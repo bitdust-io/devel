@@ -1,0 +1,35 @@
+BitPie.NET Terms of Use
+==========================
+
+Please contact us if you have any questions: bitpie.net@gmail.com
+
+This is not the final version of the document, we are in the process of developing the working version of those terms.
+
+This license is not GPL, BSD, etc., this is proprietary software. 
+But we share the source code of the project. BitPie.NET Software is written in Python and distributed as is.
+
+In short, we provide most common rights to use, study, modify and distribute the source code of the program. 
+We dissallow to distribute modified code, as well as use our code for commercial purposes under other brands or other organizations.
+
+Great thanks to Richard Stallman!
+He gave us the right words, his wording is extremely clear.
+
+In short we declare following rights and restrictions:
+
++ you can run the program for any purpose,
++ you can study how the program works, and change it so it does your computing as you wish,
++ you can redistribute copies so you can help your neighbor,
+- but you CAN NOT distribute copies of your modified versions to others.
+
+BitPie.NET will try to protect users from harmful code comes from bad guys. 
+If you want to make changes in the BitPie.NET code - contact me and send your modifications. 
+In fact this is mostly open source project, we just want to keep control over official releases, protect users and do not let shameless people to just copy sources and build alternative platform. 
+I hope to build an open society around the project - join us!
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED 
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED 
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
+USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+

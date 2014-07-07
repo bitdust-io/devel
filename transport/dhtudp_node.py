@@ -1,0 +1,408 @@
+
+
+"""
+.. module:: dhtudp_node
+.. role:: red
+BitPie.NET dhtudp_node() Automat
+
+
+EVENTS:
+    * :red:`connect`
+    * :red:`datagram-received`
+    * :red:`dht-read-result`
+    * :red:`dht-write-failed`
+    * :red:`dht-write-success`
+    * :red:`disconnected`
+    * :red:`go-offline`
+    * :red:`go-online`
+    * :red:`stun-failed`
+    * :red:`stun-success`
+    * :red:`timer-10sec`
+        
+"""
+
+import lib.dhnio as dhnio
+import lib.automat as automat
+import lib.udp as udp
+import lib.settings as settings
+
+import stun.stun_client as stun_client
+
+import dht.dht_service as dht_service
+
+import dhtudp_connector
+import dhtudp_session
+import dhtudp_stream
+import dhtudp_interface
+
+#------------------------------------------------------------------------------ 
+
+_DHTUDPNode = None
+
+#------------------------------------------------------------------------------ 
+
+def A(event=None, arg=None):
+    """
+    Access method to interact with the state machine.
+    """
+    global _DHTUDPNode
+    if _DHTUDPNode is None:
+        # set automat name and starting state here
+        _DHTUDPNode = DHTUDPNode('dhtudp_node', 'AT_STARTUP')
+    if event is not None:
+        _DHTUDPNode.automat(event, arg)
+    return _DHTUDPNode
+
+
+class DHTUDPNode(automat.Automat):
+    """
+    This class implements all the functionality of the ``dhtudp_node()`` state machine.
+    """
+
+    timers = {
+        'timer-10sec': (10.0, ['LISTEN']),
+        }
+
+    def init(self):
+        """
+        Method to initialize additional variables and flags at creation of the state machine.
+        """
+        self.listen_port = None
+        self.my_id = None
+        self.my_address = None
+        self.my_current_incomings = []
+        self.notified = False
+        
+    def state_changed(self, oldstate, newstate):
+        """
+        """
+        
+    def A(self, event, arg):
+        #---LISTEN---
+        if self.state == 'LISTEN':
+            if event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
+                self.doStartNewSession(arg)
+            elif event == 'go-offline' :
+                self.state = 'DISCONNECTING'
+                self.doDisconnect(arg)
+            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg) :
+                self.doStartNewConnector(arg)
+            elif event == 'timer-10sec' and not self.isKnowMyAddress(arg) :
+                self.state = 'STUN'
+                self.doStartStunClient(arg)
+            elif event == 'timer-10sec' and self.isKnowMyAddress(arg) :
+                self.state = 'WRITE_MY_IP'
+                self.doDHTWtiteMyAddress(arg)
+        #---AT_STARTUP---
+        elif self.state == 'AT_STARTUP':
+            if event == 'go-online' :
+                self.state = 'STUN'
+                self.GoOn=False
+                self.doInit(arg)
+                self.doStartStunClient(arg)
+        #---STUN---
+        elif self.state == 'STUN':
+            if event == 'stun-success' :
+                self.state = 'WRITE_MY_IP'
+                self.doUpdateMyAddress(arg)
+                self.doDHTWtiteMyAddress(arg)
+            elif event == 'go-offline' :
+                self.state = 'DISCONNECTING'
+                self.doDisconnect(arg)
+            elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
+                self.doStartNewSession(arg)
+            elif event == 'stun-failed' :
+                self.state = 'OFFLINE'
+                self.doUpdateMyAddress(arg)
+                self.doNotifyFailed(arg)
+        #---OFFLINE---
+        elif self.state == 'OFFLINE':
+            if event == 'go-online' :
+                self.state = 'STUN'
+                self.doStartStunClient(arg)
+        #---DHT_READ---
+        elif self.state == 'DHT_READ':
+            if event == 'dht-read-result' :
+                self.state = 'LISTEN'
+                self.doCheckAndStartNewSessions(arg)
+                self.doDHTRemoveMyIncomings(arg)
+                self.doNotifyConnected(arg)
+            elif event == 'go-offline' :
+                self.state = 'DISCONNECTING'
+                self.doDisconnect(arg)
+            elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
+                self.doStartNewSession(arg)
+            elif event == 'connect' and not self.isKnowMyAddress(arg) :
+                self.state = 'STUN'
+                self.doStartStunClient(arg)
+            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg) :
+                self.doStartNewConnector(arg)
+        #---WRITE_MY_IP---
+        elif self.state == 'WRITE_MY_IP':
+            if event == 'dht-write-success' :
+                self.state = 'DHT_READ'
+                self.doDHTReadMyIncomings(arg)
+            elif event == 'go-offline' :
+                self.state = 'DISCONNECTING'
+                self.doDisconnect(arg)
+            elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
+                self.doStartNewSession(arg)
+            elif event == 'connect' and not self.isKnowMyAddress(arg) :
+                self.state = 'STUN'
+                self.doStartStunClient(arg)
+            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg) :
+                self.doStartNewConnector(arg)
+            elif event == 'dht-write-failed' :
+                self.state = 'OFFLINE'
+                self.doNotifyFailed(arg)
+        #---DISCONNECTING---
+        elif self.state == 'DISCONNECTING':
+            if event == 'go-online' :
+                self.GoOn=True
+            elif event == 'disconnected' and not self.GoOn :
+                self.state = 'OFFLINE'
+                self.doNotifyDisconnected(arg)
+            elif event == 'disconnected' and self.GoOn :
+                self.state = 'STUN'
+                self.GoOn=False
+                self.doNotifyDisconnected(arg)
+                self.doStartStunClient(arg)
+
+    def isKnownPeer(self, arg):
+        """
+        Condition method.
+        """
+        try:
+            datagram, address = arg
+            command, payload = datagram
+        except:
+            dhnio.DprintException()
+            return False
+        if address == stun_client.A().peer_address:
+            return True
+        s = dhtudp_session.get(address)
+        return s is not None
+
+    def isKnownUser(self, arg):
+        """
+        Condition method.
+        """
+        user_id = arg
+        if dhtudp_session.get_by_peer_id(user_id) is not None:
+            return True
+        if dhtudp_connector.get(user_id) is not None:
+            return True
+        return False
+
+    def isKnowMyAddress(self, arg):
+        """
+        Condition method.
+        """
+        return self.my_address is not None
+
+    def isPacketValid(self, arg):
+        """
+        Condition method.
+        """
+        try:
+            datagram, address = arg
+            command, payload = datagram
+        except:
+            return False
+        return True
+        
+    def isStun(self, arg):
+        """
+        Condition method.
+        """
+        command = arg[0][0]
+        return command == udp.CMD_STUN
+
+    def doInit(self, arg):
+        """
+        Action method.
+        """
+        options = arg
+        self.my_idurl = options['idurl']
+        self.listen_port = int(options['udp_port']) 
+        self.my_id = dhtudp_interface.idurl_to_id(self.my_idurl)
+        udp.proto(self.listen_port).add_callback(self._datagram_received)
+        # udp.add_datagram_receiver_callback(self._datagram_received)
+        dhtudp_stream.start_process_sessions()
+
+    def doStartStunClient(self, arg):
+        """
+        Action method.
+        """
+        stun_client.A('start', (self.listen_port, self._stun_finished))
+
+    def doStartNewConnector(self, arg):
+        """
+        Action method.
+        """
+        c = dhtudp_connector.create(self, arg)
+        c.automat('start', (self.listen_port, self.my_id, self.my_address))
+
+    def doStartNewSession(self, arg):
+        """
+        Action method.
+        """
+        try:
+            datagram, address = arg
+            command, payload = datagram
+        except:
+            dhnio.DprintException()
+            return
+        # dhnio.Dprint(10, 'dhtudp_node.doStartNewSession wants to start a new session with UNKNOWN peer')
+        s = dhtudp_session.create(self, address)
+        s.automat('init')
+        s.automat('datagram-received', arg)
+
+    def doCheckAndStartNewSessions(self, arg):
+        """
+        Action method.
+        """
+        if type(arg) != list:
+            raise Exception('Wrong type') 
+        self.my_current_incomings = arg
+        for incoming in self.my_current_incomings:
+            try:
+                incoming_user_id, incoming_user_address, time_placed = incoming.split(' ')
+                incoming_user_address = incoming_user_address.split(':')
+                incoming_user_address[1] = int(incoming_user_address[1])
+                incoming_user_address = tuple(incoming_user_address)
+            except:
+                dhnio.DprintException()
+                continue
+            s = dhtudp_session.get(incoming_user_address) 
+            if s:
+                continue
+            # dhnio.Dprint(10, 'dhtudp_connector.doCheckAndStartNewSessions wants to start a new session with incoming peer')
+            s = dhtudp_session.create(self, incoming_user_address, incoming_user_id)
+            s.automat('init')
+
+    def doUpdateMyAddress(self, arg):
+        """
+        Action method.
+        """
+        self.my_address = arg
+        if self.my_address:
+            dhnio.Dprint(4, 'dhtudp_node.doUpdateMyAddress old=%s new=%s' % (str(self.my_address), str(arg)))
+            dhnio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
+        #TODO call top level code to notify about my external IP changes
+
+    def doDHTReadMyIncomings(self, arg):
+        """
+        Action method.
+        """
+        d = dht_service.get_value(self.my_id+':incomings')
+        d.addCallback(self._got_my_incomings)
+
+    def doDHTRemoveMyIncomings(self, arg):
+        """
+        Action method.
+        """
+        if len(self.my_current_incomings) > 0:
+            # dht_service.delete_key(self.my_id+':incomings')
+            dht_service.set_value(self.my_id+':incomings', '')
+
+    def doDHTWtiteMyAddress(self, arg):
+        """
+        Action method.
+        """
+        d = dht_service.set_value(self.my_id+':address', '%s:%d' % (self.my_address[0], self.my_address[1]))
+        d.addCallback(self._wrote_my_address)
+        d.addErrback(lambda x: self.automat('dht-write-failed'))
+
+    def doDisconnect(self, arg):
+        """
+        Action method.
+        """
+        dhtudp_stream.stop_process_sessions()
+        for s in dhtudp_session.sessions().values():
+            dhnio.Dprint(18, 'dhtudp_node.doShutdown  send "shutdown" to %s' % s)
+            s.automat('shutdown')
+        # udp.remove_datagram_receiver_callback(self._datagram_received)
+        self.automat('disconnected')
+
+    def doNotifyDisconnected(self, arg):
+        """
+        Action method.
+        """
+        self.notified = False
+        dhtudp_interface.interface_disconnected(arg)
+
+    def doNotifyConnected(self, arg):
+        """
+        Action method.
+        """
+        if not self.notified:
+            dhtudp_interface.interface_receiving_started(self.my_id)
+            self.notified = True
+        
+    def doNotifyFailed(self, arg):
+        """
+        Action method.
+        """
+        dhtudp_interface.interface_receiving_failed('state is %s' % self.state)
+
+    def _datagram_received(self, datagram, address):
+        """
+        """
+        try:
+            command, payload = datagram
+        except:
+            return
+        # dhnio.Dprint(18, '>>> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
+        s = dhtudp_session.get(address)
+        if s:
+            s.automat('datagram-received', (datagram, address))
+        self.automat('datagram-received', (datagram, address))
+        
+    def _stun_finished(self, result, address=None):
+        self.automat(result, address)
+        
+    def _got_my_address(self, value):
+        if type(value) != dict:
+            dhnio.Dprint(4, 'dhtudp_node._got_my_address WARNING   can not read my address')
+            self.automat('dht-write-failed')
+            return
+        hkey = dht_service.key_to_hash(self.my_id+':address')
+        if hkey not in value.keys():
+            dhnio.Dprint(4, 'dhtudp_node._got_my_address ERROR   wrong key in response')
+            self.automat('dht-write-failed')
+            return
+        value = value[hkey].strip('\n').strip()
+        if value != '%s:%d' % (self.my_address[0], self.my_address[1]):
+            dhnio.Dprint(4, 'dhtudp_node._got_my_address ERROR   value not fit: %s' % str(value)[:20])
+            self.automat('dht-write-failed')
+            return
+        self.automat('dht-write-success')
+        
+    def _wrote_my_address(self, nodes):
+        if len(nodes) == 0:
+            self.automat('dht-write-failed')
+            return
+        d = dht_service.get_value(self.my_id+':address')
+        d.addCallback(self._got_my_address)
+        d.addErrback(lambda x: self.automat('dht-write-failed'))
+
+    def _got_my_incomings(self, value):
+        # dhnio.Dprint(18, 'incomings: ' + str(value))
+        if type(value) != dict:
+            self.automat('dht-read-result', [])
+            return
+        hkey = dht_service.key_to_hash(self.my_id+':incomings')
+        if hkey not in value.keys():
+            self.automat('dht-read-result', [])
+            return
+        value = value[hkey].strip('\n').strip()
+        if value == '':
+            self.automat('dht-read-result', [])
+            return
+        value = value.split('\n')
+        self.automat('dht-read-result', value)
+
+#------------------------------------------------------------------------------ 
+
+

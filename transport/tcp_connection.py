@@ -1,0 +1,394 @@
+
+
+"""
+.. module:: tcp_connection
+.. role:: red
+
+BitPie.NET tcp_connection() Automat
+
+EVENTS:
+    * :red:`connection-lost`
+    * :red:`connection-made`
+    * :red:`data-received`
+    * :red:`disconnect`
+    * :red:`timer-10sec`
+
+"""
+
+
+import os
+import sys
+import time
+
+try:
+    from twisted.internet import reactor
+except:
+    sys.exit('Error initializing twisted.internet.reactor in tcp_node.py')
+
+from twisted.internet import protocol
+from twisted.protocols import basic
+
+import lib.dhnio as dhnio
+import lib.automat as automat
+
+import tcp_node
+import tcp_interface
+import tcp_stream
+
+#------------------------------------------------------------------------------ 
+
+MAX_SIMULTANEOUS_CONNECTIONS = 250
+
+CMD_HELLO = 'h'
+CMD_WAZAP = 'w'
+CMD_DATA = 'd'
+CMD_OK = 'o'
+CMD_ABORT = 'a'
+
+#------------------------------------------------------------------------------ 
+
+class TCPConnection(automat.Automat, basic.Int32StringReceiver):
+    SoftwareVersion = '1'
+
+    timers = {
+        'timer-10sec': (10.0, ['CLIENT?','SERVER?']),
+        }
+
+    def __init__(self):
+        self.stream = None
+        self.peer_address = None
+        self.peer_external_address = None
+        self.peer_idurl = None
+        self.total_bytes_received = 0
+        self.total_bytes_sent = 0
+        self.outboxQueue = []
+
+    def init(self):
+        """
+        Method to initialize additional variables and flags at creation of the state machine.
+        """
+
+    def state_changed(self, oldstate, newstate):
+        """
+        Method to to catch the moment when automat's state were changed.
+        """
+
+    def A(self, event, arg):
+        #---CONNECTED---
+        if self.state == 'CONNECTED':
+            if event == 'data-received' :
+                self.doReceiveData(arg)
+            elif event == 'connection-lost' :
+                self.state = 'CLOSED'
+                self.doStopInOutFiles(arg)
+                self.doCloseStream(arg)
+                self.doDestroyMe(arg)
+            elif event == 'disconnect' :
+                self.state = 'DISCONNECT'
+                self.doStopInOutFiles(arg)
+                self.doCloseStream(arg)
+                self.doDisconnect(arg)
+        #---AT_STARTUP---
+        elif self.state == 'AT_STARTUP':
+            if event == 'connection-made' and not self.isOutgoing(arg) :
+                self.state = 'SERVER?'
+                self.doInit(arg)
+            elif event == 'connection-made' and self.isOutgoing(arg) :
+                self.state = 'CLIENT?'
+                self.doInit(arg)
+                self.doCloseOutgoing(arg)
+                self.doSendHello(arg)
+        #---CLIENT?---
+        elif self.state == 'CLIENT?':
+            if event == 'connection-lost' :
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'data-received' and self.isWazap(arg) and self.isSomePendingFiles(arg) :
+                self.state = 'CONNECTED'
+                self.doReadWazap(arg)
+                self.doOpenStream(arg)
+                self.doStartPendingFiles(arg)
+            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not ( self.isWazap(arg) and self.isSomePendingFiles () ) ) :
+                self.state = 'DISCONNECT'
+                self.doDisconnect(arg)
+        #---SERVER?---
+        elif self.state == 'SERVER?':
+            if event == 'connection-lost' :
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'data-received' and self.isHello(arg) :
+                self.state = 'CONNECTED'
+                self.doReadHello(arg)
+                self.doSendWazap(arg)
+                self.doOpenStream(arg)
+                self.doStartPendingFiles(arg)
+            elif event == 'timer-10sec' or event == 'disconnect' or ( event == 'data-received' and not self.isHello(arg) ) :
+                self.state = 'DISCONNECT'
+                self.doDisconnect(arg)
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
+        #---DISCONNECT---
+        elif self.state == 'DISCONNECT':
+            if event == 'connection-lost' :
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+
+    def isHello(self, arg):
+        """
+        Condition method.
+        """
+        try:
+            command, payload = arg
+            peeraddress, peeridurl = payload.split(' ')
+            peerip, peerport = peeraddress.split(':') 
+            peerport = int(peerport)
+            peeraddress = (peerip, peerport)
+        except:
+            return False
+        return command == CMD_HELLO
+
+    def isWazap(self, arg):
+        """
+        Condition method.
+        """
+        try:
+            command, payload = arg
+        except:
+            return False
+        return command == CMD_WAZAP
+
+    def isOutgoing(self, arg):
+        """
+        Condition method.
+        """
+        if self.getConnectionAddress() is not None:
+            if self.getConnectionAddress() in tcp_node.started_connections().keys(): 
+                return True
+        return False 
+
+    def isSomePendingFiles(self, arg):
+        """
+        Condition method.
+        """
+        return len(self.factory.pendingoutboxfiles) > 0
+
+    def doInit(self, arg):
+        """
+        Action method.
+        """
+        self.peer_address = self.getTransportAddress()
+        self.peer_external_address = self.peer_address
+        self.connected = time.time()
+        if self.peer_address not in tcp_node.opened_connections():
+            tcp_node.opened_connections()[self.peer_address] = []
+        tcp_node.opened_connections()[self.peer_address].append(self)
+        tcp_node.increase_connections_counter()
+
+    def doCloseOutgoing(self, arg):
+        """
+        Action method.
+        """
+        conn = tcp_node.started_connections().pop(self.getConnectionAddress())
+        conn.connector = None
+        # dhnio.Dprint(18, 'tcp_connection.doCloseOutgoing    %s closed, %d more started' % (
+        #     str(self.peer_address), len(tcp_node.started_connections())))
+
+    def doReadHello(self, arg):
+        """
+        Action method.
+        """
+        try:
+            command, payload = arg
+            peeraddress, peeridurl = payload.split(' ')
+            peerip, peerport = peeraddress.split(':') 
+            peerport = int(peerport)
+            peeraddress = (peerip, peerport)
+        except:
+            return
+        # self.peer_external_address = (self.peer_external_address[0], peerport)
+        self.peer_external_address = peeraddress
+        self.peer_idurl = peeridurl
+        if self.peer_address != self.peer_external_address:
+            tcp_node.opened_connections()[self.peer_address].remove(self)
+            if len(tcp_node.opened_connections()[self.peer_address]) == 0:
+                tcp_node.opened_connections().pop(self.peer_address)
+            self.peer_address = self.peer_external_address
+            if self.peer_address not in tcp_node.opened_connections():
+                tcp_node.opened_connections()[self.peer_address] = []
+            tcp_node.opened_connections()[self.peer_address].append(self)
+            dhnio.Dprint(12, '%s : external peer address changed to %s' % (
+                self, self.peer_address))
+        # dhnio.Dprint(18, 'tcp_connection.doReadHello from %s' % (self.peer_idurl))
+
+    def doReadWazap(self, arg):
+        """
+        Action method.
+        """
+        try:
+            command, payload = arg
+        except:
+            return
+        self.peer_idurl = payload
+        # dhnio.Dprint(18, 'tcp_connection.doReadWazap from %s' % (self.peer_idurl))
+
+    def doReceiveData(self, arg):
+        """
+        Action method.
+        """
+        try:
+            command, payload = arg
+        except:
+            return
+        if command == CMD_DATA:
+            self.stream.data_received(payload)
+        elif command == CMD_OK:
+            self.stream.ok_received(payload)
+        elif command == CMD_ABORT:
+            self.stream.abort_received(payload)
+        else:
+            pass
+            
+    def doSendHello(self, arg):
+        """
+        Action method.
+        """
+        host = tcp_node.my_host() or '127.0.0.1:7771'
+        idurl = tcp_node.my_idurl() or 'None'
+        payload = host + ' ' + idurl
+        self.sendData(CMD_HELLO, payload) 
+
+    def doSendWazap(self, arg):
+        """
+        Action method.
+        """
+        payload = tcp_node.my_idurl() or 'None' 
+        self.sendData(CMD_WAZAP, payload)
+
+    def doStartPendingFiles(self, arg):
+        """
+        Action method.
+        """
+        for filename, description, result_defer, single in self.factory.pendingoutboxfiles:
+            self.append_outbox_file(filename, description, result_defer, single)
+        self.factory.pendingoutboxfiles = []
+
+    def doStopInOutFiles(self, arg):
+        """
+        Action method.
+        """
+        self.stream.abort_files('disconnecting')
+
+    def doOpenStream(self, arg):
+        """
+        Action method.
+        """
+        self.stream = tcp_stream.TCPFileStream(self)
+                
+    def doCloseStream(self, arg):
+        """
+        Action method.
+        """
+        self.stream.close()
+        del self.stream
+        self.stream = None
+
+    def doDisconnect(self, arg):
+        """
+        Action method.
+        """
+        # dhnio.Dprint(18, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
+        try:
+            self.transport.abortConnection()
+        except:
+            self.transport.loseConnection()
+            
+    def doDestroyMe(self, arg):
+        """
+        Action method.
+        """
+        # dhnio.Dprint(18, 'tcp_connection.doDestroyMe %s' % str(self))
+        automat.objects().pop(self.index)
+        if self.peer_address in tcp_node.opened_connections():
+            tcp_node.opened_connections()[self.peer_address].remove(self)
+            if len(tcp_node.opened_connections()[self.peer_address]) == 0:
+                tcp_node.opened_connections().pop(self.peer_address)
+            tcp_node.decrease_connections_counter()
+        else:
+            raise Exception('not found %s in the opened connections' % self.peer_address)
+
+
+    def getTransportAddress(self):
+        peer = self.transport.getPeer()
+        return (peer.host, int(peer.port))
+    
+    def getConnectionAddress(self):
+        return self.factory.connection_address
+    
+    def getAddress(self):
+        addr = self.getConnectionAddress()
+        if not addr:
+            addr = self.getTransportAddress()
+        return addr
+    
+    def connectionMade(self):
+        # dhnio.Dprint(18, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
+        address = self.getAddress()
+        name = 'tcp_connection[%s:%d]' % (address[0], address[1])  
+        automat.Automat.__init__(self, name, 'AT_STARTUP')
+        self.automat('connection-made')
+    
+    def connectionLost(self, reason):
+        # dhnio.Dprint(18, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
+        self.automat('connection-lost')
+
+    def sendData(self, command, payload):
+        # print '<<<<<< [%s], %d bytes' % (command, len(payload))
+        try:
+            data = self.SoftwareVersion + str(command.lower())[0] + payload
+            self.sendString(data)
+        except:
+            return False
+        return True
+    
+    def stringReceived(self, data):
+        try:
+            version = data[0]
+            command = data[1]
+            payload = data[2:]
+        except:
+            dhnio.DprintException()
+            self.transport.loseConnection()
+            return
+        # print '>>>>>> [%s] %d bytes' % (command, len(payload))
+        self.automat('data-received', (command, payload))
+
+    def append_outbox_file(self, filename, description='', result_defer=None, single=False):
+        self.outboxQueue.append((filename, description, result_defer, single))
+     
+    def process_outbox_queue(self):
+        if self.stream is None:
+            return False
+        has_reads = False
+        while len(self.outboxQueue) > 0 and len(self.stream.outboxFiles) < tcp_stream.MAX_SIMULTANEOUS_OUTGOING_FILES:        
+            filename, description, result_defer, single = self.outboxQueue.pop(0)
+            has_reads = True
+            # we have a queue of files to be sent
+            # somehow file may be removed before we start sending it
+            # so we check it here and skip not existed files
+            if not os.path.isfile(filename):
+                self.failed_outbox_queue_item(filename, description, 'file not exist')
+                continue
+            try:
+                filesize = os.path.getsize(filename)
+            except:
+                self.failed_outbox_queue_item(filename, description, 'can not get file size')
+                continue
+            self.stream.create_outbox_file(filename, filesize, description, result_defer, single)
+        return has_reads
+
+    def failed_outbox_queue_item(self, filename, description='', error_message=''):
+        dhnio.Dprint(6, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
+        tcp_interface.interface_cancelled_file_sending(
+            self.getAddress(), filename, 0, description, error_message)        
+
