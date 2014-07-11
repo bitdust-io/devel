@@ -70,18 +70,15 @@ def create(outpacket, wide, callbacks):
     
     
 def search(proto, host, filename):
-    # print 'search', proto, host, filename
     for p in queue():
         if p.filename != filename:
-            # print p.filename
             continue
         for i in p.items:
-            # print i.host, i.proto
-            if i.host == host and i.proto == proto:
+            if i.proto == proto:
                 return p, i
     for p in queue():
-        dhnio.Dprint(18, '%s %s' % (os.path.basename(p.filename), 
-            ('|'.join(map(lambda i: '%r:%r' % (i.proto, i.host), p.items)))))
+        dhnio.Dprint(18, '%s [%s]' % (os.path.basename(p.filename), 
+            ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
     return None, None
 
 
