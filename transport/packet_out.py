@@ -377,7 +377,7 @@ class PacketOut(automat.Automat):
         ok = False
         proto, host, filename, transfer_id = arg
         for i in xrange(len(self.items)):
-            if self.items[i].proto == proto and self.items[i].host == host:
+            if self.items[i].proto == proto: # and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
                 # dhnio.Dprint(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
                 ok = True
