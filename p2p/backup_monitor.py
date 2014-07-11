@@ -115,6 +115,8 @@ class BackupMonitor(automat.Automat):
         This method is called every time when my state is changed. 
         """
         automats.set_global_state('MONITOR ' + newstate)
+        if newstate == 'RESTART':
+            self.automat('instant')
 
     def A(self, event, arg):
         #---READY---

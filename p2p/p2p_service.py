@@ -472,13 +472,13 @@ def Data(request):
     if request.OwnerID in used_space_dict.keys():
         try:
             bytes_used_by_customer = int(used_space_dict[request.OwnerID])
-            bytes_donated_to_customer = int(space_dict[request.OwnerID]) * 1024 * 1024  
+            bytes_donated_to_customer = int(float(space_dict[request.OwnerID]) * 1024 * 1024)  
+            if bytes_donated_to_customer - bytes_used_by_customer < len(data):
+                dhnio.Dprint(6, "p2p_service.Data WARNING no free space for %s" % request.OwnerID)
+                SendFail(request, 'no free space')
+                return
         except:
             dhnio.DprintException()
-        if bytes_donated_to_customer - bytes_used_by_customer < len(data):
-            dhnio.Dprint(6, "p2p_service.Data WARNING no free space for %s" % request.OwnerID)
-            SendFail(request, 'no free space')
-            return
     if not dhnio.WriteFile(filename, data):
         dhnio.Dprint(2, "p2p_service.Data ERROR can not write to " + str(filename))
         SendFail(request, 'write error')

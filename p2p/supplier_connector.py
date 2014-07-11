@@ -145,7 +145,7 @@ class SupplierConnector(automat.Automat):
             elif event == 'disconnect' :
                 self.state = 'REFUSE'
                 self.doCancelService(arg)
-            elif event == 'fail' :
+            elif event == 'fail' or event == 'connect' :
                 self.state = 'REQUEST'
                 self.doRequestService(arg)
                 self.GoDisconnect=False
