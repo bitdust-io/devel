@@ -525,7 +525,8 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     """
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        dhnio.Dprint(2, 'gate.on_register_file_sending ERROR packet_out not found: %r' % ((proto, host, filename),))
+        dhnio.Dprint(2, 'gate.on_register_file_sending ERROR packet_out not found: %r %r %r' % (
+            proto, host, os.path.basename(filename)))
         return None
     transfer_id = make_transfer_ID()
     # dhnio.Dprint(14, '>>> OUT >>> ?%d? send {%s} via [%s] to %s at %s' % (

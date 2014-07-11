@@ -79,7 +79,9 @@ def search(proto, host, filename):
             # print i.host, i.proto
             if i.host == host and i.proto == proto:
                 return p, i
-    dhnio.Dprint(18, '|'.join(map(lambda p: os.path.basename(p.filename), queue())))
+    for p in queue():
+        dhnio.Dprint(18, '%s %s' % (os.path.basename(p.filename), 
+            ('|'.join(map(lambda i: '%r:%r' % (i.proto, i.host), p.items)))))
     return None, None
 
 
