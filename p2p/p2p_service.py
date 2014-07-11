@@ -258,13 +258,16 @@ def Identity(newpacket):
     newidentity = identity.identity(xmlsrc=newxml)
 
     # SECURITY - check that identity is signed correctly
-    if not newidentity.Valid():
-        dhnio.Dprint(1,"p2p_service.Identity ERROR has non-Valid identity")
-        return
+    # if not newidentity.Valid():
+    #     dhnio.Dprint(1,"p2p_service.Identity ERROR has non-Valid identity")
+    #     return
 
     idurl = newidentity.getIDURL()
 
-    identitycache.UpdateAfterChecking(idurl, newxml)
+    if not identitycache.UpdateAfterChecking(idurl, newxml):
+        dhnio.Dprint(1,"p2p_service.Identity ERROR has non-Valid identity")
+        return
+        
 
     # if contacts.isKnown(idurl):
         # This checks that old public key matches new
