@@ -586,7 +586,8 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
     """
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        dhnio.Dprint(2, 'gate.on_cancelled_file_sending packet_out not found - IT IS OK')
+        dhnio.Dprint(2, 'gate.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (
+            proto, host, os.path.basename(filename)))
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
     dhnio.Dprint(14, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s' % (
