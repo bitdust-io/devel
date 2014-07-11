@@ -59,13 +59,13 @@ def queue():
     return _OutboxQueue
 
 
-def create(outpacket, doack, wide):
+def create(outpacket, wide, callbacks):
     """
     """
-    dhnio.Dprint(10, 'packet_out.create  %s' % str(outpacket))
-    p = PacketOut(outpacket, doack, wide)
+    # dhnio.Dprint(10, 'packet_out.create  %s' % str(outpacket))
+    p = PacketOut(outpacket, wide, callbacks)
     queue().append(p)
-    p.automat('run', (outpacket, doack, wide))
+    p.automat('run')
     return p
     
     
@@ -90,12 +90,24 @@ def search_by_transfer_id(transfer_id):
     return None, None
 
 
-def search_by_packet_id(creator_id, packet_id):
+def search_by_response_packet(newpacket):
+#    dhnio.Dprint(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
+#        nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
+#        nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
+    target_idurl = newpacket.CreatorID
+    if newpacket.OwnerID == misc.getLocalID():
+        target_idurl = newpacket.RemoteID
     for p in queue():
-        # print p.outpacket.CreatorID, p.outpacket.PacketID, creator_id, packet_id
-        if p.outpacket.RemoteID == creator_id and p.outpacket.PacketID == packet_id:
-            result.append(p)
+        if p.outpacket.PacketID != newpacket.PacketID:
+            continue
+        if target_idurl != p.outpacket.RemoteID:
+            continue  
+        result.append(p)
+        dhnio.Dprint(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
+            nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID), 
+            nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
+            p.callbacks.keys()))
     return result
 
 #------------------------------------------------------------------------------ 
@@ -144,7 +156,7 @@ class PacketOut(automat.Automat):
         self.items = []
         self.results = []
         self.response_packet = None
-        automat.Automat.__init__(self, 'OUT(%s)' % self.md5, 'AT_STARTUP', 8)
+        automat.Automat.__init__(self, 'OUT(%s)' % self.md5, 'AT_STARTUP', 18)
         
     def is_timed_out(self):
         if self.time is None or self.timeout is None:
@@ -290,7 +302,6 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        self.outpacket, self.doack, self.wide = arg
 
     def doCacheRemoteIdentity(self, arg):
         """
@@ -332,26 +343,22 @@ class PacketOut(automat.Automat):
             transfer_id, status, size, error_message = arg
             for i in self.items:
                 if i.transfer_id and i.transfer_id == transfer_id:
-                    # self._item_finished(i, status, size, error_message)
                     self.items.remove(i)
                     i.status = status
                     i.error_message = error_message
                     i.bytes_sent = size
                     self.results.append(i)
-                    # self.results.append((i.proto, i.host, status, size, '', error_message))
                     self.popped_item = i
                     break
         elif len(arg) == 6:
             proto, host, filename, size, descr, err_msg = arg
             for i in self.items:
                 if i.proto == proto and i.host == host:
-                    # self._item_failed(i)
                     self.items.remove(i)
                     i.status = 'failed'
                     i.error_message = err_msg
                     i.bytes_sent = size
                     self.results.append(i)
-                    # self.results.append((i.proto, i.host, 'failed', size, descr, err_msg))
                     self.popped_item = i
                     break
         else:
@@ -372,7 +379,7 @@ class PacketOut(automat.Automat):
         for i in xrange(len(self.items)):
             if self.items[i].proto == proto and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
-                dhnio.Dprint(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
+                # dhnio.Dprint(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
                 ok = True
         if not ok:
             dhnio.Dprint(8, 'packet_out.doSetTransferID WARNING not found item for %r:%r' % (proto, host))
@@ -397,7 +404,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        callback.run_outbox_callbacks(self.outpacket, self.doack, self.wide)
+        callback.run_outbox_callbacks(self)
 
     def doReportItem(self, arg):
         """
@@ -428,16 +435,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        if self.response_packet.Command == commands.Ack():
-            for cb in self.ack_callbacks:
-                cb(self.response_packet, self)
-        elif self.response_packet.Command == commands.Fail():
-            for cb in self.fail_callbacks:
-                cb(self.response_packet, self)
-        else:
-            raise Exception('wrong type of response packet')
-        self.ack_callbacks = []
-        self.fail_callbacks = []
+        self.callbacks[self.response_packet.Command](self.response_packet, self)
         callback.run_queue_item_status_callbacks(self, 'finished', '')
 
     def doReportDoneNoAck(self, arg):
@@ -472,7 +470,6 @@ class PacketOut(automat.Automat):
         self.outpacket = None
         self.remote_identity = None
         self.callbacks.clear()
-        self.fail_callbacks = []
         queue().remove(self)
         automat.objects().pop(self.index)
 
@@ -560,33 +557,3 @@ class PacketOut(automat.Automat):
         self.automat('nothing-to-send')
         dhnio.Dprint(6, 'packet_out._push WARNING no supported protocols with %s' % self.remote_idurl)
         
-    def _item_finished(self, item, status, size, error_message):
-        stats.count_outbox(self.remote_idurl, item.proto, status)
-        gate.counters_out()['total_bytes'] += size
-        if self.remote_idurl and self.remote_idurl.startswith('http://') and self.remote_idurl.endswith('.xml'): 
-            if not gate.counters_out().has_key(self.remote_idurl):
-                gate.counters_out()[self.remote_idurl] = 0
-            gate.counters_out()[self.remote_idurl] += size
-        else:
-            gate.counters_out()['unknown_bytes'] += size
-        if status == 'finished':
-            if self.remote_idurl and self.remote_idurl.startswith('http://') and self.remote_idurl.endswith('.xml'): 
-                gate.counters_out()['total_packets'] += 1
-            else:
-                gate.counters_out()['unknown_packets'] += 1
-            dhnnet.ConnectionDone(self.filename, item.proto, 'sendStatusReport %s' % item.host)
-        else:
-            if self.remote_idurl and self.remote_idurl.startswith('http://') and self.remote_idurl.endswith('.xml'): 
-                gate.counters_out()['failed_packets'] += 1
-            dhnnet.ConnectionFailed(self.filename, item.proto, 'sendStatusReport %s' % item.host)
-        callback.run_finish_file_sending_callbacks(
-            self, item, status, size, error_message)
-        # webtraffic.outbox(self, item, status)
-        # bandwidth.OUTfile(self, status)
-
-    def _item_failed(self, item):
-        dhnnet.ConnectionFailed(self, item.proto, 'sendStatusReport %s' % item.host)
-        callback.run_finish_file_sending_callbacks(
-            self, item, 'failed', 0, None)
-        
-

@@ -231,7 +231,7 @@ class restore(automat.Automat):
     
     def isLastBlock(self, arg):
         NewBlock = arg[0]
-        return NewBlock.LastBlock == str(True)
+        return NewBlock.LastBlock
     
     def doStartNewBlock(self, arg):
         self.LastAction = time.time()
@@ -277,10 +277,10 @@ class restore(automat.Automat):
         fd, filename = tmpfile.make('restore', 
             prefix=self.BackupID.replace('/','_')+'_'+str(self.BlockNumber)+'_')
         os.close(fd)
-        raid_worker.A('new-task', 
-            ('read', lambda result: self._blockRestoreResult(result, filename),
-            filename, eccmap.CurrentName(), self.Version, self.BlockNumber, 
-            os.path.join(settings.getLocalBackupsDir(), self.PathID)))
+        raid_worker.A('new-task', ('read', 
+            (filename, eccmap.CurrentName(), self.Version, self.BlockNumber, 
+            os.path.join(settings.getLocalBackupsDir(), self.PathID)),
+            lambda cmd, params, result: self._blockRestoreResult(result, filename)))
         
 #        threads.deferToThread(
 #            raidread.raidread,
@@ -322,7 +322,8 @@ class restore(automat.Automat):
         if self.packetInCallback is not None:
             self.packetInCallback(self.BackupID, NewPacket)
     
-    def doRestoreBlock(self, filename):
+    def doRestoreBlock(self, arg):
+        filename = arg
         blockbits = dhnio.ReadBinaryFile(filename)
         if not blockbits:
             self.automat('block-restored', (None, filename))

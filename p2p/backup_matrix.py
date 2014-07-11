@@ -35,9 +35,6 @@ to reconstruct "Data" pieces. So need to keep track of both "surfaces".
 
 import os
 import sys
-import time
-import random
-import gc
 import cStringIO
 
 
@@ -46,29 +43,13 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_matrix.py')
 
-from twisted.internet.defer import Deferred, maybeDeferred
-from twisted.internet import threads
-
-
 import lib.dhnio as dhnio
 import lib.misc as misc
-import lib.nameurl as nameurl
 import lib.settings as settings
 import lib.contacts as contacts
-# import lib.eccmap as eccmap
-import lib.tmpfile as tmpfile
-import lib.diskspace as diskspace
 import lib.packetid as packetid
-from lib.automat import Automat
 
-
-import backup_monitor
-import backup_rebuilder  
-import fire_hire
-import list_files_orator
 import backup_db_keeper
-
-import p2p_service
 import io_throttle
 import contact_status
 import backup_fs
@@ -592,20 +573,21 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
     RepaintBackup(backupID)
 
 
-def LocalBlockReport(newblock, num_suppliers):
+def LocalBlockReport(backupID, blockNumber, result):
     """
     This updates "local" matrix - a several pieces corresponding to given block of data.
     """
-    if suppliers_set().supplierCount != num_suppliers:
-        dhnio.Dprint(6, 'backup_matrix.LocalBlockReport %s skipped, because number of suppliers were changed' % str(newblock))
+    # if suppliers_set().supplierCount != num_suppliers:
+    #     dhnio.Dprint(6, 'backup_matrix.LocalBlockReport %s skipped, because number of suppliers were changed' % str(newblock))
+    #     return
+    if result is None:
         return
     try:
-        backupID = newblock.BackupID
-        blockNum = int(newblock.BlockNumber)
+        blockNum = int(blockNumber)
     except:
         dhnio.DprintException()
         return
-    for supplierNum in xrange(num_suppliers):
+    for supplierNum in xrange(suppliers_set().supplierCount):
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
             if not local_files().has_key(backupID):

@@ -348,28 +348,25 @@ def inbox(info):
         os.write(fd, data)
         os.close(fd)
         return None
-    dhnio.Dprint(12, "gate.inbox %s from %s" % (newpacket, nameurl.GetName(OwnerID)))
+    dhnio.Dprint(16, "gate.inbox [%s] from %s|%s by %s://%s" % (
+        newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
+        nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
     return newpacket
 
 #------------------------------------------------------------------------------ 
 
-def outbox(outpacket, doack=False, wide=False, 
-           ack_callback=None, fail_callback=None):
+def outbox(outpacket, wide=False, callbacks={}): 
     """
     Sends `dhnpacket` to the network.
     
         :param outpacket: an instance of dhnpacket
-        :param doack: set to True if you want to wait for an Ack packet 
-                      before counting that transfer as finished
         :param wide:  set to True if you need to send the packet 
                       to all contacts of Remote Identity
+        :param callbacks: provide a callback methods to get response
     """
-    pkt = packet_out.create(outpacket, doack, wide)
-    if ack_callback:
-        pkt.add_ack_callback(ack_callback)
-    if fail_callback:
-        pkt.add_fail_callback(fail_callback)
-    return pkt
+    dhnio.Dprint(16, "gate.outbox [%s] to %s" % (
+        outpacket.Command, nameurl.GetName(outpacket.RemoteID),))
+    return packet_out.create(outpacket, wide, callbacks)
 
 
 def send_work_item(proto, host, filename, description):
@@ -531,9 +528,9 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
         dhnio.Dprint(2, 'gate.on_register_file_sending ERROR packet_out not found: %r' % ((proto, host, filename),))
         return None
     transfer_id = make_transfer_ID()
-    dhnio.Dprint(14, '>>> OUT >>> ?%d? send {%s} via [%s] to %s at %s' % (
-        transfer_id, os.path.basename(filename), proto, 
-        nameurl.GetName(receiver_idurl), host))
+    # dhnio.Dprint(14, '>>> OUT >>> ?%d? send {%s} via [%s] to %s at %s' % (
+    #     transfer_id, os.path.basename(filename), proto, 
+    #     nameurl.GetName(receiver_idurl), host))
     if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
         dhnio.Dprint(2, 'gate.on_register_file_sending ERROR  [%s] [%s]' % (pkt_out.remote_idurl, receiver_idurl))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
@@ -548,12 +545,12 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
         dhnio.Dprint(6, 'gate.unregister_file_sending WARNING %s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
-    if status == 'finished':
-        dhnio.Dprint(14, '<<< OUT <<< !%d! [%s] %s with %d bytes' % (
-            transfer_id, work_item.proto, status.upper(), bytes_sent))
-    else:
-        dhnio.Dprint(14, '<<< OUT <<< #%d# [%s] %s : %s' % (
-            transfer_id, work_item.proto, status.upper(), error_message))
+    # if status == 'finished':
+    #     dhnio.Dprint(14, '<<< OUT <<< !%d! [%s] %s with %d bytes' % (
+    #         transfer_id, work_item.proto, status.upper(), bytes_sent))
+    # else:
+    #     dhnio.Dprint(14, '<<< OUT <<< #%d# [%s] %s : %s' % (
+    #         transfer_id, work_item.proto, status.upper(), error_message))
     return True
 
 def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
@@ -564,9 +561,9 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     """
     transfer_id = make_transfer_ID()
     packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))
-    dhnio.Dprint(14, '>>> IN >>> ?%d? receive {%s} via [%s] from %s at %s' % (
-        transfer_id, os.path.basename(filename), proto, 
-        nameurl.GetName(sender_idurl), host))
+    # dhnio.Dprint(14, '>>> IN >>> ?%d? receive {%s} via [%s] from %s at %s' % (
+    #     transfer_id, os.path.basename(filename), proto, 
+    #     nameurl.GetName(sender_idurl), host))
     return transfer_id
 
 def on_unregister_file_receiving(transfer_id, status, bytes_received, error_message=''):
@@ -576,12 +573,12 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     pkt_in = packet_in.get(transfer_id)
     assert pkt_in != None
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
-    if status == 'finished':
-        dhnio.Dprint(14, '<<< IN <<< !%d! [%s] %s with %d bytes' % (
-            transfer_id, pkt_in.proto, status.upper(), bytes_received))
-    else:
-        dhnio.Dprint(14, '<<< IN <<< #%d# [%s] %s : %s' % (
-            transfer_id, pkt_in.proto, status.upper(), error_message))
+    # if status == 'finished':
+    #     dhnio.Dprint(14, '<<< IN <<< !%d! [%s] %s with %d bytes' % (
+    #         transfer_id, pkt_in.proto, status.upper(), bytes_received))
+    # else:
+    #     dhnio.Dprint(14, '<<< IN <<< #%d# [%s] %s : %s' % (
+    #         transfer_id, pkt_in.proto, status.upper(), error_message))
     return True
 
 def on_cancelled_file_sending(proto, host, filename, size, description='', error_message=None):
@@ -716,7 +713,7 @@ def main():
             p = dhnpacket.dhnpacket(commands.Data(), misc.getLocalID(), 
                                     misc.getLocalID(), misc.getLocalID(), 
                                     dhnio.ReadBinaryFile(args[1]), args[0])
-            outbox(p, doack=True, wide=True)
+            outbox(p, wide=True)
             dhnio.Dprint(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))
             globals()['num_out'] += 1
         t = task.LoopingCall(_s)

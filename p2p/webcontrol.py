@@ -2141,9 +2141,9 @@ class MainPage(Page):
             self.htmlComment = ''
             
         #--- list items and backups
-        if self.listExpandedDirs is None:
+        if self.listExpandedDirs is None or len(self.listExpandedDirs) == 0:
             self.listExpandedDirs, self.listExpandedVersions = backup_fs.ListExpandedFoldersAndBackups(self.expanded_dirs, self.selected_items)
-        
+            
         src += '<table width=100% align=center cellspacing=10 cellpadding=0 border=0>'
         src += '<tr>\n'
         src += '<td width=33%>&nbsp;</td>\n'

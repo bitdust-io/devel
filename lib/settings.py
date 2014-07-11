@@ -995,6 +995,11 @@ def CustomersSpaceFile():
     """
     return os.path.join(MetaDataDir(), 'space')
 
+def CustomersUsedSpaceFile():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'spaceused')
+
 def BalanceFile():
     """
     This file keeps our current DHN balance - two values: 

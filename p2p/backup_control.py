@@ -255,7 +255,7 @@ def IncomingSupplierBackupIndex(packet):
         # TODO repaint a GUI
         dhnio.Dprint(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (revision(), packet.RemoteID))
     input.close()
-    backup_db_keeper.A('incoming-db-info', packet)
+    # backup_db_keeper.A('incoming-db-info', packet)
         
 #------------------------------------------------------------------------------ 
 
@@ -469,19 +469,18 @@ class Task():
             dhnio.Dprint(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return 
+        compress_mode = 'none' # 'gz'
         if backup_fs.pathIsDir(sourcePath):
-            backupPipe = backup_tar.backuptar(sourcePath, compress='gz')
+            backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
         else:    
-            backupPipe = backup_tar.backuptarfile(sourcePath, compress='gz')
+            backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)
         backupPipe.make_nonblocking()
-        resultDefer = Deferred()
-        blockSize = settings.getBackupBlockSize()
         job = backup.backup(backupID, backupPipe, OnJobDone, OnBackupBlockReport, settings.getBackupBlockSize())
         jobs()[backupID] = job
         itemInfo.add_version(dataID)
         if itemInfo.type in [ backup_fs.PARENT, backup_fs.DIR ]:
             dirsize.ask(sourcePath, FoundFolderSize, (self.pathID, dataID))
-        # self.defer.callback('started', backupID)
+        jobs()[backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
         dhnio.Dprint(4, 'backup_control.Task.run %s [%s], size=%d' % (self.pathID, dataID, itemInfo.size))
         
@@ -582,14 +581,14 @@ def OnTaskFailed(pathID, result):
     RunTasks()
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)
     
-def OnBackupBlockReport(newblock, num_suppliers):
+def OnBackupBlockReport(backupID, blockNum, result):
     """
     Called for every finished block during backup process.
         :param newblock: this is a ``p2p.dhnblock.dhnblock`` instance
         :param num_suppliers: number of suppliers which is used for that backup
         
     """
-    backup_matrix.LocalBlockReport(newblock, num_suppliers)
+    backup_matrix.LocalBlockReport(backupID, blockNum, result)
 
 #------------------------------------------------------------------------------ 
 

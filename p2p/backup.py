@@ -48,9 +48,12 @@ Process will be completed as soon as all data will be read from the folder
 and all blocks will receive a delivery report. 
 
 EVENTS:
-    * :red:`block-ready`
-    * :red:`init`
-    * :red:`raid-done`
+    * :red:`block-encrypted`
+    * :red:`block-raid-done`
+    * :red:`block-raid-started`
+    * :red:`read-success`
+    * :red:`start`
+    * :red:`timer-001sec`
     * :red:`timer-01sec`
 
 """
@@ -103,7 +106,8 @@ class backup(automat.Automat):
     """
     
     timers = {
-        'timer-01sec': (0.1, ['RUN','READ']),
+        'timer-01sec': (0.1, ['RAID']),
+        'timer-001sec': (0.01, ['READ']),
         }
     
     def __init__(self, backupID, pipe, finishCallback=None, blockResultCallback=None, blockSize=None,): #  resultDeferred=None
@@ -116,17 +120,16 @@ class backup(automat.Automat):
         self.ask4abort = False
         self.stateEOF = False
         self.stateReading = False
+        self.closed = False
         self.currentBlockData = cStringIO.StringIO()
         self.currentBlockSize = 0
+        self.workBlocks = {}
         self.blockNumber = 0
         self.dataSent = 0
         self.blocksSent = 0
-        self.closed = False
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
         automat.Automat.__init__(self, 'backup', 'AT_STARTUP', 14)
-        self.automat('init')
-        events.info('backup', '%s started' % self.backupID)
         # dhnio.Dprint(6, 'backup.__init__ %s %s %d' % (self.backupID, self.eccmap, self.blockSize,))
 
     def abort(self):
@@ -145,49 +148,64 @@ class backup(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'init' :
-                self.state = 'RUN'
-        #---RUN---
-        elif self.state == 'RUN':
-            if event == 'timer-01sec' and self.isAborted(arg) :
+            if event == 'start' :
+                self.state = 'READ'
+                self.doInit(arg)
+                self.doFirstBlock(arg)
+        #---READ---
+        elif self.state == 'READ':
+            if event == 'read-success' and not self.isReadingNow(arg) and ( self.isBlockReady(arg) or self.isEOF(arg) ) :
+                self.state = 'ENCRYPT'
+                self.doEncryptBlock(arg)
+            elif event == 'block-raid-done' :
+                self.doPopBlock(arg)
+                self.doBlockReport(arg)
+                data_sender.A('new-data')
+            elif ( event == 'read-success' or event == 'timer-001sec' ) and self.isAborted(arg) :
                 self.state = 'ABORTED'
                 self.doClose(arg)
                 self.doReport(arg)
                 self.doDestroyMe(arg)
-            elif event == 'timer-01sec' and not self.isAborted(arg) :
-                self.state = 'READ'
-        #---READ---
-        elif self.state == 'READ':
-            if event == 'timer-01sec' and self.isPipeReady(arg) and not self.isEOF(arg) and not self.isReadingNow(arg) and not self.isBlockReady(arg) :
+            elif ( event == 'read-success' or event == 'timer-001sec' ) and not self.isAborted(arg) and self.isPipeReady(arg) and not self.isEOF(arg) and not self.isReadingNow(arg) and not self.isBlockReady(arg) :
                 self.doRead(arg)
-            elif event == 'timer-01sec' and not self.isReadingNow(arg) and ( self.isBlockReady(arg) or self.isEOF(arg) ) :
-                self.state = 'BLOCK'
-                self.doBlock(arg)
-        #---BLOCK---
-        elif self.state == 'BLOCK':
-            if event == 'block-ready' :
-                self.state = 'RAID'
-                self.doRaid(arg)
         #---RAID---
         elif self.state == 'RAID':
-            if event == 'raid-done' and not self.isEOF(arg) :
-                self.state = 'RUN'
-                self.doBlockReport(arg)
-                data_sender.A('new-data')
-                self.doNewBlock(arg)
-            elif event == 'raid-done' and self.isEOF(arg) :
+            if ( event == 'timer-01sec' or event == 'block-raid-done' or event == 'block-raid-started' ) and self.isAborted(arg) :
+                self.state = 'ABORTED'
+                self.doClose(arg)
+                self.doReport(arg)
+                self.doDestroyMe(arg)
+            elif event == 'block-raid-done' and not self.isMoreBlocks(arg) and not self.isAborted(arg) :
                 self.state = 'DONE'
+                self.doPopBlock(arg)
                 self.doBlockReport(arg)
                 data_sender.A('new-data')
                 self.doClose(arg)
                 self.doReport(arg)
                 self.doDestroyMe(arg)
+            elif event == 'block-raid-started' and not self.isEOF(arg) and not self.isAborted(arg) :
+                self.state = 'READ'
+                self.doNextBlock(arg)
+                self.doRead(arg)
+            elif event == 'block-raid-done' and self.isMoreBlocks(arg) and not self.isAborted(arg) :
+                self.doPopBlock(arg)
+                self.doBlockReport(arg)
+                data_sender.A('new-data')
         #---DONE---
         elif self.state == 'DONE':
             pass
         #---ABORTED---
         elif self.state == 'ABORTED':
             pass
+        #---ENCRYPT---
+        elif self.state == 'ENCRYPT':
+            if event == 'block-raid-done' :
+                self.doPopBlock(arg)
+                self.doBlockReport(arg)
+                data_sender.A('new-data')
+            elif event == 'block-encrypted' :
+                self.state = 'RAID'
+                self.doBlockPushAndRaid(arg)
 
     def isAborted(self, arg):
         """
@@ -210,25 +228,17 @@ class backup(automat.Automat):
     def isReadingNow(self, arg):
         return self.stateReading
 
-    def doClose(self, arg):
-        self.closed = True
-        
-    def doDestroyMe(self, arg):
-        self.currentBlockData.close()
-        del self.currentBlockData
-        automat.objects().pop(self.index)
-        collected = gc.collect()
-        dhnio.Dprint(10, 'backup.doDestroyMe [%s] collected %d objects' % (self.backupID, collected))
+    def isMoreBlocks(self, arg):
+        """
+        Condition method.
+        """
+        return len(self.workBlocks) > 1
 
-    def doReport(self, arg):
-        if self.ask4abort:
-            if self.finishCallback:
-                self.finishCallback(self.backupID, 'abort')
-            events.info('backup', '%s aborted' % self.backupID)
-        else:  
-            if self.finishCallback:
-                self.finishCallback(self.backupID, 'done')
-            events.info('backup', '%s done successfully' % self.backupID)
+    def doInit(self, arg):
+        """
+        Action method.
+        """
+        events.info('backup', '%s started' % self.backupID)
 
     def doRead(self, arg):
         def readChunk():
@@ -261,11 +271,12 @@ class backup(automat.Automat):
             self.stateReading = False
             if data == '':
                 self.stateEOF = True
+            self.automat('read-success')
             #dhnio.Dprint(12, 'backup.readDone %d bytes' % len(data))
         self.stateReading = True
         maybeDeferred(readChunk).addCallback(readDone)
 
-    def doBlock(self, arg):
+    def doEncryptBlock(self, arg):
         def _doBlock():
             dt = time.time()
             src = self.currentBlockData.getvalue()
@@ -278,51 +289,91 @@ class backup(automat.Automat):
                 self.stateEOF,
                 src,)
             del src
-            dhnio.Dprint(12, 'backup.doBlock blockNumber=%d size=%d atEOF=%s dt=%s' % (self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time()-dt)))
+            dhnio.Dprint(12, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s' % (
+                self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time()-dt)))
             return block
         maybeDeferred(_doBlock).addCallback(
-            lambda block: self.automat('block-ready', block),)
+            lambda block: self.automat('block-encrypted', block),)
 
-    def doRaid(self, arg):
+    def doBlockPushAndRaid(self, arg):
+        """
+        Action method.
+        """
         newblock = arg
         fileno, filename = tmpfile.make('raid')
         serializedblock = newblock.Serialize()
         blocklen = len(serializedblock)
         os.write(fileno, str(blocklen) + ":" + serializedblock)
         os.close(fileno)
+        self.workBlocks[newblock.BlockNumber] = filename
         dt = time.time()
-        # d = threads.deferToThread(raidmake.raidmake, 
-        #                           filename, 
-        #                           self.eccmap.name, 
-        #                           self.backupID, 
-        #                           self.blockNumber)
-        # d.addCallback(self._raidmakeCallback, newblock, dt)
-        # d.addErrback(self._raidmakeErrback)
-        raid_worker.A('new-task', (
-            'make', lambda cmd, taskdata, result: self._raidmakeCallback(result, newblock, dt),
-            (filename, self.eccmap.name, self.backupID, self.blockNumber)))
+        raid_worker.A('new-task', ('make', 
+            (filename, self.eccmap.name, self.backupID, newblock.BlockNumber, 
+            os.path.join(settings.getLocalBackupsDir(), self.backupID)),
+            lambda cmd, params, result: self._raidmakeCallback(params, result, dt),))
+        self.automat('block-raid-started', newblock)
+        dhnio.Dprint(12, 'backup.doBlockPushAndRaid %s' % newblock.BlockNumber)
         del serializedblock
 
-    def doBlockReport(self, arg):
-        if self.blockResultCallback:
-            self.blockResultCallback(arg, self.eccmap.NumSuppliers())
+    def doPopBlock(self, arg):
+        """
+        Action method.
+        """
+        blockNumber, result = arg
+        filename = self.workBlocks.pop(blockNumber)
+        tmpfile.throw_out(filename, 'block raid done')
 
-    def doNewBlock(self, arg):
+    def doFirstBlock(self, arg):
+        """
+        Action method.
+        """
+        self.dataSent = 0
+        self.blocksSent = 0
+        self.blockNumber = 0
+        self.currentBlockSize = 0
+        self.currentBlockData = cStringIO.StringIO()
+        
+    def doNextBlock(self, arg):
+        """
+        Action method.
+        """
         self.dataSent += self.currentBlockSize
         self.blocksSent += 1
+        self.blockNumber += 1
+        self.currentBlockData.close() 
+        self.currentBlockSize = 0
+        self.currentBlockData = cStringIO.StringIO()
+
+    def doBlockReport(self, arg):
+        BlockNumber, result = arg
+        if self.blockResultCallback:
+            self.blockResultCallback(self.backupID, BlockNumber, result)
+  
+    def doClose(self, arg):
+        self.closed = True
+        for filename in self.workBlocks.values():
+            tmpfile.throw_out(filename, 'backup aborted')
+
+    def doReport(self, arg):
+        if self.ask4abort:
+            if self.finishCallback:
+                self.finishCallback(self.backupID, 'abort')
+            events.info('backup', '%s aborted' % self.backupID)
+        else:  
+            if self.finishCallback:
+                self.finishCallback(self.backupID, 'done')
+            events.info('backup', '%s done successfully' % self.backupID)
+
+    def doDestroyMe(self, arg):
         self.currentBlockData.close()
         del self.currentBlockData
-        self.currentBlockData = cStringIO.StringIO()
-        self.currentBlockSize = 0
-        self.blockNumber += 1
+        automat.objects().pop(self.index)
+        collected = gc.collect()
+        dhnio.Dprint(10, 'backup.doDestroyMe [%s] collected %d objects' % (self.backupID, collected))
 
-    def _raidmakeCallback(self, x, newblock, dt):
-        dhnio.Dprint(12, 'backup._raidmakeCallback block=%d size=%d eof=%s dt=%s' % (
-            self.blockNumber, self.currentBlockSize, str(self.stateEOF), str(time.time()-dt)))
-        self.automat('raid-done', newblock)
+    def _raidmakeCallback(self, params, result, dt):
+        filename, eccmapname, backupID, blockNumber, targetDir = params
+        dhnio.Dprint(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
+            blockNumber, result, str(self.stateEOF), str(time.time()-dt)))
+        self.automat('block-raid-done', (blockNumber, result))
         
-    def _raidmakeErrback(self, x):
-        dhnio.Dprint(2, 'backup.doRaid ERROR: %s' % str(x))
-        self.automat('raid-done', None)
-
-

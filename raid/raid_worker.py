@@ -23,16 +23,18 @@ BitPie.NET raid_worker Automat
 EVENTS:
     * :red:`init`
     * :red:`new-task`
-    * :red:`process-finished`
     * :red:`process-started`
     * :red:`shutdown`
     * :red:`task-done`
+    * :red:`task-started`
     * :red:`timer-1min`
 """
 
 import os
 import sys
 import base64
+
+import pp
 
 try:
     from twisted.internet import reactor
@@ -52,8 +54,20 @@ except:
         sys.exit()
 
 import lib.automat as automat
-import lib.child_process as child_process
+# import lib.child_process as child_process
 
+import read
+import make
+
+_MODULES = (
+'cStringIO',
+'struct',
+'raid.read', 
+'raid.make', 
+'lib.settings', 
+'lib.dhnio',
+'lib.eccmap',
+'lib.misc',)
 
 #------------------------------------------------------------------------------ 
 
@@ -61,16 +75,21 @@ _RaidWorker = None
 
 #------------------------------------------------------------------------------ 
 
-def start_processor():
-    return child_process.run(
-        'bpraid', ['-u'], process_protocol=RaidProcessProtocol('bpraid'))
-
-
-def kill_processor(proc_obj=None):
-    if proc_obj:
-        if child_process.kill_process(proc_obj):
-            return True
-    child_process.kill_child('bpraid')
+class ParallelProcessor(pp.Server):
+    """
+    """
+#    def can_work_more(self):
+#        if getattr(self, '__active_tasks', 99999) < self.get_ncpus():
+#            return True
+#        for rworker in  getattr(self, '__rworkers', []):
+#            if rworker.is_free:
+#                return True
+#        else:
+#            if len(getattr(self, '__queue', [])) > self.get_ncpus():
+#                for rworker in  getattr(self, '__rworkers_reserved', []):
+#                    if rworker.is_free:
+#                        return True
+#        return False          
 
 #------------------------------------------------------------------------------ 
 
@@ -83,7 +102,7 @@ def A(event=None, arg=None):
         if event is None or event != 'init':
             return None
         # set automat name and starting state here
-        _RaidWorker = RaidWorker('raid_worker', 'AT_STARTUP')
+        _RaidWorker = RaidWorker('raid_worker', 'AT_STARTUP', 6)
     if event is not None:
         _RaidWorker.automat(event, arg)
     return _RaidWorker
@@ -100,11 +119,14 @@ class RaidWorker(automat.Automat):
         }
 
     def init(self):
-        self.tasks = []
-        self.processor = None
         """
         Method to initialize additional variables and flags at creation of the state machine.
         """
+        self.task_id = -1
+        self.tasks = []
+        self.activetasks = {}
+        self.processor = None
+        self.callbacks = {}
 
     def state_changed(self, oldstate, newstate):
         """
@@ -137,8 +159,6 @@ class RaidWorker(automat.Automat):
                 self.state = 'WORK'
                 self.doAddTask(arg)
                 self.doStartTask(arg)
-            elif event == 'process-finished' :
-                self.state = 'OFF'
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doKillProcess(arg)
@@ -147,35 +167,27 @@ class RaidWorker(automat.Automat):
                 self.doKillProcess(arg)
         #---WORK---
         elif self.state == 'WORK':
-            if event == 'task-done' and not self.isMoreTasks(arg) :
-                self.state = 'READY'
-                self.doReportTaskDone(arg)
-                self.doRemoveTask(arg)
-            elif event == 'process-finished' :
-                self.state = 'OFF'
-                self.doReportTaskFailed(arg)
-                self.doRemoveTask(arg)
-            elif event == 'new-task' :
+            if event == 'new-task' :
                 self.doAddTask(arg)
+                self.doStartTask(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
-                self.doReportTaskFailed(arg)
-                self.doRemoveTask(arg)
+                self.doReportTasksFailed(arg)
                 self.doKillProcess(arg)
                 self.doDestroyMe(arg)
             elif event == 'task-done' and self.isMoreTasks(arg) :
                 self.doReportTaskDone(arg)
-                self.doRemoveTask(arg)
                 self.doStartTask(arg)
+            elif event == 'task-started' and self.isMoreTasks(arg) :
+                self.doStartTask(arg)
+            elif event == 'task-done' and not self.isSomeActive(arg) and not self.isMoreTasks(arg) :
+                self.state = 'READY'
+                self.doReportTaskDone(arg)
+            elif event == 'task-done' and self.isSomeActive(arg) and not self.isMoreTasks(arg) :
+                self.doReportTaskDone(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-
-    def isMoreTasks(self, arg):
-        """
-        Condition method.
-        """
-        return len(self.tasks) > 1
 
     def isSomeTasks(self, arg):
         """
@@ -183,58 +195,99 @@ class RaidWorker(automat.Automat):
         """
         return len(self.tasks) > 0
 
+    def isMoreTasks(self, arg):
+        """
+        Condition method.
+        """
+        return len(self.tasks) >= 1
+
+    def isSomeActive(self, arg):
+        """
+        Condition method.
+        """
+        return len(self.activetasks) > 0
+        
     def doInit(self, arg):
         """
         Action method.
         """
-        reactor.addSystemEventTrigger('after', 'shutdown', kill_processor)
+        reactor.addSystemEventTrigger('after', 'shutdown', self._kill_processor)
 
     def doStartProcess(self, arg):
         """
         Action method.
         """
-        self.processor = start_processor()
+        self.processor = ParallelProcessor()
+        self.automat('process-started')
 
     def doKillProcess(self, arg):
         """
         Action method.
         """
-        kill_processor(self.processor)
+        self._kill_processor()
+        self.processor = None
+        self.automat('process-finished')
 
     def doAddTask(self, arg):
         """
         Action method.
         """
-        self.tasks.append(arg)
-        
-    def doRemoveTask(self, arg):
-        """
-        Action method.
-        """
-        self.tasks.pop(0)
+        cmd, params, callback = arg
+        self.task_id += 1
+        self.tasks.append((self.task_id, cmd, params))
+        self.callbacks[self.task_id] = callback
 
     def doStartTask(self, arg):
         """
         Action method.
         """
-        cmd, callback, taskdata = list(self.tasks[0])
-        encodedtaskdata = ' '.join(map(lambda e: base64.b64encode(str(e)), taskdata))
-        encodedtaskdata = cmd + ' ' + encodedtaskdata
-        self.processor.proto.transport.write(encodedtaskdata+'\n')
+        if len(self.activetasks) >= self.processor.get_ncpus():
+            dhnio.Dprint(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
+                len(self.activetasks), self.processor.get_ncpus()))
+            return
+        try:
+            task_id, cmd, params = self.tasks.pop(0)
+            func = None
+            if cmd == 'make':
+                func = make.do_in_memory
+            elif cmd == 'read':
+                func = read.raidread
+            elif cmd == 'rebuild': 
+                # TODO:
+                func = read.RebuildOne
+        except:
+            dhnio.DprintException()
+            return
+        self.activetasks[task_id] = self.processor.submit(func, params, modules=_MODULES, 
+            callback=lambda result: self._job_done(task_id, cmd, params, result))
+        dhnio.Dprint(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
+            task_id, len(self.activetasks), self.processor.get_ncpus()))
+        reactor.callLater(0.01, self.automat, 'task-started', task_id)
 
     def doReportTaskDone(self, arg):
         """
         Action method.
         """
-        cmd, callback, taskdata = self.tasks[0]
-        callback(cmd, taskdata, arg)
+        try:
+            task_id, cmd, params, result = arg
+            cb = self.callbacks.pop(task_id)
+            cb(cmd, params, result)
+            dhnio.Dprint(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
+                len(self.callbacks), len(self.tasks), len(self.activetasks)))
+        except:
+            dhnio.DprintException()
 
-    def doReportTaskFailed(self, arg):
+    def doReportTasksFailed(self, arg):
         """
         Action method.
         """
-        cmd, callback, taskdata = self.tasks[0]
-        callback(cmd, taskdata, None)
+        for i in xrange(len(self.tasks)):
+            task_id, cmd, params = self.tasks[i]
+            cb = self.callbacks.pop(task_id)
+            cb(cmd, params, None)
+        for task_id in self.activetasks.keys():
+            cb = self.callbacks.pop(task_id)
+            cb(cmd, params, None)
 
     def doDestroyMe(self, arg):
         """
@@ -245,29 +298,18 @@ class RaidWorker(automat.Automat):
         del _RaidWorker
         _RaidWorker = None
 
-#------------------------------------------------------------------------------ 
+    def _job_done(self, task_id, cmd, params, result):
+        self.activetasks.pop(task_id)
+        dhnio.Dprint(12, 'raid_worker._job_done %r : %r active:%r' % (
+            task_id, result, self.activetasks.keys()))
+        self.automat('task-done', (task_id, cmd, params, result))
 
-class RaidProcessProtocol(child_process.ChildProcessProtocol):
-
-    def outReceived(self, data):
-        try:
-            words = data.strip().split()
-            cmd = words[0]
-            params = words[1:]
-        except:
-            dhnio.Dprint(4, '[bpraid] %s' % data)
-            return
-        if cmd == 'process-started':
-            A('process-started')
-        elif cmd == 'task-done':
-            A('task-done', params)
-        elif cmd == 'error':
-            A('task-done', None)
+    def _kill_processor(self):
+        if self.processor:
+            self.processor.destroy()
         else:
-            dhnio.Dprint(4, '[bpraid] %s' % data)
+            dhnio.Dprint(2, '_kill_processor processor is None, skip')
         
-    def processEnded(self, status):
-        A('process-finished', status)
 
 #------------------------------------------------------------------------------ 
 

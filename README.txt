@@ -18,7 +18,14 @@ http://bitpie.net
 Install
 =======
 
-Copy folder "bitpie" in any place you want.
+Seems like in Ubuntu you just need to install all dependencies at first step:
+
+sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging 
+
+
+Windows ussers can use links bellow and install packages by hands.
+
+Clone, download or copy folder "bitpie" in any place you want on your HDD.
 
 To start from command line:
 
@@ -26,10 +33,23 @@ cd bitpie
 python bitpie.py show
 
 
-You will have to create a new "Identity" first.
-If you run on a system without graphical interface you need to register from command line:
+You will have to create a new "Identity" for you to be able to communicate with others,
+program will ask you to do that during first start. 
+If you run on a system without graphical interface you need to register from command line by hands:
 
 python bitpie.py register <your_nickname>
+
+
+I recommend you to create another copy of your Private Key in a safe place to be able to recover your data in the future.
+You can do it from GUI or type a command:
+
+python bitpie.py key copy <filename>
+
+
+Your settings and local files placed in the folder ~/.bitpie.
+Type this to read more info:
+
+python bitpie.py help
 
 
 
@@ -58,14 +78,4 @@ wxgtk2.8:
     http://wiki.wxpython.org/InstallingOnUbuntuOrDebian
 
 
-Or just install following packages from repos:
-    
-python
-python-twisted
-python-pyasn1
-python-openssl
-python-crypto
-python-wxgtk2.8
-python-imaging 
-
- 
+               

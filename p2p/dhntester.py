@@ -63,7 +63,7 @@ try:
     from lib.dhnpacket import Unserialize
     from lib.nameurl import FilenameUrl
     from lib.settings import init as settings_init
-    from lib.settings import CustomersSpaceFile, getCustomersFilesDir, LocalTesterLogFilename
+    from lib.settings import CustomersSpaceFile, CustomersUsedSpaceFile, getCustomersFilesDir, LocalTesterLogFilename
     from lib.settings import BackupIndexFileName
     from lib.contacts import init as contacts_init
     from lib.commands import init as commands_init
@@ -92,6 +92,7 @@ def SpaceTime():
         printlog('SpaceTime ERROR customers folder not exist')
         return
     remove_list = {}
+    used_space = {}
     for customer_filename in os.listdir(customers_dir):
         onecustdir = os.path.join(customers_dir, customer_filename)
         if not os.path.isdir(onecustdir):
@@ -116,15 +117,16 @@ def SpaceTime():
                 return False
             if not os.path.isfile(path):
                 return True
-            if name in [BackupIndexFileName(),]:
-                return False
+            # if name in [BackupIndexFileName(),]:
+            #     return False
             stats = os.stat(path)
             timedict[path] = stats.st_ctime
             sizedict[path] = stats.st_size
         dhnio.traverse_dir_recursive(cb, onecustdir)
         currentV = 0
         for path in sorted(timedict.keys(), key=lambda x:timedict[x], reverse=True):
-            currentV += sizedict.get(path, 0)
+            filesize = sizedict.get(path, 0)
+            currentV += filesize
             if currentV < maxspaceV:
                 continue
             try:
@@ -132,7 +134,8 @@ def SpaceTime():
                 printlog('SpaceTime ' + path + ' file removed (cur:%s, max: %s)' % (str(currentV), str(maxspaceV)) )
             except:
                 printlog('SpaceTime ERROR removing ' + path)
-            time.sleep(0.1)
+            time.sleep(0.01)
+        used_space[idurl] = str(currentV)
         timedict.clear()
         sizedict.clear()
     for path in remove_list.keys():
@@ -153,6 +156,7 @@ def SpaceTime():
         except:
             printlog('SpaceTime ERROR removing ' + path)
     del remove_list
+    dhnio._write_dict(CustomersUsedSpaceFile(), used_space)
 
 #------------------------------------------------------------------------------
 

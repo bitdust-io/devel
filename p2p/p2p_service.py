@@ -175,8 +175,8 @@ def inbox(newpacket, info, status, error_message):
         Correspondent(newpacket) # contact asking for our current identity
         commandhandled = True
     
-    if commandhandled:
-        dhnio.Dprint(6, "p2p_service.inbox [%s] from %s|%s (%s://%s) handled" % (
+    if not commandhandled:
+        dhnio.Dprint(6, "p2p_service.inbox WARNING [%s] from %s|%s (%s://%s) NOT handled" % (
             newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
             nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
 
@@ -222,28 +222,30 @@ def SendAck(packettoack, response=''):
     result = dhnpacket.dhnpacket(commands.Ack(), misc.getLocalID(), misc.getLocalID(), 
                                  packettoack.PacketID, response, packettoack.OwnerID)
     dhnio.Dprint(8, "p2p_service.SendAck %s to %s" % (result.PacketID, result.RemoteID))
-    return gate.outbox(result, False)
+    gate.outbox(result)
+    return result
     
 
 def Ack(newpacket):
     dhnio.Dprint(8, "p2p_service.Ack %s from [%s] : %s" % (newpacket.PacketID, newpacket.CreatorID, newpacket.Payload))
-    for p in packet_out.search_by_packet_id(newpacket.CreatorID, newpacket.PacketID):
-        dhnio.Dprint(8, '        found matched outbox packet : %r' % p)
-        p.automat('ack', newpacket)
+    # for p in packet_out.search_by_packet_id(newpacket.CreatorID, newpacket.PacketID):
+    #     dhnio.Dprint(8, '        found matched outbox packet : %r' % p)
+    #     p.automat('ack', newpacket)
      
     
 def SendFail(request, response=''):
     result = dhnpacket.dhnpacket(commands.Fail(), misc.getLocalID(), misc.getLocalID(), 
                                  request.PacketID, response, request.OwnerID) # request.CreatorID)
     dhnio.Dprint(8, "transport_control.SendFail %s to %s" % (result.PacketID, result.RemoteID))
-    return gate.outbox(result, False)
+    gate.outbox(result)
+    return result
     
 
 def Fail(newpacket):
     dhnio.Dprint(8, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
-    for p in packet_out.search_by_packet_id(newpacket.RemoteID, newpacket.PacketID):
-        dhnio.Dprint(8, '        found matched outbox packet : %r' % p)
-        p.automat('fail', newpacket)
+    # for p in packet_out.search_by_packet_id(newpacket.RemoteID, newpacket.PacketID):
+    #     dhnio.Dprint(8, '        found matched outbox packet : %r' % p)
+    #     p.automat('fail', newpacket)
  
 #------------------------------------------------------------------------------ 
 
@@ -287,11 +289,10 @@ def Identity(newpacket):
     else:
         dhnio.Dprint(8, "p2p_service.Identity from [%s]" % nameurl.GetName(idurl))
 
-
 def RequestIdentity(request):
     """
     Someone is requesting a copy of our current identity.
-    The ``transport_control`` has verified that they are a contact.
+    Already verified that they are a contact.
     Can also be used as a sort of "ping" test to make sure we are alive.
     """
     dhnio.Dprint(6, "p2p_service.RequestIdentity starting")
@@ -302,7 +303,7 @@ def RequestIdentity(request):
     dhnio.Dprint(8, "p2p_service.RequestIdentity returning ")
     result = dhnpacket.dhnpacket(commands.Identity(), MyID, MyID, PacketID, identitystr, RemoteID)
     gate.outbox(result, False)
-    
+       
 def SendIdentity(remote_idurl, wide=False):
     """
     """
@@ -310,7 +311,7 @@ def SendIdentity(remote_idurl, wide=False):
     result = dhnpacket.dhnpacket(commands.Identity(), misc.getLocalID(), 
                                  misc.getLocalID(), 'identity', # misc.getLocalID(),
                                  misc.getLocalIdentity().serialize(), remote_idurl)
-    gate.outbox(result, False, wide)
+    gate.outbox(result, wide)
     return result       
     
 #------------------------------------------------------------------------------ 
@@ -351,9 +352,9 @@ def SendRequestService(remote_idurl, service_info, response_callback=None):
     dhnio.Dprint(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
     result = dhnpacket.dhnpacket(commands.RequestService(), misc.getLocalID(), misc.getLocalID(), 
                                  packetid.UniqueID(), service_info, remote_idurl)
-    gate.outbox(result, True,
-                ack_callback=response_callback,
-                fail_callback=response_callback)
+    gate.outbox(result, callbacks={
+        commands.Ack(): response_callback,
+        commands.Fail(): response_callback})
     return result       
 
 def CancelService(request):
@@ -383,9 +384,9 @@ def SendCancelService(remote_idurl, service_info, response_callback=None):
     dhnio.Dprint(8, "p2p_service.SendCancelService [%s]" % service_info)
     result = dhnpacket.dhnpacket(commands.CancelService(), misc.getLocalID(), misc.getLocalID(), 
                                  packetid.UniqueID(), service_info, remote_idurl)
-    gate.outbox(result, True,
-                ack_callback=response_callback,
-                fail_callback=response_callback)
+    gate.outbox(result, callbacks={
+        commands.Ack(): response_callback,
+        commands.Fail(): response_callback})
     return result   
 
 #------------------------------------------------------------------------------ 
@@ -407,13 +408,13 @@ def ListFiles(request):
         dhnio.Dprint(8, "p2p_service.ListFiles did not find customer dir " + ownerdir)
         src = PackListFiles('', Payload)
         result = dhnpacket.dhnpacket(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
-        gate.outbox(result, False)
-        return
+        gate.outbox(result)
+        return result
     plaintext = TreeSummary(ownerdir)
     src = PackListFiles(plaintext, Payload)
-    outpacket = dhnpacket.dhnpacket(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
-    gate.outbox(outpacket, False)
-    return outpacket       
+    result = dhnpacket.dhnpacket(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
+    gate.outbox(result)
+    return result       
 
 
 def Files(packet):
@@ -446,7 +447,7 @@ def Data(request):
         dhnio.Dprint(6, "p2p_service.Data WARNING %s not a customer, packetID=%s" % (request.OwnerID, request.PacketID))
         SendFail(request, 'not a customer')
         # central_service.SendRequestCustomers()
-        return 
+        return
     filename = makeFilename(request.OwnerID, request.PacketID)
     if filename == "":
         dhnio.Dprint(6,"p2p_service.Data WARNING got empty filename, bad customer or wrong packetID? ")
@@ -461,12 +462,29 @@ def Data(request):
             SendFail(request, 'write error')
             return 
     data = request.Serialize()
+    mb_donated = diskspace.GetMegaBytesFromString(settings.getCentralMegabytesDonated())
+    space_dict = dhnio._read_dict(settings.CustomersSpaceFile(), {'free': str(mb_donated)})
+    if request.OwnerID not in space_dict.keys():
+        dhnio.Dprint(6, "p2p_service.Data WARNING no info about donated space for %s" % request.OwnerID)
+        SendFail(request, 'no info about donated space')
+        return
+    used_space_dict = dhnio._read_dict(settings.CustomersUsedSpaceFile(), {})
+    if request.OwnerID in used_space_dict.keys():
+        try:
+            bytes_used_by_customer = int(used_space_dict[request.OwnerID])
+            bytes_donated_to_customer = int(space_dict[request.OwnerID]) * 1024 * 1024  
+        except:
+            dhnio.DprintException()
+        if bytes_donated_to_customer - bytes_used_by_customer < len(data):
+            dhnio.Dprint(6, "p2p_service.Data WARNING no free space for %s" % request.OwnerID)
+            SendFail(request, 'no free space')
+            return
     if not dhnio.WriteFile(filename, data):
         dhnio.Dprint(2, "p2p_service.Data ERROR can not write to " + str(filename))
         SendFail(request, 'write error')
         return
     SendAck(request, str(len(request.Payload)))
-    reactor.callLater(3, local_tester.TestSpaceTime)
+    reactor.callLater(0, local_tester.TestSpaceTime)
     del data
     dhnio.Dprint(8, "p2p_service.Data saved from [%s/%s], packetID is %s" % (
         nameurl.GetName(request.OwnerID), nameurl.GetName(request.CreatorID), request.PacketID,))
@@ -510,7 +528,7 @@ def Retrieve(request):
         SendFail(request, 'unserialized packet is not Valid')
         return
     dhnio.Dprint(8, "p2p_service.Retrieve sending %r back to %s" % (packet, nameurl.GetName(packet.CreatorID)))
-    return gate.outbox(packet, False)
+    gate.outbox(packet)
 
 #------------------------------------------------------------------------------ 
 
@@ -556,7 +574,8 @@ def SendDeleteFile(SupplierID, pathID):
     PacketID = pathID
     RemoteID = SupplierID
     result = dhnpacket.dhnpacket(commands.DeleteFile(),  MyID, MyID, PacketID, "", RemoteID)
-    gate.outbox(result, False)
+    gate.outbox(result)
+    return result
     
     
 def SendDeleteListPaths(SupplierID, ListPathIDs):
@@ -566,7 +585,8 @@ def SendDeleteListPaths(SupplierID, ListPathIDs):
     RemoteID = SupplierID
     Payload = '\n'.join(ListPathIDs)
     result = dhnpacket.dhnpacket(commands.DeleteFile(),  MyID, MyID, PacketID, Payload, RemoteID)
-    gate.outbox(result, False)
+    gate.outbox(result)
+    return result
 
 #------------------------------------------------------------------------------ 
 
@@ -610,7 +630,8 @@ def SendDeleteBackup(SupplierID, BackupID):
     PacketID = BackupID
     RemoteID = SupplierID
     result = dhnpacket.dhnpacket(commands.DeleteBackup(),  MyID, MyID, PacketID, "", RemoteID)
-    gate.outbox(result, False)
+    gate.outbox(result)
+    return result
 
 def SendDeleteListBackups(SupplierID, ListBackupIDs):
     dhnio.Dprint(8, "p2p_service.SendDeleteListBackups SupplierID=%s BackupIDs number: %d" % (SupplierID, len(ListBackupIDs)))
@@ -619,7 +640,8 @@ def SendDeleteListBackups(SupplierID, ListBackupIDs):
     RemoteID = SupplierID
     Payload = '\n'.join(ListBackupIDs)
     result = dhnpacket.dhnpacket(commands.DeleteBackup(),  MyID, MyID, PacketID, Payload, RemoteID)
-    gate.outbox(result, False)
+    gate.outbox(result)
+    return result
 
 #------------------------------------------------------------------------------ 
 
@@ -677,14 +699,14 @@ def RequestListFiles(supplierNumORidurl):
         RemoteID = contacts.getSupplierID(supplierNumORidurl)
     if not RemoteID:
         dhnio.Dprint(4, "p2p_service.RequestListFiles WARNING RemoteID is empty supplierNumORidurl=%s" % str(supplierNumORidurl))
-        return
+        return None
     dhnio.Dprint(8, "p2p_service.RequestListFiles [%s]" % nameurl.GetName(RemoteID))
     MyID = misc.getLocalID()
     PacketID = packetid.UniqueID()
     Payload = settings.ListFilesFormat()
     result = dhnpacket.dhnpacket(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
-    gate.outbox(result, False)
-    return PacketID
+    gate.outbox(result)
+    return result
 
 #------------------------------------------------------------------------------ 
 

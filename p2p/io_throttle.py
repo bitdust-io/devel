@@ -255,22 +255,24 @@ class SupplierQueue:
         self.requestTaskDelay = 0.1
 
 
-    def RemoveSupplierWork(self): 
+    def RemoveSupplierWork(self):
+        """
+        """ 
         # in the case that we're doing work with a supplier who has just been replaced ...
         # Need to remove the register interests
         # our dosend is using acks?
-        self.shutdown = True
+        # self.shutdown = True
         # for i in range(min(self.fileSendMaxLength, len(self.fileSendQueue))):
         #     fileToSend = self.fileSendDict[self.fileSendQueue[i]]
             # queue.remove_supplier_request(fileToSend.packetID, fileToSend.remoteID, commands.Data())
             # transport_control.RemoveSupplierRequestFromSendQueue(fileToSend.packetID, fileToSend.remoteID, commands.Data())
         #     callback.remove_interest(fileToSend.remoteID, fileToSend.packetID)
             # transport_control.RemoveInterest(fileToSend.remoteID, fileToSend.packetID)
-        for i in range(min(self.fileRequestMaxLength, len(self.fileRequestQueue))):
-            fileToRequest = self.fileRequestDict[self.fileRequestQueue[i]]
+        # for i in range(min(self.fileRequestMaxLength, len(self.fileRequestQueue))):
+        #     fileToRequest = self.fileRequestDict[self.fileRequestQueue[i]]
             # queue.remove_supplier_request(fileToRequest.packetID, fileToRequest.remoteID, commands.Retrieve())
             # transport_control.RemoveSupplierRequestFromSendQueue(fileToRequest.packetID, fileToRequest.remoteID, commands.Retrieve())
-            callback.remove_interest(fileToRequest.remoteID, fileToRequest.packetID)
+        #     callback.remove_interest(fileToRequest.remoteID, fileToRequest.packetID)
             # transport_control.RemoveInterest(fileToRequest.remoteID, fileToRequest.packetID)
 
 
@@ -364,9 +366,9 @@ class SupplierQueue:
             # outbox will not resend, because no ACK, just data, 
             # need to handle resends on own
             # transport_control.outboxNoAck(newpacket)
-            gate.outbox(newpacket, True, 
-                        ack_callback=self.FileSendAck,
-                        fail_callback=self.FileSendAck)  
+            gate.outbox(newpacket, callbacks={
+                commands.Ack(): self.FileSendAck,
+                commands.Fail(): self.FileSendAck}) 
             # transport_control.RegisterInterest(
             #     self.FileSendAck, 
             #     fileToSend.remoteID, 
@@ -524,12 +526,18 @@ class SupplierQueue:
                     fileRequest = self.fileRequestDict[packetID]
                     dhnio.Dprint(10, "io_throttle.RunRequest for packetID " + fileRequest.packetID)
                     # transport_control.RegisterInterest(self.DataReceived,fileRequest.creatorID,fileRequest.packetID)
-                    callback.register_interest(self.DataReceived, fileRequest.creatorID, fileRequest.packetID)
+                    # callback.register_interest(self.DataReceived, fileRequest.creatorID, fileRequest.packetID)
                     newpacket = dhnpacket.dhnpacket(
-                        commands.Retrieve(), fileRequest.ownerID, fileRequest.creatorID, 
-                        fileRequest.packetID, "", fileRequest.remoteID)
+                        commands.Retrieve(), 
+                        fileRequest.ownerID, 
+                        fileRequest.creatorID, 
+                        fileRequest.packetID, 
+                        "", 
+                        fileRequest.remoteID)
                     # transport_control.outboxNoAck(newpacket)
-                    gate.outbox(newpacket, False)  
+                    gate.outbox(newpacket, callbacks={
+                        commands.Data(): self.DataReceived,
+                        commands.Fail(): self.DataReceived})  
                     fileRequest.requestTime = time.time()
                 else:
                     # we have the data file, no need to request it
@@ -581,11 +589,20 @@ class SupplierQueue:
             return
         if packet.PacketID in self.fileRequestQueue:
             self.fileRequestQueue.remove(packet.PacketID)
-        if self.fileRequestDict.has_key(packet.PacketID):
-            self.fileRequestDict[packet.PacketID].fileReceivedTime = time.time()
-            self.fileRequestDict[packet.PacketID].result = 'received'
-            for callBack in self.fileRequestDict[packet.PacketID].callOnReceived:
-                callBack(packet, 'received')
+        if packet.Command == commands.Data():
+            if self.fileRequestDict.has_key(packet.PacketID):
+                self.fileRequestDict[packet.PacketID].fileReceivedTime = time.time()
+                self.fileRequestDict[packet.PacketID].result = 'received'
+                for callBack in self.fileRequestDict[packet.PacketID].callOnReceived:
+                    callBack(packet, 'received')
+        elif packet.Command == commands.Fail():
+            if self.fileRequestDict.has_key(packet.PacketID):
+                self.fileRequestDict[packet.PacketID].fileReceivedTime = time.time()
+                self.fileRequestDict[packet.PacketID].result = 'failed'
+                for callBack in self.fileRequestDict[packet.PacketID].callOnReceived:
+                    callBack(packet, 'failed')
+        else:
+            raise Exception('incorrect response command')    
         if self.fileRequestDict.has_key(packet.PacketID):
             del self.fileRequestDict[packet.PacketID]
         dhnio.Dprint(10, "io_throttle.DataReceived %s from %s, queue=%d" % (packet, self.remoteName, len(self.fileRequestQueue)))

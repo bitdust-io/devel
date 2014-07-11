@@ -91,7 +91,7 @@ def saveIN(basename=None):
     if not ret:
         dhnio.Dprint(4, 'bandwidth.saveIN to new file ' + basename)
     else:
-        dhnio.Dprint(12, 'bandwidth.saveIN to ' + basename)
+        dhnio.Dprint(18, 'bandwidth.saveIN to ' + basename)
     return ret
 
 
@@ -106,7 +106,7 @@ def saveOUT(basename=None):
     if not ret:
         dhnio.Dprint(4, 'bandwidth.saveOUT to new file ' + basename)
     else:
-        dhnio.Dprint(12, 'bandwidth.saveOUT to ' + basename)
+        dhnio.Dprint(18, 'bandwidth.saveOUT to ' + basename)
     return ret
 
 

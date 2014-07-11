@@ -40,8 +40,8 @@ then send a latest version to the suppliers.
 The backup_monitor() should be restarted every hour or every time when your backups is changed.
 
 EVENTS:
+    * :red:`all-responded`
     * :red:`db-info-acked`
-    * :red:`incoming-db-info`
     * :red:`init`
     * :red:`restart`
     * :red:`timer-1hour`
@@ -134,12 +134,9 @@ class BackupDBKeeper(Automat):
         elif self.state == 'REQUEST':
             if event == 'restart' :
                 self.state = 'RESTART'
-            elif ( event == 'incoming-db-info' and self.isAllSuppliersResponded(arg) ) or event == 'timer-30sec' :
+            elif event == 'all-responded' or event == 'timer-30sec' :
                 self.state = 'SENDING'
-                self.doCountResponse(arg)
                 self.doSuppliersSendDBInfo(arg)
-            elif event == 'incoming-db-info' and not self.isAllSuppliersResponded(arg) :
-                self.doCountResponse(arg)
         #---SENDING---
         elif self.state == 'SENDING':
             if event == 'restart' :
@@ -156,8 +153,8 @@ class BackupDBKeeper(Automat):
             if event == 'timer-1hour' or event == 'restart' :
                 self.state = 'RESTART'
 
-    def isAllSuppliersResponded(self, arg):
-        return len(self.requestedSuppliers) == 0
+#    def isAllSuppliersResponded(self, arg):
+#        return len(self.requestedSuppliers) <= 1
             
     def isAllSuppliersAcked(self, arg):
         return len(self.sentSuppliers) == 0
@@ -173,9 +170,9 @@ class BackupDBKeeper(Automat):
         # packetID_ = settings.BackupInfoFileName()
         # packetID = settings.BackupInfoEncryptedFileName()
         packetID = settings.BackupIndexFileName()
-        for supplierId in contacts.getSupplierIDs():
-            if supplierId:
-                callback.remove_interest(supplierId, packetID)
+        # for supplierId in contacts.getSupplierIDs():
+        #     if supplierId:
+        #         callback.remove_interest(supplierId, packetID)
         self.requestedSuppliers.clear()
         Payload = ''
         localID = misc.getLocalID()
@@ -183,7 +180,9 @@ class BackupDBKeeper(Automat):
             if not supplierId:
                 continue
             newpacket = dhnpacket.dhnpacket(commands.Retrieve(), localID, localID, packetID, Payload, supplierId)
-            gate.outbox(newpacket, False,) 
+            gate.outbox(newpacket, callbacks={
+                commands.Data(): self._supplier_response,
+                commands.Fail(): self._supplier_response,}) 
                         # ack_callback=self._supplier_response,
                         # fail_callback=self._supplier_response)
             # callback.register_interest(self._supplier_response, supplierId, packetID)
@@ -208,9 +207,9 @@ class BackupDBKeeper(Automat):
             if not contact_status.isOnline(supplierId):
                 continue
             newpacket = dhnpacket.dhnpacket(commands.Data(), localID, localID, packetID, Payload, supplierId)
-            gate.outbox(newpacket, True,
-                        ack_callback=self._supplier_acked,
-                        fail_callback=self._supplier_acked)
+            gate.outbox(newpacket, callbacks={
+                commands.Ack(): self._supplier_acked,
+                commands.Fail(): self._supplier_acked})
             # callback.register_interest(self._supplier_acked, supplierId, packetID)
             self.sentSuppliers.add(supplierId)
             # dhnio.Dprint(6, 'backup_db_keeper.doSuppliersSendDBInfo to %s' % supplierId)
@@ -220,54 +219,44 @@ class BackupDBKeeper(Automat):
             dhnio.Dprint(4, 'backup_db_keeper.doSetSyncFlag backup database is now SYNCHRONIZED !!!!!!!!!!!!!!!!!!!!!!')
         self.syncFlag = True
 
-    def doCountResponse(self, arg):
-        """
-        Action method.
-        """
-        packet = arg
-        dhnio.Dprint(6, 'backup_db_keeper.doCountResponse %r from %s' % (packet, packet.OwnerID))
-        self.requestedSuppliers.discard(packet.OwnerID)
-        sc = supplier_connector.by_idurl(packet.OwnerID)
-        if sc:
-            # if packet.Command == commands.Fail():
-            #     sc.automat('fail', packet)
-            elif packet.Command == commands.Data():
-                sc.automat('data', packet)
-            elif packet.Command == commands.Retrieve():
-                pass
-            elif packet.Command == commands.Ack():
-                pass
-            else:
-                raise
-        else:
-            raise
-
-#    def _supplier_response(self, packet, info):
-#        dhnio.Dprint(6, 'backup_db_keeper._supplier_response %s' % packet)
+#    def doCountResponse(self, arg):
+#        """
+#        Action method.
+#        """
+#        packet = arg
+#        dhnio.Dprint(6, 'backup_db_keeper.doCountResponse %r from %s' % (packet, packet.OwnerID))
 #        self.requestedSuppliers.discard(packet.OwnerID)
-#        sc = supplier_connector.by_idurl(packet.OwnerID)
-#        if sc:
-#            if packet.Command == commands.Fail():
+#        if packet.Command == commands.Fail():
+#            sc = supplier_connector.by_idurl(packet.OwnerID)
+#            if sc:
 #                sc.automat('fail', packet)
-#            elif packet.Command == commands.Data():
-#                sc.automat('data', packet)
-#            elif packet.Command == commands.Retrieve():
-#                pass
-#            elif packet.Command == commands.Ack():
-#                pass
 #            else:
-#                raise
-#        else:
-#            raise
+#                raise Exception('not found supplier connector')
+
+    def _supplier_response(self, packet, pkt_out):
+        if packet.Command == commands.Data():
+            self.requestedSuppliers.discard(packet.RemoteID)
+        elif packet.Command == commands.Fail():
+            self.requestedSuppliers.discard(packet.OwnerID)
+            sc = supplier_connector.by_idurl(packet.OwnerID)
+            if sc:
+                sc.automat('fail', packet)
+            else:
+                raise Exception('supplier connector was not found')
+        else:
+            raise Exception('wrong type of response')
+        if len(self.requestedSuppliers) == 0:
+            self.automat('all-responded')
+        # dhnio.Dprint(6, 'backup_db_keeper._supplier_response %s others: %r' % (packet, self.requestedSuppliers))
 
     def _supplier_acked(self, packet, info):
         self.sentSuppliers.discard(packet.OwnerID)
         self.automat('db-info-acked', packet.OwnerID)
         sc = supplier_connector.by_idurl(packet.OwnerID)
         if sc:
-            sc.automat('ack', packet)
+            sc.automat(packet.Command.lower(), packet)
         else:
-            raise
+            raise Exception('not found supplier connector')
     
     def IsSynchronized(self):
         return self.syncFlag

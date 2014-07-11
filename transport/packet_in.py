@@ -27,11 +27,11 @@ import lib.automat as automat
 import lib.dhnio as dhnio
 import lib.tmpfile as tmpfile
 import lib.settings as settings
-import lib.dhnnet as dhnnet
 
 import gate
 import stats
 import callback
+import packet_out
 
 #------------------------------------------------------------------------------ 
 
@@ -49,8 +49,8 @@ def items():
 def create(transfer_id):
     p = PacketIn(transfer_id)
     items()[transfer_id] = p
-    dhnio.Dprint(10, 'packet_in.create  %s,  %d working items now' % (
-        transfer_id, len(items())))
+    # dhnio.Dprint(10, 'packet_in.create  %s,  %d working items now' % (
+    #     transfer_id, len(items())))
     return p
 
 
@@ -75,7 +75,7 @@ class PacketIn(automat.Automat):
         self.bytes_received = None
         self.status = None
         self.error_message = None
-        automat.Automat.__init__(self, 'IN(%r)' % self.transfer_id, 'AT_STARTUP', 8)
+        automat.Automat.__init__(self, 'IN(%r)' % self.transfer_id, 'AT_STARTUP', 18)
         
     def is_timed_out(self):
         if self.time is None or self.timeout is None:
@@ -191,8 +191,9 @@ class PacketIn(automat.Automat):
         """
         newpacket = arg
         stats.count_inbox(self.sender_idurl, self.proto, self.status, self.bytes_received)
+        for p in packet_out.search_by_response_packet(newpacket):
+            p.automat('inbox-packet', newpacket)
         callback.run_inbox_callbacks(newpacket, self, self.status, self.error_message)
-        callback.find_interested_party(newpacket, self)
 
     def doReportFailed(self, arg):
         """

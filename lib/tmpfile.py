@@ -206,7 +206,7 @@ def make(name, extension='', prefix=''):
         dhnio.Dprint(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
         dhnio.DprintException()
         return None, ''
-    dhnio.Dprint(12, 'tmpfile.make ' + filename)
+    dhnio.Dprint(18, 'tmpfile.make ' + filename)
     return fd, filename
 
 

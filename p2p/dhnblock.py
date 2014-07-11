@@ -57,28 +57,29 @@ class dhnblock:
     A class to represent an encrypted Data block.
     The only 2 things secret in here will be the ``EncryptedSessionKey`` and ``EncryptedData``.
     Scrubbers may combine-packets/unserialize/inspect-blocks/check-signatures.
+
+    CreatorID              http://cate.com/id1.xml  - so people can check signature - says PK type too
+    BackupID               Creator's ID for the backup this packet is part of
+    BlockNumber            number of this block
+    EncryptedData          data may have some padding so multiple of crypto chunck size
+                           and multiple of #nodes in eccmap (usually 64) for division
+                           into dhnpackets
+    Length                 real length of data when cleartext (encrypted may be padded)
+    LastBlock              should now be "True" or "False" - careful in using
+    SessionKeyType         which crypto is used for session key
+    EncryptedSessionKey    encrypted with our public key so only we can read this
+    Other                  could be be for professional timestamp company or other future features
+    Signature              digital signature by Creator - verifiable by public key in creator identity
     """
-    CreatorID = ""          # http://cate.com/id1.xml  - so people can check signature - says PK type too
-    BackupID = ""           # Creator's ID for the backup this packet is part of
-    BlockNumber = ""        # number of this block
-    EncryptedData = ""      # data may have some padding so multiple of crypto chunck size
-                            # and multiple of #nodes in eccmap (usually 64) for division
-                            # into dhnpackets
-    Length=0                # real length of data when cleartext (encrypted may be padded)
-    LastBlock = str(False)  # should now be "True" or "False" - careful in using
-    SessionKeyType = ""     # which crypto is used for session key
-    EncryptedSessionKey = ""# encrypted with our public key so only we can read this
-    Other = ""              # could be be for professional timestamp company or other future features
-    Signature = ""          # Digital signature by Creator - verifiable by public key in creator identity
 
     def __init__ (self, CreatorID, BackupID, BlockNumber, SessionKey, SessionKeyType, LastBlock, Data,):
         self.CreatorID = CreatorID
         self.BackupID = BackupID
-        self.BlockNumber = str(BlockNumber)
+        self.BlockNumber = BlockNumber
         self.EncryptedSessionKey = dhncrypto.EncryptLocalPK(SessionKey)
         self.SessionKeyType = SessionKeyType
-        self.Length = str(len(Data))
-        self.LastBlock = str(bool(LastBlock))               
+        self.Length = len(Data)
+        self.LastBlock = bool(LastBlock)               
         self.EncryptedData = dhncrypto.EncryptWithSessionKey(SessionKey, Data) # DataLonger
         self.Signature = None
         self.Sign()
@@ -97,7 +98,7 @@ class dhnblock:
         Generate a single string with all data fields, used to create a hash for that ``dhnblock``.
         """
         sep = "::::"
-        StringToHash = self.CreatorID + sep + self.BackupID + sep + self.BlockNumber + sep + self.SessionKeyType + sep + self.EncryptedSessionKey + sep + self.Length + sep + self.LastBlock + sep + self.EncryptedData
+        StringToHash = self.CreatorID + sep + self.BackupID + sep + str(self.BlockNumber) + sep + self.SessionKeyType + sep + self.EncryptedSessionKey + sep + str(self.Length) + sep + str(self.LastBlock) + sep + self.EncryptedData
         return StringToHash
 
     def GenerateHash(self):
@@ -132,12 +133,12 @@ class dhnblock:
         if not self.Ready():
             dhnio.Dprint(4, "dhnblock.Valid WARNING block is not ready yet " + str(self))
             return False
-        hash = self.GenerateHash()
+        hashsrc = self.GenerateHash()
         ConIdentity = contacts.getContact(misc.getLocalID())
         if ConIdentity is None:
             dhnio.Dprint(2, "dhnblock.Valid WARNING could not get Identity so returning False")
             return False
-        result = dhncrypto.Verify(ConIdentity, hash, self.Signature)    # At block level only work on own stuff
+        result = dhncrypto.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
         return result
 
     def Data(self):
@@ -145,7 +146,7 @@ class dhnblock:
         Return an original data, decrypt using ``EnctryptedData`` and ``EncryptedSessionKey``.
         """
         SessionKey = self.SessionKey()
-        ClearLongData = dhncrypto.DecryptWithSessionKey(SessionKey, self.EnctryptedData)
+        ClearLongData = dhncrypto.DecryptWithSessionKey(SessionKey, self.EncryptedData)
         return ClearLongData[0:self.Length]    # remove padding
 
     def Serialize(self):

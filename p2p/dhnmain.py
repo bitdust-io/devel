@@ -155,7 +155,6 @@ def run(UI='', options=None, args=None, overDict=None):
 
     dhnio.Dprint(2, 'dhnmain.run finished, EXIT')
 
-    automat.objects().clear()
     automat.CloseLogFile()
 
 ##    import threading

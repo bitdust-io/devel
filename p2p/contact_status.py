@@ -244,8 +244,8 @@ class ContactStatus(automat.Automat):
                 self.doRepaint(arg)
 
     def isPingPacket(self, arg):
-        (outpacket, doack, wide) = arg
-        return outpacket.Command == commands.Identity() and wide is True
+        pkt_out = arg
+        return pkt_out.outpacket.Command == commands.Identity() and pkt_out.wide is True
 
     def isDataPacket(self, arg):
         outpacket, status, error = arg
@@ -286,13 +286,13 @@ def Inbox(newpacket, info, status, message):
     ratings.remember_connected_time(newpacket.OwnerID)
     
 
-def Outbox(outpacket, doack, wide):
+def Outbox(pkt_out):
     """
     Called when some ``dhnpacket`` is placed in the sending queue.
     This packet can be our Identity packet - this is a sort of PING operation 
     to try to connect with that man.    
     """
-    A(outpacket.RemoteID, 'outbox-packet', (outpacket, doack, wide))
+    A(pkt_out.outpacket.RemoteID, 'outbox-packet', pkt_out)
 
 
 def FileSent(workitem, args):

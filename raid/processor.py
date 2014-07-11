@@ -23,7 +23,11 @@ import lib.dhnio as dhnio
 
 import make
 import read 
-    
+
+#------------------------------------------------------------------------------ 
+
+JobServer = None
+
 #------------------------------------------------------------------------------ 
     
 class Echo(basic.LineReceiver):

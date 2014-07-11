@@ -125,7 +125,7 @@ def add_outbox_callback(cb):
     You can add a callback to be notified when ``outbox()`` method was called.
     Useful when need to catch that event in third module. Arguments::
     
-        callback(outpacket, doack, wide)
+        callback(pkt_out)
     """
     global _OutboxPacketCallbacksList
     if cb not in _OutboxPacketCallbacksList:
@@ -197,14 +197,14 @@ def run_inbox_callbacks(newpacket, info, status, error_message):
     return handled
 
 
-def run_outbox_callbacks(outpacket, doack, wide):
+def run_outbox_callbacks(pkt_out):
     """
     """
     global _OutboxPacketCallbacksList
     handled = False
     for cb in _OutboxPacketCallbacksList:
         try:
-            if cb(outpacket, doack, wide):
+            if cb(pkt_out):
                 handled = True
         except:
             dhnio.DprintException()

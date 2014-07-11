@@ -1358,7 +1358,10 @@ def Calculate():
                     _SizeBackups += versionSize 
             _ItemsCount += 1
         return folder_size
-    return recursive_calculate(fsID())
+    ret = recursive_calculate(fsID())
+    dhnio.Dprint(12, 'backup_fs.Calculate %d %d %d %d' % (
+        _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
+    return ret
 
 def Calculate2(iterID=None):
     """

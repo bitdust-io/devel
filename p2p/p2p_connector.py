@@ -531,9 +531,3 @@ def WorkingProtos():
     return _WorkingProtocols
 
 
-#------------------------------------------------------------------------------ 
-
-def shutdown():
-    dhnio.Dprint(4, 'p2p_connector.shutdown')
-    automat.clear_object(A().index)
-

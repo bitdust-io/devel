@@ -93,6 +93,12 @@ class Automat(object):
           timers = {'timer-60sec':     (60,     ['STATE_A',]),
                     'timer-3min':      (60*3,   ['STATE_B', 'STATE_C',]), }
     """
+    
+    instant_timers = False
+    """
+    Set this to True and timers will not skip first iteration.
+    See method self.startTimers().
+    """
      
     fast = False
     """
@@ -125,7 +131,7 @@ class Automat(object):
         name = self.name
         debug_level = self.debug_level
         if _Index is None:
-            self.log(debug_level, 'automat.__del__ Index is None')
+            self.log(debug_level, 'automat.__del__ WARNING Index is None: %r %r' % (id, name))
             return
         index = _Index.get(id, None)
         if index is None:
@@ -237,7 +243,7 @@ class Automat(object):
             if len(states) > 0 and self.state not in states:
                 continue
             self._timers[name] = LoopingCall(self.timer_event, name, interval)
-            self._timers[name].start(interval, False)
+            self._timers[name].start(interval, self.instant_timers)
             # self.log(self.debug_level * 4, '%s.startTimers timer %s started' % (self, name))
 
     def restartTimers(self):

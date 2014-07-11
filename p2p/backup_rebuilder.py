@@ -362,8 +362,8 @@ class BackupRebuilder(Automat):
 #                return
             reactor.callLater(0, _work_on_block)
         def _work_on_block():
-            self.workBlock.AttemptRebuild().addBoth(_rebuild_finished)
-            # maybeDeferred(self.workBlock.AttemptRebuild).addCallback(_rebuild_finished)
+            # self.workBlock.AttemptRebuild().addBoth(_rebuild_finished)
+            maybeDeferred(self.workBlock.AttemptRebuild).addCallback(_rebuild_finished)
         def _rebuild_finished(someNewData):
             # dhnio.Dprint(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
             if someNewData:

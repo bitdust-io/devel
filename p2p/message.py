@@ -219,7 +219,7 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
     dhnio.Dprint(6, "message.SendMessage  about to send to " + RemoteID)
     result = dhnpacket.dhnpacket(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
     # transport_control.outboxAck(result)
-    gate.outbox(result, False)
+    gate.outbox(result)
 
 def ListAllMessages():
     mlist = []

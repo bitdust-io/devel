@@ -255,7 +255,7 @@ class SupplierConnector(automat.Automat):
         # callback.remove_interest(misc.getLocalID(), self.request_packet_id)
 
     def _supplier_acked(self, response, info):
-        dhnio.Dprint(10, 'supplier_connector._supplier_acked %r %r' % (response, info))
+        dhnio.Dprint(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
 
 

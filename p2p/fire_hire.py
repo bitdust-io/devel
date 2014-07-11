@@ -104,6 +104,7 @@ import supplier_connector
 #-------------------------------------------------------------------------------
 
 _FireHire = None
+_LastFireTime = 0
 
 #-------------------------------------------------------------------------------
 
@@ -131,7 +132,7 @@ class FireHire(automat.Automat):
         """
         Method to initialize additional variables and flags at creation of the state machine.
         """
-        self.lastFireTime = 0 # time.time()
+        # self.lastFireTime = 0 # time.time()
         self.dismiss_list = []
         self.dismiss_results = []
         self.new_suppliers = []
@@ -210,7 +211,7 @@ class FireHire(automat.Automat):
 
     def isTimePassed(self, arg):
         # dhnio.Dprint(6, 'fire_hire.isTimePassed last "fire" was %d minutes ago' % ((time.time() - self.lastFireTime) / 60.0))
-        return time.time() - self.lastFireTime > settings.FireHireMinimumDelay()
+        return time.time() - GetLastFireTime() > settings.FireHireMinimumDelay()
 
     def isMoreNeeded(self, arg):
         """
@@ -353,8 +354,6 @@ class FireHire(automat.Automat):
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc:
                 sc.automat('shutdown')
-            else:
-                raise Exception('supplier_connector must exist')        
         
     def doClearDismissList(self, arg):
         """
@@ -461,13 +460,14 @@ def GetLastFireTime():
     """
     This method returns a time moment when last time some supplier was replaced. 
     """
-    return A().lastFireTime
+    global _LastFireTime
+    return _LastFireTime # A().lastFireTime
 
 
 def ClearLastFireTime():
     """
     """
-    A().lastFireTime = 0
+    _LastFireTime = 0 # A().lastFireTime = 0
 
 
 

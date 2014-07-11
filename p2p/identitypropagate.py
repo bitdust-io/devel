@@ -297,7 +297,7 @@ def HandleCustomersAck(ackpacket, info):
 
 
 def HandleAck(ackpacket, info):
-    dhnio.Dprint(12, "identitypropagate.HandleAck %r %r" % (ackpacket, info))
+    dhnio.Dprint(16, "identitypropagate.HandleAck %r %r" % (ackpacket, info))
 
 
 def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
@@ -318,9 +318,9 @@ def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
         thePayload,
         idurl)
     # callback.register_interest(AckHandler, packet.RemoteID, packet.PacketID)
-    gate.outbox(packet, NeedAck, wide, 
-                ack_callback=AckHandler, 
-                fail_callback=AckHandler)
+    gate.outbox(packet, wide, callbacks={
+        commands.Ack(): AckHandler,
+        commands.Fail(): AckHandler}) 
     if wide:
         # this is a ping packet - need to clear old info
         stats.ErasePeerProtosStates(idurl)
@@ -377,9 +377,9 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
             contact)
         dhnio.Dprint(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
         # callback.register_interest(AckHandler, packet.RemoteID, packet.PacketID)
-        gate.outbox(packet, NeedAck, wide,
-                    ack_callback=AckHandler,
-                    fail_callback=AckHandler)
+        gate.outbox(packet, wide, callbacks={
+            commands.Ack(): AckHandler,
+            commands.Fail(): AckHandler}) 
         if wide:
             # this is a ping packet - need to clear old info
             stats.ErasePeerProtosStates(contact)

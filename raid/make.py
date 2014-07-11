@@ -34,17 +34,13 @@ import struct
 import time
 import cStringIO
 
-
 if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
-
-import lib.eccmap as eccmap
-import lib.misc as misc
-import lib.dhnio as dhnio
-import lib.settings as settings
-import lib.tmpfile as tmpfile
+import lib.eccmap
+import lib.misc
+import lib.dhnio
 
 #------------------------------------------------------------------------------ 
 
@@ -52,7 +48,7 @@ _ECCMAP = {}
 def geteccmap(name):
     global _ECCMAP
     if not _ECCMAP.has_key(name):
-        _ECCMAP[name] = eccmap.eccmap(name) 
+        _ECCMAP[name] = lib.eccmap.eccmap(name) 
     return _ECCMAP[name]
 
 #------------------------------------------------------------------------------ 
@@ -64,27 +60,23 @@ def shutdown():
 #------------------------------------------------------------------------------ 
 
 def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):
-    dhnio.Dprint(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
-        os.path.basename(filename), eccmapname, backupId, blockNumber))
+    # dhnio.Dprint(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
+    #     os.path.basename(filename), eccmapname, backupId, blockNumber))
     t = time.time()
     if in_memory:
         dataNum, parityNum = do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir)
     else:
         dataNum, parityNum = do_with_files(filename, eccmapname, backupId, blockNumber, targetDir)
-    dhnio.Dprint(12, "raidmake.raidmake time=%.3f data=%d parity=%d" % (time.time()-t, dataNum, parityNum))
+    # dhnio.Dprint(12, "raidmake.raidmake time=%.3f data=%d parity=%d" % (time.time()-t, dataNum, parityNum))
     return dataNum, parityNum
 
 
-def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir=None):
-    if targetDir is None:
-        # here backupID is something like
-        # /0/0/1/23/F1234567890AM
-        targetDir = settings.getLocalBackupsDir() + '/' + backupId
-    myeccmap = geteccmap(eccmapname)
-    INTSIZE = settings.IntSize()
+def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
+    myeccmap = lib.eccmap.eccmap(eccmapname)
+    INTSIZE = 4 # settings.IntSize()
     # any padding at end and block.Length fixes
-    misc.RoundupFile(filename, myeccmap.datasegments*INTSIZE)     
-    wholefile = dhnio.ReadBinaryFile(filename)
+    lib.misc.RoundupFile(filename, myeccmap.datasegments*INTSIZE)     
+    wholefile = lib.dhnio.ReadBinaryFile(filename)
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments                 
 
@@ -110,7 +102,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir=None):
         # and store current position in the data
         # so start from zero 
         #dfds[DSegNum] = [0, dhnio.ReadBinaryFile(FileName)]
-        dfds[DSegNum] = cStringIO.StringIO(dhnio.ReadBinaryFile(FileName))
+        dfds[DSegNum] = cStringIO.StringIO(lib.dhnio.ReadBinaryFile(FileName))
 
     pfds = {}
     for PSegNum in xrange(myeccmap.paritysegments):
@@ -134,8 +126,8 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir=None):
                 Map = myeccmap.DataToParity[DSegNum]
                 for PSegNum in Map:
                     if PSegNum > myeccmap.paritysegments:
-                        dhnio.Dprint(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
-                        dhnio.Dprint(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
+                        # dhnio.Dprint(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
+                        # dhnio.Dprint(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
                         myeccmap.check()
                         raise Exception("eccmap error")
                     Parities[PSegNum] = Parities[PSegNum] ^ b
@@ -155,7 +147,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir=None):
     
     for PSegNum, data in pfds.items():
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
-        dhnio.WriteFile(FileName, pfds[PSegNum].getvalue())
+        lib.dhnio.WriteFile(FileName, pfds[PSegNum].getvalue())
 
     for f in dfds.values():
         f.close()
@@ -164,7 +156,8 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir=None):
     for f in pfds.values():
         f.close()
         #parityNum += 1
-    
+
+    del myeccmap    
     del dfds
     del pfds
     del Parities
@@ -172,14 +165,11 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir=None):
     return dataNum, parityNum 
 
 
-def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir=None):
-    if targetDir is None:
-        targetDir = settings.getLocalBackupsDir() + '/' + backupId
-
-    myeccmap = geteccmap(eccmapname)
-    INTSIZE = settings.IntSize()
-    misc.RoundupFile(filename,myeccmap.datasegments*INTSIZE)      # any padding at end and block.Length fixes
-    wholefile = dhnio.ReadBinaryFile(filename)
+def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
+    myeccmap = lib.eccmap.eccmap(eccmapname)
+    INTSIZE = 4 # settings.IntSize()
+    lib.misc.RoundupFile(filename,myeccmap.datasegments*INTSIZE)      # any padding at end and block.Length fixes
+    wholefile = lib.dhnio.ReadBinaryFile(filename)
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1)/myeccmap.datasegments                 # PREPRO -
 
@@ -222,15 +212,15 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir=None):
                 Map = myeccmap.DataToParity[DSegNum]
                 for PSegNum in Map:
                     if PSegNum > myeccmap.paritysegments:
-                        dhnio.Dprint(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
-                        dhnio.Dprint(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
+                        # dhnio.Dprint(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
+                        # dhnio.Dprint(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
                         myeccmap.check()
                         raise Exception("eccmap error")
                     Parities[PSegNum] = Parities[PSegNum] ^ b
-            else :
+            # else :
                 #TODO
-                dhnio.Dprint(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
-                dhnio.Dprint(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
+                # dhnio.Dprint(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
+                # dhnio.Dprint(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
         for PSegNum in range(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
@@ -256,7 +246,7 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir=None):
 
 
 def main():
-    dhnio.SetDebug(18)
+    lib.dhnio.SetDebug(18)
     raidmake(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], sys.argv[6]=='1')
     
 

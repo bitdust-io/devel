@@ -44,7 +44,7 @@ from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
 
 import lib.dhnio as dhnio
-from lib.automat import Automat
+import lib.automat as automat
 import lib.automats as automats
 
 import initializer
@@ -63,7 +63,7 @@ def A(event=None, arg=None):
     return _Shutdowner
 
 
-class Shutdowner(Automat):
+class Shutdowner(automat.Automat):
     
     def init(self):
         self.flagApp = False
@@ -90,6 +90,7 @@ class Shutdowner(Automat):
                 self.flagReactor=True
             elif event == 'ready' and self.flagReactor :
                 self.state = 'FINISHED'
+                self.doKillAutomats(arg)
             elif event == 'ready' and not self.flagReactor and self.flagApp :
                 self.state = 'STOPPING'
                 self.doShutdown(arg)
@@ -102,6 +103,7 @@ class Shutdowner(Automat):
                 self.doShutdown(arg)
             elif event == 'reactor-stopped' :
                 self.state = 'FINISHED'
+                self.doKillAutomats(arg)
             elif event == 'block' :
                 self.state = 'BLOCKED'
         #---BLOCKED---
@@ -118,6 +120,7 @@ class Shutdowner(Automat):
                 self.doShutdown(arg)
             elif event == 'unblock' and self.flagReactor :
                 self.state = 'FINISHED'
+                self.doKillAutomats(arg)
         #---FINISHED---
         elif self.state == 'FINISHED':
             pass
@@ -125,10 +128,25 @@ class Shutdowner(Automat):
         elif self.state == 'STOPPING':
             if event == 'reactor-stopped' :
                 self.state = 'FINISHED'
+                self.doKillAutomats(arg)
 
     def doSaveParam(self, arg):
         self.shutdown_param = arg
         dhnio.Dprint(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
+
+    def doKillAutomats(self, arg):
+        """
+        Action method.
+        """
+        import fire_hire
+        fire_hire._FireHire = None
+        import backup_monitor
+        backup_monitor._BackupMonitor = None
+        import network_connector
+        network_connector._NetworkConnector = None
+        global _Shutdowner
+        _Shutdowner = None
+        automat.objects().clear()
 
     def doShutdown(self, arg):
         param = arg

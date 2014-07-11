@@ -214,12 +214,12 @@ class TCPFileStream():
         del self.inboxFiles[file_id]   
         
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
-        dhnio.Dprint(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
+        # dhnio.Dprint(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         tcp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
-        dhnio.Dprint(18, 'tcp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
+        # dhnio.Dprint(18, 'tcp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         tcp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
         
@@ -242,7 +242,7 @@ class TCPFileStream():
     def outbox_file_done(self, file_id, status, error_message=None):
         """
         """ 
-        dhnio.Dprint(18, 'tcp_stream.outbox_file_done %s %s %s' % (file_id, status, error_message))
+        # dhnio.Dprint(18, 'tcp_stream.outbox_file_done %s %s %s' % (file_id, status, error_message))
         try:
             outfile = self.outboxFiles[file_id]
         except:
