@@ -171,11 +171,8 @@ class SupplierFinder(automat.Automat):
         sc = supplier_connector.by_idurl(self.target_idurl)
         if not sc:
             sc = supplier_connector.create(self.target_idurl)
-        if sc.state == 'CONNECTED':
-            self.automat('supplier-connected')
-        else:
-            sc.set_callback('supplier_finder', self._supplier_connector_state)
-            sc.automat('connect')
+        sc.automat('connect')
+        sc.set_callback('supplier_finder', self._supplier_connector_state)
             
     def doDHTFindRandomUser(self, arg):
         """
@@ -247,12 +244,12 @@ class SupplierFinder(automat.Automat):
     def _got_target_identity(self, pagesrc, idurl):
         self.automat('found-one-user', idurl)
         
-    def _supplier_connector_state(self, supplier_idurl, oldstate, newstate):
+    def _supplier_connector_state(self, supplier_idurl, newstate):
         if supplier_idurl != self.target_idurl:
             return
-        sc = supplier_connector.by_idurl(self.target_idurl)
-        if sc:
-            sc.remove_callback('supplier_finder')
+        # sc = supplier_connector.by_idurl(self.target_idurl)
+        # if sc:
+        #     sc.remove_callback('supplier_finder')
         if newstate is 'CONNECTED':
             self.automat('supplier-connected', self.target_idurl)
         elif newstate in ['DISCONNECTED', 'NO_SERVICE', ]:

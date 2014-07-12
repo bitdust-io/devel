@@ -292,8 +292,8 @@ def SetSupplierList(supplierList):
             dhnio.Dprint(2, "backup_control.SetSupplierList supplier %d changed: [%s]->[%s]" % (
                 supplierNum, nameurl.GetName(backup_matrix.suppliers_set().suppliers[supplierNum]), nameurl.GetName(supplierList[supplierNum])))
             io_throttle.DeleteSuppliers([backup_matrix.suppliers_set().suppliers[supplierNum],])
-        # erase (set to 0) remote info for this guys
-        backup_matrix.ClearSupplierRemoteInfo(supplierNum)
+            # erase (set to 0) remote info for this guys
+            backup_matrix.ClearSupplierRemoteInfo(supplierNum)
         # restart backup_monitor
         backup_monitor.Restart()
         # restart db keeper to save the index on all machines including a new one

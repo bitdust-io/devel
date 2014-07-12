@@ -31,6 +31,7 @@ import tempfile
 import urllib
 import locale
 import textwrap
+import cPickle
 
 
 from twisted.spread import banana
@@ -624,7 +625,13 @@ def AsciiToBinary(input):
     """
     return base64.decodestring(input)
 
-def ObjectToString(input):
+def ObjectToString(obj):
+    return cPickle.dumps(obj, protocol=cPickle.HIGHEST_PROTOCOL)
+
+def StringToObject(inp):
+    return cPickle.loads(inp)
+
+def ObjectToStringOld(input):
     """
     The core method.
     Create a string from an object in memory, uses ``twisted.spread``.
@@ -634,7 +641,7 @@ def ObjectToString(input):
     banana.SIZE_LIMIT = 200000000                                 # PREPRO not sure this is nice
     return banana.encode(jelly.jelly(input))
 
-def StringToObject(input):
+def StringToObjectOld(input):
     """
     This is a reverse method to ``ObjectToString``.
     Create a real python object in memory from ``input`` string.

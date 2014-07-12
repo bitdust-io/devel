@@ -71,13 +71,13 @@ If all providers are reliable enough - machine will not work and will reset.
 
 
 EVENTS:
-    * :red:`fire-him-now`
     * :red:`init`
+    * :red:`instant`
     * :red:`made-decision`
     * :red:`restart`
     * :red:`search-failed`
     * :red:`supplier-connected`
-    * :red:`supplier-disconnected`
+    * :red:`supplier-state-changed`
     * :red:`timer-15sec`
 """
 
@@ -105,8 +105,30 @@ import supplier_connector
 
 _FireHire = None
 _LastFireTime = 0
+_SuppliersToFire = []
 
 #-------------------------------------------------------------------------------
+
+def GetLastFireTime():
+    """
+    This method returns a time moment when last time some supplier was replaced. 
+    """
+    global _LastFireTime
+    return _LastFireTime # A().lastFireTime
+
+
+def ClearLastFireTime():
+    """
+    """
+    _LastFireTime = 0 # A().lastFireTime = 0
+    
+def AddSupplierToFire(idurl):
+    """
+    """
+    global _SuppliersToFire
+    _SuppliersToFire.append(idurl)
+
+#------------------------------------------------------------------------------ 
 
 def A(event=None, arg=None):
     """
@@ -133,9 +155,11 @@ class FireHire(automat.Automat):
         Method to initialize additional variables and flags at creation of the state machine.
         """
         # self.lastFireTime = 0 # time.time()
+        self.connect_results = []
         self.dismiss_list = []
         self.dismiss_results = []
         self.new_suppliers = []
+        self.configs = (None, None)
 
     def state_changed(self, oldstate, newstate):
         """
@@ -146,23 +170,15 @@ class FireHire(automat.Automat):
     def A(self, event, arg):
         #---READY---
         if self.state == 'READY':
-            if event == 'restart' and not self.isTimePassed(arg) and not self.isMoreNeeded(arg) :
-                backup_monitor.A('fire-hire-finished')
-            elif event == 'fire-him-now' :
-                self.state = 'HIRE_ONE'
-                self.doRememberDismissSuppliers(arg)
-                supplier_finder.A('start')
-            elif event == 'restart' and self.isMoreNeeded(arg) :
-                self.state = 'HIRE_ONE'
-                supplier_finder.A('start')
-            elif event == 'restart' :
+            if ( event == 'restart' or event == 'instant' and self.NeedRestart ) and self.isConfigChanged(arg) :
+                self.state = 'SUPPLIERS?'
+                self.NeedRestart=False
+                self.doSaveConfig(arg)
+                self.doConnectSuppliers(arg)
+            elif ( event == 'restart' or event == 'instant' and self.NeedRestart ) and not self.isConfigChanged(arg) :
                 self.state = 'DECISION?'
-                self.doDecideToDismissSuppliers(arg)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'init' :
-                self.state = 'READY'
-                self.doInit(arg)
+                self.NeedRestart=False
+                self.doDecideToDismiss(arg)
         #---DECISION?---
         elif self.state == 'DECISION?':
             if event == 'made-decision' and not self.isSomeoneToDismiss(arg) :
@@ -170,13 +186,15 @@ class FireHire(automat.Automat):
                 backup_monitor.A('fire-hire-finished')
             elif event == 'made-decision' and self.isSomeoneToDismiss(arg) and self.isMoreNeeded(arg) :
                 self.state = 'HIRE_ONE'
-                self.doRememberDismissSuppliers(arg)
+                self.doRememberSuppliers(arg)
                 supplier_finder.A('start')
             elif event == 'made-decision' and self.isSomeoneToDismiss(arg) and not self.isMoreNeeded(arg) :
                 self.state = 'FIRE_MANY'
-                self.doRememberDismissSuppliers(arg)
+                self.doRememberSuppliers(arg)
                 self.doRemoveSuppliers(arg)
                 self.doDisconnectSuppliers(arg)
+            elif event == 'restart' :
+                self.NeedRestart=True
         #---HIRE_ONE---
         elif self.state == 'HIRE_ONE':
             if event == 'supplier-connected' and self.isMoreNeeded(arg) :
@@ -185,33 +203,46 @@ class FireHire(automat.Automat):
             elif event == 'search-failed' :
                 self.state = 'READY'
                 self.doClearDismissList(arg)
+                self.NeedRestart=True
                 backup_monitor.A('fire-hire-finished')
-                self.doRestartLater(arg)
             elif event == 'supplier-connected' and not self.isMoreNeeded(arg) and not self.isSomeoneToDismiss(arg) :
                 self.state = 'READY'
                 self.doSubstituteSupplier(arg)
-                backup_monitor.A('hire-new-supplier')
+                backup_monitor.A('suppliers-changed')
             elif event == 'supplier-connected' and not self.isMoreNeeded(arg) and self.isSomeoneToDismiss(arg) :
                 self.state = 'FIRE_MANY'
                 self.doSubstituteSupplier(arg)
                 self.doDisconnectSuppliers(arg)
+            elif event == 'restart' :
+                self.NeedRestart=True
         #---FIRE_MANY---
         elif self.state == 'FIRE_MANY':
-            if event == 'supplier-disconnected' and self.isAllDismissed(arg) :
-                self.state = 'READY'
-                self.doCloseSupplierConnector(arg)
-                self.doClearDismissList(arg)
-                backup_monitor.A('hire-new-supplier')
-            elif event == 'supplier-disconnected' and not self.isAllDismissed(arg) :
-                self.doCloseSupplierConnector(arg)
-            elif event == 'timer-15sec' :
+            if event == 'timer-15sec' :
                 self.state = 'READY'
                 self.doCloseConnectors(arg)
                 self.doClearDismissList(arg)
-
-    def isTimePassed(self, arg):
-        # dhnio.Dprint(6, 'fire_hire.isTimePassed last "fire" was %d minutes ago' % ((time.time() - self.lastFireTime) / 60.0))
-        return time.time() - GetLastFireTime() > settings.FireHireMinimumDelay()
+                backup_monitor.A('suppliers-changed')
+            elif event == 'supplier-state-changed' and not self.isAllDismissed(arg) :
+                self.doCloseConnector(arg)
+            elif event == 'restart' :
+                self.NeedRestart=True
+            elif event == 'supplier-state-changed' and self.isAllDismissed(arg) :
+                self.state = 'READY'
+                self.doCloseConnector(arg)
+                self.doClearDismissList(arg)
+                backup_monitor.A('suppliers-changed')
+        #---SUPPLIERS?---
+        elif self.state == 'SUPPLIERS?':
+            if event == 'restart' :
+                self.NeedRestart=True
+            elif event == 'supplier-state-changed' and self.isAllReady(arg) :
+                self.state = 'DECISION?'
+                self.doDecideToDismiss(arg)
+        #---AT_STARTUP---
+        elif self.state == 'AT_STARTUP':
+            if event == 'init' :
+                self.state = 'READY'
+                self.NeedRestart=False
 
     def isMoreNeeded(self, arg):
         """
@@ -223,7 +254,15 @@ class FireHire(automat.Automat):
             dhnio.Dprint(4, 'fire_hire.isMoreNeeded WARNING found empty suppliers!!!')
             return True
         return contacts.numSuppliers() - len(self.dismiss_list) < settings.getCentralNumSuppliers()
-        
+
+    def isAllReady(self, arg):
+        """
+        Condition method.
+        """
+        dhnio.Dprint(14, 'fire_hire.isAllReady %d %d' % (
+            len(self.connect_results), contacts.numSuppliers()))
+        return len(self.connect_results) == contacts.numSuppliers()
+                
     def isAllDismissed(self, arg):
         """
         Condition method.
@@ -236,16 +275,39 @@ class FireHire(automat.Automat):
         """
         return len(arg) > 0
 
-    def doInit(self, arg):
+    def isConfigChanged(self, arg):
         """
-        Action method.
+        Condition method.
         """
+        if None in self.configs:
+            return True
+        curconfig = (settings.getCentralNumSuppliers(), settings.getCentralMegabytesNeeded())
+        return self.configs != curconfig 
 
-    def doDecideToDismissSuppliers(self, arg):
+    def doSaveConfig(self, arg):
         """
         Action method.
         """
-        result = set()
+        self.config = (settings.getCentralNumSuppliers(), settings.getCentralMegabytesNeeded())
+
+    def doConnectSuppliers(self, arg):
+        """
+        Action method.
+        """
+        for supplier_idurl in contacts.getSupplierIDs():
+            sc = supplier_connector.by_idurl(supplier_idurl)
+            if sc is None: 
+                sc = supplier_connector.create(supplier_idurl)
+            sc.set_callback('fire_hire', self._supplier_connector_state_changed)
+            sc.automat('connect')        
+        
+    def doDecideToDismiss(self, arg):
+        """
+        Action method.
+        """
+        global _SuppliersToFire
+        result = set(_SuppliersToFire)
+        _SuppliersToFire = []
         for supplier_idurl in contacts.getSupplierIDs():
             sc = supplier_connector.by_idurl(supplier_idurl)
             if not sc:
@@ -259,7 +321,7 @@ class FireHire(automat.Automat):
         dhnio.Dprint(10, 'fire_hire.doDecideToDismissSuppliers %s' % result)
         self.automat('made-decision', result)
 
-    def doRememberDismissSuppliers(self, arg):
+    def doRememberSuppliers(self, arg):
         """
         Action method.
         """
@@ -291,8 +353,8 @@ class FireHire(automat.Automat):
         contacts.setSupplierIDs(current_suppliers)
         contacts.saveSupplierIDs()
         misc.writeSupplierData(new_idurl, 'connected', time.strftime('%d%m%y %H:%M:%S'))
-        import backup_control
-        backup_control.SetSupplierList(current_suppliers)
+        # import backup_control
+        # backup_control.SetSupplierList(current_suppliers)
         import webcontrol
         webcontrol.OnListSuppliers()
         if position < 0:
@@ -309,16 +371,17 @@ class FireHire(automat.Automat):
         """
         current_suppliers = contacts.getSupplierIDs()
         desired_suppliers = settings.getCentralNumSuppliers()
-        if len(current_suppliers) <= desired_suppliers:
-            dhnio.Dprint(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers')
+        if len(current_suppliers) < desired_suppliers:
+            dhnio.Dprint(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers %d<%d' % (
+                len(current_suppliers), desired_suppliers))
             return
         for supplier_idurl in self.dismiss_list:
             current_suppliers.remove(supplier_idurl)
             misc.writeSupplierData(supplier_idurl, 'disconnected', time.strftime('%d%m%y %H:%M:%S'))
         contacts.setSupplierIDs(current_suppliers)
         contacts.saveSupplierIDs()
-        import backup_control
-        backup_control.SetSupplierList(current_suppliers)
+        # import backup_control
+        # backup_control.SetSupplierList(current_suppliers)
         import webcontrol
         webcontrol.OnListSuppliers()
         dhnio.Dprint(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
@@ -327,19 +390,20 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        # dhnio.Dprint(10, 'fire_hire.doDismissSuppliers %r' % self.dismiss_list)
+        dhnio.Dprint(10, 'fire_hire.doDismissSuppliers %r' % self.dismiss_list)
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc:
+                sc.set_callback('fire_hire', self._supplier_connector_state_changed)
                 sc.automat('disconnect')
             else:
                 raise Exception('supplier_connector must exist')        
 
-    def doCloseSupplierConnector(self, arg):
+    def doCloseConnector(self, arg):
         """
         Action method.
         """
-        supplier_idurl = arg
+        supplier_idurl, supplier_state = arg
         sc = supplier_connector.by_idurl(supplier_idurl)
         if sc:
             sc.automat('shutdown')
@@ -361,14 +425,18 @@ class FireHire(automat.Automat):
         """
         self.dismiss_list = []
         self.dismiss_results = []
-        
-    def doRestartLater(self, arg):
-        """
-        Action method.
-        """
-        reactor.callLater(10, self.automat, 'restart')
 
-
+    def _supplier_connector_state_changed(self, idurl, newstate):
+        dhnio.Dprint(14, 'fire_hire._supplier_connector_state_changed %s %s, state=%s' % (
+            idurl, newstate, self.state))
+        if self.state == 'SUPPLIERS?':
+            self.connect_results.append(idurl)
+        elif self.state == 'FIRE_MANY':
+            self.dismiss_results.append(idurl)
+        else:
+            raise Exception('strange state reached')
+        self.automat('supplier-state-changed', (idurl, newstate))
+    
 
 
 #def WhoIsLost():
@@ -454,20 +522,4 @@ class FireHire(automat.Automat):
     
 #    dhnio.Dprint(2, 'fire_hire.WhoIsLost some people is not here, but we did not found the bad guy at this time')
 #    return 'not-found-lost-suppliers', ''
-
-
-def GetLastFireTime():
-    """
-    This method returns a time moment when last time some supplier was replaced. 
-    """
-    global _LastFireTime
-    return _LastFireTime # A().lastFireTime
-
-
-def ClearLastFireTime():
-    """
-    """
-    _LastFireTime = 0 # A().lastFireTime = 0
-
-
 

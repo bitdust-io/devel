@@ -39,7 +39,7 @@ def A(event=None, arg=None):
     global _StunClient
     if _StunClient is None:
         # set automat name and starting state here
-        _StunClient = StunClient('stun_client', 'STOPPED')
+        _StunClient = StunClient('stun_client', 'STOPPED', 8)
     if event is not None:
         _StunClient.automat(event, arg)
     return _StunClient
@@ -112,7 +112,10 @@ class StunClient(automat.Automat):
         Action method.
         """
         # udp.add_datagram_receiver_callback(self._datagram_received)
-        self.listen_port, self.callback = arg
+        if arg:
+            self.listen_port, self.callback = arg
+        else:
+            self.listen_port, self.callback = int(settings.getDHTUDPPort()), None
         udp.proto(self.listen_port).add_callback(self._datagram_received)
 
     def doReportSuccess(self, arg):
@@ -129,7 +132,8 @@ class StunClient(automat.Automat):
         oldip = dhnio._read_data(settings.ExternalIPFilename()).strip()
         dhnio._write_data(settings.ExternalIPFilename(), ip)
         dhnio._write_data(settings.ExternalUDPPortFilename(), str(port))
-        self.callback('stun-success', (ip, port))
+        if self.callback:
+            self.callback('stun-success', (ip, port))
         if oldip != ip:
             import p2p.network_connector
             p2p.network_connector.A('reconnect')
@@ -138,7 +142,8 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        self.callback('stun-failed', None)
+        if self.callback:
+            self.callback('stun-failed', None)
 
     def doRememberPeer(self, arg):
         """

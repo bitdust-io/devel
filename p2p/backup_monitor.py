@@ -41,14 +41,11 @@ The last step is run ``fire_hire()`` automat, which monitors remote suppliers.
 EVENTS:
     * :red:`backup_rebuilder.state`
     * :red:`fire-hire-finished`
-    * :red:`hire-new-supplier`
     * :red:`init`
-    * :red:`instant`
     * :red:`list-backups-done`
     * :red:`list_files_orator.state`
     * :red:`restart`
-    * :red:`timer-1sec`
-    * :red:`timer-20sec`
+    * :red:`suppliers-changed`
 """
 
 
@@ -68,6 +65,7 @@ import lib.contacts as contacts
 import lib.diskspace as diskspace
 import lib.automat as automat
 import lib.automats as automats
+import lib.nameurl as nameurl
 
 import backup_rebuilder
 import fire_hire
@@ -78,6 +76,7 @@ import backup_control
 import supplier_connector
 import backup_db_keeper
 import data_sender
+import io_throttle
 
 #------------------------------------------------------------------------------ 
 
@@ -106,10 +105,7 @@ class BackupMonitor(automat.Automat):
         'timer-1sec': (1.0, ['RESTART','SUPPLIERS?']),
         'timer-20sec': (20.0, ['SUPPLIERS?']),
         }
-    ackCounter = 0
-    pingTime = 0
-    lastRequestSuppliersTime = 0
-
+    
     def state_changed(self, oldstate, newstate):
         """
         This method is called every time when my state is changed. 
@@ -125,17 +121,11 @@ class BackupMonitor(automat.Automat):
                 self.doSuppliersInit(arg)
                 backup_rebuilder.A('init')
             elif event == 'restart' :
-                self.state = 'RESTART'
-        #---RESTART---
-        elif self.state == 'RESTART':
-            if ( event == 'instant' or event == 'timer-1sec' ) and not self.isAnyBackupRunning(arg) and backup_rebuilder.A().state in [ 'STOPPED', 'DONE', ] :
-                self.state = 'SUPPLIERS?'
-                self.doSuppliersConnect(arg)
+                self.state = 'FIRE_HIRE'
+                fire_hire.A('restart')
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
-            if event == 'restart' :
-                self.state = 'RESTART'
-            elif ( event == 'list_files_orator.state' and arg == 'NO_FILES' ) :
+            if ( event == 'list_files_orator.state' and arg == 'NO_FILES' ) :
                 self.state = 'READY'
             elif ( event == 'list_files_orator.state' and arg == 'SAW_FILES' ) :
                 self.state = 'LIST_BACKUPS'
@@ -148,45 +138,72 @@ class BackupMonitor(automat.Automat):
                 self.state = 'REBUILDING'
                 backup_rebuilder.A('start')
             elif event == 'restart' :
-                self.state = 'RESTART'
+                self.state = 'FIRE_HIRE'
+                fire_hire.A('restart')
         #---REBUILDING---
         elif self.state == 'REBUILDING':
             if event == 'restart' :
-                self.state = 'RESTART'
-                backup_rebuilder.SetStoppedFlag()
-            elif ( event == 'backup_rebuilder.state' and arg == 'STOPPED' ) :
-                self.state = 'READY'
-            elif ( event == 'backup_rebuilder.state' and arg == 'DONE' ) :
                 self.state = 'FIRE_HIRE'
+                backup_rebuilder.SetStoppedFlag()
                 fire_hire.A('restart')
-        #---FIRE_HIRE---
-        elif self.state == 'FIRE_HIRE':
-            if event == 'fire-hire-finished' :
+            elif ( event == 'backup_rebuilder.state' and arg in [ 'DONE' , 'STOPPED' ] ) :
                 self.state = 'READY'
                 self.doCleanUpBackups(arg)
-            elif event == 'restart' or event == 'hire-new-supplier' :
-                self.state = 'RESTART'
-        #---SUPPLIERS?---
-        elif self.state == 'SUPPLIERS?':
-            if event == 'timer-1sec' and self.isAllSuppliersReady(arg) :
+        #---FIRE_HIRE---
+        elif self.state == 'FIRE_HIRE':
+            if event == 'suppliers-changed' and self.isSuppliersNumberChanged(arg) :
+                self.state = 'LIST_FILES'
+                self.doDeleteAllBackups(arg)
+                list_files_orator.A('need-files')
+            elif event == 'fire-hire-finished' :
                 self.state = 'LIST_FILES'
                 list_files_orator.A('need-files')
-            elif event == 'restart' :
-                self.state = 'RESTART'
-            elif event == 'timer-20sec' :
-                self.state = 'FIRE_HIRE'
-                fire_hire.A('restart')
+            elif event == 'suppliers-changed' and not self.isSuppliersNumberChanged(arg) :
+                self.state = 'LIST_FILES'
+                self.doUpdateSuppliers(arg)
+                list_files_orator.A('need-files')
 
-    def isAllSuppliersReady(self, arg):
+    def isSuppliersNumberChanged(self, arg):
         """
         Condition method.
         """
-        states = set(map(lambda c: c.state, supplier_connector.connectors().values()))
-        return 'REQUEST' not in states
-
-    def isAnyBackupRunning(self, arg):
-        return backup_control.HasRunningBackup()
-
+        return backup_matrix.suppliers_set().supplierCount != contacts.numSuppliers()
+        
+    def doDeleteAllBackups(self, arg):
+        """
+        Action method.
+        """
+        dhnio.Dprint(2, "backup_monitor.doDeleteAllBackups")
+        # cancel all tasks and jobs
+        backup_control.DeleteAllTasks()
+        backup_control.AbortAllRunningBackups()
+        # remove all local files and all backups
+        backup_control.DeleteAllBackups()
+        # erase all remote info
+        backup_matrix.ClearRemoteInfo()
+        # also erase local info
+        backup_matrix.ClearLocalInfo()
+        # finally save the list of current suppliers and clear all stats 
+        backup_matrix.suppliers_set().UpdateSuppliers(contacts.getSupplierIDs())
+        
+    def doUpdateSuppliers(self, arg):
+        """
+        Action method.
+        """
+        supplierList = contacts.getSupplierIDs()
+        # take a list of suppliers positions that was changed
+        changedSupplierNums = backup_matrix.suppliers_set().SuppliersChangedNumbers(supplierList)
+        # notify io_throttle that we do not neeed already this suppliers
+        for supplierNum in changedSupplierNums:
+            dhnio.Dprint(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
+                supplierNum, nameurl.GetName(backup_matrix.suppliers_set().suppliers[supplierNum]), 
+                nameurl.GetName(supplierList[supplierNum])))
+            io_throttle.DeleteSuppliers([backup_matrix.suppliers_set().suppliers[supplierNum],])
+            # erase (set to 0) remote info for this guys
+            backup_matrix.ClearSupplierRemoteInfo(supplierNum)
+        # finally save the list of current suppliers and clear all stats 
+        backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
+        
     def doSuppliersInit(self, arg):
         """
         Action method.
@@ -195,16 +212,6 @@ class BackupMonitor(automat.Automat):
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
                 sc = supplier_connector.create(supplier_idurl)
-
-    def doSuppliersConnect(self, arg):
-        """
-        Action method.
-        """
-        for supplier_idurl in contacts.getSupplierIDs():
-            sc = supplier_connector.by_idurl(supplier_idurl)
-            if sc is None: 
-                sc = supplier_connector.create(supplier_idurl)
-            sc.automat('connect')
 
     def doPrepareListBackups(self, arg):
         if backup_control.HasRunningBackup():
@@ -228,7 +235,7 @@ class BackupMonitor(automat.Automat):
 
     def doCleanUpBackups(self, arg):
         # here we check all backups we have and remove the old one
-        # user can set how many versions of that file of folder to keep 
+        # user can set how many versions of that file or folder to keep 
         # other versions (older) will be removed here  
         versionsToKeep = settings.getGeneralBackupsToKeep()
         bytesUsed = backup_fs.sizebackups()/contacts.numSuppliers()
@@ -274,7 +281,6 @@ class BackupMonitor(automat.Automat):
             backup_control.Save() 
         collected = gc.collect()
         dhnio.Dprint(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
-
 
 
 def Restart():

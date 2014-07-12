@@ -109,10 +109,6 @@ _DoingShutdown = False
 _XMLRPCListener = None
 _XMLRPCPort = None
 _XMLRPCURL = ''
-_TransfersInDict = {}
-_TransfersInByIDURL = {}
-_TransfersOutDict = {}
-_TransfersOutByIDURL = {}
 _LastTransferID = None
 _LastInboxPacketTime = 0
 _StartingDeferred = None
@@ -305,6 +301,7 @@ def inbox(info):
        which we send to DHN sometime in the 24 hours after that.
     """
     global _DoingShutdown
+    global _LastInboxPacketTime
     if _DoingShutdown:
         dhnio.Dprint(6, "gate.inbox ignoring input since _DoingShutdown ")
         return None

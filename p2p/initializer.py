@@ -143,9 +143,7 @@ class Initializer(automat.Automat):
             if event == 'init-contacts-done' :
                 self.state = 'CONNECTION'
                 self.doInitConnection(arg)
-                network_connector.A('init')
                 p2p_connector.A('init')
-                raid_worker.A('init')
                 self.doUpdate(arg)
                 shutdowner.A('ready')
             elif ( event == 'shutdowner.state' and arg == 'FINISHED' ) :

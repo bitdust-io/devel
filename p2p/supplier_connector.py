@@ -113,8 +113,6 @@ class SupplierConnector(automat.Automat):
                     dhnio.DprintException()
                     return
             dhnio.WriteFile(settings.SupplierServiceFilename(self.idurl), newstate)
-        for cb in self.callbacks.values():
-            cb(self.idurl, oldstate, newstate)
             
     def set_callback(self, name, cb):
         self.callbacks[name] = cb
@@ -132,11 +130,12 @@ class SupplierConnector(automat.Automat):
                 self.GoDisconnect=False
             elif event == 'ack' and self.isServiceAccepted(arg) :
                 self.state = 'CONNECTED'
+                self.doReportConnect(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'disconnect' :
-                fire_hire.A('supplier-disconnected', self.idurl)
+                self.doReportNoService(arg)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'close' :
@@ -156,6 +155,7 @@ class SupplierConnector(automat.Automat):
         elif self.state == 'DISCONNECTED':
             if event == 'ack' and self.isServiceAccepted(arg) :
                 self.state = 'CONNECTED'
+                self.doReportConnect(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
@@ -168,7 +168,7 @@ class SupplierConnector(automat.Automat):
                 self.GoDisconnect=False
             elif event == 'fail' :
                 self.state = 'NO_SERVICE'
-                fire_hire.A('supplier-disconnected', self.idurl)
+                self.doReportNoService(arg)
         #---REQUEST---
         elif self.state == 'REQUEST':
             if event == 'disconnect' :
@@ -176,17 +176,19 @@ class SupplierConnector(automat.Automat):
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif not self.GoDisconnect and event == 'ack' and self.isServiceAccepted(arg) :
-                self.state = 'CONNECTED'
             elif self.GoDisconnect and event == 'ack' and self.isServiceAccepted(arg) :
                 self.state = 'REFUSE'
                 self.doCancelService(arg)
             elif event == 'timer-20sec' :
                 self.state = 'DISCONNECTED'
                 self.doCleanRequest(arg)
+                self.doReportDisconnect(arg)
             elif event == 'fail' or ( event == 'ack' and not self.isServiceAccepted(arg) and not self.GoDisconnect ) :
                 self.state = 'NO_SERVICE'
-                fire_hire.A('supplier-disconnected', self.idurl)
+                self.doReportNoService(arg)
+            elif event == 'ack' and not self.GoDisconnect and self.isServiceAccepted(arg) :
+                self.state = 'CONNECTED'
+                self.doReportConnect(arg)
         #---REFUSE---
         elif self.state == 'REFUSE':
             if event == 'shutdown' :
@@ -196,7 +198,7 @@ class SupplierConnector(automat.Automat):
             elif event == 'timer-10sec' or event == 'fail' or ( event == 'ack' and self.isServiceCancelled(arg) ) :
                 self.state = 'NO_SERVICE'
                 self.doCleanRequest(arg)
-                fire_hire.A('supplier-disconnected', self.idurl)
+                self.doReportNoService(arg)
 
     def isServiceAccepted(self, arg):
         """
@@ -253,6 +255,30 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         # callback.remove_interest(misc.getLocalID(), self.request_packet_id)
+
+    def doReportConnect(self, arg):
+        """
+        Action method.
+        """
+        dhnio.Dprint(14, 'supplier_connector.doReportConnect')
+        for cb in self.callbacks.values():
+            cb(self.idurl, 'CONNECTED')
+
+    def doReportNoService(self, arg):
+        """
+        Action method.
+        """
+        dhnio.Dprint(14, 'supplier_connector.doReportNoService')
+        for cb in self.callbacks.values():
+            cb(self.idurl, 'NO_SERVICE')
+
+    def doReportDisconnect(self, arg):
+        """
+        Action method.
+        """
+        dhnio.Dprint(14, 'supplier_connector.doReportDisconnect')
+        for cb in self.callbacks.values():
+            cb(self.idurl, 'DISCONNECTED')
 
     def _supplier_acked(self, response, info):
         dhnio.Dprint(16, 'supplier_connector._supplier_acked %r %r' % (response, info))

@@ -452,9 +452,7 @@ class SupplierQueue:
             elif packet.Command == commands.Data():
                 sc.automat('data', packet)
             else:
-                raise
-        else:
-            raise
+                raise Exception('incorrect packet type received')
         self.DoSend()
         # self.RunSend()
         dhnio.Dprint(14, "io_throttle.FileSendAck %s from %s, queue=%d" % (str(packet), self.remoteName, len(self.fileSendQueue)))

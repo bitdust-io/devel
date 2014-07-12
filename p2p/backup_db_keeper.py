@@ -153,9 +153,6 @@ class BackupDBKeeper(Automat):
             if event == 'timer-1hour' or event == 'restart' :
                 self.state = 'RESTART'
 
-#    def isAllSuppliersResponded(self, arg):
-#        return len(self.requestedSuppliers) <= 1
-            
     def isAllSuppliersAcked(self, arg):
         return len(self.sentSuppliers) == 0
 

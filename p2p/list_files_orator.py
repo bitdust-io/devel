@@ -27,7 +27,7 @@ EVENTS:
     * :red:`init`
     * :red:`local-files-done`
     * :red:`need-files`
-    * :red:`timer-1min`
+    * :red:`timer-15sec`
     
 """
 
@@ -80,7 +80,7 @@ class ListFilesOrator(Automat):
     """
     
     timers = {
-        'timer-1min': (60, ['REMOTE_FILES']),
+        'timer-15sec': (15.0, ['REMOTE_FILES']),
         }
 
     def state_changed(self, oldstate, newstate):
@@ -104,9 +104,9 @@ class ListFilesOrator(Automat):
                 self.state = 'NO_FILES'
         #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':
-            if ( event == 'timer-1min' and self.isSomeListFilesReceived(arg) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(arg) ) :
+            if ( event == 'timer-15sec' and self.isSomeListFilesReceived(arg) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(arg) ) :
                 self.state = 'SAW_FILES'
-            elif event == 'timer-1min' and not self.isSomeListFilesReceived(arg) :
+            elif event == 'timer-15sec' and not self.isSomeListFilesReceived(arg) :
                 self.state = 'NO_FILES'
         #---SAW_FILES---
         elif self.state == 'SAW_FILES':

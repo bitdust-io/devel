@@ -74,6 +74,7 @@ import transport.gate as gate
 import dht.dht_service as dht_service
 import lib.udp as udp
 import stun.stun_server as stun_server
+import stun.stun_client as stun_client
 
 import userid.id_server as id_server
 
@@ -137,6 +138,7 @@ class NetworkConnector(Automat):
         elif self.state == 'UPNP':
             if event == 'upnp-done' :
                 self.state = 'CONNECTED'
+                stun_client.A('start')
             elif event == 'reconnect' :
                 self.Reset=True
         #---CONNECTED---
@@ -180,6 +182,7 @@ class NetworkConnector(Automat):
                 self.doUPNP(arg)
             elif event == 'network-up' and not self.isNeedUPNP(arg) :
                 self.state = 'CONNECTED'
+                stun_client.A('start')
         #---DOWN---
         elif self.state == 'DOWN':
             if event == 'network-down' :

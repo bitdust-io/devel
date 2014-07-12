@@ -216,7 +216,7 @@ def Unserialize(data):
         return None
     newobject = misc.StringToObject(data)
     if newobject is None:
-        dhnio.Dprint(6, "dhnpacket.Unserialize WARNING result is None")
+        # dhnio.Dprint(6, "dhnpacket.Unserialize WARNING result is None")
         return None
     if type(newobject) != types.InstanceType:
         dhnio.Dprint(6, "dhnpacket.Unserialize WARNING not an instance: " + str(newobject))

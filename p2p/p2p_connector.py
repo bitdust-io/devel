@@ -64,15 +64,14 @@ import lib.settings as settings
 import lib.dhnnet as dhnnet
 import lib.automat as automat
 import lib.automats as automats
-import lib.contacts as contacts
 
 import dht.dht_service as dht_service
 
 import transport.callback as callback
-import transport.gate as gate
+
+import raid.raid_worker as raid_worker
 
 import initializer
-import shutdowner
 import network_connector
 import backup_monitor
 import backup_db_keeper
@@ -128,11 +127,13 @@ class P2PConnector(automat.Automat):
             if event == 'init' :
                 self.state = 'NETWORK?'
                 self.doInit(arg)
+                network_connector.A('init')
                 backup_monitor.A('init')
                 backup_db_keeper.A('init')
                 list_files_orator.A('init')
                 fire_hire.A('init')
                 data_sender.A('init')
+                raid_worker.A('init')
         #---NETWORK?---
         elif self.state == 'NETWORK?':
             if ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :
