@@ -28,12 +28,12 @@ import diskspace
 import nameurl
 
 
-_BaseDirPath = ''   # location for ".dhn" folder, lets keep all program DB in one place
+_BaseDirPath = ''   # location for ".bitpie" folder, lets keep all program DB in one place
                     # however you can setup your donated location in another place, second disk ...
-                    # Linux: /home/$USER/.dhn
-                    # WindowsXP: c:\\Document and Settings\\[user]\\.dhn
-                    # Windows7: c:\\Users\\[user]\\.dhn 
-_UserConfig = None  # user settings read from file .dhn/metadata/user-config
+                    # Linux: /home/$USER/.bitpie
+                    # WindowsXP: c:\\Document and Settings\\[user]\\.bitpie
+                    # Windows7: c:\\Users\\[user]\\.bitpie
+_UserConfig = None  # user settings read from file .bitpie/metadata/userconfig
 _OverrideDict = {}  # list of values to replace some of user settings 
 _BandwidthLimit = None 
 _BackupBlockSize = None
@@ -410,38 +410,6 @@ def ApplicationName():
     """
     return 'BitPie.NET'
 
-def CentralID():
-    """
-    IDURL of the Central server.
-    """
-    return 'http://identity.datahaven.net/dhncentral.xml'
-
-def MoneyServerID():
-    """
-    IDURL of the Money server to get payments and so exchange $ US for DHN credits.
-    TODO: should be something like dhnpayments
-    """
-    return 'http://identity.datahaven.net/offshore.xml'
-
-def MarketServerID():
-    """
-    IDURL of the Market server to trade DHN credits for bitcoins.
-    """
-    return 'http://identity.datahaven.net/dhnmarket.xml'
-
-def MarketPlaceURL():
-    """
-    A public location of the Market Place.
-    """
-    return 'http://bitpie.net:%d/' % MarketServerWebPort()
-
-def MarketServerBitCoinAddress():
-    """
-    A bitcoin address to receive payments.
-    """
-    return "1467zVrKrexBQTM3uyQCZCgAzKa5AFBcm3" # Veselin Dell machine
-    return "1QAhYF3n1vvpZRh6nxkicERtmiHVL5tJbP" # caesarion.ru
-
 def ListFilesFormat():         
     """
     Argument to ListFiles command to say format to return the data in.
@@ -477,11 +445,11 @@ def UpdateLocationURL(repo=DefaultRepo()):
     Return a given repository location for Windows.
     """
     if repo == 'devel':
-        return 'http://bitpie.net/repo/devel/'
+        return 'http://bitpie.net/devel/'
     elif repo == 'stable':
-        return 'http://bitpie.net/repo/stable/'
+        return 'http://bitpie.net/stable/'
     else: 
-        return 'http://identity.datahaven.net/downloads/'
+        return 'http://bitpie.net/stable/'
 
 def FilesDigestsFilename():
     """
@@ -523,35 +491,6 @@ def LegalUsernameChars():
     """
     return set("abcdefghijklmnopqrstuvwxyz0123456789-_")
 
-def NotRealUsers():
-    """
-    A list of user IDs to not use in the stats - this is our test machines, not real users.   
-    """
-    return ('http://identity.datahaven.net/cate2gpa.xml',
-            'http://identity.datahaven.net/dcdemo.xml',
-            'http://identity.datahaven.net/dctest23.xml',
-            'http://identity.datahaven.net/derekcate.xml',
-            'http://identity.datahaven.net/derekcatewin.xml',
-            'http://identity.datahaven.net/dhncentral.xml',
-            'http://identity.datahaven.net/ethan.xml',
-            'http://identity.datahaven.net/ekaterina.xml',
-            'http://identity.datahaven.net/gazebo.xml',
-            'http://identity.datahaven.net/gazebo4.xml',
-            'http://identity.datahaven.net/guesthouse.xml',
-            'http://identity.datahaven.net/hcate2.xml',
-            'http://identity.datahaven.net/mediapc2.xml',
-            'http://identity.datahaven.net/offshore.xml',
-            'http://identity.datahaven.net/terynlinux.xml',
-            'http://identity.datahaven.net/terynvista.xml',
-            'http://identity.datahaven.net/veseleeypc.xml',
-            'http://identity.datahaven.net/veselin-macos.xml',
-            'http://identity.datahaven.net/veselin.xml',
-            'http://identity.datahaven.net/veselinux.xml',
-            'http://identity.datahaven.net/veselonflash.xml',
-            'http://identity.datahaven.net/vinceworkstation.xml',
-            'http://identity.datahaven.net/vista3.xml',
-            'http://identity.datahaven.net/workoffshoreai.xml',)
-
 #------------------------------------------------------------------------------ 
 #--- FOLDERS ----------------------------------------------------------------------------
 
@@ -560,40 +499,27 @@ def BaseDirDefault():
     A default location for BitPie.NET data folder.
     All of the paths below should be under some base directory.
     """
-    return os.path.join(os.path.expanduser('~'), '.dhn')
+    return os.path.join(os.path.expanduser('~'), '.bitpie')
 
 def BaseDirLinux():
     """
     Default data folder location for Linux users.
     """
-    # new_path = os.path.join(os.path.expanduser('~'), '.datahaven')
-    # if os.path.isdir(new_path):
-    #     return new_path
-    # old_path = os.path.join(os.path.expanduser('~'), 'datahavennet')
-    # if os.path.isdir(old_path):
-    #     return old_path
-    # return new_path
-    return os.path.join(os.path.expanduser('~'), '.dhn')
+    return os.path.join(os.path.expanduser('~'), '.bitpie')
 
 def BaseDirWindows():
     """
     Default data folder location for Windows users.
     """
-    if not dhnio.Windows():
-        return BaseDirDefault()
-    #return os.path.join(os.path.expanduser('~'), 'Application Data', 'DataHavenNet')
-    # default_path = os.path.join(os.path.expanduser('~'), 'Application Data')
-    # return os.path.join(os.environ.get('APPDATA', default_path), 'BitPie.NET')
-    return os.path.join(os.path.expanduser('~'), '.dhn')
+    return os.path.join(os.path.expanduser('~'), '.bitpie')
 
 def BaseDirMac():
     """
     Default data folder location for MacOS users.
     """
-    # return os.path.join(os.path.expanduser('~'), '.datahaven')
-    return os.path.join(os.path.expanduser('~'), '.dhn')
+    return os.path.join(os.path.expanduser('~'), '.bitpie')
 
-def DefaultBaseDir():
+def GetBaseDir():
     """
     A portable method to get the default data folder location.  
     """
@@ -1012,9 +938,9 @@ def CertificateFiles():
     """
     The idea is to have a global certificate for BitPie.NET server, just like https works.
     """
-    return [    os.path.join(MetaDataDir(), 'dhn.cer'),
-                os.path.join('.', 'dhn.cer'),
-                os.path.join(dhnio.getExecutableDir() ,'dhn.cer'),]
+    return [    os.path.join(MetaDataDir(), 'bitpie.cer'),
+                os.path.join('.', 'bitpie.cer'),
+                os.path.join(dhnio.getExecutableDir() ,'bitpie.cer'),]
 
 def CSpaceSavedProfileFile():
     """
@@ -2017,13 +1943,13 @@ def _initBaseDir(base_dir=None):
             return
 
     # get the default place for thet machine
-    default_path = DefaultBaseDir()
+    default_path = GetBaseDir()
 
     # we can use folder ".dhn" placed on the same level with binary folder:
     # /..
     #   /.dhn - data files
     #   /datahaven  - binary files
-    path1 = str(os.path.abspath(os.path.join(dhnio.getExecutableDir(), '..', '.dhn')))
+    path1 = str(os.path.abspath(os.path.join(dhnio.getExecutableDir(), '..', '.bitpie')))
     # and default path will have lower priority
     path2 = default_path
     

@@ -20,9 +20,7 @@ This module is for simple routines that do not require importing any of our code
     
 Most used method here is ``Dprint`` - prints a log string.
 
-TODO need to do some refactoring here:
-    https://github.com/datahaven-net/datahaven/issues/5
-
+TODO need to do some refactoring here
 """
 
 import os
@@ -436,7 +434,7 @@ def ExceptionHook(type, value, traceback):
 def SetWebStream(webstreamfunc):
     """
     Set callback method to be called in Dprint, used to show logs in the WEB browser.
-    See ``datahaven.lib.weblog`` module. 
+    See ``bitpie.lib.weblog`` module. 
     """
     global WebStreamFunc
     WebStreamFunc = webstreamfunc

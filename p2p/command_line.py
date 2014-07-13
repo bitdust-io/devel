@@ -65,9 +65,7 @@ def run(opts, args, overDict, pars):
     appList = dhnio.find_process([
         'dhnmain.exe',
         'dhnmain.py',
-        'dhn.py',
         'bitpie.py',
-        'regexp:^/usr/bin/python\ +/usr/bin/datahaven.*$',
         'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
         ])
     running = len(appList) > 0
@@ -794,9 +792,7 @@ def cmd_uninstall(opts, args, overDict):
             appList = dhnio.find_process([
                 'dhnmain.exe',
                 'dhnmain.py',
-                'dhn.py',
                 'bitpie.py',
-                'regexp:^/usr/bin/python\ +/usr/bin/datahaven.*$',
                 'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
                 'dhnview.exe',
                 'dhnview.py',

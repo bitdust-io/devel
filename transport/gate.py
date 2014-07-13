@@ -324,7 +324,7 @@ def inbox(info):
         return None
     if newpacket is None:
         dhnio.Dprint(2, "gate.inbox WARNING newpacket from %s://%s is None" % (info.proto, info.host))
-        return
+        return None
     try:
         Command = newpacket.Command
         OwnerID = newpacket.OwnerID

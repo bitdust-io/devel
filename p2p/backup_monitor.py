@@ -282,6 +282,7 @@ class BackupMonitor(automat.Automat):
         collected = gc.collect()
         dhnio.Dprint(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
 
+#------------------------------------------------------------------------------ 
 
 def Restart():
     """

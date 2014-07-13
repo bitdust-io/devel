@@ -163,7 +163,7 @@ def SplitMessage(clearmessage):
 def SaveMessage(clearmessage):
     msguid = UniqueID()
     dhnio.Dprint(6, "message.SaveMessage %s" % msguid)
-    msgfilename = os.path.join(settings.getMessagesDir(),  msguid+'.dhnmessage')
+    msgfilename = os.path.join(settings.getMessagesDir(),  msguid+'.message')
     msgfile = file(msgfilename, 'w')
     msgfile.write(str(clearmessage))
     msgfile.close()
@@ -176,14 +176,13 @@ def LoadMessage(msgpath):
     return SplitMessage(clearmessage) 
 
 def ReadMessage(messageuid):
-    msgpath = os.path.join(settings.getMessagesDir(), messageuid + '.dhnmessage')
-    # msgpath = settings.getMessagesDir() + os.sep + messageuid + '.dhnmessage'
+    msgpath = os.path.join(settings.getMessagesDir(), messageuid + '.message')
     if not os.path.exists(msgpath):
         return None
     return LoadMessage(msgpath)
 
 def DeleteMessage(messageuid):
-    msgpath = os.path.join(settings.getMessagesDir(), messageuid + '.dhnmessage')
+    msgpath = os.path.join(settings.getMessagesDir(), messageuid + '.message')
     if not os.path.exists(msgpath):
         return False
     try:
@@ -225,7 +224,7 @@ def ListAllMessages():
     mlist = []
     i = 0
     for filename in os.listdir(settings.getMessagesDir()):
-        if not filename.endswith('.dhnmessage'):
+        if not filename.endswith('.message'):
             continue
         msgpath = os.path.join(settings.getMessagesDir(), filename)
         # msgpath = settings.getMessagesDir() + os.sep + filename

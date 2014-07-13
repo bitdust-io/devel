@@ -3888,6 +3888,7 @@ class SupplierPage(Page):
 
         action = arg(request, 'action')
 
+        #---replace
         if action == 'replace':
             msg = ''
             msg += '<font color=red><b>WARNING!</b></font><br>\n'
@@ -3921,6 +3922,7 @@ class SupplierPage(Page):
         except:
             percUsed = 0.0
 
+        #---draw
         src += '<h1>%s</h1>\n' % nameurl.GetName(self.idurl)
         src += '<table>\n'
         src += '<tr><td>IDURL</td><td><a href="%s" target="_blank">%s</a></td></tr>\n' % (self.idurl, self.idurl)
@@ -4107,7 +4109,9 @@ class SuppliersPage(Page):
                     except:
                         idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
                 if contacts.IsSupplier(idurl):
-                    fire_hire.A('fire-him-now', [idurl,])
+                    fire_hire.AddSupplierToFire(idurl)
+                    backup_monitor.Restart()
+                    # fire_hire.A('fire-him-now', [idurl,])
         
         #---action change---
         elif action == 'change':
@@ -4262,7 +4266,7 @@ class SuppliersPage(Page):
                     src += '<table cellpadding=0 cellspacing=0 border=0>\n'
                     for c in idcontacts:
                         proto,x,x = c.partition('://')
-                        color = 'green' if proto in p2p_connector.WorkingProtos() else 'gray'
+                        color = 'green' if proto in p2p_connector.active_protos() else 'gray'
                         src += '<tr><td>'
                         src += '<font color="%s" size=-4>' % color
                         src += c

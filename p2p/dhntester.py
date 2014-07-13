@@ -33,14 +33,10 @@ def logfilepath():
     Need to make sure the ``dhntester`` log is in a directory the user has permissions for,
     Such as the customer data directory.  Possibly move to temp directory?
     """
-#    if platform.uname()[0] == 'Windows':
-#        logspath = os.path.join(os.environ['APPDATA'], 'BitPie.NET', 'logs')
-#    else:
-#        logspath = os.path.join(os.path.expanduser('~'), '.datahaven', 'logs')
-    logspath = os.path.join(os.path.expanduser('~'), '.dhn', 'logs')
+    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
     if not os.path.isdir(logspath):
-        return 'dhntester.log'
-    return os.path.join(logspath, 'dhntester.log')
+        return 'tester.log'
+    return os.path.join(logspath, 'tester.log')
 
 def printlog(txt):
     """
@@ -54,7 +50,6 @@ def printlog(txt):
 
 if __name__ == "__main__":
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath('datahaven'))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 

@@ -20,7 +20,7 @@ import datetime
 def interval_to_next_hour():
     """
     Here is a value for "seconds to to the end of an hour.:" 
-        C:\work\datahaven>python -c "import lib.dhnmath; print lib.dhnmath.interval_to_next_hour()"
+        C:\work\bitpie>python -c "import lib.dhnmath; print lib.dhnmath.interval_to_next_hour()"
         3538.81299996
     """
     _struct_time = list(time.localtime())
@@ -36,7 +36,7 @@ def shedule_continuously(last_time, interval):
     Return value for "moment when next time interval event will happens".
     In other words: when need to run the backup exactly, within that ``interval`` in seconds.
     ``last_time`` is taken from file [DHN data dir]\metadata\updateshedule.
-        C:\work\datahaven>python -c "import time, lib.dhnmath; print lib.dhnmath.shedule_continuously(1397152186.41, 60)-time.time()"
+        C:\work\bitpie>python -c "import time, lib.dhnmath; print lib.dhnmath.shedule_continuously(1397152186.41, 60)-time.time()"
         12.5670001507
  
     """
@@ -54,7 +54,7 @@ def shedule_next_hourly(last_time, interval):
     Return value for "moment when next time interval event happens".
     ``interval`` is number of hours between events.
     ``last_time`` is taken from file [DHN data dir]\metadata\updateshedule.
-        C:\work\datahaven>python -c "import time, lib.dhnmath; print lib.dhnmath.shedule_next_hourly(1397152186.41, 5)-time.time()"
+        C:\work\bitpie>python -c "import time, lib.dhnmath; print lib.dhnmath.shedule_next_hourly(1397152186.41, 5)-time.time()"
         9930.79699993     
     """
     try:

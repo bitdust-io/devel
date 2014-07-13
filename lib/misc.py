@@ -50,16 +50,6 @@ import userid.identity
 
 #------------------------------------------------------------------------------ 
 
-#if __name__ == '__main__':
-    #dirpath = os.path.dirname(os.path.abspath(__file__))
-    #sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
-    #print '\n'.join(sys.path)
-    #sys.modules['datahaven.lib.dhnpacket'] = dhnpacket
-    #sys.modules['datahaven.lib.dhnpacket'].dhnpacket = str #dhnpacket.dhnpacket
-    #import datahaven.lib.dhnpacket as dhnpacket
-
-#-------------------------------------------------------------------------------
-
 _RemoveAfterSent = True
 
 # Functions outside should use getLocalIdentity()
@@ -626,73 +616,14 @@ def AsciiToBinary(input):
     return base64.decodestring(input)
 
 def ObjectToString(obj):
+    """
+    """
     return cPickle.dumps(obj, protocol=cPickle.HIGHEST_PROTOCOL)
 
 def StringToObject(inp):
+    """
+    """
     return cPickle.loads(inp)
-
-def ObjectToStringOld(input):
-    """
-    The core method.
-    Create a string from an object in memory, uses ``twisted.spread``.
-    Used to serialize objects on disk.  
-    """
-    banana.setPrefixLimit(200000000)                              # 200 MB is ok - does not work
-    banana.SIZE_LIMIT = 200000000                                 # PREPRO not sure this is nice
-    return banana.encode(jelly.jelly(input))
-
-def StringToObjectOld(input):
-    """
-    This is a reverse method to ``ObjectToString``.
-    Create a real python object in memory from ``input`` string.
-    Uses ``twisted.spread``, this is core method.
-    """
-    banana.setPrefixLimit(200000000)                              # 200 MB is ok
-    banana.SIZE_LIMIT = 200000000                                 # PREPRO not sure this is nice
-    if len(input) == 0:
-        dhnio.Dprint(1, 'misc.StringToObject ERROR in banana.decode, data length=0')
-        return None
-    try:
-        bananaDecode = banana.decode(input)
-    except:
-        if len(input) > 0:
-            fd, filename = tmpfile.make('other', '', 'banana.error-')
-            os.write(fd, input)
-            os.close(fd)
-        dhnio.Dprint(1, 'misc.StringToObject ERROR in banana.decode, data length=%d' % len(input))
-        dhnio.DprintException()
-        return None
-    try:
-        # works for 384 bit RSA keys
-        unjellyObject = jelly.unjelly(bananaDecode)
-    except:
-        # small patch to fix new dhnpacket location
-        # this is for oldest code to understand newest code
-        if bananaDecode[0] in [
-                'lib.dhnpacket.dhnpacket',
-                'p2p.datahaven.lib.dhnpacket.dhnpacket',
-                ]:
-            bananaDecode[0] = 'datahaven.lib.dhnpacket.dhnpacket'
-
-        # different versions need to understand each other
-        # this is for newest code to understand oldest code
-        elif bananaDecode[0] == 'datahaven.lib.dhnpacket.dhnpacket':
-            bananaDecode[0] = 'lib.dhnpacket.dhnpacket'
-
-        # try again
-        try:
-            unjellyObject = jelly.unjelly(bananaDecode)
-            dhnio.Dprint(4, 'misc.StringToObject bananaDecode[0]=%s' % str(bananaDecode[0]))
-        except:
-            if len(bananaDecode) > 0:
-                fd, filename = tmpfile.make('other', '', 'jelly.error-')
-                os.write(fd, input)
-                os.close(fd)
-            dhnio.Dprint(1, 'misc.StringToObject ERROR in jelly.unjelly, data length=%d' % len(str(input)))
-            dhnio.DprintException()
-            return None
-
-    return unjellyObject
 
 def ObjectToAscii(input):
     """
@@ -1269,10 +1200,6 @@ def ReadRepoLocation():
                     dhnio.DprintException()
         return 'sources', 'http://bitpie.net/download.html'
             
-        #TODO need to add something - so user can change the current repository
-#        if dhnio.getExecutableDir().count('/usr/share/datahaven'):
-#            return 'devel', 'http://bitpie.net/apt'
-#        return 'sources', 'http://bitpie.net/download.html'
     src = dhnio.ReadTextFile(settings.RepoFile()).strip()
     if src == '':
         return settings.DefaultRepo(), settings.UpdateLocationURL(settings.DefaultRepo())
@@ -1474,8 +1401,6 @@ def DoRestart(param=''):
         
         pypyth = sys.executable
         cmdargs = [sys.executable]
-        # if sys.argv[0] == '/usr/share/datahaven/dhn.py':
-        #     cmdargs.append('/usr/bin/datahaven')
         if sys.argv[0] == '/usr/share/bitpie/bitpie.py':
             cmdargs.append('/usr/bin/bitpie')
         else:
@@ -1633,14 +1558,6 @@ def UpdateDesktopShortcut():
             if os.path.exists(pathToWindowsShortcut(settings.getIconLinkFilename())):
                 removeWindowsShortcut(settings.getIconLinkFilename())
 
-    # under Linux we need to mark file to be executable.
-    # let's disable the desktop icon for now
-    # elif dhnio.Linux():
-        # if settings.getGeneralDesktopShortcut():
-        #     RunShellCommand("xdg-desktop-icon install --novendor datahaven.desktop")
-        # else:
-        #     RunShellCommand("xdg-desktop-icon uninstall datahaven.desktop")
-
 
 def UpdateStartMenuShortcut():
     """
@@ -1660,13 +1577,6 @@ def UpdateStartMenuShortcut():
             if os.path.exists(pathToStartMenuShortcut(settings.getIconLinkFilename())):
                 removeStartMenuShortcut('Data Haven .NET.lnk')
 
-    # we do not need this at all
-    # .deb file will take care of the application menu shortcut
-    # elif dhnio.Linux():
-    #     if settings.getGeneralStartMenuShortcut():
-    #         RunShellCommand("xdg-desktop-menu install --novendor datahavenmenu.desktop")
-    #     else:
-    #         RunShellCommand("xdg-desktop-menu uninstall datahavenmenu.desktop")
 
 def UpdateSettings():
     """
@@ -1675,24 +1585,6 @@ def UpdateSettings():
     I used that place sometimes to 'patch' users settings.
     """
     dhnio.Dprint(6, 'misc.UpdateSettings')
-
-    # setting up a Desktop shortcuts
-    # UpdateDesktopShortcut()
-    # UpdateStartMenuShortcut()
-
-    # setting up autorun
-    # I just realized this.
-    # we can not do this on Linux
-    # we need permissions to write to the /etc/crontab
-    # under Linux we can do it only during installing of datahaven package
-    # Best choice is removing Autorun option at all!
-    # So let's just check it every time we start (for Windows)
-    # if dhnio.isFrozen() and dhnio.Windows():
-    #     SetAutorunWindows()
-    #     UpdateRegistryUninstall()
-    # UPDATED: 
-    # did a new setup installer for Windows.
-    # it will handle all those things
 
 #-------------------------------------------------------------------------------
 
@@ -1945,63 +1837,6 @@ if __name__ == '__main__':
     dhnio.init()
     init()
 
-#    print time.localtime()    
-#    v = NewBackupID()
-#    i = v.rfind('M')
-#    print v, i
-#    ampm = v[i-1:i+1]
-#    st_time = v[1:i-1]
-#    print ampm, st_time
-#    bk1 = '0/0/1/'+v+'2'
-#    bk2 = '0/0/1/'+v+'1'
-#    print backup_id_compare(bk1, bk2)
-    
-    # import base64
-    # base64.
-    
-    # print len(BASE_ALPHABET)
-    
-    # a = FilePathToBackupID(sys.argv[1])
-    # b = FilePathToBackupID(sys.argv[1], False)
-    # b = BackupIDToFilePath(a)
-    # print len(a), a
-    # print b, len(b)
-    # print os.path.exists(b)
-    
-    #debug
-#    from twisted.internet import reactor
-#    reactor.callLater(1, SetAutorun)
-#    reactor.run()
-
-#    target = 'C:\Program Files\DataHaven.Net\dhnmain.exe'
-#    workdir = 'C:\Program Files\DataHaven.Net'
-
-
-#    SetAutorun()
-
-#    print calculate_best_dimension(2)
-
-#    path = 'c:\\Program Files\\\xc4 \xd8 \xcd'
-#    batfilename = MakeBatFile2Restart(local_dir=path)
-##    RunBatFile(batfilename, settings.RunUpdateLogFilename())
-#    RunBatFile(batfilename)
-
-    #import imp
-    #sys.modules['datahaven.lib.dhnpacket'] = imp.new_module('datahaven.lib.dhnpacket')
-    #sys.modules['datahaven.lib.dhnpacket'].dhnpacket = dhnpacket.dhnpacket
-    #.dhnpacket = dhnpacket.dhnpacket # sys.modules['dhnpacket']
-
-    #m = sys.modules.keys()
-    #m.sort()
-    #print '\n'.join(m)
-
-    #sss = open('jelly.error1').read()
-    #o = StringToObject(sss)
-    #print type(o), o
-
-#    from twisted.internet.defer import setDebugging
-#    setDebugging(True)
-
     if True:
         from twisted.internet import reactor
         from twisted.internet.defer import Deferred        
@@ -2015,23 +1850,3 @@ if __name__ == '__main__':
         SendDevReport('subject ', 'some body112', True, _progress, d)
         reactor.run()
         
-        
-#    else:
-#        SendDevReportOld('subject', 'some body\n LALALALAL\n BitPie.NET for all!!!', True)
-
-#    for i in range(24):
-#        #print '-------------------'
-#        tm = time.time()+i*60*60
-#        #print tm
-#        st = time.localtime(tm)
-#        #print st
-#        bid = NewBackupID(st)
-#        #print bid
-#        tm2 = TimeFromBackupID(bid)
-#        #print tm2
-#        ok = int(tm) == int(tm2)
-#        print ok
-
-#    for i in range(10):
-#        print pow(8, i), seconds_to_time_left_string(pow(8, i))
-

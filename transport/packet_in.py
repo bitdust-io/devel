@@ -201,11 +201,11 @@ class PacketIn(automat.Automat):
         """
         if arg is None:
             stats.count_inbox(self.sender_idurl, self.proto, 'failed', self.bytes_received)
-            callback.run_inbox_callbacks(None, self, self.status, self.error_message)
+            # callback.run_inbox_callbacks(None, self, self.status, self.error_message)
         else:
             status, bytes_received, error_message = arg
             stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
-            callback.run_inbox_callbacks(None, self, status, error_message)
+            # callback.run_inbox_callbacks(None, self, status, error_message)
 
     def doDestroyMe(self, arg):
         """

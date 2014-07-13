@@ -65,11 +65,11 @@ def main():
         msvcrt.setmode(sys.stderr.fileno(), os.O_BINARY)
 
     dhnio.init()
-    logspath = os.path.join(os.path.expanduser('~'), '.dhn', 'logs')
+    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
     if not os.path.isdir(logspath):
-        logspath = 'bpraid.log'
+        logspath = 'raid.log'
     else:
-        logspath = os.path.join(logspath, 'bpraid.log')
+        logspath = os.path.join(logspath, 'raid.log')
     dhnio.OpenLogFile(logspath)
     dhnio.SetDebug(20)
 

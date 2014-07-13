@@ -40,7 +40,7 @@ def Receipt(tup):
 
 def SaveReceipt(data):
     try:
-        rfilename = settings.getReceiptsDir() + os.sep + data[0] + '.dhnreceipt'
+        rfilename = settings.getReceiptsDir() + os.sep + data[0] + '.receipt'
     except:
         return
     src = ''
@@ -128,7 +128,7 @@ def LoadReceipt(path):
     return UnpackReceipt2(body)
 
 def ReadReceipt( number ):
-    path = settings.getReceiptsDir() + os.sep + number + '.dhnreceipt'
+    path = settings.getReceiptsDir() + os.sep + number + '.receipt'
     if not os.path.exists(path):
         dhnio.Dprint(1, 'money.ReadReceipt ERROR file not exist ' + path)
         return None
@@ -145,7 +145,7 @@ def ReadAllReceipts():
         filenames = os.listdir(settings.getReceiptsDir())
         filenames.sort()
         for filename in filenames:
-            if not filename.endswith('.dhnreceipt'):
+            if not filename.endswith('.receipt'):
                 continue
 
             receipt_id = filename[:-11]
@@ -272,7 +272,7 @@ def SearchMissingReceipts(last_receipt_id=-1):
     max_index = -1
     for filename in os.listdir(settings.getReceiptsDir()):
         filepath = os.path.join(settings.getReceiptsDir(), filename)
-        if not filename.endswith('.dhnreceipt'):
+        if not filename.endswith('.receipt'):
             try2remove(filepath)
             continue
         receipt_id = filename[:-11]

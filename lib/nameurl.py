@@ -119,7 +119,7 @@ def UrlFilenameHTML(url):
     """
     Another method to simplify URL, so you can create a filename from URL string.
         >>> nameurl.UrlFilenameHTML('http://id.bitpie.net/veselin.xml')
-        'identity_datahaven_net_veselin_xml'     
+        'id_bitpie_net_veselin_xml'     
     """
     global legalset
     s = url.replace('http://', '')

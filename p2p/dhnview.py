@@ -191,22 +191,12 @@ NO_IMAGE = 'icons/delete01.png'
 #------------------------------------------------------------------------------
 
 def sharedPath(filename, subdir='logs'):
-    return os.path.join(os.path.expanduser('~'), '.dhn', subdir, filename)
-#    if platform.uname()[0] == 'Windows':
-#        return os.path.join(os.environ['APPDATA'], 'BitPie.NET', subdir, filename)
-#    else:
-#        new_path = os.path.join(os.path.expanduser('~'), '.datahaven')
-#        if os.path.isdir(new_path):
-#            return os.path.join(new_path, subdir, filename)
-#        old_path = os.path.join(os.path.expanduser('~'), 'datahavennet')
-#        if os.path.isdir(old_path):
-#            return os.path.join(old_path, subdir, filename)
-#        return os.path.join(new_path, subdir, filename)
+    return os.path.join(os.path.expanduser('~'), '.bitpie', subdir, filename)
 
 
-def WriteText(txt, filename='dhnview.log', mode='a', sharedLocation=True, subdir='logs'):
+def WriteText(txt, filename='view.log', mode='a', sharedLocation=True, subdir='logs'):
     global ShowLogs
-    if ShowLogs and filename not in ['dhnview-html.log', 'dhnview-form.log',]:
+    if ShowLogs and filename not in ['view-html.log', 'view-form.log',]:
         sys.stdout.write(txt)
         return
 
@@ -218,7 +208,7 @@ def WriteText(txt, filename='dhnview.log', mode='a', sharedLocation=True, subdir
     fout.close()
 
 
-def WriteException(filename='dhnview.log', mode='a', sharedLocation=True, subdir='logs'):
+def WriteException(filename='view.log', mode='a', sharedLocation=True, subdir='logs'):
     maxTBlevel=100
     cla, exc, trbk = sys.exc_info()
     try:

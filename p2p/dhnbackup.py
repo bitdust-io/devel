@@ -47,10 +47,10 @@ def logfilepath():
     """
     A method to detect where is placed the log file for ``dhnbackup`` child process.
     """
-    logspath = os.path.join(os.path.expanduser('~'), '.dhn', 'logs')
+    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
     if not os.path.isdir(logspath):
-        return 'dhnbackup.log'
-    return os.path.join(logspath, 'dhnbackup.log')
+        return 'backup.log'
+    return os.path.join(logspath, 'backup.log')
 
 def printlog(txt):
     """
@@ -78,11 +78,7 @@ def _LinuxExcludeFunction(filename):
     If tar gets stuff it can not read - it just stops and we the whole process is failed.
     """
     # TODO - must do more smart checking 
-    if filename.count("datahavennet"):
-        return True
-    if filename.count(".datahaven"):
-        return True
-    if filename.count(".dhn"):
+    if filename.count(".bitpie"):
         return True
     if not os.access(filename, os.R_OK):
         return True
@@ -101,7 +97,7 @@ def _WindowsExcludeFunction(filename):
         os.access(filename, os.R_OK) == False 
     to skip a file if I couldn't read it, but I did not get it to work every time. DWC.
     """
-    if (filename.lower().find("local settings\\temp") != -1) or (filename.lower().find("datahaven.net") != -1) :
+    if (filename.lower().find("local settings\\temp") != -1) or (filename.lower().find(".bitpie") != -1) :
         return True
     return False # don't exclude the file
 

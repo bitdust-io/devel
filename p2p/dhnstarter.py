@@ -32,18 +32,7 @@ import EasyDialogs
 
 def sharedPath(filename, subdir='logs'):
     appdata = os.path.expanduser('~')
-    sharedDir = os.path.join(appdata, '.dhn', subdir)
-#    try:
-#        appdata = os.environ['APPDATA']
-#    except:
-#        if platform.uname()[0] == 'Windows': 
-#            appdata = os.path.join(os.path.expanduser('~'), 'Application Data')
-#        else:
-#            appdata = os.path.expanduser('~')
-#    if platform.uname()[0] == 'Windows':
-#        sharedDir = os.path.join(appdata, 'BitPie.NET', subdir)
-#    else:
-#        sharedDir = os.path.join(appdata, '.datahaven', subdir)
+    sharedDir = os.path.join(appdata, '.bitpie', subdir)
     if filename is None:
         return os.path.abspath(sharedDir)
     return os.path.abspath(os.path.join(sharedDir, filename))
@@ -294,7 +283,6 @@ def main():
             'dhnmain.py',
             'dhnview.exe',
             'dhnview.py',
-            'dhn.py',
             'bitpie.py',
             ])
 
@@ -317,7 +305,6 @@ def main():
             'dhnmain.py',
             'dhnview.exe',
             'dhnview.py',
-            'dhn.py',
             'bitpie.py',
             ])
         res = stop_all(search_list)
@@ -583,8 +570,6 @@ def run():
         res = stop_all([    'dhnstarter.',
                             'dhnmain.',
                             'dhnview.',
-                            'dhn.',
-                            'datahaven', 
                             'bitpie.',
                             ])
         if res != 0:

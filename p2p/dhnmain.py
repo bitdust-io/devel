@@ -274,10 +274,8 @@ def kill():
         appList = dhnio.find_process([
             'dhnmain.exe',
             'dhnmain.py',
-            'dhn.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-            'regexp:^/usr/bin/python\ +/usr/bin/datahaven.*$',
             'dhnview.exe',
             'dhnview.py',
             'dhnbackup.exe',
@@ -320,10 +318,8 @@ def wait_then_kill(x):
         appList = dhnio.find_process([
             'dhnmain.exe',
             'dhnmain.py',
-            'dhn.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-            'regexp:^/usr/bin/python\ +/usr/bin/datahaven.*$',
             'dhnview.exe',
             'dhnview.py',
             'dhnbackup.exe',
@@ -412,7 +408,6 @@ def main():
         import lib.dhnio as dhnio
     except:
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-        sys.path.insert(0, os.path.abspath('datahaven'))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
         try:
@@ -439,17 +434,7 @@ def main():
         dhnio.DisableLogs()
 
     #---logpath---
-    logpath = ''
-    logpath = os.path.join(os.path.expanduser('~'), '.dhn', 'logs', 'start.log')
-#    if dhnio.Windows():
-#        logpath = os.path.join(os.environ['APPDATA'], 'BitPie.NET', 'logs', 'dhnmainstart.log')
-#    elif dhnio.Linux():
-#        old_path = os.path.join(os.path.expanduser('~'), 'datahavennet')
-#        if os.path.isdir(old_path):
-#            logpath = os.path.join(old_path, 'logs', 'dhnmainstart.log')
-#        else:
-#            logpath = os.path.join(os.path.expanduser('~'), '.datahaven', 'logs', 'dhnmainstart.log')
-
+    logpath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs', 'start.log')
     if opts.output:
         logpath = opts.output
 
@@ -484,10 +469,8 @@ def main():
         appList = dhnio.find_process([
             'dhnmain.exe',
             'dhnmain.py',
-            'dhn.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-            'regexp:^/usr/bin/python\ +/usr/bin/datahaven.*$',
             ])
         
 #        pid = -1
@@ -526,10 +509,8 @@ def main():
         appList = dhnio.find_process([
             'dhnmain.exe',
             'dhnmain.py',
-            'dhn.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-            'regexp:^/usr/bin/python\ +/usr/bin/datahaven.*$',
             ])
         if len(appList) > 0:
             dhnio.Dprint(0, 'found main BitPie.NET process: %s, sending "restart" command ... ' % str(appList), '')
@@ -575,10 +556,8 @@ def main():
         appList = dhnio.find_process([
             'dhnmain.exe',
             'dhnmain.py',
-            'dhn.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-            'regexp:^/usr/bin/python\ +/usr/bin/datahaven.*$',
             ])
         if len(appList_dhnview) > 0:
             if len(appList) == 0:
@@ -603,10 +582,8 @@ def main():
         appList = dhnio.find_process([
             'dhnmain.exe',
             'dhnmain.py',
-            'dhn.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-            'regexp:^/usr/bin/python\ +/usr/bin/datahaven.*$',
             ])
         if len(appList) > 0:
             dhnio.Dprint(0, 'found main BitPie.NET process: %s, sending command "exit" ... ' % str(appList), '')

@@ -76,7 +76,6 @@ class SupplierFinder(automat.Automat):
         """
         Method to to catch the moment when automat's state were changed.
         """
-        # fire_hire.A('supplier_finder.state', newstate)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -88,16 +87,16 @@ class SupplierFinder(automat.Automat):
                 self.doDHTFindRandomUser(arg)
         #---ACK?---
         elif self.state == 'ACK?':
-            if event == 'timer-10sec' and self.Attempts<10 :
-                self.state = 'RANDOM_USER'
-                self.doDHTFindRandomUser(arg)
-            elif self.Attempts>=10 and event == 'timer-10sec' :
-                self.state = 'FAILED'
-                fire_hire.A('search-failed')
-                self.doDestroyMe(arg)
-            elif event == 'inbox-packet' and self.isAckFromUser(arg) :
+            if event == 'inbox-packet' and self.isAckFromUser(arg) :
                 self.state = 'SERVICE?'
                 self.doSupplierConnect(arg)
+            elif event == 'timer-10sec' and self.Attempts<5 :
+                self.state = 'RANDOM_USER'
+                self.doDHTFindRandomUser(arg)
+            elif self.Attempts==5 and event == 'timer-10sec' :
+                self.state = 'FAILED'
+                self.doDestroyMe(arg)
+                fire_hire.A('search-failed')
         #---FAILED---
         elif self.state == 'FAILED':
             pass
@@ -108,29 +107,30 @@ class SupplierFinder(automat.Automat):
         elif self.state == 'RANDOM_USER':
             if event == 'users-not-found' :
                 self.state = 'FAILED'
-                fire_hire.A('search-failed')
                 self.doDestroyMe(arg)
+                fire_hire.A('search-failed')
             elif event == 'found-one-user' :
                 self.state = 'ACK?'
+                self.doCleanPrevUser(arg)
                 self.doRememberUser(arg)
                 self.Attempts+=1
                 self.doSendMyIdentity(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
-            if event == 'timer-10sec' and self.Attempts<10 :
-                self.state = 'RANDOM_USER'
-                self.doDHTFindRandomUser(arg)
-            elif self.Attempts>=10 and event == 'timer-10sec' :
-                self.state = 'FAILED'
-                fire_hire.A('search-failed')
-                self.doDestroyMe(arg)
-            elif self.Attempts<10 and event == 'supplier-not-connected' :
-                self.state = 'RANDOM_USER'
-                self.doDHTFindRandomUser(arg)
-            elif event == 'supplier-connected' :
+            if event == 'supplier-connected' :
                 self.state = 'DONE'
                 fire_hire.A('supplier-connected', self.target_idurl)
                 self.doDestroyMe(arg)
+            elif event == 'timer-10sec' and self.Attempts<5 :
+                self.state = 'RANDOM_USER'
+                self.doDHTFindRandomUser(arg)
+            elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'supplier-not-connected' ) :
+                self.state = 'FAILED'
+                self.doDestroyMe(arg)
+                fire_hire.A('search-failed')
+            elif self.Attempts<5 and event == 'supplier-not-connected' :
+                self.state = 'RANDOM_USER'
+                self.doDHTFindRandomUser(arg)
 
     def isAckFromUser(self, arg):
         """
@@ -185,6 +185,15 @@ class SupplierFinder(automat.Automat):
         d = dht_service.reconnect()
         d.addCallback(_find)        
 
+    def doCleanPrevUser(self, arg):
+        """
+        Action method.
+        """
+        sc = supplier_connector.by_idurl(self.target_idurl)
+        if sc:
+            sc.remove_callback('supplier_finder')
+        self.target_idurl = None
+
     def doRememberUser(self, arg):
         """
         Action method.
@@ -195,6 +204,9 @@ class SupplierFinder(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        global _SupplierFinder
+        del _SupplierFinder
+        _SupplierFinder = None
         callback.remove_inbox_callback(self._inbox_packet_received)
         if self.target_idurl:
             sc = supplier_connector.by_idurl(self.target_idurl)
@@ -202,9 +214,7 @@ class SupplierFinder(automat.Automat):
                 sc.remove_callback('supplier_finder')
             self.target_idurl = None
         automat.objects().pop(self.index)
-        global _SupplierFinder
-        del _SupplierFinder
-        _SupplierFinder = None
+        dhnio.Dprint(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         """
@@ -247,13 +257,8 @@ class SupplierFinder(automat.Automat):
     def _supplier_connector_state(self, supplier_idurl, newstate):
         if supplier_idurl != self.target_idurl:
             return
-        # sc = supplier_connector.by_idurl(self.target_idurl)
-        # if sc:
-        #     sc.remove_callback('supplier_finder')
         if newstate is 'CONNECTED':
             self.automat('supplier-connected', self.target_idurl)
         elif newstate in ['DISCONNECTED', 'NO_SERVICE', ]:
             self.automat('supplier-not-connected')
-        else:
-            pass
 
