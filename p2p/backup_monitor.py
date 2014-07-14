@@ -218,9 +218,10 @@ class BackupMonitor(automat.Automat):
         Action method.
         """
         for supplier_idurl in contacts.getSupplierIDs():
-            sc = supplier_connector.by_idurl(supplier_idurl)
-            if sc is None:
-                sc = supplier_connector.create(supplier_idurl)
+            if supplier_idurl:
+                sc = supplier_connector.by_idurl(supplier_idurl)
+                if sc is None:
+                    sc = supplier_connector.create(supplier_idurl)
 
     def doPrepareListBackups(self, arg):
         if backup_control.HasRunningBackup():

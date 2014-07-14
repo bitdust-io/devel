@@ -13,6 +13,7 @@ EVENTS:
     * :red:`supplier-connected`
     * :red:`supplier-not-connected`
     * :red:`timer-10sec`
+    * :red:`user-already-supplier`
     * :red:`users-not-found`
 
 """
@@ -115,6 +116,8 @@ class SupplierFinder(automat.Automat):
                 self.doRememberUser(arg)
                 self.Attempts+=1
                 self.doSendMyIdentity(arg)
+            elif event == 'user-already-supplier' :
+                self.doDHTFindRandomUser(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'supplier-connected' :
@@ -222,7 +225,7 @@ class SupplierFinder(automat.Automat):
         self.automat('inbox-packet', (newpacket, info, status, error_message))
         
     def _found_nodes(self, nodes):
-        io.log(18, 'supplier_finder._found_nodes %d nodes' % len(nodes))
+        io.log(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')
@@ -234,7 +237,7 @@ class SupplierFinder(automat.Automat):
         self.automat('users-not-found')
     
     def _got_target_idurl(self, response):
-        io.log(18, 'supplier_finder._got_target_idurl response=%s' % str(response) )
+        io.log(14, 'supplier_finder._got_target_idurl response=%s' % str(response) )
         try:
             idurl = response['idurl']
         except:
@@ -243,8 +246,9 @@ class SupplierFinder(automat.Automat):
             self.automat('users-not-found')
             return response
         if contacts.IsSupplier(idurl):
-            io.log(18, '    %s is supplier already' % idurl)
+            io.log(14, '    %s is supplier already' % idurl)
             self.automat('users-not-found')
+            # self.automat('user-already-supplier')
             return response
         d = identitycache.immediatelyCaching(idurl)
         d.addCallback(lambda x: self.automat('found-one-user', idurl))

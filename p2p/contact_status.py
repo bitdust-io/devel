@@ -133,6 +133,8 @@ def hasOfflineSuppliers():
     Loops all suppliers and check their state, return True if at least one is OFFLINE.
     """
     for idurl in contacts.getSupplierIDs():
+        if not idurl:
+            return True
         if isOffline(idurl):
             return True
     return False

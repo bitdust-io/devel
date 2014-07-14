@@ -156,7 +156,7 @@ class FireHire(automat.Automat):
         Method to initialize additional variables and flags at creation of the state machine.
         """
         # self.lastFireTime = 0 # time.time()
-        self.connect_results = []
+        self.connect_list = []
         self.dismiss_list = []
         self.dismiss_results = []
         self.new_suppliers = []
@@ -202,12 +202,7 @@ class FireHire(automat.Automat):
                 supplier_finder.A('start')
         #---HIRE_ONE---
         elif self.state == 'HIRE_ONE':
-            if event == 'search-failed' :
-                self.state = 'READY'
-                self.doClearDismissList(arg)
-                self.doScheduleNextRestart(arg)
-                backup_monitor.A('fire-hire-finished')
-            elif event == 'restart' :
+            if event == 'restart' :
                 self.NeedRestart=True
             elif event == 'supplier-connected' and not self.isStillNeeded(arg) and self.isSomeoneToDismiss(arg) :
                 self.state = 'FIRE_MANY'
@@ -220,6 +215,15 @@ class FireHire(automat.Automat):
             elif event == 'supplier-connected' and self.isStillNeeded(arg) :
                 self.doSubstituteSupplier(arg)
                 supplier_finder.A('start')
+            elif event == 'search-failed' and not self.isSomeoneToDismiss(arg) :
+                self.state = 'READY'
+                self.doScheduleNextRestart(arg)
+                backup_monitor.A('suppliers-changed')
+            elif event == 'search-failed' and self.isSomeoneToDismiss(arg) :
+                self.state = 'FIRE_MANY'
+                self.doDisconnectSuppliers(arg)
+                self.doRemoveSuppliers(arg)
+                self.doScheduleNextRestart(arg)
         #---FIRE_MANY---
         elif self.state == 'FIRE_MANY':
             if event == 'timer-15sec' :
@@ -256,7 +260,7 @@ class FireHire(automat.Automat):
         # io.log(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
         #     contacts.numSuppliers(), len(self.dismiss_list), settings.getCentralNumSuppliers()))
         if '' in contacts.getSupplierIDs():
-            io.log(4, 'fire_hire.isMoreNeeded WARNING found empty suppliers!!!')
+            io.log(4, 'fire_hire.isMoreNeeded found empty suppliers!!!')
             return True
         if isinstance(arg, list):
             dismissed = arg
@@ -275,8 +279,8 @@ class FireHire(automat.Automat):
         Condition method.
         """
         io.log(14, 'fire_hire.isAllReady %d %d' % (
-            len(self.connect_results), contacts.numSuppliers()))
-        return len(self.connect_results) == contacts.numSuppliers()
+            len(self.connect_list), contacts.numSuppliers()))
+        return len(self.connect_list) == 0 # contacts.numSuppliers()
                 
     def isAllDismissed(self, arg):
         """
@@ -298,14 +302,20 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
+        current_suppliers = contacts.getSupplierIDs()
+        desired_number = settings.getCentralNumSuppliers()
+        needed_suppliers = current_suppliers[:desired_number]
+        if '' in needed_suppliers:
+            io.log(4, 'fire_hire.isStillNeeded WARNING found empty suppliers!!!')
+            return True
         supplier_idurl = arg
-        s = set(contacts.getSupplierIDs())
+        s = set(needed_suppliers)
         s.add(supplier_idurl)
         s.difference_update(set(self.dismiss_list))
         result = len(s) < settings.getCentralNumSuppliers() 
-        io.log(14, 'fire_hire.isStillNeeded %d %d %d %d, result=%s' % (
-            contacts.numSuppliers(), len(self.dismiss_list), len(s), 
-            settings.getCentralNumSuppliers(), result))
+        io.log(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
+            contacts.numSuppliers(), len(needed_suppliers), len(self.dismiss_list), 
+            len(s), settings.getCentralNumSuppliers(), result))
         return result
 
     def isConfigChanged(self, arg):
@@ -322,7 +332,7 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        return contacts.numSuppliers() > 0
+        return contacts.numSuppliers() > 0 and contacts.getSupplierIDs().count('') < contacts.numSuppliers()
         
     def doSaveConfig(self, arg):
         """
@@ -335,12 +345,15 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        self.connect_results = []
+        self.connect_list = []
         for supplier_idurl in contacts.getSupplierIDs():
+            if supplier_idurl == '':
+                continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None: 
                 sc = supplier_connector.create(supplier_idurl)
             sc.set_callback('fire_hire', self._supplier_connector_state_changed)
+            self.connect_list.append(supplier_idurl)
             sc.automat('connect')        
         
     def doDecideToDismiss(self, arg):
@@ -351,6 +364,8 @@ class FireHire(automat.Automat):
         result = set(_SuppliersToFire)
         _SuppliersToFire = []
         for supplier_idurl in contacts.getSupplierIDs():
+            if not supplier_idurl:
+                continue
             sc = supplier_connector.by_idurl(supplier_idurl)
             if not sc:
                 continue
@@ -358,7 +373,9 @@ class FireHire(automat.Automat):
                 result.add(supplier_idurl)
         if contacts.numSuppliers() > settings.getCentralNumSuppliers():
             for supplier_index in range(settings.getCentralNumSuppliers(), contacts.numSuppliers()):
-                result.add(contacts.getSupplierID(supplier_index))
+                idurl = contacts.getSupplierID(supplier_index)
+                if idurl:
+                    result.add(idurl)
         result = list(result)
         io.log(10, 'fire_hire.doDecideToDismissSuppliers %s' % result)
         self.automat('made-decision', result)
@@ -417,14 +434,17 @@ class FireHire(automat.Automat):
         if len(current_suppliers) < desired_suppliers:
             io.log(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers %d<%d' % (
                 len(current_suppliers), desired_suppliers))
-            return
         for supplier_idurl in self.dismiss_list:
-            current_suppliers.remove(supplier_idurl)
+            if supplier_idurl not in current_suppliers:
+                io.log(4, 'fire_hire.doRemoveSuppliers WARNING %s not a supplier' % supplier_idurl)
+                continue
+            pos = current_suppliers.index(supplier_idurl)
+            # current_suppliers.remove(supplier_idurl)
+            current_suppliers[pos] = ''
             misc.writeSupplierData(supplier_idurl, 'disconnected', time.strftime('%d%m%y %H:%M:%S'))
+        current_suppliers = current_suppliers[:desired_suppliers]
         contacts.setSupplierIDs(current_suppliers)
         contacts.saveSupplierIDs()
-        # import backup_control
-        # backup_control.SetSupplierList(current_suppliers)
         import webcontrol
         webcontrol.OnListSuppliers()
         io.log(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
@@ -475,10 +495,10 @@ class FireHire(automat.Automat):
         """
         if not self.restart_task:
             self.restart_task = reactor.callLater(self.restart_interval, self._scheduled_restart)
-            io.log(10, 'fire_hire.doScheduleNextRestart after %d sec.' % self.restart_interval)
+            io.log(10, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
             self.restart_interval *= 1.1
         else:
-            io.log(10, 'fire_hire.doScheduleNextRestart already scheduled - %d sec. left' % (
+            io.log(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
                 time.time() - self.restart_task.getTime()))
             
     def _scheduled_restart(self): 
@@ -490,7 +510,7 @@ class FireHire(automat.Automat):
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
         if self.state == 'SUPPLIERS?':
-            self.connect_results.append(idurl)
+            self.connect_list.remove(idurl)
         elif self.state == 'FIRE_MANY':
             self.dismiss_results.append(idurl)
         else:
