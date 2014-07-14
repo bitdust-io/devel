@@ -7,7 +7,7 @@
 #
 
 """
-.. module:: dhnmath
+.. module:: maths
 
 This is mostly methods to calculate schedule events.
 """
@@ -20,7 +20,7 @@ import datetime
 def interval_to_next_hour():
     """
     Here is a value for "seconds to to the end of an hour.:" 
-        C:\work\bitpie>python -c "import lib.dhnmath; print lib.dhnmath.interval_to_next_hour()"
+        C:\work\bitpie>python -c "import lib.maths; print lib.maths.interval_to_next_hour()"
         3538.81299996
     """
     _struct_time = list(time.localtime())
@@ -35,8 +35,8 @@ def shedule_continuously(last_time, interval):
     """
     Return value for "moment when next time interval event will happens".
     In other words: when need to run the backup exactly, within that ``interval`` in seconds.
-    ``last_time`` is taken from file [DHN data dir]\metadata\updateshedule.
-        C:\work\bitpie>python -c "import time, lib.dhnmath; print lib.dhnmath.shedule_continuously(1397152186.41, 60)-time.time()"
+    ``last_time`` is taken from file [BitPie.NET data dir]\metadata\updateshedule.
+        C:\work\bitpie>python -c "import time, lib.maths; print lib.maths.shedule_continuously(1397152186.41, 60)-time.time()"
         12.5670001507
  
     """
@@ -53,8 +53,8 @@ def shedule_next_hourly(last_time, interval):
     """
     Return value for "moment when next time interval event happens".
     ``interval`` is number of hours between events.
-    ``last_time`` is taken from file [DHN data dir]\metadata\updateshedule.
-        C:\work\bitpie>python -c "import time, lib.dhnmath; print lib.dhnmath.shedule_next_hourly(1397152186.41, 5)-time.time()"
+    ``last_time`` is taken from file [BitPie.NET data dir]\metadata\updateshedule.
+        C:\work\bitpie>python -c "import time, lib.maths; print lib.maths.shedule_next_hourly(1397152186.41, 5)-time.time()"
         9930.79699993     
     """
     try:
@@ -77,7 +77,7 @@ def shedule_next_daily(last_time, period_string, start_time_string):
     Return value for "moment when next time interval event happens".
     ``period_string`` is number of days between events.
     ``start_time_string`` is start time throughout the day.
-    ``last_time`` is taken from file [DHN data dir]\metadata\updateshedule.
+    ``last_time`` is taken from file [BitPie.NET data dir]\metadata\updateshedule.
     """
     try:
         start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
@@ -85,16 +85,16 @@ def shedule_next_daily(last_time, period_string, start_time_string):
         try:
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
-            import dhnio
-            dhnio.DprintException()
+            import io
+            io.exception()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         period = int(period_string)
     except:
         print 'DEBUG: next_daily1'
-        import dhnio
-        dhnio.DprintException()
+        import io
+        io.exception()
         return None
     if period == 0:
         print 'DEBUG: next_daily2'
@@ -137,7 +137,7 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
     ``period_string`` is number of weeks between events.
     ``start_time_string`` is start time throughout the day.
     ``week_days`` is a string to mark needed days of week, format like that : "Monday Tuesday Wednesday".
-    ``last_time`` is taken from file [DHN data dir]\metadata\updateshedule.
+    ``last_time`` is taken from file [BitPie.NET data dir]\metadata\updateshedule.
     """
     try:
         start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
@@ -145,15 +145,15 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
         try:
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
-            import dhnio
-            dhnio.DprintException()
+            import io
+            io.exception()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         period = int(period_string)
     except:
-        import dhnio
-        dhnio.DprintException()
+        import io
+        io.exception()
         return None
     if len(week_days) == 0 or period == 0:
         print 'DEBUG: next_weekly2'
@@ -212,15 +212,15 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
         try:
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
-            import dhnio
-            dhnio.DprintException()
+            import io
+            io.exception()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         day = int(day_string)
     except:
-        import dhnio
-        dhnio.DprintException()
+        import io
+        io.exception()
         return None
     if len(months) == 0 or day > 31 or day < 1:
         print 'DEBUG: next_monthly2'
@@ -277,7 +277,7 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
     ``interval_months_string`` is number of months between events.
     ``start_time_string`` is start time throughout the day.
     ``dates`` is a string to mark needed days of month, format like that : "1 2 3 28 29 30 31".
-    ``last_time`` is taken from file [DHN data dir]\metadata\updateshedule.
+    ``last_time`` is taken from file [BitPie.NET data dir]\metadata\updateshedule.
     """
     try:
         start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
@@ -285,15 +285,15 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
         try:
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
-            import dhnio
-            dhnio.DprintException()
+            import io
+            io.exception()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         interval_months = int(interval_months_string)
     except:
-        import dhnio
-        dhnio.DprintException()
+        import io
+        io.exception()
         return None
 
     good_dates = []

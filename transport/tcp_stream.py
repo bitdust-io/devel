@@ -13,7 +13,7 @@ import struct
 from twisted.internet import reactor
 from twisted.protocols import basic
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.tmpfile as tmpfile
 import lib.settings as settings
 import lib.misc as misc
@@ -102,15 +102,15 @@ class TCPFileStream():
             file_size = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            dhnio.DprintException()
+            io.exception()
             return
-        # dhnio.Dprint(6, 'data_received %s' % str(( file_id, file_size)))
+        # io.log(6, 'data_received %s' % str(( file_id, file_size)))
         inp_data = inp.read()
         inp.close()
         if not self.inboxFiles.has_key(file_id):
             if len(self.inboxFiles) >= 2 * MAX_SIMULTANEOUS_OUTGOING_FILES:
                 # too many incoming files, seems remote guy is cheating - drop that session!
-                dhnio.Dprint(6, 'tcp_stream.data_received WARNING too many incoming files, close connection %s' % str(self.connection))
+                io.log(6, 'tcp_stream.data_received WARNING too many incoming files, close connection %s' % str(self.connection))
                 self.connection.automat('disconnect') 
                 return
             self.create_inbox_file(file_id, file_size)
@@ -125,7 +125,7 @@ class TCPFileStream():
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            dhnio.DprintException()
+            io.exception()
             return
         inp.close()
         self.outboxFiles[file_id].ok_received = True
@@ -138,7 +138,7 @@ class TCPFileStream():
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            dhnio.DprintException()
+            io.exception()
             return
         reason = inp.read()
         inp.close()
@@ -173,8 +173,8 @@ class TCPFileStream():
 #                    infile.transfer_id, 'finished', infile.get_bytes_received())
             
     def on_inbox_file_register_failed(self, err, file_id):
-        dhnio.Dprint(2, 'tcp_stream.on_inbox_file_register_failed ERROR failed to register, file_id=%s err:\n%s' % (str(file_id), str(err)))
-        dhnio.Dprint(6, 'tcp_stream.on_inbox_file_register_failed close session %s' % self.session)
+        io.log(2, 'tcp_stream.on_inbox_file_register_failed ERROR failed to register, file_id=%s err:\n%s' % (str(file_id), str(err)))
+        io.log(6, 'tcp_stream.on_inbox_file_register_failed close session %s' % self.session)
         self.connection.automat('disconnect')
               
     def create_outbox_file(self, filename, filesize, description, result_defer, single):
@@ -201,8 +201,8 @@ class TCPFileStream():
             self.outbox_file_done(file_id, 'finished')
 
     def on_outbox_file_register_failed(self, err, file_id):
-        dhnio.Dprint(2, 'tcp_stream.on_outbox_file_register_failed ERROR failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
-        dhnio.Dprint(6, 'tcp_stream.on_outbox_file_register_failed close session %s' % self.connection)
+        io.log(2, 'tcp_stream.on_outbox_file_register_failed ERROR failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
+        io.log(6, 'tcp_stream.on_outbox_file_register_failed close session %s' % self.connection)
         self.connection.automat('disconnect')
         
     def close_outbox_file(self, file_id):
@@ -214,12 +214,12 @@ class TCPFileStream():
         del self.inboxFiles[file_id]   
         
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
-        # dhnio.Dprint(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
+        # io.log(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         tcp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
-        # dhnio.Dprint(18, 'tcp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
+        # io.log(18, 'tcp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         tcp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
         
@@ -227,7 +227,7 @@ class TCPFileStream():
         try:
             infile = self.inboxFiles[file_id]
         except:
-            dhnio.DprintException()
+            io.exception()
             return
         if infile.registration:
             return
@@ -235,18 +235,18 @@ class TCPFileStream():
         if infile.transfer_id:
             self.report_inbox_file(infile.transfer_id, status, infile.get_bytes_received(), error_message)
         else:
-            dhnio.Dprint(6, 'tcp_stream.inbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
+            io.log(6, 'tcp_stream.inbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
         del infile
         # self.receivedFiles[file_id] = time.time()
         
     def outbox_file_done(self, file_id, status, error_message=None):
         """
         """ 
-        # dhnio.Dprint(18, 'tcp_stream.outbox_file_done %s %s %s' % (file_id, status, error_message))
+        # io.log(18, 'tcp_stream.outbox_file_done %s %s %s' % (file_id, status, error_message))
         try:
             outfile = self.outboxFiles[file_id]
         except:
-            dhnio.DprintException()
+            io.exception()
             return
         if outfile.result_defer:
             outfile.result_defer.callback((outfile, status, error_message))
@@ -257,9 +257,9 @@ class TCPFileStream():
         if outfile.transfer_id:
             self.report_outbox_file(outfile.transfer_id, status, outfile.get_bytes_sent(), error_message)
         # else:
-        #     dhnio.Dprint(6, 'tcp_stream.outbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
+        #     io.log(6, 'tcp_stream.outbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
         if outfile.single:
-            dhnio.Dprint(18, 'tcp_stream.outbox_file_done close single connection %s' % str(self.connection))
+            io.log(18, 'tcp_stream.outbox_file_done close single connection %s' % str(self.connection))
             self.connection.automat('disconnect') 
         del outfile
 
@@ -277,13 +277,13 @@ class InboxFile():
         self.started = time.time()
         self.last_block_time = time.time()
         self.timeout = max(int(self.file_size/settings.SendingSpeedLimit()), 3)
-        # dhnio.Dprint(6, 'tcp_stream.InboxFile {%s} [%d] from %s' % (self.transfer_id, self.file_id, str(self.stream.remote_address)))
+        # io.log(6, 'tcp_stream.InboxFile {%s} [%d] from %s' % (self.transfer_id, self.file_id, str(self.stream.remote_address)))
 
     def close(self):
         try:
             os.close(self.fd)
         except:
-            dhnio.DprintException()
+            io.exception()
 
     def get_bytes_received(self):
         return self.bytes_received
@@ -325,7 +325,7 @@ class OutboxFile():
         try:
             self.fin.close()
         except:
-            dhnio.DprintException()
+            io.exception()
         
     def start(self):
         self.sender = FileSender(self)
@@ -346,7 +346,7 @@ class OutboxFile():
         # self.sender = None
 
     def cancel(self):
-        dhnio.Dprint(6, 'tcp_stream.OutboxFile.cancel timeout=%d' % self.timeout)
+        io.log(6, 'tcp_stream.OutboxFile.cancel timeout=%d' % self.timeout)
         self.stop()
 
     def get_bytes_sent(self):
@@ -368,7 +368,7 @@ class OutboxFile():
             self.stream.outbox_file_done(self.file_id, 'finished')
     
     def transfer_failed(self, err):
-        dhnio.Dprint(18, 'tcp_stream.transfer_failed:   %r' % (err))
+        io.log(18, 'tcp_stream.transfer_failed:   %r' % (err))
         if not self.sender:
             return None
         self.sender.close()
@@ -394,16 +394,16 @@ class FileSender(basic.FileSender):
         # self.transfer_id = _RegisterTransferFunc(
         #     'send', self.peer, self.getSentBytes, filename, sz, description)
         # _ByTransferID[self.transfer_id] = self.protocol
-        # dhnio.Dprint(14, 'transport_tcp.TCPFileSender.init length=%d transfer_id=%s' % (self.sz, self.transfer_id))
+        # io.log(14, 'transport_tcp.TCPFileSender.init length=%d transfer_id=%s' % (self.sz, self.transfer_id))
 
     # def __del__(self):
-    #     dhnio.Dprint(14, 'transport_tcp.TCPFileSender.del length=%d transfer_id=%s' % (self.sz, self.transfer_id))
+    #     io.log(14, 'transport_tcp.TCPFileSender.del length=%d transfer_id=%s' % (self.sz, self.transfer_id))
 
     def close(self):
         self.parent = None
 
     def transform_data(self, data):
-        # dhnio.Dprint(24, 'transform_data')
+        # io.log(24, 'transform_data')
         datalength = len(data)
         datagram = ''
         datagram += struct.pack('i', self.parent.file_id)
@@ -424,7 +424,7 @@ class FileSender(basic.FileSender):
                 if self.deferred:
                     self.deferred.errback(self.lastSent)
                     self.deferred = None
-                dhnio.DprintException()
+                io.exception()
         if not chunk:
             self.file = None
             self.consumer.unregisterProducer()
@@ -438,65 +438,3 @@ class FileSender(basic.FileSender):
         self.parent.stream.connection.sendData(tcp_connection.CMD_DATA, chunk)
         self.lastSent = chunk[-1:]
         
-
-
-"""
-02:42.40      p2p_connector(my-id-propagated): [CONTACTS]->[INCOMMING?]
-02:42.42            tmpfile.make C:\Documents and Settings\veselin\.dhn\temp\outbox\viqz2s
-02:42.43        OUT(423ea75a250d019c1854470bf82bd265)(run): [AT_STARTUP]->[ITEMS?]
-02:42.45                initializer[READY] fired with event "p2p_connector.state"
-02:42.46            tmpfile.make C:\Documents and Settings\veselin\.dhn\temp\dhtudp-in\nudh4v
-02:42.48                  tcp_stream.outbox_file_done close single connection tcp_connection[37.18.255.33:6661][DISCONNECT]
-Unhandled Error
-Traceback (most recent call last):
-  File "C:\work\soft\Python27\lib\site-packages\wx-2.8-msw-unicode\wx\_core.py", line 8010, in MainLoop
-    wx.PyApp.MainLoop(self)
-  File "C:\work\soft\Python27\lib\site-packages\wx-2.8-msw-unicode\wx\_core.py", line 7306, in MainLoop
-    return _core_.PyApp_MainLoop(*args, **kwargs)
-  File "C:\work\soft\Python27\lib\site-packages\wx-2.8-msw-unicode\wx\_core.py", line 14669, in <lambda>
-    lambda event: event.callable(*event.args, **event.kw) )
-  File "C:\work\soft\Python27\lib\site-packages\twisted\internet\_threadedselect.py", line 225, in _interleave
-    self.runUntilCurrent()
---- <exception caught here> ---
-  File "C:\work\soft\Python27\lib\site-packages\twisted\internet\base.py", line 824, in runUntilCurrent
-    call.func(*call.args, **call.kw)
-  File "C:\work\datahaven.git\datahaven\lib\automat.py", line 203, in event
-    self.A(event, arg)
-  File "C:\work\datahaven.git\datahaven\transport\tcp_connection.py", line 88, in A
-    self.doStopInOutFiles(arg)
-  File "C:\work\datahaven.git\datahaven\transport\tcp_connection.py", line 280, in doStopInOutFiles
-    self.stream.abort_files('disconnecting')
-  File "C:\work\datahaven.git\datahaven\transport\tcp_stream.py", line 94, in abort_files
-    self.outbox_file_done(file_id, 'failed', reason)
-  File "C:\work\datahaven.git\datahaven\transport\tcp_stream.py", line 253, in outbox_file_done
-    self.close_outbox_file(file_id)
-  File "C:\work\datahaven.git\datahaven\transport\tcp_stream.py", line 207, in close_outbox_file
-    self.outboxFiles[file_id].close()
-  File "C:\work\datahaven.git\datahaven\transport\tcp_stream.py", line 321, in close
-    self.stop()
-  File "C:\work\datahaven.git\datahaven\transport\tcp_stream.py", line 337, in stop
-    self.sender.close()
-exceptions.AttributeError: 'NoneType' object has no attribute 'close'
-02:42.79                  dhtudp_session[37.18.255.32:9993](datagram-received): [GREETING]->[CONNECTED]
-Unhandled Error
-Traceback (most recent call last):
-  File "C:\work\soft\Python27\lib\site-packages\twisted\python\log.py", line 88, in callWithLogger
-    return callWithContext({"system": lp}, func, *args, **kw)
-  File "C:\work\soft\Python27\lib\site-packages\twisted\python\log.py", line 73, in callWithContext
-    return context.call({ILogContext: newCtx}, func, *args, **kw)
-  File "C:\work\soft\Python27\lib\site-packages\twisted\python\context.py", line 118, in callWithContext
-    return self.currentContext().callWithContext(ctx, func, *args, **kw)
-  File "C:\work\soft\Python27\lib\site-packages\twisted\python\context.py", line 81, in callWithContext
-    return func(*args,**kw)
---- <exception caught here> ---
-  File "C:\work\soft\Python27\lib\site-packages\twisted\internet\_threadedselect.py", line 283, in _doReadOrWrite
-    why = getattr(selectable, method)()
-  File "C:\work\soft\Python27\lib\site-packages\twisted\internet\abstract.py", line 276, in doWrite
-    self.producer.resumeProducing()
-  File "C:\work\datahaven.git\datahaven\transport\tcp_stream.py", line 410, in resumeProducing
-    chunk = self.file.read(self.CHUNK_SIZE)
-exceptions.ValueError: I/O operation on closed file
-02:43.00        OUT(574f1529c57aaff9969dc9e298d3126c)(items-sent): [ITEMS?]->[IN_QUEUE]
-02:43.01                initializer[READY] fired with event "p2p_connector.state"
-02:43.03        OUT(423ea75a250d019c1854470bf82bd265)(items-sent): [ITEMS?]->[IN_QUEUE]
-"""

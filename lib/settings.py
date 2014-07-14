@@ -21,9 +21,9 @@ import os
 
 
 import userconfig
-import dhnio
+import io
 import eccmap
-import dhnmath
+import maths
 import diskspace
 import nameurl
 
@@ -63,9 +63,9 @@ def _init(base_dir=None):
         - Validate most important user settings
         - Check custom folders 
     """
-    dhnio.Dprint(4, 'settings._init')
+    io.log(4, 'settings._init')
     _initBaseDir(base_dir)
-    dhnio.Dprint(2, 'settings._init data location: ' + BaseDir())
+    io.log(2, 'settings._init data location: ' + BaseDir())
     _checkMetaDataDirectory()
     uconfig()
     _checkStaticDirectories()
@@ -95,12 +95,12 @@ def uconfig(key=None):
     #init()
     if _UserConfig is None:
         if os.path.exists(os.path.join(MetaDataDir(),"user-config")) and not os.path.exists(os.path.join(MetaDataDir(),"userconfig")):
-            dhnio.Dprint(4, 'settings.uconfig rename "user-config" to "userconfig"')
+            io.log(4, 'settings.uconfig rename "user-config" to "userconfig"')
             try:
                 os.rename(os.path.join(MetaDataDir(),"user-config"), os.path.join(MetaDataDir(),"userconfig"))
             except:
                 pass
-        dhnio.Dprint(6, 'settings.uconfig loading user configuration from: ' + UserConfigFilename())
+        io.log(6, 'settings.uconfig loading user configuration from: ' + UserConfigFilename())
         _UserConfig = userconfig.UserConfig(UserConfigFilename())
     if key is None:
         return _UserConfig
@@ -118,7 +118,7 @@ def override(key, value):
     Useful when user pass some params via command line - they should override the local settings.
     """
     global _OverrideDict
-    dhnio.Dprint(4, 'settings.override %s=%s' % (key, value))
+    io.log(4, 'settings.override %s=%s' % (key, value))
     _OverrideDict[key] = value
 
 def override_dict(d):
@@ -352,7 +352,7 @@ def DefaultBackupMaxBlockSize():
 
 def MinimumBandwidthInLimitKBSec():
     """
-    Not used, idea was to limit the minimum bandwidth given to DHN.
+    Not used, idea was to limit the minimum bandwidth given to BitPie.NET.
     """
     return 10
 
@@ -523,11 +523,11 @@ def GetBaseDir():
     """
     A portable method to get the default data folder location.  
     """
-    if dhnio.Windows():
+    if io.Windows():
         return BaseDirWindows()
-    elif dhnio.Linux():
+    elif io.Linux():
         return BaseDirLinux()
-    elif dhnio.Mac():
+    elif io.Mac():
         return BaseDirMac()
     return BaseDirDefault()
 
@@ -545,7 +545,7 @@ def BaseDirPathFileName():
     Say you want to store DHN files on another disk.
     In the binary folder file "basedir.txt" can be created and it will keep the path to the data folder. 
     """
-    return os.path.join(dhnio.getExecutableDir(), 'basedir.txt')
+    return os.path.join(io.getExecutableDir(), 'basedir.txt')
 
 def RestoreDir():
     """
@@ -660,7 +660,7 @@ def CSpaceSettingsDir():
     """
     This is a CSpace settings folder location.
     """
-    if dhnio.Windows():
+    if io.Windows():
         return os.path.join(CSpaceDir(), '_CSpace', 'Settings')
     else:
         return os.path.join(CSpaceDir(), '.CSpace', 'Settings')
@@ -669,7 +669,7 @@ def CSpaceProfilesDir():
     """
     This is a CSpace profiles folder location.
     """
-    if dhnio.Windows():
+    if io.Windows():
         return os.path.join(CSpaceDir(), '_CSpaceProfiles')
     else:
         return os.path.join(CSpaceDir(), '.CSpaceProfiles')
@@ -913,7 +913,7 @@ def RevisionNumberFile():
     This is a sort of "product version".
     Probably not very best idea, we need to use a widely used software version format. 
     """
-    return os.path.join(dhnio.getExecutableDir(), 'revnum.txt')
+    return os.path.join(io.getExecutableDir(), 'revnum.txt')
 
 def CustomersSpaceFile():
     """
@@ -940,7 +940,7 @@ def CertificateFiles():
     """
     return [    os.path.join(MetaDataDir(), 'bitpie.cer'),
                 os.path.join('.', 'bitpie.cer'),
-                os.path.join(dhnio.getExecutableDir() ,'bitpie.cer'),]
+                os.path.join(io.getExecutableDir() ,'bitpie.cer'),]
 
 def CSpaceSavedProfileFile():
     """
@@ -986,7 +986,7 @@ def getIconLaunchFilename():
     Not used.
     For Windows platforms this should target to executable file to run when clicked on Desktop icon. 
     """
-    return os.path.join(dhnio.getExecutableDir(), 'dhnmain.exe')
+    return os.path.join(io.getExecutableDir(), 'dhnmain.exe')
 
 def getIconLinkFilename():
     """
@@ -1008,13 +1008,13 @@ def IconsFolderPath():
     maybe we better use another name: "media",
     because we may need not only "icons" but also other data files
     """
-    return os.path.join(dhnio.getExecutableDir(), 'icons')
+    return os.path.join(io.getExecutableDir(), 'icons')
 
 def FontsFolderPath():
     """
     A folder name where application "fons" is stored. 
     """
-    return os.path.join(dhnio.getExecutableDir(), 'fonts')
+    return os.path.join(io.getExecutableDir(), 'fonts')
 
 def FontImageFile():
     """
@@ -1038,45 +1038,6 @@ def MerchantURL():
     """
     # return 'https://merchants.4csonline.com/DevTranSvcs/tp.aspx'
     return 'https://merchants.4csonline.com/TranSvcs/tp.aspx'
-
-#------------------------------------------------------------------------------ 
-#--- SERVER HOST NAMES ----------------------------------------------------------------------------
-
-def IdentityServerName():
-    """
-    The core method, a host name of our main Identity server.
-    The whole idea of identity files is that they can be stored anywhere.
-    User can decide to put his identity file on his own host, or he can use some another trusted public host.
-    All identity files is signed with user's Key and client code should verify signatures.
-    Even if someone tried to fake my identity - this will be refused by other nodes in the network.  
-    """
-    return "identity.datahaven.net"
-
-def DefaultQ2QServer():
-    """
-    Not used, a host name for our public Q2Q server. 
-    """
-    # return 'work.offshore.ai'
-    return 'datahaven.net'
-
-def MoneyServerName():
-    """
-    A host name of our money server - to receive payments from users.
-    """
-#    return 'localhost'
-#    return '67.207.147.183' #central
-#    return "central.net"
-#    return "central.datahaven.net"
-#    return "209.59.119.34" #offshore.ai
-#    return 'datahaven.net'
-    return "offshore.ai"
-
-def CentralStatsURL():
-    """
-    A URL to see a stats of all users.
-    """
-#    return 'http://work.offshore.ai/~veselin/' - #that's old location
-    return 'http://identity.datahaven.net/statistics/'
 
 #------------------------------------------------------------------------------ 
 #---PORT NUMBERS----------------------------------------------------------------------------
@@ -1237,7 +1198,7 @@ def getProxyPort():
 
 def setProxySettings(d):
     """
-    Set proxy settings via dictionary, see ``lib.dhnnet.detect_proxy_settings`` for more details.
+    Set proxy settings via dictionary, see ``lib.net_misc.detect_proxy_settings`` for more details.
     """
     if d.has_key('host'):
         uconfig().set('network.network-proxy.network-proxy-host', str(d.get('host','')))
@@ -1264,25 +1225,25 @@ def getProxySettingsDict():
 
 def update_proxy_settings():
     """
-    Calls ``lib.dhnnet.detect_proxy_settings()`` to check current system proxy server settings.
+    Calls ``lib.net_misc.detect_proxy_settings()`` to check current system proxy server settings.
     """
-    import dhnnet
-    dhnnet.init()
+    import net_misc
+    net_misc.init()
     if enableProxy():
         if getProxyHost() == '' or getProxyPort() == '':
-            d = dhnnet.detect_proxy_settings()
-            dhnnet.set_proxy_settings(d)
+            d = net_misc.detect_proxy_settings()
+            net_misc.set_proxy_settings(d)
             setProxySettings(d)
             enableProxy(d.get('host', '') != '')
-            dhnio.Dprint(2, 'settings.update_proxy_settings UPDATED!!!')
+            io.log(2, 'settings.update_proxy_settings UPDATED!!!')
         else:
-            dhnnet.set_proxy_settings(getProxySettingsDict())
-        dhnio.Dprint(4, 'settings.update_proxy_settings')
-        dhnio.Dprint(4, 'HOST:      ' + dhnnet.get_proxy_host())
-        dhnio.Dprint(4, 'PORT:      ' + str(dhnnet.get_proxy_port()))
-        dhnio.Dprint(4, 'USERNAME:  ' + dhnnet.get_proxy_username())
-        dhnio.Dprint(4, 'PASSWORD:  ' + ('*' * len(dhnnet.get_proxy_password())))
-        dhnio.Dprint(4, 'SSL:       ' + dhnnet.get_proxy_ssl())
+            net_misc.set_proxy_settings(getProxySettingsDict())
+        io.log(4, 'settings.update_proxy_settings')
+        io.log(4, 'HOST:      ' + net_misc.get_proxy_host())
+        io.log(4, 'PORT:      ' + str(net_misc.get_proxy_port()))
+        io.log(4, 'USERNAME:  ' + net_misc.get_proxy_username())
+        io.log(4, 'PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
+        io.log(4, 'SSL:       ' + net_misc.get_proxy_ssl())
 
 #------------------------------------------------------------------------------ 
 #---OTHER USER CONFIGURATIONS---------------------------------------------------------------------------
@@ -1527,7 +1488,7 @@ def getDebugLevel():
     try:
         res = int(getDebugLevelStr())
     except:
-        res = dhnio.DebugLevel
+        res = io.DebugLevel
     return res
 
 def setDebugLevel(level):
@@ -1902,21 +1863,21 @@ def RenameBaseDir(newdir):
         import shutil
         shutil.copytree(olddir, newdir)
     except:
-        dhnio.DprintException()
+        io.exception()
         return False
     _BaseDirPath = newdir
-    dhnio.Dprint(2, 'settings.RenameBaseDir  directory was copied,  BaseDir='+BaseDir())
+    io.log(2, 'settings.RenameBaseDir  directory was copied,  BaseDir='+BaseDir())
     pathfilename = BaseDirPathFileName()
-    dhnio.WriteFile(pathfilename, _BaseDirPath)
-    dhnio.Dprint(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
-    logfilename = dhnio.LogFileName
-    dhnio.CloseLogFile()
+    io.WriteFile(pathfilename, _BaseDirPath)
+    io.log(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
+    logfilename = io.LogFileName
+    io.CloseLogFile()
     try:
-        dhnio.rmdir_recursive(olddir, True)
-        dhnio.Dprint(4, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
+        io.rmdir_recursive(olddir, True)
+        io.log(4, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
     except:
-        dhnio.DprintException()
-    dhnio.OpenLogFile(logfilename, True)
+        io.exception()
+    io.OpenLogFile(logfilename, True)
     return True
 
 def _initBaseDir(base_dir=None):
@@ -1930,33 +1891,33 @@ def _initBaseDir(base_dir=None):
     if base_dir is not None:
         _BaseDirPath = base_dir
         if not os.path.exists(_BaseDirPath):
-            dhnio._dirs_make(_BaseDirPath)
+            io._dirs_make(_BaseDirPath)
         return
 
     # if we have a file 'basedir.txt' in current folder - take the place from there
     if os.path.isfile(BaseDirPathFileName()):
-        path = dhnio.ReadBinaryFile(BaseDirPathFileName())
+        path = io.ReadBinaryFile(BaseDirPathFileName())
         if os.path.isdir(path):
             _BaseDirPath = path
             if not os.path.exists(_BaseDirPath):
-                dhnio._dirs_make(_BaseDirPath)
+                io._dirs_make(_BaseDirPath)
             return
 
     # get the default place for thet machine
     default_path = GetBaseDir()
 
-    # we can use folder ".dhn" placed on the same level with binary folder:
+    # we can use folder ".bitpie" placed on the same level with binary folder:
     # /..
-    #   /.dhn - data files
-    #   /datahaven  - binary files
-    path1 = str(os.path.abspath(os.path.join(dhnio.getExecutableDir(), '..', '.bitpie')))
+    #   /.bitpie - data files
+    #   /bitpie  - binary files
+    path1 = str(os.path.abspath(os.path.join(io.getExecutableDir(), '..', '.bitpie')))
     # and default path will have lower priority
     path2 = default_path
     
     # if default path exists - use it
     if os.path.isdir(path2):
         _BaseDirPath = path2
-    # but .dhn on same level will have bigger priority
+    # but .bitpie on same level will have bigger priority
     if os.path.isdir(path1):
         _BaseDirPath = path1
 
@@ -1964,42 +1925,42 @@ def _initBaseDir(base_dir=None):
     if not os.path.isdir(MetaDataDir()):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            dhnio._dirs_make(_BaseDirPath)
+            io._dirs_make(_BaseDirPath)
         return
     
     # if we did not found our key - use default path, new copy of DHN
     if not os.access(KeyFileName(), os.R_OK) or not os.access(KeyFileNameLocation(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            dhnio._dirs_make(_BaseDirPath)
+            io._dirs_make(_BaseDirPath)
         return
     
     # if we did not found our identity - use default path, new copy of DHN
     if not os.access(LocalIdentityFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            dhnio._dirs_make(_BaseDirPath)
+            io._dirs_make(_BaseDirPath)
         return
 
     # if we did not found our config - use default path, new copy of DHN
     if not os.access(UserConfigFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            dhnio._dirs_make(_BaseDirPath)
+            io._dirs_make(_BaseDirPath)
         return
 
     # if we did not found our suppliers - use default path, new copy of DHN
     if not os.access(SupplierIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            dhnio._dirs_make(_BaseDirPath)
+            io._dirs_make(_BaseDirPath)
         return
 
     # if we did not found our customers - use default path, new copy of DHN
     if not os.access(CustomerIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            dhnio._dirs_make(_BaseDirPath)
+            io._dirs_make(_BaseDirPath)
         return
 
 #------------------------------------------------------------------------------ 
@@ -2010,8 +1971,8 @@ def _checkMetaDataDirectory():
     Check that the metadata directory exists.
     """
     if not os.path.exists(MetaDataDir()): 
-        dhnio.Dprint(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
-        #dhnio._dirs_make(MetaDataDir())
+        io.log(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
+        #io._dirs_make(MetaDataDir())
         os.makedirs(MetaDataDir())
 
 def _checkSettings():
@@ -2086,41 +2047,41 @@ def _checkStaticDirectories():
     """
 #    # check that the base directory exists
 #    if not os.path.isdir(BaseDir()):
-#        dhnio.Dprint(8, 'settings.init want to create folder: ' + BaseDir())
-#        dhnio._dirs_make(BaseDir())
-#        if dhnio.Windows(): # ??? !!!
+#        io.log(8, 'settings.init want to create folder: ' + BaseDir())
+#        io._dirs_make(BaseDir())
+#        if io.Windows(): # ??? !!!
 #            _initBaseDir()  # ??? !!!
 
     if not os.path.exists(TempDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + TempDir())
+        io.log(6, 'settings.init want to create folder: ' + TempDir())
         os.makedirs(TempDir())
 
     if not os.path.exists(BandwidthInDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + BandwidthInDir())
+        io.log(6, 'settings.init want to create folder: ' + BandwidthInDir())
         os.makedirs(BandwidthInDir())
 
     if not os.path.exists(BandwidthOutDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + BandwidthOutDir())
+        io.log(6, 'settings.init want to create folder: ' + BandwidthOutDir())
         os.makedirs(BandwidthOutDir())
 
     if not os.path.exists(LogsDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + LogsDir())
+        io.log(6, 'settings.init want to create folder: ' + LogsDir())
         os.makedirs(LogsDir())
 
     if not os.path.exists(IdentityCacheDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + IdentityCacheDir())
+        io.log(6, 'settings.init want to create folder: ' + IdentityCacheDir())
         os.makedirs(IdentityCacheDir())
 
     if not os.path.exists(SuppliersDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + SuppliersDir())
+        io.log(6, 'settings.init want to create folder: ' + SuppliersDir())
         os.makedirs(SuppliersDir())
 
     if not os.path.exists(RatingsDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + RatingsDir())
+        io.log(6, 'settings.init want to create folder: ' + RatingsDir())
         os.makedirs(RatingsDir())
 
     if not os.path.exists(CSpaceDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + CSpaceDir())
+        io.log(6, 'settings.init want to create folder: ' + CSpaceDir())
         os.makedirs(CSpaceDir())
 
 
@@ -2131,25 +2092,25 @@ def _checkCustomDirectories():
     if getCustomersFilesDir() == '':
         uconfig().set('folder.folder-customers', os.path.join(BaseDir(), "customers"))
     if not os.path.exists(getCustomersFilesDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
+        io.log(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
         os.makedirs(getCustomersFilesDir())
 
     if getLocalBackupsDir() == '':
         uconfig().set('folder.folder-backups', BackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
+        io.log(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
 
     if getMessagesDir() == '':
         uconfig().set('folder.folder-messages', MessagesDir())
     if not os.path.exists(getMessagesDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + getMessagesDir())
+        io.log(6, 'settings.init want to create folder: ' + getMessagesDir())
         os.makedirs(getMessagesDir())
 
     if getReceiptsDir() == '':
         uconfig().set('folder.folder-receipts', ReceiptsDir())
     if not os.path.exists(getReceiptsDir()):
-        dhnio.Dprint(6, 'settings.init want to create folder: ' + getReceiptsDir())
+        io.log(6, 'settings.init want to create folder: ' + getReceiptsDir())
         os.makedirs(getReceiptsDir())
 
     if getRestoreDir() == '':

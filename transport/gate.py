@@ -58,12 +58,12 @@ from twisted.internet import task
 from twisted.internet.defer import Deferred, DeferredList, succeed
 
 try:
-    import lib.dhnio as dhnio
+    import lib.io as io
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     try:
-        import lib.dhnio as dhnio
+        import lib.io as io
     except:
         sys.exit()
 
@@ -72,7 +72,7 @@ import lib.settings as settings
 import lib.commands as commands
 import lib.nameurl as nameurl
 import lib.tmpfile as tmpfile
-import lib.dhnpacket as dhnpacket
+import lib.packet as packet
 
 import userid.identitycache as identitycache
 
@@ -94,13 +94,13 @@ try:
     import tcp_interface
     INSTALLED_TRANSPORTS['tcp'] = True
 except:
-    dhnio.DprintException()
+    io.exception()
 
 try:
     import dhtudp_interface
     INSTALLED_TRANSPORTS['dhtudp'] = True
 except:
-    dhnio.DprintException()
+    io.exception()
 
 #------------------------------------------------------------------------------ 
 
@@ -156,7 +156,7 @@ def init(transportslist=None):
     global _DoingShutdown
     global _TransportsDict
     global INSTALLED_TRANSPORTS
-    dhnio.Dprint(4, 'gate.init')
+    io.log(4, 'gate.init')
     if _XMLRPCListener or _DoingShutdown:
         return False
     _XMLRPCListener = reactor.listenTCP(0, server.Site(TransportGateXMLRPCServer()))
@@ -164,7 +164,7 @@ def init(transportslist=None):
     _XMLRPCURL = "http://localhost:%d" % int(_XMLRPCPort)
     if not transportslist:
         transportslist = INSTALLED_TRANSPORTS.keys()
-    dhnio.Dprint(6, 'gate.init  XML-RPC: %s,  transports: %s' % (_XMLRPCURL, transportslist))
+    io.log(6, 'gate.init  XML-RPC: %s,  transports: %s' % (_XMLRPCURL, transportslist))
     for proto in transportslist:
         iface = None
         if proto == 'tcp':
@@ -175,7 +175,7 @@ def init(transportslist=None):
             raise Exception('transport not supported: %s'  % proto)
         _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
         transport(proto).automat('init', _XMLRPCURL)
-        # dhnio.Dprint(6, 'gate.init want to start transport [%s]: %s' % (proto, str(ret)[:20].upper()))
+        # io.log(6, 'gate.init want to start transport [%s]: %s' % (proto, str(ret)[:20].upper()))
     return True
 
 
@@ -187,7 +187,7 @@ def shutdown():
     global _XMLRPCPort
     global _XMLRPCURL
     global _DoingShutdown
-    dhnio.Dprint(4, 'gate.shutdown')
+    io.log(4, 'gate.shutdown')
     if _DoingShutdown:
         return
     _DoingShutdown = True
@@ -200,7 +200,7 @@ def start():
     """
     global _StartingDeferred
     if _StartingDeferred:
-        dhnio.Dprint(4, 'gate.start WARNING already called')
+        io.log(4, 'gate.start WARNING already called')
         return _StartingDeferred
     _StartingDeferred = Deferred()
     _StartingDeferred.addCallback(started)
@@ -211,16 +211,16 @@ def start():
                 transp.automat('start')
                 did_something = True
     if not did_something:
-        dhnio.Dprint(4, 'gate.start  skipped')
+        io.log(4, 'gate.start  skipped')
         _StartingDeferred.callback(True)
     else:
-        dhnio.Dprint(4, 'gate.start')
+        io.log(4, 'gate.start')
     return _StartingDeferred 
     
         
 def started(x):
     global _StartingDeferred
-    dhnio.Dprint(4, 'gate.started')
+    io.log(4, 'gate.started')
     _StartingDeferred = None
     global _PacketsTimeOutTask
     if not _PacketsTimeOutTask:
@@ -232,7 +232,7 @@ def stop():
     """
     global _StoppingDeferred
     if _StoppingDeferred:
-        dhnio.Dprint(4, 'gate.stop WARNING already called')
+        io.log(4, 'gate.stop WARNING already called')
         return _StoppingDeferred
     _StoppingDeferred = Deferred()
     _StoppingDeferred.addCallback(stopped)
@@ -242,16 +242,16 @@ def stop():
             transp.automat('stop')
             did_something = True
     if not did_something:
-        dhnio.Dprint(4, 'gate.stop   skipped')
+        io.log(4, 'gate.stop   skipped')
         _StoppingDeferred.callback(True) 
     else:
-        dhnio.Dprint(4, 'gate.stop')
+        io.log(4, 'gate.stop')
     return _StoppingDeferred   
         
 
 def stopped(x):
     global _StoppingDeferred
-    dhnio.Dprint(4, 'gate.stopped')
+    io.log(4, 'gate.stopped')
     _StoppingDeferred = None
     global _PacketsTimeOutTask
     if _PacketsTimeOutTask:
@@ -266,7 +266,7 @@ def transport_state_changed(proto, oldstate, newstate):
     """
     global _StartingDeferred
     global _StoppingDeferred
-    dhnio.Dprint(6, 'gate.transport_state_changed starting=%r sopping=%r' % (
+    io.log(6, 'gate.transport_state_changed starting=%r sopping=%r' % (
         bool(_StartingDeferred), bool(_StoppingDeferred)))
     if _StartingDeferred:
         still_starting = False
@@ -291,10 +291,10 @@ def inbox(info):
     2) We unserialize
     3) We check that it is for us
     4) We check that it is from one of our contacts.
-    5) We use dhnpacket.validate() to check signature and that number fields are numbers
+    5) We use packet.validate() to check signature and that number fields are numbers
     6) Any other sanity checks we can do and if anything funny we toss out the packet.
-    7) Then change the filename to the dhnpacket.PackedID that it should be.
-       and call the right function(s) for this new dhnpacket
+    7) Then change the filename to the packet.PackedID that it should be.
+       and call the right function(s) for this new packet
        (dhnblock, scrubber, remotetester, customerservice, ...)
        to dispatch it to right place(s).
     8) We have to keep track of bandwidth to/from everyone, and make a report every 24 hours
@@ -303,27 +303,27 @@ def inbox(info):
     global _DoingShutdown
     global _LastInboxPacketTime
     if _DoingShutdown:
-        dhnio.Dprint(6, "gate.inbox ignoring input since _DoingShutdown ")
+        io.log(6, "gate.inbox ignoring input since _DoingShutdown ")
         return None
     if info.filename == "" or not os.path.exists(info.filename):
-        dhnio.Dprint(1, "gate.inbox  ERROR bad filename=" + info.filename)
+        io.log(1, "gate.inbox  ERROR bad filename=" + info.filename)
         return None
     try:
-        data = dhnio.ReadBinaryFile(info.filename)
+        data = io.ReadBinaryFile(info.filename)
     except:
-        dhnio.Dprint(1, "gate.inbox ERROR reading file " + info.filename)
+        io.log(1, "gate.inbox ERROR reading file " + info.filename)
         return None
     if len(data) == 0:
-        dhnio.Dprint(1, "gate.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
+        io.log(1, "gate.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
         return None
     try:
-        newpacket = dhnpacket.Unserialize(data)
+        newpacket = packet.Unserialize(data)
     except:
-        dhnio.Dprint(1, "gate.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
-        dhnio.DprintException()
+        io.log(1, "gate.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
+        io.exception()
         return None
     if newpacket is None:
-        dhnio.Dprint(2, "gate.inbox WARNING newpacket from %s://%s is None" % (info.proto, info.host))
+        io.log(2, "gate.inbox WARNING newpacket from %s://%s is None" % (info.proto, info.host))
         return None
     try:
         Command = newpacket.Command
@@ -338,14 +338,14 @@ def inbox(info):
             OwnerID = RemoteID
         packet_sz = len(data)
     except:
-        dhnio.Dprint(1, "gate.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
-        dhnio.Dprint(1, "data length=" + str(len(data)))
-        dhnio.DprintException()
+        io.log(1, "gate.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
+        io.log(1, "data length=" + str(len(data)))
+        io.exception()
         fd, filename = tmpfile.make('other', '.bad')
         os.write(fd, data)
         os.close(fd)
         return None
-    dhnio.Dprint(16, "gate.inbox [%s] from %s|%s by %s://%s" % (
+    io.log(16, "gate.inbox [%s] from %s|%s by %s://%s" % (
         newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
         nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
     return newpacket
@@ -354,14 +354,14 @@ def inbox(info):
 
 def outbox(outpacket, wide=False, callbacks={}): 
     """
-    Sends `dhnpacket` to the network.
+    Sends `packet` to the network.
     
-        :param outpacket: an instance of dhnpacket
+        :param outpacket: an instance of packet
         :param wide:  set to True if you need to send the packet 
                       to all contacts of Remote Identity
         :param callbacks: provide a callback methods to get response
     """
-    dhnio.Dprint(16, "gate.outbox [%s] to %s" % (
+    io.log(16, "gate.outbox [%s] to %s" % (
         outpacket.Command, nameurl.GetName(outpacket.RemoteID),))
     return packet_out.create(outpacket, wide, callbacks)
 
@@ -409,10 +409,10 @@ def make_transfer_ID():
 def cancel_output_file(transferID, why=None):
     pkt_out, work_item = packet_out.search_by_transfer_id(transferID)
     if pkt_out is None:
-        dhnio.Dprint(6, 'gate.cancel_output_file WARNING %s is not found' % str(transferID))
+        io.log(6, 'gate.cancel_output_file WARNING %s is not found' % str(transferID))
         return False
     pkt_out.automat('cancel', why)
-    dhnio.Dprint(14, 'gate.cancel_output_file    %s' % transferID)
+    io.log(14, 'gate.cancel_output_file    %s' % transferID)
     return True
 
         
@@ -426,7 +426,7 @@ def cancel_input_file(transferID, why=None):
 def cancel_outbox_file(proto, host, filename, why=None):
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        dhnio.Dprint(2, 'gate.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename),))
+        io.log(2, 'gate.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename),))
         return None
     pkt_out.automat('cancel', why)
     # return transport(proto).call('cancel_outbox_file', host, filename)
@@ -455,7 +455,7 @@ def current_bytes_received():
 
 def packets_timeout_loop():
     global _PacketsTimeOutTask
-    dhnio.Dprint(18, 'gate.packets_timeout_loop')
+    io.log(18, 'gate.packets_timeout_loop')
     _PacketsTimeOutTask = reactor.callLater(10, packets_timeout_loop)
     for pkt_in in packet_in.items().values():
         if pkt_in.is_timed_out():
@@ -475,21 +475,21 @@ def on_transport_started(proto, xmlrpcurl=None):
 def on_receiving_started(proto, host, options_modified=None):
     """
     """
-    dhnio.Dprint(6, 'gate.on_receiving_started %s host=%s' % (proto.upper(), host))
+    io.log(6, 'gate.on_receiving_started %s host=%s' % (proto.upper(), host))
     transport(proto).automat('receiving-started')
     return True
 
 def on_receiving_failed(proto, error_code=None):
     """
     """
-    dhnio.Dprint(6, 'gate.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
+    io.log(6, 'gate.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
     transport(proto).automat('failed')
     return True
 
 def on_disconnected(proto, result=None):
     """
     """
-    dhnio.Dprint(6, 'gate.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
+    io.log(6, 'gate.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
     transport(proto).automat('stopped')
     return True
 
@@ -522,15 +522,15 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     """
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        dhnio.Dprint(2, 'gate.on_register_file_sending ERROR packet_out not found: %r %r %r' % (
+        io.log(2, 'gate.on_register_file_sending ERROR packet_out not found: %r %r %r' % (
             proto, host, os.path.basename(filename)))
         return None
     transfer_id = make_transfer_ID()
-    # dhnio.Dprint(14, '>>> OUT >>> ?%d? send {%s} via [%s] to %s at %s' % (
+    # io.log(14, '>>> OUT >>> ?%d? send {%s} via [%s] to %s at %s' % (
     #     transfer_id, os.path.basename(filename), proto, 
     #     nameurl.GetName(receiver_idurl), host))
     if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
-        dhnio.Dprint(2, 'gate.on_register_file_sending ERROR  [%s] [%s]' % (pkt_out.remote_idurl, receiver_idurl))
+        io.log(2, 'gate.on_register_file_sending ERROR  [%s] [%s]' % (pkt_out.remote_idurl, receiver_idurl))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
     return transfer_id
 
@@ -540,14 +540,14 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     """
     pkt_out, work_item = packet_out.search_by_transfer_id(transfer_id)
     if pkt_out is None:
-        dhnio.Dprint(6, 'gate.unregister_file_sending WARNING %s is not found' % str(transfer_id))
+        io.log(6, 'gate.unregister_file_sending WARNING %s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
     # if status == 'finished':
-    #     dhnio.Dprint(14, '<<< OUT <<< !%d! [%s] %s with %d bytes' % (
+    #     io.log(14, '<<< OUT <<< !%d! [%s] %s with %d bytes' % (
     #         transfer_id, work_item.proto, status.upper(), bytes_sent))
     # else:
-    #     dhnio.Dprint(14, '<<< OUT <<< #%d# [%s] %s : %s' % (
+    #     io.log(14, '<<< OUT <<< #%d# [%s] %s : %s' % (
     #         transfer_id, work_item.proto, status.upper(), error_message))
     return True
 
@@ -559,7 +559,7 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     """
     transfer_id = make_transfer_ID()
     packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))
-    # dhnio.Dprint(14, '>>> IN >>> ?%d? receive {%s} via [%s] from %s at %s' % (
+    # io.log(14, '>>> IN >>> ?%d? receive {%s} via [%s] from %s at %s' % (
     #     transfer_id, os.path.basename(filename), proto, 
     #     nameurl.GetName(sender_idurl), host))
     return transfer_id
@@ -572,10 +572,10 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     assert pkt_in != None
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
     # if status == 'finished':
-    #     dhnio.Dprint(14, '<<< IN <<< !%d! [%s] %s with %d bytes' % (
+    #     io.log(14, '<<< IN <<< !%d! [%s] %s with %d bytes' % (
     #         transfer_id, pkt_in.proto, status.upper(), bytes_received))
     # else:
-    #     dhnio.Dprint(14, '<<< IN <<< #%d# [%s] %s : %s' % (
+    #     io.log(14, '<<< IN <<< #%d# [%s] %s : %s' % (
     #         transfer_id, pkt_in.proto, status.upper(), error_message))
     return True
 
@@ -584,12 +584,12 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
     """
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        dhnio.Dprint(2, 'gate.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (
+        io.log(2, 'gate.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (
             proto, host, os.path.basename(filename)))
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
-    dhnio.Dprint(14, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s' % (
-        os.path.basename(filename), proto, host))
+    io.log(14, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
+        os.path.basename(filename), proto, host, error_message))
     return True
 
 #------------------------------------------------------------------------------ 
@@ -676,19 +676,19 @@ def main():
     global INSTALLED_TRANSPORTS
     # del INSTALLED_TRANSPORTS['tcp']
     INSTALLED_TRANSPORTS.pop('dhtudp')
-    dhnio.init()
+    io.init()
     settings.init()
     misc.init()
     identitycache.init()
     identitycache.UpdateAfterChecking('http://37.18.255.33:8084/vps_1000.xml', 
         open('C:\\Documents and Settings\\veselin\\.dhn\\identitycache\\http###37.18.255.33(#8084#)#vps_1000.xml').read())
-    import lib.dhncrypto
-    lib.dhncrypto.InitMyKey()
+    import lib.crypto
+    lib.crypto.InitMyKey()
     (options, args) = parseCommandLine()
     settings.override('transport.transport-tcp.transport-tcp-port', options.tcpport)
     settings.override('transport.transport-dhtudp.transport-dhtudp-port', options.udpport)
     settings.override('transport.transport-dhtudp.transport-dht-port', options.dhtport)
-    dhnio.SetDebug(options.debug)
+    io.SetDebug(options.debug)
     tmpfile.init()
     if 'dhtudp' in INSTALLED_TRANSPORTS.keys():
         import lib.udp
@@ -702,18 +702,18 @@ def main():
     start()
     globals()['num_in'] = 0
     def _in(a,b,c,d):
-        dhnio.Dprint(2, 'INBOX %d : %r' % (globals()['num_in'], a))
+        io.log(2, 'INBOX %d : %r' % (globals()['num_in'], a))
         globals()['num_in'] += 1
         return True
     callback.add_inbox_callback(_in)
     if len(args) > 0:
         globals()['num_out'] = 0
         def _s():
-            p = dhnpacket.dhnpacket(commands.Data(), misc.getLocalID(), 
+            p = packet.Signed(commands.Data(), misc.getLocalID(), 
                                     misc.getLocalID(), misc.getLocalID(), 
-                                    dhnio.ReadBinaryFile(args[1]), args[0])
+                                    io.ReadBinaryFile(args[1]), args[0])
             outbox(p, wide=True)
-            dhnio.Dprint(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))
+            io.log(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))
             globals()['num_out'] += 1
         t = task.LoopingCall(_s)
         reactor.callLater(1, t.start, 60, True)

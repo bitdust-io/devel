@@ -25,11 +25,11 @@ except:
 from twisted.internet.defer import Deferred,  DeferredList
 from twisted.internet import task
 
-import lib.dhnio as dhnio
+import lib.io as io
 
 #------------------------------------------------------------------------------ 
 
-# need to change directory in case we were not in the p2p directory when datahaven started up,
+# need to change directory in case we were not in the p2p directory when soft started up,
 # need it to find dhntester.py and potentially others
 #try:
 #    os.chdir(os.path.abspath(os.path.dirname(__file__)))
@@ -51,7 +51,7 @@ def init_local(UI=''):
     
     global UImode
     UImode = UI
-    dhnio.Dprint(2, "dhninit.init_local")
+    io.log(2, "dhninit.init_local")
 
     import lib.settings as settings
     import lib.misc as misc
@@ -68,7 +68,7 @@ def init_local(UI=''):
             softspace = 0
             def read(self): pass
             def write(self, s):
-                dhnio.Dprint(0, s.strip())
+                io.log(0, s.strip())
             def flush(self): pass
             def close(self): pass
         from twisted.python import log as twisted_log
@@ -91,18 +91,18 @@ def init_local(UI=''):
             from guppy import hpy
             hp = hpy()
             hp.setrelheap()
-            dhnio.Dprint(2, 'hp.heap():\n'+str(hp.heap()))
-            dhnio.Dprint(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-            dhnio.Dprint(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+            io.log(2, 'hp.heap():\n'+str(hp.heap()))
+            io.log(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+            io.log(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
             import guppy.heapy.RM
         except:
-            dhnio.Dprint(2, "dhninit.init_local guppy package is not installed")            
+            io.log(2, "dhninit.init_local guppy package is not installed")            
 
     import lib.tmpfile as tmpfile
     tmpfile.init(settings.getTempDir())
 
-    import lib.dhnnet as dhnnet
-    dhnnet.init()
+    import lib.net_misc as net_misc
+    net_misc.init()
     settings.update_proxy_settings()
 
     import run_upnpc
@@ -111,7 +111,7 @@ def init_local(UI=''):
     import lib.eccmap as eccmap
     eccmap.init()
 
-    import lib.dhncrypto as dhncrypto
+    import lib.crypto as crypto
     import userid.identity as identity
 
     import webcontrol
@@ -131,7 +131,7 @@ def init_contacts(callback=None, errback=None):
     """
     Initialize ``contacts`` and ``identitycache``. 
     """
-    dhnio.Dprint(2, "dhninit.init_contacts")
+    io.log(2, "dhninit.init_contacts")
     
     import lib.misc as misc
     misc.loadLocalIdentity()
@@ -153,7 +153,7 @@ def init_connection():
     """
     
     global UImode
-    dhnio.Dprint(2, "dhninit.init_connection")
+    io.log(2, "dhninit.init_connection")
 
     import webcontrol
 
@@ -194,7 +194,7 @@ def init_connection():
         from dhnicon import USE_TRAY_ICON
     except:
         USE_TRAY_ICON = False
-        dhnio.DprintException()
+        io.exception()
 
     if USE_TRAY_ICON:
         import dhnicon
@@ -227,7 +227,7 @@ def init_modules():
     Finish initialization part, run delayed methods.
     """
     
-    dhnio.Dprint(2,"dhninit.init_modules")
+    io.log(2,"dhninit.init_modules")
 
     import webcontrol
 
@@ -260,7 +260,7 @@ def shutdown(x=None):
     """
     
     global initdone
-    dhnio.Dprint(2, "dhninit.shutdown " + str(x))
+    io.log(2, "dhninit.shutdown " + str(x))
     dl = []
 
     import io_throttle
@@ -327,14 +327,14 @@ def shutdown_restart(param=''):
     Calls ``shutdown()`` method and stop the main reactor, then restart the program. 
     """
     
-    dhnio.Dprint(2, "dhninit.shutdown_restart ")
+    io.log(2, "dhninit.shutdown_restart ")
 
     def do_restart(param):
         import lib.misc as misc
         misc.DoRestart(param)
 
     def shutdown_finished(x, param):
-        dhnio.Dprint(2, "dhninit.shutdown_restart.shutdown_finished want to stop the reactor")
+        io.log(2, "dhninit.shutdown_restart.shutdown_finished want to stop the reactor")
         reactor.addSystemEventTrigger('after','shutdown', do_restart, param)
         reactor.stop()
 
@@ -347,10 +347,10 @@ def shutdown_exit(x=None):
     Calls ``shutdown()`` method and stop the main reactor, this will finish the program. 
     """
     
-    dhnio.Dprint(2, "dhninit.shutdown_exit ")
+    io.log(2, "dhninit.shutdown_exit ")
 
     def shutdown_reactor_stop(x=None):
-        dhnio.Dprint(2, "dhninit.shutdown_exit want to stop the reactor")
+        io.log(2, "dhninit.shutdown_exit want to stop the reactor")
         reactor.stop()
         # sys.exit()
 
@@ -364,7 +364,7 @@ def settings_patch():
     Small hacks to switch on/off some options, 
     but we want to do that only during testing period.
     """
-    dhnio.Dprint(6, 'dhninit.settings_patch ')
+    io.log(6, 'dhninit.settings_patch ')
     import lib.settings as settings
     
 
@@ -372,16 +372,16 @@ def start_logs_rotate():
     """
     Checks and remove old or too big log files.
     """
-    dhnio.Dprint(4, 'dhninit.start_logs_rotate')
+    io.log(4, 'dhninit.start_logs_rotate')
     def erase_logs():
-        dhnio.Dprint(4, 'dhninit.erase_logs ')
+        io.log(4, 'dhninit.erase_logs ')
         import lib.settings as settings
         logs_dir = settings.LogsDir()
         total_sz = 0
         remove_list = []
         for filename in os.listdir(logs_dir):
             filepath = os.path.join(logs_dir, filename)
-            if filepath == dhnio.LogFileName:
+            if filepath == io.LogFileName:
                 # skip current log file
                 continue
             if not filename.endswith('.log'):
@@ -398,7 +398,7 @@ def start_logs_rotate():
                 file_size = 0
             total_sz += file_size 
             # if the file is bigger than 10mb and we are not in testing mode - erase it
-            if file_size > 1024*1024*10 and dhnio.DebugLevel < 8:
+            if file_size > 1024*1024*10 and io.DebugLevel < 8:
                 if os.access(filepath, os.W_OK):
                     remove_list.append((filepath, 'big file'))
                     continue
@@ -411,7 +411,7 @@ def start_logs_rotate():
                 try:
                     dtm = time.mktime(time.strptime(filename[4:-4],'%y%m%d%H%M%S'))
                 except:
-                    dhnio.DprintException()
+                    io.exception()
                     continue          
                 # we want to check if it is more than 30 days old ...
                 if time.time() - dtm > 60*60*24*30:
@@ -419,16 +419,16 @@ def start_logs_rotate():
                     continue
                 # also we want to check if all those files are too big - 50 MB is enough
                 # for testers we do not check this
-                if total_sz > 1024*1024*50 and dhnio.DebugLevel < 8:
+                if total_sz > 1024*1024*50 and io.DebugLevel < 8:
                     remove_list.append((filepath, 'total size'))
                     continue
         for filepath, reason in remove_list:
             try:
                 os.remove(filepath)
-                dhnio.Dprint(6, 'dhninit.erase_logs %s was deleted because of "%s"' % (filepath, reason))
+                io.log(6, 'dhninit.erase_logs %s was deleted because of "%s"' % (filepath, reason))
             except:
-                dhnio.Dprint(1, 'dhninit.erase_logs ERROR can not remove %s, reason is [%s]' % (filepath, reason))
-                dhnio.DprintException()
+                io.log(1, 'dhninit.erase_logs ERROR can not remove %s, reason is [%s]' % (filepath, reason))
+                io.exception()
         del remove_list
              
     task.LoopingCall(erase_logs).start(60*60*24)
@@ -439,57 +439,57 @@ def check_install():
     """
     Return True if Private Key and local identity files exists and both is valid.
     """
-    dhnio.Dprint(2, 'dhninit.check_install ')
+    io.log(2, 'dhninit.check_install ')
     import lib.settings as settings
     import userid.identity as identity
-    import lib.dhncrypto as dhncrypto
+    import lib.crypto as crypto
 
     keyfilename = settings.KeyFileName()
     keyfilenamelocation = settings.KeyFileNameLocation()
     if os.path.exists(keyfilenamelocation):
-        keyfilename = dhnio.ReadTextFile(keyfilenamelocation)
+        keyfilename = io.ReadTextFile(keyfilenamelocation)
         if not os.path.exists(keyfilename):
             keyfilename = settings.KeyFileName()
     idfilename = settings.LocalIdentityFilename()
     
     if not os.path.exists(keyfilename) or not os.path.exists(idfilename):
-        dhnio.Dprint(2, 'dhninit.check_install local key or local id not exists')
+        io.log(2, 'dhninit.check_install local key or local id not exists')
         return False
 
-    current_key = dhnio.ReadBinaryFile(keyfilename)
-    current_id = dhnio.ReadBinaryFile(idfilename)
+    current_key = io.ReadBinaryFile(keyfilename)
+    current_id = io.ReadBinaryFile(idfilename)
 
     if current_id == '':
-        dhnio.Dprint(2, 'dhninit.check_install local identity is empty ')
+        io.log(2, 'dhninit.check_install local identity is empty ')
         return False
 
     if current_key == '':
-        dhnio.Dprint(2, 'dhninit.check_install private key is empty ')
+        io.log(2, 'dhninit.check_install private key is empty ')
         return False
 
     try:
-        dhncrypto.InitMyKey()
+        crypto.InitMyKey()
     except:
-        dhnio.Dprint(2, 'dhninit.check_install fail loading private key ')
+        io.log(2, 'dhninit.check_install fail loading private key ')
         return False
 
     try:
         ident = identity.identity(xmlsrc=current_id)
     except:
-        dhnio.Dprint(2, 'dhninit.check_install fail init local identity ')
+        io.log(2, 'dhninit.check_install fail init local identity ')
         return False
 
     try:
         res = ident.Valid()
     except:
-        dhnio.Dprint(2, 'dhninit.check_install wrong data in local identity   ')
+        io.log(2, 'dhninit.check_install wrong data in local identity   ')
         return False
 
     if not res:
-        dhnio.Dprint(2, 'dhninit.check_install local identity is not valid ')
+        io.log(2, 'dhninit.check_install local identity is not valid ')
         return False
 
-    dhnio.Dprint(2, 'dhninit.check_install done')
+    io.log(2, 'dhninit.check_install done')
     return True
 
 

@@ -26,7 +26,7 @@ from twisted.web import xmlrpc
 from twisted.internet import protocol
 from twisted.internet.defer import Deferred, succeed
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.nameurl as nameurl
 
 import dhtudp_node
@@ -68,7 +68,7 @@ class GateInterface():
         """
         """
         global _GateProxy
-        dhnio.Dprint(4, 'dhtudp_interface.init')
+        io.log(4, 'dhtudp_interface.init')
         _GateProxy = xmlrpc.Proxy(gate_xml_rpc_url, allowNone=True)
         _GateProxy.callRemote('transport_started', 'dhtudp')
         return True
@@ -77,7 +77,7 @@ class GateInterface():
         """
         """
         global _GateProxy
-        dhnio.Dprint(4, 'dhtudp_interface.shutdown')
+        io.log(4, 'dhtudp_interface.shutdown')
         ret = self.disconnect()
         if _GateProxy:
             del _GateProxy
@@ -88,14 +88,14 @@ class GateInterface():
         """
         """
         dhtudp_node.A('go-online', options)
-        # dhnio.Dprint(8, 'dhtudp_interface.receive')
+        # io.log(8, 'dhtudp_interface.receive')
         return True
 
     def disconnect(self):
         """
         """
         dhtudp_node.A('go-offline')
-        # dhnio.Dprint(8, 'dhtudp_interface.disconnect')
+        # io.log(8, 'dhtudp_interface.disconnect')
         return succeed(True)
 
     def send_file(self, filename, host, description='', single=False):
@@ -123,7 +123,7 @@ class GateInterface():
         """
         if not host:
             host = idurl_to_id(idurl)
-        dhnio.Dprint(12, 'dhtudp_interface.connect %s' % host)
+        io.log(12, 'dhtudp_interface.connect %s' % host)
         dhtudp_node.A('connect', host)
 
     def disconnect_from_host(self, host):
@@ -146,7 +146,7 @@ class GateInterface():
         for sess in dhtudp_session.sessions().values():
             for in_file in sess.stream.inboxFiles.values():
                 if in_file.transfer_id and in_file.transfer_id == transferID:
-                    dhnio.Dprint(6, 'dhtudp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
+                    io.log(6, 'dhtudp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
                     sess.automat('shutdown')
                     return True
         return False
@@ -157,7 +157,7 @@ class GateInterface():
         for sess in dhtudp_session.sessions().values():
             for fn, descr, result_defer, single in sess.stream.outboxQueue:
                 if fn == filename and sess.peer_id == host:
-                    dhnio.Dprint(6, 'dhtudp_interface.cancel_outbox_file    host=%s  want to close session' % host)
+                    io.log(6, 'dhtudp_interface.cancel_outbox_file    host=%s  want to close session' % host)
                     sess.automat('shutdown')
                     return True
         return False

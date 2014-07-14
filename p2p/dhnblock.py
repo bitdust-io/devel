@@ -23,16 +23,16 @@ a lot of storage, so we should be using disk.
 We want to generate a pool of writes to do, and put in more as it gets below some
 MB limit. But we should not be limited by a particular nodes speed.
 
-The ``dhnpacket`` will have all the info about where it is going etc.
+The ``packet`` will have all the info about where it is going etc.
 We number them with our block number and the supplier numbers.
 
 Going to disk should let us do restarts after crashes without much trouble.
 
 Digital signatures and timestamps are done on ``dhnblocks``.
-Signatures are also done on ``dhnpackets``.
+Signatures are also done on ``packets``.
 
 RAIDMAKE:
-    This object can be asked to generate any/all ``dhnpacket(s)`` that would come from this ``dhnblock``.
+    This object can be asked to generate any/all ``packet(s)`` that would come from this ``dhnblock``.
 RAIDREAD:
     It can also rebuild the ``dhnblock`` from packets and will
     generate the read requests to get fetch the packets.
@@ -46,8 +46,8 @@ from twisted.internet.defer import Deferred
 #    sys.path.insert(0, os.path.abspath('..'))
 
 import lib.misc as misc
-import lib.dhnio as dhnio
-import lib.dhncrypto as dhncrypto
+import lib.io as io
+import lib.crypto as crypto
 import lib.contacts as contacts
 
 
@@ -63,7 +63,7 @@ class dhnblock:
     BlockNumber            number of this block
     EncryptedData          data may have some padding so multiple of crypto chunck size
                            and multiple of #nodes in eccmap (usually 64) for division
-                           into dhnpackets
+                           into packets
     Length                 real length of data when cleartext (encrypted may be padded)
     LastBlock              should now be "True" or "False" - careful in using
     SessionKeyType         which crypto is used for session key
@@ -76,11 +76,11 @@ class dhnblock:
         self.CreatorID = CreatorID
         self.BackupID = BackupID
         self.BlockNumber = BlockNumber
-        self.EncryptedSessionKey = dhncrypto.EncryptLocalPK(SessionKey)
+        self.EncryptedSessionKey = crypto.EncryptLocalPK(SessionKey)
         self.SessionKeyType = SessionKeyType
         self.Length = len(Data)
         self.LastBlock = bool(LastBlock)               
-        self.EncryptedData = dhncrypto.EncryptWithSessionKey(SessionKey, Data) # DataLonger
+        self.EncryptedData = crypto.EncryptWithSessionKey(SessionKey, Data) # DataLonger
         self.Signature = None
         self.Sign()
 
@@ -89,9 +89,9 @@ class dhnblock:
 
     def SessionKey(self):
         """
-        Return original SessionKey from ``EncryptedSessionKey`` using ``lib.dhncrypto.DecryptLocalPK()`` method.
+        Return original SessionKey from ``EncryptedSessionKey`` using ``lib.crypto.DecryptLocalPK()`` method.
         """
-        return dhncrypto.DecryptLocalPK(self.EncryptedSessionKey)
+        return crypto.DecryptLocalPK(self.EncryptedSessionKey)
 
     def GenerateHashBase(self):
         """
@@ -103,9 +103,9 @@ class dhnblock:
 
     def GenerateHash(self):
         """
-        Create a hash for that ``dhnblock`` using ``lib.dhncrypto.Hash()``.
+        Create a hash for that ``dhnblock`` using ``lib.crypto.Hash()``.
         """
-        return dhncrypto.Hash(self.GenerateHashBase())
+        return crypto.Hash(self.GenerateHashBase())
 
     def Sign(self):
         """
@@ -116,9 +116,9 @@ class dhnblock:
 
     def GenerateSignature(self):
         """
-        Call ``lib.dhncrypto.Sign()`` to generate signature.
+        Call ``lib.crypto.Sign()`` to generate signature.
         """
-        return dhncrypto.Sign(self.GenerateHash())
+        return crypto.Sign(self.GenerateHash())
 
     def Ready(self):
         """
@@ -131,14 +131,14 @@ class dhnblock:
         Validate signature to verify the ``dhnblock``.
         """
         if not self.Ready():
-            dhnio.Dprint(4, "dhnblock.Valid WARNING block is not ready yet " + str(self))
+            io.log(4, "dhnblock.Valid WARNING block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
         ConIdentity = contacts.getContact(misc.getLocalID())
         if ConIdentity is None:
-            dhnio.Dprint(2, "dhnblock.Valid WARNING could not get Identity so returning False")
+            io.log(2, "dhnblock.Valid WARNING could not get Identity so returning False")
             return False
-        result = dhncrypto.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
+        result = crypto.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
         return result
 
     def Data(self):
@@ -146,7 +146,7 @@ class dhnblock:
         Return an original data, decrypt using ``EnctryptedData`` and ``EncryptedSessionKey``.
         """
         SessionKey = self.SessionKey()
-        ClearLongData = dhncrypto.DecryptWithSessionKey(SessionKey, self.EncryptedData)
+        ClearLongData = crypto.DecryptWithSessionKey(SessionKey, self.EncryptedData)
         return ClearLongData[0:self.Length]    # remove padding
 
     def Serialize(self):

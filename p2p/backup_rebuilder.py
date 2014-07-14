@@ -55,7 +55,7 @@ except:
 from twisted.internet.defer import maybeDeferred
 
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.settings as settings
 import lib.contacts as contacts
@@ -232,7 +232,7 @@ class BackupRebuilder(Automat):
                     'P': [0] * backup_matrix.suppliers_set().supplierCount }
         # detect missing blocks from remote info
         self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(backupID)
-        dhnio.Dprint(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
+        io.log(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
         # find the correct max block number for this backup
         # we can have remote and local files
         # will take biggest block number from both 
@@ -253,7 +253,7 @@ class BackupRebuilder(Automat):
         self.currentBackupID = backupID
         # clear requesting queue, remove old packets for this backup, we will send them again
         io_throttle.DeleteBackupRequests(self.currentBackupID)
-        # dhnio.Dprint(6, 'backup_rebuilder.doTakeNextBackup currentBackupID=%s workingBlocksQueue=%d' % (self.currentBackupID, len(self.workingBlocksQueue)))
+        # io.log(6, 'backup_rebuilder.doTakeNextBackup currentBackupID=%s workingBlocksQueue=%d' % (self.currentBackupID, len(self.workingBlocksQueue)))
         self.automat('backup-ready')
 
     def doRequestAvailableBlocks(self, arg):
@@ -336,14 +336,14 @@ class BackupRebuilder(Automat):
         # and calculate the whole size to be received ... smart!
         # ... remote supplier should not use last file to calculate
         self.blockIndex = len(self.workingBlocksQueue) - 1
-        dhnio.Dprint(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
+        io.log(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
         def _prepare_one_block(): 
             if self.blockIndex < 0:
-                # dhnio.Dprint(8, '        _prepare_one_block finish all blocks')
+                # io.log(8, '        _prepare_one_block finish all blocks')
                 reactor.callLater(0, _finish_all_blocks)
                 return
             self.currentBlockNumber = self.workingBlocksQueue[self.blockIndex]
-            # dhnio.Dprint(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
+            # io.log(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
             self.workBlock = block_rebuilder.BlockRebuilder(
                 eccmap.Current(), #self.eccMap,
                 self.currentBackupID,
@@ -357,7 +357,7 @@ class BackupRebuilder(Automat):
         def _identify_block_packets():
             self.workBlock.IdentifyMissing()
 #            if not self.workBlock.IsMissingFilesOnHand():
-#                dhnio.Dprint(8, '        _identify_block_packets some missing files is not come yet')
+#                io.log(8, '        _identify_block_packets some missing files is not come yet')
 #                reactor.callLater(0, self.automat, 'rebuilding-finished', False)
 #                return
             reactor.callLater(0, _work_on_block)
@@ -365,7 +365,7 @@ class BackupRebuilder(Automat):
             # self.workBlock.AttemptRebuild().addBoth(_rebuild_finished)
             maybeDeferred(self.workBlock.AttemptRebuild).addCallback(_rebuild_finished)
         def _rebuild_finished(someNewData):
-            # dhnio.Dprint(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
+            # io.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
             if someNewData:
                 self.workBlock.WorkDoneReport()
                 self.blocksSucceed.append(self.currentBlockNumber)
@@ -379,7 +379,7 @@ class BackupRebuilder(Automat):
         def _finish_all_blocks():
             for blockNum in self.blocksSucceed:
                 self.workingBlocksQueue.remove(blockNum)
-            dhnio.Dprint(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
+            io.log(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
             result = len(self.blocksSucceed) > 0
             self.blocksSucceed = []
             self.automat('rebuilding-finished', result)
@@ -393,29 +393,29 @@ class BackupRebuilder(Automat):
         if state in ['in queue', 'shutdown', 'exist']:
             return
         if state != 'received':
-            dhnio.Dprint(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(packet)))
+            io.log(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(packet)))
             return
         packetID = packet.PacketID
         filename = os.path.join(settings.getLocalBackupsDir(), packetID)
         if not packet.Valid():
             # TODO 
             # if we didn't get a valid packet ... re-request it or delete it?
-            dhnio.Dprint(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
+            io.log(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
             return
         if os.path.exists(filename):
-            dhnio.Dprint(4, "backup_rebuilder.FileReceived WARNING rewriting existed file" + filename)
+            io.log(4, "backup_rebuilder.FileReceived WARNING rewriting existed file" + filename)
             try: 
                 os.remove(filename)
             except:
-                dhnio.DprintException()
+                io.exception()
         dirname = os.path.dirname(filename)
         if not os.path.exists(dirname):
             try:
-                dhnio._dirs_make(dirname)
+                io._dirs_make(dirname)
             except:
-                dhnio.Dprint(2, "backup_rebuilder.FileReceived ERROR can not create sub dir " + dirname)
+                io.log(2, "backup_rebuilder.FileReceived ERROR can not create sub dir " + dirname)
                 return 
-        if not dhnio.WriteFile(filename, packet.Payload):
+        if not io.WriteFile(filename, packet.Payload):
             return
         backup_matrix.LocalFileReport(packetID)
         self.automat('inbox-data-packet', packetID)

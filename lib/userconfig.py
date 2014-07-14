@@ -399,7 +399,7 @@ class UserConfig:
  </id-server>
  <logs>
   <debug-level>
-   4
+   0
   </debug-level>
   <stream-enable>
    False

@@ -89,7 +89,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in fire_hire.py')
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.settings as settings
 import lib.contacts as contacts
@@ -251,12 +251,12 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        # dhnio.Dprint(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
+        # io.log(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
         #     contacts.numSuppliers(), len(self.dismiss_list), settings.getCentralNumSuppliers()))
         if '' in contacts.getSupplierIDs():
-            dhnio.Dprint(4, 'fire_hire.isMoreNeeded WARNING found empty suppliers!!!')
+            io.log(4, 'fire_hire.isMoreNeeded WARNING found empty suppliers!!!')
             return True
-        dhnio.Dprint(14, 'fire_hire.isMoreNeeded %d %d %d' % (
+        io.log(14, 'fire_hire.isMoreNeeded %d %d %d' % (
             contacts.numSuppliers(), len(self.dismiss_list), settings.getCentralNumSuppliers()))
         return contacts.numSuppliers() - len(self.dismiss_list) < settings.getCentralNumSuppliers()
 
@@ -264,7 +264,7 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        dhnio.Dprint(14, 'fire_hire.isAllReady %d %d' % (
+        io.log(14, 'fire_hire.isAllReady %d %d' % (
             len(self.connect_results), contacts.numSuppliers()))
         return len(self.connect_results) == contacts.numSuppliers()
                 
@@ -332,7 +332,7 @@ class FireHire(automat.Automat):
             for supplier_index in range(settings.getCentralNumSuppliers(), contacts.numSuppliers()):
                 result.add(contacts.getSupplierID(supplier_index))
         result = list(result) 
-        dhnio.Dprint(10, 'fire_hire.doDecideToDismissSuppliers %s' % result)
+        io.log(10, 'fire_hire.doDecideToDismissSuppliers %s' % result)
         self.automat('made-decision', result)
 
     def doRememberSuppliers(self, arg):
@@ -372,12 +372,12 @@ class FireHire(automat.Automat):
         import webcontrol
         webcontrol.OnListSuppliers()
         if position < 0:
-            dhnio.Dprint(2, '!!!!!!!!!!! ADD SUPPLIER : %s' % (new_idurl))
+            io.log(2, '!!!!!!!!!!! ADD SUPPLIER : %s' % (new_idurl))
         else:
             if old_idurl:
-                dhnio.Dprint(2, '!!!!!!!!!!! SUBSTITUTE SUPPLIER %d : %s->%s' % (position, old_idurl, new_idurl))
+                io.log(2, '!!!!!!!!!!! SUBSTITUTE SUPPLIER %d : %s->%s' % (position, old_idurl, new_idurl))
             else:
-                dhnio.Dprint(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (position, new_idurl))
+                io.log(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (position, new_idurl))
 
     def doRemoveSuppliers(self, arg):
         """
@@ -386,7 +386,7 @@ class FireHire(automat.Automat):
         current_suppliers = contacts.getSupplierIDs()
         desired_suppliers = settings.getCentralNumSuppliers()
         if len(current_suppliers) < desired_suppliers:
-            dhnio.Dprint(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers %d<%d' % (
+            io.log(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers %d<%d' % (
                 len(current_suppliers), desired_suppliers))
             return
         for supplier_idurl in self.dismiss_list:
@@ -398,13 +398,13 @@ class FireHire(automat.Automat):
         # backup_control.SetSupplierList(current_suppliers)
         import webcontrol
         webcontrol.OnListSuppliers()
-        dhnio.Dprint(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
+        io.log(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
 
     def doDisconnectSuppliers(self, arg):
         """
         Action method.
         """
-        dhnio.Dprint(10, 'fire_hire.doDismissSuppliers %r' % self.dismiss_list)
+        io.log(10, 'fire_hire.doDismissSuppliers %r' % self.dismiss_list)
         self.dismiss_results = []
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -448,7 +448,7 @@ class FireHire(automat.Automat):
 
 
     def _supplier_connector_state_changed(self, idurl, newstate):
-        dhnio.Dprint(14, 'fire_hire._supplier_connector_state_changed %s %s, state=%s' % (
+        io.log(14, 'fire_hire._supplier_connector_state_changed %s %s, state=%s' % (
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
         if self.state == 'SUPPLIERS?':
@@ -456,7 +456,7 @@ class FireHire(automat.Automat):
         elif self.state == 'FIRE_MANY':
             self.dismiss_results.append(idurl)
         else:
-            raise Exception('strange state reached')
+            return
         self.automat('supplier-state-changed', (idurl, newstate))
     
 
@@ -479,7 +479,7 @@ class FireHire(automat.Automat):
 #    # for sc in supplier_connector.connectors().values():
 #        sc = supplier_connector.by_idurl(supplier_idurl)
 #        if sc and sc.state == 'NO_SERVICE':
-#            dhnio.Dprint(6, 'fire_hire.WhoIsLost !!!!!!!! %s : no service' % sc.idurl)
+#            io.log(6, 'fire_hire.WhoIsLost !!!!!!!! %s : no service' % sc.idurl)
 #            return 'found-one-lost-supplier', sc.idurl 
 #    unreliable_supplier = None
 #    most_fails = 0.0
@@ -518,7 +518,7 @@ class FireHire(automat.Automat):
 
 #    # if all suppliers are online - we are very happy - no need to fire anybody! 
 #    if len(offline_suppliers) == 0:
-#        dhnio.Dprint(4, 'fire_hire.WhoIsLost no offline suppliers, Cool!')
+#        io.log(4, 'fire_hire.WhoIsLost no offline suppliers, Cool!')
 #        return 'not-found-lost-suppliers', ''
     
 #    # sort users - we always fire worst supplier 
@@ -529,19 +529,19 @@ class FireHire(automat.Automat):
 #    # we do not want to fire this man if he store at least 50% of our files
 #    # the fact that he is offline is not enough to fire him!
 #    if offline_suppliers[lost_supplier_idurl] < 0.5 and backup_fs.sizebackups() > 0:
-#        dhnio.Dprint(4, 'fire_hire.WhoIsLost !!!!!!!! %s is offline and keeps only %d%% of our data' % (
+#        io.log(4, 'fire_hire.WhoIsLost !!!!!!!! %s is offline and keeps only %d%% of our data' % (
 #            nameurl.GetName(lost_supplier_idurl), 
 #            int(offline_suppliers[lost_supplier_idurl] * 100.0)))
 #        return 'found-one-lost-supplier', lost_supplier_idurl
     
 #    # but if we did not saw him for a long time - we do not want him for sure
 #    if time.time() - ratings.connected_time(lost_supplier_idurl) > 60 * 60 * 24 * 2:
-#        dhnio.Dprint(2, 'fire_hire.WhoIsLost !!!!!!!! %s is offline and keeps %d%% of our data, but he was online %d hours ago' % (
+#        io.log(2, 'fire_hire.WhoIsLost !!!!!!!! %s is offline and keeps %d%% of our data, but he was online %d hours ago' % (
 #            nameurl.GetName(lost_supplier_idurl), 
 #            int(offline_suppliers[lost_supplier_idurl] * 100.0),
 #            int((time.time() - ratings.connected_time(lost_supplier_idurl)) * 60 * 60),))
 #        return 'found-one-lost-supplier', lost_supplier_idurl
     
-#    dhnio.Dprint(2, 'fire_hire.WhoIsLost some people is not here, but we did not found the bad guy at this time')
+#    io.log(2, 'fire_hire.WhoIsLost some people is not here, but we did not found the bad guy at this time')
 #    return 'not-found-lost-suppliers', ''
 

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnpacket.py
+#packet.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: dhnpacket
+.. module:: packet
 
 These packets usually hold on the order of 1 MB.
 Something equal to a packet number so we can detect duplicates in transport.
@@ -36,21 +36,21 @@ import types
 import datetime
 
 
-import dhnio
+import io
 import commands
 import misc
-import dhncrypto
+import crypto
 import packetid
 import contacts
 
 
-class dhnpacket:
+class Signed:
     """
     The core class.
     Represents a data packet in the network. 
     Payload can be encrypted using bitpie.lib.dhnblock.
     We expect remote user run the correct software.
-    His DHN must verify signature of that packet.
+    His BitPie.NET must verify signature of that packet.
     If you want to encrypt the fields and so hide that service traffic completely - 
     do that in the transport protocols. 
     Need to transfer our public key to remote peer and than he can send us a safe messages.
@@ -82,7 +82,7 @@ class dhnpacket:
         self.Sign()
 
     def __repr__(self):
-        return 'dhnpacket (command=%s id=%s)' % (str(self.Command), str(self.PacketID))
+        return 'packet (command=%s id=%s)' % (str(self.Command), str(self.PacketID))
 
     def Sign(self):
         """
@@ -93,7 +93,7 @@ class dhnpacket:
 
     def GenerateHashBase(self):
         """
-        This make a long string containing all needed fields of ``dhnpacket`` (without Signature).
+        This make a long string containing all needed fields of ``packet`` (without Signature).
         Just to be able to generate a hash of the whole packet.
         """
         sep = "-"
@@ -102,29 +102,29 @@ class dhnpacket:
 
     def GenerateHash(self):
         """
-        Call ``lib.dhncrypto.Hash`` to create a hash code for that ``dhnpacket``.
+        Call ``lib.crypto.Hash`` to create a hash code for that ``packet``.
         """
-        return dhncrypto.Hash(self.GenerateHashBase())
+        return crypto.Hash(self.GenerateHashBase())
 
     def GenerateSignature(self):
         """
-        Call ``lib.dhncrypto.Sign`` to generate digital signature.
+        Call ``lib.crypto.Sign`` to generate digital signature.
         """
-        return dhncrypto.Sign(self.GenerateHash())
+        return crypto.Sign(self.GenerateHash())
 
     def SignatureChecksOut(self):
         """
-        This check correctness of signature, uses ``lib.dhncrypto.Verify``.
+        This check correctness of signature, uses ``lib.crypto.Verify``.
         To verify we need 3 things:
-            - the dhnpacket ``Creator`` identity ( it keeps the public key ),
-            - hash of that dhnpacket - just call ``GenerateHash()`` to make it,
+            - the packet ``Creator`` identity ( it keeps the public key ),
+            - hash of that packet - just call ``GenerateHash()`` to make it,
             - the signature itself.
         """
         ConIdentity = contacts.getContact(self.CreatorID)
         if ConIdentity is None:
-            dhnio.Dprint(1, "dhnpacket.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
+            io.log(1, "packet.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
             return False
-        Result = dhncrypto.Verify(ConIdentity, self.GenerateHash(), self.Signature)
+        Result = crypto.Verify(ConIdentity, self.GenerateHash(), self.Signature)
         return Result
 
     def Ready(self):
@@ -148,13 +148,13 @@ class dhnpacket:
             8) etc.
         """
         if not self.Ready():
-            dhnio.Dprint(4, "dhnpacket.Valid WARNING packet is not ready yet " + str(self))
+            io.log(4, "packet.Valid WARNING packet is not ready yet " + str(self))
             return False
         if not commands.IsCommand(self.Command):
-            dhnio.Dprint(1, "dhnpacket.Valid bad Command " + str(self.Command))
+            io.log(1, "packet.Valid bad Command " + str(self.Command))
             return False
         if not self.SignatureChecksOut():
-            dhnio.Dprint(1, "dhnpacket.Valid failed Signature")
+            io.log(1, "packet.Valid failed Signature")
             return False
         return True
 
@@ -184,7 +184,7 @@ class dhnpacket:
 
     def Serialize(self):
         """
-        Create a string from dhnpacket object using ``lib.misc.ObjectToString``.
+        Create a string from packet object using ``lib.misc.ObjectToString``.
         This is useful when need to save the packet on disk.
         """
         return misc.ObjectToString(self)
@@ -196,7 +196,7 @@ class dhnpacket:
         return len(self.Serialize())
 
 
-class dhnpacket_0signed(dhnpacket):
+class packet_0signed(Signed):
     """
     I was playing with hacking packets and do some debug also.
     """    
@@ -206,7 +206,7 @@ class dhnpacket_0signed(dhnpacket):
 
 def Unserialize(data):
     """
-    We expect here a string containing a whole dhnpacket object in text form.
+    We expect here a string containing a whole packet object in text form.
     Here is used a special libraries in ``twisted.spread``: ``banana`` and ``jelly`` to do that work.
     This stuff is placed in the ``lib.misc.StringToObject``. 
     So return a real object in the memory from given string.
@@ -216,21 +216,21 @@ def Unserialize(data):
         return None
     newobject = misc.StringToObject(data)
     if newobject is None:
-        # dhnio.Dprint(6, "dhnpacket.Unserialize WARNING result is None")
+        # io.log(6, "packet.Unserialize WARNING result is None")
         return None
     if type(newobject) != types.InstanceType:
-        dhnio.Dprint(6, "dhnpacket.Unserialize WARNING not an instance: " + str(newobject))
+        io.log(6, "packet.Unserialize WARNING not an instance: " + str(newobject))
         return None
-    if not str(newobject.__class__).count('dhnpacket.dhnpacket'):
-        dhnio.Dprint(6, "dhnpacket.Unserialize WARNING not a dhnpacket: " + str(newobject.__class__))
+    if not str(newobject.__class__).count('packet.packet'):
+        io.log(6, "packet.Unserialize WARNING not a packet: " + str(newobject.__class__))
         return None
     return newobject
 
 def MakePacket(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
     """
-    Just calls the constructor of dhnpacket class.
+    Just calls the constructor of packet class.
     """
-    result = dhnpacket(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
+    result = Signed(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
     return result
 
 def MakePacketInThread(CallBackFunc, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
@@ -249,12 +249,12 @@ def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 #------------------------------------------------------------------------------ 
 
 if __name__ == '__main__':
-    dhnio.init()
-    dhnio.SetDebug(18)
+    io.init()
+    io.SetDebug(18)
     import settings
     settings.init()
-    dhncrypto.InitMyKey()
-    p = Unserialize(dhnio.ReadBinaryFile(sys.argv[1]))
+    crypto.InitMyKey()
+    p = Unserialize(io.ReadBinaryFile(sys.argv[1]))
     print p
     
     

@@ -33,11 +33,11 @@ if __name__ == '__main__':
     sys.path.append(os.path.abspath('..'))
 
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
-import lib.dhnnet as dhnnet
+import lib.net_misc as net_misc
 import lib.settings as settings
-import lib.dhnmath as dhnmath
+import lib.maths as maths
 import lib.tmpfile as tmpfile
 import lib.schedule as schedule
 
@@ -75,19 +75,19 @@ _SheduleTypesDict = {
 #------------------------------------------------------------------------------
 
 def init():
-    dhnio.Dprint(4, 'dhnupdate.init')
+    io.log(4, 'dhnupdate.init')
     update_shedule_file(settings.getUpdatesSheduleData())
-    if not dhnio.isFrozen() or not dhnio.Windows():
-        dhnio.Dprint(6, 'dhnupdate.init finishing')
+    if not io.isFrozen() or not io.Windows():
+        io.log(6, 'dhnupdate.init finishing')
         return
     if not os.path.isfile(settings.VersionFile()):
-        dhnio.WriteFile(settings.VersionFile(), '')
-    SetLocalDir(dhnio.getExecutableDir())
+        io.WriteFile(settings.VersionFile(), '')
+    SetLocalDir(io.getExecutableDir())
     if settings.getUpdatesMode() != settings.getUpdatesModeValues()[2]:
-        dhnio.Dprint(6, 'dhnupdate.init starting the loop')
+        io.log(6, 'dhnupdate.init starting the loop')
         reactor.callLater(0, loop, True)
     else:
-        dhnio.Dprint(6, 'dhnupdate.init skip, update mode is: %s' % settings.getUpdatesMode())
+        io.log(6, 'dhnupdate.init skip, update mode is: %s' % settings.getUpdatesMode())
         
 
 #------------------------------------------------------------------------------
@@ -158,7 +158,7 @@ def set_bat_filename(filename):
 def fail(txt):
     global _NewVersionNotifyFunc
     global _UpdatingInProgress
-    dhnio.Dprint(1, 'dhnupdate.fail ' + str(txt))
+    io.log(1, 'dhnupdate.fail ' + str(txt))
     write2window('there are some errors during updating: ' + str(txt))
     _UpdatingInProgress = False
 
@@ -167,13 +167,13 @@ def fail(txt):
 def download_version():
     repo, locationURL = misc.ReadRepoLocation()
     url = locationURL + settings.CurrentVersionDigestsFilename()
-    dhnio.Dprint(6, 'dhnupdate.download_version ' + str(url))
-    return dhnnet.getPageTwisted(url)
+    io.log(6, 'dhnupdate.download_version ' + str(url))
+    return net_misc.getPageTwisted(url)
 
 def download_info():
     
     def _done(src, result):
-        dhnio.Dprint(6, 'dhnupdate.download_info.done ')
+        io.log(6, 'dhnupdate.download_info.done ')
         lines = src.split('\n')
         files_dict = {}
         for line in lines:
@@ -185,16 +185,16 @@ def download_info():
         return src
     
     def _fail(x, result):
-        dhnio.Dprint(1, 'dhnupdate.download_info FAILED')
+        io.log(1, 'dhnupdate.download_info FAILED')
         result.errback(Exception('error downloading info'))
         return x
     
     repo, locationURL = misc.ReadRepoLocation()
     url = locationURL + settings.FilesDigestsFilename()
 
-    dhnio.Dprint(6, 'dhnupdate.download_info ' + str(url))
+    io.log(6, 'dhnupdate.download_info ' + str(url))
     result = Deferred()
-    d = dhnnet.getPageTwisted(url)
+    d = net_misc.getPageTwisted(url)
     d.addCallback(_done, result)
     d.addErrback(_fail, result)
     return result
@@ -202,7 +202,7 @@ def download_info():
 def download_and_replace_starter(output_func = None):
     repo, locationURL = misc.ReadRepoLocation()
     url = settings.WindowsStarterFileURL(repo)
-    dhnio.Dprint(6, 'dhnupdate.download_and_replace_starter  ' + str(url))
+    io.log(6, 'dhnupdate.download_and_replace_starter  ' + str(url))
     result = Deferred()
     
     def _done(x, filename):
@@ -218,21 +218,21 @@ def download_and_replace_starter(output_func = None):
 
         local_filename = os.path.join(GetLocalDir(), settings.WindowsStarterFileName())
 
-        dhnio.backup_and_remove(local_filename)
+        io.backup_and_remove(local_filename)
 
         try:
             os.rename(filename, local_filename)
-            dhnio.Dprint(4, 'dhnupdate.download_and_replace_starter  file %s was updated' % local_filename)
+            io.log(4, 'dhnupdate.download_and_replace_starter  file %s was updated' % local_filename)
         except:
-            dhnio.Dprint(1, 'dhnupdate.download_and_replace_starter ERROR can not rename %s to %s ' % (filename, local_filename))
-            dhnio.DprintException()
+            io.log(1, 'dhnupdate.download_and_replace_starter ERROR can not rename %s to %s ' % (filename, local_filename))
+            io.exception()
             result.errback(Exception('can not rename the file ' + filename))
             return
         
         python27dll_path = os.path.join(GetLocalDir(), 'python27.dll')
         if not os.path.exists(python27dll_path):
             url = settings.UpdateLocationURL('test') + 'windows/' + 'python27.dll' 
-            d = dhnnet.downloadHTTP(url, python27dll_path)
+            d = net_misc.downloadHTTP(url, python27dll_path)
             d.addCallback(_done_python27_dll, filename)
             d.addErrback(_fail, filename)
             return
@@ -240,11 +240,11 @@ def download_and_replace_starter(output_func = None):
         result.callback(1)
 
     def _done_python27_dll(x, filename):
-        dhnio.Dprint(4, 'dhnupdate.download_and_replace_starter file %s was updated' % filename)
+        io.log(4, 'dhnupdate.download_and_replace_starter file %s was updated' % filename)
         result.callback(1)
 
     def _fail(x, filename):
-        dhnio.Dprint(1, 'dhnupdate.download_and_replace_starter FAILED')
+        io.log(1, 'dhnupdate.download_and_replace_starter FAILED')
         if output_func:
             try:
                 output_func(x.getErrorMessage())
@@ -253,12 +253,12 @@ def download_and_replace_starter(output_func = None):
         try:
             os.remove(filename)
         except:
-            dhnio.Dprint(1, 'dhnupdate.download_and_replace_starter ERROR can not remove ' + filename)
+            io.log(1, 'dhnupdate.download_and_replace_starter ERROR can not remove ' + filename)
         result.errback(Exception('error downloading starter'))
 
     fileno, filename = tmpfile.make('other', '.starter')
     os.close(fileno)
-    d = dhnnet.downloadHTTP(url, filename)
+    d = net_misc.downloadHTTP(url, filename)
     d.addCallback(_done, filename)
     d.addErrback(_fail, filename)
     return result
@@ -266,16 +266,16 @@ def download_and_replace_starter(output_func = None):
 #-------------------------------------------------------------------------------
 
 def step0():
-    dhnio.Dprint(4, 'dhnupdate.step0')
+    io.log(4, 'dhnupdate.step0')
     global _UpdatingInProgress
     if _UpdatingInProgress:
-        dhnio.Dprint(6, 'dhnupdate.step0  _UpdatingInProgress is True, skip.')
+        io.log(6, 'dhnupdate.step0  _UpdatingInProgress is True, skip.')
         return
 
     repo, locationURL = misc.ReadRepoLocation()
-    src = dhnio.ReadTextFile(settings.RepoFile())
+    src = io.ReadTextFile(settings.RepoFile())
     if src == '':
-        dhnio.WriteFile(settings.RepoFile(), '%s\n%s' % (repo, locationURL))
+        io.WriteFile(settings.RepoFile(), '%s\n%s' % (repo, locationURL))
              
     _UpdatingInProgress = True
     d = download_version()
@@ -283,25 +283,25 @@ def step0():
     d.addErrback(fail)
 
 def step1(version_digest):
-    dhnio.Dprint(4, 'dhnupdate.step1')
+    io.log(4, 'dhnupdate.step1')
     global _UpdatingInProgress
     global _CurrentVersionDigest
     global _NewVersionNotifyFunc
     global _UpdatingByUser
 
     _CurrentVersionDigest = str(version_digest).strip()
-    local_version = dhnio.ReadBinaryFile(settings.VersionFile()).strip()
+    local_version = io.ReadBinaryFile(settings.VersionFile()).strip()
     if local_version == _CurrentVersionDigest:
-        dhnio.Dprint(6, 'dhnupdate.step1 no need to update')
+        io.log(6, 'dhnupdate.step1 no need to update')
         _UpdatingInProgress = False
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
         return
 
-    appList = dhnio.find_process(['dhnview.', ])
+    appList = io.find_process(['dhnview.', ])
     if len(appList) > 0:
         if not _UpdatingByUser:
-            dhnio.Dprint(6, 'dhnupdate.step1 dhnview is running, ask user to update.')
+            io.log(6, 'dhnupdate.step1 dhnview is running, ask user to update.')
             _UpdatingInProgress = False
             if _NewVersionNotifyFunc is not None:
                 _NewVersionNotifyFunc(_CurrentVersionDigest)
@@ -312,14 +312,14 @@ def step1(version_digest):
     d.addErrback(fail)
 
 def step2(info, version_digest):
-    dhnio.Dprint(4, 'dhnupdate.step2')
+    io.log(4, 'dhnupdate.step2')
     if not isinstance(info, dict):
         fail('wrong data')
         return
 
     dhnstarter_server_digest = info.get(settings.WindowsStarterFileName(), None)
     if dhnstarter_server_digest is None:
-        dhnio.Dprint(2, 'dhnupdate.step2 WARNING windows starter executable is not found in the info file')
+        io.log(2, 'dhnupdate.step2 WARNING windows starter executable is not found in the info file')
         reactor.callLater(0.5, step4, version_digest)
         #fail('windows starter executable is not found in the info file')
         return
@@ -333,41 +333,41 @@ def step2(info, version_digest):
 
 
 def step3(version_digest):
-    dhnio.Dprint(4, 'dhnupdate.step3')
+    io.log(4, 'dhnupdate.step3')
     d = download_and_replace_starter(write2window)
     d.addCallback(lambda x: step4(version_digest))
     d.addErrback(fail)
 
 
 def step4(version_digest):
-    dhnio.Dprint(4, 'dhnupdate.step4')
+    io.log(4, 'dhnupdate.step4')
     global _UpdatingInProgress
     global _CurrentVersionDigest
     global _NewVersionNotifyFunc
     global _UpdatingByUser
 
     _CurrentVersionDigest = str(version_digest)
-    local_version = dhnio.ReadBinaryFile(settings.VersionFile())
+    local_version = io.ReadBinaryFile(settings.VersionFile())
     if local_version == _CurrentVersionDigest:
-        dhnio.Dprint(6, 'dhnupdate.step4 no need to update')
+        io.log(6, 'dhnupdate.step4 no need to update')
         _UpdatingInProgress = False
         return
 
-    dhnio.Dprint(6, 'dhnupdate.step4 local=%s current=%s ' % (local_version, _CurrentVersionDigest))
+    io.log(6, 'dhnupdate.step4 local=%s current=%s ' % (local_version, _CurrentVersionDigest))
 
     if settings.getUpdatesMode() == settings.getUpdatesModeValues()[2] and not _UpdatingByUser:
-        dhnio.Dprint(6, 'dhnupdate.step4 run scheduled, but mode is %s, skip now' % settings.getUpdatesMode())
+        io.log(6, 'dhnupdate.step4 run scheduled, but mode is %s, skip now' % settings.getUpdatesMode())
         return
 
     if _UpdatingByUser or settings.getUpdatesMode() == settings.getUpdatesModeValues()[0]:
-#        info_file_path = os.path.join(dhnio.getExecutableDir(), settings.FilesDigestsFilename())
+#        info_file_path = os.path.join(io.getExecutableDir(), settings.FilesDigestsFilename())
         info_file_path = settings.InfoFile()
         if os.path.isfile(info_file_path):
             try:
                 os.remove(info_file_path)
             except:
-                dhnio.Dprint(1, 'dhnupdate.step4 ERROR can no remove ' + info_file_path )
-                dhnio.DprintException()
+                io.log(1, 'dhnupdate.step4 ERROR can no remove ' + info_file_path )
+                io.exception()
 
         param = ''
         if _UpdatingByUser:
@@ -390,18 +390,18 @@ def is_running():
 
 
 def read_shedule_dict():
-    dhnio.Dprint(8, 'dhnupdate.read_shedule_dict')
-    d = dhnio._read_dict(settings.UpdateSheduleFilename())
+    io.log(8, 'dhnupdate.read_shedule_dict')
+    d = io._read_dict(settings.UpdateSheduleFilename())
     if d is None or not check_shedule_dict_correct(d):
         d = make_blank_shedule()
     return d
 
 
 def write_shedule_dict(d):
-    dhnio.Dprint(8, 'dhnupdate.write_shedule_dict')
+    io.log(8, 'dhnupdate.write_shedule_dict')
     if d is None or not check_shedule_dict_correct(d):
         return
-    dhnio._write_dict(settings.UpdateSheduleFilename(), d)
+    io._write_dict(settings.UpdateSheduleFilename(), d)
 
 
 def blank_shedule(type):
@@ -446,9 +446,9 @@ def blank_shedule(type):
 
 
 def make_blank_shedule(type='daily'):
-    dhnio.Dprint(8, 'dhnupdate.make_blank_shedule')
+    io.log(8, 'dhnupdate.make_blank_shedule')
     d = blank_shedule(type)
-    dhnio._write_dict(settings.UpdateSheduleFilename(), d)
+    io._write_dict(settings.UpdateSheduleFilename(), d)
     return d
 
 
@@ -458,12 +458,12 @@ def check_shedule_dict_correct(d):
             d.has_key('daytime') and
             d.has_key('details') and
             d.has_key('lasttime')):
-        dhnio.Dprint(2, 'dhnupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
+        io.log(2, 'dhnupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
         return False
     try:
         float(d['interval'])
     except:
-        dhnio.Dprint(2, 'dhnupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
+        io.log(2, 'dhnupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
         return False
     return True
 
@@ -511,9 +511,9 @@ def update_shedule_file(raw_data):
 def run():
     global _UpdatingInProgress
     global _UpdatingByUser
-    dhnio.Dprint(6, 'dhnupdate.run')
+    io.log(6, 'dhnupdate.run')
     if _UpdatingInProgress:
-        dhnio.Dprint(6, '  update is in progress, finish.')
+        io.log(6, '  update is in progress, finish.')
         return
     _UpdatingByUser = True
     reactor.callLater(0, step0)
@@ -522,15 +522,15 @@ def run():
 def run_sheduled_update():
     global _UpdatingByUser
     global _UpdatingInProgress
-    dhnio.Dprint(6, 'dhnupdate.run_sheduled_update')
+    io.log(6, 'dhnupdate.run_sheduled_update')
     if _UpdatingInProgress:
-        dhnio.Dprint(6, '  update is in progress, finish.')
+        io.log(6, '  update is in progress, finish.')
         return
     if settings.getUpdatesMode() == settings.getUpdatesModeValues()[2]:
-        dhnio.Dprint(6, '  update mode is %s, finish.' % settings.getUpdatesMode())
+        io.log(6, '  update mode is %s, finish.' % settings.getUpdatesMode())
         return
     if backup_control.HasRunningBackup():
-        dhnio.Dprint(6, '  some backups are running at the moment, finish.')
+        io.log(6, '  some backups are running at the moment, finish.')
         return
 
     _UpdatingByUser = False
@@ -553,13 +553,13 @@ def next(d):
         return -1
 
     elif d['type'] == 'continuously':
-        return dhnmath.shedule_continuously(lasttime, d['interval'],)
+        return maths.shedule_continuously(lasttime, d['interval'],)
     
     elif d['type'] == 'hourly':
-        return dhnmath.shedule_next_hourly(lasttime, d['interval'])
+        return maths.shedule_next_hourly(lasttime, d['interval'])
 
     elif d['type'] == 'daily':
-        return dhnmath.shedule_next_daily(lasttime, d['interval'], d['daytime'])
+        return maths.shedule_next_daily(lasttime, d['interval'], d['daytime'])
 
     elif d['type'] == 'weekly':
         week_days = d['details'].split(' ')
@@ -571,11 +571,11 @@ def next(d):
             except:
                 continue
             week_day_numbers.append(i)
-        return dhnmath.shedule_next_weekly(lasttime, d['interval'], d['daytime'], week_day_numbers)
+        return maths.shedule_next_weekly(lasttime, d['interval'], d['daytime'], week_day_numbers)
 
     elif d['type'] == 'monthly':
         month_dates = d['details'].split(' ')
-        return dhnmath.shedule_next_monthly(lasttime, d['interval'], d['daytime'], month_dates)
+        return maths.shedule_next_monthly(lasttime, d['interval'], d['daytime'], month_dates)
 #        months_labels = d['details'].split(' ')
 #        months_numbers = []
 #        months_names = list(calendar.month_name)
@@ -585,18 +585,18 @@ def next(d):
 #            except:
 #                continue
 #            months_numbers.append(i)
-#        return dhnmath.shedule_next_monthly(lasttime, d['interval'], d['daytime'], months_numbers)
+#        return maths.shedule_next_monthly(lasttime, d['interval'], d['daytime'], months_numbers)
 
     else:
-        dhnio.Dprint(1, 'dhnupdate.loop ERROR wrong shedule type')
+        io.log(1, 'dhnupdate.loop ERROR wrong shedule type')
         return None    
 
 def loop(first_start=False):
     global _ShedulerTask
-    dhnio.Dprint(4, 'dhnupdate.loop mode=' + str(settings.getUpdatesMode()))
+    io.log(4, 'dhnupdate.loop mode=' + str(settings.getUpdatesMode()))
 
     if settings.getUpdatesMode() == settings.getUpdatesModeValues()[2]:
-        dhnio.Dprint(4, 'dhnupdate.loop is finishing. updates is turned off')
+        io.log(4, 'dhnupdate.loop is finishing. updates is turned off')
         return
 
     shed = schedule.Schedule(from_dict=read_shedule_dict())
@@ -606,11 +606,11 @@ def loop(first_start=False):
         nexttime = time.time() + 5
     
     if nexttime is None:
-        dhnio.Dprint(1, 'dhnupdate.loop ERROR calculating shedule interval')
+        io.log(1, 'dhnupdate.loop ERROR calculating shedule interval')
         return
     
     if nexttime < 0:
-        dhnio.Dprint(1, 'dhnupdate.loop nexttime=%s' % str(nexttime))
+        io.log(1, 'dhnupdate.loop nexttime=%s' % str(nexttime))
         return
 
     # DEBUG
@@ -618,17 +618,17 @@ def loop(first_start=False):
 
     delay = nexttime - time.time()
     if delay < 0:
-        dhnio.Dprint(2, 'dhnupdate.loop WARNING delay=%s %s' % (str(delay), shed))
+        io.log(2, 'dhnupdate.loop WARNING delay=%s %s' % (str(delay), shed))
         delay = 10
 
-    dhnio.Dprint(6, 'dhnupdate.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))
+    io.log(6, 'dhnupdate.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))
     _ShedulerTask = reactor.callLater(delay, run_sheduled_update)
 
 
 def update_sheduler():
     global _ShedulerTask
-    dhnio.Dprint(4, 'dhnupdate.update_sheduler')
-##    if not dhnio.isFrozen() or not dhnio.Windows():
+    io.log(4, 'dhnupdate.update_sheduler')
+##    if not io.isFrozen() or not io.Windows():
 ##        return
     if _ShedulerTask is not None:
         if _ShedulerTask.active():
@@ -639,21 +639,21 @@ def update_sheduler():
 
 
 def check():
-    dhnio.Dprint(4, 'dhnupdate.check')
+    io.log(4, 'dhnupdate.check')
 
     def _success(x):
         global _CurrentVersionDigest
         global _NewVersionNotifyFunc
         _CurrentVersionDigest = str(x)
-        local_version = dhnio.ReadBinaryFile(settings.VersionFile())
-        dhnio.Dprint(6, 'dhnupdate.check._success local=%s current=%s' % (local_version, _CurrentVersionDigest))
+        local_version = io.ReadBinaryFile(settings.VersionFile())
+        io.log(6, 'dhnupdate.check._success local=%s current=%s' % (local_version, _CurrentVersionDigest))
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
         return x
 
     def _fail(x):
         global _NewVersionNotifyFunc
-        dhnio.Dprint(10, 'dhnupdate.check._fail NETERROR ' + x.getErrorMessage())
+        io.log(10, 'dhnupdate.check._fail NETERROR ' + x.getErrorMessage())
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc('failed')
         return x
@@ -667,8 +667,8 @@ def check():
 #------------------------------------------------------------------------------
 
 def test1():
-    dhnio.SetDebug(20)
-    dhnio.init()
+    io.SetDebug(20)
+    io.init()
     settings.init()
     update_sheduler()
     #SetLocalDir('c:\\Program Files\\\xc4 \xd8 \xcd')
@@ -676,7 +676,7 @@ def test1():
     reactor.run()
 
 if __name__ == '__main__':
-    dhnio.init()
+    io.init()
     settings.init()
     test1()
 

@@ -38,8 +38,8 @@ def run(UI='', options=None, args=None, overDict=None):
     an instance of ``initializer()`` state machine and send it an event "run".
     """
     
-    import lib.dhnio as dhnio
-    dhnio.Dprint(6, 'dhnmain.run sys.path=%s' % str(sys.path))
+    import lib.io as io
+    io.log(6, 'dhnmain.run sys.path=%s' % str(sys.path))
     
     #---settings---
     import lib.settings as settings
@@ -47,25 +47,25 @@ def run(UI='', options=None, args=None, overDict=None):
         settings.override_dict(overDict)
     settings.init()
     if not options or options.debug is None:
-        dhnio.SetDebug(settings.getDebugLevel())    
+        io.SetDebug(settings.getDebugLevel())    
     
     #---USE_TRAY_ICON---
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
         try:
             from dhnicon import USE_TRAY_ICON
-            # dhnio.Dprint(4, 'dhnmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
-            if dhnio.Linux() and not dhnio.X11_is_running():
+            # io.log(4, 'dhnmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
+            if io.Linux() and not io.X11_is_running():
                 USE_TRAY_ICON = False
             if USE_TRAY_ICON:
                 from twisted.internet import wxreactor
                 wxreactor.install()
         except:
             USE_TRAY_ICON = False
-            dhnio.DprintException()
+            io.exception()
     else:
         USE_TRAY_ICON = False
     if USE_TRAY_ICON:
-        if dhnio.Linux():
+        if io.Linux():
             icons_dict = {
                 'red':      'icon-red-24x24.png',
                 'green':    'icon-green-24x24.png',
@@ -76,8 +76,8 @@ def run(UI='', options=None, args=None, overDict=None):
                 'green':    'icon-green.png',
                 'gray':     'icon-gray.png', }
         import dhnicon
-        icons_path = str(os.path.abspath(os.path.join(dhnio.getExecutableDir(), 'icons')))
-        dhnio.Dprint(4, 'dhnmain.run call dhnicon.init(%s)' % icons_path)
+        icons_path = str(os.path.abspath(os.path.join(io.getExecutableDir(), 'icons')))
+        io.log(4, 'dhnmain.run call dhnicon.init(%s)' % icons_path)
         dhnicon.init(icons_path, icons_dict)
         def _tray_control_func(cmd):
             if cmd == 'exit':
@@ -85,22 +85,22 @@ def run(UI='', options=None, args=None, overDict=None):
                 shutdowner.A('stop', 'exit')
         dhnicon.SetControlFunc(_tray_control_func)
 
-    dhnio.Dprint(4, 'dhnmain.run want to import twisted.internet.reactor')
+    io.log(4, 'dhnmain.run want to import twisted.internet.reactor')
     try:
         from twisted.internet import reactor
     except:
-        dhnio.DprintException()
+        io.exception()
         sys.exit('Error initializing reactor in dhnmain.py\n')
 
     #---logfile----
-    if dhnio.EnableLog and dhnio.LogFile is not None:
-        dhnio.Dprint(2, 'dhnmain.run want to switch log files')
-        if dhnio.Windows() and dhnio.isFrozen():
-            dhnio.StdOutRedirectingStop()
-        dhnio.CloseLogFile()
-        dhnio.OpenLogFile(settings.MainLogFilename()+'-'+time.strftime('%y%m%d%H%M%S')+'.log')
-        if dhnio.Windows() and dhnio.isFrozen():
-            dhnio.StdOutRedirectingStart()
+    if io.EnableLog and io.LogFile is not None:
+        io.log(2, 'dhnmain.run want to switch log files')
+        if io.Windows() and io.isFrozen():
+            io.StdOutRedirectingStop()
+        io.CloseLogFile()
+        io.OpenLogFile(settings.MainLogFilename()+'-'+time.strftime('%y%m%d%H%M%S')+'.log')
+        if io.Windows() and io.isFrozen():
+            io.StdOutRedirectingStart()
             
     #---memdebug---
     if settings.uconfig('logs.memdebug-enable') == 'True':
@@ -109,63 +109,63 @@ def run(UI='', options=None, args=None, overDict=None):
             memdebug_port = int(settings.uconfig('logs.memdebug-port'))
             memdebug.start(memdebug_port)
             reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)
-            dhnio.Dprint(2, 'dhnmain.run memdebug web server started on port %d' % memdebug_port)
+            io.log(2, 'dhnmain.run memdebug web server started on port %d' % memdebug_port)
         except:
-            dhnio.DprintException()  
+            io.exception()  
             
     #---process ID---
     try:
         pid = os.getpid()
         pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
-        dhnio.WriteFile(pid_file_path, str(pid))
-        dhnio.Dprint(2, 'dhnmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
+        io.WriteFile(pid_file_path, str(pid))
+        io.log(2, 'dhnmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
     except:
-        dhnio.DprintException()  
+        io.exception()  
             
 #    #---reactor.callLater patch---
-#    if dhnio.Debug(12):
+#    if io.Debug(12):
 #        patchReactorCallLater(reactor)
 #        monitorDelayedCalls(reactor)
 
-    dhnio.Dprint(2,"dhnmain.run UI=[%s]" % UI)
+    io.log(2,"dhnmain.run UI=[%s]" % UI)
 
-    if dhnio.Debug(10):
-        dhnio.Dprint(0, '\n' + dhnio.osinfofull())
+    if io.Debug(10):
+        io.log(0, '\n' + io.osinfofull())
 
-    dhnio.Dprint(4, 'dhnmain.run import automats')
+    io.log(4, 'dhnmain.run import automats')
 
     #---START!---
     import lib.automat as automat
-    automat.LifeBegins(dhnio.LifeBeginsTime)
+    automat.LifeBegins(io.LifeBeginsTime)
     # automat.OpenLogFile(settings.AutomatsLog())
     
     import initializer
     import shutdowner
 
-    dhnio.Dprint(4, 'dhnmain.run send event "run" to initializer()')
+    io.log(4, 'dhnmain.run send event "run" to initializer()')
     
     #reactor.callLater(0, initializer.A, 'run', UI)
     initializer.A('run', UI)
 
-    dhnio.Dprint(2, 'dhnmain.run calling reactor.run()')
+    io.log(2, 'dhnmain.run calling reactor.run()')
     reactor.run()
 
-    dhnio.Dprint(2, 'dhnmain.run reactor stopped')
+    io.log(2, 'dhnmain.run reactor stopped')
     shutdowner.A('reactor-stopped')
 
-    dhnio.Dprint(2, 'dhnmain.run finished, EXIT')
+    io.log(2, 'dhnmain.run finished, EXIT')
 
     automat.CloseLogFile()
 
 ##    import threading
-##    dhnio.Dprint(0, 'threads:')
+##    io.log(0, 'threads:')
 ##    for t in threading.enumerate():
-##        dhnio.Dprint(0, '  '+str(t))
+##        io.log(0, '  '+str(t))
 
-    dhnio.CloseLogFile()
+    io.CloseLogFile()
 
-    if dhnio.Windows() and dhnio.isFrozen():
-        dhnio.StdOutRedirectingStop()
+    if io.Windows() and io.isFrozen():
+        io.StdOutRedirectingStop()
 
     return 0
 
@@ -267,11 +267,11 @@ def kill():
     """
     Kill all running BitPie.NET processes (except current).
     """
-    import lib.dhnio as dhnio
+    import lib.io as io
     total_count = 0
     found = False
     while True:
-        appList = dhnio.find_process([
+        appList = io.find_process([
             'dhnmain.exe',
             'dhnmain.py',
             'bitpie.py',
@@ -287,17 +287,17 @@ def kill():
         if len(appList) > 0:
             found = True
         for pid in appList:
-            dhnio.Dprint(0, 'trying to stop pid %d' % pid)
-            dhnio.kill_process(pid)
+            io.log(0, 'trying to stop pid %d' % pid)
+            io.kill_process(pid)
         if len(appList) == 0:
             if found:
-                dhnio.Dprint(0, 'BitPie.NET stopped\n')
+                io.log(0, 'BitPie.NET stopped\n')
             else:
-                dhnio.Dprint(0, 'BitPie.NET was not started\n')
+                io.log(0, 'BitPie.NET was not started\n')
             return 0
         total_count += 1
         if total_count > 10:
-            dhnio.Dprint(0, 'some BitPie.NET process found, but can not stop it\n')
+            io.log(0, 'some BitPie.NET process found, but can not stop it\n')
             return 1
         time.sleep(1)
 
@@ -312,10 +312,10 @@ def wait_then_kill(x):
     This method will wait for 10 seconds and then call method ``kill()``.    
     """
     from twisted.internet import reactor
-    import lib.dhnio as dhnio
+    import lib.io as io
     total_count = 0
     while True:
-        appList = dhnio.find_process([
+        appList = io.find_process([
             'dhnmain.exe',
             'dhnmain.py',
             'bitpie.py',
@@ -329,12 +329,12 @@ def wait_then_kill(x):
             'dhnstarter.exe',
             ])
         if len(appList) == 0:
-            dhnio.Dprint(0, 'DONE')
+            io.log(0, 'DONE')
             reactor.stop()
             return 0
         total_count += 1
         if total_count > 10:
-            dhnio.Dprint(0, 'not responding, KILLING ...')
+            io.log(0, 'not responding, KILLING ...')
             ret = kill()
             reactor.stop()
             return ret
@@ -388,14 +388,14 @@ def monitorDelayedCalls(r):
     Print out all delayed calls.
     """
     global _DelayedCallsIndex
-    import lib.dhnio as dhnio
+    import lib.io as io
     keys = _DelayedCallsIndex.keys()
     keys.sort(key=lambda cb: -_DelayedCallsIndex[cb][1])
     s = ''
     for i in range(0, min(10, len(_DelayedCallsIndex))):
         cb = keys[i]
         s += '        %d %d %s\n' % ( _DelayedCallsIndex[cb][0], _DelayedCallsIndex[cb][1], cb) 
-    dhnio.Dprint(8, '    delayed calls: %d\n%s' % (len(_DelayedCallsIndex), s))
+    io.log(8, '    delayed calls: %d\n%s' % (len(_DelayedCallsIndex), s))
     r.callLater(10, monitorDelayedCalls, r)
 
 #------------------------------------------------------------------------------ 
@@ -405,33 +405,33 @@ def main():
     THIS IS THE ENTRY POINT OF THE PROGRAM!
     """
     try:
-        import lib.dhnio as dhnio
+        import lib.io as io
     except:
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
         try:
-            import lib.dhnio as dhnio
+            import lib.io as io
         except:
             return 1
 
     # init IO module, update locale
-    dhnio.init()
+    io.init()
 
     # TODO
-    # sys.excepthook = dhnio.ExceptionHook
-    if not dhnio.isFrozen():
+    # sys.excepthook = io.ExceptionHook
+    if not io.isFrozen():
         from twisted.internet.defer import setDebugging
         setDebugging(True)
 
-    # ask dhnio to count time for each line from that moment, not absolute time 
-    dhnio.LifeBegins()
+    # ask to count time for each log line from that moment, not absolute time 
+    io.LifeBegins()
 
     pars = parser()
     (opts, args) = pars.parse_args()
 
     if opts.no_logs:
-        dhnio.DisableLogs()
+        io.DisableLogs()
 
     #---logpath---
     logpath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs', 'start.log')
@@ -439,22 +439,22 @@ def main():
         logpath = opts.output
 
     if logpath != '':
-        dhnio.OpenLogFile(logpath)
-        dhnio.Dprint(2, 'dhnmain.main log file opened ' + logpath)
-        if dhnio.Windows() and dhnio.isFrozen():
-            dhnio.StdOutRedirectingStart()
-            dhnio.Dprint(2, 'dhnmain.main redirecting started')
+        io.OpenLogFile(logpath)
+        io.log(2, 'dhnmain.main log file opened ' + logpath)
+        if io.Windows() and io.isFrozen():
+            io.StdOutRedirectingStart()
+            io.log(2, 'dhnmain.main redirecting started')
 
     if opts.debug or str(opts.debug) == '0':
-        dhnio.SetDebug(opts.debug)
+        io.SetDebug(opts.debug)
 
     if opts.quite and not opts.verbose:
-        dhnio.DisableOutput()
+        io.DisableOutput()
 
     if opts.verbose:
         copyright()
 
-    dhnio.Dprint(2, 'dhnmain.main started ' + time.asctime())
+    io.log(2, 'dhnmain.main started ' + time.asctime())
 
     overDict = override_options(opts, args)
 
@@ -462,11 +462,11 @@ def main():
     if len(args) > 0:
         cmd = args[0].lower()
         
-    dhnio.Dprint(2, 'dhnmain.main args=%s' % str(args))
+    io.log(2, 'dhnmain.main args=%s' % str(args))
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':
-        appList = dhnio.find_process([
+        appList = io.find_process([
             'dhnmain.exe',
             'dhnmain.py',
             'bitpie.py',
@@ -475,17 +475,17 @@ def main():
         
 #        pid = -1
 #        try:
-#            if dhnio.Windows():
+#            if io.Windows():
 #                dhn_data_path = os.path.join(os.environ.get('APPDATA', os.path.join(os.path.expanduser('~'), 'Application Data')), 'BitPie.NET')
 #                pid_path = os.path.join(dhn_data_path, 'metadata', 'processid')
 #            else:
-#                pid_path = os.path.join(os.path.expanduser('~'), '.datahaven', 'metadata', 'processid')
+#                pid_path = os.path.join(os.path.expanduser('~'), '.bitpie', 'metadata', 'processid')
 #            if os.path.isfile(pid_path):
-#                pid = int(dhnio.ReadBinaryFile(pid_path).strip())
+#                pid = int(io.ReadBinaryFile(pid_path).strip())
 #        except:
-#            dhnio.DprintException()
+#            io.exception()
         # this is extra protection for Debian release
-        # I am nut sure how process name can looks on different systems
+        # I am not sure how process name can looks on different systems
         # check the process ID from previous start 
         # it file exists and we found this PID in the currently running apps - DHN is working
         # if file not exists we don't want to start if found some other jobs with same name 
@@ -497,34 +497,34 @@ def main():
 #        if len(appList) > 0 and ( ( pid != -1 and pid in appList ) or ( pid == -1 ) ):
 
         if len(appList) > 0:
-            dhnio.Dprint(0, 'BitPie.NET already started, found another process: %s' % str(appList))
-            dhnio.shutdown()
+            io.log(0, 'BitPie.NET already started, found another process: %s' % str(appList))
+            io.shutdown()
             return 0
         ret = run('', opts, args, overDict)
-        dhnio.shutdown()
+        io.shutdown()
         return ret
 
     #---restart---
     elif cmd == 'restart':
-        appList = dhnio.find_process([
+        appList = io.find_process([
             'dhnmain.exe',
             'dhnmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
         if len(appList) > 0:
-            dhnio.Dprint(0, 'found main BitPie.NET process: %s, sending "restart" command ... ' % str(appList), '')
+            io.log(0, 'found main BitPie.NET process: %s, sending "restart" command ... ' % str(appList), '')
             def done(x):
-                dhnio.Dprint(0, 'DONE\n', '')
+                io.log(0, 'DONE\n', '')
                 from twisted.internet import reactor
                 if reactor.running and not reactor._stopped:
                     reactor.stop()
             def failed(x):
-                dhnio.Dprint(0, 'FAILED, killing previous process and do restart\n', '')
+                io.log(0, 'FAILED, killing previous process and do restart\n', '')
                 try:
                     kill()
                 except:
-                    dhnio.DprintException()
+                    io.exception()
                 from twisted.internet import reactor
                 import lib.misc as misc
                 reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart)
@@ -536,24 +536,24 @@ def main():
                 d.addCallback(done)
                 d.addErrback(failed)
                 reactor.run()
-                dhnio.shutdown()
+                io.shutdown()
                 return 0
             except:
-                dhnio.DprintException()
-                dhnio.shutdown()
+                io.exception()
+                io.shutdown()
                 return 1
         else:
             ret = run('', opts, args, overDict)
-            dhnio.shutdown()
+            io.shutdown()
             return ret
 
     #---show---
     elif cmd == 'show' or cmd == 'open':
-        appList_dhnview = dhnio.find_process([
+        appList_dhnview = io.find_process([
             'dhnview.exe',
             'dhnview.py',
             ])
-        appList = dhnio.find_process([
+        appList = io.find_process([
             'dhnmain.exe',
             'dhnmain.py',
             'bitpie.py',
@@ -562,93 +562,93 @@ def main():
         if len(appList_dhnview) > 0:
             if len(appList) == 0:
                 for pid in appList_dhnview:
-                    dhnio.kill_process(pid)
+                    io.kill_process(pid)
             else:
-                dhnio.Dprint(0, 'BitPie.NET GUI already opened, found another process: %s' % str(appList))
-                dhnio.shutdown()
+                io.log(0, 'BitPie.NET GUI already opened, found another process: %s' % str(appList))
+                io.shutdown()
                 return 0
         if len(appList) == 0:
             ret = run('show', opts, args, overDict)
-            dhnio.shutdown()
+            io.shutdown()
             return ret
         
-        dhnio.Dprint(0, 'found main BitPie.NET process: %s, start the GUI\n' % str(appList))
+        io.log(0, 'found main BitPie.NET process: %s, start the GUI\n' % str(appList))
         ret = show()
-        dhnio.shutdown()
+        io.shutdown()
         return ret
 
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
-        appList = dhnio.find_process([
+        appList = io.find_process([
             'dhnmain.exe',
             'dhnmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
         if len(appList) > 0:
-            dhnio.Dprint(0, 'found main BitPie.NET process: %s, sending command "exit" ... ' % str(appList), '')
+            io.log(0, 'found main BitPie.NET process: %s, sending command "exit" ... ' % str(appList), '')
             try:
                 from twisted.internet import reactor
                 from command_line import run_url_command
                 url = '?action=exit'
                 run_url_command(url, False).addBoth(wait_then_kill)
                 reactor.run()
-                dhnio.shutdown()
+                io.shutdown()
                 return 0
             except:
-                dhnio.DprintException()
+                io.exception()
                 ret = kill()
-                dhnio.shutdown()
+                io.shutdown()
                 return ret
         else:
-            dhnio.Dprint(0, 'BitPie.NET is not running at the moment')
-            dhnio.shutdown()
+            io.log(0, 'BitPie.NET is not running at the moment')
+            io.shutdown()
             return 0
 
     #---uninstall---
     elif cmd == 'uninstall':
         def do_spawn(x=None):
             from lib.settings import WindowsStarterFileName
-            starter_filepath = os.path.join(dhnio.getExecutableDir(), WindowsStarterFileName())
-            dhnio.Dprint(0, "dhnmain.main dhnstarter.exe path: %s " % starter_filepath)
+            starter_filepath = os.path.join(io.getExecutableDir(), WindowsStarterFileName())
+            io.log(0, "dhnmain.main dhnstarter.exe path: %s " % starter_filepath)
             if not os.path.isfile(starter_filepath):
-                dhnio.Dprint(0, "dhnmain.main ERROR %s not found" % starter_filepath)
-                dhnio.shutdown()
+                io.log(0, "dhnmain.main ERROR %s not found" % starter_filepath)
+                io.shutdown()
                 return 1
             cmdargs = [os.path.basename(starter_filepath), 'uninstall']
-            dhnio.Dprint(0, "dhnmain.main os.spawnve cmdargs="+str(cmdargs))
+            io.log(0, "dhnmain.main os.spawnve cmdargs="+str(cmdargs))
             ret = os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
-            dhnio.shutdown()
+            io.shutdown()
             return ret
         def do_reactor_stop_and_spawn(x=None):
             reactor.stop()
             ret = do_spawn()
-            dhnio.shutdown()
+            io.shutdown()
             return ret
-        dhnio.Dprint(0, 'dhnmain.main UNINSTALL!')
-        if not dhnio.Windows():
-            dhnio.Dprint(0, 'This command can be used only under OS Windows.')
-            dhnio.shutdown()
+        io.log(0, 'dhnmain.main UNINSTALL!')
+        if not io.Windows():
+            io.log(0, 'This command can be used only under OS Windows.')
+            io.shutdown()
             return 0
-        if not dhnio.isFrozen():
-            dhnio.Dprint(0, 'You are running BitPie.NET from sources, uninstall command is available only for binary version.')
-            dhnio.shutdown()
+        if not io.isFrozen():
+            io.log(0, 'You are running BitPie.NET from sources, uninstall command is available only for binary version.')
+            io.shutdown()
             return 0
-        appList = dhnio.find_process(['dhnmain.exe',])
+        appList = io.find_process(['dhnmain.exe',])
         if len(appList) > 0:
-            dhnio.Dprint(0, 'found main BitPie.NET process...   ', '')
+            io.log(0, 'found main BitPie.NET process...   ', '')
             try:
                 from twisted.internet import reactor
                 from command_line import run_url_command
                 url = '?action=exit'
                 run_url_command(url).addBoth(do_reactor_stop_and_spawn)
                 reactor.run()
-                dhnio.shutdown()
+                io.shutdown()
                 return 0
             except:
-                dhnio.DprintException()
+                io.exception()
         ret = do_spawn()
-        dhnio.shutdown()
+        io.shutdown()
         return ret
         
     #---command_line---
@@ -656,7 +656,7 @@ def main():
     ret = command_line.run(opts, args, overDict, pars)
     if ret == 2:
         print usage()
-    dhnio.shutdown()
+    io.shutdown()
     return ret 
 
 #-------------------------------------------------------------------------------

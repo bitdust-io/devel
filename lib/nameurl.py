@@ -11,7 +11,7 @@
 .. module:: nameurl
 
 Here is a methods to work with URL strings.
-We assume DHN URLs are of the form::
+We assume BitPie.NET URLs are of the form::
 
     ssh://host.name.com:port/fooobar.xml  (maybe no foobar.xml)
     tcp://123.45.67.89:4321

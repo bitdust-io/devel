@@ -41,7 +41,7 @@ import sys
 import struct
 
 
-import lib.dhnio
+import lib.io
 import lib.eccmap
 
 INTSIZE = 4
@@ -72,7 +72,7 @@ def RebuildOne(inlist, listlen, outfilename):
         try:
             raidfiles[filenum] = open(inlist[filenum], "rb")
         except:
-            lib.dhnio.DprintException()
+            lib.io.exception()
             for f in raidfiles:
                 try:
                     f.close()
@@ -101,7 +101,7 @@ def RebuildOne(inlist, listlen, outfilename):
 def RebuildOne_new(inlist, listlen, outfilename):
     # INTSIZE = settings.IntSize()
     fds = range(0,listlen)   # just need a list of this size
-    wholefile = lib.dhnio.ReadBinaryFile(inlist[0])
+    wholefile = lib.io.ReadBinaryFile(inlist[0])
     seglength = len(wholefile)   # just needed length of file
     for filenum in xrange(listlen):
         fds[filenum]=open(inlist[filenum],"r")
@@ -119,7 +119,7 @@ def RebuildOne_new(inlist, listlen, outfilename):
 def RebuildOne_orig(inlist, listlen, outfilename):
         # INTSIZE = settings.IntSize()
         fds = range(0,listlen)   # just need a list of this size
-        wholefile = lib.dhnio.ReadBinaryFile(inlist[0])
+        wholefile = lib.io.ReadBinaryFile(inlist[0])
         seglength=len(wholefile)   # just needed length of file
         for filenum in range(0, listlen):
                 fds[filenum]=open(inlist[filenum],"rb")

@@ -21,7 +21,7 @@ import time
 
 from twisted.internet import reactor
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.automat as automat
 import lib.udp as udp
 
@@ -46,7 +46,7 @@ def sessions():
 def create(node, peer_address, peer_id=None):
     """
     """
-    dhnio.Dprint(10, 'dhtudp_session.create  peer_address=%s' % str(peer_address))
+    io.log(10, 'dhtudp_session.create  peer_address=%s' % str(peer_address))
     s = DHTUDPSession(node, peer_address, peer_id)
     sessions()[s.id] = s
     return s
@@ -55,7 +55,7 @@ def create(node, peer_address, peer_id=None):
 def get(peer_address):
     """
     """
-    # dhnio.Dprint(18, 'dhtudp_session.get %s %s' % (str(peer_address), 
+    # io.log(18, 'dhtudp_session.get %s %s' % (str(peer_address), 
     #     str(map(lambda s:s.peer_address, sessions().values()))))
     for id, s in sessions().items():
         if s.peer_address == peer_address:
@@ -249,25 +249,25 @@ class DHTUDPSession(automat.Automat):
             udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
             if self.peer_id:
                 if new_peer_id != self.peer_id:
-                    dhnio.Dprint(4, 'dhtudp_session.doReceiveData WARNING session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
+                    io.log(4, 'dhtudp_session.doReceiveData WARNING session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
             else:
-                # dhnio.Dprint(4, 'dhtudp_session.doReceiveData got peer id (%s) for session %s from GREETING packet' % (new_peer_id, self))
+                # io.log(4, 'dhtudp_session.doReceiveData got peer id (%s) for session %s from GREETING packet' % (new_peer_id, self))
                 self.peer_id = new_peer_id
             if self.peer_idurl:
                 if new_peer_idurl != self.peer_idurl:
-                    dhnio.Dprint(4, 'dhtudp_session.doReceiveData WARNING session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
+                    io.log(4, 'dhtudp_session.doReceiveData WARNING session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
             else:
-                # dhnio.Dprint(4, 'dhtudp_session.doReceiveData got peer idurl (%s) for session %s from GREETING packet' % (new_peer_id, self))
+                # io.log(4, 'dhtudp_session.doReceiveData got peer idurl (%s) for session %s from GREETING packet' % (new_peer_id, self))
                 self.peer_idurl = new_peer_idurl
             for s in sessions().values():
                 if self.id == s.id:
                     continue
                 if self.peer_id == s.peer_id:
-                    dhnio.Dprint(6, 'dhtudp_session.doReceiveData WARNING  got GREETING from another address, close session %s' % s)
+                    io.log(6, 'dhtudp_session.doReceiveData WARNING  got GREETING from another address, close session %s' % s)
                     s.automat('shutdown')
                     continue
                 if self.peer_idurl == s.peer_idurl:
-                    dhnio.Dprint(6, 'dhtudp_session.doReceiveData WARNING  got GREETING from another idurl, close session %s' % s)
+                    io.log(6, 'dhtudp_session.doReceiveData WARNING  got GREETING from another idurl, close session %s' % s)
                     s.automat('shutdown')
                     continue
         elif command == udp.CMD_PING:

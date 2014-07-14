@@ -47,7 +47,7 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in contact_status.py')
     
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.nameurl as nameurl
 import lib.contacts as contacts
 import lib.automat as automat
@@ -70,7 +70,7 @@ def init():
     """
     Needs to be called before other methods here.
     """
-    dhnio.Dprint(4, 'contact_status.init')
+    io.log(4, 'contact_status.init')
     callback.add_inbox_callback(Inbox)
     callback.add_outbox_callback(Outbox)
     callback.add_queue_item_status_callback(OutboxStatus)
@@ -89,7 +89,7 @@ def shutdown():
     """
     Called from top level code when the software is finishing.
     """
-    dhnio.Dprint(4, 'contact_status.shutdown')
+    io.log(4, 'contact_status.shutdown')
     global _ShutdownFlag
     global _ContactsStatusDict
     for A in _ContactsStatusDict.values():
@@ -109,7 +109,7 @@ def isOnline(idurl):
         return False
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        dhnio.Dprint(6, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
+        io.log(6, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'CONNECTED'
 
 
@@ -124,7 +124,7 @@ def isOffline(idurl):
         return True
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        dhnio.Dprint(6, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
+        io.log(6, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'OFFLINE'
 
 
@@ -189,10 +189,10 @@ class ContactStatus(automat.Automat):
         self.idurl = idurl
         self.time_connected = None
         automat.Automat.__init__(self, name, state, debug_level)
-        dhnio.Dprint(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
+        io.log(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
         
     def state_changed(self, oldstate, newstate):
-        dhnio.Dprint(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
+        io.log(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
         
     def A(self, event, arg):
         #---CONNECTED---
@@ -261,7 +261,7 @@ class ContactStatus(automat.Automat):
             import p2p.webcontrol
             p2p.webcontrol.OnAliveStateChanged(self.idurl)
         except:
-            dhnio.DprintException()
+            io.exception()
         # if transport_control.GetContactAliveStateNotifierFunc() is not None:
         #     transport_control.GetContactAliveStateNotifierFunc()(self.idurl)
  
@@ -280,7 +280,7 @@ def OutboxStatus(pkt_out, status, error=''):
 
 def Inbox(newpacket, info, status, message):
     """
-    This is called when some ``dhnpacket`` was received from remote peer - user seems to be ONLINE.
+    This is called when some ``packet`` was received from remote peer - user seems to be ONLINE.
     """
     A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
     ratings.remember_connected_time(newpacket.OwnerID)
@@ -288,7 +288,7 @@ def Inbox(newpacket, info, status, message):
 
 def Outbox(pkt_out):
     """
-    Called when some ``dhnpacket`` is placed in the sending queue.
+    Called when some ``packet`` is placed in the sending queue.
     This packet can be our Identity packet - this is a sort of PING operation 
     to try to connect with that man.    
     """
@@ -308,6 +308,6 @@ def PacketSendingTimeout(remoteID, packetID):
     Called from ``p2p.io_throttle`` when some packet is timed out.
     Right now this do nothing, state machine ignores that event.
     """
-    # dhnio.Dprint(6, 'contact_status.PacketSendingTimeout ' + remoteID)
+    # io.log(6, 'contact_status.PacketSendingTimeout ' + remoteID)
     A(remoteID, 'sent-timeout', packetID)
 

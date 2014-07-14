@@ -43,7 +43,7 @@ from twisted.internet.task import LoopingCall
 
 
 from lib.automat import Automat
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.contacts as contacts
 
 
@@ -116,12 +116,12 @@ class ListFilesOrator(Automat):
 
     def isAllListFilesReceived(self, arg):
         global _RequestedListFilesPacketIDs
-        dhnio.Dprint(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
+        io.log(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
         return len(_RequestedListFilesPacketIDs) == 0
 
     def isSomeListFilesReceived(self, arg):
         global _RequestedListFilesCounter
-        dhnio.Dprint(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _RequestedListFilesCounter)
+        io.log(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _RequestedListFilesCounter)
         return _RequestedListFilesCounter > 0
 
     def doReadLocalFiles(self, arg):

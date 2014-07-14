@@ -19,11 +19,11 @@ import os
 import time
 import glob
 
-import dhnio
+import io
 import settings
 import diskspace
 
-if dhnio.Windows():
+if io.Windows():
     import win32api
     import win32file
 
@@ -68,7 +68,7 @@ def GetDriveSpace(path):
     """
     So this a sort of portable way to get the free HDD space in the system.
     """
-    if dhnio.Windows():
+    if io.Windows():
         drive = os.path.abspath(path)[0]
         if os.path.isdir(drive+':'):
             # the drive the data directory is on, ie C
@@ -119,9 +119,9 @@ def OkToShareSpace(desiredSharedSpaceMB):
     
 def GetDirectorySize(directoryPath):
     """
-    Just calculates the folder size in megabytes using ``dhnio.getDirectorySize``.
+    Just calculates the folder size in megabytes using ``io.getDirectorySize``.
     """
-    return dhnio.getDirectorySize(directoryPath)/(1024*1024)
+    return io.getDirectorySize(directoryPath)/(1024*1024)
 
 #------------------------------------------------------------------------------ 
 

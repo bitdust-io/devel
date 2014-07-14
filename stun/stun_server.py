@@ -15,12 +15,12 @@ import os
 import sys
 
 try:
-    import lib.dhnio as dhnio
+    import lib.io as io
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     try:
-        import lib.dhnio as dhnio
+        import lib.io as io
     except:
         sys.exit()
 
@@ -93,7 +93,7 @@ class StunServer(automat.Automat):
         # udp.add_datagram_receiver_callback(self._datagramReceived)
         self.listen_port = arg
         udp.proto(self.listen_port).add_callback(self._datagramReceived)
-        externalPort = dhnio._read_data(settings.ExternalUDPPortFilename())
+        externalPort = io._read_data(settings.ExternalUDPPortFilename())
         try:
             externalPort = int(externalPort)
         except:
@@ -127,8 +127,8 @@ class StunServer(automat.Automat):
 def main():
     from twisted.internet import reactor
     from dht import dht_service
-    dhnio.init()
-    dhnio.SetDebug(18)
+    io.init()
+    io.SetDebug(18)
     dht_service.init(4000)
     udp.listen(8882)
     A('start', 8882)

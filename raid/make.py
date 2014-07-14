@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
 import lib.eccmap
 import lib.misc
-import lib.dhnio
+import lib.io
 
 #------------------------------------------------------------------------------ 
 
@@ -60,14 +60,14 @@ def shutdown():
 #------------------------------------------------------------------------------ 
 
 def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):
-    # dhnio.Dprint(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
+    # io.log(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
     #     os.path.basename(filename), eccmapname, backupId, blockNumber))
     t = time.time()
     if in_memory:
         dataNum, parityNum = do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir)
     else:
         dataNum, parityNum = do_with_files(filename, eccmapname, backupId, blockNumber, targetDir)
-    # dhnio.Dprint(12, "raidmake.raidmake time=%.3f data=%d parity=%d" % (time.time()-t, dataNum, parityNum))
+    # io.log(12, "raidmake.raidmake time=%.3f data=%d parity=%d" % (time.time()-t, dataNum, parityNum))
     return dataNum, parityNum
 
 
@@ -76,7 +76,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
     INTSIZE = 4 # settings.IntSize()
     # any padding at end and block.Length fixes
     lib.misc.RoundupFile(filename, myeccmap.datasegments*INTSIZE)     
-    wholefile = lib.dhnio.ReadBinaryFile(filename)
+    wholefile = lib.io.ReadBinaryFile(filename)
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments                 
 
@@ -101,8 +101,8 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
         # we'l put it in memory 
         # and store current position in the data
         # so start from zero 
-        #dfds[DSegNum] = [0, dhnio.ReadBinaryFile(FileName)]
-        dfds[DSegNum] = cStringIO.StringIO(lib.dhnio.ReadBinaryFile(FileName))
+        #dfds[DSegNum] = [0, io.ReadBinaryFile(FileName)]
+        dfds[DSegNum] = cStringIO.StringIO(lib.io.ReadBinaryFile(FileName))
 
     pfds = {}
     for PSegNum in xrange(myeccmap.paritysegments):
@@ -126,16 +126,16 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
                 Map = myeccmap.DataToParity[DSegNum]
                 for PSegNum in Map:
                     if PSegNum > myeccmap.paritysegments:
-                        # dhnio.Dprint(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
-                        # dhnio.Dprint(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
+                        # io.log(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
+                        # io.log(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
                         myeccmap.check()
                         raise Exception("eccmap error")
                     Parities[PSegNum] = Parities[PSegNum] ^ b
             else:
                 raise Exception('strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' % (len(bstr), DSegNum)) 
                 #TODO
-                #dhnio.Dprint(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
-                #dhnio.Dprint(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
+                #io.log(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
+                #io.log(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
         for PSegNum in xrange(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
@@ -147,7 +147,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
     
     for PSegNum, data in pfds.items():
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
-        lib.dhnio.WriteFile(FileName, pfds[PSegNum].getvalue())
+        lib.io.WriteFile(FileName, pfds[PSegNum].getvalue())
 
     for f in dfds.values():
         f.close()
@@ -169,7 +169,7 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
     myeccmap = lib.eccmap.eccmap(eccmapname)
     INTSIZE = 4 # settings.IntSize()
     lib.misc.RoundupFile(filename,myeccmap.datasegments*INTSIZE)      # any padding at end and block.Length fixes
-    wholefile = lib.dhnio.ReadBinaryFile(filename)
+    wholefile = lib.io.ReadBinaryFile(filename)
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1)/myeccmap.datasegments                 # PREPRO -
 
@@ -212,15 +212,15 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
                 Map = myeccmap.DataToParity[DSegNum]
                 for PSegNum in Map:
                     if PSegNum > myeccmap.paritysegments:
-                        # dhnio.Dprint(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
-                        # dhnio.Dprint(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
+                        # io.log(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
+                        # io.log(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
                         myeccmap.check()
                         raise Exception("eccmap error")
                     Parities[PSegNum] = Parities[PSegNum] ^ b
             # else :
                 #TODO
-                # dhnio.Dprint(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
-                # dhnio.Dprint(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
+                # io.log(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
+                # io.log(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
         for PSegNum in range(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
@@ -246,7 +246,7 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
 
 
 def main():
-    lib.dhnio.SetDebug(18)
+    lib.io.SetDebug(18)
     raidmake(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], sys.argv[6]=='1')
     
 

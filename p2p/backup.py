@@ -74,16 +74,16 @@ from twisted.internet import threads
 from twisted.internet.defer import Deferred, maybeDeferred
 
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
-import lib.dhnpacket as dhnpacket
+import lib.packet as packet
 import lib.contacts as contacts
 import lib.commands as commands
 import lib.settings as settings
 import lib.packetid as packetid
 import lib.nonblocking as nonblocking
 import lib.eccmap as eccmap
-import lib.dhncrypto as dhncrypto
+import lib.crypto as crypto
 import lib.tmpfile as tmpfile
 import lib.automat as automat
 # import lib.automats as automats
@@ -130,13 +130,13 @@ class backup(automat.Automat):
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
         automat.Automat.__init__(self, 'backup', 'AT_STARTUP', 14)
-        # dhnio.Dprint(6, 'backup.__init__ %s %s %d' % (self.backupID, self.eccmap, self.blockSize,))
+        # io.log(6, 'backup.__init__ %s %s %d' % (self.backupID, self.eccmap, self.blockSize,))
 
     def abort(self):
         """
         This method should stop this backup by killing the pipe process.
         """
-        dhnio.Dprint(4, 'backup.abort id='+str(self.backupID))
+        io.log(4, 'backup.abort id='+str(self.backupID))
         self.ask4abort = True
         try:
             self.pipe.kill()
@@ -244,9 +244,9 @@ class backup(automat.Automat):
         def readChunk():
             size = self.blockSize - self.currentBlockSize
             if size < 0:
-                dhnio.Dprint(1, "backup.readChunk ERROR eccmap.nodes=" + str(self.eccmap.nodes()))
-                dhnio.Dprint(1, "backup.readChunk ERROR blockSize=" + str(self.blockSize))
-                dhnio.Dprint(1, "backup.readChunk ERROR currentBlockSize=" + str(self.currentBlockSize))
+                io.log(1, "backup.readChunk ERROR eccmap.nodes=" + str(self.eccmap.nodes()))
+                io.log(1, "backup.readChunk ERROR blockSize=" + str(self.blockSize))
+                io.log(1, "backup.readChunk ERROR currentBlockSize=" + str(self.currentBlockSize))
                 raise Exception('size < 0, blockSize=%s, currentBlockSize=%s' % (self.blockSize, self.currentBlockSize))
                 return ''
             elif size == 0:
@@ -255,14 +255,14 @@ class backup(automat.Automat):
                 raise Exception('backup.pipe is None')
                 return ''
             if self.pipe.state() == nonblocking.PIPE_CLOSED:
-                dhnio.Dprint(10, 'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
+                io.log(10, 'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
                 return ''
             if self.pipe.state() == nonblocking.PIPE_READY2READ:
                 newchunk = self.pipe.recv(size)
                 if newchunk == '':
-                    dhnio.Dprint(10, 'backup.readChunk pipe.recv() returned empty string')
+                    io.log(10, 'backup.readChunk pipe.recv() returned empty string')
                 return newchunk
-            dhnio.Dprint(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
+            io.log(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
             raise Exception('backup.pipe.state is ' + str(self.pipe.state()))
             return ''
         def readDone(data):
@@ -272,7 +272,7 @@ class backup(automat.Automat):
             if data == '':
                 self.stateEOF = True
             self.automat('read-success')
-            #dhnio.Dprint(12, 'backup.readDone %d bytes' % len(data))
+            #io.log(12, 'backup.readDone %d bytes' % len(data))
         self.stateReading = True
         maybeDeferred(readChunk).addCallback(readDone)
 
@@ -284,12 +284,12 @@ class backup(automat.Automat):
                 misc.getLocalID(),
                 self.backupID,
                 self.blockNumber,
-                dhncrypto.NewSessionKey(),
-                dhncrypto.SessionKeyType(),
+                crypto.NewSessionKey(),
+                crypto.SessionKeyType(),
                 self.stateEOF,
                 src,)
             del src
-            dhnio.Dprint(12, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s' % (
+            io.log(12, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s' % (
                 self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time()-dt)))
             return block
         maybeDeferred(_doBlock).addCallback(
@@ -312,7 +312,7 @@ class backup(automat.Automat):
             os.path.join(settings.getLocalBackupsDir(), self.backupID)),
             lambda cmd, params, result: self._raidmakeCallback(params, result, dt),))
         self.automat('block-raid-started', newblock)
-        dhnio.Dprint(12, 'backup.doBlockPushAndRaid %s' % newblock.BlockNumber)
+        io.log(12, 'backup.doBlockPushAndRaid %s' % newblock.BlockNumber)
         del serializedblock
 
     def doPopBlock(self, arg):
@@ -369,11 +369,11 @@ class backup(automat.Automat):
         del self.currentBlockData
         automat.objects().pop(self.index)
         collected = gc.collect()
-        dhnio.Dprint(10, 'backup.doDestroyMe [%s] collected %d objects' % (self.backupID, collected))
+        io.log(10, 'backup.doDestroyMe [%s] collected %d objects' % (self.backupID, collected))
 
     def _raidmakeCallback(self, params, result, dt):
         filename, eccmapname, backupID, blockNumber, targetDir = params
-        dhnio.Dprint(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
+        io.log(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
             blockNumber, result, str(self.stateEOF), str(time.time()-dt)))
         self.automat('block-raid-done', (blockNumber, result))
         

@@ -54,8 +54,8 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
 try:
-    import lib.dhnio as dhnio
-    from lib.dhnpacket import Unserialize
+    import lib.io as io
+    from lib.packet import Unserialize
     from lib.nameurl import FilenameUrl
     from lib.settings import init as settings_init
     from lib.settings import CustomersSpaceFile, CustomersUsedSpaceFile, getCustomersFilesDir, LocalTesterLogFilename
@@ -78,7 +78,7 @@ def SpaceTime():
     Check if he use more space than we gave him and if packets is too old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space = dhnio._read_dict(CustomersSpaceFile())
+    space = io._read_dict(CustomersSpaceFile())
     if space is None:
         printlog('SpaceTime ERROR can not read file ' + CustomersSpaceFile())
         return
@@ -117,7 +117,7 @@ def SpaceTime():
             stats = os.stat(path)
             timedict[path] = stats.st_ctime
             sizedict[path] = stats.st_size
-        dhnio.traverse_dir_recursive(cb, onecustdir)
+        io.traverse_dir_recursive(cb, onecustdir)
         currentV = 0
         for path in sorted(timedict.keys(), key=lambda x:timedict[x], reverse=True):
             filesize = sizedict.get(path, 0)
@@ -138,7 +138,7 @@ def SpaceTime():
             continue
         if os.path.isdir(path):
             try:
-                dhnio._dir_remove(path)
+                io._dir_remove(path)
                 printlog('SpaceTime ' + path + ' dir removed (%s)' % (remove_list[path]))
             except:
                 printlog('SpaceTime ERROR removing ' + path)
@@ -151,7 +151,7 @@ def SpaceTime():
         except:
             printlog('SpaceTime ERROR removing ' + path)
     del remove_list
-    dhnio._write_dict(CustomersUsedSpaceFile(), used_space)
+    io._write_dict(CustomersUsedSpaceFile(), used_space)
 
 #------------------------------------------------------------------------------
 
@@ -160,7 +160,7 @@ def UpdateCustomers():
     Test packets after list of customers was changed.
     """
     printlog('UpdateCustomers ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space = dhnio._read_dict(CustomersSpaceFile())
+    space = io._read_dict(CustomersSpaceFile())
     if space is None:
         printlog('UpdateCustomers ERROR space file can not read' )
         return
@@ -187,7 +187,7 @@ def UpdateCustomers():
             continue
         if os.path.isdir(path):
             try:
-                dhnio._dir_remove(path)
+                io._dir_remove(path)
                 printlog('UpdateCustomers ' + path + ' folder removed (%s)' % (remove_list[path]))
             except:
                 printlog('UpdateCustomers ERROR removing ' + path)
@@ -223,7 +223,7 @@ def Validate():
                 return True
             if name in [BackupIndexFileName(),]:
                 return False
-            packetsrc = dhnio.ReadBinaryFile(path)
+            packetsrc = io.ReadBinaryFile(path)
             if not packetsrc:
                 try:
                     os.remove(path) # if is is no good it is of no use to anyone
@@ -251,7 +251,7 @@ def Validate():
                     return False
             time.sleep(0.1)
             return False
-        dhnio.traverse_dir_recursive(cb, onecustdir)
+        io.traverse_dir_recursive(cb, onecustdir)
 
 #------------------------------------------------------------------------------
 
@@ -261,15 +261,15 @@ def main():
     """
     if len(sys.argv) < 2:
         return
-    dhnio.init()
-    dhnio.DisableLogs()
-    dhnio.DisableOutput()
+    io.init()
+    io.DisableLogs()
+    io.DisableOutput()
     settings_init()
-    dhnio.SetDebug(0)
-    dhnio.LowerPriority()
-#    dhnio.OpenLogFile(LocalTesterLogFilename(), True)
-#    dhnio.StdOutRedirectingStart()
-#    dhnio.LifeBegins()
+    io.SetDebug(0)
+    io.LowerPriority()
+#    io.OpenLogFile(LocalTesterLogFilename(), True)
+#    io.StdOutRedirectingStart()
+#    io.LifeBegins()
     commands = {
         'update_customers' : UpdateCustomers,
         'validate' : Validate,
@@ -280,8 +280,8 @@ def main():
         printlog('ERROR wrong command: ' + str(sys.argv))
         return
     cmd()
-#    dhnio.StdOutRedirectingStop()
-#    dhnio.CloseLogFile()
+#    io.StdOutRedirectingStop()
+#    io.CloseLogFile()
 
 #------------------------------------------------------------------------------ 
 

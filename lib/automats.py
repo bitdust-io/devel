@@ -26,7 +26,7 @@ from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
 
 
-import dhnio
+import io
 import automat
 
 #------------------------------------------------------------------------------
@@ -77,12 +77,12 @@ def set_global_state(st):
     global _GlobalStateNotifyFunc
     oldstate = _GlobalState
     _GlobalState = st
-    dhnio.Dprint(6, (' ' * 40) + '{%s}->{%s}' % (oldstate, _GlobalState))
+    io.log(6, (' ' * 40) + '{%s}->{%s}' % (oldstate, _GlobalState))
     if _GlobalStateNotifyFunc is not None and oldstate != _GlobalState:
         try:
             _GlobalStateNotifyFunc(_GlobalState)
         except:
-            dhnio.DprintException()
+            io.exception()
 
 
 def get_global_state():
@@ -91,7 +91,7 @@ def get_global_state():
         P2P CONNECTED
     """
     global _GlobalState
-    dhnio.Dprint(6, 'automats.get_global_state return [%s]' % _GlobalState)
+    io.log(6, 'automats.get_global_state return [%s]' % _GlobalState)
     return _GlobalState
 
 

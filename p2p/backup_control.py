@@ -30,13 +30,13 @@ from twisted.internet.defer import Deferred
 
 
 try:
-    import lib.dhnio as dhnio
+    import lib.io as io
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
     try:
-        import lib.dhnio as dhnio
+        import lib.io as io
     except:
         sys.exit()
 
@@ -44,7 +44,7 @@ import lib.misc as misc
 import lib.tmpfile as tmpfile
 import lib.settings as settings
 import lib.contacts as contacts
-import lib.dhncrypto as dhncrypto
+import lib.crypto as crypto
 import lib.eccmap as eccmap
 import lib.packetid as packetid
 import lib.nameurl as nameurl
@@ -117,14 +117,14 @@ def init():
     Must be called before other methods here.
     Load index database from file [DHN data dir]/metadata/index.
     """
-    dhnio.Dprint(4, 'backup_control.init')
+    io.log(4, 'backup_control.init')
     Load()
 
 def shutdown():
     """
     Called for the correct completion of all things.
     """
-    dhnio.Dprint(4, 'backup_control.shutdown')
+    io.log(4, 'backup_control.shutdown')
     
 #------------------------------------------------------------------------------ 
 
@@ -139,7 +139,7 @@ def WriteIndex(filepath=None):
         filepath = settings.BackupIndexFilePath()
     src = '%d\n' % revision()
     src += backup_fs.Serialize()
-    return dhnio.AtomicWriteFile(filepath, src)
+    return io.AtomicWriteFile(filepath, src)
 
 def ReadIndex(input):
     """
@@ -155,7 +155,7 @@ def ReadIndex(input):
         new_revision = int(input.readline().rstrip('\n'))
     except:
         _LoadingFlag = False
-        dhnio.DprintException()
+        io.exception()
         return False
     backup_fs.Clear()
     count = backup_fs.Unserialize(input)
@@ -173,11 +173,11 @@ def Load(filepath=None):
     if filepath is None:
         filepath = settings.BackupIndexFilePath()
     if not os.path.isfile(filepath):
-        dhnio.Dprint(2, 'backup_control.Load ERROR file %s not exist' % filepath)
+        io.log(2, 'backup_control.Load ERROR file %s not exist' % filepath)
         return False
-    src = dhnio.ReadTextFile(filepath)
+    src = io.ReadTextFile(filepath)
     if not src:
-        dhnio.Dprint(2, 'backup_control.Load ERROR reading file %s' % filepath)
+        io.log(2, 'backup_control.Load ERROR reading file %s' % filepath)
         return False
     input = cStringIO.StringIO(src)
     ret = ReadIndex(input)
@@ -207,7 +207,7 @@ def IncomingSupplierListFiles(packet):
     supplier_idurl = packet.OwnerID
     num = contacts.numberForSupplier(supplier_idurl)
     if num < -1:
-        dhnio.Dprint(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
+        io.log(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
         return
     src = p2p_service.UnpackListFiles(packet.Payload, settings.ListFilesFormat())
     backups2remove, paths2remove = backup_matrix.ReadRawListFiles(num, src)
@@ -219,7 +219,7 @@ def IncomingSupplierListFiles(packet):
         p2p_service.RequestDeleteListPaths(paths2remove)
     del backups2remove
     del paths2remove
-    dhnio.Dprint(8, 'backup_control.IncomingSupplierListFiles from [%s] %s bytes long' % (
+    io.log(8, 'backup_control.IncomingSupplierListFiles from [%s] %s bytes long' % (
         nameurl.GetName(supplier_idurl), len(packet.Payload)))
  
 def IncomingSupplierBackupIndex(packet):
@@ -229,18 +229,18 @@ def IncomingSupplierBackupIndex(packet):
     """
     block = dhnblock.Unserialize(packet.Payload)
     if block is None:
-        dhnio.Dprint(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % packet.RemoteID)
+        io.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % packet.RemoteID)
         return
     try:
-        session_key = dhncrypto.DecryptLocalPK(block.EncryptedSessionKey)
-        padded_data = dhncrypto.DecryptWithSessionKey(session_key, block.EncryptedData)
+        session_key = crypto.DecryptLocalPK(block.EncryptedSessionKey)
+        padded_data = crypto.DecryptWithSessionKey(session_key, block.EncryptedData)
         input = cStringIO.StringIO(padded_data[:int(block.Length)])
         supplier_revision = int(input.readline().rstrip('\n'))
         input.seek(0)
     except:
-        dhnio.Dprint(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % packet.RemoteID)
-        dhnio.Dprint(2, '\n' + padded_data)
-        dhnio.DprintException()
+        io.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % packet.RemoteID)
+        io.log(2, '\n' + padded_data)
+        io.exception()
         try:
             input.close()
         except:
@@ -252,7 +252,7 @@ def IncomingSupplierBackupIndex(packet):
         backup_fs.Calculate()
         WriteIndex()
         # TODO repaint a GUI
-        dhnio.Dprint(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (revision(), packet.RemoteID))
+        io.log(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (revision(), packet.RemoteID))
     input.close()
     # backup_db_keeper.A('incoming-db-info', packet)
         
@@ -267,7 +267,7 @@ def SetSupplierList(supplierList):
     So we lost everything! Definitely suppliers number should be a sort of constant number.
     """
     if len(supplierList) != backup_matrix.suppliers_set().supplierCount:
-        dhnio.Dprint(2, "backup_control.SetSupplierList got list of %d suppliers, but we have %d now!" % (len(supplierList), backup_matrix.suppliers_set().supplierCount))
+        io.log(2, "backup_control.SetSupplierList got list of %d suppliers, but we have %d now!" % (len(supplierList), backup_matrix.suppliers_set().supplierCount))
         # cancel all tasks and jobs
         DeleteAllTasks()
         AbortAllRunningBackups()
@@ -288,7 +288,7 @@ def SetSupplierList(supplierList):
         changedSupplierNums = backup_matrix.suppliers_set().SuppliersChangedNumbers(supplierList)
         # notify io_throttle that we do not neeed already this suppliers
         for supplierNum in changedSupplierNums:
-            dhnio.Dprint(2, "backup_control.SetSupplierList supplier %d changed: [%s]->[%s]" % (
+            io.log(2, "backup_control.SetSupplierList supplier %d changed: [%s]->[%s]" % (
                 supplierNum, nameurl.GetName(backup_matrix.suppliers_set().suppliers[supplierNum]), nameurl.GetName(supplierList[supplierNum])))
             io_throttle.DeleteSuppliers([backup_matrix.suppliers_set().suppliers[supplierNum],])
             # erase (set to 0) remote info for this guys
@@ -309,7 +309,7 @@ def DeleteAllBackups():
     # prepare a list of all known backup IDs
     all = set(backup_fs.ListAllBackupIDs())
     all.update(backup_matrix.GetBackupIDs(remote=True, local=True))
-    dhnio.Dprint(4, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all))
+    io.log(4, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all))
     # delete one by one
     for backupID in all:
         DeleteBackup(backupID, saveDB=False, calculate=False)
@@ -335,7 +335,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
         9) check and calculate used space
         10) save the modified index data base, soon it will be synchronized with "backup_db_keeper()" state machine  
     """
-    dhnio.Dprint(8, 'backup_control.DeleteBackup ' + backupID)
+    io.log(8, 'backup_control.DeleteBackup ' + backupID)
     # if the user deletes a backup, make sure we remove any work we're doing on it
     # abort backup if it just started and is running at the moment
     AbortRunningBackup(backupID)
@@ -391,7 +391,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
         backup_matrix.EraseBackupLocalInfo(backupID)
         # finally remove this backup from the index
         item.delete_version(version)
-        dhnio.Dprint(8, 'backup_control.DeletePathBackups ' + backupID)
+        io.log(8, 'backup_control.DeletePathBackups ' + backupID)
     # stop any rebuilding, we will restart it soon
     backup_rebuilder.RemoveAllBackupsToWork()
     backup_rebuilder.SetStoppedFlag()
@@ -438,7 +438,7 @@ class Task():
         """
         iter_and_path = backup_fs.WalkByID(self.pathID)
         if iter_and_path is None:
-            dhnio.Dprint(4, 'backup_control.Task.run ERROR %s not found in the index' % self.pathID)
+            io.log(4, 'backup_control.Task.run ERROR %s not found in the index' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return
         itemInfo, sourcePath = iter_and_path
@@ -446,10 +446,10 @@ class Task():
             try:
                 itemInfo = itemInfo[backup_fs.INFO_KEY]
             except:
-                dhnio.DprintException()
+                io.exception()
                 return
         if not backup_fs.pathExist(sourcePath):
-            dhnio.Dprint(4, 'backup_control.Task.run WARNING path not exist: %s' % sourcePath)
+            io.log(4, 'backup_control.Task.run WARNING path not exist: %s' % sourcePath)
             reactor.callLater(0, OnTaskFailed, self.pathID, 'not exist')
             return
         dataID = misc.NewBackupID()
@@ -464,8 +464,8 @@ class Task():
         try:
             backupPath = backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
         except:
-            dhnio.DprintException()
-            dhnio.Dprint(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
+            io.exception()
+            io.log(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return 
         compress_mode = 'none' # 'gz'
@@ -481,7 +481,7 @@ class Task():
             dirsize.ask(sourcePath, FoundFolderSize, (self.pathID, dataID))
         jobs()[backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
-        dhnio.Dprint(4, 'backup_control.Task.run %s [%s], size=%d' % (self.pathID, dataID, itemInfo.size))
+        io.log(4, 'backup_control.Task.run %s [%s], size=%d' % (self.pathID, dataID, itemInfo.size))
         
 def PutTask(pathID):
     """
@@ -528,7 +528,7 @@ def FoundFolderSize(pth, sz, arg):
         if item:
             item.set_size(sz)
     except:
-        dhnio.DprintException()
+        io.exception()
         
 #------------------------------------------------------------------------------ 
 
@@ -537,7 +537,7 @@ def OnJobDone(backupID, result):
     A callback method fired when backup is finished.
     Here we need to save the index data base. 
     """
-    dhnio.Dprint(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
+    io.log(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
     pathID, version = packetid.SplitBackupID(backupID)
     if result == 'done':
@@ -576,7 +576,7 @@ def OnTaskFailed(pathID, result):
     """
     Called when backup process get failed somehow.
     """
-    dhnio.Dprint(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
+    io.log(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
     RunTasks()
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)
     
@@ -652,7 +652,7 @@ def StartRecursive(pathID):
     backup_fs.TraverseByID(visitor)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.Restart)
-    dhnio.Dprint(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
+    io.log(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
     return startedtasks
 
 #------------------------------------------------------------------------------ 
@@ -740,13 +740,13 @@ def test2():
 #------------------------------------------------------------------------------ 
 
 if __name__ == "__main__":
-    dhnio.init()
-    dhnio.SetDebug(20)
+    io.init()
+    io.SetDebug(20)
     settings.init()
     tmpfile.init(settings.getTempDir())
     contacts.init()
     eccmap.init()
-    dhncrypto.InitMyKey()
+    crypto.InitMyKey()
     init()
     test()
 

@@ -44,12 +44,12 @@ except:
 from twisted.internet import protocol
 
 try:
-    import lib.dhnio as dhnio
+    import lib.io as io
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     try:
-        import lib.dhnio as dhnio
+        import lib.io as io
     except:
         sys.exit()
 
@@ -65,7 +65,7 @@ _MODULES = (
 'raid.read', 
 'raid.make', 
 'lib.settings', 
-'lib.dhnio',
+'lib.io',
 'lib.eccmap',
 'lib.misc',)
 
@@ -242,7 +242,7 @@ class RaidWorker(automat.Automat):
         Action method.
         """
         if len(self.activetasks) >= self.processor.get_ncpus():
-            dhnio.Dprint(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
+            io.log(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
                 len(self.activetasks), self.processor.get_ncpus()))
             return
         try:
@@ -256,11 +256,11 @@ class RaidWorker(automat.Automat):
                 # TODO:
                 func = read.RebuildOne
         except:
-            dhnio.DprintException()
+            io.exception()
             return
         self.activetasks[task_id] = self.processor.submit(func, params, modules=_MODULES, 
             callback=lambda result: self._job_done(task_id, cmd, params, result))
-        dhnio.Dprint(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
+        io.log(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
             task_id, len(self.activetasks), self.processor.get_ncpus()))
         reactor.callLater(0.01, self.automat, 'task-started', task_id)
 
@@ -272,10 +272,10 @@ class RaidWorker(automat.Automat):
             task_id, cmd, params, result = arg
             cb = self.callbacks.pop(task_id)
             cb(cmd, params, result)
-            dhnio.Dprint(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
+            io.log(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
                 len(self.callbacks), len(self.tasks), len(self.activetasks)))
         except:
-            dhnio.DprintException()
+            io.exception()
 
     def doReportTasksFailed(self, arg):
         """
@@ -300,7 +300,7 @@ class RaidWorker(automat.Automat):
 
     def _job_done(self, task_id, cmd, params, result):
         self.activetasks.pop(task_id)
-        dhnio.Dprint(12, 'raid_worker._job_done %r : %r active:%r' % (
+        io.log(12, 'raid_worker._job_done %r : %r active:%r' % (
             task_id, result, self.activetasks.keys()))
         self.automat('task-done', (task_id, cmd, params, result))
 
@@ -308,7 +308,7 @@ class RaidWorker(automat.Automat):
         if self.processor:
             self.processor.destroy()
         else:
-            dhnio.Dprint(2, '_kill_processor processor is None, skip')
+            io.log(2, '_kill_processor processor is None, skip')
         
 
 #------------------------------------------------------------------------------ 
@@ -316,8 +316,8 @@ class RaidWorker(automat.Automat):
 def main():
     def _cb(cmd, taskdata, result):
         print cmd, taskdata, result 
-    dhnio.init()
-    dhnio.SetDebug(20)
+    io.init()
+    io.SetDebug(20)
     reactor.callWhenRunning(A, 'init')
     reactor.callLater(0.5, A, 'new-task', ('make', _cb, ('sdfsdf', '45', '324', '45')))
     reactor.run()

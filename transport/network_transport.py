@@ -21,7 +21,7 @@ import sys
 from twisted.internet.defer import Deferred, fail
 
 import lib.automat as automat
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.settings as settings
 import lib.nameurl as nameurl
@@ -150,7 +150,7 @@ class NetworkTransport(automat.Automat):
             assert id_contact.startswith(self.proto+'://')
             id_contact = id_contact.strip(self.proto+'://')
         if self.proto == 'tcp':
-            default_host = dhnio.ReadTextFile(settings.ExternalIPFilename())+':'+str(settings.getTCPPort())
+            default_host = io.ReadTextFile(settings.ExternalIPFilename())+':'+str(settings.getTCPPort())
             options['host'] = id_contact or default_host
             options['tcp_port'] = int(settings.getTCPPort())
         elif self.proto == 'dhtudp':

@@ -58,7 +58,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_monitor.py')
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.settings as settings
 import lib.contacts as contacts
@@ -173,7 +173,7 @@ class BackupMonitor(automat.Automat):
         """
         Action method.
         """
-        dhnio.Dprint(2, "backup_monitor.doDeleteAllBackups")
+        io.log(2, "backup_monitor.doDeleteAllBackups")
         # cancel all tasks and jobs
         backup_control.DeleteAllTasks()
         backup_control.AbortAllRunningBackups()
@@ -195,7 +195,7 @@ class BackupMonitor(automat.Automat):
         changedSupplierNums = backup_matrix.suppliers_set().SuppliersChangedNumbers(supplierList)
         # notify io_throttle that we do not neeed already this suppliers
         for supplierNum in changedSupplierNums:
-            dhnio.Dprint(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
+            io.log(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
                 supplierNum, nameurl.GetName(backup_matrix.suppliers_set().suppliers[supplierNum]), 
                 nameurl.GetName(supplierList[supplierNum])))
             io_throttle.DeleteSuppliers([backup_matrix.suppliers_set().suppliers[supplierNum],])
@@ -217,7 +217,7 @@ class BackupMonitor(automat.Automat):
         if backup_control.HasRunningBackup():
             # if some backups are running right now no need to rebuild something - too much use of CPU
             backup_rebuilder.RemoveAllBackupsToWork()
-            dhnio.Dprint(6, 'backup_monitor.doPrepareListBackups skip all rebuilds')
+            io.log(6, 'backup_monitor.doPrepareListBackups skip all rebuilds')
             self.automat('list-backups-done')
             return 
         # take remote and local backups and get union from it 
@@ -230,7 +230,7 @@ class BackupMonitor(automat.Automat):
         allBackupIDs = misc.sorted_backup_ids(list(allBackupIDs), True)
         # add backups to the queue
         backup_rebuilder.AddBackupsToWork(allBackupIDs)
-        dhnio.Dprint(6, 'backup_monitor.doPrepareListBackups %d items' % len(allBackupIDs))
+        io.log(6, 'backup_monitor.doPrepareListBackups %d items' % len(allBackupIDs))
         self.automat('list-backups-done')
 
     def doCleanUpBackups(self, arg):
@@ -240,7 +240,7 @@ class BackupMonitor(automat.Automat):
         versionsToKeep = settings.getGeneralBackupsToKeep()
         bytesUsed = backup_fs.sizebackups()/contacts.numSuppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getCentralMegabytesNeeded(), 0) 
-        dhnio.Dprint(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
+        io.log(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
         delete_count = 0
         if versionsToKeep > 0:
             for pathID, localPath, itemInfo in backup_fs.IterateIDs():
@@ -248,7 +248,7 @@ class BackupMonitor(automat.Automat):
                 # TODO do we need to sort the list? it comes from a set, so must be sorted may be
                 while len(versions) > versionsToKeep:
                     backupID = pathID + '/' + versions.pop(0)
-                    dhnio.Dprint(6, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (len(versions), versionsToKeep, localPath, backupID))
+                    io.log(6, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (len(versions), versionsToKeep, localPath, backupID))
                     backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                     delete_count += 1
         # we need also to fit used space into needed space (given from other users)
@@ -267,7 +267,7 @@ class BackupMonitor(automat.Automat):
                     backupID = pathID+'/'+version
                     versionInfo = itemInfo.get_version_info(version)
                     if versionInfo[1] > 0:
-                        dhnio.Dprint(6, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (
+                        io.log(6, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (
                             bytesUsed, bytesNeeded, backupID, localPath))
                         backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                         delete_count += 1
@@ -280,7 +280,7 @@ class BackupMonitor(automat.Automat):
             backup_fs.Calculate()
             backup_control.Save() 
         collected = gc.collect()
-        dhnio.Dprint(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
+        io.log(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
 
 #------------------------------------------------------------------------------ 
 
@@ -288,7 +288,7 @@ def Restart():
     """
     Just sends a "restart" event to the state machine.
     """
-    dhnio.Dprint(4, 'backup_monitor.Restart')
+    io.log(4, 'backup_monitor.Restart')
     A('restart')
 
 
@@ -296,7 +296,7 @@ def shutdown():
     """
     Called from high level modules to finish all things correctly.
     """
-    dhnio.Dprint(4, 'backup_monitor.shutdown')
+    io.log(4, 'backup_monitor.shutdown')
     automat.clear_object(A().index)
 
         

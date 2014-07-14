@@ -24,7 +24,7 @@ import os
 import time
 
 import lib.automat as automat
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.tmpfile as tmpfile
 import lib.settings as settings
 
@@ -49,7 +49,7 @@ def items():
 def create(transfer_id):
     p = PacketIn(transfer_id)
     items()[transfer_id] = p
-    # dhnio.Dprint(10, 'packet_in.create  %s,  %d working items now' % (
+    # io.log(10, 'packet_in.create  %s,  %d working items now' % (
     #     transfer_id, len(items())))
     return p
 
@@ -168,19 +168,19 @@ class PacketIn(automat.Automat):
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gate.inbox(self)
         if newpacket is None:
-            dhnio.Dprint(14, '<<< IN <<<  !!!NONE!!!   [%s]   %s from %s %s' % (
+            io.log(14, '<<< IN <<<  !!!NONE!!!   [%s]   %s from %s %s' % (
                          self.proto.upper().ljust(5), self.status.ljust(8), 
                          self.host, os.path.basename(self.filename),))
-            # dhnnet.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
+            # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
             try:
                 fd, fn = tmpfile.make('other', '.inbox.error')
-                data = dhnio.ReadBinaryFile(self.filename)
+                data = io.ReadBinaryFile(self.filename)
                 os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
                 os.write(fd, str(data))
                 os.close(fd)
                 os.remove(self.filename)
             except:
-                dhnio.DprintException()
+                io.exception()
             self.automat('unserialize-failed', None)
         else:
             self.automat('valid-inbox-packet', newpacket)

@@ -9,7 +9,7 @@
 .. module:: commands
 
 This module describes all commands in the BitPie.NET p2p communication protocol.
-The command is stored as a string in the dhnpacket.Command field. 
+The command is stored as a string in the packet.Command field. 
 If all commands are repeatable, then sequence numbers are not so critical,
 though we would want date so time for replay trouble was limited.
 If backups are write, read, delete (and never write again), then replay
@@ -17,15 +17,15 @@ is not an issue here and we use PacketID that identifies data.
 So we want things like "replace supplier Vincecate"  not "replace supplier 5" 
 where seeing command an extra time would not hurt.
 
-These are the valid values for the command field of a dhnpacket:
+These are the valid values for the command field of a packet:
     - Data/Ack/                 (if customer sends you data you store it) (could be parity packet too)
     - Retrieve/Data|Fail        (data packets returned exactly as is with our signature)
     - ListFiles/Files           (ask supplier to list backup IDs he knows about for us)
     
-To DHN:
+To BitPie.NET:
     ListContacts/Contacts
         
-From DHN:
+From BitPie.NET:
     NearnessCheck/Nearness
 """
 

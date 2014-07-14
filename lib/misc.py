@@ -39,11 +39,11 @@ from twisted.spread import jelly
 from twisted.python.win32 import cmdLineQuote
 from twisted.internet.defer import fail
 
-import dhnio
+import io
 import settings
-import dhnnet
+import net_misc
 import tmpfile
-import dhnpacket
+import packet
 import packetid
 
 import userid.identity
@@ -75,7 +75,7 @@ def init():
     Will be called in main thread at start up.
     Can put here some minor things if needed.
     """
-    dhnio.Dprint(4, 'misc.init')
+    io.log(4, 'misc.init')
     loadLocalIdentity()
 
 #-------------------------------------------------------------------------------
@@ -150,20 +150,20 @@ def loadLocalIdentity():
     xmlid = ''
     filename = settings.LocalIdentityFilename()
     if os.path.exists(filename):
-        xmlid = dhnio.ReadTextFile(filename)
-        dhnio.Dprint(6, 'misc.loadLocalIdentity %d bytes read from\n        %s' % (len(xmlid), filename))
+        xmlid = io.ReadTextFile(filename)
+        io.log(6, 'misc.loadLocalIdentity %d bytes read from\n        %s' % (len(xmlid), filename))
     if xmlid == '':
-        dhnio.Dprint(2, "misc.loadLocalIdentity ERROR reading local identity from " + filename)
+        io.log(2, "misc.loadLocalIdentity ERROR reading local identity from " + filename)
         return
     lid = userid.identity.identity(xmlsrc=xmlid)
     if not lid.Valid():
-        dhnio.Dprint(2, "misc.loadLocalIdentity ERROR local identity is not Valid")
+        io.log(2, "misc.loadLocalIdentity ERROR local identity is not Valid")
         return
     _LocalIdentity = lid
     _LocalIDURL = lid.getIDURL()
     _LocalName = lid.getIDName()
     setTransportOrder(getOrderFromContacts(_LocalIdentity))
-    dhnio.Dprint(6, "misc.loadLocalIdentity my name is [%s]" % lid.getIDName())
+    io.log(6, "misc.loadLocalIdentity my name is [%s]" % lid.getIDName())
 
 def saveLocalIdentity():
     """
@@ -172,13 +172,13 @@ def saveLocalIdentity():
     """
     global _LocalIdentity
     if not isLocalIdentityReady():
-        dhnio.Dprint(2, "misc.saveLocalIdentity ERROR localidentity not exist!")
+        io.log(2, "misc.saveLocalIdentity ERROR localidentity not exist!")
         return
-    dhnio.Dprint(6, "misc.saveLocalIdentity")
+    io.log(6, "misc.saveLocalIdentity")
     _LocalIdentity.sign()
     xmlid = _LocalIdentity.serialize()
     filename = settings.LocalIdentityFilename()
-    dhnio.WriteFile(filename, xmlid)
+    io.WriteFile(filename, xmlid)
 
 #------------------------------------------------------------------------------ 
 
@@ -186,13 +186,13 @@ def readLocalIP():
     """
     Read local IP stored in the file [BitPie.NET data dir]/metadata/localip.
     """
-    return dhnio.ReadBinaryFile(settings.LocalIPFilename())
+    return io.ReadBinaryFile(settings.LocalIPFilename())
 
 def readExternalIP():
     """
     Read external IP stored in the file [BitPie.NET data dir]/metadata/externalip.
     """
-    return dhnio.ReadBinaryFile(settings.ExternalIPFilename())
+    return io.ReadBinaryFile(settings.ExternalIPFilename())
 
 def readSupplierData(idurl, filename):
     """
@@ -202,7 +202,7 @@ def readSupplierData(idurl, filename):
     path = settings.SupplierPath(idurl, filename)
     if not os.path.isfile(path):
         return ''
-    return dhnio.ReadTextFile(path)
+    return io.ReadTextFile(path)
 
 def writeSupplierData(idurl, filename, data):
     """
@@ -212,7 +212,7 @@ def writeSupplierData(idurl, filename, data):
     if not os.path.isdir(dirPath):
         os.makedirs(dirPath)
     path = settings.SupplierPath(idurl, filename)
-    return dhnio.WriteFile(path, data)
+    return io.WriteFile(path, data)
 
 #-------------------------------------------------------------------------------
 
@@ -226,7 +226,7 @@ def NewBackupID(time_st=None):
         time_st = time.localtime()
     ampm = time.strftime("%p", time_st)
     if ampm == '':
-        dhnio.Dprint(2, 'misc.NewBackupID WARNING time.strftime("%p") returns empty string')
+        io.log(2, 'misc.NewBackupID WARNING time.strftime("%p") returns empty string')
         ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
     result = "F" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
     return result
@@ -247,7 +247,7 @@ def TimeFromBackupID(backupID):
             st_time[3] += 12
         return time.mktime(st_time)
     except:
-        dhnio.DprintException()
+        io.exception()
         return None
 
 def modified_version(a):
@@ -264,7 +264,7 @@ def modified_version(a):
             int_a = int(a[1:i-1])
             int_b = int(a[i+1:])
     except:
-        dhnio.DprintException()
+        io.exception()
         return -1  
     hour = a[-8:-6]
     if a.endswith('PM') and hour != '12':
@@ -349,7 +349,7 @@ def FilePathToBackupID(filepath):
     Not used at the moment.
     """
     # be sure the string is in unicode
-    fp = dhnio.portablePath(filepath)
+    fp = io.portablePath(filepath)
     # now convert to string with char codes as numbers
     result = ''
     for part in fp.split('/'):
@@ -412,7 +412,7 @@ def BackupIDToFilePath(backupID, decompress=False):
 #                    try:
 #                        v = int(ch)
 #                    except:
-#                        dhnio.DprintException()
+#                        io.exception()
 #                    part += unichr(v)
 #                    ch = ''
     if part:
@@ -649,7 +649,7 @@ def pack_url_param(s):
         try:
             return str(urllib.quote(str(s)))
         except:
-            dhnio.DprintException()
+            io.exception()
     return s
 
 def unpack_url_param(s, default=None):
@@ -663,7 +663,7 @@ def unpack_url_param(s, default=None):
     try:
         return urllib.unquote(str(s))
     except:
-        dhnio.DprintException()
+        io.exception()
         return default
 
 def rndstr(length):
@@ -723,7 +723,7 @@ def calculate_best_dimension(sz, maxsize=8):
         w = math.sqrt(sz)
         h = sz / w
     except:
-        dhnio.DprintException()
+        io.exception()
     w = w * 1.4
     h = h / 1.4
     if int(w) * int(h) < sz and int(h) > 0:
@@ -939,7 +939,7 @@ def getClipboardText():
     """
     A portable way to get a clipboard data - some sort of Ctrl-V.  
     """
-    if dhnio.Windows():
+    if io.Windows():
         try:
             import win32clipboard
             import win32con
@@ -948,9 +948,9 @@ def getClipboardText():
             win32clipboard.CloseClipboard()
             return d.replace('\r\n','\n')
         except:
-            dhnio.DprintException()
+            io.exception()
             return ''
-    elif dhnio.Linux():
+    elif io.Linux():
         try:
             import wx
             # may crash, otherwise
@@ -975,7 +975,7 @@ def setClipboardText(txt):
     """
     A portable way to set a clipboard data - just like when you select something and press Ctrl-C.  
     """
-    if dhnio.Windows():
+    if io.Windows():
         try:
             import win32clipboard
             import win32con
@@ -984,8 +984,8 @@ def setClipboardText(txt):
             win32clipboard.SetClipboardData(win32con.CF_TEXT, txt)
             win32clipboard.CloseClipboard()
         except:
-            dhnio.DprintException()
-    elif dhnio.Linux():
+            io.exception()
+    elif io.Linux():
         try:
             import wx
             clipdata = wx.TextDataObject()
@@ -995,7 +995,7 @@ def setClipboardText(txt):
                 wx.TheClipboard.SetData(clipdata)
                 wx.TheClipboard.Close()
         except:
-            dhnio.DprintException()
+            io.exception()
     else:
         #TODO
         return
@@ -1023,12 +1023,12 @@ def validateTransports(orderL):
         if isValidTransport(transport):
             transports.append(transport)
         else:
-            dhnio.Dprint(6, 'misc.validateTransports WARNING invalid entry int transport list: %s , ignored' % str(transport))
+            io.log(6, 'misc.validateTransports WARNING invalid entry int transport list: %s , ignored' % str(transport))
     if len(transports) == 0:
-        dhnio.Dprint(1, 'misc.validateTransports ERROR no valid transports, using default transports ' + str(validTransports))
+        io.log(1, 'misc.validateTransports ERROR no valid transports, using default transports ' + str(validTransports))
         transports = validTransports
 #    if len(transports) != len(orderL):
-#        dhnio.Dprint(1, 'misc.validateTransports ERROR Transports contained an invalid entry, need to figure out where it came from.')
+#        io.log(1, 'misc.validateTransports ERROR Transports contained an invalid entry, need to figure out where it came from.')
     return transports
 
 def setTransportOrder(orderL):
@@ -1039,16 +1039,16 @@ def setTransportOrder(orderL):
     orderl = orderL
     orderL = validateTransports(orderL)
     orderTxt = string.join(orderl, ' ')
-    dhnio.Dprint(8, 'misc.setTransportOrder: ' + str(orderTxt))
-    dhnio.WriteFile(settings.DefaultTransportOrderFilename(), orderTxt)
+    io.log(8, 'misc.setTransportOrder: ' + str(orderTxt))
+    io.WriteFile(settings.DefaultTransportOrderFilename(), orderTxt)
 
 def getTransportOrder():
     """
     Read and validate tranports from [BitPie.NET data dir]\metadata\torder file.
     """
     global validTransports
-    dhnio.Dprint(8, 'misc.getTransportOrder')
-    order = dhnio.ReadTextFile(settings.DefaultTransportOrderFilename()).strip()
+    io.log(8, 'misc.getTransportOrder')
+    order = io.ReadTextFile(settings.DefaultTransportOrderFilename()).strip()
     if order == '':
         orderL = validTransports
     else:
@@ -1070,17 +1070,17 @@ def StartWebStream():
     This calls ``lib.weblog.init`` to start a web server to show the program logs.
     The port number is set in the settings.    
     """
-    dhnio.Dprint(6,"misc.StartWebStream")
+    io.log(6,"misc.StartWebStream")
     import weblog
     weblog.init(settings.getWebStreamPort())
-    dhnio.SetWebStream(weblog.log)
+    io.SetWebStream(weblog.log)
 
 def StopWebStream():
     """
     Call ``lib.weblog.shutdown`` to stop a web server. 
     """
-    dhnio.Dprint(6,"misc.StopWebStream")
-    dhnio.SetWebStream(None)
+    io.log(6,"misc.StopWebStream")
+    io.SetWebStream(None)
     import weblog
     weblog.shutdown()
 
@@ -1088,7 +1088,7 @@ def StartWebTraffic(root=None, path='traffic'):
     """
     Calls ``lib.webtraffic.init`` to run a web server to monitor packets traffic.
     """
-    dhnio.Dprint(6,"misc.StartWebStream")
+    io.log(6,"misc.StartWebStream")
     import lib.webtraffic as webtraffic
     webtraffic.init(root, path, settings.getWebTrafficPort())
     import transport.callback as callback
@@ -1099,7 +1099,7 @@ def StopWebTraffic():
     """
     Stops web server for traffic montitoring.
     """
-    dhnio.Dprint(6,"misc.StopWebTraffic")
+    io.log(6,"misc.StopWebTraffic")
     import lib.webtraffic as webtraffic
     webtraffic.shutdown()
     import transport.callback as callback
@@ -1137,7 +1137,7 @@ def file_hash(path):
     """
     Read file and get get its hash.
     """
-    src = dhnio.ReadBinaryFile(path)
+    src = io.ReadBinaryFile(path)
     if not src:
         return None
     return get_hash(src)
@@ -1189,18 +1189,18 @@ def ReadRepoLocation():
     """
     This method reutrn a tuple of two strings: "name of the current repo" and "repository location".
     """
-    if dhnio.Linux():
-        repo_file = os.path.join(dhnio.getExecutableDir(), 'repo.txt')
+    if io.Linux():
+        repo_file = os.path.join(io.getExecutableDir(), 'repo.txt')
         if os.path.isfile(repo_file):
-            src = dhnio.ReadTextFile(repo_file)
+            src = io.ReadTextFile(repo_file)
             if src:
                 try:
                     return src.split('\n')[0].strip(), src.split('\n')[1].strip() 
                 except:
-                    dhnio.DprintException()
+                    io.exception()
         return 'sources', 'http://bitpie.net/download.html'
             
-    src = dhnio.ReadTextFile(settings.RepoFile()).strip()
+    src = io.ReadTextFile(settings.RepoFile()).strip()
     if src == '':
         return settings.DefaultRepo(), settings.UpdateLocationURL(settings.DefaultRepo())
     l = src.split('\n')
@@ -1214,13 +1214,13 @@ def SetAutorunWindows():
     """
     Creates a shortcut in Start->Applications->Startup under Windows, so program can be started during system startup.
     """
-    if os.path.abspath(dhnio.getExecutableDir()) != os.path.abspath(settings.WindowsBinDir()):
+    if os.path.abspath(io.getExecutableDir()) != os.path.abspath(settings.WindowsBinDir()):
         return
     createWindowsShortcut(
         'BitPie.NET.lnk',
         '%s' % settings.getIconLaunchFilename(),
-        dhnio.getExecutableDir(),
-        os.path.join(dhnio.getExecutableDir(), 'icons', settings.IconFilename()),
+        io.getExecutableDir(),
+        os.path.join(io.getExecutableDir(), 'icons', settings.IconFilename()),
         '',
         'Startup', )
 
@@ -1232,12 +1232,12 @@ def ClearAutorunWindows():
 
 #def SetAutorunWindowsOld(CUorLM='CU', location=settings.getAutorunFilename(), name=settings.ApplicationName()):
 #    cmdexec = r'reg add HK%s\software\microsoft\windows\currentversion\run /v "%s" /t REG_SZ /d "%s" /f' % (CUorLM, name, location)
-#    dhnio.Dprint(6, 'misc.SetAutorunWindows executing: ' + cmdexec)
+#    io.log(6, 'misc.SetAutorunWindows executing: ' + cmdexec)
 #    return nonblocking.ExecuteString(cmdexec)
 
 #def ClearAutorunWindowsOld(CUorLM='CU', name = settings.ApplicationName()):
 #    cmdexec = r'reg delete HK%s\software\microsoft\windows\currentversion\run /v "%s" /f' % (CUorLM, name)
-#    dhnio.Dprint(6, 'misc.ClearAutorunWindows executing: ' + cmdexec)
+#    io.log(6, 'misc.ClearAutorunWindows executing: ' + cmdexec)
 #    return nonblocking.ExecuteString(cmdexec)
 
 #-------------------------------------------------------------------------------
@@ -1268,14 +1268,14 @@ def pathToWindowsShortcut(filename, folder='Desktop'):
         desktop = shell.SpecialFolders(folder)
         return os.path.join(desktop, filename)
     except:
-        dhnio.DprintException()
+        io.exception()
         return ''
 
 def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
     """
     Creates a shortcut for BitPie.NET on the desktop. 
     """
-    if dhnio.Windows():
+    if io.Windows():
         try:
             from win32com.client import Dispatch
             shell = Dispatch('WScript.Shell')
@@ -1289,19 +1289,19 @@ def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder
                 shortcut.IconLocation = icon
             shortcut.save()
         except:
-            dhnio.DprintException()
+            io.exception()
 
 def removeWindowsShortcut(filename, folder='Desktop'):
     """
     Removes a BitPie.NET shortcut from the desktop.
     """
-    if dhnio.Windows():
+    if io.Windows():
         path = pathToWindowsShortcut(filename, folder)
         if os.path.isfile(path) and os.access(path, os.W_OK):
             try:
                 os.remove(path)
             except:
-                dhnio.DprintException()
+                io.exception()
 
 #-------------------------------------------------------------------------------
 
@@ -1317,14 +1317,14 @@ def pathToStartMenuShortcut(filename):
         startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
         return os.path.join(startmenu, filename)
     except:
-        dhnio.DprintException()
+        io.exception()
         return ''
 
 def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
     """
     Create a BitPie.NET shortcut in the Windows start menu.
     """
-    if dhnio.Windows():
+    if io.Windows():
         try:
             from win32com.shell import shell, shellcon
             from win32com.client import Dispatch
@@ -1340,19 +1340,19 @@ def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
                 shortcut.IconLocation = icon
             shortcut.save()
         except:
-            dhnio.DprintException()
+            io.exception()
 
 def removeStartMenuShortcut(filename):
     """
     Remove a shortcut from Windows start menu.
     """
-    if dhnio.Windows():
+    if io.Windows():
         path = pathToStartMenuShortcut(filename)
         if os.path.isfile(path) and os.access(path, os.W_OK):
             try:
                 os.remove(path)
             except:
-                dhnio.DprintException()
+                io.exception()
     return
 
 #------------------------------------------------------------------------------ 
@@ -1361,25 +1361,25 @@ def DoRestart(param=''):
     """
     A smart and portable way to restart a whole program.
     """
-    if dhnio.Windows():
-        if dhnio.isFrozen():
-            dhnio.Dprint(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
-            dhnio.Dprint(2, "misc.DoRestart sys.executable=" + sys.executable)
-            dhnio.Dprint(2, "misc.DoRestart sys.argv=" + str(sys.argv))
-            starter_filepath = os.path.join(dhnio.getExecutableDir(), settings.WindowsStarterFileName())
+    if io.Windows():
+        if io.isFrozen():
+            io.log(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
+            io.log(2, "misc.DoRestart sys.executable=" + sys.executable)
+            io.log(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+            starter_filepath = os.path.join(io.getExecutableDir(), settings.WindowsStarterFileName())
             if not os.path.isfile(starter_filepath):
-                dhnio.Dprint(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
+                io.log(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
                 return
             cmdargs = [os.path.basename(starter_filepath),]
             if param != '':
                 cmdargs.append(param)
-            dhnio.Dprint(2, "misc.DoRestart cmdargs="+str(cmdargs))
+            io.log(2, "misc.DoRestart cmdargs="+str(cmdargs))
             os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
 
         else:
-            dhnio.Dprint(2, "misc.DoRestart under Windows param=%s" % param)
-            dhnio.Dprint(2, "misc.DoRestart sys.executable=" + sys.executable)
-            dhnio.Dprint(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+            io.log(2, "misc.DoRestart under Windows param=%s" % param)
+            io.log(2, "misc.DoRestart sys.executable=" + sys.executable)
+            io.log(2, "misc.DoRestart sys.argv=" + str(sys.argv))
 
             pypath = sys.executable
             cmdargs = [sys.executable]
@@ -1390,14 +1390,14 @@ def DoRestart(param=''):
             if cmdargs.count('restart'):
                 cmdargs.remove('restart')
 
-            dhnio.Dprint(2, "misc.DoRestart cmdargs="+str(cmdargs))
+            io.log(2, "misc.DoRestart cmdargs="+str(cmdargs))
             # os.spawnve(os.P_DETACH, pypath, cmdargs, os.environ)
             os.execvpe(pypath, cmdargs, os.environ)
 
     else:
-        dhnio.Dprint(2, "misc.DoRestart under Linux param=%s" % param)
-        dhnio.Dprint(2, "misc.DoRestart sys.executable=" + sys.executable)
-        dhnio.Dprint(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+        io.log(2, "misc.DoRestart under Linux param=%s" % param)
+        io.log(2, "misc.DoRestart sys.executable=" + sys.executable)
+        io.log(2, "misc.DoRestart sys.argv=" + str(sys.argv))
         
         pypyth = sys.executable
         cmdargs = [sys.executable]
@@ -1410,19 +1410,19 @@ def DoRestart(param=''):
 
         pid = os.fork()
         if pid == 0:
-            dhnio.Dprint(2, "misc.DoRestart cmdargs="+str(cmdargs))
+            io.log(2, "misc.DoRestart cmdargs="+str(cmdargs))
             os.execvpe(pypyth, cmdargs, os.environ)
         else:
-            dhnio.Dprint(2, "misc.DoRestart os.fork returned "+str(pid))
+            io.log(2, "misc.DoRestart os.fork returned "+str(pid))
             
             
 def RunBatFile(filename, output_filename=None):
     """
     Can execute a bat file under Windows.
     """
-    if not dhnio.Windows():
+    if not io.Windows():
         return
-    dhnio.Dprint(0, 'misc.RunBatFile going to execute ' + str(filename))
+    io.log(0, 'misc.RunBatFile going to execute ' + str(filename))
 
     cmd = os.path.abspath(filename).replace('\\', '/')
     if output_filename is not None:
@@ -1437,9 +1437,9 @@ def RunShellCommand(cmdstr, wait=True):
         :param cmdstr: a full command line ( with arguments ) to execute.
         :param wait: if True - the main process will be blocked until child is finished.
     """
-    dhnio.Dprint(8, 'misc.RunShellCommand ' + cmdstr)
+    io.log(8, 'misc.RunShellCommand ' + cmdstr)
     try:
-        if dhnio.Windows():
+        if io.Windows():
             import win32process
             p = subprocess.Popen(
                 cmdstr,
@@ -1450,13 +1450,13 @@ def RunShellCommand(cmdstr, wait=True):
                 cmdstr,
                 shell=True,)
     except:
-        dhnio.DprintException()
+        io.exception()
         return None
     if wait:
         try:
             result = p.wait()
         except:
-            dhnio.DprintException()
+            io.exception()
             return None
     else:
         return p.pid
@@ -1468,17 +1468,17 @@ def ExplorePathInOS(filepath):
     Very nice and portable way to show location or file on local disk. 
     """
     try:
-        if dhnio.Windows():
+        if io.Windows():
             # os.startfile(filepath)
             if os.path.isfile(filepath):
                 subprocess.Popen(['explorer', '/select,', '%s' % (filepath.replace('/','\\'))])
             else:
                 subprocess.Popen(['explorer', '%s' % (filepath.replace('/','\\'))])
 
-        elif dhnio.Linux():
+        elif io.Linux():
             subprocess.Popen(['xdg-open', filepath])
 
-        elif dhnio.Mac():
+        elif io.Mac():
             subprocess.Popen(['open', filepath])
 
     except:
@@ -1486,7 +1486,7 @@ def ExplorePathInOS(filepath):
             import webbrowser
             webbrowser.open(filepath)
         except:
-            dhnio.DprintException()
+            io.exception()
     return
 
 
@@ -1503,79 +1503,79 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
     new = cmdLineQuote(new_dir)
     
     try:
-        if dhnio.Linux():
+        if io.Linux():
             cmdargs = ['cp', '-r', current, new]
-            dhnio.Dprint(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
+            io.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
             subprocess.call(cmdargs)
             if remove_old:
                 cmdargs = ['rm', '-r', current]
-                dhnio.Dprint(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
+                io.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
                 subprocess.call(cmdargs)
             return 'ok'
     
-        if dhnio.Windows():
+        if io.Windows():
             cmdstr0 = 'mkdir %s' % new
             cmdstr1 = 'xcopy %s %s /E /K /R /H /Y' % (cmdLineQuote(os.path.join(current_dir, '*.*')), new)
             cmdstr2 = 'rmdir /S /Q %s' % current
             if not os.path.isdir(new):
-                dhnio.Dprint(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr0))
+                io.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr0))
                 if RunShellCommand(cmdstr0) is None:
                     return 'error'
-                dhnio.Dprint(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr1))
+                io.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr1))
             if RunShellCommand(cmdstr1) is None:
                 return 'error'
             if remove_old:
-                dhnio.Dprint(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr2))
+                io.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr2))
                 if RunShellCommand(cmdstr2) is None:
                     return 'error'
             return 'ok'
         
     except:
-        dhnio.DprintException()
+        io.exception()
         return 'failed'
     
     return 'ok'
 
 #------------------------------------------------------------------------------
 
-def UpdateDesktopShortcut():
-    """
-    Called at startup to update BitPie.NET shortcut on the desktop.
-    I was playing with that, tried to keep the shortcut on the desktop always (even if user removes it).
-    This is switched off now, it was very anoying for one my friend who install DHN.
-    """
-    dhnio.Dprint(6, 'misc.UpdateDesktopShortcut')
-    if dhnio.Windows() and dhnio.isFrozen():
-        if settings.getGeneralDesktopShortcut():
-            if not os.path.exists(pathToWindowsShortcut(settings.getIconLinkFilename())):
-                createWindowsShortcut(
-                    settings.getIconLinkFilename(),
-                    '%s' % settings.getIconLaunchFilename(),
-                    dhnio.getExecutableDir(),
-                    os.path.join(dhnio.getExecutableDir(), 'icons', settings.IconFilename()),
-                    'show' )
-        else:
-            if os.path.exists(pathToWindowsShortcut(settings.getIconLinkFilename())):
-                removeWindowsShortcut(settings.getIconLinkFilename())
-
-
-def UpdateStartMenuShortcut():
-    """
-    Update icons in the start menu, switched off right now.
-    """
-    dhnio.Dprint(6, 'misc.UpdateStartMenuShortcut')
-    if dhnio.Windows() and dhnio.isFrozen():
-        if settings.getGeneralStartMenuShortcut():
-            if not os.path.exists(pathToStartMenuShortcut(settings.getIconLinkFilename())):
-                createStartMenuShortcut(
-                    settings.getIconLinkFilename(),
-                    '%s' % settings.getIconLaunchFilename(),
-                    dhnio.getExecutableDir(),
-                    os.path.join(dhnio.getExecutableDir(), 'icons', settings.IconFilename()),
-                    'show' )
-        else:
-            if os.path.exists(pathToStartMenuShortcut(settings.getIconLinkFilename())):
-                removeStartMenuShortcut('Data Haven .NET.lnk')
+#def UpdateDesktopShortcut():
+#    """
+#    Called at startup to update BitPie.NET shortcut on the desktop.
+#    I was playing with that, tried to keep the shortcut on the desktop always (even if user removes it).
+#    This is switched off now, it was very anoying for one my friend who install the software.
+#    """
+#    io.log(6, 'misc.UpdateDesktopShortcut')
+#    if io.Windows() and io.isFrozen():
+#        if settings.getGeneralDesktopShortcut():
+#            if not os.path.exists(pathToWindowsShortcut(settings.getIconLinkFilename())):
+#                createWindowsShortcut(
+#                    settings.getIconLinkFilename(),
+#                    '%s' % settings.getIconLaunchFilename(),
+#                    io.getExecutableDir(),
+#                    os.path.join(io.getExecutableDir(), 'icons', settings.IconFilename()),
+#                    'show' )
+#        else:
+#            if os.path.exists(pathToWindowsShortcut(settings.getIconLinkFilename())):
+#                removeWindowsShortcut(settings.getIconLinkFilename())
+#
+#
+#def UpdateStartMenuShortcut():
+#    """
+#    Update icons in the start menu, switched off right now.
+#    """
+#    io.log(6, 'misc.UpdateStartMenuShortcut')
+#    if io.Windows() and io.isFrozen():
+#        if settings.getGeneralStartMenuShortcut():
+#            if not os.path.exists(pathToStartMenuShortcut(settings.getIconLinkFilename())):
+#                createStartMenuShortcut(
+#                    settings.getIconLinkFilename(),
+#                    '%s' % settings.getIconLaunchFilename(),
+#                    io.getExecutableDir(),
+#                    os.path.join(io.getExecutableDir(), 'icons', settings.IconFilename()),
+#                    'show' )
+#        else:
+#            if os.path.exists(pathToStartMenuShortcut(settings.getIconLinkFilename())):
+#                removeStartMenuShortcut('Data Haven .NET.lnk')
 
 
 def UpdateSettings():
@@ -1584,7 +1584,7 @@ def UpdateSettings():
     see ``p2p.dhninit.init_local()`` method.
     I used that place sometimes to 'patch' users settings.
     """
-    dhnio.Dprint(6, 'misc.UpdateSettings')
+    io.log(6, 'misc.UpdateSettings')
 
 #-------------------------------------------------------------------------------
 
@@ -1597,15 +1597,15 @@ def SendDevReportOld(subject, body, includelogs):
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
             filesList.append(settings.UserConfigFilename())
-            filesList.append(os.path.join(dhnio.getExecutableDir(), 'dhnmain.exe.log'))
-            filesList.append(os.path.join(dhnio.getExecutableDir(), 'dhnmain.log'))
+            filesList.append(os.path.join(io.getExecutableDir(), 'dhnmain.exe.log'))
+            filesList.append(os.path.join(io.getExecutableDir(), 'dhnmain.log'))
             for filename in os.listdir(settings.LogsDir()):
                 filepath = os.path.join(settings.LogsDir(), filename)
                 filesList.append(filepath)
         if len(filesList) > 0:
             import zipfile
             import time
-            username = dhnio.ReadTextFile(settings.UserNameFilename())
+            username = io.ReadTextFile(settings.UserNameFilename())
             zipfd, zipfilename = tempfile.mkstemp('.zip', username+'-'+time.strftime('%Y%m%d%I%M%S')+'-' )
             zfile = zipfile.ZipFile(zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
             for filename in filesList:
@@ -1617,7 +1617,7 @@ def SendDevReportOld(subject, body, includelogs):
                         pass
             zfile.close()
             filesList = [zipfilename]    
-        dhnnet.SendEmail(
+        net_misc.SendEmail(
             'to@mail',
             'from@mail',
             'smtp.gmail.com',
@@ -1628,7 +1628,7 @@ def SendDevReportOld(subject, body, includelogs):
             body,
             filesList,)
     except:
-        dhnio.DprintException()
+        io.exception()
         
 
 def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=None):
@@ -1646,15 +1646,15 @@ def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=No
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
             filesList.append(settings.UserConfigFilename())
-            filesList.append(os.path.join(dhnio.getExecutableDir(), 'dhnmain.exe.log'))
-            filesList.append(os.path.join(dhnio.getExecutableDir(), 'dhnmain.log'))
+            filesList.append(os.path.join(io.getExecutableDir(), 'dhnmain.exe.log'))
+            filesList.append(os.path.join(io.getExecutableDir(), 'dhnmain.log'))
             for filename in os.listdir(settings.LogsDir()):
                 filepath = os.path.join(settings.LogsDir(), filename)
                 filesList.append(filepath)
         if len(filesList) > 0:
             import zipfile
             import time
-            username = dhnio.ReadTextFile(settings.UserNameFilename())
+            username = io.ReadTextFile(settings.UserNameFilename())
             zipfd, zipfilename = tempfile.mkstemp('.zip', username+'-'+time.strftime('%Y%m%d%I%M%S')+'-' )
             zfile = zipfile.ZipFile(zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
             for filename in filesList:
@@ -1669,10 +1669,10 @@ def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=No
         if zipfilename:
             files['upload'] = zipfilename
         data = {'subject': subject, 'body': body}
-        dhnnet.uploadHTTP('http://bitpie.net/cgi-bin/feedback.py', files, data, progress, receiverDeferred)            
+        net_misc.uploadHTTP('http://bitpie.net/cgi-bin/feedback.py', files, data, progress, receiverDeferred)            
         return True 
     except:
-        dhnio.DprintException()
+        io.exception()
     return False
 
 #------------------------------------------------------------------------------ 
@@ -1690,27 +1690,27 @@ def GetUserProfilePicturePath():
     Than user can upload his avatar to some place (we can store avatars for free) 
     and set that url into his identity - so others can get his avatar very easy.
     """
-    if dhnio.Windows():
+    if io.Windows():
         
         username = os.path.basename(os.path.expanduser('~'))
-        if dhnio.windows_version() == 5: # Windows XP
+        if io.windows_version() == 5: # Windows XP
             # %ALLUSERSPROFILE%\Application Data\Microsoft\User Account Pictures
             allusers = os.environ.get('ALLUSERSPROFILE', os.path.join(os.path.dirname(os.path.expanduser('~')), 'All Users'))
             return os.path.join(allusers, 'Application Data', 'Microsoft', 'User Account Pictures', username+'.bmp')
-        elif dhnio.windows_version() == 6: # Windows 7
+        elif io.windows_version() == 6: # Windows 7
             # C:\Users\<username>\AppData\Local\Temp\<domain>+<username>.bmp 
             default_path = os.path.join(os.path.expanduser('~'), 'Application Data')
             return os.path.join(os.environ.get('APPDATA', default_path), 'Local', 'Temp', username+'.bmp')
         else:
             return ''
-    elif dhnio.Linux():
+    elif io.Linux():
         return os.path.join(os.path.expanduser('~'), '.face')
     return ''
 
 def UpdateRegistryUninstall(uninstall=False):
     """
     This is not used right now.
-    Now DHN is installed via .msi file and we do all that stuff inside it.
+    Now BitPie.NET is installed via .msi file and we do all that stuff inside it.
     """
     try:
         import _winreg
@@ -1719,13 +1719,13 @@ def UpdateRegistryUninstall(uninstall=False):
     unistallpath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall" 
     regpath = unistallpath + "\\BitPie.NET"
     values = {
-        'DisplayIcon':      '%s,0' % str(dhnio.getExecutableFilename()),
+        'DisplayIcon':      '%s,0' % str(io.getExecutableFilename()),
         'DisplayName':      'BitPie.NET',
-        'DisplayVersion':   'rev'+dhnio.ReadTextFile(settings.RevisionNumberFile()).strip(),
+        'DisplayVersion':   'rev'+io.ReadTextFile(settings.RevisionNumberFile()).strip(),
         'InstallLocation:': settings.BaseDir(),
         'NoModify':         1,
         'NoRepair':         1,
-        'UninstallString':  '%s uninstall' % dhnio.getExecutableFilename(),
+        'UninstallString':  '%s uninstall' % io.getExecutableFilename(),
         'URLInfoAbout':     'http://bitpie.net', }    
     # open
     try:
@@ -1734,7 +1734,7 @@ def UpdateRegistryUninstall(uninstall=False):
         try:
             reg = _winreg.CreateKey(_winreg.HKEY_LOCAL_MACHINE, regpath)
         except:
-            dhnio.DprintException()
+            io.exception()
             return False
     # check
     i = 0
@@ -1751,7 +1751,7 @@ def UpdateRegistryUninstall(uninstall=False):
                 try:
                     _winreg.DeleteValue(reg, name)
                 except:
-                    dhnio.DprintException()
+                    io.exception()
         else:
             if name == 'DisplayName' and value == 'BitPie.NET':
                 _winreg.CloseKey(reg)
@@ -1762,12 +1762,12 @@ def UpdateRegistryUninstall(uninstall=False):
         try:
             reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, unistallpath, 0, _winreg.KEY_ALL_ACCESS)
         except:
-            dhnio.DprintException()
+            io.exception()
             return False
         try:
             _winreg.DeleteKey(reg, 'BitPie.NET')
         except:
-            dhnio.DprintException()
+            io.exception()
             _winreg.CloseKey(reg)
             return False
         _winreg.CloseKey(reg)
@@ -1782,11 +1782,11 @@ def UpdateRegistryUninstall(uninstall=False):
     return True
 
 
-def MakeBatFileToUninstall(wait_appname='dhnmain.exe', local_dir=dhnio.getExecutableDir(), dirs2delete=[settings.BaseDir(),]):
+def MakeBatFileToUninstall(wait_appname='dhnmain.exe', local_dir=io.getExecutableDir(), dirs2delete=[settings.BaseDir(),]):
     """
     Not used.
     """
-    dhnio.Dprint(0, 'misc.MakeBatFileToUninstall')
+    io.log(0, 'misc.MakeBatFileToUninstall')
     batfileno, batfilename = tempfile.mkstemp('.bat', 'BitPie.NET-uninstall-')
     batsrc = ''
     batsrc += 'cd "%s"\n' % local_dir
@@ -1796,7 +1796,7 @@ def MakeBatFileToUninstall(wait_appname='dhnmain.exe', local_dir=dhnio.getExecut
     batsrc += 'tasklist /FI "IMAGENAME eq %s" /FO CSV > search.log\n' % wait_appname
     batsrc += 'FOR /F %%A IN (search.log) DO IF %%-zA EQU 0 GOTO again\n'
 #    batsrc += 'start /B /D"%s" %s\n' % (local_dir, start_cmd)
-#    batsrc += 'start /B /D"%s" %s\n' % (dhnio.shortPath(local_dir), start_cmd)
+#    batsrc += 'start /B /D"%s" %s\n' % (io.shortPath(local_dir), start_cmd)
     for dirpath in dirs2delete:
         batsrc += 'rmdir /S /Q "%s"\n' % os.path.abspath(dirpath)
     batsrc += 'del /F /S /Q "%s"\n' % os.path.abspath(batfilename)
@@ -1833,8 +1833,8 @@ def LoopAttenuation(current_delay, faster, min, max):
 #------------------------------------------------------------------------------ 
 
 if __name__ == '__main__':
-    dhnio.SetDebug(10)
-    dhnio.init()
+    io.SetDebug(10)
+    io.init()
     init()
 
     if True:

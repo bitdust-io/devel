@@ -18,15 +18,20 @@ Identity might better be called business card, since it is really
 mostly just your contact info. But more than that since public key.
 Hum.
 
+The whole idea of identity files is that they can be stored anywhere.
+User can decide to put his identity file on his own host, or he can use some another trusted public host.
+All identity files is signed with user's Key and client code should verify signatures.
+Even if someone tried to fake my identity - this will be refused by other nodes in the network.  
+
 Example in http://id.bitpie.net/veselin.xml
 
 Could have info just be XML on a web page.  So an Identity could be a URL.
 If we do this, then we get the scaling of DNS for free.  
 
-DataHaven.net could have mappings from unique short names to URLs for
+BitPie.NET could have mappings from unique short names to URLs for
 identities.  Or we could just make sure that the MD5 of the URL was
 always unique (this is 16 bytes).  Or we could go with the primary URL.  
-Hum.  DataHaven.net does need some sort of unique identifier, as do others.  
+Hum.  bitpie.net does need some sort of unique identifier, as do others.  
 Also, would be nice to be able to send someone a list of their 
 current 64 nodes they use, or the 300 that use them, without
 crazy amounts of data.  For display
@@ -71,12 +76,12 @@ signature on all identity info
 Contact list has enough info we can tell what protocol to use.
 User could put in order he prefers us to try the contact methods.  
 So we might have a list like:
-    datahaven:offshore.ai:5008
-    datahaven:209.88.68.34:5008
+    bitpie:offshore.ai:5008
+    bitpie:209.88.68.34:5008
     stun:stun.me:90
     vertex:foo@bar.com
-    email:datahaven@gmail.com
-    email:datahaven@hotmal.com
+    email:bitpie@gmail.com
+    email:bitpie@hotmal.com
     http://foobar.com/data.pl?vince    
 
 Really best if all the identity servers use SSL.
@@ -109,9 +114,9 @@ from xml.dom.minidom import getDOMImplementation
 
 
 import lib.settings as settings
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.nameurl as nameurl
-import lib.dhncrypto as dhncrypto
+import lib.crypto as crypto
 
 # import lib.misc as misc
 
@@ -189,7 +194,7 @@ class identity:
             self.unserialize(xmlsrc)
 
         if filename != '':
-            self.unserialize(dhnio.ReadTextFile(filename))
+            self.unserialize(io.ReadTextFile(filename))
             
         if xmlsrc is None and filename == '':
             self.default()
@@ -494,7 +499,7 @@ class identity:
         for i in self.sources:
             sr += i
         stufftohash = c + sep + s + sep + sr + sep + self.version + sep + self.postage + sep + self.date.replace(' ', '_')
-        hashcode = dhncrypto.Hash(stufftohash)          
+        hashcode = crypto.Hash(stufftohash)          
         return hashcode
 
     def sign(self):
@@ -502,11 +507,11 @@ class identity:
         Make a hash, generate digital signature on it and remember the signature.
         """
         hashcode = self.makehash()
-        self.signature = dhncrypto.Sign(hashcode)
+        self.signature = crypto.Sign(hashcode)
 ##        if self.Valid():
-##            dhnio.Dprint(12, "identity.sign tested after making and it looks good")
+##            io.log(12, "identity.sign tested after making and it looks good")
 ##        else:
-##            dhnio.Dprint(1, "identity.sign ERROR tested after making sign ")
+##            io.log(1, "identity.sign ERROR tested after making sign ")
 ##            raise Exception("sign fails")
 
     def Valid(self):
@@ -515,7 +520,7 @@ class identity:
         PREPRO - should test certificate too.
         """
         hashcode = self.makehash()
-        result = dhncrypto.VerifySignature(
+        result = crypto.VerifySignature(
             self.publickey,
             hashcode,
             str(self.signature))
@@ -528,8 +533,8 @@ class identity:
         try:
             doc = minidom.parseString(xmlsrc)
         except:
-            dhnio.DprintException()
-            dhnio.Dprint(2, '\n'+xmlsrc[:256]+'\n')
+            io.exception()
+            io.log(2, '\n'+xmlsrc[:256]+'\n')
             return
         self.clear_data()
         self.from_xmlobj(doc.documentElement)
@@ -662,7 +667,7 @@ class identity:
                         if (xkey.nodeType == Node.TEXT_NODE):
                             self.signature=xkey.wholeText.strip().encode()
         except:
-            dhnio.DprintException()
+            io.exception()
 
 #-------------------------------------------------------------------------------
 
@@ -672,9 +677,9 @@ def makeDefaultIdentity(name='', ip=''):
     Nice to provide a user name or it will have a form like: [ip address]_[date].     
     """
     import lib.misc
-    dhnio.Dprint(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
+    io.log(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
     if ip == '':
-        ip = dhnio.ReadTextFile(settings.ExternalIPFilename())
+        ip = io.ReadTextFile(settings.ExternalIPFilename())
     if name == '':
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
     servername = settings.IdentityServerName()
@@ -689,39 +694,17 @@ def makeDefaultIdentity(name='', ip=''):
     if settings.enableDHTUDP():
         cdict['dhtudp'] = 'dhtudp://%s@%s' % (name.lower(), servername)
 
-    # if settings.enableUDP() and settings.enableUDPreceiving():
-    #     cdict['udp'] = 'udp://'+ip+':'+settings.getUDPPort()
-    # if settings.enableSSH():
-    #     cdict['ssh'] = 'ssh://'+ip+':'+settings.getSSHPort()
-    # if settings.enableHTTP() or settings.enableHTTPServer():
-    #     cdict['http'] = 'http://'+ip+':'+settings.getHTTPPort()
-    # if settings.enableQ2Q():
-    #     if settings.getQ2Qusername().strip() != '' and settings.getQ2Qhost().strip() != '':
-    #         cdict['q2q'] = 'q2q://'+settings.getQ2Quserathost()
-    #     else:
-    #         cdict['q2q'] = 'q2q://default@'+settings.getQ2Qhost()
-    # if settings.enableEMAIL():
-    #     if settings.getEmailAddress().strip() != '':
-    #         cdict['email'] = 'email://'+settings.getEmailAddress()
-    #     else:
-    #         cdict['email'] = 'email://'+name+'@datahaven.net'
-    # if settings.enableCSpace():
-    #     if settings.getCSpaceKeyID() != '':
-    #         cdict['cspace'] = 'cspace://'+settings.getCSpaceKeyID()
-    #     else:
-    #         cdict['cspace'] = 'cspace://not-registered'
-        
     for c in lib.misc.validTransports:
         if cdict.has_key(c):
             ident.contacts.append(cdict[c].encode("ascii").strip())
 
-    ident.publickey = dhncrypto.MyPublicKey()
+    ident.publickey = crypto.MyPublicKey()
     ident.date = time.strftime('%b %d, %Y')
     ident.postage = "1"
 
-    revnum = dhnio.ReadTextFile(settings.RevisionNumberFile())
+    revnum = io.ReadTextFile(settings.RevisionNumberFile())
     repo, location = lib.misc.ReadRepoLocation()
-    ident.version = (revnum.strip() + ' ' + repo.strip() + ' ' + dhnio.osinfo().strip()).strip()
+    ident.version = (revnum.strip() + ' ' + repo.strip() + ' ' + io.osinfo().strip()).strip()
 
     ident.sign()
 
@@ -791,9 +774,9 @@ def update():
     A good way to check all things - load and sign again.
     """
     import lib.misc
-    dhnio.init()
+    io.init()
     settings.init()
-    src = dhnio.ReadTextFile(settings.LocalIdentityFilename())
+    src = io.ReadTextFile(settings.LocalIdentityFilename())
     lib.misc.setLocalIdentity(identity(xmlsrc=src))
     lib.misc.getLocalIdentity().sign()
     lib.misc.saveLocalIdentity()
@@ -803,7 +786,7 @@ def update():
 
 
 if __name__ == '__main__':
-    dhnio.SetDebug(18)
+    io.SetDebug(18)
     main()
 
 

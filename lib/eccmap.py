@@ -38,7 +38,7 @@ import os
 import re
 import threading
 
-import dhnio
+import io
 import settings
 
 #------------------------------------------------------------------------------ 
@@ -243,11 +243,11 @@ class eccmap:
         self.type = 0             # 0 is data+parity on same nodes, 1 is different
         self.from_memory(self.name)
         self.convert()
-        dhnio.Dprint(8, 'eccmap.init %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
+        io.log(8, 'eccmap.init %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
         
     def __del__(self):
         try:
-            dhnio.Dprint(8, 'eccmap.del %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
+            io.log(8, 'eccmap.del %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
         except:
             pass
         
@@ -293,7 +293,7 @@ class eccmap:
         """
         Read the constants from memory and take needed matrix on hands.
         """
-        # dhnio.Dprint(6, "eccmap.from_memory with " + name)
+        # io.log(6, "eccmap.from_memory with " + name)
         maxdata = 0
         maxparity = 0
         data = GetEccMapData(name)
@@ -306,8 +306,8 @@ class eccmap:
                     if datanum > maxdata:
                         maxdata = datanum
                 except (TypeError, ValueError):
-                    dhnio.Dprint(1, 'eccmap.from_memory ERROR')
-                    dhnio.DprintException()
+                    io.log(1, 'eccmap.from_memory ERROR')
+                    io.exception()
             if oneset:
                 self.ParityToData.append(oneset)
                 maxparity += 1
@@ -315,20 +315,20 @@ class eccmap:
         self.datasegments = maxdata + 1
         # we only do this type at the moment
         self.type = 0                    
-        # dhnio.Dprint(6, "   %s with parity=%s data=%s " % (name, self.paritysegments, self.datasegments))
+        # io.log(6, "   %s with parity=%s data=%s " % (name, self.paritysegments, self.datasegments))
 
     def loadfromfile(self, fname):
         """
         This is old method, I decide to move all constants into the Python code.
         """
-        # dhnio.Dprint(10, "eccmap.loadfromfile with " + fname)
+        # io.log(10, "eccmap.loadfromfile with " + fname)
         if os.path.exists(fname):
             filename = fname
         else:
             filename = os.path.join("..", fname)
         maxdata = 0
         maxparity = 0
-        s = dhnio.ReadTextFile(filename)
+        s = io.ReadTextFile(filename)
         for PS in re.split("\]",s):
             good = PS.lstrip("\[\,")
             oneset = []
@@ -339,14 +339,14 @@ class eccmap:
                     if datanum > maxdata:
                         maxdata = datanum
                 except (TypeError, ValueError):
-                    dhnio.DprintException()
+                    io.exception()
             if oneset:
                 self.ParityToData.append(oneset)
                 maxparity += 1
         self.paritysegments = maxparity
         self.datasegments = maxdata + 1
         self.type = 0                    # we only do this type at the moment
-        # dhnio.Dprint(10, "eccmap.loadfromfile  %s  with parity=%s  data=%s " % (filename, self.paritysegments, self.datasegments))
+        # io.log(10, "eccmap.loadfromfile  %s  with parity=%s  data=%s " % (filename, self.paritysegments, self.datasegments))
 
     def convert(self):
         """
@@ -460,12 +460,12 @@ class eccmap:
         Identify which Parity to use to rebuild the missing Data Segment, return the parity segment number and
         the map of data segments in that parity.
         """
-        #dhnio.Dprint(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
+        #io.log(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
         bestParityNum = -1
         bestParityMap = []
         if DataSegs[DataSegNum] == 1 :           
             # we have the data segment nothing to fix, unclear why this was called, don't expect this to happen
-            #dhnio.Dprint(12, "eccmap.GetDataFixPath we already have the data segment requested to fix?")
+            #io.log(12, "eccmap.GetDataFixPath we already have the data segment requested to fix?")
             return bestParityNum, bestParityMap
         for paritynum in range(0, self.paritysegments):
             if ((ParitySegs[paritynum]==1) or (ParitySegs[paritynum]==True)) and \

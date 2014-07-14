@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnio.py
+#io.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: dhnio
+.. module:: io
 
 This module is for simple routines that do not require importing any of our code.:
     - print logs
@@ -18,7 +18,7 @@ This module is for simple routines that do not require importing any of our code
     - list Linux mount points and Windows drives
     - methods to manage system processes
     
-Most used method here is ``Dprint`` - prints a log string.
+Most used method here is ``log`` - prints a log string.
 
 TODO need to do some refactoring here
 """
@@ -71,7 +71,7 @@ def shutdown():
     """
     This is the last method to be invoked by the program before main process will stop.
     """
-    Dprint(2, 'dhnio.shutdown')
+    log(2, 'io.shutdown')
     RestoreSTDOUT()
 
 def InstallLocale():
@@ -116,7 +116,7 @@ def RestoreSTDOUT():
         sys.stdout = OriginalStdOut
         dhn_std_out.close()
     except:
-        traceback.print_last(file=open('dhnio.shutdown.error', 'w'))
+        traceback.print_last(file=open('io.shutdown.error', 'w'))
 
 def ostype():
     """
@@ -206,7 +206,7 @@ def SetDebug(level):
     """
     global DebugLevel
     if DebugLevel > level:
-        Dprint(level, "dhnio.SetDebug DebugLevel=" + str(level))
+        log(level, "io.SetDebug DebugLevel=" + str(level))
     DebugLevel = level
 
 def LifeBegins():
@@ -224,7 +224,7 @@ def Debug(level):
     global DebugLevel
     return level <= DebugLevel
 
-def Dprint(level, s, nl='\n'):
+def log(level, s, nl='\n'):
     """
     The core method, most used thing in the whole project.
     Print a log message.  
@@ -278,22 +278,7 @@ def Dprint(level, s, nl='\n'):
         WebStreamFunc(level, s_ + nl)
     LogLinesCounter += 1
     if LogLinesCounter % 10000 == 0:
-        Dprint(2, '[%s]' % time.asctime())
-
-def DprintStd(level, s):
-    """
-    Same as ``Dprint``, but use built-in "print" method. 
-    """
-    s_ = s
-    level_ = level
-    if level_ % 2:
-        level_ -= 1
-    if level == 1:
-        level_ = 1
-    if level_:
-        s_ = ' ' * level_ + s_
-        s_ = time.strftime('%H:%M:%S') + s_
-    print s_
+        log(2, '[%s]' % time.asctime())
 
 def Dglobals(level, glob_dict):
     """
@@ -312,7 +297,7 @@ _TimePush = 0.0
 _TimeTotalDict = {}
 _TimeDeltaDict = {}
 _TimeCountsDict = {}
-def DTimePush(t):
+def logTimePush(t):
     """
     Remember current system time and set ``t`` marker to that.
     Useful to count execution time of some parts of the code.  
@@ -326,7 +311,7 @@ def DTimePush(t):
         _TimeCountsDict[t] = 0
     _TimeDeltaDict[t] = tm
 
-def DTimePop(t):
+def logTimePop(t):
     """
     Count execution time for marker ``t``.
     """
@@ -340,7 +325,7 @@ def DTimePop(t):
     _TimeTotalDict[t] += dt
     _TimeCountsDict[t] += 1
 
-def DprintTotalTime():
+def logPrintTotalTime():
     """
     Print total stats for all time markers.
     """
@@ -350,7 +335,7 @@ def DprintTotalTime():
     for t in _TimeTotalDict.keys():
         total = _TimeTotalDict[t]
         counts = _TimeCountsDict[t]
-        Dprint(2, 'total=%f sec. count=%d, avarage=%f: %s' % (total, counts, total/counts, t))
+        log(2, 'total=%f sec. count=%d, avarage=%f: %s' % (total, counts, total/counts, t))
 
 def exceptionName(value):
     """
@@ -391,7 +376,7 @@ def formatExceptionInfo(maxTBlevel=100, exc_info=None):
         tbstring += s + '\n'
     return tbstring
 
-def DprintException(level=0, maxTBlevel=100, exc_info=None):
+def exception(level=0, maxTBlevel=100, exc_info=None):
     """
     This is second most common method in the project.
     Print detailed info about last exception to the logs.
@@ -407,14 +392,14 @@ def DprintException(level=0, maxTBlevel=100, exc_info=None):
         excArgs = ''
     excTb = traceback.format_tb(trbk, maxTBlevel)
     s = 'Exception: <' + exceptionName(value) + '>\n'
-    Dprint(level, s.strip())
+    log(level, s.strip())
     if excArgs:
         s += '  args:' + excArgs + '\n'
-        Dprint(level, '  args:' + excArgs)
+        log(level, '  args:' + excArgs)
     s += '\n'
     excTb.reverse()
     for l in excTb:
-        Dprint(level, l.replace('\n', ''))
+        log(level, l.replace('\n', ''))
         s += l + '\n'
     try:
         file = open(os.path.join(os.path.dirname(LogFileName), 'exception.log'), 'w')
@@ -427,7 +412,7 @@ def ExceptionHook(type, value, traceback):
     """
     Callback function to print last exception.
     """
-    DprintException(exc_info=(type, value, traceback))
+    exception(exc_info=(type, value, traceback))
 
 #------------------------------------------------------------------------------
 
@@ -465,8 +450,8 @@ def OpenLogFile(filename, append_mode=False):
             LogFile = open(os.path.abspath(filename), 'w')
         LogFileName = os.path.abspath(filename)
     except:
-        Dprint(0, 'cant open ' + filename)
-        DprintException()
+        log(0, 'cant open ' + filename)
+        exception()
 
 def CloseLogFile():
     """
@@ -479,18 +464,18 @@ def CloseLogFile():
     LogFile.close()
     LogFile = None
 
-class DHN_stdout:
+class PATCHED_stdout:
     """
     Emulate system STDOUT, useful to log any program output. 
     """
     softspace = 0
     def read(self): pass
     def write(self, s):
-        Dprint(0, unicode(s).rstrip())
+        log(0, unicode(s).rstrip())
     def flush(self): pass
     def close(self): pass
 
-class DHN_black_hole:
+class STDOUT_black_hole:
     """
     Useful to disable any output to STDOUT.
     """
@@ -503,13 +488,13 @@ class DHN_black_hole:
 
 def StdOutRedirectingStart():
     """
-    Replace sys.stdout with DHN_stdout so all output get logged.
+    Replace sys.stdout with PATCHED_stdout so all output get logged.
     """
     global RedirectStdOut
     global StdOutPrev
     RedirectStdOut = True
     StdOutPrev = sys.stdout
-    sys.stdout = DHN_stdout()
+    sys.stdout = PATCHED_stdout()
 
 def StdOutRedirectingStop():
     """
@@ -531,7 +516,7 @@ def DisableOutput():
     NoOutput = True
     RedirectStdOut = True
     StdOutPrev = sys.stdout
-    sys.stdout = DHN_black_hole()
+    sys.stdout = STDOUT_black_hole()
 
 def DisableLogs():
     """
@@ -607,7 +592,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
                     try:
                         os.remove(full_name)
                     except:
-                        Dprint(6, 'dhnio.rmdir_recursive can not remove file ' + full_name)
+                        log(6, 'io.rmdir_recursive can not remove file ' + full_name)
                         continue
     if pre_callback:
         if not pre_callback(dirpath):
@@ -618,7 +603,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
         try:
             os.rmdir(dirpath)
         except:
-            Dprint(6, 'dhnio.rmdir_recursive can not remove dir ' + dirpath)
+            log(6, 'io.rmdir_recursive can not remove dir ' + dirpath)
 
 def getDirectorySize(directory, include_subfolders=True):
     """
@@ -723,8 +708,8 @@ def AtomicWriteFile(filename, data):
             os.remove(filename)
         os.rename(tmpfilename, filename)
     except:
-        Dprint(1, 'dhnio.AtomicWriteFile ERROR ' + str(filename))
-        DprintException()
+        log(1, 'io.AtomicWriteFile ERROR ' + str(filename))
+        exception()
         try:
             f.close() # make sure file gets closed
         except:
@@ -744,12 +729,12 @@ def AtomicAppendFile(filename, data, mode='a'):
         os.fsync(f.fileno())
         f.close()
     except:
-        Dprint(1, 'dhnio.AtomicAppendFile ERROR ' + str(filename))
-        DprintException()
+        log(1, 'io.AtomicAppendFile ERROR ' + str(filename))
+        exception()
         try:
             f.close() # make sure file gets closed
         except:
-            DprintException()
+            exception()
         return False
     return True
 
@@ -769,7 +754,7 @@ def WriteFileSimple(filename, data, mode="w"):
         file.write(data)
         file.close()
     except:
-        DprintException()
+        exception()
         return False
     return True
 
@@ -792,7 +777,7 @@ def ReadBinaryFile(filename):
         file.close()
         return data
     except:
-        DprintException()
+        exception()
         return ''
     
 def ReadTextFile(filename):
@@ -811,7 +796,7 @@ def ReadTextFile(filename):
         # Windows/Linux trouble with text files
         return data.replace('\r\n','\n')
     except:
-        DprintException()
+        exception()
     return ''
 
 #-------------------------------------------------------------------------------
@@ -844,7 +829,7 @@ def _write_data(path, src):
         try:
             os.remove(path)
         except:
-            Dprint(1, 'dhnio._write_data ERROR removing ' + str(path))
+            log(1, 'io._write_data ERROR removing ' + str(path))
     fout = open(temp_path, 'wb')
     fout.write(src)
     fout.flush()
@@ -853,7 +838,7 @@ def _write_data(path, src):
     try:
         os.rename(temp_path, path)
     except:
-        Dprint(1, 'dhnio._write_data ERROR renaming %s to %s' % (str(temp_path), str(path)))
+        log(1, 'io._write_data ERROR renaming %s to %s' % (str(temp_path), str(path)))
     return True
 
 def _append_data(path, src):
@@ -1011,19 +996,19 @@ def backup_and_remove(path):
         try:
             os.remove(bkpath)
         except:
-            Dprint(1, 'dhnio.backup_and_remove ERROR can not remove file ' + bkpath)
-            DprintException()
+            log(1, 'io.backup_and_remove ERROR can not remove file ' + bkpath)
+            exception()
     try:
         os.rename(path, bkpath)
     except:
-        Dprint(1, 'dhnio.backup_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
-        DprintException()
+        log(1, 'io.backup_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
+        exception()
     if os.path.exists(path):
         try:
             os.remove(path)
         except:
-            Dprint(1, 'dhnio.backup_and_remove ERROR can not remove file ' + path)
-            DprintException()
+            log(1, 'io.backup_and_remove ERROR can not remove file ' + path)
+            exception()
 
 def restore_and_remove(path, overwrite_existing = False):
     """
@@ -1040,13 +1025,13 @@ def restore_and_remove(path, overwrite_existing = False):
         try:
             os.remove(path)
         except:
-            Dprint(1, 'dhnio.restore_and_remove ERROR can not remove file ' + path)
-            DprintException()
+            log(1, 'io.restore_and_remove ERROR can not remove file ' + path)
+            exception()
     try:
         os.rename(bkpath, path)
     except:
-        Dprint(1, 'dhnio.restore_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
-        DprintException()
+        log(1, 'io.restore_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
+        exception()
 
 def remove_backuped_file(path):
     """
@@ -1058,8 +1043,8 @@ def remove_backuped_file(path):
     try:
         os.remove(bkpath)
     except:
-        Dprint(1, 'dhnio.remove_backuped_file ERROR can not remove file ' + bkpath)
-        DprintException()
+        log(1, 'io.remove_backuped_file ERROR can not remove file ' + bkpath)
+        exception()
 
 #------------------------------------------------------------------------------ 
 
@@ -1126,7 +1111,7 @@ def shortPath(path):
         spath = win32api.GetShortPathName(path_)
         return unicode(spath)
     except:
-        DprintException()
+        exception()
         return unicode(path_)
 
 def longPath(path):
@@ -1145,7 +1130,7 @@ def longPath(path):
         lpath = win32api.GetLongPathName(path_)
         return unicode(lpath)
     except:
-        DprintException()
+        exception()
     return unicode(path_)
 
 def _encode(s):
@@ -1274,7 +1259,7 @@ def listLocalDrivesWindows():
             if win32file.GetDriveType(drive) == 3:
                 rootlist.append(drive)
     except:
-        DprintException()
+        exception()
     return rootlist
 
 def listRemovableDrivesWindows():
@@ -1296,7 +1281,7 @@ def listRemovableDrivesWindows():
                 if t == win32file.DRIVE_REMOVABLE:
                     l.append(drname)
     except:
-        DprintException()
+        exception()
     return l
 
 def listRemovableDrivesLinux():
@@ -1450,7 +1435,7 @@ def find_process_win32(applist):
                     if cmdline.find(app) > -1:
                         pidsL.append(pid)
     except:
-        DprintException()
+        exception()
     return pidsL
 
 
@@ -1462,7 +1447,7 @@ def kill_process_linux(pid):
         import signal
         os.kill(pid, signal.SIGTERM)
     except:
-        DprintException()
+        exception()
 
 
 def kill_process_win32(pid):
@@ -1472,23 +1457,23 @@ def kill_process_win32(pid):
     try:
         from win32api import TerminateProcess, OpenProcess, CloseHandle
     except:
-        DprintException()
+        exception()
         return False
     try:
         PROCESS_TERMINATE = 1
         handle = OpenProcess(PROCESS_TERMINATE, False, pid)
     except:
-        Dprint(2, 'dhnio.kill_process_win32 can not open process %d' % pid)
+        log(2, 'io.kill_process_win32 can not open process %d' % pid)
         return False
     try:
         TerminateProcess(handle, -1)
     except:
-        Dprint(2, 'dhnio.kill_process_win32 can not terminate process %d' % pid)
+        log(2, 'io.kill_process_win32 can not terminate process %d' % pid)
         return False
     try:
         CloseHandle(handle)
     except:
-        DprintException()
+        exception()
         return False
     return True
 

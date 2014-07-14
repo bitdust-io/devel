@@ -45,7 +45,7 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 import shtoom.stun
 import shtoom.nat
-import dhnio
+import io
 import settings
 
 
@@ -69,7 +69,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
         """
         Called when internal state of the process were changed.
         """
-        dhnio.Dprint(4, 'stun.stateChanged [%s]->[%s]' % (old, new))
+        io.log(4, 'stun.stateChanged [%s]->[%s]' % (old, new))
 
     def finishedStun(self):
         """
@@ -88,8 +88,8 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
                 typ = str(self.natType.name)
                 alt = str(self._altStunAddress) 
         except:
-            dhnio.DprintException()
-        dhnio.Dprint(2, 'stun.IPStunProtocol.finishedStun local=%s external=%s altStun=%s NAT_type=%s' % (
+            io.exception()
+        io.log(2, 'stun.IPStunProtocol.finishedStun local=%s external=%s altStun=%s NAT_type=%s' % (
             local, ip+':'+port, alt, typ))
         if self.result is not None:
             if not self.result.called:
@@ -163,21 +163,21 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
     global _TimeoutTask
     
     # d = Deferred()
-    # ip = dhnio.ReadTextFile(settings.ExternalIPFilename())
+    # ip = io.ReadTextFile(settings.ExternalIPFilename())
     # d.callback(ip or '0.0.0.0')
     # return d 
     
     if _IsWorking:
         res = Deferred()
         _WorkingDefers.append(res)
-        dhnio.Dprint(4, 'stun.stunExternalIP SKIP, already called')
+        io.log(4, 'stun.stunExternalIP SKIP, already called')
         return res
     
     res = Deferred()
     _WorkingDefers.append(res)
     _IsWorking = True
 
-    dhnio.Dprint(2, 'stun.stunExternalIP')
+    io.log(2, 'stun.stunExternalIP')
 
     shtoom.stun.STUNVERBOSE = verbose
     shtoom.nat._Debug = verbose
@@ -185,7 +185,7 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
     shtoom.nat.getLocalIPAddress.clearCache()
     
     if _UDPListener is None:
-        dhnio.Dprint(4, 'stun.stunExternalIP prepare listener')
+        io.log(4, 'stun.stunExternalIP prepare listener')
         if _StunClient is None:
             _StunClient = IPStunProtocol()
         else:
@@ -194,20 +194,20 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
         try:
             UDP_port = int(internal_port)
             _UDPListener = reactor.listenUDP(UDP_port, _StunClient)
-            dhnio.Dprint(4, 'stun.stunExternalIP UDP listening on port %d started' % UDP_port)
+            io.log(4, 'stun.stunExternalIP UDP listening on port %d started' % UDP_port)
         except:
             try:
                 _UDPListener = reactor.listenUDP(0, _StunClient)
-                dhnio.Dprint(4, 'stun.stunExternalIP multi-cast UDP listening started')
+                io.log(4, 'stun.stunExternalIP multi-cast UDP listening started')
             except:
-                dhnio.DprintException()
+                io.exception()
                 for d in _WorkingDefers:
                     d.callback('0.0.0.0')
                 _WorkingDefers = []
                 _IsWorking = False
                 return res
 
-    dhnio.Dprint(6, 'stun.stunExternalIP refresh stun client')
+    io.log(6, 'stun.stunExternalIP refresh stun client')
     _StunClient.refresh()
     _StunClient.timeout = timeout
 
@@ -221,7 +221,7 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
         
         if block_marker:
             block_marker('unblock')
-        dhnio.Dprint(6, 'stun.stunExternalIP.stun_finished: ' + str(x).replace('\n', ''))
+        io.log(6, 'stun.stunExternalIP.stun_finished: ' + str(x).replace('\n', ''))
         _LastStunResult = x
         try:
             if _IsWorking:
@@ -240,11 +240,11 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
                 del _StunClient
                 _StunClient = None
         except:
-            dhnio.DprintException()
+            io.exception()
     
     _StunClient.setCallback(stun_finished, block_marker)
 
-    dhnio.Dprint(6, 'stun.stunExternalIP starting discovery')
+    io.log(6, 'stun.stunExternalIP starting discovery')
     if block_marker:
         block_marker('block')
     reactor.callLater(0, _StunClient.startDiscovery)
@@ -273,7 +273,7 @@ def stopUDPListener():
     """
     Close STUN client and UDP listener.
     """
-    dhnio.Dprint(6, 'stun.stopUDPListener')
+    io.log(6, 'stun.stopUDPListener')
     global _UDPListener
     global _StunClient
     result = None
@@ -337,13 +337,13 @@ def main(verbose=False):
 #------------------------------------------------------------------------------ 
 
 if __name__ == "__main__":
-    dhnio.init()
+    io.init()
     if sys.argv.count('quite'):
-        dhnio.SetDebug(0)
+        io.SetDebug(0)
         main(False)
     else:
         # log.startLogging(sys.stdout)
-        dhnio.SetDebug(20)
+        io.SetDebug(20)
         main(True)
     reactor.run()
 

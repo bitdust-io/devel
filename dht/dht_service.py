@@ -29,12 +29,12 @@ from entangled.kademlia.node import rpcmethod
 from entangled.kademlia.contact import Contact
 
 try:
-    import lib.dhnio as dhnio
+    import lib.io as io
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     try:
-        import lib.dhnio as dhnio
+        import lib.io as io
     except:
         sys.exit()
 
@@ -52,9 +52,9 @@ _UDPListener = None
 def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
-        dhnio.Dprint(4, 'dht_service.init WARNING, already created a DHTNode')
+        io.log(4, 'dht_service.init WARNING, already created a DHTNode')
         return
-    dhnio.Dprint(4, 'dht_service.init UDP port is %d' % udp_port)
+    io.log(4, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         # db_file_path = './dht%s' % str(udp_port)
         db_file_path = settings.DHTDBFile()
@@ -71,9 +71,9 @@ def shutdown():
         _MyNode._dataStore._db.close()
         del _MyNode
         _MyNode = None
-        dhnio.Dprint(4, 'dht_service.shutdown')
+        io.log(4, 'dht_service.shutdown')
     else:
-        dhnio.Dprint(4, 'dht_service.shutdown WARNING - DHTNode not exist')
+        io.log(4, 'dht_service.shutdown WARNING - DHTNode not exist')
 
 
 def node():
@@ -84,35 +84,35 @@ def node():
 def connect():
 #    global _UDPListener
 #    if _UDPListener:
-#        dhnio.Dprint(6, 'dht_service.connect already connected, skip')
+#        io.log(6, 'dht_service.connect already connected, skip')
 #        return _UDPListener
 #    if len(knownnodes) == 0:
 #        knownnodes += known_nodes.nodes()
 #    _UDPListener = node().joinNetwork(knownnodes)
     if node().refresher:
         node().refresher.reset(0)
-        dhnio.Dprint(6, 'dht_service.connect did RESET refresher task')
+        io.log(6, 'dht_service.connect did RESET refresher task')
     else:
         node().joinNetwork(known_nodes.nodes())
-        dhnio.Dprint(6, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
+        io.log(6, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
     return True
 
 
 def disconnect():
 #    global _UDPListener
 #    if _UDPListener is not None:
-#        dhnio.Dprint(6, 'dht_service.disconnect')
+#        io.log(6, 'dht_service.disconnect')
 #        d = _UDPListener.stopListening()
 #        del _UDPListener
 #        _UDPListener = None
 #        return d
 #    else:
-#        dhnio.Dprint(6, 'dht_service.disconnect WARNING - UDPListener is None')
+#        io.log(6, 'dht_service.disconnect WARNING - UDPListener is None')
     return None
 
 
 def reconnect():
-    # dhnio.Dprint(16, 'dht_service.reconnect')
+    # io.log(16, 'dht_service.reconnect')
     return node().reconnect()
 
 
@@ -127,17 +127,17 @@ def okay(result, method, key, arg=None):
         v = str(result.values())
     else:
         v = 'None'
-    # dhnio.Dprint(16, 'dht_service.okay   %s(%s)   result=%s' % (method, key, v[:20]))
+    # io.log(16, 'dht_service.okay   %s(%s)   result=%s' % (method, key, v[:20]))
     return result
 
 
 def error(err, method, key):
-    dhnio.Dprint(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
+    io.log(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
     return None  
 
 
 def get_value(key):
-    # dhnio.Dprint(16, 'dht_service.get_value key=[%s]' % key)
+    # io.log(16, 'dht_service.get_value key=[%s]' % key)
     d = node().iterativeFindValue(key_to_hash(key))
     d.addCallback(okay, 'get_value', key)
     d.addErrback(error, 'get_value', key)
@@ -145,14 +145,14 @@ def get_value(key):
         
 
 def set_value(key, value):
-    # dhnio.Dprint(16, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
+    # io.log(16, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
     d = node().iterativeStore(key_to_hash(key), value)
     d.addCallback(okay, 'set_value', key, value)
     d.addErrback(error, 'set_value', key)
     return d
 
 def delete_key(key):
-    # dhnio.Dprint(16, 'dht_service.delete_key [%s]' % key)
+    # io.log(16, 'dht_service.delete_key [%s]' % key)
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(okay, 'delete_value', key)
     d.addErrback(error, 'delete_key', key)
@@ -161,7 +161,7 @@ def delete_key(key):
 
 def find_node(node_id):
     node_id64 = base64.b64encode(node_id)
-    # dhnio.Dprint(16, 'dht_service.find_node   node_id=[%s]' % node_id64)
+    # io.log(16, 'dht_service.find_node   node_id=[%s]' % node_id64)
     d = node().iterativeFindNode(node_id)
     d.addCallback(okay, 'find_node', node_id64)
     d.addErrback(error, 'find_node', node_id64)
@@ -173,7 +173,7 @@ def random_key():
 
 
 def set_node_data(key, value):
-    dhnio.Dprint(16, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
+    io.log(16, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
     node().data[key] = value    
   
 #------------------------------------------------------------------------------ 
@@ -185,14 +185,14 @@ class DHTNode(DistributedTupleSpacePeer):
         
     @rpcmethod
     def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
-        # dhnio.Dprint(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+        # io.log(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
         #     base64.b32encode(key), str(value)[:10]))
         return DistributedTupleSpacePeer.store(self, key, value, originalPublisherID=originalPublisherID, age=age, **kwargs)
 
     @rpcmethod
     def request(self, key):
         value = str(self.data.get(key, None))
-        # dhnio.Dprint(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (base64.b32encode(key), str(value)))
+        # io.log(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (base64.b32encode(key), str(value)))
         return {str(key): value}
 
     def reconnect(self, knownNodeAddresses=None):
@@ -214,9 +214,9 @@ def parseCommandLine():
     return options, args
 
 def main():
-    dhnio.init()
+    io.init()
     settings.init()
-    dhnio.SetDebug(18)
+    io.SetDebug(18)
     (options, args) = parseCommandLine()
     init(options.udpport)
     connect()

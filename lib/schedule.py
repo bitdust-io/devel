@@ -24,9 +24,9 @@ import calendar
 if __name__ == '__main__':
     sys.path.append(os.path.abspath('..'))
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
-import lib.dhnmath as dhnmath
+import lib.maths as maths
 
 #------------------------------------------------------------------------------ 
 
@@ -179,15 +179,15 @@ class Schedule:
             
             # every N seconds
             elif self.type == 'continuously':
-                return dhnmath.shedule_continuously(lasttime, int(self.interval),)
+                return maths.shedule_continuously(lasttime, int(self.interval),)
         
             # every N hours, exactly when hour begins, minutes and seconds are 0
             elif self.type == 'hourly':
-                return dhnmath.shedule_next_hourly(lasttime, int(self.interval),)
+                return maths.shedule_next_hourly(lasttime, int(self.interval),)
         
             # every N days, at given time
             elif self.type == 'daily':
-                return dhnmath.shedule_next_daily(lasttime, self.interval, self.daytime)
+                return maths.shedule_next_daily(lasttime, self.interval, self.daytime)
         
             # every N weeks, at given time and selected week days
             elif self.type == 'weekly':
@@ -200,12 +200,12 @@ class Schedule:
                     except:
                         continue
                     week_day_numbers.append(i)
-                return dhnmath.shedule_next_weekly(lasttime, self.interval, self.daytime, week_day_numbers)
+                return maths.shedule_next_weekly(lasttime, self.interval, self.daytime, week_day_numbers)
         
             # monthly, at given time and day 
             elif self.type == 'monthly':
                 month_dates = self.details.split(' ')
-                return dhnmath.shedule_next_monthly(lasttime, self.interval, self.daytime, month_dates)
+                return maths.shedule_next_monthly(lasttime, self.interval, self.daytime, month_dates)
 
             # yearly, at given time and month, day, NOT DONE YET! 
             elif self.type == 'yearly':
@@ -218,13 +218,13 @@ class Schedule:
                     except:
                         continue
                     months_numbers.append(i)
-                return dhnmath.shedule_next_monthly(lasttime, self.interval, self.daytime, months_numbers)
+                return maths.shedule_next_monthly(lasttime, self.interval, self.daytime, months_numbers)
         
             else:
-                dhnio.Dprint(1, 'schedule.next_time ERROR wrong schedule type: ' + self.type)
+                io.log(1, 'schedule.next_time ERROR wrong schedule type: ' + self.type)
                 return None
         except:
-            dhnio.DprintException()
+            io.exception()
             return None 
 
     def correct_dict(self, d):
@@ -338,7 +338,7 @@ class Schedule:
             # nextString = time.asctime(time.localtime(next))
             nextString = time.strftime('%A, %d %B %Y %H:%M:%S', time.localtime(next))
         except:
-            dhnio.DprintException()
+            io.exception()
             return ''
         return 'next execution expected at <b>%s</b>' % nextString
         
@@ -406,26 +406,26 @@ def from_compact_string(s):
                 try:
                     time.strptime(sh_time, '%H:%M:%S')
                 except:
-                    dhnio.Dprint(2, 'schedule.compact_string_to_dict WARNING incorrect schedule time: ' + s)
-                    dhnio.DprintException()
+                    io.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule time: ' + s)
+                    io.exception()
                     return None
     except:
-        dhnio.Dprint(2, 'schedule.compact_string_to_dict WARNING incorrect schedule string: ' + s)
-        dhnio.DprintException()
+        io.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule string: ' + s)
+        io.exception()
         return None
     if sh_type in all_labels.keys():
         sh_type = all_labels[sh_type]
     if sh_type not in all_labels.values():
-        dhnio.Dprint(2, 'schedule.compact_string_to_dict WARNING incorrect schedule type: ' + s)
+        io.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule type: ' + s)
         return None
     sh_details_new = ''
     for i in range(len(sh_details) / 3):
         label = sh_details[i*3:i*3+3]
         if sh_type == 'weekly' and not label in calendar.day_abbr:
-            dhnio.Dprint(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
+            io.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
             return None
         if sh_type == 'monthly' and not label in calendar.month_abbr:
-            dhnio.Dprint(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
+            io.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
             return None
         sh_details_new += label + ' '
     return Schedule(sh_type, str(sh_time), str(sh_interval), sh_details_new.strip())   

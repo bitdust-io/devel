@@ -19,7 +19,7 @@ EVENTS:
 import os
 import random
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.automat as automat
 import lib.udp as udp
 import lib.settings as settings
@@ -129,9 +129,9 @@ class StunClient(automat.Automat):
             port = int(port)
         except:
             return False
-        oldip = dhnio._read_data(settings.ExternalIPFilename()).strip()
-        dhnio._write_data(settings.ExternalIPFilename(), ip)
-        dhnio._write_data(settings.ExternalUDPPortFilename(), str(port))
+        oldip = io._read_data(settings.ExternalIPFilename()).strip()
+        io._write_data(settings.ExternalIPFilename(), ip)
+        io._write_data(settings.ExternalUDPPortFilename(), str(port))
         if self.callback:
             self.callback('stun-success', (ip, port))
         if oldip != ip:
@@ -165,7 +165,7 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        dhnio.Dprint(18, 'stun_client.doStun to %s' % str(self.peer_address))
+        io.log(18, 'stun_client.doStun to %s' % str(self.peer_address))
         udp.send_command(self.listen_port, udp.CMD_STUN, '', self.peer_address)
 
     def _datagram_received(self, datagram, address):
@@ -175,7 +175,7 @@ class StunClient(automat.Automat):
         
     def _found_nodes(self, nodes):
         # addresses = map(lambda x: x.address, nodes)
-        dhnio.Dprint(18, 'stun_client.found_nodes %d nodes' % len(nodes))
+        io.log(18, 'stun_client.found_nodes %d nodes' % len(nodes))
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('stun_port')
@@ -184,14 +184,14 @@ class StunClient(automat.Automat):
             self.automat('peers-not-found')
         
     def _got_stun_port(self, response, node_ip_address):
-        # dhnio.Dprint(18, 'stun_client.got_stun_port response=%s' % str(response) )
+        # io.log(18, 'stun_client.got_stun_port response=%s' % str(response) )
         try:
             port = int(response['stun_port'])
         except:
             # Unknown stun port, let's use default port, even if we use some another port
             # TODO need to put that default port in the settings 
             port = int(settings.DefaultUDPPort())
-            # dhnio.DprintException()
+            # io.exception()
         if port:
             self.automat('found-one-peer', (node_ip_address, port))
         else:

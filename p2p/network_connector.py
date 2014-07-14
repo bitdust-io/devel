@@ -57,8 +57,8 @@ from twisted.internet import threads
 from lib.automat import Automat
 import lib.automats as automats
 
-import lib.dhnio as dhnio
-import lib.dhnnet as dhnnet
+import lib.io as io
+import lib.net_misc as net_misc
 import lib.settings as settings
 import lib.stun as stun
 
@@ -220,7 +220,7 @@ class NetworkConnector(Automat):
 #        # more success than failed - connection is not failed for sure
 #        if _CounterSuccessConnections > _CounterFailedConnections:
 #            return True
-#        dhnio.Dprint(6, 'network_connector.isConnectionAlive    %d/%d' % (_CounterSuccessConnections, _CounterFailedConnections) )
+#        io.log(6, 'network_connector.isConnectionAlive    %d/%d' % (_CounterSuccessConnections, _CounterFailedConnections) )
 #        return False
 
     def isNetworkActive(self, arg):
@@ -234,9 +234,9 @@ class NetworkConnector(Automat):
         return time.time() - self.last_reconnect_time < 15
 
     def doSetUp(self, arg):
-        dhnio.Dprint(6, 'network_connector.doSetUp')
-        # dhnnet.SetConnectionDoneCallbackFunc(ConnectionDoneCallback)
-        # dhnnet.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
+        io.log(6, 'network_connector.doSetUp')
+        # net_misc.SetConnectionDoneCallbackFunc(ConnectionDoneCallback)
+        # net_misc.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
         dhtudp_port = int(settings.getDHTUDPPort())
         if not udp.proto(dhtudp_port):
             udp.listen(dhtudp_port)
@@ -251,7 +251,7 @@ class NetworkConnector(Automat):
     def doSetDown(self, arg):
         """
         """
-        dhnio.Dprint(6, 'network_connector.doSetDown')
+        io.log(6, 'network_connector.doSetDown')
         shutlist = []
         dhtudp_port = int(settings.getDHTUDPPort())
         # d_udp = udp.close_all() # (dhtudp_port)
@@ -277,27 +277,27 @@ class NetworkConnector(Automat):
         """
         Action method.
         """
-        dhnio.Dprint(4, 'network_connector.doPingGoogleDotCom')
-        dhnnet.TestInternetConnection().addCallbacks(
+        io.log(4, 'network_connector.doPingGoogleDotCom')
+        net_misc.TestInternetConnection().addCallbacks(
             lambda x: self.automat('internet-success', 'connected'), 
             lambda x: self.automat('internet-failed', 'disconnected'))
             
     def doCheckNetworkInterfaces(self, arg):
-        dhnio.Dprint(4, 'network_connector.doCheckNetworkInterfaces')
+        io.log(4, 'network_connector.doCheckNetworkInterfaces')
         # TODO
         # self.automat('got-network-info', [])
         start_time = time.time()
-        if dhnio.Linux():
+        if io.Linux():
             def _call():
-                return dhnnet.getNetworkInterfaces()
+                return net_misc.getNetworkInterfaces()
             def _done(result, start_time):
-                dhnio.Dprint(4, 'network_connector.doCheckNetworkInterfaces._done: %s in %d seconds' % (str(result), time.time()- start_time))
+                io.log(4, 'network_connector.doCheckNetworkInterfaces._done: %s in %d seconds' % (str(result), time.time()- start_time))
                 self.automat('got-network-info', result)
             d = threads.deferToThread(_call)
             d.addBoth(_done, start_time)
         else:
-            ips = dhnnet.getNetworkInterfaces()
-            dhnio.Dprint(4, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time()- start_time))
+            ips = net_misc.getNetworkInterfaces()
+            io.log(4, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time()- start_time))
             self.automat('got-network-info', ips)
 
     def doRememberTime(self, arg):
@@ -311,7 +311,7 @@ def UpdateUPNP():
     Use ``lib.run_upnpc`` to configure UPnP device to create a port forwarding.
     """
     #global _UpnpResult
-    dhnio.Dprint(8, 'network_connector.UpdateUPNP ')
+    io.log(8, 'network_connector.UpdateUPNP ')
 
 #    protos_need_upnp = set(['tcp', 'ssh', 'http'])
     protos_need_upnp = set(['tcp',])
@@ -326,10 +326,10 @@ def UpdateUPNP():
 
     def _update_next_proto():
         if len(protos_need_upnp) == 0:
-            #dhnio.Dprint(4, 'network_connector.update_upnp done: ' + str(_UpnpResult))
+            #io.log(4, 'network_connector.update_upnp done: ' + str(_UpnpResult))
             A('upnp-done')
             return
-        dhnio.Dprint(14, 'network_connector.UpdateUPNP._update_next_proto ' + str(protos_need_upnp))
+        io.log(14, 'network_connector.UpdateUPNP._update_next_proto ' + str(protos_need_upnp))
         proto = protos_need_upnp.pop()
         protos_need_upnp.add(proto)
         if proto == 'tcp':
@@ -351,7 +351,7 @@ def UpdateUPNP():
         return (success, port)
 
     def _upnp_proto_done(result, proto):
-        dhnio.Dprint(4, 'network_connector.UpdateUPNP._upnp_proto_done %s: %s' % (proto, str(result)))
+        io.log(4, 'network_connector.UpdateUPNP._upnp_proto_done %s: %s' % (proto, str(result)))
         #_UpnpResult[proto] = result[0]
         #if _UpnpResult[proto] == 'upnp-done':
         if result[0] == 'upnp-done':

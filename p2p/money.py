@@ -19,7 +19,7 @@ import string
 import StringIO
 import time
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.settings as settings
 import lib.nameurl as nameurl
@@ -49,9 +49,9 @@ def SaveReceipt(data):
             src += '%f\n' % i
         else:
             src += str(i).strip() + '\n'
-    dhnio.Dprint(8, 'money.SaveReceipt %s to %s' % (data[0], rfilename))
-    if not dhnio._write_data(rfilename, src.strip()):
-        dhnio.Dprint(1, 'money.SaveReceipt ERROR during writing to file ' + rfilename)
+    io.log(8, 'money.SaveReceipt %s to %s' % (data[0], rfilename))
+    if not io._write_data(rfilename, src.strip()):
+        io.log(1, 'money.SaveReceipt ERROR during writing to file ' + rfilename)
 
     SaveBalance(data[6], data[8], data[0])
     currentBal, currentNTBal, maxReceiptId = LoadBalance()
@@ -59,7 +59,7 @@ def SaveReceipt(data):
 #        try:
 #            summary.SetBalanceAndBurnRate(float(data[6])+float(data[8]), float(data[5])+float(data[7]))
 #        except:
-#            dhnio.Dprint(1, 'money.SaveReceipt ERROR setting burn rate or balance for ' + str(data))
+#            io.log(1, 'money.SaveReceipt ERROR setting burn rate or balance for ' + str(data))
 
 def UnpackReceipt(body): # TODO, appears not to be called
     sin = StringIO.StringIO(str(body))
@@ -118,7 +118,7 @@ def UnpackReport(report):
                 if not line.strip().startswith('end') and not line.strip().endswith('end'):
                     d['text'] += line.strip() + '\n'
     except:
-        dhnio.DprintException()
+        io.exception()
     return d
 
 def LoadReceipt(path):
@@ -130,7 +130,7 @@ def LoadReceipt(path):
 def ReadReceipt( number ):
     path = settings.getReceiptsDir() + os.sep + number + '.receipt'
     if not os.path.exists(path):
-        dhnio.Dprint(1, 'money.ReadReceipt ERROR file not exist ' + path)
+        io.log(1, 'money.ReadReceipt ERROR file not exist ' + path)
         return None
     return LoadReceipt(path)
 
@@ -185,8 +185,8 @@ def ReadAllReceipts():
                 burnRate = float(receipt[5]) + float(receipt[7])
 
     except:
-        dhnio.Dprint(1, 'money.ReadAllReceipts unexpected ERROR')
-        dhnio.DprintException()
+        io.log(1, 'money.ReadAllReceipts unexpected ERROR')
+        io.exception()
 
     #def key_func(t):
     #    try:
@@ -202,10 +202,10 @@ def ReadAllReceipts():
 
 
 def LoadBalance():
-    src = dhnio._read_data(settings.BalanceFile())
+    src = io._read_data(settings.BalanceFile())
     if src is None:
         src = '0.0 0.0 0'
-        dhnio._write_data(settings.BalanceFile(), src)
+        io._write_data(settings.BalanceFile(), src)
     words = src.split(' ')
     try:
         b = float(words[0])
@@ -222,7 +222,7 @@ def LoadBalance():
 
 
 def SaveBalance(balance, balancent, receipt_id):
-    src = dhnio._read_data(settings.BalanceFile())
+    src = io._read_data(settings.BalanceFile())
     if src is None:
         src = '0.0 0.0 0'
 
@@ -255,18 +255,18 @@ def SaveBalance(balance, balancent, receipt_id):
     if receipt_idV >= r:
         src = '%f %f %d' % (balanceV, balancentV, receipt_idV)
 
-    return dhnio._write_data(settings.BalanceFile(), src)
+    return io._write_data(settings.BalanceFile(), src)
 
 
 def SearchMissingReceipts(last_receipt_id=-1):
-    dhnio.Dprint(8, 'money.SearchMissingReceipts ' + str(last_receipt_id))
+    io.log(8, 'money.SearchMissingReceipts ' + str(last_receipt_id))
 
     def try2remove(filepath):
         try:
             os.remove(filepath)
         except:
-            dhnio.Dprint(4, 'money.SearchMissingReceipts.try2remove WARNING can not remove ' + filepath)
-        dhnio.Dprint(6, 'money.SearchMissingReceipts.try2remove %s removed' % filepath)
+            io.log(4, 'money.SearchMissingReceipts.try2remove WARNING can not remove ' + filepath)
+        io.log(6, 'money.SearchMissingReceipts.try2remove %s removed' % filepath)
 
     existing_receipts = set()
     max_index = -1
@@ -298,7 +298,7 @@ def SearchMissingReceipts(last_receipt_id=-1):
         max_index = last_receipt_id
 
     r = []
-    dhnio.Dprint(8, 'money.SearchMissingReceipts existing_receipts=%s  max_index=%s' % (str(len(existing_receipts)), str(max_index)))
+    io.log(8, 'money.SearchMissingReceipts existing_receipts=%s  max_index=%s' % (str(len(existing_receipts)), str(max_index)))
 
     for i in range(max_index + 1):
         if i not in existing_receipts:
@@ -317,12 +317,12 @@ def GetTrueAmount(receipt):  # return a float, receipt from UnpackReceipt2 has t
     try:
         return receipt[7] + receipt[5]
     except:
-        dhnio.Dprint(1, 'money.GetTrueAmount ERROR with receipt: ' + str(receipt))
+        io.log(1, 'money.GetTrueAmount ERROR with receipt: ' + str(receipt))
         return 0.0
 
 def InboxReceipt(newpacket):
     global _InboxReceiptCallback
-    dhnio.Dprint(6, 'money.InboxReceipt ')
+    io.log(6, 'money.InboxReceipt ')
     sio = StringIO.StringIO(newpacket.Payload)
     receipt_body = ''
     for line in sio:

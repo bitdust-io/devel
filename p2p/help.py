@@ -14,7 +14,7 @@ A methods to just store text constants, used to print command-line instructions.
 """
 
 def usage():
-    return '''usage: datahaven [options] [command] [arguments]
+    return '''usage: python bitpie.py [options] [command] [arguments]
     
 Commands:
   start
@@ -62,7 +62,7 @@ Commands:
 
 
 def help():
-    return '''usage: datahaven [options] [command] [arguments]
+    return '''usage: python bitpie.py [options] [command] [arguments]
 
 Commands:
   start                 start BitPie.NET

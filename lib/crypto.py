@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+#crypto.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -7,15 +7,15 @@
 #
 
 """
-.. module:: dhncrypto
+.. module:: crypto
 
 Here is a bunch of crypto methods used in all parts of the software.
 BitPie.NET uses PyCrypto library:
     https://www.dlitz.net/software/pycrypto/
-For most of DHN code (outside ssh I think) we will only use ascii encoded string versions of keys.
+For most of BitPie.NET code (outside ssh I think) we will only use ascii encoded string versions of keys.
 Expect to make keys, signatures, and hashes all base64 strings soon.
 Our local key is always on hand.
-Main thing is to be able to use public keys in contacts to verify dhnpackets.
+Main thing is to be able to use public keys in contacts to verify packets.
 We never want to bother storing bad data, and need localtester to do local scrub.
 """
 
@@ -30,8 +30,8 @@ import warnings
 warnings.filterwarnings('ignore',category=DeprecationWarning)
 from twisted.conch.ssh import keys
 
+import io
 import settings
-import dhnio
 
 #------------------------------------------------------------------------------ 
 
@@ -66,19 +66,19 @@ def InitMyKey(keyfilename=None):
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
     if os.path.exists(keyfilename+'_location'):
-        newkeyfilename = dhnio.ReadTextFile(keyfilename+'_location').strip()
+        newkeyfilename = io.ReadTextFile(keyfilename+'_location').strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     if os.path.exists(keyfilename):
-        dhnio.Dprint(4, 'dhncrypto.InitMyKey load private key from\n        %s' % keyfilename)
+        io.log(4, 'crypto.InitMyKey load private key from\n        %s' % keyfilename)
         LocalKey = keys.Key.fromFile(keyfilename)
         MyRsaKey = LocalKey.keyObject
     else:
-        dhnio.Dprint(4, 'dhncrypto.InitMyKey generate new private key')
+        io.log(4, 'crypto.InitMyKey generate new private key')
         MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)       
         LocalKey = keys.Key(MyRsaKey)
         keystring = LocalKey.toString('openssh')
-        dhnio.WriteFile(keyfilename, keystring)
+        io.WriteFile(keyfilename, keystring)
 
 def ForgetMyKey():
     """
@@ -151,7 +151,7 @@ def VerifySignature(keystring, hashcode, signature):
     
     Return True if signature is correct, otherwise False. 
     """
-    # key is public key in string format - as is dhncrypto standard, mostly
+    # key is public key in string format 
     keyobj = keys.Key.fromString(keystring).keyObject
     # needs to be a long in a list
     sig_long = long(signature),
@@ -315,8 +315,8 @@ def SpeedTest():
 
 
 if __name__ == '__main__':
-    dhnio.init()
-    dhnio.SetDebug(18)
+    io.init()
+    io.SetDebug(18)
     settings.init()
     # from twisted.internet import reactor
     # settings.uconfig().set('backup.private-key-size', '3072')

@@ -43,7 +43,7 @@ except:
 from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.automat as automat
 import lib.automats as automats
 
@@ -132,7 +132,7 @@ class Shutdowner(automat.Automat):
 
     def doSaveParam(self, arg):
         self.shutdown_param = arg
-        dhnio.Dprint(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
+        io.log(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
 
     def doKillAutomats(self, arg):
         """

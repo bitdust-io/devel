@@ -20,7 +20,7 @@ Install
 
 Seems like in Ubuntu you just need to install all dependencies at first step:
 
-sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging 
+sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging python-pp
 
 
 Windows ussers can use links bellow and install packages by hands.
@@ -77,5 +77,6 @@ PIL:
 wxgtk2.8: 
     http://wiki.wxpython.org/InstallingOnUbuntuOrDebian
 
-
+python-pp:
+    http://www.parallelpython.com/
                

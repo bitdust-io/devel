@@ -37,7 +37,7 @@ except:
 from twisted.web.client import getPage
 from twisted.internet.defer import fail
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.settings as settings
 import lib.nameurl as nameurl
@@ -57,12 +57,12 @@ def run(opts, args, overDict, pars):
     
     if overDict:
         settings.override_dict(overDict)
-    dhnio.init()
+    io.init()
     settings.init()
     if not opts or opts.debug is None:
-        dhnio.SetDebug(0)
+        io.SetDebug(0)
 
-    appList = dhnio.find_process([
+    appList = io.find_process([
         'dhnmain.exe',
         'dhnmain.py',
         'bitpie.py',
@@ -148,7 +148,7 @@ def run(opts, args, overDict, pars):
 
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:
-        revnum = dhnio.ReadTextFile(settings.RevisionNumberFile()).strip()
+        revnum = io.ReadTextFile(settings.RevisionNumberFile()).strip()
         repo, location = misc.ReadRepoLocation()
         print 'revision:  ', revnum
         print 'repository:', repo
@@ -212,7 +212,7 @@ def run_url_command(address, stop_reactor_in_errback=True):
     Reads port number of the local HTTP server and do the request.
     """
     try:
-        local_port = int(dhnio.ReadBinaryFile(settings.LocalPortFilename()))
+        local_port = int(io.ReadBinaryFile(settings.LocalPortFilename()))
     except:
         print 'can not read local port number from the file %s\n' % settings.LocalPortFilename()
         if stop_reactor_in_errback:
@@ -222,7 +222,7 @@ def run_url_command(address, stop_reactor_in_errback=True):
         return fail('')
     
     url = 'http://127.0.0.1:'+str(local_port)+'/'+address
-    dhnio.Dprint(4, 'command_line.run_url_command url='+url)
+    io.log(4, 'command_line.run_url_command url='+url)
     def _eb(x, stop_reactor):
         print x.getErrorMessage()
         if stop_reactor and reactor.running and not reactor._stopped:
@@ -526,7 +526,7 @@ def cmd_register(opts, args, overDict):
 def cmd_recover(opts, args, overDict):
     if len(args) < 2:
         return 2
-    src = dhnio.ReadBinaryFile(args[1])
+    src = io.ReadBinaryFile(args[1])
     if len(src) > 1024*10:
         print 'file is too big for private key'
         return 0
@@ -538,7 +538,7 @@ def cmd_recover(opts, args, overDict):
             idurl = ''
             txt = src
     except:
-        #dhnio.DprintException()
+        #io.exception()
         idurl = ''
         txt = src
     if idurl == '' and len(args) >= 3:
@@ -561,24 +561,24 @@ def cmd_recover(opts, args, overDict):
 def cmd_key(opts, args, overDict):
     if len(args) == 2:
         if args[1] == 'copy':
-            import lib.dhncrypto as dhncrypto 
-            TextToSave = misc.getLocalID() + "\n" + dhncrypto.MyPrivateKey()
+            import lib.crypto as crypto 
+            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
             misc.setClipboardText(TextToSave)
             print 'now you can "paste" with Ctr+V your private key where you want.'
             del TextToSave
             return 0
         elif args[1] == 'print':
-            import lib.dhncrypto as dhncrypto 
-            TextToSave = misc.getLocalID() + "\n" + dhncrypto.MyPrivateKey()
+            import lib.crypto as crypto 
+            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
             print 
             print TextToSave
             return 0
     elif len(args) == 3:
         if args[1] == 'copy':
             filenameto = args[2]
-            import lib.dhncrypto as dhncrypto 
-            TextToSave = misc.getLocalID() + "\n" + dhncrypto.MyPrivateKey()
-            if not dhnio.AtomicWriteFile(filenameto, TextToSave):
+            import lib.crypto as crypto 
+            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
+            if not io.AtomicWriteFile(filenameto, TextToSave):
                 print 'error writing to', filenameto
                 return 1
             print 'your private key were copied to file %s' % filenameto
@@ -773,23 +773,23 @@ def cmd_money(opts, args, overDict):
     
 
 def cmd_uninstall(opts, args, overDict):
-    if not dhnio.Windows():
+    if not io.Windows():
         print 'This command can be used only under OS Windows.'
         return 0
-    if not dhnio.isFrozen():
+    if not io.isFrozen():
         print 'You are running BitPie.NET from sources, uninstall command is available only for binary version.'
         return 0
     def do_uninstall():
-        dhnio.Dprint(0, 'command_line.do_uninstall')
+        io.log(0, 'command_line.do_uninstall')
         # batfilename = misc.MakeBatFileToUninstall()
         # misc.UpdateRegistryUninstall(True)
         # misc.RunBatFile(batfilename, 'c:/out2.txt')
     def kill():
-        dhnio.Dprint(0, 'kill')
+        io.log(0, 'kill')
         total_count = 0
         found = False
         while True:
-            appList = dhnio.find_process([
+            appList = io.find_process([
                 'dhnmain.exe',
                 'dhnmain.py',
                 'bitpie.py',
@@ -805,42 +805,42 @@ def cmd_uninstall(opts, args, overDict):
             if len(appList) > 0:
                 found = True
             for pid in appList:
-                dhnio.Dprint(0, 'trying to stop pid %d' % pid)
-                dhnio.kill_process(pid)
+                io.log(0, 'trying to stop pid %d' % pid)
+                io.kill_process(pid)
             if len(appList) == 0:
                 if found:
-                    dhnio.Dprint(0, 'BitPie.NET stopped\n')
+                    io.log(0, 'BitPie.NET stopped\n')
                 else:
-                    dhnio.Dprint(0, 'BitPie.NET was not started\n')
+                    io.log(0, 'BitPie.NET was not started\n')
                 return 0
             total_count += 1
             if total_count > 10:
-                dhnio.Dprint(0, 'some BitPie.NET process found, but can not stop it\n')
+                io.log(0, 'some BitPie.NET process found, but can not stop it\n')
                 return 1
             time.sleep(1)            
     def wait_then_kill(x):
-        dhnio.Dprint(0, 'wait_then_kill')
+        io.log(0, 'wait_then_kill')
         total_count = 0
         #while True:
         def _try():
-            dhnio.Dprint(0, '_try')
-            appList = dhnio.find_process([
+            io.log(0, '_try')
+            appList = io.find_process([
                 'dhnmain.exe',
                 'dhnview.exe',
                 'dhnbackup.exe',
                 'dhntester.exe',
                 'dhnstarter.exe',
                 ])
-            dhnio.Dprint(0, 'appList:' + str(appList))
+            io.log(0, 'appList:' + str(appList))
             if len(appList) == 0:
-                dhnio.Dprint(0, 'finished')
+                io.log(0, 'finished')
                 reactor.stop()
                 do_uninstall()
                 return 0
             total_count += 1
-            dhnio.Dprint(0, '%d' % total_count)
+            io.log(0, '%d' % total_count)
             if total_count > 10:
-                dhnio.Dprint(0, 'not responding')
+                io.log(0, 'not responding')
                 ret = kill()
                 reactor.stop()
                 if ret == 0:
@@ -849,7 +849,7 @@ def cmd_uninstall(opts, args, overDict):
             reactor.callLater(1, _try)
         _try()
 #            time.sleep(1)
-    appList = dhnio.find_process([
+    appList = io.find_process([
         'dhnmain.exe',
         'dhnview.exe',
         'dhnbackup.exe',
@@ -857,10 +857,10 @@ def cmd_uninstall(opts, args, overDict):
         'dhnstarter.exe',
         ])
     if len(appList) == 0:
-        dhnio.Dprint(0, 'uninstalling BitPie.NET ...   ')
+        io.log(0, 'uninstalling BitPie.NET ...   ')
         do_uninstall()
         return 0
-    dhnio.Dprint(0, 'found BitPie.NET processes ...   ')
+    io.log(0, 'found BitPie.NET processes ...   ')
     try:
         url = webcontrol._PAGE_ROOT+'?action=exit'
         run_url_command(url).addCallback(wait_then_kill)
@@ -868,183 +868,9 @@ def cmd_uninstall(opts, args, overDict):
         reactor.run()
         return 0
     except:
-        dhnio.DprintException()
+        io.exception()
         ret = kill()
         if ret == 0:
             do_uninstall()
         return ret
-    
-
-
-#def cmd_msg(opts, args, overDict):
-#    if len(dhnio.find_process([
-#            'dhnmain.exe', 
-#            'dhnmain.py', 
-#            'dhn.py', 
-#            '/usr/bin/python /usr/bin/datahaven' ])) > 0:
-#        dhnio.Dprint(2, 'dhnmain.main DHN already running. EXIT.')
-#        return 1
-#    idurl = args[1]
-#    text = ' '.join(args[2:])
-#    dhnio.Dprint(2, 'dhnmain.cmd_msg to: ' + idurl)
-#    dhnio.Dprint(2, 'dhnmain.cmd_msg text:')
-#    dhnio.Dprint(0, text)
-#    import message
-#    try:
-#        from twisted.internet import reactor
-#    except:
-#        dhnio.DprintException()
-#        sys.exit('Error initializing twisted reactor in dhnmain.py\n')
-#
-#    def _send():
-#        dhnio.Dprint(2, 'dhnmain.cmd_msg._send')
-#        msgbody = message.MakeMessage(idurl, 'dhnmain short message', text)
-#        message.SendMessage(idurl, msgbody)
-#        message.SaveMessage(msgbody)
-#
-#    dhnio.Dprint(2, 'dhnmain.cmd_msg want to import dhninit')
-#    import dhninit
-#    dhninit.initDoneFunc = _send
-#
-#    UI = ''
-#    dhnio.Dprint(2, 'dhnmain.cmd_msg want to call dhninit.run("%s")' % UI)
-#    dhninit.run(UI, opts, args, overDict)
-#    dhnio.Dprint(2, 'dhnmain.cmd_msg will call reactor.run()')
-#    reactor.run()
-#    return 0
-#
-#
-#def cmd_tc(opts, args, overDict):
-#    import lib.dhnio as dhnio
-#    import lib.settings as settings
-#    import lib.transport_control as transport_control
-#    try:
-#        from twisted.internet import reactor
-#    except:
-#        dhnio.DprintException()
-#        sys.exit('Error initializing twisted reactor in dhnmain.py\n')
-#    if overDict:
-#        settings.override_dict(overDict)
-#    settings.init()
-#    if args[1] == 'init':
-#        dhnio.Dprint(2, 'dhnmain.cmd_tc will call transport_control.init()')
-#        transport_control.init()
-#        reactor.run()
-#    elif args[1] == 'ping':
-#        from twisted.internet import task
-#        import lib.misc as misc
-#        import lib.dhnpacket as dhnpacket
-#        import lib.packetid as packetid
-#        import lib.commands as commands
-#        import lib.contacts as contacts
-#        idurl = args[2]
-#        if not idurl.startswith('http://'):
-#            idurl = misc.username2idurl(idurl)
-#        interval = float(args[3])
-#        dhnio.Dprint(2, 'dhnmain.cmd_tc want to ping %s' % idurl)
-#        def _loop():
-#            dhnio.Dprint(6, 'dhnmain.cmd_tc._loop')
-#            LocalIdentity = misc.getLocalIdentity()
-#            data = LocalIdentity.serialize()
-#            packet = dhnpacket.dhnpacket(
-#                commands.Identity(),
-#                misc.getLocalID(),
-#                misc.getLocalID(),
-#                packetid.UniqueID(),
-#                data,
-#                idurl,)
-#            transport_control.outbox(packet, True)
-#            del packet
-#        def _init_cb():
-#            dhnio.Dprint(4, 'dhnmain.cmd_tc._init_cb')
-#            t = task.LoopingCall(_loop)
-#            t.start(interval)
-#        contacts.init()
-#        transport_control.init(_init_cb)
-#        reactor.run()
-#    else:
-#        dhnio.Dprint(2, 'dhnmain.cmd_tc ERROR wrong command line arguments')
-#        return 2
-#    return 0
-#
-#
-#def cmd_tcp(opts, args, overDict):
-#    import lib.dhnio as dhnio
-#    import lib.transport_tcp as transport_tcp
-#    try:
-#        from twisted.internet import reactor
-#    except:
-#        dhnio.DprintException()
-#        sys.exit('Error initializing twisted reactor in dhnmain.py\n')
-#    if args[1] == 'receive':
-#        port = args[2]
-#        dhnio.Dprint(2, 'dhnmain.cmd_tcp receive on port ' + port)
-#        transport_tcp.receive(port)
-#        reactor.run()
-#    elif args[1] == 'send':
-#        host = args[2]
-#        port = args[3]
-#        filename = args[4]
-#        dhnio.Dprint(2, 'dhnmain.cmd_tcp send to %s:%s filename=[%s] ' % (host, port, filename))
-#        def _send(x):
-#            dhnio.Dprint(2, 'dhnmain.cmd_tcp result=[%s]' % str(x))
-#            reactor.stop()
-#        r = transport_tcp.send(filename, host, port)
-#        r.addBoth(_send)
-#        reactor.run()
-#    else:
-#        dhnio.Dprint(2, 'dhnmain.cmd_tcp ERROR wrong command line arguments')
-#        return 2
-#    return 0
-#
-#
-#def cmd_q2q(opts, args, overDict):
-#    import lib.dhnio as dhnio
-#    import lib.settings as settings
-#    import lib.transport_q2q as transport_q2q
-#    try:
-#        from twisted.internet import reactor
-#    except:
-#        dhnio.DprintException()
-#        sys.exit('Error initializing twisted reactor in dhnmain.py\n')
-#    if overDict:
-#        settings.override_dict(overDict)
-#    settings.init()
-#    if args[1] == 'register':
-#        userhost = args[2]
-#        password = args[3]
-#        dhnio.Dprint(2, 'dhnmain.cmd_q2q register new user ' + userhost)
-#        def init_callback(x):
-#            dhnio.Dprint(4, 'dhnmain.cmd_q2q.init_callback: ' + str(x))
-#            transport_q2q.register(userhost, password).addBoth(lambda x: reactor.stop())
-#        transport_q2q.init(False).addBoth(init_callback)
-#        reactor.run()
-#    elif args[1] == 'receive':
-#        dhnio.Dprint(2, 'dhnmain.cmd_q2q receive')
-#        def init_callback(x):
-#            dhnio.Dprint(4, 'dhnmain.cmd_q2q.init_callback: ' + str(x))
-#            transport_q2q.receive()
-#        transport_q2q.init(False).addBoth(init_callback)
-#        reactor.run()
-#    elif args[1] == 'send':
-#        to_userhost = args[2]
-#        filename = args[3]
-#        timeout = None
-#        if len(args) > 4:
-#            timeout = int(args[4])
-#        dhnio.Dprint(2, 'dhnmain.cmd_q2q send to %s file %s' % (to_userhost, filename))
-#        def init_callback(x):
-#            dhnio.Dprint(4, 'dhnmain.cmd_q2q.init_callback: ' + str(x))
-#            if timeout:
-#                t = LoopingCall(transport_q2q.send, to_userhost, filename)
-#            else:
-#                transport_q2q.send(to_userhost, filename).addBoth(lambda x: reactor.stop())
-#        transport_q2q.init(False).addBoth(init_callback)
-#        reactor.run()
-#    elif args[1] == 'clear':
-#        transport_q2q.clear_local_db(settings.Q2QDir())
-#    else:
-#        dhnio.Dprint(2, 'dhnmain.cmd_tcp ERROR wrong command line arguments')
-#        return 2
-#    return 0
 

@@ -19,8 +19,8 @@ import os
 
 from twisted.internet.defer import Deferred
 
-import lib.dhnio as dhnio
-import lib.dhnnet as dhnnet
+import lib.io as io
+import lib.net_misc as net_misc
 import lib.settings as settings
 import lib.nameurl as nameurl
 
@@ -37,7 +37,7 @@ def init(success_func=None, fail_func=None):
     This should be called before all other things.
     Call to initialize identitydb and cache several important IDs.
     """
-    dhnio.Dprint(4, 'identitycache.init')
+    io.log(4, 'identitycache.init')
     identitydb.init()
     # CacheCentralID(success_func, fail_func)
     # CacheMoneyServerID()
@@ -49,12 +49,12 @@ def CacheCentralID(success_func=None, fail_func=None):
     """
     Check and request a Central server identity. 
     """
-    dhnio.Dprint(6, 'identitycache.CacheCentralID')
+    io.log(6, 'identitycache.CacheCentralID')
     if HasKey(settings.CentralID()):
         if success_func:
             success_func('')
         return
-    src = dhnio._read_data(os.path.join(dhnio.getExecutableDir(), 'dhncentral.xml'))
+    src = io._read_data(os.path.join(io.getExecutableDir(), 'dhncentral.xml'))
     if src:
         if identitydb.update(settings.CentralID(), src):
             if success_func:
@@ -66,23 +66,23 @@ def CacheCentralID(success_func=None, fail_func=None):
     if fail_func is not None:
         d.addErrback(fail_func)
     else:
-        d.addErrback(lambda x: dhnio.Dprint(6, 'identitycache.CacheCentralID NETERROR: '+x.getErrorMessage()))
+        d.addErrback(lambda x: io.log(6, 'identitycache.CacheCentralID NETERROR: '+x.getErrorMessage()))
         
         
 def CacheMoneyServerID():
     """
     Cache a money server identity.
     """
-    dhnio.Dprint(6, 'identitycache.CacheMoneyServerID')
-    immediatelyCaching(settings.MoneyServerID()).addErrback(lambda x: dhnio.Dprint(6, 'identitycache.CacheMoneyServerID NETERROR: '+x.getErrorMessage()))
+    io.log(6, 'identitycache.CacheMoneyServerID')
+    immediatelyCaching(settings.MoneyServerID()).addErrback(lambda x: io.log(6, 'identitycache.CacheMoneyServerID NETERROR: '+x.getErrorMessage()))
 
 
 def CacheMarketServerID():
     """
     Cache a market server identity.
     """
-    dhnio.Dprint(6, 'identitycache.CacheMarketServerID')
-    immediatelyCaching(settings.MarketServerID()).addErrback(lambda x: dhnio.Dprint(6, 'identitycache.CacheMarketServerID NETERROR: '+x.getErrorMessage()))    
+    io.log(6, 'identitycache.CacheMarketServerID')
+    immediatelyCaching(settings.MarketServerID()).addErrback(lambda x: io.log(6, 'identitycache.CacheMarketServerID NETERROR: '+x.getErrorMessage()))    
 
 
 def Clear(excludeList=None):
@@ -170,7 +170,7 @@ def UpdateAfterChecking(url, xml_src):
     """
     Need to call that method to update the cache when some identity sources is changed.
     """
-    #dhnio.Dprint(12, 'identitycache.UpdateAfterChecking ' + url)
+    #io.log(12, 'identitycache.UpdateAfterChecking ' + url)
     return identitydb.update(url, xml_src)
 
 
@@ -184,7 +184,7 @@ def RemapContactAddress(address):
     idurl = GetIDURLByIPPort(address[0], address[1])
     if idurl is not None and HasLocalIP(idurl):
         newaddress = (GetLocalIP(idurl), address[1])
-#        dhnio.Dprint(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
+#        io.log(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
 #            nameurl.GetName(idurl), str(address), str(newaddress)))
         return newaddress
     return address
@@ -203,7 +203,7 @@ def getPageFail(x, url):
     """
     This is called when identity request is failed. 
     """
-    dhnio.Dprint(6, "identitycache.getPageFail NETERROR in request to " + url)
+    io.log(6, "identitycache.getPageFail NETERROR in request to " + url)
     return x
 
 
@@ -211,7 +211,7 @@ def pageRequestTwisted(url):
     """
     Request an HTML page - this can be an user identity.
     """
-    d = dhnnet.getPageTwisted(url)
+    d = net_misc.getPageTwisted(url)
     d.addCallback(getPageSuccess, url)
     d.addErrback(getPageFail, url)
     return d
@@ -253,7 +253,7 @@ def immediatelyCaching(url, success_func=None, fail_func=None):
         res.errback(x)
         
     result = Deferred()
-    d = dhnnet.getPageTwisted(url)
+    d = net_misc.getPageTwisted(url)
     d.addCallback(_getPageSuccess, url, result)
     d.addErrback(_getPageFail, url, result)
     

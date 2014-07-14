@@ -61,13 +61,13 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_rebuilder.py')
     
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.contacts as contacts
 import lib.settings as settings
-import lib.dhnpacket as dhnpacket
+import lib.packet as packet
 import lib.commands as commands
-import lib.dhncrypto as dhncrypto
+import lib.crypto as crypto
 import lib.automats as automats
 from lib.automat import Automat
 
@@ -163,7 +163,7 @@ class BackupDBKeeper(Automat):
         self.lastRestartTime = time.time()        
     
     def doSuppliersRequestDBInfo(self, arg):
-        # dhnio.Dprint(4, 'backup_db_keeper.doSuppliersRequestDBInfo')
+        # io.log(4, 'backup_db_keeper.doSuppliersRequestDBInfo')
         # packetID_ = settings.BackupInfoFileName()
         # packetID = settings.BackupInfoEncryptedFileName()
         packetID = settings.BackupIndexFileName()
@@ -176,7 +176,7 @@ class BackupDBKeeper(Automat):
         for supplierId in contacts.getSupplierIDs():
             if not supplierId:
                 continue
-            newpacket = dhnpacket.dhnpacket(commands.Retrieve(), localID, localID, packetID, Payload, supplierId)
+            newpacket = packet.Signed(commands.Retrieve(), localID, localID, packetID, Payload, supplierId)
             gate.outbox(newpacket, callbacks={
                 commands.Data(): self._supplier_response,
                 commands.Fail(): self._supplier_response,}) 
@@ -186,34 +186,34 @@ class BackupDBKeeper(Automat):
             self.requestedSuppliers.add(supplierId)
 
     def doSuppliersSendDBInfo(self, arg):
-        # dhnio.Dprint(4, 'backup_db_keeper.doSuppliersSendDBInfo')
+        # io.log(4, 'backup_db_keeper.doSuppliersSendDBInfo')
         # packetID = settings.BackupInfoEncryptedFileName()
         packetID = settings.BackupIndexFileName()
         # for supplierId in contacts.getSupplierIDs():
         #     if supplierId:
         #         callback.remove_interest(supplierId, packetID)
         self.sentSuppliers.clear()
-        # src = dhnio.ReadBinaryFile(settings.BackupInfoFileFullPath())
-        src = dhnio.ReadBinaryFile(settings.BackupIndexFilePath())
+        # src = io.ReadBinaryFile(settings.BackupInfoFileFullPath())
+        src = io.ReadBinaryFile(settings.BackupIndexFilePath())
         localID = misc.getLocalID()
-        block = dhnblock.dhnblock(localID, packetID, 0, dhncrypto.NewSessionKey(), dhncrypto.SessionKeyType(), True, src)
+        block = dhnblock.dhnblock(localID, packetID, 0, crypto.NewSessionKey(), crypto.SessionKeyType(), True, src)
         Payload = block.Serialize() 
         for supplierId in contacts.getSupplierIDs():
             if not supplierId:
                 continue
             if not contact_status.isOnline(supplierId):
                 continue
-            newpacket = dhnpacket.dhnpacket(commands.Data(), localID, localID, packetID, Payload, supplierId)
+            newpacket = packet.Signed(commands.Data(), localID, localID, packetID, Payload, supplierId)
             gate.outbox(newpacket, callbacks={
                 commands.Ack(): self._supplier_acked,
                 commands.Fail(): self._supplier_acked})
             # callback.register_interest(self._supplier_acked, supplierId, packetID)
             self.sentSuppliers.add(supplierId)
-            # dhnio.Dprint(6, 'backup_db_keeper.doSuppliersSendDBInfo to %s' % supplierId)
+            # io.log(6, 'backup_db_keeper.doSuppliersSendDBInfo to %s' % supplierId)
 
     def doSetSyncFlag(self, arg):
         if not self.syncFlag:
-            dhnio.Dprint(4, 'backup_db_keeper.doSetSyncFlag backup database is now SYNCHRONIZED !!!!!!!!!!!!!!!!!!!!!!')
+            io.log(4, 'backup_db_keeper.doSetSyncFlag backup database is now SYNCHRONIZED !!!!!!!!!!!!!!!!!!!!!!')
         self.syncFlag = True
 
 #    def doCountResponse(self, arg):
@@ -221,7 +221,7 @@ class BackupDBKeeper(Automat):
 #        Action method.
 #        """
 #        packet = arg
-#        dhnio.Dprint(6, 'backup_db_keeper.doCountResponse %r from %s' % (packet, packet.OwnerID))
+#        io.log(6, 'backup_db_keeper.doCountResponse %r from %s' % (packet, packet.OwnerID))
 #        self.requestedSuppliers.discard(packet.OwnerID)
 #        if packet.Command == commands.Fail():
 #            sc = supplier_connector.by_idurl(packet.OwnerID)
@@ -244,7 +244,7 @@ class BackupDBKeeper(Automat):
             raise Exception('wrong type of response')
         if len(self.requestedSuppliers) == 0:
             self.automat('all-responded')
-        # dhnio.Dprint(6, 'backup_db_keeper._supplier_response %s others: %r' % (packet, self.requestedSuppliers))
+        # io.log(6, 'backup_db_keeper._supplier_response %s others: %r' % (packet, self.requestedSuppliers))
 
     def _supplier_acked(self, packet, info):
         self.sentSuppliers.discard(packet.OwnerID)

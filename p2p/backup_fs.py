@@ -45,13 +45,13 @@ import stat
 import cStringIO
 
 try:
-    import lib.dhnio as dhnio
+    import lib.io as io
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(dirpath))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     try:
-        import lib.dhnio as dhnio
+        import lib.io as io
     except:
         sys.exit()
         
@@ -129,7 +129,7 @@ def init():
     """
     Some initial steps can be done here.
     """
-    dhnio.Dprint(4, 'backup_fs.init')
+    io.log(4, 'backup_fs.init')
     # fs()[settings.BackupIndexFileName()] = -1
     # fsID()[-1] = FSItemInfo(settings.BackupIndexFileName(), '-1', FILE)
     # backup_fs.SetFile(settings.BackupIndexFileName(), settings.BackupIndexFileName())
@@ -138,7 +138,7 @@ def shutdown():
     """
     Should be called when the program is finishing.
     """
-    dhnio.Dprint(4, 'backup_fs.shutdown')
+    io.log(4, 'backup_fs.shutdown')
 
 #------------------------------------------------------------------------------ 
 
@@ -181,7 +181,7 @@ class FSItemInfo():
             try:
                 s = os.stat(path.decode('utf-8'))
             except:
-                dhnio.DprintException()
+                io.exception()
                 self.size = -1
                 return
         self.size = long(s.st_size)
@@ -193,7 +193,7 @@ class FSItemInfo():
         if not os.access(path, os.R_OK):
             return 0
         totalSize = 0
-        for version in dhnio.list_dir_safe(path):
+        for version in io.list_dir_safe(path):
             if self.get_version_info(version)[0] >= 0:
                 continue
             versionSize = 0
@@ -205,22 +205,22 @@ class FSItemInfo():
                 continue
             if not os.access(versionpath, os.R_OK):
                 return 0
-            for filename in dhnio.list_dir_safe(versionpath):
+            for filename in io.list_dir_safe(versionpath):
                 filepath = os.path.join(versionpath, filename)
                 if not packetid.IsPacketNameCorrect(filename):
-                    dhnio.Dprint(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
+                    io.log(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
                     continue
                 try:
                     blockNum, supplierNum, dataORparity = filename.split('-')
                     blockNum, supplierNum = int(blockNum), int(supplierNum)
                 except:
-                    dhnio.Dprint(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
+                    io.log(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
                     continue
                 try:
                     sz = long(os.path.getsize(filepath))
                 except:
-                    dhnio.DprintException()
-                # add some bytes because on remote machines all packets are dhnpackets
+                    io.exception()
+                # add some bytes because on remote machines all packets are packets
                 # so they have a header and the files size will be bigger than on local machine
                 versionSize += sz + 1024   
                 maxBlock = max(maxBlock, blockNum)
@@ -318,7 +318,7 @@ def portablePath(path):
     if not isinstance(p, unicode):
         # p = p.encode('utf-8')
         p = unicode(p)
-    if dhnio.Windows():
+    if io.Windows():
         p = p.replace('\\', '/') # .replace('\\\\', '/')
         if len(p) >= 2 and p[1] == ':':
             p = p[0].lower() + p[1:]
@@ -361,7 +361,7 @@ def pathIsDir(localpath):
     if not os.path.exists(p):
         return False
     # ok, on Linux we have devices, mounts, links ...
-    if dhnio.Linux():
+    if io.Linux():
         try:
             st = os.path.stat(localpath)
             return stat.S_ISDIR(st.st_mode)
@@ -540,7 +540,7 @@ def AddLocalPath(localpath, read_stats=False):
         path = portablePath(path)
         if not os.access(path, os.R_OK):
             return c
-        for localname in dhnio.list_dir_safe(path):
+        for localname in io.list_dir_safe(path):
             p = os.path.join(path, localname)  # .encode("utf-8")
             name = unicode(localname) 
             if pathIsDir(p):
@@ -814,7 +814,7 @@ def DeleteBackupID(backupID):
     if info is None:
         return False
     if not info.has_version(versionName):
-        dhnio.Dprint(4, 'backup_fs.DeleteBackupID WARNING %s do not have version %s' % (pathID, versionName))
+        io.log(4, 'backup_fs.DeleteBackupID WARNING %s do not have version %s' % (pathID, versionName))
         return False 
     info.delete_version(versionName)
     return True
@@ -1011,7 +1011,7 @@ def TraverseByID(callback, iterID=None):
                 raise Exception('Error, wrong item type in the index')
     if iterID is None:
         iterID = fsID()
-    startpth = '' if dhnio.Windows() else '/'
+    startpth = '' if io.Windows() else '/'
     recursive_traverse(iterID, '', startpth, callback)
     
 def TraverseByIDSorted(callback, iterID=None):
@@ -1047,7 +1047,7 @@ def TraverseByIDSorted(callback, iterID=None):
         del files
     if iterID is None:
         iterID = fsID()
-    startpth = '' if dhnio.Windows() else '/'
+    startpth = '' if io.Windows() else '/'
     recursive_traverse(iterID, '', startpth, callback)
     
 def IterateIDs(iterID=None):
@@ -1094,7 +1094,7 @@ def IterateIDs(iterID=None):
                 yield path_id+'/'+str(id) if path_id else str(id), path+'/'+i[id].name(), i[id]
             else:
                 raise Exception('Error, wrong item type in the index')        
-    startpth = '' if dhnio.Windows() else '/'
+    startpth = '' if io.Windows() else '/'
     return recursive_iterate(iterID, '', startpth)    
 
 #------------------------------------------------------------------------------ 
@@ -1246,7 +1246,7 @@ def DeleteLocalDir(basedir, pathID):
         return
     if not pathIsDir(path):
         raise Exception('Error, %s is not a directory' % path)
-    dhnio.rmdir_recursive(path, ignore_errors=True)
+    io.rmdir_recursive(path, ignore_errors=True)
     
 def DeleteLocalBackup(basedir, backupID):
     """
@@ -1265,7 +1265,7 @@ def DeleteLocalBackup(basedir, backupID):
             count_and_size[0] += 1
             count_and_size[1] += os.path.getsize(fullpath) 
         return True
-    dhnio.rmdir_recursive(backupDir, ignore_errors=True, pre_callback=visitor)
+    io.rmdir_recursive(backupDir, ignore_errors=True, pre_callback=visitor)
     return count_and_size[0], count_and_size[1]
 
 #------------------------------------------------------------------------------ 
@@ -1359,7 +1359,7 @@ def Calculate():
             _ItemsCount += 1
         return folder_size
     ret = recursive_calculate(fsID())
-    dhnio.Dprint(12, 'backup_fs.Calculate %d %d %d %d' % (
+    io.log(12, 'backup_fs.Calculate %d %d %d %d' % (
         _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
     return ret
 
@@ -1409,7 +1409,7 @@ def Serialize(iterID=None):
     TraverseByID(cb, iterID)
     src = result.getvalue()
     result.close()
-    dhnio.Dprint(6, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
+    io.log(6, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
     return src
 
 def Unserialize(input, iter=None, iterID=None):
@@ -1432,7 +1432,7 @@ def Unserialize(input, iter=None, iterID=None):
         else:
             raise Exception('Incorrect entry type')
         count += 1
-    dhnio.Dprint(6, 'backup_fs.Unserialize done with %d indexed files' % count)
+    io.log(6, 'backup_fs.Unserialize done with %d indexed files' % count)
     return count
 
 #------------------------------------------------------------------------------ 
@@ -1442,7 +1442,7 @@ def main():
     For tests.
     """
     import pprint
-#    dhnio.init()
+#    io.init()
 #    for path in sys.argv[1:]:
 #        print path, AddLocalPath(path, True)
 #

@@ -43,7 +43,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in data_sender.py')
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.packetid as packetid
 import lib.contacts as contacts
@@ -125,7 +125,7 @@ class DataSender(automat.Automat):
     
     def doScanAndQueue(self, arg):
         global _ShutdownFlag
-        dhnio.Dprint(10, 'data_sender.doScanAndQueue')
+        io.log(10, 'data_sender.doScanAndQueue')
         log = open(os.path.join(settings.LogsDir(), 'data_sender.log'), 'w')
         log.write('doScanAndQueue %s\n' % time.asctime())
         if _ShutdownFlag:
@@ -141,15 +141,15 @@ class DataSender(automat.Automat):
                 for supplierNum in packetsBySupplier.keys():
                     supplier_idurl = contacts.getSupplierID(supplierNum)
                     if not supplier_idurl:
-                        dhnio.Dprint(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (supplierNum, backupID))
+                        io.log(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (supplierNum, backupID))
                         continue
                     for packetID in packetsBySupplier[supplierNum]:
                         backupID_, blockNum, supplierNum_, dataORparity = packetid.BidBnSnDp(packetID)
                         if backupID_ != backupID:
-                            dhnio.Dprint(2, 'data_sender.doScanAndQueue WARNING ?backupID? %s for %s' % (packetID, backupID))
+                            io.log(2, 'data_sender.doScanAndQueue WARNING ?backupID? %s for %s' % (packetID, backupID))
                             continue
                         if supplierNum_ != supplierNum:
-                            dhnio.Dprint(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (packetID, backupID))
+                            io.log(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (packetID, backupID))
                             continue
                         if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
                             log.write('%s in the send queue to %s\n' % (packetID, supplier_idurl))
@@ -173,7 +173,7 @@ class DataSender(automat.Automat):
                             self._packetAcked, 
                             self._packetFailed)
                         log.write('io_throttle.QueueSendFile %s\n' % packetID)
-                        # dhnio.Dprint(6, '  %s for %s' % (packetID, backupID))
+                        # io.log(6, '  %s for %s' % (packetID, backupID))
         self.automat('scan-done')
         log.flush()
         log.close()
@@ -181,13 +181,13 @@ class DataSender(automat.Automat):
     def doPrintStats(self, arg):
         """
         """
-#        if dhnio.Debug(18):
+#        if io.Debug(18):
 #            transfers = transport_control.current_transfers()
 #            bytes_stats = transport_control.current_bytes_transferred()
 #            s = ''
 #            for info in transfers:
 #                s += '%s ' % (diskspace.MakeStringFromBytes(bytes_stats[info.transfer_id]).replace(' ', '').replace('bytes', 'b'))
-#            dhnio.Dprint(0, 'transfers: ' + s[:120])
+#            io.log(0, 'transfers: ' + s[:120])
 
     def doRemoveUnusedFiles(self, arg):
         # we want to remove files for this block 
@@ -210,12 +210,12 @@ class DataSender(automat.Automat):
                 if os.path.isfile(filename):
                     try:
                         os.remove(filename)
-                        # dhnio.Dprint(6, '    ' + os.path.basename(filename))
+                        # io.log(6, '    ' + os.path.basename(filename))
                     except:
-                        dhnio.DprintException()
+                        io.exception()
                         continue
                     count += 1
-        dhnio.Dprint(8, 'data_sender.doRemoveUnusedFiles %d files were removed' % count)
+        io.log(8, 'data_sender.doRemoveUnusedFiles %d files were removed' % count)
         backup_matrix.ReadLocalFiles()
                          
     def _packetAcked(self, packet, ownerID, packetID):

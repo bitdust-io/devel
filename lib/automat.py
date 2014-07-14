@@ -288,12 +288,12 @@ class Automat(object):
             _LogsCount += 1
         else:
             try:
-                from dhnio import Dprint
-                Dprint(level, text)
+                from io import log
+                log(level, text)
             except:
                 try:
-                    from lib.dhnio import Dprint
-                    Dprint(level, text)
+                    from lib.io import log
+                    log(level, text)
                 except:
                     pass
 

@@ -42,8 +42,8 @@ import string
 import sys
 
 
+import io
 import settings
-import dhnio
 import misc
 import contactsdb
 import nameurl
@@ -63,10 +63,10 @@ _CorrespondentsChangedCallback = None
 def init():
     """
     We read from disk and if we have all the info we are set.
-    If we don't have enough, then we have to ask DHN to list contacts and use
+    If we don't have enough, then we have to ask BitPie.NET to list contacts and use
     that list to get and then store all the identities for our contacts.
     """
-    dhnio.Dprint(4, "contacts.init ")
+    io.log(4, "contacts.init ")
     contactsdb.load_suppliers(settings.SupplierIDsFilename())
     contactsdb.load_customers(settings.CustomerIDsFilename())
     contactsdb.load_correspondents(settings.CorrespondentIDsFilename())
@@ -76,7 +76,7 @@ def init():
 def getContact(idurl):
     """
     The Main Method Here - return identity object for given ID or None if not found. 
-    Only valid contacts for dhnpackets will be signed by local identity, suppliers, customers
+    Only valid contacts for packets will be signed by local identity, suppliers, customers
     and eventually dhn central command.
     """
     if idurl is None:
@@ -90,9 +90,9 @@ def getContact(idurl):
     if contactsdb.is_correspondent(idurl):
         return identitycache.FromCache(idurl)
     if identitycache.HasKey(idurl):
-        # dhnio.Dprint(2, "contacts.getContact WARNING who is %s ?" % nameurl.GetName(idurl))
+        # io.log(2, "contacts.getContact WARNING who is %s ?" % nameurl.GetName(idurl))
         return identitycache.FromCache(idurl)
-    dhnio.Dprint(6, "contacts.getContact %s is not found" % nameurl.GetName(idurl))
+    io.log(6, "contacts.getContact %s is not found" % nameurl.GetName(idurl))
     # TODO
     # this is not correct: 
     # need to check if other contacts is fine - if internet is turned off we can get lots fails ...  

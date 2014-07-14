@@ -26,7 +26,7 @@ EVENTS:
 import os
 import time 
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.automat as automat
 import lib.nameurl as nameurl
 import lib.contacts as contacts
@@ -83,7 +83,7 @@ class SupplierConnector(automat.Automat):
         self.request_packet_id = None
         self.callbacks = {}
         try:
-            st = dhnio.ReadTextFile(settings.SupplierServiceFilename(self.idurl)).strip() 
+            st = io.ReadTextFile(settings.SupplierServiceFilename(self.idurl)).strip() 
         except:
             st = 'DISCONNECTED'
         if st == 'CONNECTED':
@@ -110,9 +110,9 @@ class SupplierConnector(automat.Automat):
                 try:
                     os.makedirs(supplierPath)
                 except:
-                    dhnio.DprintException()
+                    io.exception()
                     return
-            dhnio.WriteFile(settings.SupplierServiceFilename(self.idurl), newstate)
+            io.WriteFile(settings.SupplierServiceFilename(self.idurl), newstate)
             
     def set_callback(self, name, cb):
         self.callbacks[name] = cb
@@ -207,7 +207,7 @@ class SupplierConnector(automat.Automat):
         newpacket = arg
         if newpacket.Command == commands.Ack():
             if newpacket.Payload.startswith('accepted'):
-                dhnio.Dprint(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
+                io.log(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
                 return True
         return False
 
@@ -218,7 +218,7 @@ class SupplierConnector(automat.Automat):
         newpacket = arg
         if newpacket.Command == commands.Ack():
             if newpacket.Payload.startswith('accepted'):
-                dhnio.Dprint(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
+                io.log(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
                 return True
         return False
 
@@ -260,7 +260,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        dhnio.Dprint(14, 'supplier_connector.doReportConnect')
+        io.log(14, 'supplier_connector.doReportConnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'CONNECTED')
 
@@ -268,7 +268,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        dhnio.Dprint(14, 'supplier_connector.doReportNoService')
+        io.log(14, 'supplier_connector.doReportNoService')
         for cb in self.callbacks.values():
             cb(self.idurl, 'NO_SERVICE')
 
@@ -276,12 +276,12 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        dhnio.Dprint(14, 'supplier_connector.doReportDisconnect')
+        io.log(14, 'supplier_connector.doReportDisconnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'DISCONNECTED')
 
     def _supplier_acked(self, response, info):
-        dhnio.Dprint(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
+        io.log(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhn.py
+#bitpie.py
 #
 # <<<COPYRIGHT>>>
 #

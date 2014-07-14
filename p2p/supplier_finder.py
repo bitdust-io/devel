@@ -20,7 +20,7 @@ EVENTS:
 import time
 import random
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.automat as automat
 import lib.commands as commands
 import lib.contacts as contacts
@@ -214,7 +214,7 @@ class SupplierFinder(automat.Automat):
                 sc.remove_callback('supplier_finder')
             self.target_idurl = None
         automat.objects().pop(self.index)
-        dhnio.Dprint(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
+        io.log(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         """
@@ -222,7 +222,7 @@ class SupplierFinder(automat.Automat):
         self.automat('inbox-packet', (newpacket, info, status, error_message))
         
     def _found_nodes(self, nodes):
-        dhnio.Dprint(18, 'supplier_finder._found_nodes %d nodes' % len(nodes))
+        io.log(18, 'supplier_finder._found_nodes %d nodes' % len(nodes))
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')
@@ -234,7 +234,7 @@ class SupplierFinder(automat.Automat):
         self.automat('users-not-found')
     
     def _got_target_idurl(self, response):
-        dhnio.Dprint(18, 'supplier_finder._got_target_idurl response=%s' % str(response) )
+        io.log(18, 'supplier_finder._got_target_idurl response=%s' % str(response) )
         try:
             idurl = response['idurl']
         except:
@@ -243,7 +243,7 @@ class SupplierFinder(automat.Automat):
             self.automat('users-not-found')
             return response
         if contacts.IsSupplier(idurl):
-            dhnio.Dprint(18, '    %s is supplier already' % idurl)
+            io.log(18, '    %s is supplier already' % idurl)
             self.automat('users-not-found')
             return response
         d = identitycache.immediatelyCaching(idurl)

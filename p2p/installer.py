@@ -61,7 +61,7 @@ from twisted.internet.task import LoopingCall
 
 import lib.automat as automat
 import lib.automats as automats
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.nameurl as nameurl
 import lib.packetid as packetid
@@ -257,12 +257,12 @@ class Installer(automat.Automat):
         # gate.init()
 
     def doClearOutput(self, arg):
-        # dhnio.Dprint(4, 'installer.doClearOutput')
+        # io.log(4, 'installer.doClearOutput')
         for state in self.output.keys():
             self.output[state] = {'data': [('', 'black')]}
 
     def doPrint(self, arg):
-        dhnio.Dprint(8, 'installer.doPrint %s %s' % (self.state, str(arg)))
+        io.log(8, 'installer.doPrint %s %s' % (self.state, str(arg)))
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
         if arg is None:
@@ -273,7 +273,7 @@ class Installer(automat.Automat):
             ch = '+'
             if arg[1] == 'red':
                 ch = '!'
-            dhnio.Dprint(0, '  %s %s' % (ch, arg[0]))
+            io.log(0, '  %s %s' % (ch, arg[0]))
 
     def doShowOutput(self, arg):
         """
@@ -288,15 +288,15 @@ class Installer(automat.Automat):
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['data'].append((text, color))
-        # dhnio.Dprint(0, '  [%s]' % text)
+        # io.log(0, '  [%s]' % text)
 
     def doUpdate(self, arg):
-        # dhnio.Dprint(4, 'installer.doUpdate')
+        # io.log(4, 'installer.doUpdate')
         reactor.callLater(0, webcontrol.OnUpdateInstallPage)
 
     def doReadKey(self, arg):
-        dhnio.Dprint(2, 'installer.doReadKey arg=[%s]' % str(arg))
-        src = dhnio.ReadBinaryFile(arg)
+        io.log(2, 'installer.doReadKey arg=[%s]' % str(arg))
+        src = io.ReadBinaryFile(arg)
         if len(src) > 1024*10:
             self.doPrint(('file is too big for private key', 'red'))
             return
@@ -309,7 +309,7 @@ class Installer(automat.Automat):
                 idurl = ''
                 keysrc = src
         except:
-            dhnio.DprintException()
+            io.exception()
             idurl = ''
             keysrc = src
 
@@ -328,7 +328,7 @@ class Installer(automat.Automat):
                 idurl = ''
                 keysrc = src
         except:
-            dhnio.DprintException()
+            io.exception()
             idurl = ''
             keysrc = src
         if not self.output.has_key(self.state):
@@ -336,9 +336,9 @@ class Installer(automat.Automat):
         self.output[self.state]['idurl'] = idurl
 
     def doIncreaseDebugLevel(self, arg):
-        if self.flagCmdLine and not dhnio.Debug(10):
-            dhnio.SetDebug(0)
+        if self.flagCmdLine and not io.Debug(10):
+            io.SetDebug(0)
         # else:
-        #     dhnio.SetDebug(18)
+        #     io.SetDebug(18)
 
 

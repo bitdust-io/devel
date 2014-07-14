@@ -26,7 +26,7 @@ except:
 
 from twisted.internet import threads
 
-import dhnio
+import io
 import diskspace
 
 #------------------------------------------------------------------------------ 
@@ -45,7 +45,7 @@ def ask(dirpath, callback=None, arg=None):
     """
     global _Jobs
     global _Dirs
-    dhnio.Dprint(6, 'dirsize.ask %s' % dirpath)
+    io.log(6, 'dirsize.ask %s' % dirpath)
     if _Jobs.has_key(dirpath):
         return 'counting size'
     if not os.path.isdir(dirpath):
@@ -53,7 +53,7 @@ def ask(dirpath, callback=None, arg=None):
         if callback:
             reactor.callLater(0, callback, 'not exist', arg)
         return 'not exist'
-    d = threads.deferToThread(dhnio.getDirectorySize, dirpath)
+    d = threads.deferToThread(io.getDirectorySize, dirpath)
     d.addCallback(done, dirpath)
     _Jobs[dirpath] = (d, callback, arg)
     _Dirs[dirpath] = 'counting size'
@@ -65,14 +65,14 @@ def done(size, dirpath):
     """
     global _Dirs
     global _Jobs
-    dhnio.Dprint(6, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
+    io.log(6, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
     _Dirs[dirpath] = str(size)
     try:
         (d, cb, arg) = _Jobs.pop(dirpath, (None, None, None))
         if cb:
             cb(dirpath, size, arg)
     except:
-        dhnio.DprintException()
+        io.exception()
     
 def get(dirpath, default=''):
     """
@@ -116,7 +116,7 @@ def main():
     def _done(path, sz, arg):
         print path, sz
         reactor.stop()
-    dhnio.init()
+    io.init()
     ask(sys.argv[1], _done)
     reactor.run()
 

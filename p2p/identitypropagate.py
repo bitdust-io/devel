@@ -32,11 +32,11 @@ except:
 
 from twisted.internet.defer import DeferredList, Deferred
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.nameurl as nameurl
-import lib.dhnpacket as dhnpacket
-import lib.dhncrypto as dhncrypto
+import lib.packet as packet
+import lib.crypto as crypto
 import lib.contacts as contacts
 import lib.commands as commands
 import lib.settings as settings
@@ -63,13 +63,13 @@ def init():
     """
     Need to call that at start up to link with transport_control. 
     """
-    dhnio.Dprint(4, "identitypropagate.init ")
+    io.log(4, "identitypropagate.init ")
 
 
 def shutdown():
     """
     """
-    dhnio.Dprint(4, "identitypropagate.shutdown ")
+    io.log(4, "identitypropagate.shutdown ")
 
 #------------------------------------------------------------------------------ 
 
@@ -79,10 +79,10 @@ def propagate(selected_contacts, AckHandler=None, wide=False):
     First need to fetch ``selected_contacts`` IDs from id server.
     And then send our Identity file to that contacts. 
     """
-    dhnio.Dprint(6, "identitypropagate.propagate to %d contacts" % len(selected_contacts))
+    io.log(6, "identitypropagate.propagate to %d contacts" % len(selected_contacts))
     d = Deferred()
     def contacts_fetched(x):
-        dhnio.Dprint(6, "identitypropagate.propagate.contacts_fetched")
+        io.log(6, "identitypropagate.propagate.contacts_fetched")
         SendToIDs(selected_contacts, AckHandler, wide)
         d.callback(list(selected_contacts))
         return x
@@ -94,7 +94,7 @@ def fetch(list_ids):
     """
     Request a list of identity files.
     """
-    dhnio.Dprint(6, "identitypropagate.fetch identities for %d users" % len(list_ids))
+    io.log(6, "identitypropagate.fetch identities for %d users" % len(list_ids))
     dl = []
     for url in list_ids:
         if url:
@@ -107,7 +107,7 @@ def start(AckHandler=None, wide=False):
     """
     Call ``propagate()`` for all known contacts.
     """
-    dhnio.Dprint(6, 'identitypropagate.start')
+    io.log(6, 'identitypropagate.start')
     return propagate(contacts.getRemoteContacts(), AckHandler, wide)
 
 
@@ -115,7 +115,7 @@ def suppliers(AckHandler=None, wide=False):
     """
     Call ``propagate()`` for all suppliers.
     """
-    dhnio.Dprint(6, 'identitypropagate.suppliers')
+    io.log(6, 'identitypropagate.suppliers')
     return propagate(contacts.getSupplierIDs(), AckHandler, wide)
 
 
@@ -123,7 +123,7 @@ def customers(AckHandler=None, wide=False):
     """
     Call ``propagate()`` for all known customers.
     """
-    dhnio.Dprint(6, 'identitypropagate.customers')
+    io.log(6, 'identitypropagate.customers')
     return propagate(contacts.getCustomerIDs(), AckHandler, wide)
 
 
@@ -131,7 +131,7 @@ def allcontacts(AckHandler=None, wide=False):
     """
     Call ``propagate()`` for all contacts and correspondents, almost the same to ``start()``.
     """
-    dhnio.Dprint(6, 'identitypropagate.allcontacts')
+    io.log(6, 'identitypropagate.allcontacts')
     return propagate(contacts.getContactsAndCorrespondents(), AckHandler, wide)
 
 
@@ -146,13 +146,13 @@ def update():
     """
     A wrapper of ``SendServers()`` method.
     """
-    dhnio.Dprint(6, "identitypropagate.update")
+    io.log(6, "identitypropagate.update")
     return SendServers()
 
 def write_to_dht():
     """
     """
-    dhnio.Dprint(6, "identitypropagate.write_to_dht")
+    io.log(6, "identitypropagate.write_to_dht")
     LocalIdentity = misc.getLocalIdentity()
     dht_service.set_value(LocalIdentity.getIDURL(), LocalIdentity.serialize())
 
@@ -162,7 +162,7 @@ def FetchSingle(idurl):
     """
     Fetch single identity file from given ``idurl``.
     """
-    dhnio.Dprint(6, "identitypropagate.fetch_single " + idurl)
+    io.log(6, "identitypropagate.fetch_single " + idurl)
     return identitycache.scheduleForCaching(idurl)
 
 
@@ -197,7 +197,7 @@ def SendServers():
     sendfile, sendfilename = tmpfile.make("propagate")
     os.close(sendfile)
     LocalIdentity = misc.getLocalIdentity()
-    dhnio.WriteFile(sendfilename, LocalIdentity.serialize())
+    io.WriteFile(sendfilename, LocalIdentity.serialize())
     dlist = []
     for idurl in LocalIdentity.sources:
         # sources for out identity are servers we need to send to
@@ -216,7 +216,7 @@ def SendSuppliers():
     """
     Send my identity file to all my suppliers, calls to ``SendToIDs()`` method. 
     """
-    dhnio.Dprint(6, "identitypropagate.SendSuppliers")
+    io.log(6, "identitypropagate.SendSuppliers")
     SendToIDs(contacts.getSupplierIDs(), HandleSuppliersAck)
 
 
@@ -224,7 +224,7 @@ def SendCustomers():
     """
     Calls ``SendToIDs()`` to send identity to all my customers.
     """
-    dhnio.Dprint(8, "identitypropagate.SendCustomers")
+    io.log(8, "identitypropagate.SendCustomers")
     SendToIDs(contacts.getCustomerIDs(), HandleCustomersAck)
 
 
@@ -235,9 +235,9 @@ def SlowSendSuppliers(delay=1):
     """
     global _SlowSendIsWorking
     if _SlowSendIsWorking:
-        dhnio.Dprint(8, "identitypropagate.SlowSendSuppliers  is working at the moment. skip.")
+        io.log(8, "identitypropagate.SlowSendSuppliers  is working at the moment. skip.")
         return
-    dhnio.Dprint(8, "identitypropagate.SlowSendSuppliers delay=%s" % str(delay))
+    io.log(8, "identitypropagate.SlowSendSuppliers delay=%s" % str(delay))
 
     def _send(index, payload, delay):
         global _SlowSendIsWorking
@@ -261,9 +261,9 @@ def SlowSendCustomers(delay=1):
     
     global _SlowSendIsWorking
     if _SlowSendIsWorking:
-        dhnio.Dprint(8, "identitypropagate.SlowSendCustomers  slow send is working at the moment. skip.")
+        io.log(8, "identitypropagate.SlowSendCustomers  slow send is working at the moment. skip.")
         return
-    dhnio.Dprint(8, "identitypropagate.SlowSendCustomers delay=%s" % str(delay))
+    io.log(8, "identitypropagate.SlowSendCustomers delay=%s" % str(delay))
 
     def _send(index, payload, delay):
         global _SlowSendIsWorking
@@ -285,7 +285,7 @@ def HandleSuppliersAck(ackpacket, info):
     Called when supplier is "Acked" to my after call to ``SendSuppliers()``. 
     """
     Num = contacts.numberForSupplier(ackpacket.OwnerID)
-    dhnio.Dprint(8, "identitypropagate.HandleSupplierAck ")
+    io.log(8, "identitypropagate.HandleSupplierAck ")
 
 
 def HandleCustomersAck(ackpacket, info):
@@ -293,24 +293,24 @@ def HandleCustomersAck(ackpacket, info):
     Called when supplier is "Acked" to my after call to ``SendCustomers()``. 
     """
     Num = contacts.numberForCustomer(ackpacket.OwnerID)
-    dhnio.Dprint(8, "identitypropagate.HandleCustomerAck ")
+    io.log(8, "identitypropagate.HandleCustomerAck ")
 
 
 def HandleAck(ackpacket, info):
-    dhnio.Dprint(16, "identitypropagate.HandleAck %r %r" % (ackpacket, info))
+    io.log(16, "identitypropagate.HandleAck %r %r" % (ackpacket, info))
 
 
 def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
     """
-    Create ``dhnpacket`` with my Identity file and calls ``lib.transport_control.outbox()`` to send it.
+    Create ``packet`` with my Identity file and calls ``lib.transport_control.outbox()`` to send it.
     """
-    dhnio.Dprint(8, "identitypropagate.SendToID [%s] NeedAck=%s" % (nameurl.GetName(idurl), str(NeedAck)))
+    io.log(8, "identitypropagate.SendToID [%s] NeedAck=%s" % (nameurl.GetName(idurl), str(NeedAck)))
     if AckHandler is None:
         AckHandler = HandleAck
     thePayload = Payload
     if thePayload is None:
         thePayload = misc.getLocalIdentity().serialize()
-    packet = dhnpacket.dhnpacket(
+    p = packet.Signed(
         commands.Identity(),
         misc.getLocalID(), #MyID,
         misc.getLocalID(), #MyID,
@@ -318,7 +318,7 @@ def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
         thePayload,
         idurl)
     # callback.register_interest(AckHandler, packet.RemoteID, packet.PacketID)
-    gate.outbox(packet, wide, callbacks={
+    gate.outbox(p, wide, callbacks={
         commands.Ack(): AckHandler,
         commands.Fail(): AckHandler}) 
     if wide:
@@ -331,14 +331,14 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
     """
     Same, but send to many IDs.
     """
-    dhnio.Dprint(8, "identitypropagate.SendToIDs to %d users" % len(idlist))
+    io.log(8, "identitypropagate.SendToIDs to %d users" % len(idlist))
     if AckHandler is None:
         AckHandler = HandleAck
     MyID = misc.getLocalID()
     PacketID = MyID
     LocalIdentity = misc.getLocalIdentity()
     Payload = LocalIdentity.serialize()
-    Hash = dhncrypto.Hash(Payload)
+    Hash = crypto.Hash(Payload)
     alreadysent = set()
     inqueue = {}
     found_previous_packets = 0
@@ -357,7 +357,7 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
             continue
         if contact in inqueue and inqueue[contact] > 2:
             # now only 2 protocols is working: tcp and dhtudp
-            dhnio.Dprint(8, '        skip sending to %s' % contact)
+            io.log(8, '        skip sending to %s' % contact)
             continue
 #        found_previous_packets = 0
 #        for transfer_id in gate.transfers_out_by_idurl().get(contact, []):
@@ -366,18 +366,18 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
 #                found_previous_packets += 1
 #                break
 #        if found_previous_packets >= 3:
-#            dhnio.Dprint(8, '        skip sending to %s' % contact)
+#            io.log(8, '        skip sending to %s' % contact)
 #            continue    
-        packet = dhnpacket.dhnpacket(
+        p = packet.Signed(
             commands.Identity(),
             misc.getLocalID(), #MyID,
             misc.getLocalID(), #MyID,
             'identity', # misc.getLocalID(), #PacketID,
             Payload,
             contact)
-        dhnio.Dprint(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
+        io.log(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
         # callback.register_interest(AckHandler, packet.RemoteID, packet.PacketID)
-        gate.outbox(packet, wide, callbacks={
+        gate.outbox(p, wide, callbacks={
             commands.Ack(): AckHandler,
             commands.Fail(): AckHandler}) 
         if wide:

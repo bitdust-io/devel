@@ -28,7 +28,7 @@ Rebuilding each block of data is as follows:
 
 import os
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
 import lib.settings as settings
 import lib.contacts as contacts
@@ -147,14 +147,14 @@ class BlockRebuilder():
         """
         This made an attempt to rebuild the missing pieces from pieces we have on hands. 
         """
-        dhnio.Dprint(14, 'block_rebuilder.AttemptRebuild %s %d BEGIN' % (self.backupID, self.blockNum))
+        io.log(14, 'block_rebuilder.AttemptRebuild %s %d BEGIN' % (self.backupID, self.blockNum))
         newData = False
         madeProgress = True
         while madeProgress:
             madeProgress = False
             # if number of suppliers were changed - stop immediately 
             if contacts.numSuppliers() != self.supplierCount:
-                dhnio.Dprint(10, 'block_rebuilder.AttemptRebuild END - number of suppliers were changed')
+                io.log(10, 'block_rebuilder.AttemptRebuild END - number of suppliers were changed')
                 return False
             # will check all data packets we have 
             for supplierNum in xrange(self.supplierCount):
@@ -170,7 +170,7 @@ class BlockRebuilder():
                                 filename = self.BuildRaidFileName(supplierParity, 'Data')
                                 if os.path.isfile(filename):
                                     rebuildFileList.append(filename)
-                        dhnio.Dprint(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
+                        io.log(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
                         
                         
                         # TODO - send to raid_worker
@@ -183,12 +183,12 @@ class BlockRebuilder():
                     if os.path.exists(dataFileName):
                         self.localData[supplierNum] = 1
                         madeProgress = True
-                        dhnio.Dprint(10, '        Data file %s found after rebuilding for supplier %d' % (os.path.basename(dataFileName), supplierNum))
+                        io.log(10, '        Data file %s found after rebuilding for supplier %d' % (os.path.basename(dataFileName), supplierNum))
                 # now we check again if we have the data on hand after rebuild at it is missing - send it
                 # but also check to not duplicate sending to this man   
                 # now sending is separated, see the file data_sender.py          
                 if self.localData[supplierNum] == 1 and self.missingData[supplierNum] == 1: # and self.dataSent[supplierNum] == 0:
-                    dhnio.Dprint(10, '            rebuilt a new Data for supplier %d' % supplierNum)
+                    io.log(10, '            rebuilt a new Data for supplier %d' % supplierNum)
                     newData = True
                     self.reconstructedData[supplierNum] = 1
                     # self.outstandingFilesList.append((dataFileName, self.BuildFileName(supplierNum, 'Data'), supplierNum))
@@ -204,7 +204,7 @@ class BlockRebuilder():
                         filename = self.BuildRaidFileName(supplierParity, 'Data')  # ??? why not 'Parity'
                         if os.path.isfile(filename): 
                             rebuildFileList.append(filename)
-                    dhnio.Dprint(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
+                    io.log(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
                     
                     
                     
@@ -213,16 +213,16 @@ class BlockRebuilder():
                     
                     
                     if os.path.exists(parityFileName):
-                        dhnio.Dprint(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
+                        io.log(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
                         self.localParity[supplierNum] = 1
             # so we have the parity on hand and it is missing - send it
             if self.localParity[supplierNum] == 1 and self.missingParity[supplierNum] == 1: # and self.paritySent[supplierNum] == 0:
-                dhnio.Dprint(10, '            rebuilt a new Parity for supplier %d' % supplierNum)
+                io.log(10, '            rebuilt a new Parity for supplier %d' % supplierNum)
                 newData = True
                 self.reconstructedParity[supplierNum] = 1
                 # self.outstandingFilesList.append((parityFileName, self.BuildFileName(supplierNum, 'Parity'), supplierNum))
                 # self.paritySent[supplierNum] = 1
-        dhnio.Dprint(14, 'block_rebuilder.AttemptRebuild END')
+        io.log(14, 'block_rebuilder.AttemptRebuild END')
         return newData
 
     def WorkDoneReport(self):

@@ -25,7 +25,7 @@ In identity.py we need to have spam-price published.
 Ok to put IDURL on web pages because can't get junk mail without making money.
 
 Message body is always encrypted with key of destination.
-We learn of payments when we get deposit receipt from either sender or accounts.datahaven.net.
+We learn of payments when we get deposit receipt from sender.
 We credit that contact.
 
 When message comes in we check if they have enough credit or if they are on the correspondent list.
@@ -63,16 +63,16 @@ except:
 from twisted.internet.defer import Deferred
 
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.misc as misc
-import lib.dhnpacket as dhnpacket
+import lib.packet as packet
 import lib.contacts as contacts
 import lib.commands as commands
 ##import lib.eccmap as eccmap
 import lib.settings as settings
 # import lib.transport_control as transport_control
 import lib.packetid as packetid
-import lib.dhncrypto as dhncrypto
+import lib.crypto as crypto
 import lib.nameurl as nameurl
 
 import userid.identity as identity
@@ -90,7 +90,7 @@ OnIncommingMessageFunc = None
 
 
 def init():
-    dhnio.Dprint(4,"message.init")
+    io.log(4,"message.init")
 ##    guimessage.UpdateCorrespondents()
 
 def ConnectCorrespondent(idurl):
@@ -105,16 +105,16 @@ class MessageClass:
     We always encrypt messages with a session key so we need to package with encrypted body.
     """
     def __init__(self, destinationidentity, messagebody):
-        dhnio.Dprint(8, "message.MessageClass making message ")
-        sessionkey = dhncrypto.NewSessionKey()
+        io.log(8, "message.MessageClass making message ")
+        sessionkey = crypto.NewSessionKey()
         keystring = destinationidentity.publickey
-        self.encryptedKey = dhncrypto.EncryptStringPK(keystring, sessionkey)
-        self.encryptedMessage = dhncrypto.EncryptWithSessionKey(sessionkey, messagebody)
+        self.encryptedKey = crypto.EncryptStringPK(keystring, sessionkey)
+        self.encryptedMessage = crypto.EncryptWithSessionKey(sessionkey, messagebody)
         
     def ClearBody(self):
-        sessionkey = dhncrypto.DecryptLocalPK(self.encryptedKey)
+        sessionkey = crypto.DecryptLocalPK(self.encryptedKey)
         # we only decrypt with LocalIdentity
-        return dhncrypto.DecryptWithSessionKey(sessionkey, self.encryptedMessage)
+        return crypto.DecryptWithSessionKey(sessionkey, self.encryptedMessage)
 
 def Message(request):
     """
@@ -126,14 +126,14 @@ def Message(request):
         5) send an "Ack" back to sender
     """
     global OnIncommingMessageFunc
-    dhnio.Dprint(6, "message.Message from " + str(request.OwnerID))
+    io.log(6, "message.Message from " + str(request.OwnerID))
     senderidentity = contacts.getCorrespondent(request.OwnerID)
     if not senderidentity:
-        dhnio.Dprint(4,"message.Message WARNING had sender not in correspondents list " + request.OwnerID)
+        io.log(4,"message.Message WARNING had sender not in correspondents list " + request.OwnerID)
         return
     Amessage = misc.StringToObject(request.Payload)
     if Amessage is None:
-        dhnio.Dprint(4,"message.Message WARNING wrong Payload, can not extract message from request")
+        io.log(4,"message.Message WARNING wrong Payload, can not extract message from request")
         return
     clearmessage = Amessage.ClearBody()
     SaveMessage(clearmessage)
@@ -143,7 +143,7 @@ def Message(request):
     p2p_service.SendAck(request)
 
 def MakeMessage(to, subj, body, dt=datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")):
-    dhnio.Dprint(6, "message.MakeMessage to " + to)
+    io.log(6, "message.MakeMessage to " + to)
     msg = ( misc.getLocalID(),
             to,
             subj,
@@ -162,7 +162,7 @@ def SplitMessage(clearmessage):
 
 def SaveMessage(clearmessage):
     msguid = UniqueID()
-    dhnio.Dprint(6, "message.SaveMessage %s" % msguid)
+    io.log(6, "message.SaveMessage %s" % msguid)
     msgfilename = os.path.join(settings.getMessagesDir(),  msguid+'.message')
     msgfile = file(msgfilename, 'w')
     msgfile.write(str(clearmessage))
@@ -188,9 +188,9 @@ def DeleteMessage(messageuid):
     try:
         os.remove(msgpath)
     except:
-        dhnio.DprintException()
+        io.exception()
         return False
-    dhnio.Dprint(6, "message.DeleteMessage %s" % messageuid)
+    io.log(6, "message.DeleteMessage %s" % messageuid)
     return True
 
 def SendMessage(RemoteID, messagebody, PacketID=""):
@@ -201,22 +201,22 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
     when it needs to do more than X retries.
     GUI calls this to send the message.
     """
-    dhnio.Dprint(6, "message.SendMessage to: " + str(RemoteID) )
+    io.log(6, "message.SendMessage to: " + str(RemoteID) )
     #TODO ERROR HERE (return Defer)
     if not identitycache.scheduleForCaching(RemoteID):
-        dhnio.Dprint(1, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
+        io.log(1, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
         return
     RemoteIdentity=identitycache.FromCache(RemoteID)
     if RemoteIdentity == '':
-        dhnio.Dprint(1, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
+        io.log(1, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
         return
     Amessage = MessageClass(RemoteIdentity, messagebody)
     MyID = misc.getLocalID()
     if PacketID == "":
         PacketID = packetid.UniqueID()
     Payload = misc.ObjectToString(Amessage)
-    dhnio.Dprint(6, "message.SendMessage  about to send to " + RemoteID)
-    result = dhnpacket.dhnpacket(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
+    io.log(6, "message.SendMessage  about to send to " + RemoteID)
+    result = packet.Signed(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
     # transport_control.outboxAck(result)
     gate.outbox(result)
 

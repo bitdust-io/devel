@@ -30,7 +30,7 @@ import os
 import time
 import hashlib
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.automat as automat
 import lib.misc as misc
 import lib.commands as commands
@@ -38,7 +38,7 @@ import lib.contacts as contacts
 import lib.tmpfile as tmpfile
 import lib.nameurl as nameurl
 import lib.settings as settings
-import lib.dhnnet as dhnnet
+import lib.net_misc as net_misc
 
 import userid.identitycache as identitycache
 
@@ -62,7 +62,7 @@ def queue():
 def create(outpacket, wide, callbacks):
     """
     """
-    # dhnio.Dprint(10, 'packet_out.create  %s' % str(outpacket))
+    # io.log(10, 'packet_out.create  %s' % str(outpacket))
     p = PacketOut(outpacket, wide, callbacks)
     queue().append(p)
     p.automat('run')
@@ -77,7 +77,7 @@ def search(proto, host, filename):
             if i.proto == proto:
                 return p, i
     for p in queue():
-        dhnio.Dprint(18, '%s [%s]' % (os.path.basename(p.filename), 
+        io.log(18, '%s [%s]' % (os.path.basename(p.filename), 
             ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
     return None, None
 
@@ -91,7 +91,7 @@ def search_by_transfer_id(transfer_id):
 
 
 def search_by_response_packet(newpacket):
-#    dhnio.Dprint(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
+#    io.log(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
 #        nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
 #        nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
@@ -104,7 +104,7 @@ def search_by_response_packet(newpacket):
         if target_idurl != p.outpacket.RemoteID:
             continue  
         result.append(p)
-        dhnio.Dprint(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
+        io.log(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
             nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID), 
             nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
             p.callbacks.keys()))
@@ -142,7 +142,7 @@ class PacketOut(automat.Automat):
                 self.remote_idurl = self.outpacket.CreatorID.strip()       
             else:
                 self.remote_idurl = None
-                dhnio.Dprint(2, 'packet_out.__init__ WARNING sending a packet we did not make, and that is not Data packet')
+                io.log(2, 'packet_out.__init__ WARNING sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contacts.getContact(self.remote_idurl)
         self.hash = '%s%s%s%s' % (str(self.time), self.outpacket.Command, 
                                   self.outpacket.PacketID, str(self.remote_idurl))
@@ -315,7 +315,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        # serialize and write dhnpacket on disk
+        # serialize and write packet on disk
         try:
             fileno, self.filename = tmpfile.make('outbox')
             self.packetdata = self.outpacket.Serialize()
@@ -324,7 +324,7 @@ class PacketOut(automat.Automat):
             self.filesize = len(self.packetdata)
             self.timeout = max(int(self.filesize/settings.SendingSpeedLimit()), settings.SendTimeOut())
         except:
-            dhnio.DprintException()
+            io.exception()
             self.packetdata = None
             self.automat('write-error')
             
@@ -379,10 +379,10 @@ class PacketOut(automat.Automat):
         for i in xrange(len(self.items)):
             if self.items[i].proto == proto: # and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
-                # dhnio.Dprint(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
+                # io.log(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
                 ok = True
         if not ok:
-            dhnio.Dprint(8, 'packet_out.doSetTransferID WARNING not found item for %r:%r' % (proto, host))
+            io.log(8, 'packet_out.doSetTransferID WARNING not found item for %r:%r' % (proto, host))
 
     def doSaveResponse(self, arg):
         """
@@ -499,7 +499,7 @@ class PacketOut(automat.Automat):
                         workitem_sent = True
             if not workitem_sent:
                 self.automat('nothing-to-send')
-                dhnio.Dprint(6, 'packet_out._push  (wide)  WARNING no supported protocols with %s' % self.remote_idurl)
+                io.log(6, 'packet_out._push  (wide)  WARNING no supported protocols with %s' % self.remote_idurl)
             else:
                 self.automat('items-sent')
             return
@@ -555,5 +555,5 @@ class PacketOut(automat.Automat):
                     self.automat('items-sent')
                     return
         self.automat('nothing-to-send')
-        dhnio.Dprint(6, 'packet_out._push WARNING no supported protocols with %s' % self.remote_idurl)
+        io.log(6, 'packet_out._push WARNING no supported protocols with %s' % self.remote_idurl)
         

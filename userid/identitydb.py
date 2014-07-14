@@ -15,7 +15,7 @@ Also keep track of changing identities sources and maintain a several "index" di
 
 import os
 
-import lib.dhnio as dhnio
+import lib.io as io
 import lib.settings as settings
 import lib.nameurl as nameurl
 
@@ -39,11 +39,11 @@ def init():
     Need to call before all other methods.
     Check to exist and create a folder to keep all cached identities.
     """
-    dhnio.Dprint(4,"identitydb.init")
+    io.log(4,"identitydb.init")
     iddir = settings.IdentityCacheDir()
     if not os.path.exists(iddir):
-        dhnio.Dprint(8, 'identitydb.init create folder ' + iddir)
-        dhnio._dir_make(iddir)
+        io.log(8, 'identitydb.init create folder ' + iddir)
+        io._dir_make(iddir)
 
 def clear(exclude_list=None):
     """
@@ -53,7 +53,7 @@ def clear(exclude_list=None):
     global _Contact2IDURL
     global _IPPort2IDURL
     global _IDURL2Contacts
-    dhnio.Dprint(4,"identitydb.clear")
+    io.log(4,"identitydb.clear")
     _IdentityCache.clear()
     _Contact2IDURL.clear()
     _IPPort2IDURL.clear()
@@ -72,7 +72,7 @@ def clear(exclude_list=None):
             if idurl in exclude_list:
                 continue 
         os.remove(path)
-        dhnio.Dprint(6, 'identitydb.clear remove ' + path)
+        io.log(6, 'identitydb.clear remove ' + path)
 
 def size():
     """
@@ -97,14 +97,14 @@ def idset(idurl, id_obj):
     global _IDURL2Contacts
     global _IPPort2IDURL
     if not has_key(idurl):
-        dhnio.Dprint(6, 'identitydb.idset new identity: ' + idurl)
+        io.log(6, 'identitydb.idset new identity: ' + idurl)
     _IdentityCache[idurl] = id_obj
     for contact in id_obj.getContacts():
         if not _Contact2IDURL.has_key(contact):
             _Contact2IDURL[contact] = set()
         else:
             if len(_Contact2IDURL[contact]) >= 1 and idurl not in _Contact2IDURL[contact]:
-                dhnio.Dprint(6, 'identitydb.idset WARNING another user have same contact: ' + str(list(_Contact2IDURL[contact])))
+                io.log(6, 'identitydb.idset WARNING another user have same contact: ' + str(list(_Contact2IDURL[contact])))
         _Contact2IDURL[contact].add(idurl)
         if not _IDURL2Contacts.has_key(idurl):
             _IDURL2Contacts[idurl] = set()
@@ -163,15 +163,15 @@ def get(url):
         try:
             partfilename = nameurl.UrlFilename(url)
         except:
-            dhnio.Dprint(1, "identitydb.get ERROR %s is incorrect" % str(url))
+            io.log(1, "identitydb.get ERROR %s is incorrect" % str(url))
             return None
         
         filename = os.path.join(settings.IdentityCacheDir(), partfilename)
         if not os.path.exists(filename):
-            dhnio.Dprint(6, "identitydb.get file %s not exist" % os.path.basename(filename))
+            io.log(6, "identitydb.get file %s not exist" % os.path.basename(filename))
             return None
         
-        idxml = dhnio.ReadTextFile(filename)
+        idxml = io.ReadTextFile(filename)
         if idxml:
             idobj = identity.identity(xmlsrc=idxml)
             url2 = idobj.getIDURL()
@@ -180,10 +180,10 @@ def get(url):
                 return idobj
             
             else:
-                dhnio.Dprint(1, "identitydb.get ERROR url=%s url2=%s" % (url, url2))
+                io.log(1, "identitydb.get ERROR url=%s url2=%s" % (url, url2))
                 return None
 
-        dhnio.Dprint(6, "identitydb.get %s not found" % nameurl.GetName(url))
+        io.log(6, "identitydb.get %s not found" % nameurl.GetName(url))
         return None
 
 def get_idurls_by_contact(contact):
@@ -208,37 +208,37 @@ def update(url, xml_src):
     try:
         newid = identity.identity(xmlsrc=xml_src)
     except:
-        dhnio.DprintException()
+        io.exception()
         return False
 
     if not newid.isCorrect():
-        dhnio.Dprint(1, "identitydb.update ERROR: incorrect identity " + str(url))
+        io.log(1, "identitydb.update ERROR: incorrect identity " + str(url))
         return False
 
     try:
         if not newid.Valid():
-            dhnio.Dprint(1, "identitydb.update ERROR identity not Valid" + str(url))
+            io.log(1, "identitydb.update ERROR identity not Valid" + str(url))
             return False
     except:
-        dhnio.DprintException()
+        io.exception()
         return False
 
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(url))
     if os.path.exists(filename):
-        oldidentityxml = dhnio.ReadTextFile(filename)
+        oldidentityxml = io.ReadTextFile(filename)
         oldidentity = identity.identity(xmlsrc=oldidentityxml)
 
         if oldidentity.publickey != newid.publickey:
-            dhnio.Dprint(1, "identitydb.update ERROR new publickey does not match old : SECURITY VIOLATION " + url)
+            io.log(1, "identitydb.update ERROR new publickey does not match old : SECURITY VIOLATION " + url)
             return False
 
         if oldidentity.signature != newid.signature:
-            dhnio.Dprint(6, 'identitydb.update have new data for ' + nameurl.GetName(url))
+            io.log(6, 'identitydb.update have new data for ' + nameurl.GetName(url))
         else:
             idset(url, newid)
             return True
 
-    dhnio.WriteFile(filename, xml_src)             # publickeys match so we can update it
+    io.WriteFile(filename, xml_src)             # publickeys match so we can update it
     idset(url, newid)
 
     return True
@@ -249,11 +249,11 @@ def remove(url):
     """
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(url))
     if os.path.isfile(filename):
-        dhnio.Dprint(6, "identitydb.remove file %s" % filename)
+        io.log(6, "identitydb.remove file %s" % filename)
         try:
             os.remove(filename)
         except:
-            dhnio.DprintException()
+            io.exception()
     idremove(url)
 
 def update_local_ips_dict(local_ips_dict):
@@ -297,10 +297,10 @@ def print_id(url):
     """
     if has_key(url):
         idForKey = get(url)
-        dhnio.Dprint(6, str(idForKey.sources) )
-        dhnio.Dprint(6, str(idForKey.contacts ))
-        dhnio.Dprint(6, str(idForKey.publickey ))
-        dhnio.Dprint(6, str(idForKey.signature ))
+        io.log(6, str(idForKey.sources) )
+        io.log(6, str(idForKey.contacts ))
+        io.log(6, str(idForKey.publickey ))
+        io.log(6, str(idForKey.signature ))
 
 def print_keys():
     """
@@ -308,7 +308,7 @@ def print_keys():
     """
     global _IdentityCache
     for key in _IdentityCache.keys():
-        dhnio.Dprint(6, key)
+        io.log(6, key)
 
 def print_cache():
     """
@@ -316,7 +316,7 @@ def print_cache():
     """
     global _IdentityCache
     for key in _IdentityCache.keys():
-        dhnio.Dprint(6, "---------------------" )
+        io.log(6, "---------------------" )
         print_id(key)
 
 

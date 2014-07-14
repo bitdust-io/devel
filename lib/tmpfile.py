@@ -23,7 +23,7 @@ import time
 from twisted.internet import reactor, task
 
 
-import dhnio
+import io
 
 
 _TempDirPath = None
@@ -106,7 +106,7 @@ def init(temp_dir_path=''):
         - call ``startup_clean()``
         - starts collector task to call method ``collect()`` every 5 minutes
     """
-    dhnio.Dprint(4, 'tmpfile.init')
+    io.log(4, 'tmpfile.init')
     global _TempDirPath
     global _SubDirs
     global _FilesDict
@@ -123,24 +123,24 @@ def init(temp_dir_path=''):
                 try:
                     os.mkdir(temp_dir)
                 except:
-                    dhnio.Dprint(2, 'tmpfile.init ERROR can not create ' + temp_dir)
-                    dhnio.DprintException()
+                    io.log(2, 'tmpfile.init ERROR can not create ' + temp_dir)
+                    io.exception()
                     temp_dir = os_temp_dir
 
             if not os.access(temp_dir, os.W_OK):
-                dhnio.Dprint(2, 'tmpfile.init ERROR no write permissions to ' + temp_dir)
+                io.log(2, 'tmpfile.init ERROR no write permissions to ' + temp_dir)
                 temp_dir = os_temp_dir
 
             _TempDirPath = temp_dir
-        dhnio.Dprint(6, 'tmpfile.init  _TempDirPath=' + _TempDirPath)
+        io.log(6, 'tmpfile.init  _TempDirPath=' + _TempDirPath)
 
     for name in _SubDirs.keys():
         if not os.path.exists(subdir(name)):
             try:
                 os.makedirs(subdir(name))
             except:
-                dhnio.Dprint(2, 'tmpfile.init ERROR can not create ' + subdir(name))
-                dhnio.DprintException()
+                io.log(2, 'tmpfile.init ERROR can not create ' + subdir(name))
+                io.exception()
 
     for name in _SubDirs.keys():
         if not _FilesDict.has_key(name):
@@ -157,7 +157,7 @@ def shutdown():
     """
     Do not need to remove any files here, just stop the collector task.
     """
-    dhnio.Dprint(4, 'tmpfile.shutdown')
+    io.log(4, 'tmpfile.shutdown')
     global _CollectorTask
     if _CollectorTask is not None:
         _CollectorTask.stop()
@@ -203,10 +203,10 @@ def make(name, extension='', prefix=''):
         fd, filename = tempfile.mkstemp(extension, prefix, subdir(name))
         _FilesDict[name][filename] = time.time()
     except:
-        dhnio.Dprint(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
-        dhnio.DprintException()
+        io.log(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
+        io.exception()
         return None, ''
-    dhnio.Dprint(18, 'tmpfile.make ' + filename)
+    io.log(18, 'tmpfile.make ' + filename)
     return fd, filename
 
 
@@ -220,24 +220,24 @@ def erase(name, filename, why='no reason'):
         try:
             _FilesDict[name].pop(filename, '')
         except:
-            dhnio.Dprint(4, 'tmpfile.erase WARNING we do not know about file %s in sub folder %s' %(filename, name))
+            io.log(4, 'tmpfile.erase WARNING we do not know about file %s in sub folder %s' %(filename, name))
     else:
-        dhnio.Dprint(4, 'tmpfile.erase WARNING we do not know sub folder ' + name)
+        io.log(4, 'tmpfile.erase WARNING we do not know sub folder ' + name)
 
     if not os.path.exists(filename):
-        dhnio.Dprint(6, 'tmpfile.erase WARNING %s not exist' % filename)
+        io.log(6, 'tmpfile.erase WARNING %s not exist' % filename)
         return
 
     if not os.access(filename, os.W_OK):
-        dhnio.Dprint(4, 'tmpfile.erase WARNING %s no write permissions' % filename)
+        io.log(4, 'tmpfile.erase WARNING %s no write permissions' % filename)
         return
 
     try:
         os.remove(filename)
-        # dhnio.Dprint(24, 'tmpfile.erase [%s] : "%s"' % (filename, why))
+        # io.log(24, 'tmpfile.erase [%s] : "%s"' % (filename, why))
     except:
-        dhnio.Dprint(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
-        #dhnio.DprintException()
+        io.log(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
+        #io.exception()
 
 
 def throw_out(filepath, why='dont know'):
@@ -255,7 +255,7 @@ def collect():
     """
     Removes old temporary files.
     """
-    # dhnio.Dprint(10, 'tmpfile.collect')
+    # io.log(10, 'tmpfile.collect')
     global _FilesDict
     global _SubDirs
     erase_list = []
@@ -280,24 +280,9 @@ def collect():
     for name, filename in erase_list:
         erase(name, filename, 'collected')
 
-    dhnio.Dprint(6, 'tmpfile.collect %d files erased' % len(erase_list))
+    io.log(6, 'tmpfile.collect %d files erased' % len(erase_list))
 
     del erase_list
-
-#    # small fix to solve problem with temp files in the old location
-#    try:
-#        old_path = os.path.join(os.path.expanduser('~'), 'datahavennet','temp')
-#        if os.path.exists(old_path):
-#            for filename in os.listdir(old_path):
-#                filepath = os.path.join(old_path, filename)
-#                try:
-#                    os.remove(filepath)
-#                    dhnio.Dprint(12, 'tmpfile.erase [%s] deleted because "%s"' % (filepath, 'old location'))
-#                except:
-#                    dhnio.Dprint(2, 'tmpfile.erase ERROR can not remove ' + filepath)
-#    except:
-#        dhnio.DprintException()
-
 
 
 def startup_clean():
@@ -307,7 +292,7 @@ def startup_clean():
     """
     global _TempDirPath
     global _SubDirs
-    dhnio.Dprint(6, 'tmpfile.startup_clean in %s' % _TempDirPath)
+    io.log(6, 'tmpfile.startup_clean in %s' % _TempDirPath)
     if _TempDirPath is None:
         return
     counter = 0
@@ -336,25 +321,11 @@ def startup_clean():
                     if counter > 200:
                         break
 
-#    # small fix to solve problem with temp files in the old location
-#    try:
-#        old_path = os.path.join(os.path.expanduser('~'), 'datahavennet','temp')
-#        if os.path.exists(old_path):
-#            for filename in os.listdir(old_path):
-#                filepath = os.path.join(old_path, filename)
-#                try:
-#                    os.remove(filepath)
-#                    dhnio.Dprint(12, 'tmpfile.erase [%s] deleted because "%s"' % (filepath, 'old location'))
-#                except:
-#                    dhnio.Dprint(2, 'tmpfile.erase ERROR can not remove ' + filepath)
-#    except:
-#        dhnio.DprintException()
-
 #------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
-    dhnio.SetDebug(18)
+    io.SetDebug(18)
     init()
     fd, filename = make('raid')
     os.write(fd, 'TEST FILE')

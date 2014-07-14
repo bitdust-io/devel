@@ -1365,9 +1365,8 @@ class MyApp(wx.App):
         self.busyInfo = None
         self.ready = False
         # WriteText('MyApp.__init__: %s\n' % url)
-        output_path = sharedPath('dhnview-err.log')
+        output_path = sharedPath('view-err.log')
         wx.App.__init__(self, not ShowLogs, output_path)
-        #self.set_icon_from_file('datahaven.xpm')
 
     def OnInit(self):
         global GUISettingsExists
@@ -1477,14 +1476,14 @@ class MyApp(wx.App):
 class MyClientProtocol(basic.LineReceiver):
     connectedFlag = False
     def connectionMade(self):
-        self.transport.write('DATAHAVEN-VIEW-REQUEST\r\n')
+        self.transport.write('BITPIE-VIEW-REQUEST\r\n')
 
     def lineReceived(self, line):
         cmd = line.strip()
         #WriteText('>>>' + cmd + '\n')
-        if cmd.startswith('DATAHAVEN-SERVER:'):
+        if cmd.startswith('BITPIE-SERVER:'):
             self.connectedFlag = True
-            state = cmd.replace('DATAHAVEN-SERVER:', '')
+            state = cmd.replace('BITPIE-SERVER:', '')
             self.factory.app.OnCommand('state:' + state)
             return
         if not self.connectedFlag:

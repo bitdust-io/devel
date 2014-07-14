@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnnet.py
+#net_misc.py
 #
 #
 # <<<COPYRIGHT>>>
@@ -8,7 +8,7 @@
 #
 #
 """
-.. module:: dhnnet
+.. module:: net_misc
 
 Some network routines
 """ 
@@ -26,7 +26,7 @@ import mimetypes
 try:
     from twisted.internet import reactor
 except:
-    sys.exit('Error initializing twisted.internet.reactor in dhnnet.py')
+    sys.exit('Error initializing twisted.internet.reactor in net_misc.py')
 
 from twisted.internet.defer import Deferred, DeferredList, succeed, fail
 from twisted.internet import ssl
@@ -79,7 +79,7 @@ def SetConnectionDoneCallbackFunc(f):
 def SetConnectionFailedCallbackFunc(f):
     """
     Set a callback to catch events for ````failed```` network transfers or connections.
-    Later, DHN code will compare both counters to decide that connection to Internet is gone. 
+    Later, BitPie.NET code will compare both counters to decide that connection to Internet is gone. 
     """
     global _ConnectionFailedCallbackFunc
     _ConnectionFailedCallbackFunc = f
@@ -609,7 +609,7 @@ def SendEmail(TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES):
     s.close()
 
 #    except:
-#        dhnio.DprintException()
+#        io.exception()
 
 
 #-------------------------------------------------------------------------------
