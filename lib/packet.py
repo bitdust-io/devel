@@ -221,7 +221,7 @@ def Unserialize(data):
     if type(newobject) != types.InstanceType:
         io.log(6, "packet.Unserialize WARNING not an instance: " + str(newobject))
         return None
-    if not str(newobject.__class__).count('packet.packet'):
+    if not str(newobject.__class__).count('packet.Signed'):
         io.log(6, "packet.Unserialize WARNING not a packet: " + str(newobject.__class__))
         return None
     return newobject
