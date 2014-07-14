@@ -42,6 +42,7 @@ EVENTS:
     * :red:`backup_rebuilder.state`
     * :red:`fire-hire-finished`
     * :red:`init`
+    * :red:`instant`
     * :red:`list-backups-done`
     * :red:`list_files_orator.state`
     * :red:`restart`
@@ -118,10 +119,12 @@ class BackupMonitor(automat.Automat):
         #---READY---
         if self.state == 'READY':
             if event == 'init' :
+                self.RestartAgain=False
                 self.doSuppliersInit(arg)
                 backup_rebuilder.A('init')
-            elif event == 'restart' :
+            elif event == 'restart' or ( event == 'instant' and self.RestartAgain ) :
                 self.state = 'FIRE_HIRE'
+                self.RestartAgain=False
                 fire_hire.A('restart')
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
@@ -132,6 +135,8 @@ class BackupMonitor(automat.Automat):
                 backup_db_keeper.A('restart')
                 data_sender.A('restart')
                 self.doPrepareListBackups(arg)
+            elif event == 'restart' :
+                self.RestartAgain=True
         #---LIST_BACKUPS---
         elif self.state == 'LIST_BACKUPS':
             if event == 'list-backups-done' :
@@ -140,6 +145,8 @@ class BackupMonitor(automat.Automat):
             elif event == 'restart' :
                 self.state = 'FIRE_HIRE'
                 fire_hire.A('restart')
+            elif event == 'restart' :
+                self.RestartAgain=True
         #---REBUILDING---
         elif self.state == 'REBUILDING':
             if event == 'restart' :
@@ -162,6 +169,8 @@ class BackupMonitor(automat.Automat):
                 self.state = 'LIST_FILES'
                 self.doUpdateSuppliers(arg)
                 list_files_orator.A('need-files')
+            elif event == 'restart' :
+                self.RestartAgain=True
 
     def isSuppliersNumberChanged(self, arg):
         """

@@ -161,6 +161,8 @@ class FireHire(automat.Automat):
         self.dismiss_results = []
         self.new_suppliers = []
         self.configs = (None, None)
+        self.restart_interval = 1.0
+        self.restart_task = None
 
     def state_changed(self, oldstate, newstate):
         """
@@ -200,24 +202,24 @@ class FireHire(automat.Automat):
                 supplier_finder.A('start')
         #---HIRE_ONE---
         elif self.state == 'HIRE_ONE':
-            if event == 'supplier-connected' and self.isMoreNeeded(arg) :
-                self.doSubstituteSupplier(arg)
-                supplier_finder.A('start')
-            elif event == 'search-failed' :
+            if event == 'search-failed' :
                 self.state = 'READY'
                 self.doClearDismissList(arg)
                 self.doScheduleNextRestart(arg)
                 backup_monitor.A('fire-hire-finished')
-            elif event == 'supplier-connected' and not self.isMoreNeeded(arg) and not self.isSomeoneToDismiss(arg) :
-                self.state = 'READY'
-                self.doSubstituteSupplier(arg)
-                backup_monitor.A('suppliers-changed')
-            elif event == 'supplier-connected' and not self.isMoreNeeded(arg) and self.isSomeoneToDismiss(arg) :
+            elif event == 'restart' :
+                self.NeedRestart=True
+            elif event == 'supplier-connected' and not self.isStillNeeded(arg) and self.isSomeoneToDismiss(arg) :
                 self.state = 'FIRE_MANY'
                 self.doSubstituteSupplier(arg)
                 self.doDisconnectSuppliers(arg)
-            elif event == 'restart' :
-                self.NeedRestart=True
+            elif event == 'supplier-connected' and not self.isStillNeeded(arg) and not self.isSomeoneToDismiss(arg) :
+                self.state = 'READY'
+                self.doSubstituteSupplier(arg)
+                backup_monitor.A('suppliers-changed')
+            elif event == 'supplier-connected' and self.isStillNeeded(arg) :
+                self.doSubstituteSupplier(arg)
+                supplier_finder.A('start')
         #---FIRE_MANY---
         elif self.state == 'FIRE_MANY':
             if event == 'timer-15sec' :
@@ -256,9 +258,17 @@ class FireHire(automat.Automat):
         if '' in contacts.getSupplierIDs():
             io.log(4, 'fire_hire.isMoreNeeded WARNING found empty suppliers!!!')
             return True
-        io.log(14, 'fire_hire.isMoreNeeded %d %d %d' % (
-            contacts.numSuppliers(), len(self.dismiss_list), settings.getCentralNumSuppliers()))
-        return contacts.numSuppliers() - len(self.dismiss_list) < settings.getCentralNumSuppliers()
+        if isinstance(arg, list):
+            dismissed = arg
+        else:
+            dismissed = self.dismiss_list
+        s = set(contacts.getSupplierIDs())
+        s.difference_update(set(dismissed))
+        result = len(s) < settings.getCentralNumSuppliers() 
+        io.log(14, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
+            contacts.numSuppliers(), len(dismissed), len(s), 
+            settings.getCentralNumSuppliers(), result))
+        return result
 
     def isAllReady(self, arg):
         """
@@ -278,7 +288,25 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        return len(arg) > 0
+        if isinstance(arg, list):
+            dismissed = arg
+        else:
+            dismissed = self.dismiss_list
+        return len(dismissed) > 0
+
+    def isStillNeeded(self, arg):
+        """
+        Condition method.
+        """
+        supplier_idurl = arg
+        s = set(contacts.getSupplierIDs())
+        s.add(supplier_idurl)
+        s.difference_update(set(self.dismiss_list))
+        result = len(s) < settings.getCentralNumSuppliers() 
+        io.log(14, 'fire_hire.isStillNeeded %d %d %d %d, result=%s' % (
+            contacts.numSuppliers(), len(self.dismiss_list), len(s), 
+            settings.getCentralNumSuppliers(), result))
+        return result
 
     def isConfigChanged(self, arg):
         """
@@ -331,7 +359,7 @@ class FireHire(automat.Automat):
         if contacts.numSuppliers() > settings.getCentralNumSuppliers():
             for supplier_index in range(settings.getCentralNumSuppliers(), contacts.numSuppliers()):
                 result.add(contacts.getSupplierID(supplier_index))
-        result = list(result) 
+        result = list(result)
         io.log(10, 'fire_hire.doDecideToDismissSuppliers %s' % result)
         self.automat('made-decision', result)
 
@@ -378,6 +406,7 @@ class FireHire(automat.Automat):
                 io.log(2, '!!!!!!!!!!! SUBSTITUTE SUPPLIER %d : %s->%s' % (position, old_idurl, new_idurl))
             else:
                 io.log(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (position, new_idurl))
+        self.restart_interval = 1.0
 
     def doRemoveSuppliers(self, arg):
         """
@@ -404,7 +433,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        io.log(10, 'fire_hire.doDismissSuppliers %r' % self.dismiss_list)
+        io.log(10, 'fire_hire.doDisconnectSuppliers %r' % self.dismiss_list)
         self.dismiss_results = []
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -444,8 +473,17 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        reactor.callLater(60, self.automat, 'restart')
-
+        if not self.restart_task:
+            self.restart_task = reactor.callLater(self.restart_interval, self._scheduled_restart)
+            io.log(10, 'fire_hire.doScheduleNextRestart after %d sec.' % self.restart_interval)
+            self.restart_interval *= 1.1
+        else:
+            io.log(10, 'fire_hire.doScheduleNextRestart already scheduled - %d sec. left' % (
+                time.time() - self.restart_task.getTime()))
+            
+    def _scheduled_restart(self): 
+        self.restart_task = None
+        self.automat('restart')
 
     def _supplier_connector_state_changed(self, idurl, newstate):
         io.log(14, 'fire_hire._supplier_connector_state_changed %s %s, state=%s' % (
