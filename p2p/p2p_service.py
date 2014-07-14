@@ -324,9 +324,10 @@ def RequestService(request):
         try:
             mb_for_customer = round(float(request.Payload.split(' ')[1]), 2)
         except:
+            io.exception()
             mb_for_customer = None
         if not mb_for_customer:
-            io.log(6, "p2p_service.RequestService WARNING got wrong payload in %s" % request)
+            io.log(6, "p2p_service.RequestService WARNING got wrong payload : %s" % request.Payload)
             return SendFail(request, 'bad payload')
         mb_donated = diskspace.GetMegaBytesFromString(settings.getCentralMegabytesDonated())
         space_dict = io._read_dict(settings.CustomersSpaceFile(), {'free': str(mb_donated)})
