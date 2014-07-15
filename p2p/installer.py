@@ -124,18 +124,15 @@ class Installer(automat.Automat):
             if event == 'init' :
                 self.state = 'WHAT_TO_DO?'
                 self.flagCmdLine=False
-                self.doIncreaseDebugLevel(arg)
             elif event == 'register-cmd-line' :
                 self.state = 'REGISTER'
                 self.flagCmdLine=True
                 self.doInit(arg)
-                self.doIncreaseDebugLevel(arg)
                 id_registrator.A('start', arg)
             elif event == 'recover-cmd-line' :
                 self.state = 'RECOVER'
                 self.flagCmdLine=True
                 self.doInit(arg)
-                self.doIncreaseDebugLevel(arg)
                 id_restorer.A('start', arg)
         #---WHAT_TO_DO?---
         elif self.state == 'WHAT_TO_DO?':
@@ -321,10 +318,12 @@ class Installer(automat.Automat):
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['idurl'] = idurl
 
-    def doIncreaseDebugLevel(self, arg):
-        if self.flagCmdLine and not io.Debug(10):
-            io.SetDebug(0)
-        # else:
-        #     io.SetDebug(18)
+#    def doIncreaseDebugLevel(self, arg):
+#        """
+#        """
+#        if self.flagCmdLine and not io.Debug(10):
+#            io.SetDebug(0)
+#        else:
+#            io.SetDebug(18)
 
 

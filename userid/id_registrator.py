@@ -275,8 +275,8 @@ class IdRegistrator(automat.Automat):
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))            
         for host in self.discovered_servers:
-            webport, tcpport = known_servers.by_host().get(
-                host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
+            webport, tcpport = known_servers.by_host().get(host, 
+                (settings.IdentityWebPort(), settings.IdentityServerPort()))
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', host, webport, '')
