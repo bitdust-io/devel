@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnbackup.py
+#bppipe.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 if __name__ == "__main__":
-    import p2p.dhnbackup
-    p2p.dhnbackup.main()
+    import p2p.bppipe
+    p2p.bppipe.main()
 
 

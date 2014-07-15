@@ -493,7 +493,7 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
     """
     Writes info for a single piece of data into "remote" matrix.
     May be called when you got an Ack packet from remote supplier 
-    after you sent him some Data packet. 
+    after you sent him some Data packet . 
     """
     blockNum = int(blockNum)
     supplierNum = int(supplierNum)

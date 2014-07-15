@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnblock.py
+#encrypted_block.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,9 +8,9 @@
 #
 
 """
-.. module:: dhnblock
+.. module:: encrypted_block
 
-Higher level code interfaces with ``dhnblock`` so that it does not have to deal
+Higher level code interfaces with ``encrypted_block`` so that it does not have to deal
 with ECC stuff.  We write or read a large block at a time (maybe 64 MB say).
 When writing we generate all the ECC information, and when reading we will
 use ECC to recover lost information so user sees whole block still.
@@ -28,13 +28,13 @@ We number them with our block number and the supplier numbers.
 
 Going to disk should let us do restarts after crashes without much trouble.
 
-Digital signatures and timestamps are done on ``dhnblocks``.
+Digital signatures and timestamps are done on ``encrypted_blocks``.
 Signatures are also done on ``packets``.
 
 RAIDMAKE:
-    This object can be asked to generate any/all ``packet(s)`` that would come from this ``dhnblock``.
+    This object can be asked to generate any/all ``packet(s)`` that would come from this ``encrypted_block``.
 RAIDREAD:
-    It can also rebuild the ``dhnblock`` from packets and will
+    It can also rebuild the ``encrypted_block`` from packets and will
     generate the read requests to get fetch the packets.
 """
 
@@ -52,7 +52,7 @@ import lib.contacts as contacts
 
 
 
-class dhnblock:
+class Block:
     """
     A class to represent an encrypted Data block.
     The only 2 things secret in here will be the ``EncryptedSessionKey`` and ``EncryptedData``.
@@ -85,7 +85,7 @@ class dhnblock:
         self.Sign()
 
     def __repr__(self):
-        return 'dhnblock (BackupID=%s BlockNumber=%s Length=%s LastBlock=%s)' % (str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
+        return 'encrypted_block (BackupID=%s BlockNumber=%s Length=%s LastBlock=%s)' % (str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)
 
     def SessionKey(self):
         """
@@ -95,7 +95,7 @@ class dhnblock:
 
     def GenerateHashBase(self):
         """
-        Generate a single string with all data fields, used to create a hash for that ``dhnblock``.
+        Generate a single string with all data fields, used to create a hash for that ``encrypted_block``.
         """
         sep = "::::"
         StringToHash = self.CreatorID + sep + self.BackupID + sep + str(self.BlockNumber) + sep + self.SessionKeyType + sep + self.EncryptedSessionKey + sep + str(self.Length) + sep + str(self.LastBlock) + sep + self.EncryptedData
@@ -103,13 +103,13 @@ class dhnblock:
 
     def GenerateHash(self):
         """
-        Create a hash for that ``dhnblock`` using ``lib.crypto.Hash()``.
+        Create a hash for that ``encrypted_block`` using ``lib.crypto.Hash()``.
         """
         return crypto.Hash(self.GenerateHashBase())
 
     def Sign(self):
         """
-        Generate digital signature for that ``dhnblock``.
+        Generate digital signature for that ``encrypted_block``.
         """
         self.Signature = self.GenerateSignature()  # usually just done at packet creation
         return self
@@ -128,15 +128,15 @@ class dhnblock:
 
     def Valid(self):
         """
-        Validate signature to verify the ``dhnblock``.
+        Validate signature to verify the ``encrypted_block``.
         """
         if not self.Ready():
-            io.log(4, "dhnblock.Valid WARNING block is not ready yet " + str(self))
+            io.log(4, "encrypted_block.Valid WARNING block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
         ConIdentity = contacts.getContact(misc.getLocalID())
         if ConIdentity is None:
-            io.log(2, "dhnblock.Valid WARNING could not get Identity so returning False")
+            io.log(2, "encrypted_block.Valid WARNING could not get Identity so returning False")
             return False
         result = crypto.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
         return result
@@ -151,16 +151,17 @@ class dhnblock:
 
     def Serialize(self):
         """
-        Create a string that stores all data fields of that ``dhnblock`` object.
-        Used to save ``dhnblock`` to a file on HDD.
+        Create a string that stores all data fields of that ``encrypted_block`` object.
+        Used to save ``encrypted_block`` to a file on HDD.
         """
         e = misc.ObjectToString(self)
         return e
 
+
 def Unserialize(data):
     """
-    A method to create a ``dhnblock`` instance from input string.
-    Used to read ``dhnblocks`` from a local file. 
+    A method to create a ``encrypted_block`` instance from input string.
+    Used to read ``encrypted_blocks`` from a local file. 
     """
     newobject = misc.StringToObject(data)
     return newobject

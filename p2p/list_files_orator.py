@@ -141,15 +141,15 @@ class ListFilesOrator(Automat):
 
 
 
-def IncomingListFiles(packet):
+def IncomingListFiles(newpacket):
     """
     Called from ``p2p.backup_control`` to pass incoming "ListFiles" packet here.
     """
     global _RequestedListFilesPacketIDs
     global _RequestedListFilesCounter
     _RequestedListFilesCounter += 1
-    _RequestedListFilesPacketIDs.discard(packet.OwnerID)
-    A('inbox-files', packet)
+    _RequestedListFilesPacketIDs.discard(newpacket.OwnerID)
+    A('inbox-files', newpacket)
     
     
 

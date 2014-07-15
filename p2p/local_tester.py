@@ -25,7 +25,7 @@ Also, after a system crash we need to check that things are ok and cleanup
 and partial stuff, like maybe backupid/outgoing/tmp where block was being
 converted to a bunch of packets but the conversion was not finished.
 
-So has to open/parse the ``packet`` but that code is part of packet.py
+So has to open/parse the ``packet`` but that code is part of signed_packet.py
 
 The concept of "fail fast" is what we are after here.  If there is a failure we
 want to know about it fast, so we can fix it fast, so the chance of multiple

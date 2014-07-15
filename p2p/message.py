@@ -65,7 +65,7 @@ from twisted.internet.defer import Deferred
 
 import lib.io as io
 import lib.misc as misc
-import lib.packet as packet
+import lib.signed_packet as signed_packet
 import lib.contacts as contacts
 import lib.commands as commands
 ##import lib.eccmap as eccmap
@@ -216,7 +216,7 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
         PacketID = packetid.UniqueID()
     Payload = misc.ObjectToString(Amessage)
     io.log(6, "message.SendMessage  about to send to " + RemoteID)
-    result = packet.Signed(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
+    result = signed_packet.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
     # transport_control.outboxAck(result)
     gate.outbox(result)
 

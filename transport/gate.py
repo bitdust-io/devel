@@ -72,7 +72,7 @@ import lib.settings as settings
 import lib.commands as commands
 import lib.nameurl as nameurl
 import lib.tmpfile as tmpfile
-import lib.packet as packet
+import lib.signed_packet as signed_packet
 
 import userid.identitycache as identitycache
 
@@ -291,11 +291,11 @@ def inbox(info):
     2) We unserialize
     3) We check that it is for us
     4) We check that it is from one of our contacts.
-    5) We use packet.validate() to check signature and that number fields are numbers
-    6) Any other sanity checks we can do and if anything funny we toss out the packet.
-    7) Then change the filename to the packet.PackedID that it should be.
+    5) We use signed_packet.validate() to check signature and that number fields are numbers
+    6) Any other sanity checks we can do and if anything funny we toss out the packet .
+    7) Then change the filename to the PackedID that it should be.
        and call the right function(s) for this new packet
-       (dhnblock, scrubber, remotetester, customerservice, ...)
+       (encrypted_block, scrubber, remotetester, customerservice, ...)
        to dispatch it to right place(s).
     8) We have to keep track of bandwidth to/from everyone, and make a report every 24 hours
        which we send to DHN sometime in the 24 hours after that.
@@ -317,7 +317,7 @@ def inbox(info):
         io.log(1, "gate.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
         return None
     try:
-        newpacket = packet.Unserialize(data)
+        newpacket = signed_packet.Unserialize(data)
     except:
         io.log(1, "gate.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
         io.exception()
@@ -709,7 +709,7 @@ def main():
     if len(args) > 0:
         globals()['num_out'] = 0
         def _s():
-            p = packet.Signed(commands.Data(), misc.getLocalID(), 
+            p = signed_packet.Packet(commands.Data(), misc.getLocalID(), 
                                     misc.getLocalID(), misc.getLocalID(), 
                                     io.ReadBinaryFile(args[1]), args[0])
             outbox(p, wide=True)

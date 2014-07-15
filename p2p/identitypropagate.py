@@ -35,7 +35,7 @@ from twisted.internet.defer import DeferredList, Deferred
 import lib.io as io
 import lib.misc as misc
 import lib.nameurl as nameurl
-import lib.packet as packet
+import lib.signed_packet as signed_packet
 import lib.crypto as crypto
 import lib.contacts as contacts
 import lib.commands as commands
@@ -284,16 +284,16 @@ def HandleSuppliersAck(ackpacket, info):
     """
     Called when supplier is "Acked" to my after call to ``SendSuppliers()``. 
     """
-    Num = contacts.numberForSupplier(ackpacket.OwnerID)
-    io.log(8, "identitypropagate.HandleSupplierAck ")
+    # Num = contacts.numberForSupplier(ackpacket.OwnerID)
+    io.log(8, "identitypropagate.HandleSupplierAck %s" % ackpacket.OwnerID)
 
 
 def HandleCustomersAck(ackpacket, info):
     """
     Called when supplier is "Acked" to my after call to ``SendCustomers()``. 
     """
-    Num = contacts.numberForCustomer(ackpacket.OwnerID)
-    io.log(8, "identitypropagate.HandleCustomerAck ")
+    # Num = contacts.numberForCustomer(ackpacket.OwnerID)
+    io.log(8, "identitypropagate.HandleCustomerAck %s" % ackpacket.OwnerID)
 
 
 def HandleAck(ackpacket, info):
@@ -310,14 +310,14 @@ def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
     thePayload = Payload
     if thePayload is None:
         thePayload = misc.getLocalIdentity().serialize()
-    p = packet.Signed(
+    p = signed_packet.Packet(
         commands.Identity(),
         misc.getLocalID(), #MyID,
         misc.getLocalID(), #MyID,
         'identity', # misc.getLocalID(), #PacketID,
         thePayload,
         idurl)
-    # callback.register_interest(AckHandler, packet.RemoteID, packet.PacketID)
+    # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
     gate.outbox(p, wide, callbacks={
         commands.Ack(): AckHandler,
         commands.Fail(): AckHandler}) 
@@ -368,7 +368,7 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
 #        if found_previous_packets >= 3:
 #            io.log(8, '        skip sending to %s' % contact)
 #            continue    
-        p = packet.Signed(
+        p = signed_packet.Packet(
             commands.Identity(),
             misc.getLocalID(), #MyID,
             misc.getLocalID(), #MyID,
@@ -376,7 +376,7 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
             Payload,
             contact)
         io.log(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
-        # callback.register_interest(AckHandler, packet.RemoteID, packet.PacketID)
+        # callback.register_interest(AckHandler, signed_packet.RemoteID, signed_packet.PacketID)
         gate.outbox(p, wide, callbacks={
             commands.Ack(): AckHandler,
             commands.Fail(): AckHandler}) 

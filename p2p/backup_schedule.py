@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#backupshedule.py
+#backup_schedule.py
 #
 #
 # <<<COPYRIGHT>>>
@@ -10,7 +10,7 @@
 #
 
 """
-.. module:: backupshedule
+.. module:: backup_schedule
 
 A set of methods to run backups at given intervals, used to provide scheduled backups. 
 
@@ -28,7 +28,7 @@ import calendar
 try:
     from twisted.internet import reactor
 except:
-    sys.exit('Error initializing twisted.internet.reactor in backupshedule.py')
+    sys.exit('Error initializing twisted.internet.reactor in backup_schedule.py')
 
 from twisted.internet.defer import Deferred
 
@@ -44,10 +44,7 @@ import lib.misc as misc
 import lib.maths as maths
 
 
-import dobackup
-import backup_db
 import backup_monitor
-import p2p_service
 import webcontrol
 
 
@@ -62,28 +59,28 @@ _GuiBackupUpdate = None
 def init(usingGui = False):
     global _UsingGUI
     _UsingGUI = usingGui
-    io.log(4, 'backupshedule.init ')
+    io.log(4, 'backup_schedule.init ')
     loop()
 
 
 def shutdown():
-    io.log(4, 'backupshedule.shutdown ')
+    io.log(4, 'backup_schedule.shutdown ')
     global _SheduledTasks
     for dirName, task in _SheduledTasks.items():
         try:
             task.cancel()
         except:
-            io.log(1, 'backupshedule.shutdown ERROR can not stop task for ' + str(dirName))
+            io.log(1, 'backup_schedule.shutdown ERROR can not stop task for ' + str(dirName))
             io.exception()
-        io.log(4, 'backupshedule.shutdown canceled: ' + str(dirName))
+        io.log(4, 'backup_schedule.shutdown canceled: ' + str(dirName))
 
 
 def loop():
-    io.log(8, 'backupshedule.loop ')
+    io.log(8, 'backup_schedule.loop ')
     #debugWrite("in loop about to run at "+str(time.asctime(time.localtime(time.time()))))
-    run()
+    # run()
     #debugWrite("in loop finished run, setting callLater")
-    reactor.callLater(timeout(), loop)
+    # reactor.callLater(timeout(), loop)
 
 
 #will check all Shedules each 60 minutes
@@ -91,127 +88,127 @@ def timeout():
     return 60.0*60.0
 
 
-def run():
-    global _SheduledTasks
-    try:
-        io.log(8, 'backupshedule.run ')
-        for dirName in backup_db.GetBackupDirectories():
-            io.log(8, 'backupshedule.run %s' % dirName)
-            if backup_db.IsBackupRunning(dirName):
-                io.log(8, 'backupshedule.run %s is running at the moment, skip.' % dirName)
-                continue
-
-            next_start = next(dirName)
-
-            if next_start is None:
-                # io.log(8, '  backupshedule.run next_start is None')
-                continue
-
-            if next_start < 0:
-                continue
-
-            now = time.time()
-            delay = next_start - now
-            io.log(8, '  backupshedule.run delay=%s next_start=[%s]' % (str(delay), str(time.asctime(time.localtime(next_start)))))
-            if delay > 0 and delay < timeout():
-                if _SheduledTasks.has_key(unicode(dirName)):
-                    io.log(8, 'backupshedule.run cancel previous task')
-                    try:
-                        _SheduledTasks[unicode(dirName)].cancel()
-                    except:
-                        pass # may have already run or already been cancelled, nothing to cancel
-                    del _SheduledTasks[unicode(dirName)]
-                _SheduledTasks[unicode(dirName)] = reactor.callLater(delay, start_backup, dirName)
-                # io.log(8, '  backupshedule.run will start after %s seconds' % (str(delay)))
-                # io.log(8, '  backupshedule.run getTime()=' + str(_SheduledTasks[unicode(dirName)].getTime()))
-
-    except:
-        io.exception()
-
-
-def start_backup(dirName):
-    global _SheduledTasks
-    if _SheduledTasks.has_key(unicode(dirName)): # we're running now, no longer need the schedule
-        del _SheduledTasks[unicode(dirName)]
-    io.log(6, 'backupshedule.start_backup ' + str(dirName))
-
-    if not backup_db.CheckDirectory(dirName):
-        return
-
-    bid = misc.NewBackupID()
-    # backups.AddBackupInProcess(bid)
-    recursive_subfolders = backup_db.GetDirectorySubfoldersInclude(dirName)
-    dir_size = io.getDirectorySize(dirName, recursive_subfolders)
-    result = Deferred()
-    result.addCallback(backup_done)
-    result.addErrback(backup_fail)
-    dobackup.dobackup(bid, dirName, dir_size, recursive_subfolders, webcontrol.OnBackupDataPacketResult, result)
-
-    global _UsingGUI
-    global _GuiBackupUpdate
-    if _UsingGUI:
-        _GuiBackupUpdate()
+#def run():
+#    global _SheduledTasks
+#    try:
+#        io.log(8, 'backup_schedule.run ')
+#        for dirName in backup_db.GetBackupDirectories():
+#            io.log(8, 'backup_schedule.run %s' % dirName)
+#            if backup_db.IsBackupRunning(dirName):
+#                io.log(8, 'backup_schedule.run %s is running at the moment, skip.' % dirName)
+#                continue
+#
+#            next_start = next(dirName)
+#
+#            if next_start is None:
+#                # io.log(8, '  backup_schedule.run next_start is None')
+#                continue
+#
+#            if next_start < 0:
+#                continue
+#
+#            now = time.time()
+#            delay = next_start - now
+#            io.log(8, '  backup_schedule.run delay=%s next_start=[%s]' % (str(delay), str(time.asctime(time.localtime(next_start)))))
+#            if delay > 0 and delay < timeout():
+#                if _SheduledTasks.has_key(unicode(dirName)):
+#                    io.log(8, 'backup_schedule.run cancel previous task')
+#                    try:
+#                        _SheduledTasks[unicode(dirName)].cancel()
+#                    except:
+#                        pass # may have already run or already been cancelled, nothing to cancel
+#                    del _SheduledTasks[unicode(dirName)]
+#                _SheduledTasks[unicode(dirName)] = reactor.callLater(delay, start_backup, dirName)
+#                # io.log(8, '  backup_schedule.run will start after %s seconds' % (str(delay)))
+#                # io.log(8, '  backup_schedule.run getTime()=' + str(_SheduledTasks[unicode(dirName)].getTime()))
+#
+#    except:
+#        io.exception()
 
 
-def backup_done(backupID):
-    io.log(4, 'backupshedule.backup_done ' + str(backupID))
-
-    global _UsingGUI
-    global _GuiBackupUpdate
-    global _GuiStatusClearPageData
-
-    if _UsingGUI:
-        _GuiStatusClearPageData(backupID)
-
-    aborted = False
-    if backupID.endswith(' abort'):
-        backupID = backupID[:-6]
-        aborted = True
-
-    backupDir = backup_db.GetDirectoryFromBackupId(backupID)
-    if backupDir == "" or backupDir is None:
-        io.log(6, 'backupshedule.backup_done  can not find %s  it in database' % backupID)
-        return
-
-    if aborted:
-        backupDir = backup_db.GetDirectoryFromBackupId(backupID)
-        backup_db.SetBackupStatus(backupDir, backupID, "stopped", "")
-    else:
-        backupDir = backup_db.GetDirectoryFromBackupId(backupID)
-        backup_db.SetBackupStatus(backupDir, backupID, "done", str(time.time()))
-    backup_db.Save()
-
-    # backups.RemoveBackupInProcess(backupID)
-    backup_monitor.Restart()
-
-    if aborted:
-        if _UsingGUI:
-            _GuiBackupUpdate()
-    else:
-        if _UsingGUI:
-            _GuiBackupUpdate()
+#def start_backup(dirName):
+#    global _SheduledTasks
+#    if _SheduledTasks.has_key(unicode(dirName)): # we're running now, no longer need the schedule
+#        del _SheduledTasks[unicode(dirName)]
+#    io.log(6, 'backup_schedule.start_backup ' + str(dirName))
+#
+#    if not backup_db.CheckDirectory(dirName):
+#        return
+#
+#    bid = misc.NewBackupID()
+#    # backups.AddBackupInProcess(bid)
+#    recursive_subfolders = backup_db.GetDirectorySubfoldersInclude(dirName)
+#    dir_size = io.getDirectorySize(dirName, recursive_subfolders)
+#    result = Deferred()
+#    result.addCallback(backup_done)
+#    result.addErrback(backup_fail)
+#    dobackup.dobackup(bid, dirName, dir_size, recursive_subfolders, webcontrol.OnBackupDataPacketResult, result)
+#
+#    global _UsingGUI
+#    global _GuiBackupUpdate
+#    if _UsingGUI:
+#        _GuiBackupUpdate()
 
 
-def backup_fail(backupID):
-    io.log(4, 'backupshedule.backup_fail ' + str(backupID))
-    global _UsingGUI
-    global _GuiBackupUpdate
-    global _GuiStatusClearPageData
-    if _UsingGUI:
-        _GuiStatusClearPageData(backupID)
+#def backup_done(backupID):
+#    io.log(4, 'backup_schedule.backup_done ' + str(backupID))
+#
+#    global _UsingGUI
+#    global _GuiBackupUpdate
+#    global _GuiStatusClearPageData
+#
+#    if _UsingGUI:
+#        _GuiStatusClearPageData(backupID)
+#
+#    aborted = False
+#    if backupID.endswith(' abort'):
+#        backupID = backupID[:-6]
+#        aborted = True
+#
+#    backupDir = backup_db.GetDirectoryFromBackupId(backupID)
+#    if backupDir == "" or backupDir is None:
+#        io.log(6, 'backup_schedule.backup_done  can not find %s  it in database' % backupID)
+#        return
+#
+#    if aborted:
+#        backupDir = backup_db.GetDirectoryFromBackupId(backupID)
+#        backup_db.SetBackupStatus(backupDir, backupID, "stopped", "")
+#    else:
+#        backupDir = backup_db.GetDirectoryFromBackupId(backupID)
+#        backup_db.SetBackupStatus(backupDir, backupID, "done", str(time.time()))
+#    backup_db.Save()
+#
+#    # backups.RemoveBackupInProcess(backupID)
+#    backup_monitor.Restart()
+#
+#    if aborted:
+#        if _UsingGUI:
+#            _GuiBackupUpdate()
+#    else:
+#        if _UsingGUI:
+#            _GuiBackupUpdate()
 
-    backupDir = backup_db.GetDirectoryFromBackupId(backupID)
-    if backupDir == "" or backupDir is None:
-        io.log(6, 'backupshedule.backup_fail  can not find %s  it in database' % str(backupID))
-        return
 
-    backup_db.SetBackupStatus(backupDir, backupID, "failed", "")
-    backup_db.Save()
-    # backups.RemoveBackupInProcess(backupID)
-    backup_monitor.Restart()
-
-    if _UsingGUI:
-        _GuiBackupUpdate()
+#def backup_fail(backupID):
+#    io.log(4, 'backup_schedule.backup_fail ' + str(backupID))
+#    global _UsingGUI
+#    global _GuiBackupUpdate
+#    global _GuiStatusClearPageData
+#    if _UsingGUI:
+#        _GuiStatusClearPageData(backupID)
+#
+#    backupDir = backup_db.GetDirectoryFromBackupId(backupID)
+#    if backupDir == "" or backupDir is None:
+#        io.log(6, 'backup_schedule.backup_fail  can not find %s  it in database' % str(backupID))
+#        return
+#
+#    backup_db.SetBackupStatus(backupDir, backupID, "failed", "")
+#    backup_db.Save()
+#    # backups.RemoveBackupInProcess(backupID)
+#    backup_monitor.Restart()
+#
+#    if _UsingGUI:
+#        _GuiBackupUpdate()
 
 
 def task(dirName=None):
@@ -225,12 +222,12 @@ def next(dirName):
     global _SheduledTasks
 #    lastRunId, lastRunSize, lastRunStatus, lastRunStart, lastRunFinish = backup_db.GetLastRunInfo(dirName)
 #    schedule_type, schedule_time, schedule_interval, interval_details = backup_db.GetSchedule(dirName)
-    schedule = backup_db.GetSchedule(dirName)
+    schedule = None # backup_db.GetSchedule(dirName)
     if schedule is None:
         return None
 
-#    io.log(8, 'backupshedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
-#    io.log(8, 'backupshedule.next %s %s' % (str(dirName), schedule))
+#    io.log(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
+#    io.log(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
 
     return schedule.next_time()
     
@@ -355,22 +352,22 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #            sh_interval = int(sh_interval)
 #            time.strptime(sh_time, '%H:%M')
 #    except:
-#        io.log(2, 'backupshedule.unpack WARNING incorrect shedule '+s)
+#        io.log(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
 #        io.exception()
 #        return None
 #    if sh_type in labels().keys():
 #        sh_type = labels()[sh_type]
 #    if sh_type not in labels().values():
-#        io.log(2, 'backupshedule.unpack WARNING incorrect shedule '+s)
+#        io.log(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
 #        return None
 #    sh_details_new = ''
 #    for i in range(len(sh_details)/3):
 #        label = sh_details[i*3:i*3+3]
 #        if sh_type == 'weekly' and not label in calendar.day_abbr:
-#            io.log(2, 'backupshedule.unpack WARNING incorrect shedule '+s)
+#            io.log(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
 #            return None
 #        if sh_type == 'monthly' and not label in calendar.month_abbr:
-#            io.log(2, 'backupshedule.unpack WARNING incorrect shedule '+s)
+#            io.log(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
 #            return None
 #        sh_details_new += label + ' '
 #    return {'type': sh_type,
@@ -384,7 +381,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #    if typ in types().keys():
 #        typ = types()[typ]
 #    if typ not in types().values():
-#        io.log(2, 'backupshedule.split WARNING incorrect shedule '+str(t))
+#        io.log(2, 'backup_schedule.split WARNING incorrect shedule '+str(t))
 #        return default()
 #    return {
 #        'type':         typ,
@@ -396,19 +393,19 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #-------------------------------------------------------------------------------
 
 
-def main():
-    nt = maths.shedule_next_daily(time.time()-60*60*24*2, 4, '12:00')
-    print 'daily', time.asctime(time.localtime(nt))
-    nw = maths.shedule_next_weekly(time.time(),1,'12:00', [0,])
-    print 'weekly', time.asctime(time.localtime(nw))
-    nm = maths.shedule_next_monthly(time.time(),1,'12:00', [1,])
-    print 'monthly', time.asctime(time.localtime(nm))
-    print unpack('weekly.4.18:45.MonTueWedThuFriSatSun')
-    print unpack('h.1')
+#def main():
+#    nt = maths.shedule_next_daily(time.time()-60*60*24*2, 4, '12:00')
+#    print 'daily', time.asctime(time.localtime(nt))
+#    nw = maths.shedule_next_weekly(time.time(),1,'12:00', [0,])
+#    print 'weekly', time.asctime(time.localtime(nw))
+#    nm = maths.shedule_next_monthly(time.time(),1,'12:00', [1,])
+#    print 'monthly', time.asctime(time.localtime(nm))
+#    print unpack('weekly.4.18:45.MonTueWedThuFriSatSun')
+#    print unpack('h.1')
 
 
 if __name__ == '__main__':
     io.SetDebug(12)
-    main()
+    # main()
 
 

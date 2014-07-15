@@ -43,22 +43,22 @@ def block_restored_callback(backupID, block):
         OnRestoreBlockFunc(backupID, block)
 
 
-def packet_in_callback(backupID, packet):
+def packet_in_callback(backupID, newpacket):
     # io.log(8, 'restore_monitor.packet_in_callback ' + backupID)
     global _WorkingRestoreProgress
     global OnRestorePacketFunc
     
-    SupplierNumber = packet.SupplierNumber()
+    SupplierNumber = newpacket.SupplierNumber()
     
     #want to count the data we restoring
     if SupplierNumber not in _WorkingRestoreProgress[backupID].keys():
         _WorkingRestoreProgress[backupID][SupplierNumber] = 0
-    _WorkingRestoreProgress[backupID][SupplierNumber] += len(packet.Payload)
+    _WorkingRestoreProgress[backupID][SupplierNumber] += len(newpacket.Payload)
     
-    backup_matrix.LocalFileReport(packet.PacketID)
+    backup_matrix.LocalFileReport(newpacket.PacketID)
     
     if OnRestorePacketFunc is not None:
-        OnRestorePacketFunc(backupID, SupplierNumber, packet)
+        OnRestorePacketFunc(backupID, SupplierNumber, newpacket)
 
 
 def extract_done(retcode, backupID, tarfilename, callback):

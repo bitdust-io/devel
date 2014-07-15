@@ -25,8 +25,8 @@ and not gotten data packets from a supplier we can flag him as suspect-bad
 and start requesting a parity packet to cover him right away.
 
 When we are missing a data packet we pick a parity packet where we have all the
-other data packets for that parity so we can recover the missing data packet.
-This network cost for this is just as low as if we read the data packet.
+other data packets for that parity so we can recover the missing data packet .
+This network cost for this is just as low as if we read the data packet .
 But most of the time we won't bother reading the parities.  Just uses up bandwidth.
 
 We don't want to fire someone till
@@ -88,7 +88,7 @@ import lib.automat as automat
 import raid.raid_worker as raid_worker
 
 # import raidread
-import dhnblock
+import encrypted_block
 import io_throttle
 import events
 import contact_status
@@ -333,7 +333,7 @@ class restore(automat.Automat):
         try:
             datalength = int(lengthstring)                                  # real length before raidmake/ECC
             blockdata = blockbits[splitindex+1:splitindex+1+datalength]     # remove padding from raidmake/ECC
-            newblock = dhnblock.Unserialize(blockdata)                      # convert to object
+            newblock = encrypted_block.Unserialize(blockdata)                      # convert to object
         except:
             datalength = 0
             blockdata = ''

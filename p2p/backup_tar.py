@@ -19,8 +19,8 @@ We call that "tar" because standard TAR utility is used
 to read data from files and folders and create a single data stream.
 This data stream is passed via ``Pipe`` to the main process.
  
-This module execute a sub process "dhnbackup" - pretty simple TAR compressor, 
-see ``p2p.dhnbackup`` module.
+This module execute a sub process "bppipe" - pretty simple TAR compressor, 
+see ``p2p.bppipe`` module.
 """
 
 import os
@@ -59,13 +59,13 @@ def backuptar(directorypath, recursive_subfolders=True, compress=None):
     # io.log(14, "backup_tar.backuptar %s %s compress=%s" % (directorypath, subdirs, compress))
     if io.Windows():
         if io.isFrozen():
-            commandpath = "dhnbackup.exe"
+            commandpath = "bppipe.exe"
             cmdargs = [commandpath, subdirs, compress, directorypath]
         else:
-            commandpath = "dhnbackup.py"
+            commandpath = "bppipe.py"
             cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath]
     else:
-        commandpath = "dhnbackup.py"
+        commandpath = "bppipe.py"
         cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath]
     if not os.path.isfile(commandpath):
         io.log(1, 'backup_tar.backuptar ERROR %s not found' % commandpath)
@@ -89,13 +89,13 @@ def backuptarfile(filepath, compress=None):
     # io.log(14, "backup_tar.backuptarfile %s compress=%s" % (filepath, compress))
     if io.Windows():
         if io.isFrozen():
-            commandpath = "dhnbackup.exe"
+            commandpath = "bppipe.exe"
             cmdargs = [commandpath, 'nosubdirs', compress, filepath]
         else:
-            commandpath = "dhnbackup.py"
+            commandpath = "bppipe.py"
             cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath]
     else:
-        commandpath = "dhnbackup.py"
+        commandpath = "bppipe.py"
         cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath]
     if not os.path.isfile(commandpath):
         io.log(1, 'backup_tar.backuptarfile ERROR %s not found' % commandpath)
@@ -108,7 +108,7 @@ def backuptarfile(filepath, compress=None):
 
 def extracttar(tarfile, outdir):
     """
-    Opposite method, run dhnbackup to extract files and folders from ".tar" file.
+    Opposite method, run bppipe to extract files and folders from ".tar" file.
     """
     if not os.path.isfile(tarfile):
         io.log(1, 'backup_tar.extracttar ERROR %s not found' % tarfile)
@@ -116,13 +116,13 @@ def extracttar(tarfile, outdir):
     # io.log(12, "backup_tar.extracttar %s %s" % (tarfile, outdir))
     if io.Windows():
         if io.isFrozen():
-            commandpath = 'dhnbackup.exe'
+            commandpath = 'bppipe.exe'
             cmdargs = [commandpath, 'extract', tarfile, outdir]
         else:
-            commandpath = "dhnbackup.py"
+            commandpath = "bppipe.py"
             cmdargs = [sys.executable, commandpath, 'extract', tarfile, outdir]
     else:
-        commandpath = "dhnbackup.py"
+        commandpath = "bppipe.py"
         cmdargs = [sys.executable, commandpath, 'extract', tarfile, outdir]
     if not os.path.isfile(commandpath):
         io.log(1, 'backup_tar.extracttar ERROR %s is not found' % commandpath)

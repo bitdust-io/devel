@@ -80,7 +80,7 @@ except:
     except:
         sys.exit()
 
-import lib.packet as packet
+import lib.signed_packet as signed_packet
 import lib.contacts as contacts
 import lib.commands as commands
 import lib.misc as misc
@@ -218,7 +218,7 @@ def makeFilename(customerID, packetID):
 #------------------------------------------------------------------------------
 
 def SendAck(packettoack, response=''):
-    result = packet.Signed(commands.Ack(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed_packet.Packet(commands.Ack(), misc.getLocalID(), misc.getLocalID(), 
                                  packettoack.PacketID, response, packettoack.OwnerID)
     io.log(8, "p2p_service.SendAck %s to %s" % (result.PacketID, result.RemoteID))
     gate.outbox(result)
@@ -233,7 +233,7 @@ def Ack(newpacket):
      
     
 def SendFail(request, response=''):
-    result = packet.Signed(commands.Fail(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed_packet.Packet(commands.Fail(), misc.getLocalID(), misc.getLocalID(), 
                                  request.PacketID, response, request.OwnerID) # request.CreatorID)
     io.log(8, "transport_control.SendFail %s to %s" % (result.PacketID, result.RemoteID))
     gate.outbox(result)
@@ -303,14 +303,14 @@ def RequestIdentity(request):
     PacketID = request.PacketID
     identitystr = misc.getLocalIdentity().serialize()
     io.log(8, "p2p_service.RequestIdentity returning ")
-    result = packet.Signed(commands.Identity(), MyID, MyID, PacketID, identitystr, RemoteID)
+    result = signed_packet.Packet(commands.Identity(), MyID, MyID, PacketID, identitystr, RemoteID)
     gate.outbox(result, False)
        
 def SendIdentity(remote_idurl, wide=False):
     """
     """
     io.log(8, "p2p_service.SendIdentity to %s" % nameurl.GetName(remote_idurl))
-    result = packet.Signed(commands.Identity(), misc.getLocalID(), 
+    result = signed_packet.Packet(commands.Identity(), misc.getLocalID(), 
                                  misc.getLocalID(), 'identity', # misc.getLocalID(),
                                  misc.getLocalIdentity().serialize(), remote_idurl)
     gate.outbox(result, wide)
@@ -353,7 +353,7 @@ def RequestService(request):
     
 def SendRequestService(remote_idurl, service_info, response_callback=None):
     io.log(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
-    result = packet.Signed(commands.RequestService(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed_packet.Packet(commands.RequestService(), misc.getLocalID(), misc.getLocalID(), 
                                  packetid.UniqueID(), service_info, remote_idurl)
     gate.outbox(result, callbacks={
         commands.Ack(): response_callback,
@@ -385,7 +385,7 @@ def CancelService(request):
 
 def SendCancelService(remote_idurl, service_info, response_callback=None):
     io.log(8, "p2p_service.SendCancelService [%s]" % service_info)
-    result = packet.Signed(commands.CancelService(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed_packet.Packet(commands.CancelService(), misc.getLocalID(), misc.getLocalID(), 
                                  packetid.UniqueID(), service_info, remote_idurl)
     gate.outbox(result, callbacks={
         commands.Ack(): response_callback,
@@ -410,22 +410,22 @@ def ListFiles(request):
     if not os.path.isdir(ownerdir):
         io.log(8, "p2p_service.ListFiles did not find customer dir " + ownerdir)
         src = PackListFiles('', Payload)
-        result = packet.Signed(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
+        result = signed_packet.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
         gate.outbox(result)
         return result
     plaintext = TreeSummary(ownerdir)
     src = PackListFiles(plaintext, Payload)
-    result = packet.Signed(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
+    result = signed_packet.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
     gate.outbox(result)
     return result       
 
 
-def Files(packet):
+def Files(newpacket):
     """
     A directory list came in from some supplier.
     """
-    io.log(8, "p2p_service.Files from [%s]" % nameurl.GetName(packet.OwnerID))
-    backup_control.IncomingSupplierListFiles(packet)
+    io.log(8, "p2p_service.Files from [%s]" % nameurl.GetName(newpacket.OwnerID))
+    backup_control.IncomingSupplierListFiles(newpacket)
    
 #------------------------------------------------------------------------------ 
 
@@ -520,18 +520,18 @@ def Retrieve(request):
         io.log(4, "p2p_service.Retrieve WARNING empty data on disk " + filename)
         SendFail(request, 'empty data on disk')
         return
-    packet = packet.Unserialize(data)
+    outpacket = signed_packet.Unserialize(data)
     del data 
-    if packet is None:
+    if outpacket is None:
         io.log(4, "p2p_service.Retrieve WARNING Unserialize fails, not Valid packet " + filename)
         SendFail(request, 'unserialize fails')
         return
-    if not packet.Valid():
+    if not outsigned_packet.Valid():
         io.log(4, "p2p_service.Retrieve WARNING unserialized packet is not Valid " + filename)
         SendFail(request, 'unserialized packet is not Valid')
         return
-    io.log(8, "p2p_service.Retrieve sending %r back to %s" % (packet, nameurl.GetName(packet.CreatorID)))
-    gate.outbox(packet)
+    io.log(8, "p2p_service.Retrieve sending %r back to %s" % (outpacket, nameurl.GetName(outsigned_packet.CreatorID)))
+    gate.outbox(outpacket)
 
 #------------------------------------------------------------------------------ 
 
@@ -576,7 +576,7 @@ def SendDeleteFile(SupplierID, pathID):
     MyID = misc.getLocalID()
     PacketID = pathID
     RemoteID = SupplierID
-    result = packet.Signed(commands.DeleteFile(),  MyID, MyID, PacketID, "", RemoteID)
+    result = signed_packet.Packet(commands.DeleteFile(),  MyID, MyID, PacketID, "", RemoteID)
     gate.outbox(result)
     return result
     
@@ -587,7 +587,7 @@ def SendDeleteListPaths(SupplierID, ListPathIDs):
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
     Payload = '\n'.join(ListPathIDs)
-    result = packet.Signed(commands.DeleteFile(),  MyID, MyID, PacketID, Payload, RemoteID)
+    result = signed_packet.Packet(commands.DeleteFile(),  MyID, MyID, PacketID, Payload, RemoteID)
     gate.outbox(result)
     return result
 
@@ -632,7 +632,7 @@ def SendDeleteBackup(SupplierID, BackupID):
     MyID = misc.getLocalID()
     PacketID = BackupID
     RemoteID = SupplierID
-    result = packet.Signed(commands.DeleteBackup(),  MyID, MyID, PacketID, "", RemoteID)
+    result = signed_packet.Packet(commands.DeleteBackup(),  MyID, MyID, PacketID, "", RemoteID)
     gate.outbox(result)
     return result
 
@@ -642,7 +642,7 @@ def SendDeleteListBackups(SupplierID, ListBackupIDs):
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
     Payload = '\n'.join(ListBackupIDs)
-    result = packet.Signed(commands.DeleteBackup(),  MyID, MyID, PacketID, Payload, RemoteID)
+    result = signed_packet.Packet(commands.DeleteBackup(),  MyID, MyID, PacketID, Payload, RemoteID)
     gate.outbox(result)
     return result
 
@@ -707,7 +707,7 @@ def RequestListFiles(supplierNumORidurl):
     MyID = misc.getLocalID()
     PacketID = packetid.UniqueID()
     Payload = settings.ListFilesFormat()
-    result = packet.Signed(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
+    result = signed_packet.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)
     gate.outbox(result)
     return result
 

@@ -41,7 +41,7 @@ except:
 
 import lib.io as io
 import lib.settings as settings
-import lib.packet as packet
+import lib.signed_packet as signed_packet
 import lib.commands as commands
 import lib.misc as misc
 import lib.tmpfile as tmpfile
@@ -354,7 +354,7 @@ class SupplierQueue:
             # prepare the packet
             dt = time.time()
             Payload = str(io.ReadBinaryFile(fileToSend.fileName))
-            newpacket = packet.Signed(
+            newpacket = signed_packet.Packet(
                 commands.Data(), 
                 fileToSend.ownerID, 
                 self.creatorID, 
@@ -421,39 +421,40 @@ class SupplierQueue:
             reactor.callLater(0, self.SendingTask)
             
 
-    def FileSendAck(self, packet, info):    
+    def FileSendAck(self, newpacket, info):    
         if self.shutdown: 
             io.log(10, "io_throttle.FileSendAck finishing to %s, shutdown is True" % self.remoteName)
             return
         self.ackedCount += 1
-        if packet.PacketID not in self.fileSendQueue:
-            io.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending queue for %s" % (packet.PacketID, self.remoteName))
+        if newpacket.PacketID not in self.fileSendQueue:
+            io.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending queue for %s" % (signed_packet.PacketID, self.remoteName))
             return
-        if packet.PacketID not in self.fileSendDict.keys():
-            io.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending dict for %s" % (packet.PacketID, self.remoteName))
+        if newpacket.PacketID not in self.fileSendDict.keys():
+            io.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending dict for %s" % (signed_packet.PacketID, self.remoteName))
             return
-        self.fileSendDict[packet.PacketID].ackTime = time.time()
-        if packet.Command == commands.Ack():
-            self.fileSendDict[packet.PacketID].result = 'acked'
-            if self.fileSendDict[packet.PacketID].callOnAck:
-                reactor.callLater(0, self.fileSendDict[packet.PacketID].callOnAck, packet, packet.OwnerID, packet.PacketID)
-        elif packet.Command == commands.Fail():
-            self.fileSendDict[packet.PacketID].result = 'failed'
-            if self.fileSendDict[packet.PacketID].callOnFail:
-                reactor.callLater(0, self.fileSendDict[packet.PacketID].callOnFail, packet.CreatorID, packet.PacketID, 'failed')
-        sc = supplier_connector.by_idurl(packet.OwnerID)
+        self.fileSendDict[newpacket.PacketID].ackTime = time.time()
+        if newpacket.Command == commands.Ack():
+            self.fileSendDict[newpacket.PacketID].result = 'acked'
+            if self.fileSendDict[newpacket.PacketID].callOnAck:
+                reactor.callLater(0, self.fileSendDict[newpacket.PacketID].callOnAck, newpacket, newpacket.OwnerID, newpacket.PacketID)
+        elif newpacket.Command == commands.Fail():
+            self.fileSendDict[newpacket.PacketID].result = 'failed'
+            if self.fileSendDict[newpacket.PacketID].callOnFail:
+                reactor.callLater(0, self.fileSendDict[newpacket.PacketID].callOnFail, newpacket.CreatorID, newpacket.PacketID, 'failed')
+        sc = supplier_connector.by_idurl(newpacket.OwnerID)
         if sc:
-            if packet.Command == commands.Ack():
-                sc.automat('ack', packet)
-            elif packet.Command == commands.Fail():
-                sc.automat('fail', packet)
-            elif packet.Command == commands.Data():
-                sc.automat('data', packet)
+            if newpacket.Command == commands.Ack():
+                sc.automat('ack', newpacket)
+            elif newpacket.Command == commands.Fail():
+                sc.automat('fail', newpacket)
+            elif newpacket.Command == commands.Data():
+                sc.automat('data', newpacket)
             else:
                 raise Exception('incorrect packet type received')
         self.DoSend()
         # self.RunSend()
-        io.log(14, "io_throttle.FileSendAck %s from %s, queue=%d" % (str(packet), self.remoteName, len(self.fileSendQueue)))
+        io.log(14, "io_throttle.FileSendAck %s from %s, queue=%d" % (
+            str(newpacket), self.remoteName, len(self.fileSendQueue)))
 
         
     def FileSendFailed(self, RemoteID, PacketID, why):
@@ -523,7 +524,7 @@ class SupplierQueue:
                     io.log(10, "io_throttle.RunRequest for packetID " + fileRequest.packetID)
                     # transport_control.RegisterInterest(self.DataReceived,fileRequest.creatorID,fileRequest.packetID)
                     # callback.register_interest(self.DataReceived, fileRequest.creatorID, fileRequest.packetID)
-                    newpacket = packet.Signed(
+                    newpacket = signed_packet.Packet(
                         commands.Retrieve(), 
                         fileRequest.ownerID, 
                         fileRequest.creatorID, 
@@ -578,30 +579,31 @@ class SupplierQueue:
                 self.RequestTask()
 
 
-    def DataReceived(self, packet, info):   
+    def DataReceived(self, newpacket, info):   
         # we requested some data from a supplier, just received it
         if self.shutdown: 
             # if we're closing down this queue (supplier replaced, don't any anything new)
             return
-        if packet.PacketID in self.fileRequestQueue:
-            self.fileRequestQueue.remove(packet.PacketID)
-        if packet.Command == commands.Data():
-            if self.fileRequestDict.has_key(packet.PacketID):
-                self.fileRequestDict[packet.PacketID].fileReceivedTime = time.time()
-                self.fileRequestDict[packet.PacketID].result = 'received'
-                for callBack in self.fileRequestDict[packet.PacketID].callOnReceived:
-                    callBack(packet, 'received')
-        elif packet.Command == commands.Fail():
-            if self.fileRequestDict.has_key(packet.PacketID):
-                self.fileRequestDict[packet.PacketID].fileReceivedTime = time.time()
-                self.fileRequestDict[packet.PacketID].result = 'failed'
-                for callBack in self.fileRequestDict[packet.PacketID].callOnReceived:
-                    callBack(packet, 'failed')
+        if newpacket.PacketID in self.fileRequestQueue:
+            self.fileRequestQueue.remove(newpacket.PacketID)
+        if newpacket.Command == commands.Data():
+            if self.fileRequestDict.has_key(newpacket.PacketID):
+                self.fileRequestDict[newpacket.PacketID].fileReceivedTime = time.time()
+                self.fileRequestDict[newpacket.PacketID].result = 'received'
+                for callBack in self.fileRequestDict[newpacket.PacketID].callOnReceived:
+                    callBack(newpacket, 'received')
+        elif newpacket.Command == commands.Fail():
+            if self.fileRequestDict.has_key(newpacket.PacketID):
+                self.fileRequestDict[newpacket.PacketID].fileReceivedTime = time.time()
+                self.fileRequestDict[newpacket.PacketID].result = 'failed'
+                for callBack in self.fileRequestDict[newpacket.PacketID].callOnReceived:
+                    callBack(newpacket, 'failed')
         else:
             raise Exception('incorrect response command')    
-        if self.fileRequestDict.has_key(packet.PacketID):
-            del self.fileRequestDict[packet.PacketID]
-        io.log(10, "io_throttle.DataReceived %s from %s, queue=%d" % (packet, self.remoteName, len(self.fileRequestQueue)))
+        if self.fileRequestDict.has_key(newpacket.PacketID):
+            del self.fileRequestDict[newpacket.PacketID]
+        io.log(10, "io_throttle.DataReceived %s from %s, queue=%d" % (
+            newpacket, self.remoteName, len(self.fileRequestQueue)))
         self.DoRequest()
 
 
@@ -777,7 +779,7 @@ class IOThrottle:
     
     def HasBackupIDInSendQueue(self, supplierIDURL, backupID):
         """
-        Same to ``HasPacketInSendQueue()``, but looks for packets for the whole backup, not just a single packet.
+        Same to ``HasPacketInSendQueue()``, but looks for packets for the whole backup, not just a single packet .
         """
         if not self.supplierQueues.has_key(supplierIDURL):
             return False

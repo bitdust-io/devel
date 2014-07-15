@@ -231,17 +231,17 @@ def Validate():
                 except:
                     printlog('Validate ERROR removing ' + path)
                     return False
-            packet = Unserialize(packetsrc)
-            if packet is None:
+            p = Unserialize(packetsrc)
+            if p is None:
                 try:
                     os.remove(path) # if is is no good it is of no use to anyone
                     printlog('Validate ' + path + ' removed (unserialize error)')
                 except:
                     printlog('Validate ERROR removing ' + path)
                     return False
-            result = packet.Valid()
+            result = p.Valid()
             packetsrc = ''
-            del packet
+            del p
             if not result:
                 try:
                     os.remove(path) # if is is no good it is of no use to anyone

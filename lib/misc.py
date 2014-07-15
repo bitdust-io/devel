@@ -34,16 +34,11 @@ import textwrap
 import cPickle
 
 
-from twisted.spread import banana
-from twisted.spread import jelly
 from twisted.python.win32 import cmdLineQuote
-from twisted.internet.defer import fail
 
 import io
 import settings
 import net_misc
-import tmpfile
-import packet
 import packetid
 
 import userid.identity

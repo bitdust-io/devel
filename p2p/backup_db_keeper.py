@@ -65,7 +65,7 @@ import lib.io as io
 import lib.misc as misc
 import lib.contacts as contacts
 import lib.settings as settings
-import lib.packet as packet
+import lib.signed_packet as signed_packet
 import lib.commands as commands
 import lib.crypto as crypto
 import lib.automats as automats
@@ -74,7 +74,7 @@ from lib.automat import Automat
 import transport.callback as callback
 import transport.gate as gate
 
-import dhnblock
+import encrypted_block
 import p2p_connector
 import contact_status
 import supplier_connector
@@ -176,7 +176,7 @@ class BackupDBKeeper(Automat):
         for supplierId in contacts.getSupplierIDs():
             if not supplierId:
                 continue
-            newpacket = packet.Signed(commands.Retrieve(), localID, localID, packetID, Payload, supplierId)
+            newpacket = signed_packet.Packet(commands.Retrieve(), localID, localID, packetID, Payload, supplierId)
             gate.outbox(newpacket, callbacks={
                 commands.Data(): self._supplier_response,
                 commands.Fail(): self._supplier_response,}) 
@@ -196,14 +196,14 @@ class BackupDBKeeper(Automat):
         # src = io.ReadBinaryFile(settings.BackupInfoFileFullPath())
         src = io.ReadBinaryFile(settings.BackupIndexFilePath())
         localID = misc.getLocalID()
-        block = dhnblock.dhnblock(localID, packetID, 0, crypto.NewSessionKey(), crypto.SessionKeyType(), True, src)
-        Payload = block.Serialize() 
+        b = encrypted_block.Block(localID, packetID, 0, crypto.NewSessionKey(), crypto.SessionKeyType(), True, src)
+        Payload = b.Serialize() 
         for supplierId in contacts.getSupplierIDs():
             if not supplierId:
                 continue
             if not contact_status.isOnline(supplierId):
                 continue
-            newpacket = packet.Signed(commands.Data(), localID, localID, packetID, Payload, supplierId)
+            newpacket = signed_packet.Packet(commands.Data(), localID, localID, packetID, Payload, supplierId)
             gate.outbox(newpacket, callbacks={
                 commands.Ack(): self._supplier_acked,
                 commands.Fail(): self._supplier_acked})
@@ -220,24 +220,24 @@ class BackupDBKeeper(Automat):
 #        """
 #        Action method.
 #        """
-#        packet = arg
-#        io.log(6, 'backup_db_keeper.doCountResponse %r from %s' % (packet, packet.OwnerID))
+#        newpacket = arg
+#        io.log(6, 'backup_db_keeper.doCountResponse %r from %s' % (newpacket, packet.OwnerID))
 #        self.requestedSuppliers.discard(packet.OwnerID)
 #        if packet.Command == commands.Fail():
 #            sc = supplier_connector.by_idurl(packet.OwnerID)
 #            if sc:
-#                sc.automat('fail', packet)
+#                sc.automat('fail', newpacket)
 #            else:
 #                raise Exception('not found supplier connector')
 
-    def _supplier_response(self, packet, pkt_out):
-        if packet.Command == commands.Data():
-            self.requestedSuppliers.discard(packet.RemoteID)
-        elif packet.Command == commands.Fail():
-            self.requestedSuppliers.discard(packet.OwnerID)
-            sc = supplier_connector.by_idurl(packet.OwnerID)
+    def _supplier_response(self, newpacket, pkt_out):
+        if newpacket.Command == commands.Data():
+            self.requestedSuppliers.discard(newpacket.RemoteID)
+        elif newpacket.Command == commands.Fail():
+            self.requestedSuppliers.discard(newpacket.OwnerID)
+            sc = supplier_connector.by_idurl(newpacket.OwnerID)
             if sc:
-                sc.automat('fail', packet)
+                sc.automat('fail', newpacket)
             else:
                 raise Exception('supplier connector was not found')
         else:
@@ -246,12 +246,12 @@ class BackupDBKeeper(Automat):
             self.automat('all-responded')
         # io.log(6, 'backup_db_keeper._supplier_response %s others: %r' % (packet, self.requestedSuppliers))
 
-    def _supplier_acked(self, packet, info):
-        self.sentSuppliers.discard(packet.OwnerID)
-        self.automat('db-info-acked', packet.OwnerID)
-        sc = supplier_connector.by_idurl(packet.OwnerID)
+    def _supplier_acked(self, newpacket, info):
+        self.sentSuppliers.discard(newpacket.OwnerID)
+        self.automat('db-info-acked', newpacket.OwnerID)
+        sc = supplier_connector.by_idurl(newpacket.OwnerID)
         if sc:
-            sc.automat(packet.Command.lower(), packet)
+            sc.automat(newpacket.Command.lower(), newpacket)
         else:
             raise Exception('not found supplier connector')
     

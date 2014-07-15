@@ -395,9 +395,9 @@ class BackupRebuilder(Automat):
         if state != 'received':
             io.log(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(packet)))
             return
-        packetID = packet.PacketID
+        packetID = signed_packet.PacketID
         filename = os.path.join(settings.getLocalBackupsDir(), packetID)
-        if not packet.Valid():
+        if not signed_packet.Valid():
             # TODO 
             # if we didn't get a valid packet ... re-request it or delete it?
             io.log(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
@@ -415,7 +415,7 @@ class BackupRebuilder(Automat):
             except:
                 io.log(2, "backup_rebuilder.FileReceived ERROR can not create sub dir " + dirname)
                 return 
-        if not io.WriteFile(filename, packet.Payload):
+        if not io.WriteFile(filename, signed_packet.Payload):
             return
         backup_matrix.LocalFileReport(packetID)
         self.automat('inbox-data-packet', packetID)

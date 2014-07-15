@@ -157,7 +157,7 @@ _PAGE_MESSAGE = 'message'
 _PAGE_NEW_MESSAGE = 'newmessage'
 _PAGE_CORRESPONDENTS = 'correspondents'
 _PAGE_SHEDULE = 'shedule'
-_PAGE_BACKUP_SHEDULE = 'backupshedule'
+_PAGE_BACKUP_SHEDULE = 'backup_schedule'
 _PAGE_UPDATE_SHEDULE = 'updateshedule'
 _PAGE_DEV_REPORT = 'devreport'
 _PAGE_BACKUP_SETTINGS = 'backupsettings'
@@ -6759,7 +6759,7 @@ class ShedulePage(Page):
 #         current = self.read_from_html(request)
 #         backup_db.SetSchedule(backupdir, current)
 #         backup_db.Save()
-#         # reactor.callLater(0, backupshedule.run)
+#         # reactor.callLater(0, backup_schedule.run)
 #         io.log(6, 'webcontrol.BackupShedulePage.save success %s %s' % (backupdir, current))
 # 
 #     def list_params(self):

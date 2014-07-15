@@ -247,7 +247,7 @@ def uninstall():
             'dhnmain.exe',
             'dhnview.exe'
             'dhntester.exe',
-            'dhnbackup.exe'])
+            'bppipe.exe'])
     if ret != 0:
         return ret  
     logwrite('start uninstalling\n')

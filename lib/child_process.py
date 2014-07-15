@@ -10,14 +10,12 @@
 """
 .. module:: child_process
 
-BitPie.NET uses several child modules, right now this is:
-    - dhnbackup
+BitPie.NET executes periodically several slaves:
+    - bppipe
     - dhntester
     - dhnview
-    - dhntcp
-    - dhnudp
-    - dhncspace
-They are started as a separated processes and managed from the main process: dhnmain. 
+They are started as a separated processes and managed from the main process: 
+    dhnmain.
 """
 
 import os

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#packet.py
+#signed_packet.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: packet
+.. module:: signed_packet 
 
 These packets usually hold on the order of 1 MB.
 Something equal to a packet number so we can detect duplicates in transport.
@@ -44,13 +44,13 @@ import packetid
 import contacts
 
 
-class Signed:
+class Packet:
     """
     The core class.
     Represents a data packet in the network. 
-    Payload can be encrypted using bitpie.lib.dhnblock.
+    Payload can be encrypted using bitpie.lib.encrypted_block.
     We expect remote user run the correct software.
-    His BitPie.NET must verify signature of that packet.
+    His BitPie.NET must verify signature of that packet .
     If you want to encrypt the fields and so hide that service traffic completely - 
     do that in the transport protocols. 
     Need to transfer our public key to remote peer and than he can send us a safe messages.
@@ -58,7 +58,7 @@ class Signed:
     """
     def __init__(self, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID,):
         """
-        Init all fields and sign the packet.
+        Init all fields and sign the packet .
         """
         # Legal Commands are in commands.py
         self.Command = Command               
@@ -82,7 +82,7 @@ class Signed:
         self.Sign()
 
     def __repr__(self):
-        return 'packet (command=%s id=%s)' % (str(self.Command), str(self.PacketID))
+        return 'signed_packet (command=%s id=%s)' % (str(self.Command), str(self.PacketID))
 
     def Sign(self):
         """
@@ -94,7 +94,7 @@ class Signed:
     def GenerateHashBase(self):
         """
         This make a long string containing all needed fields of ``packet`` (without Signature).
-        Just to be able to generate a hash of the whole packet.
+        Just to be able to generate a hash of the whole packet .
         """
         sep = "-"
         stufftosum = self.Command + sep + self.OwnerID + sep + self.CreatorID + sep + self.PacketID + sep + self.Date + sep + self.Payload + sep + self.RemoteID
@@ -122,7 +122,7 @@ class Signed:
         """
         ConIdentity = contacts.getContact(self.CreatorID)
         if ConIdentity is None:
-            io.log(1, "packet.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
+            io.log(1, "signed_packet.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
             return False
         Result = crypto.Verify(ConIdentity, self.GenerateHash(), self.Signature)
         return Result
@@ -148,13 +148,13 @@ class Signed:
             8) etc.
         """
         if not self.Ready():
-            io.log(4, "packet.Valid WARNING packet is not ready yet " + str(self))
+            io.log(4, "signed_packet.Valid WARNING packet is not ready yet " + str(self))
             return False
         if not commands.IsCommand(self.Command):
-            io.log(1, "packet.Valid bad Command " + str(self.Command))
+            io.log(1, "signed_packet.Valid bad Command " + str(self.Command))
             return False
         if not self.SignatureChecksOut():
-            io.log(1, "packet.Valid failed Signature")
+            io.log(1, "signed_packet.Valid failed Signature")
             return False
         return True
 
@@ -191,12 +191,12 @@ class Signed:
 
     def __len__(self):
         """
-        Return a length of serialized packet. 
+        Return a length of serialized packet . 
         """
         return len(self.Serialize())
 
 
-class packet_0signed(Signed):
+class PacketZeroSigned(Packet):
     """
     I was playing with hacking packets and do some debug also.
     """    
@@ -216,13 +216,13 @@ def Unserialize(data):
         return None
     newobject = misc.StringToObject(data)
     if newobject is None:
-        # io.log(6, "packet.Unserialize WARNING result is None")
+        # io.log(6, "signed_packet.Unserialize WARNING result is None")
         return None
     if type(newobject) != types.InstanceType:
-        io.log(6, "packet.Unserialize WARNING not an instance: " + str(newobject))
+        io.log(6, "signed_packet.Unserialize WARNING not an instance: " + str(newobject))
         return None
-    if not str(newobject.__class__).count('packet.Signed'):
-        io.log(6, "packet.Unserialize WARNING not a packet: " + str(newobject.__class__))
+    if not str(newobject.__class__).count('signed_packet.Packet'):
+        io.log(6, "signed_packet.Unserialize WARNING not a packet: " + str(newobject.__class__))
         return None
     return newobject
 
@@ -230,7 +230,7 @@ def MakePacket(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
     """
     Just calls the constructor of packet class.
     """
-    result = Signed(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
+    result = Packet(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
     return result
 
 def MakePacketInThread(CallBackFunc, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
@@ -242,7 +242,7 @@ def MakePacketInThread(CallBackFunc, Command, OwnerID, CreatorID, PacketID, Payl
 
 def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
     """
-    Another nice way to create a signed packet.
+    Another nice way to create a signed packet .
     """
     return threads.deferToThread(MakePacket, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 

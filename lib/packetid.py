@@ -197,7 +197,7 @@ def SupplierNumber(packetID):
 
 def DataOrParity(packetID):
     """
-    A wrapper for ``Split()`` method to get the last part - is this Data or Parity packet.
+    A wrapper for ``Split()`` method to get the last part - is this Data or Parity packet .
     """
     return Split(packetID)[3]
 

@@ -232,7 +232,7 @@ def init_modules():
     import webcontrol
 
     import local_tester
-    # import backupshedule
+    # import backup_schedule
     #import ratings
     # import fire_hire
     #import backup_monitor
@@ -242,7 +242,7 @@ def init_modules():
 
     reactor.callLater(5, local_tester.init)
 
-    # reactor.callLater(10, backupshedule.init)
+    # reactor.callLater(10, backup_schedule.init)
 
     #reactor.callLater(20, ratings.init)
 

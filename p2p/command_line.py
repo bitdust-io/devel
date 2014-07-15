@@ -796,8 +796,8 @@ def cmd_uninstall(opts, args, overDict):
                 'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
                 'dhnview.exe',
                 'dhnview.py',
-                'dhnbackup.exe',
-                'dhnbackup.py',
+                'bppipe.exe',
+                'bppipe.py',
                 'dhntester.exe',
                 'dhntester.py',
                 'dhnstarter.exe',
@@ -827,7 +827,7 @@ def cmd_uninstall(opts, args, overDict):
             appList = io.find_process([
                 'dhnmain.exe',
                 'dhnview.exe',
-                'dhnbackup.exe',
+                'bppipe.exe',
                 'dhntester.exe',
                 'dhnstarter.exe',
                 ])
@@ -852,7 +852,7 @@ def cmd_uninstall(opts, args, overDict):
     appList = io.find_process([
         'dhnmain.exe',
         'dhnview.exe',
-        'dhnbackup.exe',
+        'bppipe.exe',
         'dhntester.exe',
         'dhnstarter.exe',
         ])

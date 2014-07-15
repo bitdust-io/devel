@@ -52,7 +52,7 @@ import lib.dirsize as dirsize
 
 import transport.callback as callback
 
-import dhnblock
+import encrypted_block
 import backup
 import backup_tar
 import backup_fs
@@ -199,19 +199,19 @@ def Save(filepath=None):
 
 #------------------------------------------------------------------------------ 
 
-def IncomingSupplierListFiles(packet):
+def IncomingSupplierListFiles(newpacket):
     """
     Called by ``p2p.p2p_service`` when command "Files" were received from one of our suppliers.
     This is an answer from given supplier (after our request) to get a list of our files stored on his machine.
     """
-    supplier_idurl = packet.OwnerID
+    supplier_idurl = newpacket.OwnerID
     num = contacts.numberForSupplier(supplier_idurl)
     if num < -1:
         io.log(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
         return
-    src = p2p_service.UnpackListFiles(packet.Payload, settings.ListFilesFormat())
+    src = p2p_service.UnpackListFiles(newpacket.Payload, settings.ListFilesFormat())
     backups2remove, paths2remove = backup_matrix.ReadRawListFiles(num, src)
-    list_files_orator.IncomingListFiles(packet)
+    list_files_orator.IncomingListFiles(newpacket)
     backup_matrix.SaveLatestRawListFiles(supplier_idurl, src)
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
@@ -220,25 +220,25 @@ def IncomingSupplierListFiles(packet):
     del backups2remove
     del paths2remove
     io.log(8, 'backup_control.IncomingSupplierListFiles from [%s] %s bytes long' % (
-        nameurl.GetName(supplier_idurl), len(packet.Payload)))
+        nameurl.GetName(supplier_idurl), len(newpacket.Payload)))
  
-def IncomingSupplierBackupIndex(packet):
+def IncomingSupplierBackupIndex(newpacket):
     """
     Called by ``p2p.p2p_service`` when a remote copy of our local index data base ( in the "Data" packet )
     is received from one of our suppliers. The index is also stored on suppliers to be able to restore it.   
     """
-    block = dhnblock.Unserialize(packet.Payload)
-    if block is None:
-        io.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % packet.RemoteID)
+    b = encrypted_block.Unserialize(newpacket.Payload)
+    if b is None:
+        io.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         return
     try:
-        session_key = crypto.DecryptLocalPK(block.EncryptedSessionKey)
-        padded_data = crypto.DecryptWithSessionKey(session_key, block.EncryptedData)
-        input = cStringIO.StringIO(padded_data[:int(block.Length)])
+        session_key = crypto.DecryptLocalPK(b.EncryptedSessionKey)
+        padded_data = crypto.DecryptWithSessionKey(session_key, b.EncryptedData)
+        input = cStringIO.StringIO(padded_data[:int(b.Length)])
         supplier_revision = int(input.readline().rstrip('\n'))
         input.seek(0)
     except:
-        io.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % packet.RemoteID)
+        io.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         io.log(2, '\n' + padded_data)
         io.exception()
         try:
@@ -252,9 +252,10 @@ def IncomingSupplierBackupIndex(packet):
         backup_fs.Calculate()
         WriteIndex()
         # TODO repaint a GUI
-        io.log(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (revision(), packet.RemoteID))
+        io.log(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
+            revision(), newpacket.RemoteID))
     input.close()
-    # backup_db_keeper.A('incoming-db-info', packet)
+    # backup_db_keeper.A('incoming-db-info', newpacket)
         
 #------------------------------------------------------------------------------ 
 
@@ -583,7 +584,7 @@ def OnTaskFailed(pathID, result):
 def OnBackupBlockReport(backupID, blockNum, result):
     """
     Called for every finished block during backup process.
-        :param newblock: this is a ``p2p.dhnblock.dhnblock`` instance
+        :param newblock: this is a ``p2p.encrypted_block.encrypted_block`` instance
         :param num_suppliers: number of suppliers which is used for that backup
         
     """

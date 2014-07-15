@@ -7,12 +7,12 @@
 #
 
 """
-.. module:: dhnbackup
+.. module:: bppipe
 
 This python code can be used to replace the Unix tar command
 and so be portable to non-unix machines.
 There are other python tar libraries, but this is included with Python.
-So that file is starter as child process of DHN to prepare data for backup.
+So that file is starter as child process of BitPie.NET to prepare data for backup.
 
 .. warning:: Note that we should not print things here because tar output goes to standard out.
              If we print anything else to stdout the .tar file will be ruined.
@@ -25,7 +25,7 @@ Inspired from examples here:
 
 TODO: 
 If we kept track of how far we were through a list of files, and broke off
-new ``dhnblocks`` at file boundaries, we could restart a backup and continue
+new ``encrypted_blocks`` at file boundaries, we could restart a backup and continue
 were we left off if a crash happened while we were waiting to send a block
 (most of the time is waiting so good chance).
 """
@@ -45,12 +45,12 @@ except:
 
 def logfilepath():
     """
-    A method to detect where is placed the log file for ``dhnbackup`` child process.
+    A method to detect where is placed the log file for ``bppipe`` child process.
     """
     logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
     if not os.path.isdir(logspath):
-        return 'backup.log'
-    return os.path.join(logspath, 'backup.log')
+        return 'bppipe.log'
+    return os.path.join(logspath, 'bppipe.log')
 
 def printlog(txt):
     """
@@ -163,7 +163,7 @@ def readtar(archivepath, outputdir, encoding=None):
 
 def main():
     """
-    The entry point of the ``dhnbackup`` child process. 
+    The entry point of the ``bppipe`` child process. 
     Use command line arguments to get the command from ``dhnmain``. 
     """
     try:
@@ -179,7 +179,7 @@ def main():
 
 #    if len(sys.argv) < 4:
 #        printlog('sys.argv: %s\n' % str(sys.argv))
-#        printlog('dhnbackup ["subdirs"/"nosubdirs"/"extract"] ["none"/"bz2"/"gz"] [folder path]\n')
+#        printlog('bppipe ["subdirs"/"nosubdirs"/"extract"] ["none"/"bz2"/"gz"] [folder path]\n')
 #        return 2
 
     # printlog(str(sys.argv) + '\n')

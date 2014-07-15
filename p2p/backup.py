@@ -29,7 +29,7 @@ Main idea:
    3) always use select/poll before reading, so never block the main process
    4) also poll to see if more data is needed to create a block
    5) number/name blocks so can be sure what is what when we read back later
-   6) encrypt the block data into ``dhnblocks`` 
+   6) encrypt the block data into ``encrypted_blocks`` 
    7) call ``p2p.raidmake`` to split block and make "Parity" packets (pieces of block)
    8) notify the top level code about new pieces of data to send on suppliers
    
@@ -70,32 +70,23 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup.py')
 
-from twisted.internet import threads
-from twisted.internet.defer import Deferred, maybeDeferred
+from twisted.internet.defer import maybeDeferred
 
 
 import lib.io as io
 import lib.misc as misc
-import lib.packet as packet
-import lib.contacts as contacts
-import lib.commands as commands
 import lib.settings as settings
-import lib.packetid as packetid
 import lib.nonblocking as nonblocking
 import lib.eccmap as eccmap
 import lib.crypto as crypto
 import lib.tmpfile as tmpfile
 import lib.automat as automat
-# import lib.automats as automats
 
 import raid.raid_worker as raid_worker
 
 import data_sender
-
-# import raidmake
-import dhnblock
+import encrypted_block
 import events
-# import backup_matrix
 
 
 #-------------------------------------------------------------------------------
@@ -280,7 +271,7 @@ class backup(automat.Automat):
         def _doBlock():
             dt = time.time()
             src = self.currentBlockData.getvalue()
-            block = dhnblock.dhnblock(
+            block = encrypted_block.Block(
                 misc.getLocalID(),
                 self.backupID,
                 self.blockNumber,
