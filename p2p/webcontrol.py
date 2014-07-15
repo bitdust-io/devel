@@ -7367,9 +7367,14 @@ def InitSettingsTreePages():
     'emergency-phone':          SettingsTreeUStringNode,
     'emergency-fax':            SettingsTreeUStringNode,
     'emergency-text':           SettingsTreeTextNode,
+    
+    'id-server-enable':         SettingsTreeYesNoNode,
+    'id-server-host':           SettingsTreeTextNode,
+    'id-server-web-port':       SettingsTreeNumericNonZeroPositiveNode,
+    'id-server-tcp-port':       SettingsTreeNumericNonZeroPositiveNode,
 
-    'updates':                  SettingsTreeNode,
-    'updates-mode':             SettingsTreeComboboxNode,
+    # 'updates':                  SettingsTreeNode,
+    # 'updates-mode':             SettingsTreeComboboxNode,
 
     'general':                          SettingsTreeNode,
     'general-desktop-shortcut':         SettingsTreeYesNoNode,
