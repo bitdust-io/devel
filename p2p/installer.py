@@ -75,7 +75,7 @@ import initializer
 import p2p_connector
 import install_wizard
 
-import dhninit
+import init_shutdown
 import dhnupdate
 import identitypropagate
 import webcontrol

@@ -48,7 +48,7 @@ import lib.automat as automat
 import lib.automats as automats
 
 import initializer
-import dhninit
+import init_shutdown
 
 _Shutdowner = None
 
@@ -159,11 +159,11 @@ class Shutdowner(automat.Automat):
         if param not in ['exit', 'restart', 'restartnshow']:
             param = 'exit'
         if param == 'exit':
-            dhninit.shutdown_exit()
+            init_shutdown.shutdown_exit()
         elif param == 'restart':
-            dhninit.shutdown_restart()
+            init_shutdown.shutdown_restart()
         elif param == 'restartnshow':
-            dhninit.shutdown_restart('show')
+            init_shutdown.shutdown_restart('show')
 
 
 

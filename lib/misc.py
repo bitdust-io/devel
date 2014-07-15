@@ -1576,7 +1576,7 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
 def UpdateSettings():
     """
     This method is called at startup, during "local initialization" part, 
-    see ``p2p.dhninit.init_local()`` method.
+    see ``p2p.init_shutdown.init_local()`` method.
     I used that place sometimes to 'patch' users settings.
     """
     io.log(6, 'misc.UpdateSettings')
@@ -1592,8 +1592,8 @@ def SendDevReportOld(subject, body, includelogs):
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
             filesList.append(settings.UserConfigFilename())
-            filesList.append(os.path.join(io.getExecutableDir(), 'dhnmain.exe.log'))
-            filesList.append(os.path.join(io.getExecutableDir(), 'dhnmain.log'))
+            filesList.append(os.path.join(io.getExecutableDir(), 'bpmain.exe.log'))
+            filesList.append(os.path.join(io.getExecutableDir(), 'bpmain.log'))
             for filename in os.listdir(settings.LogsDir()):
                 filepath = os.path.join(settings.LogsDir(), filename)
                 filesList.append(filepath)
@@ -1641,8 +1641,8 @@ def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=No
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
             filesList.append(settings.UserConfigFilename())
-            filesList.append(os.path.join(io.getExecutableDir(), 'dhnmain.exe.log'))
-            filesList.append(os.path.join(io.getExecutableDir(), 'dhnmain.log'))
+            filesList.append(os.path.join(io.getExecutableDir(), 'bpmain.exe.log'))
+            filesList.append(os.path.join(io.getExecutableDir(), 'bpmain.log'))
             for filename in os.listdir(settings.LogsDir()):
                 filepath = os.path.join(settings.LogsDir(), filename)
                 filesList.append(filepath)
@@ -1777,7 +1777,7 @@ def UpdateRegistryUninstall(uninstall=False):
     return True
 
 
-def MakeBatFileToUninstall(wait_appname='dhnmain.exe', local_dir=io.getExecutableDir(), dirs2delete=[settings.BaseDir(),]):
+def MakeBatFileToUninstall(wait_appname='bpmain.exe', local_dir=io.getExecutableDir(), dirs2delete=[settings.BaseDir(),]):
     """
     Not used.
     """

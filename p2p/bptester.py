@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhntester.py
+#bptester.py
 #
 # <<<COPYRIGHT>>>-2011
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: dhntester
+.. module:: bptester
 
 This is a BitPie.NET child process, do monitoring of customer's files.
 
@@ -21,7 +21,6 @@ In case some of customers do not play fair - need to stop this.:
 
 import os
 import sys
-import platform
 
 import time
 
@@ -29,8 +28,8 @@ import time
 
 def logfilepath():
     """
-    A file path to the file where ``dhntester`` will write logs. 
-    Need to make sure the ``dhntester`` log is in a directory the user has permissions for,
+    A file path to the file where ``bptester`` will write logs. 
+    Need to make sure the ``bptester`` log is in a directory the user has permissions for,
     Such as the customer data directory.  Possibly move to temp directory?
     """
     logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
@@ -55,7 +54,7 @@ if __name__ == "__main__":
 
 try:
     import lib.io as io
-    from lib.packet import Unserialize
+    from lib.signed_packet import Unserialize
     from lib.nameurl import FilenameUrl
     from lib.settings import init as settings_init
     from lib.settings import CustomersSpaceFile, CustomersUsedSpaceFile, getCustomersFilesDir, LocalTesterLogFilename

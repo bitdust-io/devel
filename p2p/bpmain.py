@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnmain.py
+#bpmain.py
 #
 #
 # <<<COPYRIGHT>>>
@@ -10,7 +10,7 @@
 #
 
 """
-.. module:: dhnmain
+.. module:: bpmain
 
 This is the entry point of the program, see method ``main()`` bellow.
 """
@@ -39,7 +39,7 @@ def run(UI='', options=None, args=None, overDict=None):
     """
     
     import lib.io as io
-    io.log(6, 'dhnmain.run sys.path=%s' % str(sys.path))
+    io.log(6, 'bpmain.run sys.path=%s' % str(sys.path))
     
     #---settings---
     import lib.settings as settings
@@ -52,8 +52,8 @@ def run(UI='', options=None, args=None, overDict=None):
     #---USE_TRAY_ICON---
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
         try:
-            from dhnicon import USE_TRAY_ICON
-            # io.log(4, 'dhnmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
+            from tray_icon import USE_TRAY_ICON
+            # io.log(4, 'bpmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
             if io.Linux() and not io.X11_is_running():
                 USE_TRAY_ICON = False
             if USE_TRAY_ICON:
@@ -75,26 +75,26 @@ def run(UI='', options=None, args=None, overDict=None):
                 'red':      'icon-red.png',
                 'green':    'icon-green.png',
                 'gray':     'icon-gray.png', }
-        import dhnicon
+        import tray_icon
         icons_path = str(os.path.abspath(os.path.join(io.getExecutableDir(), 'icons')))
-        io.log(4, 'dhnmain.run call dhnicon.init(%s)' % icons_path)
-        dhnicon.init(icons_path, icons_dict)
+        io.log(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)
+        tray_icon.init(icons_path, icons_dict)
         def _tray_control_func(cmd):
             if cmd == 'exit':
                 import shutdowner
                 shutdowner.A('stop', 'exit')
-        dhnicon.SetControlFunc(_tray_control_func)
+        tray_icon.SetControlFunc(_tray_control_func)
 
-    io.log(4, 'dhnmain.run want to import twisted.internet.reactor')
+    io.log(4, 'bpmain.run want to import twisted.internet.reactor')
     try:
         from twisted.internet import reactor
     except:
         io.exception()
-        sys.exit('Error initializing reactor in dhnmain.py\n')
+        sys.exit('Error initializing reactor in bpmain.py\n')
 
     #---logfile----
     if io.EnableLog and io.LogFile is not None:
-        io.log(2, 'dhnmain.run want to switch log files')
+        io.log(2, 'bpmain.run want to switch log files')
         if io.Windows() and io.isFrozen():
             io.StdOutRedirectingStop()
         io.CloseLogFile()
@@ -109,7 +109,7 @@ def run(UI='', options=None, args=None, overDict=None):
             memdebug_port = int(settings.uconfig('logs.memdebug-port'))
             memdebug.start(memdebug_port)
             reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)
-            io.log(2, 'dhnmain.run memdebug web server started on port %d' % memdebug_port)
+            io.log(2, 'bpmain.run memdebug web server started on port %d' % memdebug_port)
         except:
             io.exception()  
             
@@ -118,7 +118,7 @@ def run(UI='', options=None, args=None, overDict=None):
         pid = os.getpid()
         pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
         io.WriteFile(pid_file_path, str(pid))
-        io.log(2, 'dhnmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
+        io.log(2, 'bpmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
     except:
         io.exception()  
             
@@ -127,12 +127,12 @@ def run(UI='', options=None, args=None, overDict=None):
 #        patchReactorCallLater(reactor)
 #        monitorDelayedCalls(reactor)
 
-    io.log(2,"dhnmain.run UI=[%s]" % UI)
+    io.log(2,"bpmain.run UI=[%s]" % UI)
 
     if io.Debug(10):
         io.log(0, '\n' + io.osinfofull())
 
-    io.log(4, 'dhnmain.run import automats')
+    io.log(4, 'bpmain.run import automats')
 
     #---START!---
     import lib.automat as automat
@@ -142,18 +142,18 @@ def run(UI='', options=None, args=None, overDict=None):
     import initializer
     import shutdowner
 
-    io.log(4, 'dhnmain.run send event "run" to initializer()')
+    io.log(4, 'bpmain.run send event "run" to initializer()')
     
     #reactor.callLater(0, initializer.A, 'run', UI)
     initializer.A('run', UI)
 
-    io.log(2, 'dhnmain.run calling reactor.run()')
+    io.log(2, 'bpmain.run calling reactor.run()')
     reactor.run()
 
-    io.log(2, 'dhnmain.run reactor stopped')
+    io.log(2, 'bpmain.run reactor stopped')
     shutdowner.A('reactor-stopped')
 
-    io.log(2, 'dhnmain.run finished, EXIT')
+    io.log(2, 'bpmain.run finished, EXIT')
 
     automat.CloseLogFile()
 
@@ -272,17 +272,17 @@ def kill():
     found = False
     while True:
         appList = io.find_process([
-            'dhnmain.exe',
-            'dhnmain.py',
+            'bpmain.exe',
+            'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             'dhnview.exe',
             'dhnview.py',
             'bppipe.exe',
             'bppipe.py',
-            'dhntester.exe',
-            'dhntester.py',
-            'dhnstarter.exe',
+            'bptester.exe',
+            'bptester.py',
+            'bpstarter.exe',
             ])
         if len(appList) > 0:
             found = True
@@ -307,7 +307,7 @@ def wait_then_kill(x):
     For correct shutdown of the program need to send a URL request to the HTTP server::
         http://localhost:<random port>/?action=exit
         
-    After receiving such request the program will call ``p2p.dhninit.shutdown()`` method and stops.
+    After receiving such request the program will call ``p2p.init_shutdown.shutdown()`` method and stops.
     But if the main process was blocked it needs to be killed with system "kill" procedure.
     This method will wait for 10 seconds and then call method ``kill()``.    
     """
@@ -316,17 +316,17 @@ def wait_then_kill(x):
     total_count = 0
     while True:
         appList = io.find_process([
-            'dhnmain.exe',
-            'dhnmain.py',
+            'bpmain.exe',
+            'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             'dhnview.exe',
             'dhnview.py',
             'bppipe.exe',
             'bppipe.py',
-            'dhntester.exe',
-            'dhntester.py',
-            'dhnstarter.exe',
+            'bptester.exe',
+            'bptester.py',
+            'bpstarter.exe',
             ])
         if len(appList) == 0:
             io.log(0, 'DONE')
@@ -440,10 +440,10 @@ def main():
 
     if logpath != '':
         io.OpenLogFile(logpath)
-        io.log(2, 'dhnmain.main log file opened ' + logpath)
+        io.log(2, 'bpmain.main log file opened ' + logpath)
         if io.Windows() and io.isFrozen():
             io.StdOutRedirectingStart()
-            io.log(2, 'dhnmain.main redirecting started')
+            io.log(2, 'bpmain.main redirecting started')
 
     if opts.debug or str(opts.debug) == '0':
         io.SetDebug(opts.debug)
@@ -454,7 +454,7 @@ def main():
     if opts.verbose:
         copyright()
 
-    io.log(2, 'dhnmain.main started ' + time.asctime())
+    io.log(2, 'bpmain.main started ' + time.asctime())
 
     overDict = override_options(opts, args)
 
@@ -462,13 +462,13 @@ def main():
     if len(args) > 0:
         cmd = args[0].lower()
         
-    io.log(2, 'dhnmain.main args=%s' % str(args))
+    io.log(2, 'bpmain.main args=%s' % str(args))
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':
         appList = io.find_process([
-            'dhnmain.exe',
-            'dhnmain.py',
+            'bpmain.exe',
+            'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
@@ -507,8 +507,8 @@ def main():
     #---restart---
     elif cmd == 'restart':
         appList = io.find_process([
-            'dhnmain.exe',
-            'dhnmain.py',
+            'bpmain.exe',
+            'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
@@ -554,8 +554,8 @@ def main():
             'dhnview.py',
             ])
         appList = io.find_process([
-            'dhnmain.exe',
-            'dhnmain.py',
+            'bpmain.exe',
+            'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
@@ -580,8 +580,8 @@ def main():
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
         appList = io.find_process([
-            'dhnmain.exe',
-            'dhnmain.py',
+            'bpmain.exe',
+            'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
@@ -610,13 +610,13 @@ def main():
         def do_spawn(x=None):
             from lib.settings import WindowsStarterFileName
             starter_filepath = os.path.join(io.getExecutableDir(), WindowsStarterFileName())
-            io.log(0, "dhnmain.main dhnstarter.exe path: %s " % starter_filepath)
+            io.log(0, "bpmain.main bpstarter.exe path: %s " % starter_filepath)
             if not os.path.isfile(starter_filepath):
-                io.log(0, "dhnmain.main ERROR %s not found" % starter_filepath)
+                io.log(0, "bpmain.main ERROR %s not found" % starter_filepath)
                 io.shutdown()
                 return 1
             cmdargs = [os.path.basename(starter_filepath), 'uninstall']
-            io.log(0, "dhnmain.main os.spawnve cmdargs="+str(cmdargs))
+            io.log(0, "bpmain.main os.spawnve cmdargs="+str(cmdargs))
             ret = os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
             io.shutdown()
             return ret
@@ -625,7 +625,7 @@ def main():
             ret = do_spawn()
             io.shutdown()
             return ret
-        io.log(0, 'dhnmain.main UNINSTALL!')
+        io.log(0, 'bpmain.main UNINSTALL!')
         if not io.Windows():
             io.log(0, 'This command can be used only under OS Windows.')
             io.shutdown()
@@ -634,7 +634,7 @@ def main():
             io.log(0, 'You are running BitPie.NET from sources, uninstall command is available only for binary version.')
             io.shutdown()
             return 0
-        appList = io.find_process(['dhnmain.exe',])
+        appList = io.find_process(['bpmain.exe',])
         if len(appList) > 0:
             io.log(0, 'found main BitPie.NET process...   ', '')
             try:

@@ -1,0 +1,10 @@
+#!/usr/bin/python
+#
+# <<<COPYRIGHT>>>
+#
+#
+#
+#
+
+import p2p.bpmain
+p2p.bpmain.main()

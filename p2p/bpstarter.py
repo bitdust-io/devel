@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnstarter.py
+#bpstarter.py
 #
 # <<<COPYRIGHT>>>-2011
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: dhnstarter
+.. module:: bpstarter
 
 This is a Windows starter process.
 It is used to check and update binaries at start up. 
@@ -39,7 +39,7 @@ def sharedPath(filename, subdir='logs'):
 
 #------------------------------------------------------------------------------ 
 
-StarterFilename = os.path.basename(sys.argv[0].lower()) #'dhnstarter.exe'
+StarterFilename = os.path.basename(sys.argv[0].lower()) #'bpstarter.exe'
 
 UpdateRepo = ''
 UpdateLocationURL = ''
@@ -50,10 +50,10 @@ UpdateFolder = 'windows/'
 FilesDigestsFilename = 'info.txt'
 CurrentVersionDigestsFilename = 'version.txt'
 WGetFilename = 'wget.exe'
-MainExecutableFilename = 'dhnmain.exe'
-StarterFilename = 'dhnstarter.exe'
+MainExecutableFilename = 'bpmain.exe'
+StarterFilename = 'bpstarter.exe'
 
-LogFilePath = sharedPath('dhnstarter.log', 'logs')
+LogFilePath = sharedPath('bpstarter.log', 'logs')
 RepoFileName = sharedPath('repo', 'metadata')
 FilesDigestsLocalPath = sharedPath('info', 'metadata')
 CurrentVersionDigestsLocalPath = sharedPath('version', 'metadata')
@@ -162,7 +162,7 @@ def launch(show):
         else:
             subprocess.Popen([MainExecutableFilename,])
     except:
-        return 'error starting dhnmain.exe'
+        return 'error starting bpmain.exe'
     return 0
 
 def uninstall():
@@ -243,10 +243,10 @@ def uninstall():
     
     logwrite('uninstall()\n')
     ret = stop_all([
-            'dhnstarter.exe',
-            'dhnmain.exe',
+            'bpstarter.exe',
+            'bpmain.exe',
             'dhnview.exe'
-            'dhntester.exe',
+            'bptester.exe',
             'bppipe.exe'])
     if ret != 0:
         return ret  
@@ -278,20 +278,20 @@ def main():
     if sys.argv.count('stop'):
         #we want to check if another instance is running
         return stop_all([
-            'dhnstarter.exe',
-            'dhnmain.exe',
-            'dhnmain.py',
+            'bpstarter.exe',
+            'bpmain.exe',
+            'bpmain.py',
             'dhnview.exe',
             'dhnview.py',
             'bitpie.py',
             ])
 
-    search_list = ['dhnstarter.exe',]
+    search_list = ['bpstarter.exe',]
     # if we do not need to stop,
     # but still other instance is running
     # we do not want to work together. EXIT.
     if len(find_process_win32(search_list)) > 0:
-        logwrite('another dhnstarter.exe found working')
+        logwrite('another bpstarter.exe found working')
         return 0
 
     show = False
@@ -299,10 +299,10 @@ def main():
         show = True
 
     if not show:
-        #if dhnmain.exe or dhnview.exe is running - stop it.
+        #if bpmain.exe or dhnview.exe is running - stop it.
         search_list.extend([
-            'dhnmain.exe',
-            'dhnmain.py',
+            'bpmain.exe',
+            'bpmain.py',
             'dhnview.exe',
             'dhnview.py',
             'bitpie.py',
@@ -371,7 +371,7 @@ def main():
 
         # also try to remove info.txt and version.txt in the current folder
         # they can be here because included in the installation release
-        # so they needed only during first start of the dhnstarter.exe
+        # so they needed only during first start of the bpstarter.exe
         # if we did not start with param "install" - we do not need them at all
         if sys.argv.count('install') == 0:
             try:
@@ -511,7 +511,7 @@ def main():
         except KeyboardInterrupt:
             return 'canceled'
 
-    #finally - start dhnmain.exe and exit
+    #finally - start bpmain.exe and exit
     return launch(show)
 
 
@@ -567,8 +567,8 @@ def run():
 
     if (not binDirExist) or executable_filename != sharedStarterFilename:
         #if dhn is running - stop it.
-        res = stop_all([    'dhnstarter.',
-                            'dhnmain.',
+        res = stop_all([    'bpstarter.',
+                            'bpmain.',
                             'dhnview.',
                             'bitpie.',
                             ])

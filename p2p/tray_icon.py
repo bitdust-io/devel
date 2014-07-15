@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnicon.py
+#tray_icon.py
 #
 #
 # <<<COPYRIGHT>>>
@@ -10,10 +10,10 @@
 #
 
 """
-.. module:: dhnicon
+.. module:: tray_icon
 
 Uses wxPython to show tray icon for BitPie.NET.
-This is working inside ``dhnmain`` process, uses wxreactor to connect with main Twisted loop.
+This is working inside ``bpmain`` process, uses wxreactor to connect with main Twisted loop.
 """
 
 import os

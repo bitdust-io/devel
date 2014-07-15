@@ -80,7 +80,7 @@ import fire_hire
 import data_sender
 import identitypropagate
 import ratings
-import dhnicon
+import tray_icon
 
 #------------------------------------------------------------------------------ 
 
@@ -140,7 +140,7 @@ class P2PConnector(automat.Automat):
         automats.set_global_state('P2P ' + newstate)
         initializer.A('p2p_connector.state', newstate)
         # central_connector.A('p2p_connector.state', newstate)
-        dhnicon.state_changed(network_connector.A().state, self.state)
+        tray_icon.state_changed(network_connector.A().state, self.state)
 
     def A(self, event, arg):
         #---AT_STARTUP---

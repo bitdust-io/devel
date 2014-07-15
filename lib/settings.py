@@ -462,7 +462,7 @@ def FilesDigestsFilename():
     
         [DHN data dir]/metadata/info.
         
-    Our dhnstarter.exe read local copy and than can request a public copy and compare the content.
+    Our bpstarter.exe read local copy and than can request a public copy and compare the content.
     If some files were changed or new files added to the repo - it will update the local binaries from repo.
     The idea is to update only modified files when new release will be published.
     """
@@ -767,10 +767,10 @@ def GUIOptionsFilename():
 
 def UpdateSheduleFilename():
     """
-    Under Windows the update process is done in the dhnstarter.exe file.
-    Periodically, the main file dhnmain.exe request file "version.txt" (from currently used repository) 
+    Under Windows the update process is done in the bpstarter.exe file.
+    Periodically, the main file bpmain.exe request file "version.txt" (from currently used repository) 
     to check for new software release.
-    Main process can restart itself thru dhnstarter to be able to update the binaries.
+    Main process can restart itself thru bpstarter to be able to update the binaries.
     User can set a schedule to check for updates in the settings. 
     """
     return os.path.join(MetaDataDir(), "updateshedule")
@@ -861,9 +861,9 @@ def SupplierServiceFilename(idurl):
 
 def LocalTesterLogFilename():
     """
-    A file name path where dhntester.py will write its logs.
+    A file name path where bptester.py will write its logs.
     """
-    return os.path.join(LogsDir(), 'dhntester.log')
+    return os.path.join(LogsDir(), 'bptester.log')
 
 def MainLogFilename():
     """
@@ -969,13 +969,13 @@ def DHTDBFile():
 
 def WindowsStarterFileName():
     """
-    Return a file name of the Windows starte: "dhnstarter.exe".
+    Return a file name of the Windows starte: "bpstarter.exe".
     """
-    return 'dhnstarter.exe'
+    return 'bpstarter.exe'
 
 def WindowsStarterFileURL(repo=DefaultRepo()):
     """
-    Return a public URL of the "dhnstarter.exe" file, according to given ``repo``.
+    Return a public URL of the "bpstarter.exe" file, according to given ``repo``.
     When we need to modify the starter code we place it in the repository along with other binaries.
     It will be downloaded by all users and updated.  
     """
@@ -986,7 +986,7 @@ def getIconLaunchFilename():
     Not used.
     For Windows platforms this should target to executable file to run when clicked on Desktop icon. 
     """
-    return os.path.join(io.getExecutableDir(), 'dhnmain.exe')
+    return os.path.join(io.getExecutableDir(), 'bpmain.exe')
 
 def getIconLinkFilename():
     """
@@ -998,7 +998,7 @@ def IconFilename():
     """
     Application icon file name.
     """
-    return 'dhnicon.ico'
+    return 'tray_icon.ico'
 
 def IconsFolderPath():
     """

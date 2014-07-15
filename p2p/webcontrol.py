@@ -856,12 +856,12 @@ def OnTrafficOut(pkt_out, item, status, size, message):
 def OnTrayIconCommand(cmd):
     if cmd == 'exit':
         DHNViewSendCommand('exit')
-        #reactor.callLater(0, dhninit.shutdown_exit)
+        #reactor.callLater(0, init_shutdown.shutdown_exit)
         shutdowner.A('stop', 'exit')
 
     elif cmd == 'restart':
         DHNViewSendCommand('exit')
-        #reactor.callLater(0, dhninit.shutdown_restart, 'show')
+        #reactor.callLater(0, init_shutdown.shutdown_restart, 'show')
         appList = io.find_process(['dhnview.',])
         if len(appList) > 0:
             shutdowner.A('stop', 'restartnshow') # ('restart', 'show'))
@@ -1061,14 +1061,14 @@ class Page(resource.Resource):
             return NOT_DONE_YET
 
         if not init_done:
-            # dhninit did not finished yet
+            # init_shutdown did not finished yet
             # we should stop here at this moment
             # need to wait till all needed modules was initialized.
             # we want to call ".init()" method for all of them
             # let's show "Please wait ..." page here
             # typically we should not fall in this situation
             # because all local initializations should be done very fast
-            # we will open the web browser only AFTER dhninit was finished
+            # we will open the web browser only AFTER init_shutdown was finished
             io.log(4, 'webcontrol.Page.render will show "Please wait" page')
             d = {}
             d['reload'] = '1'
@@ -1080,7 +1080,7 @@ class Page(resource.Resource):
         # dhn is not installed or broken somehow
         if not check_install():
             # page requested is not the install page
-            # we do not need this in that moment because dhnmain is not installed
+            # we do not need this in that moment because bpmain is not installed
             if self.pagename not in [_PAGE_INSTALL, _PAGE_INSTALL_NETWORK_SETTINGS]:
                 io.log(4, 'webcontrol.Page.render redirect to the page %s' % _PAGE_INSTALL)
                 request.redirect('/'+_PAGE_INSTALL)

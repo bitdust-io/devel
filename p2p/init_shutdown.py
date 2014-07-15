@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhninit.py
+#init_shutdown.py
 #
 #
 # <<<COPYRIGHT>>>
@@ -9,9 +9,10 @@
 #
 
 """
-.. module:: dhninit
+.. module:: init_shutdown
 
-The top level methods to manage startup process of the whole BitPie.NET cdoe.  
+The top level methods to manage startup process of the whole BitPie.NET code
+and also correct shutdown all things when finishing.  
 """
 
 import os
@@ -21,7 +22,7 @@ import time
 try:
     from twisted.internet import reactor
 except:
-    sys.exit('Error initializing twisted.internet.reactor in dhninit.py')
+    sys.exit('Error initializing twisted.internet.reactor in init_shutdown.py')
 from twisted.internet.defer import Deferred,  DeferredList
 from twisted.internet import task
 
@@ -30,7 +31,7 @@ import lib.io as io
 #------------------------------------------------------------------------------ 
 
 # need to change directory in case we were not in the p2p directory when soft started up,
-# need it to find dhntester.py and potentially others
+# need it to find bptester.py and potentially others
 #try:
 #    os.chdir(os.path.abspath(os.path.dirname(__file__)))
 #except:
@@ -51,7 +52,7 @@ def init_local(UI=''):
     
     global UImode
     UImode = UI
-    io.log(2, "dhninit.init_local")
+    io.log(2, "init_shutdown.init_local")
 
     import lib.settings as settings
     import lib.misc as misc
@@ -96,7 +97,7 @@ def init_local(UI=''):
             io.log(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
             import guppy.heapy.RM
         except:
-            io.log(2, "dhninit.init_local guppy package is not installed")            
+            io.log(2, "init_shutdown.init_local guppy package is not installed")            
 
     import lib.tmpfile as tmpfile
     tmpfile.init(settings.getTempDir())
@@ -131,7 +132,7 @@ def init_contacts(callback=None, errback=None):
     """
     Initialize ``contacts`` and ``identitycache``. 
     """
-    io.log(2, "dhninit.init_contacts")
+    io.log(2, "init_shutdown.init_contacts")
     
     import lib.misc as misc
     misc.loadLocalIdentity()
@@ -153,7 +154,7 @@ def init_connection():
     """
     
     global UImode
-    io.log(2, "dhninit.init_connection")
+    io.log(2, "init_shutdown.init_connection")
 
     import webcontrol
 
@@ -191,14 +192,14 @@ def init_connection():
     identitypropagate.init()
 
     try:
-        from dhnicon import USE_TRAY_ICON
+        from tray_icon import USE_TRAY_ICON
     except:
         USE_TRAY_ICON = False
         io.exception()
 
     if USE_TRAY_ICON:
-        import dhnicon
-        dhnicon.SetControlFunc(webcontrol.OnTrayIconCommand)
+        import tray_icon
+        tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
         
     #init the mechanism for sending and requesting files for repairing backups
     import io_throttle
@@ -227,7 +228,7 @@ def init_modules():
     Finish initialization part, run delayed methods.
     """
     
-    io.log(2,"dhninit.init_modules")
+    io.log(2,"init_shutdown.init_modules")
 
     import webcontrol
 
@@ -260,7 +261,7 @@ def shutdown(x=None):
     """
     
     global initdone
-    io.log(2, "dhninit.shutdown " + str(x))
+    io.log(2, "init_shutdown.shutdown " + str(x))
     dl = []
 
     import io_throttle
@@ -327,14 +328,14 @@ def shutdown_restart(param=''):
     Calls ``shutdown()`` method and stop the main reactor, then restart the program. 
     """
     
-    io.log(2, "dhninit.shutdown_restart ")
+    io.log(2, "init_shutdown.shutdown_restart ")
 
     def do_restart(param):
         import lib.misc as misc
         misc.DoRestart(param)
 
     def shutdown_finished(x, param):
-        io.log(2, "dhninit.shutdown_restart.shutdown_finished want to stop the reactor")
+        io.log(2, "init_shutdown.shutdown_restart.shutdown_finished want to stop the reactor")
         reactor.addSystemEventTrigger('after','shutdown', do_restart, param)
         reactor.stop()
 
@@ -347,10 +348,10 @@ def shutdown_exit(x=None):
     Calls ``shutdown()`` method and stop the main reactor, this will finish the program. 
     """
     
-    io.log(2, "dhninit.shutdown_exit ")
+    io.log(2, "init_shutdown.shutdown_exit ")
 
     def shutdown_reactor_stop(x=None):
-        io.log(2, "dhninit.shutdown_exit want to stop the reactor")
+        io.log(2, "init_shutdown.shutdown_exit want to stop the reactor")
         reactor.stop()
         # sys.exit()
 
@@ -364,7 +365,7 @@ def settings_patch():
     Small hacks to switch on/off some options, 
     but we want to do that only during testing period.
     """
-    io.log(6, 'dhninit.settings_patch ')
+    io.log(6, 'init_shutdown.settings_patch ')
     import lib.settings as settings
     
 
@@ -372,9 +373,9 @@ def start_logs_rotate():
     """
     Checks and remove old or too big log files.
     """
-    io.log(4, 'dhninit.start_logs_rotate')
+    io.log(4, 'init_shutdown.start_logs_rotate')
     def erase_logs():
-        io.log(4, 'dhninit.erase_logs ')
+        io.log(4, 'init_shutdown.erase_logs ')
         import lib.settings as settings
         logs_dir = settings.LogsDir()
         total_sz = 0
@@ -387,7 +388,7 @@ def start_logs_rotate():
             if not filename.endswith('.log'):
                 # this is not a log file - we did not create it - do nothing
                 continue
-            if filename.startswith('dhnmain-'):
+            if filename.startswith('bpmain-'):
                 # remove "old version" files, now we have files started with "dhn-"
                 remove_list.append((filepath, 'old version')) 
                 continue
@@ -425,9 +426,9 @@ def start_logs_rotate():
         for filepath, reason in remove_list:
             try:
                 os.remove(filepath)
-                io.log(6, 'dhninit.erase_logs %s was deleted because of "%s"' % (filepath, reason))
+                io.log(6, 'init_shutdown.erase_logs %s was deleted because of "%s"' % (filepath, reason))
             except:
-                io.log(1, 'dhninit.erase_logs ERROR can not remove %s, reason is [%s]' % (filepath, reason))
+                io.log(1, 'init_shutdown.erase_logs ERROR can not remove %s, reason is [%s]' % (filepath, reason))
                 io.exception()
         del remove_list
              
@@ -439,7 +440,7 @@ def check_install():
     """
     Return True if Private Key and local identity files exists and both is valid.
     """
-    io.log(2, 'dhninit.check_install ')
+    io.log(2, 'init_shutdown.check_install ')
     import lib.settings as settings
     import userid.identity as identity
     import lib.crypto as crypto
@@ -453,43 +454,43 @@ def check_install():
     idfilename = settings.LocalIdentityFilename()
     
     if not os.path.exists(keyfilename) or not os.path.exists(idfilename):
-        io.log(2, 'dhninit.check_install local key or local id not exists')
+        io.log(2, 'init_shutdown.check_install local key or local id not exists')
         return False
 
     current_key = io.ReadBinaryFile(keyfilename)
     current_id = io.ReadBinaryFile(idfilename)
 
     if current_id == '':
-        io.log(2, 'dhninit.check_install local identity is empty ')
+        io.log(2, 'init_shutdown.check_install local identity is empty ')
         return False
 
     if current_key == '':
-        io.log(2, 'dhninit.check_install private key is empty ')
+        io.log(2, 'init_shutdown.check_install private key is empty ')
         return False
 
     try:
         crypto.InitMyKey()
     except:
-        io.log(2, 'dhninit.check_install fail loading private key ')
+        io.log(2, 'init_shutdown.check_install fail loading private key ')
         return False
 
     try:
         ident = identity.identity(xmlsrc=current_id)
     except:
-        io.log(2, 'dhninit.check_install fail init local identity ')
+        io.log(2, 'init_shutdown.check_install fail init local identity ')
         return False
 
     try:
         res = ident.Valid()
     except:
-        io.log(2, 'dhninit.check_install wrong data in local identity   ')
+        io.log(2, 'init_shutdown.check_install wrong data in local identity   ')
         return False
 
     if not res:
-        io.log(2, 'dhninit.check_install local identity is not valid ')
+        io.log(2, 'init_shutdown.check_install local identity is not valid ')
         return False
 
-    io.log(2, 'dhninit.check_install done')
+    io.log(2, 'init_shutdown.check_install done')
     return True
 
 

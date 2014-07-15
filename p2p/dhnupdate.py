@@ -43,7 +43,7 @@ import lib.schedule as schedule
 
 
 import backup_control
-import dhninit
+import init_shutdown
 
 
 #-------------------------------------------------------------------------------
@@ -317,16 +317,16 @@ def step2(info, version_digest):
         fail('wrong data')
         return
 
-    dhnstarter_server_digest = info.get(settings.WindowsStarterFileName(), None)
-    if dhnstarter_server_digest is None:
+    bpstarter_server_digest = info.get(settings.WindowsStarterFileName(), None)
+    if bpstarter_server_digest is None:
         io.log(2, 'dhnupdate.step2 WARNING windows starter executable is not found in the info file')
         reactor.callLater(0.5, step4, version_digest)
         #fail('windows starter executable is not found in the info file')
         return
 
-    dhnstarter_local_digest = misc.file_hash(os.path.join(GetLocalDir(), settings.WindowsStarterFileName()))
+    bpstarter_local_digest = misc.file_hash(os.path.join(GetLocalDir(), settings.WindowsStarterFileName()))
 
-    if dhnstarter_local_digest != dhnstarter_server_digest:
+    if bpstarter_local_digest != bpstarter_server_digest:
         reactor.callLater(0.5, step3, version_digest)
     else:
         reactor.callLater(0.5, step4, version_digest)

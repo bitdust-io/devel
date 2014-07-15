@@ -24,8 +24,8 @@ It also checks whether the program is installed and switch to run another "insta
 
 The ``initializer()`` machine is doing several operations:
 
-    * start low-level modules and init local data, see ``p2p.dhninit.init_local()``
-    * prepare lists of my contacts, see ``p2p.dhninit.init_contacts()``
+    * start low-level modules and init local data, see ``p2p.init_shutdown.init_local()``
+    * prepare lists of my contacts, see ``p2p.init_shutdown.init_contacts()``
     * starts the network communications by running core method ``p2p.dhnini.init_connection()``
     * other modules is started after all other more important things 
     * machine can switch to "install" wizard if Private Key or local identity file is not fine
@@ -67,7 +67,7 @@ import installer
 import shutdowner
 import p2p_connector
 
-import dhninit
+import init_shutdown
 import webcontrol
 
 _Initializer = None
@@ -194,7 +194,7 @@ class Initializer(automat.Automat):
 
     def isInstalled(self, arg):
         if self.is_installed is None:
-            self.is_installed = dhninit.check_install() 
+            self.is_installed = init_shutdown.check_install() 
         return self.is_installed
     
     def isGUIPossible(self, arg):
@@ -208,25 +208,25 @@ class Initializer(automat.Automat):
         reactor.callLater(0, webcontrol.OnUpdateStartingPage)
 
     def doInitLocal(self, arg):
-        maybeDeferred(dhninit.init_local, arg).addCallback(
+        maybeDeferred(init_shutdown.init_local, arg).addCallback(
             lambda x: self.automat('init-local-done'))
 
     def doInitContacts(self, arg):
-        dhninit.init_contacts(
+        init_shutdown.init_contacts(
             # lambda x: self.automat('init-contacts-done'),
             lambda x: reactor.callLater(2, self.automat, 'init-contacts-done'),
             lambda x: self.automat('init-contacts-done'), )
 
     def doInitConnection(self, arg):
-        dhninit.init_connection()
+        init_shutdown.init_connection()
 
     def doInitModules(self, arg):
-        maybeDeferred(dhninit.init_modules).addCallback(
+        maybeDeferred(init_shutdown.init_modules).addCallback(
             lambda x: self.automat('init-modules-done'))
 
     def doShowGUI(self, arg):
         d = webcontrol.init()
-        if dhninit.UImode == 'show' or not self.is_installed: 
+        if init_shutdown.UImode == 'show' or not self.is_installed: 
             d.addCallback(webcontrol.show)
         webcontrol.ready()
 

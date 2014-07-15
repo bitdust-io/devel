@@ -51,7 +51,7 @@ import webcontrol
 
 def run(opts, args, overDict, pars):
     """
-    The entry point, this is called from ``p2p.dhnmain`` to process command line arguments.
+    The entry point, this is called from ``p2p.bpmain`` to process command line arguments.
     """
     print 'Copyright 2014, BitPie.NET. All rights reserved.'
     
@@ -63,8 +63,8 @@ def run(opts, args, overDict, pars):
         io.SetDebug(0)
 
     appList = io.find_process([
-        'dhnmain.exe',
-        'dhnmain.py',
+        'bpmain.exe',
+        'bpmain.py',
         'bitpie.py',
         'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
         ])
@@ -790,17 +790,17 @@ def cmd_uninstall(opts, args, overDict):
         found = False
         while True:
             appList = io.find_process([
-                'dhnmain.exe',
-                'dhnmain.py',
+                'bpmain.exe',
+                'bpmain.py',
                 'bitpie.py',
                 'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
                 'dhnview.exe',
                 'dhnview.py',
                 'bppipe.exe',
                 'bppipe.py',
-                'dhntester.exe',
-                'dhntester.py',
-                'dhnstarter.exe',
+                'bptester.exe',
+                'bptester.py',
+                'bpstarter.exe',
                 ])
             if len(appList) > 0:
                 found = True
@@ -825,11 +825,11 @@ def cmd_uninstall(opts, args, overDict):
         def _try():
             io.log(0, '_try')
             appList = io.find_process([
-                'dhnmain.exe',
+                'bpmain.exe',
                 'dhnview.exe',
                 'bppipe.exe',
-                'dhntester.exe',
-                'dhnstarter.exe',
+                'bptester.exe',
+                'bpstarter.exe',
                 ])
             io.log(0, 'appList:' + str(appList))
             if len(appList) == 0:
@@ -850,11 +850,11 @@ def cmd_uninstall(opts, args, overDict):
         _try()
 #            time.sleep(1)
     appList = io.find_process([
-        'dhnmain.exe',
+        'bpmain.exe',
         'dhnview.exe',
         'bppipe.exe',
-        'dhntester.exe',
-        'dhnstarter.exe',
+        'bptester.exe',
+        'bpstarter.exe',
         ])
     if len(appList) == 0:
         io.log(0, 'uninstalling BitPie.NET ...   ')

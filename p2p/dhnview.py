@@ -844,7 +844,7 @@ class MyLogWindow(wx.Frame):
         if os.path.isfile('icons/logs.ico'):
             icon = openWxIcon('icons/logs.ico')
         else:
-            icon = openWxIcon('icons/dhnicon.ico')
+            icon = openWxIcon('icons/tray_icon.ico')
         self.SetIcon(icon)
         
     def OnClose(self, event):
@@ -886,7 +886,7 @@ class MyTrafficWindow(wx.Frame):
         if os.path.isfile('icons/history.ico'):
             icon = openWxIcon('icons/history.ico')
         else:
-            icon = openWxIcon('icons/dhnicon.ico')
+            icon = openWxIcon('icons/tray_icon.ico')
         self.SetIcon(icon)
 
     def OnClose(self, event):
@@ -984,7 +984,7 @@ class MyEventsWindow(wx.Frame):
         if os.path.isfile('icons/event.ico'):
             icon = openWxIcon('icons/event.ico')
         else:
-            icon = openWxIcon('icons/dhnicon.ico')
+            icon = openWxIcon('icons/tray_icon.ico')
         self.SetIcon(icon)
         self.lst = wx.ListCtrl(self, style=wx.LC_REPORT)
         self.lst.InsertColumn(0, 'Time', )
@@ -1062,7 +1062,7 @@ class MyStatesWindow(wx.Frame):
         if os.path.isfile('icons/states.ico'):
             icon = openWxIcon('icons/states.ico')
         else:
-            icon = openWxIcon('icons/dhnicon.ico')
+            icon = openWxIcon('icons/tray_icon.ico')
         self.SetIcon(icon)
         self.lst = wx.ListCtrl(self, style=wx.LC_REPORT)
         self.lst.InsertColumn(0, 'ID', )
@@ -1117,7 +1117,7 @@ class MyQueuesWindow(wx.Frame):
         if os.path.isfile('icons/traffic.ico'):
             icon = openWxIcon('icons/traffic.ico')
         else:
-            icon = openWxIcon('icons/dhnicon.ico')
+            icon = openWxIcon('icons/tray_icon.ico')
         self.SetIcon(icon)
 
     def OnClose(self, event):
@@ -1145,7 +1145,7 @@ class MyCountersWindow(wx.Frame):
         if os.path.isfile('icons/counter.ico'):
             icon = openWxIcon('icons/counter.ico')
         else:    
-            icon = openWxIcon('icons/dhnicon.ico')
+            icon = openWxIcon('icons/tray_icon.ico')
         self.SetIcon(icon)
 
     def OnClose(self, event):
@@ -1226,7 +1226,7 @@ class MyFrame(wx.Frame):
         # self.statusTextTimer = None
 
         #---icon
-        icon = openWxIcon('icons/dhnicon.ico')
+        icon = openWxIcon('icons/tray_icon.ico')
         self.SetIcon(icon)
 
         #---start page

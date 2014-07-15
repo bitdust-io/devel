@@ -31,7 +31,7 @@ The concept of "fail fast" is what we are after here.  If there is a failure we
 want to know about it fast, so we can fix it fast, so the chance of multiple
 failures at the same time is less.
 
-Right now this is an interface between ``dhnmain`` and ``dhntester`` child process.
+Right now this is an interface between ``bpmain`` and ``bptester`` child process.
 """
 
 import os
@@ -111,12 +111,12 @@ def shutdown():
             _LoopSpaceTime.cancel()
 
     if alive():
-        io.log(4, 'localtester.shutdown is killing dhntester')
+        io.log(4, 'localtester.shutdown is killing bptester')
 
         try:
             _CurrentProcess.kill()
         except:
-            io.log(4, 'localtester.shutdown WARNING can not kill dhntester')
+            io.log(4, 'localtester.shutdown WARNING can not kill bptester')
         del _CurrentProcess
         _CurrentProcess = None
 
@@ -144,10 +144,10 @@ def run(Tester):
     # io.log(8, 'localtester.run ' + str(Tester))
 
     if io.isFrozen() and io.Windows():
-        commandpath = 'dhntester.exe'
+        commandpath = 'bptester.exe'
         cmdargs = [commandpath, Tester]
     else:
-        commandpath = 'dhntester.py'
+        commandpath = 'bptester.py'
         cmdargs = [sys.executable, commandpath, Tester]
 
     if not os.path.isfile(commandpath):

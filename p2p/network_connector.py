@@ -82,7 +82,7 @@ import p2p_connector
 # import central_connector
 import shutdowner
 
-import dhnicon
+import tray_icon
 import run_upnpc
 
 #------------------------------------------------------------------------------ 
@@ -124,7 +124,7 @@ class NetworkConnector(Automat):
     def state_changed(self, oldstate, newstate):
         automats.set_global_state('NETWORK ' + newstate)
         p2p_connector.A('network_connector.state', newstate)
-        dhnicon.state_changed(self.state, p2p_connector.A().state)
+        tray_icon.state_changed(self.state, p2p_connector.A().state)
 
     def A(self, event, arg):
         #---AT_STARTUP---

@@ -36,7 +36,7 @@ if __name__ == "__main__":
 #        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
     # DHN use py2exe to build binaries under Windows, but it wont finish correctly!
-    # After finishing all processes dhnmain.exe still working and eat 50% CPU! - it wont stop.
+    # After finishing all processes bpmain.exe still working and eat 50% CPU! - it wont stop.
     # But if running from command line - it gives no problems.
     # It seems CSpace reactor makes some conflicts with twisted reactor.
     # However all threads are finished correctly - really strange thing.
@@ -46,8 +46,8 @@ if __name__ == "__main__":
     how_to_stop = windows_and_frozen()
     
     #---START THE MAIN CODE---
-    import p2p.dhnmain
-    ret = p2p.dhnmain.main()
+    import p2p.bpmain
+    ret = p2p.bpmain.main()
     
 #    if OriginalSTDOUT is not None:
 #        sys.stdout = OriginalSTDOUT

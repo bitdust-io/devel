@@ -164,7 +164,7 @@ def readtar(archivepath, outputdir, encoding=None):
 def main():
     """
     The entry point of the ``bppipe`` child process. 
-    Use command line arguments to get the command from ``dhnmain``. 
+    Use command line arguments to get the command from ``bpmain``. 
     """
     try:
         import sys
