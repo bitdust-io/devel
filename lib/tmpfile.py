@@ -35,42 +35,12 @@ _SubDirs = {
     # hold onto outbox files 1 hour
     # so we can handle resends if contact is off-line
 
-    # 'data-par': 0,
-    # for data and parity files we have special rules
-    # because both files types are stored in the same folder "data-par"
-    # also backup_monitor seems to be responsible to remove these files
-    # but we will remove old files to - at startup
-    # hold onto data for rebuilding for a day, can rebuild parity as needed
-    # hold onto parity for an hour
-
     'tcp-in':   60*10,
     # 10 minutes for incoming tcp files
     
-    'ssh-in':   60*10,
-    # 10 minutes for incoming ssh files
-
-    'q2q-in':   60*10,
-    # 10 minutes for incoming files
-
-    'http-in':  60*30,
-    # 30 minutes for incoming http files
-    # http is very slow so let's give more time
-
-    'email-in': 60*60,
-    # 1 hour for incoming email files
-    # email is so slow so we may be want to keep it more
-
-    'cspace-in':60*10,
-    # 10 minutes for incoming files
-    
     'dhtudp-in': 60*10,
     
-    'bat':      60*60,
-    # we need bat files to restart dhn
-    # we create it and start immediately
-    # so we can remove it soon
-
-    'propagat': 60*10,
+    'propagate': 60*10,
     # propagate happens often enough,
     # 10 minutes should be enough
 
@@ -117,7 +87,7 @@ def init(temp_dir_path=''):
             _TempDirPath = temp_dir_path
         else:
             os_temp_dir = tempfile.gettempdir()
-            temp_dir = os.path.join(os_temp_dir, 'dhn')
+            temp_dir = os.path.join(os_temp_dir, 'bitpie')
 
             if not os.path.exists(temp_dir):
                 try:

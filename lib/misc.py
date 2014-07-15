@@ -472,8 +472,6 @@ def ValidUserName(username):
             return False
     if username[0] not in set('abcdefghijklmnopqrstuvwxyz'):
         return False
-    if username.startswith('dhn'):
-        return False
     return True
 
 def ValidEmail(email, full_check=True):

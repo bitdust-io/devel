@@ -19,7 +19,7 @@
     
 We contact BitPie.NET for list of nodes we have hired
 and we can also replace any node (fire & hire someone else at once)
-by contacting DHN and asking for replacement.
+by contacting BitPie.NET and asking for replacement.
 
 If at some point we are not getting good answers from a node
 for too long we need to replace him and reconstruct the data

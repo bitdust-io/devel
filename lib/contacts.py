@@ -76,8 +76,7 @@ def init():
 def getContact(idurl):
     """
     The Main Method Here - return identity object for given ID or None if not found. 
-    Only valid contacts for packets will be signed by local identity, suppliers, customers
-    and eventually dhn central command.
+    Only valid contacts for packets will be signed by local identity, suppliers, customers.
     """
     if idurl is None:
         return None

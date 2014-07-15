@@ -50,9 +50,9 @@ def InitMyKey(keyfilename=None):
     If file "[BitPie.NET data dir]/metadata/mykeyfile_location" exists - 
     it should contain the location of the mykeyfile. Useful to store Private Key on the USB flash.
     BitPie.NET data dir is platform dependent:
-        - Linux: ~/.dhn
-        - Windows XP: C:/Documents and Settings/[user]/.dhn
-        - Windows Vista, 7, 8: C:/Users/[user]/.dhn
+        - Linux: ~/.bitpie
+        - Windows XP: C:/Documents and Settings/[user]/.bitpie
+        - Windows Vista, 7, 8: C:/Users/[user]/.bitpie
     Finally if target file exist - the Private Key will be loaded into memory.
     If file does not exist - the new key will be generated. 
     The size for new key will be taken from settings.  

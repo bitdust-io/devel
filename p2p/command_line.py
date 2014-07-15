@@ -14,11 +14,11 @@
 
 Here is a bunch of methods to process input from command-line.
 
-User can pass arguments via command line and newly executed DHN process 
-will communicate with already started DHN main application to do needed operations.
+User can pass arguments via command line and newly executed BitPie.NET process 
+will communicate with already started BitPie.NET main application to do needed operations.
 In some cases we do not need to communicate - the new process just prints some static data and exit.
 
-To communicate with existing DHN process new instance first reads the port number of the 
+To communicate with existing BitPie.NET process new instance first reads the port number of the 
 HTML web server (see ``p2p.webcontrol`` module) and then connect to that port and send request.
 
 See ``p2p.help`` module for commands details.
@@ -208,7 +208,7 @@ def run(opts, args, overDict, pars):
 
 def run_url_command(address, stop_reactor_in_errback=True):
     """
-    Method to communicate with existing DHN process with HTTP request.
+    Method to communicate with existing BitPie.NET process with HTTP request.
     Reads port number of the local HTTP server and do the request.
     """
     try:

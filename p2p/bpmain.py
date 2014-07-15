@@ -201,7 +201,7 @@ def parser():
     group.add_option('-t', '--tempdir',
                         dest='tempdir',
                         type='string',
-                        help='set location for temporary files, default is ~/.dhn/temp',)
+                        help='set location for temporary files, default is ~/.bitpie/temp',)
     group.add_option('--twisted',
                         dest='twisted',
                         action='store_true',
@@ -346,7 +346,7 @@ _OriginalCallLater = None
 _DelayedCallsIndex = {}
 _LastCallableID = 0
 
-class DHN_callable():
+class _callable():
     """
     This class shows my experiments with performance monitoring.
     I tried to decrease the number of delayed calls.
@@ -366,13 +366,13 @@ class DHN_callable():
     def call(self):
         self.to_call()
 
-def DHN_callLater(delay, callable, *args, **kw):
+def _callLater(delay, callable, *args, **kw):
     """
     A wrapper around Twisted ``reactor.callLater()`` method.
     """
     global _OriginalCallLater
-    dhn_call = DHN_callable(callable, *args, **kw)
-    delayed_call = _OriginalCallLater(delay, dhn_call.call)
+    _call = _callable(callable, *args, **kw)
+    delayed_call = _OriginalCallLater(delay, _call.call)
     return delayed_call
 
 def patchReactorCallLater(r):
@@ -381,7 +381,7 @@ def patchReactorCallLater(r):
     """
     global _OriginalCallLater
     _OriginalCallLater = r.callLater
-    r.callLater = DHN_callLater 
+    r.callLater = _callLater 
 
 def monitorDelayedCalls(r):
     """
@@ -476,8 +476,8 @@ def main():
 #        pid = -1
 #        try:
 #            if io.Windows():
-#                dhn_data_path = os.path.join(os.environ.get('APPDATA', os.path.join(os.path.expanduser('~'), 'Application Data')), 'BitPie.NET')
-#                pid_path = os.path.join(dhn_data_path, 'metadata', 'processid')
+#                _data_path = os.path.join(os.environ.get('APPDATA', os.path.join(os.path.expanduser('~'), 'Application Data')), 'BitPie.NET')
+#                pid_path = os.path.join(_data_path, 'metadata', 'processid')
 #            else:
 #                pid_path = os.path.join(os.path.expanduser('~'), '.bitpie', 'metadata', 'processid')
 #            if os.path.isfile(pid_path):
@@ -487,7 +487,7 @@ def main():
         # this is extra protection for Debian release
         # I am not sure how process name can looks on different systems
         # check the process ID from previous start 
-        # it file exists and we found this PID in the currently running apps - DHN is working
+        # it file exists and we found this PID in the currently running apps - BitPie.NET is working
         # if file not exists we don't want to start if found some other jobs with same name 
         # PREPRO probably in future we can switch to this line:
         # if len(appList) > 0 and pid != -1 and pid in appList
@@ -664,7 +664,7 @@ def main():
 
 def usage():
     """
-    Calls ``p2p.help.usage()`` method to print out how to run DHN software from command line.
+    Calls ``p2p.help.usage()`` method to print out how to run BitPie.NET software from command line.
     """
     try:
         import help

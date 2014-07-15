@@ -22,7 +22,7 @@ This serves requests from peers:
     * Correspondent - request to be my correspondent
 
 For listed customers we will save and retrieve data up to their specified limits.
-DHN tells us who our customers are and limits, we get their identities.
+BitPie.NET tells us who our customers are and limits, we get their identities.
 If a customer does not contact us for more than 30 hours (or something) then we can process
 requests from that customers scrubbers.
 

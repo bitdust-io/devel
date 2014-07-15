@@ -26,7 +26,7 @@ The ``initializer()`` machine is doing several operations:
 
     * start low-level modules and init local data, see ``p2p.init_shutdown.init_local()``
     * prepare lists of my contacts, see ``p2p.init_shutdown.init_contacts()``
-    * starts the network communications by running core method ``p2p.dhnini.init_connection()``
+    * starts the network communications by running core method ``p2p.init_shutdown.init_connection()``
     * other modules is started after all other more important things 
     * machine can switch to "install" wizard if Private Key or local identity file is not fine
     * it will finally switch to "READY" state to indicate the whole status of the application

@@ -1195,7 +1195,7 @@ class MyFrame(wx.Frame):
         #---menu
         if False:
             menuFile = wx.Menu()
-            self.Bind(wx.EVT_MENU, self.OnClose, menuFile.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window, DHN will go in background."))
+            self.Bind(wx.EVT_MENU, self.OnClose, menuFile.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window, BitPie.NET will go in background."))
             menuView = wx.Menu()
             self.Bind(wx.EVT_MENU, self.OnLogs, menuView.Append(-1, "&Logs", "Browse system messages"))
             self.Bind(wx.EVT_MENU, self.OnTraffic, menuView.Append(-1, "&Traffic", "View packets traffic"))

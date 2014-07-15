@@ -169,7 +169,7 @@ def uninstall():
     def make_bat_file():
         wait_appname = StarterFilename
         local_dir = os.path.abspath(os.path.dirname(os.path.abspath(sys.executable)))
-        dirs2delete = [ sharedPath(None, '.'), os.path.join(tempfile.gettempdir(), 'dhn') ]
+        dirs2delete = [ sharedPath(None, '.'), os.path.join(tempfile.gettempdir(), 'bitpie') ]
         logwrite('make_bat_file\n')
         batfileno, batfilename = tempfile.mkstemp('.bat', 'BitPie.NET-uninstall-')
         logwrite('batfilename:%s\n' % batfilename)
@@ -566,14 +566,14 @@ def run():
     logwrite('shared location is     [%s]\n' % sharedStarterFilename)
 
     if (not binDirExist) or executable_filename != sharedStarterFilename:
-        #if dhn is running - stop it.
+        #if BitPie.NET is running - stop it.
         res = stop_all([    'bpstarter.',
                             'bpmain.',
                             'bpgui.',
                             'bitpie.',
                             ])
         if res != 0:
-            logwrite('can not stop dhn: %s\n' % res)
+            logwrite('can not stop BitPie.NET: %s\n' % res)
             sys.exit(res)
 
         logwrite('copy files to %s\n' % sharedPath('', 'bin'))

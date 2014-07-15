@@ -112,9 +112,9 @@ def RestoreSTDOUT():
     if OriginalStdOut is None:
         return
     try:
-        dhn_std_out = sys.stdout
+        _std_out = sys.stdout
         sys.stdout = OriginalStdOut
-        dhn_std_out.close()
+        _std_out.close()
     except:
         traceback.print_last(file=open('io.shutdown.error', 'w'))
 

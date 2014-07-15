@@ -102,7 +102,7 @@ centered_page_src = ''
 url_history = [] # ['/main']
 pagename_history = [] # ['main']
 
-_DHNViewCommandFunc = []
+_GUICommandCallbacks = []
 _SettingsTreeNodesDict = {}
 _SettingsTreeComboboxNodeLists = {}
 
@@ -178,9 +178,9 @@ _MenuItems = {
     '1|users'               :('/'+_PAGE_SUPPLIERS,          'icons/users01.png'),
     '2|storage'             :('/'+_PAGE_STORAGE,            'icons/storage01.png'),
     '3|settings'            :('/'+_PAGE_CONFIG,             'icons/settings01.png'),
-    '4|money'               :('/'+_PAGE_MONEY,              'icons/money01.png'),
-    '5|messages'            :('/'+_PAGE_MESSAGES,           'icons/messages01.png'),
-    '6|friends'             :('/'+_PAGE_CORRESPONDENTS,     'icons/handshake01.png'),
+#     '4|money'               :('/'+_PAGE_MONEY,              'icons/money01.png'),
+    '4|messages'            :('/'+_PAGE_MESSAGES,           'icons/messages01.png'),
+    '5|friends'             :('/'+_PAGE_CORRESPONDENTS,     'icons/handshake01.png'),
     #'4|shutdown'            :('/?action=exit',              'icons/exit.png'),
     }
 
@@ -245,7 +245,7 @@ def init(port = 6001):
         io.log(2, 'webcontrol.init SKIP, already started on port ' + str(local_port))
         return succeed(local_port)
 
-    events.init(DHNViewSendCommand)
+    events.init(SendCommandToGUI)
     
     # links
     # transport_control.SetContactAliveStateNotifierFunc(OnAliveStateChanged)
@@ -325,13 +325,13 @@ def init(port = 6001):
         root.putChild(_PAGE_SETTINGS_LIST, SettingsListPage())
         root.putChild(_PAGE_SECURITY, SecurityPage())
         root.putChild(_PAGE_NETWORK_SETTINGS, NetworkSettingsPage())
-        root.putChild(_PAGE_MONEY, MoneyPage())
-        root.putChild(_PAGE_MONEY_ADD, MoneyAddPage())
-        root.putChild(_PAGE_MONEY_MARKET_BUY, MoneyMarketBuyPage())
-        root.putChild(_PAGE_MONEY_MARKET_SELL, MoneyMarketSellPage())
-        root.putChild(_PAGE_MONEY_MARKET_LIST, MoneyMarketListPage())
-        root.putChild(_PAGE_TRANSFER, TransferPage())
-        root.putChild(_PAGE_RECEIPTS, ReceiptsPage())
+        # root.putChild(_PAGE_MONEY, MoneyPage())
+        # root.putChild(_PAGE_MONEY_ADD, MoneyAddPage())
+        # root.putChild(_PAGE_MONEY_MARKET_BUY, MoneyMarketBuyPage())
+        # root.putChild(_PAGE_MONEY_MARKET_SELL, MoneyMarketSellPage())
+        # root.putChild(_PAGE_MONEY_MARKET_LIST, MoneyMarketListPage())
+        # root.putChild(_PAGE_TRANSFER, TransferPage())
+        # root.putChild(_PAGE_RECEIPTS, ReceiptsPage())
         root.putChild(_PAGE_MESSAGES, MessagesPage())
         root.putChild(_PAGE_NEW_MESSAGE, NewMessagePage())
         root.putChild(_PAGE_CORRESPONDENTS, CorrespondentsPage())
@@ -339,7 +339,7 @@ def init(port = 6001):
         # root.putChild(_PAGE_UPDATE_SHEDULE, UpdateShedulePage())
         root.putChild(_PAGE_DEV_REPORT, DevReportPage())
         root.putChild(_PAGE_DEVELOPMENT, DevelopmentPage())
-        root.putChild(_PAGE_BIT_COIN_SETTINGS, BitCoinSettingsPage())
+        # root.putChild(_PAGE_BIT_COIN_SETTINGS, BitCoinSettingsPage())
         root.putChild(_PAGE_AUTOMATS, AutomatsPage())
         root.putChild(_PAGE_MEMORY, MemoryPage())
         root.putChild(_PAGE_EMERGENCY, EmergencyPage())
@@ -407,7 +407,7 @@ def show(x=None):
     appList = io.find_process(['bpgui.', ])
     if len(appList):
         io.log(2, 'webcontrol.show SKIP, we found another bpgui process running at the moment, pid=%s' % appList)
-        DHNViewSendCommand('raise')
+        SendCommandToGUI('raise')
         return
     try:
         if io.Windows():
@@ -654,7 +654,6 @@ def html_comment(text):
 
 def SetReadOnlyState(state):
     global read_only_state
-    global dhn_state
     io.log(12, 'webcontrol.SetReadOnlyState ' + str(state))
     read_only_state = not state
 
@@ -672,14 +671,14 @@ def check_install():
 #------------------------------------------------------------------------------
 
 def OnGlobalStateChanged(state):
-    DHNViewSendCommand('BITPIE-SERVER:' + state)
+    SendCommandToGUI('BITPIE-SERVER:' + state)
     if currentVisiblePageName() == _PAGE_STARTING:
-        DHNViewSendCommand('update')
+        SendCommandToGUI('update')
 #    elif currentVisiblePageUrl().count(_PAGE_SETTINGS):
-#        DHNViewSendCommand('update')
+#        SendCommandToGUI('update')
 
 def OnSingleStateChanged(index, id, name, new_state):
-    DHNViewSendCommand('automat %s %s %s %s' % (str(index), id, name, new_state))
+    SendCommandToGUI('automat %s %s %s %s' % (str(index), id, name, new_state))
 
 def OnGlobalVersionReceived(txt):
     io.log(4, 'webcontrol.OnGlobalVersionReceived ' + txt)
@@ -690,7 +689,7 @@ def OnGlobalVersionReceived(txt):
     global_version = txt
     io.log(6, '  global:' + str(global_version))
     io.log(6, '  local :' + str(local_version))
-    DHNViewSendCommand('version: ' + str(global_version) + ' ' + str(local_version))
+    SendCommandToGUI('version: ' + str(global_version) + ' ' + str(local_version))
 
 def OnAliveStateChanged(idurl):
     if contacts.IsSupplier(idurl):
@@ -702,17 +701,17 @@ def OnAliveStateChanged(idurl):
                                         _PAGE_BACKUP_DIAGRAM,
                                         _PAGE_BACKUP_LOCAL_FILES,
                                         _PAGE_BACKUP_REMOTE_FILES,]:
-            DHNViewSendCommand('update')
+            SendCommandToGUI('update')
     if contacts.IsCustomer(idurl):
         if currentVisiblePageName() in [_PAGE_CUSTOMERS, _PAGE_CUSTOMER]:
-            DHNViewSendCommand('update')
+            SendCommandToGUI('update')
     if contacts.IsCorrespondent(idurl):
         if currentVisiblePageName() == _PAGE_CORRESPONDENTS:
-            DHNViewSendCommand('update')
+            SendCommandToGUI('update')
 
 def OnInitFinalDone():
     if currentVisiblePageName() in [_PAGE_MAIN,]:
-        DHNViewSendCommand('update')
+        SendCommandToGUI('update')
 
 def OnBackupStats(backupID):
     if currentVisiblePageName() in [ _PAGE_BACKUP,
@@ -720,9 +719,9 @@ def OnBackupStats(backupID):
                                      _PAGE_BACKUP_LOCAL_FILES,
                                      _PAGE_BACKUP_REMOTE_FILES,]:
         if currentVisiblePageUrl().count(backupID.replace('/','_')):         
-            DHNViewSendCommand('update')
+            SendCommandToGUI('update')
     elif currentVisiblePageName() == _PAGE_MAIN:
-        DHNViewSendCommand('update')
+        SendCommandToGUI('update')
 
 def OnBackupDataPacketResult(backupID, packet):
     if currentVisiblePageName() in [ _PAGE_BACKUP,
@@ -730,7 +729,7 @@ def OnBackupDataPacketResult(backupID, packet):
                                      _PAGE_BACKUP_LOCAL_FILES,
                                      _PAGE_BACKUP_REMOTE_FILES,]:
         if currentVisiblePageUrl().count(backupID.replace('/','_')):
-            DHNViewSendCommand('update')
+            SendCommandToGUI('update')
 
 def OnBackupProcess(backupID, packet=None):
     if currentVisiblePageName() in [ _PAGE_BACKUP,
@@ -738,9 +737,9 @@ def OnBackupProcess(backupID, packet=None):
                                      _PAGE_BACKUP_LOCAL_FILES,
                                      _PAGE_BACKUP_REMOTE_FILES,]:
         if currentVisiblePageUrl().count(backupID.replace('/','_')):
-            DHNViewSendCommand('update')
+            SendCommandToGUI('update')
     if currentVisiblePageName() in [_PAGE_MAIN]:
-        DHNViewSendCommand('update')
+        SendCommandToGUI('update')
 
 def OnRestoreProcess(backupID, SupplierNumber, packet):
     #io.log(18, 'webcontrol.OnRestorePacket %s %s' % (backupID, SupplierNumber))
@@ -749,7 +748,7 @@ def OnRestoreProcess(backupID, SupplierNumber, packet):
                                      _PAGE_BACKUP_LOCAL_FILES,
                                      _PAGE_BACKUP_REMOTE_FILES,]:
         if currentVisiblePageUrl().count(backupID.replace('/','_')):
-            DHNViewSendCommand('update')
+            SendCommandToGUI('update')
             
 def OnRestoreSingleBlock(backupID, block):
     if currentVisiblePageName() in [ _PAGE_BACKUP,
@@ -757,7 +756,7 @@ def OnRestoreSingleBlock(backupID, block):
                                      _PAGE_BACKUP_LOCAL_FILES,
                                      _PAGE_BACKUP_REMOTE_FILES,]:
         if currentVisiblePageUrl().count(backupID.replace('/','_')):
-            DHNViewSendCommand('update')
+            SendCommandToGUI('update')
 
 def OnRestoreDone(backupID, result):
     #io.log(18, 'webcontrol.OnRestoreDone ' + backupID)
@@ -766,23 +765,23 @@ def OnRestoreDone(backupID, result):
                                      _PAGE_BACKUP_LOCAL_FILES,
                                      _PAGE_BACKUP_REMOTE_FILES,]:
         if currentVisiblePageUrl().count(backupID.replace('/','_')):
-        # DHNViewSendCommand('open %s?action=restore.done&result=%s' % ('/'+_PAGE_MAIN+'/'+backupID.replace('/','_'), result))
-            DHNViewSendCommand('update')
+        # SendCommandToGUI('open %s?action=restore.done&result=%s' % ('/'+_PAGE_MAIN+'/'+backupID.replace('/','_'), result))
+            SendCommandToGUI('update')
     elif currentVisiblePageName() in [_PAGE_MAIN,]:
-        DHNViewSendCommand('update')
+        SendCommandToGUI('update')
 
 def OnListSuppliers():
     if currentVisiblePageName() == _PAGE_SUPPLIERS:
-        DHNViewSendCommand('update')
+        SendCommandToGUI('update')
 
 def OnListCustomers():
     #io.log(18, 'webcontrol.OnListCustomers ')
     if currentVisiblePageName() == _PAGE_CUSTOMERS:
-        DHNViewSendCommand('update')
+        SendCommandToGUI('update')
         
-def OnMarketList():
-    if currentVisiblePageName() == _PAGE_MONEY_MARKET_LIST:
-        DHNViewSendCommand('update')
+#def OnMarketList():
+#    if currentVisiblePageName() == _PAGE_MONEY_MARKET_LIST:
+#        SendCommandToGUI('update')
         
 # msg is (sender, to, subject, dt, body)
 def OnIncommingMessage(packet, msg):
@@ -792,7 +791,7 @@ def OnTrafficIn(newpacket, info, status, message):
     if message:
         message = message.replace(' ', '_')
     if newpacket is None:
-        DHNViewSendCommand(
+        SendCommandToGUI(
             'packet in Unknown from (%s://%s) %s 0 %s "%s"' % (
                  info.proto, info.host, message, status, message))
     else:
@@ -801,7 +800,7 @@ def OnTrafficIn(newpacket, info, status, message):
             packet_from = newpacket.RemoteID
         if newpacket.Command == commands.Fail():
             message = newpacket.Payload.replace(' ', '_')
-        DHNViewSendCommand(
+        SendCommandToGUI(
             'packet in %s from %s (%s://%s) %s %d %s "%s"' % (
                 newpacket.Command, nameurl.GetName(packet_from),
                 info.proto, info.host, newpacket.PacketID,
@@ -820,7 +819,7 @@ def OnPacketOut(pkt_out, status, message):
         addr += proto + ' '
         if error_message:
             error_message = error_message.replace(' ', '_')
-    DHNViewSendCommand(
+    SendCommandToGUI(
         'packet out %s to %s (%s) %s %d %s "%s"' % (
             pkt_out.outpacket.Command, nameurl.GetName(pkt_out.remote_idurl),
             addr, pkt_out.outpacket.PacketID, size, status, 
@@ -830,7 +829,7 @@ def OnPacketOut(pkt_out, status, message):
 #        proto, host, status, size, description, error_message = result
 #        if error_message:
 #            error_message = error_message.replace(' ', '_')
-#        DHNViewSendCommand(
+#        SendCommandToGUI(
 #            'packet out %s to %s (%s://%s) %s %d %s "%s"' % (
 #                pkt_out.outpacket.Command, nameurl.GetName(pkt_out.remote_idurl),
 #                proto, host, pkt_out.outpacket.PacketID, size, status, 
@@ -841,26 +840,26 @@ def OnTrafficOut(pkt_out, item, status, size, message):
     #     return
     if message:
         message = message.replace(' ', '_')    
-    DHNViewSendCommand(
+    SendCommandToGUI(
         'packet out %s to %s (%s://%s) %s %d %s "%s"' % (
             pkt_out.outpacket.Command, nameurl.GetName(pkt_out.remote_idurl),
             item.proto, item.host, pkt_out.outpacket.PacketID, pkt_out.filesize,
             status, message))
 
 #def OnSupplierQueuePacketCallback(sendORrequest, supplier_idurl, packetid, result):
-#    DHNViewSendCommand('queue %s %s %d %d %s %s' % (
+#    SendCommandToGUI('queue %s %s %d %d %s %s' % (
 #        sendORrequest, nameurl.GetName(supplier_idurl), 
 #        contacts.numberForSupplier(supplier_idurl), contacts.numSuppliers(),
 #        packetid, result))
 
 def OnTrayIconCommand(cmd):
     if cmd == 'exit':
-        DHNViewSendCommand('exit')
+        SendCommandToGUI('exit')
         #reactor.callLater(0, init_shutdown.shutdown_exit)
         shutdowner.A('stop', 'exit')
 
     elif cmd == 'restart':
-        DHNViewSendCommand('exit')
+        SendCommandToGUI('exit')
         #reactor.callLater(0, init_shutdown.shutdown_restart, 'show')
         appList = io.find_process(['bpgui.',])
         if len(appList) > 0:
@@ -875,10 +874,10 @@ def OnTrayIconCommand(cmd):
         show()
 
     elif cmd == 'hide':
-        DHNViewSendCommand('exit')
+        SendCommandToGUI('exit')
         
     elif cmd == 'toolbar':
-        DHNViewSendCommand('toolbar')
+        SendCommandToGUI('toolbar')
 
     else:
         io.log(2, 'webcontrol.OnTrayIconCommand WARNING: ' + str(cmd))
@@ -889,41 +888,41 @@ def OnTrayIconCommand(cmd):
 #    installing_process_str += txt + '\n'
 #    #installing_process_str = txt
 #    if currentVisiblePageName() == _PAGE_INSTALL:
-#        DHNViewSendCommand('update')
+#        SendCommandToGUI('update')
 
 def OnUpdateInstallPage():
     io.log(6, 'webcontrol.OnUpdateInstallPage')
     if currentVisiblePageName() in [_PAGE_INSTALL,]:
-        DHNViewSendCommand('open /'+_PAGE_INSTALL)
+        SendCommandToGUI('open /'+_PAGE_INSTALL)
 
 def OnUpdateStartingPage():
     if currentVisiblePageName() in [_PAGE_STARTING,]:
-        DHNViewSendCommand('open /'+_PAGE_STARTING)
+        SendCommandToGUI('open /'+_PAGE_STARTING)
 
 def OnReadLocalFiles():
     if currentVisiblePageName() in [_PAGE_MAIN,
                                     _PAGE_BACKUP,
                                     _PAGE_SUPPLIER_LOCAL_FILES,]:
-        DHNViewSendCommand('update')
+        SendCommandToGUI('update')
 
-def OnInboxReceipt(newpacket):
-    if currentVisiblePageName() in [_PAGE_MONEY, 
-                                    _PAGE_MONEY_ADD, ]:
-        DHNViewSendCommand('update')
+#def OnInboxReceipt(newpacket):
+#    if currentVisiblePageName() in [_PAGE_MONEY, 
+#                                    _PAGE_MONEY_ADD, ]:
+#        SendCommandToGUI('update')
 
-def OnBitCoinUpdateBalance(balance):
-    if currentVisiblePageName() in [_PAGE_MONEY,]:
-        if not currentVisiblePageUrl().count('?'):
-            DHNViewSendCommand('update')
+#def OnBitCoinUpdateBalance(balance):
+#    if currentVisiblePageName() in [_PAGE_MONEY,]:
+#        if not currentVisiblePageUrl().count('?'):
+#            SendCommandToGUI('update')
 
 #-------------------------------------------------------------------------------
 
-def DHNViewSendCommand(cmd):
-    global _DHNViewCommandFunc
+def SendCommandToGUI(cmd):
+    global _GUICommandCallbacks
     if isinstance(cmd, unicode):
-        io.log(2, 'DHNViewSendCommand WARNING cmd is unicode' + str(cmd))
+        io.log(2, 'SendCommandToGUI WARNING cmd is unicode' + str(cmd))
     try:
-        for f in _DHNViewCommandFunc:
+        for f in _GUICommandCallbacks:
             f(str(cmd))
     except:
         io.exception()
@@ -938,14 +937,14 @@ class LocalHTTPChannel(http.HTTPChannel):
         return http.HTTPChannel.connectionMade(self)
 
     def lineReceived(self, line):
-        global _DHNViewCommandFunc
+        global _GUICommandCallbacks
         if line.strip().upper() == 'BITPIE-VIEW-REQUEST':
-            io.log(2, 'DHNView: view request received from ' + str(self.transport.getHost()))
+            io.log(2, 'GUI: view request received from ' + str(self.transport.getHost()))
             self.controlState = True
-            _DHNViewCommandFunc.append(self.send)
-            DHNViewSendCommand('BITPIE-SERVER:' + GetGlobalState())
+            _GUICommandCallbacks.append(self.send)
+            SendCommandToGUI('BITPIE-SERVER:' + GetGlobalState())
             for index, object in automat.objects().items():
-                DHNViewSendCommand('automat %s %s %s %s' % (str(index), object.id, object.name, object.state))
+                SendCommandToGUI('automat %s %s %s %s' % (str(index), object.id, object.name, object.state))
         else:
             return http.HTTPChannel.lineReceived(self, line)
 
@@ -953,10 +952,10 @@ class LocalHTTPChannel(http.HTTPChannel):
         self.transport.write(cmd+'\r\n')
 
     def connectionLost(self, reason):
-        global _DHNViewCommandFunc
+        global _GUICommandCallbacks
         if self.controlState:
             try:
-                _DHNViewCommandFunc.remove(self.send)
+                _GUICommandCallbacks.remove(self.send)
             except:
                 io.exception()
             if not check_install() or GetGlobalState().lower().startswith('install'):
@@ -1077,7 +1076,7 @@ class Page(resource.Resource):
             request.finish()
             return NOT_DONE_YET
 
-        # dhn is not installed or broken somehow
+        # BitPie.NET is not installed or broken somehow
         if not check_install():
             # page requested is not the install page
             # we do not need this in that moment because bpmain is not installed
@@ -1090,7 +1089,7 @@ class Page(resource.Resource):
             # current page is install page - okay, show it
             return self.renderPage(request)
 
-        # DHN is installed, show the requested page normally
+        # BitPie.NET is installed, show the requested page normally
         try:
             ret = self.renderPage(request)
         except:
@@ -4090,7 +4089,7 @@ class SuppliersPage(Page):
             # request.redirect(request.path)
             # request.finish()
             # return NOT_DONE_YET
-            #DHNViewSendCommand('open %s' % request.path)
+            #SendCommandToGUI('open %s' % request.path)
             
         #---action request---
         elif action == 'request':
@@ -5476,820 +5475,820 @@ class DevelopmentPage(Page):
         return html(request, body=src, back=arg(request, 'back', '/'+_PAGE_CONFIG), title='developers')
 
 
-class MoneyPage(Page):
-    pagename = _PAGE_MONEY
-    
-    def renderPage(self, request):
-        action = arg(request, 'action')
-        bal, balnt, rcptnum = money.LoadBalance()
-        bitcoins = bitcoin.balance()
-        back = arg(request, 'back', '/'+_PAGE_MENU)
-        if action == 'update':
-            bitcoin.update(OnBitCoinUpdateBalance)
-        src = '<h1>money</h1>\n'
-        src += '<table align=center>'
-        src += '<tr><td align=right>total balance:</td>\n'
-        src += '<td align=left><b>%s DHN</b></td></tr>\n' % misc.float2str(bal + balnt) # (<b>%d</b> days remaining)
-        src += '<tr><td align=right>transferable balance:</td>\n'
-        src += '<td align=left><b>%s DHN</b></td></tr>\n' % misc.float2str(bal)
-        src += '<tr><td align=right>not transferable balance:</td>\n'
-        src += '<td align=left><b>%s DHN</b></td></tr>\n' % misc.float2str(balnt)
-        src += '<tr><td align=right><a href="/%s?back=%s">BitCoins</a> balance:</td>\n' % (_PAGE_BIT_COIN_SETTINGS, request.path) 
-        src += '<td align=left><b>%s</b>\n' % misc.float2str(bitcoins)
-        if bitcoin.installed():
-            src += '&nbsp;&nbsp; <a href="%s?action=update&back=%s">[update]</a>\n' % (request.path, back)
-        src += '</td></tr>\n'        
-        src += '</table>\n'
-        src += html_comment('total balance: %s DHN' % misc.float2str(bal + balnt))
-        src += html_comment('transferable balance: %s DHN' % misc.float2str(bal))
-        src += html_comment('not transferable balance: %s DHN' % misc.float2str(balnt))
-        src += html_comment('bitcoins: %s BTC' % str(bitcoins))
-        src += '<br>\n'
-        src += '<br><br><a href="%s">I want to <b>BUY</b> BitPie.NET credits <b>for $ US</b> with my <b>CreditCard</b></a>\n' % _PAGE_MONEY_ADD
-        src += '<br><br><a href="%s"><b>BUY/SELL</b> DHN credits <b>for BitCoins</b> on the BitPie.NET Market Place</a>\n' % _PAGE_MONEY_MARKET_LIST
-        src += '<br><br><a href="%s">Let\'s <b>SEND</b> some of my <b>earned</b> DHN credits to one of my friends</a>\n' % _PAGE_TRANSFER
-        src += '<br><br><a href="%s">Show me the full receipts <b>HISTORY</b></a>\n' % _PAGE_RECEIPTS
-        return html(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU), title='money')
+#class MoneyPage(Page):
+#    pagename = _PAGE_MONEY
+#    
+#    def renderPage(self, request):
+#        action = arg(request, 'action')
+#        bal, balnt, rcptnum = money.LoadBalance()
+#        bitcoins = bitcoin.balance()
+#        back = arg(request, 'back', '/'+_PAGE_MENU)
+#        if action == 'update':
+#            bitcoin.update(OnBitCoinUpdateBalance)
+#        src = '<h1>money</h1>\n'
+#        src += '<table align=center>'
+#        src += '<tr><td align=right>total balance:</td>\n'
+#        src += '<td align=left><b>%s BP</b></td></tr>\n' % misc.float2str(bal + balnt) # (<b>%d</b> days remaining)
+#        src += '<tr><td align=right>transferable balance:</td>\n'
+#        src += '<td align=left><b>%s BP</b></td></tr>\n' % misc.float2str(bal)
+#        src += '<tr><td align=right>not transferable balance:</td>\n'
+#        src += '<td align=left><b>%s BP</b></td></tr>\n' % misc.float2str(balnt)
+#        src += '<tr><td align=right><a href="/%s?back=%s">BitCoins</a> balance:</td>\n' % (_PAGE_BIT_COIN_SETTINGS, request.path) 
+#        src += '<td align=left><b>%s</b>\n' % misc.float2str(bitcoins)
+#        if bitcoin.installed():
+#            src += '&nbsp;&nbsp; <a href="%s?action=update&back=%s">[update]</a>\n' % (request.path, back)
+#        src += '</td></tr>\n'        
+#        src += '</table>\n'
+#        src += html_comment('total balance: %s BP' % misc.float2str(bal + balnt))
+#        src += html_comment('transferable balance: %s BP' % misc.float2str(bal))
+#        src += html_comment('not transferable balance: %s BP' % misc.float2str(balnt))
+#        src += html_comment('bitcoins: %s BTC' % str(bitcoins))
+#        src += '<br>\n'
+#        src += '<br><br><a href="%s">I want to <b>BUY</b> BitPie.NET credits <b>for $ US</b> with my <b>CreditCard</b></a>\n' % _PAGE_MONEY_ADD
+#        src += '<br><br><a href="%s"><b>BUY/SELL</b> BP credits <b>for BitCoins</b> on the BitPie.NET Market Place</a>\n' % _PAGE_MONEY_MARKET_LIST
+#        src += '<br><br><a href="%s">Let\'s <b>SEND</b> some of my <b>earned</b> BP credits to one of my friends</a>\n' % _PAGE_TRANSFER
+#        src += '<br><br><a href="%s">Show me the full receipts <b>HISTORY</b></a>\n' % _PAGE_RECEIPTS
+#        return html(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU), title='money')
 
 
-class MoneyAddPage(Page):
-    pagename = _PAGE_MONEY_ADD
-    def renderPage(self, request):
-        action = arg(request, 'action')
-        back = arg(request, 'back', '/'+_PAGE_MONEY)
-        src = '<h1>add DHN credits</h1>\n'
+#class MoneyAddPage(Page):
+#    pagename = _PAGE_MONEY_ADD
+#    def renderPage(self, request):
+#        action = arg(request, 'action')
+#        back = arg(request, 'back', '/'+_PAGE_MONEY)
+#        src = '<h1>add BitPie.NET credits</h1>\n'
+#        
+#        if action == 'pay':
+#            url = 'http://%s:%s?id=%s' % (
+#                settings.MoneyServerName(), str(settings.MoneyServerPort()),
+#                misc.encode64(misc.getLocalID()))
+#            webbrowser.open(url, new=1, autoraise=1)
+#            request.redirect('/'+_PAGE_MONEY)
+#            request.finish()
+#            return NOT_DONE_YET
+#            
+#        src += '<table width=55%><tr><td>\n'
+#        src += '<p align=justify>At the moment, that would increase your balance you can use credit card: Visa or MasterCard.</p>\n'
+#        src += '<p align=justify>The money will be transferred without commission.</p>\n'
+#        src += '<p align=justify>In the opened browser window, fill in your credit card info and payment will be accomplished immediately,\n'
+#        src += 'check receipts history to monitor money transfer.</p>\n'
+#        src += '</td></tr></table>\n'
+#        src += '<br><br><br>\n'
+#        src += '<form action="%s" method="post">\n' % request.path
+#        src += '<input type="hidden" name="action" value="pay" />\n'
+#        src += '<input type="hidden" name="back" value="%s" />\n' % back
+#        src += '<input type="submit" name="submit" value=" buy BitPie.NET credits ON-LINE with your Credit Card " />\n'
+#        src += '</form>\n'
+#        return html(request, body=src, back=back, title='buy credits for $ US')
+
+
+#class MoneyMarketBuyPage(Page):
+#    pagename = _PAGE_MONEY_MARKET_BUY
+#    def _checkInput(self, maxamount, price, days, comment, btcaddress):
+#        if '' in [maxamount.strip(), price.strip(), days.strip(), btcaddress]:
+#            return 'enter required info, please'
+#        try:
+#            float(maxamount)
+#            float(price)
+#            float(days)
+#        except:
+#            return 'enter number, please'
+#        if not misc.ValidateBitCoinAddress(btcaddress):
+#            return 'BitCoin address is not valid'
+#        if len(comment) > 256:
+#            return 'your comment is too long'
+#        return ''
+#    
+#    def renderPage(self, request):
+#        bal, balnt, rcptnum = money.LoadBalance()
+#        bitcoins = bitcoin.balance()
+#        action = arg(request, 'action')
+#        back = arg(request, 'back', '/'+_PAGE_MONEY)
+#        message = ''
+#        maxamount = arg(request, 'maxamount', '10.0')
+#        price = arg(request, 'price', str(settings.DefaultBitCoinCostPerBitPie.NETCredit())) 
+#        days = arg(request, 'days', '365')
+#        comment = misc.MakeValidHTMLComment(arg(request, 'comment'))
+#        btcaddress = arg(request, 'btcaddress')
+#        
+#        if action == 'bid':
+#            message = self._checkInput(maxamount, price, days, comment, btcaddress)
+#            if not message:
+#                amount = float(maxamount) * float(price)
+#                src = '<br>' * 3
+#                src += '<table width=70%><tr><td align=center>\n'
+#                src += '<h1>Please, confirm your bid</h1>\n'
+#                src += '<font size=+1><p align=center>Buy <b>%s BitPie.NET</b> for <b>%s BTC</b> each, <br><br>\n' % (misc.float2str(maxamount), misc.float2str(price)) 
+#                src += 'a total of <b>%s BTC</b> will be deducted from your BitCoin account. <br><br>\n' % misc.float2str(amount)
+#                src += 'This bid will be available for <b>%s</b> days' % days
+#                if comment.strip():
+#                    src += ' and published with comment:</p></font>\n'
+#                    src += '<br><br><font color=gray>%s</font>\n' % comment
+#                else:
+#                    src += '.</p></font>\n'
+#                src += '</td></tr></table>\n'
+#                src += '<br><br><br>\n'
+#                src += '<table><tr>\n'
+#                src += '<td>\n'
+#                src += '<form action="%s" method="post">\n' % request.path
+#                src += '<input type="hidden" name="action" value="acceptbid" />\n'
+#                src += '<input type="hidden" name="maxamount" value="%s" />\n' % maxamount
+#                src += '<input type="hidden" name="price" value="%s" />\n' % price
+#                src += '<input type="hidden" name="days" value="%s" />\n' % days 
+#                src += '<input type="hidden" name="comment" value="%s" />\n' % comment
+#                src += '<input type="hidden" name="btcaddress" value="%s" />\n' % btcaddress
+#                src += '<input type="hidden" name="back" value="%s" />\n' % back
+#                src += '<input type="submit" name="submit" value=" confirm " />\n'
+#                src += '</form>\n'
+#                src += '</td>\n<td>\n'
+#                src += '<form action="%s" method="post">\n' % request.path
+#                src += '<input type="hidden" name="action" value="" />\n'
+#                src += '<input type="hidden" name="maxamount" value="%s" />\n' % maxamount
+#                src += '<input type="hidden" name="price" value="%s" />\n' % price
+#                src += '<input type="hidden" name="days" value="%s" />\n' % days 
+#                src += '<input type="hidden" name="comment" value="%s" />\n' % comment
+#                src += '<input type="hidden" name="btcaddress" value="%s" />\n' % btcaddress
+#                src += '<input type="hidden" name="back" value="%s" />\n' % back
+#                src += '<input type="submit" name="submit" value=" cancel " />\n'
+#                src += '</form>\n'
+#                src += '</td>\n'
+#                src += '</tr></table>\n'
+#                return html(request, body=src, back=back, title='buy credits for BitCoins') 
+#            
+#        elif action == 'acceptbid':
+#            message = self._checkInput(maxamount, price, days, comment, btcaddress)
+#            if not message:
+#                try:
+#                    amount = float(maxamount) * float(price)
+#                    ret = bitcoin.connection().sendtoaddress( 
+#                                   settings.MarketServerBitCoinAddress(), 
+#                                   float( float(maxamount) * float(price) ),
+#                                   'BitPie.NET bid from ' + misc.getLocalID())
+#                    message = ''
+#                except Exception, e:
+#                    message = str(e)
+#                if not message:
+#                    # central_service.SendBid(maxamount, price, days, comment, btcaddress, ret)
+#                    src = '<br><br><br>\n'
+#                    src += '<tabler width=50%><tr><td>\n'
+#                    src += '<h1>your successfully made a bid</h1>\n'
+#                    src += '<font color=green><p><b>%s BTC</b> were sent to the Market Server</p></font>\n' % misc.float2str(amount)
+#                    src += '<p>Transaction ID is <a href="https://blockchain.info/tx/%s" target=_blank>%s</a></p>\n' % (str(ret), str(ret))
+#                    src += '<p>Your bid will be published as soon as we receive your BitCoins in our account.<br>\n'
+#                    src += 'When will be found suitable offer - <b>%s BitPie.NET</b> will be credited to your account.<br>\n' % misc.float2str(maxamount)
+#                    src += 'After <b>%s</b> days there will be no suitable offer - <b>%s BTC</b> will be transferred back to this address:' % (days, misc.float2str(amount))
+#                    src += '<br><font color=green>%s</font></p>\n' % btcaddress
+#                    src += '<p>You can view offers and bids from all users on the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>\n' % settings.MarketPlaceURL()
+#                    src += '<br><br><a href="%s">Go to a list of my current bids and offers</a>\n' % ('/'+_PAGE_MONEY_MARKET_LIST) 
+#                    src += '</td></tr></table>\n'
+#                    return html(request, body=src, back=back, title='buy BitPie.NET credits for BitCoins')
+#                    
+#        # elif action == 'update':
+#        #     bitcoin.update(OnBitCoinUpdateBalance)
+#                
+#        src = ''
+#        src += '<h3>place a bid to buy credits for BitCoins</h3>\n'
+#        src += '<table align=center><tr><td align=left>\n'
+#        src += 'Transferable balance: <b>%s BitPie.NET</b>\n' % misc.float2str(bal)
+#        src += '<br><br>BitCoins: <b>%s</b> \n' % str(bitcoins)
+#        # src += '&nbsp;&nbsp;&nbsp; <a href="%s?action=update&back=%s">[update]</a>\n' % (request.path, request.path)
+#        # src += '&nbsp;&nbsp;&nbsp; <a href="/%s?back=%s">[BitCoin settings]</a></p>\n' % (_PAGE_BIT_COIN_SETTINGS, request.path)
+#        src += '</td></tr></table>\n'
+#        src += html_comment('transferable balance: %s BitPie.NET' % misc.float2str(bal))
+#        src += html_comment('bitcoins: %s BTC' % str(bitcoins))
+#        src += '<br>\n'
+#        src += '<form action="%s" method="post">\n' % request.path
+#        src += '<input type="hidden" name="action" value="bid" />\n'
+#        src += '<table><tr><td align=left>\n'
+#        src += '<table><tr><td align=left colspan=2>buy:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="maxamount" value="%s" size=12 /></td>\n' % maxamount
+#        src += '<td align=left>BitPie.NET credits</td></tr></table>\n'
+#        src += '<table><tr><td align=left colspan=2>price is:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="price" value="%s" size=12 /></td>\n' % price
+#        src += '<td align=left>BTC per 1 BitPie.NET </td></tr></table>\n'
+#        src += '<table><tr><td align=left colspan=2>duration:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="days" value="%s" size=4 /></td>\n' % days 
+#        src += '<td align=left>days</td></tr></table>\n'
+#        src += '<table><tr><td align=left>return BitCoin address:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="btcaddress" value="%s" size=38></td></tr>\n' % btcaddress
+#        src += '<tr><td align=right nowrap><font color=gray size=-1>to receive funds if your bid is cancelled or expired</font></td></tr></table>\n'
+#        src += '<table><tr><td align=left>short comment:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="comment" value="%s" size=40></td></tr>\n' % comment
+#        src += '<tr><td align=right nowrap><font color=gray size=-1>up to 256 chars long</font></td></tr></table>\n'
+#        src += '</td></tr></table>\n'
+#        if message:
+#            src += '<br><br>' + html_message(message, 'error') + '\n'
+#        src += '<input type="hidden" name="back" value="%s" />\n' % back
+#        src += '<br><br><br><input type="submit" name="submit" value=" make a bid " />\n'
+#        src += '</form>\n'
+#        return html(request, body=src, back=back, title='buy credits for BitCoins')
         
-        if action == 'pay':
-            url = 'http://%s:%s?id=%s' % (
-                settings.MoneyServerName(), str(settings.MoneyServerPort()),
-                misc.encode64(misc.getLocalID()))
-            webbrowser.open(url, new=1, autoraise=1)
-            request.redirect('/'+_PAGE_MONEY)
-            request.finish()
-            return NOT_DONE_YET
-            
-        src += '<table width=55%><tr><td>\n'
-        src += '<p align=justify>At the moment, that would increase your balance you can use credit card: Visa or MasterCard.</p>\n'
-        src += '<p align=justify>The money will be transferred without commission.</p>\n'
-        src += '<p align=justify>In the opened browser window, fill in your credit card info and payment will be accomplished immediately,\n'
-        src += 'check receipts history to monitor money transfer.</p>\n'
-        src += '</td></tr></table>\n'
-        src += '<br><br><br>\n'
-        src += '<form action="%s" method="post">\n' % request.path
-        src += '<input type="hidden" name="action" value="pay" />\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % back
-        src += '<input type="submit" name="submit" value=" buy DHN credits ON-LINE with your Credit Card " />\n'
-        src += '</form>\n'
-        return html(request, body=src, back=back, title='buy credits for $ US')
+
+#class MoneyMarketSellPage(Page):
+#    pagename = _PAGE_MONEY_MARKET_SELL
+#    def _checkInput(self, maxamount, minamount, price, days, comment, btaddress):
+#        if '' in [maxamount.strip(), minamount.strip(), price.strip(), days.strip(), btaddress.strip()]:
+#            return 'enter required info, please'
+#        try:
+#            float(maxamount)
+#            float(minamount)
+#            float(price)
+#            float(days)
+#        except:
+#            return 'enter number, please'
+#        if float(maxamount) <= float(minamount):
+#            return 'incorrect minimum and maximum amount values'
+#        if float(minamount) < 1.0:
+#            return 'minimum amount is 1 BitPie.NET'
+#        if len(comment) > 256:
+#            return 'your comment is too long'
+#        if not misc.ValidateBitCoinAddress(btaddress):
+#            return 'BitCoin address is not valid'
+#        bal, balnt, rcptnum = money.LoadBalance()
+#        if float(bal) <= float(maxamount):
+#            return 'you have insufficient funds in your BitPie.NET account'
+#        return ''
+#
+#    def renderPage(self, request):
+#        bal, balnt, rcptnum = money.LoadBalance()
+#        bitcoins = bitcoin.balance()
+#        action = arg(request, 'action')
+#        back = arg(request, 'back', '/'+_PAGE_MONEY)
+#        message = ''
+#        maxamount = arg(request, 'maxamount', '10.0')
+#        minamount = arg(request, 'minamount', '1.0')
+#        price = arg(request, 'price', str(settings.DefaultBitCoinCostPerBitPie.NETCredit())) 
+#        days = arg(request, 'days', '365')
+#        comment = misc.MakeValidHTMLComment(arg(request, 'comment'))
+#        btcaddress = arg(request, 'btcaddress')
+#        
+#        if action == 'offer':
+#            message = self._checkInput(maxamount, minamount, price, days, comment, btcaddress)
+#            if not message:
+#                amount = float(maxamount) * float(price)
+#                src = '<br>' * 3
+#                src += '<table width=70%><tr><td align=center>\n'
+#                src += '<h1>Please, confirm your offer</h1>\n'
+#                src += '<font size=+1><p align=center>Sell up to <b>%s BitPie.NET</b> for <b>%s BTC</b> each, <br><br>\n' % (misc.float2str(maxamount), misc.float2str(price)) 
+#                src += 'a total of <b>%s BitPie.NET</b> will be deducted from your BitPie.NET account. <br><br>\n' % misc.float2str(maxamount)
+#                src += 'Your purchased BitCoins will be transferred to this address:<br>\n'
+#                src += '<font color=green>%s</font><br><br>\n' % btcaddress
+#                src += 'The minimum amount of the deal is <b>%s BitPie.NET</b> credits.\n' % minamount
+#                src += 'If there is a bid on the Market that satisfies only part of your offer, the remainder of the loans will be transferred back to your BitPie.NET account.<br><br>\n'
+#                src += 'This offer will be available for <b>%s</b> days' % days
+#                if comment.strip():
+#                    src += ' and published with comment:</p></font>\n'
+#                    src += '<br><br><font color=gray>%s</font>\n' % comment
+#                else:
+#                    src += '.</p></font>\n'
+#                src += '</td></tr></table>\n'
+#                src += '<br><br><br>\n'
+#                src += '<table><tr>\n'
+#                src += '<td>\n'
+#                src += '<form action="%s" method="post">\n' % request.path
+#                src += '<input type="hidden" name="action" value="acceptoffer" />\n'
+#                src += '<input type="hidden" name="maxamount" value="%s" />\n' % maxamount
+#                src += '<input type="hidden" name="minamount" value="%s" />\n' % minamount
+#                src += '<input type="hidden" name="price" value="%s" />\n' % price
+#                src += '<input type="hidden" name="days" value="%s" />\n' % days 
+#                src += '<input type="hidden" name="comment" value="%s" />\n' % comment
+#                src += '<input type="hidden" name="btcaddress" value="%s" />\n' % btcaddress
+#                src += '<input type="hidden" name="back" value="%s" />\n' % back
+#                src += '<input type="submit" name="submit" value=" confirm " />\n'
+#                src += '</form>\n'
+#                src += '</td>\n<td>\n'
+#                src += '<form action="%s" method="post">\n' % request.path
+#                src += '<input type="hidden" name="action" value="" />\n'
+#                src += '<input type="hidden" name="maxamount" value="%s" />\n' % maxamount
+#                src += '<input type="hidden" name="minamount" value="%s" />\n' % minamount
+#                src += '<input type="hidden" name="price" value="%s" />\n' % price
+#                src += '<input type="hidden" name="days" value="%s" />\n' % days 
+#                src += '<input type="hidden" name="comment" value="%s" />\n' % comment
+#                src += '<input type="hidden" name="btcaddress" value="%s" />\n' % btcaddress
+#                src += '<input type="hidden" name="back" value="%s" />\n' % back
+#                src += '<input type="submit" name="submit" value=" cancel " />\n'
+#                src += '</form>\n'
+#                src += '</td>\n'
+#                src += '</tr></table>\n'
+#                return html(request, body=src, back=back, title='sell BitPie.NET credits for BitCoins') 
+#
+#        elif action == 'acceptoffer':
+#            message = self._checkInput(maxamount, minamount, price, days, comment, btcaddress)
+#            if not message:
+#                amount = float(maxamount) * float(price)
+#                # central_service.SendOffer(maxamount, minamount, price, days, comment, btcaddress)
+#                src = '<br><br><br>\n'
+#                src += '<tabler width=50%><tr><td>\n'
+#                src += '<h1>your successfully made an offer</h1>\n'
+#                src += '<font color=green><p><b>%s BitPie.NET</b> were transferred to the Market Server</p></font>\n' % misc.float2str(maxamount)
+#                src += '<p>Your offer should be published immediately.<br>\n'
+#                src += 'When will be found a suitable bid your purchased BTC will be credited to this BitCoin address:<br>\n'
+#                src += '<font color=green>%s</font><br><br>\n' % btcaddress
+#                src += 'After <b>%s</b> days there will be no suitable offer - <b>%s BitPie.NET</b> will be transferred back to your account.</p>\n' % (days, misc.float2str(maxamount))
+#                src += '<p>You can view offers and bids from all users on the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>\n' % settings.MarketPlaceURL()
+#                src += '<br><br><a href="%s">Go to a list of my current bids and offers</a>\n' % ('/'+_PAGE_MONEY_MARKET_LIST) 
+#                src += '</td></tr></table>\n'
+#                return html(request, body=src, back=back, title='buy BitPie.NET credits for BitCoins')
+#                                
+#        # elif action == 'update':
+#        #     bitcoin.update(OnBitCoinUpdateBalance)
+#        
+#        src = '<h3>place offer to sell credits for BitCoins</h3>\n'
+#        src += '<table align=center><tr><td align=left>\n'
+#        src += 'Transferable balance: <b>%s BitPie.NET</b>\n' % misc.float2str(bal)
+#        src += '<br><br>BitCoins: <b>%s</b>\n' % bitcoins
+#        # src += '&nbsp;&nbsp;&nbsp; <a href="%s?action=update&back=%s">[update]</a>\n' % (request.path, request.path)
+#        # src += '&nbsp;&nbsp;&nbsp; <a href="/%s?back=%s">[BitCoin settings]</a></p>\n' % (_PAGE_BIT_COIN_SETTINGS, request.path)
+#        src += '</td></tr></table>\n'
+#        src += html_comment('transferable balance: %s BitPie.NET' % misc.float2str(bal))
+#        src += html_comment('bitcoins: %s' % bitcoins)
+#        src += '<br>\n'
+#        src += '<form action="%s" method="post">\n' % request.path
+#        src += '<input type="hidden" name="action" value="offer" />\n'
+#        src += '<table><tr><td align=left>\n'
+#        src += '<table><tr><td align=left colspan=2>sell up to:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="maxamount" value="%s" size=12 /></td>\n' % maxamount
+#        src += '<td align=left>BitPie.NET credits</td></tr></table>\n'
+#        src += '</td><td align=left>\n'
+#        src += '<table><tr><td align=left colspan=2>but not less than:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="minamount" value="%s" size=12 /></td>\n' % minamount
+#        src += '<td align=left>BitPie.NET credits</td></tr></table>\n'
+#        src += '</td></tr><tr><td align=left>\n'
+#        src += '<table><tr><td align=left colspan=2>price is:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="price" value="%s" size=12 /></td>\n' % price
+#        src += '<td align=left nowrap>BTC per 1 BitPie.NET </td></tr></table>\n'
+#        src += '</td><td align=left>\n'
+#        src += '<table><tr><td align=left colspan=2>duration:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="days" value="%s" size=4 /></td>\n' % days 
+#        src += '<td align=left>days</td></tr></table>\n'
+#        src += '</td></tr><tr><td align=left colspan=2>\n'
+#        src += '<table><tr><td align=left colspan=2 nowrap>BitCoin address to receive the payment:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="btcaddress" value="%s" size=38></td>\n' % btcaddress
+#        src += '<td align=left nowrap>&nbsp;</td></tr></table>\n'
+#        src += '</td></tr><tr><td align=left colspan=2>\n'
+#        src += '<table><tr><td align=left>comment:</td></tr>\n'
+#        src += '<tr><td><input type="text" name="comment" value="%s" size=60></td></tr>\n' % comment
+#        src += '<tr><td align=right nowrap><font color=gray size=-1>up to 256 chars long</font></td></tr></table>\n'
+#        src += '</td></tr></table>\n'
+#        if message:
+#            src += '<br><br>' + html_message(message, 'error') + '\n'
+#        src += '<input type="hidden" name="back" value="%s" />\n' % back
+#        src += '<br><br><input type="submit" name="submit" value=" place offer " />\n'
+#        src += '</form>\n'
+#        return html(request, body=src, back=back, title='sell credits for BitCoins')
 
 
-class MoneyMarketBuyPage(Page):
-    pagename = _PAGE_MONEY_MARKET_BUY
-    def _checkInput(self, maxamount, price, days, comment, btcaddress):
-        if '' in [maxamount.strip(), price.strip(), days.strip(), btcaddress]:
-            return 'enter required info, please'
-        try:
-            float(maxamount)
-            float(price)
-            float(days)
-        except:
-            return 'enter number, please'
-        if not misc.ValidateBitCoinAddress(btcaddress):
-            return 'BitCoin address is not valid'
-        if len(comment) > 256:
-            return 'your comment is too long'
-        return ''
-    
-    def renderPage(self, request):
-        bal, balnt, rcptnum = money.LoadBalance()
-        bitcoins = bitcoin.balance()
-        action = arg(request, 'action')
-        back = arg(request, 'back', '/'+_PAGE_MONEY)
-        message = ''
-        maxamount = arg(request, 'maxamount', '10.0')
-        price = arg(request, 'price', str(settings.DefaultBitCoinCostPerDHNCredit())) 
-        days = arg(request, 'days', '365')
-        comment = misc.MakeValidHTMLComment(arg(request, 'comment'))
-        btcaddress = arg(request, 'btcaddress')
-        
-        if action == 'bid':
-            message = self._checkInput(maxamount, price, days, comment, btcaddress)
-            if not message:
-                amount = float(maxamount) * float(price)
-                src = '<br>' * 3
-                src += '<table width=70%><tr><td align=center>\n'
-                src += '<h1>Please, confirm your bid</h1>\n'
-                src += '<font size=+1><p align=center>Buy <b>%s DHN</b> for <b>%s BTC</b> each, <br><br>\n' % (misc.float2str(maxamount), misc.float2str(price)) 
-                src += 'a total of <b>%s BTC</b> will be deducted from your BitCoin account. <br><br>\n' % misc.float2str(amount)
-                src += 'This bid will be available for <b>%s</b> days' % days
-                if comment.strip():
-                    src += ' and published with comment:</p></font>\n'
-                    src += '<br><br><font color=gray>%s</font>\n' % comment
-                else:
-                    src += '.</p></font>\n'
-                src += '</td></tr></table>\n'
-                src += '<br><br><br>\n'
-                src += '<table><tr>\n'
-                src += '<td>\n'
-                src += '<form action="%s" method="post">\n' % request.path
-                src += '<input type="hidden" name="action" value="acceptbid" />\n'
-                src += '<input type="hidden" name="maxamount" value="%s" />\n' % maxamount
-                src += '<input type="hidden" name="price" value="%s" />\n' % price
-                src += '<input type="hidden" name="days" value="%s" />\n' % days 
-                src += '<input type="hidden" name="comment" value="%s" />\n' % comment
-                src += '<input type="hidden" name="btcaddress" value="%s" />\n' % btcaddress
-                src += '<input type="hidden" name="back" value="%s" />\n' % back
-                src += '<input type="submit" name="submit" value=" confirm " />\n'
-                src += '</form>\n'
-                src += '</td>\n<td>\n'
-                src += '<form action="%s" method="post">\n' % request.path
-                src += '<input type="hidden" name="action" value="" />\n'
-                src += '<input type="hidden" name="maxamount" value="%s" />\n' % maxamount
-                src += '<input type="hidden" name="price" value="%s" />\n' % price
-                src += '<input type="hidden" name="days" value="%s" />\n' % days 
-                src += '<input type="hidden" name="comment" value="%s" />\n' % comment
-                src += '<input type="hidden" name="btcaddress" value="%s" />\n' % btcaddress
-                src += '<input type="hidden" name="back" value="%s" />\n' % back
-                src += '<input type="submit" name="submit" value=" cancel " />\n'
-                src += '</form>\n'
-                src += '</td>\n'
-                src += '</tr></table>\n'
-                return html(request, body=src, back=back, title='buy credits for BitCoins') 
-            
-        elif action == 'acceptbid':
-            message = self._checkInput(maxamount, price, days, comment, btcaddress)
-            if not message:
-                try:
-                    amount = float(maxamount) * float(price)
-                    ret = bitcoin.connection().sendtoaddress( 
-                                   settings.MarketServerBitCoinAddress(), 
-                                   float( float(maxamount) * float(price) ),
-                                   'BitPie.NET bid from ' + misc.getLocalID())
-                    message = ''
-                except Exception, e:
-                    message = str(e)
-                if not message:
-                    # central_service.SendBid(maxamount, price, days, comment, btcaddress, ret)
-                    src = '<br><br><br>\n'
-                    src += '<tabler width=50%><tr><td>\n'
-                    src += '<h1>your successfully made a bid</h1>\n'
-                    src += '<font color=green><p><b>%s BTC</b> were sent to the Market Server</p></font>\n' % misc.float2str(amount)
-                    src += '<p>Transaction ID is <a href="https://blockchain.info/tx/%s" target=_blank>%s</a></p>\n' % (str(ret), str(ret))
-                    src += '<p>Your bid will be published as soon as we receive your BitCoins in our account.<br>\n'
-                    src += 'When will be found suitable offer - <b>%s DHN</b> will be credited to your account.<br>\n' % misc.float2str(maxamount)
-                    src += 'After <b>%s</b> days there will be no suitable offer - <b>%s BTC</b> will be transferred back to this address:' % (days, misc.float2str(amount))
-                    src += '<br><font color=green>%s</font></p>\n' % btcaddress
-                    src += '<p>You can view offers and bids from all users on the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>\n' % settings.MarketPlaceURL()
-                    src += '<br><br><a href="%s">Go to a list of my current bids and offers</a>\n' % ('/'+_PAGE_MONEY_MARKET_LIST) 
-                    src += '</td></tr></table>\n'
-                    return html(request, body=src, back=back, title='buy DHN credits for BitCoins')
-                    
-        # elif action == 'update':
-        #     bitcoin.update(OnBitCoinUpdateBalance)
-                
-        src = ''
-        src += '<h3>place a bid to buy credits for BitCoins</h3>\n'
-        src += '<table align=center><tr><td align=left>\n'
-        src += 'Transferable balance: <b>%s DHN</b>\n' % misc.float2str(bal)
-        src += '<br><br>BitCoins: <b>%s</b> \n' % str(bitcoins)
-        # src += '&nbsp;&nbsp;&nbsp; <a href="%s?action=update&back=%s">[update]</a>\n' % (request.path, request.path)
-        # src += '&nbsp;&nbsp;&nbsp; <a href="/%s?back=%s">[BitCoin settings]</a></p>\n' % (_PAGE_BIT_COIN_SETTINGS, request.path)
-        src += '</td></tr></table>\n'
-        src += html_comment('transferable balance: %s DHN' % misc.float2str(bal))
-        src += html_comment('bitcoins: %s BTC' % str(bitcoins))
-        src += '<br>\n'
-        src += '<form action="%s" method="post">\n' % request.path
-        src += '<input type="hidden" name="action" value="bid" />\n'
-        src += '<table><tr><td align=left>\n'
-        src += '<table><tr><td align=left colspan=2>buy:</td></tr>\n'
-        src += '<tr><td><input type="text" name="maxamount" value="%s" size=12 /></td>\n' % maxamount
-        src += '<td align=left>DHN credits</td></tr></table>\n'
-        src += '<table><tr><td align=left colspan=2>price is:</td></tr>\n'
-        src += '<tr><td><input type="text" name="price" value="%s" size=12 /></td>\n' % price
-        src += '<td align=left>BTC per 1 DHN </td></tr></table>\n'
-        src += '<table><tr><td align=left colspan=2>duration:</td></tr>\n'
-        src += '<tr><td><input type="text" name="days" value="%s" size=4 /></td>\n' % days 
-        src += '<td align=left>days</td></tr></table>\n'
-        src += '<table><tr><td align=left>return BitCoin address:</td></tr>\n'
-        src += '<tr><td><input type="text" name="btcaddress" value="%s" size=38></td></tr>\n' % btcaddress
-        src += '<tr><td align=right nowrap><font color=gray size=-1>to receive funds if your bid is cancelled or expired</font></td></tr></table>\n'
-        src += '<table><tr><td align=left>short comment:</td></tr>\n'
-        src += '<tr><td><input type="text" name="comment" value="%s" size=40></td></tr>\n' % comment
-        src += '<tr><td align=right nowrap><font color=gray size=-1>up to 256 chars long</font></td></tr></table>\n'
-        src += '</td></tr></table>\n'
-        if message:
-            src += '<br><br>' + html_message(message, 'error') + '\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % back
-        src += '<br><br><br><input type="submit" name="submit" value=" make a bid " />\n'
-        src += '</form>\n'
-        return html(request, body=src, back=back, title='buy credits for BitCoins')
-        
-
-class MoneyMarketSellPage(Page):
-    pagename = _PAGE_MONEY_MARKET_SELL
-    def _checkInput(self, maxamount, minamount, price, days, comment, btaddress):
-        if '' in [maxamount.strip(), minamount.strip(), price.strip(), days.strip(), btaddress.strip()]:
-            return 'enter required info, please'
-        try:
-            float(maxamount)
-            float(minamount)
-            float(price)
-            float(days)
-        except:
-            return 'enter number, please'
-        if float(maxamount) <= float(minamount):
-            return 'incorrect minimum and maximum amount values'
-        if float(minamount) < 1.0:
-            return 'minimum amount is 1 DHN'
-        if len(comment) > 256:
-            return 'your comment is too long'
-        if not misc.ValidateBitCoinAddress(btaddress):
-            return 'BitCoin address is not valid'
-        bal, balnt, rcptnum = money.LoadBalance()
-        if float(bal) <= float(maxamount):
-            return 'you have insufficient funds in your BitPie.NET account'
-        return ''
-
-    def renderPage(self, request):
-        bal, balnt, rcptnum = money.LoadBalance()
-        bitcoins = bitcoin.balance()
-        action = arg(request, 'action')
-        back = arg(request, 'back', '/'+_PAGE_MONEY)
-        message = ''
-        maxamount = arg(request, 'maxamount', '10.0')
-        minamount = arg(request, 'minamount', '1.0')
-        price = arg(request, 'price', str(settings.DefaultBitCoinCostPerDHNCredit())) 
-        days = arg(request, 'days', '365')
-        comment = misc.MakeValidHTMLComment(arg(request, 'comment'))
-        btcaddress = arg(request, 'btcaddress')
-        
-        if action == 'offer':
-            message = self._checkInput(maxamount, minamount, price, days, comment, btcaddress)
-            if not message:
-                amount = float(maxamount) * float(price)
-                src = '<br>' * 3
-                src += '<table width=70%><tr><td align=center>\n'
-                src += '<h1>Please, confirm your offer</h1>\n'
-                src += '<font size=+1><p align=center>Sell up to <b>%s DHN</b> for <b>%s BTC</b> each, <br><br>\n' % (misc.float2str(maxamount), misc.float2str(price)) 
-                src += 'a total of <b>%s DHN</b> will be deducted from your BitPie.NET account. <br><br>\n' % misc.float2str(maxamount)
-                src += 'Your purchased BitCoins will be transferred to this address:<br>\n'
-                src += '<font color=green>%s</font><br><br>\n' % btcaddress
-                src += 'The minimum amount of the deal is <b>%s DHN</b> credits.\n' % minamount
-                src += 'If there is a bid on the Market that satisfies only part of your offer, the remainder of the loans will be transferred back to your BitPie.NET account.<br><br>\n'
-                src += 'This offer will be available for <b>%s</b> days' % days
-                if comment.strip():
-                    src += ' and published with comment:</p></font>\n'
-                    src += '<br><br><font color=gray>%s</font>\n' % comment
-                else:
-                    src += '.</p></font>\n'
-                src += '</td></tr></table>\n'
-                src += '<br><br><br>\n'
-                src += '<table><tr>\n'
-                src += '<td>\n'
-                src += '<form action="%s" method="post">\n' % request.path
-                src += '<input type="hidden" name="action" value="acceptoffer" />\n'
-                src += '<input type="hidden" name="maxamount" value="%s" />\n' % maxamount
-                src += '<input type="hidden" name="minamount" value="%s" />\n' % minamount
-                src += '<input type="hidden" name="price" value="%s" />\n' % price
-                src += '<input type="hidden" name="days" value="%s" />\n' % days 
-                src += '<input type="hidden" name="comment" value="%s" />\n' % comment
-                src += '<input type="hidden" name="btcaddress" value="%s" />\n' % btcaddress
-                src += '<input type="hidden" name="back" value="%s" />\n' % back
-                src += '<input type="submit" name="submit" value=" confirm " />\n'
-                src += '</form>\n'
-                src += '</td>\n<td>\n'
-                src += '<form action="%s" method="post">\n' % request.path
-                src += '<input type="hidden" name="action" value="" />\n'
-                src += '<input type="hidden" name="maxamount" value="%s" />\n' % maxamount
-                src += '<input type="hidden" name="minamount" value="%s" />\n' % minamount
-                src += '<input type="hidden" name="price" value="%s" />\n' % price
-                src += '<input type="hidden" name="days" value="%s" />\n' % days 
-                src += '<input type="hidden" name="comment" value="%s" />\n' % comment
-                src += '<input type="hidden" name="btcaddress" value="%s" />\n' % btcaddress
-                src += '<input type="hidden" name="back" value="%s" />\n' % back
-                src += '<input type="submit" name="submit" value=" cancel " />\n'
-                src += '</form>\n'
-                src += '</td>\n'
-                src += '</tr></table>\n'
-                return html(request, body=src, back=back, title='sell BitPie.NET credits for BitCoins') 
-
-        elif action == 'acceptoffer':
-            message = self._checkInput(maxamount, minamount, price, days, comment, btcaddress)
-            if not message:
-                amount = float(maxamount) * float(price)
-                # central_service.SendOffer(maxamount, minamount, price, days, comment, btcaddress)
-                src = '<br><br><br>\n'
-                src += '<tabler width=50%><tr><td>\n'
-                src += '<h1>your successfully made an offer</h1>\n'
-                src += '<font color=green><p><b>%s DHN</b> were transferred to the Market Server</p></font>\n' % misc.float2str(maxamount)
-                src += '<p>Your offer should be published immediately.<br>\n'
-                src += 'When will be found a suitable bid your purchased BTC will be credited to this BitCoin address:<br>\n'
-                src += '<font color=green>%s</font><br><br>\n' % btcaddress
-                src += 'After <b>%s</b> days there will be no suitable offer - <b>%s DHN</b> will be transferred back to your account.</p>\n' % (days, misc.float2str(maxamount))
-                src += '<p>You can view offers and bids from all users on the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>\n' % settings.MarketPlaceURL()
-                src += '<br><br><a href="%s">Go to a list of my current bids and offers</a>\n' % ('/'+_PAGE_MONEY_MARKET_LIST) 
-                src += '</td></tr></table>\n'
-                return html(request, body=src, back=back, title='buy DHN credits for BitCoins')
-                                
-        # elif action == 'update':
-        #     bitcoin.update(OnBitCoinUpdateBalance)
-        
-        src = '<h3>place offer to sell credits for BitCoins</h3>\n'
-        src += '<table align=center><tr><td align=left>\n'
-        src += 'Transferable balance: <b>%s DHN</b>\n' % misc.float2str(bal)
-        src += '<br><br>BitCoins: <b>%s</b>\n' % bitcoins
-        # src += '&nbsp;&nbsp;&nbsp; <a href="%s?action=update&back=%s">[update]</a>\n' % (request.path, request.path)
-        # src += '&nbsp;&nbsp;&nbsp; <a href="/%s?back=%s">[BitCoin settings]</a></p>\n' % (_PAGE_BIT_COIN_SETTINGS, request.path)
-        src += '</td></tr></table>\n'
-        src += html_comment('transferable balance: %s DHN' % misc.float2str(bal))
-        src += html_comment('bitcoins: %s' % bitcoins)
-        src += '<br>\n'
-        src += '<form action="%s" method="post">\n' % request.path
-        src += '<input type="hidden" name="action" value="offer" />\n'
-        src += '<table><tr><td align=left>\n'
-        src += '<table><tr><td align=left colspan=2>sell up to:</td></tr>\n'
-        src += '<tr><td><input type="text" name="maxamount" value="%s" size=12 /></td>\n' % maxamount
-        src += '<td align=left>DHN credits</td></tr></table>\n'
-        src += '</td><td align=left>\n'
-        src += '<table><tr><td align=left colspan=2>but not less than:</td></tr>\n'
-        src += '<tr><td><input type="text" name="minamount" value="%s" size=12 /></td>\n' % minamount
-        src += '<td align=left>DHN credits</td></tr></table>\n'
-        src += '</td></tr><tr><td align=left>\n'
-        src += '<table><tr><td align=left colspan=2>price is:</td></tr>\n'
-        src += '<tr><td><input type="text" name="price" value="%s" size=12 /></td>\n' % price
-        src += '<td align=left nowrap>BTC per 1 DHN </td></tr></table>\n'
-        src += '</td><td align=left>\n'
-        src += '<table><tr><td align=left colspan=2>duration:</td></tr>\n'
-        src += '<tr><td><input type="text" name="days" value="%s" size=4 /></td>\n' % days 
-        src += '<td align=left>days</td></tr></table>\n'
-        src += '</td></tr><tr><td align=left colspan=2>\n'
-        src += '<table><tr><td align=left colspan=2 nowrap>BitCoin address to receive the payment:</td></tr>\n'
-        src += '<tr><td><input type="text" name="btcaddress" value="%s" size=38></td>\n' % btcaddress
-        src += '<td align=left nowrap>&nbsp;</td></tr></table>\n'
-        src += '</td></tr><tr><td align=left colspan=2>\n'
-        src += '<table><tr><td align=left>comment:</td></tr>\n'
-        src += '<tr><td><input type="text" name="comment" value="%s" size=60></td></tr>\n' % comment
-        src += '<tr><td align=right nowrap><font color=gray size=-1>up to 256 chars long</font></td></tr></table>\n'
-        src += '</td></tr></table>\n'
-        if message:
-            src += '<br><br>' + html_message(message, 'error') + '\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % back
-        src += '<br><br><input type="submit" name="submit" value=" place offer " />\n'
-        src += '</form>\n'
-        return html(request, body=src, back=back, title='sell credits for BitCoins')
-
-
-class MoneyMarketListPage(Page):
-    pagename = _PAGE_MONEY_MARKET_LIST
-    def renderPage(self, request):
-        action = arg(request, 'action')
-        back = arg(request, 'back', '/'+_PAGE_MONEY)
-
-        if action == 'request':
-            pass
-            # central_service.SendRequestMarketList()
-            
-        elif action == 'canceloffer':
-            pass
-            # central_service.SendCancelOffer(arg(request, 'offerid'))
-            
-        elif action == 'cancelbid':
-            pass
-            # central_service.SendCancelBid(arg(request, 'bidid'))
-        
-        src = ''
-        src += '<h3>BitCoin Market</h3>\n'
-        src += '<p>Here you can watch your bids and offers currently placed on the Market.<p>\n'
-        src += '<table width=90%>\n'
-        # if central_service._MarketOffers is None and central_service._MarketBids is None:
-        if True:
-            src += '<tr>\n'
-            src += '<td align=center colspan=2>\n'
-            src += '<br><br><br><font color=gray size=-1>no responses yet from the Market Server</font><br>\n'
-            src += '</td>\n'
-            src += '</tr>\n'
-        src += '<tr>\n'
-        src += '<td align=center valign=top width=50%>\n'
-        if True:
-        # if central_service._MarketBids is not None:
-            # if len(central_service._MarketBids) == 0:
-            if True:
-                src += '<br><br><br><font color=gray size=-1>no bids</font><br>\n'
-#            else:
-#                src += '<h3>your bids</h3>\n'
-#                src += '<table width=300 border=0 cellspacing=10 cellpadding=0>\n'
-#                src += '<tr>\n'
-#                src += '<td align=center>price</td>\n'
-#                src += '<td align=center>amount</td>\n'
-#                src += '<td align=center>time left<br></td>\n'
-#                src += '<td align=center>&nbsp;</td>\n'
-#                src += '</tr>\n'
-#                for bid in central_service._MarketBids:
-#                    timeleft = bid.get('timeleft', '')
-#                    public = True
-#                    if timeleft != 'bitcoins expected':
-#                        timeleft = misc.seconds_to_time_left_string(timeleft)
-#                    else:
-#                        timeleft = '<font color=red>%s</font>' % timeleft
-#                        public = False 
-#                    src += '<tr><td colspan=4><hr></td></tr>\n'
-#                    src += '<tr>\n'
-#                    if public:
-#                        src += '<td align=center><font color=red>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(bid.get('price', 'error'))
-#                        src += '<td align=center><font color=blue>%s</font><font color=gray size=-2> DHN</font></td>\n' % misc.float2str(bid.get('maxamount', 'error'))
-#                    else:
-#                        src += '<td align=center><font color=gray>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(bid.get('price', 'error'))
-#                        src += '<td align=center><font color=gray>%s</font><font color=gray size=-2> DHN</font></td>\n' % misc.float2str(bid.get('maxamount', 'error'))
-#                    src += '<td align=center><font color=green>%s</font></td>\n' % timeleft 
-#                    src += '<td align=right><a href="%s"><img src="%s" width=16 height=16></a></td>\n' % (request.path+'?action=cancelbid&bidid='+bid.get('id', ''), iconurl(request, 'icons/delete01.png'))
-#                    src += '</tr>\n'
-#                    src += '<tr><td colspan=4 align=left><font color=gray size=-1>\n'
-#                    if bid.get('comment', '') == '':
-#                        src += '<p align=center>the amount of the transaction will be %s BTC</p>' % (
-#                            misc.float2str(float(bid['maxamount'])*float(bid['price'])))
-#                    else:
-#                        src += bid.get('comment', '')                        
-#                    src += '\n</font></td></tr>\n'
-                src += '</table>\n'
-        src += '</td>\n'
-        src += '<td align=center valign=top width=50%>\n'
-        # if central_service._MarketOffers is not None:
-        if True:
-            # if len(central_service._MarketOffers) == 0:
-            if True:
-                src += '<br><br><br><font color=gray size=-1>no offers</font><br>\n'
-#            else:
-#                src += '<h3>your offers</h3>\n'
-#                src += '<table width=300 border=0 cellspacing=10 cellpadding=0>\n'
-#                src += '<tr>\n'
-#                src += '<td align=center>price</td>\n'
-#                src += '<td align=center>amount</td>\n'
-#                src += '<td align=center>time left</td>\n'
-#                src += '<td align=center>&nbsp;</td>\n'
-#                src += '</tr>\n'
-#                for offer in central_service._MarketOffers:
-#                    src += '<tr><td colspan=4><hr></td></tr>\n'
-#                    src += '<tr>\n'
-#                    src += '<td align=center><font color=red>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(offer.get('price', 'error'))
-#                    src += '<td align=center><font color=blue>%s - %s</font><font color=gray size=-2> DHN</font></td>\n' % (misc.float2str(offer.get('minamount', 'error')), misc.float2str(offer.get('maxamount', 'error')))
-#                    src += '<td align=center><font color=green>%s</font></td>\n' % misc.seconds_to_time_left_string(offer.get('timeleft', 0))
-#                    src += '<td align=right><a href="%s"><img src="%s" width=16 height=16></a></td>\n' % (request.path+'?action=canceloffer&offerid='+offer.get('id', ''), iconurl(request, 'icons/delete01.png'))
-#                    src += '</tr>\n'
-#                    src += '<tr><td colspan=4 align=left><font color=gray size=-1>\n'
-#                    if offer.get('comment', '') == '':
-#                        src += '<p align=center>the amount of the transaction will be from %s to %s BTC</p>' % (
-#                            misc.float2str(float(offer['minamount'])*float(offer['price'])),
-#                            misc.float2str(float(offer['maxamount'])*float(offer['price'])))
-#                    else:
-#                        src += offer.get('comment', '')                        
-#                    src += '\n</font></td></tr>\n'
+#class MoneyMarketListPage(Page):
+#    pagename = _PAGE_MONEY_MARKET_LIST
+#    def renderPage(self, request):
+#        action = arg(request, 'action')
+#        back = arg(request, 'back', '/'+_PAGE_MONEY)
+#
+#        if action == 'request':
+#            pass
+#            # central_service.SendRequestMarketList()
+#            
+#        elif action == 'canceloffer':
+#            pass
+#            # central_service.SendCancelOffer(arg(request, 'offerid'))
+#            
+#        elif action == 'cancelbid':
+#            pass
+#            # central_service.SendCancelBid(arg(request, 'bidid'))
+#        
+#        src = ''
+#        src += '<h3>BitCoin Market</h3>\n'
+#        src += '<p>Here you can watch your bids and offers currently placed on the Market.<p>\n'
+#        src += '<table width=90%>\n'
+#        # if central_service._MarketOffers is None and central_service._MarketBids is None:
+#        if True:
+#            src += '<tr>\n'
+#            src += '<td align=center colspan=2>\n'
+#            src += '<br><br><br><font color=gray size=-1>no responses yet from the Market Server</font><br>\n'
+#            src += '</td>\n'
+#            src += '</tr>\n'
+#        src += '<tr>\n'
+#        src += '<td align=center valign=top width=50%>\n'
+#        if True:
+#        # if central_service._MarketBids is not None:
+#            # if len(central_service._MarketBids) == 0:
+#            if True:
+#                src += '<br><br><br><font color=gray size=-1>no bids</font><br>\n'
+##            else:
+##                src += '<h3>your bids</h3>\n'
+##                src += '<table width=300 border=0 cellspacing=10 cellpadding=0>\n'
+##                src += '<tr>\n'
+##                src += '<td align=center>price</td>\n'
+##                src += '<td align=center>amount</td>\n'
+##                src += '<td align=center>time left<br></td>\n'
+##                src += '<td align=center>&nbsp;</td>\n'
+##                src += '</tr>\n'
+##                for bid in central_service._MarketBids:
+##                    timeleft = bid.get('timeleft', '')
+##                    public = True
+##                    if timeleft != 'bitcoins expected':
+##                        timeleft = misc.seconds_to_time_left_string(timeleft)
+##                    else:
+##                        timeleft = '<font color=red>%s</font>' % timeleft
+##                        public = False 
+##                    src += '<tr><td colspan=4><hr></td></tr>\n'
+##                    src += '<tr>\n'
+##                    if public:
+##                        src += '<td align=center><font color=red>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(bid.get('price', 'error'))
+##                        src += '<td align=center><font color=blue>%s</font><font color=gray size=-2> BitPie.NET</font></td>\n' % misc.float2str(bid.get('maxamount', 'error'))
+##                    else:
+##                        src += '<td align=center><font color=gray>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(bid.get('price', 'error'))
+##                        src += '<td align=center><font color=gray>%s</font><font color=gray size=-2> BitPie.NET</font></td>\n' % misc.float2str(bid.get('maxamount', 'error'))
+##                    src += '<td align=center><font color=green>%s</font></td>\n' % timeleft 
+##                    src += '<td align=right><a href="%s"><img src="%s" width=16 height=16></a></td>\n' % (request.path+'?action=cancelbid&bidid='+bid.get('id', ''), iconurl(request, 'icons/delete01.png'))
+##                    src += '</tr>\n'
+##                    src += '<tr><td colspan=4 align=left><font color=gray size=-1>\n'
+##                    if bid.get('comment', '') == '':
+##                        src += '<p align=center>the amount of the transaction will be %s BTC</p>' % (
+##                            misc.float2str(float(bid['maxamount'])*float(bid['price'])))
+##                    else:
+##                        src += bid.get('comment', '')                        
+##                    src += '\n</font></td></tr>\n'
 #                src += '</table>\n'
-        src += '</td>\n'
-        src += '</tr>\n'
-        src += '<tr>\n'
-        src += '<td align=center>\n'
-        src += '<br><br><br>\n'
-        src += '<font size=4><b><a href="%s?back=%s">[buy DHN credits]</a></b></font><br><br>\n' % ('/'+_PAGE_MONEY_MARKET_BUY, request.path)
-        src += '</td>\n'
-        src += '<td align=center>\n'
-        src += '<br><br><br>\n'
-        src += '<font size=4><b><a href="%s?back=%s">[sell DHN credits]</a></b></font><br><br>\n' % ('/'+_PAGE_MONEY_MARKET_SELL, request.path)
-        src += '</td>\n'
-        src += '</tr>\n'
-        src += '</table>\n'
-        src += '<p><a href="%s?action=request&back=%s">Send a request to the Market Server for a list of my bids and offers</a></p>\n' % (request.path, back)
-        src += '<br><p>To see bids and offers from all users go to the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>' % settings.MarketPlaceURL() 
-        return html(request, body=src, back=back, title='list of my bids and offers')
+#        src += '</td>\n'
+#        src += '<td align=center valign=top width=50%>\n'
+#        # if central_service._MarketOffers is not None:
+#        if True:
+#            # if len(central_service._MarketOffers) == 0:
+#            if True:
+#                src += '<br><br><br><font color=gray size=-1>no offers</font><br>\n'
+##            else:
+##                src += '<h3>your offers</h3>\n'
+##                src += '<table width=300 border=0 cellspacing=10 cellpadding=0>\n'
+##                src += '<tr>\n'
+##                src += '<td align=center>price</td>\n'
+##                src += '<td align=center>amount</td>\n'
+##                src += '<td align=center>time left</td>\n'
+##                src += '<td align=center>&nbsp;</td>\n'
+##                src += '</tr>\n'
+##                for offer in central_service._MarketOffers:
+##                    src += '<tr><td colspan=4><hr></td></tr>\n'
+##                    src += '<tr>\n'
+##                    src += '<td align=center><font color=red>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(offer.get('price', 'error'))
+##                    src += '<td align=center><font color=blue>%s - %s</font><font color=gray size=-2> BitPie.NET</font></td>\n' % (misc.float2str(offer.get('minamount', 'error')), misc.float2str(offer.get('maxamount', 'error')))
+##                    src += '<td align=center><font color=green>%s</font></td>\n' % misc.seconds_to_time_left_string(offer.get('timeleft', 0))
+##                    src += '<td align=right><a href="%s"><img src="%s" width=16 height=16></a></td>\n' % (request.path+'?action=canceloffer&offerid='+offer.get('id', ''), iconurl(request, 'icons/delete01.png'))
+##                    src += '</tr>\n'
+##                    src += '<tr><td colspan=4 align=left><font color=gray size=-1>\n'
+##                    if offer.get('comment', '') == '':
+##                        src += '<p align=center>the amount of the transaction will be from %s to %s BTC</p>' % (
+##                            misc.float2str(float(offer['minamount'])*float(offer['price'])),
+##                            misc.float2str(float(offer['maxamount'])*float(offer['price'])))
+##                    else:
+##                        src += offer.get('comment', '')                        
+##                    src += '\n</font></td></tr>\n'
+##                src += '</table>\n'
+#        src += '</td>\n'
+#        src += '</tr>\n'
+#        src += '<tr>\n'
+#        src += '<td align=center>\n'
+#        src += '<br><br><br>\n'
+#        src += '<font size=4><b><a href="%s?back=%s">[buy BitPie.NET credits]</a></b></font><br><br>\n' % ('/'+_PAGE_MONEY_MARKET_BUY, request.path)
+#        src += '</td>\n'
+#        src += '<td align=center>\n'
+#        src += '<br><br><br>\n'
+#        src += '<font size=4><b><a href="%s?back=%s">[sell BitPie.NET credits]</a></b></font><br><br>\n' % ('/'+_PAGE_MONEY_MARKET_SELL, request.path)
+#        src += '</td>\n'
+#        src += '</tr>\n'
+#        src += '</table>\n'
+#        src += '<p><a href="%s?action=request&back=%s">Send a request to the Market Server for a list of my bids and offers</a></p>\n' % (request.path, back)
+#        src += '<br><p>To see bids and offers from all users go to the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>' % settings.MarketPlaceURL() 
+#        return html(request, body=src, back=back, title='list of my bids and offers')
 
 
-class BitCoinSettingsPage(Page):
-    pagename = _PAGE_BIT_COIN_SETTINGS
-    def renderPage(self, request):
-        src = '<h1>BitCoin settings</h1>\n'
-        src += '<table width=70%><tr><td align=center>\n'
-        src += '<p align=justify>Bitcoin is a cryptocurrency where the creation and transfer of bitcoins '
-        src += 'is based on an open-source cryptographic protocol that is independent of any central authority.\n'
-        src += '<a href="http://en.wikipedia.org/wiki/Bitcoin" target=_blank>Read wiki</a> or '
-        src += 'visit <a href="http://bitcoin.org" target="_blank">BitCoin.org</a> to get started.</p>\n'
-        src += '<p align=justify>Here you can specify how to connect with your local or remote BitCoin JSON-RPC server '
-        src += 'on which you installed your wallet.\n '
-        src += 'Read how to get started installing '
-        src += '<a href="https://en.bitcoin.it/wiki/Getting_started_installing_bitcoin-qt" target=_blank>bitcoin-qt</a>\n '
-        src += 'or <a href="http://rdmsnippets.com/2013/03/12/installind-bitcoind-on-ubuntu-12-4-lts/" target=_blank>bitcoind</a> command line server.</p>\n'
-        if not bitcoin.installed():
-            src += '<br><br><font color=red><b>WARNING!!!</b><br>Module bitcoin-python is not installed</font>\n'
-            if io.Linux():
-                src += '<font size=-1><br><br>To install it type this commands:\n'
-                src += '<table>\n\n'
-                src += '<tr><td align=left>sudo apt-get update</td></tr>\n'
-                src += '<tr><td align=left>sudo apt-get install python-setuptools</td></tr>\n'
-                src += '<tr><td align=left>sudo easy_install bitcoin-python</td></tr>\n'
-                src += '</table></font>\n'
-        src += '</td></tr></table>\n'
-        src += '<br>\n' 
-        src += '<br><h3>use local or remote server: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-server-is-local', request.path,
-            'local' if settings.getBitCoinServerIsLocal() else 'remote')
-        if settings.getBitCoinServerIsLocal():
-            src += '<br><h3>config file location: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-config-filename', request.path,
-                settings.getBitCoinServerConfigFilename().strip() or 'not specified')
-        else:
-            src += '<br><h3>ip address or host name: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-host', request.path,
-                settings.getBitCoinServerHost().strip() or 'not specified')
-            src += '<br><h3>port: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-port', request.path,
-                settings.getBitCoinServerPort().strip() or 'not set')
-            src += '<br><h3>username: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-username', request.path,
-                settings.getBitCoinServerUserName().strip() or 'not set')
-            src += '<br><h3>password: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-password', request.path,
-                ('*'*len(settings.getBitCoinServerPassword()) or 'not set' ))
-        src += '<br><br>\n'
-        return html(request, body=src,  back=arg(request, 'back', '/'+_PAGE_CONFIG), title='BitCoin settings')
+#class BitCoinSettingsPage(Page):
+#    pagename = _PAGE_BIT_COIN_SETTINGS
+#    def renderPage(self, request):
+#        src = '<h1>BitCoin settings</h1>\n'
+#        src += '<table width=70%><tr><td align=center>\n'
+#        src += '<p align=justify>Bitcoin is a cryptocurrency where the creation and transfer of bitcoins '
+#        src += 'is based on an open-source cryptographic protocol that is independent of any central authority.\n'
+#        src += '<a href="http://en.wikipedia.org/wiki/Bitcoin" target=_blank>Read wiki</a> or '
+#        src += 'visit <a href="http://bitcoin.org" target="_blank">BitCoin.org</a> to get started.</p>\n'
+#        src += '<p align=justify>Here you can specify how to connect with your local or remote BitCoin JSON-RPC server '
+#        src += 'on which you installed your wallet.\n '
+#        src += 'Read how to get started installing '
+#        src += '<a href="https://en.bitcoin.it/wiki/Getting_started_installing_bitcoin-qt" target=_blank>bitcoin-qt</a>\n '
+#        src += 'or <a href="http://rdmsnippets.com/2013/03/12/installind-bitcoind-on-ubuntu-12-4-lts/" target=_blank>bitcoind</a> command line server.</p>\n'
+#        if not bitcoin.installed():
+#            src += '<br><br><font color=red><b>WARNING!!!</b><br>Module bitcoin-python is not installed</font>\n'
+#            if io.Linux():
+#                src += '<font size=-1><br><br>To install it type this commands:\n'
+#                src += '<table>\n\n'
+#                src += '<tr><td align=left>sudo apt-get update</td></tr>\n'
+#                src += '<tr><td align=left>sudo apt-get install python-setuptools</td></tr>\n'
+#                src += '<tr><td align=left>sudo easy_install bitcoin-python</td></tr>\n'
+#                src += '</table></font>\n'
+#        src += '</td></tr></table>\n'
+#        src += '<br>\n' 
+#        src += '<br><h3>use local or remote server: <a href="%s?back=%s">%s</a></h3>\n' % (
+#            '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-server-is-local', request.path,
+#            'local' if settings.getBitCoinServerIsLocal() else 'remote')
+#        if settings.getBitCoinServerIsLocal():
+#            src += '<br><h3>config file location: <a href="%s?back=%s">%s</a></h3>\n' % (
+#                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-config-filename', request.path,
+#                settings.getBitCoinServerConfigFilename().strip() or 'not specified')
+#        else:
+#            src += '<br><h3>ip address or host name: <a href="%s?back=%s">%s</a></h3>\n' % (
+#                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-host', request.path,
+#                settings.getBitCoinServerHost().strip() or 'not specified')
+#            src += '<br><h3>port: <a href="%s?back=%s">%s</a></h3>\n' % (
+#                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-port', request.path,
+#                settings.getBitCoinServerPort().strip() or 'not set')
+#            src += '<br><h3>username: <a href="%s?back=%s">%s</a></h3>\n' % (
+#                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-username', request.path,
+#                settings.getBitCoinServerUserName().strip() or 'not set')
+#            src += '<br><h3>password: <a href="%s?back=%s">%s</a></h3>\n' % (
+#                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-password', request.path,
+#                ('*'*len(settings.getBitCoinServerPassword()) or 'not set' ))
+#        src += '<br><br>\n'
+#        return html(request, body=src,  back=arg(request, 'back', '/'+_PAGE_CONFIG), title='BitCoin settings')
 
 
-class TransferPage(Page):
-    pagename = _PAGE_TRANSFER
-    def _checkInput(self, amount, bal, recipient):
-        if recipient.strip() == '':
-            return 3
-        try:
-            float(amount)
-        except:
-            return 1
-        if float(amount) > float(bal):
-            return 2
-        return 0
+#class TransferPage(Page):
+#    pagename = _PAGE_TRANSFER
+#    def _checkInput(self, amount, bal, recipient):
+#        if recipient.strip() == '':
+#            return 3
+#        try:
+#            float(amount)
+#        except:
+#            return 1
+#        if float(amount) > float(bal):
+#            return 2
+#        return 0
+#
+#    def renderPage(self, request):
+#        bal, balnt, rcptnum = money.LoadBalance()
+#        idurls = contacts.getContactsAndCorrespondents()
+#        idurls.sort()
+#        recipient = arg(request, 'recipient')
+#        if recipient.strip() and not recipient.startswith('http://'):
+#            recipient = 'http://'+settings.IdentityServerName()+'/'+recipient+'.xml'
+#        amount = arg(request, 'amount', '0.0')
+#        action = arg(request, 'action')
+#        io.log(6, 'webcontrol.TransferPage.renderPage [%s] [%s] [%s]' % (action, amount, recipient))
+#        msg = ''
+#        typ = 'info'
+#        button = 'Send money'
+#        modify = True
+#
+#        if action == '':
+#            action = 'send'
+#
+#        elif action == 'send':
+#            res = self._checkInput(amount, bal, recipient)
+#            if res == 0:
+#                action = 'commit'
+#                button = 'Yes! Send the money!'
+#                modify = False
+#                msg = '<table width="60%"><tr><td align=center>'
+#                msg += 'Do you want to transfer <font color=blue><b>%s BitPie.NET</b></font>' % misc.float2str(amount)
+#                msg += ' of your total <font color=blue><b>%s BitPie.NET</b></font> transferable funds ' % misc.float2str(bal)
+#                msg += ' to user <font color=blue><b>%s</b></font> ?<br>\n' % nameurl.GetName(recipient)
+#                msg += '<br>Your transferable balance will become <font color=blue><b>%s BitPie.NET</b></font>.' % misc.float2str(float(bal)-float(amount))
+#                msg += '</td></tr></table>'
+#                typ = 'info'
+#            elif res == 1:
+#                msg = 'Wrong amount! Please enter a number!'
+#                typ = 'error'
+#            elif res == 2:
+#                msg = 'Sorry! But you do not have enough transferable funds.'
+#                typ = 'error'
+#            else:
+#                msg = 'Unknown error! Please try again.'
+#                typ = 'error'
+#
+#        elif action == 'commit':
+#            res = self._checkInput(amount, bal, recipient)
+#            if res == 0:
+#                # central_service.SendTransfer(recipient, amount)
+#                msg = 'A request for the transfer of funds to user <b>%s</b> was sent to the Central server.' % nameurl.GetName(recipient)
+#                typ = 'success'
+#                button = 'Return'
+#                modify = False
+#                action = 'return'
+#            elif res == 1:
+#                action = 'send'
+#                button = 'Send money'
+#                modify = True
+#                msg = 'Wrong amount! Please enter a number!'
+#                typ = 'error'
+#            elif res == 2:
+#                action = 'send'
+#                button = 'Send money'
+#                modify = True
+#                msg = 'Sorry! But you do not have enough transferable funds.'
+#                typ = 'error'
+#            else:
+#                action = 'send'
+#                button = 'Send money'
+#                modify = True
+#                msg = 'Unknown error! Please try again.'
+#                typ = 'error'
+#
+#        elif action == 'return':
+#            request.redirect('/'+_PAGE_MONEY)
+#            request.finish()
+#            return NOT_DONE_YET
+#        
+#        else:
+#            action = 'send'
+#            button = 'Send money'
+#            modify = True
+#            msg = 'Unknown action! Please try again.'
+#            typ = 'error'
+#
+#        src = '<h1>money</h1>\n'
+#        src += '<table align=center><tr><td align=left>\n'
+#        # src += 'Total balance: <b>%s BitPie.NET</b>\n' % misc.float2str(bal + balnt)
+#        src += 'transferable balance: <b>%s BitPie.NET</b>\n' % misc.float2str(bal)
+#        # src += '<br><br>Not transferable balance: <b>%s BitPie.NET</b>\n' % misc.float2str(balnt)
+#        src += '</td></tr></table>\n'
+#        src += '<br><br><br>\n'
+#        src += '<form action="%s" method="post">\n' % request.path
+#        src += '<input type="hidden" name="action" value="%s" />\n' % action
+#        if modify:
+#            src += '<table><tr>\n'
+#            src += '<td align=right><input type="text" name="amount" value="%s" size=12 /></td>\n' % amount
+#            src += '<td align=left>$</td>\n'
+#            src += '</tr></table><br>\n'
+#            src += '<select name="recipient">\n'
+#            for idurl in idurls:
+#                name = nameurl.GetName(idurl)
+#                src += '<option value="%s"' % idurl
+#                if idurl == recipient:
+#                    src += ' selected '
+#                src += '>%s</option>\n' % name
+#            src += '</select><br><br>\n'
+#        else:
+#            src += '<input type="hidden" name="amount" value="%s" />\n' % amount
+#            src += '<input type="hidden" name="recipient" value="%s" />\n' % recipient
+#        src += html_message(msg, typ)
+#        src += '<br><br>\n'
+#        src += '<input type="submit" name="submit" value="%s" />\n' % button
+#        src += '</form><br><br>\n'
+#        src += html_comment(msg.lower().replace('<b>', '').replace('</b>', ''))
+#        return html(request, body=src, back='/'+_PAGE_MONEY, title='money transfer')
 
-    def renderPage(self, request):
-        bal, balnt, rcptnum = money.LoadBalance()
-        idurls = contacts.getContactsAndCorrespondents()
-        idurls.sort()
-        recipient = arg(request, 'recipient')
-        if recipient.strip() and not recipient.startswith('http://'):
-            recipient = 'http://'+settings.IdentityServerName()+'/'+recipient+'.xml'
-        amount = arg(request, 'amount', '0.0')
-        action = arg(request, 'action')
-        io.log(6, 'webcontrol.TransferPage.renderPage [%s] [%s] [%s]' % (action, amount, recipient))
-        msg = ''
-        typ = 'info'
-        button = 'Send money'
-        modify = True
 
-        if action == '':
-            action = 'send'
+#class ReceiptPage(Page):
+#    pagename = _PAGE_RECEIPT
+#    # isLeaf = True
+#    def __init__(self, path):
+#        Page.__init__(self)
+#        self.path = path
+#
+#    def renderPage(self, request):
+#        io.log(6, 'webcontrol.ReceiptPage.renderPage ' + self.path)
+#        receipt = money.ReadReceipt(self.path)
+#        typ = str(receipt[2])
+#        src = '<h1>receipt %s</h1>\n' % self.path
+#        if receipt is None:
+#            src += html_message('Can not read receipt with number ' + self.path , 'error')
+#            return html(request, body=src, back='/'+_PAGE_RECEIPTS)
+#        src += '<table cellspacing=5 width=80% align=center>\n'
+#        src += '<tr><td align=right width=20%><b>ID:</b></td><td width=80% align=left>' + str(receipt[0]) + '</td></tr>\n'
+#        src += html_comment('  ID:     %s' % str(receipt[0]))
+#        src += '<tr><td align=right><b>Type:</b></td><td align=left>' + typ + '</td></tr>\n'
+#        src += html_comment('  Type:   %s' % typ)
+#        src += '<tr><td align=right><b>From:</b></td><td align=left>' + str(receipt[3]) + '</td></tr>\n'
+#        src += html_comment('  From:   %s' % str(receipt[3]))
+#        src += '<tr><td align=right><b>To:</b></td><td align=left>' + str(receipt[4]) + '</td></tr>\n'
+#        src += html_comment('  To:     %s' % str(receipt[4]))
+#        if str(receipt[2]) not in ['bid', 'offer', 'cancelbid', 'canceloffer']:
+#            src += '<tr><td align=right><b>Amount:</b></td><td align=left>' + misc.float2str(money.GetTrueAmount(receipt)) + ' BitPie.NET</td></tr>\n'
+#            src += html_comment('  Amount: %s BitPie.NET' % misc.float2str(money.GetTrueAmount(receipt)))
+#        src += '<tr><td align=right><b>Date:</b></td><td align=left>' + str(receipt[1]) + '</td></tr>\n'
+#        src += html_comment('  Date:   %s' % str(receipt[1]))
+#        d = money.UnpackReport(receipt[-1])
+#        if typ == 'space':
+#            src += '<tr><td colspan=2>\n'
+#            src += '<br><br><table width=100%><tr><td valign=top align=right>\n'
+#            src += '<table>\n'
+#            src += '<tr><td colspan=2 align=left><b>Suppliers:</b></td></tr>\n'
+#            src += '<tr><td>user</td><td>taken Mb</td></tr>\n'
+#            src += html_comment('    suppliers, taken Mb')
+#            for idurl, mb in d['suppliers'].items():
+#                if idurl == 'space' or idurl == 'costs':
+#                    continue
+#                src += '<tr><td>%s</td>' % nameurl.GetName(idurl)
+#                src += '<td nowrap>%s Mb</td>\n' % str(mb)
+#                src += '</tr>\n'
+#                src += html_comment('      %s  %s' % (nameurl.GetName(idurl).ljust(20), str(mb)))
+#            src += '<tr><td>&nbsp;</td></tr>\n'
+#            # src += '<tr><td nowrap>total taken space</td><td nowrap>%s Mb</td></tr>\n' % str(d['suppliers']['space'])
+#            # src += '<tr><td nowrap>suppliers costs</td><td nowrap>%s$</td></tr>\n' % str(d['suppliers']['costs'])
+#            src += '</table>\n'
+#            src += '</td><td valign=top align=left>\n'
+#            src += '<table>'
+#            src += '<tr><td colspan=2 align=left><b>Customers:</b></td></tr>\n'
+#            src += html_comment('    customers, given Mb')
+#            src += '<tr><td>user</td><td>given Mb</td></tr>\n'
+#            for idurl, mb in d['customers'].items():
+#                if idurl == 'space' or idurl == 'income':
+#                    continue
+#                src += '<tr><td>%s</td>' % nameurl.GetName(idurl)
+#                src += '<td nowrap>%s Mb</td>\n' % str(mb)
+#                src += '</tr>\n'
+#                src += html_comment('      %s  %s' % (nameurl.GetName(idurl).ljust(20), str(mb)))
+#            src += '<tr><td>&nbsp;</td></tr>\n'
+#            # src += '<tr><td nowrap>total given space</td><td nowrap>%s Mb</td></tr>\n' %  str(d['customers']['space'])
+#            # src += '<tr><td>customers income</td><td nowrap>%s$</td></tr>\n' % str(d['customers']['income'])
+#            src += '</table>\n'
+#            src += '</td></tr>\n'
+#            src += '<tr><td align=right>\n'
+#            src += '<table><tr><td nowrap>total taken space</td><td nowrap>%s Mb</td></tr>\n' % str(d['suppliers']['space'])
+#            src += html_comment('    total taken space: %s Mb' % str(d['suppliers']['space']))
+#            src += '<tr><td nowrap>suppliers costs</td><td nowrap>%s BitPie.NET</td></tr></table>\n' % str(d['suppliers']['costs'])
+#            src += html_comment('    suppliers costs:   %s BitPie.NET' % str(d['suppliers']['costs']))
+#            src += '</td><td>\n'
+#            src += '<table><tr><td nowrap>total given space</td><td nowrap>%s Mb</td></tr>\n' %  str(d['customers']['space'])
+#            src += html_comment('    total given space: %s Mb' % str(d['customers']['space']))
+#            src += '<tr><td>customers income</td><td nowrap>%s BitPie.NET</td></tr></table>\n' % str(d['customers']['income'])
+#            src += html_comment('    customers income:  %s BitPie.NET' % str(d['customers']['income']))
+#            src += '</td></tr>'
+#            src += '</table>\n'
+#            src += '</td></tr>\n'
+#            src += '<tr><td colspan=2 align=center>\n'
+#            src += '<br><b>Total profits:</b> %s BitPie.NET\n' % str(d['total']).strip()
+#            src += html_comment('    total profits:     %s BitPie.NET' % str(d['total']).strip())
+#            src += '</td></tr>\n'
+#            src += '<tr><td colspan=2>\n'
+#            src += d['text']
+#            src += '</td></tr>\n'
+#            src += html_comment('    ' + d['text'])
+#        else:
+#            src += '<tr><td align=right valign=top><b>Details:</b></td><td align=left>' + str(d['text']).replace('\n','<br>') + '</td></tr>\n'
+#            src += html_comment('  Details: %s' % str(d['text']))
+#        src += '</table>\n'
+#        return html(request, body=src, back='/'+_PAGE_RECEIPTS)
 
-        elif action == 'send':
-            res = self._checkInput(amount, bal, recipient)
-            if res == 0:
-                action = 'commit'
-                button = 'Yes! Send the money!'
-                modify = False
-                msg = '<table width="60%"><tr><td align=center>'
-                msg += 'Do you want to transfer <font color=blue><b>%s DHN</b></font>' % misc.float2str(amount)
-                msg += ' of your total <font color=blue><b>%s DHN</b></font> transferable funds ' % misc.float2str(bal)
-                msg += ' to user <font color=blue><b>%s</b></font> ?<br>\n' % nameurl.GetName(recipient)
-                msg += '<br>Your transferable balance will become <font color=blue><b>%s DHN</b></font>.' % misc.float2str(float(bal)-float(amount))
-                msg += '</td></tr></table>'
-                typ = 'info'
-            elif res == 1:
-                msg = 'Wrong amount! Please enter a number!'
-                typ = 'error'
-            elif res == 2:
-                msg = 'Sorry! But you do not have enough transferable funds.'
-                typ = 'error'
-            else:
-                msg = 'Unknown error! Please try again.'
-                typ = 'error'
-
-        elif action == 'commit':
-            res = self._checkInput(amount, bal, recipient)
-            if res == 0:
-                # central_service.SendTransfer(recipient, amount)
-                msg = 'A request for the transfer of funds to user <b>%s</b> was sent to the Central server.' % nameurl.GetName(recipient)
-                typ = 'success'
-                button = 'Return'
-                modify = False
-                action = 'return'
-            elif res == 1:
-                action = 'send'
-                button = 'Send money'
-                modify = True
-                msg = 'Wrong amount! Please enter a number!'
-                typ = 'error'
-            elif res == 2:
-                action = 'send'
-                button = 'Send money'
-                modify = True
-                msg = 'Sorry! But you do not have enough transferable funds.'
-                typ = 'error'
-            else:
-                action = 'send'
-                button = 'Send money'
-                modify = True
-                msg = 'Unknown error! Please try again.'
-                typ = 'error'
-
-        elif action == 'return':
-            request.redirect('/'+_PAGE_MONEY)
-            request.finish()
-            return NOT_DONE_YET
-        
-        else:
-            action = 'send'
-            button = 'Send money'
-            modify = True
-            msg = 'Unknown action! Please try again.'
-            typ = 'error'
-
-        src = '<h1>money</h1>\n'
-        src += '<table align=center><tr><td align=left>\n'
-        # src += 'Total balance: <b>%s DHN</b>\n' % misc.float2str(bal + balnt)
-        src += 'transferable balance: <b>%s DHN</b>\n' % misc.float2str(bal)
-        # src += '<br><br>Not transferable balance: <b>%s DHN</b>\n' % misc.float2str(balnt)
-        src += '</td></tr></table>\n'
-        src += '<br><br><br>\n'
-        src += '<form action="%s" method="post">\n' % request.path
-        src += '<input type="hidden" name="action" value="%s" />\n' % action
-        if modify:
-            src += '<table><tr>\n'
-            src += '<td align=right><input type="text" name="amount" value="%s" size=12 /></td>\n' % amount
-            src += '<td align=left>$</td>\n'
-            src += '</tr></table><br>\n'
-            src += '<select name="recipient">\n'
-            for idurl in idurls:
-                name = nameurl.GetName(idurl)
-                src += '<option value="%s"' % idurl
-                if idurl == recipient:
-                    src += ' selected '
-                src += '>%s</option>\n' % name
-            src += '</select><br><br>\n'
-        else:
-            src += '<input type="hidden" name="amount" value="%s" />\n' % amount
-            src += '<input type="hidden" name="recipient" value="%s" />\n' % recipient
-        src += html_message(msg, typ)
-        src += '<br><br>\n'
-        src += '<input type="submit" name="submit" value="%s" />\n' % button
-        src += '</form><br><br>\n'
-        src += html_comment(msg.lower().replace('<b>', '').replace('</b>', ''))
-        return html(request, body=src, back='/'+_PAGE_MONEY, title='money transfer')
-
-
-class ReceiptPage(Page):
-    pagename = _PAGE_RECEIPT
-    # isLeaf = True
-    def __init__(self, path):
-        Page.__init__(self)
-        self.path = path
-
-    def renderPage(self, request):
-        io.log(6, 'webcontrol.ReceiptPage.renderPage ' + self.path)
-        receipt = money.ReadReceipt(self.path)
-        typ = str(receipt[2])
-        src = '<h1>receipt %s</h1>\n' % self.path
-        if receipt is None:
-            src += html_message('Can not read receipt with number ' + self.path , 'error')
-            return html(request, body=src, back='/'+_PAGE_RECEIPTS)
-        src += '<table cellspacing=5 width=80% align=center>\n'
-        src += '<tr><td align=right width=20%><b>ID:</b></td><td width=80% align=left>' + str(receipt[0]) + '</td></tr>\n'
-        src += html_comment('  ID:     %s' % str(receipt[0]))
-        src += '<tr><td align=right><b>Type:</b></td><td align=left>' + typ + '</td></tr>\n'
-        src += html_comment('  Type:   %s' % typ)
-        src += '<tr><td align=right><b>From:</b></td><td align=left>' + str(receipt[3]) + '</td></tr>\n'
-        src += html_comment('  From:   %s' % str(receipt[3]))
-        src += '<tr><td align=right><b>To:</b></td><td align=left>' + str(receipt[4]) + '</td></tr>\n'
-        src += html_comment('  To:     %s' % str(receipt[4]))
-        if str(receipt[2]) not in ['bid', 'offer', 'cancelbid', 'canceloffer']:
-            src += '<tr><td align=right><b>Amount:</b></td><td align=left>' + misc.float2str(money.GetTrueAmount(receipt)) + ' DHN</td></tr>\n'
-            src += html_comment('  Amount: %s DHN' % misc.float2str(money.GetTrueAmount(receipt)))
-        src += '<tr><td align=right><b>Date:</b></td><td align=left>' + str(receipt[1]) + '</td></tr>\n'
-        src += html_comment('  Date:   %s' % str(receipt[1]))
-        d = money.UnpackReport(receipt[-1])
-        if typ == 'space':
-            src += '<tr><td colspan=2>\n'
-            src += '<br><br><table width=100%><tr><td valign=top align=right>\n'
-            src += '<table>\n'
-            src += '<tr><td colspan=2 align=left><b>Suppliers:</b></td></tr>\n'
-            src += '<tr><td>user</td><td>taken Mb</td></tr>\n'
-            src += html_comment('    suppliers, taken Mb')
-            for idurl, mb in d['suppliers'].items():
-                if idurl == 'space' or idurl == 'costs':
-                    continue
-                src += '<tr><td>%s</td>' % nameurl.GetName(idurl)
-                src += '<td nowrap>%s Mb</td>\n' % str(mb)
-                src += '</tr>\n'
-                src += html_comment('      %s  %s' % (nameurl.GetName(idurl).ljust(20), str(mb)))
-            src += '<tr><td>&nbsp;</td></tr>\n'
-            # src += '<tr><td nowrap>total taken space</td><td nowrap>%s Mb</td></tr>\n' % str(d['suppliers']['space'])
-            # src += '<tr><td nowrap>suppliers costs</td><td nowrap>%s$</td></tr>\n' % str(d['suppliers']['costs'])
-            src += '</table>\n'
-            src += '</td><td valign=top align=left>\n'
-            src += '<table>'
-            src += '<tr><td colspan=2 align=left><b>Customers:</b></td></tr>\n'
-            src += html_comment('    customers, given Mb')
-            src += '<tr><td>user</td><td>given Mb</td></tr>\n'
-            for idurl, mb in d['customers'].items():
-                if idurl == 'space' or idurl == 'income':
-                    continue
-                src += '<tr><td>%s</td>' % nameurl.GetName(idurl)
-                src += '<td nowrap>%s Mb</td>\n' % str(mb)
-                src += '</tr>\n'
-                src += html_comment('      %s  %s' % (nameurl.GetName(idurl).ljust(20), str(mb)))
-            src += '<tr><td>&nbsp;</td></tr>\n'
-            # src += '<tr><td nowrap>total given space</td><td nowrap>%s Mb</td></tr>\n' %  str(d['customers']['space'])
-            # src += '<tr><td>customers income</td><td nowrap>%s$</td></tr>\n' % str(d['customers']['income'])
-            src += '</table>\n'
-            src += '</td></tr>\n'
-            src += '<tr><td align=right>\n'
-            src += '<table><tr><td nowrap>total taken space</td><td nowrap>%s Mb</td></tr>\n' % str(d['suppliers']['space'])
-            src += html_comment('    total taken space: %s Mb' % str(d['suppliers']['space']))
-            src += '<tr><td nowrap>suppliers costs</td><td nowrap>%s DHN</td></tr></table>\n' % str(d['suppliers']['costs'])
-            src += html_comment('    suppliers costs:   %s DHN' % str(d['suppliers']['costs']))
-            src += '</td><td>\n'
-            src += '<table><tr><td nowrap>total given space</td><td nowrap>%s Mb</td></tr>\n' %  str(d['customers']['space'])
-            src += html_comment('    total given space: %s Mb' % str(d['customers']['space']))
-            src += '<tr><td>customers income</td><td nowrap>%s DHN</td></tr></table>\n' % str(d['customers']['income'])
-            src += html_comment('    customers income:  %s DHN' % str(d['customers']['income']))
-            src += '</td></tr>'
-            src += '</table>\n'
-            src += '</td></tr>\n'
-            src += '<tr><td colspan=2 align=center>\n'
-            src += '<br><b>Total profits:</b> %s DHN\n' % str(d['total']).strip()
-            src += html_comment('    total profits:     %s DHN' % str(d['total']).strip())
-            src += '</td></tr>\n'
-            src += '<tr><td colspan=2>\n'
-            src += d['text']
-            src += '</td></tr>\n'
-            src += html_comment('    ' + d['text'])
-        else:
-            src += '<tr><td align=right valign=top><b>Details:</b></td><td align=left>' + str(d['text']).replace('\n','<br>') + '</td></tr>\n'
-            src += html_comment('  Details: %s' % str(d['text']))
-        src += '</table>\n'
-        return html(request, body=src, back='/'+_PAGE_RECEIPTS)
-
-class ReceiptsPage(Page):
-    pagename = _PAGE_RECEIPTS
-    def renderPage(self, request):
-        receipts_list = money.ReadAllReceipts()
-        page = arg(request, 'page', time.strftime('%Y%m'))
-        pageYear = nextYear = prevYear = misc.ToInt(page[:4], int(time.strftime('%Y')))
-        pageMonth =  nextMonth = prevMonth = misc.ToInt(page[4:], int(time.strftime('%m')))
-        nextMonth = pageMonth + 1
-        if nextMonth == 13:
-            nextMonth = 1
-            nextYear += 1
-        prevMonth = pageMonth -1
-        if prevMonth == 0:
-            prevMonth = 12
-            prevYear -= 1
-        next = '%d%02d' % (nextYear, nextMonth)
-        prev = '%d%02d' % (prevYear, prevMonth)
-        nextLabel = '%d %s' % (nextYear, calendar.month_name[nextMonth])
-        prevLabel = '%d %s' % (prevYear, calendar.month_name[prevMonth])
-        src = '<h1>receipts</h1>\n'
-        src += '<br><br>\n'
-        src += '<a href="%s?page=%s">[%s]</a>\n' % (request.path, prev, prevLabel)
-        src += '<a href="%s?page=%s">[%s]</a>\n' % (request.path, next, nextLabel)
-        src += '<table cellpadding=5>\n'
-        src += '<tr align=left>\n'
-        src += '<th>ID</th>\n'
-        src += '<th>Type</th>\n'
-        src += '<th>Amount</th>\n'
-        src += '<th>From</th>\n'
-        src += '<th>To</th>\n'
-        src += '<th>Date</th>\n'
-        src += '</tr>\n'
-        src += html_comment('  ID          Type      Amount        From            To              Date')
-        for receipt in receipts_list:
-            src += html_comment('  %s  %s  %s  %s  %s  %s' % (
-                receipt[0].ljust(10), receipt[1].ljust(8), misc.float2str(receipt[2]).ljust(12), 
-                receipt[3].ljust(14), receipt[4].ljust(14), receipt[5]))
-            try:
-                d = time.strptime(receipt[5], "%a, %d %b %Y %H:%M:%S")
-                if d[0] != pageYear or d[1] != pageMonth:
-                    continue
-            except:
-                io.exception()
-                continue
-            src += '<tr><td>'
-            src += '<a href="%s/%s">' % (request.path, receipt[0])
-            src += '%s</a></td>\n' % receipt[0]
-            src += '<td>%s</td>\n' % receipt[1]
-            src += '<td>%s</td>\n' % ('&nbsp;' if float(receipt[2]) == 0.0 else misc.float2str(receipt[2]))
-            src += '<td>%s</td>\n' % receipt[3]
-            src += '<td>%s</td>\n' % receipt[4]
-            src += '<td nowrap>%s</td>\n' % receipt[5]
-            src += '</tr>\n'
-        src += '\n</table>\n'
-        return html(request, body=src, back='/'+_PAGE_MONEY, title='receipts')
-
-    def getChild(self, path, request):
-        if path == '':
-            return self
-        return ReceiptPage(path)
+#class ReceiptsPage(Page):
+#    pagename = _PAGE_RECEIPTS
+#    def renderPage(self, request):
+#        receipts_list = money.ReadAllReceipts()
+#        page = arg(request, 'page', time.strftime('%Y%m'))
+#        pageYear = nextYear = prevYear = misc.ToInt(page[:4], int(time.strftime('%Y')))
+#        pageMonth =  nextMonth = prevMonth = misc.ToInt(page[4:], int(time.strftime('%m')))
+#        nextMonth = pageMonth + 1
+#        if nextMonth == 13:
+#            nextMonth = 1
+#            nextYear += 1
+#        prevMonth = pageMonth -1
+#        if prevMonth == 0:
+#            prevMonth = 12
+#            prevYear -= 1
+#        next = '%d%02d' % (nextYear, nextMonth)
+#        prev = '%d%02d' % (prevYear, prevMonth)
+#        nextLabel = '%d %s' % (nextYear, calendar.month_name[nextMonth])
+#        prevLabel = '%d %s' % (prevYear, calendar.month_name[prevMonth])
+#        src = '<h1>receipts</h1>\n'
+#        src += '<br><br>\n'
+#        src += '<a href="%s?page=%s">[%s]</a>\n' % (request.path, prev, prevLabel)
+#        src += '<a href="%s?page=%s">[%s]</a>\n' % (request.path, next, nextLabel)
+#        src += '<table cellpadding=5>\n'
+#        src += '<tr align=left>\n'
+#        src += '<th>ID</th>\n'
+#        src += '<th>Type</th>\n'
+#        src += '<th>Amount</th>\n'
+#        src += '<th>From</th>\n'
+#        src += '<th>To</th>\n'
+#        src += '<th>Date</th>\n'
+#        src += '</tr>\n'
+#        src += html_comment('  ID          Type      Amount        From            To              Date')
+#        for receipt in receipts_list:
+#            src += html_comment('  %s  %s  %s  %s  %s  %s' % (
+#                receipt[0].ljust(10), receipt[1].ljust(8), misc.float2str(receipt[2]).ljust(12), 
+#                receipt[3].ljust(14), receipt[4].ljust(14), receipt[5]))
+#            try:
+#                d = time.strptime(receipt[5], "%a, %d %b %Y %H:%M:%S")
+#                if d[0] != pageYear or d[1] != pageMonth:
+#                    continue
+#            except:
+#                io.exception()
+#                continue
+#            src += '<tr><td>'
+#            src += '<a href="%s/%s">' % (request.path, receipt[0])
+#            src += '%s</a></td>\n' % receipt[0]
+#            src += '<td>%s</td>\n' % receipt[1]
+#            src += '<td>%s</td>\n' % ('&nbsp;' if float(receipt[2]) == 0.0 else misc.float2str(receipt[2]))
+#            src += '<td>%s</td>\n' % receipt[3]
+#            src += '<td>%s</td>\n' % receipt[4]
+#            src += '<td nowrap>%s</td>\n' % receipt[5]
+#            src += '</tr>\n'
+#        src += '\n</table>\n'
+#        return html(request, body=src, back='/'+_PAGE_MONEY, title='receipts')
+#
+#    def getChild(self, path, request):
+#        if path == '':
+#            return self
+#        return ReceiptPage(path)
 
 class MessagePage(Page):
     pagename = _PAGE_MESSAGE

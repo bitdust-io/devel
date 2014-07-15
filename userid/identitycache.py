@@ -11,18 +11,15 @@
 
 Here we store a local copies of identities.
 This fetches identities off the web and stores an XML copy in file and an identity object in a dictionary.  
-Other parts of DHN call this to get an identity using an IDURL.
+Other parts of BitPie.NET call this to get an identity using an IDURL.
 So this is a local cache of user ID's.
 """
 
-import os
 
 from twisted.internet.defer import Deferred
 
 import lib.io as io
 import lib.net_misc as net_misc
-import lib.settings as settings
-import lib.nameurl as nameurl
 
 import identitydb
 
@@ -39,50 +36,8 @@ def init(success_func=None, fail_func=None):
     """
     io.log(4, 'identitycache.init')
     identitydb.init()
-    # CacheCentralID(success_func, fail_func)
-    # CacheMoneyServerID()
-    # CacheMarketServerID()
     if success_func:
         success_func('')
-
-def CacheCentralID(success_func=None, fail_func=None):
-    """
-    Check and request a Central server identity. 
-    """
-    io.log(6, 'identitycache.CacheCentralID')
-    if HasKey(settings.CentralID()):
-        if success_func:
-            success_func('')
-        return
-    src = io._read_data(os.path.join(io.getExecutableDir(), 'dhncentral.xml'))
-    if src:
-        if identitydb.update(settings.CentralID(), src):
-            if success_func:
-                success_func('')
-            return
-    d = immediatelyCaching(settings.CentralID())
-    if success_func is not None:
-        d.addCallback(success_func)
-    if fail_func is not None:
-        d.addErrback(fail_func)
-    else:
-        d.addErrback(lambda x: io.log(6, 'identitycache.CacheCentralID NETERROR: '+x.getErrorMessage()))
-        
-        
-def CacheMoneyServerID():
-    """
-    Cache a money server identity.
-    """
-    io.log(6, 'identitycache.CacheMoneyServerID')
-    immediatelyCaching(settings.MoneyServerID()).addErrback(lambda x: io.log(6, 'identitycache.CacheMoneyServerID NETERROR: '+x.getErrorMessage()))
-
-
-def CacheMarketServerID():
-    """
-    Cache a market server identity.
-    """
-    io.log(6, 'identitycache.CacheMarketServerID')
-    immediatelyCaching(settings.MarketServerID()).addErrback(lambda x: io.log(6, 'identitycache.CacheMarketServerID NETERROR: '+x.getErrorMessage()))    
 
 
 def Clear(excludeList=None):

@@ -21,10 +21,10 @@ use external p2p (or centralized) networks to transfer files in different ways.
 
 To identify user need to place his ID inside given external network to his public identity file.
 So BitPie.NET users can use different ways to communicate and transfer data.
-DHN code will use that module to talk with nodes in the network.
+BitPie.NET code will use that module to talk with nodes in the network.
 
 Seems like we faced with such situation - 
-DHN software need to work together with other networks software on same machine.
+BitPie.NET software need to work together with other networks software on same machine.
 This means we need to communicate between system processes - this is work for plug-ins.
 So the idea is to make plug-ins code working inside the main process thread - 
 they just need to send/receive a short commands to another process in the OS.
@@ -298,7 +298,7 @@ def inbox(info):
        (encrypted_block, scrubber, remotetester, customerservice, ...)
        to dispatch it to right place(s).
     8) We have to keep track of bandwidth to/from everyone, and make a report every 24 hours
-       which we send to DHN sometime in the 24 hours after that.
+       which we send to BitPie.NET sometime in the 24 hours after that.
     """
     global _DoingShutdown
     global _LastInboxPacketTime
@@ -681,7 +681,7 @@ def main():
     misc.init()
     identitycache.init()
     identitycache.UpdateAfterChecking('http://37.18.255.33:8084/vps_1000.xml', 
-        open('C:\\Documents and Settings\\veselin\\.dhn\\identitycache\\http###37.18.255.33(#8084#)#vps_1000.xml').read())
+        open('C:\\Documents and Settings\\veselin\\.bitpie\\identitycache\\http###37.18.255.33(#8084#)#vps_1000.xml').read())
     import lib.crypto
     lib.crypto.InitMyKey()
     (options, args) = parseCommandLine()

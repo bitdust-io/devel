@@ -181,8 +181,8 @@ def init_connection():
     import p2p_service
     p2p_service.init()
 
-    import money
-    money.SetInboxReceiptCallback(webcontrol.OnInboxReceipt)
+    # import money
+    # money.SetInboxReceiptCallback(webcontrol.OnInboxReceipt)
 
     import message
     message.init()
@@ -389,7 +389,7 @@ def start_logs_rotate():
                 # this is not a log file - we did not create it - do nothing
                 continue
             if filename.startswith('bpmain-'):
-                # remove "old version" files, now we have files started with "dhn-"
+                # remove "old version" files, now we have files started with "bpmain-"
                 remove_list.append((filepath, 'old version')) 
                 continue
             # count the total size of the all log files
@@ -403,8 +403,8 @@ def start_logs_rotate():
                 if os.access(filepath, os.W_OK):
                     remove_list.append((filepath, 'big file'))
                     continue
-            # if this is a file for every execution (started with "dhn-") ... 
-            if filename.startswith('dhn-'):
+            # if this is a file for every execution (started with "bpmain-") ... 
+            if filename.startswith('bpmain-'):
                 # we check if file is writable - so we can remove it
                 if not os.access(filepath, os.W_OK):
                     continue

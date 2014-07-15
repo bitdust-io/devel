@@ -388,18 +388,6 @@ def MaxDeletedBackupIDsToKeep():
     """
     return 100 
 
-def DefaultBitCoinCostPerDHNCredit():
-    """
-    Let's calculate this.:
-        1)  1 DHN ~ 1 US $ - this is our default exchange rate.
-        2)  1 BTC ~ 130 $ US on 26 Sep 2013 and still going up - this  
-        3)  so 1 DHN is about 0.00769 BTC if we want to keep DHN to $ US exchange rate
-        4)  let's decrease it 10 times or even more so people can have flexible market
-            and let's trade at least 1 DHN at once, lower values seems very small
-            another one thing is that BitCoins have minimum transaction amount: 0.00005430 BTC
-    """
-    return 0.0005 
-
 #------------------------------------------------------------------------------ 
 #---CONSTANTS ( STRINGS ) ----------------------------------------------------------------------------
 
@@ -460,7 +448,7 @@ def FilesDigestsFilename():
         
     Local copy of this file is also stored in the file::
     
-        [DHN data dir]/metadata/info.
+        .bitpie/metadata/info
         
     Our bpstarter.exe read local copy and than can request a public copy and compare the content.
     If some files were changed or new files added to the repo - it will update the local binaries from repo.
@@ -479,7 +467,7 @@ def CurrentVersionDigestsFilename():
     its checksum also.
     Locally this is stored in the file::
         
-        [DHN data dir]/metadata/version
+        .bitpie/metadata/version
         
     The software check "version.txt" first and if it is not the same - further download "info.txt". 
     """
@@ -542,7 +530,7 @@ def BaseDir():
 def BaseDirPathFileName():
     """
     You can configure BitPie.NET software to use another place for data folder.
-    Say you want to store DHN files on another disk.
+    Say you want to store BitPie.NET files on another disk.
     In the binary folder file "basedir.txt" can be created and it will keep the path to the data folder. 
     """
     return os.path.join(io.getExecutableDir(), 'basedir.txt')
@@ -555,7 +543,7 @@ def RestoreDir():
 
 def WindowsBinDir():
     """
-    Under Windows executable files is placed in the [DHN data folder]/bin/.
+    Under Windows executable files is placed in the [BitPie.NET data folder]/bin/.
     This is because Windows Vista and later not allow to write to "Program files" folder. 
     """
     return os.path.join(BaseDir(), 'bin')
@@ -568,7 +556,7 @@ def MetaDataDir():
 
 def TempDir():
     """
-    A place for temporary DHN files, we really need some extra disk space to operate.
+    A place for temporary BitPie.NET files, we really need some extra disk space to operate.
     TODO: need to add some stuff to control how much extra space we use and be able limit that. 
     """
     return os.path.join(BaseDir(), "temp")
@@ -646,7 +634,7 @@ def BandwidthOutDir():
 
 def RatingsDir():
     """
-    In that location DHN software keeps a rating stats for known users. 
+    In that location BitPie.NET software keeps a rating stats for known users. 
     """
     return os.path.join(BaseDir(), 'ratings')
 
@@ -686,8 +674,8 @@ def KeyFileName():
 def KeyFileNameLocation():
     """
     User can set another location for his Private Key file - he can use USB stick to keep his Key.
-    After DHN stars he can remove the USB stick and keep it in safe place.
-    So DHN will keep user's key in the RAM only - this way you can have more protection for your Key. 
+    After BitPie.NET stars he can remove the USB stick and keep it in safe place.
+    So BitPie.NET will keep user's key in the RAM only - this way you can have more protection for your Key. 
     If your machine is stolen - thief can not get your Private key. 
     But you must be sure that machine was switched off - the RAM is erased when power is off.
     This file keeps alternative location of your Private Key.
@@ -778,7 +766,7 @@ def UpdateSheduleFilename():
 def LocalPortFilename():
     """
     This is a file to keep randomly generated port number 
-    for HTTP server to provide a Web Access to DHN main process.
+    for HTTP server to provide a Web Access to BitPie.NET main process.
     See module ``p2p.webcontrol`` for more details.  
     """
     return os.path.join(MetaDataDir(), 'localport')
@@ -805,7 +793,7 @@ def BackupIndexFileName():
     """
     This is backup data base index file location.
     This store folder and files names and locations with path ID's and some extra info.
-    Located in the file [DHN data dir]/metadata/index.
+    Located in the file .bitpie/metadata/index .
     Also this file is saved on suppliers in encrypted state.
     
     TODO:
@@ -869,7 +857,7 @@ def MainLogFilename():
     """
     A prefix for file names to store main process logs.
     """
-    return os.path.join(LogsDir(), 'dhn')
+    return os.path.join(LogsDir(), 'bpmain')
 
 def UpdateLogFilename():
     """
@@ -928,7 +916,7 @@ def CustomersUsedSpaceFile():
 
 def BalanceFile():
     """
-    This file keeps our current DHN balance - two values: 
+    This file keeps our current BitPie.NET balance - two values: 
         - transferable funds
         - not transferable funds 
     """
@@ -1501,7 +1489,7 @@ def setDebugLevel(level):
 def enableWebStream(enable=None):
     """
     Get current state or enable/disable using of HTTP server to print logs,
-    need to restart DHN to take place changes.
+    need to restart BitPie.NET to take place changes.
     """
     if enable is None:
         return uconfig('logs.stream-enable').lower() == 'true'
@@ -1511,7 +1499,7 @@ def enableWebStream(enable=None):
 def enableWebTraffic(enable=None):
     """
     Get current state or enable/disable using of HTTP server to print packets traffic, 
-    need to restart DHN to take place changes.
+    need to restart BitPie.NET to take place changes.
     """
     if enable is None:
         return uconfig('logs.traffic-enable').lower() == 'true'
@@ -1643,7 +1631,7 @@ def getEmergencyMethods():
 
 def getUpdatesMode():
     """
-    User can set different modes to update the DHN software.
+    User can set different modes to update the BitPie.NET software.
     """
     return uconfig('updates.updates-mode')
 
@@ -1694,7 +1682,7 @@ def getGeneralWaitSuppliers():
 
 def getGeneralAutorun():
     """
-    Return True if user want to start DHN at system start up.
+    Return True if user want to start BitPie.NET at system start up.
     """
     return uconfig('general.general-autorun').lower() == 'true'
 
@@ -1791,7 +1779,7 @@ def enableUPNP(enable=None):
 
 def getUPNPatStartup():
     """
-    User have an option to check UPNP port forwarding every time DHN software starts up.
+    User have an option to check UPNP port forwarding every time BitPie.NET software starts up.
     But this slow down the start up process.
     """
     return uconfig('other.upnp-at-startup').lower() == 'true'
@@ -1921,42 +1909,42 @@ def _initBaseDir(base_dir=None):
     if os.path.isdir(path1):
         _BaseDirPath = path1
 
-    # if we did not found "metadata" subfolder - use default path, new copy of DHN
+    # if we did not found "metadata" subfolder - use default path, new copy of BitPie.NET
     if not os.path.isdir(MetaDataDir()):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             io._dirs_make(_BaseDirPath)
         return
     
-    # if we did not found our key - use default path, new copy of DHN
+    # if we did not found our key - use default path, new copy of BitPie.NET
     if not os.access(KeyFileName(), os.R_OK) or not os.access(KeyFileNameLocation(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             io._dirs_make(_BaseDirPath)
         return
     
-    # if we did not found our identity - use default path, new copy of DHN
+    # if we did not found our identity - use default path, new copy of BitPie.NET
     if not os.access(LocalIdentityFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             io._dirs_make(_BaseDirPath)
         return
 
-    # if we did not found our config - use default path, new copy of DHN
+    # if we did not found our config - use default path, new copy of BitPie.NET
     if not os.access(UserConfigFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             io._dirs_make(_BaseDirPath)
         return
 
-    # if we did not found our suppliers - use default path, new copy of DHN
+    # if we did not found our suppliers - use default path, new copy of BitPie.NET
     if not os.access(SupplierIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             io._dirs_make(_BaseDirPath)
         return
 
-    # if we did not found our customers - use default path, new copy of DHN
+    # if we did not found our customers - use default path, new copy of BitPie.NET
     if not os.access(CustomerIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):

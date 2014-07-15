@@ -91,15 +91,14 @@ def SumFileSizes(fileList):
             pass
     return fileSizeTotal
 
-def GetOurTempFileSizeTotal(tempDirectory):
+def GetOurTempFileSizeTotal(tempDirectory, masks=['*',]):
     """
     Not used right now.
     Tried here to calculate our temporary files size.
     Temp files was reorganized and so this must be rewritten. TODO.
     """
-    ourFileMasks = ['*-Data', '*-Parity', '*dhn*', '*.controloutbox', 'newblock-*', '*.backup']
     ourFileSizes = 0
-    for mask in ourFileMasks:
+    for mask in masks:
         ourFileSizes += SumFileSizes(glob.glob(os.path.join(tempDirectory, mask)))
     return ourFileSizes
 
@@ -147,11 +146,6 @@ def main():
 
     print time.time()
     print "our temp files: " + str(GetOurTempFileSizeTotal(tempDir)/(1024*1024)) + "MB"
-    ourFileMasks = ['*-Data', '*-Parity', '*dhn*', '*.controloutbox', 'newblock-*', '*.backup']
-    for mask in ourFileMasks:
-        print time.time()
-        print mask + "=" + str(SumFileSizes(glob.glob(os.path.join(tempDir, mask))))
-
     print time.time()
 
     GetDirectorySize(dataDir)
