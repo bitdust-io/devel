@@ -702,7 +702,6 @@ def cmd_set_request(opts, args, overDict):
     webcontrol.InitSettingsTreePages()
     cls = webcontrol._SettingsTreeNodesDict.get(name, None)
     input = ' '.join(args[2:])
-    #print cls, name, path, input
     if cls is None:
         return 2
     if cls in [ webcontrol.SettingsTreeTextNode,

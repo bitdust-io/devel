@@ -7543,14 +7543,8 @@ class SettingsTreeNode(Page):
         elif self.path in (
                 'central-settings.shared-megabytes',
                 ):
-            customer_manager.A('restart')
-
-
-#        elif self.path in (
-#                'updates.updates-mode',
-#                'updates.updates-shedule'):
-#            bpupdate.update_shedule_file(settings.getUpdatesSheduleData())
-#            bpupdate.update_sheduler()
+            pass
+            # customer_manager.A('restart')
 
         elif self.path == 'logs.stream-enable':
             if settings.enableWebStream():
@@ -7561,12 +7555,12 @@ class SettingsTreeNode(Page):
         elif self.path == 'logs.stream-port':
             misc.StopWebStream()
             if settings.enableWebStream():
-                reactor.callLater(1, misc.StartWebStream)
+                reactor.callLater(0, misc.StartWebStream)
 
         elif self.path == 'logs.traffic-port':
             misc.StopWebTraffic()
             if settings.enableWebTraffic():
-                reactor.callLater(1, misc.StartWebTraffic)
+                reactor.callLater(0, misc.StartWebTraffic)
 
         elif self.path == 'logs.debug-level':
             try:

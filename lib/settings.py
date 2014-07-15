@@ -1055,21 +1055,9 @@ def IdentityServerPort():
 
 def IdentityWebPort():
     """
-    Our public identity server use standard web port number to publish identity files - 80.
+    Our public identity servers use standard web port number to publish identity files.
     """
     return 80
-
-def MarketServerWebPort():
-    """
-    Market server Web port number.
-    """
-    return 8085
-
-def MoneyServerPort():
-    """
-    Money server Web port number.
-    """
-    return 9898
 
 def DefaultTCPPort():
     """
