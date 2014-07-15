@@ -123,8 +123,8 @@ def init_local(UI=''):
     import lib.automat as automat
     automat.SetStateChangedCallback(webcontrol.OnSingleStateChanged)
 
-    import dhnupdate
-    dhnupdate.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
+    # import bpupdate
+    # bpupdate.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
 
     start_logs_rotate()
 
@@ -188,8 +188,8 @@ def init_connection():
     message.init()
     message.OnIncommingMessageFunc = webcontrol.OnIncommingMessage
 
-    import identitypropagate
-    identitypropagate.init()
+    import userid.propagate
+    userid.propagate.init()
 
     try:
         from tray_icon import USE_TRAY_ICON
@@ -237,7 +237,7 @@ def init_modules():
     #import ratings
     # import fire_hire
     #import backup_monitor
-    import dhnupdate
+    # import bpupdate
 
     #reactor.callLater(3, backup_monitor.start)
 
@@ -249,7 +249,7 @@ def init_modules():
 
     #reactor.callLater(25, firehire.init)
 
-    reactor.callLater(15, dhnupdate.init)
+    # reactor.callLater(15, bpupdate.init)
 
     webcontrol.OnInitFinalDone()
 
@@ -301,8 +301,8 @@ def shutdown(x=None):
     import webcontrol
     dl.append(webcontrol.shutdown())
 
-    import identitypropagate
-    identitypropagate.shutdown()
+    import userid.propagate
+    userid.propagate.shutdown()
 
     from lib import bandwidth
     from transport import callback

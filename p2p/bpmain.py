@@ -276,8 +276,8 @@ def kill():
             'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-            'dhnview.exe',
-            'dhnview.py',
+            'bpgui.exe',
+            'bpgui.py',
             'bppipe.exe',
             'bppipe.py',
             'bptester.exe',
@@ -320,8 +320,8 @@ def wait_then_kill(x):
             'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-            'dhnview.exe',
-            'dhnview.py',
+            'bpgui.exe',
+            'bpgui.py',
             'bppipe.exe',
             'bppipe.py',
             'bptester.exe',
@@ -549,9 +549,9 @@ def main():
 
     #---show---
     elif cmd == 'show' or cmd == 'open':
-        appList_dhnview = io.find_process([
-            'dhnview.exe',
-            'dhnview.py',
+        appList_bpgui = io.find_process([
+            'bpgui.exe',
+            'bpgui.py',
             ])
         appList = io.find_process([
             'bpmain.exe',
@@ -559,9 +559,9 @@ def main():
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
-        if len(appList_dhnview) > 0:
+        if len(appList_bpgui) > 0:
             if len(appList) == 0:
-                for pid in appList_dhnview:
+                for pid in appList_bpgui:
                     io.kill_process(pid)
             else:
                 io.log(0, 'BitPie.NET GUI already opened, found another process: %s' % str(appList))

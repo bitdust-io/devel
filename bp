@@ -6,5 +6,7 @@
 #
 #
 
+import sys
 import p2p.bpmain
-p2p.bpmain.main()
+ret = p2p.bpmain.main()
+sys.exit(ret)

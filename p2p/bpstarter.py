@@ -245,7 +245,7 @@ def uninstall():
     ret = stop_all([
             'bpstarter.exe',
             'bpmain.exe',
-            'dhnview.exe'
+            'bpgui.exe'
             'bptester.exe',
             'bppipe.exe'])
     if ret != 0:
@@ -281,8 +281,8 @@ def main():
             'bpstarter.exe',
             'bpmain.exe',
             'bpmain.py',
-            'dhnview.exe',
-            'dhnview.py',
+            'bpgui.exe',
+            'bpgui.py',
             'bitpie.py',
             ])
 
@@ -299,12 +299,12 @@ def main():
         show = True
 
     if not show:
-        #if bpmain.exe or dhnview.exe is running - stop it.
+        #if bpmain.exe or bpgui.exe is running - stop it.
         search_list.extend([
             'bpmain.exe',
             'bpmain.py',
-            'dhnview.exe',
-            'dhnview.py',
+            'bpgui.exe',
+            'bpgui.py',
             'bitpie.py',
             ])
         res = stop_all(search_list)
@@ -569,7 +569,7 @@ def run():
         #if dhn is running - stop it.
         res = stop_all([    'bpstarter.',
                             'bpmain.',
-                            'dhnview.',
+                            'bpgui.',
                             'bitpie.',
                             ])
         if res != 0:

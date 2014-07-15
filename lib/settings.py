@@ -875,7 +875,7 @@ def UpdateLogFilename():
     """
     A place to store logs from update porcess.
     """
-    return os.path.join(LogsDir(), 'dhnupdate.log')
+    return os.path.join(LogsDir(), 'bpupdate.log')
 
 def CSpaceLogFilename():
     """

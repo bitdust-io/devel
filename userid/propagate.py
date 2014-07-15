@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#identitypropagate.py
+#propagate.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: identitypropagate
+.. module:: propagate
 
 When a user starts up he needs to run the stun.py to check what his IP is,
 and if it has changed he needs to generate a new identity and send it to
@@ -28,7 +28,7 @@ import sys
 try:
     from twisted.internet import reactor
 except:
-    sys.exit('Error initializing twisted.internet.reactor in identitypropagate.py')
+    sys.exit('Error initializing twisted.internet.reactor in propagate.py')
 
 from twisted.internet.defer import DeferredList, Deferred
 
@@ -63,13 +63,13 @@ def init():
     """
     Need to call that at start up to link with transport_control. 
     """
-    io.log(4, "identitypropagate.init ")
+    io.log(4, "propagate.init ")
 
 
 def shutdown():
     """
     """
-    io.log(4, "identitypropagate.shutdown ")
+    io.log(4, "propagate.shutdown ")
 
 #------------------------------------------------------------------------------ 
 
@@ -79,10 +79,10 @@ def propagate(selected_contacts, AckHandler=None, wide=False):
     First need to fetch ``selected_contacts`` IDs from id server.
     And then send our Identity file to that contacts. 
     """
-    io.log(6, "identitypropagate.propagate to %d contacts" % len(selected_contacts))
+    io.log(6, "propagate.propagate to %d contacts" % len(selected_contacts))
     d = Deferred()
     def contacts_fetched(x):
-        io.log(6, "identitypropagate.propagate.contacts_fetched")
+        io.log(6, "propagate.propagate.contacts_fetched")
         SendToIDs(selected_contacts, AckHandler, wide)
         d.callback(list(selected_contacts))
         return x
@@ -94,7 +94,7 @@ def fetch(list_ids):
     """
     Request a list of identity files.
     """
-    io.log(6, "identitypropagate.fetch identities for %d users" % len(list_ids))
+    io.log(6, "propagate.fetch identities for %d users" % len(list_ids))
     dl = []
     for url in list_ids:
         if url:
@@ -107,7 +107,7 @@ def start(AckHandler=None, wide=False):
     """
     Call ``propagate()`` for all known contacts.
     """
-    io.log(6, 'identitypropagate.start')
+    io.log(6, 'propagate.start')
     return propagate(contacts.getRemoteContacts(), AckHandler, wide)
 
 
@@ -115,7 +115,7 @@ def suppliers(AckHandler=None, wide=False):
     """
     Call ``propagate()`` for all suppliers.
     """
-    io.log(6, 'identitypropagate.suppliers')
+    io.log(6, 'propagate.suppliers')
     return propagate(contacts.getSupplierIDs(), AckHandler, wide)
 
 
@@ -123,7 +123,7 @@ def customers(AckHandler=None, wide=False):
     """
     Call ``propagate()`` for all known customers.
     """
-    io.log(6, 'identitypropagate.customers')
+    io.log(6, 'propagate.customers')
     return propagate(contacts.getCustomerIDs(), AckHandler, wide)
 
 
@@ -131,7 +131,7 @@ def allcontacts(AckHandler=None, wide=False):
     """
     Call ``propagate()`` for all contacts and correspondents, almost the same to ``start()``.
     """
-    io.log(6, 'identitypropagate.allcontacts')
+    io.log(6, 'propagate.allcontacts')
     return propagate(contacts.getContactsAndCorrespondents(), AckHandler, wide)
 
 
@@ -146,13 +146,13 @@ def update():
     """
     A wrapper of ``SendServers()`` method.
     """
-    io.log(6, "identitypropagate.update")
+    io.log(6, "propagate.update")
     return SendServers()
 
 def write_to_dht():
     """
     """
-    io.log(6, "identitypropagate.write_to_dht")
+    io.log(6, "propagate.write_to_dht")
     LocalIdentity = misc.getLocalIdentity()
     dht_service.set_value(LocalIdentity.getIDURL(), LocalIdentity.serialize())
 
@@ -162,7 +162,7 @@ def FetchSingle(idurl):
     """
     Fetch single identity file from given ``idurl``.
     """
-    io.log(6, "identitypropagate.fetch_single " + idurl)
+    io.log(6, "propagate.fetch_single " + idurl)
     return identitycache.scheduleForCaching(idurl)
 
 
@@ -216,7 +216,7 @@ def SendSuppliers():
     """
     Send my identity file to all my suppliers, calls to ``SendToIDs()`` method. 
     """
-    io.log(6, "identitypropagate.SendSuppliers")
+    io.log(6, "propagate.SendSuppliers")
     SendToIDs(contacts.getSupplierIDs(), HandleSuppliersAck)
 
 
@@ -224,7 +224,7 @@ def SendCustomers():
     """
     Calls ``SendToIDs()`` to send identity to all my customers.
     """
-    io.log(8, "identitypropagate.SendCustomers")
+    io.log(8, "propagate.SendCustomers")
     SendToIDs(contacts.getCustomerIDs(), HandleCustomersAck)
 
 
@@ -235,9 +235,9 @@ def SlowSendSuppliers(delay=1):
     """
     global _SlowSendIsWorking
     if _SlowSendIsWorking:
-        io.log(8, "identitypropagate.SlowSendSuppliers  is working at the moment. skip.")
+        io.log(8, "propagate.SlowSendSuppliers  is working at the moment. skip.")
         return
-    io.log(8, "identitypropagate.SlowSendSuppliers delay=%s" % str(delay))
+    io.log(8, "propagate.SlowSendSuppliers delay=%s" % str(delay))
 
     def _send(index, payload, delay):
         global _SlowSendIsWorking
@@ -261,9 +261,9 @@ def SlowSendCustomers(delay=1):
     
     global _SlowSendIsWorking
     if _SlowSendIsWorking:
-        io.log(8, "identitypropagate.SlowSendCustomers  slow send is working at the moment. skip.")
+        io.log(8, "propagate.SlowSendCustomers  slow send is working at the moment. skip.")
         return
-    io.log(8, "identitypropagate.SlowSendCustomers delay=%s" % str(delay))
+    io.log(8, "propagate.SlowSendCustomers delay=%s" % str(delay))
 
     def _send(index, payload, delay):
         global _SlowSendIsWorking
@@ -285,7 +285,7 @@ def HandleSuppliersAck(ackpacket, info):
     Called when supplier is "Acked" to my after call to ``SendSuppliers()``. 
     """
     # Num = contacts.numberForSupplier(ackpacket.OwnerID)
-    io.log(8, "identitypropagate.HandleSupplierAck %s" % ackpacket.OwnerID)
+    io.log(8, "propagate.HandleSupplierAck %s" % ackpacket.OwnerID)
 
 
 def HandleCustomersAck(ackpacket, info):
@@ -293,18 +293,18 @@ def HandleCustomersAck(ackpacket, info):
     Called when supplier is "Acked" to my after call to ``SendCustomers()``. 
     """
     # Num = contacts.numberForCustomer(ackpacket.OwnerID)
-    io.log(8, "identitypropagate.HandleCustomerAck %s" % ackpacket.OwnerID)
+    io.log(8, "propagate.HandleCustomerAck %s" % ackpacket.OwnerID)
 
 
 def HandleAck(ackpacket, info):
-    io.log(16, "identitypropagate.HandleAck %r %r" % (ackpacket, info))
+    io.log(16, "propagate.HandleAck %r %r" % (ackpacket, info))
 
 
 def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
     """
     Create ``packet`` with my Identity file and calls ``lib.transport_control.outbox()`` to send it.
     """
-    io.log(8, "identitypropagate.SendToID [%s] NeedAck=%s" % (nameurl.GetName(idurl), str(NeedAck)))
+    io.log(8, "propagate.SendToID [%s] NeedAck=%s" % (nameurl.GetName(idurl), str(NeedAck)))
     if AckHandler is None:
         AckHandler = HandleAck
     thePayload = Payload
@@ -331,7 +331,7 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
     """
     Same, but send to many IDs.
     """
-    io.log(8, "identitypropagate.SendToIDs to %d users" % len(idlist))
+    io.log(8, "propagate.SendToIDs to %d users" % len(idlist))
     if AckHandler is None:
         AckHandler = HandleAck
     MyID = misc.getLocalID()

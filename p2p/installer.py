@@ -55,29 +55,15 @@ try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in installer.py')
-from twisted.internet.defer import Deferred, maybeDeferred
-from twisted.internet.task import LoopingCall
-
 
 import lib.automat as automat
 import lib.automats as automats
 import lib.io as io
 import lib.misc as misc
 import lib.nameurl as nameurl
-import lib.packetid as packetid
-import lib.settings as settings
-import lib.contacts as contacts
-import lib.diskusage as diskusage
-
-import transport.gate as gate
 
 import initializer
-import p2p_connector
-import install_wizard
 
-import init_shutdown
-import dhnupdate
-import identitypropagate
 import webcontrol
 
 import userid.id_registrator as id_registrator

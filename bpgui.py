@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnview.py
+#bpgui.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 if __name__ == "__main__":
-    import p2p.dhnview
-    p2p.dhnview.main()
+    import p2p.bpgui
+    p2p.bpgui.main()
 
 

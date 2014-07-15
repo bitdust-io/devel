@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhview.py
+#bpgui.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: dhnview
+.. module:: bpgui
 
 Here is a child process to drive the GUI part.
 This is a simple WEB browser, the HTTP server is started in the main process to show the user interface.
@@ -28,7 +28,6 @@ import imp
 import re
 import traceback
 
-import wx
 import wx.html
 
 from twisted.internet import wxreactor
@@ -199,7 +198,6 @@ def WriteText(txt, filename='view.log', mode='a', sharedLocation=True, subdir='l
     if ShowLogs and filename not in ['view-html.log', 'view-form.log',]:
         sys.stdout.write(txt)
         return
-
     filename_ = filename
     if sharedLocation:
         filename_ = sharedPath(filename, subdir)
@@ -611,7 +609,7 @@ class MyHtmlWindow(wx.html.HtmlWindow):
             tm = time.time()
             # WriteText('OpenURL.callback %s \n' % time.time())
             if self.enable_logs:
-                WriteText(src, 'dhnview-html.log', mode='w')
+                WriteText(src, 'bpgui-html.log', mode='w')
             self.UnRegisterClick()
             pos = self.GetViewStart()[1]
             self.Freeze()
@@ -679,7 +677,7 @@ class MyHtmlWindow(wx.html.HtmlWindow):
             return
         def callback(src):
             if self.enable_logs:
-                WriteText(src, 'dhnview-form.log', mode='w')
+                WriteText(src, 'bpgui-form.log', mode='w')
             self.UnRegisterClick()
             pos = self.GetViewStart()[1]
             self.Freeze()
@@ -1533,8 +1531,8 @@ def main():
     if denc != '':
         sys.setdefaultencoding(denc)
 
-    WriteText('', 'dhnview-err.log', 'w')
-    WriteText(time.asctime()+' started\n', 'dhnview.log', 'w')
+    WriteText('', 'bpgui-err.log', 'w')
+    WriteText(time.asctime()+' started\n', 'bpgui.log', 'w')
     WriteText('Forms: %s\n' % str(forms))
 
     app = MyApp(url)
@@ -1545,7 +1543,7 @@ def main():
 
     save_gui_settings()
 
-    WriteText(time.asctime()+' finished\n', 'dhnview.log', 'a')
+    WriteText(time.asctime()+' finished\n', 'bpgui.log', 'a')
 
 
 #------------------------------------------------------------------------------
@@ -1559,7 +1557,7 @@ def test():
     class MyTestApp(wx.App):
         def __init__(self):
             global ShowLogs
-            wx.App.__init__(self, not ShowLogs, sharedPath('dhnview-err.log'))
+            wx.App.__init__(self, not ShowLogs, sharedPath('bpgui-err.log'))
         def OnInit(self):
             self.frame = MyTrafficWindow(None)
             self.frame.Show()

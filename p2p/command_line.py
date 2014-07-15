@@ -794,8 +794,8 @@ def cmd_uninstall(opts, args, overDict):
                 'bpmain.py',
                 'bitpie.py',
                 'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-                'dhnview.exe',
-                'dhnview.py',
+                'bpgui.exe',
+                'bpgui.py',
                 'bppipe.exe',
                 'bppipe.py',
                 'bptester.exe',
@@ -826,7 +826,7 @@ def cmd_uninstall(opts, args, overDict):
             io.log(0, '_try')
             appList = io.find_process([
                 'bpmain.exe',
-                'dhnview.exe',
+                'bpgui.exe',
                 'bppipe.exe',
                 'bptester.exe',
                 'bpstarter.exe',
@@ -851,7 +851,7 @@ def cmd_uninstall(opts, args, overDict):
 #            time.sleep(1)
     appList = io.find_process([
         'bpmain.exe',
-        'dhnview.exe',
+        'bpgui.exe',
         'bppipe.exe',
         'bptester.exe',
         'bpstarter.exe',

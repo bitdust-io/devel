@@ -48,7 +48,7 @@ from lib.automat import Automat
 
 import installer
 import webcontrol
-import dhnupdate
+# import bpupdate
 
 #------------------------------------------------------------------------------ 
 
@@ -149,15 +149,8 @@ class InstallWizard(Automat):
             if event == 'back' :
                 self.state = 'STORAGE'
             elif event == 'next' :
-                self.state = 'UPDATES'
-                self.doSaveContacts(arg)
-        #---UPDATES---
-        elif self.state == 'UPDATES':
-            if event == 'back' :
-                self.state = 'CONTACTS'
-            elif event == 'next' :
                 self.state = 'LAST_PAGE'
-                self.doSaveUpdates(arg)
+                self.doSaveContacts(arg)
         #---DONE---
         elif self.state == 'DONE':
             if event == 'back' :
@@ -166,6 +159,8 @@ class InstallWizard(Automat):
         elif self.state == 'LAST_PAGE':
             if event == 'next' :
                 self.state = 'DONE'
+            elif event == 'back' :
+                self.state = 'CONTACTS'
 
     def isRoleSecure(self, arg):
         return self.role == 'MOST_SECURE'
@@ -218,10 +213,12 @@ class InstallWizard(Automat):
                 io.SetDebug(10)
         settings.uconfig().update()
 
-    def doSaveUpdates(self, arg):
-        shedule = dhnupdate.blank_shedule(arg)
-        settings.uconfig().set('updates.updates-shedule', dhnupdate.shedule_to_string(shedule))
-        settings.uconfig().update()
+#    def doSaveUpdates(self, arg):
+#        """
+#        """
+#        shedule = bpupdate.blank_shedule(arg)
+#        settings.uconfig().set('updates.updates-shedule', bpupdate.shedule_to_string(shedule))
+#        settings.uconfig().update()
 
 
 

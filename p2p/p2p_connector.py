@@ -78,7 +78,7 @@ import backup_db_keeper
 import list_files_orator
 import fire_hire
 import data_sender
-import identitypropagate
+import userid.propagate
 import ratings
 import tray_icon
 
@@ -231,7 +231,7 @@ class P2PConnector(automat.Automat):
         """
         Action method.
         """
-        identitypropagate.single(arg, wide=True)
+        userid.propagate.single(arg, wide=True)
 
     def doInit(self, arg):
         self.revision_number = io.ReadTextFile(settings.RevisionNumberFile()).strip()
@@ -243,10 +243,10 @@ class P2PConnector(automat.Automat):
         self.automat('my-id-updated')
         
     def doPropagateMyIdentity(self, arg):
-        identitypropagate.update()
-        identitypropagate.write_to_dht()
+        userid.propagate.update()
+        userid.propagate.write_to_dht()
         dht_service.set_node_data('idurl', misc.getLocalID())
-        d = identitypropagate.start()
+        d = userid.propagate.start()
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 
     def doPopBestProto(self, arg):

@@ -13,7 +13,7 @@
 BitPie.NET executes periodically several slaves:
     - bppipe
     - bptester
-    - dhnview
+    - bpgui
 They are started as a separated processes and managed from the main process: 
     bpmain.
 """

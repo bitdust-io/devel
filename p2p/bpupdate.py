@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dhnupdate.py
+#bpupdate.py
 #
 #
 # <<<COPYRIGHT>>>
@@ -10,7 +10,7 @@
 #
 
 """
-.. module:: dhnupdate
+.. module:: bpupdate
 
 A code for Windows platforms to check for updates and download latest binaries.   
 """
@@ -24,7 +24,7 @@ import calendar
 try:
     from twisted.internet import reactor
 except:
-    sys.exit('Error initializing twisted.internet.reactor in dhnupdate.py')
+    sys.exit('Error initializing twisted.internet.reactor in bpupdate.py')
 
 from twisted.internet.defer import Deferred
 
@@ -75,19 +75,19 @@ _SheduleTypesDict = {
 #------------------------------------------------------------------------------
 
 def init():
-    io.log(4, 'dhnupdate.init')
+    io.log(4, 'bpupdate.init')
     update_shedule_file(settings.getUpdatesSheduleData())
     if not io.isFrozen() or not io.Windows():
-        io.log(6, 'dhnupdate.init finishing')
+        io.log(6, 'bpupdate.init finishing')
         return
     if not os.path.isfile(settings.VersionFile()):
         io.WriteFile(settings.VersionFile(), '')
     SetLocalDir(io.getExecutableDir())
     if settings.getUpdatesMode() != settings.getUpdatesModeValues()[2]:
-        io.log(6, 'dhnupdate.init starting the loop')
+        io.log(6, 'bpupdate.init starting the loop')
         reactor.callLater(0, loop, True)
     else:
-        io.log(6, 'dhnupdate.init skip, update mode is: %s' % settings.getUpdatesMode())
+        io.log(6, 'bpupdate.init skip, update mode is: %s' % settings.getUpdatesMode())
         
 
 #------------------------------------------------------------------------------
@@ -158,7 +158,7 @@ def set_bat_filename(filename):
 def fail(txt):
     global _NewVersionNotifyFunc
     global _UpdatingInProgress
-    io.log(1, 'dhnupdate.fail ' + str(txt))
+    io.log(1, 'bpupdate.fail ' + str(txt))
     write2window('there are some errors during updating: ' + str(txt))
     _UpdatingInProgress = False
 
@@ -167,13 +167,13 @@ def fail(txt):
 def download_version():
     repo, locationURL = misc.ReadRepoLocation()
     url = locationURL + settings.CurrentVersionDigestsFilename()
-    io.log(6, 'dhnupdate.download_version ' + str(url))
+    io.log(6, 'bpupdate.download_version ' + str(url))
     return net_misc.getPageTwisted(url)
 
 def download_info():
     
     def _done(src, result):
-        io.log(6, 'dhnupdate.download_info.done ')
+        io.log(6, 'bpupdate.download_info.done ')
         lines = src.split('\n')
         files_dict = {}
         for line in lines:
@@ -185,14 +185,14 @@ def download_info():
         return src
     
     def _fail(x, result):
-        io.log(1, 'dhnupdate.download_info FAILED')
+        io.log(1, 'bpupdate.download_info FAILED')
         result.errback(Exception('error downloading info'))
         return x
     
     repo, locationURL = misc.ReadRepoLocation()
     url = locationURL + settings.FilesDigestsFilename()
 
-    io.log(6, 'dhnupdate.download_info ' + str(url))
+    io.log(6, 'bpupdate.download_info ' + str(url))
     result = Deferred()
     d = net_misc.getPageTwisted(url)
     d.addCallback(_done, result)
@@ -202,7 +202,7 @@ def download_info():
 def download_and_replace_starter(output_func = None):
     repo, locationURL = misc.ReadRepoLocation()
     url = settings.WindowsStarterFileURL(repo)
-    io.log(6, 'dhnupdate.download_and_replace_starter  ' + str(url))
+    io.log(6, 'bpupdate.download_and_replace_starter  ' + str(url))
     result = Deferred()
     
     def _done(x, filename):
@@ -222,9 +222,9 @@ def download_and_replace_starter(output_func = None):
 
         try:
             os.rename(filename, local_filename)
-            io.log(4, 'dhnupdate.download_and_replace_starter  file %s was updated' % local_filename)
+            io.log(4, 'bpupdate.download_and_replace_starter  file %s was updated' % local_filename)
         except:
-            io.log(1, 'dhnupdate.download_and_replace_starter ERROR can not rename %s to %s ' % (filename, local_filename))
+            io.log(1, 'bpupdate.download_and_replace_starter ERROR can not rename %s to %s ' % (filename, local_filename))
             io.exception()
             result.errback(Exception('can not rename the file ' + filename))
             return
@@ -240,11 +240,11 @@ def download_and_replace_starter(output_func = None):
         result.callback(1)
 
     def _done_python27_dll(x, filename):
-        io.log(4, 'dhnupdate.download_and_replace_starter file %s was updated' % filename)
+        io.log(4, 'bpupdate.download_and_replace_starter file %s was updated' % filename)
         result.callback(1)
 
     def _fail(x, filename):
-        io.log(1, 'dhnupdate.download_and_replace_starter FAILED')
+        io.log(1, 'bpupdate.download_and_replace_starter FAILED')
         if output_func:
             try:
                 output_func(x.getErrorMessage())
@@ -253,7 +253,7 @@ def download_and_replace_starter(output_func = None):
         try:
             os.remove(filename)
         except:
-            io.log(1, 'dhnupdate.download_and_replace_starter ERROR can not remove ' + filename)
+            io.log(1, 'bpupdate.download_and_replace_starter ERROR can not remove ' + filename)
         result.errback(Exception('error downloading starter'))
 
     fileno, filename = tmpfile.make('other', '.starter')
@@ -266,10 +266,10 @@ def download_and_replace_starter(output_func = None):
 #-------------------------------------------------------------------------------
 
 def step0():
-    io.log(4, 'dhnupdate.step0')
+    io.log(4, 'bpupdate.step0')
     global _UpdatingInProgress
     if _UpdatingInProgress:
-        io.log(6, 'dhnupdate.step0  _UpdatingInProgress is True, skip.')
+        io.log(6, 'bpupdate.step0  _UpdatingInProgress is True, skip.')
         return
 
     repo, locationURL = misc.ReadRepoLocation()
@@ -283,7 +283,7 @@ def step0():
     d.addErrback(fail)
 
 def step1(version_digest):
-    io.log(4, 'dhnupdate.step1')
+    io.log(4, 'bpupdate.step1')
     global _UpdatingInProgress
     global _CurrentVersionDigest
     global _NewVersionNotifyFunc
@@ -292,16 +292,16 @@ def step1(version_digest):
     _CurrentVersionDigest = str(version_digest).strip()
     local_version = io.ReadBinaryFile(settings.VersionFile()).strip()
     if local_version == _CurrentVersionDigest:
-        io.log(6, 'dhnupdate.step1 no need to update')
+        io.log(6, 'bpupdate.step1 no need to update')
         _UpdatingInProgress = False
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
         return
 
-    appList = io.find_process(['dhnview.', ])
+    appList = io.find_process(['bpgui.', ])
     if len(appList) > 0:
         if not _UpdatingByUser:
-            io.log(6, 'dhnupdate.step1 dhnview is running, ask user to update.')
+            io.log(6, 'bpupdate.step1 bpgui is running, ask user to update.')
             _UpdatingInProgress = False
             if _NewVersionNotifyFunc is not None:
                 _NewVersionNotifyFunc(_CurrentVersionDigest)
@@ -312,14 +312,14 @@ def step1(version_digest):
     d.addErrback(fail)
 
 def step2(info, version_digest):
-    io.log(4, 'dhnupdate.step2')
+    io.log(4, 'bpupdate.step2')
     if not isinstance(info, dict):
         fail('wrong data')
         return
 
     bpstarter_server_digest = info.get(settings.WindowsStarterFileName(), None)
     if bpstarter_server_digest is None:
-        io.log(2, 'dhnupdate.step2 WARNING windows starter executable is not found in the info file')
+        io.log(2, 'bpupdate.step2 WARNING windows starter executable is not found in the info file')
         reactor.callLater(0.5, step4, version_digest)
         #fail('windows starter executable is not found in the info file')
         return
@@ -333,14 +333,14 @@ def step2(info, version_digest):
 
 
 def step3(version_digest):
-    io.log(4, 'dhnupdate.step3')
+    io.log(4, 'bpupdate.step3')
     d = download_and_replace_starter(write2window)
     d.addCallback(lambda x: step4(version_digest))
     d.addErrback(fail)
 
 
 def step4(version_digest):
-    io.log(4, 'dhnupdate.step4')
+    io.log(4, 'bpupdate.step4')
     global _UpdatingInProgress
     global _CurrentVersionDigest
     global _NewVersionNotifyFunc
@@ -349,14 +349,14 @@ def step4(version_digest):
     _CurrentVersionDigest = str(version_digest)
     local_version = io.ReadBinaryFile(settings.VersionFile())
     if local_version == _CurrentVersionDigest:
-        io.log(6, 'dhnupdate.step4 no need to update')
+        io.log(6, 'bpupdate.step4 no need to update')
         _UpdatingInProgress = False
         return
 
-    io.log(6, 'dhnupdate.step4 local=%s current=%s ' % (local_version, _CurrentVersionDigest))
+    io.log(6, 'bpupdate.step4 local=%s current=%s ' % (local_version, _CurrentVersionDigest))
 
     if settings.getUpdatesMode() == settings.getUpdatesModeValues()[2] and not _UpdatingByUser:
-        io.log(6, 'dhnupdate.step4 run scheduled, but mode is %s, skip now' % settings.getUpdatesMode())
+        io.log(6, 'bpupdate.step4 run scheduled, but mode is %s, skip now' % settings.getUpdatesMode())
         return
 
     if _UpdatingByUser or settings.getUpdatesMode() == settings.getUpdatesModeValues()[0]:
@@ -366,7 +366,7 @@ def step4(version_digest):
             try:
                 os.remove(info_file_path)
             except:
-                io.log(1, 'dhnupdate.step4 ERROR can no remove ' + info_file_path )
+                io.log(1, 'bpupdate.step4 ERROR can no remove ' + info_file_path )
                 io.exception()
 
         param = ''
@@ -390,7 +390,7 @@ def is_running():
 
 
 def read_shedule_dict():
-    io.log(8, 'dhnupdate.read_shedule_dict')
+    io.log(8, 'bpupdate.read_shedule_dict')
     d = io._read_dict(settings.UpdateSheduleFilename())
     if d is None or not check_shedule_dict_correct(d):
         d = make_blank_shedule()
@@ -398,7 +398,7 @@ def read_shedule_dict():
 
 
 def write_shedule_dict(d):
-    io.log(8, 'dhnupdate.write_shedule_dict')
+    io.log(8, 'bpupdate.write_shedule_dict')
     if d is None or not check_shedule_dict_correct(d):
         return
     io._write_dict(settings.UpdateSheduleFilename(), d)
@@ -446,7 +446,7 @@ def blank_shedule(type):
 
 
 def make_blank_shedule(type='daily'):
-    io.log(8, 'dhnupdate.make_blank_shedule')
+    io.log(8, 'bpupdate.make_blank_shedule')
     d = blank_shedule(type)
     io._write_dict(settings.UpdateSheduleFilename(), d)
     return d
@@ -458,12 +458,12 @@ def check_shedule_dict_correct(d):
             d.has_key('daytime') and
             d.has_key('details') and
             d.has_key('lasttime')):
-        io.log(2, 'dhnupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
+        io.log(2, 'bpupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
         return False
     try:
         float(d['interval'])
     except:
-        io.log(2, 'dhnupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
+        io.log(2, 'bpupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
         return False
     return True
 
@@ -511,7 +511,7 @@ def update_shedule_file(raw_data):
 def run():
     global _UpdatingInProgress
     global _UpdatingByUser
-    io.log(6, 'dhnupdate.run')
+    io.log(6, 'bpupdate.run')
     if _UpdatingInProgress:
         io.log(6, '  update is in progress, finish.')
         return
@@ -522,7 +522,7 @@ def run():
 def run_sheduled_update():
     global _UpdatingByUser
     global _UpdatingInProgress
-    io.log(6, 'dhnupdate.run_sheduled_update')
+    io.log(6, 'bpupdate.run_sheduled_update')
     if _UpdatingInProgress:
         io.log(6, '  update is in progress, finish.')
         return
@@ -588,15 +588,15 @@ def next(d):
 #        return maths.shedule_next_monthly(lasttime, d['interval'], d['daytime'], months_numbers)
 
     else:
-        io.log(1, 'dhnupdate.loop ERROR wrong shedule type')
+        io.log(1, 'bpupdate.loop ERROR wrong shedule type')
         return None    
 
 def loop(first_start=False):
     global _ShedulerTask
-    io.log(4, 'dhnupdate.loop mode=' + str(settings.getUpdatesMode()))
+    io.log(4, 'bpupdate.loop mode=' + str(settings.getUpdatesMode()))
 
     if settings.getUpdatesMode() == settings.getUpdatesModeValues()[2]:
-        io.log(4, 'dhnupdate.loop is finishing. updates is turned off')
+        io.log(4, 'bpupdate.loop is finishing. updates is turned off')
         return
 
     shed = schedule.Schedule(from_dict=read_shedule_dict())
@@ -606,11 +606,11 @@ def loop(first_start=False):
         nexttime = time.time() + 5
     
     if nexttime is None:
-        io.log(1, 'dhnupdate.loop ERROR calculating shedule interval')
+        io.log(1, 'bpupdate.loop ERROR calculating shedule interval')
         return
     
     if nexttime < 0:
-        io.log(1, 'dhnupdate.loop nexttime=%s' % str(nexttime))
+        io.log(1, 'bpupdate.loop nexttime=%s' % str(nexttime))
         return
 
     # DEBUG
@@ -618,16 +618,16 @@ def loop(first_start=False):
 
     delay = nexttime - time.time()
     if delay < 0:
-        io.log(2, 'dhnupdate.loop WARNING delay=%s %s' % (str(delay), shed))
+        io.log(2, 'bpupdate.loop WARNING delay=%s %s' % (str(delay), shed))
         delay = 10
 
-    io.log(6, 'dhnupdate.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))
+    io.log(6, 'bpupdate.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))
     _ShedulerTask = reactor.callLater(delay, run_sheduled_update)
 
 
 def update_sheduler():
     global _ShedulerTask
-    io.log(4, 'dhnupdate.update_sheduler')
+    io.log(4, 'bpupdate.update_sheduler')
 ##    if not io.isFrozen() or not io.Windows():
 ##        return
     if _ShedulerTask is not None:
@@ -639,21 +639,21 @@ def update_sheduler():
 
 
 def check():
-    io.log(4, 'dhnupdate.check')
+    io.log(4, 'bpupdate.check')
 
     def _success(x):
         global _CurrentVersionDigest
         global _NewVersionNotifyFunc
         _CurrentVersionDigest = str(x)
         local_version = io.ReadBinaryFile(settings.VersionFile())
-        io.log(6, 'dhnupdate.check._success local=%s current=%s' % (local_version, _CurrentVersionDigest))
+        io.log(6, 'bpupdate.check._success local=%s current=%s' % (local_version, _CurrentVersionDigest))
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
         return x
 
     def _fail(x):
         global _NewVersionNotifyFunc
-        io.log(10, 'dhnupdate.check._fail NETERROR ' + x.getErrorMessage())
+        io.log(10, 'bpupdate.check._fail NETERROR ' + x.getErrorMessage())
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc('failed')
         return x
