@@ -17,7 +17,6 @@ import random
 import webbrowser
 import math
 import cStringIO
-import calendar
 import base64
 import re
 
@@ -7531,10 +7530,16 @@ class SettingsTreeNode(Page):
         elif self.path in (
                 'central-settings.desired-suppliers',
                 'central-settings.needed-megabytes',
-                'central-settings.shared-megabytes',
+                # 'central-settings.shared-megabytes',
                 ):
             fire_hire.ClearLastFireTime()
             backup_monitor.A('restart')
+
+        elif self.path in (
+                'central-settings.shared-megabytes',
+                ):
+            customer_manager.A('restart')
+
 
 #        elif self.path in (
 #                'updates.updates-mode',
