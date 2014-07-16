@@ -112,8 +112,8 @@ class CustomersRejector(automat.Automat):
         for idurl, customer_mb in space_dict.items():
             if idurl != 'free':
                 spent_bytes += int(customer_mb * 1024 * 1024)
-        for idurl, customer_files_size in used_dict.items():
-            used_bytes += customer_files_size
+        # for idurl, customer_files_size in used_dict.items():
+        #     used_bytes += int(customer_files_size)
         if spent_bytes < donated_bytes:
             space_dict['free'] = round((donated_bytes - spent_bytes) / (1024.0 * 1024.0), 2)
             bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
@@ -142,8 +142,17 @@ class CustomersRejector(automat.Automat):
                     bpio.log(4, 'customers_rejector.doThrowOutSomeCustomers WARNING %s not customers' % customer_idurl)
                 bpio.log(4, 'customers_rejector.doThrowOutSomeCustomers WARNING %s allocated_bytes==0' % customer_idurl)
                 continue
-            files_size = used_dict.get(customer_idurl, 0)
-            ratio = float(files_size) / float(allocated_bytes)
+            try:
+                files_size = int(used_dict.get(customer_idurl, 0))
+                ratio = float(files_size) / float(allocated_bytes)
+            except:
+                if customer_idurl in current_customers:
+                    current_customers.remove(customer_idurl)
+                    removed_customers.append(customer_idurl)
+                else:
+                    bpio.log(4, 'customers_rejector.doThrowOutSomeCustomers WARNING %s not customers' % customer_idurl)
+                bpio.log(4, 'customers_rejector.doThrowOutSomeCustomers WARNING %s used_dict have wrong value' % customer_idurl)
+                continue
             if ratio > 1.0:
                 if customer_idurl in current_customers:
                     current_customers.remove(customer_idurl)

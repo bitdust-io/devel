@@ -65,7 +65,7 @@ _MODULES = (
 'raid.read', 
 'raid.make', 
 'lib.settings', 
-'lib.io',
+'lib.bpio',
 'lib.eccmap',
 'lib.misc',)
 

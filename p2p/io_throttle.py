@@ -427,10 +427,10 @@ class SupplierQueue:
             return
         self.ackedCount += 1
         if newpacket.PacketID not in self.fileSendQueue:
-            bpio.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending queue for %s" % (signed_packet.PacketID, self.remoteName))
+            bpio.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending queue for %s" % (newpacket.PacketID, self.remoteName))
             return
         if newpacket.PacketID not in self.fileSendDict.keys():
-            bpio.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending dict for %s" % (signed_packet.PacketID, self.remoteName))
+            bpio.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending dict for %s" % (newpacket.PacketID, self.remoteName))
             return
         self.fileSendDict[newpacket.PacketID].ackTime = time.time()
         if newpacket.Command == commands.Ack():
