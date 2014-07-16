@@ -42,7 +42,7 @@ import string
 import sys
 
 
-import io
+import bpio
 import settings
 import misc
 import contactsdb
@@ -66,7 +66,7 @@ def init():
     If we don't have enough, then we have to ask BitPie.NET to list contacts and use
     that list to get and then store all the identities for our contacts.
     """
-    io.log(4, "contacts.init ")
+    bpio.log(4, "contacts.init ")
     contactsdb.load_suppliers(settings.SupplierIDsFilename())
     contactsdb.load_customers(settings.CustomerIDsFilename())
     contactsdb.load_correspondents(settings.CorrespondentIDsFilename())
@@ -89,9 +89,9 @@ def getContact(idurl):
     if contactsdb.is_correspondent(idurl):
         return identitycache.FromCache(idurl)
     if identitycache.HasKey(idurl):
-        # io.log(2, "contacts.getContact WARNING who is %s ?" % nameurl.GetName(idurl))
+        # bpio.log(2, "contacts.getContact WARNING who is %s ?" % nameurl.GetName(idurl))
         return identitycache.FromCache(idurl)
-    io.log(6, "contacts.getContact %s is not found" % nameurl.GetName(idurl))
+    bpio.log(6, "contacts.getContact %s is not found" % nameurl.GetName(idurl))
     # TODO
     # this is not correct: 
     # need to check if other contacts is fine - if internet is turned off we can get lots fails ...  

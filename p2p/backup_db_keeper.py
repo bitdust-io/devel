@@ -61,7 +61,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_rebuilder.py')
     
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.contacts as contacts
 import lib.settings as settings
@@ -163,7 +163,7 @@ class BackupDBKeeper(Automat):
         self.lastRestartTime = time.time()        
     
     def doSuppliersRequestDBInfo(self, arg):
-        # io.log(4, 'backup_db_keeper.doSuppliersRequestDBInfo')
+        # bpio.log(4, 'backup_db_keeper.doSuppliersRequestDBInfo')
         # packetID_ = settings.BackupInfoFileName()
         # packetID = settings.BackupInfoEncryptedFileName()
         packetID = settings.BackupIndexFileName()
@@ -186,15 +186,15 @@ class BackupDBKeeper(Automat):
             self.requestedSuppliers.add(supplierId)
 
     def doSuppliersSendDBInfo(self, arg):
-        # io.log(4, 'backup_db_keeper.doSuppliersSendDBInfo')
+        # bpio.log(4, 'backup_db_keeper.doSuppliersSendDBInfo')
         # packetID = settings.BackupInfoEncryptedFileName()
         packetID = settings.BackupIndexFileName()
         # for supplierId in contacts.getSupplierIDs():
         #     if supplierId:
         #         callback.remove_interest(supplierId, packetID)
         self.sentSuppliers.clear()
-        # src = io.ReadBinaryFile(settings.BackupInfoFileFullPath())
-        src = io.ReadBinaryFile(settings.BackupIndexFilePath())
+        # src = bpio.ReadBinaryFile(settings.BackupInfoFileFullPath())
+        src = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
         localID = misc.getLocalID()
         b = encrypted_block.Block(localID, packetID, 0, crypto.NewSessionKey(), crypto.SessionKeyType(), True, src)
         Payload = b.Serialize() 
@@ -209,11 +209,11 @@ class BackupDBKeeper(Automat):
                 commands.Fail(): self._supplier_acked})
             # callback.register_interest(self._supplier_acked, supplierId, packetID)
             self.sentSuppliers.add(supplierId)
-            # io.log(6, 'backup_db_keeper.doSuppliersSendDBInfo to %s' % supplierId)
+            # bpio.log(6, 'backup_db_keeper.doSuppliersSendDBInfo to %s' % supplierId)
 
     def doSetSyncFlag(self, arg):
         if not self.syncFlag:
-            io.log(4, 'backup_db_keeper.doSetSyncFlag backup database is now SYNCHRONIZED !!!!!!!!!!!!!!!!!!!!!!')
+            bpio.log(4, 'backup_db_keeper.doSetSyncFlag backup database is now SYNCHRONIZED !!!!!!!!!!!!!!!!!!!!!!')
         self.syncFlag = True
 
 #    def doCountResponse(self, arg):
@@ -221,7 +221,7 @@ class BackupDBKeeper(Automat):
 #        Action method.
 #        """
 #        newpacket = arg
-#        io.log(6, 'backup_db_keeper.doCountResponse %r from %s' % (newpacket, packet.OwnerID))
+#        bpio.log(6, 'backup_db_keeper.doCountResponse %r from %s' % (newpacket, packet.OwnerID))
 #        self.requestedSuppliers.discard(packet.OwnerID)
 #        if packet.Command == commands.Fail():
 #            sc = supplier_connector.by_idurl(packet.OwnerID)
@@ -244,7 +244,7 @@ class BackupDBKeeper(Automat):
             raise Exception('wrong type of response')
         if len(self.requestedSuppliers) == 0:
             self.automat('all-responded')
-        # io.log(6, 'backup_db_keeper._supplier_response %s others: %r' % (packet, self.requestedSuppliers))
+        # bpio.log(6, 'backup_db_keeper._supplier_response %s others: %r' % (packet, self.requestedSuppliers))
 
     def _supplier_acked(self, newpacket, info):
         self.sentSuppliers.discard(newpacket.OwnerID)

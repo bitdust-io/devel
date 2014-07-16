@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#io.py
+#bpio.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,9 +8,9 @@
 #
 
 """
-.. module:: io
+.. module:: bpio
 
-This module is for simple routines that do not require importing any of our code.:
+This module is for simple BitPie.NET routines that do not require importing any of our code.:
     - print logs
     - file system IO operations
     - pack/unpack lists and dictionaries into strings 
@@ -71,7 +71,7 @@ def shutdown():
     """
     This is the last method to be invoked by the program before main process will stop.
     """
-    log(2, 'io.shutdown')
+    log(2, 'bpio.shutdown')
     RestoreSTDOUT()
 
 def InstallLocale():
@@ -116,7 +116,7 @@ def RestoreSTDOUT():
         sys.stdout = OriginalStdOut
         _std_out.close()
     except:
-        traceback.print_last(file=open('io.shutdown.error', 'w'))
+        traceback.print_last(file=open('bpio.shutdown.error', 'w'))
 
 def ostype():
     """
@@ -206,7 +206,7 @@ def SetDebug(level):
     """
     global DebugLevel
     if DebugLevel > level:
-        log(level, "io.SetDebug DebugLevel=" + str(level))
+        log(level, 'bpio.SetDebug DebugLevel=' + str(level))
     DebugLevel = level
 
 def LifeBegins():
@@ -592,7 +592,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
                     try:
                         os.remove(full_name)
                     except:
-                        log(6, 'io.rmdir_recursive can not remove file ' + full_name)
+                        log(6, 'bpio.rmdir_recursive can not remove file ' + full_name)
                         continue
     if pre_callback:
         if not pre_callback(dirpath):
@@ -603,7 +603,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
         try:
             os.rmdir(dirpath)
         except:
-            log(6, 'io.rmdir_recursive can not remove dir ' + dirpath)
+            log(6, 'bpio.rmdir_recursive can not remove dir ' + dirpath)
 
 def getDirectorySize(directory, include_subfolders=True):
     """
@@ -651,32 +651,6 @@ def getDirectorySize(directory, include_subfolders=True):
                         pass
     return dir_size
 
-def getHomeDirectory():
-    """
-    Under Linux return the path to the home folder: /home/veselin.
-    For Windows should return path to "MyDocuments" folder.
-    """
-    if not Windows():
-        return os.path.expanduser('~')
-    try:
-        from win32com.shell import shell
-        df = shell.SHGetDesktopFolder()
-        pidl = df.ParseDisplayName(0, None,
-            "::{450d8fba-ad25-11d0-98a8-0800361b1103}")[1]
-        mydocs = shell.SHGetPathFromIDList(pidl)
-##        another one way:
-##        import win32com.client
-##        objShell = win32com.client.Dispatch("WScript.Shell")
-##        mydocs = objShell.SpecialFolders("MyDocuments")
-##             Other available folders:
-##             AllUsersDesktop, AllUsersStartMenu, AllUsersPrograms,
-##             AllUsersStartup, Desktop, Favorites, Fonts, MyDocuments,
-##             NetHood, PrintHood, Recent, SendTo, StartMenu, Startup & Templates
-        return mydocs
-    except:
-        return os.path.expanduser('~')
-
-
 #-------------------------------------------------------------------------------
 
 ### AtomicSave:  Save either all of data to file, or don't make file
@@ -708,7 +682,7 @@ def AtomicWriteFile(filename, data):
             os.remove(filename)
         os.rename(tmpfilename, filename)
     except:
-        log(1, 'io.AtomicWriteFile ERROR ' + str(filename))
+        log(1, 'bpio.AtomicWriteFile ERROR ' + str(filename))
         exception()
         try:
             f.close() # make sure file gets closed
@@ -729,7 +703,7 @@ def AtomicAppendFile(filename, data, mode='a'):
         os.fsync(f.fileno())
         f.close()
     except:
-        log(1, 'io.AtomicAppendFile ERROR ' + str(filename))
+        log(1, 'bpio.AtomicAppendFile ERROR ' + str(filename))
         exception()
         try:
             f.close() # make sure file gets closed
@@ -829,7 +803,7 @@ def _write_data(path, src):
         try:
             os.remove(path)
         except:
-            log(1, 'io._write_data ERROR removing ' + str(path))
+            log(1, 'bpio._write_data ERROR removing ' + str(path))
     fout = open(temp_path, 'wb')
     fout.write(src)
     fout.flush()
@@ -838,7 +812,7 @@ def _write_data(path, src):
     try:
         os.rename(temp_path, path)
     except:
-        log(1, 'io._write_data ERROR renaming %s to %s' % (str(temp_path), str(path)))
+        log(1, 'bpio._write_data ERROR renaming %s to %s' % (str(temp_path), str(path)))
     return True
 
 def _append_data(path, src):
@@ -996,18 +970,18 @@ def backup_and_remove(path):
         try:
             os.remove(bkpath)
         except:
-            log(1, 'io.backup_and_remove ERROR can not remove file ' + bkpath)
+            log(1, 'bpio.backup_and_remove ERROR can not remove file ' + bkpath)
             exception()
     try:
         os.rename(path, bkpath)
     except:
-        log(1, 'io.backup_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
+        log(1, 'bpio.backup_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
         exception()
     if os.path.exists(path):
         try:
             os.remove(path)
         except:
-            log(1, 'io.backup_and_remove ERROR can not remove file ' + path)
+            log(1, 'bpio.backup_and_remove ERROR can not remove file ' + path)
             exception()
 
 def restore_and_remove(path, overwrite_existing = False):
@@ -1025,12 +999,12 @@ def restore_and_remove(path, overwrite_existing = False):
         try:
             os.remove(path)
         except:
-            log(1, 'io.restore_and_remove ERROR can not remove file ' + path)
+            log(1, 'bpio.restore_and_remove ERROR can not remove file ' + path)
             exception()
     try:
         os.rename(bkpath, path)
     except:
-        log(1, 'io.restore_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
+        log(1, 'bpio.restore_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
         exception()
 
 def remove_backuped_file(path):
@@ -1043,7 +1017,7 @@ def remove_backuped_file(path):
     try:
         os.remove(bkpath)
     except:
-        log(1, 'io.remove_backuped_file ERROR can not remove file ' + bkpath)
+        log(1, 'bpio.remove_backuped_file ERROR can not remove file ' + bkpath)
         exception()
 
 #------------------------------------------------------------------------------ 
@@ -1463,12 +1437,12 @@ def kill_process_win32(pid):
         PROCESS_TERMINATE = 1
         handle = OpenProcess(PROCESS_TERMINATE, False, pid)
     except:
-        log(2, 'io.kill_process_win32 can not open process %d' % pid)
+        log(2, 'bpio.kill_process_win32 can not open process %d' % pid)
         return False
     try:
         TerminateProcess(handle, -1)
     except:
-        log(2, 'io.kill_process_win32 can not terminate process %d' % pid)
+        log(2, 'bpio.kill_process_win32 can not terminate process %d' % pid)
         return False
     try:
         CloseHandle(handle)

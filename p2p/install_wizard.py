@@ -42,7 +42,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in install_wizard.py')
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.settings as settings
 from lib.automat import Automat
 
@@ -189,7 +189,7 @@ class InstallWizard(Automat):
         if needed:
             settings.uconfig().set('central-settings.needed-megabytes', needed+'MB')
         if donated:
-            settings.uconfig().set('central-settings.shared-megabytes', donated+'MB')
+            settings.uconfig().set('central-settings.donated-megabytes', donated+'MB')
         if customersdir:
             settings.uconfig().set('folder.folder-customers', customersdir)
         if localbackupsdir:
@@ -210,7 +210,7 @@ class InstallWizard(Automat):
             if self.role_args and self.role_args.get('development', '').lower() == 'true':
                 settings.uconfig().set("logs.debug-level", '10')
                 settings.uconfig().set("logs.stream-enable", 'True')
-                io.SetDebug(10)
+                bpio.SetDebug(10)
         settings.uconfig().update()
 
 #    def doSaveUpdates(self, arg):

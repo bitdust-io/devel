@@ -56,7 +56,7 @@ except:
 from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.automat as automat
 import lib.automats as automats
 
@@ -198,10 +198,10 @@ class Initializer(automat.Automat):
         return self.is_installed
     
     def isGUIPossible(self, arg):
-        if io.Windows():
+        if bpio.Windows():
             return True
-        if io.Linux():
-            return io.X11_is_running()
+        if bpio.Linux():
+            return bpio.X11_is_running()
         return False
 
     def doUpdate(self, arg):
@@ -234,8 +234,8 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
-        io.log(0, 'You must register first, run command:')
-        io.log(0, '   bitpie register <your name>')
+        bpio.log(0, 'You must register first, run command:')
+        bpio.log(0, '   bitpie register <your name>')
 
     def doDestroyMe(self, arg):
         global _Initializer

@@ -19,7 +19,7 @@ To add a single item in the user configuration:
    do not forget to add tag "label" and "info".
    
 2. edit settings.py
-   you can add access functions like getECC() or getCentralNumSuppliers()
+   you can add access functions like getECC() or getDesiredSuppliersNumber()
    
 3. edit guisettings.py if you wish user to be able to edit this item:
    add key pair to dictionary CSettings.items
@@ -59,7 +59,7 @@ InfosDict = {
     'central-settings':             "Central Server Settings. Here you can manage your settings stored on the BitPie.NET Central Server (c).",
     'desired-suppliers':            "Number of remote suppliers which keeps your backups.<br><font color=red>WARNING!</font> You will lost all your backups after changing suppliers number.",
     'needed-megabytes':             "How many megabytes you need to store your files?",
-    'shared-megabytes':             "How many megabytes you ready to donate to other users?",
+    'donated-megabytes':             "How many megabytes you ready to donate to other users?",
     'folder-backups':               "Place for your local backups files.",
     'folder-restore':               'Location where your restored files should be placed.',
     'folder-customers':             'Place for donated space, other users will keep their files here.',
@@ -140,7 +140,7 @@ LabelsDict = {
     'central-settings':                     'central server',
     'desired-suppliers':                    'number of suppliers',
     'needed-megabytes':                     'needed space',
-    'shared-megabytes':                     'donated space',
+    'donated-megabytes':                     'donated space',
     'folder':                               'folders',
     'folder-customers':                     'donated space',
     'folder-backups':                       'local backups',
@@ -267,9 +267,9 @@ class UserConfig:
   <needed-megabytes>
    4GB
   </needed-megabytes>
-  <shared-megabytes>
+  <donated-megabytes>
    8GB
-  </shared-megabytes>
+  </donated-megabytes>
  </central-settings>
  <folder>
   <folder-customers>
@@ -458,7 +458,7 @@ class UserConfig:
                         'general.general-wait-suppliers-enable',
                         'central-settings.desired-suppliers',
                         'central-settings.needed-megabytes',
-                        'central-settings.shared-megabytes',
+                        'central-settings.donated-megabytes',
                         'folder.folder-customers',
                         'folder.folder-backups',
                         'folder.folder-restore',

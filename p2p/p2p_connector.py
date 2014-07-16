@@ -58,7 +58,7 @@ except:
 from twisted.internet.defer import Deferred, DeferredList, maybeDeferred, succeed
 from twisted.internet.task import LoopingCall
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.settings as settings
 import lib.net_misc as net_misc
@@ -71,6 +71,11 @@ import transport.callback as callback
 
 import raid.raid_worker as raid_worker
 
+import userid.propagate as propagate
+
+import ratings
+import tray_icon
+
 import initializer
 import network_connector
 import backup_monitor
@@ -78,9 +83,7 @@ import backup_db_keeper
 import list_files_orator
 import fire_hire
 import data_sender
-import userid.propagate
-import ratings
-import tray_icon
+import customers_rejector
 
 #------------------------------------------------------------------------------ 
 
@@ -101,13 +104,13 @@ def inbox(newpacket, info, status, message):
             # but we want to check that this packet is come from the Internet, not our local network
             # because we do not want to use this proto as first method if it is not working for all
             if info.proto not in active_protos():
-                io.log(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
-                io.log(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
+                bpio.log(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                bpio.log(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
                 active_protos().add(info.proto)
     elif info.proto in ['cspace', 'dhtudp',]:
         if info.proto not in active_protos():
-            io.log(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
-            io.log(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
+            bpio.log(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+            bpio.log(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     A('inbox-packet', (newpacket, info, status, message))
 
@@ -155,6 +158,7 @@ class P2PConnector(automat.Automat):
                 fire_hire.A('init')
                 data_sender.A('init')
                 raid_worker.A('init')
+                customers_rejector.A('restart')
         #---NETWORK?---
         elif self.state == 'NETWORK?':
             if ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :
@@ -213,7 +217,7 @@ class P2PConnector(automat.Automat):
                 self.doPropagateMyIdentity(arg)
             elif event == 'my-id-updated' and self.isMyIdentityChanged(arg) :
                 self.state = 'NETWORK?'
-                network_connector.A('ireconnect')
+                network_connector.A('reconnect')
 
     def isUsingBestProto(self, arg):
         """
@@ -231,11 +235,11 @@ class P2PConnector(automat.Automat):
         """
         Action method.
         """
-        userid.propagate.single(arg, wide=True)
+        propagate.single(arg, wide=True)
 
     def doInit(self, arg):
-        self.revision_number = io.ReadTextFile(settings.RevisionNumberFile()).strip()
-        io.log(4, 'p2p_connector.doInit RevisionNumber=%s' % str(self.revision_number))
+        self.revision_number = bpio.ReadTextFile(settings.RevisionNumberFile()).strip()
+        bpio.log(4, 'p2p_connector.doInit RevisionNumber=%s' % str(self.revision_number))
         callback.add_inbox_callback(inbox)
         
     def doUpdateMyIdentity(self, arg):
@@ -243,10 +247,10 @@ class P2PConnector(automat.Automat):
         self.automat('my-id-updated')
         
     def doPropagateMyIdentity(self, arg):
-        userid.propagate.update()
-        userid.propagate.write_to_dht()
+        propagate.update()
+        propagate.write_to_dht()
         dht_service.set_node_data('idurl', misc.getLocalID())
-        d = userid.propagate.start()
+        d = propagate.start()
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 
     def doPopBestProto(self, arg):
@@ -256,7 +260,7 @@ class P2PConnector(automat.Automat):
         ratings.init()
 
     def _check_to_use_best_proto(self):
-        #io.log(4, 'p2p_connector._check_to_use_best_proto active_protos()=%s' % str(active_protos()))
+        #bpio.log(4, 'p2p_connector._check_to_use_best_proto active_protos()=%s' % str(active_protos()))
         #if no incomming traffic - do nothing
         if len(active_protos()) == 0:
             return True
@@ -269,21 +273,21 @@ class P2PConnector(automat.Automat):
         #if first contact in local identity is not working yet
         #but there is another working methods - switch first method
         if first not in active_protos():
-            io.log(2, 'p2p_connector._check_to_use_best_proto first contact (%s) is not working!   active_protos()=%s' % (first, str(active_protos())))
+            bpio.log(2, 'p2p_connector._check_to_use_best_proto first contact (%s) is not working!   active_protos()=%s' % (first, str(active_protos())))
             return False
         #if tcp contact is on first place and it is working - we are VERY HAPPY! - no need to change anything - return False
         if first == 'tcp' and 'tcp' in active_protos():
             return True
         #but if tcp method is not the first and it works - we want to TURN IT ON! - return True
         if first != 'tcp' and 'tcp' in active_protos():
-            io.log(2, 'p2p_connector._check_to_use_best_proto tcp is not first but it works active_protos()=%s' % str(active_protos()))
+            bpio.log(2, 'p2p_connector._check_to_use_best_proto tcp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
         #if we are using dhtudp and it is working - this is fantastic!
         if first == 'dhtudp' and 'dhtudp' in active_protos():
             return True
         #dhtudp seems to be working and first contact is not working - so switch to dhtudp
         if first != 'dhtudp' and 'dhtudp' in active_protos():
-            io.log(2, 'p2p_connector._check_to_use_best_proto dhtudp is not first but it works active_protos()=%s' % str(active_protos()))
+            bpio.log(2, 'p2p_connector._check_to_use_best_proto dhtudp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
         #in other cases - do nothing
         return True
@@ -307,7 +311,7 @@ class P2PConnector(automat.Automat):
         #if tcp method is not the first but it works - switch to tcp
         if first != 'tcp' and 'tcp' in active_protos():
             wantedproto = 'tcp'
-        io.log(4, 'p2p_connector.PopWorkingProto will pop %s contact   order=%s active_protos()=%s' % (wantedproto, str(order), str(active_protos())))
+        bpio.log(4, 'p2p_connector.PopWorkingProto will pop %s contact   order=%s active_protos()=%s' % (wantedproto, str(order), str(active_protos())))
         # now move best proto on the top
         # other users will use this method to send to us
         lid.popProtoContact(wantedproto)
@@ -368,20 +372,20 @@ class P2PConnector(automat.Automat):
     #    #if IP is not external and upnp configuration was failed for some reasons
     #    #we may want to use another contact methods, NOT tcp
     #    if IPisLocal() and run_upnpc.last_result('tcp') != 'upnp-done':
-    #        io.log(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
+    #        bpio.log(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
     #        lid.pushProtoContact('tcp')
         #update software version number
         repo, location = misc.ReadRepoLocation()
-        lid.version = (self.revision_number.strip() + ' ' + repo.strip() + ' ' + io.osinfo().strip()).strip()
+        lid.version = (self.revision_number.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
         #generate signature with changed content
         lid.sign()
         #remember the identity
         misc.setLocalIdentity(lid)
         #finally saving local identity
         misc.saveLocalIdentity()
-        io.log(4, 'p2p_connector.UpdateIdentity')
-        io.log(4, '    version: %s' % str(lid.version))
-        io.log(4, '    contacts: %s' % str(lid.contacts))
+        bpio.log(4, 'p2p_connector.UpdateIdentity')
+        bpio.log(4, '    version: %s' % str(lid.version))
+        bpio.log(4, '    contacts: %s' % str(lid.contacts))
         #_UpnpResult.clear()
         changed = False
         for proto, contact in misc.getLocalIdentity().getContactsByProto().items():

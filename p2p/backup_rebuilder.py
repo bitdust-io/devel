@@ -55,7 +55,7 @@ except:
 from twisted.internet.defer import maybeDeferred
 
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.settings as settings
 import lib.contacts as contacts
@@ -232,7 +232,7 @@ class BackupRebuilder(Automat):
                     'P': [0] * backup_matrix.suppliers_set().supplierCount }
         # detect missing blocks from remote info
         self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(backupID)
-        io.log(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
+        bpio.log(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
         # find the correct max block number for this backup
         # we can have remote and local files
         # will take biggest block number from both 
@@ -253,7 +253,7 @@ class BackupRebuilder(Automat):
         self.currentBackupID = backupID
         # clear requesting queue, remove old packets for this backup, we will send them again
         io_throttle.DeleteBackupRequests(self.currentBackupID)
-        # io.log(6, 'backup_rebuilder.doTakeNextBackup currentBackupID=%s workingBlocksQueue=%d' % (self.currentBackupID, len(self.workingBlocksQueue)))
+        # bpio.log(6, 'backup_rebuilder.doTakeNextBackup currentBackupID=%s workingBlocksQueue=%d' % (self.currentBackupID, len(self.workingBlocksQueue)))
         self.automat('backup-ready')
 
     def doRequestAvailableBlocks(self, arg):
@@ -336,14 +336,14 @@ class BackupRebuilder(Automat):
         # and calculate the whole size to be received ... smart!
         # ... remote supplier should not use last file to calculate
         self.blockIndex = len(self.workingBlocksQueue) - 1
-        io.log(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
+        bpio.log(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
         def _prepare_one_block(): 
             if self.blockIndex < 0:
-                # io.log(8, '        _prepare_one_block finish all blocks')
+                # bpio.log(8, '        _prepare_one_block finish all blocks')
                 reactor.callLater(0, _finish_all_blocks)
                 return
             self.currentBlockNumber = self.workingBlocksQueue[self.blockIndex]
-            # io.log(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
+            # bpio.log(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
             self.workBlock = block_rebuilder.BlockRebuilder(
                 eccmap.Current(), #self.eccMap,
                 self.currentBackupID,
@@ -357,7 +357,7 @@ class BackupRebuilder(Automat):
         def _identify_block_packets():
             self.workBlock.IdentifyMissing()
 #            if not self.workBlock.IsMissingFilesOnHand():
-#                io.log(8, '        _identify_block_packets some missing files is not come yet')
+#                bpio.log(8, '        _identify_block_packets some missing files is not come yet')
 #                reactor.callLater(0, self.automat, 'rebuilding-finished', False)
 #                return
             reactor.callLater(0, _work_on_block)
@@ -365,7 +365,7 @@ class BackupRebuilder(Automat):
             # self.workBlock.AttemptRebuild().addBoth(_rebuild_finished)
             maybeDeferred(self.workBlock.AttemptRebuild).addCallback(_rebuild_finished)
         def _rebuild_finished(someNewData):
-            # io.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
+            # bpio.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
             if someNewData:
                 self.workBlock.WorkDoneReport()
                 self.blocksSucceed.append(self.currentBlockNumber)
@@ -379,7 +379,7 @@ class BackupRebuilder(Automat):
         def _finish_all_blocks():
             for blockNum in self.blocksSucceed:
                 self.workingBlocksQueue.remove(blockNum)
-            io.log(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
+            bpio.log(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
             result = len(self.blocksSucceed) > 0
             self.blocksSucceed = []
             self.automat('rebuilding-finished', result)
@@ -393,29 +393,29 @@ class BackupRebuilder(Automat):
         if state in ['in queue', 'shutdown', 'exist']:
             return
         if state != 'received':
-            io.log(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(packet)))
+            bpio.log(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(packet)))
             return
         packetID = signed_packet.PacketID
         filename = os.path.join(settings.getLocalBackupsDir(), packetID)
         if not signed_packet.Valid():
             # TODO 
             # if we didn't get a valid packet ... re-request it or delete it?
-            io.log(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
+            bpio.log(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
             return
         if os.path.exists(filename):
-            io.log(4, "backup_rebuilder.FileReceived WARNING rewriting existed file" + filename)
+            bpio.log(4, "backup_rebuilder.FileReceived WARNING rewriting existed file" + filename)
             try: 
                 os.remove(filename)
             except:
-                io.exception()
+                bpio.exception()
         dirname = os.path.dirname(filename)
         if not os.path.exists(dirname):
             try:
-                io._dirs_make(dirname)
+                bpio._dirs_make(dirname)
             except:
-                io.log(2, "backup_rebuilder.FileReceived ERROR can not create sub dir " + dirname)
+                bpio.log(2, "backup_rebuilder.FileReceived ERROR can not create sub dir " + dirname)
                 return 
-        if not io.WriteFile(filename, signed_packet.Payload):
+        if not bpio.WriteFile(filename, signed_packet.Payload):
             return
         backup_matrix.LocalFileReport(packetID)
         self.automat('inbox-data-packet', packetID)

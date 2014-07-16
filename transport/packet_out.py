@@ -30,7 +30,7 @@ import os
 import time
 import hashlib
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.automat as automat
 import lib.misc as misc
 import lib.commands as commands
@@ -62,7 +62,7 @@ def queue():
 def create(outpacket, wide, callbacks):
     """
     """
-    # io.log(10, 'packet_out.create  %s' % str(outpacket))
+    # bpio.log(10, 'packet_out.create  %s' % str(outpacket))
     p = PacketOut(outpacket, wide, callbacks)
     queue().append(p)
     p.automat('run')
@@ -77,7 +77,7 @@ def search(proto, host, filename):
             if i.proto == proto:
                 return p, i
     for p in queue():
-        io.log(18, '%s [%s]' % (os.path.basename(p.filename), 
+        bpio.log(18, '%s [%s]' % (os.path.basename(p.filename), 
             ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
     return None, None
 
@@ -91,7 +91,7 @@ def search_by_transfer_id(transfer_id):
 
 
 def search_by_response_packet(newpacket):
-#    io.log(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
+#    bpio.log(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
 #        nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
 #        nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
@@ -104,10 +104,14 @@ def search_by_response_packet(newpacket):
         if target_idurl != p.outpacket.RemoteID:
             continue  
         result.append(p)
-        io.log(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
-            nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID), 
-            nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
-            p.callbacks.keys()))
+        # bpio.log(20, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
+        #     nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID), 
+        #     nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
+        #     p.callbacks.keys()))
+    if len(result) == 0:
+        bpio.log(18, 'packet_out.search_by_response_packet WARNING - not found [%s/%s/%s]:%s %s' % (
+            nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
+            nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     return result
 
 #------------------------------------------------------------------------------ 
@@ -142,7 +146,7 @@ class PacketOut(automat.Automat):
                 self.remote_idurl = self.outpacket.CreatorID.strip()       
             else:
                 self.remote_idurl = None
-                io.log(2, 'packet_out.__init__ WARNING sending a packet we did not make, and that is not Data packet')
+                bpio.log(2, 'packet_out.__init__ WARNING sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contacts.getContact(self.remote_idurl)
         self.hash = '%s%s%s%s' % (str(self.time), self.outpacket.Command, 
                                   self.outpacket.PacketID, str(self.remote_idurl))
@@ -324,7 +328,7 @@ class PacketOut(automat.Automat):
             self.filesize = len(self.packetdata)
             self.timeout = max(int(self.filesize/settings.SendingSpeedLimit()), settings.SendTimeOut())
         except:
-            io.exception()
+            bpio.exception()
             self.packetdata = None
             self.automat('write-error')
             
@@ -379,10 +383,10 @@ class PacketOut(automat.Automat):
         for i in xrange(len(self.items)):
             if self.items[i].proto == proto: # and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
-                # io.log(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
+                # bpio.log(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
                 ok = True
         if not ok:
-            io.log(8, 'packet_out.doSetTransferID WARNING not found item for %r:%r' % (proto, host))
+            bpio.log(8, 'packet_out.doSetTransferID WARNING not found item for %r:%r' % (proto, host))
 
     def doSaveResponse(self, arg):
         """
@@ -499,7 +503,7 @@ class PacketOut(automat.Automat):
                         workitem_sent = True
             if not workitem_sent:
                 self.automat('nothing-to-send')
-                io.log(6, 'packet_out._push  (wide)  WARNING no supported protocols with %s' % self.remote_idurl)
+                bpio.log(6, 'packet_out._push  (wide)  WARNING no supported protocols with %s' % self.remote_idurl)
             else:
                 self.automat('items-sent')
             return
@@ -555,5 +559,5 @@ class PacketOut(automat.Automat):
                     self.automat('items-sent')
                     return
         self.automat('nothing-to-send')
-        io.log(6, 'packet_out._push WARNING no supported protocols with %s' % self.remote_idurl)
+        bpio.log(6, 'packet_out._push WARNING no supported protocols with %s' % self.remote_idurl)
         

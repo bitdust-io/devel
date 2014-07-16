@@ -269,7 +269,7 @@ class Automat(object):
         global _LifeBeginsTime
         if _LogFile is not None:
             import time
-            if _LogsCount > 10000:
+            if _LogsCount > 100000:
                 _LogFile.close()
                 _LogFile = open(_LogFilename, 'w')
                 _LogsCount = 0
@@ -288,11 +288,11 @@ class Automat(object):
             _LogsCount += 1
         else:
             try:
-                from io import log
+                from bpio import log
                 log(level, text)
             except:
                 try:
-                    from lib.io import log
+                    from lib.bpio import log
                     log(level, text)
                 except:
                     pass

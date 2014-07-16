@@ -10,7 +10,7 @@ import struct
 
 from twisted.internet import reactor
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.udp as udp
 import lib.tmpfile as tmpfile
 import lib.settings as settings
@@ -158,10 +158,10 @@ class FileStream:
             file_id = block_info[0]
             block_id = block_info[1]
             if not self.outboxFiles.has_key(file_id):
-                # io.log(2, 'dhtudp_stream.checkWindow WARNING unknown file_id [%d] from %s' % (file_id, nameurl.GetName(self.remote_idurl)))
+                # bpio.log(2, 'dhtudp_stream.checkWindow WARNING unknown file_id [%d] from %s' % (file_id, nameurl.GetName(self.remote_idurl)))
                 continue
             if not self.outboxFiles[file_id].blocks.has_key(block_id):
-                io.log(2, 'dhtudp_stream.checkWindow WARNING unknown block_id: %d' % block_id)
+                bpio.log(2, 'dhtudp_stream.checkWindow WARNING unknown block_id: %d' % block_id)
                 continue
             to_update[block_info] = cur_tm
             outFile = self.outboxFiles[file_id]
@@ -171,15 +171,15 @@ class FileStream:
             self.adjust_ack_timeout(timeouts_ratio)
         for block_info in to_remove:
             del self.sliding_window[block_info]
-            # io.log(8, 'dhtudp_stream.doCheckWindow (%d,%d) removed, window=%d' % (file_id, block_id, len(self.sliding_window)))
+            # bpio.log(8, 'dhtudp_stream.doCheckWindow (%d,%d) removed, window=%d' % (file_id, block_id, len(self.sliding_window)))
         for block_info, tm in to_update.items():
             self.sliding_window[block_info] = tm
-            # io.log(8, 'dhtudp_stream.doCheckWindow (%s) resending to %s, window=%d' % (block_info, self.remote_address, len(self.sliding_window)))
+            # bpio.log(8, 'dhtudp_stream.doCheckWindow (%s) resending to %s, window=%d' % (block_info, self.remote_address, len(self.sliding_window)))
         if len(to_remove) > 0:
             self.sliding_window_size = int( self.sliding_window_size / 2.0 )
             if self.sliding_window_size < MIN_WINDOW_SIZE:
                 self.sliding_window_size = MIN_WINDOW_SIZE
-            # io.log(8, 'dhtudp_stream.doCheckWindow decreased, window=%d' % self.sliding_window_size)
+            # bpio.log(8, 'dhtudp_stream.doCheckWindow decreased, window=%d' % self.sliding_window_size)
         del to_remove
         del to_update
         return 
@@ -189,7 +189,7 @@ class FileStream:
             self.ack_timeout *= 2.0
             if self.ack_timeout > MAX_ACK_TIME_OUT:
                 self.ack_timeout = MAX_ACK_TIME_OUT
-                io.log(6, 'dhtudp_stream.data_received NETERROR Ack timeout, close session %s' % str(self.session))
+                bpio.log(6, 'dhtudp_stream.data_received NETERROR Ack timeout, close session %s' % str(self.session))
                 self.session.automat('shutdown')
         elif timeouts_ratio <= FINE_TIMEOUTS_RATIO:
             self.ack_timeout /= 2.0
@@ -210,7 +210,7 @@ class FileStream:
     def timeout_incoming_files(self):
         for file_id in self.inboxFiles.keys():
             if self.inboxFiles[file_id].is_timed_out():
-                io.log(6, 'dhtudp_stream.data_received WARNING inbox file is timed out, close session %s' % str(self.session))
+                bpio.log(6, 'dhtudp_stream.data_received WARNING inbox file is timed out, close session %s' % str(self.session))
                 self.session.automat('shutdown')
                 return True
         return False
@@ -234,7 +234,7 @@ class FileStream:
             data_size = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            io.exception()
+            bpio.exception()
             return
         inp_data = inp.read()
         inp.close()
@@ -243,20 +243,20 @@ class FileStream:
                 if time.time() - self.receivedFiles[file_id] > 30:
                     # file were received, but 30 seconds since that moment we still receive some Acks
                     # definitely something is wrong - need to drop the session
-                    io.log(6, 'dhtudp_stream.data_received NETERROR too old Ack packets, drop session %s' % str(self.session)) 
+                    bpio.log(6, 'dhtudp_stream.data_received NETERROR too old Ack packets, drop session %s' % str(self.session)) 
                     self.session.automat('shutdown')
                     return
                 self.send_data(udp.CMD_ACK, struct.pack('i', file_id) + struct.pack('i', block_id)) 
                 return
             if len(self.inboxFiles) >= 2 * MAX_SIMULTANEOUS_OUTGOING_FILES:
                 # too many incoming files, seems remote guy is cheating - drop that session!
-                io.log(6, 'dhtudp_stream.data_received WARNING too many incoming files, close session %s' % str(self.session))
+                bpio.log(6, 'dhtudp_stream.data_received WARNING too many incoming files, close session %s' % str(self.session))
                 self.session.automat('shutdown') 
                 return
             self.create_inbox_file(file_id, num_blocks)
         if len(inp_data) != data_size:
-            io.log(6, 'dhtudp_stream.data_received WARNING incorrect datagram received from %s, not full data' % str(self.session.peer_address))
-            io.log(6, 'dhtudp_stream.data_received close session %s' % str(self.session))
+            bpio.log(6, 'dhtudp_stream.data_received WARNING incorrect datagram received from %s, not full data' % str(self.session.peer_address))
+            bpio.log(6, 'dhtudp_stream.data_received close session %s' % str(self.session))
             self.session.automat('shutdown') 
             return
         self.inboxFiles[file_id].input_block(block_id, inp_data) 
@@ -271,17 +271,17 @@ class FileStream:
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            io.exception()
+            bpio.exception()
             return
         if not self.outboxFiles.has_key(file_id):
             # if not self.receivedFiles.has_key(file_id):
-            #     io.log(8, 'dhtudp_stream.ack_received WARNING unknown file_id in REPORT packet received from %s: [%d]' % (self.remote_address, file_id))
+            #     bpio.log(8, 'dhtudp_stream.ack_received WARNING unknown file_id in REPORT packet received from %s: [%d]' % (self.remote_address, file_id))
             return
         try:
             block_id = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            io.exception()
+            bpio.exception()
             return
         inp.close()
         self.outboxFiles[file_id].report_block(block_id)
@@ -291,7 +291,7 @@ class FileStream:
             self.sliding_window_size = MAX_WINDOW_SIZE
         if self.outboxFiles[file_id].is_done():
             self.outbox_file_done(file_id, 'finished')
-        # io.log(8, 'dhtudp_stream.doReceiveData REPORT on [%d,%d] received, blocks=%d, window=%d' % (file_id, block_id, len(self.outboxFiles[file_id]), self.sliding_window_size))
+        # bpio.log(8, 'dhtudp_stream.doReceiveData REPORT on [%d,%d] received, blocks=%d, window=%d' % (file_id, block_id, len(self.outboxFiles[file_id]), self.sliding_window_size))
 
     def create_inbox_file(self, file_id, num_blocks):
         infile = InboxFile(self, file_id, num_blocks)
@@ -321,8 +321,8 @@ class FileStream:
             self.erase_old_file_ids()
             
     def on_inbox_file_register_failed(self, err, file_id):
-        io.log(2, 'dhtudp_stream.on_inbox_file_register_failed ERROR failed to register, file_id=%s' % (str(file_id)))
-        io.log(6, 'dhtudp_stream.on_inbox_file_register_failed close session %s' % self.session)
+        bpio.log(2, 'dhtudp_stream.on_inbox_file_register_failed ERROR failed to register, file_id=%s' % (str(file_id)))
+        bpio.log(6, 'dhtudp_stream.on_inbox_file_register_failed close session %s' % self.session)
         self.session.automat('shutdown')
 
     def create_outbox_file(self, filename, filesize, description, result_defer, single):
@@ -352,8 +352,8 @@ class FileStream:
             self.close_outbox_file(file_id)
 
     def on_outbox_file_register_failed(self, err, file_id):
-        io.log(2, 'dhtudp_stream.on_outbox_file_register_failed ERROR failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
-        io.log(6, 'dhtudp_stream.on_outbox_file_register_failed close session %s' % self.session)
+        bpio.log(2, 'dhtudp_stream.on_outbox_file_register_failed ERROR failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
+        bpio.log(6, 'dhtudp_stream.on_outbox_file_register_failed close session %s' % self.session)
         self.session.automat('shutdown')
 
 
@@ -361,7 +361,7 @@ class FileStream:
         try:
             infile = self.inboxFiles[file_id]
         except:
-            io.exception()
+            bpio.exception()
             return
         if infile.registration:
             return
@@ -370,17 +370,17 @@ class FileStream:
 #                infile.transfer_id, status, infile.get_bytes_received(), error_message)
             self.report_inbox_file(infile.transfer_id, status, infile.get_bytes_received(), error_message)
         else:
-            io.log(6, 'dhtudp_stream.file_received WARNING transfer_id is None, file_id=%s' % (str(file_id)))
+            bpio.log(6, 'dhtudp_stream.file_received WARNING transfer_id is None, file_id=%s' % (str(file_id)))
         self.close_inbox_file(file_id)
         self.receivedFiles[file_id] = time.time()
         self.erase_old_file_ids()
 
     def outbox_file_done(self, file_id, status, error_message=None):
-        io.log(18, 'dhtudp_stream.outbox_file_done %s %s because %s' % (file_id, status, error_message))
+        bpio.log(18, 'dhtudp_stream.outbox_file_done %s %s because %s' % (file_id, status, error_message))
         try:
             outfile = self.outboxFiles[file_id]
         except:
-            io.exception()
+            bpio.exception()
             return
         if outfile.result_defer:
             outfile.result_defer.callback((outfile, status, error_message))
@@ -393,7 +393,7 @@ class FileStream:
         self.close_outbox_file(file_id)
 
     def failed_outbox_queue_item(self, filename, description='', error_message='', result_defer=None, single=False):
-        io.log(18, 'dhtudp_stream.failed_outbox_queue_item %s because %s' % (filename, error_message))
+        bpio.log(18, 'dhtudp_stream.failed_outbox_queue_item %s because %s' % (filename, error_message))
         if not single:
             dhtudp_interface.interface_cancelled_file_sending(
                 self.session.peer_id, filename, 0, description, error_message)
@@ -409,12 +409,12 @@ class FileStream:
         del self.inboxFiles[file_id]   
 
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
-        io.log(18, 'dhtudp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
+        bpio.log(18, 'dhtudp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         dhtudp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
-        io.log(18, 'dhtudp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
+        bpio.log(18, 'dhtudp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         dhtudp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
 
@@ -434,19 +434,19 @@ class InboxFile():
         self.started = time.time()
         self.last_block_time = time.time()
         self.block_timeout = 0
-        # io.log(6, 'dhtudp_stream.InboxFile {%s} [%d] from %s' % (self.transfer_id, self.file_id, str(self.stream.remote_address)))
+        # bpio.log(6, 'dhtudp_stream.InboxFile {%s} [%d] from %s' % (self.transfer_id, self.file_id, str(self.stream.remote_address)))
 
     def close(self):
         try:
             if self.bytes_received > 0 and self.bytes_extra > self.bytes_received * 0.1:
-                io.log(10, 'dhtudp_stream.InboxFile.close WARNING %s%% garbage traffic from %s' % (
+                bpio.log(10, 'dhtudp_stream.InboxFile.close WARNING %s%% garbage traffic from %s' % (
                     str(self.bytes_extra/float(self.bytes_received)), self.stream.session.peer_address))
         except:
-            io.exception()
+            bpio.exception()
         try:
             os.close(self.fd)
         except:
-            io.exception()
+            bpio.exception()
 
     def get_bytes_received(self):
         return self.bytes_received
@@ -464,7 +464,7 @@ class InboxFile():
         for block_id in xrange(len(self.blocks)):
             os.write(self.fd, self.blocks[block_id])
         # os.close(self.fd)
-        # io.log(10, 'transport_udp_server.InboxFile.build [%s] file_id=%d, blocks=%d' % (
+        # bpio.log(10, 'transport_udp_server.InboxFile.build [%s] file_id=%d, blocks=%d' % (
         #     os.path.basename(self.filename), self.file_id, self.num_blocks))
 
     def is_done(self):
@@ -502,7 +502,7 @@ class OutboxFile():
         pass
 
     def cancel(self):
-        io.log(6, 'dhtudp_stream.OutboxFile.cancel timeout=%d' % self.timeout)
+        bpio.log(6, 'dhtudp_stream.OutboxFile.cancel timeout=%d' % self.timeout)
         self.timeout = 0
 
     def get_bytes_sent(self):
@@ -510,7 +510,7 @@ class OutboxFile():
 
     def report_block(self, block_id):
         if not self.blocks.has_key(block_id):
-            io.log(10, 'dhtudp_stream.report_block WARNING unknown block_id from %s: [%d]' % (str(self.stream.session.peer_address), block_id))
+            bpio.log(10, 'dhtudp_stream.report_block WARNING unknown block_id from %s: [%d]' % (str(self.stream.session.peer_address), block_id))
             return
         self.bytes_sent += len(self.blocks[block_id])
         del self.blocks[block_id]
@@ -537,7 +537,7 @@ class OutboxFile():
     def send_block(self, block_id):
         # global _SendControlFunc
         if not self.blocks.has_key(block_id):
-            io.log(8, 'dhtudp_stream.send_block WARNING block_id=%d not found, file_id=%s, transfer_id=%s, blocks: %d' % (
+            bpio.log(8, 'dhtudp_stream.send_block WARNING block_id=%d not found, file_id=%s, transfer_id=%s, blocks: %d' % (
                 block_id, self.file_id, str(self.transfer_id), len(self.blocks) ))
             return False
         data = self.blocks[block_id]

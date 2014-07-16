@@ -47,7 +47,7 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in contact_status.py')
     
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.nameurl as nameurl
 import lib.contacts as contacts
 import lib.automat as automat
@@ -70,7 +70,7 @@ def init():
     """
     Needs to be called before other methods here.
     """
-    io.log(4, 'contact_status.init')
+    bpio.log(4, 'contact_status.init')
     callback.add_inbox_callback(Inbox)
     callback.add_outbox_callback(Outbox)
     callback.add_queue_item_status_callback(OutboxStatus)
@@ -89,7 +89,7 @@ def shutdown():
     """
     Called from top level code when the software is finishing.
     """
-    io.log(4, 'contact_status.shutdown')
+    bpio.log(4, 'contact_status.shutdown')
     global _ShutdownFlag
     global _ContactsStatusDict
     for A in _ContactsStatusDict.values():
@@ -109,7 +109,7 @@ def isOnline(idurl):
         return False
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        io.log(6, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
+        bpio.log(6, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'CONNECTED'
 
 
@@ -124,7 +124,7 @@ def isOffline(idurl):
         return True
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        io.log(6, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
+        bpio.log(6, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'OFFLINE'
 
 
@@ -191,10 +191,10 @@ class ContactStatus(automat.Automat):
         self.idurl = idurl
         self.time_connected = None
         automat.Automat.__init__(self, name, state, debug_level)
-        io.log(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
+        bpio.log(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
         
     def state_changed(self, oldstate, newstate):
-        io.log(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
+        bpio.log(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
         
     def A(self, event, arg):
         #---CONNECTED---
@@ -263,7 +263,7 @@ class ContactStatus(automat.Automat):
             import p2p.webcontrol
             p2p.webcontrol.OnAliveStateChanged(self.idurl)
         except:
-            io.exception()
+            bpio.exception()
         # if transport_control.GetContactAliveStateNotifierFunc() is not None:
         #     transport_control.GetContactAliveStateNotifierFunc()(self.idurl)
  
@@ -310,6 +310,6 @@ def PacketSendingTimeout(remoteID, packetID):
     Called from ``p2p.io_throttle`` when some packet is timed out.
     Right now this do nothing, state machine ignores that event.
     """
-    # io.log(6, 'contact_status.PacketSendingTimeout ' + remoteID)
+    # bpio.log(6, 'contact_status.PacketSendingTimeout ' + remoteID)
     A(remoteID, 'sent-timeout', packetID)
 

@@ -13,7 +13,7 @@ import struct
 from twisted.internet import reactor
 from twisted.protocols import basic
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.tmpfile as tmpfile
 import lib.settings as settings
 import lib.misc as misc
@@ -102,15 +102,15 @@ class TCPFileStream():
             file_size = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            io.exception()
+            bpio.exception()
             return
-        # io.log(6, 'data_received %s' % str(( file_id, file_size)))
+        # bpio.log(6, 'data_received %s' % str(( file_id, file_size)))
         inp_data = inp.read()
         inp.close()
         if not self.inboxFiles.has_key(file_id):
             if len(self.inboxFiles) >= 2 * MAX_SIMULTANEOUS_OUTGOING_FILES:
                 # too many incoming files, seems remote guy is cheating - drop that session!
-                io.log(6, 'tcp_stream.data_received WARNING too many incoming files, close connection %s' % str(self.connection))
+                bpio.log(6, 'tcp_stream.data_received WARNING too many incoming files, close connection %s' % str(self.connection))
                 self.connection.automat('disconnect') 
                 return
             self.create_inbox_file(file_id, file_size)
@@ -125,7 +125,7 @@ class TCPFileStream():
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            io.exception()
+            bpio.exception()
             return
         inp.close()
         self.outboxFiles[file_id].ok_received = True
@@ -138,7 +138,7 @@ class TCPFileStream():
             file_id = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
-            io.exception()
+            bpio.exception()
             return
         reason = inp.read()
         inp.close()
@@ -173,8 +173,8 @@ class TCPFileStream():
 #                    infile.transfer_id, 'finished', infile.get_bytes_received())
             
     def on_inbox_file_register_failed(self, err, file_id):
-        io.log(2, 'tcp_stream.on_inbox_file_register_failed ERROR failed to register, file_id=%s err:\n%s' % (str(file_id), str(err)))
-        io.log(6, 'tcp_stream.on_inbox_file_register_failed close session %s' % self.session)
+        bpio.log(2, 'tcp_stream.on_inbox_file_register_failed ERROR failed to register, file_id=%s err:\n%s' % (str(file_id), str(err)))
+        bpio.log(6, 'tcp_stream.on_inbox_file_register_failed close session %s' % self.session)
         self.connection.automat('disconnect')
               
     def create_outbox_file(self, filename, filesize, description, result_defer, single):
@@ -201,8 +201,8 @@ class TCPFileStream():
             self.outbox_file_done(file_id, 'finished')
 
     def on_outbox_file_register_failed(self, err, file_id):
-        io.log(2, 'tcp_stream.on_outbox_file_register_failed ERROR failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
-        io.log(6, 'tcp_stream.on_outbox_file_register_failed close session %s' % self.connection)
+        bpio.log(2, 'tcp_stream.on_outbox_file_register_failed ERROR failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
+        bpio.log(6, 'tcp_stream.on_outbox_file_register_failed close session %s' % self.connection)
         self.connection.automat('disconnect')
         
     def close_outbox_file(self, file_id):
@@ -214,12 +214,12 @@ class TCPFileStream():
         del self.inboxFiles[file_id]   
         
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
-        # io.log(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
+        # bpio.log(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         tcp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
-        # io.log(18, 'tcp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
+        # bpio.log(18, 'tcp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         tcp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
         
@@ -227,7 +227,7 @@ class TCPFileStream():
         try:
             infile = self.inboxFiles[file_id]
         except:
-            io.exception()
+            bpio.exception()
             return
         if infile.registration:
             return
@@ -235,18 +235,18 @@ class TCPFileStream():
         if infile.transfer_id:
             self.report_inbox_file(infile.transfer_id, status, infile.get_bytes_received(), error_message)
         else:
-            io.log(6, 'tcp_stream.inbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
+            bpio.log(6, 'tcp_stream.inbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
         del infile
         # self.receivedFiles[file_id] = time.time()
         
     def outbox_file_done(self, file_id, status, error_message=None):
         """
         """ 
-        # io.log(18, 'tcp_stream.outbox_file_done %s %s %s' % (file_id, status, error_message))
+        # bpio.log(18, 'tcp_stream.outbox_file_done %s %s %s' % (file_id, status, error_message))
         try:
             outfile = self.outboxFiles[file_id]
         except:
-            io.exception()
+            bpio.exception()
             return
         if outfile.result_defer:
             outfile.result_defer.callback((outfile, status, error_message))
@@ -257,9 +257,9 @@ class TCPFileStream():
         if outfile.transfer_id:
             self.report_outbox_file(outfile.transfer_id, status, outfile.get_bytes_sent(), error_message)
         # else:
-        #     io.log(6, 'tcp_stream.outbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
+        #     bpio.log(6, 'tcp_stream.outbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
         if outfile.single:
-            io.log(18, 'tcp_stream.outbox_file_done close single connection %s' % str(self.connection))
+            bpio.log(18, 'tcp_stream.outbox_file_done close single connection %s' % str(self.connection))
             self.connection.automat('disconnect') 
         del outfile
 
@@ -277,13 +277,13 @@ class InboxFile():
         self.started = time.time()
         self.last_block_time = time.time()
         self.timeout = max(int(self.file_size/settings.SendingSpeedLimit()), 3)
-        # io.log(6, 'tcp_stream.InboxFile {%s} [%d] from %s' % (self.transfer_id, self.file_id, str(self.stream.remote_address)))
+        # bpio.log(6, 'tcp_stream.InboxFile {%s} [%d] from %s' % (self.transfer_id, self.file_id, str(self.stream.remote_address)))
 
     def close(self):
         try:
             os.close(self.fd)
         except:
-            io.exception()
+            bpio.exception()
 
     def get_bytes_received(self):
         return self.bytes_received
@@ -325,7 +325,7 @@ class OutboxFile():
         try:
             self.fin.close()
         except:
-            io.exception()
+            bpio.exception()
         
     def start(self):
         self.sender = FileSender(self)
@@ -346,7 +346,7 @@ class OutboxFile():
         # self.sender = None
 
     def cancel(self):
-        io.log(6, 'tcp_stream.OutboxFile.cancel timeout=%d' % self.timeout)
+        bpio.log(6, 'tcp_stream.OutboxFile.cancel timeout=%d' % self.timeout)
         self.stop()
 
     def get_bytes_sent(self):
@@ -368,7 +368,7 @@ class OutboxFile():
             self.stream.outbox_file_done(self.file_id, 'finished')
     
     def transfer_failed(self, err):
-        io.log(18, 'tcp_stream.transfer_failed:   %r' % (err))
+        bpio.log(18, 'tcp_stream.transfer_failed:   %r' % (err))
         if not self.sender:
             return None
         self.sender.close()
@@ -394,16 +394,16 @@ class FileSender(basic.FileSender):
         # self.transfer_id = _RegisterTransferFunc(
         #     'send', self.peer, self.getSentBytes, filename, sz, description)
         # _ByTransferID[self.transfer_id] = self.protocol
-        # io.log(14, 'transport_tcp.TCPFileSender.init length=%d transfer_id=%s' % (self.sz, self.transfer_id))
+        # bpio.log(14, 'transport_tcp.TCPFileSender.init length=%d transfer_id=%s' % (self.sz, self.transfer_id))
 
     # def __del__(self):
-    #     io.log(14, 'transport_tcp.TCPFileSender.del length=%d transfer_id=%s' % (self.sz, self.transfer_id))
+    #     bpio.log(14, 'transport_tcp.TCPFileSender.del length=%d transfer_id=%s' % (self.sz, self.transfer_id))
 
     def close(self):
         self.parent = None
 
     def transform_data(self, data):
-        # io.log(24, 'transform_data')
+        # bpio.log(24, 'transform_data')
         datalength = len(data)
         datagram = ''
         datagram += struct.pack('i', self.parent.file_id)
@@ -424,7 +424,7 @@ class FileSender(basic.FileSender):
                 if self.deferred:
                     self.deferred.errback(self.lastSent)
                     self.deferred = None
-                io.exception()
+                bpio.exception()
         if not chunk:
             self.file = None
             self.consumer.unregisterProducer()

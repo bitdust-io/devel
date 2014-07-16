@@ -18,7 +18,7 @@ Suppliers and customers comes from Central server,
 list of correspondents are managed by user and also can be stored on Central server (not done yet). 
 """
 
-import io
+import bpio
 
 #-------------------------------------------------------------------------------
 
@@ -239,25 +239,25 @@ def save_suppliers(path):
     """
     Write current suppliers list on the disk, ``path`` is a file path to save.
     """
-    io._write_list(path, suppliers())
+    bpio._write_list(path, suppliers())
 
 def save_customers(path):
     """
     Write current customers list on the disk, ``path`` is a file path to save.
     """
-    io._write_list(path, customers())
+    bpio._write_list(path, customers())
     
 def save_correspondents(path):
     """
     Write current correspondents list on the disk, ``path`` is a file path to save.
     """
-    io._write_list(path, correspondents())
+    bpio._write_list(path, correspondents())
 
 def load_suppliers(path):
     """
     Load suppliers list from disk.
     """
-    lst = io._read_list(path)
+    lst = bpio._read_list(path)
     if lst is None:
         lst = list()
     set_suppliers(lst)
@@ -266,7 +266,7 @@ def load_customers(path):
     """
     Load customers list from disk.
     """
-    lst = io._read_list(path)
+    lst = bpio._read_list(path)
     if lst is None:
         lst = list()
     set_customers(lst)
@@ -275,7 +275,7 @@ def load_correspondents(path):
     """
     Load correspondents list from disk.
     """
-    lst = io._read_list(path)
+    lst = bpio._read_list(path)
     if lst is None:
         lst = list()
     set_correspondents(lst)

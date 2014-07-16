@@ -26,7 +26,7 @@ except:
 
 from twisted.internet import threads
 
-import io
+import bpio
 import diskspace
 
 #------------------------------------------------------------------------------ 
@@ -45,7 +45,7 @@ def ask(dirpath, callback=None, arg=None):
     """
     global _Jobs
     global _Dirs
-    io.log(6, 'dirsize.ask %s' % dirpath)
+    bpio.log(6, 'dirsize.ask %s' % dirpath)
     if _Jobs.has_key(dirpath):
         return 'counting size'
     if not os.path.isdir(dirpath):
@@ -53,7 +53,7 @@ def ask(dirpath, callback=None, arg=None):
         if callback:
             reactor.callLater(0, callback, 'not exist', arg)
         return 'not exist'
-    d = threads.deferToThread(io.getDirectorySize, dirpath)
+    d = threads.deferToThread(bpio.getDirectorySize, dirpath)
     d.addCallback(done, dirpath)
     _Jobs[dirpath] = (d, callback, arg)
     _Dirs[dirpath] = 'counting size'
@@ -65,14 +65,14 @@ def done(size, dirpath):
     """
     global _Dirs
     global _Jobs
-    io.log(6, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
+    bpio.log(6, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
     _Dirs[dirpath] = str(size)
     try:
         (d, cb, arg) = _Jobs.pop(dirpath, (None, None, None))
         if cb:
             cb(dirpath, size, arg)
     except:
-        io.exception()
+        bpio.exception()
     
 def get(dirpath, default=''):
     """
@@ -116,7 +116,7 @@ def main():
     def _done(path, sz, arg):
         print path, sz
         reactor.stop()
-    io.init()
+    bpio.init()
     ask(sys.argv[1], _done)
     reactor.run()
 

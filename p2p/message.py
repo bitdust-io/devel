@@ -63,7 +63,7 @@ except:
 from twisted.internet.defer import Deferred
 
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.signed_packet as signed_packet
 import lib.contacts as contacts
@@ -90,7 +90,7 @@ OnIncommingMessageFunc = None
 
 
 def init():
-    io.log(4,"message.init")
+    bpio.log(4,"message.init")
 ##    guimessage.UpdateCorrespondents()
 
 def ConnectCorrespondent(idurl):
@@ -105,7 +105,7 @@ class MessageClass:
     We always encrypt messages with a session key so we need to package with encrypted body.
     """
     def __init__(self, destinationidentity, messagebody):
-        io.log(8, "message.MessageClass making message ")
+        bpio.log(8, "message.MessageClass making message ")
         sessionkey = crypto.NewSessionKey()
         keystring = destinationidentity.publickey
         self.encryptedKey = crypto.EncryptStringPK(keystring, sessionkey)
@@ -126,14 +126,14 @@ def Message(request):
         5) send an "Ack" back to sender
     """
     global OnIncommingMessageFunc
-    io.log(6, "message.Message from " + str(request.OwnerID))
+    bpio.log(6, "message.Message from " + str(request.OwnerID))
     senderidentity = contacts.getCorrespondent(request.OwnerID)
     if not senderidentity:
-        io.log(4,"message.Message WARNING had sender not in correspondents list " + request.OwnerID)
+        bpio.log(4,"message.Message WARNING had sender not in correspondents list " + request.OwnerID)
         return
     Amessage = misc.StringToObject(request.Payload)
     if Amessage is None:
-        io.log(4,"message.Message WARNING wrong Payload, can not extract message from request")
+        bpio.log(4,"message.Message WARNING wrong Payload, can not extract message from request")
         return
     clearmessage = Amessage.ClearBody()
     SaveMessage(clearmessage)
@@ -143,7 +143,7 @@ def Message(request):
     p2p_service.SendAck(request)
 
 def MakeMessage(to, subj, body, dt=datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")):
-    io.log(6, "message.MakeMessage to " + to)
+    bpio.log(6, "message.MakeMessage to " + to)
     msg = ( misc.getLocalID(),
             to,
             subj,
@@ -162,7 +162,7 @@ def SplitMessage(clearmessage):
 
 def SaveMessage(clearmessage):
     msguid = UniqueID()
-    io.log(6, "message.SaveMessage %s" % msguid)
+    bpio.log(6, "message.SaveMessage %s" % msguid)
     msgfilename = os.path.join(settings.getMessagesDir(),  msguid+'.message')
     msgfile = file(msgfilename, 'w')
     msgfile.write(str(clearmessage))
@@ -188,9 +188,9 @@ def DeleteMessage(messageuid):
     try:
         os.remove(msgpath)
     except:
-        io.exception()
+        bpio.exception()
         return False
-    io.log(6, "message.DeleteMessage %s" % messageuid)
+    bpio.log(6, "message.DeleteMessage %s" % messageuid)
     return True
 
 def SendMessage(RemoteID, messagebody, PacketID=""):
@@ -201,21 +201,21 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
     when it needs to do more than X retries.
     GUI calls this to send the message.
     """
-    io.log(6, "message.SendMessage to: " + str(RemoteID) )
+    bpio.log(6, "message.SendMessage to: " + str(RemoteID) )
     #TODO ERROR HERE (return Defer)
     if not identitycache.scheduleForCaching(RemoteID):
-        io.log(1, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
+        bpio.log(1, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
         return
     RemoteIdentity=identitycache.FromCache(RemoteID)
     if RemoteIdentity == '':
-        io.log(1, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
+        bpio.log(1, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
         return
     Amessage = MessageClass(RemoteIdentity, messagebody)
     MyID = misc.getLocalID()
     if PacketID == "":
         PacketID = packetid.UniqueID()
     Payload = misc.ObjectToString(Amessage)
-    io.log(6, "message.SendMessage  about to send to " + RemoteID)
+    bpio.log(6, "message.SendMessage  about to send to " + RemoteID)
     result = signed_packet.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
     # transport_control.outboxAck(result)
     gate.outbox(result)

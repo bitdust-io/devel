@@ -28,13 +28,13 @@ import sys
 # import subprocess
 
 try:
-    import lib.io as io
+    import lib.bpio as bpio
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
     try:
-        import lib.io as io
+        import lib.bpio as bpio
     except:
         sys.exit()
 
@@ -49,16 +49,16 @@ def backuptar(directorypath, recursive_subfolders=True, compress=None):
     In other words executes a child process and create a Pipe to communicate with it.
     """
     if not os.path.isdir(directorypath):
-        io.log(1, 'backup_tar.backuptar ERROR %s not found' % directorypath)
+        bpio.log(1, 'backup_tar.backuptar ERROR %s not found' % directorypath)
         return None
     subdirs = 'subdirs'
     if not recursive_subfolders:
         subdirs = 'nosubdirs'
     if compress is None:
         compress = 'none'
-    # io.log(14, "backup_tar.backuptar %s %s compress=%s" % (directorypath, subdirs, compress))
-    if io.Windows():
-        if io.isFrozen():
+    # bpio.log(14, "backup_tar.backuptar %s %s compress=%s" % (directorypath, subdirs, compress))
+    if bpio.Windows():
+        if bpio.isFrozen():
             commandpath = "bppipe.exe"
             cmdargs = [commandpath, subdirs, compress, directorypath]
         else:
@@ -68,9 +68,9 @@ def backuptar(directorypath, recursive_subfolders=True, compress=None):
         commandpath = "bppipe.py"
         cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath]
     if not os.path.isfile(commandpath):
-        io.log(1, 'backup_tar.backuptar ERROR %s not found' % commandpath)
+        bpio.log(1, 'backup_tar.backuptar ERROR %s not found' % commandpath)
         return None
-    # io.log(14, "backup_tar.backuptar going to execute %s" % str(cmdargs))
+    # bpio.log(14, "backup_tar.backuptar going to execute %s" % str(cmdargs))
     # p = run(cmdargs)
     p = child_process.pipe(cmdargs)
     return p
@@ -82,13 +82,13 @@ def backuptarfile(filepath, compress=None):
     But tar archive is created from single file, not folder.
     """
     if not os.path.isfile(filepath):
-        io.log(1, 'backup_tar.backuptarfile ERROR %s not found' % filepath)
+        bpio.log(1, 'backup_tar.backuptarfile ERROR %s not found' % filepath)
         return None
     if compress is None:
         compress = 'none'
-    # io.log(14, "backup_tar.backuptarfile %s compress=%s" % (filepath, compress))
-    if io.Windows():
-        if io.isFrozen():
+    # bpio.log(14, "backup_tar.backuptarfile %s compress=%s" % (filepath, compress))
+    if bpio.Windows():
+        if bpio.isFrozen():
             commandpath = "bppipe.exe"
             cmdargs = [commandpath, 'nosubdirs', compress, filepath]
         else:
@@ -98,9 +98,9 @@ def backuptarfile(filepath, compress=None):
         commandpath = "bppipe.py"
         cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath]
     if not os.path.isfile(commandpath):
-        io.log(1, 'backup_tar.backuptarfile ERROR %s not found' % commandpath)
+        bpio.log(1, 'backup_tar.backuptarfile ERROR %s not found' % commandpath)
         return None
-    # io.log(12, "backup_tar.backuptarfile going to execute %s" % str(cmdargs))
+    # bpio.log(12, "backup_tar.backuptarfile going to execute %s" % str(cmdargs))
     # p = run(cmdargs)
     p = child_process.pipe(cmdargs)
     return p
@@ -111,11 +111,11 @@ def extracttar(tarfile, outdir):
     Opposite method, run bppipe to extract files and folders from ".tar" file.
     """
     if not os.path.isfile(tarfile):
-        io.log(1, 'backup_tar.extracttar ERROR %s not found' % tarfile)
+        bpio.log(1, 'backup_tar.extracttar ERROR %s not found' % tarfile)
         return None
-    # io.log(12, "backup_tar.extracttar %s %s" % (tarfile, outdir))
-    if io.Windows():
-        if io.isFrozen():
+    # bpio.log(12, "backup_tar.extracttar %s %s" % (tarfile, outdir))
+    if bpio.Windows():
+        if bpio.isFrozen():
             commandpath = 'bppipe.exe'
             cmdargs = [commandpath, 'extract', tarfile, outdir]
         else:
@@ -125,7 +125,7 @@ def extracttar(tarfile, outdir):
         commandpath = "bppipe.py"
         cmdargs = [sys.executable, commandpath, 'extract', tarfile, outdir]
     if not os.path.isfile(commandpath):
-        io.log(1, 'backup_tar.extracttar ERROR %s is not found' % commandpath)
+        bpio.log(1, 'backup_tar.extracttar ERROR %s is not found' % commandpath)
         return None
     # p = run(cmdargs)
     p = child_process.pipe(cmdargs)
@@ -135,7 +135,7 @@ def extracttar(tarfile, outdir):
 #------------------------------------------------------------------------------ 
 
 if __name__ == "__main__":
-    io.SetDebug(20)
+    bpio.SetDebug(20)
     p = backuptar(sys.argv[1])
     p.make_nonblocking()
     print p

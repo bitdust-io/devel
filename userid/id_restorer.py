@@ -46,7 +46,7 @@ from twisted.internet.task import LoopingCall
 
 import lib.automat as automat
 import lib.automats as automats
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.settings as settings
 import lib.crypto as crypto
@@ -163,49 +163,49 @@ class IdRestorer(automat.Automat):
     def doRequestMyIdentity(self, arg):
         global _WorkingIDURL
         idurl = _WorkingIDURL
-        io.log(4, 'identity_restorer.doRequestMyIdentity %s' % idurl)
+        bpio.log(4, 'identity_restorer.doRequestMyIdentity %s' % idurl)
         net_misc.getPageTwisted(idurl).addCallbacks(
             lambda src: self.automat('my-id-received', src),
             lambda err: self.automat('my-id-failed', err))
     
     def doVerifyAndRestore(self, arg):
         global _WorkingKey
-        io.log(4, 'identity_restorer.doVerifyAndRestore')
+        bpio.log(4, 'identity_restorer.doVerifyAndRestore')
     
         remote_identity_src = arg
 
         if os.path.isfile(settings.KeyFileName()):
-            io.log(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.KeyFileName())
-            io.backup_and_remove(settings.KeyFileName())
+            bpio.log(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.KeyFileName())
+            bpio.backup_and_remove(settings.KeyFileName())
 
         if os.path.isfile(settings.LocalIdentityFilename()):    
-            io.log(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.LocalIdentityFilename())
-            io.backup_and_remove(settings.LocalIdentityFilename())
+            bpio.log(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.LocalIdentityFilename())
+            bpio.backup_and_remove(settings.LocalIdentityFilename())
     
         try:
             remote_ident = identity.identity(xmlsrc = remote_identity_src)
             local_ident = identity.identity(xmlsrc = remote_identity_src)
         except:
-            # io.exception()
+            # bpio.exception()
             reactor.callLater(0.5, self.automat, 'restore-failed', ('remote identity have incorrect format', 'red'))
             return
     
         try:
             res = remote_ident.Valid()
         except:
-            io.exception()
+            bpio.exception()
             res = False
         if not res:
             reactor.callLater(0.5, self.automat, 'restore-failed', ('remote identity is not valid', 'red'))
             return
     
         crypto.ForgetMyKey()
-        io.WriteFile(settings.KeyFileName(), _WorkingKey)
+        bpio.WriteFile(settings.KeyFileName(), _WorkingKey)
         try:
             crypto.InitMyKey()
         except:
             crypto.ForgetMyKey()
-            # io.exception()
+            # bpio.exception()
             try:
                 os.remove(settings.KeyFileName())
             except:
@@ -216,7 +216,7 @@ class IdRestorer(automat.Automat):
         try:
             local_ident.sign()
         except:
-            # io.exception()
+            # bpio.exception()
             reactor.callLater(0.5, self.automat, 'restore-failed', ('error while signing identity', 'red'))
             return
     
@@ -227,22 +227,22 @@ class IdRestorer(automat.Automat):
         misc.setLocalIdentity(local_ident)
         misc.saveLocalIdentity()
     
-        io.WriteFile(settings.UserNameFilename(), misc.getIDName())
+        bpio.WriteFile(settings.UserNameFilename(), misc.getIDName())
     
         if os.path.isfile(settings.KeyFileName()+'.backup'):
-            io.log(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.KeyFileName())
-            io.remove_backuped_file(settings.KeyFileName())
+            bpio.log(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.KeyFileName())
+            bpio.remove_backuped_file(settings.KeyFileName())
 
         if os.path.isfile(settings.LocalIdentityFilename()+'.backup'):
-            io.log(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.LocalIdentityFilename())
-            io.remove_backuped_file(settings.LocalIdentityFilename())
+            bpio.log(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.LocalIdentityFilename())
+            bpio.remove_backuped_file(settings.LocalIdentityFilename())
 
         reactor.callLater(0.5, self.automat, 'restore-success')
         
     def doRestoreSave(self, arg):
         settings.uconfig().set('central-settings.desired-suppliers', '0')
         settings.uconfig().set('central-settings.needed-megabytes', '0Mb')
-        settings.uconfig().set('central-settings.shared-megabytes', '0Mb')
+        settings.uconfig().set('central-settings.donated-megabytes', '0Mb')
         settings.uconfig().update()
 
     def doPrint(self, arg):

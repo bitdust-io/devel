@@ -53,7 +53,7 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
 try:
-    import lib.io as io
+    import lib.bpio as bpio
     from lib.signed_packet import Unserialize
     from lib.nameurl import FilenameUrl
     from lib.settings import init as settings_init
@@ -77,7 +77,7 @@ def SpaceTime():
     Check if he use more space than we gave him and if packets is too old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space = io._read_dict(CustomersSpaceFile())
+    space = bpio._read_dict(CustomersSpaceFile())
     if space is None:
         printlog('SpaceTime ERROR can not read file ' + CustomersSpaceFile())
         return
@@ -116,7 +116,7 @@ def SpaceTime():
             stats = os.stat(path)
             timedict[path] = stats.st_ctime
             sizedict[path] = stats.st_size
-        io.traverse_dir_recursive(cb, onecustdir)
+        bpio.traverse_dir_recursive(cb, onecustdir)
         currentV = 0
         for path in sorted(timedict.keys(), key=lambda x:timedict[x], reverse=True):
             filesize = sizedict.get(path, 0)
@@ -128,7 +128,7 @@ def SpaceTime():
                 printlog('SpaceTime ' + path + ' file removed (cur:%s, max: %s)' % (str(currentV), str(maxspaceV)) )
             except:
                 printlog('SpaceTime ERROR removing ' + path)
-            time.sleep(0.01)
+            # time.sleep(0.01)
         used_space[idurl] = str(currentV)
         timedict.clear()
         sizedict.clear()
@@ -137,7 +137,7 @@ def SpaceTime():
             continue
         if os.path.isdir(path):
             try:
-                io._dir_remove(path)
+                bpio._dir_remove(path)
                 printlog('SpaceTime ' + path + ' dir removed (%s)' % (remove_list[path]))
             except:
                 printlog('SpaceTime ERROR removing ' + path)
@@ -150,7 +150,7 @@ def SpaceTime():
         except:
             printlog('SpaceTime ERROR removing ' + path)
     del remove_list
-    io._write_dict(CustomersUsedSpaceFile(), used_space)
+    bpio._write_dict(CustomersUsedSpaceFile(), used_space)
 
 #------------------------------------------------------------------------------
 
@@ -159,7 +159,7 @@ def UpdateCustomers():
     Test packets after list of customers was changed.
     """
     printlog('UpdateCustomers ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space = io._read_dict(CustomersSpaceFile())
+    space = bpio._read_dict(CustomersSpaceFile())
     if space is None:
         printlog('UpdateCustomers ERROR space file can not read' )
         return
@@ -186,7 +186,7 @@ def UpdateCustomers():
             continue
         if os.path.isdir(path):
             try:
-                io._dir_remove(path)
+                bpio._dir_remove(path)
                 printlog('UpdateCustomers ' + path + ' folder removed (%s)' % (remove_list[path]))
             except:
                 printlog('UpdateCustomers ERROR removing ' + path)
@@ -222,7 +222,7 @@ def Validate():
                 return True
             if name in [BackupIndexFileName(),]:
                 return False
-            packetsrc = io.ReadBinaryFile(path)
+            packetsrc = bpio.ReadBinaryFile(path)
             if not packetsrc:
                 try:
                     os.remove(path) # if is is no good it is of no use to anyone
@@ -248,9 +248,9 @@ def Validate():
                 except:
                     printlog('Validate ERROR removing ' + path)
                     return False
-            time.sleep(0.1)
+            # time.sleep(0.1)
             return False
-        io.traverse_dir_recursive(cb, onecustdir)
+        bpio.traverse_dir_recursive(cb, onecustdir)
 
 #------------------------------------------------------------------------------
 
@@ -260,15 +260,15 @@ def main():
     """
     if len(sys.argv) < 2:
         return
-    io.init()
-    io.DisableLogs()
-    io.DisableOutput()
+    bpio.init()
+    bpio.DisableLogs()
+    bpio.DisableOutput()
     settings_init()
-    io.SetDebug(0)
-    io.LowerPriority()
-#    io.OpenLogFile(LocalTesterLogFilename(), True)
-#    io.StdOutRedirectingStart()
-#    io.LifeBegins()
+    bpio.SetDebug(0)
+    bpio.LowerPriority()
+#    bpio.OpenLogFile(LocalTesterLogFilename(), True)
+#    bpio.StdOutRedirectingStart()
+#    bpio.LifeBegins()
     commands = {
         'update_customers' : UpdateCustomers,
         'validate' : Validate,
@@ -279,8 +279,8 @@ def main():
         printlog('ERROR wrong command: ' + str(sys.argv))
         return
     cmd()
-#    io.StdOutRedirectingStop()
-#    io.CloseLogFile()
+#    bpio.StdOutRedirectingStop()
+#    bpio.CloseLogFile()
 
 #------------------------------------------------------------------------------ 
 

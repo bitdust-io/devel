@@ -114,7 +114,7 @@ from xml.dom.minidom import getDOMImplementation
 
 
 import lib.settings as settings
-import lib.io as io
+import lib.bpio as bpio
 import lib.nameurl as nameurl
 import lib.crypto as crypto
 
@@ -194,7 +194,7 @@ class identity:
             self.unserialize(xmlsrc)
 
         if filename != '':
-            self.unserialize(io.ReadTextFile(filename))
+            self.unserialize(bpio.ReadTextFile(filename))
             
         if xmlsrc is None and filename == '':
             self.default()
@@ -509,9 +509,9 @@ class identity:
         hashcode = self.makehash()
         self.signature = crypto.Sign(hashcode)
 ##        if self.Valid():
-##            io.log(12, "identity.sign tested after making and it looks good")
+##            bpio.log(12, "identity.sign tested after making and it looks good")
 ##        else:
-##            io.log(1, "identity.sign ERROR tested after making sign ")
+##            bpio.log(1, "identity.sign ERROR tested after making sign ")
 ##            raise Exception("sign fails")
 
     def Valid(self):
@@ -533,8 +533,8 @@ class identity:
         try:
             doc = minidom.parseString(xmlsrc)
         except:
-            io.exception()
-            io.log(2, '\n'+xmlsrc[:256]+'\n')
+            bpio.exception()
+            bpio.log(2, '\n'+xmlsrc[:256]+'\n')
             return
         self.clear_data()
         self.from_xmlobj(doc.documentElement)
@@ -667,7 +667,7 @@ class identity:
                         if (xkey.nodeType == Node.TEXT_NODE):
                             self.signature=xkey.wholeText.strip().encode()
         except:
-            io.exception()
+            bpio.exception()
 
 #-------------------------------------------------------------------------------
 
@@ -677,9 +677,9 @@ def makeDefaultIdentity(name='', ip=''):
     Nice to provide a user name or it will have a form like: [ip address]_[date].     
     """
     import lib.misc
-    io.log(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
+    bpio.log(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
     if ip == '':
-        ip = io.ReadTextFile(settings.ExternalIPFilename())
+        ip = bpio.ReadTextFile(settings.ExternalIPFilename())
     if name == '':
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
     servername = settings.IdentityServerName()
@@ -702,9 +702,9 @@ def makeDefaultIdentity(name='', ip=''):
     ident.date = time.strftime('%b %d, %Y')
     ident.postage = "1"
 
-    revnum = io.ReadTextFile(settings.RevisionNumberFile())
+    revnum = bpio.ReadTextFile(settings.RevisionNumberFile())
     repo, location = lib.misc.ReadRepoLocation()
-    ident.version = (revnum.strip() + ' ' + repo.strip() + ' ' + io.osinfo().strip()).strip()
+    ident.version = (revnum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
 
     ident.sign()
 
@@ -774,9 +774,9 @@ def update():
     A good way to check all things - load and sign again.
     """
     import lib.misc
-    io.init()
+    bpio.init()
     settings.init()
-    src = io.ReadTextFile(settings.LocalIdentityFilename())
+    src = bpio.ReadTextFile(settings.LocalIdentityFilename())
     lib.misc.setLocalIdentity(identity(xmlsrc=src))
     lib.misc.getLocalIdentity().sign()
     lib.misc.saveLocalIdentity()
@@ -786,7 +786,7 @@ def update():
 
 
 if __name__ == '__main__':
-    io.SetDebug(18)
+    bpio.SetDebug(18)
     main()
 
 

@@ -16,7 +16,7 @@ import time
 from twisted.internet import reactor, threads
 
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.tmpfile as tmpfile
 
 import restore
@@ -34,7 +34,7 @@ OnRestoreBlockFunc = None
 #------------------------------------------------------------------------------ 
 
 def init():
-    io.log(4, 'restore_monitor.init')
+    bpio.log(4, 'restore_monitor.init')
 
 
 def block_restored_callback(backupID, block):
@@ -44,7 +44,7 @@ def block_restored_callback(backupID, block):
 
 
 def packet_in_callback(backupID, newpacket):
-    # io.log(8, 'restore_monitor.packet_in_callback ' + backupID)
+    # bpio.log(8, 'restore_monitor.packet_in_callback ' + backupID)
     global _WorkingRestoreProgress
     global OnRestorePacketFunc
     
@@ -62,7 +62,7 @@ def packet_in_callback(backupID, newpacket):
 
 
 def extract_done(retcode, backupID, tarfilename, callback):
-    io.log(8, 'restore_monitor.extract_done %s result: %s' % (backupID, str(retcode)))
+    bpio.log(8, 'restore_monitor.extract_done %s result: %s' % (backupID, str(retcode)))
     global OnRestoreDoneFunc
     
     _WorkingBackupIDs.pop(backupID, None)
@@ -78,7 +78,7 @@ def extract_done(retcode, backupID, tarfilename, callback):
 
 
 def restore_done(x, tarfilename, outputlocation, callback):
-    io.log(8, 'restore_monitor.restore_done ' + str(x))
+    bpio.log(8, 'restore_monitor.restore_done ' + str(x))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
@@ -106,7 +106,7 @@ def restore_done(x, tarfilename, outputlocation, callback):
 
 
 def restore_failed(x, tarfilename, callback):
-    io.log(8, 'restore_monitor.restore_failed ' + str(x))
+    bpio.log(8, 'restore_monitor.restore_failed ' + str(x))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
@@ -127,7 +127,7 @@ def restore_failed(x, tarfilename, callback):
 
 
 def Start(backupID, outputLocation, callback=None):
-    io.log(8, 'restore_monitor.Start %s to %s' % (backupID, outputLocation))
+    bpio.log(8, 'restore_monitor.Start %s to %s' % (backupID, outputLocation))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     if backupID in _WorkingBackupIDs.keys():
@@ -144,7 +144,7 @@ def Start(backupID, outputLocation, callback=None):
 
 
 def Abort(backupID):
-    io.log(8, 'restore_monitor.Abort %s' % backupID)
+    bpio.log(8, 'restore_monitor.Abort %s' % backupID)
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     if not backupID in _WorkingBackupIDs.keys():

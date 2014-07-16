@@ -23,7 +23,7 @@ import time
 from twisted.internet import reactor, task
 
 
-import io
+import bpio
 
 
 _TempDirPath = None
@@ -76,7 +76,7 @@ def init(temp_dir_path=''):
         - call ``startup_clean()``
         - starts collector task to call method ``collect()`` every 5 minutes
     """
-    io.log(4, 'tmpfile.init')
+    bpio.log(4, 'tmpfile.init')
     global _TempDirPath
     global _SubDirs
     global _FilesDict
@@ -93,24 +93,24 @@ def init(temp_dir_path=''):
                 try:
                     os.mkdir(temp_dir)
                 except:
-                    io.log(2, 'tmpfile.init ERROR can not create ' + temp_dir)
-                    io.exception()
+                    bpio.log(2, 'tmpfile.init ERROR can not create ' + temp_dir)
+                    bpio.exception()
                     temp_dir = os_temp_dir
 
             if not os.access(temp_dir, os.W_OK):
-                io.log(2, 'tmpfile.init ERROR no write permissions to ' + temp_dir)
+                bpio.log(2, 'tmpfile.init ERROR no write permissions to ' + temp_dir)
                 temp_dir = os_temp_dir
 
             _TempDirPath = temp_dir
-        io.log(6, 'tmpfile.init  _TempDirPath=' + _TempDirPath)
+        bpio.log(6, 'tmpfile.init  _TempDirPath=' + _TempDirPath)
 
     for name in _SubDirs.keys():
         if not os.path.exists(subdir(name)):
             try:
                 os.makedirs(subdir(name))
             except:
-                io.log(2, 'tmpfile.init ERROR can not create ' + subdir(name))
-                io.exception()
+                bpio.log(2, 'tmpfile.init ERROR can not create ' + subdir(name))
+                bpio.exception()
 
     for name in _SubDirs.keys():
         if not _FilesDict.has_key(name):
@@ -127,7 +127,7 @@ def shutdown():
     """
     Do not need to remove any files here, just stop the collector task.
     """
-    io.log(4, 'tmpfile.shutdown')
+    bpio.log(4, 'tmpfile.shutdown')
     global _CollectorTask
     if _CollectorTask is not None:
         _CollectorTask.stop()
@@ -173,10 +173,10 @@ def make(name, extension='', prefix=''):
         fd, filename = tempfile.mkstemp(extension, prefix, subdir(name))
         _FilesDict[name][filename] = time.time()
     except:
-        io.log(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
-        io.exception()
+        bpio.log(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
+        bpio.exception()
         return None, ''
-    io.log(18, 'tmpfile.make ' + filename)
+    bpio.log(18, 'tmpfile.make ' + filename)
     return fd, filename
 
 
@@ -190,24 +190,24 @@ def erase(name, filename, why='no reason'):
         try:
             _FilesDict[name].pop(filename, '')
         except:
-            io.log(4, 'tmpfile.erase WARNING we do not know about file %s in sub folder %s' %(filename, name))
+            bpio.log(4, 'tmpfile.erase WARNING we do not know about file %s in sub folder %s' %(filename, name))
     else:
-        io.log(4, 'tmpfile.erase WARNING we do not know sub folder ' + name)
+        bpio.log(4, 'tmpfile.erase WARNING we do not know sub folder ' + name)
 
     if not os.path.exists(filename):
-        io.log(6, 'tmpfile.erase WARNING %s not exist' % filename)
+        bpio.log(6, 'tmpfile.erase WARNING %s not exist' % filename)
         return
 
     if not os.access(filename, os.W_OK):
-        io.log(4, 'tmpfile.erase WARNING %s no write permissions' % filename)
+        bpio.log(4, 'tmpfile.erase WARNING %s no write permissions' % filename)
         return
 
     try:
         os.remove(filename)
-        # io.log(24, 'tmpfile.erase [%s] : "%s"' % (filename, why))
+        # bpio.log(24, 'tmpfile.erase [%s] : "%s"' % (filename, why))
     except:
-        io.log(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
-        #io.exception()
+        bpio.log(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
+        #bpio.exception()
 
 
 def throw_out(filepath, why='dont know'):
@@ -225,7 +225,7 @@ def collect():
     """
     Removes old temporary files.
     """
-    # io.log(10, 'tmpfile.collect')
+    # bpio.log(10, 'tmpfile.collect')
     global _FilesDict
     global _SubDirs
     erase_list = []
@@ -250,7 +250,7 @@ def collect():
     for name, filename in erase_list:
         erase(name, filename, 'collected')
 
-    io.log(6, 'tmpfile.collect %d files erased' % len(erase_list))
+    bpio.log(6, 'tmpfile.collect %d files erased' % len(erase_list))
 
     del erase_list
 
@@ -262,7 +262,7 @@ def startup_clean():
     """
     global _TempDirPath
     global _SubDirs
-    io.log(6, 'tmpfile.startup_clean in %s' % _TempDirPath)
+    bpio.log(6, 'tmpfile.startup_clean in %s' % _TempDirPath)
     if _TempDirPath is None:
         return
     counter = 0
@@ -295,7 +295,7 @@ def startup_clean():
 
 
 if __name__ == '__main__':
-    io.SetDebug(18)
+    bpio.SetDebug(18)
     init()
     fd, filename = make('raid')
     os.write(fd, 'TEST FILE')

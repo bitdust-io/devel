@@ -21,7 +21,7 @@ import os
 
 
 import userconfig
-import io
+import bpio
 import eccmap
 import maths
 import diskspace
@@ -63,9 +63,9 @@ def _init(base_dir=None):
         - Validate most important user settings
         - Check custom folders 
     """
-    io.log(4, 'settings._init')
+    bpio.log(4, 'settings._init')
     _initBaseDir(base_dir)
-    io.log(2, 'settings._init data location: ' + BaseDir())
+    bpio.log(2, 'settings._init data location: ' + BaseDir())
     _checkMetaDataDirectory()
     uconfig()
     _checkStaticDirectories()
@@ -95,12 +95,12 @@ def uconfig(key=None):
     #init()
     if _UserConfig is None:
         if os.path.exists(os.path.join(MetaDataDir(),"user-config")) and not os.path.exists(os.path.join(MetaDataDir(),"userconfig")):
-            io.log(4, 'settings.uconfig rename "user-config" to "userconfig"')
+            bpio.log(4, 'settings.uconfig rename "user-config" to "userconfig"')
             try:
                 os.rename(os.path.join(MetaDataDir(),"user-config"), os.path.join(MetaDataDir(),"userconfig"))
             except:
                 pass
-        io.log(6, 'settings.uconfig loading user configuration from: ' + UserConfigFilename())
+        bpio.log(6, 'settings.uconfig loading user configuration from: ' + UserConfigFilename())
         _UserConfig = userconfig.UserConfig(UserConfigFilename())
     if key is None:
         return _UserConfig
@@ -118,7 +118,7 @@ def override(key, value):
     Useful when user pass some params via command line - they should override the local settings.
     """
     global _OverrideDict
-    io.log(4, 'settings.override %s=%s' % (key, value))
+    bpio.log(4, 'settings.override %s=%s' % (key, value))
     _OverrideDict[key] = value
 
 def override_dict(d):
@@ -511,11 +511,11 @@ def GetBaseDir():
     """
     A portable method to get the default data folder location.  
     """
-    if io.Windows():
+    if bpio.Windows():
         return BaseDirWindows()
-    elif io.Linux():
+    elif bpio.Linux():
         return BaseDirLinux()
-    elif io.Mac():
+    elif bpio.Mac():
         return BaseDirMac()
     return BaseDirDefault()
 
@@ -533,7 +533,7 @@ def BaseDirPathFileName():
     Say you want to store BitPie.NET files on another disk.
     In the binary folder file "basedir.txt" can be created and it will keep the path to the data folder. 
     """
-    return os.path.join(io.getExecutableDir(), 'basedir.txt')
+    return os.path.join(bpio.getExecutableDir(), 'basedir.txt')
 
 def RestoreDir():
     """
@@ -648,7 +648,7 @@ def CSpaceSettingsDir():
     """
     This is a CSpace settings folder location.
     """
-    if io.Windows():
+    if bpio.Windows():
         return os.path.join(CSpaceDir(), '_CSpace', 'Settings')
     else:
         return os.path.join(CSpaceDir(), '.CSpace', 'Settings')
@@ -657,7 +657,7 @@ def CSpaceProfilesDir():
     """
     This is a CSpace profiles folder location.
     """
-    if io.Windows():
+    if bpio.Windows():
         return os.path.join(CSpaceDir(), '_CSpaceProfiles')
     else:
         return os.path.join(CSpaceDir(), '.CSpaceProfiles')
@@ -901,7 +901,7 @@ def RevisionNumberFile():
     This is a sort of "product version".
     Probably not very best idea, we need to use a widely used software version format. 
     """
-    return os.path.join(io.getExecutableDir(), 'revnum.txt')
+    return os.path.join(bpio.getExecutableDir(), 'revnum.txt')
 
 def CustomersSpaceFile():
     """
@@ -928,7 +928,7 @@ def CertificateFiles():
     """
     return [    os.path.join(MetaDataDir(), 'bitpie.cer'),
                 os.path.join('.', 'bitpie.cer'),
-                os.path.join(io.getExecutableDir() ,'bitpie.cer'),]
+                os.path.join(bpio.getExecutableDir() ,'bitpie.cer'),]
 
 def CSpaceSavedProfileFile():
     """
@@ -974,7 +974,7 @@ def getIconLaunchFilename():
     Not used.
     For Windows platforms this should target to executable file to run when clicked on Desktop icon. 
     """
-    return os.path.join(io.getExecutableDir(), 'bpmain.exe')
+    return os.path.join(bpio.getExecutableDir(), 'bpmain.exe')
 
 def getIconLinkFilename():
     """
@@ -996,13 +996,13 @@ def IconsFolderPath():
     maybe we better use another name: "media",
     because we may need not only "icons" but also other data files
     """
-    return os.path.join(io.getExecutableDir(), 'icons')
+    return os.path.join(bpio.getExecutableDir(), 'icons')
 
 def FontsFolderPath():
     """
     A folder name where application "fons" is stored. 
     """
-    return os.path.join(io.getExecutableDir(), 'fonts')
+    return os.path.join(bpio.getExecutableDir(), 'fonts')
 
 def FontImageFile():
     """
@@ -1211,15 +1211,15 @@ def update_proxy_settings():
             net_misc.set_proxy_settings(d)
             setProxySettings(d)
             enableProxy(d.get('host', '') != '')
-            io.log(2, 'settings.update_proxy_settings UPDATED!!!')
+            bpio.log(2, 'settings.update_proxy_settings UPDATED!!!')
         else:
             net_misc.set_proxy_settings(getProxySettingsDict())
-        io.log(4, 'settings.update_proxy_settings')
-        io.log(4, 'HOST:      ' + net_misc.get_proxy_host())
-        io.log(4, 'PORT:      ' + str(net_misc.get_proxy_port()))
-        io.log(4, 'USERNAME:  ' + net_misc.get_proxy_username())
-        io.log(4, 'PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
-        io.log(4, 'SSL:       ' + net_misc.get_proxy_ssl())
+        bpio.log(4, 'settings.update_proxy_settings')
+        bpio.log(4, 'HOST:      ' + net_misc.get_proxy_host())
+        bpio.log(4, 'PORT:      ' + str(net_misc.get_proxy_port()))
+        bpio.log(4, 'USERNAME:  ' + net_misc.get_proxy_username())
+        bpio.log(4, 'PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
+        bpio.log(4, 'SSL:       ' + net_misc.get_proxy_ssl())
 
 #------------------------------------------------------------------------------ 
 #---OTHER USER CONFIGURATIONS---------------------------------------------------------------------------
@@ -1464,7 +1464,7 @@ def getDebugLevel():
     try:
         res = int(getDebugLevelStr())
     except:
-        res = io.DebugLevel
+        res = bpio.DebugLevel
     return res
 
 def setDebugLevel(level):
@@ -1525,7 +1525,7 @@ def getECC():
     """
     Get ecc map name from current suppliers number. 
     """
-    snum = getCentralNumSuppliers()
+    snum = getDesiredSuppliersNumber()
     if snum < 0:
         return DefaultEccMapName()
     ecc = eccmap.GetEccMapName(snum)
@@ -1541,7 +1541,7 @@ def getECCSuppliersNumbers():
     return [2, 4, 7, 13]
     # return eccmap.SuppliersNumbers()
 
-def getCentralNumSuppliers():
+def getDesiredSuppliersNumber():
     """
     Get suppliers number from user settings.
     """
@@ -1550,17 +1550,17 @@ def getCentralNumSuppliers():
     except:
         return -1
 
-def getCentralMegabytesNeeded():
+def getMegabytesNeeded():
     """
     Get needed space in megabytes from user settings.
     """
     return uconfig('central-settings.needed-megabytes')
 
-def getCentralMegabytesDonated():
+def getMegabytesDonated():
     """
     Get donated space in megabytes from user settings.
     """
-    return uconfig('central-settings.shared-megabytes')
+    return uconfig('central-settings.donated-megabytes')
 
 def getEmergencyEmail():
     """
@@ -1839,21 +1839,21 @@ def RenameBaseDir(newdir):
         import shutil
         shutil.copytree(olddir, newdir)
     except:
-        io.exception()
+        bpio.exception()
         return False
     _BaseDirPath = newdir
-    io.log(2, 'settings.RenameBaseDir  directory was copied,  BaseDir='+BaseDir())
+    bpio.log(2, 'settings.RenameBaseDir  directory was copied,  BaseDir='+BaseDir())
     pathfilename = BaseDirPathFileName()
-    io.WriteFile(pathfilename, _BaseDirPath)
-    io.log(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
-    logfilename = io.LogFileName
-    io.CloseLogFile()
+    bpio.WriteFile(pathfilename, _BaseDirPath)
+    bpio.log(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
+    logfilename = bpio.LogFileName
+    bpio.CloseLogFile()
     try:
-        io.rmdir_recursive(olddir, True)
-        io.log(4, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
+        bpio.rmdir_recursive(olddir, True)
+        bpio.log(4, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
     except:
-        io.exception()
-    io.OpenLogFile(logfilename, True)
+        bpio.exception()
+    bpio.OpenLogFile(logfilename, True)
     return True
 
 def _initBaseDir(base_dir=None):
@@ -1867,16 +1867,16 @@ def _initBaseDir(base_dir=None):
     if base_dir is not None:
         _BaseDirPath = base_dir
         if not os.path.exists(_BaseDirPath):
-            io._dirs_make(_BaseDirPath)
+            bpio._dirs_make(_BaseDirPath)
         return
 
     # if we have a file 'basedir.txt' in current folder - take the place from there
     if os.path.isfile(BaseDirPathFileName()):
-        path = io.ReadBinaryFile(BaseDirPathFileName())
+        path = bpio.ReadBinaryFile(BaseDirPathFileName())
         if os.path.isdir(path):
             _BaseDirPath = path
             if not os.path.exists(_BaseDirPath):
-                io._dirs_make(_BaseDirPath)
+                bpio._dirs_make(_BaseDirPath)
             return
 
     # get the default place for thet machine
@@ -1886,7 +1886,7 @@ def _initBaseDir(base_dir=None):
     # /..
     #   /.bitpie - data files
     #   /bitpie  - binary files
-    path1 = str(os.path.abspath(os.path.join(io.getExecutableDir(), '..', '.bitpie')))
+    path1 = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), '..', '.bitpie')))
     # and default path will have lower priority
     path2 = default_path
     
@@ -1901,42 +1901,42 @@ def _initBaseDir(base_dir=None):
     if not os.path.isdir(MetaDataDir()):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            io._dirs_make(_BaseDirPath)
+            bpio._dirs_make(_BaseDirPath)
         return
     
     # if we did not found our key - use default path, new copy of BitPie.NET
     if not os.access(KeyFileName(), os.R_OK) or not os.access(KeyFileNameLocation(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            io._dirs_make(_BaseDirPath)
+            bpio._dirs_make(_BaseDirPath)
         return
     
     # if we did not found our identity - use default path, new copy of BitPie.NET
     if not os.access(LocalIdentityFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            io._dirs_make(_BaseDirPath)
+            bpio._dirs_make(_BaseDirPath)
         return
 
     # if we did not found our config - use default path, new copy of BitPie.NET
     if not os.access(UserConfigFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            io._dirs_make(_BaseDirPath)
+            bpio._dirs_make(_BaseDirPath)
         return
 
     # if we did not found our suppliers - use default path, new copy of BitPie.NET
     if not os.access(SupplierIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            io._dirs_make(_BaseDirPath)
+            bpio._dirs_make(_BaseDirPath)
         return
 
     # if we did not found our customers - use default path, new copy of BitPie.NET
     if not os.access(CustomerIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
-            io._dirs_make(_BaseDirPath)
+            bpio._dirs_make(_BaseDirPath)
         return
 
 #------------------------------------------------------------------------------ 
@@ -1947,28 +1947,27 @@ def _checkMetaDataDirectory():
     Check that the metadata directory exists.
     """
     if not os.path.exists(MetaDataDir()): 
-        io.log(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
-        #io._dirs_make(MetaDataDir())
-        os.makedirs(MetaDataDir())
+        bpio.log(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
+        bpio._dirs_make(MetaDataDir())
 
 def _checkSettings():
     """
     Validate some most important user settings.
     """
-    if getCentralNumSuppliers() < 0:
+    if getDesiredSuppliersNumber() < 0:
         uconfig().set("central-settings.desired-suppliers", str(DefaultDesiredSuppliers()))
 
-    if getCentralMegabytesDonated() == '':
-        uconfig().set("central-settings.shared-megabytes", str(DefaultDonatedMb())+' Mb')
-    donatedV, donatedS = diskspace.SplitString(getCentralMegabytesDonated())
+    if getMegabytesDonated() == '':
+        uconfig().set("central-settings.donated-megabytes", str(DefaultDonatedMb())+' Mb')
+    donatedV, donatedS = diskspace.SplitString(getMegabytesDonated())
     if not donatedS:
-        uconfig().set("central-settings.shared-megabytes", str(getCentralMegabytesDonated())+' Mb')
+        uconfig().set("central-settings.donated-megabytes", str(getMegabytesDonated())+' Mb')
 
-    if getCentralMegabytesNeeded() == '':
+    if getMegabytesNeeded() == '':
         uconfig().set("central-settings.needed-megabytes", str(DefaultNeededMb())+' Mb')
-    neededV, neededS = diskspace.SplitString(getCentralMegabytesNeeded())
+    neededV, neededS = diskspace.SplitString(getMegabytesNeeded())
     if not neededS:
-        uconfig().set("central-settings.needed-megabytes", str(getCentralMegabytesNeeded())+' Mb')
+        uconfig().set("central-settings.needed-megabytes", str(getMegabytesNeeded())+' Mb')
 
     if getDebugLevelStr() == "":
         uconfig().set("logs.debug-level", str(defaultDebugLevel()))
@@ -2023,41 +2022,41 @@ def _checkStaticDirectories():
     """
 #    # check that the base directory exists
 #    if not os.path.isdir(BaseDir()):
-#        io.log(8, 'settings.init want to create folder: ' + BaseDir())
-#        io._dirs_make(BaseDir())
-#        if io.Windows(): # ??? !!!
+#        bpio.log(8, 'settings.init want to create folder: ' + BaseDir())
+#        bpio._dirs_make(BaseDir())
+#        if bpio.Windows(): # ??? !!!
 #            _initBaseDir()  # ??? !!!
 
     if not os.path.exists(TempDir()):
-        io.log(6, 'settings.init want to create folder: ' + TempDir())
+        bpio.log(6, 'settings.init want to create folder: ' + TempDir())
         os.makedirs(TempDir())
 
     if not os.path.exists(BandwidthInDir()):
-        io.log(6, 'settings.init want to create folder: ' + BandwidthInDir())
+        bpio.log(6, 'settings.init want to create folder: ' + BandwidthInDir())
         os.makedirs(BandwidthInDir())
 
     if not os.path.exists(BandwidthOutDir()):
-        io.log(6, 'settings.init want to create folder: ' + BandwidthOutDir())
+        bpio.log(6, 'settings.init want to create folder: ' + BandwidthOutDir())
         os.makedirs(BandwidthOutDir())
 
     if not os.path.exists(LogsDir()):
-        io.log(6, 'settings.init want to create folder: ' + LogsDir())
+        bpio.log(6, 'settings.init want to create folder: ' + LogsDir())
         os.makedirs(LogsDir())
 
     if not os.path.exists(IdentityCacheDir()):
-        io.log(6, 'settings.init want to create folder: ' + IdentityCacheDir())
+        bpio.log(6, 'settings.init want to create folder: ' + IdentityCacheDir())
         os.makedirs(IdentityCacheDir())
 
     if not os.path.exists(SuppliersDir()):
-        io.log(6, 'settings.init want to create folder: ' + SuppliersDir())
+        bpio.log(6, 'settings.init want to create folder: ' + SuppliersDir())
         os.makedirs(SuppliersDir())
 
     if not os.path.exists(RatingsDir()):
-        io.log(6, 'settings.init want to create folder: ' + RatingsDir())
+        bpio.log(6, 'settings.init want to create folder: ' + RatingsDir())
         os.makedirs(RatingsDir())
 
     if not os.path.exists(CSpaceDir()):
-        io.log(6, 'settings.init want to create folder: ' + CSpaceDir())
+        bpio.log(6, 'settings.init want to create folder: ' + CSpaceDir())
         os.makedirs(CSpaceDir())
 
 
@@ -2068,25 +2067,25 @@ def _checkCustomDirectories():
     if getCustomersFilesDir() == '':
         uconfig().set('folder.folder-customers', os.path.join(BaseDir(), "customers"))
     if not os.path.exists(getCustomersFilesDir()):
-        io.log(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
+        bpio.log(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
         os.makedirs(getCustomersFilesDir())
 
     if getLocalBackupsDir() == '':
         uconfig().set('folder.folder-backups', BackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
-        io.log(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
+        bpio.log(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
 
     if getMessagesDir() == '':
         uconfig().set('folder.folder-messages', MessagesDir())
     if not os.path.exists(getMessagesDir()):
-        io.log(6, 'settings.init want to create folder: ' + getMessagesDir())
+        bpio.log(6, 'settings.init want to create folder: ' + getMessagesDir())
         os.makedirs(getMessagesDir())
 
     if getReceiptsDir() == '':
         uconfig().set('folder.folder-receipts', ReceiptsDir())
     if not os.path.exists(getReceiptsDir()):
-        io.log(6, 'settings.init want to create folder: ' + getReceiptsDir())
+        bpio.log(6, 'settings.init want to create folder: ' + getReceiptsDir())
         os.makedirs(getReceiptsDir())
 
     if getRestoreDir() == '':

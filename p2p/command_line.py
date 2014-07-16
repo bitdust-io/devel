@@ -37,7 +37,7 @@ except:
 from twisted.web.client import getPage
 from twisted.internet.defer import fail
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.settings as settings
 import lib.nameurl as nameurl
@@ -57,12 +57,12 @@ def run(opts, args, overDict, pars):
     
     if overDict:
         settings.override_dict(overDict)
-    io.init()
+    bpio.init()
     settings.init()
     if not opts or opts.debug is None:
-        io.SetDebug(0)
+        bpio.SetDebug(0)
 
-    appList = io.find_process([
+    appList = bpio.find_process([
         'bpmain.exe',
         'bpmain.py',
         'bitpie.py',
@@ -148,7 +148,7 @@ def run(opts, args, overDict, pars):
 
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:
-        revnum = io.ReadTextFile(settings.RevisionNumberFile()).strip()
+        revnum = bpio.ReadTextFile(settings.RevisionNumberFile()).strip()
         repo, location = misc.ReadRepoLocation()
         print 'revision:  ', revnum
         print 'repository:', repo
@@ -212,7 +212,7 @@ def run_url_command(address, stop_reactor_in_errback=True):
     Reads port number of the local HTTP server and do the request.
     """
     try:
-        local_port = int(io.ReadBinaryFile(settings.LocalPortFilename()))
+        local_port = int(bpio.ReadBinaryFile(settings.LocalPortFilename()))
     except:
         print 'can not read local port number from the file %s\n' % settings.LocalPortFilename()
         if stop_reactor_in_errback:
@@ -222,7 +222,7 @@ def run_url_command(address, stop_reactor_in_errback=True):
         return fail('')
     
     url = 'http://127.0.0.1:'+str(local_port)+'/'+address
-    io.log(4, 'command_line.run_url_command url='+url)
+    bpio.log(4, 'command_line.run_url_command url='+url)
     def _eb(x, stop_reactor):
         print x.getErrorMessage()
         if stop_reactor and reactor.running and not reactor._stopped:
@@ -526,7 +526,7 @@ def cmd_register(opts, args, overDict):
 def cmd_recover(opts, args, overDict):
     if len(args) < 2:
         return 2
-    src = io.ReadBinaryFile(args[1])
+    src = bpio.ReadBinaryFile(args[1])
     if len(src) > 1024*10:
         print 'file is too big for private key'
         return 0
@@ -538,7 +538,7 @@ def cmd_recover(opts, args, overDict):
             idurl = ''
             txt = src
     except:
-        #io.exception()
+        #bpio.exception()
         idurl = ''
         txt = src
     if idurl == '' and len(args) >= 3:
@@ -578,7 +578,7 @@ def cmd_key(opts, args, overDict):
             filenameto = args[2]
             import lib.crypto as crypto 
             TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
-            if not io.AtomicWriteFile(filenameto, TextToSave):
+            if not bpio.AtomicWriteFile(filenameto, TextToSave):
                 print 'error writing to', filenameto
                 return 1
             print 'your private key were copied to file %s' % filenameto
@@ -626,7 +626,7 @@ def cmd_reconnect(opts, args, overDict):
 def option_name_to_path(name, default=''):
     path = default
     if name in [ 'donated', 'shared', 'given', ]:
-        path = 'central-settings.shared-megabytes'
+        path = 'central-settings.donated-megabytes'
     elif name in [ 'needed', ]:
         path = 'central-settings.needed-megabytes'
     elif name in [ 'suppliers', ]:
@@ -772,23 +772,23 @@ def cmd_money(opts, args, overDict):
     
 
 def cmd_uninstall(opts, args, overDict):
-    if not io.Windows():
+    if not bpio.Windows():
         print 'This command can be used only under OS Windows.'
         return 0
-    if not io.isFrozen():
+    if not bpio.isFrozen():
         print 'You are running BitPie.NET from sources, uninstall command is available only for binary version.'
         return 0
     def do_uninstall():
-        io.log(0, 'command_line.do_uninstall')
+        bpio.log(0, 'command_line.do_uninstall')
         # batfilename = misc.MakeBatFileToUninstall()
         # misc.UpdateRegistryUninstall(True)
         # misc.RunBatFile(batfilename, 'c:/out2.txt')
     def kill():
-        io.log(0, 'kill')
+        bpio.log(0, 'kill')
         total_count = 0
         found = False
         while True:
-            appList = io.find_process([
+            appList = bpio.find_process([
                 'bpmain.exe',
                 'bpmain.py',
                 'bitpie.py',
@@ -804,42 +804,42 @@ def cmd_uninstall(opts, args, overDict):
             if len(appList) > 0:
                 found = True
             for pid in appList:
-                io.log(0, 'trying to stop pid %d' % pid)
-                io.kill_process(pid)
+                bpio.log(0, 'trying to stop pid %d' % pid)
+                bpio.kill_process(pid)
             if len(appList) == 0:
                 if found:
-                    io.log(0, 'BitPie.NET stopped\n')
+                    bpio.log(0, 'BitPie.NET stopped\n')
                 else:
-                    io.log(0, 'BitPie.NET was not started\n')
+                    bpio.log(0, 'BitPie.NET was not started\n')
                 return 0
             total_count += 1
             if total_count > 10:
-                io.log(0, 'some BitPie.NET process found, but can not stop it\n')
+                bpio.log(0, 'some BitPie.NET process found, but can not stop it\n')
                 return 1
             time.sleep(1)            
     def wait_then_kill(x):
-        io.log(0, 'wait_then_kill')
+        bpio.log(0, 'wait_then_kill')
         total_count = 0
         #while True:
         def _try():
-            io.log(0, '_try')
-            appList = io.find_process([
+            bpio.log(0, '_try')
+            appList = bpio.find_process([
                 'bpmain.exe',
                 'bpgui.exe',
                 'bppipe.exe',
                 'bptester.exe',
                 'bpstarter.exe',
                 ])
-            io.log(0, 'appList:' + str(appList))
+            bpio.log(0, 'appList:' + str(appList))
             if len(appList) == 0:
-                io.log(0, 'finished')
+                bpio.log(0, 'finished')
                 reactor.stop()
                 do_uninstall()
                 return 0
             total_count += 1
-            io.log(0, '%d' % total_count)
+            bpio.log(0, '%d' % total_count)
             if total_count > 10:
-                io.log(0, 'not responding')
+                bpio.log(0, 'not responding')
                 ret = kill()
                 reactor.stop()
                 if ret == 0:
@@ -848,7 +848,7 @@ def cmd_uninstall(opts, args, overDict):
             reactor.callLater(1, _try)
         _try()
 #            time.sleep(1)
-    appList = io.find_process([
+    appList = bpio.find_process([
         'bpmain.exe',
         'bpgui.exe',
         'bppipe.exe',
@@ -856,10 +856,10 @@ def cmd_uninstall(opts, args, overDict):
         'bpstarter.exe',
         ])
     if len(appList) == 0:
-        io.log(0, 'uninstalling BitPie.NET ...   ')
+        bpio.log(0, 'uninstalling BitPie.NET ...   ')
         do_uninstall()
         return 0
-    io.log(0, 'found BitPie.NET processes ...   ')
+    bpio.log(0, 'found BitPie.NET processes ...   ')
     try:
         url = webcontrol._PAGE_ROOT+'?action=exit'
         run_url_command(url).addCallback(wait_then_kill)
@@ -867,7 +867,7 @@ def cmd_uninstall(opts, args, overDict):
         reactor.run()
         return 0
     except:
-        io.exception()
+        bpio.exception()
         ret = kill()
         if ret == 0:
             do_uninstall()

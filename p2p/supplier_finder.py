@@ -21,7 +21,7 @@ EVENTS:
 import time
 import random
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.automat as automat
 import lib.commands as commands
 import lib.contacts as contacts
@@ -217,7 +217,7 @@ class SupplierFinder(automat.Automat):
                 sc.remove_callback('supplier_finder')
             self.target_idurl = None
         automat.objects().pop(self.index)
-        io.log(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
+        bpio.log(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         """
@@ -225,7 +225,7 @@ class SupplierFinder(automat.Automat):
         self.automat('inbox-packet', (newpacket, info, status, error_message))
         
     def _found_nodes(self, nodes):
-        io.log(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
+        bpio.log(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')
@@ -237,7 +237,7 @@ class SupplierFinder(automat.Automat):
         self.automat('users-not-found')
     
     def _got_target_idurl(self, response):
-        io.log(14, 'supplier_finder._got_target_idurl response=%s' % str(response) )
+        bpio.log(14, 'supplier_finder._got_target_idurl response=%s' % str(response) )
         try:
             idurl = response['idurl']
         except:
@@ -246,7 +246,7 @@ class SupplierFinder(automat.Automat):
             self.automat('users-not-found')
             return response
         if contacts.IsSupplier(idurl):
-            io.log(14, '    %s is supplier already' % idurl)
+            bpio.log(14, '    %s is supplier already' % idurl)
             self.automat('users-not-found')
             # self.automat('user-already-supplier')
             return response

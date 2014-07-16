@@ -19,7 +19,7 @@ This is a daily stats - a single file for every day.
 import os
 import time
 
-import io
+import bpio
 import nameurl
 import settings
 import misc
@@ -40,13 +40,13 @@ def init():
     """
     global CountTimeIn
     global CountTimeOut
-    io.log(4, 'bandwidth.init ')
+    bpio.log(4, 'bandwidth.init ')
     fin = filenameIN()
     fout = filenameOUT()
     if not os.path.isfile(fin):
-        io.WriteFile(fin, '')
+        bpio.WriteFile(fin, '')
     if not os.path.isfile(fout):
-        io.WriteFile(fout, '')
+        bpio.WriteFile(fout, '')
     read_bandwidthIN()
     read_bandwidthOUT()
     CountTimeIn = time.time()
@@ -75,9 +75,9 @@ def save():
     """
     Writes today stats on disk
     """
-    io.log(6, 'bandwidth.save')
-    io._write_dict(filenameIN(), getBandwidthIN())
-    io._write_dict(filenameOUT(), getBandwidthOUT())
+    bpio.log(6, 'bandwidth.save')
+    bpio._write_dict(filenameIN(), getBandwidthIN())
+    bpio._write_dict(filenameOUT(), getBandwidthOUT())
 
 
 def saveIN(basename=None):
@@ -87,11 +87,11 @@ def saveIN(basename=None):
     if basename is None:
         basename = misc.gmtime2str('%d%m%y') 
     ret = os.path.isfile(filenameIN(basename))
-    io._write_dict(filenameIN(basename), getBandwidthIN())
+    bpio._write_dict(filenameIN(basename), getBandwidthIN())
     if not ret:
-        io.log(4, 'bandwidth.saveIN to new file ' + basename)
+        bpio.log(4, 'bandwidth.saveIN to new file ' + basename)
     else:
-        io.log(18, 'bandwidth.saveIN to ' + basename)
+        bpio.log(18, 'bandwidth.saveIN to ' + basename)
     return ret
 
 
@@ -102,11 +102,11 @@ def saveOUT(basename=None):
     if basename is None:
         basename = misc.gmtime2str('%d%m%y') 
     ret = os.path.isfile(filenameOUT(basename))
-    io._write_dict(filenameOUT(basename), getBandwidthOUT())
+    bpio._write_dict(filenameOUT(basename), getBandwidthOUT())
     if not ret:
-        io.log(4, 'bandwidth.saveOUT to new file ' + basename)
+        bpio.log(4, 'bandwidth.saveOUT to new file ' + basename)
     else:
-        io.log(18, 'bandwidth.saveOUT to ' + basename)
+        bpio.log(18, 'bandwidth.saveOUT to ' + basename)
     return ret
 
 
@@ -115,8 +115,8 @@ def read_bandwidthIN():
     Reads today's incoming bandwidth stats from disk  
     """
     global BandInDict
-    io.log(6, 'bandwidth.read_bandwidthIN ')
-    for idurl, bytes in io._read_dict(filenameIN(), {}).items():
+    bpio.log(6, 'bandwidth.read_bandwidthIN ')
+    for idurl, bytes in bpio._read_dict(filenameIN(), {}).items():
         BandInDict[idurl] = int(bytes)
 
 
@@ -125,8 +125,8 @@ def read_bandwidthOUT():
     Reads today's outgoing bandwidth stats from disk  
     """
     global BandOutDict
-    io.log(6, 'bandwidth.read_bandwidthOUT ')
-    for idurl, bytes in io._read_dict(filenameOUT(), {}).items():
+    bpio.log(6, 'bandwidth.read_bandwidthOUT ')
+    for idurl, bytes in bpio._read_dict(filenameOUT(), {}).items():
         BandOutDict[idurl] = int(bytes)
 
 
@@ -135,7 +135,7 @@ def clear_bandwidthIN():
     Erase all incoming stats from memory 
     """
     global BandInDict
-    io.log(6, 'bandwidth.clear_bandwidthIN ')
+    bpio.log(6, 'bandwidth.clear_bandwidthIN ')
     BandInDict.clear()
 
 
@@ -144,7 +144,7 @@ def clear_bandwidthOUT():
     Erase all outgoing stats from memory
     """ 
     global BandOutDict
-    io.log(6, 'bandwidth.clear_bandwidthOUT ')
+    bpio.log(6, 'bandwidth.clear_bandwidthOUT ')
     BandOutDict.clear()
 
 
@@ -191,7 +191,7 @@ def files2send():
     Return a list of file names to be read and send to Central server.
     Sent files are market with ".sent" extension and skipped here.  
     """
-    io.log(6, 'bandwidth.files2send')
+    bpio.log(6, 'bandwidth.files2send')
     listIN = []
     listOUT = []
     for filename in os.listdir(settings.BandwidthInDir()):
@@ -219,11 +219,11 @@ def files2send():
         # if filepath == filenameOUT():
         #     continue
         listOUT.append(filepath)
-    io.log(6, 'bandwidth.files2send listIN=%d listOUT=%d' % (len(listIN), len(listOUT)))
+    bpio.log(6, 'bandwidth.files2send listIN=%d listOUT=%d' % (len(listIN), len(listOUT)))
     for i in listIN:
-        io.log(6, '  ' + i)
+        bpio.log(6, '  ' + i)
     for i in listOUT:
-        io.log(6, '  ' + i)
+        bpio.log(6, '  ' + i)
     return listIN, listOUT
 
 

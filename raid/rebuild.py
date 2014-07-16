@@ -1,6 +1,6 @@
 
 
-import lib.io
+import lib.bpio
 
 
 def BuildRaidFileName():
@@ -11,14 +11,14 @@ def attempt_rebuild_block(supplierCount):
         """
         This made an attempt to rebuild the missing pieces from pieces we have on hands. 
         """
-        # io.log(14, 'block_rebuilder.AttemptRebuild %s %d BEGIN' % (self.backupID, self.blockNum))
+        # bpio.log(14, 'block_rebuilder.AttemptRebuild %s %d BEGIN' % (self.backupID, self.blockNum))
         newData = False
         madeProgress = True
         while madeProgress:
             madeProgress = False
 #            # if number of suppliers were changed - stop immediately 
 #            if contacts.numSuppliers() != self.supplierCount:
-#                io.log(10, 'block_rebuilder.AttemptRebuild END - number of suppliers were changed')
+#                bpio.log(10, 'block_rebuilder.AttemptRebuild END - number of suppliers were changed')
 #                return False
             # will check all data packets we have 
             for supplierNum in xrange(supplierCount):
@@ -34,7 +34,7 @@ def attempt_rebuild_block(supplierCount):
                                 filename = self.BuildRaidFileName(supplierParity, 'Data')
                                 if os.path.isfile(filename):
                                     rebuildFileList.append(filename)
-                        io.log(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
+                        bpio.log(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
                         
                         
                         # TODO - send to raid_worker
@@ -47,12 +47,12 @@ def attempt_rebuild_block(supplierCount):
                     if os.path.exists(dataFileName):
                         self.localData[supplierNum] = 1
                         madeProgress = True
-                        io.log(10, '        Data file %s found after rebuilding for supplier %d' % (os.path.basename(dataFileName), supplierNum))
+                        bpio.log(10, '        Data file %s found after rebuilding for supplier %d' % (os.path.basename(dataFileName), supplierNum))
                 # now we check again if we have the data on hand after rebuild at it is missing - send it
                 # but also check to not duplicate sending to this man   
                 # now sending is separated, see the file data_sender.py          
                 if self.localData[supplierNum] == 1 and self.missingData[supplierNum] == 1: # and self.dataSent[supplierNum] == 0:
-                    io.log(10, '            rebuilt a new Data for supplier %d' % supplierNum)
+                    bpio.log(10, '            rebuilt a new Data for supplier %d' % supplierNum)
                     newData = True
                     self.reconstructedData[supplierNum] = 1
                     # self.outstandingFilesList.append((dataFileName, self.BuildFileName(supplierNum, 'Data'), supplierNum))
@@ -68,7 +68,7 @@ def attempt_rebuild_block(supplierCount):
                         filename = self.BuildRaidFileName(supplierParity, 'Data')  # ??? why not 'Parity'
                         if os.path.isfile(filename): 
                             rebuildFileList.append(filename)
-                    io.log(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
+                    bpio.log(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
                     
                     
                     
@@ -77,17 +77,17 @@ def attempt_rebuild_block(supplierCount):
                     
                     
                     if os.path.exists(parityFileName):
-                        io.log(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
+                        bpio.log(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
                         self.localParity[supplierNum] = 1
             # so we have the parity on hand and it is missing - send it
             if self.localParity[supplierNum] == 1 and self.missingParity[supplierNum] == 1: # and self.paritySent[supplierNum] == 0:
-                io.log(10, '            rebuilt a new Parity for supplier %d' % supplierNum)
+                bpio.log(10, '            rebuilt a new Parity for supplier %d' % supplierNum)
                 newData = True
                 self.reconstructedParity[supplierNum] = 1
                 # self.outstandingFilesList.append((parityFileName, self.BuildFileName(supplierNum, 'Parity'), supplierNum))
                 # self.paritySent[supplierNum] = 1
-        io.log(14, 'block_rebuilder.AttemptRebuild END')
+        bpio.log(14, 'block_rebuilder.AttemptRebuild END')
         return newData
     except:
-        lib.io.exception()
+        lib.bpio.exception()
         return None

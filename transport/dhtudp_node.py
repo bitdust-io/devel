@@ -21,7 +21,7 @@ EVENTS:
         
 """
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.automat as automat
 import lib.udp as udp
 import lib.settings as settings
@@ -176,7 +176,7 @@ class DHTUDPNode(automat.Automat):
             datagram, address = arg
             command, payload = datagram
         except:
-            io.exception()
+            bpio.exception()
             return False
         if address == stun_client.A().peer_address:
             return True
@@ -251,9 +251,9 @@ class DHTUDPNode(automat.Automat):
             datagram, address = arg
             command, payload = datagram
         except:
-            io.exception()
+            bpio.exception()
             return
-        # io.log(10, 'dhtudp_node.doStartNewSession wants to start a new session with UNKNOWN peer')
+        # bpio.log(10, 'dhtudp_node.doStartNewSession wants to start a new session with UNKNOWN peer')
         s = dhtudp_session.create(self, address)
         s.automat('init')
         s.automat('datagram-received', arg)
@@ -272,12 +272,12 @@ class DHTUDPNode(automat.Automat):
                 incoming_user_address[1] = int(incoming_user_address[1])
                 incoming_user_address = tuple(incoming_user_address)
             except:
-                io.exception()
+                bpio.exception()
                 continue
             s = dhtudp_session.get(incoming_user_address) 
             if s:
                 continue
-            # io.log(10, 'dhtudp_connector.doCheckAndStartNewSessions wants to start a new session with incoming peer')
+            # bpio.log(10, 'dhtudp_connector.doCheckAndStartNewSessions wants to start a new session with incoming peer')
             s = dhtudp_session.create(self, incoming_user_address, incoming_user_id)
             s.automat('init')
 
@@ -287,8 +287,8 @@ class DHTUDPNode(automat.Automat):
         """
         self.my_address = arg
         if self.my_address:
-            io.log(4, 'dhtudp_node.doUpdateMyAddress old=%s new=%s' % (str(self.my_address), str(arg)))
-            io.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
+            bpio.log(4, 'dhtudp_node.doUpdateMyAddress old=%s new=%s' % (str(self.my_address), str(arg)))
+            bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
         #TODO call top level code to notify about my external IP changes
 
     def doDHTReadMyIncomings(self, arg):
@@ -320,7 +320,7 @@ class DHTUDPNode(automat.Automat):
         """
         dhtudp_stream.stop_process_sessions()
         for s in dhtudp_session.sessions().values():
-            io.log(18, 'dhtudp_node.doShutdown  send "shutdown" to %s' % s)
+            bpio.log(18, 'dhtudp_node.doShutdown  send "shutdown" to %s' % s)
             s.automat('shutdown')
         # udp.remove_datagram_receiver_callback(self._datagram_received)
         self.automat('disconnected')
@@ -353,7 +353,7 @@ class DHTUDPNode(automat.Automat):
             command, payload = datagram
         except:
             return
-        # io.log(18, '>>> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
+        # bpio.log(18, '>>> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
         s = dhtudp_session.get(address)
         if s:
             s.automat('datagram-received', (datagram, address))
@@ -364,17 +364,17 @@ class DHTUDPNode(automat.Automat):
         
     def _got_my_address(self, value):
         if type(value) != dict:
-            io.log(4, 'dhtudp_node._got_my_address WARNING   can not read my address')
+            bpio.log(4, 'dhtudp_node._got_my_address WARNING   can not read my address')
             self.automat('dht-write-failed')
             return
         hkey = dht_service.key_to_hash(self.my_id+':address')
         if hkey not in value.keys():
-            io.log(4, 'dhtudp_node._got_my_address ERROR   wrong key in response')
+            bpio.log(4, 'dhtudp_node._got_my_address ERROR   wrong key in response')
             self.automat('dht-write-failed')
             return
         value = value[hkey].strip('\n').strip()
         if value != '%s:%d' % (self.my_address[0], self.my_address[1]):
-            io.log(4, 'dhtudp_node._got_my_address ERROR   value not fit: %s' % str(value)[:20])
+            bpio.log(4, 'dhtudp_node._got_my_address ERROR   value not fit: %s' % str(value)[:20])
             self.automat('dht-write-failed')
             return
         self.automat('dht-write-success')
@@ -388,7 +388,7 @@ class DHTUDPNode(automat.Automat):
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
     def _got_my_incomings(self, value):
-        # io.log(18, 'incomings: ' + str(value))
+        # bpio.log(18, 'incomings: ' + str(value))
         if type(value) != dict:
             self.automat('dht-read-result', [])
             return

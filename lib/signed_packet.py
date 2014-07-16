@@ -36,7 +36,7 @@ import types
 import datetime
 
 
-import io
+import bpio
 import commands
 import misc
 import crypto
@@ -122,7 +122,7 @@ class Packet:
         """
         ConIdentity = contacts.getContact(self.CreatorID)
         if ConIdentity is None:
-            io.log(1, "signed_packet.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
+            bpio.log(1, "signed_packet.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
             return False
         Result = crypto.Verify(ConIdentity, self.GenerateHash(), self.Signature)
         return Result
@@ -148,13 +148,13 @@ class Packet:
             8) etc.
         """
         if not self.Ready():
-            io.log(4, "signed_packet.Valid WARNING packet is not ready yet " + str(self))
+            bpio.log(4, "signed_packet.Valid WARNING packet is not ready yet " + str(self))
             return False
         if not commands.IsCommand(self.Command):
-            io.log(1, "signed_packet.Valid bad Command " + str(self.Command))
+            bpio.log(1, "signed_packet.Valid bad Command " + str(self.Command))
             return False
         if not self.SignatureChecksOut():
-            io.log(1, "signed_packet.Valid failed Signature")
+            bpio.log(1, "signed_packet.Valid failed Signature")
             return False
         return True
 
@@ -216,13 +216,13 @@ def Unserialize(data):
         return None
     newobject = misc.StringToObject(data)
     if newobject is None:
-        # io.log(6, "signed_packet.Unserialize WARNING result is None")
+        # bpio.log(6, "signed_packet.Unserialize WARNING result is None")
         return None
     if type(newobject) != types.InstanceType:
-        io.log(6, "signed_packet.Unserialize WARNING not an instance: " + str(newobject))
+        bpio.log(6, "signed_packet.Unserialize WARNING not an instance: " + str(newobject))
         return None
     if not str(newobject.__class__).count('signed_packet.Packet'):
-        io.log(6, "signed_packet.Unserialize WARNING not a packet: " + str(newobject.__class__))
+        bpio.log(6, "signed_packet.Unserialize WARNING not a packet: " + str(newobject.__class__))
         return None
     return newobject
 
@@ -249,12 +249,12 @@ def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 #------------------------------------------------------------------------------ 
 
 if __name__ == '__main__':
-    io.init()
-    io.SetDebug(18)
+    bpio.init()
+    bpio.SetDebug(18)
     import settings
     settings.init()
     crypto.InitMyKey()
-    p = Unserialize(io.ReadBinaryFile(sys.argv[1]))
+    p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))
     print p
     
     

@@ -26,7 +26,7 @@ EVENTS:
 import os
 import time 
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.automat as automat
 import lib.nameurl as nameurl
 import lib.contacts as contacts
@@ -83,7 +83,7 @@ class SupplierConnector(automat.Automat):
         self.request_packet_id = None
         self.callbacks = {}
         try:
-            st = io.ReadTextFile(settings.SupplierServiceFilename(self.idurl)).strip() 
+            st = bpio.ReadTextFile(settings.SupplierServiceFilename(self.idurl)).strip() 
         except:
             st = 'DISCONNECTED'
         if st == 'CONNECTED':
@@ -110,9 +110,9 @@ class SupplierConnector(automat.Automat):
                 try:
                     os.makedirs(supplierPath)
                 except:
-                    io.exception()
+                    bpio.exception()
                     return
-            io.WriteFile(settings.SupplierServiceFilename(self.idurl), newstate)
+            bpio.WriteFile(settings.SupplierServiceFilename(self.idurl), newstate)
             
     def set_callback(self, name, cb):
         self.callbacks[name] = cb
@@ -207,7 +207,7 @@ class SupplierConnector(automat.Automat):
         newpacket = arg
         if newpacket.Command == commands.Ack():
             if newpacket.Payload.startswith('accepted'):
-                io.log(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
+                # bpio.log(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
                 return True
         return False
 
@@ -218,7 +218,7 @@ class SupplierConnector(automat.Automat):
         newpacket = arg
         if newpacket.Command == commands.Ack():
             if newpacket.Payload.startswith('accepted'):
-                io.log(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
+                # bpio.log(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
                 return True
         return False
 
@@ -226,8 +226,8 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        bytes_needed = diskspace.GetBytesFromString(settings.getCentralMegabytesNeeded(), 0)
-        num_suppliers = settings.getCentralNumSuppliers()
+        bytes_needed = diskspace.GetBytesFromString(settings.getMegabytesNeeded(), 0)
+        num_suppliers = settings.getDesiredSuppliersNumber()
         if num_suppliers > 0:
             mb_per_supplier = round((2.0*bytes_needed/num_suppliers)/(1024.0*1024.0), 2)
         else:
@@ -260,7 +260,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        io.log(14, 'supplier_connector.doReportConnect')
+        bpio.log(14, 'supplier_connector.doReportConnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'CONNECTED')
 
@@ -268,7 +268,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        io.log(14, 'supplier_connector.doReportNoService')
+        bpio.log(14, 'supplier_connector.doReportNoService')
         for cb in self.callbacks.values():
             cb(self.idurl, 'NO_SERVICE')
 
@@ -276,12 +276,12 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        io.log(14, 'supplier_connector.doReportDisconnect')
+        bpio.log(14, 'supplier_connector.doReportDisconnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'DISCONNECTED')
 
     def _supplier_acked(self, response, info):
-        io.log(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
+        bpio.log(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
 
 

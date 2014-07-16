@@ -26,7 +26,7 @@ except:
 from twisted.internet.defer import Deferred,  DeferredList
 from twisted.internet import task
 
-import lib.io as io
+import lib.bpio as bpio
 
 #------------------------------------------------------------------------------ 
 
@@ -52,7 +52,7 @@ def init_local(UI=''):
     
     global UImode
     UImode = UI
-    io.log(2, "init_shutdown.init_local")
+    bpio.log(2, "init_shutdown.init_local")
 
     import lib.settings as settings
     import lib.misc as misc
@@ -69,7 +69,7 @@ def init_local(UI=''):
             softspace = 0
             def read(self): pass
             def write(self, s):
-                io.log(0, s.strip())
+                bpio.log(0, s.strip())
             def flush(self): pass
             def close(self): pass
         from twisted.python import log as twisted_log
@@ -92,12 +92,12 @@ def init_local(UI=''):
             from guppy import hpy
             hp = hpy()
             hp.setrelheap()
-            io.log(2, 'hp.heap():\n'+str(hp.heap()))
-            io.log(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-            io.log(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+            bpio.log(2, 'hp.heap():\n'+str(hp.heap()))
+            bpio.log(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+            bpio.log(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
             import guppy.heapy.RM
         except:
-            io.log(2, "init_shutdown.init_local guppy package is not installed")            
+            bpio.log(2, "init_shutdown.init_local guppy package is not installed")            
 
     import lib.tmpfile as tmpfile
     tmpfile.init(settings.getTempDir())
@@ -132,7 +132,7 @@ def init_contacts(callback=None, errback=None):
     """
     Initialize ``contacts`` and ``identitycache``. 
     """
-    io.log(2, "init_shutdown.init_contacts")
+    bpio.log(2, "init_shutdown.init_contacts")
     
     import lib.misc as misc
     misc.loadLocalIdentity()
@@ -154,7 +154,7 @@ def init_connection():
     """
     
     global UImode
-    io.log(2, "init_shutdown.init_connection")
+    bpio.log(2, "init_shutdown.init_connection")
 
     import webcontrol
 
@@ -188,14 +188,14 @@ def init_connection():
     message.init()
     message.OnIncommingMessageFunc = webcontrol.OnIncommingMessage
 
-    import userid.propagate
-    userid.propagate.init()
+    import userid.propagate as propagate
+    propagate.init()
 
     try:
         from tray_icon import USE_TRAY_ICON
     except:
         USE_TRAY_ICON = False
-        io.exception()
+        bpio.exception()
 
     if USE_TRAY_ICON:
         import tray_icon
@@ -228,7 +228,7 @@ def init_modules():
     Finish initialization part, run delayed methods.
     """
     
-    io.log(2,"init_shutdown.init_modules")
+    bpio.log(2,"init_shutdown.init_modules")
 
     import webcontrol
 
@@ -261,7 +261,7 @@ def shutdown(x=None):
     """
     
     global initdone
-    io.log(2, "init_shutdown.shutdown " + str(x))
+    bpio.log(2, "init_shutdown.shutdown " + str(x))
     dl = []
 
     import io_throttle
@@ -301,8 +301,8 @@ def shutdown(x=None):
     import webcontrol
     dl.append(webcontrol.shutdown())
 
-    import userid.propagate
-    userid.propagate.shutdown()
+    from userid import propagate
+    propagate.shutdown()
 
     from lib import bandwidth
     from transport import callback
@@ -328,14 +328,14 @@ def shutdown_restart(param=''):
     Calls ``shutdown()`` method and stop the main reactor, then restart the program. 
     """
     
-    io.log(2, "init_shutdown.shutdown_restart ")
+    bpio.log(2, "init_shutdown.shutdown_restart ")
 
     def do_restart(param):
         import lib.misc as misc
         misc.DoRestart(param)
 
     def shutdown_finished(x, param):
-        io.log(2, "init_shutdown.shutdown_restart.shutdown_finished want to stop the reactor")
+        bpio.log(2, "init_shutdown.shutdown_restart.shutdown_finished want to stop the reactor")
         reactor.addSystemEventTrigger('after','shutdown', do_restart, param)
         reactor.stop()
 
@@ -348,10 +348,10 @@ def shutdown_exit(x=None):
     Calls ``shutdown()`` method and stop the main reactor, this will finish the program. 
     """
     
-    io.log(2, "init_shutdown.shutdown_exit ")
+    bpio.log(2, "init_shutdown.shutdown_exit ")
 
     def shutdown_reactor_stop(x=None):
-        io.log(2, "init_shutdown.shutdown_exit want to stop the reactor")
+        bpio.log(2, "init_shutdown.shutdown_exit want to stop the reactor")
         reactor.stop()
         # sys.exit()
 
@@ -365,7 +365,7 @@ def settings_patch():
     Small hacks to switch on/off some options, 
     but we want to do that only during testing period.
     """
-    io.log(6, 'init_shutdown.settings_patch ')
+    bpio.log(6, 'init_shutdown.settings_patch ')
     import lib.settings as settings
     
 
@@ -373,16 +373,16 @@ def start_logs_rotate():
     """
     Checks and remove old or too big log files.
     """
-    io.log(4, 'init_shutdown.start_logs_rotate')
+    bpio.log(4, 'init_shutdown.start_logs_rotate')
     def erase_logs():
-        io.log(4, 'init_shutdown.erase_logs ')
+        bpio.log(4, 'init_shutdown.erase_logs ')
         import lib.settings as settings
         logs_dir = settings.LogsDir()
         total_sz = 0
         remove_list = []
         for filename in os.listdir(logs_dir):
             filepath = os.path.join(logs_dir, filename)
-            if filepath == io.LogFileName:
+            if filepath == bpio.LogFileName:
                 # skip current log file
                 continue
             if not filename.endswith('.log'):
@@ -399,7 +399,7 @@ def start_logs_rotate():
                 file_size = 0
             total_sz += file_size 
             # if the file is bigger than 10mb and we are not in testing mode - erase it
-            if file_size > 1024*1024*10 and io.DebugLevel < 8:
+            if file_size > 1024*1024*10 and bpio.DebugLevel < 8:
                 if os.access(filepath, os.W_OK):
                     remove_list.append((filepath, 'big file'))
                     continue
@@ -412,7 +412,7 @@ def start_logs_rotate():
                 try:
                     dtm = time.mktime(time.strptime(filename[4:-4],'%y%m%d%H%M%S'))
                 except:
-                    io.exception()
+                    bpio.exception()
                     continue          
                 # we want to check if it is more than 30 days old ...
                 if time.time() - dtm > 60*60*24*30:
@@ -420,16 +420,16 @@ def start_logs_rotate():
                     continue
                 # also we want to check if all those files are too big - 50 MB is enough
                 # for testers we do not check this
-                if total_sz > 1024*1024*50 and io.DebugLevel < 8:
+                if total_sz > 1024*1024*50 and bpio.DebugLevel < 8:
                     remove_list.append((filepath, 'total size'))
                     continue
         for filepath, reason in remove_list:
             try:
                 os.remove(filepath)
-                io.log(6, 'init_shutdown.erase_logs %s was deleted because of "%s"' % (filepath, reason))
+                bpio.log(6, 'init_shutdown.erase_logs %s was deleted because of "%s"' % (filepath, reason))
             except:
-                io.log(1, 'init_shutdown.erase_logs ERROR can not remove %s, reason is [%s]' % (filepath, reason))
-                io.exception()
+                bpio.log(1, 'init_shutdown.erase_logs ERROR can not remove %s, reason is [%s]' % (filepath, reason))
+                bpio.exception()
         del remove_list
              
     task.LoopingCall(erase_logs).start(60*60*24)
@@ -440,7 +440,7 @@ def check_install():
     """
     Return True if Private Key and local identity files exists and both is valid.
     """
-    io.log(2, 'init_shutdown.check_install ')
+    bpio.log(2, 'init_shutdown.check_install ')
     import lib.settings as settings
     import userid.identity as identity
     import lib.crypto as crypto
@@ -448,49 +448,49 @@ def check_install():
     keyfilename = settings.KeyFileName()
     keyfilenamelocation = settings.KeyFileNameLocation()
     if os.path.exists(keyfilenamelocation):
-        keyfilename = io.ReadTextFile(keyfilenamelocation)
+        keyfilename = bpio.ReadTextFile(keyfilenamelocation)
         if not os.path.exists(keyfilename):
             keyfilename = settings.KeyFileName()
     idfilename = settings.LocalIdentityFilename()
     
     if not os.path.exists(keyfilename) or not os.path.exists(idfilename):
-        io.log(2, 'init_shutdown.check_install local key or local id not exists')
+        bpio.log(2, 'init_shutdown.check_install local key or local id not exists')
         return False
 
-    current_key = io.ReadBinaryFile(keyfilename)
-    current_id = io.ReadBinaryFile(idfilename)
+    current_key = bpio.ReadBinaryFile(keyfilename)
+    current_id = bpio.ReadBinaryFile(idfilename)
 
     if current_id == '':
-        io.log(2, 'init_shutdown.check_install local identity is empty ')
+        bpio.log(2, 'init_shutdown.check_install local identity is empty ')
         return False
 
     if current_key == '':
-        io.log(2, 'init_shutdown.check_install private key is empty ')
+        bpio.log(2, 'init_shutdown.check_install private key is empty ')
         return False
 
     try:
         crypto.InitMyKey()
     except:
-        io.log(2, 'init_shutdown.check_install fail loading private key ')
+        bpio.log(2, 'init_shutdown.check_install fail loading private key ')
         return False
 
     try:
         ident = identity.identity(xmlsrc=current_id)
     except:
-        io.log(2, 'init_shutdown.check_install fail init local identity ')
+        bpio.log(2, 'init_shutdown.check_install fail init local identity ')
         return False
 
     try:
         res = ident.Valid()
     except:
-        io.log(2, 'init_shutdown.check_install wrong data in local identity   ')
+        bpio.log(2, 'init_shutdown.check_install wrong data in local identity   ')
         return False
 
     if not res:
-        io.log(2, 'init_shutdown.check_install local identity is not valid ')
+        bpio.log(2, 'init_shutdown.check_install local identity is not valid ')
         return False
 
-    io.log(2, 'init_shutdown.check_install done')
+    bpio.log(2, 'init_shutdown.check_install done')
     return True
 
 

@@ -19,11 +19,11 @@ import os
 import time
 import glob
 
-import io
+import bpio
 import settings
 import diskspace
 
-if io.Windows():
+if bpio.Windows():
     import win32api
     import win32file
 
@@ -68,7 +68,7 @@ def GetDriveSpace(path):
     """
     So this a sort of portable way to get the free HDD space in the system.
     """
-    if io.Windows():
+    if bpio.Windows():
         drive = os.path.abspath(path)[0]
         if os.path.isdir(drive+':'):
             # the drive the data directory is on, ie C
@@ -118,9 +118,9 @@ def OkToShareSpace(desiredSharedSpaceMB):
     
 def GetDirectorySize(directoryPath):
     """
-    Just calculates the folder size in megabytes using ``io.getDirectorySize``.
+    Calculates the folder size in megabytes using ``bpio.getDirectorySize``.
     """
-    return io.getDirectorySize(directoryPath)/(1024*1024)
+    return bpio.getDirectorySize(directoryPath)/(1024*1024)
 
 #------------------------------------------------------------------------------ 
 

@@ -19,13 +19,13 @@ import sys
 import stat
 
 try:
-    import lib.io as io
+    import lib.bpio as bpio
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
     try:
-        import lib.io as io
+        import lib.bpio as bpio
     except:
         sys.exit()
 
@@ -49,7 +49,7 @@ def TraverseLocalFileSystem(basedir, expanded_dirs, callback):
         if subpath not in expanded_dirs:
             callback(realpath, subpath, name)
             return False
-    io.traverse_dir_recursive(cb, basedir)
+    bpio.traverse_dir_recursive(cb, basedir)
 
 
 

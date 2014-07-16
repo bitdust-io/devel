@@ -77,7 +77,7 @@ from twisted.internet.defer import Deferred
 
 
 import lib.misc as misc
-import lib.io as io
+import lib.bpio as bpio
 import lib.eccmap as eccmap
 import lib.settings as settings
 import lib.packetid as packetid
@@ -128,7 +128,7 @@ class restore(automat.Automat):
         automat.Automat.__init__(self, 'restore', 'AT_STARTUP', 4)
         self.automat('init')
         events.info('restore', '%s start restoring' % self.BackupID)
-        # io.log(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
+        # bpio.log(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -236,7 +236,7 @@ class restore(automat.Automat):
     def doStartNewBlock(self, arg):
         self.LastAction = time.time()
         self.BlockNumber += 1    
-        io.log(6, "restore.doStartNewBlock " + str(self.BlockNumber))
+        bpio.log(6, "restore.doStartNewBlock " + str(self.BlockNumber))
         self.OnHandData = [False] * self.EccMap.datasegments
         self.OnHandParity = [False] * self.EccMap.paritysegments
 
@@ -269,7 +269,7 @@ class restore(automat.Automat):
                 packetID, 
                 self.CreatorID, 
                 SupplierID)
-        io.log(6, "restore.doRequestPackets requested %d packets for block %d" % (len(packetsToRequest), self.BlockNumber))
+        bpio.log(6, "restore.doRequestPackets requested %d packets for block %d" % (len(packetsToRequest), self.BlockNumber))
         del packetsToRequest
         self.automat('request-done')
     
@@ -311,20 +311,20 @@ class restore(automat.Automat):
         dirpath = os.path.dirname(filename)
         if not os.path.exists(dirpath):
             try:
-                io._dirs_make(dirpath)
+                bpio._dirs_make(dirpath)
             except:
-                io.exception()
+                bpio.exception()
         # either way the payload of packet is saved
-        if not io.WriteFile(filename, NewPacket.Payload):
-            io.log(6, "restore.doSavePacket WARNING unable to write to %s" % filename)
+        if not bpio.WriteFile(filename, NewPacket.Payload):
+            bpio.log(6, "restore.doSavePacket WARNING unable to write to %s" % filename)
             return
-        io.log(6, "restore.doSavePacket %s saved" % packetID)
+        bpio.log(6, "restore.doSavePacket %s saved" % packetID)
         if self.packetInCallback is not None:
             self.packetInCallback(self.BackupID, NewPacket)
     
     def doRestoreBlock(self, arg):
         filename = arg
-        blockbits = io.ReadBinaryFile(filename)
+        blockbits = bpio.ReadBinaryFile(filename)
         if not blockbits:
             self.automat('block-restored', (None, filename))
             return 
@@ -352,7 +352,7 @@ class restore(automat.Automat):
             # self.File.write(data)
             os.write(self.File, data)
         except:
-            io.exception()
+            bpio.exception()
         if self.blockRestoredCallback is not None:
             self.blockRestoredCallback(self.BackupID, NewBlock)
     
@@ -370,19 +370,19 @@ class restore(automat.Automat):
         os.close(self.File)
     
     def doReportAborted(self, arg):
-        io.log(6, "restore.doReportAborted " + self.BackupID)
+        bpio.log(6, "restore.doReportAborted " + self.BackupID)
         self.Done = True
         self.MyDeferred.callback(self.BackupID+' aborted')
         events.info('restore', '%s restoring were aborted' % self.BackupID)
     
     def doReportFailed(self, arg):
-        io.log(6, "restore.doReportFailed ERROR - the block does not look good")
+        bpio.log(6, "restore.doReportFailed ERROR - the block does not look good")
         self.Done = True
         self.MyDeferred.errback(Exception(self.BackupID+' failed'))
         events.notify('restore', '%s failed to restore block number %d' % (self.BackupID, self.BlockNumber))
     
     def doReportDone(self, arg):
-        # io.log(6, "restore.doReportDone - restore has finished. All is well that ends well !!!")
+        # bpio.log(6, "restore.doReportDone - restore has finished. All is well that ends well !!!")
         self.Done = True
         self.MyDeferred.callback(self.BackupID+' done')
         events.info('restore', '%s restored successfully' % self.BackupID)
@@ -390,7 +390,7 @@ class restore(automat.Automat):
     def doDestroyMe(self, arg):
         automat.objects().pop(self.index)
         collected = gc.collect()
-        # io.log(6, 'restore.doDestroyMe collected %d objects' % collected)
+        # bpio.log(6, 'restore.doDestroyMe collected %d objects' % collected)
 
     def _blockRestoreResult(self, restored_blocks, filename):
         self.automat('raid-done', filename)
@@ -412,6 +412,6 @@ class restore(automat.Automat):
         self.blockRestoredCallback = cb
 
     def Abort(self): # for when user clicks the Abort restore button on the gui
-        io.log(4, "restore.Abort " + self.BackupID)
+        bpio.log(4, "restore.Abort " + self.BackupID)
         self.AbortState = True
 

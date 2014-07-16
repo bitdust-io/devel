@@ -22,7 +22,7 @@ except:
 from twisted.internet import task
 
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.maths as maths
 import lib.misc as misc
 import lib.nameurl as nameurl
@@ -47,14 +47,14 @@ def init():
     global _InitDone
     if _InitDone:
         return
-    io.log(4, 'ratings.init')
+    bpio.log(4, 'ratings.init')
     read_index()
     run()
     _InitDone = True
 
 
 def shutdown():
-    io.log(4, 'ratings.shutdown')
+    bpio.log(4, 'ratings.shutdown')
     stop()
 
 
@@ -65,14 +65,14 @@ def run():
     # debug
     #interval = 5
     reactor.callLater(interval, start)
-    io.log(6, 'ratings.run will start after %s minutes' % str(interval/60.0))
+    bpio.log(6, 'ratings.run will start after %s minutes' % str(interval/60.0))
     
     
 def start():
     global _LoopCountRatingsTask
     _LoopCountRatingsTask = task.LoopingCall(rate_all_users)
     _LoopCountRatingsTask.start(settings.DefaultAlivePacketTimeOut())
-    io.log(6, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut()/60.0))
+    bpio.log(6, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut()/60.0))
 
 
 def stop():
@@ -82,7 +82,7 @@ def stop():
             _LoopCountRatingsTask.stop()
         del _LoopCountRatingsTask
         _LoopCountRatingsTask = None
-        io.log(6, 'ratings.stop task finished')
+        bpio.log(6, 'ratings.stop task finished')
         
             
 def rating_dir(idurl):
@@ -100,31 +100,31 @@ def rating_total_file(idurl):
 
 
 def exist_rating_dir(idurl):
-    return io._dir_exist(rating_dir(idurl))
+    return bpio._dir_exist(rating_dir(idurl))
 
 
 def make_rating_dir(idurl):
-    io._dir_make(rating_dir(idurl))
+    bpio._dir_make(rating_dir(idurl))
 
 
 def read_month_rating_dict(idurl, monthstr=None):
     if monthstr is None:
         monthstr = time.strftime('%m%y')
-    return io._read_dict(rating_month_file(idurl, monthstr))
+    return bpio._read_dict(rating_month_file(idurl, monthstr))
 
 
 def write_month_rating_dict(idurl, rating_dict, monthstr=None):
     if monthstr is None:
         monthstr = time.strftime('%m%y')
-    return io._write_dict(rating_month_file(idurl, monthstr), rating_dict)
+    return bpio._write_dict(rating_month_file(idurl, monthstr), rating_dict)
 
 
 def read_total_rating_dict(idurl):
-    return io._read_dict(rating_total_file(idurl))
+    return bpio._read_dict(rating_total_file(idurl))
 
 
 def write_total_rating_dict(idurl, rating_dict):
-    return io._write_dict(rating_total_file(idurl), rating_dict)
+    return bpio._write_dict(rating_total_file(idurl), rating_dict)
 
 
 def make_blank_rating_dict():
@@ -170,14 +170,14 @@ def increase_rating(idurl, alive_state):
 
 
 def rate_all_users():
-    io.log(4, 'ratings.rate_all_users')
+    bpio.log(4, 'ratings.rate_all_users')
     monthStr = time.strftime('%B')
     for idurl in contacts.getContactsAndCorrespondents():
         isalive = contact_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
         month_percent = 100.0*float(malive)/float(mall)
         total_percent = 100.0*float(talive)/float(tall)
-        io.log(4, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
+        bpio.log(4, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
             month_percent,
             malive,
             mall,
@@ -192,11 +192,11 @@ def rate_all_users():
 def remember_connected_time(idurl):
     if not exist_rating_dir(idurl):
         make_rating_dir(idurl)
-    io._write_data(os.path.join(rating_dir(idurl), 'connected'), time.strftime('%d%m%y %H:%M:%S'))
+    bpio._write_data(os.path.join(rating_dir(idurl), 'connected'), time.strftime('%d%m%y %H:%M:%S'))
                          
 
 def connected_time(idurl):
-    s = io._read_data(os.path.join(rating_dir(idurl), 'connected'))
+    s = bpio._read_data(os.path.join(rating_dir(idurl), 'connected'))
     if s == '':
         return 0
     try:
@@ -224,7 +224,7 @@ def read_all_monthly_ratings(idurl):
 def read_index(monthstr=None):
     global _IndexMonth
     global _IndexTotal
-    #io.log(4, 'ratings.read_index')
+    #bpio.log(4, 'ratings.read_index')
     if monthstr is None:
         monthstr = time.strftime('%m%y')
     _IndexMonth.clear()
@@ -237,7 +237,7 @@ def read_index(monthstr=None):
         total = read_total_rating_dict(idurl)
         _IndexMonth[idurl] = {'all': '0', 'alive': '0'} if month is None else month
         _IndexTotal[idurl] = {'all': '0', 'alive': '0'} if total is None else total
-        #io.log(4, '    [%s]: %s, %s' % (nameurl.GetName(idurl), _IndexMonth[idurl], _IndexTotal[idurl]))
+        #bpio.log(4, '    [%s]: %s, %s' % (nameurl.GetName(idurl), _IndexMonth[idurl], _IndexTotal[idurl]))
 
 
 def month(idurl):

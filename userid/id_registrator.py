@@ -30,17 +30,17 @@ import time
 from twisted.internet.defer import Deferred, DeferredList
 
 try:
-    import lib.io as io
+    import lib.bpio as bpio
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     try:
-        import lib.io as io
+        import lib.bpio as bpio
     except:
         sys.exit()
 
 import lib.automat as automat
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.settings as settings
 import lib.stun as stun
@@ -105,9 +105,9 @@ class IdRegistrator(automat.Automat):
     def msg(self, msgid, arg=None): 
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0] % {
-            'login': io.ReadTextFile(settings.UserNameFilename()),
-            'externalip': io.ReadTextFile(settings.ExternalIPFilename()),
-            'localip': io.ReadTextFile(settings.LocalIPFilename()),}
+            'login': bpio.ReadTextFile(settings.UserNameFilename()),
+            'externalip': bpio.ReadTextFile(settings.ExternalIPFilename()),
+            'localip': bpio.ReadTextFile(settings.LocalIPFilename()),}
         color = 'black'
         if len(msg) == 2:
             color = msg[1]
@@ -258,20 +258,20 @@ class IdRegistrator(automat.Automat):
             s.difference_update(self.discovered_servers)
             if len(s) > 0:
                 self.discovered_servers.append(random.choice(list(s)))
-        io.log(4, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))        
+        bpio.log(4, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))        
 
     def doPingServers(self, arg):
         """
         Action method.
         """
-        io.log(4, 'id_registrator.doPingServers    %d in list' % len(self.discovered_servers))
+        bpio.log(4, 'id_registrator.doPingServers    %d in list' % len(self.discovered_servers))
         def _cb(htmlsrc, id_server_host):
-            io.log(4, '            RESPONDED: %s' % id_server_host)
+            bpio.log(4, '            RESPONDED: %s' % id_server_host)
             self.good_servers.append(id_server_host)
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-response', (id_server_host, htmlsrc))
         def _eb(err, id_server_host):
-            io.log(4, '               FAILED: %s' % id_server_host)
+            bpio.log(4, '               FAILED: %s' % id_server_host)
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))            
         for host in self.discovered_servers:
@@ -288,13 +288,13 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        login = io.ReadTextFile(settings.UserNameFilename())
+        login = bpio.ReadTextFile(settings.UserNameFilename())
         def _cb(xmlsrc, idurl, host):
-            io.log(4, '                EXIST: %s' % idurl)
+            bpio.log(4, '                EXIST: %s' % idurl)
             self.registrations.remove(idurl)
             self.automat('id-exist', idurl)
         def _eb(err, idurl, host):
-            io.log(4, '            NOT EXIST: %s' % idurl)
+            bpio.log(4, '            NOT EXIST: %s' % idurl)
             self.free_idurls.append(idurl)
             self.registrations.remove(idurl)
             self.automat('id-not-exist', idurl)        
@@ -304,30 +304,30 @@ class IdRegistrator(automat.Automat):
             if webport == 80:
                 webport = ''
             idurl = nameurl.UrlMake('http', host, webport, login+'.xml')
-            io.log(4, '    %s' % idurl)
+            bpio.log(4, '    %s' % idurl)
             d = net_misc.getPageTwisted(idurl, timeout=10)
             d.addCallback(_cb, idurl, host)
             d.addErrback(_eb, idurl, host)
             self.registrations.append(idurl)
-        io.log(4, 'id_registrator.doRequestServers login=%s registrations=%d' % (login, len(self.registrations)))
+        bpio.log(4, 'id_registrator.doRequestServers login=%s registrations=%d' % (login, len(self.registrations)))
 
     def doDetectLocalIP(self, arg):
         """
         Action method.
         """
         localip = net_misc.getLocalIp()
-        io.WriteFile(settings.LocalIPFilename(), localip)
-        io.log(4, 'id_registrator.doDetectLocalIP [%s]' % localip)
+        bpio.WriteFile(settings.LocalIPFilename(), localip)
+        bpio.log(4, 'id_registrator.doDetectLocalIP [%s]' % localip)
         self.automat('local-ip-detected')        
 
     def doStunExternalIP(self, arg):
         """
         Action method.
         """
-        io.log(4, 'id_registrator.doStunExternalIP')
+        bpio.log(4, 'id_registrator.doStunExternalIP')
         def save(ip):
-            io.log(4, '            external IP is %s' % ip)
-            io.WriteFile(settings.ExternalIPFilename(), ip)
+            bpio.log(4, '            external IP is %s' % ip)
+            bpio.WriteFile(settings.ExternalIPFilename(), ip)
             self.automat('stun-success', ip)
         stun.stunExternalIP(
             close_listener=True,  # False, 
@@ -339,8 +339,8 @@ class IdRegistrator(automat.Automat):
         Action method.
         """
         login = arg
-        io.log(4, 'id_registrator.doSaveMyName [%s]' % login)
-        io.WriteFile(settings.UserNameFilename(), login)
+        bpio.log(4, 'id_registrator.doSaveMyName [%s]' % login)
+        bpio.WriteFile(settings.UserNameFilename(), login)
 
     def doCreateMyIdentity(self, arg):
         """
@@ -368,13 +368,13 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        io.log(8, 'id_registrator.doRequestMyIdentity')
+        bpio.log(8, 'id_registrator.doRequestMyIdentity')
         def _cb(src):
             self.automat('my-id-exist', src)
         def _eb(err):
             self.automat('my-id-not-exist', err)
         for idurl in self.new_identity.sources:
-            io.log(8, '        %s' % idurl)
+            bpio.log(8, '        %s' % idurl)
             d = net_misc.getPageTwisted(idurl, timeout=20)
             d.addCallback(_cb)
             d.addErrback(_eb)
@@ -415,17 +415,17 @@ class IdRegistrator(automat.Automat):
 #                valid = lid.Valid()
 #            except:
 #                valid = False
-#                io.exception()
+#                bpio.exception()
 #            if valid:
 #                self.new_identity = lid
-#                io.log(2, 'id_registrator.create_new_identity   found existing local identity!!!!!!!!!!')
+#                bpio.log(2, 'id_registrator.create_new_identity   found existing local identity!!!!!!!!!!')
 #                return
-#            io.log(2, 'id_registrator.create_new_identity WARNING existing local identity is not VALID')
+#            bpio.log(2, 'id_registrator.create_new_identity WARNING existing local identity is not VALID')
     
-        login = io.ReadTextFile(settings.UserNameFilename())
-        externalIP = io.ReadTextFile(settings.ExternalIPFilename())
-        localIP = io.ReadTextFile(settings.LocalIPFilename())
-        io.log(4, 'id_registrator.create_new_identity %s %s ' % (login, externalIP))
+        login = bpio.ReadTextFile(settings.UserNameFilename())
+        externalIP = bpio.ReadTextFile(settings.ExternalIPFilename())
+        localIP = bpio.ReadTextFile(settings.LocalIPFilename())
+        bpio.log(4, 'id_registrator.create_new_identity %s %s ' % (login, externalIP))
         ident = identity.identity()
         ident.default()
         ident.sources = []
@@ -440,24 +440,24 @@ class IdRegistrator(automat.Automat):
                     host += '_%d' % int(port) 
                 cdict['dhtudp'] = 'dhtudp://%s@%s' % (login.lower(), host)
             except:
-                io.exception()
+                bpio.exception()
         for c in misc.validTransports:
             if cdict.has_key(c):
                 ident.contacts.append(cdict[c])
         ident.publickey = crypto.MyPublicKey()
         ident.date = time.ctime() #time.strftime('%b %d, %Y')
-        revnum = io.ReadTextFile(settings.RevisionNumberFile()).strip()
+        revnum = bpio.ReadTextFile(settings.RevisionNumberFile()).strip()
         repo, location = misc.ReadRepoLocation()
-        ident.version = (revnum.strip() + ' ' + repo.strip() + ' ' + io.osinfo().strip()).strip()
+        ident.version = (revnum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
         ident.sign()
-        io.WriteFile(settings.LocalIdentityFilename()+'.new', ident.serialize())
+        bpio.WriteFile(settings.LocalIdentityFilename()+'.new', ident.serialize())
         self.new_identity = ident
         
     def send_new_identity(self):
         """
         Send created identity to the identity server to register it. 
         """
-        io.log(4, 'id_registrator.send_new_identity ')
+        bpio.log(4, 'id_registrator.send_new_identity ')
         gate.init()
         gate.start()
         sendfilename = settings.LocalIdentityFilename()+'.new'
@@ -476,9 +476,9 @@ class IdRegistrator(automat.Automat):
 #------------------------------------------------------------------------------ 
 
 def main():
-    io.init()
+    bpio.init()
     settings.init()
-    io.SetDebug(20)
+    bpio.SetDebug(20)
     from twisted.internet import reactor
     reactor.callWhenRunning(A, 'start', sys.argv[1])
     reactor.run()

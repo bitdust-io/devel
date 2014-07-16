@@ -30,13 +30,13 @@ from twisted.internet.defer import Deferred
 
 
 try:
-    import lib.io as io
+    import lib.bpio as bpio
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
     try:
-        import lib.io as io
+        import lib.bpio as bpio
     except:
         sys.exit()
 
@@ -117,14 +117,14 @@ def init():
     Must be called before other methods here.
     Load index database from file .bitpie/metadata/index.
     """
-    io.log(4, 'backup_control.init')
+    bpio.log(4, 'backup_control.init')
     Load()
 
 def shutdown():
     """
     Called for the correct completion of all things.
     """
-    io.log(4, 'backup_control.shutdown')
+    bpio.log(4, 'backup_control.shutdown')
     
 #------------------------------------------------------------------------------ 
 
@@ -139,7 +139,7 @@ def WriteIndex(filepath=None):
         filepath = settings.BackupIndexFilePath()
     src = '%d\n' % revision()
     src += backup_fs.Serialize()
-    return io.AtomicWriteFile(filepath, src)
+    return bpio.AtomicWriteFile(filepath, src)
 
 def ReadIndex(input):
     """
@@ -155,7 +155,7 @@ def ReadIndex(input):
         new_revision = int(input.readline().rstrip('\n'))
     except:
         _LoadingFlag = False
-        io.exception()
+        bpio.exception()
         return False
     backup_fs.Clear()
     count = backup_fs.Unserialize(input)
@@ -173,11 +173,11 @@ def Load(filepath=None):
     if filepath is None:
         filepath = settings.BackupIndexFilePath()
     if not os.path.isfile(filepath):
-        io.log(2, 'backup_control.Load ERROR file %s not exist' % filepath)
+        bpio.log(2, 'backup_control.Load ERROR file %s not exist' % filepath)
         return False
-    src = io.ReadTextFile(filepath)
+    src = bpio.ReadTextFile(filepath)
     if not src:
-        io.log(2, 'backup_control.Load ERROR reading file %s' % filepath)
+        bpio.log(2, 'backup_control.Load ERROR reading file %s' % filepath)
         return False
     input = cStringIO.StringIO(src)
     ret = ReadIndex(input)
@@ -207,7 +207,7 @@ def IncomingSupplierListFiles(newpacket):
     supplier_idurl = newpacket.OwnerID
     num = contacts.numberForSupplier(supplier_idurl)
     if num < -1:
-        io.log(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
+        bpio.log(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
         return
     src = p2p_service.UnpackListFiles(newpacket.Payload, settings.ListFilesFormat())
     backups2remove, paths2remove = backup_matrix.ReadRawListFiles(num, src)
@@ -219,7 +219,7 @@ def IncomingSupplierListFiles(newpacket):
         p2p_service.RequestDeleteListPaths(paths2remove)
     del backups2remove
     del paths2remove
-    io.log(8, 'backup_control.IncomingSupplierListFiles from [%s] %s bytes long' % (
+    bpio.log(8, 'backup_control.IncomingSupplierListFiles from [%s] %s bytes long' % (
         nameurl.GetName(supplier_idurl), len(newpacket.Payload)))
  
 def IncomingSupplierBackupIndex(newpacket):
@@ -229,7 +229,7 @@ def IncomingSupplierBackupIndex(newpacket):
     """
     b = encrypted_block.Unserialize(newpacket.Payload)
     if b is None:
-        io.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
+        bpio.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         return
     try:
         session_key = crypto.DecryptLocalPK(b.EncryptedSessionKey)
@@ -238,9 +238,9 @@ def IncomingSupplierBackupIndex(newpacket):
         supplier_revision = int(input.readline().rstrip('\n'))
         input.seek(0)
     except:
-        io.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
-        io.log(2, '\n' + padded_data)
-        io.exception()
+        bpio.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
+        bpio.log(2, '\n' + padded_data)
+        bpio.exception()
         try:
             input.close()
         except:
@@ -252,7 +252,7 @@ def IncomingSupplierBackupIndex(newpacket):
         backup_fs.Calculate()
         WriteIndex()
         # TODO repaint a GUI
-        io.log(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
+        bpio.log(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
             revision(), newpacket.RemoteID))
     input.close()
     # backup_db_keeper.A('incoming-db-info', newpacket)
@@ -268,7 +268,7 @@ def SetSupplierList(supplierList):
     So we lost everything! Definitely suppliers number should be a sort of constant number.
     """
     if len(supplierList) != backup_matrix.suppliers_set().supplierCount:
-        io.log(2, "backup_control.SetSupplierList got list of %d suppliers, but we have %d now!" % (len(supplierList), backup_matrix.suppliers_set().supplierCount))
+        bpio.log(2, "backup_control.SetSupplierList got list of %d suppliers, but we have %d now!" % (len(supplierList), backup_matrix.suppliers_set().supplierCount))
         # cancel all tasks and jobs
         DeleteAllTasks()
         AbortAllRunningBackups()
@@ -289,7 +289,7 @@ def SetSupplierList(supplierList):
         changedSupplierNums = backup_matrix.suppliers_set().SuppliersChangedNumbers(supplierList)
         # notify io_throttle that we do not neeed already this suppliers
         for supplierNum in changedSupplierNums:
-            io.log(2, "backup_control.SetSupplierList supplier %d changed: [%s]->[%s]" % (
+            bpio.log(2, "backup_control.SetSupplierList supplier %d changed: [%s]->[%s]" % (
                 supplierNum, nameurl.GetName(backup_matrix.suppliers_set().suppliers[supplierNum]), nameurl.GetName(supplierList[supplierNum])))
             io_throttle.DeleteSuppliers([backup_matrix.suppliers_set().suppliers[supplierNum],])
             # erase (set to 0) remote info for this guys
@@ -310,7 +310,7 @@ def DeleteAllBackups():
     # prepare a list of all known backup IDs
     all = set(backup_fs.ListAllBackupIDs())
     all.update(backup_matrix.GetBackupIDs(remote=True, local=True))
-    io.log(4, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all))
+    bpio.log(4, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all))
     # delete one by one
     for backupID in all:
         DeleteBackup(backupID, saveDB=False, calculate=False)
@@ -336,7 +336,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
         9) check and calculate used space
         10) save the modified index data base, soon it will be synchronized with "backup_db_keeper()" state machine  
     """
-    io.log(8, 'backup_control.DeleteBackup ' + backupID)
+    bpio.log(8, 'backup_control.DeleteBackup ' + backupID)
     # if the user deletes a backup, make sure we remove any work we're doing on it
     # abort backup if it just started and is running at the moment
     AbortRunningBackup(backupID)
@@ -392,7 +392,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
         backup_matrix.EraseBackupLocalInfo(backupID)
         # finally remove this backup from the index
         item.delete_version(version)
-        io.log(8, 'backup_control.DeletePathBackups ' + backupID)
+        bpio.log(8, 'backup_control.DeletePathBackups ' + backupID)
     # stop any rebuilding, we will restart it soon
     backup_rebuilder.RemoveAllBackupsToWork()
     backup_rebuilder.SetStoppedFlag()
@@ -439,7 +439,7 @@ class Task():
         """
         iter_and_path = backup_fs.WalkByID(self.pathID)
         if iter_and_path is None:
-            io.log(4, 'backup_control.Task.run ERROR %s not found in the index' % self.pathID)
+            bpio.log(4, 'backup_control.Task.run ERROR %s not found in the index' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return
         itemInfo, sourcePath = iter_and_path
@@ -447,10 +447,10 @@ class Task():
             try:
                 itemInfo = itemInfo[backup_fs.INFO_KEY]
             except:
-                io.exception()
+                bpio.exception()
                 return
         if not backup_fs.pathExist(sourcePath):
-            io.log(4, 'backup_control.Task.run WARNING path not exist: %s' % sourcePath)
+            bpio.log(4, 'backup_control.Task.run WARNING path not exist: %s' % sourcePath)
             reactor.callLater(0, OnTaskFailed, self.pathID, 'not exist')
             return
         dataID = misc.NewBackupID()
@@ -465,8 +465,8 @@ class Task():
         try:
             backupPath = backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
         except:
-            io.exception()
-            io.log(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
+            bpio.exception()
+            bpio.log(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return 
         compress_mode = 'none' # 'gz'
@@ -482,7 +482,7 @@ class Task():
             dirsize.ask(sourcePath, FoundFolderSize, (self.pathID, dataID))
         jobs()[backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
-        io.log(4, 'backup_control.Task.run %s [%s], size=%d' % (self.pathID, dataID, itemInfo.size))
+        bpio.log(4, 'backup_control.Task.run %s [%s], size=%d' % (self.pathID, dataID, itemInfo.size))
         
 def PutTask(pathID):
     """
@@ -529,7 +529,7 @@ def FoundFolderSize(pth, sz, arg):
         if item:
             item.set_size(sz)
     except:
-        io.exception()
+        bpio.exception()
         
 #------------------------------------------------------------------------------ 
 
@@ -538,7 +538,7 @@ def OnJobDone(backupID, result):
     A callback method fired when backup is finished.
     Here we need to save the index data base. 
     """
-    io.log(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
+    bpio.log(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
     pathID, version = packetid.SplitBackupID(backupID)
     if result == 'done':
@@ -577,7 +577,7 @@ def OnTaskFailed(pathID, result):
     """
     Called when backup process get failed somehow.
     """
-    io.log(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
+    bpio.log(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
     RunTasks()
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)
     
@@ -653,7 +653,7 @@ def StartRecursive(pathID):
     backup_fs.TraverseByID(visitor)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.Restart)
-    io.log(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
+    bpio.log(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
     return startedtasks
 
 #------------------------------------------------------------------------------ 
@@ -741,8 +741,8 @@ def test2():
 #------------------------------------------------------------------------------ 
 
 if __name__ == "__main__":
-    io.init()
-    io.SetDebug(20)
+    bpio.init()
+    bpio.SetDebug(20)
     settings.init()
     tmpfile.init(settings.getTempDir())
     contacts.init()

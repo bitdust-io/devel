@@ -50,13 +50,13 @@ from twisted.python.win32 import cmdLineQuote
 import subprocess
 
 try:
-    import lib.io as io
+    import lib.bpio as bpio
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
     try:
-        import lib.io as io
+        import lib.bpio as bpio
     except:
         sys.exit()
 
@@ -82,7 +82,7 @@ def init():
     global _Loop
     global _LoopValidate
     global _LoopUpdateCustomers
-    io.log(4, 'localtester.init ')
+    bpio.log(4, 'localtester.init ')
     _Loop = reactor.callLater(5, loop)
     _LoopValidate = reactor.callLater(0, loop_validate)
     _LoopUpdateCustomers = reactor.callLater(0, loop_update_customers)
@@ -95,7 +95,7 @@ def shutdown():
     global _LoopUpdateCustomers
     global _LoopSpaceTime
     global _CurrentProcess
-    io.log(4, 'localtester.shutdown ')
+    bpio.log(4, 'localtester.shutdown ')
 
     if _Loop:
         if _Loop.active():
@@ -111,12 +111,12 @@ def shutdown():
             _LoopSpaceTime.cancel()
 
     if alive():
-        io.log(4, 'localtester.shutdown is killing bptester')
+        bpio.log(4, 'localtester.shutdown is killing bptester')
 
         try:
             _CurrentProcess.kill()
         except:
-            io.log(4, 'localtester.shutdown WARNING can not kill bptester')
+            bpio.log(4, 'localtester.shutdown WARNING can not kill bptester')
         del _CurrentProcess
         _CurrentProcess = None
 
@@ -141,9 +141,9 @@ def _popTester():
 
 def run(Tester):
     global _CurrentProcess
-    # io.log(8, 'localtester.run ' + str(Tester))
+    # bpio.log(8, 'localtester.run ' + str(Tester))
 
-    if io.isFrozen() and io.Windows():
+    if bpio.isFrozen() and bpio.Windows():
         commandpath = 'bptester.exe'
         cmdargs = [commandpath, Tester]
     else:
@@ -151,13 +151,13 @@ def run(Tester):
         cmdargs = [sys.executable, commandpath, Tester]
 
     if not os.path.isfile(commandpath):
-        io.log(1, 'localtester.run ERROR %s not found' % commandpath)
+        bpio.log(1, 'localtester.run ERROR %s not found' % commandpath)
         return None
 
-    io.log(14, 'localtester.run execute: %s' % cmdargs)
+    bpio.log(14, 'localtester.run execute: %s' % cmdargs)
 
     try:
-        if io.Windows():
+        if bpio.Windows():
             import win32process
             _CurrentProcess = nonblocking.Popen(
                 cmdargs,
@@ -176,8 +176,8 @@ def run(Tester):
                 stderr = subprocess.PIPE,
                 universal_newlines = False,)
     except:
-        io.log(1, 'localtester.run ERROR executing: %s' % str(cmdargs))
-        io.exception()
+        bpio.log(1, 'localtester.run ERROR executing: %s' % str(cmdargs))
+        bpio.exception()
         return None
     return _CurrentProcess
 
@@ -233,8 +233,8 @@ def TestSpaceTime():
 #-------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    io.SetDebug(18)
-    io.init()
+    bpio.SetDebug(18)
+    bpio.init()
     settings.init()
     init()
     reactor.run()

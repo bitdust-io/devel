@@ -46,7 +46,7 @@ from twisted.internet.defer import Deferred
 #    sys.path.insert(0, os.path.abspath('..'))
 
 import lib.misc as misc
-import lib.io as io
+import lib.bpio as bpio
 import lib.crypto as crypto
 import lib.contacts as contacts
 
@@ -131,12 +131,12 @@ class Block:
         Validate signature to verify the ``encrypted_block``.
         """
         if not self.Ready():
-            io.log(4, "encrypted_block.Valid WARNING block is not ready yet " + str(self))
+            bpio.log(4, "encrypted_block.Valid WARNING block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
         ConIdentity = contacts.getContact(misc.getLocalID())
         if ConIdentity is None:
-            io.log(2, "encrypted_block.Valid WARNING could not get Identity so returning False")
+            bpio.log(2, "encrypted_block.Valid WARNING could not get Identity so returning False")
             return False
         result = crypto.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
         return result

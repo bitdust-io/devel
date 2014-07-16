@@ -73,7 +73,7 @@ except:
 from twisted.internet.defer import maybeDeferred
 
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.settings as settings
 import lib.nonblocking as nonblocking
@@ -121,13 +121,13 @@ class backup(automat.Automat):
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
         automat.Automat.__init__(self, 'backup', 'AT_STARTUP', 14)
-        # io.log(6, 'backup.__init__ %s %s %d' % (self.backupID, self.eccmap, self.blockSize,))
+        # bpio.log(6, 'backup.__init__ %s %s %d' % (self.backupID, self.eccmap, self.blockSize,))
 
     def abort(self):
         """
         This method should stop this backup by killing the pipe process.
         """
-        io.log(4, 'backup.abort id='+str(self.backupID))
+        bpio.log(4, 'backup.abort id='+str(self.backupID))
         self.ask4abort = True
         try:
             self.pipe.kill()
@@ -235,9 +235,9 @@ class backup(automat.Automat):
         def readChunk():
             size = self.blockSize - self.currentBlockSize
             if size < 0:
-                io.log(1, "backup.readChunk ERROR eccmap.nodes=" + str(self.eccmap.nodes()))
-                io.log(1, "backup.readChunk ERROR blockSize=" + str(self.blockSize))
-                io.log(1, "backup.readChunk ERROR currentBlockSize=" + str(self.currentBlockSize))
+                bpio.log(1, "backup.readChunk ERROR eccmap.nodes=" + str(self.eccmap.nodes()))
+                bpio.log(1, "backup.readChunk ERROR blockSize=" + str(self.blockSize))
+                bpio.log(1, "backup.readChunk ERROR currentBlockSize=" + str(self.currentBlockSize))
                 raise Exception('size < 0, blockSize=%s, currentBlockSize=%s' % (self.blockSize, self.currentBlockSize))
                 return ''
             elif size == 0:
@@ -246,14 +246,14 @@ class backup(automat.Automat):
                 raise Exception('backup.pipe is None')
                 return ''
             if self.pipe.state() == nonblocking.PIPE_CLOSED:
-                io.log(10, 'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
+                bpio.log(10, 'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
                 return ''
             if self.pipe.state() == nonblocking.PIPE_READY2READ:
                 newchunk = self.pipe.recv(size)
                 if newchunk == '':
-                    io.log(10, 'backup.readChunk pipe.recv() returned empty string')
+                    bpio.log(10, 'backup.readChunk pipe.recv() returned empty string')
                 return newchunk
-            io.log(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
+            bpio.log(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
             raise Exception('backup.pipe.state is ' + str(self.pipe.state()))
             return ''
         def readDone(data):
@@ -263,7 +263,7 @@ class backup(automat.Automat):
             if data == '':
                 self.stateEOF = True
             self.automat('read-success')
-            #io.log(12, 'backup.readDone %d bytes' % len(data))
+            #bpio.log(12, 'backup.readDone %d bytes' % len(data))
         self.stateReading = True
         maybeDeferred(readChunk).addCallback(readDone)
 
@@ -280,7 +280,7 @@ class backup(automat.Automat):
                 self.stateEOF,
                 src,)
             del src
-            io.log(12, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s' % (
+            bpio.log(12, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s' % (
                 self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time()-dt)))
             return block
         maybeDeferred(_doBlock).addCallback(
@@ -303,7 +303,7 @@ class backup(automat.Automat):
             os.path.join(settings.getLocalBackupsDir(), self.backupID)),
             lambda cmd, params, result: self._raidmakeCallback(params, result, dt),))
         self.automat('block-raid-started', newblock)
-        io.log(12, 'backup.doBlockPushAndRaid %s' % newblock.BlockNumber)
+        bpio.log(12, 'backup.doBlockPushAndRaid %s' % newblock.BlockNumber)
         del serializedblock
 
     def doPopBlock(self, arg):
@@ -360,11 +360,11 @@ class backup(automat.Automat):
         del self.currentBlockData
         automat.objects().pop(self.index)
         collected = gc.collect()
-        io.log(10, 'backup.doDestroyMe [%s] collected %d objects' % (self.backupID, collected))
+        bpio.log(10, 'backup.doDestroyMe [%s] collected %d objects' % (self.backupID, collected))
 
     def _raidmakeCallback(self, params, result, dt):
         filename, eccmapname, backupID, blockNumber, targetDir = params
-        io.log(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
+        bpio.log(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
             blockNumber, result, str(self.stateEOF), str(time.time()-dt)))
         self.automat('block-raid-done', (blockNumber, result))
         

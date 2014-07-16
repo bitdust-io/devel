@@ -58,7 +58,7 @@ except:
 
 import lib.automat as automat
 import lib.automats as automats
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.nameurl as nameurl
 
@@ -240,12 +240,12 @@ class Installer(automat.Automat):
         # gate.init()
 
     def doClearOutput(self, arg):
-        # io.log(4, 'installer.doClearOutput')
+        # bpio.log(4, 'installer.doClearOutput')
         for state in self.output.keys():
             self.output[state] = {'data': [('', 'black')]}
 
     def doPrint(self, arg):
-        io.log(8, 'installer.doPrint %s %s' % (self.state, str(arg)))
+        bpio.log(8, 'installer.doPrint %s %s' % (self.state, str(arg)))
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
         if arg is None:
@@ -256,7 +256,7 @@ class Installer(automat.Automat):
             ch = '+'
             if arg[1] == 'red':
                 ch = '!'
-            io.log(0, '  %s %s' % (ch, arg[0]))
+            bpio.log(0, '  %s %s' % (ch, arg[0]))
 
     def doShowOutput(self, arg):
         """
@@ -271,15 +271,15 @@ class Installer(automat.Automat):
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['data'].append((text, color))
-        # io.log(0, '  [%s]' % text)
+        # bpio.log(0, '  [%s]' % text)
 
     def doUpdate(self, arg):
-        # io.log(4, 'installer.doUpdate')
+        # bpio.log(4, 'installer.doUpdate')
         reactor.callLater(0, webcontrol.OnUpdateInstallPage)
 
     def doReadKey(self, arg):
-        io.log(2, 'installer.doReadKey arg=[%s]' % str(arg))
-        src = io.ReadBinaryFile(arg)
+        bpio.log(2, 'installer.doReadKey arg=[%s]' % str(arg))
+        src = bpio.ReadBinaryFile(arg)
         if len(src) > 1024*10:
             self.doPrint(('file is too big for private key', 'red'))
             return
@@ -292,7 +292,7 @@ class Installer(automat.Automat):
                 idurl = ''
                 keysrc = src
         except:
-            io.exception()
+            bpio.exception()
             idurl = ''
             keysrc = src
 
@@ -311,7 +311,7 @@ class Installer(automat.Automat):
                 idurl = ''
                 keysrc = src
         except:
-            io.exception()
+            bpio.exception()
             idurl = ''
             keysrc = src
         if not self.output.has_key(self.state):
@@ -321,9 +321,9 @@ class Installer(automat.Automat):
 #    def doIncreaseDebugLevel(self, arg):
 #        """
 #        """
-#        if self.flagCmdLine and not io.Debug(10):
-#            io.SetDebug(0)
+#        if self.flagCmdLine and not bpio.Debug(10):
+#            bpio.SetDebug(0)
 #        else:
-#            io.SetDebug(18)
+#            bpio.SetDebug(18)
 
 

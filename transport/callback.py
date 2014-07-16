@@ -6,7 +6,7 @@
 
 from twisted.internet.defer import Deferred
 
-import lib.io as io
+import lib.bpio as bpio
 
 #------------------------------------------------------------------------------ 
 
@@ -47,7 +47,7 @@ def register_interest(cb, creator_id, packet_id):
     if newparty.ComboID not in interested_parties().keys():
         interested_parties()[newparty.ComboID] = []
     interested_parties()[newparty.ComboID].append(newparty) 
-    io.log(18, 'callback.register_interest %r' % newparty.ComboID)
+    bpio.log(18, 'callback.register_interest %r' % newparty.ComboID)
 
 
 def remove_interest(creator_id, packet_id):
@@ -58,15 +58,15 @@ def remove_interest(creator_id, packet_id):
     if interested_parties().has_key(comboID):
         del interested_parties()[comboID]
     else:
-        io.log(10, 'callback.remove_interest WARNING  party %r not found' % comboID)
+        bpio.log(10, 'callback.remove_interest WARNING  party %r not found' % comboID)
 
 
 def find_interested_party(newpacket, info):
     ComboID = combine_IDs(newpacket.CreatorID, newpacket.PacketID)
     if ComboID not in interested_parties().keys():
-        # io.log(18, 'callback.find_interested_party not found : %r' % ComboID)
+        # bpio.log(18, 'callback.find_interested_party not found : %r' % ComboID)
         # for combid in interested_parties().keys():
-        #     io.log(18, '        %s' % combid)
+        #     bpio.log(18, '        %s' % combid)
         return False
     count = 0
     for party in interested_parties()[ComboID]:
@@ -77,7 +77,7 @@ def find_interested_party(newpacket, info):
             FuncOrDefer(newpacket, info)
         count += 1
     del interested_parties()[ComboID]                 # We called all interested parties, remove entry in dictionary
-    io.log(18, 'callback.find_interested_party found for %r other parties=%d' % (newpacket, len(interested_parties())))
+    bpio.log(18, 'callback.find_interested_party found for %r other parties=%d' % (newpacket, len(interested_parties())))
     return True
 
 
@@ -93,7 +93,7 @@ def delete_backup_interest(BackupName):
             partystoremove.add(combokey)          # will remove party since got his callback
             found=True
     for combokey in partystoremove:                           #
-        # io.log(12, "transport_control.DeleteBackupInterest removing " + combokey)
+        # bpio.log(12, "transport_control.DeleteBackupInterest removing " + combokey)
         del interested_parties()[combokey]
     del partystoremove
     return found
@@ -193,7 +193,7 @@ def run_inbox_callbacks(newpacket, info, status, error_message):
             if cb(newpacket, info, status, error_message):
                 handled = True
         except:
-            io.exception()
+            bpio.exception()
     return handled
 
 
@@ -207,7 +207,7 @@ def run_outbox_callbacks(pkt_out):
             if cb(pkt_out):
                 handled = True
         except:
-            io.exception()
+            bpio.exception()
     return handled
 
 
@@ -221,7 +221,7 @@ def run_queue_item_status_callbacks(pkt_out, status, error_message):
             if cb(pkt_out, status, error_message):
                 handled = True
         except:
-            io.exception()
+            bpio.exception()
     return handled
     
 
@@ -241,7 +241,7 @@ def run_finish_file_sending_callbacks(pkt_out, item, status, size, error_message
             if cb(pkt_out, item, status, size, error_message):
                 handled = True
         except:
-            io.exception()
+            bpio.exception()
     return handled
     
     

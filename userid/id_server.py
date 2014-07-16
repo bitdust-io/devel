@@ -28,13 +28,13 @@ from twisted.internet.defer import Deferred, DeferredList
 from twisted.web import server, resource, static
 
 try:
-    import lib.io as io
+    import lib.bpio as bpio
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
     try:
-        import lib.io as io
+        import lib.bpio as bpio
     except:
         sys.exit("Can not import bitpie.lib.io")
 
@@ -139,44 +139,44 @@ class IdServer(automat.Automat):
         """
         self.hostname = settings.getIdServerHost()
         if self.hostname == '':
-            self.hostname = io.ReadTextFile(settings.ExternalIPFilename())
+            self.hostname = bpio.ReadTextFile(settings.ExternalIPFilename())
         if self.hostname == '':
             self.hostname = net_misc.getLocalIp()
-        io.log(4, 'id_server.doSetUp hostname=%s' % self.hostname)
+        bpio.log(4, 'id_server.doSetUp hostname=%s' % self.hostname)
         if not os.path.isdir(settings.IdentityServerDir()):
             os.makedirs(settings.IdentityServerDir())
-            io.log(4, '            created a folder %s' % settings.IdentityServerDir())
+            bpio.log(4, '            created a folder %s' % settings.IdentityServerDir())
         root = WebRoot()
         root.putChild('', WebMainPage())
         try:
             self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))
-            io.log(4,"            have started web listener on port %d " % (self.web_port))
+            bpio.log(4,"            have started web listener on port %d " % (self.web_port))
         except:
-            io.log(4,"id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
-            io.exception()
+            bpio.log(4,"id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
+            bpio.exception()
         try:
             self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())
-            io.log(4, "            identity server listen on TCP port %d started" % (self.tcp_port))
+            bpio.log(4, "            identity server listen on TCP port %d started" % (self.tcp_port))
         except:
-            io.log(4,"id_server.set_up ERROR exception trying to listen on port " + str(self.tcp_port))
-            io.exception()
+            bpio.log(4,"id_server.set_up ERROR exception trying to listen on port " + str(self.tcp_port))
+            bpio.exception()
 
     def doSetDown(self, arg):
         """
         Action method.
         """
-        io.log(4,"id_server.doSetDown")
+        bpio.log(4,"id_server.doSetDown")
         shutlist = []
         if self.web_listener:
             d = self.web_listener.stopListening()
             if d:
                 shutlist.append(d)
-            io.log(4,"            stopped web listener")
+            bpio.log(4,"            stopped web listener")
         if self.tcp_listener:
             d = self.tcp_listener.stopListening()
             if d:
                 shutlist.append(d)
-            io.log(4,"            stopped TCP listener")
+            bpio.log(4,"            stopped TCP listener")
         self.web_listener = None
         self.tcp_listener = None
         DeferredList(shutlist).addBoth(lambda x: self.automat('server-down'))
@@ -200,70 +200,70 @@ class IdServer(automat.Automat):
     def save_identity(self, inputfilename):
         """
         """
-        io.log(6,"id_server.save_identity " + inputfilename)
+        bpio.log(6,"id_server.save_identity " + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
-            io.log(2,"id_server.save_identity WARNING input file too big - ignoring ")
+            bpio.log(2,"id_server.save_identity WARNING input file too big - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file too big')
             # os.remove(inputfilename)
             return
-        newxml = io.ReadTextFile(inputfilename)
+        newxml = bpio.ReadTextFile(inputfilename)
         if len(newxml.strip()) < 500:
-            io.log(2,"id_server.save_identity WARNING input file too small - ignoring ")
+            bpio.log(2,"id_server.save_identity WARNING input file too small - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file too small')
             # os.remove(inputfilename)
             return
         try:    
             newidentity = identity.identity(xmlsrc=newxml)
         except:
-            io.log(2,"id_server.save_identity WARNING input file is wrong - ignoring ")
+            bpio.log(2,"id_server.save_identity WARNING input file is wrong - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file is wrong')
             # os.remove(inputfilename)
             return
         tmpfile.erase('idsrv', inputfilename, 'id received')
         if not newidentity.Valid():
-            io.log(2,"id_server.save_identity WARNING has non-Valid packet")
+            bpio.log(2,"id_server.save_identity WARNING has non-Valid packet")
             return
         matchid = ""
         for idurl in newidentity.sources:
             protocol, host, port, filename = nameurl.UrlParse(idurl)
             if host == self.hostname:
-                io.log(4,"id_server.save_identity found match for us")
+                bpio.log(4,"id_server.save_identity found match for us")
                 matchid = idurl
                 break
         if matchid == "":
-            io.log(2,"id_server.save_identity WARNING identity is not for this nameserver")
+            bpio.log(2,"id_server.save_identity WARNING identity is not for this nameserver")
             return
         protocol, host, port, filename = nameurl.UrlParse(matchid)
         name, justxml = filename.split(".")
         #SECURITY check that name is simple
         if justxml != "xml":
-            io.log(2,"id_server.save_identity WARNING identity name " + filename)
+            bpio.log(2,"id_server.save_identity WARNING identity name " + filename)
             return
         if len(name) > settings.MaximumUsernameLength():
-            io.log(2,"id_server.save_identity WARNING identity name " + filename)
+            bpio.log(2,"id_server.save_identity WARNING identity name " + filename)
             return
         if len(name) < settings.MinimumUsernameLength():
-            io.log(2,"id_server.save_identity WARNING identity name " + filename)
+            bpio.log(2,"id_server.save_identity WARNING identity name " + filename)
             return
         for c in name:
             if c not in settings.LegalUsernameChars():
-                io.log(2,"id_server.save_identity WARNING identity name " + filename)
+                bpio.log(2,"id_server.save_identity WARNING identity name " + filename)
                 return
         localfilename = os.path.join(settings.IdentityServerDir(), filename)
-    #    io.log(8,"id_server.SaveIdentity with filename " + localfilename)
+    #    bpio.log(8,"id_server.SaveIdentity with filename " + localfilename)
         oldxml = ''
         # need to make sure id was not already used by different key - which would mean someone trying to steal identity
         if os.path.exists(localfilename):
-            io.log(6,"id_server.save_identity was already an identity with this name " + localfilename)
-            oldxml = io.ReadTextFile(localfilename)
+            bpio.log(6,"id_server.save_identity was already an identity with this name " + localfilename)
+            oldxml = bpio.ReadTextFile(localfilename)
             oldidentity = identity.identity(xmlsrc=oldxml)
             if oldidentity.publickey != newidentity.publickey:
-                io.log(4,"id_server.save_identity WARNING new public key does not match old " + localfilename)
+                bpio.log(4,"id_server.save_identity WARNING new public key does not match old " + localfilename)
                 return
         if newxml != oldxml:
             if not os.path.exists(localfilename):
-                io.log(6,"id_server.save_identity will save NEW Identity: " + filename)
-            io.WriteFile(localfilename, newxml)
+                bpio.log(6,"id_server.save_identity will save NEW Identity: " + filename)
+            bpio.WriteFile(localfilename, newxml)
 
 #------------------------------------------------------------------------------ 
 
@@ -282,7 +282,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
     def connectionMade(self):
         """
         """
-        # io.log(8, 'id_server.connectionMade from ' + str(self.transport.getPeer()))
+        # bpio.log(8, 'id_server.connectionMade from ' + str(self.transport.getPeer()))
 
     def stringReceived(self, data):
         try:
@@ -292,17 +292,17 @@ class IdServerProtocol(basic.Int32StringReceiver):
         except:
             self.disconnect()
             # self.transport.loseConnection()
-            io.exception()
-            io.log(4, 'id_server.stringReceived WARNING incorrect data from %s\n' % str(self.transport.getPeer()))
+            bpio.exception()
+            bpio.log(4, 'id_server.stringReceived WARNING incorrect data from %s\n' % str(self.transport.getPeer()))
             return
         if command == 'h':
-            # io.log(6, 'id_server.stringReceived HELLO received from %s' % payload)
+            # bpio.log(6, 'id_server.stringReceived HELLO received from %s' % payload)
             self.sendString('%swid-server:%s' % (version, A().hostname))
             return
         if command != 'd':
             self.disconnect()
             # self.transport.loseConnection()
-            io.log(4, 'id_server.stringReceived WARNING not a "data" packet from %s' % str(self.transport.getPeer()))
+            bpio.log(4, 'id_server.stringReceived WARNING not a "data" packet from %s' % str(self.transport.getPeer()))
             return
         inp = cStringIO.StringIO(payload)
         try:
@@ -312,8 +312,8 @@ class IdServerProtocol(basic.Int32StringReceiver):
             inp.close()
             self.disconnect()
             # self.transport.loseConnection()
-            io.exception()
-            io.log(4, 'id_server.stringReceived WARNING wrong data from %s' % str(self.transport.getPeer()))
+            bpio.exception()
+            bpio.log(4, 'id_server.stringReceived WARNING wrong data from %s' % str(self.transport.getPeer()))
             return
         if self.fin is None:
             self.fin, self.fpath = tmpfile.make('idsrv', '.xml')
@@ -323,7 +323,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
         self.received += len(inp_data)
             # self.transport.loseConnection()
         self.sendString('%so%s' % (version, struct.pack('i', file_id)))
-        # io.log(6, 'id_server.stringReceived  %d bytes received from %s' % (len(data), str(self.transport.getPeer())))
+        # bpio.log(6, 'id_server.stringReceived  %d bytes received from %s' % (len(data), str(self.transport.getPeer())))
         if self.received == file_size:
             os.close(self.fin)
             A('incoming-identity-file', self.fpath)
@@ -407,16 +407,16 @@ class WebRoot(resource.Resource):
 #------------------------------------------------------------------------------ 
 
 def main():
-    io.init()
+    bpio.init()
     settings.init()
-    io.SetDebug(20)
+    bpio.SetDebug(20)
     A('start', (settings.getIdServerWebPort(), 
                 settings.getIdServerTCPPort()))
     reactor.addSystemEventTrigger('before', 'shutdown', 
                                   A().communicate, 'shutdown')
     # reactor.callWhenRunning(A, 'start', (8084, 6661))
     reactor.run()
-    io.log(2, 'reactor stopped, EXIT')
+    bpio.log(2, 'reactor stopped, EXIT')
 
 if __name__ == "__main__":
     main()

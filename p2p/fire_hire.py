@@ -89,7 +89,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in fire_hire.py')
 
-import lib.io as io
+import lib.bpio as bpio
 import lib.misc as misc
 import lib.settings as settings
 import lib.contacts as contacts
@@ -257,10 +257,10 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        # io.log(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
-        #     contacts.numSuppliers(), len(self.dismiss_list), settings.getCentralNumSuppliers()))
+        # bpio.log(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
+        #     contacts.numSuppliers(), len(self.dismiss_list), settings.getDesiredSuppliersNumber()))
         if '' in contacts.getSupplierIDs():
-            io.log(4, 'fire_hire.isMoreNeeded found empty suppliers!!!')
+            bpio.log(4, 'fire_hire.isMoreNeeded found empty suppliers!!!')
             return True
         if isinstance(arg, list):
             dismissed = arg
@@ -268,17 +268,17 @@ class FireHire(automat.Automat):
             dismissed = self.dismiss_list
         s = set(contacts.getSupplierIDs())
         s.difference_update(set(dismissed))
-        result = len(s) < settings.getCentralNumSuppliers() 
-        io.log(14, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
+        result = len(s) < settings.getDesiredSuppliersNumber() 
+        bpio.log(14, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
             contacts.numSuppliers(), len(dismissed), len(s), 
-            settings.getCentralNumSuppliers(), result))
+            settings.getDesiredSuppliersNumber(), result))
         return result
 
     def isAllReady(self, arg):
         """
         Condition method.
         """
-        io.log(14, 'fire_hire.isAllReady %d %d' % (
+        bpio.log(14, 'fire_hire.isAllReady %d %d' % (
             len(self.connect_list), contacts.numSuppliers()))
         return len(self.connect_list) == 0 # contacts.numSuppliers()
                 
@@ -303,27 +303,27 @@ class FireHire(automat.Automat):
         Condition method.
         """
         current_suppliers = contacts.getSupplierIDs()
-        desired_number = settings.getCentralNumSuppliers()
+        desired_number = settings.getDesiredSuppliersNumber()
         needed_suppliers = current_suppliers[:desired_number]
         if '' in needed_suppliers:
-            io.log(4, 'fire_hire.isStillNeeded WARNING found empty suppliers!!!')
+            bpio.log(4, 'fire_hire.isStillNeeded WARNING found empty suppliers!!!')
             return True
         supplier_idurl = arg
         s = set(needed_suppliers)
         s.add(supplier_idurl)
         s.difference_update(set(self.dismiss_list))
-        result = len(s) < settings.getCentralNumSuppliers() 
-        io.log(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
+        result = len(s) < settings.getDesiredSuppliersNumber() 
+        bpio.log(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
             contacts.numSuppliers(), len(needed_suppliers), len(self.dismiss_list), 
-            len(s), settings.getCentralNumSuppliers(), result))
+            len(s), settings.getDesiredSuppliersNumber(), result))
         return result
 
     def isConfigChanged(self, arg):
         """
         Condition method.
         """
-        curconfigs = (settings.getCentralNumSuppliers(), 
-                     diskspace.GetBytesFromString(settings.getCentralMegabytesNeeded()))
+        curconfigs = (settings.getDesiredSuppliersNumber(), 
+                     diskspace.GetBytesFromString(settings.getMegabytesNeeded()))
         if None in self.configs:
             return True
         return self.configs[0] != curconfigs[0] or self.configs[1] != curconfigs[1]  
@@ -338,8 +338,8 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        self.configs = (settings.getCentralNumSuppliers(), 
-                       diskspace.GetBytesFromString(settings.getCentralMegabytesNeeded()))
+        self.configs = (settings.getDesiredSuppliersNumber(), 
+                       diskspace.GetBytesFromString(settings.getMegabytesNeeded()))
 
     def doConnectSuppliers(self, arg):
         """
@@ -371,13 +371,13 @@ class FireHire(automat.Automat):
                 continue
             if sc.state == 'NO_SERVICE':
                 result.add(supplier_idurl)
-        if contacts.numSuppliers() > settings.getCentralNumSuppliers():
-            for supplier_index in range(settings.getCentralNumSuppliers(), contacts.numSuppliers()):
+        if contacts.numSuppliers() > settings.getDesiredSuppliersNumber():
+            for supplier_index in range(settings.getDesiredSuppliersNumber(), contacts.numSuppliers()):
                 idurl = contacts.getSupplierID(supplier_index)
                 if idurl:
                     result.add(idurl)
         result = list(result)
-        io.log(10, 'fire_hire.doDecideToDismissSuppliers %s' % result)
+        bpio.log(10, 'fire_hire.doDecideToDismissSuppliers %s' % result)
         self.automat('made-decision', result)
 
     def doRememberSuppliers(self, arg):
@@ -417,12 +417,12 @@ class FireHire(automat.Automat):
         import webcontrol
         webcontrol.OnListSuppliers()
         if position < 0:
-            io.log(2, '!!!!!!!!!!! ADD SUPPLIER : %s' % (new_idurl))
+            bpio.log(2, '!!!!!!!!!!! ADD SUPPLIER : %s' % (new_idurl))
         else:
             if old_idurl:
-                io.log(2, '!!!!!!!!!!! SUBSTITUTE SUPPLIER %d : %s->%s' % (position, old_idurl, new_idurl))
+                bpio.log(2, '!!!!!!!!!!! SUBSTITUTE SUPPLIER %d : %s->%s' % (position, old_idurl, new_idurl))
             else:
-                io.log(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (position, new_idurl))
+                bpio.log(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (position, new_idurl))
         self.restart_interval = 1.0
 
     def doRemoveSuppliers(self, arg):
@@ -430,13 +430,13 @@ class FireHire(automat.Automat):
         Action method.
         """
         current_suppliers = contacts.getSupplierIDs()
-        desired_suppliers = settings.getCentralNumSuppliers()
+        desired_suppliers = settings.getDesiredSuppliersNumber()
         if len(current_suppliers) < desired_suppliers:
-            io.log(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers %d<%d' % (
+            bpio.log(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers %d<%d' % (
                 len(current_suppliers), desired_suppliers))
         for supplier_idurl in self.dismiss_list:
             if supplier_idurl not in current_suppliers:
-                io.log(4, 'fire_hire.doRemoveSuppliers WARNING %s not a supplier' % supplier_idurl)
+                bpio.log(4, 'fire_hire.doRemoveSuppliers WARNING %s not a supplier' % supplier_idurl)
                 continue
             pos = current_suppliers.index(supplier_idurl)
             # current_suppliers.remove(supplier_idurl)
@@ -447,13 +447,13 @@ class FireHire(automat.Automat):
         contacts.saveSupplierIDs()
         import webcontrol
         webcontrol.OnListSuppliers()
-        io.log(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
+        bpio.log(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
 
     def doDisconnectSuppliers(self, arg):
         """
         Action method.
         """
-        io.log(10, 'fire_hire.doDisconnectSuppliers %r' % self.dismiss_list)
+        bpio.log(10, 'fire_hire.doDisconnectSuppliers %r' % self.dismiss_list)
         self.dismiss_results = []
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -495,10 +495,10 @@ class FireHire(automat.Automat):
         """
         if not self.restart_task:
             self.restart_task = reactor.callLater(self.restart_interval, self._scheduled_restart)
-            io.log(10, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
+            bpio.log(10, 'fire_hire.doScheduleNextRestart after %r sec.' % self.restart_interval)
             self.restart_interval *= 1.1
         else:
-            io.log(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
+            bpio.log(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
                 time.time() - self.restart_task.getTime()))
             
     def _scheduled_restart(self): 
@@ -506,7 +506,7 @@ class FireHire(automat.Automat):
         self.automat('restart')
 
     def _supplier_connector_state_changed(self, idurl, newstate):
-        io.log(14, 'fire_hire._supplier_connector_state_changed %s %s, state=%s' % (
+        bpio.log(14, 'fire_hire._supplier_connector_state_changed %s %s, state=%s' % (
             idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
         if self.state == 'SUPPLIERS?':
@@ -537,7 +537,7 @@ class FireHire(automat.Automat):
 #    # for sc in supplier_connector.connectors().values():
 #        sc = supplier_connector.by_idurl(supplier_idurl)
 #        if sc and sc.state == 'NO_SERVICE':
-#            io.log(6, 'fire_hire.WhoIsLost !!!!!!!! %s : no service' % sc.idurl)
+#            bpio.log(6, 'fire_hire.WhoIsLost !!!!!!!! %s : no service' % sc.idurl)
 #            return 'found-one-lost-supplier', sc.idurl 
 #    unreliable_supplier = None
 #    most_fails = 0.0
@@ -576,7 +576,7 @@ class FireHire(automat.Automat):
 
 #    # if all suppliers are online - we are very happy - no need to fire anybody! 
 #    if len(offline_suppliers) == 0:
-#        io.log(4, 'fire_hire.WhoIsLost no offline suppliers, Cool!')
+#        bpio.log(4, 'fire_hire.WhoIsLost no offline suppliers, Cool!')
 #        return 'not-found-lost-suppliers', ''
     
 #    # sort users - we always fire worst supplier 
@@ -587,19 +587,19 @@ class FireHire(automat.Automat):
 #    # we do not want to fire this man if he store at least 50% of our files
 #    # the fact that he is offline is not enough to fire him!
 #    if offline_suppliers[lost_supplier_idurl] < 0.5 and backup_fs.sizebackups() > 0:
-#        io.log(4, 'fire_hire.WhoIsLost !!!!!!!! %s is offline and keeps only %d%% of our data' % (
+#        bpio.log(4, 'fire_hire.WhoIsLost !!!!!!!! %s is offline and keeps only %d%% of our data' % (
 #            nameurl.GetName(lost_supplier_idurl), 
 #            int(offline_suppliers[lost_supplier_idurl] * 100.0)))
 #        return 'found-one-lost-supplier', lost_supplier_idurl
     
 #    # but if we did not saw him for a long time - we do not want him for sure
 #    if time.time() - ratings.connected_time(lost_supplier_idurl) > 60 * 60 * 24 * 2:
-#        io.log(2, 'fire_hire.WhoIsLost !!!!!!!! %s is offline and keeps %d%% of our data, but he was online %d hours ago' % (
+#        bpio.log(2, 'fire_hire.WhoIsLost !!!!!!!! %s is offline and keeps %d%% of our data, but he was online %d hours ago' % (
 #            nameurl.GetName(lost_supplier_idurl), 
 #            int(offline_suppliers[lost_supplier_idurl] * 100.0),
 #            int((time.time() - ratings.connected_time(lost_supplier_idurl)) * 60 * 60),))
 #        return 'found-one-lost-supplier', lost_supplier_idurl
     
-#    io.log(2, 'fire_hire.WhoIsLost some people is not here, but we did not found the bad guy at this time')
+#    bpio.log(2, 'fire_hire.WhoIsLost some people is not here, but we did not found the bad guy at this time')
 #    return 'not-found-lost-suppliers', ''
 
