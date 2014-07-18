@@ -112,8 +112,6 @@ class CustomersRejector(automat.Automat):
         for idurl, customer_mb in space_dict.items():
             if idurl != 'free':
                 spent_bytes += int(customer_mb * 1024 * 1024)
-        # for idurl, customer_files_size in used_dict.items():
-        #     used_bytes += int(customer_files_size)
         if spent_bytes < donated_bytes:
             space_dict['free'] = round((donated_bytes - spent_bytes) / (1024.0 * 1024.0), 2)
             bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
@@ -173,9 +171,6 @@ class CustomersRejector(automat.Automat):
             current_customers.remove(customer_idurl)
             removed_customers.append(customer_idurl)
         space_dict['free'] = round(float(donated_bytes - spent_bytes) / (1014.0 * 1024.0), 2)
-        contacts.setCustomerIDs(current_customers)
-        contacts.saveCustomerIDs()
-        bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
         self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
 
     def doRemoveCustomers(self, arg):

@@ -16,7 +16,7 @@ User ID has the following form:
     
     http://example.server.org/subfolder/user.xml
     
-See lib/identity.py for more details about user identities. 
+See userid/identity.py for more details about user identities. 
 
 We only talk with limited sets of people and in limited ways for each type:
  1)  suppliers        - ID's for nodes who supply us with storage services 

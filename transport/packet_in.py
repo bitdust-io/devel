@@ -75,7 +75,7 @@ class PacketIn(automat.Automat):
         self.bytes_received = None
         self.status = None
         self.error_message = None
-        automat.Automat.__init__(self, 'IN(%r)' % self.transfer_id, 'AT_STARTUP', 18)
+        automat.Automat.__init__(self, 'IN(%r)' % self.transfer_id, 'AT_STARTUP', 20)
         
     def is_timed_out(self):
         if self.time is None or self.timeout is None:

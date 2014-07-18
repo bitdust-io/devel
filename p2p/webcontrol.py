@@ -4594,7 +4594,14 @@ class StoragePage(Page):
     def renderPage(self, request):
         bytesNeeded = diskspace.GetBytesFromString(settings.getMegabytesNeeded(), 0)
         bytesDonated = diskspace.GetBytesFromString(settings.getMegabytesDonated(), 0)
-        bytesUsed = backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
+        usedDict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
+        bytesUsed = 0
+        for customer_bytes_used in usedDict:
+            try:
+                bytesUsed += int(customer_bytes_used)
+            except:
+                bpio.exception() 
+        # backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
         suppliers_count = contacts.numSuppliers()
         if suppliers_count > 0: 
             bytesNeededPerSupplier = bytesNeeded / suppliers_count 

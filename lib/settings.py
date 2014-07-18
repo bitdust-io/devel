@@ -903,6 +903,12 @@ def RevisionNumberFile():
     """
     return os.path.join(bpio.getExecutableDir(), 'revnum.txt')
 
+def SuppliersFile():
+    return os.path.join(MetaDataDir(), 'suppliers')
+
+def CustomersFile():
+    return os.path.join(MetaDataDir(), 'customers')
+
 def CustomersSpaceFile():
     """
     This file keeps info about our customers - how many megabytes every guy takes from us. 

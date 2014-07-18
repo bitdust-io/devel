@@ -158,10 +158,9 @@ def UpdateCustomers():
     """
     Test packets after list of customers was changed.
     """
-    printlog('UpdateCustomers ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
     space = bpio._read_dict(CustomersSpaceFile())
     if space is None:
-        printlog('UpdateCustomers ERROR space file can not read' )
+        printlog('UpdateCustomers ERROR space file can not be read' )
         return
     customers_dir = getCustomersFilesDir()
     if not os.path.exists(customers_dir):
@@ -198,6 +197,7 @@ def UpdateCustomers():
             printlog('UpdateCustomers ' + path + ' file removed (%s)' % (remove_list[path]))
         except:
             printlog('UpdateCustomers ERROR removing ' + path)
+    printlog('UpdateCustomers ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
 
 #------------------------------------------------------------------------------
 
