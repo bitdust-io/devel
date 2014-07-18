@@ -56,19 +56,10 @@ from twisted.internet import threads
 
 from lib.automat import Automat
 import lib.automats as automats
-
 import lib.bpio as bpio
 import lib.net_misc as net_misc
 import lib.settings as settings
-import lib.stun as stun
-
-import userid.identity as identity
-# from id import identity
 import lib.misc as misc
-
-# import lib.transport_control as transport_control
-# if transport_control._TransportCSpaceEnable:
-#     import lib.transport_cspace as transport_cspace
 
 import transport.gate as gate
 import dht.dht_service as dht_service
@@ -79,7 +70,6 @@ import stun.stun_client as stun_client
 import userid.id_server as id_server
 
 import p2p_connector
-# import central_connector
 import shutdowner
 
 import tray_icon

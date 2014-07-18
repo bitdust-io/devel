@@ -638,30 +638,6 @@ def RatingsDir():
     """
     return os.path.join(BaseDir(), 'ratings')
 
-def CSpaceDir():
-    """
-    Location for CSpace config files.
-    """
-    return os.path.join(BaseDir(), 'cspace')
-
-def CSpaceSettingsDir():
-    """
-    This is a CSpace settings folder location.
-    """
-    if bpio.Windows():
-        return os.path.join(CSpaceDir(), '_CSpace', 'Settings')
-    else:
-        return os.path.join(CSpaceDir(), '.CSpace', 'Settings')
-
-def CSpaceProfilesDir():
-    """
-    This is a CSpace profiles folder location.
-    """
-    if bpio.Windows():
-        return os.path.join(CSpaceDir(), '_CSpaceProfiles')
-    else:
-        return os.path.join(CSpaceDir(), '.CSpaceProfiles')
-
 #------------------------------------------------------------------------------ 
 #--- FILES --------------------------------------------------------------------------- 
 
@@ -865,12 +841,6 @@ def UpdateLogFilename():
     """
     return os.path.join(LogsDir(), 'bpupdate.log')
 
-def CSpaceLogFilename():
-    """
-    Logs from ``lib.transport_cspace`` module goes here.
-    """
-    return os.path.join(LogsDir(), 'cspace.log')
-
 def AutomatsLog():
     """
     All state machines logs in the main process is written here.
@@ -935,25 +905,6 @@ def CertificateFiles():
     return [    os.path.join(MetaDataDir(), 'bitpie.cer'),
                 os.path.join('.', 'bitpie.cer'),
                 os.path.join(bpio.getExecutableDir() ,'bitpie.cer'),]
-
-def CSpaceSavedProfileFile():
-    """
-    This file is used in the CSpace code.
-    You can have different profiles and this points to currently used profile.
-    """
-    return os.path.join(CSpaceSettingsDir(), 'SavedProfile') 
-
-def CSpaceSavedPasswordFile():
-    """
-    This file is used in the CSpace code.
-    """
-    return os.path.join(CSpaceSettingsDir(), 'SavedPassword') 
-
-def CSpaceRememberKeyFile():
-    """
-    This file is used in the CSpace code.
-    """
-    return os.path.join(CSpaceSettingsDir(), 'RememberKey') 
 
 def DHTDBFile():
     return os.path.join(MetaDataDir(), 'dhtdb')
@@ -2060,11 +2011,6 @@ def _checkStaticDirectories():
     if not os.path.exists(RatingsDir()):
         bpio.log(6, 'settings.init want to create folder: ' + RatingsDir())
         os.makedirs(RatingsDir())
-
-    if not os.path.exists(CSpaceDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + CSpaceDir())
-        os.makedirs(CSpaceDir())
-
 
 def _checkCustomDirectories():
     """

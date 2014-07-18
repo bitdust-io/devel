@@ -75,15 +75,6 @@ def init():
     callback.add_outbox_callback(Outbox)
     callback.add_queue_item_status_callback(OutboxStatus)
     
-#    transport_control.AddInboxCallback(Inbox)
-#    transport_control.AddOutboxCallback(Outbox)
-#    transport_control.AddOutboxPacketStatusFunc(OutboxStatus)
-#    transport_control.AddWorkItemSentCallbackFunc(FileSent)
-#    if transport_control._TransportCSpaceEnable:
-#        transport_cspace.SetContactStatusNotifyFunc(CSpaceContactStatus)
-#    if transport_control._TransportUDPEnable:
-#        transport_udp_session.SetStateChangedCallbackFunc(TransportUDPSessionStateChanged)
-
 
 def shutdown():
     """

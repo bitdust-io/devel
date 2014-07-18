@@ -84,9 +84,7 @@ import packet_out
 #------------------------------------------------------------------------------ 
 
 XMLRPC_DEFAULT_PORT_NUMBERS = {
-   'tcp': 9010,
-   'udp': 9011,
-   'cspace': 9012, }
+   'tcp': 9010, }
 
 INSTALLED_TRANSPORTS = {}
 

@@ -107,7 +107,7 @@ def inbox(newpacket, info, status, message):
                 bpio.log(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
                 bpio.log(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
                 active_protos().add(info.proto)
-    elif info.proto in ['cspace', 'dhtudp',]:
+    elif info.proto in ['dhtudp',]:
         if info.proto not in active_protos():
             bpio.log(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
             bpio.log(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))

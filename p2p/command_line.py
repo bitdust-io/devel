@@ -645,8 +645,6 @@ def option_name_to_path(name, default=''):
         path = 'transport.transport-dhtudp.transport-dhtudp-port'
     elif name in [ 'dht-port' ]:
         path = 'transport.transport-dhtudp.transport-dht-port'
-    elif name in [ 'cspace' ]:
-        path = 'transport.transport-cspace.transport-cspace-enable'
     elif name in [ 'dhtudp' ]:
         path = 'transport.transport-dhtudp.transport-dhtudp-enable'
     elif name in [ 'weblog' ]:

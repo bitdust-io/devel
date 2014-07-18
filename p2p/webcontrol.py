@@ -5239,34 +5239,6 @@ class NetworkSettingsPage(Page):
                 '/'+_PAGE_SETTINGS+'/'+'other.upnp-enabled', request.path,
                 'yes' if settings.enableUPNP() else 'no')
         src += '</td>\n'
-#        src += '<td width=50% valign=top nowrap><h3>UDP transport</h3>\n'
-#        src += '<p>enable transport_udp: <a href="%s?back=%s">%s</a></p>\n' % (
-#            '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-enable', request.path,
-#            'yes' if settings.enableUDP() else 'no')
-#        if settings.enableUDP():
-#            src += '<p>use for sending: <a href="%s?back=%s">%s</a></p>\n' % (
-#                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-sending-enable', request.path,
-#                'yes' if settings.enableUDPsending() else 'no')
-#            src += '<br><p>use for receiving: <a href="%s?back=%s">%s</a></p>\n' % (
-#                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-receiving-enable', request.path,
-#                'yes' if settings.enableUDPreceiving() else 'no')
-#            src += '<p>transport_udp port: <a href="%s?back=%s">%s</a></h3>\n' % (
-#                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-port', request.path,
-#                settings.getUDPPort())
-#        src += '</td>\n'
-#        src += '</tr>\n<tr>\n'
-#        src += '<td width=50% valign=top nowrap><h3>CSpace transport</h3>\n'
-#        src += '<p>enable transport_cspace: <a href="%s?back=%s">%s</a></p>\n' % (
-#            '/'+_PAGE_SETTINGS+'/'+'transport.transport-cspace.transport-cspace-enable', request.path,
-#            'yes' if settings.enableCSpace() else 'no')
-#        if settings.enableCSpace():
-#            src += '<p>use for sending: <a href="%s?back=%s">%s</a></p>\n' % (
-#                '/'+_PAGE_SETTINGS+'/'+'transport.transport-cspace.transport-cspace-sending-enable', request.path,
-#                'yes' if settings.enableCSPACEsending() else 'no')
-#            src += '<br><p>use for receiving: <a href="%s?back=%s">%s</a></p>\n' % (
-#                '/'+_PAGE_SETTINGS+'/'+'transport.transport-cspace.transport-cspace-receiving-enable', request.path,
-#                'yes' if settings.enableCSPACEreceiving() else 'no')
-#        src += '</td>\n'
         src += '<td width=50% valign=top nowrap><h3>DHTUDP transport</h3>\n'
         src += '<p>enable transport: <a href="%s?back=%s">%s</a></p>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'transport.transport-dhtudp.transport-dhtudp-enable', request.path,
@@ -7187,31 +7159,6 @@ class MonitorTransportsPage(Page):
 #                src += '</table>\n'
 #        src += '</td>\n'
 #        src += '<td width=33% valign=top>\n' 
-#        if False: # transport_control._TransportCSpaceEnable:
-#            src += '<p>opened CSpace connections: <b>%d</b></p>\n' % (
-#                len(transport_cspace.opened_opened_streams_list()))
-#            if len(transport_cspace.opened_opened_streams_list()) > 0:
-#                src += '<table width=100% cellspacing=0 cellpadding=2 border=0>\n'
-#                src += '<tr bgcolor="#000000">\n'
-#                src += '<td align=left nowrap><b><font color="#ffffff">key ID</font></b></td>\n'
-#                src += '<td align=left nowrap><b><font color="#ffffff">state</font></b></td>\n'
-#                src += '<td align=left nowrap><b><font color="#ffffff">sent</font></b></td>\n'
-#                src += '<td align=left nowrap><b><font color="#ffffff">received</font></b></td>\n'
-#                src += '</tr>\n'
-#                i = 0
-#                for item in transport_cspace.opened_opened_streams_list():
-#                    keyID, state, sentBytes, receivedBytes = item.split(':')
-#                    if i % 2: 
-#                        src += '<tr>\n'
-#                    else:
-#                        src += '<tr bgcolor="#f0f0f0">\n'
-#                    i += 1
-#                    src += '<td nowrap>%s</td>' % keyID
-#                    src += '<td nowrap>%s</td>' % state
-#                    src += '<td nowrap>%s</td>' % diskspace.MakeStringFromBytes(sentBytes)
-#                    src += '<td nowrap>%s</td>' % diskspace.MakeStringFromBytes(receivedBytes)
-#                    src += '</tr>\n'
-#                src += '</table>\n'
 #        src += '</td>\n'
 #        src += '<td width=33% valign=top>\n' 
 #        if False: # transport_control._TransportUDPEnable:
@@ -7402,16 +7349,6 @@ def InitSettingsTreePages():
     'transport-tcp-port':       SettingsTreeNumericNonZeroPositiveNode,
     'transport-tcp-sending-enable':   SettingsTreeYesNoNode,
     'transport-tcp-receiving-enable': SettingsTreeYesNoNode,
-    'transport-udp':            SettingsTreeNode,
-    'transport-udp-enable':     SettingsTreeYesNoNode,
-    'transport-udp-port':       SettingsTreeNumericPositiveNode,
-    'transport-udp-sending-enable':   SettingsTreeYesNoNode,
-    'transport-udp-receiving-enable': SettingsTreeYesNoNode,
-    'transport-cspace':         SettingsTreeNode,
-    'transport-cspace-enable':  SettingsTreeYesNoNode,
-    'transport-cspace-key-id':  SettingsTreeUStringNode,
-    'transport-cspace-sending-enable':   SettingsTreeYesNoNode,
-    'transport-cspace-receiving-enable': SettingsTreeYesNoNode,
     'transport-dhtudp':         SettingsTreeNode,
     'transport-dhtudp-port':    SettingsTreeNumericPositiveNode,
     'transport-dht-port':       SettingsTreeNumericPositiveNode,

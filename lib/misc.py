@@ -59,7 +59,8 @@ _LocalName = None
 # order is important!
 # this is default order to be used for new users
 # more stable transports must be higher
-validTransports = [ 'http', 'cspace', 'q2q', 'tcp', 'ssh', 'email', 'skype', 'udp', 'dhtudp']
+# validTransports = [ 'http', 'cspace', 'q2q', 'tcp', 'ssh', 'email', 'skype', 'udp', 'dhtudp']
+validTransports = ['tcp', 'dhtudp', ]
 
 _AttenuationFactor = 1.1
 
@@ -767,10 +768,6 @@ def getRealHost(host, port=None):
     Some tricks to get a 'host' from contact method (see ``lib.identity``).
     """
     if isinstance(host, str):
-        if host.startswith('http://'):
-            host = host[7:]
-        elif host.startswith('cspace://'):
-            host = host[9:]
         if port is not None:
             host += ':' + str(port)
     elif isinstance(host, tuple) and len(host) == 2:

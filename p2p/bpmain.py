@@ -222,10 +222,6 @@ def parser():
                         dest='no_upnp',
                         action='store_true',
                         help='do not use UPnP',)
-    group.add_option('--no-cspace',
-                        dest='no_cspace',
-                        action='store_true',
-                        help='do not use transport_cspace',)
     group.add_option('--memdebug-port',
                         dest='memdebug_port',
                         type='int',
@@ -245,10 +241,6 @@ def override_options(opts, args):
         overDict['transport.transport-tcp.transport-tcp-port'] = str(opts.tcp_port)
     if opts.no_upnp:
         overDict['other.upnp-enabled'] = 'False'
-    #if opts.no_q2q:
-        #overDict['transport.transport-q2q.transport-q2q-enable'] = 'False'
-    if opts.no_cspace:
-        overDict['transport.transport-cspace.transport-cspace-enable'] = 'False'
     if opts.tempdir:
         overDict['folder.folder-temp'] = opts.tempdir
     if opts.debug or str(opts.debug) == '0':
