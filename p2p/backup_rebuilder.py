@@ -191,7 +191,7 @@ class BackupRebuilder(Automat):
     
     def isChanceToRebuild(self, arg):
 #         return len(self.missingSuppliers) <= eccmap.Current().CorrectableErrors
-        supplierSet = backup_matrix.suppliers_set()
+        # supplierSet = backup_matrix.suppliers_set()
         # start checking in reverse order, see below for explanation
         for blockIndex in range(len(self.workingBlocksQueue)-1, -1, -1):
             blockNumber = self.workingBlocksQueue[blockIndex]
@@ -202,9 +202,9 @@ class BackupRebuilder(Automat):
         return False
     
     def isRequestQueueEmpty(self, arg):
-        supplierSet = backup_matrix.suppliers_set()
-        for supplierNum in range(supplierSet.supplierCount):
-            supplierID = supplierSet.suppliers[supplierNum]
+        # supplierSet = backup_matrix.suppliers_set()
+        for supplierNum in range(contacts.numSuppliers()):
+            supplierID = contacts.getSupplierID(supplierNum)
             if io_throttle.HasBackupIDInSendQueue(supplierID, self.currentBackupID):
                 return False
         return True
@@ -228,8 +228,8 @@ class BackupRebuilder(Automat):
             # range(0) should return []
             for blockNum in range(backup_matrix.local_max_block_numbers().get(backupID, -1) + 1):
                 backup_matrix.remote_files()[backupID][blockNum] = {
-                    'D': [0] * backup_matrix.suppliers_set().supplierCount,
-                    'P': [0] * backup_matrix.suppliers_set().supplierCount }
+                    'D': [0] * contacts.numSuppliers(),
+                    'P': [0] * contacts.numSuppliers() }
         # detect missing blocks from remote info
         self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(backupID)
         bpio.log(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
@@ -244,8 +244,8 @@ class BackupRebuilder(Automat):
             if backup_matrix.remote_files()[backupID].has_key(blockNum):
                 continue
             backup_matrix.remote_files()[backupID][blockNum] = {
-                'D': [0] * backup_matrix.suppliers_set().supplierCount,
-                'P': [0] * backup_matrix.suppliers_set().supplierCount }
+                'D': [0] * contacts.numSuppliers(),
+                'P': [0] * contacts.numSuppliers() }
         if self.currentBackupID:
             # clear requesting queue from previous task
             io_throttle.DeleteBackupRequests(self.currentBackupID)
@@ -260,16 +260,16 @@ class BackupRebuilder(Automat):
         self.missingPackets = 0
         # self.missingSuppliers.clear()
         # here we want to request some packets before we start working to rebuild the missed blocks
-        supplierSet = backup_matrix.suppliers_set()
-        availableSuppliers = supplierSet.GetActiveArray()
+        # supplierSet = backup_matrix.suppliers_set()
+        availableSuppliers = backup_matrix.GetActiveArray()
         # remember how many requests we did on this iteration
         total_requests_count = 0
         # at the moment I do download everything I have available and needed
         if '' in contacts.getSupplierIDs():
             self.automat('requests-sent', total_requests_count)
             return
-        for supplierNum in range(supplierSet.supplierCount):
-            supplierID = supplierSet.suppliers[supplierNum]
+        for supplierNum in range(contacts.numSuppliers()):
+            supplierID = contacts.getSupplierID(supplierNum)
             requests_count = 0
             # we do requests in reverse order because we start rebuilding from the last block 
             # for blockNum in range(self.currentBlockNumber, -1, -1):
@@ -389,15 +389,15 @@ class BackupRebuilder(Automat):
     def doClearStoppedFlag(self, arg):
         ClearStoppedFlag()
 
-    def FileReceived(self, packet, state):
+    def FileReceived(self, newpacket, state):
         if state in ['in queue', 'shutdown', 'exist']:
             return
         if state != 'received':
-            bpio.log(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(packet)))
+            bpio.log(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(newpacket)))
             return
-        packetID = signed_packet.PacketID
+        packetID = newpacket.PacketID
         filename = os.path.join(settings.getLocalBackupsDir(), packetID)
-        if not signed_packet.Valid():
+        if not newpacket.Valid():
             # TODO 
             # if we didn't get a valid packet ... re-request it or delete it?
             bpio.log(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
@@ -415,7 +415,7 @@ class BackupRebuilder(Automat):
             except:
                 bpio.log(2, "backup_rebuilder.FileReceived ERROR can not create sub dir " + dirname)
                 return 
-        if not bpio.WriteFile(filename, signed_packet.Payload):
+        if not bpio.WriteFile(filename, newpacket.Payload):
             return
         backup_matrix.LocalFileReport(packetID)
         self.automat('inbox-data-packet', packetID)

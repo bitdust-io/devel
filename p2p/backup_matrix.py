@@ -63,7 +63,7 @@ _RemoteMaxBlockNumbers = {}
 _LocalMaxBlockNumbers = {}
 _LocalBackupSize = {}
 _BackupsInProcess = []
-_SuppliersSet = None
+# _SuppliersSet = None
 _BackupStatusNotifyCallback = None
 _StatusCallBackForGuiBackup = None
 _LocalFilesNotifyCallback = None
@@ -81,6 +81,7 @@ def init():
     * read latest (stored on local disk) ListFiles for suppliers to build "remote" matrix     
     """
     bpio.log(4, 'backup_matrix.init')
+    # suppliers_set()
     RepaintingProcess(True)
     ReadLocalFiles()
     ReadLatestRawListFiles()
@@ -156,112 +157,38 @@ def local_backup_size():
     global _LocalBackupSize
     return _LocalBackupSize
 
-
-def suppliers_set():
-    """
-    Return current set of suppliers, see ``SuppliersSet`` class.
-    
-    PREPRO: 
-    Not sure do we need to duplicate suppliers IDs.
-    In ``lib.contactsdb`` we already store this list.
-    However scrubbers need to keep track of other suppliers also ...
-    """
-    global _SuppliersSet
-    if _SuppliersSet is None:
-        _SuppliersSet = SuppliersSet(contacts.getSupplierIDs())
-    return _SuppliersSet
-
 #------------------------------------------------------------------------------ 
-class SuppliersSet:
+
+def GetActiveArray():
     """
-    This should represent a set of suppliers for either the user 
-    or for a customer the user is acting as a scrubber for.
+    Loops all suppliers and returns who is alive at the moment.
+    Return a list with integers: 0 for offline suppler and 1 if he is available right now.
+    Uses ``p2p.contact_status.isOnline()`` to see the current state of supplier.
     """
-    def __init__(self, supplierList):
-        """
-        Set initial list of suppliers, ``supplierList`` is an array with suppliers IDURL's.
-        """
-        self.suppliers = [] 
-        self.supplierCount = 0 
-        self.UpdateSuppliers(supplierList)
-
-    def UpdateSuppliers(self, supplierList):
-        """
-        Called when your suppliers is changed and need to update current set of suppliers.
-        Right now this list comes from Central server.
-        """
-        self.suppliers = list(supplierList)
-        self.supplierCount = len(self.suppliers)
-
-    def GetActiveArray(self):
-        """
-        Loops all suppliers in the set and returns who is alive at the moment.
-        Return a list with integers: 0 for offline suppler and 1 if he is available right now.
-        Uses ``p2p.contact_status.isOnline()`` to see the current state of supplier.
-        """
-        activeArray = [0] * self.supplierCount
-        for i in xrange(self.supplierCount):
-            if not self.suppliers[i]:
-                continue
-            if contact_status.isOnline(self.suppliers[i]):
-                activeArray[i] = 1
-            else:
-                activeArray[i] = 0
-        return activeArray
-
-    def ChangedArray(self, supplierList):
-        """
-        Loops all suppliers in the set and compare with ``supplierList``.
-        Return two lists:
-        * array with integers where value 1 means that supplier is different
-        * list of different user IDs
-        """
-        changedArray = [0] * self.supplierCount
-        changedIdentities = []
-        for i in xrange(self.supplierCount):
-            if not self.suppliers[i]:
-                continue
-            if supplierList[i] != self.suppliers[i]:
-                changedArray[i] = 1
-                changedIdentities.append(supplierList[i])
-        return changedArray, changedIdentities
-
-    def SuppliersChanged(self, supplierList):
-        """
-        Return True if at least one from current set of suppliers is different from ``supplierList``.
-        """
-        if len(supplierList) != self.supplierCount:
-            return True
-        for i in xrange(self.supplierCount):
-            if not self.suppliers[i]:
-                continue
-            if supplierList[i] != self.suppliers[i]:
-                return True
-        return False
-
-    def SuppliersChangedNumbers(self, supplierList):
-        """
-        Return list of possitions of changed suppliers,
-        say if suppliers 1 and 3 were changed it should return [1,3].
-        """
-        changedList = []
-        for i in xrange(self.supplierCount):
-            if not self.suppliers[i]:
-                continue
-            if supplierList[i] != self.suppliers[i]:
-                changedList.append(i)
-        return changedList
-
-    def SupplierCountChanged(self, supplierList):
-        """
-        Return True if number of suppliers were changed.
-        """
-        if len(supplierList) != self.supplierCount:
-            return True
+    activeArray = [0] * contacts.numSuppliers()
+    for i in xrange(contacts.numSuppliers()):
+        suplier_idurl = contacts.getSupplierID(i)
+        if not suplier_idurl:
+            continue
+        if contact_status.isOnline(suplier_idurl):
+            activeArray[i] = 1
         else:
-            return False
+            activeArray[i] = 0
+    return activeArray
 
-#------------------------------------------------------------------------------ 
+def SuppliersChangedNumbers(newSupplierList):
+    """
+    Return list of possitions of changed suppliers,
+    say if suppliers 1 and 3 were changed it should return [1,3].
+    """
+    changedList = []
+    for i in xrange(contacts.numSuppliers()):
+        suplier_idurl = contacts.getSupplierID(i)
+        if not suplier_idurl:
+            continue
+        if newSupplierList[i] != suplier_idurl:
+            changedList.append(i)
+    return changedList
 
 def SaveLatestRawListFiles(idurl, listFileText):
     """
@@ -406,8 +333,8 @@ def ReadRawListFiles(supplierNum, listFileText):
             for blockNum in xrange(maxBlockNum+1):
                 if not remote_files()[backupID].has_key(blockNum):
                     remote_files()[backupID][blockNum] = {
-                        'D': [0] * suppliers_set().supplierCount,
-                        'P': [0] * suppliers_set().supplierCount,}
+                        'D': [0] * contacts.numSuppliers(),
+                        'P': [0] * contacts.numSuppliers(),}
                 for dataORparity in ['Data', 'Parity']:
                     # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
                     bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1 
@@ -497,7 +424,7 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
     """
     blockNum = int(blockNum)
     supplierNum = int(supplierNum)
-    if supplierNum > suppliers_set().supplierCount:
+    if supplierNum > contacts.numSuppliers():
         bpio.log(4, 'backup_matrix.RemoteFileReport got too big supplier number, possible this is an old packet')
         return
     if not remote_files().has_key(backupID):
@@ -505,8 +432,8 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
         bpio.log(8, 'backup_matrix.RemoteFileReport new remote entry for %s created in the memory' % backupID)
     if not remote_files()[backupID].has_key(blockNum):
         remote_files()[backupID][blockNum] = {
-            'D': [0] * suppliers_set().supplierCount,
-            'P': [0] * suppliers_set().supplierCount,}
+            'D': [0] * contacts.numSuppliers(),
+            'P': [0] * contacts.numSuppliers(),}
     # save backed up block info into remote info structure, synchronize on hand info
     flag = 1 if result else 0
     if dataORparity == 'Data':
@@ -546,22 +473,20 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
     if dataORparity not in ['Data', 'Parity']:
         bpio.log(4, 'backup_matrix.LocalFileReport WARNING Data or Parity? ' + filename)
         return
-    if supplierNum >= suppliers_set().supplierCount:
-        bpio.log(4, 'backup_matrix.LocalFileReport WARNING supplier number %d > %d %s' % (supplierNum, suppliers_set().supplierCount, filename))
+    if supplierNum >= contacts.numSuppliers():
+        bpio.log(4, 'backup_matrix.LocalFileReport WARNING supplier number %d > %d %s' % (supplierNum, contacts.numSuppliers(), filename))
         return
     if not local_files().has_key(backupID):
         local_files()[backupID] = {}
-        # bpio.log(14, 'backup_matrix.LocalFileReport new local entry for %s created in the memory' % backupID)
     if not local_files()[backupID].has_key(blockNum):
         local_files()[backupID][blockNum] = {
-            'D': [0] * suppliers_set().supplierCount,
-            'P': [0] * suppliers_set().supplierCount}
+            'D': [0] * contacts.numSuppliers(),
+            'P': [0] * contacts.numSuppliers()}
     local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
     if not local_max_block_numbers().has_key(backupID):
         local_max_block_numbers()[backupID] = -1
     if local_max_block_numbers()[backupID] < blockNum:
         local_max_block_numbers()[backupID] = blockNum
-    # bpio.log(6, 'backup_matrix.LocalFileReport %s max block num is %d' % (backupID, local_max_block_numbers()[backupID]))
     if not local_backup_size().has_key(backupID):
         local_backup_size()[backupID] = 0
     localDest = os.path.join(settings.getLocalBackupsDir(), filename)
@@ -577,7 +502,7 @@ def LocalBlockReport(backupID, blockNumber, result):
     """
     This updates "local" matrix - a several pieces corresponding to given block of data.
     """
-    # if suppliers_set().supplierCount != num_suppliers:
+    # if contacts.numSuppliers() != num_suppliers:
     #     bpio.log(6, 'backup_matrix.LocalBlockReport %s skipped, because number of suppliers were changed' % str(newblock))
     #     return
     if result is None:
@@ -587,7 +512,7 @@ def LocalBlockReport(backupID, blockNumber, result):
     except:
         bpio.exception()
         return
-    for supplierNum in xrange(suppliers_set().supplierCount):
+    for supplierNum in xrange(contacts.numSuppliers()):
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
             if not local_files().has_key(backupID):
@@ -595,8 +520,8 @@ def LocalBlockReport(backupID, blockNumber, result):
                 # bpio.log(14, 'backup_matrix.LocalFileReport new local entry for %s created in the memory' % backupID)
             if not local_files()[backupID].has_key(blockNum):
                 local_files()[backupID][blockNum] = {
-                    'D': [0] * suppliers_set().supplierCount,
-                    'P': [0] * suppliers_set().supplierCount}
+                    'D': [0] * contacts.numSuppliers(),
+                    'P': [0] * contacts.numSuppliers()}
             local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
             # bpio.log(6, 'backup_matrix.LocalFileReport %s max block num is %d' % (backupID, local_max_block_numbers()[backupID]))
             if not local_backup_size().has_key(backupID):
@@ -622,7 +547,7 @@ def ScanMissingBlocks(backupID):
     missingBlocks = set()
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
     remoteMaxBlockNum = remote_max_block_numbers().get(backupID, -1)
-    supplierActiveArray = suppliers_set().GetActiveArray()
+    supplierActiveArray = GetActiveArray()
 
     if not remote_files().has_key(backupID):
         if not local_files().has_key(backupID):
@@ -698,8 +623,8 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
         if ( -1 in remoteArray['Data'] ) or ( -1 in remoteArray['Parity'] ):
             # also if we do not have any info about this block for some supplier do not remove other local pieces
             continue
-        for supplierNum in xrange(suppliers_set().supplierCount):
-            supplierIDURL = suppliers_set().suppliers[supplierNum]
+        for supplierNum in xrange(contacts.numSuppliers()):
+            supplierIDURL = contacts.getSupplierID(supplierNum)
             if not supplierIDURL:
                 # supplier is unknown - skip
                 continue
@@ -723,10 +648,10 @@ def ScanBlocksToSend(backupID):
     """
     Opposite method - search for pieces which is not yet delivered to remote suppliers. 
     """
-    if '' in suppliers_set().suppliers:
+    if '' in contacts.getSupplierIDs():
         return {} 
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
-    supplierActiveArray = suppliers_set().GetActiveArray()
+    supplierActiveArray = GetActiveArray()
     bySupplier = {}
     for supplierNum in xrange(len(supplierActiveArray)):
         bySupplier[supplierNum] = set()
@@ -856,15 +781,15 @@ def GetBackupStats(backupID):
     Collect needed info from "remote" matrix and create a detailed report about given backup.
     """
     if not remote_files().has_key(backupID):
-        return 0, 0, [(0, 0)] * suppliers_set().supplierCount
-    percentPerSupplier = 100.0 / suppliers_set().supplierCount
+        return 0, 0, [(0, 0)] * contacts.numSuppliers()
+    percentPerSupplier = 100.0 / contacts.numSuppliers()
     # ??? maxBlockNum = remote_max_block_numbers().get(backupID, -1)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
-    fileNumbers = [0] * suppliers_set().supplierCount
+    fileNumbers = [0] * contacts.numSuppliers()
     totalNumberOfFiles = 0
     for blockNum in remote_files()[backupID].keys():
         for supplierNum in xrange(len(fileNumbers)):
-            if supplierNum < suppliers_set().supplierCount:
+            if supplierNum < contacts.numSuppliers():
                 if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
                     fileNumbers[supplierNum] += 1
                     totalNumberOfFiles += 1
@@ -872,7 +797,7 @@ def GetBackupStats(backupID):
                     fileNumbers[supplierNum] += 1
                     totalNumberOfFiles += 1
     statsArray = []
-    for supplierNum in xrange(suppliers_set().supplierCount):
+    for supplierNum in xrange(contacts.numSuppliers()):
         if maxBlockNum > -1:
             # 0.5 because we count both Parity and Data.
             percent = percentPerSupplier * 0.5 * fileNumbers[supplierNum] / ( maxBlockNum + 1 )
@@ -893,16 +818,16 @@ def GetBackupLocalStats(backupID):
     # ??? maxBlockNum = local_max_block_numbers().get(backupID, -1)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
     if not local_files().has_key(backupID):
-        return 0, 0, 0, maxBlockNum, [(0, 0)] * suppliers_set().supplierCount
-    percentPerSupplier = 100.0 / suppliers_set().supplierCount
+        return 0, 0, 0, maxBlockNum, [(0, 0)] * contacts.numSuppliers()
+    percentPerSupplier = 100.0 / contacts.numSuppliers()
     totalNumberOfFiles = 0
-    fileNumbers = [0] * suppliers_set().supplierCount
+    fileNumbers = [0] * contacts.numSuppliers()
     for blockNum in xrange(maxBlockNum + 1):
         if blockNum not in local_files()[backupID].keys():
             continue
 #    for blockNum in local_files()[backupID].keys():
         for supplierNum in xrange(len(fileNumbers)):
-            if supplierNum < suppliers_set().supplierCount:
+            if supplierNum < contacts.numSuppliers():
                 if local_files()[backupID][blockNum]['D'][supplierNum] == 1:
                     fileNumbers[supplierNum] += 1
                     totalNumberOfFiles += 1
@@ -910,7 +835,7 @@ def GetBackupLocalStats(backupID):
                     fileNumbers[supplierNum] += 1
                     totalNumberOfFiles += 1
     statsArray = []
-    for supplierNum in xrange(suppliers_set().supplierCount):
+    for supplierNum in xrange(contacts.numSuppliers()):
         if maxBlockNum > -1:
             # 0.5 because we count both Parity and Data.
             percent = percentPerSupplier * 0.5 * fileNumbers[supplierNum] / ( maxBlockNum + 1 )
@@ -918,7 +843,7 @@ def GetBackupLocalStats(backupID):
             percent = 0.0
         statsArray.append(( percent, fileNumbers[supplierNum] ))
     del fileNumbers 
-    totalPercent = 100.0 * 0.5 * totalNumberOfFiles / ((maxBlockNum + 1) * suppliers_set().supplierCount)
+    totalPercent = 100.0 * 0.5 * totalNumberOfFiles / ((maxBlockNum + 1) * contacts.numSuppliers())
     return totalPercent, totalNumberOfFiles, local_backup_size().get(backupID, 0), maxBlockNum, statsArray
 
 
@@ -936,13 +861,13 @@ def GetBackupBlocksAndPercent(backupID):
     # we count all remote files for this backup
     fileCounter = 0
     for blockNum in remote_files()[backupID].keys():
-        for supplierNum in xrange(suppliers_set().supplierCount):
+        for supplierNum in xrange(contacts.numSuppliers()):
             if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
                 fileCounter += 1
             if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
                 fileCounter += 1
     # +1 since zero based and *0.5 because Data and Parity
-    return maxBlockNum + 1, 100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * suppliers_set().supplierCount)
+    return maxBlockNum + 1, 100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * contacts.numSuppliers())
 
 
 def GetBackupRemoteStats(backupID, only_available_files=True):
@@ -965,11 +890,11 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
     maxBlockNum = GetKnownMaxBlockNum(backupID)
     if maxBlockNum == -1:
         return 0, 0, 0, 0
-    supplierCount = suppliers_set().supplierCount
+    supplierCount = contacts.numSuppliers()
     fileCounter = 0
     weakBlockNum = -1
     lessSuppliers = supplierCount
-    activeArray = suppliers_set().GetActiveArray()
+    activeArray = GetActiveArray()
     # we count all remote files for this backup - scan all blocks
     for blockNum in xrange(maxBlockNum + 1):
         if blockNum not in remote_files()[backupID].keys():
@@ -1047,9 +972,9 @@ def GetLocalDataArray(backupID, blockNum):
     Get "local" info for a single block of given backup, this is for "Data" surface.  
     """
     if not local_files().has_key(backupID):
-        return [0] * suppliers_set().supplierCount
+        return [0] * contacts.numSuppliers()
     if not local_files()[backupID].has_key(blockNum):
-        return [0] * suppliers_set().supplierCount
+        return [0] * contacts.numSuppliers()
     return local_files()[backupID][blockNum]['D']
 
 
@@ -1058,9 +983,9 @@ def GetLocalParityArray(backupID, blockNum):
     Get "local" info for a single block of given backup, this is for "Parity" surface.  
     """
     if not local_files().has_key(backupID):
-        return [0] * suppliers_set().supplierCount
+        return [0] * contacts.numSuppliers()
     if not local_files()[backupID].has_key(blockNum):
-        return [0] * suppliers_set().supplierCount
+        return [0] * contacts.numSuppliers()
     return local_files()[backupID][blockNum]['P']
     
 
@@ -1069,9 +994,9 @@ def GetRemoteDataArray(backupID, blockNum):
     Get "remote" info for a single block of given backup, this is for "Data" surface.  
     """
     if not remote_files().has_key(backupID):
-        return [0] * suppliers_set().supplierCount
+        return [0] * contacts.numSuppliers()
     if not remote_files()[backupID].has_key(blockNum):
-        return [0] * suppliers_set().supplierCount
+        return [0] * contacts.numSuppliers()
     return remote_files()[backupID][blockNum]['D']
 
     
@@ -1080,9 +1005,9 @@ def GetRemoteParityArray(backupID, blockNum):
     Get "remote" info for a single block of given backup, this is for "Parity" surface.  
     """
     if not remote_files().has_key(backupID):
-        return [0] * suppliers_set().supplierCount
+        return [0] * contacts.numSuppliers()
     if not remote_files()[backupID].has_key(blockNum):
-        return [0] * suppliers_set().supplierCount
+        return [0] * contacts.numSuppliers()
     return remote_files()[backupID][blockNum]['P']
 
 
@@ -1110,7 +1035,7 @@ def GetWeakLocalBlock(backupID):
     """
     Scan all "local" blocks for given backup and find the most "weak" block. 
     """
-    supplierCount = suppliers_set().supplierCount
+    supplierCount = contacts.numSuppliers()
     if not local_files().has_key(backupID):
         return -1, 0, supplierCount
     maxBlockNum = GetKnownMaxBlockNum(backupID)
@@ -1134,13 +1059,13 @@ def GetWeakRemoteBlock(backupID):
     Scan all "remote" blocks for given backup and find the most "weak" block - 
     less suppliers keeps the data and stay online.
     """ 
-    supplierCount = suppliers_set().supplierCount
+    supplierCount = contacts.numSuppliers()
     if not remote_files().has_key(backupID):
         return -1, 0, supplierCount
     maxBlockNum = GetKnownMaxBlockNum(backupID)
     weakBlockNum = -1
     lessSuppliers = supplierCount
-    activeArray = suppliers_set().GetActiveArray()
+    activeArray = GetActiveArray()
     for blockNum in xrange(maxBlockNum+1):
         if blockNum not in remote_files()[backupID].keys():
             return blockNum, 0, supplierCount

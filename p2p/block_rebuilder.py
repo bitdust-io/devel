@@ -49,8 +49,7 @@ class BlockRebuilder():
     def __init__(self,  
                  eccMap, 
                  backupID, 
-                 blockNum, 
-                 supplierSet, 
+                 blockNum,  
                  remoteData, 
                  remoteParity,
                  localData, 
@@ -60,8 +59,7 @@ class BlockRebuilder():
         self.eccMap = eccMap
         self.backupID = backupID
         self.blockNum = blockNum
-        self.supplierSet = supplierSet
-        self.supplierCount = len(self.supplierSet.suppliers)
+        self.supplierCount = contacts.numSuppliers()
         self.remoteData = remoteData
         self.remoteParity = remoteParity
         self.localData = localData
@@ -89,7 +87,7 @@ class BlockRebuilder():
         but the supplier who must keep that file is online.
         In other words, if supplier is online but do not have that piece - this piece is missing.
         """
-        self.availableSuppliers = self.supplierSet.GetActiveArray()
+        self.availableSuppliers = backup_matrix.GetActiveArray()
         for supplierNum in xrange(self.supplierCount):
             if self.availableSuppliers[supplierNum] == 0:
                 continue

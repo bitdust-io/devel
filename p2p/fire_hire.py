@@ -412,8 +412,6 @@ class FireHire(automat.Automat):
         contacts.setSupplierIDs(current_suppliers)
         contacts.saveSupplierIDs()
         misc.writeSupplierData(new_idurl, 'connected', time.strftime('%d%m%y %H:%M:%S'))
-        # import backup_control
-        # backup_control.SetSupplierList(current_suppliers)
         import webcontrol
         webcontrol.OnListSuppliers()
         if position < 0:

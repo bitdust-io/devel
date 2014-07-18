@@ -259,47 +259,47 @@ def IncomingSupplierBackupIndex(newpacket):
         
 #------------------------------------------------------------------------------ 
 
-def SetSupplierList(supplierList):
-    """
-    Set a list of suppliers IDs, this is called by ``p2p.central_service`` 
-    when a list of my suppliers comes from Central server.  
-    Going from 2 to 4 suppliers (or whatever) invalidates all backups,
-    all suppliers was changed because its number was changed.
-    So we lost everything! Definitely suppliers number should be a sort of constant number.
-    """
-    if len(supplierList) != backup_matrix.suppliers_set().supplierCount:
-        bpio.log(2, "backup_control.SetSupplierList got list of %d suppliers, but we have %d now!" % (len(supplierList), backup_matrix.suppliers_set().supplierCount))
-        # cancel all tasks and jobs
-        DeleteAllTasks()
-        AbortAllRunningBackups()
-        # remove all local files and all backups
-        DeleteAllBackups()
-        # erase all remote info
-        backup_matrix.ClearRemoteInfo()
-        # also erase local info
-        backup_matrix.ClearLocalInfo()
-        # restart backup_monitor
-        backup_monitor.Restart()
-        # restart db keeper to save the index on new machines
-        backup_db_keeper.A('restart')
-    # only single suppliers changed
-    # need to erase info only for them 
-    elif backup_matrix.suppliers_set().SuppliersChanged(supplierList):
-        # take a list of suppliers positions that was changed
-        changedSupplierNums = backup_matrix.suppliers_set().SuppliersChangedNumbers(supplierList)
-        # notify io_throttle that we do not neeed already this suppliers
-        for supplierNum in changedSupplierNums:
-            bpio.log(2, "backup_control.SetSupplierList supplier %d changed: [%s]->[%s]" % (
-                supplierNum, nameurl.GetName(backup_matrix.suppliers_set().suppliers[supplierNum]), nameurl.GetName(supplierList[supplierNum])))
-            io_throttle.DeleteSuppliers([backup_matrix.suppliers_set().suppliers[supplierNum],])
-            # erase (set to 0) remote info for this guys
-            backup_matrix.ClearSupplierRemoteInfo(supplierNum)
-        # restart backup_monitor
-        backup_monitor.Restart()
-        # restart db keeper to save the index on all machines including a new one
-        backup_db_keeper.A('restart')
-    # finally save the list of current suppliers and clear all stats 
-    backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
+#def SetSupplierList(supplierList):
+#    """
+#    Set a list of suppliers IDs, this is called by ``p2p.central_service`` 
+#    when a list of my suppliers comes from Central server.  
+#    Going from 2 to 4 suppliers (or whatever) invalidates all backups,
+#    all suppliers was changed because its number was changed.
+#    So we lost everything! Definitely suppliers number should be a sort of constant number.
+#    """
+#    if len(supplierList) != contacts.numSuppliers():
+#        bpio.log(2, "backup_control.SetSupplierList got list of %d suppliers, but we have %d now!" % (len(supplierList), contacts.numSuppliers()))
+#        # cancel all tasks and jobs
+#        DeleteAllTasks()
+#        AbortAllRunningBackups()
+#        # remove all local files and all backups
+#        DeleteAllBackups()
+#        # erase all remote info
+#        backup_matrix.ClearRemoteInfo()
+#        # also erase local info
+#        backup_matrix.ClearLocalInfo()
+#        # restart backup_monitor
+#        backup_monitor.Restart()
+#        # restart db keeper to save the index on new machines
+#        backup_db_keeper.A('restart')
+#    # only single suppliers changed
+#    # need to erase info only for them 
+#    elif backup_matrix.suppliers_set().SuppliersChanged(supplierList):
+#        # take a list of suppliers positions that was changed
+#        changedSupplierNums = backup_matrix.suppliers_set().SuppliersChangedNumbers(supplierList)
+#        # notify io_throttle that we do not neeed already this suppliers
+#        for supplierNum in changedSupplierNums:
+#            bpio.log(2, "backup_control.SetSupplierList supplier %d changed: [%s]->[%s]" % (
+#                supplierNum, nameurl.GetName(contacts.getSupplierIDs[supplierNum]), nameurl.GetName(supplierList[supplierNum])))
+#            io_throttle.DeleteSuppliers([contacts.getSupplierIDs[supplierNum],])
+#            # erase (set to 0) remote info for this guys
+#            backup_matrix.ClearSupplierRemoteInfo(supplierNum)
+#        # restart backup_monitor
+#        backup_monitor.Restart()
+#        # restart db keeper to save the index on all machines including a new one
+#        backup_db_keeper.A('restart')
+#    # finally save the list of current suppliers and clear all stats 
+#    backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
 
 #------------------------------------------------------------------------------ 
           

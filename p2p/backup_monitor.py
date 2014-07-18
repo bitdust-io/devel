@@ -176,7 +176,7 @@ class BackupMonitor(automat.Automat):
         """
         Condition method.
         """
-        return backup_matrix.suppliers_set().supplierCount != contacts.numSuppliers()
+        return contacts.numSuppliers() != contacts.numSuppliers()
         
     def doDeleteAllBackups(self, arg):
         """
@@ -193,7 +193,7 @@ class BackupMonitor(automat.Automat):
         # also erase local info
         backup_matrix.ClearLocalInfo()
         # finally save the list of current suppliers and clear all stats 
-        backup_matrix.suppliers_set().UpdateSuppliers(contacts.getSupplierIDs())
+        # backup_matrix.suppliers_set().UpdateSuppliers(contacts.getSupplierIDs())
         
     def doUpdateSuppliers(self, arg):
         """
@@ -201,17 +201,17 @@ class BackupMonitor(automat.Automat):
         """
         supplierList = contacts.getSupplierIDs()
         # take a list of suppliers positions that was changed
-        changedSupplierNums = backup_matrix.suppliers_set().SuppliersChangedNumbers(supplierList)
+        changedSupplierNums = backup_matrix.SuppliersChangedNumbers(supplierList)
         # notify io_throttle that we do not neeed already this suppliers
         for supplierNum in changedSupplierNums:
             bpio.log(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
-                supplierNum, nameurl.GetName(backup_matrix.suppliers_set().suppliers[supplierNum]), 
+                supplierNum, nameurl.GetName(contacts.getSupplierIDs[supplierNum]), 
                 nameurl.GetName(supplierList[supplierNum])))
-            io_throttle.DeleteSuppliers([backup_matrix.suppliers_set().suppliers[supplierNum],])
+            io_throttle.DeleteSuppliers([contacts.getSupplierIDs[supplierNum],])
             # erase (set to 0) remote info for this guys
             backup_matrix.ClearSupplierRemoteInfo(supplierNum)
         # finally save the list of current suppliers and clear all stats 
-        backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
+        # backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
         
     def doSuppliersInit(self, arg):
         """

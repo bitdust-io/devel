@@ -3767,8 +3767,8 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
             return NOT_DONE_YET
         arrayLocal = backup_matrix.GetBackupLocalArray(self.backupID)
         arrayRemote = backup_matrix.GetBackupRemoteArray(self.backupID)
-        suppliersActive = backup_matrix.suppliers_set().GetActiveArray()
-        w = backup_matrix.suppliers_set().supplierCount
+        suppliersActive = backup_matrix.GetActiveArray()
+        w = contacts.numSuppliers()
         h = backup_matrix.GetKnownMaxBlockNum(self.backupID) + 1
         backupObj = backup_control.GetRunningBackupObject(self.backupID)
         if backupObj is not None:
@@ -3787,10 +3787,14 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
             for x in range(h): # blocks
                 for y in range(w): # suppliers
                     for DP in ['D', 'P']:
-                        remote = (0 if (arrayRemote is None or not arrayRemote.has_key(x)) else (0 if arrayRemote[x][DP][y] != 1 else 1))
-                        active = suppliersActive[y]
-                        local = (0 if (arrayLocal is None or not arrayLocal.has_key(x)) else arrayLocal[x][DP][y])
-                        color = _BackupDiagramColors[DP]['%d%d%d' % (local, remote, active)]
+                        try:
+                            remote = (0 if (arrayRemote is None or not arrayRemote.has_key(x)) else (0 if arrayRemote[x][DP][y] != 1 else 1))
+                            active = suppliersActive[y]
+                            local = (0 if (arrayLocal is None or not arrayLocal.has_key(x)) else arrayLocal[x][DP][y])
+                            color = _BackupDiagramColors[DP]['%d%d%d' % (local, remote, active)]
+                        except:
+                            bpio.exception()
+                            color = 'red'
                         x0 = 1 + x * dx
                         y0 = 1 + y * dy
                         if DP == 'P':
@@ -3817,10 +3821,14 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
             for x in range(h): # blocks
                 for y in range(w): # suppliers
                     for DP in ['D', 'P']:
-                        remote = (0 if (arrayRemote is None or not arrayRemote.has_key(x)) else (0 if arrayRemote[x][DP][y] != 1 else 1))
-                        active = suppliersActive[y]
-                        local = (0 if (arrayLocal is None or not arrayLocal.has_key(x)) else arrayLocal[x][DP][y])
-                        color = _BackupDiagramColors[DP]['%d%d%d' % (local, remote, active)]
+                        try:
+                            remote = (0 if (arrayRemote is None or not arrayRemote.has_key(x)) else (0 if arrayRemote[x][DP][y] != 1 else 1))
+                            active = suppliersActive[y]
+                            local = (0 if (arrayLocal is None or not arrayLocal.has_key(x)) else arrayLocal[x][DP][y])
+                            color = _BackupDiagramColors[DP]['%d%d%d' % (local, remote, active)]
+                        except:
+                            bpio.exception()
+                            color = 'red'
                         r1 = R - dR * x
                         r12 = R - dR * x - dR/2.0
                         r2 = R - dR * x - dR
@@ -4768,7 +4776,7 @@ class StorageNeededImage(resource.Resource):
             request.finish()
             return NOT_DONE_YET
         bytesUsed = backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
-        w = backup_matrix.suppliers_set().supplierCount
+        w = contacts.numSuppliers()
         if w == 0:
             img.save(f, "PNG")
             f.seek(0)
