@@ -345,17 +345,23 @@ def RequestService(request):
         if ( request.OwnerID in current_customers and request.OwnerID not in space_dict.keys() ):
             bpio.log(6, "p2p_service.RequestService WARNING broken customers file")
             return SendFail(request, 'broken customers file')
-        if request.OwnerID in space_dict.keys():
+        if request.OwnerID in current_customers:
             free_mb += round(float(space_dict[request.OwnerID]), 2)
             space_dict['free'] = str(free_mb)
             current_customers.remove(request.OwnerID)  
             space_dict.pop(request.OwnerID)
+            new_customer = False
+        else:
+            new_customer = True
         if free_mb <= mb_for_customer:
             contacts.setCustomerIDs(current_customers)
             contacts.saveCustomerIDs()
             bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
             reactor.callLater(0, local_tester.TestUpdateCustomers)
-            bpio.log(8, "    DENY!!!    not enough space")
+            if new_customer:
+                bpio.log(8, "    NEW CUSTOMER - DENIED !!!!!!!!!!!    not enough space")
+            else:
+                bpio.log(8, "    OLD CUSTOMER - DENIED !!!!!!!!!!!    not enough space")
             return SendAck(request, 'deny')
         space_dict['free'] = str(round(free_mb - mb_for_customer, 2))
         current_customers.append(request.OwnerID)  
@@ -364,7 +370,10 @@ def RequestService(request):
         contacts.saveCustomerIDs()
         bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
         reactor.callLater(0, local_tester.TestUpdateCustomers)
-        bpio.log(8, "    ACCEPTED!")
+        if new_customer:
+            bpio.log(8, "    NEW CUSTOMER ACCEPTED !!!!!!!!!!!!!!")
+        else:
+            bpio.log(8, "    OLD CUSTOMER ACCEPTED !!!!!!!!!!!!!!")
         return SendAck(request, 'accepted')
     bpio.log(6, "p2p_service.RequestService WARNING wrong service request in %s" % request)
     return SendFail(request, 'wrong service request')
@@ -473,7 +482,7 @@ def Data(request):
     filename = makeFilename(request.OwnerID, request.PacketID)
     if filename == "":
         bpio.log(6,"p2p_service.Data WARNING got empty filename, bad customer or wrong packetID? ")
-        SendFail(request, 'empty filename, you are not a customer maybe?')
+        SendFail(request, 'empty filename')
         return
     dirname = os.path.dirname(filename)
     if not os.path.exists(dirname):
