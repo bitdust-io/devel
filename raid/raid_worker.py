@@ -164,6 +164,7 @@ class RaidWorker(automat.Automat):
                 self.doKillProcess(arg)
                 self.doDestroyMe(arg)
             elif event == 'timer-1min' :
+                self.state = 'OFF'
                 self.doKillProcess(arg)
         #---WORK---
         elif self.state == 'WORK':
