@@ -217,7 +217,7 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
-        self.processor = ParallelProcessor()
+        self.processor = ParallelProcessor(secret='bitpie')
         self.automat('process-started')
 
     def doKillProcess(self, arg):

@@ -254,6 +254,8 @@ class BackupMonitor(automat.Automat):
         delete_count = 0
         if versionsToKeep > 0:
             for pathID, localPath, itemInfo in backup_fs.IterateIDs():
+                if backup_control.IsPathInProcess(pathID):
+                    continue
                 versions = itemInfo.list_versions()
                 # TODO do we need to sort the list? it comes from a set, so must be sorted may be
                 while len(versions) > versionsToKeep:
