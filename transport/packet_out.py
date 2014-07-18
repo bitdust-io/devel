@@ -108,10 +108,10 @@ def search_by_response_packet(newpacket):
         #     nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID), 
         #     nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
         #     p.callbacks.keys()))
-    if len(result) == 0:
-        bpio.log(18, 'packet_out.search_by_response_packet WARNING - not found [%s/%s/%s]:%s %s' % (
-            nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
-            nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
+    # if len(result) == 0:
+        # bpio.log(18, 'packet_out.search_by_response_packet WARNING - not found [%s/%s/%s]:%s %s' % (
+        #     nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
+        #     nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     return result
 
 #------------------------------------------------------------------------------ 

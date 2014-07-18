@@ -455,7 +455,7 @@ def current_bytes_received():
 
 def packets_timeout_loop():
     global _PacketsTimeOutTask
-    bpio.log(18, 'gate.packets_timeout_loop')
+    # bpio.log(18, 'gate.packets_timeout_loop')
     _PacketsTimeOutTask = reactor.callLater(10, packets_timeout_loop)
     for pkt_in in packet_in.items().values():
         if pkt_in.is_timed_out():

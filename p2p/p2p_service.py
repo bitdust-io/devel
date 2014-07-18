@@ -510,8 +510,8 @@ def Data(request):
     SendAck(request, str(len(request.Payload)))
     reactor.callLater(0, local_tester.TestSpaceTime)
     del data
-    bpio.log(8, "p2p_service.Data saved from [%s/%s], packetID is %s" % (
-        nameurl.GetName(request.OwnerID), nameurl.GetName(request.CreatorID), request.PacketID,))
+    bpio.log(8, "p2p_service.Data saved from [%s/%s] to %s" % (
+        nameurl.GetName(request.OwnerID), nameurl.GetName(request.CreatorID), filename,))
 
 
 def Retrieve(request):
