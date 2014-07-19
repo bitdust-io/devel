@@ -886,14 +886,11 @@ def _pack_dict(dictionary, sort=False):
     Values must not contain new lines.
     If ``sort`` is True the resulted string will be sorted by keys.
     """
-    src = ''
     if sort:
-        for k in sorted(dictionary.keys()):
-            src += k + ' ' + str(dictionary[k]) + '\n'
+        seq = sorted(dictionary.keys())
     else:
-        for k in sorted(dictionary.keys()):
-            src += k + ' ' + str(dictionary[k]) + '\n'
-    return src
+        seq = dictionary.keys()
+    return '\n'.join(map(lambda k: '%s %s' % (k, str(dictionary[k])), seq))
 
 def _unpack_dict_from_list(lines):
     """
