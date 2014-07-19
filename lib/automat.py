@@ -52,6 +52,7 @@ of Information Technologies, Mechanics and Optics, Programming Technologies Depa
 import os
 import sys
 import time
+import traceback
 
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
@@ -206,7 +207,10 @@ class Automat(object):
         global _StateChangedCallback
         self.log(self.debug_level * 8, '%s fired with event "%s"' % (self, event))# , sys.getrefcount(Automat)))
         old_state = self.state
-        self.A(event, arg)
+        try:
+            self.A(event, arg)
+        except:
+            self.log(self.debug_level, traceback.format_exc())
         new_state = self.state
         if old_state != new_state:
             self.stopTimers()
