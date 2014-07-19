@@ -235,10 +235,18 @@ def Ack(newpacket):
 def SendFail(request, response=''):
     result = signed_packet.Packet(commands.Fail(), misc.getLocalID(), misc.getLocalID(), 
                                  request.PacketID, response, request.OwnerID) # request.CreatorID)
-    bpio.log(8, "transport_control.SendFail %s to %s" % (result.PacketID, result.RemoteID))
+    bpio.log(8, "p2p_service.SendFail %s to %s" % (result.PacketID, result.RemoteID))
     gate.outbox(result)
     return result
     
+    
+def SendFailNoRequest(remoteID, packetID, response):
+    result = signed_packet.Packet(commands.Fail(), misc.getLocalID(), misc.getLocalID(), 
+        packetID, response, remoteID)
+    bpio.log(8, "p2p_service.SendFailNoRequest %s to %s" % (result.PacketID, result.RemoteID))
+    gate.outbox(result)
+    return result
+
 
 def Fail(newpacket):
     bpio.log(8, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
@@ -426,9 +434,9 @@ def CancelService(request):
 def SendCancelService(remote_idurl, service_info, response_callback=None):
     bpio.log(8, "p2p_service.SendCancelService [%s]" % service_info)
     result = signed_packet.Packet(commands.CancelService(), misc.getLocalID(), misc.getLocalID(), 
-                                 packetid.UniqueID(), service_info, remote_idurl)
+                                  packetid.UniqueID(), service_info, remote_idurl)
     gate.outbox(result, callbacks={
-        commands.Ack(): response_callback,
+        commands.Ack():  response_callback,
         commands.Fail(): response_callback})
     return result   
 

@@ -22,8 +22,8 @@ EVENTS:
 import lib.automat as automat
 import lib.bpio as bpio
 import lib.settings as settings
-import lib.diskspace as diskspace
 import lib.contacts as contacts
+import lib.packetid as packetid
 
 import p2p_service
 import local_tester
@@ -177,7 +177,7 @@ class CustomersRejector(automat.Automat):
             current_customers.remove(customer_idurl)
             removed_customers.append(customer_idurl)
             bpio.log(8, '        customer %s REMOVED' % customer_idurl)
-            if spent_bytes >= donated_bytes:
+            if spent_bytes < donated_bytes:
                 break
         space_dict['free'] = donated_bytes - spent_bytes
         bpio.log(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
@@ -198,7 +198,7 @@ class CustomersRejector(automat.Automat):
         """
         space_dict, spent_bytes, current_customers, removed_customers = arg
         for customer_idurl in removed_customers:
-            p2p_service.SendFail(customer_idurl, 'customer removed')
+            p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
         
     def doRestartLocalTester(self, arg):
         """
