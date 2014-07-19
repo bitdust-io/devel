@@ -337,6 +337,7 @@ def RequestService(request):
         mb_donated = diskspace.GetMegaBytesFromString(settings.getMegabytesDonated())
         if not os.path.isfile(settings.CustomersSpaceFile()):
             bpio._write_dict(settings.CustomersSpaceFile(), {'free': str(mb_donated)})
+            bpio.log(6, 'p2p_service.RequestService created a new space file')
         space_dict = bpio._read_dict(settings.CustomersSpaceFile())
         free_mb = round(float(space_dict['free']), 2)
         if ( request.OwnerID not in current_customers and request.OwnerID in space_dict.keys() ):
@@ -496,6 +497,7 @@ def Data(request):
     mb_donated = diskspace.GetMegaBytesFromString(settings.getMegabytesDonated())
     if not os.path.isfile(settings.CustomersSpaceFile()):
         bpio._write_dict(settings.CustomersSpaceFile(), {'free': str(mb_donated)})
+        bpio.log(6, 'p2p_service.Data created a new space file')
     space_dict = bpio._read_dict(settings.CustomersSpaceFile())
     if request.OwnerID not in space_dict.keys():
         bpio.log(6, "p2p_service.Data WARNING no info about donated space for %s" % request.OwnerID)

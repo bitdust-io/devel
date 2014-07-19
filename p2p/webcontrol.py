@@ -4852,14 +4852,14 @@ class StorageDonatedImage(resource.Resource):
         customers_ids = list(contacts.getCustomerIDs())
         customers_count = contacts.numCustomers()
         spaceDict = bpio._read_dict(settings.CustomersSpaceFile(), {})
-        usedSpaceDict = {}
+        usedSpaceDict = bpio._read_dict(settings.CustomersUsedSpaceFile())
         totalCustomersBytes = 0
         bytesDonated = diskspace.GetBytesFromString(settings.getMegabytesDonated(), 0)
         try:
             freeDonatedBytes = int(float(spaceDict['free'])*1024.0*1024.0)
         except:
             freeDonatedBytes = bytesDonated
-            spaceDict['free'] = freeDonatedBytes/(1024.0*1024.0)
+            spaceDict['free'] = round(freeDonatedBytes/(1024.0*1024.0), 2)
         if freeDonatedBytes < 0:
             freeDonatedBytes = 0
         for idurl in customers_ids:
@@ -4867,12 +4867,12 @@ class StorageDonatedImage(resource.Resource):
                 totalCustomersBytes += int(float(spaceDict.get(idurl, 0.0))*1024.0*1024.0)
             except:
                 bpio.exception()
-            customerDir = os.path.join(dataDir, nameurl.UrlFilename(idurl))
-            if os.path.isdir(customerDir):
-                sz = bpio.getDirectorySize(customerDir)
-            else:
-                sz = 0
-            usedSpaceDict[idurl] = sz
+#            customerDir = os.path.join(dataDir, nameurl.UrlFilename(idurl))
+#            if os.path.isdir(customerDir):
+#                sz = bpio.getDirectorySize(customerDir)
+#            else:
+#                sz = 0
+#            usedSpaceDict[idurl] = sz
         x0 = (width - 2) / 2.0
         y0 = (height - 2) / 2.0
         R = float(min(width, height)) / 2.0 - 1
