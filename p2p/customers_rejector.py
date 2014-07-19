@@ -106,7 +106,7 @@ class CustomersRejector(automat.Automat):
         used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
         bpio.log(8, 'customers_rejector.doThrowOutSomeCustomers donated=%d' % donated_bytes)
         try:
-            free_bytes = int(space_dict['free']) * 1024 * 1024
+            free_bytes = int(float(space_dict['free']) * 1024 * 1024)
         except:
             free_bytes = donated_bytes
             space_dict = {'free': round(free_bytes / (1024 * 1024), 2)}
