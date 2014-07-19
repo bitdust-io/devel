@@ -98,19 +98,26 @@ class CustomersRejector(automat.Automat):
             - free_bytes = donated_bytes - spent_bytes : not yet allocated space
             - used_bytes : size of all files, which you store on your disk for your customers    
         """
+        current_customers = contacts.getCustomerIDs()
+        removed_customers = []
         spent_bytes = 0
         donated_bytes = settings.getDonatedBytes()
         space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
         used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
         bpio.log(8, 'customers_rejector.doTestMyCapacity donated=%d' % donated_bytes)
-        try:
+        try: 
             int(space_dict['free'])
+            for idurl, customer_bytes in space_dict.items():
+                if idurl != 'free':
+                    spent_bytes += int(customer_bytes)
         except:
-            space_dict = {'free': donated_bytes}
             bpio.exception()
-        for idurl, customer_bytes in space_dict.items():
-            if idurl != 'free':
-                spent_bytes += customer_bytes
+            space_dict = {'free': donated_bytes}
+            spent_bytes = 0
+            removed_customers = list(current_customers)
+            current_customers = []
+            self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
+            return
         bpio.log(8, '        spent=%d' % spent_bytes)
         if spent_bytes < donated_bytes:
             space_dict['free'] = donated_bytes - spent_bytes
@@ -118,8 +125,6 @@ class CustomersRejector(automat.Automat):
             bpio.log(8, '        space is OK !!!!!!!!')
             self.automat('space-enough')
             return
-        current_customers = contacts.getCustomerIDs()
-        removed_customers = []
         used_space_ratio_dict = {}
         for customer_pos in xrange(contacts.numCustomers()):
             customer_idurl = contacts.getCustomerID(customer_pos)
