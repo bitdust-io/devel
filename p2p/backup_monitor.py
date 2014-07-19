@@ -249,7 +249,7 @@ class BackupMonitor(automat.Automat):
         # other versions (older) will be removed here  
         versionsToKeep = settings.getGeneralBackupsToKeep()
         bytesUsed = backup_fs.sizebackups()/contacts.numSuppliers()
-        bytesNeeded = diskspace.GetBytesFromString(settings.getMegabytesNeeded(), 0) 
+        bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0) 
         bpio.log(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
         delete_count = 0
         if versionsToKeep > 0:

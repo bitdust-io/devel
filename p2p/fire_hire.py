@@ -258,7 +258,7 @@ class FireHire(automat.Automat):
         Condition method.
         """
         # bpio.log(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
-        #     contacts.numSuppliers(), len(self.dismiss_list), settings.getDesiredSuppliersNumber()))
+        #     contacts.numSuppliers(), len(self.dismiss_list), settings.getSuppliersNumberDesired()))
         if '' in contacts.getSupplierIDs():
             bpio.log(4, 'fire_hire.isMoreNeeded found empty suppliers!!!')
             return True
@@ -268,10 +268,10 @@ class FireHire(automat.Automat):
             dismissed = self.dismiss_list
         s = set(contacts.getSupplierIDs())
         s.difference_update(set(dismissed))
-        result = len(s) < settings.getDesiredSuppliersNumber() 
+        result = len(s) < settings.getSuppliersNumberDesired() 
         bpio.log(14, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
             contacts.numSuppliers(), len(dismissed), len(s), 
-            settings.getDesiredSuppliersNumber(), result))
+            settings.getSuppliersNumberDesired(), result))
         return result
 
     def isAllReady(self, arg):
@@ -303,7 +303,7 @@ class FireHire(automat.Automat):
         Condition method.
         """
         current_suppliers = contacts.getSupplierIDs()
-        desired_number = settings.getDesiredSuppliersNumber()
+        desired_number = settings.getSuppliersNumberDesired()
         needed_suppliers = current_suppliers[:desired_number]
         if '' in needed_suppliers:
             bpio.log(4, 'fire_hire.isStillNeeded WARNING found empty suppliers!!!')
@@ -312,18 +312,18 @@ class FireHire(automat.Automat):
         s = set(needed_suppliers)
         s.add(supplier_idurl)
         s.difference_update(set(self.dismiss_list))
-        result = len(s) < settings.getDesiredSuppliersNumber() 
+        result = len(s) < settings.getSuppliersNumberDesired() 
         bpio.log(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
             contacts.numSuppliers(), len(needed_suppliers), len(self.dismiss_list), 
-            len(s), settings.getDesiredSuppliersNumber(), result))
+            len(s), settings.getSuppliersNumberDesired(), result))
         return result
 
     def isConfigChanged(self, arg):
         """
         Condition method.
         """
-        curconfigs = (settings.getDesiredSuppliersNumber(), 
-                     diskspace.GetBytesFromString(settings.getMegabytesNeeded()))
+        curconfigs = (settings.getSuppliersNumberDesired(), 
+                     diskspace.GetBytesFromString(settings.getNeededString()))
         if None in self.configs:
             return True
         return self.configs[0] != curconfigs[0] or self.configs[1] != curconfigs[1]  
@@ -338,8 +338,8 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        self.configs = (settings.getDesiredSuppliersNumber(), 
-                       diskspace.GetBytesFromString(settings.getMegabytesNeeded()))
+        self.configs = (settings.getSuppliersNumberDesired(), 
+                       diskspace.GetBytesFromString(settings.getNeededString()))
 
     def doConnectSuppliers(self, arg):
         """
@@ -371,8 +371,8 @@ class FireHire(automat.Automat):
                 continue
             if sc.state == 'NO_SERVICE':
                 result.add(supplier_idurl)
-        if contacts.numSuppliers() > settings.getDesiredSuppliersNumber():
-            for supplier_index in range(settings.getDesiredSuppliersNumber(), contacts.numSuppliers()):
+        if contacts.numSuppliers() > settings.getSuppliersNumberDesired():
+            for supplier_index in range(settings.getSuppliersNumberDesired(), contacts.numSuppliers()):
                 idurl = contacts.getSupplierID(supplier_index)
                 if idurl:
                     result.add(idurl)
@@ -428,7 +428,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         current_suppliers = contacts.getSupplierIDs()
-        desired_suppliers = settings.getDesiredSuppliersNumber()
+        desired_suppliers = settings.getSuppliersNumberDesired()
         if len(current_suppliers) < desired_suppliers:
             bpio.log(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers %d<%d' % (
                 len(current_suppliers), desired_suppliers))

@@ -626,21 +626,25 @@ def cmd_reconnect(opts, args, overDict):
 def option_name_to_path(name, default=''):
     path = default
     if name in [ 'donated', 'shared', 'given', ]:
-        path = 'central-settings.donated-megabytes'
+        path = 'storage.donated'
     elif name in [ 'needed', ]:
-        path = 'central-settings.needed-megabytes'
+        path = 'storage.needed'
     elif name in [ 'suppliers', ]:
-        path = 'central-settings.desired-suppliers'
+        path = 'storage.suppliers'
     elif name in [ 'debug' ]:
         path = 'logs.debug-level'
+    elif name in [ 'block-size', ]:
+        path = 'backup.backup-block-size'
+    elif name in [ 'block-size-max', ]:
+        path = 'backup.backup-max-block-size'
+    elif name in [ 'max-backups', ]:
+        path = 'general.general-backups'
+    elif name in [ 'local-backups', ]:
+        path = 'general.general-local-backups-enable'
     elif name in [ 'tcp' ]:
         path = 'transport.transport-tcp.transport-tcp-enable'
     elif name in [ 'tcp-port' ]:
         path = 'transport.transport-tcp.transport-tcp-port'
-    elif name in [ 'udp' ]:
-        path = 'transport.transport-udp.transport-udp-enable'
-    elif name in [ 'udp-port' ]:
-        path = 'transport.transport-udp.transport-udp-port'
     elif name in [ 'dhtudp-port' ]:
         path = 'transport.transport-dhtudp.transport-dhtudp-port'
     elif name in [ 'dht-port' ]:

@@ -1774,13 +1774,13 @@ class InstallPage(Page):
                 raise 'Not found target location: ' + str(request.args)
         self.needed = arg(request, 'needed', self.needed)
         if self.needed == '':
-            self.needed = str(settings.DefaultNeededMb())
+            self.needed = str(settings.DefaultNeededBytes())
         self.donated = arg(request, 'donated', self.donated)
         if self.donated == '':
-            self.donated = str(settings.DefaultDonatedMb())
-        neededV = misc.ToInt(misc.DigitsOnly(str(self.needed)), settings.DefaultNeededMb())
+            self.donated = str(settings.DefaultDonatedBytes())
+        neededV = misc.ToInt(misc.DigitsOnly(str(self.needed)), settings.DefaultNeededBytes())
         self.needed = str(int(neededV))
-        donatedV = misc.ToInt(misc.DigitsOnly(str(self.donated)), settings.DefaultDonatedMb())
+        donatedV = misc.ToInt(misc.DigitsOnly(str(self.donated)), settings.DefaultDonatedBytes())
         self.donated = str(int(donatedV))
         mounts = []
         freeSpaceIsOk = True
@@ -1828,8 +1828,9 @@ class InstallPage(Page):
         if not freeSpaceIsOk:
             message += '\n<br>' + html_message('you do not have enough free space on the disk', 'error')
             ok = False
-        if donatedV < settings.MinimumDonatedMb():
-            message += '\n<br>' + html_message('you must donate at least %d MB' % settings.MinimumDonatedMb(), 'notify')
+        if donatedV < settings.MinimumDonatedBytes():
+            message += '\n<br>' + html_message('you must donate at least %f MB' % (
+                round(settings.MinimumDonatedBytes()/(1024.0*1024.0), 2)), 'notify')
             ok = False
         if not os.path.isdir(self.customersdir):
             message += '\n<br>' + html_message('directory %s not exist' % self.customersdir, 'error')
@@ -3000,13 +3001,13 @@ class MainPage(Page):
         src = self._body(request)
         
         src += '<br><br><table><tr><td><div align=left>\n'
-        availibleSpace = diskspace.MakeStringFromString(settings.getMegabytesNeeded())
+        availibleSpace = diskspace.MakeStringFromString(settings.getNeededString())
         backupsSizeTotal = backup_fs.sizebackups()
         backupsSizeSupplier = -1 if contacts.numSuppliers() == 0 else backupsSizeTotal/contacts.numSuppliers()
         usedSpaceTotal = diskspace.MakeStringFromBytes(backupsSizeTotal)
         usedSpaceSupplier = '-' if backupsSizeSupplier<0 else diskspace.MakeStringFromBytes(backupsSizeSupplier)
         src += 'availible space:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'central-settings.needed-megabytes?back='+request.path, availibleSpace,)
+            '/'+_PAGE_SETTINGS+'/'+'storage.needed?back='+request.path, availibleSpace,)
         src += 'total space used:&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % ('/'+_PAGE_STORAGE, usedSpaceTotal) 
         src += 'used per supplier:&nbsp;%s\n' % (usedSpaceSupplier) 
         src += '</div></td></tr></table>\n'
@@ -3910,7 +3911,7 @@ class SupplierPage(Page):
             request.finish()
             return NOT_DONE_YET
 
-        bytesNeeded = diskspace.GetBytesFromString(settings.getMegabytesNeeded(), 0)
+        bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         bytesUsed = backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
         suppliers_count = contacts.numSuppliers()
         if suppliers_count > 0: 
@@ -4346,7 +4347,7 @@ class CustomerPage(Page):
                 return NOT_DONE_YET
 
         spaceDict = bpio._read_dict(settings.CustomersSpaceFile(), {})
-        bytesGiven = int(float(spaceDict.get(self.idurl, 0)) * 1024 * 1024)
+        bytesGiven = int(spaceDict.get(self.idurl, 0))
         dataDir = settings.getCustomersFilesDir()
         customerDir = os.path.join(dataDir, nameurl.UrlFilename(self.idurl))
         if os.path.isdir(customerDir):
@@ -4600,8 +4601,8 @@ class CustomersPage(Page):
 class StoragePage(Page):
     pagename = _PAGE_STORAGE
     def renderPage(self, request):
-        bytesNeeded = diskspace.GetBytesFromString(settings.getMegabytesNeeded(), 0)
-        bytesDonated = diskspace.GetBytesFromString(settings.getMegabytesDonated(), 0)
+        bytesNeeded = settings.getNeededBytes()
+        bytesDonated = settings.getDonatedBytes()
         usedDict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
         bytesUsed = 0
         for customer_bytes_used in usedDict:
@@ -4622,17 +4623,17 @@ class StoragePage(Page):
             dataDriveFreeSpace = 0
         customers_count = contacts.numCustomers()
         spaceDict = bpio._read_dict(settings.CustomersSpaceFile(), {})
-        totalCustomersMB = 0.0
+        totalCustomersBytes = 0.0
         try:
-            freeDonatedMB = float(spaceDict.get('free', bytesDonated/(1024*1024)))
+            freeDonatedBytes = spaceDict['free']
         except:
             bpio.exception()
-            freeDonatedMB = 0.0
-        if freeDonatedMB < 0:
-            freeDonatedMB = 0.0
+            freeDonatedBytes = 0.0
+        if freeDonatedBytes < 0:
+            freeDonatedBytes = 0.0
         try:
             for idurl in contacts.getCustomerIDs():
-                totalCustomersMB += float(spaceDict.get(idurl, '0.0'))
+                totalCustomersBytes += int(spaceDict[idurl])
         except:
             bpio.exception()
             totalCustomersMB = 0.0
@@ -4645,15 +4646,15 @@ class StoragePage(Page):
         StringNeededPerSupplier = diskspace.MakeStringFromBytes(bytesNeededPerSupplier)
         StringUsedPerSupplier = diskspace.MakeStringFromBytes(bytesUsedPerSupplier)
         StringDiskFreeSpace = diskspace.MakeStringFromBytes(dataDriveFreeSpace)
-        StringTotalCustomers = diskspace.MakeStringFromBytes(totalCustomersMB*1024.0*1024.0)
-        StringFreeDonated = diskspace.MakeStringFromBytes(freeDonatedMB*1024.0*1024.0)
+        StringTotalCustomers = diskspace.MakeStringFromBytes(totalCustomersBytes)
+        StringFreeDonated = diskspace.MakeStringFromBytes(freeDonatedBytes)
         StringUsedDonated = diskspace.MakeStringFromBytes(currentlyUsedDonatedBytes)
         try:
             PercNeed = 100.0 * bytesUsed / bytesNeeded
         except:
             PercNeed = 0.0
         try:
-            PercAllocated = (100.0*totalCustomersMB/(totalCustomersMB+freeDonatedMB))
+            PercAllocated = (100.0*totalCustomersBytes/(totalCustomersBytes+freeDonatedBytes))
         except:
             PercAllocated = 0.0
         try:
@@ -4768,7 +4769,7 @@ class StorageNeededImage(resource.Resource):
         except:
             font = None
         f = cStringIO.StringIO()
-        bytesNeeded = diskspace.GetBytesFromString(settings.getMegabytesNeeded(), None)
+        bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), None)
         if bytesNeeded is None:
             img.save(f, "PNG")
             f.seek(0)
@@ -4854,17 +4855,17 @@ class StorageDonatedImage(resource.Resource):
         spaceDict = bpio._read_dict(settings.CustomersSpaceFile(), {})
         usedSpaceDict = bpio._read_dict(settings.CustomersUsedSpaceFile())
         totalCustomersBytes = 0
-        bytesDonated = diskspace.GetBytesFromString(settings.getMegabytesDonated(), 0)
+        bytesDonated = settings.getDonatedBytes()
         try:
-            freeDonatedBytes = int(float(spaceDict['free'])*1024.0*1024.0)
+            freeDonatedBytes = int(spaceDict['free'])
         except:
             freeDonatedBytes = bytesDonated
-            spaceDict['free'] = round(freeDonatedBytes/(1024.0*1024.0), 2)
+            spaceDict['free'] = freeDonatedBytes
         if freeDonatedBytes < 0:
             freeDonatedBytes = 0
         for idurl in customers_ids:
             try:
-                totalCustomersBytes += int(float(spaceDict.get(idurl, 0.0))*1024.0*1024.0)
+                totalCustomersBytes += int(spaceDict.get(idurl, 0))
             except:
                 bpio.exception()
 #            customerDir = os.path.join(dataDir, nameurl.UrlFilename(idurl))
@@ -4888,7 +4889,7 @@ class StorageDonatedImage(resource.Resource):
             else:
                 for idurl in customers_ids + ['free',]:
                     usedBytes = usedSpaceDict.get(idurl, 0)
-                    givenBytes = int(float(spaceDict[idurl])*1024*1024)
+                    givenBytes = int(spaceDict[idurl])
                     dA = 360.0 * givenBytes / ( totalCustomersBytes + freeDonatedBytes )
 #                    if dA < 1.0:
 #                        A += dA
@@ -4917,7 +4918,7 @@ class StorageDonatedImage(resource.Resource):
                 else:
                     for idurl in customers_ids:
                         usedBytes = usedSpaceDict.get(idurl, 0)
-                        givenBytes = int(float(spaceDict[idurl])*1024*1024)
+                        givenBytes = int(spaceDict[idurl])
                         dA = 360.0 * givenBytes / bytesDonated
                         if dA < 15.0:
                             A += dA
@@ -4997,25 +4998,25 @@ class BackupSettingsPage(Page):
     pagename = _PAGE_BACKUP_SETTINGS
     def renderPage(self, request):
         # bpio.log(14, 'webcontrol.BackupSettingsPage.renderPage')
-        donatedStr = diskspace.MakeStringFromString(settings.getMegabytesDonated())
-        neededStr = diskspace.MakeStringFromString(settings.getMegabytesNeeded())
+        donatedStr = settings.getDonatedString()
+        neededStr = settings.getNeededString()
 
         src = '<h1>backup settings</h1>\n'
         src += '<br><h3>needed space: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'central-settings.needed-megabytes',
+            '/'+_PAGE_SETTINGS+'/'+'storage.needed',
             request.path,
             neededStr)
 #        src += '<p>This will cost %s$ per day.</p>\n' % 'XX.XX'
 
         src += '<br><h3>donated space: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'central-settings.donated-megabytes',
+            '/'+_PAGE_SETTINGS+'/'+'storage.donated',
             request.path,
             donatedStr)
 #        src += '<p>This will earn up to %s$ per day, depending on space used.</p>\n' % 'XX.XX'
 
-        numSuppliers = settings.getDesiredSuppliersNumber()
+        numSuppliers = settings.getSuppliersNumberDesired()
         src += '<br><h3>number of suppliers: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'central-settings.desired-suppliers',
+            '/'+_PAGE_SETTINGS+'/'+'storage.suppliers',
             request.path, str(numSuppliers))
 
         blockSize = settings.getBackupBlockSize()
@@ -7281,7 +7282,7 @@ class TrafficPage(Page):
 def InitSettingsTreePages():
     global _SettingsTreeNodesDict
     bpio.log(4, 'webcontrol.init.options')
-    SettingsTreeAddComboboxList('desired-suppliers', settings.getECCSuppliersNumbers())
+    SettingsTreeAddComboboxList('suppliers', settings.getECCSuppliersNumbers())
     SettingsTreeAddComboboxList('updates-mode', settings.getUpdatesModeValues())
     SettingsTreeAddComboboxList('general-display-mode', settings.getGeneralDisplayModeValues())
     SettingsTreeAddComboboxList('emergency-first', settings.getEmergencyMethods())
@@ -7290,10 +7291,10 @@ def InitSettingsTreePages():
     _SettingsTreeNodesDict = {
     'settings':                 SettingsTreeNode,
 
-    'central-settings':         SettingsTreeNode,
-    'desired-suppliers':        SettingsTreeComboboxNode,
-    'donated-megabytes':         SettingsTreeDiskSpaceNode,
-    'needed-megabytes':         SettingsTreeDiskSpaceNode,
+    'storage':         SettingsTreeNode,
+    'suppliers':        SettingsTreeComboboxNode,
+    'donated':         SettingsTreeDiskSpaceNode,
+    'needed':         SettingsTreeDiskSpaceNode,
     
     'backup-block-size':        SettingsTreeNumericNonZeroPositiveNode,
     'backup-max-block-size':    SettingsTreeNumericNonZeroPositiveNode,
@@ -7481,15 +7482,15 @@ class SettingsTreeNode(Page):
             p2p_connector.A('reconnect')
 
         elif self.path in (
-                'central-settings.desired-suppliers',
-                'central-settings.needed-megabytes',
-                # 'central-settings.donated-megabytes',
+                'storage.suppliers',
+                'storage.needed',
+                # 'storage.donated',
                 ):
             fire_hire.ClearLastFireTime()
             backup_monitor.A('restart')
 
         elif self.path in (
-                'central-settings.donated-megabytes',
+                'storage.donated',
                 ):
             customers_rejector.A('restart')
 

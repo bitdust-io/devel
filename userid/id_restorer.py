@@ -240,9 +240,9 @@ class IdRestorer(automat.Automat):
         reactor.callLater(0.5, self.automat, 'restore-success')
         
     def doRestoreSave(self, arg):
-        settings.uconfig().set('central-settings.desired-suppliers', '0')
-        settings.uconfig().set('central-settings.needed-megabytes', '0Mb')
-        settings.uconfig().set('central-settings.donated-megabytes', '0Mb')
+        settings.uconfig().set('storage.suppliers', '0')
+        settings.uconfig().set('storage.needed', '0Mb')
+        settings.uconfig().set('storage.donated', '0Mb')
         settings.uconfig().update()
 
     def doPrint(self, arg):

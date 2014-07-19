@@ -19,7 +19,7 @@ To add a single item in the user configuration:
    do not forget to add tag "label" and "info".
    
 2. edit settings.py
-   you can add access functions like getECC() or getDesiredSuppliersNumber()
+   you can add access functions like getECC() or getSuppliersNumberDesired()
    
 3. edit guisettings.py if you wish user to be able to edit this item:
    add key pair to dictionary CSettings.items
@@ -56,10 +56,10 @@ InfosDict = {
     'updates':                      "Software updates options.",
     'updates-mode':                 "You can choose one of the install modes. Software must be restarted after installation of the new version.",
     'updates-shedule':              "You can setup updating schedule here.",
-    'central-settings':             "Central Server Settings. Here you can manage your settings stored on the BitPie.NET Central Server (c).",
-    'desired-suppliers':            "Number of remote suppliers which keeps your backups.<br><font color=red>WARNING!</font> You will lost all your backups after changing suppliers number.",
-    'needed-megabytes':             "How many megabytes you need to store your files?",
-    'donated-megabytes':             "How many megabytes you ready to donate to other users?",
+    'storage':                      "Here you can manage your storage settings.",
+    'suppliers':            "Number of remote suppliers which keeps your backups.<br><font color=red>WARNING!</font> You will lost all your backups after changing suppliers number.",
+    'needed':             "How many megabytes you need to store your files?",
+    'donated':            "How many megabytes you ready to donate to other users?",
     'folder-backups':               "Place for your local backups files.",
     'folder-restore':               'Location where your restored files should be placed.',
     'folder-customers':             'Place for donated space, other users will keep their files here.',
@@ -127,10 +127,10 @@ LabelsDict = {
     'updates':                              'updates',
     'updates-mode':                         'mode',
     'updates-shedule':                      'schedule',
-    'central-settings':                     'central server',
-    'desired-suppliers':                    'number of suppliers',
-    'needed-megabytes':                     'needed space',
-    'donated-megabytes':                     'donated space',
+    'storage':                              'storage settings',
+    'suppliers':                    'number of suppliers',
+    'needed':                     'needed space',
+    'donated':                    'donated space',
     'folder':                               'folders',
     'folder-customers':                     'donated space',
     'folder-backups':                       'local backups',
@@ -240,17 +240,17 @@ class UserConfig:
 
   </updates-shedule>
  </updates>
- <central-settings>
-  <desired-suppliers>
+ <storage>
+  <suppliers>
    7
-  </desired-suppliers>
-  <needed-megabytes>
-   4GB
-  </needed-megabytes>
-  <donated-megabytes>
-   8GB
-  </donated-megabytes>
- </central-settings>
+  </suppliers>
+  <needed>
+   4 Gb
+  </needed>
+  <donated>
+   8 Gb
+  </donated>
+ </storage>
  <folder>
   <folder-customers>
 
@@ -410,42 +410,23 @@ class UserConfig:
   <upnp-at-startup>
    False
   </upnp-at-startup>
-  <bitcoin>
-   <bitcoin-host>
-   
-   </bitcoin-host>
-   <bitcoin-port>
-    8332
-   </bitcoin-port>
-   <bitcoin-username>
-   
-   </bitcoin-username>
-   <bitcoin-password>
-   
-   </bitcoin-password>
-   <bitcoin-server-is-local>
-    False
-   </bitcoin-server-is-local>
-   <bitcoin-config-filename> 
-    
-   </bitcoin-config-filename> 
-  </bitcoin>
  </other>
 </settings>"""
 
-    public_options = [  'general.general-backups',
+    public_options = [  
+                        'storage.suppliers',
+                        'storage.needed',
+                        'storage.donated',
+                        'backup.backup-block-size',
+                        'backup.backup-max-block-size',
+                        'general.general-backups',
                         'general.general-local-backups-enable',
                         'general.general-wait-suppliers-enable',
-                        'central-settings.desired-suppliers',
-                        'central-settings.needed-megabytes',
-                        'central-settings.donated-megabytes',
                         'folder.folder-customers',
                         'folder.folder-backups',
                         'folder.folder-restore',
                         'folder.folder-messages',
                         'folder.folder-receipts',
-                        'network.network-send-limit',
-                        'network.network-receive-limit',
                         'transport.transport-tcp.transport-tcp-port',
                         'transport.transport-tcp.transport-tcp-enable',
                         'transport.transport-tcp.transport-tcp-sending-enable',
@@ -455,20 +436,14 @@ class UserConfig:
                         'transport.transport-dhtudp.transport-dhtudp-receiving-enable',
                         'transport.transport-dhtudp.transport-dhtudp-port',
                         'transport.transport-dhtudp.transport-dht-port',                        
-                        'logs.debug-level',
-                        'logs.stream-enable',
-                        'logs.stream-port',
-                        'other.upnp-enabled',
-                        'other.bitcoin.bitcoin-host',
-                        'other.bitcoin.bitcoin-port',
-                        'other.bitcoin.bitcoin-username',
-                        'other.bitcoin.bitcoin-password',
-                        'other.bitcoin.bitcoin-server-is-local',
-                        'other.bitcoin.bitcoin-config-filename',
                         'id-server.id-server-enable',
                         'id-server.id-server-host',
                         'id-server.id-server-web-port',
                         'id-server.id-server-tcp-port',
+                        'logs.debug-level',
+                        'logs.stream-enable',
+                        'logs.stream-port',
+                        'other.upnp-enabled',
                         ]
 
     xmlsrc = ''
@@ -831,7 +806,7 @@ def set_text(xmlnode, txt):
             node.data = text
             return
         j += 1
-    node = xmlnode.ownerDocument.createTextNode(text)#.decode('latin_1'))
+    node = xmlnode.ownerDocument.createTextNode(text) #.decode('latin_1'))
     xmlnode.appendChild(node)
 
 def get_label(xmlnode):
@@ -858,6 +833,7 @@ def main():
     uc = UserConfig(settings.UserConfigFilename())
     uc.update()
     print uc.print_all_html()
+
 
 if __name__ == "__main__":
     main()

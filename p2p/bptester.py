@@ -98,9 +98,10 @@ def SpaceTime():
             continue
         curspace = space.get(idurl, None)
         if curspace is None:
+            remove_list[onecustdir] = 'not found in space file'
             continue
         try:
-            maxspaceV = int(float(curspace) * 1024 * 1024) #in bytes
+            maxspaceV = int(curspace)
         except:
             remove_list[onecustdir] = 'wrong space value'
             continue

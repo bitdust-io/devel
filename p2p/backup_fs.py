@@ -220,7 +220,7 @@ class FSItemInfo():
                     sz = long(os.path.getsize(filepath))
                 except:
                     bpio.exception()
-                # add some bytes because on remote machines all packets are packets
+                # add some bytes because on remote machines all files are packets
                 # so they have a header and the files size will be bigger than on local machine
                 versionSize += sz + 1024   
                 maxBlock = max(maxBlock, blockNum)

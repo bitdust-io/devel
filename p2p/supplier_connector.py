@@ -24,7 +24,8 @@ EVENTS:
 """
 
 import os
-import time 
+import time
+import math 
 
 import lib.bpio as bpio
 import lib.automat as automat
@@ -226,13 +227,13 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        bytes_needed = diskspace.GetBytesFromString(settings.getMegabytesNeeded(), 0)
-        num_suppliers = settings.getDesiredSuppliersNumber()
+        bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
+        num_suppliers = settings.getSuppliersNumberDesired()
         if num_suppliers > 0:
-            mb_per_supplier = round((2.0*bytes_needed/num_suppliers)/(1024.0*1024.0), 2)
+            bytes_per_supplier = int(math.ceil(2.0*bytes_needed/float(num_suppliers)))
         else:
-            mb_per_supplier = 1.0 
-        service_info = 'storage %d' % mb_per_supplier
+            bytes_per_supplier = int(math.ceil(2.0*settings.MinimumNeededBytes()/float(settings.DefaultDesiredSuppliers()))) 
+        service_info = 'storage %d' % bytes_per_supplier
         request = p2p_service.SendRequestService(self.idurl, service_info, self._supplier_acked)
         self.request_packet_id = request.PacketID
 

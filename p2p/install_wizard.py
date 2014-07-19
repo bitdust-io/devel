@@ -187,9 +187,9 @@ class InstallWizard(Automat):
         localbackupsdir = arg.get('localbackupsdir', '')
         restoredir = arg.get('restoredir', '')
         if needed:
-            settings.uconfig().set('central-settings.needed-megabytes', needed+'MB')
+            settings.uconfig().set('storage.needed', needed+' MB')
         if donated:
-            settings.uconfig().set('central-settings.donated-megabytes', donated+'MB')
+            settings.uconfig().set('storage.donated', donated+' MB')
         if customersdir:
             settings.uconfig().set('folder.folder-customers', customersdir)
         if localbackupsdir:

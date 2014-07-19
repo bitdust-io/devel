@@ -311,30 +311,26 @@ def MaximumUsernameLength():
     """
     return 20
 
-def DefaultDonatedMb():
+def DefaultDonatedString():
     """
     Default donated space value - user can set this at any moment in the settings.
     """
-    return 8*1024
+    return '8 Gb' # 8 * 1024 * 1014 * 1024 # 8GB
 
-def DefaultNeededMb():
+def DefaultNeededString():
     """
     Default needed space value.
     """
-    return 4*1024
+    return '4 Gb' # 4 * 1024 * 1024 * 1024 # 4GB
 
-def MinimumNeededMb():
-    """
-    Minimum needed Megabytes - I really do not want to allow user to set needed space to zero.
-    So need to request at least 1Mb from the network.
-    """
-    return 1
-
-def MinimumDonatedMb():
+def MinimumDonatedBytes():
     """
     Minimum donated space amount in Megabytes - need to donate at least 2 Mb right now.
     """
-    return 2
+    return 64 * 1024 * 1024 # 64 Mb
+
+def MinimumNeededBytes():
+    return 32 * 1024 * 1024 # 32 Mb - minimum 1 Mb will be taken from every supplier
 
 def DefaultBackupBlockSize():
     """
@@ -1482,7 +1478,7 @@ def getECC():
     """
     Get ecc map name from current suppliers number. 
     """
-    snum = getDesiredSuppliersNumber()
+    snum = getSuppliersNumberDesired()
     if snum < 0:
         return DefaultEccMapName()
     ecc = eccmap.GetEccMapName(snum)
@@ -1498,26 +1494,32 @@ def getECCSuppliersNumbers():
     return [2, 4, 7, 13]
     # return eccmap.SuppliersNumbers()
 
-def getDesiredSuppliersNumber():
+def getSuppliersNumberDesired():
     """
     Get suppliers number from user settings.
     """
     try:
-        return int(uconfig('central-settings.desired-suppliers'))
+        return int(uconfig('storage.suppliers'))
     except:
         return -1
 
-def getMegabytesNeeded():
+def getNeededString():
     """
     Get needed space in megabytes from user settings.
     """
-    return uconfig('central-settings.needed-megabytes')
+    return uconfig('storage.needed')
 
-def getMegabytesDonated():
+def getNeededBytes():
+    return diskspace.GetBytesFromString(getNeededString())
+
+def getDonatedString():
     """
     Get donated space in megabytes from user settings.
     """
-    return uconfig('central-settings.donated-megabytes')
+    return uconfig('storage.donated')
+
+def getDonatedBytes():
+    return diskspace.GetBytesFromString(getDonatedString())
 
 def getEmergencyEmail():
     """
@@ -1911,20 +1913,20 @@ def _checkSettings():
     """
     Validate some most important user settings.
     """
-    if getDesiredSuppliersNumber() < 0:
-        uconfig().set("central-settings.desired-suppliers", str(DefaultDesiredSuppliers()))
+    if getSuppliersNumberDesired() < 0:
+        uconfig().set("storage.suppliers", str(DefaultDesiredSuppliers()))
 
-    if getMegabytesDonated() == '':
-        uconfig().set("central-settings.donated-megabytes", str(DefaultDonatedMb())+' Mb')
-    donatedV, donatedS = diskspace.SplitString(getMegabytesDonated())
-    if not donatedS:
-        uconfig().set("central-settings.donated-megabytes", str(getMegabytesDonated())+' Mb')
+    if getDonatedString() == '':
+        uconfig().set("storage.donated", DefaultDonatedString())
+    # donatedV, donatedS = diskspace.SplitString(getDonatedString())
+    # if not donatedS:
+    #     uconfig().set("storage.donated", str(getDonatedString()))
 
-    if getMegabytesNeeded() == '':
-        uconfig().set("central-settings.needed-megabytes", str(DefaultNeededMb())+' Mb')
-    neededV, neededS = diskspace.SplitString(getMegabytesNeeded())
-    if not neededS:
-        uconfig().set("central-settings.needed-megabytes", str(getMegabytesNeeded())+' Mb')
+    if getNeededString() == '':
+        uconfig().set("storage.needed", DefaultNeededString())
+    # neededV, neededS = diskspace.SplitString(getNeededString())
+    # if not neededS:
+    #     uconfig().set("storage.needed", str(getNeededString())+' Mb')
 
     if getDebugLevelStr() == "":
         uconfig().set("logs.debug-level", str(defaultDebugLevel()))

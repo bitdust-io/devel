@@ -326,20 +326,20 @@ def RequestService(request):
         return SendFail(request, 'wrong payload')
     if words[0] == 'storage':
         try:
-            mb_for_customer = round(float(words[1]), 2)
+            bytes_for_customer = round(float(words[1]), 2)
         except:
             bpio.exception()
-            mb_for_customer = None
-        if not mb_for_customer or mb_for_customer < 0:
+            bytes_for_customer = None
+        if not bytes_for_customer or bytes_for_customer < 0:
             bpio.log(6, "p2p_service.RequestService WARNING wrong storage value : %s" % request.Payload)
             return SendFail(request, 'wrong storage value')
         current_customers = contacts.getCustomerIDs()
-        mb_donated = diskspace.GetMegaBytesFromString(settings.getMegabytesDonated())
+        donated_bytes = settings.getDonatedBytes()
         if not os.path.isfile(settings.CustomersSpaceFile()):
-            bpio._write_dict(settings.CustomersSpaceFile(), {'free': str(mb_donated)})
+            bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
             bpio.log(6, 'p2p_service.RequestService created a new space file')
         space_dict = bpio._read_dict(settings.CustomersSpaceFile())
-        free_mb = round(float(space_dict['free']), 2)
+        free_bytes = int(space_dict['free'])
         if ( request.OwnerID not in current_customers and request.OwnerID in space_dict.keys() ):
             bpio.log(6, "p2p_service.RequestService WARNING broken space file")
             return SendFail(request, 'broken space file')
@@ -347,14 +347,14 @@ def RequestService(request):
             bpio.log(6, "p2p_service.RequestService WARNING broken customers file")
             return SendFail(request, 'broken customers file')
         if request.OwnerID in current_customers:
-            free_mb += round(float(space_dict[request.OwnerID]), 2)
-            space_dict['free'] = str(free_mb)
+            free_bytes += int(space_dict[request.OwnerID])
+            space_dict['free'] = free_bytes
             current_customers.remove(request.OwnerID)  
             space_dict.pop(request.OwnerID)
             new_customer = False
         else:
             new_customer = True
-        if free_mb <= mb_for_customer:
+        if free_bytes <= bytes_for_customer:
             contacts.setCustomerIDs(current_customers)
             contacts.saveCustomerIDs()
             bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
@@ -364,9 +364,9 @@ def RequestService(request):
             else:
                 bpio.log(8, "    OLD CUSTOMER - DENIED !!!!!!!!!!!    not enough space")
             return SendAck(request, 'deny')
-        space_dict['free'] = str(round(free_mb - mb_for_customer, 2))
+        space_dict['free'] = free_bytes - bytes_for_customer
         current_customers.append(request.OwnerID)  
-        space_dict[request.OwnerID] = str(mb_for_customer)
+        space_dict[request.OwnerID] = bytes_for_customer
         contacts.setCustomerIDs(current_customers)
         contacts.saveCustomerIDs()
         bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
@@ -394,13 +394,20 @@ def CancelService(request):
         if not contacts.IsCustomer(request.OwnerID):
             bpio.log(6, "p2p_service.CancelService WARNING got packet from %s, but he is not a customer" % request.OwnerID)
             return SendFail(request, 'not a customer')
-        mb_donated = diskspace.GetMegaBytesFromString(settings.getMegabytesDonated())
-        space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {'free': str(mb_donated)})
+        donated_bytes = settings.getDonatedBytes()
+        if not os.path.isfile(settings.CustomersSpaceFile()):
+            bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
+            bpio.log(6, 'p2p_service.CancelService created a new space file')
+        space_dict = bpio._read_dict(settings.CustomersSpaceFile())
         if request.OwnerID not in space_dict.keys():
             bpio.log(6, "p2p_service.CancelService WARNING got packet from %s, but not found him in space dictionary" % request.OwnerID)
             return SendFail(request, 'not a customer')
-        free_mb = float(space_dict['free'])
-        space_dict['free'] = str(round(free_mb + float(space_dict[request.OwnerID]), 2))
+        free_bytes = space_dict['free']
+        try:
+            space_dict['free'] = free_bytes + int(space_dict[request.OwnerID])
+        except:
+            bpio.exception()
+            return SendFail(request, 'broken space file')
         new_customers = list(contacts.getCustomerIDs())
         new_customers.remove(request.OwnerID)
         contacts.setCustomerIDs(new_customers)
@@ -494,9 +501,9 @@ def Data(request):
             SendFail(request, 'write error')
             return 
     data = request.Serialize()
-    mb_donated = diskspace.GetMegaBytesFromString(settings.getMegabytesDonated())
+    donated_bytes = settings.getDonatedBytes()
     if not os.path.isfile(settings.CustomersSpaceFile()):
-        bpio._write_dict(settings.CustomersSpaceFile(), {'free': str(mb_donated)})
+        bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
         bpio.log(6, 'p2p_service.Data created a new space file')
     space_dict = bpio._read_dict(settings.CustomersSpaceFile())
     if request.OwnerID not in space_dict.keys():
@@ -507,7 +514,7 @@ def Data(request):
     if request.OwnerID in used_space_dict.keys():
         try:
             bytes_used_by_customer = int(used_space_dict[request.OwnerID])
-            bytes_donated_to_customer = int(float(space_dict[request.OwnerID]) * 1024 * 1024)  
+            bytes_donated_to_customer = int(space_dict[request.OwnerID])  
             if bytes_donated_to_customer - bytes_used_by_customer < len(data):
                 bpio.log(6, "p2p_service.Data WARNING no free space for %s" % request.OwnerID)
                 SendFail(request, 'no free space')

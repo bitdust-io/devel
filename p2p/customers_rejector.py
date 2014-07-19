@@ -101,22 +101,21 @@ class CustomersRejector(automat.Automat):
         free_bytes = 0.0
         used_bytes = 0.0  
         spent_bytes = 0.0 
-        donated_bytes = diskspace.GetBytesFromString(settings.getMegabytesDonated())
+        donated_bytes = settings.getDonatedBytes()
         space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
         used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
         bpio.log(8, 'customers_rejector.doThrowOutSomeCustomers donated=%d' % donated_bytes)
         try:
-            free_bytes = int(float(space_dict['free']) * 1024 * 1024)
+            int(space_dict['free'])
         except:
-            free_bytes = donated_bytes
-            space_dict = {'free': round(free_bytes / (1024 * 1024), 2)}
+            space_dict = {'free': donated_bytes}
             bpio.exception()
-        for idurl, customer_mb in space_dict.items():
+        for idurl, customer_bytes in space_dict.items():
             if idurl != 'free':
-                spent_bytes += int(customer_mb * 1024 * 1024)
+                spent_bytes += customer_bytes
         bpio.log(8, '        spent=%d' % spent_bytes)
         if spent_bytes < donated_bytes:
-            space_dict['free'] = round((donated_bytes - spent_bytes) / (1024.0 * 1024.0), 2)
+            space_dict['free'] = donated_bytes - spent_bytes
             bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
             self.automat('space-enough')
             return
@@ -126,7 +125,7 @@ class CustomersRejector(automat.Automat):
         for customer_pos in xrange(contacts.numCustomers()):
             customer_idurl = contacts.getCustomerID(customer_pos)
             try:
-                allocated_bytes = int(float(space_dict[customer_idurl]) * 1024 * 1024)
+                allocated_bytes = int(space_dict[customer_idurl])
             except:
                 if customer_idurl in current_customers:
                     current_customers.remove(customer_idurl)
@@ -168,12 +167,12 @@ class CustomersRejector(automat.Automat):
                                 key=lambda i: used_space_ratio_dict[i],)
         while spent_bytes >= donated_bytes:
             customer_idurl = customers_sorted.pop()
-            allocated_bytes = int(float(space_dict[customer_idurl]) * 1024 * 1024)
+            allocated_bytes = int(space_dict[customer_idurl])
             spent_bytes -= allocated_bytes
             space_dict.pop(customer_idurl)
             current_customers.remove(customer_idurl)
             removed_customers.append(customer_idurl)
-        space_dict['free'] = round(float(donated_bytes - spent_bytes) / (1014.0 * 1024.0), 2)
+        space_dict['free'] = donated_bytes - spent_bytes
         self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
 
     def doRemoveCustomers(self, arg):
