@@ -158,7 +158,6 @@ class P2PConnector(automat.Automat):
                 fire_hire.A('init')
                 data_sender.A('init')
                 raid_worker.A('init')
-                customers_rejector.A('restart')
         #---NETWORK?---
         elif self.state == 'NETWORK?':
             if ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :
@@ -184,6 +183,7 @@ class P2PConnector(automat.Automat):
                 self.state = 'CONNECTED'
                 self.doInitRatings(arg)
                 backup_monitor.A('restart')
+                customers_rejector.A('restart')
             elif event == 'reconnect' or ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
