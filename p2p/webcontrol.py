@@ -7489,9 +7489,7 @@ class SettingsTreeNode(Page):
             fire_hire.ClearLastFireTime()
             backup_monitor.A('restart')
 
-        elif self.path in (
-                'storage.donated',
-                ):
+        elif self.path == 'storage.donated':
             customers_rejector.A('restart')
 
         elif self.path == 'logs.stream-enable':
