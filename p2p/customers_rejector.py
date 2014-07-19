@@ -98,9 +98,9 @@ class CustomersRejector(automat.Automat):
             - free_bytes = donated_bytes - spent_bytes : not yet allocated space
             - used_bytes : size of all files, which you store on your disk for your customers    
         """
-        free_bytes = 0.0
-        used_bytes = 0.0  
-        spent_bytes = 0.0 
+        free_bytes = 0
+        used_bytes = 0
+        spent_bytes = 0
         donated_bytes = settings.getDonatedBytes()
         space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
         used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})

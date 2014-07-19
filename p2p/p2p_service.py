@@ -326,7 +326,7 @@ def RequestService(request):
         return SendFail(request, 'wrong payload')
     if words[0] == 'storage':
         try:
-            bytes_for_customer = round(float(words[1]), 2)
+            bytes_for_customer = int(words[1])
         except:
             bpio.exception()
             bytes_for_customer = None
@@ -339,7 +339,11 @@ def RequestService(request):
             bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
             bpio.log(6, 'p2p_service.RequestService created a new space file')
         space_dict = bpio._read_dict(settings.CustomersSpaceFile())
-        free_bytes = int(space_dict['free'])
+        try:
+            free_bytes = int(space_dict['free'])
+        except:
+            bpio.exception()
+            return SendFail(request, 'broken space file')
         if ( request.OwnerID not in current_customers and request.OwnerID in space_dict.keys() ):
             bpio.log(6, "p2p_service.RequestService WARNING broken space file")
             return SendFail(request, 'broken space file')
@@ -402,8 +406,8 @@ def CancelService(request):
         if request.OwnerID not in space_dict.keys():
             bpio.log(6, "p2p_service.CancelService WARNING got packet from %s, but not found him in space dictionary" % request.OwnerID)
             return SendFail(request, 'not a customer')
-        free_bytes = space_dict['free']
         try:
+            free_bytes = int(space_dict['free'])
             space_dict['free'] = free_bytes + int(space_dict[request.OwnerID])
         except:
             bpio.exception()
