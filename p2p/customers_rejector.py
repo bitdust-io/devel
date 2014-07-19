@@ -98,8 +98,6 @@ class CustomersRejector(automat.Automat):
             - free_bytes = donated_bytes - spent_bytes : not yet allocated space
             - used_bytes : size of all files, which you store on your disk for your customers    
         """
-        free_bytes = 0
-        used_bytes = 0
         spent_bytes = 0
         donated_bytes = settings.getDonatedBytes()
         space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
@@ -165,7 +163,7 @@ class CustomersRejector(automat.Automat):
                 continue
             used_space_ratio_dict[customer_idurl] = ratio
         customers_sorted = sorted(current_customers, 
-                                key=lambda i: used_space_ratio_dict[i],)
+            key=lambda i: used_space_ratio_dict[i],)
         while len(customers_sorted) > 0:
             customer_idurl = customers_sorted.pop()
             allocated_bytes = int(space_dict[customer_idurl])
