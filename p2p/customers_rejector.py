@@ -119,72 +119,69 @@ class CustomersRejector(automat.Automat):
             self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
             return
         bpio.log(8, '        spent=%d' % spent_bytes)
-        try:
-            if spent_bytes < donated_bytes:
-                space_dict['free'] = donated_bytes - spent_bytes
-                bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
-                bpio.log(8, '        space is OK !!!!!!!!')
-                self.automat('space-enough')
-                return
-            used_space_ratio_dict = {}
-            for customer_pos in xrange(contacts.numCustomers()):
-                customer_idurl = contacts.getCustomerID(customer_pos)
-                try:
-                    allocated_bytes = int(space_dict[customer_idurl])
-                except:
-                    if customer_idurl in current_customers:
-                        current_customers.remove(customer_idurl)
-                        removed_customers.append(customer_idurl)
-                    else:
-                        bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
-                    bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s allocated space unknown' % customer_idurl)
-                    continue 
-                if allocated_bytes <= 0:
-                    if customer_idurl in current_customers:
-                        current_customers.remove(customer_idurl)
-                        removed_customers.append(customer_idurl)
-                    else:
-                        bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
-                    bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s allocated_bytes==0' % customer_idurl)
-                    continue
-                try:
-                    files_size = int(used_dict.get(customer_idurl, 0))
-                    ratio = float(files_size) / float(allocated_bytes)
-                except:
-                    if customer_idurl in current_customers:
-                        current_customers.remove(customer_idurl)
-                        removed_customers.append(customer_idurl)
-                    else:
-                        bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
-                    bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s used_dict have wrong value' % customer_idurl)
-                    continue
-                if ratio > 1.0:
-                    if customer_idurl in current_customers:
-                        current_customers.remove(customer_idurl)
-                        removed_customers.append(customer_idurl)
-                    else:
-                        bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
-                    spent_bytes -= allocated_bytes
-                    bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s space overflow, where is bptester?' % customer_idurl)
-                    continue
-                used_space_ratio_dict[customer_idurl] = ratio
-            customers_sorted = sorted(current_customers, 
-                key=lambda i: used_space_ratio_dict[i],)
-            while len(customers_sorted) > 0:
-                customer_idurl = customers_sorted.pop()
-                allocated_bytes = int(space_dict[customer_idurl])
-                spent_bytes -= allocated_bytes
-                space_dict.pop(customer_idurl)
-                current_customers.remove(customer_idurl)
-                removed_customers.append(customer_idurl)
-                bpio(8, '        customer %s REMOVED' % customer_idurl)
-                if spent_bytes >= donated_bytes:
-                    break
+        if spent_bytes < donated_bytes:
             space_dict['free'] = donated_bytes - spent_bytes
-            bpio.log(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
-            self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
-        except:
-            bpio.exception()
+            bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
+            bpio.log(8, '        space is OK !!!!!!!!')
+            self.automat('space-enough')
+            return
+        used_space_ratio_dict = {}
+        for customer_pos in xrange(contacts.numCustomers()):
+            customer_idurl = contacts.getCustomerID(customer_pos)
+            try:
+                allocated_bytes = int(space_dict[customer_idurl])
+            except:
+                if customer_idurl in current_customers:
+                    current_customers.remove(customer_idurl)
+                    removed_customers.append(customer_idurl)
+                else:
+                    bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
+                bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s allocated space unknown' % customer_idurl)
+                continue 
+            if allocated_bytes <= 0:
+                if customer_idurl in current_customers:
+                    current_customers.remove(customer_idurl)
+                    removed_customers.append(customer_idurl)
+                else:
+                    bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
+                bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s allocated_bytes==0' % customer_idurl)
+                continue
+            try:
+                files_size = int(used_dict.get(customer_idurl, 0))
+                ratio = float(files_size) / float(allocated_bytes)
+            except:
+                if customer_idurl in current_customers:
+                    current_customers.remove(customer_idurl)
+                    removed_customers.append(customer_idurl)
+                else:
+                    bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
+                bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s used_dict have wrong value' % customer_idurl)
+                continue
+            if ratio > 1.0:
+                if customer_idurl in current_customers:
+                    current_customers.remove(customer_idurl)
+                    removed_customers.append(customer_idurl)
+                else:
+                    bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
+                spent_bytes -= allocated_bytes
+                bpio.log(4, 'customers_rejector.doTestMyCapacity WARNING %s space overflow, where is bptester?' % customer_idurl)
+                continue
+            used_space_ratio_dict[customer_idurl] = ratio
+        customers_sorted = sorted(current_customers, 
+            key=lambda i: used_space_ratio_dict[i],)
+        while len(customers_sorted) > 0:
+            customer_idurl = customers_sorted.pop()
+            allocated_bytes = int(space_dict[customer_idurl])
+            spent_bytes -= allocated_bytes
+            space_dict.pop(customer_idurl)
+            current_customers.remove(customer_idurl)
+            removed_customers.append(customer_idurl)
+            bpio.log(8, '        customer %s REMOVED' % customer_idurl)
+            if spent_bytes >= donated_bytes:
+                break
+        space_dict['free'] = donated_bytes - spent_bytes
+        bpio.log(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
+        self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
         
     def doRemoveCustomers(self, arg):
         """
