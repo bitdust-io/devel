@@ -104,14 +104,17 @@ class CustomersRejector(automat.Automat):
         donated_bytes = diskspace.GetBytesFromString(settings.getMegabytesDonated())
         space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
         used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
+        bpio.log(8, 'customers_rejector.doThrowOutSomeCustomers donated=%d' % donated_bytes)
         try:
             free_bytes = int(space_dict['free'] * 1024 * 1024)
         except:
             free_bytes = donated_bytes
             space_dict = {'free': round(free_bytes / (1024 * 1024), 2)}
+            bpio.exception()
         for idurl, customer_mb in space_dict.items():
             if idurl != 'free':
                 spent_bytes += int(customer_mb * 1024 * 1024)
+        bpio.log(8, '        spent=%d' % spent_bytes)
         if spent_bytes < donated_bytes:
             space_dict['free'] = round((donated_bytes - spent_bytes) / (1024.0 * 1024.0), 2)
             bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
