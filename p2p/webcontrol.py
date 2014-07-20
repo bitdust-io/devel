@@ -4635,9 +4635,9 @@ class StoragePage(Page):
                 totalCustomersBytes += int(spaceDict[idurl])
         except:
             bpio.exception()
-            totalCustomersMB = 0.0
-        if totalCustomersMB < 0:
-            totalCustomersMB = 0.0
+            totalCustomersBytes = 0.0
+        if totalCustomersBytes < 0:
+            totalCustomersBytes = 0.0
         currentlyUsedDonatedBytes = bpio.getDirectorySize(dataDir)
         StringNeeded = diskspace.MakeStringFromBytes(bytesNeeded)
         StringDonated = diskspace.MakeStringFromBytes(bytesDonated)
