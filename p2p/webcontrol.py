@@ -4603,13 +4603,7 @@ class StoragePage(Page):
     def renderPage(self, request):
         bytesNeeded = settings.getNeededBytes()
         bytesDonated = settings.getDonatedBytes()
-        usedDict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
-        try:
-            bytesUsed = sum(map(int, usedDict.values()))
-        except:
-            bytesUsed = 0 
-            bpio.exception() 
-        # backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
+        bytesUsed = backup_fs.sizebackups()
         suppliers_count = contacts.numSuppliers()
         if suppliers_count > 0: 
             bytesNeededPerSupplier = bytesNeeded / suppliers_count 
@@ -4622,22 +4616,12 @@ class StoragePage(Page):
             dataDriveFreeSpace = 0
         customers_count = contacts.numCustomers()
         spaceDict = bpio._read_dict(settings.CustomersSpaceFile(), {})
-        totalCustomersBytes = 0.0
         try:
             freeDonatedBytes = spaceDict['free']
         except:
             bpio.exception()
             freeDonatedBytes = 0.0
-        if freeDonatedBytes < 0:
-            freeDonatedBytes = 0.0
-        try:
-            for idurl in contacts.getCustomerIDs():
-                totalCustomersBytes += int(spaceDict[idurl])
-        except:
-            bpio.exception()
-            totalCustomersBytes = 0.0
-        if totalCustomersBytes < 0:
-            totalCustomersBytes = 0.0
+        totalCustomersBytes = sum(map(lambda idurl: spaceDict[idurl], contacts.getCustomerIDs()))
         currentlyUsedDonatedBytes = bpio.getDirectorySize(dataDir)
         StringNeeded = diskspace.MakeStringFromBytes(bytesNeeded)
         StringDonated = diskspace.MakeStringFromBytes(bytesDonated)
@@ -4679,7 +4663,7 @@ class StoragePage(Page):
         src += '<tr><td nowrap>number of <a href="%s">suppliers</a>:</td><td nowrap><b>%d</b></td></tr>\n' % ('/'+_PAGE_SUPPLIERS, suppliers_count)
         src += html_comment('  number of suppliers: %d' % suppliers_count)
         src += '<tr><td nowrap>space given to you:</td><td nowrap><b>%s</b></td></tr>\n' % StringNeeded 
-        src += html_comment('  space given to you: %s' % StringNeeded)
+        src += html_comment('  allocated space: %s' % StringNeeded)
         src += '<tr><td nowrap>space used at the moment:</td><td nowrap><b>%s</b></td></tr>\n' % StringUsed
         src += html_comment('  space used at the moment: %s' % StringUsed) 
         src += '<tr><td nowrap>percentage used:</td><td nowrap><b>%3.2f%%</b></td></tr>\n' % PercNeed
