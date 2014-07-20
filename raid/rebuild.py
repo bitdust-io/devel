@@ -32,13 +32,11 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
     remoteParity = list(remoteMatrix['P'])
     localData = list(localMatrix['D'])
     localParity = list(localMatrix['P'])
-    """
-    This builds a list of missing pieces.
-    The file is missing if value in the corresponding cell 
-    in the "remote" matrix (see ``p2p.backup_matrix``) is -1 or 0 
-    but the supplier who must keep that file is online.
-    In other words, if supplier is online but do not have that piece - this piece is missing.
-    """
+    # This builds a list of missing pieces.
+    # The file is missing if value in the corresponding cell 
+    # in the "remote" matrix (see ``p2p.backup_matrix``) is -1 or 0 
+    # but the supplier who must keep that file is online.
+    # In other words, if supplier is online but do not have that piece - this piece is missing.
     for supplierNum in xrange(supplierCount):
         if availableSuppliers[supplierNum] == 0:
             continue
@@ -50,16 +48,6 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
         # same for Parity file
         if remoteParity[supplierNum] != 1:
             missingParity[supplierNum] = 1
-
-    def HaveAllData(parityMap):
-        """
-        Return True if you have on hands all needed pieces to rebuild the block.
-        """
-        for segment in parityMap:
-            if localData[segment] == 0:
-                return False
-        return True
-    
     # This made an attempt to rebuild the missing pieces 
     # from pieces we have on hands. 
     # bpio.log(14, 'block_rebuilder.AttemptRebuild %s %d BEGIN' % (self.backupID, self.blockNum))

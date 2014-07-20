@@ -352,20 +352,20 @@ class BackupRebuilder(automat.Automat):
             raid_worker.add_task('rebuild', task_params,
                 lambda cmd, params, result: _rebuild_finished(result))
         def _rebuild_finished(result):
-            newData, localData, localParity, reconstructedData, reconstructedParity = result 
-            # bpio.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
-            if newData:
-                for supplierNum in xrange(contacts.numSuppliers()):
-                    if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
-                        backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Data')
-                    if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
-                        backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Parity')
-                self.blocksSucceed.append(self.currentBlockNumber)
-                data_sender.A('new-data')
             self.blockIndex -= 1
-#             delay = 0
-#             if newData:
-#                 delay = 0.5
+            if result:
+                newData, localData, localParity, reconstructedData, reconstructedParity = result 
+                bpio.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(newData)))
+                if newData:
+                    for supplierNum in xrange(contacts.numSuppliers()):
+                        if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
+                            backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Data')
+                        if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
+                            backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Parity')
+                    self.blocksSucceed.append(self.currentBlockNumber)
+                    data_sender.A('new-data')
+            else:
+                bpio.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, result))
             reactor.callLater(0, _prepare_one_block)
         def _finish_all_blocks():
             for blockNum in self.blocksSucceed:

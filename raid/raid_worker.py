@@ -58,13 +58,15 @@ import lib.automat as automat
 
 import read
 import make
+import rebuild
 
 _MODULES = (
 'os',
 'cStringIO',
 'struct',
 'raid.read', 
-'raid.make', 
+'raid.make',
+'raid.rebuild', 
 'lib.settings', 
 'lib.bpio',
 'lib.eccmap',
@@ -244,7 +246,7 @@ class RaidWorker(automat.Automat):
                 func = read.raidread
             elif cmd == 'rebuild': 
                 # TODO:
-                func = read.RebuildOne
+                func = rebuild.rebuild
         except:
             bpio.exception()
             return
