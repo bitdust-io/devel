@@ -60,11 +60,6 @@ import read
 import make
 import rebuild
 
-_DEPFUNCS = (
-'BuildFileName',
-'BuildRaidFileName',
-)
-
 _MODULES = (
 'os',
 'cStringIO',
@@ -255,8 +250,8 @@ class RaidWorker(automat.Automat):
         except:
             bpio.exception()
             return
-        self.activetasks[task_id] = self.processor.submit(func, params, 
-            depfuncs=_DEPFUNCS, modules=_MODULES, 
+        self.activetasks[task_id] = self.processor.submit(func, params,
+            modules=_MODULES, 
             callback=lambda result: self._job_done(task_id, cmd, params, result))
         bpio.log(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
             task_id, len(self.activetasks), self.processor.get_ncpus()))

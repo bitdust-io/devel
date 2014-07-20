@@ -8,21 +8,14 @@ import lib.settings
 
 import raid.read
 
-
-def BuildFileName(backupID, blockNum, supplierNumber, dataOrParity):
-    """
-    Build a file name for that piece depend on given supplier.
-    """
-    return lib.packetid.MakePacketID(backupID, blockNum, supplierNumber, dataOrParity)
-
-def BuildRaidFileName(backupID, blockNum, supplierNumber, dataOrParity):
-    """
-    Same but return an absolute path of that file.
-    """
-    return os.path.join(lib.settings.getLocalBackupsDir(), 
-        BuildFileName(backupID, blockNum, supplierNumber, dataOrParity))
-
 def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix):
+
+    def _build_raid_file_name(supplierNumber, dataOrParity):
+        return os.path.join(
+            lib.settings.getLocalBackupsDir(),
+            lib.packetid.MakePacketID(backupID, blockNum, 
+                                      supplierNumber, dataOrParity))
+    
     supplierCount = len(availableSuppliers)
     missingData = [0] * supplierCount
     missingParity = [0] * supplierCount
@@ -57,16 +50,16 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
         madeProgress = False
         # will check all data packets we have 
         for supplierNum in xrange(supplierCount):
-            dataFileName = BuildRaidFileName(backupID, blockNum, supplierNum, 'Data')
+            dataFileName = _build_raid_file_name(supplierNum, 'Data')
             # if we do not have this item on hands - we will reconstruct it from other items 
             if localData[supplierNum] == 0:
                 parityNum, parityMap = eccMap.GetDataFixPath(localData, localParity, supplierNum)
                 if parityNum != -1:
                     rebuildFileList = []
-                    rebuildFileList.append(BuildRaidFileName(backupID, blockNum, parityNum, 'Parity'))
+                    rebuildFileList.append(_build_raid_file_name(parityNum, 'Parity'))
                     for supplierParity in parityMap:
                         if supplierParity != supplierNum:
-                            filename = BuildRaidFileName(supplierParity, 'Data')
+                            filename = _build_raid_file_name(supplierParity, 'Data')
                             if os.path.isfile(filename):
                                 rebuildFileList.append(filename)
                     # bpio.log(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
@@ -86,7 +79,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                 # self.dataSent[supplierNum] = 1
     # now with parities ...            
     for supplierNum in xrange(supplierCount):
-        parityFileName = BuildRaidFileName(backupID, blockNum, supplierNum, 'Parity')
+        parityFileName = _build_raid_file_name(supplierNum, 'Parity')
         if localParity[supplierNum] == 0:
             parityMap = eccMap.ParityToData[supplierNum]
             HaveAllData = True
@@ -97,7 +90,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
             if HaveAllData:
                 rebuildFileList = []
                 for supplierParity in parityMap:
-                    filename = BuildRaidFileName(supplierParity, 'Data')  # ??? why not 'Parity'
+                    filename = _build_raid_file_name(supplierParity, 'Data')  # ??? why not 'Parity'
                     if os.path.isfile(filename): 
                         rebuildFileList.append(filename)
                 # bpio.log(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
