@@ -4603,6 +4603,7 @@ class StoragePage(Page):
     def renderPage(self, request):
         bytesNeeded = settings.getNeededBytes()
         bytesDonated = settings.getDonatedBytes()
+        usedSpace = bpio._read_dict(settings.CustomersUsedSpaceFile())
         bytesUsed = backup_fs.sizebackups()
         suppliers_count = contacts.numSuppliers()
         if suppliers_count > 0: 
@@ -4621,7 +4622,7 @@ class StoragePage(Page):
         except:
             bpio.exception()
             freeDonatedBytes = 0.0
-        totalCustomersBytes = sum(map(lambda idurl: spaceDict[idurl], contacts.getCustomerIDs()))
+        totalCustomersBytes = sum(map(lambda idurl: int(spaceDict[idurl]), contacts.getCustomerIDs()))
         currentlyUsedDonatedBytes = bpio.getDirectorySize(dataDir)
         StringNeeded = diskspace.MakeStringFromBytes(bytesNeeded)
         StringDonated = diskspace.MakeStringFromBytes(bytesDonated)

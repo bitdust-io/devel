@@ -1335,10 +1335,12 @@ def Calculate():
                     _FilesCount += 1
                     if i[id].exist():
                         _SizeFiles += i[id].size
+                        bpio.log(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
                 for version in i[id].list_versions():
                     versionSize = i[id].get_version_info(version)[1]
                     if versionSize > 0:
-                        _SizeBackups += versionSize 
+                        _SizeBackups += versionSize
+                        bpio.log(16, '        [version] %s : %d bytes' % (i[id].path+'/'+version, versionSize))
                 _ItemsCount += 1
             elif isinstance(i[id], dict):
                 sub_folder_size = recursive_calculate(i[id])
@@ -1352,14 +1354,16 @@ def Calculate():
                 _FilesCount += 1
                 if i[INFO_KEY].exist():
                     _SizeFiles += i[INFO_KEY].size
+                    bpio.log(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
             for version in i[INFO_KEY].list_versions():
                 versionSize = i[INFO_KEY].get_version_info(version)[1]
                 if versionSize > 0:
                     _SizeBackups += versionSize 
+                    bpio.log(16, '        [version] %s : %d bytes' % (i[INFO_KEY].path+'/'+version, versionSize))
             _ItemsCount += 1
         return folder_size
     ret = recursive_calculate(fsID())
-    bpio.log(12, 'backup_fs.Calculate %d %d %d %d' % (
+    bpio.log(16, 'backup_fs.Calculate %d %d %d %d' % (
         _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
     return ret
 
