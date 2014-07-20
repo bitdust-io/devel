@@ -59,6 +59,7 @@ import lib.misc as misc
 import lib.settings as settings        
 import lib.packetid as packetid
 # import lib.dirsize as dirsize
+import lib.contacts as contacts
 
 #------------------------------------------------------------------------------ 
 
@@ -130,9 +131,9 @@ def init():
     Some initial steps can be done here.
     """
     bpio.log(4, 'backup_fs.init')
-    # fs()[settings.BackupIndexFileName()] = -1
-    # fsID()[-1] = FSItemInfo(settings.BackupIndexFileName(), '-1', FILE)
-    # backup_fs.SetFile(settings.BackupIndexFileName(), settings.BackupIndexFileName())
+    fs()[settings.BackupIndexFileName()] = settings.BackupIndexFileName()
+    fsID()[settings.BackupIndexFileName()] = FSItemInfo(settings.BackupIndexFileName(), settings.BackupIndexFileName(), FILE)
+    # SetFile(settings.BackupIndexFileName(), settings.BackupIndexFileName())
 
 def shutdown():
     """
@@ -1363,8 +1364,8 @@ def Calculate():
             _ItemsCount += 1
         return folder_size
     ret = recursive_calculate(fsID())
-    bpio.log(16, 'backup_fs.Calculate %d %d %d %d' % (
-        _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
+    bpio.log(16, 'backup_fs.Calculate %d %d %d %d %d' % (
+        _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups, int(_SizeBackups/contacts.numSuppliers())))
     return ret
 
 def Calculate2(iterID=None):

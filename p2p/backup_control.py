@@ -235,7 +235,11 @@ def IncomingSupplierBackupIndex(newpacket):
         session_key = crypto.DecryptLocalPK(b.EncryptedSessionKey)
         padded_data = crypto.DecryptWithSessionKey(session_key, b.EncryptedData)
         input = cStringIO.StringIO(padded_data[:int(b.Length)])
-        supplier_revision = int(input.readline().rstrip('\n'))
+        supplier_revision = input.readline().rstrip('\n')
+        if supplier_revision:
+            supplier_revision = int(supplier_revision)
+        else:
+            supplier_revision = -1
         input.seek(0)
     except:
         bpio.log(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)

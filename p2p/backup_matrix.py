@@ -263,11 +263,12 @@ def ReadRawListFiles(supplierNum, listFileText):
             # the first idea:  check backup_db_keeper state - READY means index is fine
             # the second idea: check revision number of the local index - 0 means we have no index yet 
             if not backup_fs.IsFileID(line): # remote supplier have some file - but we don't have it in the index
-                if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():  
-                    # so we have some modifications in the index - it is not empty!
-                    # backup_db_keeper did its job - so we have the correct index
-                    paths2remove.add(line) # now we are sure that this file is old and must be removed
-                    bpio.log(8, '        F%s - remove, not found in the index' % line)
+                if line not in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
+                    if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():  
+                        # so we have some modifications in the index - it is not empty!
+                        # backup_db_keeper did its job - so we have the correct index
+                        paths2remove.add(line) # now we are sure that this file is old and must be removed
+                        bpio.log(8, '        F%s - remove, not found in the index' % line)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
             if not backup_fs.ExistsID(line):
