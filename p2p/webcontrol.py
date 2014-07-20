@@ -963,9 +963,9 @@ class LocalSite(server.Site):
     protocol = LocalHTTPChannel
 
     def buildProtocol(self, addr):
-        if addr.host != '127.0.0.1':
-            bpio.log(2, 'webcontrol.LocalSite.buildProtocol WARNING NETERROR connection from ' + str(addr))
-            return None
+        # if addr.host != '127.0.0.1':
+        #     bpio.log(2, 'webcontrol.LocalSite.buildProtocol WARNING NETERROR connection from ' + str(addr))
+        #     return None
         try:
             res = server.Site.buildProtocol(self, addr)
         except:
