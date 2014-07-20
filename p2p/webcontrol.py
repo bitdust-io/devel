@@ -4604,7 +4604,11 @@ class StoragePage(Page):
         bytesNeeded = settings.getNeededBytes()
         bytesDonated = settings.getDonatedBytes()
         usedDict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
-        bytesUsed = sum(usedDict.values())
+        try:
+            bytesUsed = sum(map(int, usedDict.values()))
+        except:
+            bytesUsed = 0 
+            bpio.exception() 
         # backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
         suppliers_count = contacts.numSuppliers()
         if suppliers_count > 0: 
