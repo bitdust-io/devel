@@ -298,10 +298,10 @@ class backup(automat.Automat):
         os.close(fileno)
         self.workBlocks[newblock.BlockNumber] = filename
         dt = time.time()
-        raid_worker.A('new-task', ('make', 
-            (filename, self.eccmap.name, self.backupID, newblock.BlockNumber, 
-            os.path.join(settings.getLocalBackupsDir(), self.backupID)),
-            lambda cmd, params, result: self._raidmakeCallback(params, result, dt),))
+        task_params = (filename, self.eccmap.name, self.backupID, newblock.BlockNumber, 
+                       os.path.join(settings.getLocalBackupsDir(), self.backupID)) 
+        raid_worker.add_task('make', task_params, 
+            lambda cmd, params, result: self._raidmakeCallback(params, result, dt),)
         self.automat('block-raid-started', newblock)
         bpio.log(12, 'backup.doBlockPushAndRaid %s' % newblock.BlockNumber)
         del serializedblock

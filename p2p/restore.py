@@ -277,11 +277,10 @@ class restore(automat.Automat):
         fd, filename = tmpfile.make('restore', 
             prefix=self.BackupID.replace('/','_')+'_'+str(self.BlockNumber)+'_')
         os.close(fd)
-        raid_worker.A('new-task', ('read', 
-            (filename, eccmap.CurrentName(), self.Version, self.BlockNumber, 
-            os.path.join(settings.getLocalBackupsDir(), self.PathID)),
-            lambda cmd, params, result: self._blockRestoreResult(result, filename)))
-        
+        task_params = (filename, eccmap.CurrentName(), self.Version, self.BlockNumber, 
+            os.path.join(settings.getLocalBackupsDir(), self.PathID))
+        raid_worker.add_task('read', task_params,            
+            lambda cmd, params, result: self._blockRestoreResult(result, filename))
 #        threads.deferToThread(
 #            raidread.raidread,
 #                filename, 

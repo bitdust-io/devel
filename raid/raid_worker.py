@@ -60,6 +60,7 @@ import read
 import make
 
 _MODULES = (
+'os',
 'cStringIO',
 'struct',
 'raid.read', 
@@ -67,7 +68,8 @@ _MODULES = (
 'lib.settings', 
 'lib.bpio',
 'lib.eccmap',
-'lib.misc',)
+'lib.misc',
+'lib.packetid',)
 
 #------------------------------------------------------------------------------ 
 
@@ -75,22 +77,9 @@ _RaidWorker = None
 
 #------------------------------------------------------------------------------ 
 
-class ParallelProcessor(pp.Server):
-    """
-    """
-#    def can_work_more(self):
-#        if getattr(self, '__active_tasks', 99999) < self.get_ncpus():
-#            return True
-#        for rworker in  getattr(self, '__rworkers', []):
-#            if rworker.is_free:
-#                return True
-#        else:
-#            if len(getattr(self, '__queue', [])) > self.get_ncpus():
-#                for rworker in  getattr(self, '__rworkers_reserved', []):
-#                    if rworker.is_free:
-#                        return True
-#        return False          
-
+def add_task(cmd, params, callback):
+    A('new-task', (cmd, params, callback))
+     
 #------------------------------------------------------------------------------ 
 
 def A(event=None, arg=None):
@@ -218,7 +207,7 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
-        self.processor = ParallelProcessor(secret='bitpie')
+        self.processor = pp.Server(secret='bitpie')
         self.automat('process-started')
 
     def doKillProcess(self, arg):

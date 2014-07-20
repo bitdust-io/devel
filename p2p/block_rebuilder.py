@@ -140,8 +140,6 @@ class BlockRebuilder():
 
     def AttemptRebuild(self):
         return False
-    
-
         """
         This made an attempt to rebuild the missing pieces from pieces we have on hands. 
         """
