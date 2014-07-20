@@ -2355,7 +2355,6 @@ class MainPage(Page):
                 backupsSize = 0 if contacts.numSuppliers() == 0 else sizeVersions/contacts.numSuppliers()
 
                 src += '<tr>'
-    
                 src += '<td align=left valign=top nowrap>\n'
                 src += spaces + '\n'
     
@@ -4603,12 +4602,11 @@ class StoragePage(Page):
     def renderPage(self, request):
         bytesNeeded = settings.getNeededBytes()
         bytesDonated = settings.getDonatedBytes()
-        usedSpace = bpio._read_dict(settings.CustomersUsedSpaceFile())
         bytesUsed = int(backup_fs.sizebackups() / 2)
         suppliers_count = contacts.numSuppliers()
         if suppliers_count > 0: 
-            bytesNeededPerSupplier = bytesNeeded / suppliers_count 
-            bytesUsedPerSupplier = bytesUsed / suppliers_count
+            bytesNeededPerSupplier = int(math.ceil(2.0 * bytesNeeded / suppliers_count)) 
+            bytesUsedPerSupplier = int(math.ceil(2.0 * bytesUsed / suppliers_count))
         else:
             bytesNeededPerSupplier = bytesUsedPerSupplier = 0
         dataDir = settings.getCustomersFilesDir()
@@ -4616,14 +4614,19 @@ class StoragePage(Page):
         if dataDriveFreeSpace is None:
             dataDriveFreeSpace = 0
         customers_count = contacts.numCustomers()
-        spaceDict = bpio._read_dict(settings.CustomersSpaceFile(), {})
+        spaceDict = bpio._read_dict(settings.CustomersSpaceFile())
         try:
             freeDonatedBytes = spaceDict['free']
         except:
             bpio.exception()
             freeDonatedBytes = 0.0
         totalCustomersBytes = sum(map(lambda idurl: int(spaceDict[idurl]), contacts.getCustomerIDs()))
-        currentlyUsedDonatedBytes = bpio.getDirectorySize(dataDir)
+        usedSpace = bpio._read_dict(settings.CustomersUsedSpaceFile())
+        try:
+            currentlyUsedDonatedBytes = sum(map(int, usedSpace.values()))
+        except:
+            bpio.exception()
+            currentlyUsedDonatedBytes = bpio.getDirectorySize(dataDir)
         StringNeeded = diskspace.MakeStringFromBytes(bytesNeeded)
         StringDonated = diskspace.MakeStringFromBytes(bytesDonated)
         StringUsed = diskspace.MakeStringFromBytes(bytesUsed)
