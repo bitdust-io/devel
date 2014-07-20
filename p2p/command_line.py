@@ -326,7 +326,7 @@ def cmd_backups(opts, args, overDict):
     elif args[1] == 'delete' and len(args) >= 3:
         if args[2] == 'local':
             if len(args) >= 4:
-                url = webcontrol._PAGE_BACKUPS+'/'+args[3].replace('/','_')+'/action=delete.local'
+                url = webcontrol._PAGE_BACKUPS+'/'+webcontrol._PAGE_BACKUP+args[3].replace('/','_')+'?action=delete.local'
             else:
                 return 2
         else:
