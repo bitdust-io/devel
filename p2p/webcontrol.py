@@ -2934,7 +2934,7 @@ class MainPage(Page):
                         szver = diskspace.MakeStringFromBytes(vinfo[1]/contacts.numSuppliers())+' / '+diskspace.MakeStringFromBytes(vinfo[1]) 
                     else:
                         szver = '?'
-                    src += html_comment('  %s   %s %s' % (' '*27, version.ljust(70), szver))
+                    src += html_comment('  %s   %s %s' % (' '*27, (pathID+'/'+version).ljust(68), szver))
             return html(request, body=str(src),)
         
         #---idlist---

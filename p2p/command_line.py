@@ -324,8 +324,11 @@ def cmd_backups(opts, args, overDict):
         return 0
 
     elif args[1] == 'delete' and len(args) >= 3:
-        if args[2] == 'local' and len(args) >= 4:
-            url = webcontrol._PAGE_BACKUPS+'/'+args[3].replace('/','_')+'/action=delete.local'
+        if args[2] == 'local':
+            if len(args) >= 4:
+                url = webcontrol._PAGE_BACKUPS+'/'+args[3].replace('/','_')+'/action=delete.local'
+            else:
+                return 2
         else:
             if packetid.Valid(args[2]):
                 url = webcontrol._PAGE_BACKUPS+'?action=deleteid&pathid='+args[2].replace('/','_')

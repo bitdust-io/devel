@@ -397,14 +397,15 @@ class FireHire(automat.Automat):
         position = -1
         old_idurl = None
         for i in range(len(current_suppliers)):
+            if current_suppliers[i].strip() == '':
+                position = i
+                break
             if current_suppliers[i] in self.dismiss_list:
                 # self.dismiss_list.remove(current_suppliers[i])
                 position = i
                 old_idurl = current_suppliers[i]
                 break
-            if current_suppliers[i].strip() == '':
-                position = i
-                break
+        bpio.log(10, 'fire_hire.doSubstituteSupplier position=%d' % position)
         if position < 0:
             current_suppliers.append(new_idurl)
         else:
