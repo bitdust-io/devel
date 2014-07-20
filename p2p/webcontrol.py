@@ -2339,8 +2339,8 @@ class MainPage(Page):
             # src += '<input type="hidden" name="action" value="select" />\n'
             src += '<table width=98% align=left cellspacing=0 cellpadding=0 border=0>\n'
             for type, pathID, localPath, sizeInBytes, versions in self.listExpandedDirs:
-                if localPath in [settings.BackupIndexFileName(),]:
-                    continue
+                # if localPath in [settings.BackupIndexFileName(),]:
+                #    continue
                 isExist = backup_fs.pathExist(localPath)
                 x, x, name = localPath.rpartition('/')
                 if len(name) == 2 and name[1] == ':':
@@ -4604,7 +4604,7 @@ class StoragePage(Page):
         bytesNeeded = settings.getNeededBytes()
         bytesDonated = settings.getDonatedBytes()
         usedSpace = bpio._read_dict(settings.CustomersUsedSpaceFile())
-        bytesUsed = backup_fs.sizebackups()
+        bytesUsed = int(backup_fs.sizebackups() / 2)
         suppliers_count = contacts.numSuppliers()
         if suppliers_count > 0: 
             bytesNeededPerSupplier = bytesNeeded / suppliers_count 

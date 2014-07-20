@@ -244,8 +244,8 @@ def ReadRawListFiles(supplierNum, listFileText):
         if line.find('http://') != -1 or line.find('.xml') != -1:
             continue
         # nor backup_info.xml, nor backup_db, nor index  files 
-        if line in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
-            continue
+        # if line in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
+        #     continue
         if typ == 'F':
             # we don't have this path in the index
             # so we have several cases:
@@ -382,8 +382,8 @@ def ReadLocalFiles():
             return True
         if realpath.startswith('newblock-'):
             return False
-        if subpath in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
-            return False
+        # if subpath in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
+        #     return False
         try:
             version = subpath.split('/')[-2]
         except:

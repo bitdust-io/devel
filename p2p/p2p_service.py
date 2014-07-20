@@ -204,10 +204,10 @@ def makeFilename(customerID, packetID):
     Must be a customer, and then we make full path filename for where this packet is stored locally.
     """
     if not packetid.Valid(packetID): # SECURITY
-        if packetID not in [    settings.BackupInfoFileName(), 
-                                settings.BackupInfoFileNameOld(), 
-                                settings.BackupInfoEncryptedFileName(), 
-                                settings.BackupIndexFileName() ]:
+        if packetID not in [settings.BackupInfoFileName(), 
+                            settings.BackupInfoFileNameOld(), 
+                            settings.BackupInfoEncryptedFileName(), 
+                            settings.BackupIndexFileName() ]:
             # bpio.log(1, "p2p_service.makeFilename ERROR failed packetID format: " + packetID )
             return ''
     if not contacts.IsCustomer(customerID):  # SECURITY
