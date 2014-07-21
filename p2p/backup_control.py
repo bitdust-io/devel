@@ -173,8 +173,9 @@ def Load(filepath=None):
     if filepath is None:
         filepath = settings.BackupIndexFilePath()
     if not os.path.isfile(filepath):
-        bpio.log(2, 'backup_control.Load ERROR file %s not exist' % filepath)
-        return False
+        bpio.log(2, 'backup_control.Load WARNING file %s not exist' % filepath)
+        WriteIndex(filepath)
+        # return False
     src = bpio.ReadTextFile(filepath)
     if not src:
         bpio.log(2, 'backup_control.Load ERROR reading file %s' % filepath)
