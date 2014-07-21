@@ -87,17 +87,17 @@ def init_local(UI=''):
     # if settings.enableWebTraffic():
     #     misc.StartWebTraffic()
         
-    if settings.enableMemoryProfile():
-        try:
-            from guppy import hpy
-            hp = hpy()
-            hp.setrelheap()
-            bpio.log(2, 'hp.heap():\n'+str(hp.heap()))
-            bpio.log(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-            bpio.log(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
-            import guppy.heapy.RM
-        except:
-            bpio.log(2, "init_shutdown.init_local guppy package is not installed")            
+#    if settings.enableMemoryProfile():
+#        try:
+#            from guppy import hpy
+#            hp = hpy()
+#            hp.setrelheap()
+#            bpio.log(2, 'hp.heap():\n'+str(hp.heap()))
+#            bpio.log(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+#            bpio.log(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+#            import guppy.heapy.RM
+#        except:
+#            bpio.log(2, "init_shutdown.init_local guppy package is not installed")            
 
     import lib.tmpfile as tmpfile
     tmpfile.init(settings.getTempDir())
@@ -388,10 +388,10 @@ def start_logs_rotate():
             if not filename.endswith('.log'):
                 # this is not a log file - we did not create it - do nothing
                 continue
-            if filename.startswith('bpmain-'):
-                # remove "old version" files, now we have files started with "bpmain-"
-                remove_list.append((filepath, 'old version')) 
-                continue
+#            if filename.startswith('dhnmain-'):
+#                # remove "old version" files, now we have files started with "bpmain-"
+#                remove_list.append((filepath, 'old version')) 
+#                continue
             # count the total size of the all log files
             try:
                 file_size = os.path.getsize(filepath)
@@ -410,7 +410,7 @@ def start_logs_rotate():
                     continue
                 # get its datetime
                 try:
-                    dtm = time.mktime(time.strptime(filename[4:-4],'%y%m%d%H%M%S'))
+                    dtm = time.mktime(time.strptime(filename[7:-4],'%y%m%d%H%M%S'))
                 except:
                     bpio.exception()
                     continue          

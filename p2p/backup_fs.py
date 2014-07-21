@@ -131,8 +131,10 @@ def init():
     Some initial steps can be done here.
     """
     bpio.log(4, 'backup_fs.init')
-    fs()[settings.BackupIndexFileName()] = settings.BackupIndexFileName()
-    fsID()[settings.BackupIndexFileName()] = FSItemInfo(settings.BackupIndexFileName(), settings.BackupIndexFileName(), FILE)
+    fn_index = settings.BackupIndexFileName()
+    fs()[fn_index] = settings.BackupIndexFileName()
+    fsID()[fn_index] = FSItemInfo(fn_index, fn_index, FILE)
+    fsID()[fn_index].read_stats(os.path.join(settings.getLocalBackupsDir(), fn_index))
     # SetFile(settings.BackupIndexFileName(), settings.BackupIndexFileName())
 
 def shutdown():
@@ -590,7 +592,8 @@ def SetFile(item, iter=None, iterID=None):
         iterID = fsID()
     parts = item.path.split('/')
     for j in range(len(parts)):
-        id = int(parts[j])
+        part = parts[j]
+        id = misc.ToInt(part, part)
         if j == len(parts) - 1:
             if not iter.has_key(item.name()):
                 iter[item.name()] = id
@@ -622,7 +625,8 @@ def SetDir(item, iter=None, iterID=None):
     parts = item.path.split('/')
     itemname = item.name()
     for j in range(len(parts)):
-        id = int(parts[j])
+        part = parts[j]
+        id = misc.ToInt(part, part)
         if j == len(parts)-1:
             if not iter.has_key(itemname):
                 iter[itemname] = {}
@@ -702,10 +706,8 @@ def WalkByID(pathID, iterID=None):
     path = ''
     parts = pathID.strip('/').split('/')
     for j in range(len(parts)):
-        try:
-            id = int(parts[j])
-        except:
-            return None
+        part = parts[j]
+        id = misc.ToInt(part, part)
         if not iterID.has_key(id):
             return None
         if isinstance(iterID[id], dict):
@@ -740,7 +742,8 @@ def DeleteByID(pathID, iter=None, iterID=None):
     path = ''
     parts = pathID.strip('/').split('/')
     for j in range(len(parts)):
-        id = int(parts[j])
+        part = parts[j]
+        id = misc.ToInt(part, part)
         if not iterID.has_key(id):
             return None
         if isinstance(iterID[id], dict):
