@@ -995,7 +995,7 @@ def TraverseByID(callback, iterID=None):
     """
     def recursive_traverse(i, path_id, path, cb):
         name = None
-        if path not in ['', '/']:
+        if path not in ['', '/', settings.BackupIndexFileName()]:
             path += '/'
         if isinstance(i, FSItemInfo):
             cb(path_id, path, i)
@@ -1024,7 +1024,7 @@ def TraverseByIDSorted(callback, iterID=None):
     """ 
     def recursive_traverse(i, path_id, path, cb):
         name = None
-        if path not in ['', '/']:
+        if path not in ['', '/', settings.BackupIndexFileName()]:
             path += '/'
         if i.has_key(INFO_KEY):
             name = i[INFO_KEY].name()
@@ -1082,7 +1082,7 @@ def IterateIDs(iterID=None):
         iterID = fsID()
     def recursive_iterate(i, path_id, path):
         name = None
-        if path not in ['', '/']:
+        if path not in ['', '/', settings.BackupIndexFileName()]:
             path += '/'
         if i.has_key(INFO_KEY):
             name = i[INFO_KEY].name()
