@@ -1368,7 +1368,7 @@ def Calculate():
         return folder_size
     ret = recursive_calculate(fsID())
     bpio.log(16, 'backup_fs.Calculate %d %d %d %d %d' % (
-        _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups, int(_SizeBackups/contacts.numSuppliers())))
+        _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
     return ret
 
 def Calculate2(iterID=None):
