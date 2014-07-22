@@ -209,14 +209,14 @@ def ReadRawListFiles(supplierNum, listFileText):
     Read ListFiles packet for given supplier and build a "remote" matrix.
     All lines are something like that::
     
-      Findex
-      D0
-      D0/1 
-      V0/1/F20090709034221PM 3 0-1000
-      V0/1/F20090709034221PM 3 0-1000
-      D0/0/123/4567
-      V0/0/123/4567/F20090709034221PM 3 0-11 missing Data:1,3
-      V0/0/123/4/F20090709012331PM 3 0-5 missing Data:1,3 Parity:0,1,2
+      Findex 5456
+      D0 -1
+      D0/1 -1
+      V0/1/F20090709034221PM 3 0-1000 7463434
+      V0/1/F20090709034221PM 3 0-1000 7463434
+      D0/0/123/4567 -1
+      V0/0/123/4567/F20090709034221PM 3 0-11 434353 missing Data:1,3
+      V0/0/123/4/F20090709012331PM 3 0-5 434353 missing Data:1,3 Parity:0,1,2
         
     First character can be::
     
@@ -235,17 +235,13 @@ def ReadRawListFiles(supplierNum, listFileText):
         if line == '':
             break
         typ = line[0]
-        line = line[1:] 
+        line = line[1:]
         line = line.rstrip('\n')
-        # comment lines in Files reports start with blank,
         if line.strip() == '':
             continue
         # also don't consider the identity a backup,
         if line.find('http://') != -1 or line.find('.xml') != -1:
             continue
-        # nor backup_info.xml, nor backup_db, nor index  files 
-        # if line in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
-        #     continue
         if typ == 'F':
             # we don't have this path in the index
             # so we have several cases:
@@ -262,23 +258,35 @@ def ReadRawListFiles(supplierNum, listFileText):
             # or we may loose it if the local index file were lost
             # the first idea:  check backup_db_keeper state - READY means index is fine
             # the second idea: check revision number of the local index - 0 means we have no index yet 
-            if not backup_fs.IsFileID(line): # remote supplier have some file - but we don't have it in the index
-                if line not in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
+            try:
+                pth, filesz = line.split(' ')
+                filesz = int(filesz)
+            except:
+                pth = line
+                filesz = -1
+            if not backup_fs.IsFileID(pth): # remote supplier have some file - but we don't have it in the index
+                if pth.strip('/') in [settings.BackupIndexFileName(), ]: 
+                    # this is the index file saved on remote supplier
+                    # let's remember its size and put it in the backup_fs
+                    item = backup_fs.FSItemInfo(pth.strip('/'), pth.strip('/'), backup_fs.FILE)
+                    item.size = filesz
+                    backup_fs.SetFile(item) 
+                else:
                     if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():  
                         # so we have some modifications in the index - it is not empty!
                         # backup_db_keeper did its job - so we have the correct index
-                        paths2remove.add(line) # now we are sure that this file is old and must be removed
-                        bpio.log(8, '        F%s - remove, not found in the index' % line)
+                        paths2remove.add(pth) # now we are sure that this file is old and must be removed
+                        bpio.log(8, '        F%s - remove, not found in the index' % pth)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
-            if not backup_fs.ExistsID(line):
+            if not backup_fs.ExistsID(pth):
                 if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():
-                    paths2remove.add(line)
-                    bpio.log(8, '        D%s - remove, not found in the index' % line)
+                    paths2remove.add(pth)
+                    bpio.log(8, '        D%s - remove, not found in the index' % pth)
         elif typ == 'V':
+            # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
             words = line.split(' ')
-            # minimum is 3 words: "0/0/F20090709034221PM", "3", "0-1000"
-            if len(words) < 3:
+            if len(words) < 4:
                 bpio.log(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
                 continue
             try:
@@ -383,8 +391,8 @@ def ReadLocalFiles():
             return True
         if realpath.startswith('newblock-'):
             return False
-        # if subpath in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
-        #     return False
+        if subpath in [ settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName() ]:
+            return False
         try:
             version = subpath.split('/')[-2]
         except:

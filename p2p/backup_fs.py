@@ -131,10 +131,10 @@ def init():
     Some initial steps can be done here.
     """
     bpio.log(4, 'backup_fs.init')
-    fn_index = settings.BackupIndexFileName()
-    fs()[fn_index] = settings.BackupIndexFileName()
-    fsID()[fn_index] = FSItemInfo(fn_index, fn_index, FILE)
-    fsID()[fn_index].read_stats(os.path.join(settings.getLocalBackupsDir(), fn_index))
+    # fn_index = settings.BackupIndexFileName()
+    # fs()[fn_index] = settings.BackupIndexFileName()
+    # fsID()[fn_index] = FSItemInfo(fn_index, fn_index, FILE)
+    # fsID()[fn_index].read_stats(os.path.join(settings.getLocalBackupsDir(), fn_index))
     # SetFile(settings.BackupIndexFileName(), settings.BackupIndexFileName())
 
 def shutdown():

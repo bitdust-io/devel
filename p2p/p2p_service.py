@@ -807,12 +807,17 @@ def TreeSummary(ownerdir):
         if not os.access(realpath, os.R_OK):
             return False
         if os.path.isfile(realpath):
-            result.write('F%s\n' % subpath)
+            try:
+                filesz = os.path.getsize(realpath)
+            except:
+                filesz = -1
+            result.write('F%s %d\n' % (subpath, filesz))
             return False
         if not packetid.IsCanonicalVersion(name):
             result.write('D%s\n' % subpath)
             return True
         maxBlock = -1
+        versionSize = {}
         dataBlocks = {}
         parityBlocks = {}
         dataMissing = {}
@@ -820,41 +825,52 @@ def TreeSummary(ownerdir):
         for filename in os.listdir(realpath):
             packetID = subpath + '/' + filename
             pth = os.path.join(realpath, filename)
+            try:
+                filesz = os.path.getsize(pth)
+            except:
+                filesz = -1
             if os.path.isdir(pth):
                 result.write('D%s\n' % packetID)
                 continue
             if not packetid.Valid(packetID):
-                result.write('F%s\n' % packetID)
+                result.write('F%s %d\n' % (packetID, filesz))
                 continue
             pathID, versionName, blockNum, supplierNum, dataORparity = packetid.SplitFull(packetID)
             if None in [pathID, versionName, blockNum, supplierNum, dataORparity]:
-                result.write('F%s\n' % packetID)
+                result.write('F%s %d\n' % (packetID, filesz))
                 continue
             if dataORparity == 'Data':
                 if not dataBlocks.has_key(supplierNum):
-                    dataBlocks[supplierNum] = set()
+                    dataBlocks[supplierNum] = {}
                     dataMissing[supplierNum] = []
-                dataBlocks[supplierNum].add(blockNum)
+                    versionSize[supplierNum] = 0
+                dataBlocks[supplierNum][blockNum] = filesz
             elif dataORparity == 'Parity':
                 if not parityBlocks.has_key(supplierNum):
-                    parityBlocks[supplierNum] = set()
+                    parityBlocks[supplierNum] = {}
                     parityMissing[supplierNum] = []
-                parityBlocks[supplierNum].add(blockNum)
+                    versionSize[supplierNum] = 0
+                parityBlocks[supplierNum][blockNum] = filesz
             else:
-                result.write('F%s\n' % packetID)
+                result.write('F%s %d\n' % (packetID, filesz))
                 continue
             if maxBlock < blockNum:
                 maxBlock = blockNum
         for blockNum in range(maxBlock+1):
             for supplierNum in dataBlocks.keys():
-                if not blockNum in dataBlocks[supplierNum]:
+                if blockNum in dataBlocks[supplierNum].keys():
+                    versionSize[supplierNum] += dataBlocks[supplierNum][blockNum]
+                else:
                     dataMissing[supplierNum].append(str(blockNum))
             for supplierNum in parityBlocks.keys():
-                if not blockNum in parityBlocks[supplierNum]:
+                if blockNum in parityBlocks[supplierNum].keys():
+                    versionSize[supplierNum] += parityBlocks[supplierNum][blockNum]
+                else:
                     parityMissing[supplierNum].append(str(blockNum))
         suppliers = set(dataBlocks.keys() + parityBlocks.keys())
         for supplierNum in suppliers:
-            versionString = '%s %d 0-%d' % (subpath, supplierNum, maxBlock)
+            versionString = '%s %d 0-%d %d' % (
+                subpath, supplierNum, maxBlock, versionSize[supplierNum])
             dataMiss = []
             parityMiss = []
             if dataMissing.has_key(supplierNum):

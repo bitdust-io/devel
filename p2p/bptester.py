@@ -112,8 +112,8 @@ def SpaceTime():
                 return False
             if not os.path.isfile(path):
                 return True
-            # if name in [BackupIndexFileName(),]:
-            #     return False
+            if name in [BackupIndexFileName(),]:
+                return False
             stats = os.stat(path)
             timedict[path] = stats.st_ctime
             sizedict[path] = stats.st_size

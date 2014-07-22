@@ -68,16 +68,16 @@ import lib.settings as settings
 import lib.signed_packet as signed_packet
 import lib.commands as commands
 import lib.crypto as crypto
-import lib.automats as automats
-from lib.automat import Automat
+import lib.automat as automat
 
-import transport.callback as callback
 import transport.gate as gate
 
 import encrypted_block
 import p2p_connector
 import contact_status
 import supplier_connector
+
+#------------------------------------------------------------------------------ 
 
 _BackupDBKeeper = None
    
@@ -96,7 +96,7 @@ def A(event=None, arg=None):
     
 #------------------------------------------------------------------------------ 
 
-class BackupDBKeeper(Automat):
+class BackupDBKeeper(automat.Automat):
     """
     A class to provides logic for database synchronization process.
     """
