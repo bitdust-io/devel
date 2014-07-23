@@ -18,8 +18,10 @@ So this is a local cache of user ID's.
 
 from twisted.internet.defer import Deferred
 
-import lib.bpio as bpio
-import lib.net_misc as net_misc
+from logs import lg
+
+from lib import bpio
+from lib import net_misc
 
 import identitydb
 
@@ -34,7 +36,7 @@ def init(success_func=None, fail_func=None):
     This should be called before all other things.
     Call to initialize identitydb and cache several important IDs.
     """
-    bpio.log(4, 'identitycache.init')
+    lg.out(4, 'identitycache.init')
     identitydb.init()
     if success_func:
         success_func('')
@@ -125,7 +127,7 @@ def UpdateAfterChecking(url, xml_src):
     """
     Need to call that method to update the cache when some identity sources is changed.
     """
-    #bpio.log(12, 'identitycache.UpdateAfterChecking ' + url)
+    #out(12, 'identitycache.UpdateAfterChecking ' + url)
     return identitydb.update(url, xml_src)
 
 
@@ -139,7 +141,7 @@ def RemapContactAddress(address):
     idurl = GetIDURLByIPPort(address[0], address[1])
     if idurl is not None and HasLocalIP(idurl):
         newaddress = (GetLocalIP(idurl), address[1])
-#        bpio.log(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
+#        lg.out(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
 #            nameurl.GetName(idurl), str(address), str(newaddress)))
         return newaddress
     return address
@@ -158,7 +160,7 @@ def getPageFail(x, url):
     """
     This is called when identity request is failed. 
     """
-    bpio.log(6, "identitycache.getPageFail NETERROR in request to " + url)
+    lg.out(6, "identitycache.getPageFail NETERROR in request to " + url)
     return x
 
 

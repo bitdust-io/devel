@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#encrypted_block.py
+#encrypted.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -10,7 +10,7 @@
 """
 .. module:: encrypted_block
 
-Higher level code interfaces with ``encrypted_block`` so that it does not have to deal
+Higher level code interfaces with ``encrypted`` so that it does not have to deal
 with ECC stuff.  We write or read a large block at a time (maybe 64 MB say).
 When writing we generate all the ECC information, and when reading we will
 use ECC to recover lost information so user sees whole block still.
@@ -40,17 +40,18 @@ RAIDREAD:
 
 import os
 import sys
+
 from twisted.internet.defer import Deferred
 
-#if __name__ == '__main__':
-#    sys.path.insert(0, os.path.abspath('..'))
+from logs import lg
 
-import lib.misc as misc
-import lib.bpio as bpio
-import lib.crypto as crypto
-import lib.contacts as contacts
+from lib import misc
+from lib import bpio
+from lib import contacts
 
+import key
 
+#------------------------------------------------------------------------------ 
 
 class Block:
     """
@@ -76,11 +77,11 @@ class Block:
         self.CreatorID = CreatorID
         self.BackupID = BackupID
         self.BlockNumber = BlockNumber
-        self.EncryptedSessionKey = crypto.EncryptLocalPK(SessionKey)
+        self.EncryptedSessionKey = key.EncryptLocalPK(SessionKey)
         self.SessionKeyType = SessionKeyType
         self.Length = len(Data)
         self.LastBlock = bool(LastBlock)               
-        self.EncryptedData = crypto.EncryptWithSessionKey(SessionKey, Data) # DataLonger
+        self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data) # DataLonger
         self.Signature = None
         self.Sign()
 
@@ -89,9 +90,9 @@ class Block:
 
     def SessionKey(self):
         """
-        Return original SessionKey from ``EncryptedSessionKey`` using ``lib.crypto.DecryptLocalPK()`` method.
+        Return original SessionKey from ``EncryptedSessionKey`` using ``crypto.key.DecryptLocalPK()`` method.
         """
-        return crypto.DecryptLocalPK(self.EncryptedSessionKey)
+        return key.DecryptLocalPK(self.EncryptedSessionKey)
 
     def GenerateHashBase(self):
         """
@@ -103,9 +104,9 @@ class Block:
 
     def GenerateHash(self):
         """
-        Create a hash for that ``encrypted_block`` using ``lib.crypto.Hash()``.
+        Create a hash for that ``encrypted_block`` using ``crypto.key.Hash()``.
         """
-        return crypto.Hash(self.GenerateHashBase())
+        return key.Hash(self.GenerateHashBase())
 
     def Sign(self):
         """
@@ -116,9 +117,9 @@ class Block:
 
     def GenerateSignature(self):
         """
-        Call ``lib.crypto.Sign()`` to generate signature.
+        Call ``crypto.key.Sign()`` to generate signature.
         """
-        return crypto.Sign(self.GenerateHash())
+        return key.Sign(self.GenerateHash())
 
     def Ready(self):
         """
@@ -131,14 +132,14 @@ class Block:
         Validate signature to verify the ``encrypted_block``.
         """
         if not self.Ready():
-            bpio.log(4, "encrypted_block.Valid WARNING block is not ready yet " + str(self))
+            lg.out(4, "encrypted_block.Valid WARNING block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
         ConIdentity = contacts.getContact(misc.getLocalID())
         if ConIdentity is None:
-            bpio.log(2, "encrypted_block.Valid WARNING could not get Identity so returning False")
+            lg.out(2, "encrypted_block.Valid WARNING could not get Identity so returning False")
             return False
-        result = crypto.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
+        result = key.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
         return result
 
     def Data(self):
@@ -146,13 +147,12 @@ class Block:
         Return an original data, decrypt using ``EnctryptedData`` and ``EncryptedSessionKey``.
         """
         SessionKey = self.SessionKey()
-        ClearLongData = crypto.DecryptWithSessionKey(SessionKey, self.EncryptedData)
+        ClearLongData = key.DecryptWithSessionKey(SessionKey, self.EncryptedData)
         return ClearLongData[0:self.Length]    # remove padding
 
     def Serialize(self):
         """
-        Create a string that stores all data fields of that ``encrypted_block`` object.
-        Used to save ``encrypted_block`` to a file on HDD.
+        Create a string that stores all data fields of that ``encrypted.Block`` object.
         """
         e = misc.ObjectToString(self)
         return e
@@ -160,8 +160,7 @@ class Block:
 
 def Unserialize(data):
     """
-    A method to create a ``encrypted_block`` instance from input string.
-    Used to read ``encrypted_blocks`` from a local file. 
+    A method to create a ``encrypted.Block`` instance from input string.
     """
     newobject = misc.StringToObject(data)
     return newobject

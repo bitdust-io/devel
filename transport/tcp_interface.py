@@ -25,7 +25,9 @@ except:
 
 from twisted.web import xmlrpc
 
-import lib.bpio as bpio
+from logs import lg
+
+from lib import bpio
 
 import tcp_node
 
@@ -47,25 +49,25 @@ class GateInterface():
         """
         """
         global _GateProxy
-        bpio.log(4, 'tcp_interface.init')
+        lg.out(4, 'tcp_interface.init')
         if not _GateProxy:
             _GateProxy = xmlrpc.Proxy(gate_xml_rpc_url, allowNone=True)
         proxy().callRemote('transport_started', 'tcp')
         return True
 
     def receive(self, options):
-        bpio.log(4, 'tcp_interface.receive')
+        lg.out(4, 'tcp_interface.receive')
         tcp_node.start_streams()
         return tcp_node.receive(options)
 
     def disconnect(self):
-        bpio.log(4, 'tcp_interface.disconnect')
+        lg.out(4, 'tcp_interface.disconnect')
         tcp_node.stop_streams()
         tcp_node.close_connections()
         return tcp_node.disconnect()
     
     def shutdown(self):
-        bpio.log(4, 'tcp_interface.shutdown')
+        lg.out(4, 'tcp_interface.shutdown')
         ret = self.disconnect()
         global _GateProxy
         if _GateProxy:

@@ -56,18 +56,19 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in installer.py')
 
-import lib.automat as automat
-import lib.automats as automats
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.nameurl as nameurl
+from logs import lg
+
+from lib import automat
+from lib import automats
+from lib import bpio
+from lib import misc
+from lib import nameurl
+
+from userid import id_registrator
+from userid import id_restorer
 
 import initializer
-
 import webcontrol
-
-import userid.id_registrator as id_registrator
-import userid.id_restorer as id_restorer
 
 #------------------------------------------------------------------------------ 
 
@@ -240,12 +241,12 @@ class Installer(automat.Automat):
         # gate.init()
 
     def doClearOutput(self, arg):
-        # bpio.log(4, 'installer.doClearOutput')
+        # lg.out(4, 'installer.doClearOutput')
         for state in self.output.keys():
             self.output[state] = {'data': [('', 'black')]}
 
     def doPrint(self, arg):
-        bpio.log(8, 'installer.doPrint %s %s' % (self.state, str(arg)))
+        lg.out(8, 'installer.doPrint %s %s' % (self.state, str(arg)))
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
         if arg is None:
@@ -256,7 +257,7 @@ class Installer(automat.Automat):
             ch = '+'
             if arg[1] == 'red':
                 ch = '!'
-            bpio.log(0, '  %s %s' % (ch, arg[0]))
+            lg.out(0, '  %s %s' % (ch, arg[0]))
 
     def doShowOutput(self, arg):
         """
@@ -271,14 +272,14 @@ class Installer(automat.Automat):
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['data'].append((text, color))
-        # bpio.log(0, '  [%s]' % text)
+        # lg.out(0, '  [%s]' % text)
 
     def doUpdate(self, arg):
-        # bpio.log(4, 'installer.doUpdate')
+        # lg.out(4, 'installer.doUpdate')
         reactor.callLater(0, webcontrol.OnUpdateInstallPage)
 
     def doReadKey(self, arg):
-        bpio.log(2, 'installer.doReadKey arg=[%s]' % str(arg))
+        lg.out(2, 'installer.doReadKey arg=[%s]' % str(arg))
         src = bpio.ReadBinaryFile(arg)
         if len(src) > 1024*10:
             self.doPrint(('file is too big for private key', 'red'))
@@ -292,7 +293,7 @@ class Installer(automat.Automat):
                 idurl = ''
                 keysrc = src
         except:
-            bpio.exception()
+            lg.exc()
             idurl = ''
             keysrc = src
 
@@ -311,7 +312,7 @@ class Installer(automat.Automat):
                 idurl = ''
                 keysrc = src
         except:
-            bpio.exception()
+            lg.exc()
             idurl = ''
             keysrc = src
         if not self.output.has_key(self.state):
@@ -321,9 +322,9 @@ class Installer(automat.Automat):
 #    def doIncreaseDebugLevel(self, arg):
 #        """
 #        """
-#        if self.flagCmdLine and not bpio.Debug(10):
-#            bpio.SetDebug(0)
+#        if self.flagCmdLine and not lg.is_debug(10):
+#            lg.set_debug_level(0)
 #        else:
-#            bpio.SetDebug(18)
+#            lg.set_debug_level(18)
 
 

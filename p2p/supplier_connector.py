@@ -27,16 +27,18 @@ import os
 import time
 import math 
 
-import lib.bpio as bpio
-import lib.automat as automat
-import lib.nameurl as nameurl
-import lib.contacts as contacts
-import lib.commands as commands
-import lib.diskspace as diskspace
-import lib.settings as settings
-import lib.misc as misc
+from logs import lg
 
-import transport.callback as callback
+from lib import bpio
+from lib import automat
+from lib import nameurl
+from lib import contacts
+from lib import commands
+from lib import diskspace
+from lib import settings
+from lib import misc
+
+from transport import callback
 
 import p2p_service
 import fire_hire 
@@ -111,7 +113,7 @@ class SupplierConnector(automat.Automat):
                 try:
                     os.makedirs(supplierPath)
                 except:
-                    bpio.exception()
+                    lg.exc()
                     return
             bpio.WriteFile(settings.SupplierServiceFilename(self.idurl), newstate)
             
@@ -208,7 +210,7 @@ class SupplierConnector(automat.Automat):
         newpacket = arg
         if newpacket.Command == commands.Ack():
             if newpacket.Payload.startswith('accepted'):
-                # bpio.log(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
+                # lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
                 return True
         return False
 
@@ -219,7 +221,7 @@ class SupplierConnector(automat.Automat):
         newpacket = arg
         if newpacket.Command == commands.Ack():
             if newpacket.Payload.startswith('accepted'):
-                # bpio.log(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
+                # lg.out(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
                 return True
         return False
 
@@ -261,7 +263,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        bpio.log(14, 'supplier_connector.doReportConnect')
+        lg.out(14, 'supplier_connector.doReportConnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'CONNECTED')
 
@@ -269,7 +271,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        bpio.log(14, 'supplier_connector.doReportNoService')
+        lg.out(14, 'supplier_connector.doReportNoService')
         for cb in self.callbacks.values():
             cb(self.idurl, 'NO_SERVICE')
 
@@ -277,12 +279,12 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        bpio.log(14, 'supplier_connector.doReportDisconnect')
+        lg.out(14, 'supplier_connector.doReportDisconnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'DISCONNECTED')
 
     def _supplier_acked(self, response, info):
-        bpio.log(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
+        lg.out(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
 
 

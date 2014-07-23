@@ -21,17 +21,16 @@ except:
 
 from twisted.internet import task
 
+from logs import lg
 
-import lib.bpio as bpio
-import lib.maths as maths
-import lib.misc as misc
-import lib.nameurl as nameurl
-import lib.settings as settings
-import lib.contacts as contacts
-
+from lib import bpio
+from lib import maths
+from lib import misc
+from lib import nameurl
+from lib import settings
+from lib import contacts
 
 import contact_status
-
 
 #-------------------------------------------------------------------------------
 
@@ -47,14 +46,14 @@ def init():
     global _InitDone
     if _InitDone:
         return
-    bpio.log(4, 'ratings.init')
+    lg.out(4, 'ratings.init')
     read_index()
     run()
     _InitDone = True
 
 
 def shutdown():
-    bpio.log(4, 'ratings.shutdown')
+    lg.out(4, 'ratings.shutdown')
     stop()
 
 
@@ -65,14 +64,14 @@ def run():
     # debug
     #interval = 5
     reactor.callLater(interval, start)
-    bpio.log(6, 'ratings.run will start after %s minutes' % str(interval/60.0))
+    lg.out(6, 'ratings.run will start after %s minutes' % str(interval/60.0))
     
     
 def start():
     global _LoopCountRatingsTask
     _LoopCountRatingsTask = task.LoopingCall(rate_all_users)
     _LoopCountRatingsTask.start(settings.DefaultAlivePacketTimeOut())
-    bpio.log(6, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut()/60.0))
+    lg.out(6, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut()/60.0))
 
 
 def stop():
@@ -82,7 +81,7 @@ def stop():
             _LoopCountRatingsTask.stop()
         del _LoopCountRatingsTask
         _LoopCountRatingsTask = None
-        bpio.log(6, 'ratings.stop task finished')
+        lg.out(6, 'ratings.stop task finished')
         
             
 def rating_dir(idurl):
@@ -170,14 +169,14 @@ def increase_rating(idurl, alive_state):
 
 
 def rate_all_users():
-    bpio.log(4, 'ratings.rate_all_users')
+    lg.out(4, 'ratings.rate_all_users')
     monthStr = time.strftime('%B')
     for idurl in contacts.getContactsAndCorrespondents():
         isalive = contact_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
         month_percent = 100.0*float(malive)/float(mall)
         total_percent = 100.0*float(talive)/float(tall)
-        bpio.log(4, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
+        lg.out(4, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
             month_percent,
             malive,
             mall,
@@ -224,7 +223,7 @@ def read_all_monthly_ratings(idurl):
 def read_index(monthstr=None):
     global _IndexMonth
     global _IndexTotal
-    #bpio.log(4, 'ratings.read_index')
+    #out(4, 'ratings.read_index')
     if monthstr is None:
         monthstr = time.strftime('%m%y')
     _IndexMonth.clear()
@@ -237,7 +236,7 @@ def read_index(monthstr=None):
         total = read_total_rating_dict(idurl)
         _IndexMonth[idurl] = {'all': '0', 'alive': '0'} if month is None else month
         _IndexTotal[idurl] = {'all': '0', 'alive': '0'} if total is None else total
-        #bpio.log(4, '    [%s]: %s, %s' % (nameurl.GetName(idurl), _IndexMonth[idurl], _IndexTotal[idurl]))
+        #out(4, '    [%s]: %s, %s' % (nameurl.GetName(idurl), _IndexMonth[idurl], _IndexTotal[idurl]))
 
 
 def month(idurl):

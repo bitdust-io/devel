@@ -23,10 +23,12 @@ EVENTS:
 import os
 import time
 
-import lib.automat as automat
-import lib.bpio as bpio
-import lib.tmpfile as tmpfile
-import lib.settings as settings
+from logs import lg
+
+from lib import automat
+from lib import bpio
+from lib import tmpfile
+from lib import settings
 
 import gate
 import stats
@@ -49,7 +51,7 @@ def items():
 def create(transfer_id):
     p = PacketIn(transfer_id)
     items()[transfer_id] = p
-    # bpio.log(10, 'packet_in.create  %s,  %d working items now' % (
+    # lg.out(10, 'packet_in.create  %s,  %d working items now' % (
     #     transfer_id, len(items())))
     return p
 
@@ -168,7 +170,7 @@ class PacketIn(automat.Automat):
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gate.inbox(self)
         if newpacket is None:
-            bpio.log(14, '<<< IN <<<  !!!NONE!!!   [%s]   %s from %s %s' % (
+            lg.out(14, '<<< IN <<<  !!!NONE!!!   [%s]   %s from %s %s' % (
                          self.proto.upper().ljust(5), self.status.ljust(8), 
                          self.host, os.path.basename(self.filename),))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
@@ -180,7 +182,7 @@ class PacketIn(automat.Automat):
                 os.close(fd)
                 os.remove(self.filename)
             except:
-                bpio.exception()
+                lg.exc()
             self.automat('unserialize-failed', None)
         else:
             self.automat('valid-inbox-packet', newpacket)

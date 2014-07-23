@@ -24,9 +24,7 @@ except:
 
 from twisted.web import server, resource
 
-
 #-------------------------------------------------------------------------------
-
 
 #(total bytes, finished packets, failed packets, total packets)
 _InboxPacketsCount = 0
@@ -50,6 +48,9 @@ _DefaultReloadTimeout = 600
 def init(root=None, path='traffic', port=9997):
     global _WebListener
     if root is not None:
+        from transport import callback
+        callback.add_inbox_callback(inbox)
+        callback.add_finish_file_sending_callback(outbox)
         root.putChild(path, TrafficPage())
         return
     if _WebListener:
@@ -60,7 +61,12 @@ def init(root=None, path='traffic', port=9997):
     try:
         _WebListener = reactor.listenTCP(port, site)
     except:
-        pass
+        from logs import lg
+        lg.exc()
+        return
+    from transport import callback
+    callback.add_inbox_callback(inbox)
+    callback.add_finish_file_sending_callback(outbox)
 
 def shutdown():
     global _WebListener

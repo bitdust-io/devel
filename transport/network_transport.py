@@ -20,11 +20,13 @@ import sys
 
 from twisted.internet.defer import Deferred, fail
 
-import lib.automat as automat
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.settings as settings
-import lib.nameurl as nameurl
+from logs import lg
+
+from lib import automat
+from lib import bpio
+from lib import misc
+from lib import settings
+from lib import nameurl
 
 import gate
 

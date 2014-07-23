@@ -21,7 +21,6 @@ In case some of customers do not play fair - need to stop this.:
 
 import os
 import sys
-
 import time
 
 #------------------------------------------------------------------------------ 
@@ -53,8 +52,9 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
 try:
-    import lib.bpio as bpio
-    from lib.signed_packet import Unserialize
+    from logs import lg
+    from lib import bpio
+    from lib.signed import Unserialize
     from lib.nameurl import FilenameUrl
     from lib.settings import init as settings_init
     from lib.settings import CustomersSpaceFile, CustomersUsedSpaceFile, getCustomersFilesDir, LocalTesterLogFilename
@@ -262,14 +262,10 @@ def main():
     if len(sys.argv) < 2:
         return
     bpio.init()
-    bpio.DisableLogs()
-    bpio.DisableOutput()
+    lg.disable_logs()
+    lg.disable_output()
     settings_init()
-    bpio.SetDebug(0)
-    bpio.LowerPriority()
-#    bpio.OpenLogFile(LocalTesterLogFilename(), True)
-#    bpio.StdOutRedirectingStart()
-#    bpio.LifeBegins()
+    lg.set_debug_level(0)
     commands = {
         'update_customers' : UpdateCustomers,
         'validate' : Validate,
@@ -280,7 +276,7 @@ def main():
         printlog('ERROR wrong command: ' + str(sys.argv))
         return
     cmd()
-#    bpio.StdOutRedirectingStop()
+#    bpio.stdout_stop_redirecting()
 #    bpio.CloseLogFile()
 
 #------------------------------------------------------------------------------ 

@@ -15,7 +15,7 @@ Holds a user configurable options in the xml file:
 
 To add a single item in the user configuration:
 
-1. edit userconfig.py: UserConfig.default_xml_src
+1. edit userconfig.py: userconfig.default_xml_config
    do not forget to add tag "label" and "info".
    
 2. edit settings.py
@@ -44,157 +44,7 @@ from xml.dom.minidom import getDOMImplementation
 
 #-------------------------------------------------------------------------------
 
-InfosDict = {
-    'general':                      "General options.",
-    'general-backups':              'How many backup copies of each directory to keep, oldest will be removed automatically? ( 0 = unlimited )',
-    'general-autorun':              "Starting the application during system startup.",
-    'general-display-mode':         "Specifies how you want the window to display when you start the software.",
-    'general-desktop-shortcut':     "Place shortcut on the Desktop?",
-    'general-start-menu-shortcut':  "Add shortcut to the Start Menu?",
-    'general-local-backups-enable': "Also keep a copy of your backups on local HDD?",
-    'general-wait-suppliers-enable':"Wait 24 hours and check suppliers status before removing the locally backed up data.",
-    'updates':                      "Software updates options.",
-    'updates-mode':                 "You can choose one of the install modes. Software must be restarted after installation of the new version.",
-    'updates-shedule':              "You can setup updating schedule here.",
-    'storage':                      "Here you can manage your storage settings.",
-    'suppliers':            "Number of remote suppliers which keeps your backups.<br><font color=red>WARNING!</font> You will lost all your backups after changing suppliers number.",
-    'needed':             "How many megabytes you need to store your files?",
-    'donated':            "How many megabytes you ready to donate to other users?",
-    'folder-backups':               "Place for your local backups files.",
-    'folder-restore':               'Location where your restored files should be placed.',
-    'folder-customers':             'Place for donated space, other users will keep their files here.',
-    'folder-messages':              'Folder to store your messages.',
-    'folder-receipts':              'Folder to store receipts.',
-    'emergency':                    "We can contact you if your account balance is running low, if your backups are not working, or if your machine appears to not be working.",
-    'emergency-first':              "What is your preferred method for us to contact you if there are problems?",
-    'emergency-second':             "What is the second best method to contact you?",
-    'emergency-email':              "What email address should we contact you at? Email contact is free.",
-    'emergency-phone':              "If you would like to be contacted by phone, what number can we reach you at? ($1 per call for our time and costs)",
-    'emergency-fax':                "If you would like to be contacted by fax, what number can we reach you at? ($0.50 per fax for our time and costs)",
-    'emergency-text':               "Other method we should contact you by? Cost will be based on our costs.",
-    'personal':                     'Your personal information.',
-    'personal-name':                'Your name',
-    'personal-surname':             'Your surname',
-    'personal-nickname':            'Nickname',
-    'personal-betatester':          'Are you agree to participate in the BitPie.NET project testing?',
-    'network':                      'Network settings.',
-    'network-send-limit':           'The value in kilobytes per second to decrease network load. At the moment the maximum sending speed that BitPie.NET can support is about half megabyte per second. 0 - no limit.',
-    'network-receive-limit':        'Limit incoming traffic with a value in kilobytes per second. 0 - no limit.',
-    'backup':                       'Backups setting',
-    'backup-block-size':            'Preferred block size in bytes when doing a backup.',
-    'backup-max-block-size':        'Maximum block size in bytes when doing a backup, if you plan to do a huge backups - set higher values to increase the speed.',
-    'transport':                    'You can use different protocols to transfer packets, called "transports". Here you can customize your transport settings.',
-    'transport-tcp':                "transport_tcp uses the standard TCP protocol to transfer packets.",
-    'transport-tcp-port':           "Enter the TCP port number for the transport_tcp, it will be used to connect with your machine.",
-    'transport-tcp-enable':         "transport_tcp uses the standard TCP protocol to transfer packets.<br>Do you want to use transport_tcp?",
-    'transport-tcp-sending-enable': 'Do you want to use transport_tcp for sending packets?',
-    'transport-tcp-receiving-enable': 'Do you want to use transport_tcp for receiving packets?',
-    'transport-dhtudp':             '',
-    'transport-dht-port':           '',
-    'transport-dhtudp-port':        '',
-    'transport-dhtudp-enable':      '',
-    'transport-dhtudp-sending-enable': '',
-    'transport-dhtudp-receiving-enable': '',
-    'upnp-enabled':                 'Do you want to use UPnP to configure port forwarding?',
-    'debug-level':                  "Higher values will produce more log messages.",
-    'stream-enable':                "Go to http://127.0.0.1:[logs port number] to browse the program log.",
-    'memdebug-enable':              'Go to http://127.0.0.1:[memdebug port number] to see memory usage.',
-    'memprofile-enable':            'Use guppy to profile memory usage.',
-    'bitcoin-host':                 'address of the BitCoin RPC server',
-    'bitcoin-port':                 'remote port of the BitCoin RPC server',
-    'bitcoin-username':             'username to authenticate on the BitCoin RPC server',
-    'bitcoin-password':             'password to authenticate on the BitCoin RPC server',
-    'bitcoin-server-is-local':      'use local BitCoin JSON-RPC server instead of remote',
-    'bitcoin-config-filename':      'path to the bitcoin.conf file with info to access the local BitCoin JSON-RPC server',
-    'id-server-enable':             '',
-    'id-server-host':               'host name or IP address for own ID server',
-    'id-server-web-port':           '',
-    'id-server-tcp-port':           '',
-    }
-
-LabelsDict = {
-    'general':                              'general',
-    'general-backups':                      'backup copies',
-    'general-local-backups-enable':         'local backups',
-    'general-wait-suppliers-enable':        'wait suppliers',
-    'general-autorun':                      'autorun',
-    'general-display-mode':                 'display mode',
-    'general-desktop-shortcut':             'desktop shortcut',
-    'general-start-menu-shortcut':          'start menu shortcut',
-    'backup':                               'backup',
-    'backup-block-size':                    'backup block size',
-    'backup-max-block-size':                'maximum block size',
-    'updates':                              'updates',
-    'updates-mode':                         'mode',
-    'updates-shedule':                      'schedule',
-    'storage':                              'storage settings',
-    'suppliers':                    'number of suppliers',
-    'needed':                     'needed space',
-    'donated':                    'donated space',
-    'folder':                               'folders',
-    'folder-customers':                     'donated space',
-    'folder-backups':                       'local backups',
-    'folder-restore':                       'restored files',
-    'folder-messages':                      'messages',
-    'folder-receipts':                      'receipts',
-    'emergency':                            'emergency',
-    'emergency-first':                      'primary',
-    'emergency-second':                     'secondary',
-    'emergency-email':                      'email',
-    'emergency-phone':                      'phone',
-    'emergency-fax':                        'fax',
-    'emergency-text':                       'other',
-    'personal':                             'personal information',
-    'personal-name':                        'name',
-    'personal-surname':                     'surname',
-    'personal-nickname':                    'nickname',
-    'personal-betatester':                  'betatester',
-    'network':                              'network',
-    'network-send-limit':                   'outgoing bandwidth limit',
-    'network-receive-limit':                'incoming bandwidth limit',
-    'transport':                            'transports',
-    'transport-tcp':                        'transport_tcp',
-    'transport-tcp-port':                   'TCP port',
-    'transport-tcp-enable':                 'transport_tcp enable',
-    'transport-tcp-sending-enable':         'transport_tcp sending enable',
-    'transport-tcp-receiving-enable':       'transport_tcp receiving enable',
-    'transport-dhtudp':                     'transport_dhtudp',
-    'transport-dhtudp-port':                'dhtudp UDP port',
-    'transport-dht-port':                   'DHT port',
-    'transport-dhtudp-enable':              'transport_dhtudp enable',
-    'transport-dhtudp-sending-enable':      'transport_dhtudp sending enable',
-    'transport-dhtudp-receiving-enable':    'transport_dhtudp receiving enable',
-    'logs':                                 'logs',
-    'debug-level':                          'debug level',
-    'stream-enable':                        'enable logs',
-    'stream-port':                          'logs port number',
-    'memdebug-enable':                      'enable memdebug',
-    'memdebug-port':                        'memdebug port number',
-    'memprofile-enable':                    'enable memory profiler',
-    'traffic-enable':                       'enable packets traffic',
-    'traffic-port':                         'traffic port number',
-    'other':                                'other',
-    'upnp-enabled':                         'UPnP enable',
-    'upnp-at-startup':                      'check UPnP at startup',
-    'bitcoin-host':                         'BitCoin server hostname',
-    'bitcoin-port':                         'BitCoin server port',
-    'bitcoin-username':                     'BitCoin server username',
-    'bitcoin-password':                     'BitCoin server password',
-    'bitcoin-server-is-local':              'use local BitCoin server',
-    'bitcoin-config-filename':              'path to the bitcoin.conf file',
-    'id-server-enable':                     'start own ID server',
-    'id-server-host':                       'own ID server hostname',
-    'id-server-web-port':                   'ID server web port',
-    'id-server-tcp-port':                   'ID server TCP port',
-    }
-
-#------------------------------------------------------------------------------ 
-
-class UserConfig:
-    """
-    A class to keep options in the memory and have fast access.
-    """
-    default_xml_src = ur"""<settings>
+_DefaultXMLConfig = ur"""<settings>
  <general>
   <general-backups>
    2
@@ -413,38 +263,183 @@ class UserConfig:
  </other>
 </settings>"""
 
-    public_options = [  
-                        'storage.suppliers',
-                        'storage.needed',
-                        'storage.donated',
-                        'backup.backup-block-size',
-                        'backup.backup-max-block-size',
-                        'general.general-backups',
-                        'general.general-local-backups-enable',
-                        'general.general-wait-suppliers-enable',
-                        'folder.folder-customers',
-                        'folder.folder-backups',
-                        'folder.folder-restore',
-                        'folder.folder-messages',
-                        'folder.folder-receipts',
-                        'transport.transport-tcp.transport-tcp-port',
-                        'transport.transport-tcp.transport-tcp-enable',
-                        'transport.transport-tcp.transport-tcp-sending-enable',
-                        'transport.transport-tcp.transport-tcp-receiving-enable',
-                        'transport.transport-dhtudp.transport-dhtudp-enable',
-                        'transport.transport-dhtudp.transport-dhtudp-sending-enable',
-                        'transport.transport-dhtudp.transport-dhtudp-receiving-enable',
-                        'transport.transport-dhtudp.transport-dhtudp-port',
-                        'transport.transport-dhtudp.transport-dht-port',                        
-                        'id-server.id-server-enable',
-                        'id-server.id-server-host',
-                        'id-server.id-server-web-port',
-                        'id-server.id-server-tcp-port',
-                        'logs.debug-level',
-                        'logs.stream-enable',
-                        'logs.stream-port',
-                        'other.upnp-enabled',
-                        ]
+_PublicOptions = [  
+    'storage.suppliers',
+    'storage.needed',
+    'storage.donated',
+    'backup.backup-block-size',
+    'backup.backup-max-block-size',
+    'general.general-backups',
+    'general.general-local-backups-enable',
+    'general.general-wait-suppliers-enable',
+    'folder.folder-customers',
+    'folder.folder-backups',
+    'folder.folder-restore',
+    'folder.folder-messages',
+    'folder.folder-receipts',
+    'transport.transport-tcp.transport-tcp-port',
+    'transport.transport-tcp.transport-tcp-enable',
+    'transport.transport-tcp.transport-tcp-sending-enable',
+    'transport.transport-tcp.transport-tcp-receiving-enable',
+    'transport.transport-dhtudp.transport-dhtudp-enable',
+    'transport.transport-dhtudp.transport-dhtudp-sending-enable',
+    'transport.transport-dhtudp.transport-dhtudp-receiving-enable',
+    'transport.transport-dhtudp.transport-dhtudp-port',
+    'transport.transport-dhtudp.transport-dht-port',                        
+    'id-server.id-server-enable',
+    'id-server.id-server-host',
+    'id-server.id-server-web-port',
+    'id-server.id-server-tcp-port',
+    'logs.debug-level',
+    'logs.stream-enable',
+    'logs.stream-port',
+    'other.upnp-enabled',
+    ]
+    
+_InfosDict = {
+    'general':                      "General options.",
+    'general-backups':              'How many backup copies of each directory to keep, oldest will be removed automatically? ( 0 = unlimited )',
+    'general-autorun':              "Starting the application during system startup.",
+    'general-display-mode':         "Specifies how you want the window to display when you start the software.",
+    'general-desktop-shortcut':     "Place shortcut on the Desktop?",
+    'general-start-menu-shortcut':  "Add shortcut to the Start Menu?",
+    'general-local-backups-enable': "Also keep a copy of your backups on local HDD?",
+    'general-wait-suppliers-enable':"Wait 24 hours and check suppliers status before removing the locally backed up data.",
+    'updates':                      "Software updates options.",
+    'updates-mode':                 "You can choose one of the install modes. Software must be restarted after installation of the new version.",
+    'updates-shedule':              "You can setup updating schedule here.",
+    'storage':                      "Here you can manage your storage settings.",
+    'suppliers':            "Number of remote suppliers which keeps your backups.<br><font color=red>WARNING!</font> You will lost all your backups after changing suppliers number.",
+    'needed':             "How many megabytes you need to store your files?",
+    'donated':            "How many megabytes you ready to donate to other users?",
+    'folder-backups':               "Place for your local backups files.",
+    'folder-restore':               'Location where your restored files should be placed.',
+    'folder-customers':             'Place for donated space, other users will keep their files here.',
+    'folder-messages':              'Folder to store your messages.',
+    'folder-receipts':              'Folder to store receipts.',
+    'emergency':                    "We can contact you if your account balance is running low, if your backups are not working, or if your machine appears to not be working.",
+    'emergency-first':              "What is your preferred method for us to contact you if there are problems?",
+    'emergency-second':             "What is the second best method to contact you?",
+    'emergency-email':              "What email address should we contact you at? Email contact is free.",
+    'emergency-phone':              "If you would like to be contacted by phone, what number can we reach you at? ($1 per call for our time and costs)",
+    'emergency-fax':                "If you would like to be contacted by fax, what number can we reach you at? ($0.50 per fax for our time and costs)",
+    'emergency-text':               "Other method we should contact you by? Cost will be based on our costs.",
+    'personal':                     'Your personal information.',
+    'personal-name':                'Your name',
+    'personal-surname':             'Your surname',
+    'personal-nickname':            'Nickname',
+    'personal-betatester':          'Are you agree to participate in the BitPie.NET project testing?',
+    'network':                      'Network settings.',
+    'network-send-limit':           'The value in kilobytes per second to decrease network load. At the moment the maximum sending speed that BitPie.NET can support is about half megabyte per second. 0 - no limit.',
+    'network-receive-limit':        'Limit incoming traffic with a value in kilobytes per second. 0 - no limit.',
+    'backup':                       'Backups setting',
+    'backup-block-size':            'Preferred block size in bytes when doing a backup.',
+    'backup-max-block-size':        'Maximum block size in bytes when doing a backup, if you plan to do a huge backups - set higher values to increase the speed.',
+    'transport':                    'You can use different protocols to transfer packets, called "transports". Here you can customize your transport settings.',
+    'transport-tcp':                "transport_tcp uses the standard TCP protocol to transfer packets.",
+    'transport-tcp-port':           "Enter the TCP port number for the transport_tcp, it will be used to connect with your machine.",
+    'transport-tcp-enable':         "transport_tcp uses the standard TCP protocol to transfer packets.<br>Do you want to use transport_tcp?",
+    'transport-tcp-sending-enable': 'Do you want to use transport_tcp for sending packets?',
+    'transport-tcp-receiving-enable': 'Do you want to use transport_tcp for receiving packets?',
+    'transport-dhtudp':             '',
+    'transport-dht-port':           '',
+    'transport-dhtudp-port':        '',
+    'transport-dhtudp-enable':      '',
+    'transport-dhtudp-sending-enable': '',
+    'transport-dhtudp-receiving-enable': '',
+    'upnp-enabled':                 'Do you want to use UPnP to configure port forwarding?',
+    'debug-level':                  "Higher values will produce more log messages.",
+    'stream-enable':                "Go to http://127.0.0.1:[logs port number] to browse the program log.",
+    'memdebug-enable':              'Go to http://127.0.0.1:[memdebug port number] to see memory usage.',
+    'memprofile-enable':            'Use guppy to profile memory usage.',
+    'id-server-enable':             '',
+    'id-server-host':               'host name or IP address for own ID server',
+    'id-server-web-port':           '',
+    'id-server-tcp-port':           '',
+    }
+
+_LabelsDict = {
+    'general':                              'general',
+    'general-backups':                      'backup copies',
+    'general-local-backups-enable':         'local backups',
+    'general-wait-suppliers-enable':        'wait suppliers',
+    'general-autorun':                      'autorun',
+    'general-display-mode':                 'display mode',
+    'general-desktop-shortcut':             'desktop shortcut',
+    'general-start-menu-shortcut':          'start menu shortcut',
+    'backup':                               'backup',
+    'backup-block-size':                    'backup block size',
+    'backup-max-block-size':                'maximum block size',
+    'updates':                              'updates',
+    'updates-mode':                         'mode',
+    'updates-shedule':                      'schedule',
+    'storage':                              'storage settings',
+    'suppliers':                    'number of suppliers',
+    'needed':                     'needed space',
+    'donated':                    'donated space',
+    'folder':                               'folders',
+    'folder-customers':                     'donated space',
+    'folder-backups':                       'local backups',
+    'folder-restore':                       'restored files',
+    'folder-messages':                      'messages',
+    'folder-receipts':                      'receipts',
+    'emergency':                            'emergency',
+    'emergency-first':                      'primary',
+    'emergency-second':                     'secondary',
+    'emergency-email':                      'email',
+    'emergency-phone':                      'phone',
+    'emergency-fax':                        'fax',
+    'emergency-text':                       'other',
+    'personal':                             'personal information',
+    'personal-name':                        'name',
+    'personal-surname':                     'surname',
+    'personal-nickname':                    'nickname',
+    'personal-betatester':                  'betatester',
+    'network':                              'network',
+    'network-send-limit':                   'outgoing bandwidth limit',
+    'network-receive-limit':                'incoming bandwidth limit',
+    'transport':                            'transports',
+    'transport-tcp':                        'transport_tcp',
+    'transport-tcp-port':                   'TCP port',
+    'transport-tcp-enable':                 'transport_tcp enable',
+    'transport-tcp-sending-enable':         'transport_tcp sending enable',
+    'transport-tcp-receiving-enable':       'transport_tcp receiving enable',
+    'transport-dhtudp':                     'transport_dhtudp',
+    'transport-dhtudp-port':                'dhtudp UDP port',
+    'transport-dht-port':                   'DHT port',
+    'transport-dhtudp-enable':              'transport_dhtudp enable',
+    'transport-dhtudp-sending-enable':      'transport_dhtudp sending enable',
+    'transport-dhtudp-receiving-enable':    'transport_dhtudp receiving enable',
+    'logs':                                 'logs',
+    'debug-level':                          'debug level',
+    'stream-enable':                        'enable logs',
+    'stream-port':                          'logs port number',
+    'memdebug-enable':                      'enable memdebug',
+    'memdebug-port':                        'memdebug port number',
+    'memprofile-enable':                    'enable memory profiler',
+    'traffic-enable':                       'enable packets traffic',
+    'traffic-port':                         'traffic port number',
+    'other':                                'other',
+    'upnp-enabled':                         'UPnP enable',
+    'upnp-at-startup':                      'check UPnP at startup',
+    'bitcoin-host':                         'BitCoin server hostname',
+    'bitcoin-port':                         'BitCoin server port',
+    'bitcoin-username':                     'BitCoin server username',
+    'bitcoin-password':                     'BitCoin server password',
+    'bitcoin-server-is-local':              'use local BitCoin server',
+    'bitcoin-config-filename':              'path to the bitcoin.conf file',
+    'id-server-enable':                     'start own ID server',
+    'id-server-host':                       'own ID server hostname',
+    'id-server-web-port':                   'ID server web port',
+    'id-server-tcp-port':                   'ID server TCP port',
+    }
+
+#------------------------------------------------------------------------------ 
+
+class UserConfig:
+    """
+    A class to keep options in the memory and have fast access.
+    """
 
     xmlsrc = ''
     data = {}
@@ -463,7 +458,7 @@ class UserConfig:
         else:
             self._create()
 
-        doc1 = self._parse(self.default_xml_src)
+        doc1 = self._parse(default_xml_config())
         self._load(
             self.default_data,
             doc1.documentElement,
@@ -476,7 +471,6 @@ class UserConfig:
 
         self._validate(True)
 
-
     def _parse(self, src):
         """
         Read XML content from ``src`` argument and return a DOM object.
@@ -486,7 +480,7 @@ class UserConfig:
             s = src.encode('utf-8')
             return minidom.parseString(s)
         except:
-            return minidom.parseString(self.default_xml_src.encode('utf-8'))
+            return minidom.parseString(default_xml_config().encode('utf-8'))
 
     def _read(self):
         """
@@ -515,7 +509,7 @@ class UserConfig:
         """
         Create default settings.
         """
-        self.xmlsrc = self.default_xml_src
+        self.xmlsrc = default_xml_config()
         self._write()
 
     def _validate(self, remove=False):
@@ -657,7 +651,7 @@ class UserConfig:
         """
         Use this when user needs to "reset to factory defaults".
         """
-        self.xmlsrc = self.default_xml_src
+        self.xmlsrc = default_xml_config()
 
     def get(self, key, request=None):
         """
@@ -813,15 +807,23 @@ def get_label(xmlnode):
     """
     Get a label for DOM element.
     """
-    global LabelsDict
-    return LabelsDict.get(xmlnode.tagName, xmlnode.tagName)
+    global _LabelsDict
+    return _LabelsDict.get(xmlnode.tagName, xmlnode.tagName)
 
 def get_info(xmlnode):
     """
     Get a more detailed info about that DOM element.
     """
-    global InfosDict
-    return InfosDict.get(xmlnode.tagName, '')
+    global _InfosDict
+    return _InfosDict.get(xmlnode.tagName, '')
+
+def public_options():
+    global _PublicOptions
+    return _PublicOptions
+
+def default_xml_config():
+    global _DefaultXMLConfig
+    return _DefaultXMLConfig
 
 #-------------------------------------------------------------------------------
 

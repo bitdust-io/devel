@@ -18,16 +18,9 @@ import os
 import sys
 import stat
 
-try:
-    import lib.bpio as bpio
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
-    try:
-        import lib.bpio as bpio
-    except:
-        sys.exit()
+from logs import lg
+        
+from lib import bpio
 
 #------------------------------------------------------------------------------ 
 

@@ -38,22 +38,24 @@ def run(UI='', options=None, args=None, overDict=None):
     an instance of ``initializer()`` state machine and send it an event "run".
     """
     
-    import lib.bpio as bpio
-    bpio.log(6, 'bpmain.run sys.path=%s' % str(sys.path))
+    from logs import lg
+    lg.out(6, 'bpmain.run sys.path=%s' % str(sys.path))
+    
+    from lib import bpio
     
     #---settings---
-    import lib.settings as settings
+    from lib import settings
     if overDict:
         settings.override_dict(overDict)
     settings.init()
     if not options or options.debug is None:
-        bpio.SetDebug(settings.getDebugLevel())    
+        lg.set_debug_level(settings.getDebugLevel())    
     
     #---USE_TRAY_ICON---
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
         try:
             from tray_icon import USE_TRAY_ICON
-            # bpio.log(4, 'bpmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
+            # lg.out(4, 'bpmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
             if bpio.Linux() and not bpio.X11_is_running():
                 USE_TRAY_ICON = False
             if USE_TRAY_ICON:
@@ -61,7 +63,7 @@ def run(UI='', options=None, args=None, overDict=None):
                 wxreactor.install()
         except:
             USE_TRAY_ICON = False
-            bpio.exception()
+            lg.exc()
     else:
         USE_TRAY_ICON = False
     if USE_TRAY_ICON:
@@ -77,7 +79,7 @@ def run(UI='', options=None, args=None, overDict=None):
                 'gray':     'icon-gray.png', }
         import tray_icon
         icons_path = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), 'icons')))
-        bpio.log(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)
+        lg.out(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)
         tray_icon.init(icons_path, icons_dict)
         def _tray_control_func(cmd):
             if cmd == 'exit':
@@ -85,22 +87,22 @@ def run(UI='', options=None, args=None, overDict=None):
                 shutdowner.A('stop', 'exit')
         tray_icon.SetControlFunc(_tray_control_func)
 
-    bpio.log(4, 'bpmain.run want to import twisted.internet.reactor')
+    lg.out(4, 'bpmain.run want to import twisted.internet.reactor')
     try:
         from twisted.internet import reactor
     except:
-        bpio.exception()
+        lg.exc()
         sys.exit('Error initializing reactor in bpmain.py\n')
 
     #---logfile----
-    if bpio.EnableLog and bpio.LogFile is not None:
-        bpio.log(2, 'bpmain.run want to switch log files')
+    if lg.logs_enabled() and lg.log_file():
+        lg.out(2, 'bpmain.run want to switch log files')
         if bpio.Windows() and bpio.isFrozen():
-            bpio.StdOutRedirectingStop()
-        bpio.CloseLogFile()
-        bpio.OpenLogFile(settings.MainLogFilename()+'-'+time.strftime('%y%m%d%H%M%S')+'.log')
+            lg.stdout_stop_redirecting()
+        lg.close_log_file()
+        lg.open_log_file(settings.MainLogFilename()+'-'+time.strftime('%y%m%d%H%M%S')+'.log')
         if bpio.Windows() and bpio.isFrozen():
-            bpio.StdOutRedirectingStart()
+            lg.stdout_start_redirecting()
             
     #---memdebug---
     if settings.uconfig('logs.memdebug-enable') == 'True':
@@ -109,63 +111,63 @@ def run(UI='', options=None, args=None, overDict=None):
             memdebug_port = int(settings.uconfig('logs.memdebug-port'))
             memdebug.start(memdebug_port)
             reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)
-            bpio.log(2, 'bpmain.run memdebug web server started on port %d' % memdebug_port)
+            lg.out(2, 'bpmain.run memdebug web server started on port %d' % memdebug_port)
         except:
-            bpio.exception()  
+            lg.exc()  
             
     #---process ID---
     try:
         pid = os.getpid()
         pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
         bpio.WriteFile(pid_file_path, str(pid))
-        bpio.log(2, 'bpmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
+        lg.out(2, 'bpmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
     except:
-        bpio.exception()  
+        lg.exc()  
             
 #    #---reactor.callLater patch---
-#    if bpio.Debug(12):
+#    if lg.is_debug(12):
 #        patchReactorCallLater(reactor)
 #        monitorDelayedCalls(reactor)
 
-    bpio.log(2,"bpmain.run UI=[%s]" % UI)
+    lg.out(2,"bpmain.run UI=[%s]" % UI)
 
-    if bpio.Debug(10):
-        bpio.log(0, '\n' + bpio.osinfofull())
+    if lg.is_debug(10):
+        lg.out(0, '\n' + bpio.osinfofull())
 
-    bpio.log(4, 'bpmain.run import automats')
+    lg.out(4, 'bpmain.run import automats')
 
     #---START!---
     import lib.automat as automat
-    automat.LifeBegins(bpio.LifeBeginsTime)
+    automat.LifeBegins(lg.when_life_begins())
     # automat.OpenLogFile(settings.AutomatsLog())
     
     import initializer
     import shutdowner
 
-    bpio.log(4, 'bpmain.run send event "run" to initializer()')
+    lg.out(4, 'bpmain.run send event "run" to initializer()')
     
     #reactor.callLater(0, initializer.A, 'run', UI)
     initializer.A('run', UI)
 
-    bpio.log(2, 'bpmain.run calling reactor.run()')
+    lg.out(2, 'bpmain.run calling reactor.run()')
     reactor.run()
 
-    bpio.log(2, 'bpmain.run reactor stopped')
+    lg.out(2, 'bpmain.run reactor stopped')
     shutdowner.A('reactor-stopped')
 
-    bpio.log(2, 'bpmain.run finished, EXIT')
+    lg.out(2, 'bpmain.run finished, EXIT')
 
     automat.CloseLogFile()
 
 ##    import threading
-##    bpio.log(0, 'threads:')
+##    lg.out(0, 'threads:')
 ##    for t in threading.enumerate():
-##        bpio.log(0, '  '+str(t))
+##        lg.out(0, '  '+str(t))
 
-    bpio.CloseLogFile()
+    lg.close_log_file()
 
     if bpio.Windows() and bpio.isFrozen():
-        bpio.StdOutRedirectingStop()
+        lg.stdout_stop_redirecting()
 
     return 0
 
@@ -259,7 +261,8 @@ def kill():
     """
     Kill all running BitPie.NET processes (except current).
     """
-    import lib.bpio as bpio
+    from logs import lg
+    from lib import bpio
     total_count = 0
     found = False
     while True:
@@ -279,17 +282,17 @@ def kill():
         if len(appList) > 0:
             found = True
         for pid in appList:
-            bpio.log(0, 'trying to stop pid %d' % pid)
+            lg.out(0, 'trying to stop pid %d' % pid)
             bpio.kill_process(pid)
         if len(appList) == 0:
             if found:
-                bpio.log(0, 'BitPie.NET stopped\n')
+                lg.out(0, 'BitPie.NET stopped\n')
             else:
-                bpio.log(0, 'BitPie.NET was not started\n')
+                lg.out(0, 'BitPie.NET was not started\n')
             return 0
         total_count += 1
         if total_count > 10:
-            bpio.log(0, 'some BitPie.NET process found, but can not stop it\n')
+            lg.out(0, 'some BitPie.NET process found, but can not stop it\n')
             return 1
         time.sleep(1)
 
@@ -304,7 +307,8 @@ def wait_then_kill(x):
     This method will wait for 10 seconds and then call method ``kill()``.    
     """
     from twisted.internet import reactor
-    import lib.bpio as bpio
+    from logs import lg
+    from lib import bpio
     total_count = 0
     while True:
         appList = bpio.find_process([
@@ -321,12 +325,12 @@ def wait_then_kill(x):
             'bpstarter.exe',
             ])
         if len(appList) == 0:
-            bpio.log(0, 'DONE')
+            lg.out(0, 'DONE')
             reactor.stop()
             return 0
         total_count += 1
         if total_count > 10:
-            bpio.log(0, 'not responding, KILLING ...')
+            lg.out(0, 'not responding, KILLING ...')
             ret = kill()
             reactor.stop()
             return ret
@@ -380,14 +384,15 @@ def monitorDelayedCalls(r):
     Print out all delayed calls.
     """
     global _DelayedCallsIndex
-    import lib.bpio as bpio
+    from logs import lg
+    from lib import bpio
     keys = _DelayedCallsIndex.keys()
     keys.sort(key=lambda cb: -_DelayedCallsIndex[cb][1])
     s = ''
     for i in range(0, min(10, len(_DelayedCallsIndex))):
         cb = keys[i]
         s += '        %d %d %s\n' % ( _DelayedCallsIndex[cb][0], _DelayedCallsIndex[cb][1], cb) 
-    bpio.log(8, '    delayed calls: %d\n%s' % (len(_DelayedCallsIndex), s))
+    lg.out(8, '    delayed calls: %d\n%s' % (len(_DelayedCallsIndex), s))
     r.callLater(10, monitorDelayedCalls, r)
 
 #------------------------------------------------------------------------------ 
@@ -397,33 +402,32 @@ def main():
     THIS IS THE ENTRY POINT OF THE PROGRAM!
     """
     try:
-        import lib.bpio as bpio
+        from logs import lg
     except:
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-        sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
-        try:
-            import lib.bpio as bpio
-        except:
-            return 1
+        # sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+
+    from logs import lg
+    from lib import bpio
 
     # init IO module, update locale
     bpio.init()
-
-    # TODO
-    # sys.excepthook = bpio.ExceptionHook
+    
+    # sys.excepthook = lg.exception_hook
+    
     if not bpio.isFrozen():
         from twisted.internet.defer import setDebugging
         setDebugging(True)
 
     # ask to count time for each log line from that moment, not absolute time 
-    bpio.LifeBegins()
-
+    lg.life_begins()
+    
     pars = parser()
     (opts, args) = pars.parse_args()
 
     if opts.no_logs:
-        bpio.DisableLogs()
+        lg.disable_logs()
 
     #---logpath---
     logpath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs', 'start.log')
@@ -431,22 +435,27 @@ def main():
         logpath = opts.output
 
     if logpath != '':
-        bpio.OpenLogFile(logpath)
-        bpio.log(2, 'bpmain.main log file opened ' + logpath)
+        lg.open_log_file(logpath)
+        lg.out(2, 'bpmain.main log file opened ' + logpath)
         if bpio.Windows() and bpio.isFrozen():
-            bpio.StdOutRedirectingStart()
-            bpio.log(2, 'bpmain.main redirecting started')
+            lg.stdout_start_redirecting()
+            lg.out(2, 'bpmain.main redirecting started')
+
+    try:
+        os.remove(os.path.expanduser('~'), '.bitpie', 'logs', 'exception.log')
+    except:
+        pass
 
     if opts.debug or str(opts.debug) == '0':
-        bpio.SetDebug(opts.debug)
+        lg.set_debug_level(opts.debug)
 
     if opts.quite and not opts.verbose:
-        bpio.DisableOutput()
+        lg.disable_output()
 
     if opts.verbose:
         copyright()
 
-    bpio.log(2, 'bpmain.main started ' + time.asctime())
+    lg.out(2, 'bpmain.main started ' + time.asctime())
 
     overDict = override_options(opts, args)
 
@@ -454,7 +463,7 @@ def main():
     if len(args) > 0:
         cmd = args[0].lower()
         
-    bpio.log(2, 'bpmain.main args=%s' % str(args))
+    lg.out(2, 'bpmain.main args=%s' % str(args))
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':
@@ -475,7 +484,7 @@ def main():
 #            if os.path.isfile(pid_path):
 #                pid = int(bpio.ReadBinaryFile(pid_path).strip())
 #        except:
-#            bpio.exception()
+#            lg.exc()
         # this is extra protection for Debian release
         # I am not sure how process name can looks on different systems
         # check the process ID from previous start 
@@ -489,7 +498,7 @@ def main():
 #        if len(appList) > 0 and ( ( pid != -1 and pid in appList ) or ( pid == -1 ) ):
 
         if len(appList) > 0:
-            bpio.log(0, 'BitPie.NET already started, found another process: %s' % str(appList))
+            lg.out(0, 'BitPie.NET already started, found another process: %s' % str(appList))
             bpio.shutdown()
             return 0
         ret = run('', opts, args, overDict)
@@ -505,20 +514,20 @@ def main():
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
         if len(appList) > 0:
-            bpio.log(0, 'found main BitPie.NET process: %s, sending "restart" command ... ' % str(appList), '')
+            lg.out(0, 'found main BitPie.NET process: %s, sending "restart" command ... ' % str(appList), '')
             def done(x):
-                bpio.log(0, 'DONE\n', '')
+                lg.out(0, 'DONE\n', '')
                 from twisted.internet import reactor
                 if reactor.running and not reactor._stopped:
                     reactor.stop()
             def failed(x):
-                bpio.log(0, 'FAILED, killing previous process and do restart\n', '')
+                lg.out(0, 'FAILED, killing previous process and do restart\n', '')
                 try:
                     kill()
                 except:
-                    bpio.exception()
+                    lg.exc()
                 from twisted.internet import reactor
-                import lib.misc as misc
+                from lib import misc
                 reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart)
                 reactor.stop()
             try:
@@ -531,7 +540,7 @@ def main():
                 bpio.shutdown()
                 return 0
             except:
-                bpio.exception()
+                lg.exc()
                 bpio.shutdown()
                 return 1
         else:
@@ -556,7 +565,7 @@ def main():
                 for pid in appList_bpgui:
                     bpio.kill_process(pid)
             else:
-                bpio.log(0, 'BitPie.NET GUI already opened, found another process: %s' % str(appList))
+                lg.out(0, 'BitPie.NET GUI already opened, found another process: %s' % str(appList))
                 bpio.shutdown()
                 return 0
         if len(appList) == 0:
@@ -564,7 +573,7 @@ def main():
             bpio.shutdown()
             return ret
         
-        bpio.log(0, 'found main BitPie.NET process: %s, start the GUI\n' % str(appList))
+        lg.out(0, 'found main BitPie.NET process: %s, start the GUI\n' % str(appList))
         ret = show()
         bpio.shutdown()
         return ret
@@ -578,7 +587,7 @@ def main():
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
             ])
         if len(appList) > 0:
-            bpio.log(0, 'found main BitPie.NET process: %s, sending command "exit" ... ' % str(appList), '')
+            lg.out(0, 'found main BitPie.NET process: %s, sending command "exit" ... ' % str(appList), '')
             try:
                 from twisted.internet import reactor
                 from command_line import run_url_command
@@ -588,12 +597,12 @@ def main():
                 bpio.shutdown()
                 return 0
             except:
-                bpio.exception()
+                lg.exc()
                 ret = kill()
                 bpio.shutdown()
                 return ret
         else:
-            bpio.log(0, 'BitPie.NET is not running at the moment')
+            lg.out(0, 'BitPie.NET is not running at the moment')
             bpio.shutdown()
             return 0
 
@@ -602,13 +611,13 @@ def main():
         def do_spawn(x=None):
             from lib.settings import WindowsStarterFileName
             starter_filepath = os.path.join(bpio.getExecutableDir(), WindowsStarterFileName())
-            bpio.log(0, "bpmain.main bpstarter.exe path: %s " % starter_filepath)
+            lg.out(0, "bpmain.main bpstarter.exe path: %s " % starter_filepath)
             if not os.path.isfile(starter_filepath):
-                bpio.log(0, "bpmain.main ERROR %s not found" % starter_filepath)
+                lg.out(0, "bpmain.main ERROR %s not found" % starter_filepath)
                 bpio.shutdown()
                 return 1
             cmdargs = [os.path.basename(starter_filepath), 'uninstall']
-            bpio.log(0, "bpmain.main os.spawnve cmdargs="+str(cmdargs))
+            lg.out(0, "bpmain.main os.spawnve cmdargs="+str(cmdargs))
             ret = os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
             bpio.shutdown()
             return ret
@@ -617,18 +626,18 @@ def main():
             ret = do_spawn()
             bpio.shutdown()
             return ret
-        bpio.log(0, 'bpmain.main UNINSTALL!')
+        lg.out(0, 'bpmain.main UNINSTALL!')
         if not bpio.Windows():
-            bpio.log(0, 'This command can be used only under OS Windows.')
+            lg.out(0, 'This command can be used only under OS Windows.')
             bpio.shutdown()
             return 0
         if not bpio.isFrozen():
-            bpio.log(0, 'You are running BitPie.NET from sources, uninstall command is available only for binary version.')
+            lg.out(0, 'You are running BitPie.NET from sources, uninstall command is available only for binary version.')
             bpio.shutdown()
             return 0
         appList = bpio.find_process(['bpmain.exe',])
         if len(appList) > 0:
-            bpio.log(0, 'found main BitPie.NET process...   ', '')
+            lg.out(0, 'found main BitPie.NET process...   ', '')
             try:
                 from twisted.internet import reactor
                 from command_line import run_url_command
@@ -638,7 +647,7 @@ def main():
                 bpio.shutdown()
                 return 0
             except:
-                bpio.exception()
+                lg.exc()
         ret = do_spawn()
         bpio.shutdown()
         return ret

@@ -24,9 +24,11 @@ import calendar
 if __name__ == '__main__':
     sys.path.append(os.path.abspath('..'))
 
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.maths as maths
+from logs import lg
+
+from lib import bpio
+from lib import misc
+from lib import maths
 
 #------------------------------------------------------------------------------ 
 
@@ -221,10 +223,10 @@ class Schedule:
                 return maths.shedule_next_monthly(lasttime, self.interval, self.daytime, months_numbers)
         
             else:
-                bpio.log(1, 'schedule.next_time ERROR wrong schedule type: ' + self.type)
+                lg.out(1, 'schedule.next_time ERROR wrong schedule type: ' + self.type)
                 return None
         except:
-            bpio.exception()
+            lg.exc()
             return None 
 
     def correct_dict(self, d):
@@ -338,7 +340,7 @@ class Schedule:
             # nextString = time.asctime(time.localtime(next))
             nextString = time.strftime('%A, %d %B %Y %H:%M:%S', time.localtime(next))
         except:
-            bpio.exception()
+            lg.exc()
             return ''
         return 'next execution expected at <b>%s</b>' % nextString
         
@@ -406,26 +408,26 @@ def from_compact_string(s):
                 try:
                     time.strptime(sh_time, '%H:%M:%S')
                 except:
-                    bpio.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule time: ' + s)
-                    bpio.exception()
+                    lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule time: ' + s)
+                    lg.exc()
                     return None
     except:
-        bpio.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule string: ' + s)
-        bpio.exception()
+        lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule string: ' + s)
+        lg.exc()
         return None
     if sh_type in all_labels.keys():
         sh_type = all_labels[sh_type]
     if sh_type not in all_labels.values():
-        bpio.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule type: ' + s)
+        lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule type: ' + s)
         return None
     sh_details_new = ''
     for i in range(len(sh_details) / 3):
         label = sh_details[i*3:i*3+3]
         if sh_type == 'weekly' and not label in calendar.day_abbr:
-            bpio.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
+            lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
             return None
         if sh_type == 'monthly' and not label in calendar.month_abbr:
-            bpio.log(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
+            lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
             return None
         sh_details_new += label + ' '
     return Schedule(sh_type, str(sh_time), str(sh_interval), sh_details_new.strip())   

@@ -42,7 +42,7 @@ import struct
 
 
 import lib.bpio
-import lib.eccmap
+import raid.eccmap
 
 INTSIZE = 4
 
@@ -52,7 +52,7 @@ _ECCMAP = {}
 def geteccmap(name):
     global _ECCMAP
     if not _ECCMAP.has_key(name):
-        _ECCMAP[name] = lib.eccmap.eccmap(name) 
+        _ECCMAP[name] = raid.eccmap.eccmap(name) 
     return _ECCMAP[name]
 
 #------------------------------------------------------------------------------ 
@@ -72,7 +72,7 @@ def RebuildOne(inlist, listlen, outfilename):
         try:
             raidfiles[filenum] = open(inlist[filenum], "rb")
         except:
-            lib.bpio.exception()
+            lib.exc()
             for f in raidfiles:
                 try:
                     f.close()
@@ -146,7 +146,7 @@ def RebuildOne_orig(inlist, listlen, outfilename):
 def raidread(OutputFileName, eccmapname, backupId, blockNumber, data_parity_dir):
     # INTSIZE = settings.IntSize()
     # myeccmap = eccmap.eccmap(eccmapname)
-    myeccmap = lib.eccmap.eccmap(eccmapname)
+    myeccmap = raid.eccmap.eccmap(eccmapname)
     GoodFiles = range(0, 200)
     MakingProgress = 1
     while MakingProgress == 1:

@@ -29,6 +29,8 @@ except:
 
 from twisted.internet import protocol
 
+from logs import lg
+
 import bpio
 import nonblocking
 
@@ -41,10 +43,10 @@ class ChildProcessProtocol(protocol.ProcessProtocol):
                     
     def errReceived(self, inp):
         for line in inp.splitlines():
-            bpio.log(2, '[%s]: %s' % (self.name, line))
+            lg.out(2, '[%s]: %s' % (self.name, line))
             
     def processEnded(self, reason):
-        bpio.log(2, 'child process [%s] FINISHED')
+        lg.out(2, 'child process [%s] FINISHED')
         
 
 def run(child_name, params=[], base_dir='.', process_protocol=None):
@@ -62,12 +64,12 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
         cmdargs = [executable, progpath]
         cmdargs.extend(params)
     if not os.path.isfile(executable):
-        bpio.log(1, 'child_process.run ERROR %s not found' % executable)
+        lg.out(1, 'child_process.run ERROR %s not found' % executable)
         return None
     if not os.path.isfile(progpath):
-        bpio.log(1, 'child_process.run ERROR %s not found' % progpath)
+        lg.out(1, 'child_process.run ERROR %s not found' % progpath)
         return None
-    bpio.log(6, 'child_process.run: "%s"' % (' '.join(cmdargs)))
+    lg.out(6, 'child_process.run: "%s"' % (' '.join(cmdargs)))
 
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
@@ -88,14 +90,14 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
     try:
         Process = reactor.spawnProcess(process_protocol, executable, cmdargs, path=base_dir)
     except:
-        bpio.log(1, 'child_process.run ERROR executing: %s' % str(cmdargs))
-        bpio.exception()
+        lg.out(1, 'child_process.run ERROR executing: %s' % str(cmdargs))
+        lg.exc()
         return None
     
     if bpio.Windows():
         setattr(_dumbwin32proc.win32process, 'CreateProcess', real_CreateProcess)
 
-    bpio.log(6, 'child_process.run [%s] pid=%d' % (child_name, Process.pid))
+    lg.out(6, 'child_process.run [%s] pid=%d' % (child_name, Process.pid))
     return Process    
 
 
@@ -105,7 +107,7 @@ def kill_process(process):
     """
     try:
         process.signalProcess('KILL')
-        bpio.log(6, 'child_process.kill_process sent signal "KILL" to %s the process %d' % process.pid)
+        lg.out(6, 'child_process.kill_process sent signal "KILL" to %s the process %d' % process.pid)
     except:
         return False
     return True
@@ -118,7 +120,7 @@ def kill_child(child_name):
     killed = False
     for pid in bpio.find_process([child_name+'.']): 
         bpio.kill_process(pid)
-        bpio.log(6, 'child_process.kill_child pid %d' % pid)
+        lg.out(6, 'child_process.kill_child pid %d' % pid)
         killed = True
     return killed
 
@@ -128,7 +130,7 @@ def pipe(cmdargs):
     Execute a process in different way, create a Pipe to do read/write operations with child process.
     See ``lib.nonblocking`` module.
     """
-    bpio.log(14, "child_process.pipe %s" % str(cmdargs))
+    lg.out(14, "child_process.pipe %s" % str(cmdargs))
     try:
         if bpio.Windows():
             import win32process
@@ -149,7 +151,8 @@ def pipe(cmdargs):
                 stderr=subprocess.PIPE,
                 universal_newlines=False,)
     except:
-        bpio.log(1, 'child_process.pipe ERROR executing: ' + str(cmdargs) + '\n' + str(bpio.formatExceptionInfo()))
+        lg.out(1, 'child_process.pipe ERROR executing: %s' + str(cmdargs))
+        lg.exc()
         return None
     return p
 

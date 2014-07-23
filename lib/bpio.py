@@ -31,26 +31,13 @@ import string
 import platform
 import traceback
 import locale
-import threading
 import glob
 import re
 
+from logs import lg
+
 #------------------------------------------------------------------------------
 
-DebugLevel = 0
-LogLinesCounter = 0
-EnableLog = True
-RedirectStdOut = False
-NoOutput = False
-OriginalStdOut = None
-StdOutPrev = None
-LogFile = None
-LogFileName = None
-WebStreamFunc = None
-ShowTime = True
-LifeBeginsTime = 0
-tc_using = True
-tc_remove_after = True
 LocaleInstalled = False
 PlatformInfo = None
 X11isRunning = None
@@ -64,15 +51,15 @@ def init():
     """
     InstallLocale()
     if Linux():
-        UnbufferedSTDOUT()
+        lg.setup_unbuffered_stdout()
     # StartCountingOpenedFiles()
         
 def shutdown():
     """
     This is the last method to be invoked by the program before main process will stop.
     """
-    log(2, 'bpio.shutdown')
-    RestoreSTDOUT()
+    lg.out(2, 'bpio.shutdown')
+    lg.restore_original_stdout()
 
 def InstallLocale():
     """
@@ -93,30 +80,6 @@ def InstallLocale():
     except:
         pass
     return LocaleInstalled
-
-def UnbufferedSTDOUT():
-    """
-    This makes logs to be printed without delays in Linux - unbuffered output.
-    Great thanks, the idea is taken from here: 
-        http://algorithmicallyrandom.blogspot.com/2009/10/python-tips-and-tricks-flushing-stdout.html
-    """
-    global OriginalStdOut
-    OriginalStdOut = sys.stdout
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-
-def RestoreSTDOUT():
-    """
-    Restore original STDOUT, need to be called after ``UnbufferedSTDOUT`` to get back to default state.
-    """
-    global OriginalStdOut
-    if OriginalStdOut is None:
-        return
-    try:
-        _std_out = sys.stdout
-        sys.stdout = OriginalStdOut
-        _std_out.close()
-    except:
-        traceback.print_last(file=open('bpio.shutdown.error', 'w'))
 
 def ostype():
     """
@@ -198,334 +161,6 @@ def isFrozen():
     """
     return main_is_frozen()
 
-def SetDebug(level):
-    """
-    Code will use ``level`` 2-4 for most important things and 10 for really minor stuff. 
-    Level 14 and higher is for things we don't think we want to see again.
-    Can set ``level`` to 0 for no debug messages at all.
-    """
-    global DebugLevel
-    if DebugLevel > level:
-        log(level, 'bpio.SetDebug DebugLevel=' + str(level))
-    DebugLevel = level
-
-def LifeBegins():
-    """
-    Start counting time in the logs from that moment.
-    If not called the logs will contain current system time.
-    """
-    global LifeBeginsTime
-    LifeBeginsTime = time.time()
-
-def Debug(level):
-    """
-    Return True if something at this ``level`` should be reported given current DebugLevel.
-    """
-    global DebugLevel
-    return level <= DebugLevel
-
-def log(level, s, nl='\n'):
-    """
-    The core method, most used thing in the whole project.
-    Print a log message.  
-    
-    :param level: lower values is count as more important messages. I am using only even values from 0 to 18. 
-    :param s: message string to be printed
-    :param nl: this string is added at the end, set to empty string to avoid new line.     
-    """
-    global WebStreamFunc
-    global LogFile
-    global RedirectStdOut
-    global ShowTime
-    global LifeBeginsTime
-    global NoOutput
-    global LogLinesCounter
-    global EnableLog
-    global DebugLevel
-    if not EnableLog:
-        return
-    if isinstance(s, unicode):
-        s = s.encode('utf-8')
-    s_ = s
-    if level % 2:
-        level -= 1
-    if level:
-        s = ' ' * level + s
-    if ShowTime and level > 0:
-        if LifeBeginsTime != 0:
-            dt = time.time() - LifeBeginsTime
-            mn = dt // 60
-            sc = dt - mn * 60
-            if DebugLevel>=8:
-                s = ('%02d:%02d.%02d' % (mn, sc, (sc-int(sc))*100)) + s
-            else:
-                s = ('%02d:%02d' % (mn, sc)) + s
-        else:
-            s = time.strftime('%H:%M:%S') + s
-    if Debug(24):
-        currentThreadName = threading.currentThread().getName()
-        s = s + ' {%s}' % currentThreadName.lower()
-    if Debug(level):
-        if LogFile is not None:
-            LogFile.write(s + nl)
-            LogFile.flush()
-        if not RedirectStdOut and not NoOutput:
-            if nl == '\n':
-                print s
-            else:
-                sys.stdout.write(s + nl)
-    if WebStreamFunc is not None:
-        WebStreamFunc(level, s_ + nl)
-    LogLinesCounter += 1
-    if LogLinesCounter % 10000 == 0:
-        log(2, '[%s]' % time.asctime())
-
-def Dglobals(level, glob_dict):
-    """
-    Print all items from dictionary ``glob_dict`` to the logs if current DebugLevel is higher than ``level``. 
-    """
-    global DebugLevel
-    if (level>DebugLevel):
-        return
-    keys = glob_dict.keys()
-    keys.sort()
-    for k in keys:
-        if k != '__builtins__':
-            print k, glob_dict[k]
-
-_TimePush = 0.0
-_TimeTotalDict = {}
-_TimeDeltaDict = {}
-_TimeCountsDict = {}
-def logTimePush(t):
-    """
-    Remember current system time and set ``t`` marker to that.
-    Useful to count execution time of some parts of the code.  
-    """
-    global _TimeTotalDict
-    global _TimeDeltaDict
-    global _TimeCountsDict
-    tm = time.time()
-    if not _TimeTotalDict.has_key(t):
-        _TimeTotalDict[t] = 0.0
-        _TimeCountsDict[t] = 0
-    _TimeDeltaDict[t] = tm
-
-def logTimePop(t):
-    """
-    Count execution time for marker ``t``.
-    """
-    global _TimeTotalDict
-    global _TimeDeltaDict
-    global _TimeCountsDict
-    tm = time.time()
-    if not _TimeTotalDict.has_key(t):
-        return
-    dt = tm - _TimeDeltaDict[t]
-    _TimeTotalDict[t] += dt
-    _TimeCountsDict[t] += 1
-
-def logPrintTotalTime():
-    """
-    Print total stats for all time markers.
-    """
-    global _TimeTotalDict
-    global _TimeDeltaDict
-    global _TimeCountsDict
-    for t in _TimeTotalDict.keys():
-        total = _TimeTotalDict[t]
-        counts = _TimeCountsDict[t]
-        log(2, 'total=%f sec. count=%d, avarage=%f: %s' % (total, counts, total/counts, t))
-
-def exceptionName(value):
-    """
-    Some tricks to extract the correct exception name from traceback string. 
-    """
-    try:
-        excStr = unicode(value)
-    except:
-        try:
-            excStr = repr(value)
-        except:
-            try:
-                excStr = str(value)
-            except:
-                try:
-                    excStr = value.message
-                except:
-                    excStr = type(value).__name__
-    return excStr
-
-def formatExceptionInfo(maxTBlevel=100, exc_info=None):
-    """
-    Return string with detailed info about last exception.  
-    """
-    if exc_info is None:
-        cla, value, trbk = sys.exc_info()
-    else:
-        cla, value, trbk = exc_info
-    try:
-        excArgs = value.__dict__["args"]
-    except KeyError:
-        excArgs = ''
-    excTb = traceback.format_tb(trbk, maxTBlevel)
-    tbstring = 'Exception: <' + exceptionName(value) + '>\n'
-    if excArgs:
-        tbstring += '  args:' + excArgs + '\n' 
-    for s in excTb:
-        tbstring += s + '\n'
-    return tbstring
-
-def exception(level=0, maxTBlevel=100, exc_info=None):
-    """
-    This is second most common method in the project.
-    Print detailed info about last exception to the logs.
-    """
-    global LogFileName
-    if exc_info is None:
-        cla, value, trbk = sys.exc_info()
-    else:
-        cla, value, trbk = exc_info
-    try:
-        excArgs = str(value.__dict__["args"])
-    except KeyError:
-        excArgs = ''
-    excTb = traceback.format_tb(trbk, maxTBlevel)
-    s = 'Exception: <' + exceptionName(value) + '>\n'
-    log(level, s.strip())
-    if excArgs:
-        s += '  args:' + excArgs + '\n'
-        log(level, '  args:' + excArgs)
-    s += '\n'
-    excTb.reverse()
-    for l in excTb:
-        log(level, l.replace('\n', ''))
-        s += l + '\n'
-    try:
-        file = open(os.path.join(os.path.dirname(LogFileName), 'exception.log'), 'w')
-        file.write(s)
-        file.close()
-    except:
-        pass
-
-def ExceptionHook(type, value, traceback):
-    """
-    Callback function to print last exception.
-    """
-    exception(exc_info=(type, value, traceback))
-
-#------------------------------------------------------------------------------
-
-def SetWebStream(webstreamfunc):
-    """
-    Set callback method to be called in Dprint, used to show logs in the WEB browser.
-    See ``bitpie.lib.weblog`` module. 
-    """
-    global WebStreamFunc
-    WebStreamFunc = webstreamfunc
-
-def WebStream():
-    """
-    Return current web log callback function.
-    """
-    global WebStreamFunc
-    return WebStreamFunc
-
-#------------------------------------------------------------------------------ 
-
-def OpenLogFile(filename, append_mode=False):
-    """
-    Open a log file, so all logs will go here instead of STDOUT.
-    """
-    global LogFile
-    global LogFileName
-    if LogFile:
-        return
-    try:
-        if not os.path.isdir(os.path.dirname(os.path.abspath(filename))):
-            os.makedirs(os.path.dirname(os.path.abspath(filename)))
-        if append_mode:
-            LogFile = open(os.path.abspath(filename), 'a')
-        else:
-            LogFile = open(os.path.abspath(filename), 'w')
-        LogFileName = os.path.abspath(filename)
-    except:
-        log(0, 'cant open ' + filename)
-        exception()
-
-def CloseLogFile():
-    """
-    Closes opened log file.
-    """
-    global LogFile
-    if not LogFile:
-        return
-    LogFile.flush()
-    LogFile.close()
-    LogFile = None
-
-class PATCHED_stdout:
-    """
-    Emulate system STDOUT, useful to log any program output. 
-    """
-    softspace = 0
-    def read(self): pass
-    def write(self, s):
-        log(0, unicode(s).rstrip())
-    def flush(self): pass
-    def close(self): pass
-
-class STDOUT_black_hole:
-    """
-    Useful to disable any output to STDOUT.
-    """
-    softspace = 0
-    def read(self): pass
-    def write(self, s):  pass
-    def flush(self): pass
-    def close(self): pass
-
-
-def StdOutRedirectingStart():
-    """
-    Replace sys.stdout with PATCHED_stdout so all output get logged.
-    """
-    global RedirectStdOut
-    global StdOutPrev
-    RedirectStdOut = True
-    StdOutPrev = sys.stdout
-    sys.stdout = PATCHED_stdout()
-
-def StdOutRedirectingStop():
-    """
-    Restore sys.stdout after ``StdOutRedirectingStart``.
-    """
-    global RedirectStdOut
-    global StdOutPrev
-    RedirectStdOut = False
-    if StdOutPrev is not None:
-        sys.stdout = StdOutPrev
-
-def DisableOutput():
-    """
-    Disable any output to sys.stdout.
-    """
-    global RedirectStdOut
-    global StdOutPrev
-    global NoOutput
-    NoOutput = True
-    RedirectStdOut = True
-    StdOutPrev = sys.stdout
-    sys.stdout = STDOUT_black_hole()
-
-def DisableLogs():
-    """
-    Celar EnableLog flag, so calls to Dprint will do nothing.
-    Must be used in production release to increase performance. 
-    """
-    global EnableLog
-    EnableLog = False
-
 #-------------------------------------------------------------------------------
 
 def list_dir_safe(dirpath):
@@ -592,7 +227,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
                     try:
                         os.remove(full_name)
                     except:
-                        log(6, 'bpio.rmdir_recursive can not remove file ' + full_name)
+                        lg.out(6, 'bpio.rmdir_recursive can not remove file ' + full_name)
                         continue
     if pre_callback:
         if not pre_callback(dirpath):
@@ -603,7 +238,7 @@ def rmdir_recursive(dirpath, ignore_errors=False, pre_callback=None):
         try:
             os.rmdir(dirpath)
         except:
-            log(6, 'bpio.rmdir_recursive can not remove dir ' + dirpath)
+            lg.out(6, 'bpio.rmdir_recursive can not remove dir ' + dirpath)
 
 def getDirectorySize(directory, include_subfolders=True):
     """
@@ -682,8 +317,8 @@ def AtomicWriteFile(filename, data):
             os.remove(filename)
         os.rename(tmpfilename, filename)
     except:
-        log(1, 'bpio.AtomicWriteFile ERROR ' + str(filename))
-        exception()
+        lg.out(1, 'bpio.AtomicWriteFile ERROR ' + str(filename))
+        lg.exc()
         try:
             f.close() # make sure file gets closed
         except:
@@ -703,12 +338,12 @@ def AtomicAppendFile(filename, data, mode='a'):
         os.fsync(f.fileno())
         f.close()
     except:
-        log(1, 'bpio.AtomicAppendFile ERROR ' + str(filename))
-        exception()
+        lg.out(1, 'bpio.AtomicAppendFile ERROR ' + str(filename))
+        lg.exc()
         try:
             f.close() # make sure file gets closed
         except:
-            exception()
+            lg.exc()
         return False
     return True
 
@@ -728,7 +363,7 @@ def WriteFileSimple(filename, data, mode="w"):
         file.write(data)
         file.close()
     except:
-        exception()
+        lg.exc()
         return False
     return True
 
@@ -751,7 +386,7 @@ def ReadBinaryFile(filename):
         file.close()
         return data
     except:
-        exception()
+        lg.exc()
         return ''
     
 def ReadTextFile(filename):
@@ -770,7 +405,7 @@ def ReadTextFile(filename):
         # Windows/Linux trouble with text files
         return data.replace('\r\n','\n')
     except:
-        exception()
+        lg.exc()
     return ''
 
 #-------------------------------------------------------------------------------
@@ -803,7 +438,7 @@ def _write_data(path, src):
         try:
             os.remove(path)
         except:
-            log(1, 'bpio._write_data ERROR removing ' + str(path))
+            lg.out(1, 'bpio._write_data ERROR removing ' + str(path))
     fout = open(temp_path, 'wb')
     fout.write(src)
     fout.flush()
@@ -812,7 +447,7 @@ def _write_data(path, src):
     try:
         os.rename(temp_path, path)
     except:
-        log(1, 'bpio._write_data ERROR renaming %s to %s' % (str(temp_path), str(path)))
+        lg.out(1, 'bpio._write_data ERROR renaming %s to %s' % (str(temp_path), str(path)))
     return True
 
 def _append_data(path, src):
@@ -967,19 +602,19 @@ def backup_and_remove(path):
         try:
             os.remove(bkpath)
         except:
-            log(1, 'bpio.backup_and_remove ERROR can not remove file ' + bkpath)
-            exception()
+            lg.out(1, 'bpio.backup_and_remove ERROR can not remove file ' + bkpath)
+            lg.exc()
     try:
         os.rename(path, bkpath)
     except:
-        log(1, 'bpio.backup_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
-        exception()
+        lg.out(1, 'bpio.backup_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
+        lg.exc()
     if os.path.exists(path):
         try:
             os.remove(path)
         except:
-            log(1, 'bpio.backup_and_remove ERROR can not remove file ' + path)
-            exception()
+            lg.out(1, 'bpio.backup_and_remove ERROR can not remove file ' + path)
+            lg.exc()
 
 def restore_and_remove(path, overwrite_existing = False):
     """
@@ -996,13 +631,13 @@ def restore_and_remove(path, overwrite_existing = False):
         try:
             os.remove(path)
         except:
-            log(1, 'bpio.restore_and_remove ERROR can not remove file ' + path)
-            exception()
+            lg.out(1, 'bpio.restore_and_remove ERROR can not remove file ' + path)
+            lg.exc()
     try:
         os.rename(bkpath, path)
     except:
-        log(1, 'bpio.restore_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
-        exception()
+        lg.out(1, 'bpio.restore_and_remove ERROR can not rename file %s to %s' % (path, bkpath))
+        lg.exc()
 
 def remove_backuped_file(path):
     """
@@ -1014,8 +649,8 @@ def remove_backuped_file(path):
     try:
         os.remove(bkpath)
     except:
-        log(1, 'bpio.remove_backuped_file ERROR can not remove file ' + bkpath)
-        exception()
+        lg.out(1, 'bpio.remove_backuped_file ERROR can not remove file ' + bkpath)
+        lg.exc()
 
 #------------------------------------------------------------------------------ 
 
@@ -1082,7 +717,7 @@ def shortPath(path):
         spath = win32api.GetShortPathName(path_)
         return unicode(spath)
     except:
-        exception()
+        lg.exc()
         return unicode(path_)
 
 def longPath(path):
@@ -1101,7 +736,7 @@ def longPath(path):
         lpath = win32api.GetLongPathName(path_)
         return unicode(lpath)
     except:
-        exception()
+        lg.exc()
     return unicode(path_)
 
 def _encode(s):
@@ -1230,7 +865,7 @@ def listLocalDrivesWindows():
             if win32file.GetDriveType(drive) == 3:
                 rootlist.append(drive)
     except:
-        exception()
+        lg.exc()
     return rootlist
 
 def listRemovableDrivesWindows():
@@ -1252,7 +887,7 @@ def listRemovableDrivesWindows():
                 if t == win32file.DRIVE_REMOVABLE:
                     l.append(drname)
     except:
-        exception()
+        lg.exc()
     return l
 
 def listRemovableDrivesLinux():
@@ -1406,7 +1041,7 @@ def find_process_win32(applist):
                     if cmdline.find(app) > -1:
                         pidsL.append(pid)
     except:
-        exception()
+        lg.exc()
     return pidsL
 
 
@@ -1418,7 +1053,7 @@ def kill_process_linux(pid):
         import signal
         os.kill(pid, signal.SIGTERM)
     except:
-        exception()
+        lg.exc()
 
 
 def kill_process_win32(pid):
@@ -1428,23 +1063,23 @@ def kill_process_win32(pid):
     try:
         from win32api import TerminateProcess, OpenProcess, CloseHandle
     except:
-        exception()
+        lg.exc()
         return False
     try:
         PROCESS_TERMINATE = 1
         handle = OpenProcess(PROCESS_TERMINATE, False, pid)
     except:
-        log(2, 'bpio.kill_process_win32 can not open process %d' % pid)
+        lg.out(2, 'bpio.kill_process_win32 can not open process %d' % pid)
         return False
     try:
         TerminateProcess(handle, -1)
     except:
-        log(2, 'bpio.kill_process_win32 can not terminate process %d' % pid)
+        lg.out(2, 'bpio.kill_process_win32 can not terminate process %d' % pid)
         return False
     try:
         CloseHandle(handle)
     except:
-        exception()
+        lg.exc()
         return False
     return True
 

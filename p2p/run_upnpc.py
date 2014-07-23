@@ -7,6 +7,10 @@
 #
 #
 
+"""
+.. module:: init_shutdown
+"""
+
 import os
 import sys
 import re
@@ -19,9 +23,13 @@ from twisted.python.win32 import cmdLineQuote
 if __name__ == '__main__':
     sys.path.insert(0, os.path.abspath('..'))
 
-import lib.bpio as bpio
-import lib.nonblocking as nonblocking
-import lib.settings as settings
+from logs import lg
+
+from lib import bpio
+from lib import nonblocking
+from lib import settings
+
+#------------------------------------------------------------------------------ 
 
 _CurrentProcess = None
 _MyPortMapping = {}
@@ -31,14 +39,14 @@ _LastUpdateResultDict = {}
 
 def init():
     global _MyPortMapping
-    bpio.log(4, 'run_upnpc.init ')
+    lg.out(4, 'run_upnpc.init ')
 
 
 def shutdown():
     global _CurrentProcess
-    bpio.log(4, 'run_upnpc.shutdown')
+    lg.out(4, 'run_upnpc.shutdown')
     if _CurrentProcess is not None:
-        bpio.log(6, 'run_upnpc.shutdown going to kill _CurrentProcess')
+        lg.out(6, 'run_upnpc.shutdown going to kill _CurrentProcess')
         try:
             _CurrentProcess.kill()
         except:
@@ -50,7 +58,7 @@ def shutdown():
 def run(args_list):
     global _CurrentProcess
     if _CurrentProcess is not None:
-        bpio.log(4, 'run_upnpc.run WARNING only one process at once')
+        lg.out(4, 'run_upnpc.run WARNING only one process at once')
         return None
 
     if bpio.Windows():
@@ -68,10 +76,10 @@ def run(args_list):
             if os.path.isfile(os.path.join('p2p', cmdargs[0])):
                 cmdargs[0] = os.path.join('p2p', cmdargs[0])
             else:
-                bpio.log(1, 'run_upnpc.run ERROR can not find executable file ' + cmdargs[0])
+                lg.out(1, 'run_upnpc.run ERROR can not find executable file ' + cmdargs[0])
                 return None
 
-    bpio.log(6, 'run_upnpc.run is going to execute: %s' % cmdargs)
+    lg.out(6, 'run_upnpc.run is going to execute: %s' % cmdargs)
 
     try:
         if bpio.Windows() and bpio.isFrozen():
@@ -83,10 +91,10 @@ def run(args_list):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,)
     except OSError:
-        bpio.log(1, 'run_upnpc.run ERROR can not start executable file ' + cmdargs[0])
+        lg.out(1, 'run_upnpc.run ERROR can not start executable file ' + cmdargs[0])
         return None
     except:
-        bpio.exception()
+        lg.exc()
         return None
 
     try:
@@ -97,10 +105,10 @@ def run(args_list):
             out_data = _CurrentProcess.communicate()[0]
             returncode = _CurrentProcess.returncode
     except:
-        bpio.exception()
+        lg.exc()
         return None
 
-    bpio.log(6, 'run_upnpc.run %s finished with return code: %s' % (str(_CurrentProcess), str(returncode)))
+    lg.out(6, 'run_upnpc.run %s finished with return code: %s' % (str(_CurrentProcess), str(returncode)))
     _CurrentProcess = None
 
     return out_data
@@ -183,7 +191,7 @@ def clear():
 def update(port, attempt=0, new_port= -1):
     global _MyPortMapping
     global _LastUpdateResultDict
-    bpio.log(4, 'run_upnpc.update %s attempt=%s new_port=%s' % (str(port), str(attempt), str(new_port)))
+    lg.out(4, 'run_upnpc.update %s attempt=%s new_port=%s' % (str(port), str(attempt), str(new_port)))
 
     local_ip, external_ip, port_map = info()
 
@@ -196,17 +204,17 @@ def update(port, attempt=0, new_port= -1):
         if i[1] == local_ip and str(i[3]).find('libminiupnpc') >= 0:
             local_ports[i[0]] = (i[2], i[3])
 
-    bpio.log(6, 'run_upnpc.update local_ports=%s' % str(local_ports.keys()))
+    lg.out(6, 'run_upnpc.update local_ports=%s' % str(local_ports.keys()))
 
     if int(port) in local_ports.keys():
         _MyPortMapping[str(port)] = 'TCP'
-        bpio.log(6, 'run_upnpc.update port %s mapped. all port maps: %s' % (str(port), str(_MyPortMapping.keys())))
+        lg.out(6, 'run_upnpc.update port %s mapped. all port maps: %s' % (str(port), str(_MyPortMapping.keys())))
         _LastUpdateResultDict[port] = 'upnp-done'
         return 'upnp-done', port
 
     if int(new_port) in local_ports.keys():
         _MyPortMapping[str(new_port)] = 'TCP'
-        bpio.log(6, 'run_upnpc.update new port %s mapped. all port maps: %s' % (str(port), str(_MyPortMapping.keys())))
+        lg.out(6, 'run_upnpc.update new port %s mapped. all port maps: %s' % (str(port), str(_MyPortMapping.keys())))
         _LastUpdateResultDict[new_port] = 'upnp-done'
         return 'upnp-done', new_port
 
@@ -246,7 +254,7 @@ def last_result(proto):
 
 def main():
     import pprint
-    bpio.SetDebug(14)
+    lg.set_debug_level(14)
     if sys.argv.count('list'):
         pprint.pprint(lst())
     elif sys.argv.count('info'):

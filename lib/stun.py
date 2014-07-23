@@ -39,15 +39,17 @@ except:
 from twisted.internet.defer import Deferred, succeed, fail
 # from twisted.python import log, failure
 
-import warnings
-warnings.filterwarnings('ignore', category=DeprecationWarning)
+# import warnings
+# warnings.filterwarnings('ignore', category=DeprecationWarning)
 
+from logs import lg
 
 import shtoom.stun
 import shtoom.nat
 import bpio
 import settings
 
+#------------------------------------------------------------------------------ 
 
 _WorkingDefers = []
 _IsWorking = False
@@ -69,7 +71,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
         """
         Called when internal state of the process were changed.
         """
-        bpio.log(4, 'stun.stateChanged [%s]->[%s]' % (old, new))
+        lg.out(4, 'stun.stateChanged [%s]->[%s]' % (old, new))
 
     def finishedStun(self):
         """
@@ -88,8 +90,8 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
                 typ = str(self.natType.name)
                 alt = str(self._altStunAddress) 
         except:
-            bpio.exception()
-        bpio.log(2, 'stun.IPStunProtocol.finishedStun local=%s external=%s altStun=%s NAT_type=%s' % (
+            lg.exc()
+        lg.out(2, 'stun.IPStunProtocol.finishedStun local=%s external=%s altStun=%s NAT_type=%s' % (
             local, ip+':'+port, alt, typ))
         if self.result is not None:
             if not self.result.called:
@@ -170,14 +172,14 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
     if _IsWorking:
         res = Deferred()
         _WorkingDefers.append(res)
-        bpio.log(4, 'stun.stunExternalIP SKIP, already called')
+        lg.out(4, 'stun.stunExternalIP SKIP, already called')
         return res
     
     res = Deferred()
     _WorkingDefers.append(res)
     _IsWorking = True
 
-    bpio.log(2, 'stun.stunExternalIP')
+    lg.out(2, 'stun.stunExternalIP')
 
     shtoom.stun.STUNVERBOSE = verbose
     shtoom.nat._Debug = verbose
@@ -185,7 +187,7 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
     shtoom.nat.getLocalIPAddress.clearCache()
     
     if _UDPListener is None:
-        bpio.log(4, 'stun.stunExternalIP prepare listener')
+        lg.out(4, 'stun.stunExternalIP prepare listener')
         if _StunClient is None:
             _StunClient = IPStunProtocol()
         else:
@@ -194,20 +196,20 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
         try:
             UDP_port = int(internal_port)
             _UDPListener = reactor.listenUDP(UDP_port, _StunClient)
-            bpio.log(4, 'stun.stunExternalIP UDP listening on port %d started' % UDP_port)
+            lg.out(4, 'stun.stunExternalIP UDP listening on port %d started' % UDP_port)
         except:
             try:
                 _UDPListener = reactor.listenUDP(0, _StunClient)
-                bpio.log(4, 'stun.stunExternalIP multi-cast UDP listening started')
+                lg.out(4, 'stun.stunExternalIP multi-cast UDP listening started')
             except:
-                bpio.exception()
+                lg.exc()
                 for d in _WorkingDefers:
                     d.callback('0.0.0.0')
                 _WorkingDefers = []
                 _IsWorking = False
                 return res
 
-    bpio.log(6, 'stun.stunExternalIP refresh stun client')
+    lg.out(6, 'stun.stunExternalIP refresh stun client')
     _StunClient.refresh()
     _StunClient.timeout = timeout
 
@@ -221,7 +223,7 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
         
         if block_marker:
             block_marker('unblock')
-        bpio.log(6, 'stun.stunExternalIP.stun_finished: ' + str(x).replace('\n', ''))
+        lg.out(6, 'stun.stunExternalIP.stun_finished: ' + str(x).replace('\n', ''))
         _LastStunResult = x
         try:
             if _IsWorking:
@@ -240,11 +242,11 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
                 del _StunClient
                 _StunClient = None
         except:
-            bpio.exception()
+            lg.exc()
     
     _StunClient.setCallback(stun_finished, block_marker)
 
-    bpio.log(6, 'stun.stunExternalIP starting discovery')
+    lg.out(6, 'stun.stunExternalIP starting discovery')
     if block_marker:
         block_marker('block')
     reactor.callLater(0, _StunClient.startDiscovery)
@@ -273,7 +275,7 @@ def stopUDPListener():
     """
     Close STUN client and UDP listener.
     """
-    bpio.log(6, 'stun.stopUDPListener')
+    lg.out(6, 'stun.stopUDPListener')
     global _UDPListener
     global _StunClient
     result = None
@@ -339,11 +341,11 @@ def main(verbose=False):
 if __name__ == "__main__":
     bpio.init()
     if sys.argv.count('quite'):
-        bpio.SetDebug(0)
+        lg.set_debug_level(0)
         main(False)
     else:
         # log.startLogging(sys.stdout)
-        bpio.SetDebug(20)
+        lg.set_debug_level(20)
         main(True)
     reactor.run()
 

@@ -2,7 +2,6 @@
 
 import os
 
-import lib.bpio
 import lib.packetid
 import lib.settings
 
@@ -43,7 +42,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
             missingParity[supplierNum] = 1
     # This made an attempt to rebuild the missing pieces 
     # from pieces we have on hands. 
-    # bpio.log(14, 'block_rebuilder.AttemptRebuild %s %d BEGIN' % (self.backupID, self.blockNum))
+    # lg.out(14, 'block_rebuilder.AttemptRebuild %s %d BEGIN' % (self.backupID, self.blockNum))
     newData = False
     madeProgress = True
     while madeProgress:
@@ -62,17 +61,17 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                             filename = _build_raid_file_name(supplierParity, 'Data')
                             if os.path.isfile(filename):
                                 rebuildFileList.append(filename)
-                    # bpio.log(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
+                    # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
                     raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), dataFileName)
                 if os.path.exists(dataFileName):
                     localData[supplierNum] = 1
                     madeProgress = True
-                    # bpio.log(10, '        Data file %s found after rebuilding for supplier %d' % (os.path.basename(dataFileName), supplierNum))
+                    # lg.out(10, '        Data file %s found after rebuilding for supplier %d' % (os.path.basename(dataFileName), supplierNum))
             # now we check again if we have the data on hand after rebuild at it is missing - send it
             # but also check to not duplicate sending to this man   
             # now sending is separated, see the file data_sender.py          
             if localData[supplierNum] == 1 and missingData[supplierNum] == 1: # and self.dataSent[supplierNum] == 0:
-                # bpio.log(10, '            rebuilt a new Data for supplier %d' % supplierNum)
+                # lg.out(10, '            rebuilt a new Data for supplier %d' % supplierNum)
                 newData = True
                 reconstructedData[supplierNum] = 1
                 # self.outstandingFilesList.append((dataFileName, self.BuildFileName(supplierNum, 'Data'), supplierNum))
@@ -93,19 +92,19 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
                     filename = _build_raid_file_name(supplierParity, 'Data')  # ??? why not 'Parity'
                     if os.path.isfile(filename): 
                         rebuildFileList.append(filename)
-                # bpio.log(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
+                # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
                 raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), parityFileName)
                 if os.path.exists(parityFileName):
-                    # bpio.log(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
+                    # lg.out(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
                     localParity[supplierNum] = 1
         # so we have the parity on hand and it is missing - send it
         if localParity[supplierNum] == 1 and missingParity[supplierNum] == 1: # and self.paritySent[supplierNum] == 0:
-            # bpio.log(10, '            rebuilt a new Parity for supplier %d' % supplierNum)
+            # lg.out(10, '            rebuilt a new Parity for supplier %d' % supplierNum)
             newData = True
             reconstructedParity[supplierNum] = 1
             # self.outstandingFilesList.append((parityFileName, self.BuildFileName(supplierNum, 'Parity'), supplierNum))
             # self.paritySent[supplierNum] = 1
-    # bpio.log(14, 'block_rebuilder.AttemptRebuild END')
+    # lg.out(14, 'block_rebuilder.AttemptRebuild END')
     return (newData, localData, localParity, reconstructedData, reconstructedParity)
 
 

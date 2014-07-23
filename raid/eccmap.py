@@ -38,8 +38,9 @@ import os
 import re
 import threading
 
-import bpio
-import settings
+from logs import lg
+
+from lib import bpio
 
 #------------------------------------------------------------------------------ 
 
@@ -159,13 +160,18 @@ def DefaultName():
     """
     This is a wrapper for ``settings.DefaultEccMapName``.
     """
+    from lib import settings
     return settings.DefaultEccMapName()
 
 def CurrentName():
     """
     Should return a ecc map name from current suppliers number - taken from user settings. 
     """
-    return settings.getECC()
+    from lib import settings
+    snum = settings.getSuppliersNumberDesired()
+    if snum < 0:
+        return DefaultName()
+    return GetEccMapName(snum)
 
 def Current():
     """
@@ -204,8 +210,9 @@ def GetEccMapSuppliersNumber(eccmapname):
     """
     global __eccmap2suppliers
     try:
-        return int(__eccmap2suppliers.get(eccmapname, settings.DefaultDesiredSuppliers()))
+        return int(__eccmap2suppliers[eccmapname])
     except:
+        from lib import settings
         return settings.DefaultDesiredSuppliers()
 
 def GetEccMapData(name):
@@ -243,11 +250,11 @@ class eccmap:
         self.type = 0             # 0 is data+parity on same nodes, 1 is different
         self.from_memory(self.name)
         self.convert()
-        bpio.log(8, 'eccmap.init %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
+        lg.out(8, 'eccmap.init %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
         
     def __del__(self):
         try:
-            bpio.log(8, 'eccmap.del %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
+            lg.out(8, 'eccmap.del %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
         except:
             pass
         
@@ -293,7 +300,7 @@ class eccmap:
         """
         Read the constants from memory and take needed matrix on hands.
         """
-        # bpio.log(6, "eccmap.from_memory with " + name)
+        # lg.out(6, "eccmap.from_memory with " + name)
         maxdata = 0
         maxparity = 0
         data = GetEccMapData(name)
@@ -306,8 +313,8 @@ class eccmap:
                     if datanum > maxdata:
                         maxdata = datanum
                 except (TypeError, ValueError):
-                    bpio.log(1, 'eccmap.from_memory ERROR')
-                    bpio.exception()
+                    lg.out(1, 'eccmap.from_memory ERROR')
+                    lg.exc()
             if oneset:
                 self.ParityToData.append(oneset)
                 maxparity += 1
@@ -315,13 +322,13 @@ class eccmap:
         self.datasegments = maxdata + 1
         # we only do this type at the moment
         self.type = 0                    
-        # bpio.log(6, "   %s with parity=%s data=%s " % (name, self.paritysegments, self.datasegments))
+        # lg.out(6, "   %s with parity=%s data=%s " % (name, self.paritysegments, self.datasegments))
 
     def loadfromfile(self, fname):
         """
         This is old method, I decide to move all constants into the Python code.
         """
-        # bpio.log(10, "eccmap.loadfromfile with " + fname)
+        # lg.out(10, "eccmap.loadfromfile with " + fname)
         if os.path.exists(fname):
             filename = fname
         else:
@@ -339,14 +346,14 @@ class eccmap:
                     if datanum > maxdata:
                         maxdata = datanum
                 except (TypeError, ValueError):
-                    bpio.exception()
+                    lg.exc()
             if oneset:
                 self.ParityToData.append(oneset)
                 maxparity += 1
         self.paritysegments = maxparity
         self.datasegments = maxdata + 1
         self.type = 0                    # we only do this type at the moment
-        # bpio.log(10, "eccmap.loadfromfile  %s  with parity=%s  data=%s " % (filename, self.paritysegments, self.datasegments))
+        # lg.out(10, "eccmap.loadfromfile  %s  with parity=%s  data=%s " % (filename, self.paritysegments, self.datasegments))
 
     def convert(self):
         """
@@ -460,12 +467,12 @@ class eccmap:
         Identify which Parity to use to rebuild the missing Data Segment, return the parity segment number and
         the map of data segments in that parity.
         """
-        #bpio.log(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
+        #out(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
         bestParityNum = -1
         bestParityMap = []
         if DataSegs[DataSegNum] == 1 :           
             # we have the data segment nothing to fix, unclear why this was called, don't expect this to happen
-            #bpio.log(12, "eccmap.GetDataFixPath we already have the data segment requested to fix?")
+            #out(12, "eccmap.GetDataFixPath we already have the data segment requested to fix?")
             return bestParityNum, bestParityMap
         for paritynum in range(0, self.paritysegments):
             if ((ParitySegs[paritynum]==1) or (ParitySegs[paritynum]==True)) and \

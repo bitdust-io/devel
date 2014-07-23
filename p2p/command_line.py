@@ -37,13 +37,15 @@ except:
 from twisted.web.client import getPage
 from twisted.internet.defer import fail
 
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.settings as settings
-import lib.nameurl as nameurl
-import lib.contacts as contacts
-import lib.packetid as packetid
-import lib.schedule as schedule
+from logs import lg
+
+from lib import bpio
+from lib import misc
+from lib import settings
+from lib import nameurl
+from lib import contacts
+from lib import packetid
+from lib import schedule
 
 import webcontrol
 
@@ -60,7 +62,7 @@ def run(opts, args, overDict, pars):
     bpio.init()
     settings.init()
     if not opts or opts.debug is None:
-        bpio.SetDebug(0)
+        lg.set_debug_level(0)
 
     appList = bpio.find_process([
         'bpmain.exe',
@@ -222,7 +224,7 @@ def run_url_command(address, stop_reactor_in_errback=True):
         return fail('')
     
     url = 'http://127.0.0.1:'+str(local_port)+'/'+address
-    bpio.log(4, 'command_line.run_url_command url='+url)
+    lg.out(4, 'command_line.run_url_command url='+url)
     def _eb(x, stop_reactor):
         print x.getErrorMessage()
         if stop_reactor and reactor.running and not reactor._stopped:
@@ -512,7 +514,7 @@ def cmd_register(opts, args, overDict):
     if len(args) < 2:
         return 2
     if len(args) >= 3:
-        import lib.settings as settings
+        from lib import settings
         settings.uconfig().set('backup.private-key-size', str(args[2]))
         settings.uconfig().update()
     import lib.automat as automat
@@ -541,7 +543,7 @@ def cmd_recover(opts, args, overDict):
             idurl = ''
             txt = src
     except:
-        #bpio.exception()
+        #exc()
         idurl = ''
         txt = src
     if idurl == '' and len(args) >= 3:
@@ -564,23 +566,23 @@ def cmd_recover(opts, args, overDict):
 def cmd_key(opts, args, overDict):
     if len(args) == 2:
         if args[1] == 'copy':
-            import lib.crypto as crypto 
-            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
+            from crypto import key 
+            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             misc.setClipboardText(TextToSave)
             print 'now you can "paste" with Ctr+V your private key where you want.'
             del TextToSave
             return 0
         elif args[1] == 'print':
-            import lib.crypto as crypto 
-            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
+            from crypto import key 
+            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             print 
             print TextToSave
             return 0
     elif len(args) == 3:
         if args[1] == 'copy':
             filenameto = args[2]
-            import lib.crypto as crypto 
-            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
+            from crypto import key 
+            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             if not bpio.AtomicWriteFile(filenameto, TextToSave):
                 print 'error writing to', filenameto
                 return 1
@@ -665,7 +667,7 @@ def cmd_set_directly(opts, args, overDict):
         for path in settings.uconfig().default_order:
             if path.strip() == '':
                 continue
-            if path not in settings.uconfig().public_options:
+            if path not in settings.uconfig.public_options():
                 continue
             value = settings.uconfig().data.get(path, '').replace('\n', ' ')
             label = settings.uconfig().labels.get(path, '')
@@ -784,12 +786,12 @@ def cmd_uninstall(opts, args, overDict):
         print 'You are running BitPie.NET from sources, uninstall command is available only for binary version.'
         return 0
     def do_uninstall():
-        bpio.log(0, 'command_line.do_uninstall')
+        lg.out(0, 'command_line.do_uninstall')
         # batfilename = misc.MakeBatFileToUninstall()
         # misc.UpdateRegistryUninstall(True)
         # misc.RunBatFile(batfilename, 'c:/out2.txt')
     def kill():
-        bpio.log(0, 'kill')
+        lg.out(0, 'kill')
         total_count = 0
         found = False
         while True:
@@ -809,25 +811,25 @@ def cmd_uninstall(opts, args, overDict):
             if len(appList) > 0:
                 found = True
             for pid in appList:
-                bpio.log(0, 'trying to stop pid %d' % pid)
+                lg.out(0, 'trying to stop pid %d' % pid)
                 bpio.kill_process(pid)
             if len(appList) == 0:
                 if found:
-                    bpio.log(0, 'BitPie.NET stopped\n')
+                    lg.out(0, 'BitPie.NET stopped\n')
                 else:
-                    bpio.log(0, 'BitPie.NET was not started\n')
+                    lg.out(0, 'BitPie.NET was not started\n')
                 return 0
             total_count += 1
             if total_count > 10:
-                bpio.log(0, 'some BitPie.NET process found, but can not stop it\n')
+                lg.out(0, 'some BitPie.NET process found, but can not stop it\n')
                 return 1
             time.sleep(1)            
     def wait_then_kill(x):
-        bpio.log(0, 'wait_then_kill')
+        lg.out(0, 'wait_then_kill')
         total_count = 0
         #while True:
         def _try():
-            bpio.log(0, '_try')
+            lg.out(0, '_try')
             appList = bpio.find_process([
                 'bpmain.exe',
                 'bpgui.exe',
@@ -835,16 +837,16 @@ def cmd_uninstall(opts, args, overDict):
                 'bptester.exe',
                 'bpstarter.exe',
                 ])
-            bpio.log(0, 'appList:' + str(appList))
+            lg.out(0, 'appList:' + str(appList))
             if len(appList) == 0:
-                bpio.log(0, 'finished')
+                lg.out(0, 'finished')
                 reactor.stop()
                 do_uninstall()
                 return 0
             total_count += 1
-            bpio.log(0, '%d' % total_count)
+            lg.out(0, '%d' % total_count)
             if total_count > 10:
-                bpio.log(0, 'not responding')
+                lg.out(0, 'not responding')
                 ret = kill()
                 reactor.stop()
                 if ret == 0:
@@ -861,10 +863,10 @@ def cmd_uninstall(opts, args, overDict):
         'bpstarter.exe',
         ])
     if len(appList) == 0:
-        bpio.log(0, 'uninstalling BitPie.NET ...   ')
+        lg.out(0, 'uninstalling BitPie.NET ...   ')
         do_uninstall()
         return 0
-    bpio.log(0, 'found BitPie.NET processes ...   ')
+    lg.out(0, 'found BitPie.NET processes ...   ')
     try:
         url = webcontrol._PAGE_ROOT+'?action=exit'
         run_url_command(url).addCallback(wait_then_kill)
@@ -872,7 +874,7 @@ def cmd_uninstall(opts, args, overDict):
         reactor.run()
         return 0
     except:
-        bpio.exception()
+        lg.exc()
         ret = kill()
         if ret == 0:
             do_uninstall()

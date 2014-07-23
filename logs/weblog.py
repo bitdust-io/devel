@@ -27,6 +27,8 @@ except:
 
 from twisted.web import server, resource
 
+#------------------------------------------------------------------------------ 
+
 myweblistener = None
 default_level = 6
 default_reload_timeout = 600
@@ -92,6 +94,31 @@ level2color = {
     23: '#D0D0D0',
     }
 
+#------------------------------------------------------------------------------ 
+
+def init(port = 9999):
+    global myweblistener
+    if myweblistener:
+        return
+    from logs import lg
+    root = RootResource()
+    site = server.Site(root)
+    try:
+        myweblistener = reactor.listenTCP(port, site)
+    except:
+        lg.exc()
+        return
+    lg.set_weblog_func(log)
+
+def shutdown():
+    global myweblistener
+    if myweblistener:
+        myweblistener.stopListening()
+        del myweblistener
+        myweblistener = None
+
+#------------------------------------------------------------------------------ 
+
 def log(level, s):
     global logtext
     global maxlines
@@ -106,6 +133,8 @@ def log(level, s):
     while numlines > maxlines:
         logtext = logtext[logtext.find('\n')+1:]
         numlines -= 1
+
+#------------------------------------------------------------------------------ 
 
 class LogPage(resource.Resource):
     def __init__(self,parent):
@@ -208,32 +237,14 @@ class LogPage(resource.Resource):
 
         return out+'</pre></body></html>'
 
+#------------------------------------------------------------------------------ 
 
 class RootResource(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
         logpage = LogPage(self)
         self.putChild('', logpage)
-        
-
-def init(port = 9999):
-    global myweblistener
-    if myweblistener:
-        return
-    root = RootResource()
-    site = server.Site(root)
-    try:
-        myweblistener = reactor.listenTCP(port, site)
-    except:
-        pass
-
-def shutdown():
-    global myweblistener
-    if myweblistener:
-        myweblistener.stopListening()
-        del myweblistener
-        myweblistener = None
-
+ 
 #------------------------------------------------------------------------------
 
 if __name__ == "__main__":

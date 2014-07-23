@@ -43,17 +43,19 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in data_sender.py')
 
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.packetid as packetid
-import lib.contacts as contacts
-import lib.settings as settings
-import lib.diskspace as diskspace
-import lib.nameurl as nameurl
-import lib.automat as automat
-import lib.automats as automats
+from logs import lg
 
-import transport.gate as gate
+from lib import bpio
+from lib import misc
+from lib import packetid
+from lib import contacts
+from lib import settings
+from lib import diskspace
+from lib import nameurl
+from lib import automat
+from lib import automats
+
+from transport import gate
 
 import io_throttle
 import backup_matrix
@@ -125,7 +127,7 @@ class DataSender(automat.Automat):
     
     def doScanAndQueue(self, arg):
         global _ShutdownFlag
-        bpio.log(10, 'data_sender.doScanAndQueue')
+        lg.out(10, 'data_sender.doScanAndQueue')
         log = open(os.path.join(settings.LogsDir(), 'data_sender.log'), 'w')
         log.write('doScanAndQueue %s\n' % time.asctime())
         if _ShutdownFlag:
@@ -141,15 +143,15 @@ class DataSender(automat.Automat):
                 for supplierNum in packetsBySupplier.keys():
                     supplier_idurl = contacts.getSupplierID(supplierNum)
                     if not supplier_idurl:
-                        bpio.log(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (supplierNum, backupID))
+                        lg.out(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (supplierNum, backupID))
                         continue
                     for packetID in packetsBySupplier[supplierNum]:
                         backupID_, blockNum, supplierNum_, dataORparity = packetid.BidBnSnDp(packetID)
                         if backupID_ != backupID:
-                            bpio.log(2, 'data_sender.doScanAndQueue WARNING ?backupID? %s for %s' % (packetID, backupID))
+                            lg.out(2, 'data_sender.doScanAndQueue WARNING ?backupID? %s for %s' % (packetID, backupID))
                             continue
                         if supplierNum_ != supplierNum:
-                            bpio.log(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (packetID, backupID))
+                            lg.out(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (packetID, backupID))
                             continue
                         if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
                             log.write('%s in the send queue to %s\n' % (packetID, supplier_idurl))
@@ -173,7 +175,7 @@ class DataSender(automat.Automat):
                             self._packetAcked, 
                             self._packetFailed)
                         log.write('io_throttle.QueueSendFile %s\n' % packetID)
-                        # bpio.log(6, '  %s for %s' % (packetID, backupID))
+                        # lg.out(6, '  %s for %s' % (packetID, backupID))
         self.automat('scan-done')
         log.flush()
         log.close()
@@ -181,13 +183,13 @@ class DataSender(automat.Automat):
     def doPrintStats(self, arg):
         """
         """
-#        if bpio.Debug(18):
+#        if lg.is_debug(18):
 #            transfers = transport_control.current_transfers()
 #            bytes_stats = transport_control.current_bytes_transferred()
 #            s = ''
 #            for info in transfers:
 #                s += '%s ' % (diskspace.MakeStringFromBytes(bytes_stats[info.transfer_id]).replace(' ', '').replace('bytes', 'b'))
-#            bpio.log(0, 'transfers: ' + s[:120])
+#            lg.out(0, 'transfers: ' + s[:120])
 
     def doRemoveUnusedFiles(self, arg):
         # we want to remove files for this block 
@@ -210,12 +212,12 @@ class DataSender(automat.Automat):
                 if os.path.isfile(filename):
                     try:
                         os.remove(filename)
-                        # bpio.log(6, '    ' + os.path.basename(filename))
+                        # lg.out(6, '    ' + os.path.basename(filename))
                     except:
-                        bpio.exception()
+                        lg.exc()
                         continue
                     count += 1
-        bpio.log(8, 'data_sender.doRemoveUnusedFiles %d files were removed' % count)
+        lg.out(8, 'data_sender.doRemoveUnusedFiles %d files were removed' % count)
         backup_matrix.ReadLocalFiles()
                          
     def _packetAcked(self, packet, ownerID, packetID):

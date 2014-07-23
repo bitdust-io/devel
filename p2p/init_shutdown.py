@@ -23,45 +23,36 @@ try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in init_shutdown.py')
+
 from twisted.internet.defer import Deferred,  DeferredList
 from twisted.internet import task
 
-import lib.bpio as bpio
+from logs import lg
+
+from lib import bpio
 
 #------------------------------------------------------------------------------ 
-
-# need to change directory in case we were not in the p2p directory when soft started up,
-# need it to find bptester.py and potentially others
-#try:
-#    os.chdir(os.path.abspath(os.path.dirname(__file__)))
-#except:
-#    pass
 
 UImode = ''
 
 #------------------------------------------------------------------------------
 
-#def run(UI='', options=None, args=None, overDict=None):
-#    init(UI, options, args, overDict)
-
-
 def init_local(UI=''):
     """
     Run ``init()`` method in most important modules.
     """
-    
     global UImode
     UImode = UI
-    bpio.log(2, "init_shutdown.init_local")
+    lg.out(2, "init_shutdown.init_local")
 
-    import lib.settings as settings
-    import lib.misc as misc
+    from lib import settings
+    from lib import misc
     misc.init()
     misc.UpdateSettings()
 
     settings_patch()
 
-    import lib.commands as commands
+    from lib import commands 
     commands.init()
 
     if sys.argv.count('--twisted'):
@@ -69,7 +60,7 @@ def init_local(UI=''):
             softspace = 0
             def read(self): pass
             def write(self, s):
-                bpio.log(0, s.strip())
+                lg.out(0, s.strip())
             def flush(self): pass
             def close(self): pass
         from twisted.python import log as twisted_log
@@ -81,67 +72,66 @@ def init_local(UI=''):
     from twisted.internet import defer
     defer.setDebugging(True)
 
+    from logs import weblog
     if settings.enableWebStream():
-        misc.StartWebStream()
+        weblog.init(settings.getWebStreamPort())
 
-    # if settings.enableWebTraffic():
-    #     misc.StartWebTraffic()
+    from logs import webtraffic
+    if settings.enableWebTraffic():
+        webtraffic.init(port=settings.getWebTrafficPort())
         
 #    if settings.enableMemoryProfile():
 #        try:
 #            from guppy import hpy
 #            hp = hpy()
 #            hp.setrelheap()
-#            bpio.log(2, 'hp.heap():\n'+str(hp.heap()))
-#            bpio.log(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
-#            bpio.log(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+#            lg.out(2, 'hp.heap():\n'+str(hp.heap()))
+#            lg.out(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+#            lg.out(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
 #            import guppy.heapy.RM
 #        except:
-#            bpio.log(2, "init_shutdown.init_local guppy package is not installed")            
+#            lg.out(2, "init_shutdown.init_local guppy package is not installed")            
 
-    import lib.tmpfile as tmpfile
+    from lib import tmpfile
     tmpfile.init(settings.getTempDir())
 
-    import lib.net_misc as net_misc
+    from lib import net_misc
     net_misc.init()
     settings.update_proxy_settings()
 
     import run_upnpc
     run_upnpc.init()
 
-    import lib.eccmap as eccmap
+    from raid import eccmap
     eccmap.init()
 
-    import lib.crypto as crypto
-    import userid.identity as identity
+    from userid import identity
 
     import webcontrol
-    import lib.automats as automats
+    from lib import automats
     webcontrol.GetGlobalState = automats.get_global_state
     automats.SetGlobalStateNotifyFunc(webcontrol.OnGlobalStateChanged)
     
-    import lib.automat as automat
+    from lib import automat
     automat.SetStateChangedCallback(webcontrol.OnSingleStateChanged)
 
-    # import bpupdate
-    # bpupdate.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
-
     start_logs_rotate()
+    
 
 def init_contacts(callback=None, errback=None):
     """
     Initialize ``contacts`` and ``identitycache``. 
     """
-    bpio.log(2, "init_shutdown.init_contacts")
+    lg.out(2, "init_shutdown.init_contacts")
     
-    import lib.misc as misc
+    from lib import misc
     misc.loadLocalIdentity()
     if misc._LocalIdentity is None:
         if errback is not None:
             errback(1)
         return
 
-    import lib.contacts as contacts
+    from lib import contacts
     contacts.init()
 
     import userid.identitycache as identitycache
@@ -154,9 +144,11 @@ def init_connection():
     """
     
     global UImode
-    bpio.log(2, "init_shutdown.init_connection")
+    lg.out(2, "init_shutdown.init_connection")
 
     import webcontrol
+    import interface.xmlrpc_server 
+    interface.xmlrpc_server.init()
 
     from dht import dht_service
     from lib import settings
@@ -165,7 +157,7 @@ def init_connection():
     from transport import gate
     gate.init()
     
-    from lib import bandwidth
+    from transport import bandwidth
     from transport import callback
     callback.add_inbox_callback(bandwidth.INfile)
     callback.add_finish_file_sending_callback(bandwidth.OUTfile)
@@ -173,29 +165,21 @@ def init_connection():
     import contact_status
     contact_status.init()
 
-    # import central_service
-    # central_service.OnListSuppliersFunc = webcontrol.OnListSuppliers
-    # central_service.OnListCustomersFunc = webcontrol.OnListCustomers
-    # central_service.OnMarketListFunc = webcontrol.OnMarketList
-
     import p2p_service
     p2p_service.init()
-
-    # import money
-    # money.SetInboxReceiptCallback(webcontrol.OnInboxReceipt)
 
     import message
     message.init()
     message.OnIncommingMessageFunc = webcontrol.OnIncommingMessage
 
-    import userid.propagate as propagate
+    from userid import propagate
     propagate.init()
 
     try:
         from tray_icon import USE_TRAY_ICON
     except:
         USE_TRAY_ICON = False
-        bpio.exception()
+        lg.exc()
 
     if USE_TRAY_ICON:
         import tray_icon
@@ -228,29 +212,12 @@ def init_modules():
     Finish initialization part, run delayed methods.
     """
     
-    bpio.log(2,"init_shutdown.init_modules")
-
-    import webcontrol
+    lg.out(2,"init_shutdown.init_modules")
 
     import local_tester
-    # import backup_schedule
-    #import ratings
-    # import fire_hire
-    #import backup_monitor
-    # import bpupdate
-
-    #reactor.callLater(3, backup_monitor.start)
-
     reactor.callLater(5, local_tester.init)
 
-    # reactor.callLater(10, backup_schedule.init)
-
-    #reactor.callLater(20, ratings.init)
-
-    #reactor.callLater(25, firehire.init)
-
-    # reactor.callLater(15, bpupdate.init)
-
+    import webcontrol
     webcontrol.OnInitFinalDone()
 
 
@@ -261,7 +228,7 @@ def shutdown(x=None):
     """
     
     global initdone
-    bpio.log(2, "init_shutdown.shutdown " + str(x))
+    lg.out(2, "init_shutdown.shutdown " + str(x))
     dl = []
 
     import io_throttle
@@ -274,13 +241,10 @@ def shutdown(x=None):
     data_sender.SetShutdownFlag()
     data_sender.A('restart')
 
-    import lib.bitcoin as bitcoin
-    bitcoin.shutdown()
-
     import lib.stun
     dl.append(lib.stun.stopUDPListener())
     
-    import lib.eccmap as eccmap
+    from raid import eccmap
     eccmap.shutdown()
 
     import backup_matrix
@@ -304,7 +268,7 @@ def shutdown(x=None):
     from userid import propagate
     propagate.shutdown()
 
-    from lib import bandwidth
+    from transport import bandwidth
     from transport import callback
     callback.remove_inbox_callback(bandwidth.INfile)
     callback.remove_finish_file_sending_callback(bandwidth.OUTfile)
@@ -315,8 +279,11 @@ def shutdown(x=None):
     from dht import dht_service
     dht_service.shutdown()
 
-    import lib.weblog as weblog
+    from logs import weblog
     weblog.shutdown()
+    
+    from logs import webtraffic
+    webtraffic.shutdown()
 
     initdone = False
 
@@ -328,14 +295,14 @@ def shutdown_restart(param=''):
     Calls ``shutdown()`` method and stop the main reactor, then restart the program. 
     """
     
-    bpio.log(2, "init_shutdown.shutdown_restart ")
+    lg.out(2, "init_shutdown.shutdown_restart ")
 
     def do_restart(param):
-        import lib.misc as misc
+        from lib import misc
         misc.DoRestart(param)
 
     def shutdown_finished(x, param):
-        bpio.log(2, "init_shutdown.shutdown_restart.shutdown_finished want to stop the reactor")
+        lg.out(2, "init_shutdown.shutdown_restart.shutdown_finished want to stop the reactor")
         reactor.addSystemEventTrigger('after','shutdown', do_restart, param)
         reactor.stop()
 
@@ -348,10 +315,10 @@ def shutdown_exit(x=None):
     Calls ``shutdown()`` method and stop the main reactor, this will finish the program. 
     """
     
-    bpio.log(2, "init_shutdown.shutdown_exit ")
+    lg.out(2, "init_shutdown.shutdown_exit ")
 
     def shutdown_reactor_stop(x=None):
-        bpio.log(2, "init_shutdown.shutdown_exit want to stop the reactor")
+        lg.out(2, "init_shutdown.shutdown_exit want to stop the reactor")
         reactor.stop()
         # sys.exit()
 
@@ -365,24 +332,24 @@ def settings_patch():
     Small hacks to switch on/off some options, 
     but we want to do that only during testing period.
     """
-    bpio.log(6, 'init_shutdown.settings_patch ')
-    import lib.settings as settings
+    lg.out(6, 'init_shutdown.settings_patch ')
+    from lib import settings
     
 
 def start_logs_rotate():
     """
     Checks and remove old or too big log files.
     """
-    bpio.log(4, 'init_shutdown.start_logs_rotate')
+    lg.out(4, 'init_shutdown.start_logs_rotate')
     def erase_logs():
-        bpio.log(4, 'init_shutdown.erase_logs ')
-        import lib.settings as settings
+        lg.out(4, 'init_shutdown.erase_logs ')
+        from lib import settings
         logs_dir = settings.LogsDir()
         total_sz = 0
         remove_list = []
         for filename in os.listdir(logs_dir):
             filepath = os.path.join(logs_dir, filename)
-            if filepath == bpio.LogFileName:
+            if filepath == lg.log_filename():
                 # skip current log file
                 continue
             if not filename.endswith('.log'):
@@ -412,7 +379,7 @@ def start_logs_rotate():
                 try:
                     dtm = time.mktime(time.strptime(filename[7:-4],'%y%m%d%H%M%S'))
                 except:
-                    bpio.exception()
+                    lg.exc()
                     continue          
                 # we want to check if it is more than 30 days old ...
                 if time.time() - dtm > 60*60*24*30:
@@ -426,10 +393,10 @@ def start_logs_rotate():
         for filepath, reason in remove_list:
             try:
                 os.remove(filepath)
-                bpio.log(6, 'init_shutdown.erase_logs %s was deleted because of "%s"' % (filepath, reason))
+                lg.out(6, 'init_shutdown.erase_logs %s was deleted because of "%s"' % (filepath, reason))
             except:
-                bpio.log(1, 'init_shutdown.erase_logs ERROR can not remove %s, reason is [%s]' % (filepath, reason))
-                bpio.exception()
+                lg.out(1, 'init_shutdown.erase_logs ERROR can not remove %s, reason is [%s]' % (filepath, reason))
+                lg.exc()
         del remove_list
              
     task.LoopingCall(erase_logs).start(60*60*24)
@@ -440,10 +407,10 @@ def check_install():
     """
     Return True if Private Key and local identity files exists and both is valid.
     """
-    bpio.log(2, 'init_shutdown.check_install ')
-    import lib.settings as settings
-    import userid.identity as identity
-    import lib.crypto as crypto
+    lg.out(2, 'init_shutdown.check_install ')
+    from lib import settings
+    from userid import identity
+    from crypto import key
 
     keyfilename = settings.KeyFileName()
     keyfilenamelocation = settings.KeyFileNameLocation()
@@ -454,43 +421,43 @@ def check_install():
     idfilename = settings.LocalIdentityFilename()
     
     if not os.path.exists(keyfilename) or not os.path.exists(idfilename):
-        bpio.log(2, 'init_shutdown.check_install local key or local id not exists')
+        lg.out(2, 'init_shutdown.check_install local key or local id not exists')
         return False
 
     current_key = bpio.ReadBinaryFile(keyfilename)
     current_id = bpio.ReadBinaryFile(idfilename)
 
     if current_id == '':
-        bpio.log(2, 'init_shutdown.check_install local identity is empty ')
+        lg.out(2, 'init_shutdown.check_install local identity is empty ')
         return False
 
     if current_key == '':
-        bpio.log(2, 'init_shutdown.check_install private key is empty ')
+        lg.out(2, 'init_shutdown.check_install private key is empty ')
         return False
 
     try:
-        crypto.InitMyKey()
+        key.InitMyKey()
     except:
-        bpio.log(2, 'init_shutdown.check_install fail loading private key ')
+        lg.out(2, 'init_shutdown.check_install fail loading private key ')
         return False
 
     try:
         ident = identity.identity(xmlsrc=current_id)
     except:
-        bpio.log(2, 'init_shutdown.check_install fail init local identity ')
+        lg.out(2, 'init_shutdown.check_install fail init local identity ')
         return False
 
     try:
         res = ident.Valid()
     except:
-        bpio.log(2, 'init_shutdown.check_install wrong data in local identity   ')
+        lg.out(2, 'init_shutdown.check_install wrong data in local identity   ')
         return False
 
     if not res:
-        bpio.log(2, 'init_shutdown.check_install local identity is not valid ')
+        lg.out(2, 'init_shutdown.check_install local identity is not valid ')
         return False
 
-    bpio.log(2, 'init_shutdown.check_install done')
+    lg.out(2, 'init_shutdown.check_install done')
     return True
 
 

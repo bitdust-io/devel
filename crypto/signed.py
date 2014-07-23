@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#signed_packet.py
+#signed.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: signed_packet 
+.. module:: signed 
 
 These packets usually hold on the order of 1 MB.
 Something equal to a packet number so we can detect duplicates in transport.
@@ -31,24 +31,26 @@ import sys
 from twisted.internet import threads
 from twisted.internet.defer import Deferred
 
-
 import types
 import datetime
 
+from logs import lg
 
-import bpio
-import commands
-import misc
-import crypto
-import packetid
-import contacts
+from lib import bpio
+from lib import commands
+from lib import misc
+from lib import packetid
+from lib import contacts
 
+import key
+
+#------------------------------------------------------------------------------ 
 
 class Packet:
     """
     The core class.
     Represents a data packet in the network. 
-    Payload can be encrypted using bitpie.lib.encrypted_block.
+    Payload can be encrypted using bitpie.key.encrypted.Block.
     We expect remote user run the correct software.
     His BitPie.NET must verify signature of that packet .
     If you want to encrypt the fields and so hide that service traffic completely - 
@@ -82,7 +84,7 @@ class Packet:
         self.Sign()
 
     def __repr__(self):
-        return 'signed_packet (command=%s id=%s)' % (str(self.Command), str(self.PacketID))
+        return 'signed.Packet(command=%s id=%s)' % (str(self.Command), str(self.PacketID))
 
     def Sign(self):
         """
@@ -102,19 +104,19 @@ class Packet:
 
     def GenerateHash(self):
         """
-        Call ``lib.crypto.Hash`` to create a hash code for that ``packet``.
+        Call ``crypto.key.Hash`` to create a hash code for that ``packet``.
         """
-        return crypto.Hash(self.GenerateHashBase())
+        return key.Hash(self.GenerateHashBase())
 
     def GenerateSignature(self):
         """
-        Call ``lib.crypto.Sign`` to generate digital signature.
+        Call ``crypto.key.Sign`` to generate digital signature.
         """
-        return crypto.Sign(self.GenerateHash())
+        return key.Sign(self.GenerateHash())
 
     def SignatureChecksOut(self):
         """
-        This check correctness of signature, uses ``lib.crypto.Verify``.
+        This check correctness of signature, uses ``crypto.key.Verify``.
         To verify we need 3 things:
             - the packet ``Creator`` identity ( it keeps the public key ),
             - hash of that packet - just call ``GenerateHash()`` to make it,
@@ -122,9 +124,9 @@ class Packet:
         """
         ConIdentity = contacts.getContact(self.CreatorID)
         if ConIdentity is None:
-            bpio.log(1, "signed_packet.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
+            lg.out(1, "signed.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
             return False
-        Result = crypto.Verify(ConIdentity, self.GenerateHash(), self.Signature)
+        Result = key.Verify(ConIdentity, self.GenerateHash(), self.Signature)
         return Result
 
     def Ready(self):
@@ -148,13 +150,13 @@ class Packet:
             8) etc.
         """
         if not self.Ready():
-            bpio.log(4, "signed_packet.Valid WARNING packet is not ready yet " + str(self))
+            lg.out(4, "signed.Valid WARNING packet is not ready yet " + str(self))
             return False
         if not commands.IsCommand(self.Command):
-            bpio.log(1, "signed_packet.Valid bad Command " + str(self.Command))
+            lg.out(1, "signed.Valid bad Command " + str(self.Command))
             return False
         if not self.SignatureChecksOut():
-            bpio.log(1, "signed_packet.Valid failed Signature")
+            lg.out(1, "signed.Valid failed Signature")
             return False
         return True
 
@@ -216,13 +218,13 @@ def Unserialize(data):
         return None
     newobject = misc.StringToObject(data)
     if newobject is None:
-        # bpio.log(6, "signed_packet.Unserialize WARNING result is None")
+        # lg.out(6, "signed.Unserialize WARNING result is None")
         return None
     if type(newobject) != types.InstanceType:
-        bpio.log(6, "signed_packet.Unserialize WARNING not an instance: " + str(newobject))
+        lg.out(6, "signed.Unserialize WARNING not an instance: " + str(newobject))
         return None
-    if not str(newobject.__class__).count('signed_packet.Packet'):
-        bpio.log(6, "signed_packet.Unserialize WARNING not a packet: " + str(newobject.__class__))
+    if not str(newobject.__class__).count('signed.Packet'):
+        lg.out(6, "signed.Unserialize WARNING not a packet: " + str(newobject.__class__))
         return None
     return newobject
 
@@ -250,10 +252,10 @@ def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 
 if __name__ == '__main__':
     bpio.init()
-    bpio.SetDebug(18)
-    import settings
+    lg.set_debug_level(18)
+    from lib import settings
     settings.init()
-    crypto.InitMyKey()
+    key.InitMyKey()
     p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))
     print p
     

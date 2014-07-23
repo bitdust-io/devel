@@ -43,37 +43,30 @@ except:
 
 from twisted.internet import protocol
 
-try:
-    import lib.bpio as bpio
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    try:
-        import lib.bpio as bpio
-    except:
-        sys.exit()
+from logs import lg
 
-import lib.automat as automat
-# import lib.child_process as child_process
+from lib import bpio
+from lib import automat
 
 import read
 import make
 import rebuild
 
+#------------------------------------------------------------------------------ 
+
 _MODULES = (
 'os',
 'cStringIO',
 'struct',
+'logs.lg',
 'raid.read', 
 'raid.make',
 'raid.rebuild', 
+'raid.eccmap',
 'lib.settings', 
 'lib.bpio',
-'lib.eccmap',
 'lib.misc',
 'lib.packetid',)
-
-#------------------------------------------------------------------------------ 
 
 _RaidWorker = None
 
@@ -234,7 +227,7 @@ class RaidWorker(automat.Automat):
         Action method.
         """
         if len(self.activetasks) >= self.processor.get_ncpus():
-            bpio.log(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
+            lg.out(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
                 len(self.activetasks), self.processor.get_ncpus()))
             return
         try:
@@ -248,12 +241,12 @@ class RaidWorker(automat.Automat):
                 # TODO:
                 func = rebuild.rebuild
         except:
-            bpio.exception()
+            lg.exc()
             return
         self.activetasks[task_id] = self.processor.submit(func, params,
             modules=_MODULES, 
             callback=lambda result: self._job_done(task_id, cmd, params, result))
-        bpio.log(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
+        lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
             task_id, len(self.activetasks), self.processor.get_ncpus()))
         reactor.callLater(0.01, self.automat, 'task-started', task_id)
 
@@ -265,10 +258,10 @@ class RaidWorker(automat.Automat):
             task_id, cmd, params, result = arg
             cb = self.callbacks.pop(task_id)
             cb(cmd, params, result)
-            bpio.log(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
+            lg.out(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
                 len(self.callbacks), len(self.tasks), len(self.activetasks)))
         except:
-            bpio.exception()
+            lg.exc()
 
     def doReportTasksFailed(self, arg):
         """
@@ -293,15 +286,14 @@ class RaidWorker(automat.Automat):
 
     def _job_done(self, task_id, cmd, params, result):
         self.activetasks.pop(task_id)
-        bpio.log(12, 'raid_worker._job_done %r : %r active:%r' % (
+        lg.out(12, 'raid_worker._job_done %r : %r active:%r' % (
             task_id, result, self.activetasks.keys()))
         self.automat('task-done', (task_id, cmd, params, result))
 
     def _kill_processor(self):
         if self.processor:
             self.processor.destroy()
-        else:
-            bpio.log(2, '_kill_processor processor is None, skip')
+            lg.out(12, 'raid_worker._kill_processor processor was destroyed')
         
 
 #------------------------------------------------------------------------------ 
@@ -310,7 +302,7 @@ def main():
     def _cb(cmd, taskdata, result):
         print cmd, taskdata, result 
     bpio.init()
-    bpio.SetDebug(20)
+    lg.set_debug_level(20)
     reactor.callWhenRunning(A, 'init')
     reactor.callLater(0.5, A, 'new-task', ('make', _cb, ('sdfsdf', '45', '324', '45')))
     reactor.run()

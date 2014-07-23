@@ -15,19 +15,17 @@ import os
 import sys
 
 try:
-    import lib.bpio as bpio
+    from lib import bpio
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    try:
-        import lib.bpio as bpio
-    except:
-        sys.exit()
 
-import lib.settings as settings
-import lib.automat as automat
-import lib.udp as udp
-import dht.dht_service as dht_service
+from lib import bpio
+from lib import settings
+from lib import automat
+from lib import udp
+
+from dht import dht_service
 
 #------------------------------------------------------------------------------
  
@@ -128,7 +126,6 @@ def main():
     from twisted.internet import reactor
     from dht import dht_service
     bpio.init()
-    bpio.SetDebug(18)
     dht_service.init(4000)
     udp.listen(8882)
     A('start', 8882)

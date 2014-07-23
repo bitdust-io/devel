@@ -11,6 +11,7 @@
 
 """
 .. module:: identity
+.. role:: red
 
 This is a core module.
 
@@ -112,14 +113,15 @@ import time
 from xml.dom import minidom, Node
 from xml.dom.minidom import getDOMImplementation
 
+from logs import lg
 
-import lib.settings as settings
-import lib.bpio as bpio
-import lib.nameurl as nameurl
-import lib.crypto as crypto
+from lib import settings
+from lib import bpio
+from lib import nameurl
 
-# import lib.misc as misc
+from crypto import key
 
+#------------------------------------------------------------------------------ 
 
 default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 <identity>
@@ -139,6 +141,7 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
   <signature></signature>
 </identity>"""
 
+#------------------------------------------------------------------------------ 
 
 class identity:
     """
@@ -499,7 +502,7 @@ class identity:
         for i in self.sources:
             sr += i
         stufftohash = c + sep + s + sep + sr + sep + self.version + sep + self.postage + sep + self.date.replace(' ', '_')
-        hashcode = crypto.Hash(stufftohash)          
+        hashcode = key.Hash(stufftohash)          
         return hashcode
 
     def sign(self):
@@ -507,11 +510,11 @@ class identity:
         Make a hash, generate digital signature on it and remember the signature.
         """
         hashcode = self.makehash()
-        self.signature = crypto.Sign(hashcode)
+        self.signature = key.Sign(hashcode)
 ##        if self.Valid():
-##            bpio.log(12, "identity.sign tested after making and it looks good")
+##            lg.out(12, "identity.sign tested after making and it looks good")
 ##        else:
-##            bpio.log(1, "identity.sign ERROR tested after making sign ")
+##            lg.out(1, "identity.sign ERROR tested after making sign ")
 ##            raise Exception("sign fails")
 
     def Valid(self):
@@ -520,7 +523,7 @@ class identity:
         PREPRO - should test certificate too.
         """
         hashcode = self.makehash()
-        result = crypto.VerifySignature(
+        result = key.VerifySignature(
             self.publickey,
             hashcode,
             str(self.signature))
@@ -533,8 +536,8 @@ class identity:
         try:
             doc = minidom.parseString(xmlsrc)
         except:
-            bpio.exception()
-            bpio.log(2, '\n'+xmlsrc[:256]+'\n')
+            lg.exc()
+            lg.out(2, '\n'+xmlsrc[:256]+'\n')
             return
         self.clear_data()
         self.from_xmlobj(doc.documentElement)
@@ -667,7 +670,7 @@ class identity:
                         if (xkey.nodeType == Node.TEXT_NODE):
                             self.signature=xkey.wholeText.strip().encode()
         except:
-            bpio.exception()
+            lg.exc()
 
 #-------------------------------------------------------------------------------
 
@@ -677,7 +680,7 @@ def makeDefaultIdentity(name='', ip=''):
     Nice to provide a user name or it will have a form like: [ip address]_[date].     
     """
     import lib.misc
-    bpio.log(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
+    lg.out(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
     if ip == '':
         ip = bpio.ReadTextFile(settings.ExternalIPFilename())
     if name == '':
@@ -698,7 +701,7 @@ def makeDefaultIdentity(name='', ip=''):
         if cdict.has_key(c):
             ident.contacts.append(cdict[c].encode("ascii").strip())
 
-    ident.publickey = crypto.MyPublicKey()
+    ident.publickey = key.MyPublicKey()
     ident.date = time.strftime('%b %d, %Y')
     ident.postage = "1"
 
@@ -786,7 +789,7 @@ def update():
 
 
 if __name__ == '__main__':
-    bpio.SetDebug(18)
+    lg.set_debug_level(18)
     main()
 
 

@@ -29,16 +29,15 @@ from entangled.kademlia.node import rpcmethod
 from entangled.kademlia.contact import Contact
 
 try:
-    import lib.bpio as bpio
+    from logs import lg
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    try:
-        import lib.bpio as bpio
-    except:
-        sys.exit()
 
-import lib.settings as settings
+from logs import lg
+
+from lib import bpio
+from lib import settings
 
 import known_nodes
 
@@ -52,9 +51,9 @@ _UDPListener = None
 def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
-        bpio.log(4, 'dht_service.init WARNING, already created a DHTNode')
+        lg.out(4, 'dht_service.init WARNING, already created a DHTNode')
         return
-    bpio.log(4, 'dht_service.init UDP port is %d' % udp_port)
+    lg.out(4, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         # db_file_path = './dht%s' % str(udp_port)
         db_file_path = settings.DHTDBFile()
@@ -71,9 +70,9 @@ def shutdown():
         _MyNode._dataStore._db.close()
         del _MyNode
         _MyNode = None
-        bpio.log(4, 'dht_service.shutdown')
+        lg.out(4, 'dht_service.shutdown')
     else:
-        bpio.log(4, 'dht_service.shutdown WARNING - DHTNode not exist')
+        lg.out(4, 'dht_service.shutdown WARNING - DHTNode not exist')
 
 
 def node():
@@ -82,37 +81,30 @@ def node():
 
 
 def connect():
-#    global _UDPListener
-#    if _UDPListener:
-#        bpio.log(6, 'dht_service.connect already connected, skip')
-#        return _UDPListener
-#    if len(knownnodes) == 0:
-#        knownnodes += known_nodes.nodes()
-#    _UDPListener = node().joinNetwork(knownnodes)
-    if node().refresher:
+    if node().refresher and node().refresher.active():
         node().refresher.reset(0)
-        bpio.log(6, 'dht_service.connect did RESET refresher task')
+        lg.out(6, 'dht_service.connect did RESET refresher task')
     else:
         node().joinNetwork(known_nodes.nodes())
-        bpio.log(6, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
+        lg.out(6, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
     return True
 
 
 def disconnect():
 #    global _UDPListener
 #    if _UDPListener is not None:
-#        bpio.log(6, 'dht_service.disconnect')
+#        lg.out(6, 'dht_service.disconnect')
 #        d = _UDPListener.stopListening()
 #        del _UDPListener
 #        _UDPListener = None
 #        return d
 #    else:
-#        bpio.log(6, 'dht_service.disconnect WARNING - UDPListener is None')
+#        lg.out(6, 'dht_service.disconnect WARNING - UDPListener is None')
     return None
 
 
 def reconnect():
-    # bpio.log(16, 'dht_service.reconnect')
+    # lg.out(16, 'dht_service.reconnect')
     return node().reconnect()
 
 
@@ -127,17 +119,17 @@ def okay(result, method, key, arg=None):
         v = str(result.values())
     else:
         v = 'None'
-    # bpio.log(16, 'dht_service.okay   %s(%s)   result=%s' % (method, key, v[:20]))
+    # lg.out(16, 'dht_service.okay   %s(%s)   result=%s' % (method, key, v[:20]))
     return result
 
 
 def error(err, method, key):
-    bpio.log(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
+    lg.out(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
     return None  
 
 
 def get_value(key):
-    # bpio.log(16, 'dht_service.get_value key=[%s]' % key)
+    # lg.out(16, 'dht_service.get_value key=[%s]' % key)
     d = node().iterativeFindValue(key_to_hash(key))
     d.addCallback(okay, 'get_value', key)
     d.addErrback(error, 'get_value', key)
@@ -145,14 +137,14 @@ def get_value(key):
         
 
 def set_value(key, value):
-    # bpio.log(16, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
+    # lg.out(16, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
     d = node().iterativeStore(key_to_hash(key), value)
     d.addCallback(okay, 'set_value', key, value)
     d.addErrback(error, 'set_value', key)
     return d
 
 def delete_key(key):
-    # bpio.log(16, 'dht_service.delete_key [%s]' % key)
+    # lg.out(16, 'dht_service.delete_key [%s]' % key)
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(okay, 'delete_value', key)
     d.addErrback(error, 'delete_key', key)
@@ -161,7 +153,7 @@ def delete_key(key):
 
 def find_node(node_id):
     node_id64 = base64.b64encode(node_id)
-    # bpio.log(16, 'dht_service.find_node   node_id=[%s]' % node_id64)
+    # lg.out(16, 'dht_service.find_node   node_id=[%s]' % node_id64)
     d = node().iterativeFindNode(node_id)
     d.addCallback(okay, 'find_node', node_id64)
     d.addErrback(error, 'find_node', node_id64)
@@ -173,7 +165,7 @@ def random_key():
 
 
 def set_node_data(key, value):
-    bpio.log(16, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
+    lg.out(16, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
     node().data[key] = value    
   
 #------------------------------------------------------------------------------ 
@@ -185,14 +177,14 @@ class DHTNode(DistributedTupleSpacePeer):
         
     @rpcmethod
     def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
-        # bpio.log(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+        # lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
         #     base64.b32encode(key), str(value)[:10]))
         return DistributedTupleSpacePeer.store(self, key, value, originalPublisherID=originalPublisherID, age=age, **kwargs)
 
     @rpcmethod
     def request(self, key):
         value = str(self.data.get(key, None))
-        # bpio.log(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (base64.b32encode(key), str(value)))
+        # lg.out(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (base64.b32encode(key), str(value)))
         return {str(key): value}
 
     def reconnect(self, knownNodeAddresses=None):
@@ -216,7 +208,7 @@ def parseCommandLine():
 def main():
     bpio.init()
     settings.init()
-    bpio.SetDebug(18)
+    lg.set_debug_level(18)
     (options, args) = parseCommandLine()
     init(options.udpport)
     connect()

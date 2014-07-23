@@ -54,16 +54,17 @@ except:
 
 from twisted.internet.defer import maybeDeferred
 
+from logs import lg
 
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.settings as settings
-import lib.contacts as contacts
-import lib.eccmap as eccmap
-import lib.packetid as packetid
-import lib.automat as automat
+from lib import bpio
+from lib import misc
+from lib import settings
+from lib import contacts
+from lib import packetid
+from lib import automat
 
-import raid.raid_worker as raid_worker
+from raid import eccmap
+from raid import raid_worker
 
 import backup_monitor
 import block_rebuilder
@@ -233,7 +234,7 @@ class BackupRebuilder(automat.Automat):
                     'P': [0] * contacts.numSuppliers() }
         # detect missing blocks from remote info
         self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(backupID)
-        bpio.log(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
+        lg.out(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
         # find the correct max block number for this backup
         # we can have remote and local files
         # will take biggest block number from both 
@@ -254,7 +255,7 @@ class BackupRebuilder(automat.Automat):
         self.currentBackupID = backupID
         # clear requesting queue, remove old packets for this backup, we will send them again
         io_throttle.DeleteBackupRequests(self.currentBackupID)
-        # bpio.log(6, 'backup_rebuilder.doTakeNextBackup currentBackupID=%s workingBlocksQueue=%d' % (self.currentBackupID, len(self.workingBlocksQueue)))
+        # lg.out(6, 'backup_rebuilder.doTakeNextBackup currentBackupID=%s workingBlocksQueue=%d' % (self.currentBackupID, len(self.workingBlocksQueue)))
         self.automat('backup-ready')
 
     def doRequestAvailableBlocks(self, arg):
@@ -336,14 +337,14 @@ class BackupRebuilder(automat.Automat):
         # and calculate the whole size to be received ... smart!
         # ... remote supplier should not use last file to calculate
         self.blockIndex = len(self.workingBlocksQueue) - 1
-        bpio.log(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
+        lg.out(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
         def _prepare_one_block(): 
             if self.blockIndex < 0:
-                bpio.log(8, '        _prepare_one_block finish all blocks')
+                lg.out(8, '        _prepare_one_block finish all blocks')
                 reactor.callLater(0, _finish_all_blocks)
                 return
             self.currentBlockNumber = self.workingBlocksQueue[self.blockIndex]
-            bpio.log(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
+            lg.out(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
             task_params = (
                 self.currentBackupID, self.currentBlockNumber, eccmap.Current(),
                 backup_matrix.GetActiveArray(),
@@ -355,7 +356,7 @@ class BackupRebuilder(automat.Automat):
             self.blockIndex -= 1
             if result:
                 newData, localData, localParity, reconstructedData, reconstructedParity = result 
-                bpio.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(newData)))
+                lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(newData)))
                 if newData:
                     for supplierNum in xrange(contacts.numSuppliers()):
                         if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
@@ -365,12 +366,12 @@ class BackupRebuilder(automat.Automat):
                     self.blocksSucceed.append(self.currentBlockNumber)
                     data_sender.A('new-data')
             else:
-                bpio.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, result))
+                lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, result))
             reactor.callLater(0, _prepare_one_block)
         def _finish_all_blocks():
             for blockNum in self.blocksSucceed:
                 self.workingBlocksQueue.remove(blockNum)
-            bpio.log(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
+            lg.out(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
             result = len(self.blocksSucceed) > 0
             self.blocksSucceed = []
             self.automat('rebuilding-finished', result)         
@@ -389,14 +390,14 @@ class BackupRebuilder(automat.Automat):
 #        # and calculate the whole size to be received ... smart!
 #        # ... remote supplier should not use last file to calculate
 #        self.blockIndex = len(self.workingBlocksQueue) - 1
-#        bpio.log(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
+#        lg.out(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
 #        def _prepare_one_block(): 
 #            if self.blockIndex < 0:
-#                # bpio.log(8, '        _prepare_one_block finish all blocks')
+#                # lg.out(8, '        _prepare_one_block finish all blocks')
 #                reactor.callLater(0, _finish_all_blocks)
 #                return
 #            self.currentBlockNumber = self.workingBlocksQueue[self.blockIndex]
-#            # bpio.log(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
+#            # lg.out(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
 #            self.workBlock = block_rebuilder.BlockRebuilder(
 #                eccmap.Current(), #self.eccMap,
 #                self.currentBackupID,
@@ -410,7 +411,7 @@ class BackupRebuilder(automat.Automat):
 #        def _identify_block_packets():
 #            self.workBlock.IdentifyMissing()
 ##            if not self.workBlock.IsMissingFilesOnHand():
-##                bpio.log(8, '        _identify_block_packets some missing files is not come yet')
+##                lg.out(8, '        _identify_block_packets some missing files is not come yet')
 ##                reactor.callLater(0, self.automat, 'rebuilding-finished', False)
 ##                return
 #            reactor.callLater(0, _work_on_block)
@@ -418,7 +419,7 @@ class BackupRebuilder(automat.Automat):
 #            # self.workBlock.AttemptRebuild().addBoth(_rebuild_finished)
 #            maybeDeferred(self.workBlock.AttemptRebuild).addCallback(_rebuild_finished)
 #        def _rebuild_finished(someNewData):
-#            # bpio.log(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
+#            # lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
 #            if someNewData:
 #                self.workBlock.WorkDoneReport()
 #                self.blocksSucceed.append(self.currentBlockNumber)
@@ -432,7 +433,7 @@ class BackupRebuilder(automat.Automat):
 #        def _finish_all_blocks():
 #            for blockNum in self.blocksSucceed:
 #                self.workingBlocksQueue.remove(blockNum)
-#            bpio.log(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
+#            lg.out(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
 #            result = len(self.blocksSucceed) > 0
 #            self.blocksSucceed = []
 #            self.automat('rebuilding-finished', result)  
@@ -445,27 +446,27 @@ class BackupRebuilder(automat.Automat):
         if state in ['in queue', 'shutdown', 'exist']:
             return
         if state != 'received':
-            bpio.log(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(newpacket)))
+            lg.out(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(newpacket)))
             return
         packetID = newpacket.PacketID
         filename = os.path.join(settings.getLocalBackupsDir(), packetID)
         if not newpacket.Valid():
             # TODO 
             # if we didn't get a valid packet ... re-request it or delete it?
-            bpio.log(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
+            lg.out(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
             return
         if os.path.exists(filename):
-            bpio.log(4, "backup_rebuilder.FileReceived WARNING rewriting existed file" + filename)
+            lg.out(4, "backup_rebuilder.FileReceived WARNING rewriting existed file" + filename)
             try: 
                 os.remove(filename)
             except:
-                bpio.exception()
+                lg.exc()
         dirname = os.path.dirname(filename)
         if not os.path.exists(dirname):
             try:
                 bpio._dirs_make(dirname)
             except:
-                bpio.log(2, "backup_rebuilder.FileReceived ERROR can not create sub dir " + dirname)
+                lg.out(2, "backup_rebuilder.FileReceived ERROR can not create sub dir " + dirname)
                 return 
         if not bpio.WriteFile(filename, newpacket.Payload):
             return

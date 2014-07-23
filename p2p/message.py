@@ -53,32 +53,29 @@ import datetime
 import time
 import StringIO
 
-
 try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in message.py')
 
-
 from twisted.internet.defer import Deferred
 
+from logs import lg
 
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.signed_packet as signed_packet
-import lib.contacts as contacts
-import lib.commands as commands
-##import lib.eccmap as eccmap
-import lib.settings as settings
-# import lib.transport_control as transport_control
-import lib.packetid as packetid
-import lib.crypto as crypto
-import lib.nameurl as nameurl
+from lib import bpio
+from lib import misc
+from lib import contacts
+from lib import commands
+from lib import settings
+from lib import packetid
+from lib import nameurl
 
-import userid.identity as identity
-import userid.identitycache as identitycache
+from crypto import signed
+from crypto import key
 
-import transport.gate as gate
+from userid import identitycache
+
+from transport import gate
 
 import p2p_service
 
@@ -90,7 +87,7 @@ OnIncommingMessageFunc = None
 
 
 def init():
-    bpio.log(4,"message.init")
+    lg.out(4,"message.init")
 ##    guimessage.UpdateCorrespondents()
 
 def ConnectCorrespondent(idurl):
@@ -105,16 +102,16 @@ class MessageClass:
     We always encrypt messages with a session key so we need to package with encrypted body.
     """
     def __init__(self, destinationidentity, messagebody):
-        bpio.log(8, "message.MessageClass making message ")
-        sessionkey = crypto.NewSessionKey()
+        lg.out(8, "message.MessageClass making message ")
+        sessionkey = key.NewSessionKey()
         keystring = destinationidentity.publickey
-        self.encryptedKey = crypto.EncryptStringPK(keystring, sessionkey)
-        self.encryptedMessage = crypto.EncryptWithSessionKey(sessionkey, messagebody)
+        self.encryptedKey = key.EncryptStringPK(keystring, sessionkey)
+        self.encryptedMessage = key.EncryptWithSessionKey(sessionkey, messagebody)
         
     def ClearBody(self):
-        sessionkey = crypto.DecryptLocalPK(self.encryptedKey)
+        sessionkey = key.DecryptLocalPK(self.encryptedKey)
         # we only decrypt with LocalIdentity
-        return crypto.DecryptWithSessionKey(sessionkey, self.encryptedMessage)
+        return key.DecryptWithSessionKey(sessionkey, self.encryptedMessage)
 
 def Message(request):
     """
@@ -126,14 +123,14 @@ def Message(request):
         5) send an "Ack" back to sender
     """
     global OnIncommingMessageFunc
-    bpio.log(6, "message.Message from " + str(request.OwnerID))
+    lg.out(6, "message.Message from " + str(request.OwnerID))
     senderidentity = contacts.getCorrespondent(request.OwnerID)
     if not senderidentity:
-        bpio.log(4,"message.Message WARNING had sender not in correspondents list " + request.OwnerID)
+        lg.out(4,"message.Message WARNING had sender not in correspondents list " + request.OwnerID)
         return
     Amessage = misc.StringToObject(request.Payload)
     if Amessage is None:
-        bpio.log(4,"message.Message WARNING wrong Payload, can not extract message from request")
+        lg.out(4,"message.Message WARNING wrong Payload, can not extract message from request")
         return
     clearmessage = Amessage.ClearBody()
     SaveMessage(clearmessage)
@@ -143,7 +140,7 @@ def Message(request):
     p2p_service.SendAck(request)
 
 def MakeMessage(to, subj, body, dt=datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")):
-    bpio.log(6, "message.MakeMessage to " + to)
+    lg.out(6, "message.MakeMessage to " + to)
     msg = ( misc.getLocalID(),
             to,
             subj,
@@ -162,7 +159,7 @@ def SplitMessage(clearmessage):
 
 def SaveMessage(clearmessage):
     msguid = UniqueID()
-    bpio.log(6, "message.SaveMessage %s" % msguid)
+    lg.out(6, "message.SaveMessage %s" % msguid)
     msgfilename = os.path.join(settings.getMessagesDir(),  msguid+'.message')
     msgfile = file(msgfilename, 'w')
     msgfile.write(str(clearmessage))
@@ -188,9 +185,9 @@ def DeleteMessage(messageuid):
     try:
         os.remove(msgpath)
     except:
-        bpio.exception()
+        lg.exc()
         return False
-    bpio.log(6, "message.DeleteMessage %s" % messageuid)
+    lg.out(6, "message.DeleteMessage %s" % messageuid)
     return True
 
 def SendMessage(RemoteID, messagebody, PacketID=""):
@@ -201,22 +198,22 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
     when it needs to do more than X retries.
     GUI calls this to send the message.
     """
-    bpio.log(6, "message.SendMessage to: " + str(RemoteID) )
+    lg.out(6, "message.SendMessage to: " + str(RemoteID) )
     #TODO ERROR HERE (return Defer)
     if not identitycache.scheduleForCaching(RemoteID):
-        bpio.log(1, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
+        lg.out(1, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
         return
     RemoteIdentity=identitycache.FromCache(RemoteID)
     if RemoteIdentity == '':
-        bpio.log(1, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
+        lg.out(1, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
         return
     Amessage = MessageClass(RemoteIdentity, messagebody)
     MyID = misc.getLocalID()
     if PacketID == "":
         PacketID = packetid.UniqueID()
     Payload = misc.ObjectToString(Amessage)
-    bpio.log(6, "message.SendMessage  about to send to " + RemoteID)
-    result = signed_packet.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
+    lg.out(6, "message.SendMessage  about to send to " + RemoteID)
+    result = signed.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
     # transport_control.outboxAck(result)
     gate.outbox(result)
 

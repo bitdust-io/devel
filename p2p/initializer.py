@@ -53,14 +53,17 @@ try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in initializer.py')
+
 from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
 
-import lib.bpio as bpio
-import lib.automat as automat
-import lib.automats as automats
+from logs import lg
 
-import raid.raid_worker as raid_worker
+from lib import bpio
+from lib import automat
+from lib import automats
+
+from raid import raid_worker
 
 import network_connector
 import installer
@@ -69,6 +72,8 @@ import p2p_connector
 
 import init_shutdown
 import webcontrol
+
+#------------------------------------------------------------------------------ 
 
 _Initializer = None
 
@@ -234,8 +239,8 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
-        bpio.log(0, 'You must register first, run command:')
-        bpio.log(0, '   bitpie register <your name>')
+        lg.out(0, 'You must register first, run command:')
+        lg.out(0, '   bitpie register <your name>')
 
     def doDestroyMe(self, arg):
         global _Initializer

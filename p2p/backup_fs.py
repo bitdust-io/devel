@@ -44,22 +44,13 @@ import sys
 import stat
 import cStringIO
 
-try:
-    import lib.bpio as bpio
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(dirpath))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    try:
-        import lib.bpio as bpio
-    except:
-        sys.exit()
+from logs import lg
         
-import lib.misc as misc
-import lib.settings as settings        
-import lib.packetid as packetid
-# import lib.dirsize as dirsize
-import lib.contacts as contacts
+from lib import bpio        
+from lib import misc
+from lib import settings        
+from lib import packetid
+from lib import contacts
 
 #------------------------------------------------------------------------------ 
 
@@ -130,7 +121,7 @@ def init():
     """
     Some initial steps can be done here.
     """
-    bpio.log(4, 'backup_fs.init')
+    lg.out(4, 'backup_fs.init')
     # fn_index = settings.BackupIndexFileName()
     # fs()[fn_index] = settings.BackupIndexFileName()
     # fsID()[fn_index] = FSItemInfo(fn_index, fn_index, FILE)
@@ -141,7 +132,7 @@ def shutdown():
     """
     Should be called when the program is finishing.
     """
-    bpio.log(4, 'backup_fs.shutdown')
+    lg.out(4, 'backup_fs.shutdown')
 
 #------------------------------------------------------------------------------ 
 
@@ -184,7 +175,7 @@ class FSItemInfo():
             try:
                 s = os.stat(path.decode('utf-8'))
             except:
-                bpio.exception()
+                lg.exc()
                 self.size = -1
                 return
         self.size = long(s.st_size)
@@ -211,18 +202,18 @@ class FSItemInfo():
             for filename in bpio.list_dir_safe(versionpath):
                 filepath = os.path.join(versionpath, filename)
                 if not packetid.IsPacketNameCorrect(filename):
-                    bpio.log(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
+                    lg.out(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
                     continue
                 try:
                     blockNum, supplierNum, dataORparity = filename.split('-')
                     blockNum, supplierNum = int(blockNum), int(supplierNum)
                 except:
-                    bpio.log(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
+                    lg.out(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
                     continue
                 try:
                     sz = long(os.path.getsize(filepath))
                 except:
-                    bpio.exception()
+                    lg.exc()
                 # add some bytes because on remote machines all files are packets
                 # so they have a header and the files size will be bigger than on local machine
                 versionSize += sz + 1024   
@@ -818,7 +809,7 @@ def DeleteBackupID(backupID):
     if info is None:
         return False
     if not info.has_version(versionName):
-        bpio.log(4, 'backup_fs.DeleteBackupID WARNING %s do not have version %s' % (pathID, versionName))
+        lg.out(4, 'backup_fs.DeleteBackupID WARNING %s do not have version %s' % (pathID, versionName))
         return False 
     info.delete_version(versionName)
     return True
@@ -995,7 +986,7 @@ def TraverseByID(callback, iterID=None):
     """
     def recursive_traverse(i, path_id, path, cb):
         name = None
-        if path not in ['', '/', settings.BackupIndexFileName()]:
+        if path not in ['', '/']:
             path += '/'
         if isinstance(i, FSItemInfo):
             cb(path_id, path, i)
@@ -1024,7 +1015,7 @@ def TraverseByIDSorted(callback, iterID=None):
     """ 
     def recursive_traverse(i, path_id, path, cb):
         name = None
-        if path not in ['', '/', settings.BackupIndexFileName()]:
+        if path not in ['', '/']:
             path += '/'
         if i.has_key(INFO_KEY):
             name = i[INFO_KEY].name()
@@ -1082,7 +1073,7 @@ def IterateIDs(iterID=None):
         iterID = fsID()
     def recursive_iterate(i, path_id, path):
         name = None
-        if path not in ['', '/', settings.BackupIndexFileName()]:
+        if path not in ['', '/']:
             path += '/'
         if i.has_key(INFO_KEY):
             name = i[INFO_KEY].name()
@@ -1339,12 +1330,12 @@ def Calculate():
                     _FilesCount += 1
                     if i[id].exist():
                         _SizeFiles += i[id].size
-                        bpio.log(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
+                        lg.out(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
                 for version in i[id].list_versions():
                     versionSize = i[id].get_version_info(version)[1]
                     if versionSize > 0:
                         _SizeBackups += versionSize
-                        bpio.log(16, '        [version] %s : %d bytes' % (i[id].path+'/'+version, versionSize))
+                        lg.out(16, '        [version] %s : %d bytes' % (i[id].path+'/'+version, versionSize))
                 _ItemsCount += 1
             elif isinstance(i[id], dict):
                 sub_folder_size = recursive_calculate(i[id])
@@ -1358,16 +1349,16 @@ def Calculate():
                 _FilesCount += 1
                 if i[INFO_KEY].exist():
                     _SizeFiles += i[INFO_KEY].size
-                    bpio.log(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
+                    lg.out(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
             for version in i[INFO_KEY].list_versions():
                 versionSize = i[INFO_KEY].get_version_info(version)[1]
                 if versionSize > 0:
                     _SizeBackups += versionSize 
-                    bpio.log(16, '        [version] %s : %d bytes' % (i[INFO_KEY].path+'/'+version, versionSize))
+                    lg.out(16, '        [version] %s : %d bytes' % (i[INFO_KEY].path+'/'+version, versionSize))
             _ItemsCount += 1
         return folder_size
     ret = recursive_calculate(fsID())
-    bpio.log(16, 'backup_fs.Calculate %d %d %d %d' % (
+    lg.out(16, 'backup_fs.Calculate %d %d %d %d' % (
         _ItemsCount, _FilesCount, _SizeFiles, _SizeBackups))
     return ret
 
@@ -1417,7 +1408,7 @@ def Serialize(iterID=None):
     TraverseByID(cb, iterID)
     src = result.getvalue()
     result.close()
-    bpio.log(6, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
+    lg.out(6, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
     return src
 
 def Unserialize(input, iter=None, iterID=None):
@@ -1440,7 +1431,7 @@ def Unserialize(input, iter=None, iterID=None):
         else:
             raise Exception('Incorrect entry type')
         count += 1
-    bpio.log(6, 'backup_fs.Unserialize done with %d indexed files' % count)
+    lg.out(6, 'backup_fs.Unserialize done with %d indexed files' % count)
     return count
 
 #------------------------------------------------------------------------------ 

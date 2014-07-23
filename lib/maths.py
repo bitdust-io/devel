@@ -86,7 +86,7 @@ def shedule_next_daily(last_time, period_string, start_time_string):
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             import bpio
-            bpio.exception()
+            lg.exc()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
@@ -94,7 +94,7 @@ def shedule_next_daily(last_time, period_string, start_time_string):
     except:
         print 'DEBUG: next_daily1'
         import bpio
-        bpio.exception()
+        lg.exc()
         return None
     if period == 0:
         print 'DEBUG: next_daily2'
@@ -146,14 +146,14 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             import bpio
-            bpio.exception()
+            lg.exc()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         period = int(period_string)
     except:
         import bpio
-        bpio.exception()
+        lg.exc()
         return None
     if len(week_days) == 0 or period == 0:
         print 'DEBUG: next_weekly2'
@@ -213,14 +213,14 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             import bpio
-            bpio.exception()
+            lg.exc()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         day = int(day_string)
     except:
         import bpio
-        bpio.exception()
+        lg.exc()
         return None
     if len(months) == 0 or day > 31 or day < 1:
         print 'DEBUG: next_monthly2'
@@ -286,14 +286,14 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             import bpio
-            bpio.exception()
+            lg.exc()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         interval_months = int(interval_months_string)
     except:
         import bpio
-        bpio.exception()
+        lg.exc()
         return None
 
     good_dates = []

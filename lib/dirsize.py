@@ -26,6 +26,8 @@ except:
 
 from twisted.internet import threads
 
+from logs import lg
+
 import bpio
 import diskspace
 
@@ -45,7 +47,7 @@ def ask(dirpath, callback=None, arg=None):
     """
     global _Jobs
     global _Dirs
-    bpio.log(6, 'dirsize.ask %s' % dirpath)
+    lg.out(6, 'dirsize.ask %s' % dirpath)
     if _Jobs.has_key(dirpath):
         return 'counting size'
     if not os.path.isdir(dirpath):
@@ -65,14 +67,14 @@ def done(size, dirpath):
     """
     global _Dirs
     global _Jobs
-    bpio.log(6, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
+    lg.out(6, 'dirsize.done %s %s' % (str(size), dirpath.decode(),))
     _Dirs[dirpath] = str(size)
     try:
         (d, cb, arg) = _Jobs.pop(dirpath, (None, None, None))
         if cb:
             cb(dirpath, size, arg)
     except:
-        bpio.exception()
+        lg.exc()
     
 def get(dirpath, default=''):
     """

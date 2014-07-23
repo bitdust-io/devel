@@ -59,14 +59,16 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_monitor.py')
 
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.settings as settings
-import lib.contacts as contacts
-import lib.diskspace as diskspace
-import lib.automat as automat
-import lib.automats as automats
-import lib.nameurl as nameurl
+from logs import lg
+
+from lib import bpio
+from lib import misc
+from lib import settings
+from lib import contacts
+from lib import diskspace
+from lib import automat
+from lib import automats
+from lib import nameurl
 
 import backup_rebuilder
 import fire_hire
@@ -182,7 +184,7 @@ class BackupMonitor(automat.Automat):
         """
         Action method.
         """
-        bpio.log(2, "backup_monitor.doDeleteAllBackups")
+        lg.out(2, "backup_monitor.doDeleteAllBackups")
         # cancel all tasks and jobs
         backup_control.DeleteAllTasks()
         backup_control.AbortAllRunningBackups()
@@ -204,7 +206,7 @@ class BackupMonitor(automat.Automat):
         changedSupplierNums = backup_matrix.SuppliersChangedNumbers(supplierList)
         # notify io_throttle that we do not neeed already this suppliers
         for supplierNum in changedSupplierNums:
-            bpio.log(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
+            lg.out(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
                 supplierNum, nameurl.GetName(contacts.getSupplierIDs[supplierNum]), 
                 nameurl.GetName(supplierList[supplierNum])))
             io_throttle.DeleteSuppliers([contacts.getSupplierIDs[supplierNum],])
@@ -227,7 +229,7 @@ class BackupMonitor(automat.Automat):
         if backup_control.HasRunningBackup():
             # if some backups are running right now no need to rebuild something - too much use of CPU
             backup_rebuilder.RemoveAllBackupsToWork()
-            bpio.log(6, 'backup_monitor.doPrepareListBackups skip all rebuilds')
+            lg.out(6, 'backup_monitor.doPrepareListBackups skip all rebuilds')
             self.automat('list-backups-done')
             return 
         # take remote and local backups and get union from it 
@@ -240,7 +242,7 @@ class BackupMonitor(automat.Automat):
         allBackupIDs = misc.sorted_backup_ids(list(allBackupIDs), True)
         # add backups to the queue
         backup_rebuilder.AddBackupsToWork(allBackupIDs)
-        bpio.log(6, 'backup_monitor.doPrepareListBackups %d items' % len(allBackupIDs))
+        lg.out(6, 'backup_monitor.doPrepareListBackups %d items' % len(allBackupIDs))
         self.automat('list-backups-done')
 
     def doCleanUpBackups(self, arg):
@@ -250,7 +252,7 @@ class BackupMonitor(automat.Automat):
         versionsToKeep = settings.getGeneralBackupsToKeep()
         bytesUsed = backup_fs.sizebackups()/contacts.numSuppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0) 
-        bpio.log(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
+        lg.out(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
         delete_count = 0
         if versionsToKeep > 0:
             for pathID, localPath, itemInfo in backup_fs.IterateIDs():
@@ -260,7 +262,7 @@ class BackupMonitor(automat.Automat):
                 # TODO do we need to sort the list? it comes from a set, so must be sorted may be
                 while len(versions) > versionsToKeep:
                     backupID = pathID + '/' + versions.pop(0)
-                    bpio.log(6, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (len(versions), versionsToKeep, localPath, backupID))
+                    lg.out(6, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (len(versions), versionsToKeep, localPath, backupID))
                     backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                     delete_count += 1
         # we need also to fit used space into needed space (given from other users)
@@ -279,7 +281,7 @@ class BackupMonitor(automat.Automat):
                     backupID = pathID+'/'+version
                     versionInfo = itemInfo.get_version_info(version)
                     if versionInfo[1] > 0:
-                        bpio.log(6, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (
+                        lg.out(6, 'backup_monitor.doCleanUpBackups over use %d of %d, so remove %s of %s' % (
                             bytesUsed, bytesNeeded, backupID, localPath))
                         backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                         delete_count += 1
@@ -292,7 +294,7 @@ class BackupMonitor(automat.Automat):
             backup_fs.Calculate()
             backup_control.Save() 
         collected = gc.collect()
-        bpio.log(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
+        lg.out(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
 
 #------------------------------------------------------------------------------ 
 
@@ -300,7 +302,7 @@ def Restart():
     """
     Just sends a "restart" event to the state machine.
     """
-    bpio.log(4, 'backup_monitor.Restart')
+    lg.out(4, 'backup_monitor.Restart')
     A('restart')
 
 
@@ -308,7 +310,7 @@ def shutdown():
     """
     Called from high level modules to finish all things correctly.
     """
-    bpio.log(4, 'backup_monitor.shutdown')
+    lg.out(4, 'backup_monitor.shutdown')
     automat.clear_object(A().index)
 
         

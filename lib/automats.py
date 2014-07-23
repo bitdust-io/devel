@@ -22,11 +22,12 @@ try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in automats.py')
+    
 from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
 
+from logs import lg
 
-import bpio
 import automat
 
 #------------------------------------------------------------------------------
@@ -77,12 +78,12 @@ def set_global_state(st):
     global _GlobalStateNotifyFunc
     oldstate = _GlobalState
     _GlobalState = st
-    bpio.log(6, (' ' * 40) + '{%s}->{%s}' % (oldstate, _GlobalState))
+    lg.out(6, (' ' * 40) + '{%s}->{%s}' % (oldstate, _GlobalState))
     if _GlobalStateNotifyFunc is not None and oldstate != _GlobalState:
         try:
             _GlobalStateNotifyFunc(_GlobalState)
         except:
-            bpio.exception()
+            lg.exc()
 
 
 def get_global_state():
@@ -91,7 +92,7 @@ def get_global_state():
         P2P CONNECTED
     """
     global _GlobalState
-    bpio.log(6, 'automats.get_global_state return [%s]' % _GlobalState)
+    lg.out(6, 'automats.get_global_state return [%s]' % _GlobalState)
     return _GlobalState
 
 

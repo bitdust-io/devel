@@ -40,15 +40,20 @@ try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in shutdowner.py')
+
 from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
 
-import lib.bpio as bpio
-import lib.automat as automat
-import lib.automats as automats
+from logs import lg
+
+from lib import bpio
+from lib import automat
+from lib import automats
 
 import initializer
 import init_shutdown
+
+#------------------------------------------------------------------------------ 
 
 _Shutdowner = None
 
@@ -132,7 +137,7 @@ class Shutdowner(automat.Automat):
 
     def doSaveParam(self, arg):
         self.shutdown_param = arg
-        bpio.log(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
+        lg.out(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
 
     def doKillAutomats(self, arg):
         """

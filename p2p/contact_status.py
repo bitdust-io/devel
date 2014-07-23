@@ -46,31 +46,32 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in contact_status.py')
     
+from logs import lg
 
-import lib.bpio as bpio
-import lib.nameurl as nameurl
-import lib.contacts as contacts
-import lib.automat as automat
-import lib.settings as settings
-import lib.commands as commands
+from lib import bpio
+from lib import nameurl
+from lib import contacts
+from lib import automat
+from lib import settings
+from lib import commands
 
-import userid.identitycache as identitycache
-import transport.callback as callback
+from userid import identitycache
+from transport import callback
 
 import ratings
 
+#------------------------------------------------------------------------------ 
 
 _ContactsStatusDict = {}
 _ShutdownFlag = False
 
 #------------------------------------------------------------------------------ 
 
-
 def init():
     """
     Needs to be called before other methods here.
     """
-    bpio.log(4, 'contact_status.init')
+    lg.out(4, 'contact_status.init')
     callback.add_inbox_callback(Inbox)
     callback.add_outbox_callback(Outbox)
     callback.add_queue_item_status_callback(OutboxStatus)
@@ -80,7 +81,7 @@ def shutdown():
     """
     Called from top level code when the software is finishing.
     """
-    bpio.log(4, 'contact_status.shutdown')
+    lg.out(4, 'contact_status.shutdown')
     global _ShutdownFlag
     global _ContactsStatusDict
     for A in _ContactsStatusDict.values():
@@ -100,7 +101,7 @@ def isOnline(idurl):
         return False
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        bpio.log(6, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
+        lg.out(6, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'CONNECTED'
 
 
@@ -115,7 +116,7 @@ def isOffline(idurl):
         return True
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        bpio.log(6, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
+        lg.out(6, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'OFFLINE'
 
 
@@ -182,10 +183,10 @@ class ContactStatus(automat.Automat):
         self.idurl = idurl
         self.time_connected = None
         automat.Automat.__init__(self, name, state, debug_level)
-        bpio.log(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
+        lg.out(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
         
     def state_changed(self, oldstate, newstate):
-        bpio.log(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
+        lg.out(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
         
     def A(self, event, arg):
         #---CONNECTED---
@@ -254,7 +255,7 @@ class ContactStatus(automat.Automat):
             import p2p.webcontrol
             p2p.webcontrol.OnAliveStateChanged(self.idurl)
         except:
-            bpio.exception()
+            lg.exc()
         # if transport_control.GetContactAliveStateNotifierFunc() is not None:
         #     transport_control.GetContactAliveStateNotifierFunc()(self.idurl)
  
@@ -301,6 +302,6 @@ def PacketSendingTimeout(remoteID, packetID):
     Called from ``p2p.io_throttle`` when some packet is timed out.
     Right now this do nothing, state machine ignores that event.
     """
-    # bpio.log(6, 'contact_status.PacketSendingTimeout ' + remoteID)
+    # lg.out(6, 'contact_status.PacketSendingTimeout ' + remoteID)
     A(remoteID, 'sent-timeout', packetID)
 

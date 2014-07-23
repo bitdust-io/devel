@@ -24,7 +24,6 @@ import sys
 import time
 import calendar
 
-
 try:
     from twisted.internet import reactor
 except:
@@ -32,51 +31,45 @@ except:
 
 from twisted.internet.defer import Deferred
 
+from logs import lg
 
-if __name__ == '__main__':
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
-
-
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.maths as maths
-
+from lib import bpio
+from lib import misc
+from lib import maths
 
 import backup_monitor
 import webcontrol
 
+#------------------------------------------------------------------------------ 
 
 _SheduledTasks = {}
 _UsingGUI = False
 _GuiStatusClearPageData = None
 _GuiBackupUpdate = None
 
-
 #------------------------------------------------------------------------------
 
 def init(usingGui = False):
     global _UsingGUI
     _UsingGUI = usingGui
-    bpio.log(4, 'backup_schedule.init ')
+    lg.out(4, 'backup_schedule.init ')
     loop()
 
 
 def shutdown():
-    bpio.log(4, 'backup_schedule.shutdown ')
+    lg.out(4, 'backup_schedule.shutdown ')
     global _SheduledTasks
     for dirName, task in _SheduledTasks.items():
         try:
             task.cancel()
         except:
-            bpio.log(1, 'backup_schedule.shutdown ERROR can not stop task for ' + str(dirName))
-            bpio.exception()
-        bpio.log(4, 'backup_schedule.shutdown canceled: ' + str(dirName))
+            lg.out(1, 'backup_schedule.shutdown ERROR can not stop task for ' + str(dirName))
+            lg.exc()
+        lg.out(4, 'backup_schedule.shutdown canceled: ' + str(dirName))
 
 
 def loop():
-    bpio.log(8, 'backup_schedule.loop ')
+    lg.out(8, 'backup_schedule.loop ')
     #debugWrite("in loop about to run at "+str(time.asctime(time.localtime(time.time()))))
     # run()
     #debugWrite("in loop finished run, setting callLater")
@@ -91,17 +84,17 @@ def timeout():
 #def run():
 #    global _SheduledTasks
 #    try:
-#        bpio.log(8, 'backup_schedule.run ')
+#        lg.out(8, 'backup_schedule.run ')
 #        for dirName in backup_db.GetBackupDirectories():
-#            bpio.log(8, 'backup_schedule.run %s' % dirName)
+#            lg.out(8, 'backup_schedule.run %s' % dirName)
 #            if backup_db.IsBackupRunning(dirName):
-#                bpio.log(8, 'backup_schedule.run %s is running at the moment, skip.' % dirName)
+#                lg.out(8, 'backup_schedule.run %s is running at the moment, skip.' % dirName)
 #                continue
 #
 #            next_start = next(dirName)
 #
 #            if next_start is None:
-#                # bpio.log(8, '  backup_schedule.run next_start is None')
+#                # lg.out(8, '  backup_schedule.run next_start is None')
 #                continue
 #
 #            if next_start < 0:
@@ -109,28 +102,28 @@ def timeout():
 #
 #            now = time.time()
 #            delay = next_start - now
-#            bpio.log(8, '  backup_schedule.run delay=%s next_start=[%s]' % (str(delay), str(time.asctime(time.localtime(next_start)))))
+#            lg.out(8, '  backup_schedule.run delay=%s next_start=[%s]' % (str(delay), str(time.asctime(time.localtime(next_start)))))
 #            if delay > 0 and delay < timeout():
 #                if _SheduledTasks.has_key(unicode(dirName)):
-#                    bpio.log(8, 'backup_schedule.run cancel previous task')
+#                    lg.out(8, 'backup_schedule.run cancel previous task')
 #                    try:
 #                        _SheduledTasks[unicode(dirName)].cancel()
 #                    except:
 #                        pass # may have already run or already been cancelled, nothing to cancel
 #                    del _SheduledTasks[unicode(dirName)]
 #                _SheduledTasks[unicode(dirName)] = reactor.callLater(delay, start_backup, dirName)
-#                # bpio.log(8, '  backup_schedule.run will start after %s seconds' % (str(delay)))
-#                # bpio.log(8, '  backup_schedule.run getTime()=' + str(_SheduledTasks[unicode(dirName)].getTime()))
+#                # lg.out(8, '  backup_schedule.run will start after %s seconds' % (str(delay)))
+#                # lg.out(8, '  backup_schedule.run getTime()=' + str(_SheduledTasks[unicode(dirName)].getTime()))
 #
 #    except:
-#        bpio.exception()
+#        lg.exc()
 
 
 #def start_backup(dirName):
 #    global _SheduledTasks
 #    if _SheduledTasks.has_key(unicode(dirName)): # we're running now, no longer need the schedule
 #        del _SheduledTasks[unicode(dirName)]
-#    bpio.log(6, 'backup_schedule.start_backup ' + str(dirName))
+#    lg.out(6, 'backup_schedule.start_backup ' + str(dirName))
 #
 #    if not backup_db.CheckDirectory(dirName):
 #        return
@@ -151,7 +144,7 @@ def timeout():
 
 
 #def backup_done(backupID):
-#    bpio.log(4, 'backup_schedule.backup_done ' + str(backupID))
+#    lg.out(4, 'backup_schedule.backup_done ' + str(backupID))
 #
 #    global _UsingGUI
 #    global _GuiBackupUpdate
@@ -167,7 +160,7 @@ def timeout():
 #
 #    backupDir = backup_db.GetDirectoryFromBackupId(backupID)
 #    if backupDir == "" or backupDir is None:
-#        bpio.log(6, 'backup_schedule.backup_done  can not find %s  it in database' % backupID)
+#        lg.out(6, 'backup_schedule.backup_done  can not find %s  it in database' % backupID)
 #        return
 #
 #    if aborted:
@@ -190,7 +183,7 @@ def timeout():
 
 
 #def backup_fail(backupID):
-#    bpio.log(4, 'backup_schedule.backup_fail ' + str(backupID))
+#    lg.out(4, 'backup_schedule.backup_fail ' + str(backupID))
 #    global _UsingGUI
 #    global _GuiBackupUpdate
 #    global _GuiStatusClearPageData
@@ -199,7 +192,7 @@ def timeout():
 #
 #    backupDir = backup_db.GetDirectoryFromBackupId(backupID)
 #    if backupDir == "" or backupDir is None:
-#        bpio.log(6, 'backup_schedule.backup_fail  can not find %s  it in database' % str(backupID))
+#        lg.out(6, 'backup_schedule.backup_fail  can not find %s  it in database' % str(backupID))
 #        return
 #
 #    backup_db.SetBackupStatus(backupDir, backupID, "failed", "")
@@ -226,8 +219,8 @@ def next(dirName):
     if schedule is None:
         return None
 
-#    bpio.log(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
-#    bpio.log(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
+#    lg.out(8, 'backup_schedule.next dirName=%s type=%s, time=%s, interval=%s, details=%s' % (str(dirName), schedule_type, schedule_time, schedule_interval, interval_details))
+#    lg.out(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
 
     return schedule.next_time()
     
@@ -282,7 +275,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
         debugFile.write(debugtext+"\r\n")
         debugFile.close()
     else:
-        bpio.log(8, debugtext)
+        lg.out(8, debugtext)
 
 
 #def types(k=None):
@@ -352,22 +345,22 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #            sh_interval = int(sh_interval)
 #            time.strptime(sh_time, '%H:%M')
 #    except:
-#        bpio.log(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
-#        bpio.exception()
+#        lg.out(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
+#        lg.exc()
 #        return None
 #    if sh_type in labels().keys():
 #        sh_type = labels()[sh_type]
 #    if sh_type not in labels().values():
-#        bpio.log(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
+#        lg.out(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
 #        return None
 #    sh_details_new = ''
 #    for i in range(len(sh_details)/3):
 #        label = sh_details[i*3:i*3+3]
 #        if sh_type == 'weekly' and not label in calendar.day_abbr:
-#            bpio.log(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
+#            lg.out(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
 #            return None
 #        if sh_type == 'monthly' and not label in calendar.month_abbr:
-#            bpio.log(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
+#            lg.out(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
 #            return None
 #        sh_details_new += label + ' '
 #    return {'type': sh_type,
@@ -381,7 +374,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #    if typ in types().keys():
 #        typ = types()[typ]
 #    if typ not in types().values():
-#        bpio.log(2, 'backup_schedule.split WARNING incorrect shedule '+str(t))
+#        lg.out(2, 'backup_schedule.split WARNING incorrect shedule '+str(t))
 #        return default()
 #    return {
 #        'type':         typ,
@@ -405,7 +398,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 
 
 if __name__ == '__main__':
-    bpio.SetDebug(12)
+    lg.set_debug_level(12)
     # main()
 
 

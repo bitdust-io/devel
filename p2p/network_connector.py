@@ -54,24 +54,25 @@ from twisted.internet.defer import Deferred, DeferredList
 from twisted.internet.task import LoopingCall
 from twisted.internet import threads
 
+from logs import lg
+
 from lib.automat import Automat
-import lib.automats as automats
-import lib.bpio as bpio
-import lib.net_misc as net_misc
-import lib.settings as settings
-import lib.misc as misc
+from lib import automats
+from lib import bpio
+from lib import net_misc
+from lib import settings
+from lib import misc
 
-import transport.gate as gate
-import dht.dht_service as dht_service
-import lib.udp as udp
-import stun.stun_server as stun_server
-import stun.stun_client as stun_client
+from transport import gate
+from dht import dht_service
+from lib import udp
+from stun import stun_server
+from stun import stun_client
 
-import userid.id_server as id_server
+from userid import id_server
 
 import p2p_connector
 import shutdowner
-
 import tray_icon
 import run_upnpc
 
@@ -210,7 +211,7 @@ class NetworkConnector(Automat):
 #        # more success than failed - connection is not failed for sure
 #        if _CounterSuccessConnections > _CounterFailedConnections:
 #            return True
-#        bpio.log(6, 'network_connector.isConnectionAlive    %d/%d' % (_CounterSuccessConnections, _CounterFailedConnections) )
+#        lg.out(6, 'network_connector.isConnectionAlive    %d/%d' % (_CounterSuccessConnections, _CounterFailedConnections) )
 #        return False
 
     def isNetworkActive(self, arg):
@@ -224,7 +225,7 @@ class NetworkConnector(Automat):
         return time.time() - self.last_reconnect_time < 15
 
     def doSetUp(self, arg):
-        bpio.log(6, 'network_connector.doSetUp')
+        lg.out(6, 'network_connector.doSetUp')
         # net_misc.SetConnectionDoneCallbackFunc(ConnectionDoneCallback)
         # net_misc.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
         dhtudp_port = int(settings.getDHTUDPPort())
@@ -241,7 +242,7 @@ class NetworkConnector(Automat):
     def doSetDown(self, arg):
         """
         """
-        bpio.log(6, 'network_connector.doSetDown')
+        lg.out(6, 'network_connector.doSetDown')
         shutlist = []
         dhtudp_port = int(settings.getDHTUDPPort())
         # d_udp = udp.close_all() # (dhtudp_port)
@@ -267,13 +268,13 @@ class NetworkConnector(Automat):
         """
         Action method.
         """
-        bpio.log(4, 'network_connector.doPingGoogleDotCom')
+        lg.out(4, 'network_connector.doPingGoogleDotCom')
         net_misc.TestInternetConnection().addCallbacks(
             lambda x: self.automat('internet-success', 'connected'), 
             lambda x: self.automat('internet-failed', 'disconnected'))
             
     def doCheckNetworkInterfaces(self, arg):
-        bpio.log(4, 'network_connector.doCheckNetworkInterfaces')
+        lg.out(4, 'network_connector.doCheckNetworkInterfaces')
         # TODO
         # self.automat('got-network-info', [])
         start_time = time.time()
@@ -281,13 +282,13 @@ class NetworkConnector(Automat):
             def _call():
                 return net_misc.getNetworkInterfaces()
             def _done(result, start_time):
-                bpio.log(4, 'network_connector.doCheckNetworkInterfaces._done: %s in %d seconds' % (str(result), time.time()- start_time))
+                lg.out(4, 'network_connector.doCheckNetworkInterfaces._done: %s in %d seconds' % (str(result), time.time()- start_time))
                 self.automat('got-network-info', result)
             d = threads.deferToThread(_call)
             d.addBoth(_done, start_time)
         else:
             ips = net_misc.getNetworkInterfaces()
-            bpio.log(4, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time()- start_time))
+            lg.out(4, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time()- start_time))
             self.automat('got-network-info', ips)
 
     def doRememberTime(self, arg):
@@ -301,7 +302,7 @@ def UpdateUPNP():
     Use ``lib.run_upnpc`` to configure UPnP device to create a port forwarding.
     """
     #global _UpnpResult
-    bpio.log(8, 'network_connector.UpdateUPNP ')
+    lg.out(8, 'network_connector.UpdateUPNP ')
 
 #    protos_need_upnp = set(['tcp', 'ssh', 'http'])
     protos_need_upnp = set(['tcp',])
@@ -316,10 +317,10 @@ def UpdateUPNP():
 
     def _update_next_proto():
         if len(protos_need_upnp) == 0:
-            #bpio.log(4, 'network_connector.update_upnp done: ' + str(_UpnpResult))
+            #out(4, 'network_connector.update_upnp done: ' + str(_UpnpResult))
             A('upnp-done')
             return
-        bpio.log(14, 'network_connector.UpdateUPNP._update_next_proto ' + str(protos_need_upnp))
+        lg.out(14, 'network_connector.UpdateUPNP._update_next_proto ' + str(protos_need_upnp))
         proto = protos_need_upnp.pop()
         protos_need_upnp.add(proto)
         if proto == 'tcp':
@@ -341,7 +342,7 @@ def UpdateUPNP():
         return (success, port)
 
     def _upnp_proto_done(result, proto):
-        bpio.log(4, 'network_connector.UpdateUPNP._upnp_proto_done %s: %s' % (proto, str(result)))
+        lg.out(4, 'network_connector.UpdateUPNP._upnp_proto_done %s: %s' % (proto, str(result)))
         #_UpnpResult[proto] = result[0]
         #if _UpnpResult[proto] == 'upnp-done':
         if result[0] == 'upnp-done':

@@ -34,28 +34,31 @@ from twisted.web.server import NOT_DONE_YET
 
 #-------------------------------------------------------------------------------
 
-import lib.misc as misc
-import lib.bpio as bpio
-import lib.net_misc as net_misc
-import lib.settings as settings
-import lib.diskspace as diskspace
-import lib.dirsize as dirsize
-import lib.diskusage as diskusage
-import lib.commands as commands
-import lib.contacts as contacts
-import lib.nameurl as nameurl
-import lib.crypto as crypto
-import lib.schedule as schedule
-import lib.automat as automat
-import lib.webtraffic as webtraffic
-import lib.packetid as packetid
+from logs import lg
+from logs import webtraffic
 
-import transport.stats as stats
-import transport.callback as callback
-import transport.packet_out as packet_out
+from lib import bpio
+from lib import misc
+from lib import net_misc
+from lib import settings
+from lib import diskspace
+from lib import dirsize
+from lib import diskusage
+from lib import commands
+from lib import contacts
+from lib import nameurl
+from lib import schedule
+from lib import automat
+from lib import packetid
 
-import userid.id_restorer as id_restorer
-import userid.propagate as propagate
+from transport import stats
+from transport import callback
+from transport import packet_out
+
+from userid import id_restorer
+from userid import propagate
+
+from crypto import key
 
 import initializer
 import shutdowner
@@ -234,11 +237,11 @@ _CentralStatusColors = {
 
 def init(port = 6001):
     global myweblistener
-    bpio.log(2, 'webcontrol.init ')
+    lg.out(2, 'webcontrol.init ')
 
     if myweblistener:
         global local_port
-        bpio.log(2, 'webcontrol.init SKIP, already started on port ' + str(local_port))
+        lg.out(2, 'webcontrol.init SKIP, already started on port ' + str(local_port))
         return succeed(local_port)
 
     events.init(SendCommandToGUI)
@@ -256,7 +259,7 @@ def init(port = 6001):
     def version():
         global local_version
         global revision_number
-        bpio.log(6, 'webcontrol.init.version')
+        lg.out(6, 'webcontrol.init.version')
         if bpio.Windows() and bpio.isFrozen():
             local_version = bpio.ReadBinaryFile(settings.VersionFile())
         else:
@@ -266,7 +269,7 @@ def init(port = 6001):
     def html():
         global root_page_src
         global centered_page_src
-        bpio.log(6, 'webcontrol.init.html')
+        lg.out(6, 'webcontrol.init.html')
 
         root_page_src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
@@ -302,7 +305,7 @@ def init(port = 6001):
         InitSettingsTreePages()
 
     def site():
-        bpio.log(6, 'webcontrol.init.site')
+        lg.out(6, 'webcontrol.init.site')
         root = resource.Resource()
         root.putChild(_PAGE_STARTING, StartingPage())
         root.putChild(_PAGE_ROOT, RootPage())
@@ -350,18 +353,18 @@ def init(port = 6001):
         global local_port
         local_port = int(x)
         bpio.WriteFile(settings.LocalPortFilename(), str(local_port))
-        bpio.log(4, 'webcontrol.init.done local server started on port %d' % local_port)
+        lg.out(4, 'webcontrol.init.done local server started on port %d' % local_port)
 
     def start_listener(site):
-        bpio.log(6, 'webcontrol.start_listener')
+        lg.out(6, 'webcontrol.start_listener')
         def _try(site, result):
             global myweblistener
             port = random.randint(6001, 6999)
-            bpio.log(4, 'webcontrol.init.start_listener._try port=%d' % port)
+            lg.out(4, 'webcontrol.init.start_listener._try port=%d' % port)
             try:
                 l = reactor.listenTCP(port, site)
             except:
-                bpio.log(4, 'webcontrol.init.start_listener._try it seems port %d is busy' % port)
+                lg.out(4, 'webcontrol.init.start_listener._try it seems port %d is busy' % port)
                 l = None
             if l is not None:
                 myweblistener = l
@@ -374,7 +377,7 @@ def init(port = 6001):
         return result
 
     def run(site):
-        bpio.log(6, 'webcontrol.init.run')
+        lg.out(6, 'webcontrol.init.run')
         d = start_listener(site)
         d.addCallback(done)
         return d
@@ -389,20 +392,20 @@ def init(port = 6001):
 def show(x=None):
     global local_port
     if bpio.Linux() and not bpio.X11_is_running():
-        bpio.log(0, 'X11 is not running, can not start BitPie.NET GUI')
+        lg.out(0, 'X11 is not running, can not start BitPie.NET GUI')
         return
     if local_port == 0:
         try:
             local_port = int(bpio.ReadBinaryFile(settings.LocalPortFilename()))
         except:
             pass
-    bpio.log(2, 'webcontrol.show local port is %s' % str(local_port))
+    lg.out(2, 'webcontrol.show local port is %s' % str(local_port))
     if not local_port:
-        bpio.log(4, 'webcontrol.show ERROR can not read local port number')
+        lg.out(4, 'webcontrol.show ERROR can not read local port number')
         return
     appList = bpio.find_process(['bpgui.', ])
     if len(appList):
-        bpio.log(2, 'webcontrol.show SKIP, we found another bpgui process running at the moment, pid=%s' % appList)
+        lg.out(2, 'webcontrol.show SKIP, we found another bpgui process running at the moment, pid=%s' % appList)
         SendCommandToGUI('raise')
         return
     try:
@@ -416,38 +419,38 @@ def show(x=None):
         else:
             pid = os.fork()
             if pid == 0:
-                if bpio.Debug(30):
+                if lg.is_debug(30):
                     os.execlp('python', 'python', 'bpgui.py', 'logs')
                 else:
                     os.execlp('python', 'python', 'bpgui.py',)
     except:
-        bpio.exception()
+        lg.exc()
 
 
 def ready(state=True):
     global init_done
     init_done = state
-    bpio.log(4, 'webcontrol.ready is ' + str(init_done))
+    lg.out(4, 'webcontrol.ready is ' + str(init_done))
 
 
 def kill():
-    bpio.log(2, 'webcontrol.kill')
+    lg.out(2, 'webcontrol.kill')
     total_count = 0
     while True:
         count = 0
-        bpio.log(2, 'webcontrol.kill do search for "bpgui." in the processes list')
+        lg.out(2, 'webcontrol.kill do search for "bpgui." in the processes list')
         appList = bpio.find_process(['bpgui.', ])
         for pid in appList:
             count += 1
-            bpio.log(2, 'webcontrol.kill want to stop pid %d' % pid)
+            lg.out(2, 'webcontrol.kill want to stop pid %d' % pid)
             bpio.kill_process(pid)
         if len(appList) == 0:
-            bpio.log(2, 'webcontrol.kill no more "bpgui." processes found')
+            lg.out(2, 'webcontrol.kill no more "bpgui." processes found')
             return 0
         total_count += 1
         if total_count > 3:
-            bpio.log(2, 'webcontrol.kill ERROR: some "bpgui." processes found, but can not stop it')
-            bpio.log(2, 'webcontrol.kill may be we do not have permissions to stop them?')
+            lg.out(2, 'webcontrol.kill ERROR: some "bpgui." processes found, but can not stop it')
+            lg.out(2, 'webcontrol.kill may be we do not have permissions to stop them?')
             return 1
         time.sleep(1)
     return 1
@@ -455,10 +458,10 @@ def kill():
 
 def shutdown():
     global myweblistener
-    bpio.log(2, 'webcontrol.shutdown')
+    lg.out(2, 'webcontrol.shutdown')
     result = Deferred()
     def _kill(x, reslt):
-        bpio.log(2, 'webcontrol.shutdown._kill')
+        lg.out(2, 'webcontrol.shutdown._kill')
         res = kill()
         result.callback(res)
         return res
@@ -582,13 +585,13 @@ def html_from_dict(request, d):
     else:
         d['reload_tag'] = ''
     if not d.has_key('debug'):
-        if bpio.Debug(24):
+        if lg.is_debug(24):
             d['debug'] = '<br><br><br>request.args: '+str(request.args) + '\n<br>\n'
             d['debug'] += 'request.path: ' + str(request.path) + '<br>\n'
             d['debug'] += 'request.getClientIP: ' + str(request.getClientIP()) + '<br>\n'
             d['debug'] += 'request.getHost: ' + str(request.getHost()) + '<br>\n'
             d['debug'] += 'request.getRequestHostname: ' + str(request.getRequestHostname()) + '<br>\n'
-            if bpio.Debug(30):
+            if lg.is_debug(30):
                 d['debug'] += 'sys.modules:<br><pre>%s</pre><br>\n'+pprint.pformat(sys.modules) + '<br>\n'
         else:
             d['debug'] = ''
@@ -650,7 +653,7 @@ def html_comment(text):
 
 def SetReadOnlyState(state):
     global read_only_state
-    bpio.log(12, 'webcontrol.SetReadOnlyState ' + str(state))
+    lg.out(12, 'webcontrol.SetReadOnlyState ' + str(state))
     read_only_state = not state
 
 def ReadOnly():
@@ -662,7 +665,7 @@ def GetGlobalState():
     return 'unknown'
 
 def check_install():
-    return misc.isLocalIdentityReady() and crypto.isMyLocalKeyReady()
+    return misc.isLocalIdentityReady() and key.isMyLocalKeyReady()
 
 #------------------------------------------------------------------------------
 
@@ -677,14 +680,14 @@ def OnSingleStateChanged(index, id, name, new_state):
     SendCommandToGUI('automat %s %s %s %s' % (str(index), id, name, new_state))
 
 def OnGlobalVersionReceived(txt):
-    bpio.log(4, 'webcontrol.OnGlobalVersionReceived ' + txt)
+    lg.out(4, 'webcontrol.OnGlobalVersionReceived ' + txt)
     global global_version
     global local_version
     if txt == 'failed':
         return
     global_version = txt
-    bpio.log(6, '  global:' + str(global_version))
-    bpio.log(6, '  local :' + str(local_version))
+    lg.out(6, '  global:' + str(global_version))
+    lg.out(6, '  local :' + str(local_version))
     SendCommandToGUI('version: ' + str(global_version) + ' ' + str(local_version))
 
 def OnAliveStateChanged(idurl):
@@ -738,7 +741,7 @@ def OnBackupProcess(backupID, packet=None):
         SendCommandToGUI('update')
 
 def OnRestoreProcess(backupID, SupplierNumber, packet):
-    #bpio.log(18, 'webcontrol.OnRestorePacket %s %s' % (backupID, SupplierNumber))
+    #out(18, 'webcontrol.OnRestorePacket %s %s' % (backupID, SupplierNumber))
     if currentVisiblePageName() in [ _PAGE_BACKUP,
                                      _PAGE_BACKUP_DIAGRAM,
                                      _PAGE_BACKUP_LOCAL_FILES,
@@ -755,7 +758,7 @@ def OnRestoreSingleBlock(backupID, block):
             SendCommandToGUI('update')
 
 def OnRestoreDone(backupID, result):
-    #bpio.log(18, 'webcontrol.OnRestoreDone ' + backupID)
+    #out(18, 'webcontrol.OnRestoreDone ' + backupID)
     if currentVisiblePageName() in [ _PAGE_BACKUP,
                                      _PAGE_BACKUP_DIAGRAM,
                                      _PAGE_BACKUP_LOCAL_FILES,
@@ -771,7 +774,7 @@ def OnListSuppliers():
         SendCommandToGUI('update')
 
 def OnListCustomers():
-    #bpio.log(18, 'webcontrol.OnListCustomers ')
+    #out(18, 'webcontrol.OnListCustomers ')
     if currentVisiblePageName() == _PAGE_CUSTOMERS:
         SendCommandToGUI('update')
         
@@ -781,7 +784,7 @@ def OnListCustomers():
         
 # msg is (sender, to, subject, dt, body)
 def OnIncommingMessage(packet, msg):
-    bpio.log(6, 'webcontrol.OnIncommingMessage')
+    lg.out(6, 'webcontrol.OnIncommingMessage')
 
 def OnTrafficIn(newpacket, info, status, message):
     if message:
@@ -876,18 +879,18 @@ def OnTrayIconCommand(cmd):
         SendCommandToGUI('toolbar')
 
     else:
-        bpio.log(2, 'webcontrol.OnTrayIconCommand WARNING: ' + str(cmd))
+        lg.out(2, 'webcontrol.OnTrayIconCommand WARNING: ' + str(cmd))
 
 #def OnInstallMessage(txt):
 #    global installing_process_str
-#    bpio.log(6, 'webcontrol.OnInstallMessage %s' % txt)
+#    lg.out(6, 'webcontrol.OnInstallMessage %s' % txt)
 #    installing_process_str += txt + '\n'
 #    #installing_process_str = txt
 #    if currentVisiblePageName() == _PAGE_INSTALL:
 #        SendCommandToGUI('update')
 
 def OnUpdateInstallPage():
-    bpio.log(6, 'webcontrol.OnUpdateInstallPage')
+    lg.out(6, 'webcontrol.OnUpdateInstallPage')
     if currentVisiblePageName() in [_PAGE_INSTALL,]:
         SendCommandToGUI('open /'+_PAGE_INSTALL)
 
@@ -916,12 +919,12 @@ def OnReadLocalFiles():
 def SendCommandToGUI(cmd):
     global _GUICommandCallbacks
     if isinstance(cmd, unicode):
-        bpio.log(2, 'SendCommandToGUI WARNING cmd is unicode' + str(cmd))
+        lg.out(2, 'SendCommandToGUI WARNING cmd is unicode' + str(cmd))
     try:
         for f in _GUICommandCallbacks:
             f(str(cmd))
     except:
-        bpio.exception()
+        lg.exc()
         return False
     return True
 
@@ -935,7 +938,7 @@ class LocalHTTPChannel(http.HTTPChannel):
     def lineReceived(self, line):
         global _GUICommandCallbacks
         if line.strip().upper() == 'BITPIE-VIEW-REQUEST':
-            bpio.log(2, 'GUI: view request received from ' + str(self.transport.getHost()))
+            lg.out(2, 'GUI: view request received from ' + str(self.transport.getHost()))
             self.controlState = True
             _GUICommandCallbacks.append(self.send)
             SendCommandToGUI('BITPIE-SERVER:' + GetGlobalState())
@@ -953,7 +956,7 @@ class LocalHTTPChannel(http.HTTPChannel):
             try:
                 _GUICommandCallbacks.remove(self.send)
             except:
-                bpio.exception()
+                lg.exc()
             if not check_install() or GetGlobalState().lower().startswith('install'):
                 reactor.callLater(0, shutdowner.A, 'ready')
                 reactor.callLater(1, shutdowner.A, 'stop', 'exit')
@@ -964,13 +967,13 @@ class LocalSite(server.Site):
 
     def buildProtocol(self, addr):
         # if addr.host != '127.0.0.1':
-        #     bpio.log(2, 'webcontrol.LocalSite.buildProtocol WARNING NETERROR connection from ' + str(addr))
+        #     lg.out(2, 'webcontrol.LocalSite.buildProtocol WARNING NETERROR connection from ' + str(addr))
         #     return None
         try:
             res = server.Site.buildProtocol(self, addr)
         except:
             res = None
-            bpio.exception()
+            lg.exc()
         return res
 
 #------------------------------------------------------------------------------ 
@@ -994,7 +997,7 @@ class Page(resource.Resource):
         global url_history
         global pagename_history
 
-        # bpio.log(14, 'webcontrol.Page.render request=%s current_pagename=%s current_url=%s' % (request.path, current_pagename, current_url))
+        # lg.out(14, 'webcontrol.Page.render request=%s current_pagename=%s current_url=%s' % (request.path, current_pagename, current_url))
         
         if self.pagename in [_PAGE_MONITOR_TRANSPORTS, _PAGE_TRAFFIC]:
             return self.renderPage(request)
@@ -1024,7 +1027,7 @@ class Page(resource.Resource):
         current_pagename = self.pagename
 
         if arg(request, 'action') == 'exit': #  and not bpupdate.is_running():
-            bpio.log(2, 'webcontrol.Page.render action is [exit]')
+            lg.out(2, 'webcontrol.Page.render action is [exit]')
             reactor.callLater(0, shutdowner.A, 'stop', 'exit')
             d = {}
             d['body'] = ('<br>' * 10) + '\n<h1>Good Luck!<br><br>See you</h1>\n'
@@ -1033,13 +1036,13 @@ class Page(resource.Resource):
             return NOT_DONE_YET
 
         elif arg(request, 'action') == 'restart': #  and not bpupdate.is_running():
-            bpio.log(2, 'webcontrol.Page.render action is [restart]')
+            lg.out(2, 'webcontrol.Page.render action is [restart]')
             appList = bpio.find_process(['bpgui.',])
             if len(appList) > 0:
-                bpio.log(2, 'webcontrol.Page.render found bpgui process, add param "show"')
+                lg.out(2, 'webcontrol.Page.render found bpgui process, add param "show"')
                 reactor.callLater(0, shutdowner.A, 'stop', 'restartnshow') # ('restart', 'show'))
             else:
-                bpio.log(2, 'webcontrol.Page.render did not found bpgui process')
+                lg.out(2, 'webcontrol.Page.render did not found bpgui process')
                 reactor.callLater(0, shutdowner.A, 'stop', 'restart')
             d = {}
             d['body'] = ('<br>' * 10) + '\n<h1>Restarting BitPie.NET</h1>\n'
@@ -1064,7 +1067,7 @@ class Page(resource.Resource):
             # typically we should not fall in this situation
             # because all local initializations should be done very fast
             # we will open the web browser only AFTER init_shutdown was finished
-            bpio.log(4, 'webcontrol.Page.render will show "Please wait" page')
+            lg.out(4, 'webcontrol.Page.render will show "Please wait" page')
             d = {}
             d['reload'] = '1'
             d['body'] = '<h1>Please wait ...</h1>'
@@ -1077,7 +1080,7 @@ class Page(resource.Resource):
             # page requested is not the install page
             # we do not need this in that moment because bpmain is not installed
             if self.pagename not in [_PAGE_INSTALL, _PAGE_INSTALL_NETWORK_SETTINGS]:
-                bpio.log(4, 'webcontrol.Page.render redirect to the page %s' % _PAGE_INSTALL)
+                lg.out(4, 'webcontrol.Page.render redirect to the page %s' % _PAGE_INSTALL)
                 request.redirect('/'+_PAGE_INSTALL)
                 request.finish()
                 return NOT_DONE_YET
@@ -1094,7 +1097,7 @@ class Page(resource.Resource):
             exc_src += '<table width="400px"><tr><td>\n'
             exc_src += '<div align=left>\n'
             exc_src += '<code>\n'
-            e = bpio.formatExceptionInfo()
+            e = lg.format_exception()
             e = e.replace(' ', '&nbsp;').replace("'", '"')
             e = e.replace('<', '[').replace('>', ']').replace('\n', '<br>\n')
             exc_src += e
@@ -1104,12 +1107,12 @@ class Page(resource.Resource):
             request.write(s)
             request.finish()
             ret = NOT_DONE_YET
-            bpio.exception()
+            lg.exc()
 
         return ret
 
     def renderPage(self, request):
-        bpio.log(4, 'webcontrol.Page.renderPage WARNING base page requested, but should not !')
+        lg.out(4, 'webcontrol.Page.renderPage WARNING base page requested, but should not !')
         return html(request, body='ERROR!')
 
     def created(self):
@@ -1349,7 +1352,7 @@ class InstallPage(Page):
         try:
             message, messageColor = installer.A().getOutput('INPUT_NAME').get('data', [('', '')])[-1]
         except:
-            bpio.exception()
+            lg.exc()
             message = messageColor = ''
         src = ''
         src += '<h1>enter your preferred username</h1>\n'
@@ -1396,7 +1399,7 @@ class InstallPage(Page):
             elif action == 'back':
                 installer.A('back')
             else:
-                bpio.log(2, 'webcontrol.InstallPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.InstallPage WARNING incorrect action: %s' % action)
         return result
 
     def renderRestorePage(self, request):
@@ -1493,7 +1496,7 @@ class InstallPage(Page):
             elif action == 'restore-start':
                 installer.A(action, { 'idurl': self.idurl, 'keysrc': self.keysrc } )
             else:
-                bpio.log(2, 'webcontrol.InstallPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.InstallPage WARNING incorrect action: %s' % action)
         return result
 
     def renderWizardPage(self, request):
@@ -1572,7 +1575,7 @@ class InstallPage(Page):
                 self.role = 5
                 install_wizard.A('select-try-it')
             else:
-                bpio.log(2, 'webcontrol.renderWizardSelectRolePage WARNING incorrect args: %s' % str(request.args))
+                lg.out(2, 'webcontrol.renderWizardSelectRolePage WARNING incorrect args: %s' % str(request.args))
         return result
 
     def renderWizardJustTryItPage(self, request):
@@ -1602,7 +1605,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                bpio.log(2, 'webcontrol.renderWizardJustTryItPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.renderWizardJustTryItPage WARNING incorrect action: %s' % action)
         return result
 
     def renderWizardBetaTestPage(self, request):
@@ -1648,7 +1651,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                bpio.log(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
         return result
 
     def renderWizardDonatorPage(self, request):
@@ -1678,7 +1681,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                bpio.log(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
         return result
 
     def renderWizardFREEBackupsPage(self, request):
@@ -1711,7 +1714,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                bpio.log(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
         return result
 
     def renderWizardMostSecurePage(self, request):
@@ -1744,7 +1747,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                bpio.log(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
         return result
 
     def renderWizardStoragePage(self, request):
@@ -1917,7 +1920,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                bpio.log(2, 'webcontrol.renderWizardStoragePage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.renderWizardStoragePage WARNING incorrect action: %s' % action)
         return result
 
     def renderWizardContactsPage(self, request):
@@ -1966,7 +1969,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                bpio.log(2, 'webcontrol.renderWizardContactsPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.renderWizardContactsPage WARNING incorrect action: %s' % action)
         return result
 
 #    def renderWizardUpdatesPage(self, request):
@@ -2018,7 +2021,7 @@ class InstallPage(Page):
 #            elif action == 'back':
 #                install_wizard.A('back')
 #            else:
-#                bpio.log(2, 'webcontrol.renderWizardUpdatesPage WARNING incorrect action: %s' % action)
+#                lg.out(2, 'webcontrol.renderWizardUpdatesPage WARNING incorrect action: %s' % action)
 #        return result
 
     def renderLastPage(self, request):
@@ -2039,7 +2042,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                bpio.log(2, 'webcontrol.renderLastPage WARNING incorrect action: %s' % action)
+                lg.out(2, 'webcontrol.renderLastPage WARNING incorrect action: %s' % action)
         return result
         
 
@@ -2052,7 +2055,7 @@ class InstallNetworkSettingsPage(Page):
         host = arg(request, 'host', settings.getProxyHost())
         port = arg(request, 'port', settings.getProxyPort())
         upnpenable = arg(request, 'upnpenable', '')
-        # bpio.log(6, 'webcontrol.InstallNetworkSettingsPage.renderPage back=[%s]' % back)
+        # lg.out(6, 'webcontrol.InstallNetworkSettingsPage.renderPage back=[%s]' % back)
         if action == 'set':
             settings.enableUPNP(upnpenable.lower()=='true')
             d = {'host': host.strip(), 'port': port.strip()}
@@ -2926,7 +2929,7 @@ class MainPage(Page):
             src = ''
             src += html_comment('  %s %s %s' % ('[path ID]'.ljust(27), '[local path / version]'.ljust(70), '[size]'))
             for pathID, localPath, item in backup_fs.IterateIDs():
-                sz = diskspace.MakeStringFromBytes(item.size) if item.exist() else 'not exist' 
+                sz = diskspace.MakeStringFromBytes(item.size) if item.exist() else '' 
                 src += html_comment('  %s %s %s' % (pathID.ljust(27), localPath.ljust(70), sz.ljust(9)))
                 for version, vinfo in item.get_versions().items():
                     if vinfo[1] >= 0:
@@ -3741,7 +3744,7 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
             import ImageFont
             import cStringIO
         except:
-            #  bpio.exception()
+            #  lg.exc()
             # 1x1 png picture 
             src = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAAXNSR0IArs4c6QAAAARnQU1BAACx\njwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAABp0RVh0\nU29mdHdhcmUAUGFpbnQuTkVUIHYzLjUuMTAw9HKhAAAADElEQVQYV2P4//8/AAX+Av6nNYGEAAAA\nAElFTkSuQmCC\n'
             bin = misc.AsciiToBinary(src)
@@ -3793,7 +3796,7 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
                             local = (0 if (arrayLocal is None or not arrayLocal.has_key(x)) else arrayLocal[x][DP][y])
                             color = _BackupDiagramColors[DP]['%d%d%d' % (local, remote, active)]
                         except:
-                            bpio.exception()
+                            lg.exc()
                             color = 'red'
                         x0 = 1 + x * dx
                         y0 = 1 + y * dy
@@ -3827,7 +3830,7 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
                             local = (0 if (arrayLocal is None or not arrayLocal.has_key(x)) else arrayLocal[x][DP][y])
                             color = _BackupDiagramColors[DP]['%d%d%d' % (local, remote, active)]
                         except:
-                            bpio.exception()
+                            lg.exc()
                             color = 'red'
                         r1 = R - dR * x
                         r12 = R - dR * x - dR/2.0
@@ -4204,7 +4207,7 @@ class SuppliersPage(Page):
                             ratings.month(idurl)['all'])
 
         #---show_contacts---
-                    if bpio.Debug(8):
+                    if lg.is_debug(8):
                         idobj = contacts.getSupplier(idurl)
                         idcontacts = []
                         idversion = ''
@@ -4260,7 +4263,7 @@ class SuppliersPage(Page):
 
             src += '</table>\n'
 
-            if bpio.Debug(8):
+            if lg.is_debug(8):
                 idcontacts = misc.getLocalIdentity().getContacts()
                 if len(idcontacts) > 0:
                     src += 'my contacts is:\n'
@@ -4520,7 +4523,7 @@ class CustomersPage(Page):
                             ratings.month(idurl)['all'])
 
         #---show_contacts---
-                    if bpio.Debug(8):
+                    if lg.is_debug(8):
                         idobj = contacts.getCustomer(idurl)
                         idcontacts = []
                         idversion = ''
@@ -4618,14 +4621,14 @@ class StoragePage(Page):
         try:
             freeDonatedBytes = spaceDict['free']
         except:
-            bpio.exception()
+            lg.exc()
             freeDonatedBytes = 0.0
         totalCustomersBytes = sum(map(lambda idurl: int(spaceDict[idurl]), contacts.getCustomerIDs()))
         usedSpace = bpio._read_dict(settings.CustomersUsedSpaceFile())
         try:
             currentlyUsedDonatedBytes = sum(map(int, usedSpace.values()))
         except:
-            bpio.exception()
+            lg.exc()
             currentlyUsedDonatedBytes = bpio.getDirectorySize(dataDir)
         StringNeeded = diskspace.MakeStringFromBytes(bytesNeeded)
         StringDonated = diskspace.MakeStringFromBytes(bytesDonated)
@@ -4740,7 +4743,7 @@ class StorageNeededImage(resource.Resource):
             import ImageDraw
             import ImageFont 
         except:
-            bpio.exception()
+            lg.exc()
             # 1x1 png picture 
             src = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAAXNSR0IArs4c6QAAAARnQU1BAACx\njwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAABp0RVh0\nU29mdHdhcmUAUGFpbnQuTkVUIHYzLjUuMTAw9HKhAAAADElEQVQYV2P4//8/AAX+Av6nNYGEAAAA\nAElFTkSuQmCC\n'
             bin = misc.AsciiToBinary(src)
@@ -4817,7 +4820,7 @@ class StorageDonatedImage(resource.Resource):
             import ImageDraw
             import ImageFont 
         except:
-            bpio.exception()
+            lg.exc()
             # 1x1 png picture 
             src = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAAAXNSR0IArs4c6QAAAARnQU1BAACx\njwv8YQUAAAAgY0hSTQAAeiYAAICEAAD6AAAAgOgAAHUwAADqYAAAOpgAABdwnLpRPAAAABp0RVh0\nU29mdHdhcmUAUGFpbnQuTkVUIHYzLjUuMTAw9HKhAAAADElEQVQYV2P4//8/AAX+Av6nNYGEAAAA\nAElFTkSuQmCC\n'
             bin = misc.AsciiToBinary(src)
@@ -4854,7 +4857,7 @@ class StorageDonatedImage(resource.Resource):
             try:
                 totalCustomersBytes += int(spaceDict.get(idurl, 0))
             except:
-                bpio.exception()
+                lg.exc()
 #            customerDir = os.path.join(dataDir, nameurl.UrlFilename(idurl))
 #            if os.path.isdir(customerDir):
 #                sz = bpio.getDirectorySize(customerDir)
@@ -4927,7 +4930,7 @@ class StorageDonatedImage(resource.Resource):
                             draw.text((self.toInt(x1-sw2/2.0), self.toInt(y1)), s2, fill="#000000", font=font)
                         A += dA
         except:
-            bpio.exception()
+            lg.exc()
             img.save(f, "PNG")
             f.seek(0)
             request.write(f.read())
@@ -4984,7 +4987,7 @@ class ConfigPage(Page):
 class BackupSettingsPage(Page):
     pagename = _PAGE_BACKUP_SETTINGS
     def renderPage(self, request):
-        # bpio.log(14, 'webcontrol.BackupSettingsPage.renderPage')
+        # lg.out(14, 'webcontrol.BackupSettingsPage.renderPage')
         donatedStr = settings.getDonatedString()
         neededStr = settings.getNeededString()
 
@@ -5063,14 +5066,14 @@ class SecurityPage(Page):
         back = arg(request, 'back', '/'+_PAGE_CONFIG)
 
         if action == 'copy':
-            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
+            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             misc.setClipboardText(TextToSave)
             messageA = '<font color="green">Now you can "paste" with Ctr+V your Private Key where you want.</font>'
             comment = 'now you can "paste" with Ctr+V your private key where you want.'
             del TextToSave
 
         elif action == 'view':
-            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
+            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             TextToSave = TextToSave.replace('\n', '<br>\n').replace(' ', '&nbsp;')
             src = '<h1>private key</h1>\n'
             src += '<table align=center><tr><td align=center>\n'
@@ -5083,7 +5086,7 @@ class SecurityPage(Page):
             return html(request, body=src, back=back, title='private key')
 
         elif action == 'write':
-            TextToSave = misc.getLocalID() + "\n" + crypto.MyPrivateKey()
+            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             savefile = unicode(misc.unpack_url_param(arg(request, 'savefile'), ''))
             bpio.AtomicWriteFile(savefile, TextToSave)
             messageA = '<font color="green">Your Private Key were copied to the file %s</font>' % savefile
@@ -5091,7 +5094,7 @@ class SecurityPage(Page):
             del TextToSave
             
         elif action == 'move':
-            TextToSave = crypto.MyPrivateKey()
+            TextToSave = key.MyPrivateKey()
             savefile = unicode(misc.unpack_url_param(arg(request, 'savefile'), ''))
             if bpio.AtomicWriteFile(savefile, TextToSave):
                 keyfilename = settings.KeyFileName()
@@ -5099,7 +5102,7 @@ class SecurityPage(Page):
                     try:
                         os.remove(keyfilename)
                     except:
-                        bpio.exception()
+                        lg.exc()
                         messageB = '<font color="red">Failed to remove your Private Key from %s</font>' % keyfilename
                         comment = 'failed to remove your Private Key from %s' % keyfilename
                     messageB = '<font color="green">Your Private Key were moved to %s,<br>be sure to have the file in same place during next program start</font>' % savefile
@@ -6002,7 +6005,7 @@ class DevelopmentPage(Page):
 #            recipient = 'http://'+settings.IdentityServerName()+'/'+recipient+'.xml'
 #        amount = arg(request, 'amount', '0.0')
 #        action = arg(request, 'action')
-#        bpio.log(6, 'webcontrol.TransferPage.renderPage [%s] [%s] [%s]' % (action, amount, recipient))
+#        lg.out(6, 'webcontrol.TransferPage.renderPage [%s] [%s] [%s]' % (action, amount, recipient))
 #        msg = ''
 #        typ = 'info'
 #        button = 'Send money'
@@ -6115,7 +6118,7 @@ class DevelopmentPage(Page):
 #        self.path = path
 #
 #    def renderPage(self, request):
-#        bpio.log(6, 'webcontrol.ReceiptPage.renderPage ' + self.path)
+#        lg.out(6, 'webcontrol.ReceiptPage.renderPage ' + self.path)
 #        receipt = money.ReadReceipt(self.path)
 #        typ = str(receipt[2])
 #        src = '<h1>receipt %s</h1>\n' % self.path
@@ -6241,7 +6244,7 @@ class DevelopmentPage(Page):
 #                if d[0] != pageYear or d[1] != pageMonth:
 #                    continue
 #            except:
-#                bpio.exception()
+#                lg.exc()
 #                continue
 #            src += '<tr><td>'
 #            src += '<a href="%s/%s">' % (request.path, receipt[0])
@@ -6495,7 +6498,7 @@ class CorrespondentsPage(Page):
                 msg = '%s is your friend already' % name
                 typ = 'error' 
             else:
-                bpio.log(6, 'webcontrol.CorrespondentsPage.renderPage (add) will request ' + idurl)
+                lg.out(6, 'webcontrol.CorrespondentsPage.renderPage (add) will request ' + idurl)
                 res = net_misc.getPageTwisted(idurl)
                 res.addCallback(self._check_name_cb, request, name)
                 res.addErrback(self._check_name_eb, request, name)
@@ -6569,7 +6572,7 @@ class ShedulePage(Page):
         back = arg(request, 'back', '/'+_PAGE_MAIN)
         
         stored = self.load_from_data(request)
-        bpio.log(6, 'webcontrol.ShedulePage.renderPage stored=%s args=%s' % (str(stored), str(request.args)))
+        lg.out(6, 'webcontrol.ShedulePage.renderPage stored=%s args=%s' % (str(stored), str(request.args)))
 
         src = ''
 
@@ -6687,7 +6690,7 @@ class ShedulePage(Page):
                 src += '<br><br>\n'
                 src += html_message('saved!', 'done')
             else:
-                bpio.log(2, 'webcontrol.ShedulePage.renderPage ERROR incorrect "submit" parameter value: ' + submit)
+                lg.out(2, 'webcontrol.ShedulePage.renderPage ERROR incorrect "submit" parameter value: ' + submit)
                 src += '<input type="hidden" name="action" value="type" />\n'
                 src += '<input type="hidden" name="back" value="%s" />\n' % back
                 src += self.store_params(request)
@@ -6709,7 +6712,7 @@ class ShedulePage(Page):
 #     def load_from_data(self, request):
 #         backupdir = unicode(misc.unpack_url_param(arg(request, 'backupdir'), None))
 #         if backupdir is None:
-#             bpio.log(1, 'webcontrol.BackupShedulePage.load WARNING backupdir=%s' % str(backupdir))
+#             lg.out(1, 'webcontrol.BackupShedulePage.load WARNING backupdir=%s' % str(backupdir))
 #             return schedule.empty()
 #         current = backup_db.GetSchedule(backupdir)
 #         if current is None:
@@ -6719,7 +6722,7 @@ class ShedulePage(Page):
 #     def save(self, request):
 #         backupdir = unicode(misc.unpack_url_param(arg(request, 'backupdir'), None))
 #         if backupdir is None:
-#             bpio.log(1, 'webcontrol.BackupShedulePage.save ERROR backupdir=None')
+#             lg.out(1, 'webcontrol.BackupShedulePage.save ERROR backupdir=None')
 #             return
 #         if backupdir != '' and not backup_db.CheckDirectory(backupdir):
 #             backup_db.AddDirectory(backupdir, True)
@@ -6728,7 +6731,7 @@ class ShedulePage(Page):
 #         backup_db.SetSchedule(backupdir, current)
 #         backup_db.Save()
 #         # reactor.callLater(0, backup_schedule.run)
-#         bpio.log(6, 'webcontrol.BackupShedulePage.save success %s %s' % (backupdir, current))
+#         lg.out(6, 'webcontrol.BackupShedulePage.save success %s %s' % (backupdir, current))
 # 
 #     def list_params(self):
 #         return ('backupdir',)
@@ -6777,7 +6780,7 @@ class ShedulePage(Page):
 #        settings.setUpdatesSheduleData(current.to_string())
 #        bpupdate.update_shedule_file(settings.getUpdatesSheduleData())
 #        bpupdate.update_sheduler()
-#        bpio.log(6, 'webcontrol.UpdateShedulePage.save success')
+#        lg.out(6, 'webcontrol.UpdateShedulePage.save success')
 #
 #    def print_shedule(self, request):
 #        src = '<h3>update schedule</h3>\n'
@@ -6863,10 +6866,10 @@ class MemoryPage(Page):
             src = 'guppy package is not installed in your system.'
             src += html_comment('guppy package is not installed in your system.')
             return html(request, back=arg(request, 'back', '/'+_PAGE_CONFIG), body=src)
-        # bpio.log(6, 'webcontrol.MemoryPage')
+        # lg.out(6, 'webcontrol.MemoryPage')
         h = hpy()
         out = str(h.heap())
-        bpio.log(6, '\n'+out)
+        lg.out(6, '\n'+out)
         src = ''
         src += '<table width="600px"><tr><td>\n'
         src += '<div align=left>\n'
@@ -7268,7 +7271,7 @@ class TrafficPage(Page):
 
 def InitSettingsTreePages():
     global _SettingsTreeNodesDict
-    bpio.log(4, 'webcontrol.init.options')
+    lg.out(4, 'webcontrol.init.options')
     SettingsTreeAddComboboxList('suppliers', settings.getECCSuppliersNumbers())
     SettingsTreeAddComboboxList('updates-mode', settings.getUpdatesModeValues())
     SettingsTreeAddComboboxList('general-display-mode', settings.getGeneralDisplayModeValues())
@@ -7364,7 +7367,7 @@ class SettingsTreeNode(Page):
         self.update()
 
     def renderPage(self, request):
-        bpio.log(6, 'webcontrol.SettingsTreeNode.renderPage [%s] args=%s' % (self.path, str(request.args)))
+        lg.out(6, 'webcontrol.SettingsTreeNode.renderPage [%s] args=%s' % (self.path, str(request.args)))
         src = ''
         if self.exist:
             src += '<h3>%s</h3>\n' % self.label 
@@ -7373,10 +7376,10 @@ class SettingsTreeNode(Page):
                 src += '<p>%s</p>\n' % self.info
                 src += '</td></tr></table><br>\n'
             old_value = self.value
-            #bpio.log(6, 'webcontrol.SettingsTreeNode.renderPage before %s: %s' % (self.path, self.value))
+            #out(6, 'webcontrol.SettingsTreeNode.renderPage before %s: %s' % (self.path, self.value))
             ret = self.body(request)
             #src += self.body(request)
-            #bpio.log(6, 'webcontrol.SettingsTreeNode.renderPage after %s: %s' % (self.path, self.value))
+            #out(6, 'webcontrol.SettingsTreeNode.renderPage after %s: %s' % (self.path, self.value))
             src += html_comment('  path:     %s' % self.path)
             src += html_comment('  label:    %s' % self.label)
             src += html_comment('  info:     %s' % self.info)
@@ -7397,16 +7400,16 @@ class SettingsTreeNode(Page):
         if self.exist and len(self.leafs) >= 1:
             header = 'settings'
             try:
-                bpio.log(14, 'webcontrol.SettingsTreeNode.renderPage leafs=%s' % (self.leafs))
+                lg.out(14, 'webcontrol.SettingsTreeNode.renderPage leafs=%s' % (self.leafs))
                 for i in range(0, len(self.leafs)):
                     fullname = '.'.join(self.leafs[0:i+1])
                     label = settings.uconfig().get(fullname, 'label')
                     if label is None:
                         label = self.leafs[i]
                     header += ' > ' + label
-                    bpio.log(14, 'webcontrol.SettingsTreeNode.renderPage fullname=%s label=%s' % (fullname, label))
+                    lg.out(14, 'webcontrol.SettingsTreeNode.renderPage fullname=%s label=%s' % (fullname, label))
             except:
-                bpio.exception()
+                lg.exc()
         else:
             header = str(self.label)
         back = ''
@@ -7421,7 +7424,7 @@ class SettingsTreeNode(Page):
             self.modifyList.append((path, value))
             if self.modifyTask is None:
                 self.modifyTask = reactor.callLater(1, self.modifyWorker)
-                bpio.log(4, 'webcontrol.SettingsTreeNode.requestModify (%s) task for %s' % (self.path, path))
+                lg.out(4, 'webcontrol.SettingsTreeNode.requestModify (%s) task for %s' % (self.path, path))
         else:
             oldvalue = settings.uconfig(path)
             settings.uconfig().set(path, value)
@@ -7430,7 +7433,7 @@ class SettingsTreeNode(Page):
             self.modified(oldvalue)
             
     def modifyWorker(self):
-        #bpio.log(4, 'webcontrol.SettingsTreeNode.modifyWorker(%s)' % self.path)
+        #out(4, 'webcontrol.SettingsTreeNode.modifyWorker(%s)' % self.path)
         if len(self.modifyList) == 0:
             return
         if p2p_connector.A().state in ['TRANSPORTS', 'NETWORK?']:
@@ -7454,7 +7457,7 @@ class SettingsTreeNode(Page):
         self.has_childs = len(settings.uconfig().get_childs(self.path)) > 0
 
     def modified(self, old_value=None):
-        bpio.log(8, 'webcontrol.SettingsTreeNode.modified %s %s' % (self.path, self.value))
+        lg.out(8, 'webcontrol.SettingsTreeNode.modified %s %s' % (self.path, self.value))
 
         if self.path in (
                 'transport.transport-dhtudp.transport-dhtudp-port',
@@ -7499,9 +7502,9 @@ class SettingsTreeNode(Page):
 
         elif self.path == 'logs.debug-level':
             try:
-                bpio.SetDebug(int(self.value))
+                lg.set_debug_level(int(self.value))
             except:
-                bpio.log(1, 'webcontrol.SettingsTreeNode.modified ERROR wrong value!')
+                lg.out(1, 'webcontrol.SettingsTreeNode.modified ERROR wrong value!')
 
         elif self.path == 'backup.backup-block-size':
             settings.setBackupBlockSize(self.value)
@@ -7512,13 +7515,13 @@ class SettingsTreeNode(Page):
 
     def body(self, request):
         global SettingsTreeNodesDict
-        bpio.log(12, 'webcontrol.SettingsTreeNode.body path='+self.path)
+        lg.out(12, 'webcontrol.SettingsTreeNode.body path='+self.path)
         if not self.has_childs:
             return ''
         src = '<br>'
         back = arg(request, 'back')
         childs = settings.uconfig().get_childs(self.path).keys()
-        bpio.log(12, 'webcontrol.SettingsTreeNode.body childs='+str(childs))
+        lg.out(12, 'webcontrol.SettingsTreeNode.body childs='+str(childs))
         for path in settings.uconfig().default_order:
             if path.strip() == '':
                 continue
@@ -7624,7 +7627,7 @@ class SettingsTreeComboboxNode(SettingsTreeNode):
 
 class SettingsTreeUStringNode(SettingsTreeNode):
     def body(self, request):
-        bpio.log(12, 'webcontrol.SettingsTreeUStringNode.body path='+self.path)
+        lg.out(12, 'webcontrol.SettingsTreeUStringNode.body path='+self.path)
 
         back = arg(request, 'back', '/'+_PAGE_CONFIG)
         message = ('', 'info')
@@ -7646,7 +7649,7 @@ class SettingsTreeUStringNode(SettingsTreeNode):
 
 class SettingsTreePasswordNode(SettingsTreeNode):
     def body(self, request):
-        bpio.log(12, 'webcontrol.SettingsTreePasswordNode.body path='+self.path)
+        lg.out(12, 'webcontrol.SettingsTreePasswordNode.body path='+self.path)
 
         back = arg(request, 'back', '/'+_PAGE_CONFIG)
         message = ('', 'info')
@@ -7783,7 +7786,7 @@ class SettingsTreeFilePathNode(SettingsTreeNode):
 
 class SettingsTreeTextNode(SettingsTreeNode):
     def body(self, request):
-        bpio.log(12, 'webcontrol.SettingsTreeTextNode.body path='+self.path)
+        lg.out(12, 'webcontrol.SettingsTreeTextNode.body path='+self.path)
 
         back = arg(request, 'back', '/'+_PAGE_CONFIG)
         message = ('', 'info')
@@ -7805,7 +7808,7 @@ class SettingsTreeTextNode(SettingsTreeNode):
 
 class SettingsTreeDiskSpaceNode(SettingsTreeNode):
     def body(self, request):
-        bpio.log(6, 'webcontrol.SettingsTreeDiskSpaceNode.body args=%s' % str(request.args))
+        lg.out(6, 'webcontrol.SettingsTreeDiskSpaceNode.body args=%s' % str(request.args))
 
         number = arg(request, 'number', None)
         suffix = arg(request, 'suffix', None)
@@ -7856,7 +7859,7 @@ class SettingsPage(Page):
     pagename = _PAGE_SETTINGS
     def renderPage(self, request):
         global _SettingsTreeNodesDict
-        bpio.log(6, 'webcontrol.SettingsPage.renderPage args=%s' % str(request.args))
+        lg.out(6, 'webcontrol.SettingsPage.renderPage args=%s' % str(request.args))
 
         src = ''
 
@@ -7901,7 +7904,7 @@ class SettingsListPage(Page):
         for path in settings.uconfig().default_order:
             if path.strip() == '':
                 continue
-            if path not in settings.uconfig().public_options:
+            if path not in settings.uconfig.public_options():
                 continue
             value = settings.uconfig().data.get(path, '').replace('\n', ' ')
             label = settings.uconfig().labels.get(path, '')

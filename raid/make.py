@@ -38,8 +38,9 @@ if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
-import lib.eccmap
 import lib.misc
+
+import raid.eccmap
 
 #------------------------------------------------------------------------------ 
 
@@ -47,7 +48,7 @@ _ECCMAP = {}
 def geteccmap(name):
     global _ECCMAP
     if not _ECCMAP.has_key(name):
-        _ECCMAP[name] = lib.eccmap.eccmap(name) 
+        _ECCMAP[name] = raid.eccmap.eccmap(name) 
     return _ECCMAP[name]
 
 #------------------------------------------------------------------------------ 
@@ -59,19 +60,19 @@ def shutdown():
 #------------------------------------------------------------------------------ 
 
 def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):
-    # bpio.log(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
+    # lg.out(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
     #     os.path.basename(filename), eccmapname, backupId, blockNumber))
     t = time.time()
     if in_memory:
         dataNum, parityNum = do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir)
     else:
         dataNum, parityNum = do_with_files(filename, eccmapname, backupId, blockNumber, targetDir)
-    # bpio.log(12, "raidmake.raidmake time=%.3f data=%d parity=%d" % (time.time()-t, dataNum, parityNum))
+    # lg.out(12, "raidmake.raidmake time=%.3f data=%d parity=%d" % (time.time()-t, dataNum, parityNum))
     return dataNum, parityNum
 
 
 def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
-    myeccmap = lib.eccmap.eccmap(eccmapname)
+    myeccmap = raid.eccmap.eccmap(eccmapname)
     INTSIZE = 4 # settings.IntSize()
     # any padding at end and block.Length fixes
     lib.misc.RoundupFile(filename, myeccmap.datasegments*INTSIZE)     
@@ -125,16 +126,16 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
                 Map = myeccmap.DataToParity[DSegNum]
                 for PSegNum in Map:
                     if PSegNum > myeccmap.paritysegments:
-                        # bpio.log(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
-                        # bpio.log(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
+                        # lg.out(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
+                        # lg.out(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
                         myeccmap.check()
                         raise Exception("eccmap error")
                     Parities[PSegNum] = Parities[PSegNum] ^ b
             else:
                 raise Exception('strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' % (len(bstr), DSegNum)) 
                 #TODO
-                #bpio.log(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
-                #bpio.log(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
+                #out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
+                #out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
         for PSegNum in xrange(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
@@ -165,7 +166,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
 
 
 def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
-    myeccmap = lib.eccmap.eccmap(eccmapname)
+    myeccmap = raid.eccmap.eccmap(eccmapname)
     INTSIZE = 4 # settings.IntSize()
     lib.misc.RoundupFile(filename,myeccmap.datasegments*INTSIZE)      # any padding at end and block.Length fixes
     wholefile = lib.bpio.ReadBinaryFile(filename)
@@ -211,15 +212,15 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
                 Map = myeccmap.DataToParity[DSegNum]
                 for PSegNum in Map:
                     if PSegNum > myeccmap.paritysegments:
-                        # bpio.log(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
-                        # bpio.log(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
+                        # lg.out(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
+                        # lg.out(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
                         myeccmap.check()
                         raise Exception("eccmap error")
                     Parities[PSegNum] = Parities[PSegNum] ^ b
             # else :
                 #TODO
-                # bpio.log(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
-                # bpio.log(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
+                # lg.out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
+                # lg.out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
         for PSegNum in range(myeccmap.paritysegments):
             bstr = struct.pack(">l", Parities[PSegNum])
@@ -245,7 +246,7 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
 
 
 def main():
-    lib.bpio.SetDebug(18)
+    lib.lg.set_debug_level(18)
     raidmake(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], sys.argv[6]=='1')
     
 

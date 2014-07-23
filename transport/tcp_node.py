@@ -39,7 +39,9 @@ from twisted.internet.defer import Deferred, succeed
 from twisted.internet.error import ConnectionDone
 from twisted.internet.error import CannotListenError
 
-import lib.bpio as bpio
+from logs import lg
+
+from lib import bpio
 
 import tcp_interface
 import tcp_connection
@@ -115,7 +117,7 @@ def receive(options):
         except:
             e = str(ex)
         tcp_interface.interface_receiving_failed(e)
-        # bpio.exception()
+        # lg.exc()
     return _Listener
 
 
@@ -161,7 +163,7 @@ def send(filename, remoteaddress, description=None, single=False):
     connection.add_outbox_file(filename, description, result_defer, single)
     connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection)
     started_connections()[remoteaddress] = connection
-    # bpio.log(18, 'tcp_node.send     %s opened, %d started' % (
+    # lg.out(18, 'tcp_node.send     %s opened, %d started' % (
     #     str(remoteaddress), len(started_connections())))
     return result_defer
 
@@ -187,7 +189,7 @@ def cancel_file_receiving(transferID):
                 if in_file.transfer_id and in_file.transfer_id == transferID:
                     connection.automat('disconnect')
                     return True
-    bpio.log(8, 'tcp_node.cancel_file_receiving WARNING %r not found' % transferID)
+    lg.out(8, 'tcp_node.cancel_file_receiving WARNING %r not found' % transferID)
     return False
 
 def cancel_file_sending(transferID):
@@ -199,7 +201,7 @@ def cancel_file_sending(transferID):
                 if out_file.transfer_id and out_file.transfer_id == transferID:
                     out_file.cancel()
                     return True
-    bpio.log(8, 'tcp_node.cancel_file_sending WARNING %r not found' % transferID)
+    lg.out(8, 'tcp_node.cancel_file_sending WARNING %r not found' % transferID)
     return False
    
 def cancel_outbox_file(host, filename):
@@ -263,7 +265,7 @@ class TCPFactory(protocol.ClientFactory):
             if result_defer:
                 result_defer.callback((filename, description, 'failed', 'connection failed'))
         self.pendingoutboxfiles = []
-        bpio.log(18, 'tcp_node.clientConnectionFailed from %s  :   %s closed, %d more started' % (
+        lg.out(18, 'tcp_node.clientConnectionFailed from %s  :   %s closed, %d more started' % (
             str(destaddress), self, len(started_connections())))
         
     def add_outbox_file(self, filename, description='', result_defer=None, single=False):

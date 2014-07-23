@@ -43,11 +43,13 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_matrix.py')
 
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.settings as settings
-import lib.contacts as contacts
-import lib.packetid as packetid
+from logs import lg
+
+from lib import bpio
+from lib import misc
+from lib import settings
+from lib import contacts
+from lib import packetid
 
 import backup_db_keeper
 import io_throttle
@@ -80,7 +82,7 @@ def init():
     * scan local files and build the "local" matrix
     * read latest (stored on local disk) ListFiles for suppliers to build "remote" matrix     
     """
-    bpio.log(4, 'backup_matrix.init')
+    lg.out(4, 'backup_matrix.init')
     # suppliers_set()
     RepaintingProcess(True)
     ReadLocalFiles()
@@ -91,7 +93,7 @@ def shutdown():
     """
     Correct way to finish all things here.
     """
-    bpio.log(4, 'backup_matrix.shutdown')
+    lg.out(4, 'backup_matrix.shutdown')
     RepaintingProcess(False)
 
 #------------------------------------------------------------------------------ 
@@ -199,7 +201,7 @@ def SaveLatestRawListFiles(idurl, listFileText):
         try:
             os.makedirs(supplierPath)
         except:
-            bpio.exception()
+            lg.exc()
             return
     bpio.WriteFile(settings.SupplierListFilesFilename(idurl), listFileText)
 
@@ -228,7 +230,7 @@ def ReadRawListFiles(supplierNum, listFileText):
     paths2remove = set()
     oldfiles = ClearSupplierRemoteInfo(supplierNum)
     newfiles = 0
-    bpio.log(8, 'backup_matrix.ReadRawListFiles %d bytes to read' % len(listFileText))
+    lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read' % len(listFileText))
     input = cStringIO.StringIO(listFileText)
     while True:
         line = input.readline()
@@ -276,18 +278,18 @@ def ReadRawListFiles(supplierNum, listFileText):
                         # so we have some modifications in the index - it is not empty!
                         # backup_db_keeper did its job - so we have the correct index
                         paths2remove.add(pth) # now we are sure that this file is old and must be removed
-                        bpio.log(8, '        F%s - remove, not found in the index' % pth)
+                        lg.out(8, '        F%s - remove, not found in the index' % pth)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
             if not backup_fs.ExistsID(pth):
                 if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():
                     paths2remove.add(pth)
-                    bpio.log(8, '        D%s - remove, not found in the index' % pth)
+                    lg.out(8, '        D%s - remove, not found in the index' % pth)
         elif typ == 'V':
             # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
             words = line.split(' ')
             if len(words) < 4:
-                bpio.log(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
+                lg.out(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
                 continue
             try:
                 pathID, versionName = packetid.SplitBackupID(words[0])
@@ -296,12 +298,12 @@ def ReadRawListFiles(supplierNum, listFileText):
                 minBlockNum, maxBlockNum = words[2].split('-')
                 maxBlockNum = int(maxBlockNum)
             except:
-                bpio.log(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
+                lg.out(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
                 continue
             if lineSupplierNum != supplierNum:
                 # this mean supplier have old files and we do not need that 
                 backups2remove.add(backupID)
-                bpio.log(8, '        V%s - remove, different supplier number' % backupID)
+                lg.out(8, '        V%s - remove, different supplier number' % backupID)
                 continue
             iter_path = backup_fs.WalkByID(pathID)
             if iter_path is None:
@@ -309,7 +311,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                 if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():
                     backups2remove.add(backupID)
                     paths2remove.add(pathID)
-                    bpio.log(8, '        V%s - remove, path not found in the index' % pathID)
+                    lg.out(8, '        V%s - remove, path not found in the index' % pathID)
                 continue
             item, localPath = iter_path
             if isinstance(item, dict):
@@ -320,24 +322,24 @@ def ReadRawListFiles(supplierNum, listFileText):
             if not item or not item.has_version(versionName):
                 if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():
                     backups2remove.add(backupID)
-                    bpio.log(8, '        V%s - remove, version is not found in the index' % backupID)
+                    lg.out(8, '        V%s - remove, version is not found in the index' % backupID)
                 continue
             missingBlocksSet = {'Data': set(), 'Parity': set()}
             if len(words) > 3:
                 # "0/0/123/4567/F20090709034221PM/0-Data" "3" "0-5" "missing" "Data:1,3" "Parity:0,1,2"
                 if words[3].strip() != 'missing':
-                    bpio.log(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
+                    lg.out(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
                     continue
                 for missingBlocksString in words[4:]:
                     try:
                         dp, blocks = missingBlocksString.split(':')
                         missingBlocksSet[dp] = set(blocks.split(','))
                     except:
-                        bpio.exception()
+                        lg.exc()
                         break
             if not remote_files().has_key(backupID):
                 remote_files()[backupID] = {}
-                # bpio.log(6, 'backup_matrix.ReadRawListFiles new remote entry for %s created in the memory' % backupID)
+                # lg.out(6, 'backup_matrix.ReadRawListFiles new remote entry for %s created in the memory' % backupID)
             # +1 because range(2) give us [0,1] but we want [0,1,2]
             for blockNum in xrange(maxBlockNum+1):
                 if not remote_files()[backupID].has_key(blockNum):
@@ -357,7 +359,7 @@ def ReadRawListFiles(supplierNum, listFileText):
             # mark this backup to be repainted
             RepaintBackup(backupID)
     input.close()
-    bpio.log(8, 'backup_matrix.ReadRawListFiles for supplier %d, old/new files:%d/%d, backups2remove:%d, paths2remove:%d' % (
+    lg.out(8, 'backup_matrix.ReadRawListFiles for supplier %d, old/new files:%d/%d, backups2remove:%d, paths2remove:%d' % (
         supplierNum, oldfiles, newfiles, len(backups2remove), len(paths2remove)))
     # return list of backupID's which is too old but stored on suppliers machines 
     return backups2remove, paths2remove
@@ -367,7 +369,7 @@ def ReadLatestRawListFiles():
     """
     Call ``ReadRawListFiles()`` for every local file we have on hands and build whole "remote" matrix.
     """
-    bpio.log(4, 'backup_matrix.ReadLatestRawListFiles')
+    lg.out(4, 'backup_matrix.ReadLatestRawListFiles')
     for idurl in contacts.getSupplierIDs():
         if idurl:
             filename = os.path.join(settings.SupplierPath(idurl, 'listfiles'))
@@ -403,8 +405,8 @@ def ReadLocalFiles():
         _counter[0] += 1
         return False
     bpio.traverse_dir_recursive(visit, settings.getLocalBackupsDir())
-    bpio.log(8, 'backup_matrix.ReadLocalFiles  %d files indexed' % _counter[0])
-    if bpio.Debug(8):
+    lg.out(8, 'backup_matrix.ReadLocalFiles  %d files indexed' % _counter[0])
+    if lg.is_debug(8):
         try:
             if sys.version_info >= (2, 6):
                 #localSZ = sys.getsizeof(local_files())
@@ -414,12 +416,12 @@ def ReadLocalFiles():
                 remoteSZ = lib.getsizeof.total_size(remote_files())
                 indexByName = lib.getsizeof.total_size(backup_fs.fs())
                 indexByID = lib.getsizeof.total_size(backup_fs.fsID())
-                bpio.log(10, '    all local info uses %d bytes in the memory' % localSZ)
-                bpio.log(10, '    all remote info uses %d bytes in the memory' % remoteSZ)
-                bpio.log(10, '    index by name takes %d bytes in the memory' % indexByName)
-                bpio.log(10, '    index by ID takes %d bytes in the memory' % indexByID)
+                lg.out(10, '    all local info uses %d bytes in the memory' % localSZ)
+                lg.out(10, '    all remote info uses %d bytes in the memory' % remoteSZ)
+                lg.out(10, '    index by name takes %d bytes in the memory' % indexByName)
+                lg.out(10, '    index by ID takes %d bytes in the memory' % indexByID)
         except:
-            bpio.exception()
+            lg.exc()
     if _LocalFilesNotifyCallback is not None:
         _LocalFilesNotifyCallback()
 
@@ -434,11 +436,11 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
     blockNum = int(blockNum)
     supplierNum = int(supplierNum)
     if supplierNum > contacts.numSuppliers():
-        bpio.log(4, 'backup_matrix.RemoteFileReport got too big supplier number, possible this is an old packet')
+        lg.out(4, 'backup_matrix.RemoteFileReport got too big supplier number, possible this is an old packet')
         return
     if not remote_files().has_key(backupID):
         remote_files()[backupID] = {}
-        bpio.log(8, 'backup_matrix.RemoteFileReport new remote entry for %s created in the memory' % backupID)
+        lg.out(8, 'backup_matrix.RemoteFileReport new remote entry for %s created in the memory' % backupID)
     if not remote_files()[backupID].has_key(blockNum):
         remote_files()[backupID][blockNum] = {
             'D': [0] * contacts.numSuppliers(),
@@ -450,7 +452,7 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
     elif dataORparity == 'Parity':
         remote_files()[backupID][blockNum]['P'][supplierNum] = flag
     else:
-        bpio.log(4, 'backup_matrix.RemoteFileReport WARNING incorrect backup ID: %s' % backupID)
+        lg.out(4, 'backup_matrix.RemoteFileReport WARNING incorrect backup ID: %s' % backupID)
     # if we know only 5 blocks stored on remote machine
     # but we have backed up 6th block - remember this  
     remote_max_block_numbers()[backupID] = max(remote_max_block_numbers().get(backupID, -1), blockNum)
@@ -471,7 +473,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
     if packetID is not None:
         backupID, blockNum, supplierNum, dataORparity = packetid.Split(packetID)  
         if backupID is None:
-            bpio.log(8, 'backup_matrix.LocalFileReport WARNING incorrect filename: ' + packetID)
+            lg.out(8, 'backup_matrix.LocalFileReport WARNING incorrect filename: ' + packetID)
             return
     else:
         blockNum = int(blockNum)
@@ -480,10 +482,10 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
     filename = packetID
     if dataORparity not in ['Data', 'Parity']:
-        bpio.log(4, 'backup_matrix.LocalFileReport WARNING Data or Parity? ' + filename)
+        lg.out(4, 'backup_matrix.LocalFileReport WARNING Data or Parity? ' + filename)
         return
     if supplierNum >= contacts.numSuppliers():
-        bpio.log(4, 'backup_matrix.LocalFileReport WARNING supplier number %d > %d %s' % (supplierNum, contacts.numSuppliers(), filename))
+        lg.out(4, 'backup_matrix.LocalFileReport WARNING supplier number %d > %d %s' % (supplierNum, contacts.numSuppliers(), filename))
         return
     if not local_files().has_key(backupID):
         local_files()[backupID] = {}
@@ -503,7 +505,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         try:
             local_backup_size()[backupID] += os.path.getsize(localDest)
         except:
-            bpio.exception()
+            lg.exc()
     RepaintBackup(backupID)
 
 
@@ -512,33 +514,33 @@ def LocalBlockReport(backupID, blockNumber, result):
     This updates "local" matrix - a several pieces corresponding to given block of data.
     """
     # if contacts.numSuppliers() != num_suppliers:
-    #     bpio.log(6, 'backup_matrix.LocalBlockReport %s skipped, because number of suppliers were changed' % str(newblock))
+    #     lg.out(6, 'backup_matrix.LocalBlockReport %s skipped, because number of suppliers were changed' % str(newblock))
     #     return
     if result is None:
         return
     try:
         blockNum = int(blockNumber)
     except:
-        bpio.exception()
+        lg.exc()
         return
     for supplierNum in xrange(contacts.numSuppliers()):
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
             if not local_files().has_key(backupID):
                 local_files()[backupID] = {}
-                # bpio.log(14, 'backup_matrix.LocalFileReport new local entry for %s created in the memory' % backupID)
+                # lg.out(14, 'backup_matrix.LocalFileReport new local entry for %s created in the memory' % backupID)
             if not local_files()[backupID].has_key(blockNum):
                 local_files()[backupID][blockNum] = {
                     'D': [0] * contacts.numSuppliers(),
                     'P': [0] * contacts.numSuppliers()}
             local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
-            # bpio.log(6, 'backup_matrix.LocalFileReport %s max block num is %d' % (backupID, local_max_block_numbers()[backupID]))
+            # lg.out(6, 'backup_matrix.LocalFileReport %s max block num is %d' % (backupID, local_max_block_numbers()[backupID]))
             if not local_backup_size().has_key(backupID):
                 local_backup_size()[backupID] = 0
             try:
                 local_backup_size()[backupID] += os.path.getsize(os.path.join(settings.getLocalBackupsDir(), packetID))
             except:
-                bpio.exception()
+                lg.exc()
     if not local_max_block_numbers().has_key(backupID):
         local_max_block_numbers()[backupID] = -1
     if local_max_block_numbers()[backupID] < blockNum:
@@ -563,7 +565,7 @@ def ScanMissingBlocks(backupID):
             # we have no local and no remote info for this backup
             # no chance to do some rebuilds...
             # TODO but how we get here ?! 
-            bpio.log(4, 'backup_matrix.ScanMissingBlocks no local and no remote info for %s' % backupID)
+            lg.out(4, 'backup_matrix.ScanMissingBlocks no local and no remote info for %s' % backupID)
         else:
             # we have no remote info, but some local files exists
             # so let's try to sent all of them
@@ -585,7 +587,7 @@ def ScanMissingBlocks(backupID):
         # now we have some remote info
         # we take max block number from local and remote
         maxBlockNum = max(remoteMaxBlockNum, localMaxBlockNum)
-        # bpio.log(6, 'backup_matrix.ScanMissingBlocks maxBlockNum=%d' % maxBlockNum)
+        # lg.out(6, 'backup_matrix.ScanMissingBlocks maxBlockNum=%d' % maxBlockNum)
         # and increase by one because range(3) give us [0, 1, 2], but we want [0, 1, 2, 3]
         for blockNum in xrange(maxBlockNum + 1):
             # if we have few remote files, but many locals - we want to send all missed 
@@ -606,7 +608,7 @@ def ScanMissingBlocks(backupID):
                 if remoteParity[supplierNum] != 1:  # 1 - file exist on remote supplier 
                     missingBlocks.add(blockNum)
                 
-    # bpio.log(6, 'backup_matrix.ScanMissingBlocks %s' % missingBlocks)
+    # lg.out(6, 'backup_matrix.ScanMissingBlocks %s' % missingBlocks)
     return list(missingBlocks)
 
 def ScanBlocksToRemove(backupID, check_all_suppliers=True):
@@ -614,7 +616,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
     This method compare both matrixes and found pieces which is present on both sides.
     If remote supplier got that file it can be removed from the local HDD.  
     """
-    bpio.log(10, 'backup_matrix.ScanBlocksToRemove for %s' % backupID)
+    lg.out(10, 'backup_matrix.ScanBlocksToRemove for %s' % backupID)
     packets = []
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
     if not remote_files().has_key(backupID) or not local_files().has_key(backupID):
@@ -644,7 +646,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
                     continue
                 if localArray[dataORparity][supplierNum] == 1:  
                     packets.append(packetID)
-                    bpio.log(10, '    mark to remove %s, blockNum:%d remote:%s local:%s' % (packetID, blockNum, str(remoteArray), str(localArray)))
+                    lg.out(10, '    mark to remove %s, blockNum:%d remote:%s local:%s' % (packetID, blockNum, str(remoteArray), str(localArray)))
 #                if check_all_suppliers:
 #                    if localArray[dataORparity][supplierNum] == 1:  
 #                        packets.append(packetID)

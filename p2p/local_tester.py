@@ -25,7 +25,7 @@ Also, after a system crash we need to check that things are ok and cleanup
 and partial stuff, like maybe backupid/outgoing/tmp where block was being
 converted to a bunch of packets but the conversion was not finished.
 
-So has to open/parse the ``packet`` but that code is part of signed_packet.py
+So has to open/parse the ``packet`` but that code is part of signed.py
 
 The concept of "fail fast" is what we are after here.  If there is a failure we
 want to know about it fast, so we can fix it fast, so the chance of multiple
@@ -50,18 +50,16 @@ from twisted.python.win32 import cmdLineQuote
 import subprocess
 
 try:
-    import lib.bpio as bpio
+    from logs import lg
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
-    try:
-        import lib.bpio as bpio
-    except:
-        sys.exit()
 
-import lib.settings as settings
-import lib.nonblocking as nonblocking
+from logs import lg
+
+from lib import bpio
+from lib import settings
+from lib import nonblocking
 
 #-------------------------------------------------------------------------------
 
@@ -82,7 +80,7 @@ def init():
     global _Loop
     global _LoopValidate
     global _LoopUpdateCustomers
-    bpio.log(4, 'localtester.init ')
+    lg.out(4, 'localtester.init ')
     _Loop = reactor.callLater(5, loop)
     _LoopValidate = reactor.callLater(0, loop_validate)
     _LoopUpdateCustomers = reactor.callLater(0, loop_update_customers)
@@ -95,7 +93,7 @@ def shutdown():
     global _LoopUpdateCustomers
     global _LoopSpaceTime
     global _CurrentProcess
-    bpio.log(4, 'localtester.shutdown ')
+    lg.out(4, 'localtester.shutdown ')
 
     if _Loop:
         if _Loop.active():
@@ -111,12 +109,12 @@ def shutdown():
             _LoopSpaceTime.cancel()
 
     if alive():
-        bpio.log(4, 'localtester.shutdown is killing bptester')
+        lg.out(4, 'localtester.shutdown is killing bptester')
 
         try:
             _CurrentProcess.kill()
         except:
-            bpio.log(4, 'localtester.shutdown WARNING can not kill bptester')
+            lg.out(4, 'localtester.shutdown WARNING can not kill bptester')
         del _CurrentProcess
         _CurrentProcess = None
 
@@ -141,7 +139,7 @@ def _popTester():
 
 def run(Tester):
     global _CurrentProcess
-    # bpio.log(8, 'localtester.run ' + str(Tester))
+    # lg.out(8, 'localtester.run ' + str(Tester))
 
     if bpio.isFrozen() and bpio.Windows():
         commandpath = 'bptester.exe'
@@ -151,10 +149,10 @@ def run(Tester):
         cmdargs = [sys.executable, commandpath, Tester]
 
     if not os.path.isfile(commandpath):
-        bpio.log(1, 'localtester.run ERROR %s not found' % commandpath)
+        lg.out(1, 'localtester.run ERROR %s not found' % commandpath)
         return None
 
-    bpio.log(14, 'localtester.run execute: %s' % cmdargs)
+    lg.out(14, 'localtester.run execute: %s' % cmdargs)
 
     try:
         if bpio.Windows():
@@ -176,8 +174,8 @@ def run(Tester):
                 stderr = subprocess.PIPE,
                 universal_newlines = False,)
     except:
-        bpio.log(1, 'localtester.run ERROR executing: %s' % str(cmdargs))
-        bpio.exception()
+        lg.out(1, 'localtester.run ERROR executing: %s' % str(cmdargs))
+        lg.exc()
         return None
     return _CurrentProcess
 
@@ -233,7 +231,7 @@ def TestSpaceTime():
 #-------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    bpio.SetDebug(18)
+    lg.set_debug_level(18)
     bpio.init()
     settings.init()
     init()

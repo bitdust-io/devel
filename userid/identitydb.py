@@ -15,9 +15,11 @@ Also keep track of changing identities sources and maintain a several "index" di
 
 import os
 
-import lib.bpio as bpio
-import lib.settings as settings
-import lib.nameurl as nameurl
+from logs import lg
+
+from lib import bpio
+from lib import settings
+from lib import nameurl
 
 import identity
 
@@ -39,10 +41,10 @@ def init():
     Need to call before all other methods.
     Check to exist and create a folder to keep all cached identities.
     """
-    bpio.log(4,"identitydb.init")
+    lg.out(4,"identitydb.init")
     iddir = settings.IdentityCacheDir()
     if not os.path.exists(iddir):
-        bpio.log(8, 'identitydb.init create folder ' + iddir)
+        lg.out(8, 'identitydb.init create folder ' + iddir)
         bpio._dir_make(iddir)
 
 def clear(exclude_list=None):
@@ -53,7 +55,7 @@ def clear(exclude_list=None):
     global _Contact2IDURL
     global _IPPort2IDURL
     global _IDURL2Contacts
-    bpio.log(4,"identitydb.clear")
+    lg.out(4,"identitydb.clear")
     _IdentityCache.clear()
     _Contact2IDURL.clear()
     _IPPort2IDURL.clear()
@@ -72,7 +74,7 @@ def clear(exclude_list=None):
             if idurl in exclude_list:
                 continue 
         os.remove(path)
-        bpio.log(6, 'identitydb.clear remove ' + path)
+        lg.out(6, 'identitydb.clear remove ' + path)
 
 def size():
     """
@@ -97,14 +99,14 @@ def idset(idurl, id_obj):
     global _IDURL2Contacts
     global _IPPort2IDURL
     if not has_key(idurl):
-        bpio.log(6, 'identitydb.idset new identity: ' + idurl)
+        lg.out(6, 'identitydb.idset new identity: ' + idurl)
     _IdentityCache[idurl] = id_obj
     for contact in id_obj.getContacts():
         if not _Contact2IDURL.has_key(contact):
             _Contact2IDURL[contact] = set()
         else:
             if len(_Contact2IDURL[contact]) >= 1 and idurl not in _Contact2IDURL[contact]:
-                bpio.log(6, 'identitydb.idset WARNING another user have same contact: ' + str(list(_Contact2IDURL[contact])))
+                lg.out(6, 'identitydb.idset WARNING another user have same contact: ' + str(list(_Contact2IDURL[contact])))
         _Contact2IDURL[contact].add(idurl)
         if not _IDURL2Contacts.has_key(idurl):
             _IDURL2Contacts[idurl] = set()
@@ -163,12 +165,12 @@ def get(url):
         try:
             partfilename = nameurl.UrlFilename(url)
         except:
-            bpio.log(1, "identitydb.get ERROR %s is incorrect" % str(url))
+            lg.out(1, "identitydb.get ERROR %s is incorrect" % str(url))
             return None
         
         filename = os.path.join(settings.IdentityCacheDir(), partfilename)
         if not os.path.exists(filename):
-            bpio.log(6, "identitydb.get file %s not exist" % os.path.basename(filename))
+            lg.out(6, "identitydb.get file %s not exist" % os.path.basename(filename))
             return None
         
         idxml = bpio.ReadTextFile(filename)
@@ -180,10 +182,10 @@ def get(url):
                 return idobj
             
             else:
-                bpio.log(1, "identitydb.get ERROR url=%s url2=%s" % (url, url2))
+                lg.out(1, "identitydb.get ERROR url=%s url2=%s" % (url, url2))
                 return None
 
-        bpio.log(6, "identitydb.get %s not found" % nameurl.GetName(url))
+        lg.out(6, "identitydb.get %s not found" % nameurl.GetName(url))
         return None
 
 def get_idurls_by_contact(contact):
@@ -208,19 +210,19 @@ def update(url, xml_src):
     try:
         newid = identity.identity(xmlsrc=xml_src)
     except:
-        bpio.exception()
+        lg.exc()
         return False
 
     if not newid.isCorrect():
-        bpio.log(1, "identitydb.update ERROR: incorrect identity " + str(url))
+        lg.out(1, "identitydb.update ERROR: incorrect identity " + str(url))
         return False
 
     try:
         if not newid.Valid():
-            bpio.log(1, "identitydb.update ERROR identity not Valid" + str(url))
+            lg.out(1, "identitydb.update ERROR identity not Valid" + str(url))
             return False
     except:
-        bpio.exception()
+        lg.exc()
         return False
 
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(url))
@@ -229,11 +231,11 @@ def update(url, xml_src):
         oldidentity = identity.identity(xmlsrc=oldidentityxml)
 
         if oldidentity.publickey != newid.publickey:
-            bpio.log(1, "identitydb.update ERROR new publickey does not match old : SECURITY VIOLATION " + url)
+            lg.out(1, "identitydb.update ERROR new publickey does not match old : SECURITY VIOLATION " + url)
             return False
 
         if oldidentity.signature != newid.signature:
-            bpio.log(6, 'identitydb.update have new data for ' + nameurl.GetName(url))
+            lg.out(6, 'identitydb.update have new data for ' + nameurl.GetName(url))
         else:
             idset(url, newid)
             return True
@@ -249,11 +251,11 @@ def remove(url):
     """
     filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(url))
     if os.path.isfile(filename):
-        bpio.log(6, "identitydb.remove file %s" % filename)
+        lg.out(6, "identitydb.remove file %s" % filename)
         try:
             os.remove(filename)
         except:
-            bpio.exception()
+            lg.exc()
     idremove(url)
 
 def update_local_ips_dict(local_ips_dict):
@@ -297,10 +299,10 @@ def print_id(url):
     """
     if has_key(url):
         idForKey = get(url)
-        bpio.log(6, str(idForKey.sources) )
-        bpio.log(6, str(idForKey.contacts ))
-        bpio.log(6, str(idForKey.publickey ))
-        bpio.log(6, str(idForKey.signature ))
+        lg.out(6, str(idForKey.sources) )
+        lg.out(6, str(idForKey.contacts ))
+        lg.out(6, str(idForKey.publickey ))
+        lg.out(6, str(idForKey.signature ))
 
 def print_keys():
     """
@@ -308,7 +310,7 @@ def print_keys():
     """
     global _IdentityCache
     for key in _IdentityCache.keys():
-        bpio.log(6, key)
+        lg.out(6, key)
 
 def print_cache():
     """
@@ -316,7 +318,7 @@ def print_cache():
     """
     global _IdentityCache
     for key in _IdentityCache.keys():
-        bpio.log(6, "---------------------" )
+        lg.out(6, "---------------------" )
         print_id(key)
 
 

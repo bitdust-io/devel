@@ -25,7 +25,7 @@ Inspired from examples here:
 
 TODO: 
 If we kept track of how far we were through a list of files, and broke off
-new ``encrypted_blocks`` at file boundaries, we could restart a backup and continue
+new blocks at file boundaries, we could restart a backup and continue
 were we left off if a crash happened while we were waiting to send a block
 (most of the time is waiting so good chance).
 """

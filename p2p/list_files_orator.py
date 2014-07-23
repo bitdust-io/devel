@@ -41,20 +41,21 @@ except:
 from twisted.internet.defer import maybeDeferred
 from twisted.internet.task import LoopingCall
 
+from logs import lg
 
 from lib.automat import Automat
-import lib.bpio as bpio
-import lib.contacts as contacts
-
+from lib import bpio
+from lib import contacts
 
 import backup_monitor
 import p2p_connector
-import lib.automats as automats
+from lib import automats
 
 import backup_matrix
 import p2p_service
 import contact_status
 
+#------------------------------------------------------------------------------ 
 
 _ListFilesOrator = None
 _RequestedListFilesPacketIDs = set()
@@ -116,12 +117,12 @@ class ListFilesOrator(Automat):
 
     def isAllListFilesReceived(self, arg):
         global _RequestedListFilesPacketIDs
-        bpio.log(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
+        lg.out(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
         return len(_RequestedListFilesPacketIDs) == 0
 
     def isSomeListFilesReceived(self, arg):
         global _RequestedListFilesCounter
-        bpio.log(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _RequestedListFilesCounter)
+        lg.out(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _RequestedListFilesCounter)
         return _RequestedListFilesCounter > 0
 
     def doReadLocalFiles(self, arg):

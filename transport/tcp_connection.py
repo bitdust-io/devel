@@ -28,8 +28,10 @@ except:
 from twisted.internet import protocol
 from twisted.protocols import basic
 
-import lib.bpio as bpio
-import lib.automat as automat
+from logs import lg
+
+from lib import bpio
+from lib import automat
 
 import tcp_node
 import tcp_interface
@@ -191,7 +193,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         conn = tcp_node.started_connections().pop(self.getConnectionAddress())
         conn.connector = None
-        # bpio.log(18, 'tcp_connection.doCloseOutgoing    %s closed, %d more started' % (
+        # lg.out(18, 'tcp_connection.doCloseOutgoing    %s closed, %d more started' % (
         #     str(self.peer_address), len(tcp_node.started_connections())))
 
     def doReadHello(self, arg):
@@ -217,9 +219,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             if self.peer_address not in tcp_node.opened_connections():
                 tcp_node.opened_connections()[self.peer_address] = []
             tcp_node.opened_connections()[self.peer_address].append(self)
-            bpio.log(12, '%s : external peer address changed to %s' % (
+            lg.out(12, '%s : external peer address changed to %s' % (
                 self, self.peer_address))
-        # bpio.log(18, 'tcp_connection.doReadHello from %s' % (self.peer_idurl))
+        # lg.out(18, 'tcp_connection.doReadHello from %s' % (self.peer_idurl))
 
     def doReadWazap(self, arg):
         """
@@ -230,7 +232,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         except:
             return
         self.peer_idurl = payload
-        # bpio.log(18, 'tcp_connection.doReadWazap from %s' % (self.peer_idurl))
+        # lg.out(18, 'tcp_connection.doReadWazap from %s' % (self.peer_idurl))
 
     def doReceiveData(self, arg):
         """
@@ -297,7 +299,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
-        # bpio.log(18, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
+        # lg.out(18, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
         try:
             self.transport.abortConnection()
         except:
@@ -307,7 +309,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
-        # bpio.log(18, 'tcp_connection.doDestroyMe %s' % str(self))
+        # lg.out(18, 'tcp_connection.doDestroyMe %s' % str(self))
         automat.objects().pop(self.index)
         if self.peer_address in tcp_node.opened_connections():
             tcp_node.opened_connections()[self.peer_address].remove(self)
@@ -332,14 +334,14 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         return addr
     
     def connectionMade(self):
-        # bpio.log(18, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
+        # lg.out(18, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
         address = self.getAddress()
         name = 'tcp_connection[%s:%d]' % (address[0], address[1])  
         automat.Automat.__init__(self, name, 'AT_STARTUP')
         self.automat('connection-made')
     
     def connectionLost(self, reason):
-        # bpio.log(18, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
+        # lg.out(18, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
         self.automat('connection-lost')
 
     def sendData(self, command, payload):
@@ -357,7 +359,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             command = data[1]
             payload = data[2:]
         except:
-            bpio.exception()
+            lg.exc()
             self.transport.loseConnection()
             return
         # print '>>>>>> [%s] %d bytes' % (command, len(payload))
@@ -388,7 +390,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         return has_reads
 
     def failed_outbox_queue_item(self, filename, description='', error_message=''):
-        bpio.log(6, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
+        lg.out(6, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
         tcp_interface.interface_cancelled_file_sending(
             self.getAddress(), filename, 0, description, error_message)        
 

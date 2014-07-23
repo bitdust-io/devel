@@ -71,31 +71,28 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in restore.py')
 
-
-from twisted.internet import threads
 from twisted.internet.defer import Deferred
 
+from logs import lg
 
-import lib.misc as misc
-import lib.bpio as bpio
-import lib.eccmap as eccmap
-import lib.settings as settings
-import lib.packetid as packetid
-import lib.contacts as contacts
-import lib.tmpfile as tmpfile
-import lib.automat as automat
+from lib import misc
+from lib import bpio
+from lib import settings
+from lib import packetid
+from lib import contacts
+from lib import tmpfile
+from lib import automat
 
-import raid.raid_worker as raid_worker
+from raid import raid_worker
+from raid import eccmap
 
-# import raidread
-import encrypted_block
+from crypto import encrypted
+
 import io_throttle
 import events
 import contact_status
 
-
 #------------------------------------------------------------------------------ 
-
 
 class restore(automat.Automat):
     timers = {
@@ -128,7 +125,7 @@ class restore(automat.Automat):
         automat.Automat.__init__(self, 'restore', 'AT_STARTUP', 4)
         self.automat('init')
         events.info('restore', '%s start restoring' % self.BackupID)
-        # bpio.log(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
+        # lg.out(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -236,7 +233,7 @@ class restore(automat.Automat):
     def doStartNewBlock(self, arg):
         self.LastAction = time.time()
         self.BlockNumber += 1    
-        bpio.log(6, "restore.doStartNewBlock " + str(self.BlockNumber))
+        lg.out(6, "restore.doStartNewBlock " + str(self.BlockNumber))
         self.OnHandData = [False] * self.EccMap.datasegments
         self.OnHandParity = [False] * self.EccMap.paritysegments
 
@@ -269,7 +266,7 @@ class restore(automat.Automat):
                 packetID, 
                 self.CreatorID, 
                 SupplierID)
-        bpio.log(6, "restore.doRequestPackets requested %d packets for block %d" % (len(packetsToRequest), self.BlockNumber))
+        lg.out(6, "restore.doRequestPackets requested %d packets for block %d" % (len(packetsToRequest), self.BlockNumber))
         del packetsToRequest
         self.automat('request-done')
     
@@ -281,14 +278,6 @@ class restore(automat.Automat):
             os.path.join(settings.getLocalBackupsDir(), self.PathID))
         raid_worker.add_task('read', task_params,            
             lambda cmd, params, result: self._blockRestoreResult(result, filename))
-#        threads.deferToThread(
-#            raidread.raidread,
-#                filename, 
-#                eccmap.CurrentName(), 
-#                self.Version, 
-#                self.BlockNumber, 
-#                os.path.join(settings.getLocalBackupsDir(), self.PathID) ).addBoth(
-#                    lambda restored_blocks: self.automat('raid-done', filename))
          
     def doReadPacketsQueue(self, arg):
         reactor.callLater(0, self.ProcessInboxQueue)
@@ -312,12 +301,12 @@ class restore(automat.Automat):
             try:
                 bpio._dirs_make(dirpath)
             except:
-                bpio.exception()
+                lg.exc()
         # either way the payload of packet is saved
         if not bpio.WriteFile(filename, NewPacket.Payload):
-            bpio.log(6, "restore.doSavePacket WARNING unable to write to %s" % filename)
+            lg.out(6, "restore.doSavePacket WARNING unable to write to %s" % filename)
             return
-        bpio.log(6, "restore.doSavePacket %s saved" % packetID)
+        lg.out(6, "restore.doSavePacket %s saved" % packetID)
         if self.packetInCallback is not None:
             self.packetInCallback(self.BackupID, NewPacket)
     
@@ -332,7 +321,7 @@ class restore(automat.Automat):
         try:
             datalength = int(lengthstring)                                  # real length before raidmake/ECC
             blockdata = blockbits[splitindex+1:splitindex+1+datalength]     # remove padding from raidmake/ECC
-            newblock = encrypted_block.Unserialize(blockdata)                      # convert to object
+            newblock = encrypted.Unserialize(blockdata)                      # convert to object
         except:
             datalength = 0
             blockdata = ''
@@ -341,17 +330,12 @@ class restore(automat.Automat):
     
     def doWriteRestoredData(self, arg):
         NewBlock = arg[0]
-        # SessionKey = crypto.DecryptLocalPK(NewBlock.EncryptedSessionKey)
-        # paddeddata = crypto.DecryptWithSessionKey(SessionKey, NewBlock.EncryptedData)
-        # newlen = int(NewBlock.Length)
-        # data = paddeddata[:newlen]
         data = NewBlock.Data()
         # Add to the file where all the data is going
         try:
-            # self.File.write(data)
             os.write(self.File, data)
         except:
-            bpio.exception()
+            lg.exc()
         if self.blockRestoredCallback is not None:
             self.blockRestoredCallback(self.BackupID, NewBlock)
     
@@ -365,23 +349,22 @@ class restore(automat.Automat):
         tmpfile.throw_out(arg[1], 'block restored')
 
     def doCloseFile(self, arg):
-        # self.File.close()
         os.close(self.File)
     
     def doReportAborted(self, arg):
-        bpio.log(6, "restore.doReportAborted " + self.BackupID)
+        lg.out(6, "restore.doReportAborted " + self.BackupID)
         self.Done = True
         self.MyDeferred.callback(self.BackupID+' aborted')
         events.info('restore', '%s restoring were aborted' % self.BackupID)
     
     def doReportFailed(self, arg):
-        bpio.log(6, "restore.doReportFailed ERROR - the block does not look good")
+        lg.out(6, "restore.doReportFailed ERROR - the block does not look good")
         self.Done = True
         self.MyDeferred.errback(Exception(self.BackupID+' failed'))
         events.notify('restore', '%s failed to restore block number %d' % (self.BackupID, self.BlockNumber))
     
     def doReportDone(self, arg):
-        # bpio.log(6, "restore.doReportDone - restore has finished. All is well that ends well !!!")
+        # lg.out(6, "restore.doReportDone - restore has finished. All is well that ends well !!!")
         self.Done = True
         self.MyDeferred.callback(self.BackupID+' done')
         events.info('restore', '%s restored successfully' % self.BackupID)
@@ -389,7 +372,7 @@ class restore(automat.Automat):
     def doDestroyMe(self, arg):
         automat.objects().pop(self.index)
         collected = gc.collect()
-        # bpio.log(6, 'restore.doDestroyMe collected %d objects' % collected)
+        # lg.out(6, 'restore.doDestroyMe collected %d objects' % collected)
 
     def _blockRestoreResult(self, restored_blocks, filename):
         self.automat('raid-done', filename)
@@ -410,7 +393,8 @@ class restore(automat.Automat):
     def SetBlockRestoredCallback(self, cb):
         self.blockRestoredCallback = cb
 
-    def Abort(self): # for when user clicks the Abort restore button on the gui
-        bpio.log(4, "restore.Abort " + self.BackupID)
+    def Abort(self): 
+        # for when user clicks the Abort restore button on the gui
+        lg.out(4, "restore.Abort " + self.BackupID)
         self.AbortState = True
 

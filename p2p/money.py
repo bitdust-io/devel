@@ -19,10 +19,12 @@ import string
 import StringIO
 import time
 
-import lib.bpio as bpio
-import lib.misc as misc
-import lib.settings as settings
-import lib.nameurl as nameurl
+from logs import lg
+
+from lib import bpio
+from lib import misc
+from lib import settings
+from lib import nameurl
 
 #------------------------------------------------------------------------------ 
 
@@ -49,9 +51,9 @@ def SaveReceipt(data):
             src += '%f\n' % i
         else:
             src += str(i).strip() + '\n'
-    bpio.log(8, 'money.SaveReceipt %s to %s' % (data[0], rfilename))
+    lg.out(8, 'money.SaveReceipt %s to %s' % (data[0], rfilename))
     if not bpio._write_data(rfilename, src.strip()):
-        bpio.log(1, 'money.SaveReceipt ERROR during writing to file ' + rfilename)
+        lg.out(1, 'money.SaveReceipt ERROR during writing to file ' + rfilename)
 
     SaveBalance(data[6], data[8], data[0])
     currentBal, currentNTBal, maxReceiptId = LoadBalance()
@@ -59,7 +61,7 @@ def SaveReceipt(data):
 #        try:
 #            summary.SetBalanceAndBurnRate(float(data[6])+float(data[8]), float(data[5])+float(data[7]))
 #        except:
-#            bpio.log(1, 'money.SaveReceipt ERROR setting burn rate or balance for ' + str(data))
+#            lg.out(1, 'money.SaveReceipt ERROR setting burn rate or balance for ' + str(data))
 
 def UnpackReceipt(body): # TODO, appears not to be called
     sin = StringIO.StringIO(str(body))
@@ -118,7 +120,7 @@ def UnpackReport(report):
                 if not line.strip().startswith('end') and not line.strip().endswith('end'):
                     d['text'] += line.strip() + '\n'
     except:
-        bpio.exception()
+        lg.exc()
     return d
 
 def LoadReceipt(path):
@@ -130,7 +132,7 @@ def LoadReceipt(path):
 def ReadReceipt( number ):
     path = settings.getReceiptsDir() + os.sep + number + '.receipt'
     if not os.path.exists(path):
-        bpio.log(1, 'money.ReadReceipt ERROR file not exist ' + path)
+        lg.out(1, 'money.ReadReceipt ERROR file not exist ' + path)
         return None
     return LoadReceipt(path)
 
@@ -185,8 +187,8 @@ def ReadAllReceipts():
                 burnRate = float(receipt[5]) + float(receipt[7])
 
     except:
-        bpio.log(1, 'money.ReadAllReceipts unexpected ERROR')
-        bpio.exception()
+        lg.out(1, 'money.ReadAllReceipts unexpected ERROR')
+        lg.exc()
 
     #def key_func(t):
     #    try:
@@ -259,14 +261,14 @@ def SaveBalance(balance, balancent, receipt_id):
 
 
 def SearchMissingReceipts(last_receipt_id=-1):
-    bpio.log(8, 'money.SearchMissingReceipts ' + str(last_receipt_id))
+    lg.out(8, 'money.SearchMissingReceipts ' + str(last_receipt_id))
 
     def try2remove(filepath):
         try:
             os.remove(filepath)
         except:
-            bpio.log(4, 'money.SearchMissingReceipts.try2remove WARNING can not remove ' + filepath)
-        bpio.log(6, 'money.SearchMissingReceipts.try2remove %s removed' % filepath)
+            lg.out(4, 'money.SearchMissingReceipts.try2remove WARNING can not remove ' + filepath)
+        lg.out(6, 'money.SearchMissingReceipts.try2remove %s removed' % filepath)
 
     existing_receipts = set()
     max_index = -1
@@ -298,7 +300,7 @@ def SearchMissingReceipts(last_receipt_id=-1):
         max_index = last_receipt_id
 
     r = []
-    bpio.log(8, 'money.SearchMissingReceipts existing_receipts=%s  max_index=%s' % (str(len(existing_receipts)), str(max_index)))
+    lg.out(8, 'money.SearchMissingReceipts existing_receipts=%s  max_index=%s' % (str(len(existing_receipts)), str(max_index)))
 
     for i in range(max_index + 1):
         if i not in existing_receipts:
@@ -317,12 +319,12 @@ def GetTrueAmount(receipt):  # return a float, receipt from UnpackReceipt2 has t
     try:
         return receipt[7] + receipt[5]
     except:
-        bpio.log(1, 'money.GetTrueAmount ERROR with receipt: ' + str(receipt))
+        lg.out(1, 'money.GetTrueAmount ERROR with receipt: ' + str(receipt))
         return 0.0
 
 def InboxReceipt(newpacket):
     global _InboxReceiptCallback
-    bpio.log(6, 'money.InboxReceipt ')
+    lg.out(6, 'money.InboxReceipt ')
     sio = StringIO.StringIO(newpacket.Payload)
     receipt_body = ''
     for line in sio:

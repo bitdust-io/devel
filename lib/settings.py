@@ -19,14 +19,14 @@ need to move out userconfig stuff from that file
 
 import os
 
+from logs import lg
 
 import userconfig
 import bpio
-import eccmap
-import maths
 import diskspace
 import nameurl
 
+#------------------------------------------------------------------------------ 
 
 _BaseDirPath = ''   # location for ".bitpie" folder, lets keep all program DB in one place
                     # however you can setup your donated location in another place, second disk ...
@@ -41,7 +41,8 @@ _BackupMaxBlockSize = None
 _InitDone = False    
 
 #------------------------------------------------------------------------------ 
-#---INIT----------------------------------------------------------------------------
+#---INIT-----------------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def init(base_dir=None):
     """
@@ -63,9 +64,9 @@ def _init(base_dir=None):
         - Validate most important user settings
         - Check custom folders 
     """
-    bpio.log(4, 'settings._init')
+    lg.out(4, 'settings._init')
     _initBaseDir(base_dir)
-    bpio.log(2, 'settings._init data location: ' + BaseDir())
+    lg.out(2, 'settings._init data location: ' + BaseDir())
     _checkMetaDataDirectory()
     uconfig()
     _checkStaticDirectories()
@@ -73,7 +74,8 @@ def _init(base_dir=None):
     _checkCustomDirectories()
 
 #------------------------------------------------------------------------------ 
-#---USER CONFIG---------------------------------------------------------------------------
+#---USER CONFIG----------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def uconfig(key=None):
     """
@@ -95,12 +97,12 @@ def uconfig(key=None):
     #init()
     if _UserConfig is None:
         if os.path.exists(os.path.join(MetaDataDir(),"user-config")) and not os.path.exists(os.path.join(MetaDataDir(),"userconfig")):
-            bpio.log(4, 'settings.uconfig rename "user-config" to "userconfig"')
+            lg.out(4, 'settings.uconfig rename "user-config" to "userconfig"')
             try:
                 os.rename(os.path.join(MetaDataDir(),"user-config"), os.path.join(MetaDataDir(),"userconfig"))
             except:
                 pass
-        bpio.log(6, 'settings.uconfig loading user configuration from: ' + UserConfigFilename())
+        lg.out(6, 'settings.uconfig loading user configuration from: ' + UserConfigFilename())
         _UserConfig = userconfig.UserConfig(UserConfigFilename())
     if key is None:
         return _UserConfig
@@ -118,7 +120,7 @@ def override(key, value):
     Useful when user pass some params via command line - they should override the local settings.
     """
     global _OverrideDict
-    bpio.log(4, 'settings.override %s=%s' % (key, value))
+    lg.out(4, 'settings.override %s=%s' % (key, value))
     _OverrideDict[key] = value
 
 def override_dict(d):
@@ -129,7 +131,8 @@ def override_dict(d):
         override(key, value)
         
 #------------------------------------------------------------------------------ 
-#--- CONSTANTS ---------------------------------------------------------------------------
+#--- CONSTANTS ----------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 """
 Below is a set of global constants.
@@ -385,7 +388,8 @@ def MaxDeletedBackupIDsToKeep():
     return 100 
 
 #------------------------------------------------------------------------------ 
-#---CONSTANTS ( STRINGS ) ----------------------------------------------------------------------------
+#---CONSTANTS ( STRINGS ) -----------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def ApplicationName():
     """
@@ -476,7 +480,8 @@ def LegalUsernameChars():
     return set("abcdefghijklmnopqrstuvwxyz0123456789-_")
 
 #------------------------------------------------------------------------------ 
-#--- FOLDERS ----------------------------------------------------------------------------
+#--- FOLDERS ------------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def BaseDirDefault():
     """
@@ -635,7 +640,8 @@ def RatingsDir():
     return os.path.join(BaseDir(), 'ratings')
 
 #------------------------------------------------------------------------------ 
-#--- FILES --------------------------------------------------------------------------- 
+#--- FILES -------------------------------------------------------------------- 
+#------------------------------------------------------------------------------ 
 
 def KeyFileName():
     """
@@ -829,7 +835,7 @@ def MainLogFilename():
     """
     A prefix for file names to store main process logs.
     """
-    return os.path.join(LogsDir(), 'bpmain')
+    return os.path.join(LogsDir(), 'bitpie')
 
 def UpdateLogFilename():
     """
@@ -906,7 +912,8 @@ def DHTDBFile():
     return os.path.join(MetaDataDir(), 'dhtdb')
 
 #------------------------------------------------------------------------------ 
-#--- BINARY FILES --------------------------------------------------------------------------- 
+#--- BINARY FILES -------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def WindowsStarterFileName():
     """
@@ -964,7 +971,8 @@ def FontImageFile():
     return os.path.join(FontsFolderPath(), 'Arial_Narrow.ttf')
 
 #------------------------------------------------------------------------------ 
-#--- MERCHANT ID AND LINK ----------------------------------------------------------------------------
+#--- MERCHANT ID AND LINK -----------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def MerchantID():
     """
@@ -981,7 +989,8 @@ def MerchantURL():
     return 'https://merchants.4csonline.com/TranSvcs/tp.aspx'
 
 #------------------------------------------------------------------------------ 
-#---PORT NUMBERS----------------------------------------------------------------------------
+#---PORT NUMBERS---------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def DefaultSSHPort():
     """
@@ -1057,7 +1066,8 @@ def DefaultWebTrafficPort():
     return 9997
 
 #------------------------------------------------------------------------------ 
-#--- USER FOLDERS ----------------------------------------------------------------------------
+#--- USER FOLDERS -------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def getCustomersFilesDir():
     """
@@ -1102,7 +1112,8 @@ def getTempDir():
     return TempDir()
 
 #------------------------------------------------------------------------------ 
-#--- PROXY SERVER OPTIONS ---------------------------------------------------------------------------
+#--- PROXY SERVER OPTIONS -----------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def enableProxy(enable=None):
     """
@@ -1164,18 +1175,19 @@ def update_proxy_settings():
             net_misc.set_proxy_settings(d)
             setProxySettings(d)
             enableProxy(d.get('host', '') != '')
-            bpio.log(2, 'settings.update_proxy_settings UPDATED!!!')
+            lg.out(2, 'settings.update_proxy_settings UPDATED!!!')
         else:
             net_misc.set_proxy_settings(getProxySettingsDict())
-        bpio.log(4, 'settings.update_proxy_settings')
-        bpio.log(4, 'HOST:      ' + net_misc.get_proxy_host())
-        bpio.log(4, 'PORT:      ' + str(net_misc.get_proxy_port()))
-        bpio.log(4, 'USERNAME:  ' + net_misc.get_proxy_username())
-        bpio.log(4, 'PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
-        bpio.log(4, 'SSL:       ' + net_misc.get_proxy_ssl())
+        lg.out(4, 'settings.update_proxy_settings')
+        lg.out(4, 'HOST:      ' + net_misc.get_proxy_host())
+        lg.out(4, 'PORT:      ' + str(net_misc.get_proxy_port()))
+        lg.out(4, 'USERNAME:  ' + net_misc.get_proxy_username())
+        lg.out(4, 'PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
+        lg.out(4, 'SSL:       ' + net_misc.get_proxy_ssl())
 
 #------------------------------------------------------------------------------ 
-#---OTHER USER CONFIGURATIONS---------------------------------------------------------------------------
+#---OTHER USER CONFIGURATIONS--------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def getBandOutLimit(): 
     """
@@ -1474,19 +1486,6 @@ def enableMemoryProfile(enable=None):
     uconfig().set('logs.memprofile-enable', str(enable))
     uconfig().update()
 
-def getECC():
-    """
-    Get ecc map name from current suppliers number. 
-    """
-    snum = getSuppliersNumberDesired()
-    if snum < 0:
-        return DefaultEccMapName()
-    ecc = eccmap.GetEccMapName(snum)
-    if isValidECC(ecc):
-        return ecc
-    else:
-        return DefaultEccMapName()
-
 def getECCSuppliersNumbers():
     """
     List of available suppliers numbers.
@@ -1738,53 +1737,9 @@ def setUPNPatStartup(enable):
     uconfig().set('other.upnp-at-startup', str(enable))
     uconfig().update()
 
-def isValidECC(ecc):
-    """
-    Return True if ``ecc`` is a correct ecc map name.
-    """
-    if ecc in eccmap.EccMapNames():
-        return True
-    else:
-        return False
-
-def getBitCoinServerHost():
-    """
-    Get a bitcoin server host name from settings. 
-    """
-    return uconfig('other.bitcoin.bitcoin-host')
-
-def getBitCoinServerPort():
-    """
-    Get a bitcoin server port number from settings. 
-    """
-    return uconfig('other.bitcoin.bitcoin-port')
-
-def getBitCoinServerUserName():
-    """
-    Get a bitcoin server user name from settings. 
-    """
-    return uconfig('other.bitcoin.bitcoin-username')
-
-def getBitCoinServerPassword():
-    """
-    Get a bitcoin server user password from settings. 
-    """
-    return uconfig('other.bitcoin.bitcoin-password')
-
-def getBitCoinServerIsLocal():
-    """
-    Get a bitcoin server mode from settings: local or remote server. 
-    """
-    return uconfig('other.bitcoin.bitcoin-server-is-local').lower() == 'true' 
-
-def getBitCoinServerConfigFilename():
-    """
-    Get a bitcoin server config file name from settings. 
-    """
-    return uconfig('other.bitcoin.bitcoin-config-filename')
-
 #------------------------------------------------------------------------------ 
-#--- INITIALIZE BASE DIR ----------------------------------------------------------------------------
+#--- INITIALIZE BASE DIR ------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def RenameBaseDir(newdir):
     """
@@ -1798,21 +1753,21 @@ def RenameBaseDir(newdir):
         import shutil
         shutil.copytree(olddir, newdir)
     except:
-        bpio.exception()
+        lg.exc()
         return False
     _BaseDirPath = newdir
-    bpio.log(2, 'settings.RenameBaseDir  directory was copied,  BaseDir='+BaseDir())
+    lg.out(2, 'settings.RenameBaseDir  directory was copied,  BaseDir='+BaseDir())
     pathfilename = BaseDirPathFileName()
     bpio.WriteFile(pathfilename, _BaseDirPath)
-    bpio.log(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
+    lg.out(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
     logfilename = bpio.LogFileName
-    bpio.CloseLogFile()
+    lg.close_log_file()
     try:
         bpio.rmdir_recursive(olddir, True)
-        bpio.log(4, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
+        lg.out(4, 'settings.RenameBaseDir  old directory was removed: ' + olddir)
     except:
-        bpio.exception()
-    bpio.OpenLogFile(logfilename, True)
+        lg.exc()
+    lg.open_log_file(logfilename, True)
     return True
 
 def _initBaseDir(base_dir=None):
@@ -1899,14 +1854,15 @@ def _initBaseDir(base_dir=None):
         return
 
 #------------------------------------------------------------------------------ 
-#--- USER SETTINGS VALIDATION --------------------------------------------------------------------------- 
+#--- USER SETTINGS VALIDATION -------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 def _checkMetaDataDirectory():
     """
     Check that the metadata directory exists.
     """
     if not os.path.exists(MetaDataDir()): 
-        bpio.log(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
+        lg.out(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
         bpio._dirs_make(MetaDataDir())
 
 def _checkSettings():
@@ -1981,37 +1937,37 @@ def _checkStaticDirectories():
     """
 #    # check that the base directory exists
 #    if not os.path.isdir(BaseDir()):
-#        bpio.log(8, 'settings.init want to create folder: ' + BaseDir())
+#        lg.out(8, 'settings.init want to create folder: ' + BaseDir())
 #        bpio._dirs_make(BaseDir())
 #        if bpio.Windows(): # ??? !!!
 #            _initBaseDir()  # ??? !!!
 
     if not os.path.exists(TempDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + TempDir())
+        lg.out(6, 'settings.init want to create folder: ' + TempDir())
         os.makedirs(TempDir())
 
     if not os.path.exists(BandwidthInDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + BandwidthInDir())
+        lg.out(6, 'settings.init want to create folder: ' + BandwidthInDir())
         os.makedirs(BandwidthInDir())
 
     if not os.path.exists(BandwidthOutDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + BandwidthOutDir())
+        lg.out(6, 'settings.init want to create folder: ' + BandwidthOutDir())
         os.makedirs(BandwidthOutDir())
 
     if not os.path.exists(LogsDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + LogsDir())
+        lg.out(6, 'settings.init want to create folder: ' + LogsDir())
         os.makedirs(LogsDir())
 
     if not os.path.exists(IdentityCacheDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + IdentityCacheDir())
+        lg.out(6, 'settings.init want to create folder: ' + IdentityCacheDir())
         os.makedirs(IdentityCacheDir())
 
     if not os.path.exists(SuppliersDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + SuppliersDir())
+        lg.out(6, 'settings.init want to create folder: ' + SuppliersDir())
         os.makedirs(SuppliersDir())
 
     if not os.path.exists(RatingsDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + RatingsDir())
+        lg.out(6, 'settings.init want to create folder: ' + RatingsDir())
         os.makedirs(RatingsDir())
 
 def _checkCustomDirectories():
@@ -2021,25 +1977,25 @@ def _checkCustomDirectories():
     if getCustomersFilesDir() == '':
         uconfig().set('folder.folder-customers', os.path.join(BaseDir(), "customers"))
     if not os.path.exists(getCustomersFilesDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
+        lg.out(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
         os.makedirs(getCustomersFilesDir())
 
     if getLocalBackupsDir() == '':
         uconfig().set('folder.folder-backups', BackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
+        lg.out(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
 
     if getMessagesDir() == '':
         uconfig().set('folder.folder-messages', MessagesDir())
     if not os.path.exists(getMessagesDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + getMessagesDir())
+        lg.out(6, 'settings.init want to create folder: ' + getMessagesDir())
         os.makedirs(getMessagesDir())
 
     if getReceiptsDir() == '':
         uconfig().set('folder.folder-receipts', ReceiptsDir())
     if not os.path.exists(getReceiptsDir()):
-        bpio.log(6, 'settings.init want to create folder: ' + getReceiptsDir())
+        lg.out(6, 'settings.init want to create folder: ' + getReceiptsDir())
         os.makedirs(getReceiptsDir())
 
     if getRestoreDir() == '':

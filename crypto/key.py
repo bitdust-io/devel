@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#crypto.py
+#key.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -30,8 +30,10 @@ import warnings
 warnings.filterwarnings('ignore',category=DeprecationWarning)
 from twisted.conch.ssh import keys
 
-import bpio
-import settings
+from logs import lg
+
+from lib import bpio
+from lib import settings
 
 #------------------------------------------------------------------------------ 
 
@@ -70,11 +72,11 @@ def InitMyKey(keyfilename=None):
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     if os.path.exists(keyfilename):
-        bpio.log(4, 'crypto.InitMyKey load private key from\n        %s' % keyfilename)
+        lg.out(4, 'key.InitMyKey load private key from\n        %s' % keyfilename)
         LocalKey = keys.Key.fromFile(keyfilename)
         MyRsaKey = LocalKey.keyObject
     else:
-        bpio.log(4, 'crypto.InitMyKey generate new private key')
+        lg.out(4, 'key.InitMyKey generate new private key')
         MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)       
         LocalKey = keys.Key(MyRsaKey)
         keystring = LocalKey.toString('openssh')
@@ -316,7 +318,7 @@ def SpeedTest():
 
 if __name__ == '__main__':
     bpio.init()
-    bpio.SetDebug(18)
+    lg.set_debug_level(18)
     settings.init()
     # from twisted.internet import reactor
     # settings.uconfig().set('backup.private-key-size', '3072')

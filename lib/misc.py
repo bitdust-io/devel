@@ -33,15 +33,17 @@ import locale
 import textwrap
 import cPickle
 
-
 from twisted.python.win32 import cmdLineQuote
+
+from logs import lg 
+
+import userid.identity
 
 import bpio
 import settings
 import net_misc
 import packetid
 
-import userid.identity
 
 #------------------------------------------------------------------------------ 
 
@@ -71,7 +73,7 @@ def init():
     Will be called in main thread at start up.
     Can put here some minor things if needed.
     """
-    bpio.log(4, 'misc.init')
+    lg.out(4, 'misc.init')
     loadLocalIdentity()
 
 #-------------------------------------------------------------------------------
@@ -147,19 +149,19 @@ def loadLocalIdentity():
     filename = settings.LocalIdentityFilename()
     if os.path.exists(filename):
         xmlid = bpio.ReadTextFile(filename)
-        bpio.log(6, 'misc.loadLocalIdentity %d bytes read from\n        %s' % (len(xmlid), filename))
+        lg.out(6, 'misc.loadLocalIdentity %d bytes read from\n        %s' % (len(xmlid), filename))
     if xmlid == '':
-        bpio.log(2, "misc.loadLocalIdentity ERROR reading local identity from " + filename)
+        lg.out(2, "misc.loadLocalIdentity ERROR reading local identity from " + filename)
         return
     lid = userid.identity.identity(xmlsrc=xmlid)
     if not lid.Valid():
-        bpio.log(2, "misc.loadLocalIdentity ERROR local identity is not Valid")
+        lg.out(2, "misc.loadLocalIdentity ERROR local identity is not Valid")
         return
     _LocalIdentity = lid
     _LocalIDURL = lid.getIDURL()
     _LocalName = lid.getIDName()
     setTransportOrder(getOrderFromContacts(_LocalIdentity))
-    bpio.log(6, "misc.loadLocalIdentity my name is [%s]" % lid.getIDName())
+    lg.out(6, "misc.loadLocalIdentity my name is [%s]" % lid.getIDName())
 
 def saveLocalIdentity():
     """
@@ -168,9 +170,9 @@ def saveLocalIdentity():
     """
     global _LocalIdentity
     if not isLocalIdentityReady():
-        bpio.log(2, "misc.saveLocalIdentity ERROR localidentity not exist!")
+        lg.out(2, "misc.saveLocalIdentity ERROR localidentity not exist!")
         return
-    bpio.log(6, "misc.saveLocalIdentity")
+    lg.out(6, "misc.saveLocalIdentity")
     _LocalIdentity.sign()
     xmlid = _LocalIdentity.serialize()
     filename = settings.LocalIdentityFilename()
@@ -222,7 +224,7 @@ def NewBackupID(time_st=None):
         time_st = time.localtime()
     ampm = time.strftime("%p", time_st)
     if ampm == '':
-        bpio.log(2, 'misc.NewBackupID WARNING time.strftime("%p") returns empty string')
+        lg.out(2, 'misc.NewBackupID WARNING time.strftime("%p") returns empty string')
         ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
     result = "F" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
     return result
@@ -243,7 +245,7 @@ def TimeFromBackupID(backupID):
             st_time[3] += 12
         return time.mktime(st_time)
     except:
-        bpio.exception()
+        lg.exc()
         return None
 
 def modified_version(a):
@@ -260,7 +262,7 @@ def modified_version(a):
             int_a = int(a[1:i-1])
             int_b = int(a[i+1:])
     except:
-        bpio.exception()
+        lg.exc()
         return -1  
     hour = a[-8:-6]
     if a.endswith('PM') and hour != '12':
@@ -408,7 +410,7 @@ def BackupIDToFilePath(backupID, decompress=False):
 #                    try:
 #                        v = int(ch)
 #                    except:
-#                        bpio.exception()
+#                        lg.exc()
 #                    part += unichr(v)
 #                    ch = ''
     if part:
@@ -643,7 +645,7 @@ def pack_url_param(s):
         try:
             return str(urllib.quote(str(s)))
         except:
-            bpio.exception()
+            lg.exc()
     return s
 
 def unpack_url_param(s, default=None):
@@ -657,7 +659,7 @@ def unpack_url_param(s, default=None):
     try:
         return urllib.unquote(str(s))
     except:
-        bpio.exception()
+        lg.exc()
         return default
 
 def rndstr(length):
@@ -717,7 +719,7 @@ def calculate_best_dimension(sz, maxsize=8):
         w = math.sqrt(sz)
         h = sz / w
     except:
-        bpio.exception()
+        lg.exc()
     w = w * 1.4
     h = h / 1.4
     if int(w) * int(h) < sz and int(h) > 0:
@@ -938,7 +940,7 @@ def getClipboardText():
             win32clipboard.CloseClipboard()
             return d.replace('\r\n','\n')
         except:
-            bpio.exception()
+            lg.exc()
             return ''
     elif bpio.Linux():
         try:
@@ -974,7 +976,7 @@ def setClipboardText(txt):
             win32clipboard.SetClipboardData(win32con.CF_TEXT, txt)
             win32clipboard.CloseClipboard()
         except:
-            bpio.exception()
+            lg.exc()
     elif bpio.Linux():
         try:
             import wx
@@ -985,7 +987,7 @@ def setClipboardText(txt):
                 wx.TheClipboard.SetData(clipdata)
                 wx.TheClipboard.Close()
         except:
-            bpio.exception()
+            lg.exc()
     else:
         #TODO
         return
@@ -1013,12 +1015,12 @@ def validateTransports(orderL):
         if isValidTransport(transport):
             transports.append(transport)
         else:
-            bpio.log(6, 'misc.validateTransports WARNING invalid entry int transport list: %s , ignored' % str(transport))
+            lg.out(6, 'misc.validateTransports WARNING invalid entry int transport list: %s , ignored' % str(transport))
     if len(transports) == 0:
-        bpio.log(1, 'misc.validateTransports ERROR no valid transports, using default transports ' + str(validTransports))
+        lg.out(1, 'misc.validateTransports ERROR no valid transports, using default transports ' + str(validTransports))
         transports = validTransports
 #    if len(transports) != len(orderL):
-#        bpio.log(1, 'misc.validateTransports ERROR Transports contained an invalid entry, need to figure out where it came from.')
+#        lg.out(1, 'misc.validateTransports ERROR Transports contained an invalid entry, need to figure out where it came from.')
     return transports
 
 def setTransportOrder(orderL):
@@ -1029,7 +1031,7 @@ def setTransportOrder(orderL):
     orderl = orderL
     orderL = validateTransports(orderL)
     orderTxt = string.join(orderl, ' ')
-    bpio.log(8, 'misc.setTransportOrder: ' + str(orderTxt))
+    lg.out(8, 'misc.setTransportOrder: ' + str(orderTxt))
     bpio.WriteFile(settings.DefaultTransportOrderFilename(), orderTxt)
 
 def getTransportOrder():
@@ -1037,7 +1039,7 @@ def getTransportOrder():
     Read and validate tranports from [BitPie.NET data dir]\metadata\torder file.
     """
     global validTransports
-    bpio.log(8, 'misc.getTransportOrder')
+    lg.out(8, 'misc.getTransportOrder')
     order = bpio.ReadTextFile(settings.DefaultTransportOrderFilename()).strip()
     if order == '':
         orderL = validTransports
@@ -1052,49 +1054,6 @@ def getOrderFromContacts(ident):
     A wrapper for ``identity.getProtoOrder`` method.
     """
     return ident.getProtoOrder()
-
-#-------------------------------------------------------------------------------
-
-def StartWebStream():
-    """
-    This calls ``lib.weblog.init`` to start a web server to show the program logs.
-    The port number is set in the settings.    
-    """
-    bpio.log(6,"misc.StartWebStream")
-    import weblog
-    weblog.init(settings.getWebStreamPort())
-    bpio.SetWebStream(weblog.log)
-
-def StopWebStream():
-    """
-    Call ``lib.weblog.shutdown`` to stop a web server. 
-    """
-    bpio.log(6,"misc.StopWebStream")
-    bpio.SetWebStream(None)
-    import weblog
-    weblog.shutdown()
-
-def StartWebTraffic(root=None, path='traffic'):
-    """
-    Calls ``lib.webtraffic.init`` to run a web server to monitor packets traffic.
-    """
-    bpio.log(6,"misc.StartWebStream")
-    import lib.webtraffic as webtraffic
-    webtraffic.init(root, path, settings.getWebTrafficPort())
-    import transport.callback as callback
-    callback.add_inbox_callback(webtraffic.inbox)
-    callback.add_finish_file_sending_callback(webtraffic.outbox)
-
-def StopWebTraffic():
-    """
-    Stops web server for traffic montitoring.
-    """
-    bpio.log(6,"misc.StopWebTraffic")
-    import lib.webtraffic as webtraffic
-    webtraffic.shutdown()
-    import transport.callback as callback
-    callback.remove_inbox_callback(webtraffic.inbox)
-    callback.remove_finish_file_sending_callback(webtraffic.outbox)
 
 #------------------------------------------------------------------------------
 
@@ -1187,7 +1146,7 @@ def ReadRepoLocation():
                 try:
                     return src.split('\n')[0].strip(), src.split('\n')[1].strip() 
                 except:
-                    bpio.exception()
+                    lg.exc()
         return 'sources', 'http://bitpie.net/download.html'
             
     src = bpio.ReadTextFile(settings.RepoFile()).strip()
@@ -1222,12 +1181,12 @@ def ClearAutorunWindows():
 
 #def SetAutorunWindowsOld(CUorLM='CU', location=settings.getAutorunFilename(), name=settings.ApplicationName()):
 #    cmdexec = r'reg add HK%s\software\microsoft\windows\currentversion\run /v "%s" /t REG_SZ /d "%s" /f' % (CUorLM, name, location)
-#    bpio.log(6, 'misc.SetAutorunWindows executing: ' + cmdexec)
+#    lg.out(6, 'misc.SetAutorunWindows executing: ' + cmdexec)
 #    return nonblocking.ExecuteString(cmdexec)
 
 #def ClearAutorunWindowsOld(CUorLM='CU', name = settings.ApplicationName()):
 #    cmdexec = r'reg delete HK%s\software\microsoft\windows\currentversion\run /v "%s" /f' % (CUorLM, name)
-#    bpio.log(6, 'misc.ClearAutorunWindows executing: ' + cmdexec)
+#    lg.out(6, 'misc.ClearAutorunWindows executing: ' + cmdexec)
 #    return nonblocking.ExecuteString(cmdexec)
 
 #-------------------------------------------------------------------------------
@@ -1258,7 +1217,7 @@ def pathToWindowsShortcut(filename, folder='Desktop'):
         desktop = shell.SpecialFolders(folder)
         return os.path.join(desktop, filename)
     except:
-        bpio.exception()
+        lg.exc()
         return ''
 
 def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
@@ -1279,7 +1238,7 @@ def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder
                 shortcut.IconLocation = icon
             shortcut.save()
         except:
-            bpio.exception()
+            lg.exc()
 
 def removeWindowsShortcut(filename, folder='Desktop'):
     """
@@ -1291,7 +1250,7 @@ def removeWindowsShortcut(filename, folder='Desktop'):
             try:
                 os.remove(path)
             except:
-                bpio.exception()
+                lg.exc()
 
 #-------------------------------------------------------------------------------
 
@@ -1307,7 +1266,7 @@ def pathToStartMenuShortcut(filename):
         startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
         return os.path.join(startmenu, filename)
     except:
-        bpio.exception()
+        lg.exc()
         return ''
 
 def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
@@ -1330,7 +1289,7 @@ def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
                 shortcut.IconLocation = icon
             shortcut.save()
         except:
-            bpio.exception()
+            lg.exc()
 
 def removeStartMenuShortcut(filename):
     """
@@ -1342,7 +1301,7 @@ def removeStartMenuShortcut(filename):
             try:
                 os.remove(path)
             except:
-                bpio.exception()
+                lg.exc()
     return
 
 #------------------------------------------------------------------------------ 
@@ -1353,23 +1312,23 @@ def DoRestart(param=''):
     """
     if bpio.Windows():
         if bpio.isFrozen():
-            bpio.log(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
-            bpio.log(2, "misc.DoRestart sys.executable=" + sys.executable)
-            bpio.log(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+            lg.out(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
+            lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
+            lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
             starter_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsStarterFileName())
             if not os.path.isfile(starter_filepath):
-                bpio.log(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
+                lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
                 return
             cmdargs = [os.path.basename(starter_filepath),]
             if param != '':
                 cmdargs.append(param)
-            bpio.log(2, "misc.DoRestart cmdargs="+str(cmdargs))
+            lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
 
         else:
-            bpio.log(2, "misc.DoRestart under Windows param=%s" % param)
-            bpio.log(2, "misc.DoRestart sys.executable=" + sys.executable)
-            bpio.log(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+            lg.out(2, "misc.DoRestart under Windows param=%s" % param)
+            lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
+            lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
 
             pypath = sys.executable
             cmdargs = [sys.executable]
@@ -1380,14 +1339,14 @@ def DoRestart(param=''):
             if cmdargs.count('restart'):
                 cmdargs.remove('restart')
 
-            bpio.log(2, "misc.DoRestart cmdargs="+str(cmdargs))
+            lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             # os.spawnve(os.P_DETACH, pypath, cmdargs, os.environ)
             os.execvpe(pypath, cmdargs, os.environ)
 
     else:
-        bpio.log(2, "misc.DoRestart under Linux param=%s" % param)
-        bpio.log(2, "misc.DoRestart sys.executable=" + sys.executable)
-        bpio.log(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+        lg.out(2, "misc.DoRestart under Linux param=%s" % param)
+        lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
+        lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
         
         pypyth = sys.executable
         cmdargs = [sys.executable]
@@ -1400,10 +1359,10 @@ def DoRestart(param=''):
 
         pid = os.fork()
         if pid == 0:
-            bpio.log(2, "misc.DoRestart cmdargs="+str(cmdargs))
+            lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             os.execvpe(pypyth, cmdargs, os.environ)
         else:
-            bpio.log(2, "misc.DoRestart os.fork returned "+str(pid))
+            lg.out(2, "misc.DoRestart os.fork returned "+str(pid))
             
             
 def RunBatFile(filename, output_filename=None):
@@ -1412,7 +1371,7 @@ def RunBatFile(filename, output_filename=None):
     """
     if not bpio.Windows():
         return
-    bpio.log(0, 'misc.RunBatFile going to execute ' + str(filename))
+    lg.out(0, 'misc.RunBatFile going to execute ' + str(filename))
 
     cmd = os.path.abspath(filename).replace('\\', '/')
     if output_filename is not None:
@@ -1427,7 +1386,7 @@ def RunShellCommand(cmdstr, wait=True):
         :param cmdstr: a full command line ( with arguments ) to execute.
         :param wait: if True - the main process will be blocked until child is finished.
     """
-    bpio.log(8, 'misc.RunShellCommand ' + cmdstr)
+    lg.out(8, 'misc.RunShellCommand ' + cmdstr)
     try:
         if bpio.Windows():
             import win32process
@@ -1440,13 +1399,13 @@ def RunShellCommand(cmdstr, wait=True):
                 cmdstr,
                 shell=True,)
     except:
-        bpio.exception()
+        lg.exc()
         return None
     if wait:
         try:
             result = p.wait()
         except:
-            bpio.exception()
+            lg.exc()
             return None
     else:
         return p.pid
@@ -1476,7 +1435,7 @@ def ExplorePathInOS(filepath):
             import webbrowser
             webbrowser.open(filepath)
         except:
-            bpio.exception()
+            lg.exc()
     return
 
 
@@ -1495,11 +1454,11 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
     try:
         if bpio.Linux():
             cmdargs = ['cp', '-r', current, new]
-            bpio.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
+            lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
             subprocess.call(cmdargs)
             if remove_old:
                 cmdargs = ['rm', '-r', current]
-                bpio.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
+                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
                 subprocess.call(cmdargs)
             return 'ok'
     
@@ -1508,20 +1467,20 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
             cmdstr1 = 'xcopy %s %s /E /K /R /H /Y' % (cmdLineQuote(os.path.join(current_dir, '*.*')), new)
             cmdstr2 = 'rmdir /S /Q %s' % current
             if not os.path.isdir(new):
-                bpio.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr0))
+                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr0))
                 if RunShellCommand(cmdstr0) is None:
                     return 'error'
-                bpio.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr1))
+                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr1))
             if RunShellCommand(cmdstr1) is None:
                 return 'error'
             if remove_old:
-                bpio.log(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr2))
+                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr2))
                 if RunShellCommand(cmdstr2) is None:
                     return 'error'
             return 'ok'
         
     except:
-        bpio.exception()
+        lg.exc()
         return 'failed'
     
     return 'ok'
@@ -1534,7 +1493,7 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
 #    I was playing with that, tried to keep the shortcut on the desktop always (even if user removes it).
 #    This is switched off now, it was very anoying for one my friend who install the software.
 #    """
-#    bpio.log(6, 'misc.UpdateDesktopShortcut')
+#    lg.out(6, 'misc.UpdateDesktopShortcut')
 #    if bpio.Windows() and bpio.isFrozen():
 #        if settings.getGeneralDesktopShortcut():
 #            if not os.path.exists(pathToWindowsShortcut(settings.getIconLinkFilename())):
@@ -1553,7 +1512,7 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
 #    """
 #    Update icons in the start menu, switched off right now.
 #    """
-#    bpio.log(6, 'misc.UpdateStartMenuShortcut')
+#    lg.out(6, 'misc.UpdateStartMenuShortcut')
 #    if bpio.Windows() and bpio.isFrozen():
 #        if settings.getGeneralStartMenuShortcut():
 #            if not os.path.exists(pathToStartMenuShortcut(settings.getIconLinkFilename())):
@@ -1574,7 +1533,7 @@ def UpdateSettings():
     see ``p2p.init_shutdown.init_local()`` method.
     I used that place sometimes to 'patch' users settings.
     """
-    bpio.log(6, 'misc.UpdateSettings')
+    lg.out(6, 'misc.UpdateSettings')
 
 #-------------------------------------------------------------------------------
 
@@ -1618,7 +1577,7 @@ def SendDevReportOld(subject, body, includelogs):
             body,
             filesList,)
     except:
-        bpio.exception()
+        lg.exc()
         
 
 def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=None):
@@ -1662,7 +1621,7 @@ def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=No
         net_misc.uploadHTTP('http://bitpie.net/cgi-bin/feedback.py', files, data, progress, receiverDeferred)            
         return True 
     except:
-        bpio.exception()
+        lg.exc()
     return False
 
 #------------------------------------------------------------------------------ 
@@ -1724,7 +1683,7 @@ def UpdateRegistryUninstall(uninstall=False):
         try:
             reg = _winreg.CreateKey(_winreg.HKEY_LOCAL_MACHINE, regpath)
         except:
-            bpio.exception()
+            lg.exc()
             return False
     # check
     i = 0
@@ -1741,7 +1700,7 @@ def UpdateRegistryUninstall(uninstall=False):
                 try:
                     _winreg.DeleteValue(reg, name)
                 except:
-                    bpio.exception()
+                    lg.exc()
         else:
             if name == 'DisplayName' and value == 'BitPie.NET':
                 _winreg.CloseKey(reg)
@@ -1752,12 +1711,12 @@ def UpdateRegistryUninstall(uninstall=False):
         try:
             reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, unistallpath, 0, _winreg.KEY_ALL_ACCESS)
         except:
-            bpio.exception()
+            lg.exc()
             return False
         try:
             _winreg.DeleteKey(reg, 'BitPie.NET')
         except:
-            bpio.exception()
+            lg.exc()
             _winreg.CloseKey(reg)
             return False
         _winreg.CloseKey(reg)
@@ -1776,7 +1735,7 @@ def MakeBatFileToUninstall(wait_appname='bpmain.exe', local_dir=bpio.getExecutab
     """
     Not used.
     """
-    bpio.log(0, 'misc.MakeBatFileToUninstall')
+    lg.out(0, 'misc.MakeBatFileToUninstall')
     batfileno, batfilename = tempfile.mkstemp('.bat', 'BitPie.NET-uninstall-')
     batsrc = ''
     batsrc += 'cd "%s"\n' % local_dir
@@ -1823,7 +1782,7 @@ def LoopAttenuation(current_delay, faster, min, max):
 #------------------------------------------------------------------------------ 
 
 if __name__ == '__main__':
-    bpio.SetDebug(10)
+    lg.set_debug_level(10)
     bpio.init()
     init()
 

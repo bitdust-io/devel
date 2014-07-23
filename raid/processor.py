@@ -19,7 +19,9 @@ except:
 from twisted.internet import stdio
 from twisted.protocols import basic
 
-import lib.bpio as bpio  
+from logs import lg
+
+from lib import bpio  
 
 import make
 import read 
@@ -41,7 +43,7 @@ class Echo(basic.LineReceiver):
             words = line.split(' ')
             cmd = words[0]
             params = map(base64.b64decode, words[1:])
-            bpio.log(4, '%s %s' % (cmd, params))
+            lg.out(4, '%s %s' % (cmd, params))
             if cmd == 'make':
                 dataNum, parityNum = make.raidmake(params[0], params[1], params[2], int(params[3]), in_memory=True)
                 self.sendLine('task-done %s %s' % (dataNum, parityNum))
@@ -52,7 +54,7 @@ class Echo(basic.LineReceiver):
             # elif cmd == 'rebuild': 
                 # read.RebuildOne(inlist, listlen, outfilename)
         except:
-            bpio.exception()
+            lg.exc()
             self.sendLine('error')
             
 #------------------------------------------------------------------------------ 
@@ -70,8 +72,8 @@ def main():
         logspath = 'raid.log'
     else:
         logspath = os.path.join(logspath, 'raid.log')
-    bpio.OpenLogFile(logspath)
-    bpio.SetDebug(20)
+    lg.open_log_file(logspath)
+    lg.set_debug_level(20)
 
     bpio.HigherPriority()
 

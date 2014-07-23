@@ -15,6 +15,8 @@ from twisted.internet import protocol
 from twisted.internet import task
 from twisted.internet.defer import DeferredList
 
+from logs import lg
+
 import bpio
 
 #------------------------------------------------------------------------------ 
@@ -50,25 +52,25 @@ CMD_MYIPPORT = 'm'
 
 def listen(port, proto=None):
     if port in listeners().keys():
-        bpio.log(6, 'udp.listen  WARNING already started on port %d' % port)
-        bpio.log(6, '            %s' % str(listeners().keys()))
+        lg.out(6, 'udp.listen  WARNING already started on port %d' % port)
+        lg.out(6, '            %s' % str(listeners().keys()))
         return listeners()[port]
     if proto is None:
         listeners()[port] = reactor.listenUDP(port, CommandsProtocol())
     else:
         listeners()[port] = reactor.listenUDP(port, proto)
     listeners()[port].port = port
-    bpio.log(6, 'udp.listen on port %d started' % port)
+    lg.out(6, 'udp.listen on port %d started' % port)
     return listeners()[port]
 
 
 def port_closed(x):
-    bpio.log(6, 'udp.port_closed   listeners: %d' % (len(listeners())))
+    lg.out(6, 'udp.port_closed   listeners: %d' % (len(listeners())))
     return x
     
     
 def close(port):
-    bpio.log(6, 'udp.close  %r' % port)
+    lg.out(6, 'udp.close  %r' % port)
     l = listeners().pop(port)
     l.protocol.disconnect()
     d = l.stopListening()
@@ -76,7 +78,7 @@ def close(port):
     l = None
     if d:
         d.addCallback(port_closed)
-    bpio.log(6, 'udp.close  STOP listener on UDP port %d' % port)
+    lg.out(6, 'udp.close  STOP listener on UDP port %d' % port)
     return d
 
 
@@ -88,9 +90,9 @@ def close_all():
         if d:
             # d.addCallback(port_closed)
             shutlist.append(d)
-            # bpio.log(6, 'udp.close_all  STOP listener on UDP port %d' % port)
+            # lg.out(6, 'udp.close_all  STOP listener on UDP port %d' % port)
     # _Listeners.clear()
-    bpio.log(6, 'udp.close_all  %d UDP listeners were closed' % len(shutlist))
+    lg.out(6, 'udp.close_all  %d UDP listeners were closed' % len(shutlist))
     return DeferredList(shutlist)
 
 #------------------------------------------------------------------------------ 
@@ -117,7 +119,7 @@ def listener(port):
 def send_command(from_port, command, data, address):
     p = proto(from_port)
     if not p:
-        bpio.log(6, 'udp.send_command WARNING port %d is not opened to listen' % from_port)
+        lg.out(6, 'udp.send_command WARNING port %d is not opened to listen' % from_port)
         return False
     result = p.sendCommand(command, data, address)
     p = None
@@ -134,7 +136,7 @@ class BasicProtocol(protocol.DatagramProtocol):
     def __init__(self):
         """
         """
-        # bpio.log(6, 'udp.BasicProtocol.__init__ %r' % id(self))
+        # lg.out(6, 'udp.BasicProtocol.__init__ %r' % id(self))
         self.port = None
         self.callbacks = []
         self.stopping = False
@@ -142,7 +144,7 @@ class BasicProtocol(protocol.DatagramProtocol):
     def __del__(self):
         """
         """
-        # bpio.log(6, 'udp.BasicProtocol.__del__ %r' % id(self))
+        # lg.out(6, 'udp.BasicProtocol.__del__ %r' % id(self))
         # protocol.DatagramProtocol.__del__(self)
 
     def add_callback(self, cb):
@@ -166,19 +168,19 @@ class BasicProtocol(protocol.DatagramProtocol):
         try:
             self.transport.write(datagram, address)
         except:
-            # bpio.exception()
+            # lg.exc()
             return False
         return True
         
     def startProtocol(self):
         """
         """
-        bpio.log(6, 'udp.startProtocol %r' % self)
+        lg.out(6, 'udp.startProtocol %r' % self)
 
     def stopProtocol(self):
         """
         """
-        bpio.log(6, 'udp.stopProtocol %r' % self)
+        lg.out(6, 'udp.stopProtocol %r' % self)
         self.port = None
         self.callbacks = []
         
@@ -227,7 +229,7 @@ class CommandsProtocol(BasicProtocol):
             return
         if version != self.SoftwareVersion:
             return
-        bpio.log(24, '>>> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
+        lg.out(24, '>>> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
         self.run_callbacks((command, payload), address)
         
     def sendCommand(self, command, data, address):
@@ -235,9 +237,9 @@ class CommandsProtocol(BasicProtocol):
             datagram = self.SoftwareVersion + str(command.lower())[0] + data
         except:
             # print address, datagram, type(datagram), command
-            bpio.exception()
+            lg.exc()
             return False
-        bpio.log(24, '<<< [%s] (%d bytes) to %s' % (command, len(data), address))
+        lg.out(24, '<<< [%s] (%d bytes) to %s' % (command, len(data), address))
         return self.sendDatagram(datagram, address) 
         
         
@@ -245,7 +247,7 @@ class CommandsProtocol(BasicProtocol):
 
 def main():
     bpio.init()
-    bpio.SetDebug(18)
+    lg.set_debug_level(18)
     listnport = int(sys.argv[1])
     def received(dgrm, addr):
         send_command(listnport, CMD_ALIVE, 'ok', addr)

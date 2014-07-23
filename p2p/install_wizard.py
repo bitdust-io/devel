@@ -42,13 +42,14 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in install_wizard.py')
 
-import lib.bpio as bpio
-import lib.settings as settings
+from logs import lg
+
+from lib import bpio
+from lib import settings
 from lib.automat import Automat
 
 import installer
 import webcontrol
-# import bpupdate
 
 #------------------------------------------------------------------------------ 
 
@@ -210,7 +211,7 @@ class InstallWizard(Automat):
             if self.role_args and self.role_args.get('development', '').lower() == 'true':
                 settings.uconfig().set("logs.debug-level", '10')
                 settings.uconfig().set("logs.stream-enable", 'True')
-                bpio.SetDebug(10)
+                lg.set_debug_level(10)
         settings.uconfig().update()
 
 #    def doSaveUpdates(self, arg):

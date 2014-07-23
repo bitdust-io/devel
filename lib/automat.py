@@ -292,14 +292,10 @@ class Automat(object):
             _LogsCount += 1
         else:
             try:
-                from bpio import log
-                log(level, text)
+                from logs import lg
+                lg.out(level, text)
             except:
-                try:
-                    from lib.bpio import log
-                    log(level, text)
-                except:
-                    pass
+                pass
 
 #------------------------------------------------------------------------------ 
 

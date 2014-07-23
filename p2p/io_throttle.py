@@ -27,29 +27,27 @@ We probably want to be able to send not only to suppliers but to any contacts.
 In future we can use that to do "overlay" communications to hide users.
 """  
 
-
 import os
 import sys
 import time
-
 
 try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in io_throttle.py')
 
+from logs import lg
 
-import lib.bpio as bpio
-import lib.settings as settings
-import lib.signed_packet as signed_packet
-import lib.commands as commands
-import lib.misc as misc
-import lib.tmpfile as tmpfile
-import lib.nameurl as nameurl
-import lib.packetid as packetid
+from lib import bpio
+from lib import settings
+from lib import commands
+from lib import misc
+from lib import nameurl
 
-import transport.gate as gate
-import transport.callback as callback
+from crypto import signed
+
+from transport import gate
+from transport import callback
 
 import contact_status
 import supplier_connector
@@ -74,7 +72,7 @@ def init():
     """
     Init ``throttle()`` object and link with transports.
     """
-    bpio.log(4,"io_throttle.init")
+    lg.out(4,"io_throttle.init")
     throttle()
     callback.add_queue_item_status_callback(OutboxStatus)
 
@@ -82,7 +80,7 @@ def shutdown():
     """
     To stop program correctly - need to call this before shut down.
     """
-    bpio.log(4,"io_throttle.shutdown")
+    lg.out(4,"io_throttle.shutdown")
     throttle().DeleteBackupRequests('')
     throttle().DeleteSuppliers(throttle().supplierQueues.keys())
 
@@ -192,7 +190,7 @@ class FileToSend:
         try:
             self.fileSize = os.path.getsize(os.path.abspath(fileName))
         except:
-            bpio.exception()
+            lg.exc()
             self.fileSize = 0
         self.packetID = packetID
         self.remoteID = remoteID
@@ -276,15 +274,15 @@ class SupplierQueue:
 
     def SupplierSendFile(self, fileName, packetID, ownerID, callOnAck=None, callOnFail=None):
         if self.shutdown: 
-            bpio.log(10, "io_throttle.SupplierSendFile finishing to %s, shutdown is True" % self.remoteName)
+            lg.out(10, "io_throttle.SupplierSendFile finishing to %s, shutdown is True" % self.remoteName)
             return        
         if contact_status.isOffline(self.remoteID):
-            bpio.log(10, "io_throttle.SupplierSendFile %s is offline, so packet %s is failed" % (self.remoteName, packetID))
+            lg.out(10, "io_throttle.SupplierSendFile %s is offline, so packet %s is failed" % (self.remoteName, packetID))
             if callOnFail is not None:
                 reactor.callLater(0, callOnFail, self.remoteID, packetID, 'offline')
             return
         if packetID in self.fileSendQueue:
-            # bpio.log(4, "io_throttle.SupplierSendFile WARNING packet %s already in the queue for %s" % (packetID, self.remoteName))
+            # lg.out(4, "io_throttle.SupplierSendFile WARNING packet %s already in the queue for %s" % (packetID, self.remoteName))
             if callOnFail is not None:
                 reactor.callLater(0, callOnFail, self.remoteID, packetID, 'in queue')
             return
@@ -296,7 +294,7 @@ class SupplierQueue:
             ownerID, 
             callOnAck,
             callOnFail,)
-        bpio.log(10, "io_throttle.SupplierSendFile %s to %s, queue=%d" % (packetID, self.remoteName, len(self.fileSendQueue)))
+        lg.out(10, "io_throttle.SupplierSendFile %s to %s, queue=%d" % (packetID, self.remoteName, len(self.fileSendQueue)))
         # reactor.callLater(0, self.DoSend)
         self.DoSend()
             
@@ -305,7 +303,7 @@ class SupplierQueue:
         if self._runSend:
             return
         self._runSend = True
-        #bpio.log(6, 'io_throttle.RunSend')
+        #out(6, 'io_throttle.RunSend')
         packetsFialed = {}
         packetsToRemove = set()
         packetsSent = 0
@@ -336,7 +334,7 @@ class SupplierQueue:
                 continue
             # the data file to send no longer exists - it is failed situation
             if not os.path.exists(fileToSend.fileName):
-                bpio.log(4, "io_throttle.RunSend WARNING file %s not exist" % (fileToSend.fileName))
+                lg.out(4, "io_throttle.RunSend WARNING file %s not exist" % (fileToSend.fileName))
                 packetsFialed[packetID] = 'not exist'
                 continue
             # do not send too many packets, need to wait for ack
@@ -349,12 +347,12 @@ class SupplierQueue:
                     if os.path.getsize(fileToSend.fileName) > 1024 * 10:
                         continue
                 except:
-                    bpio.exception()
+                    lg.exc()
                     continue
             # prepare the packet
             dt = time.time()
             Payload = str(bpio.ReadBinaryFile(fileToSend.fileName))
-            newpacket = signed_packet.Packet(
+            newpacket = signed.Packet(
                 commands.Data(), 
                 fileToSend.ownerID, 
                 self.creatorID, 
@@ -372,7 +370,7 @@ class SupplierQueue:
             #     fileToSend.remoteID, 
             #     fileToSend.packetID)
             # callback.register_interest(self.FileSendAck, fileToSend.remoteID, fileToSend.packetID)
-            bpio.log(12, 'io_throttle.RunSend %s to %s, dt=%s' % (
+            lg.out(12, 'io_throttle.RunSend %s to %s, dt=%s' % (
                 str(newpacket), nameurl.GetName(fileToSend.remoteID), str(time.time()-dt)))
             # mark file as been sent
             fileToSend.sendTime = time.time()
@@ -409,7 +407,7 @@ class SupplierQueue:
         
     
     def DoSend(self):
-        #bpio.log(6, 'io_throttle.DoSend')
+        #out(6, 'io_throttle.DoSend')
         if self.sendTask is None:
             self.SendingTask()
             return
@@ -423,14 +421,14 @@ class SupplierQueue:
 
     def FileSendAck(self, newpacket, info):    
         if self.shutdown: 
-            bpio.log(10, "io_throttle.FileSendAck finishing to %s, shutdown is True" % self.remoteName)
+            lg.out(10, "io_throttle.FileSendAck finishing to %s, shutdown is True" % self.remoteName)
             return
         self.ackedCount += 1
         if newpacket.PacketID not in self.fileSendQueue:
-            bpio.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending queue for %s" % (newpacket.PacketID, self.remoteName))
+            lg.out(4, "io_throttle.FileSendAck WARNING packet %s not in sending queue for %s" % (newpacket.PacketID, self.remoteName))
             return
         if newpacket.PacketID not in self.fileSendDict.keys():
-            bpio.log(4, "io_throttle.FileSendAck WARNING packet %s not in sending dict for %s" % (newpacket.PacketID, self.remoteName))
+            lg.out(4, "io_throttle.FileSendAck WARNING packet %s not in sending dict for %s" % (newpacket.PacketID, self.remoteName))
             return
         self.fileSendDict[newpacket.PacketID].ackTime = time.time()
         if newpacket.Command == commands.Ack():
@@ -453,17 +451,17 @@ class SupplierQueue:
                 raise Exception('incorrect packet type received')
         self.DoSend()
         # self.RunSend()
-        bpio.log(14, "io_throttle.FileSendAck %s from %s, queue=%d" % (
+        lg.out(14, "io_throttle.FileSendAck %s from %s, queue=%d" % (
             str(newpacket), self.remoteName, len(self.fileSendQueue)))
 
         
     def FileSendFailed(self, RemoteID, PacketID, why):
         if self.shutdown: 
-            bpio.log(10, "io_throttle.FileSendFailed finishing to %s, shutdown is True" % self.remoteName)
+            lg.out(10, "io_throttle.FileSendFailed finishing to %s, shutdown is True" % self.remoteName)
             return
         self.failedCount += 1
         if PacketID not in self.fileSendDict.keys():
-            bpio.log(4, "io_throttle.FileSendFailed WARNING packet %s not in send dict" % PacketID)
+            lg.out(4, "io_throttle.FileSendFailed WARNING packet %s not in send dict" % PacketID)
             return
         self.fileSendDict[PacketID].result = why
         fileToSend = self.fileSendDict[PacketID]
@@ -478,30 +476,30 @@ class SupplierQueue:
             reactor.callLater(0, fileToSend.callOnFail, RemoteID, PacketID, why)
         self.DoSend()
         # self.RunSend()
-        bpio.log(10, "io_throttle.FileSendFailed %s to [%s] because %s" % (PacketID, nameurl.GetName(fileToSend.remoteID), why))
+        lg.out(10, "io_throttle.FileSendFailed %s to [%s] because %s" % (PacketID, nameurl.GetName(fileToSend.remoteID), why))
 
 
     def SupplierRequestFile(self, callOnReceived, creatorID, packetID, ownerID):
         if self.shutdown: 
-            bpio.log(10, "io_throttle.SupplierRequestFile finishing to %s, shutdown is True" % self.remoteName)
+            lg.out(10, "io_throttle.SupplierRequestFile finishing to %s, shutdown is True" % self.remoteName)
             if callOnReceived:
                 reactor.callLater(0, callOnReceived, packetID, 'shutdown')
             return
         if packetID in self.fileRequestQueue:
-            # bpio.log(4, "io_throttle.SupplierRequestFile WARNING packet %s already in the queue for %s" % (packetID, self.remoteName))
+            # lg.out(4, "io_throttle.SupplierRequestFile WARNING packet %s already in the queue for %s" % (packetID, self.remoteName))
             if callOnReceived:
                 reactor.callLater(0, callOnReceived, packetID, 'in queue')
             return
         self.fileRequestQueue.append(packetID)
         self.fileRequestDict[packetID] = FileToRequest(
             callOnReceived, creatorID, packetID, ownerID, self.remoteID)
-        bpio.log(10, "io_throttle.SupplierRequestFile for %s from %s, queue length is %d" % (packetID, self.remoteName, len(self.fileRequestQueue)))
+        lg.out(10, "io_throttle.SupplierRequestFile for %s from %s, queue length is %d" % (packetID, self.remoteName, len(self.fileRequestQueue)))
         # reactor.callLater(0, self.DoRequest)
         self.DoRequest()
 
 
     def RunRequest(self):
-        #bpio.log(6, 'io_throttle.RunRequest')
+        #out(6, 'io_throttle.RunRequest')
         packetsToRemove = set()
         for i in range(0, min(self.fileRequestMaxLength, len(self.fileRequestQueue))):
             packetID = self.fileRequestQueue[i]
@@ -521,10 +519,10 @@ class SupplierQueue:
             if self.fileRequestDict[packetID].requestTime is None:
                 if not os.path.exists(os.path.join(settings.getLocalBackupsDir(), packetID)): 
                     fileRequest = self.fileRequestDict[packetID]
-                    bpio.log(10, "io_throttle.RunRequest for packetID " + fileRequest.packetID)
+                    lg.out(10, "io_throttle.RunRequest for packetID " + fileRequest.packetID)
                     # transport_control.RegisterInterest(self.DataReceived,fileRequest.creatorID,fileRequest.packetID)
                     # callback.register_interest(self.DataReceived, fileRequest.creatorID, fileRequest.packetID)
-                    newpacket = signed_packet.Packet(
+                    newpacket = signed.Packet(
                         commands.Retrieve(), 
                         fileRequest.ownerID, 
                         fileRequest.creatorID, 
@@ -569,7 +567,7 @@ class SupplierQueue:
         
     
     def DoRequest(self):
-        #bpio.log(6, 'io_throttle.DoRequest')
+        #out(6, 'io_throttle.DoRequest')
         if self.requestTask is None:
             self.RequestTask()
         else:
@@ -602,7 +600,7 @@ class SupplierQueue:
             raise Exception('incorrect response command')    
         if self.fileRequestDict.has_key(newpacket.PacketID):
             del self.fileRequestDict[newpacket.PacketID]
-        bpio.log(10, "io_throttle.DataReceived %s from %s, queue=%d" % (
+        lg.out(10, "io_throttle.DataReceived %s from %s, queue=%d" % (
             newpacket, self.remoteName, len(self.fileRequestQueue)))
         self.DoRequest()
 
@@ -617,7 +615,7 @@ class SupplierQueue:
             if packetID.count(backupName):
                 self.FileSendFailed(self.fileSendDict[packetID].remoteID, packetID, 'delete request')
                 packetsToRemove.add(packetID)
-                bpio.log(12, 'io_throttle.DeleteBackupRequests %s from send queue' % packetID)
+                lg.out(12, 'io_throttle.DeleteBackupRequests %s from send queue' % packetID)
         for packetID in packetsToRemove:
             self.fileSendQueue.remove(packetID)
             del self.fileSendDict[packetID]
@@ -625,7 +623,7 @@ class SupplierQueue:
         for packetID in self.fileRequestQueue:
             if packetID.count(backupName):
                 packetsToRemove.add(packetID)
-                bpio.log(12, 'io_throttle.DeleteBackupRequests %s from request queue' % packetID)
+                lg.out(12, 'io_throttle.DeleteBackupRequests %s from request queue' % packetID)
         for packetID in packetsToRemove:
             self.fileRequestQueue.remove(packetID)
             del self.fileRequestDict[packetID]
@@ -692,21 +690,21 @@ class IOThrottle:
 
     def DeleteBackupRequests(self, backupName):
         #if settings.getDoBackupMonitor() == "Y":
-        bpio.log(10, 'io_throttle.DeleteBackupRequests for %s' % backupName)
+        lg.out(10, 'io_throttle.DeleteBackupRequests for %s' % backupName)
         for supplierIdentity in self.supplierQueues.keys():
             self.supplierQueues[supplierIdentity].DeleteBackupRequests(backupName)
 
 
     def QueueSendFile(self, fileName, packetID, remoteID, ownerID, callOnAck=None, callOnFail=None):
-        #bpio.log(10, "io_throttle.QueueSendFile %s to %s" % (packetID, nameurl.GetName(remoteID)))
+        #out(10, "io_throttle.QueueSendFile %s to %s" % (packetID, nameurl.GetName(remoteID)))
         if not os.path.exists(fileName):
-            bpio.log(2, "io_throttle.QueueSendFile ERROR %s not exist" % fileName)
+            lg.out(2, "io_throttle.QueueSendFile ERROR %s not exist" % fileName)
             if callOnFail is not None:
                 reactor.callLater(.01, callOnFail, remoteID, packetID, 'not exist')
             return
         if remoteID not in self.supplierQueues.keys():
             self.supplierQueues[remoteID] = SupplierQueue(remoteID, self.creatorID)
-            bpio.log(6, "io_throttle.QueueSendFile made a new queue for %s" % nameurl.GetName(remoteID))
+            lg.out(6, "io_throttle.QueueSendFile made a new queue for %s" % nameurl.GetName(remoteID))
         self.supplierQueues[remoteID].SupplierSendFile(
             fileName, packetID, ownerID, callOnAck, callOnFail,)
             
@@ -719,15 +717,15 @@ class IOThrottle:
         if packetID not in [ settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName(), ]:
             filename = os.path.join(settings.getLocalBackupsDir(), packetID)
             if os.path.exists(filename):
-                bpio.log(4, "io_throttle.QueueRequestFile WARNING %s already exist " % filename)
+                lg.out(4, "io_throttle.QueueRequestFile WARNING %s already exist " % filename)
                 if callOnReceived:
                     reactor.callLater(0, callOnReceived, packetID, 'exist')
                 return
         if remoteID not in self.supplierQueues.keys():
             # made a new queue for this man
             self.supplierQueues[remoteID] = SupplierQueue(remoteID, self.creatorID)
-            bpio.log(6, "io_throttle.QueueRequestFile made a new queue for %s" % nameurl.GetName(remoteID))
-        # bpio.log(10, "io_throttle.QueueRequestFile asking for %s from %s" % (packetID, nameurl.GetName(remoteID)))
+            lg.out(6, "io_throttle.QueueRequestFile made a new queue for %s" % nameurl.GetName(remoteID))
+        # lg.out(10, "io_throttle.QueueRequestFile asking for %s from %s" % (packetID, nameurl.GetName(remoteID)))
         self.supplierQueues[remoteID].SupplierRequestFile(callOnReceived, creatorID, packetID, ownerID)
 
 

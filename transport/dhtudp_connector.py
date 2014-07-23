@@ -16,10 +16,12 @@ EVENTS:
 
 import time
 
-import lib.bpio as bpio
-import lib.automat as automat
+from logs import lg
 
-import dht.dht_service as dht_service
+from lib import bpio
+from lib import automat
+
+from dht import dht_service
 
 import dhtudp_session
 
@@ -39,7 +41,7 @@ def connectors():
 def create(node, peer_id):
     """
     """
-    bpio.log(12, 'dhtudp_connector.create peer_id=%s' % peer_id)
+    lg.out(12, 'dhtudp_connector.create peer_id=%s' % peer_id)
     c = DHTUDPConnector(node, peer_id)
     connectors()[c.id] = c
     return c
@@ -115,7 +117,7 @@ class DHTUDPConnector(automat.Automat):
         """
         Action method.
         """
-        # bpio.log(10, 'dhtudp_connector.doStartNewSession wants to start a new session')
+        # lg.out(10, 'dhtudp_connector.doStartNewSession wants to start a new session')
         peer_address = arg
         s = dhtudp_session.get(peer_address)
         if s:
@@ -182,7 +184,7 @@ class DHTUDPConnector(automat.Automat):
             self.automat('dht-write-failed')
         
     def _got_peer_address(self, value):
-        # bpio.log(18, 'dhtudp_connector._got_peer_address  %r' % value)
+        # lg.out(18, 'dhtudp_connector._got_peer_address  %r' % value)
         if type(value) != dict:
             self.automat('dht-read-failed')
             return

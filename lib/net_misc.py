@@ -609,7 +609,7 @@ def SendEmail(TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES):
     s.close()
 
 #    except:
-#        bpio.exception()
+#        lg.exc()
 
 
 #-------------------------------------------------------------------------------

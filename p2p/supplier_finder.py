@@ -21,18 +21,23 @@ EVENTS:
 import time
 import random
 
-import lib.bpio as bpio
-import lib.automat as automat
-import lib.commands as commands
-import lib.contacts as contacts
-import lib.eccmap as eccmap
-import lib.misc as misc
-import lib.settings as settings
-import lib.diskspace as diskspace
+from logs import lg
 
-import userid.identitycache as identitycache
-import transport.callback as callback
-import dht.dht_service as dht_service
+from lib import bpio
+from lib import automat
+from lib import commands
+from lib import contacts
+from lib import misc
+from lib import settings
+from lib import diskspace
+
+from raid import eccmap
+
+from userid import identitycache
+
+from transport import callback
+
+from dht import dht_service
 
 import fire_hire
 import p2p_service
@@ -217,7 +222,7 @@ class SupplierFinder(automat.Automat):
                 sc.remove_callback('supplier_finder')
             self.target_idurl = None
         automat.objects().pop(self.index)
-        bpio.log(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
+        lg.out(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         """
@@ -225,7 +230,7 @@ class SupplierFinder(automat.Automat):
         self.automat('inbox-packet', (newpacket, info, status, error_message))
         
     def _found_nodes(self, nodes):
-        bpio.log(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
+        lg.out(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')
@@ -237,7 +242,7 @@ class SupplierFinder(automat.Automat):
         self.automat('users-not-found')
     
     def _got_target_idurl(self, response):
-        bpio.log(14, 'supplier_finder._got_target_idurl response=%s' % str(response) )
+        lg.out(14, 'supplier_finder._got_target_idurl response=%s' % str(response) )
         try:
             idurl = response['idurl']
         except:
@@ -246,7 +251,7 @@ class SupplierFinder(automat.Automat):
             self.automat('users-not-found')
             return response
         if contacts.IsSupplier(idurl):
-            bpio.log(14, '    %s is supplier already' % idurl)
+            lg.out(14, '    %s is supplier already' % idurl)
             self.automat('users-not-found')
             # self.automat('user-already-supplier')
             return response

@@ -26,8 +26,10 @@ from twisted.web import xmlrpc
 from twisted.internet import protocol
 from twisted.internet.defer import Deferred, succeed
 
-import lib.bpio as bpio
-import lib.nameurl as nameurl
+from logs import lg
+
+from lib import bpio
+from lib import nameurl
 
 import dhtudp_node
 import dhtudp_session
@@ -36,11 +38,11 @@ import dhtudp_session
 
 _GateProxy = None
 
+#------------------------------------------------------------------------------ 
+
 def proxy():
     global _GateProxy
     return _GateProxy
-
-#------------------------------------------------------------------------------ 
 
 def idurl_to_id(idurl):
     """
@@ -68,7 +70,7 @@ class GateInterface():
         """
         """
         global _GateProxy
-        bpio.log(4, 'dhtudp_interface.init')
+        lg.out(4, 'dhtudp_interface.init')
         _GateProxy = xmlrpc.Proxy(gate_xml_rpc_url, allowNone=True)
         _GateProxy.callRemote('transport_started', 'dhtudp')
         return True
@@ -77,7 +79,7 @@ class GateInterface():
         """
         """
         global _GateProxy
-        bpio.log(4, 'dhtudp_interface.shutdown')
+        lg.out(4, 'dhtudp_interface.shutdown')
         ret = self.disconnect()
         if _GateProxy:
             del _GateProxy
@@ -88,14 +90,14 @@ class GateInterface():
         """
         """
         dhtudp_node.A('go-online', options)
-        # bpio.log(8, 'dhtudp_interface.receive')
+        # lg.out(8, 'dhtudp_interface.receive')
         return True
 
     def disconnect(self):
         """
         """
         dhtudp_node.A('go-offline')
-        # bpio.log(8, 'dhtudp_interface.disconnect')
+        # lg.out(8, 'dhtudp_interface.disconnect')
         return succeed(True)
 
     def send_file(self, filename, host, description='', single=False):
@@ -123,7 +125,7 @@ class GateInterface():
         """
         if not host:
             host = idurl_to_id(idurl)
-        bpio.log(12, 'dhtudp_interface.connect %s' % host)
+        lg.out(12, 'dhtudp_interface.connect %s' % host)
         dhtudp_node.A('connect', host)
 
     def disconnect_from_host(self, host):
@@ -146,7 +148,7 @@ class GateInterface():
         for sess in dhtudp_session.sessions().values():
             for in_file in sess.stream.inboxFiles.values():
                 if in_file.transfer_id and in_file.transfer_id == transferID:
-                    bpio.log(6, 'dhtudp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
+                    lg.out(6, 'dhtudp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
                     sess.automat('shutdown')
                     return True
         return False
@@ -157,7 +159,7 @@ class GateInterface():
         for sess in dhtudp_session.sessions().values():
             for fn, descr, result_defer, single in sess.stream.outboxQueue:
                 if fn == filename and sess.peer_id == host:
-                    bpio.log(6, 'dhtudp_interface.cancel_outbox_file    host=%s  want to close session' % host)
+                    lg.out(6, 'dhtudp_interface.cancel_outbox_file    host=%s  want to close session' % host)
                     sess.automat('shutdown')
                     return True
         return False
