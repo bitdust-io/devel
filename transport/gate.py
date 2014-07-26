@@ -88,11 +88,11 @@ try:
 except:
     lg.exc()
 
-try:
-    import dhtudp_interface
-    INSTALLED_TRANSPORTS['dhtudp'] = True
-except:
-    lg.exc()
+#try:
+#    import dhtudp_interface
+#    INSTALLED_TRANSPORTS['dhtudp'] = True
+#except:
+#    lg.exc()
 
 #------------------------------------------------------------------------------ 
 

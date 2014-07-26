@@ -650,6 +650,10 @@ def option_name_to_path(name, default=''):
         path = 'transport.transport-tcp.transport-tcp-enable'
     elif name in [ 'tcp-port' ]:
         path = 'transport.transport-tcp.transport-tcp-port'
+    elif name in [ 'udp' ]:
+        path = 'transport.transport-udp.transport-udp-enable'
+    elif name in [ 'udp-port' ]:
+        path = 'transport.transport-udp.transport-udp-port'
     elif name in [ 'dhtudp-port' ]:
         path = 'transport.transport-dhtudp.transport-dhtudp-port'
     elif name in [ 'dht-port' ]:
@@ -680,19 +684,23 @@ def cmd_set_directly(opts, args, overDict):
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
     if path != '':
-        old_is = settings.uconfig().get(path)
-        if len(args) > 2:
-            value = ' '.join(args[2:])
-            settings.uconfig().set(path, unicode(value))
-            settings.uconfig().update()
-        info = settings.uconfig().get(path, 'info').replace('<br>', '\n')
-        info = re.sub(r'<[^>]+>', '', info)
-        print '  XML path: %s' % path
-        print '  label:    %s' % settings.uconfig().get(path, 'label')
-        print '  info:     %s' % info
-        print '  value:    %s' % settings.uconfig().get(path)
-        if len(args) > 2:
-            print '  modified: [%s]->[%s]' % (old_is, value)
+        if not settings.uconfig().has(path):
+            print '  key "%s" not found' % path
+        else:
+            old_is = settings.uconfig().get(path)
+            if len(args) > 2:
+                value = ' '.join(args[2:])
+                settings.uconfig().set(path, unicode(value))
+                settings.uconfig().update()
+            info = str(settings.uconfig().get(path, 'info')).replace('None', '').replace('<br>', '\n')
+            info = re.sub(r'<[^>]+>', '', info)
+            label = str(settings.uconfig().get(path, 'label')).replace('None', '')
+            print '  XML path: %s' % path
+            print '  label:    %s' % label
+            print '  info:     %s' % info
+            print '  value:    %s' % settings.uconfig().get(path)
+            if len(args) > 2:
+                print '  modified: [%s]->[%s]' % (old_is, value)
         return 0
     
 def cmd_set_request(opts, args, overDict):
