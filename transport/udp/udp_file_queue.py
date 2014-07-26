@@ -203,7 +203,7 @@ class FileQueue:
             self.session.automat('shutdown') 
             return
         if stream_id not in self.streams.keys():
-            self.start_inbox_file()
+            self.start_inbox_file(stream_id, data_size)
         try:
             self.streams[stream_id].block_received(inp)
         except:
