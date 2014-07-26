@@ -32,6 +32,7 @@ class UDPStream():
                  received_ack_allback):
         self.stream_id = stream_id
         self.consumer = consumer
+        self.consumer.stream = self
         self.send_data_packet_func = send_data_packet_func
         self.send_ack_packet_func = send_ack_packet_func
         self.received_raw_data_callback = received_raw_data_callback
@@ -69,6 +70,7 @@ class UDPStream():
             self.send_ack_packet_func(ack_data)
     
     def ack_received(self, inpt):
+        print 'ack_received'
         has_progress = False
         while True:
             raw_bytes = inpt.read(4)

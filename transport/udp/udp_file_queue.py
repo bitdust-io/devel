@@ -153,6 +153,7 @@ class FileQueue:
         return has_reads
     
     def process_outbox_files(self):
+        print 'process_outbox_files'
         has_sends = False
         for outfile in self.outboxFiles.values():
             has_sends = has_sends or outfile.process()
@@ -187,6 +188,7 @@ class OutboxFile():
         self.transfer_id = None
         self.registration = None
         self.queue = queue
+        self.stream = None
         self.stream_id = stream_id
         self.filename = filename
         self.size = size
@@ -201,21 +203,23 @@ class OutboxFile():
         self.fileobj = open(self.filename, 'rb')
         lg.out(6, 'udp_file_queue.OutboxFile {%s} [%d] to %s' % (
             os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
+        reactor.callLater(5, reactor.stop)
 
     def process(self):
         print 'process', self.filename, self.eof
         if self.eof:
             return False
         has_sends = False
-        stream = self.queue.streams[self.stream_id]
+        # stream = self.queue.streams[self.stream_id]
         while True:
             if not self.buffer:
                 self.buffer = self.fileobj.read(udp_stream.BUFFER_SIZE)
                 if not self.buffer:
+                    print 'EOF!!!', self.filename
                     self.eof = True
                     break
             try:
-                stream.write(self.buffer)
+                self.stream.write(self.buffer)
             except udp_stream.BufferOverflow:
                 break
             self.bytes_sent += len(self.buffer)
