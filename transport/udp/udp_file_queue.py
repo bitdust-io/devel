@@ -33,7 +33,7 @@ class FileQueue:
         self.session = session
         self.streams = {}
         self.outboxFiles = {}
-        self.receivedFiles = {}
+        # self.receivedFiles = {}
         self.outboxQueue = []
         
     def make_unique_stream_id(self):
@@ -70,7 +70,7 @@ class FileQueue:
         inp = cStringIO.StringIO(payload)
         try:
             stream_id = struct.unpack('i', inp.read(4))[0]
-            data_size = struct.unpack('i', input.read(4))[0]
+            data_size = struct.unpack('i', inp.read(4))[0]
         except:
             inp.close()
             lg.exc()
@@ -105,7 +105,7 @@ class FileQueue:
         if stream_id not in self.streams.keys():
             inp.close()
             # if not self.receivedFiles.has_key(file_id):
-            #     lg.out(8, 'udp_file_queue.ack_received WARNING unknown file_id in REPORT packet received from %s: [%d]' % (self.remote_address, file_id))
+            lg.out(8, 'udp_file_queue.ack_received WARNING unknown stream_id=%d in ACK packet from %s' % (stream_id, self.remote_address))
             # self.session.automat('shutdown') 
             return
         try:
@@ -139,6 +139,7 @@ class FileQueue:
                 continue
             stream_id = self.make_unique_stream_id()
             outfile = OutboxFile(self, stream_id, filename, filesize, description, result_defer, single)
+            self.outboxFiles[stream_id] = outfile
             self.streams[stream_id] = udp_stream.UDPStream(
                 stream_id, outfile, 
                 self.cb_send_data, self.cb_send_ack, 
@@ -202,6 +203,7 @@ class OutboxFile():
             os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
 
     def process(self):
+        print 'process', self.filename, self.eof
         if self.eof:
             return False
         has_sends = False

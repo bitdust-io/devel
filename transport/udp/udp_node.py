@@ -432,8 +432,8 @@ class UDPNode(automat.Automat):
         has_activity = False
         for s in udp_session.sessions().values():
             # has_timeouts = s.stream.timeout_incoming_files()
-            has_sends = s.file_queue.process_outbox_files()    
             has_outbox = s.file_queue.process_outbox_queue()
+            has_sends = s.file_queue.process_outbox_files()    
             if has_sends or has_outbox:
                 has_activity = True
         if has_activity:

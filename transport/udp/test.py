@@ -31,9 +31,14 @@ def main():
     dht_service.connect()
     udp.listen(int(settings.getUDPPort())) 
     udp_node.A('go-online', options)
-    if len(sys.argv) > 3:
-        udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
-        udp_node.A('connect', sys.argv[2])
+    if len(sys.argv) >= 3:
+        def _try_connect():
+            if udp_node.A().state == 'LISTEN':
+                udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
+                udp_node.A('connect', sys.argv[2])
+            else:
+                reactor.callLater(1, _try_connect)
+        _try_connect()
     reactor.run()
     
 if __name__ == '__main__':
