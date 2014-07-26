@@ -82,7 +82,7 @@ class FileQueue:
             self.session.automat('shutdown') 
             return
         if stream_id not in self.streams.keys():
-            infile = InboxFile(stream_id, self, data_size)
+            infile = InboxFile(self, stream_id, data_size)
             self.streams[stream_id] = udp_stream.UDPStream(
                 stream_id, infile,  
                 self.cb_send_data, self.cb_send_ack, 
