@@ -9,8 +9,26 @@ from lib import udp
 
 #------------------------------------------------------------------------------ 
 
+"""
+Datagram Format
+
+[Data] packet
+
+bytes:
+  0        software version number
+  1        command identifier, see ``lib.udp`` module
+  2-5      stream_id 
+  6-9      total data size to be transferred, peer must know when to stop receiving
+  10-13    block_id, outgoing blocks are counted from 1
+  from 14  payload data   
+  
+"""
+
 UDP_DATAGRAM_SIZE = 508
 BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14 
+
+
+  
 BLOCK_RETRIES = 999999
 MAX_WINDOW_SIZE = 32
 MIN_WINDOW_SIZE = 1
