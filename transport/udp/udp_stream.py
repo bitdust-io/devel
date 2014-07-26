@@ -39,6 +39,7 @@ class UDPStream():
         self.sent_raw_data_callback = sent_raw_data_callback
         self.output_buffer_size = 0
         self.output_blocks = {}
+        self.output_blocks_not_acked = set()
         self.output_block_id = 0
         self.input_blocks = {}
         self.input_block_id = 0
@@ -98,9 +99,17 @@ class UDPStream():
                 if not raw_bytes:
                     break
                 block_id = struct.unpack('i', raw_bytes)[0]
+                fail = False
+                if block_id not in self.output_blocks_not_acked:
+                    fail = True
+                else:
+                    self.output_blocks_not_acked.discard(block_id)
                 try:
                     outblock = self.output_blocks.pop(block_id)
                 except KeyError:
+                    fail = True
+                if fail:
+                    lg.out(10, 'udp_stream.ack_received WARNING block %d not found' % (block_id))
                     continue
                 block_size = len(outblock[0])
                 self.bytes_acked += block_size
@@ -127,7 +136,8 @@ class UDPStream():
         
     def send_blocks(self):
         if self.consumer:
-            for unique_id, block in self.output_blocks.items():
+            for unique_id in self.output_blocks.keys():
+                block = self.output_blocks[unique_id]
                 data_size = len(block[0])
                 output = ''.join((
                     struct.pack('i', unique_id),
