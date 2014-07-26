@@ -41,8 +41,9 @@ def main():
             reconnect = False
             if not sess:
                 reconnect = True
-            if sess.state != 'CONNECTED':
-                reconnect = True
+            else:
+                if sess.state != 'CONNECTED':
+                    reconnect = True
             if reconnect:
                 print 'reconnect'
                 udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
