@@ -131,7 +131,8 @@ class UDPStream():
                     continue
                 block_size = len(outblock[0])
                 self.bytes_acked += block_size
-                block_rtt = time.time() - outblock[1]
+                relative_time = time.time() - self.creation_time
+                block_rtt = relative_time - outblock[1]
                 print 'ack', block_id, block_rtt
                 has_progress = True
             if has_progress:
@@ -146,8 +147,8 @@ class UDPStream():
             if not piece:
                 break
             self.output_block_id += 1
-            relative_time = (time.time() - self.creation_time)
-            self.output_blocks[self.output_block_id] = (piece, relative_time,)
+            relative_time = time.time() - self.creation_time
+            self.output_blocks[self.output_block_id] = (piece, relative_time)
             self.output_buffer_size += len(piece)
         outp.close()
         self.send_blocks()

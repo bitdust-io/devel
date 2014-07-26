@@ -43,9 +43,10 @@ def main():
                 reconnect = True
             else:
                 if sess.state != 'CONNECTED':
+                    print 'state: ', sess.state
                     reconnect = True
             if reconnect:
-                print 'reconnect'
+                print 'reconnect', sess 
                 udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
                 udp_node.A('connect', sys.argv[2])
             reactor.callLater(5, _try_reconnect)
