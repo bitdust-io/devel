@@ -5,7 +5,7 @@ import sys
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
-sys.path.append(os.path.abspath('../..'))
+sys.path.append(os.path.abspath('..'))
 
 from logs import lg
 
@@ -16,8 +16,9 @@ from lib import udp
 
 from dht import dht_service
 
-import udp_node
-import udp_session
+from transport.udp import udp_node
+from transport.udp import udp_session
+from transport import gate
 
 #------------------------------------------------------------------------------ 
 
@@ -27,10 +28,13 @@ def main():
     options['host'] = nameurl.GetName(misc.getLocalID())+'@'+'somehost.org'
     options['dht_port'] = int(settings.getDHTPort())
     options['udp_port'] = int(settings.getUDPPort())
-    dht_service.init(int(settings.getDHTPort()))
-    dht_service.connect()
     udp.listen(int(settings.getUDPPort())) 
-    udp_node.A('go-online', options)
+    dht_service.init(int(settings.getDHTPort()))
+    # dht_service.connect()
+    # udp_node.A('go-online', options)
+    reactor.addSystemEventTrigger('before', 'shutdown', gate.shutdown)
+    gate.init()
+    gate.start()
     if len(sys.argv) >= 3:
         def _try_connect():
             if udp_node.A().state == 'LISTEN':
@@ -41,6 +45,7 @@ def main():
         _try_connect()
     reactor.run()
     
+        
 if __name__ == '__main__':
     main()
     
