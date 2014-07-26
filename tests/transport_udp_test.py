@@ -36,10 +36,24 @@ def main():
     gate.init()
     gate.start()
     if len(sys.argv) >= 3:
-        def _try_connect():
-            if udp_node.A().state == 'LISTEN':
+        def _try_reconnect():
+            sess = udp_session.get(sys.argv[2])
+            reconnect = False
+            if not sess:
+                reconnect = True
+            if sess.state != 'CONNECTED':
+                reconnect = True
+            if reconnect:
+                print 'reconnect'
                 udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
                 udp_node.A('connect', sys.argv[2])
+            reactor.callLater(5, _try_reconnect)
+        def _try_connect():
+            if udp_node.A().state == 'LISTEN':
+                print 'connect'
+                udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
+                udp_node.A('connect', sys.argv[2])
+                reactor.callLater(5, _try_reconnect)
             else:
                 reactor.callLater(1, _try_connect)
         _try_connect()
