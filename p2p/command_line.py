@@ -42,6 +42,7 @@ from logs import lg
 from lib import bpio
 from lib import misc
 from lib import settings
+from lib import userconfig
 from lib import nameurl
 from lib import contacts
 from lib import packetid
@@ -667,7 +668,7 @@ def cmd_set_directly(opts, args, overDict):
         for path in settings.uconfig().default_order:
             if path.strip() == '':
                 continue
-            if path not in settings.uconfig.public_options():
+            if path not in userconfig.public_options():
                 continue
             value = settings.uconfig().data.get(path, '').replace('\n', ' ')
             label = settings.uconfig().labels.get(path, '')

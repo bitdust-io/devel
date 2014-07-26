@@ -255,8 +255,6 @@ def transport_state_changed(proto, oldstate, newstate):
     """
     global _StartingDeferred
     global _StoppingDeferred
-    lg.out(6, 'gate.transport_state_changed starting=%r sopping=%r' % (
-        bool(_StartingDeferred), bool(_StoppingDeferred)))
     if _StartingDeferred:
         still_starting = False
         for transp in transports().values():
@@ -271,6 +269,8 @@ def transport_state_changed(proto, oldstate, newstate):
                 still_stopping = True
         if not still_stopping:
             _StoppingDeferred.callback(True)
+    lg.out(6, 'gate.transport_state_changed %s starting=%r stopping=%r' % (
+        proto.upper(), bool(_StartingDeferred), bool(_StoppingDeferred)))
 
 #------------------------------------------------------------------------------ 
 
