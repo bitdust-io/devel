@@ -217,6 +217,8 @@ class CommandsProtocol(BasicProtocol):
     """
     
     SoftwareVersion = '1'
+    bytes_in = 0
+    bytes_out = 0
     
     def datagramReceived(self, datagram, address):
         global _LastDatagramReceivedTime
@@ -225,21 +227,29 @@ class CommandsProtocol(BasicProtocol):
             version = datagram[0]
             command = datagram[1]
             payload = datagram[2:]
+            payloadsz = len(payload)
         except:
             return
         if version != self.SoftwareVersion:
             return
-        lg.out(24, '>>> [%s] (%d bytes) from %s' % (
-            command, len(payload), str(address)))
+        self.bytes_in += payloadsz + 2
+        lg.out(24, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
+            command, payloadsz + 2, str(address), self.bytes_in))
         self.run_callbacks((command, payload), address)
         
     def sendCommand(self, command, data, address):
+        payloadsz = len(data)
         datagram = ''.join((
             self.SoftwareVersion,
             command,
             data))
-        lg.out(24, '<<< [%s] (%d bytes) to %s' % (command, len(data), address))
-        return self.sendDatagram(datagram, address) 
+        result = self.sendDatagram(datagram, address)
+        self.bytes_out += payloadsz + 2
+        lg.out(24, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
+            command, payloadsz + 2, address, self.bytes_out))
+        return result
+            
+         
 
 #------------------------------------------------------------------------------ 
 

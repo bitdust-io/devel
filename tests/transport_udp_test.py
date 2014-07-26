@@ -41,6 +41,7 @@ def main():
             reconnect = False
             if not sess:
                 reconnect = True
+                print 'sessions', udp_session.sessions()
             else:
                 if sess.state != 'CONNECTED':
                     print 'state: ', sess.state
