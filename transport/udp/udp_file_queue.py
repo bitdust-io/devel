@@ -155,7 +155,6 @@ class FileQueue:
         return has_reads
     
     def process_outbox_files(self):
-        print 'process_outbox_files'
         has_sends = False
         for outfile in self.outboxFiles.values():
             has_sends = has_sends or outfile.process()

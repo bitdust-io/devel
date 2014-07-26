@@ -80,6 +80,7 @@ class UDPStream():
             newdata = ''.join(newdata)
             if self.consumer:
                 eof_state = self.received_raw_data_callback(self.consumer, newdata)
+            print self.input_block_id, self.input_blocks.keys(), len(newdata), eof_state, self.consumer
         if self.consumer:
             if block_id % BLOCKS_PER_ACK == 0 or eof_state:
                 ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
