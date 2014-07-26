@@ -48,7 +48,15 @@ class UDPStream():
         self.bytes_sent = 0
         self.bytes_acked = 0
         self.creation_time = time.time() 
-
+        
+    def close(self):
+        self.consumer.stream = None
+        self.consumer = None
+        self.send_data_packet_func = None
+        self.send_ack_packet_func = None
+        self.received_raw_data_callback = None
+        self.received_ack_allback = None
+        
     def block_received(self, inpt):
         block_id = struct.unpack('i', inpt.read(4))[0]
         data = inpt.read()
@@ -64,29 +72,32 @@ class UDPStream():
                     break
                 newdata += self.input_blocks.pop(self.input_block_id)
                 self.input_block_id += 1
-            eof_state = self.received_raw_data_callback(self.consumer, newdata)
-        if block_id % BLOCKS_PER_ACK == 0 or eof_state:
-            ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
-            self.send_ack_packet_func(ack_data)
+            if self.consumer:
+                eof_state = self.received_raw_data_callback(self.consumer, newdata)
+        if self.consumer:
+            if block_id % BLOCKS_PER_ACK == 0 or eof_state:
+                ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
+                self.send_ack_packet_func(ack_data)
     
     def ack_received(self, inpt):
         print 'ack_received'
-        has_progress = False
-        while True:
-            raw_bytes = inpt.read(4)
-            if not raw_bytes:
-                break
-            block_id = struct.unpack('i', raw_bytes)[0]
-            try:
-                outblock = self.output_blocks.pop(block_id)
-            except KeyError:
-                continue
-            self.bytes_acked = len(outblock[0])
-            block_rtt = time.time() - outblock[1]
-            print block_id, block_rtt
-            has_progress = True
-        if has_progress:
-            self.received_ack_allback(self.consumer, self.bytes_acked)
+        if self.consumer:
+            has_progress = False
+            while True:
+                raw_bytes = inpt.read(4)
+                if not raw_bytes:
+                    break
+                block_id = struct.unpack('i', raw_bytes)[0]
+                try:
+                    outblock = self.output_blocks.pop(block_id)
+                except KeyError:
+                    continue
+                self.bytes_acked = len(outblock[0])
+                block_rtt = time.time() - outblock[1]
+                print block_id, block_rtt
+                has_progress = True
+            if has_progress:
+                self.received_ack_allback(self.consumer, self.bytes_acked)
 
     def write(self, data):
         if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
@@ -104,14 +115,15 @@ class UDPStream():
         self.send_blocks()
         
     def send_blocks(self):
-        for unique_id, block in self.output_blocks.items():
-            data_size = len(block[0])
-            output = ''.join((
-                struct.pack('i', unique_id),
-                struct.pack('i', data_size),
-                block[0]))
-            self.send_data_packet_func(self.stream_id, self.consumer, output)
-            self.bytes_sent += data_size
+        if self.consumer:
+            for unique_id, block in self.output_blocks.items():
+                data_size = len(block[0])
+                output = ''.join((
+                    struct.pack('i', unique_id),
+                    struct.pack('i', data_size),
+                    block[0]))
+                self.send_data_packet_func(self.stream_id, self.consumer, output)
+                self.bytes_sent += data_size
 
 #------------------------------------------------------------------------------ 
 

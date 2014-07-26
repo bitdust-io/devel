@@ -39,15 +39,14 @@ class FileQueue:
     def make_unique_stream_id(self):
         return int(str(random.randint(100,999))+str(int(time.time() * 100.0))[7:])
         
-#    def close(self):
-#        file_ids_to_remove = self.inboxFiles.keys()
-#        for file_id in file_ids_to_remove:
-#            self.inbox_file_done(file_id, 'failed', 'session has been closed')
-#        file_ids_to_remove = self.outboxFiles.keys()
-#        for file_id in file_ids_to_remove:
-#            self.outbox_file_done(file_id, 'failed', 'session has been closed')
-#        self.receivedFiles.clear()
-#        self.sliding_window.clear()
+    def close(self):
+        for stream in self.streams.values():
+            stream.close()
+        self.streams.clear()
+        self.outboxFiles.clear()
+        for filename, description, result_defer, single in self.outboxQueue:
+            self.failed_outbox_queue_item(filename, description, 'session was closed', result_defer, single)
+        self.outboxQueue = []
 
     def cb_send_data(self, stream_id, outfile, output):
         newoutput = ''.join((
