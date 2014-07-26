@@ -136,18 +136,21 @@ class UDPStream():
         
     def send_blocks(self):
         if self.consumer:
-            for unique_id in self.output_blocks.keys():
-                block = self.output_blocks[unique_id]
+            for block_id in self.output_blocks.keys():
+                if block_id in self.output_blocks_not_acked:
+                    continue
+                block = self.output_blocks[block_id]
                 data_size = len(block[0])
                 output = ''.join((
-                    struct.pack('i', unique_id),
+                    struct.pack('i', block_id),
                     block[0]))
-                if unique_id != 5:
+                if block_id != 5:
                     self.send_data_packet_func(self.stream_id, self.consumer, output)
                 # DEBUG
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
-                print 'send block', unique_id, self.bytes_sent
+                self.output_blocks_not_acked.add(block_id)
+                print 'send block', block_id, self.bytes_sent
 
 #------------------------------------------------------------------------------ 
 
