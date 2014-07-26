@@ -61,10 +61,9 @@ _LocalName = None
 # order is important!
 # this is default order to be used for new users
 # more stable transports must be higher
-# validTransports = [ 'http', 'cspace', 'q2q', 'tcp', 'ssh', 'email', 'skype', 'udp', 'dhtudp']
-validTransports = ['tcp', 'dhtudp', ]
+validTransports = ['tcp', 'udp', ]
 
-_AttenuationFactor = 1.1
+_AttenuationFactor = 2.0
 
 #-------------------------------------------------------------------------------
 
@@ -1259,9 +1258,9 @@ def pathToStartMenuShortcut(filename):
     Path to the Windows start menu folder.
     """
     try:
-        from win32com.shell import shell, shellcon
+        from win32com.shell import shell, shellcon #@UnresolvedImport
         from win32com.client import Dispatch
-        shell_ = Dispatch('WScript.Shell')
+        shell_ = Dispatch('WScript.Shell') 
         csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
         startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
         return os.path.join(startmenu, filename)
@@ -1275,7 +1274,7 @@ def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
     """
     if bpio.Windows():
         try:
-            from win32com.shell import shell, shellcon
+            from win32com.shell import shell, shellcon #@UnresolvedImport
             from win32com.client import Dispatch
             shell_ = Dispatch('WScript.Shell')
             csidl = getattr(shellcon, 'CSIDL_PROGRAMS')

@@ -88,11 +88,11 @@ try:
 except:
     lg.exc()
 
-#try:
-#    import dhtudp_interface
-#    INSTALLED_TRANSPORTS['dhtudp'] = True
-#except:
-#    lg.exc()
+try:
+    from udp import udp_interface
+    INSTALLED_TRANSPORTS['udp'] = True
+except:
+    lg.exc()
 
 #------------------------------------------------------------------------------ 
 
@@ -161,8 +161,8 @@ def init(transportslist=None):
         iface = None
         if proto == 'tcp':
             iface = tcp_interface.GateInterface()
-        elif proto == 'dhtudp':
-            iface = dhtudp_interface.GateInterface()
+        elif proto == 'udp':
+            iface = udp_interface.GateInterface()
         if iface is None:
             raise Exception('transport not supported: %s'  % proto)
         _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
@@ -665,9 +665,9 @@ def parseCommandLine():
     return options, args
 
 def main():
-    global INSTALLED_TRANSPORTS
+    # global INSTALLED_TRANSPORTS
     # del INSTALLED_TRANSPORTS['tcp']
-    INSTALLED_TRANSPORTS.pop('dhtudp')
+    # INSTALLED_TRANSPORTS.pop('udp')
     bpio.init()
     settings.init()
     misc.init()
@@ -685,8 +685,6 @@ def main():
     if 'dhtudp' in INSTALLED_TRANSPORTS.keys():
         import lib.udp
         lib.udp.listen(options.udpport)
-        import dhtudp_stream
-        dhtudp_stream.BLOCK_SIZE = options.packetsize
         import dht.dht_service
         dht.dht_service.init(options.dhtport)
     reactor.addSystemEventTrigger('before', 'shutdown', shutdown)

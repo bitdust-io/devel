@@ -246,9 +246,9 @@ class UDPSession(automat.Automat):
         assert address == self.peer_address
         self.bytes_received += len(payload)
         if command == udp.CMD_DATA:
-            self.file_queue.data_packet_received(payload)
+            self.file_queue.on_data_packet_received(payload)
         elif command == udp.CMD_ACK:
-            self.file_queue.ack_packet_received(payload)
+            self.file_queue.on_ack_packet_received(payload)
         elif command == udp.CMD_GREETING:
             try:
                 new_peer_id, new_peer_idurl = payload.split(' ')

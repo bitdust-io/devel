@@ -10,7 +10,7 @@ from lib import udp
 #------------------------------------------------------------------------------ 
 
 UDP_DATAGRAM_SIZE = 508
-BLOCK_SIZE = UDP_DATAGRAM_SIZE-20
+BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14 
 BLOCK_RETRIES = 999999
 MAX_WINDOW_SIZE = 32
 MIN_WINDOW_SIZE = 1
@@ -29,15 +29,14 @@ class UDPStream():
                  send_data_packet_func,
                  send_ack_packet_func, 
                  received_raw_data_callback,
-                 received_ack_allback):
+                 sent_raw_data_callback):
         self.stream_id = stream_id
         self.consumer = consumer
         self.consumer.stream = self
         self.send_data_packet_func = send_data_packet_func
         self.send_ack_packet_func = send_ack_packet_func
         self.received_raw_data_callback = received_raw_data_callback
-        self.received_ack_allback = received_ack_allback
-        # self.ack_timeout = MIN_ACK_TIME_OUT
+        self.sent_raw_data_callback = sent_raw_data_callback
         self.output_buffer_size = 0
         self.output_blocks = {}
         self.output_block_id = 0
@@ -59,7 +58,7 @@ class UDPStream():
         self.send_data_packet_func = None
         self.send_ack_packet_func = None
         self.received_raw_data_callback = None
-        self.received_ack_allback = None
+        self.sent_raw_data_callback = None
         
     def block_received(self, inpt):
         block_id = struct.unpack('i', inpt.read(4))[0]
@@ -82,10 +81,9 @@ class UDPStream():
         if self.consumer:
             if block_id % BLOCKS_PER_ACK == 0 or eof_state:
                 ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
-                self.send_ack_packet_func(ack_data)
+                self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
     
     def ack_received(self, inpt):
-        print 'ack_received'
         if self.consumer:
             has_progress = False
             while True:
@@ -97,12 +95,13 @@ class UDPStream():
                     outblock = self.output_blocks.pop(block_id)
                 except KeyError:
                     continue
-                self.bytes_acked = len(outblock[0])
+                block_size = len(outblock[0])
+                self.bytes_acked += block_size
                 block_rtt = time.time() - outblock[1]
                 print block_id, block_rtt
                 has_progress = True
             if has_progress:
-                self.received_ack_allback(self.consumer, self.bytes_acked)
+                self.sent_raw_data_callback(self.consumer, block_size)
 
     def write(self, data):
         if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
