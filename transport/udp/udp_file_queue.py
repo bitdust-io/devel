@@ -33,7 +33,7 @@ class FileQueue:
         self.session = session
         self.streams = {}
         self.outboxFiles = {}
-        # self.receivedFiles = {}
+        self.inboxFiles = {}
         self.outboxQueue = []
         
     def make_unique_stream_id(self):
@@ -44,6 +44,7 @@ class FileQueue:
             stream.close()
         self.streams.clear()
         self.outboxFiles.clear()
+        self.inboxFiles.clear()
         for filename, description, result_defer, single in self.outboxQueue:
             self.failed_outbox_queue_item(filename, description, 'session was closed', result_defer, single)
         self.outboxQueue = []
@@ -82,6 +83,7 @@ class FileQueue:
             return
         if stream_id not in self.streams.keys():
             infile = InboxFile(self, stream_id, data_size)
+            self.inboxFiles[stream_id] = infile
             self.streams[stream_id] = udp_stream.UDPStream(
                 stream_id, infile,  
                 self.cb_send_data, self.cb_send_ack, 
@@ -205,11 +207,9 @@ class OutboxFile():
             os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
 
     def process(self):
-        print 'process', self.filename, self.eof
         if self.eof:
             return False
         has_sends = False
-        # stream = self.queue.streams[self.stream_id]
         while True:
             if not self.buffer:
                 self.buffer = self.fileobj.read(udp_stream.BUFFER_SIZE)
