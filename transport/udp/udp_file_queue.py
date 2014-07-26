@@ -104,7 +104,8 @@ class FileQueue:
         if stream_id not in self.streams.keys():
             inp.close()
             # if not self.receivedFiles.has_key(file_id):
-            lg.out(8, 'udp_file_queue.ack_received WARNING unknown stream_id=%d in ACK packet from %s' % (stream_id, self.remote_address))
+            lg.out(8, 'udp_file_queue.ack_received WARNING unknown stream_id=%d in ACK packet from %s' % (
+                stream_id, self.session.peer_address))
             # self.session.automat('shutdown') 
             return
         try:
@@ -202,7 +203,6 @@ class OutboxFile():
         self.fileobj = open(self.filename, 'rb')
         lg.out(6, 'udp_file_queue.OutboxFile {%s} [%d] to %s' % (
             os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
-        reactor.callLater(5, reactor.stop)
 
     def process(self):
         print 'process', self.filename, self.eof
@@ -222,6 +222,7 @@ class OutboxFile():
             except udp_stream.BufferOverflow:
                 break
             self.bytes_sent += len(self.buffer)
+            self.buffer = ''
             has_sends = True
         return has_sends
           
