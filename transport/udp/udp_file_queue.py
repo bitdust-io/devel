@@ -178,6 +178,7 @@ class InboxFile():
     def process(self, newdata):
         os.write(self.fd, newdata)
         self.bytes_received += len(newdata)
+        print 'infile.process', self.bytes_received, self.size
         return self.bytes_received == self.size
 
 #------------------------------------------------------------------------------ 
