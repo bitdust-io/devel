@@ -129,7 +129,10 @@ class UDPStream():
                 output = ''.join((
                     struct.pack('i', unique_id),
                     block[0]))
-                self.send_data_packet_func(self.stream_id, self.consumer, output)
+                if unique_id != 5:
+                    self.send_data_packet_func(self.stream_id, self.consumer, output)
+                # DEBUG
+                # self.send_data_packet_func(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
 
 #------------------------------------------------------------------------------ 
