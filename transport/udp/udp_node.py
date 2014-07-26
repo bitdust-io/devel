@@ -352,6 +352,7 @@ class UDPNode(automat.Automat):
         if not self.notified:
             udp_interface.interface_receiving_started(self.my_id)
             self.notified = True
+            lg.out(4, 'udp_node.doNotifyConnected  my host is %s' % self.my_id)
         
     def doNotifyFailed(self, arg):
         """
