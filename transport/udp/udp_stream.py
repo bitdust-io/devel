@@ -71,11 +71,11 @@ class UDPStream():
         if block_id == self.input_block_id + 1:
             print 'block_received', block_id, self.input_block_id, self.input_blocks.keys()
             newdata = [] 
-            self.input_block_id += 1
             while True:
-                if self.input_block_id not in self.input_blocks.keys():
+                try:
+                    newdata.append(self.input_blocks.pop(self.input_block_id + 1))
+                except:
                     break
-                newdata.append(self.input_blocks.pop(self.input_block_id))
                 self.input_block_id += 1
             newdata = ''.join(newdata)
             if self.consumer:
