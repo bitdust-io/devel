@@ -50,7 +50,7 @@ def create(node, peer_address, peer_id=None):
     """
     lg.out(10, 'udp_session.create  peer_address=%s' % str(peer_address))
     s = UDPSession(node, peer_address, peer_id)
-    sessions()[s.id] = s
+    sessions()[s.peer_id] = s
     return s
 
 
