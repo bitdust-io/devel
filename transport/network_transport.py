@@ -16,9 +16,9 @@ EVENTS:
     * :red:`transport-started`
 """
 
-import sys
+import platform
 
-from twisted.internet.defer import Deferred, fail
+from twisted.internet.defer import fail
 
 from logs import lg
 
@@ -145,6 +145,7 @@ class NetworkTransport(automat.Automat):
         """
         options = { 'idurl': misc.getLocalID(),}
         id_contact = ''
+        default_host = ''
         ident = misc.getLocalIdentity()
         if ident:
             id_contact = ident.getContactsByProto().get(self.proto, '')
@@ -152,11 +153,13 @@ class NetworkTransport(automat.Automat):
             assert id_contact.startswith(self.proto+'://')
             id_contact = id_contact.strip(self.proto+'://')
         if self.proto == 'tcp':
-            default_host = bpio.ReadTextFile(settings.ExternalIPFilename())+':'+str(settings.getTCPPort())
+            if not id_contact:
+                default_host = bpio.ReadTextFile(settings.ExternalIPFilename())+':'+str(settings.getTCPPort())
             options['host'] = id_contact or default_host
             options['tcp_port'] = int(settings.getTCPPort())
         elif self.proto == 'udp':
-            default_host = nameurl.GetName(misc.getLocalID())+'@'+settings.IdentityServerName()
+            if not id_contact:
+                default_host = nameurl.GetName(misc.getLocalID())+'@'+platform.node()
             options['host'] = id_contact or default_host
             options['dht_port'] = int(settings.getDHTPort())
             options['udp_port'] = int(settings.getUDPPort())
@@ -180,9 +183,10 @@ class NetworkTransport(automat.Automat):
 
     def call(self, method_name, *args):
 #        if self.state != 'LISTENING':
-#            return fail(Exception('%s can not accept call right now' % self))
+#            return fail(Exception('%s can not accept calls right now' % self))
         method = getattr(self.interface, method_name, None)
         if method is None:
+            lg.out(2, 'network_transport.call ERROR method %s not found in ptoto s' % (method_name, self.proto))
             return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
         return method(*args)
         
