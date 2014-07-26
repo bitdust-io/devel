@@ -127,7 +127,7 @@ class FileQueue:
         if infile.registration:
             return
         if infile.transfer_id:
-            self.report_inbox_file(infile.transfer_id, status, infile.get_bytes_received(), error_message)
+            self.report_inbox_file(infile.transfer_id, status, infile.bytes_received, error_message)
         else:
             lg.out(6, 'udp_stream.file_received WARNING transfer_id is None, stream_id=%d' % stream_id)
         self.close_inbox_file(stream_id)
