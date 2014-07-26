@@ -136,7 +136,7 @@ class UDPStream():
                 print 'ack', block_id, block_rtt
                 has_progress = True
             if has_progress:
-                print 'has_progress', self.output_blocks_not_acked
+                print 'has_progress', self.output_blocks_not_acked, self.output_blocks.keys()
                 self.send_blocks()
                 self.sent_raw_data_callback(self.consumer, block_size)
 
