@@ -1011,7 +1011,7 @@ def IdentityServerPort():
         4) if signature is fine - server will save (or overwrite existing) the file
         5) server should refuse incorrect or faked identities
         6) someone can store incorrect or faked identities on his own server, but nodes in network will refuse those identities
-        7) you can use different ways to transfer your identity file to your own id server - do it by your self
+        7) you can use different ways to transfer your identity file to your own id server - do it by your own.
            
     This is a port number of our identity file to receive identity files from users. 
     This should be same for all identity servers everywhere.

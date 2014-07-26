@@ -158,8 +158,11 @@ def register(filepath):
 def make(name, extension='', prefix=''):
     """
     Make a new file under sub folder ``name`` and return a tuple of it's file descriptor and path.
-    Remember you need to close the file descriptor by your self.
-    The ``tmpfile`` module will remove it later - do not worry. This is a job for our collector.
+    .. warning::    Remember you need to close the file descriptor by your own.
+    The ``tmpfile`` module will remove it later - do not worry. 
+    This is a job for our collector.
+    However if you will keep the file opened for awhile 
+    it should print a ```WARNING``` in logs because will fail to delete it.
     """
     global _TempDirPath
     global _FilesDict

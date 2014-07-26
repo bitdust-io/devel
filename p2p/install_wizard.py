@@ -23,7 +23,7 @@ User need to answer some questions step by step to configure the program first t
 This is several pages:
     * select a role: "free backups", "secure storage", "donator", "just to try", "beta tester"
     * set up needed and donated space and local folders locations
-    * provide some personal information about your self if you wish
+    * provide some personal information about yourself if you wish
     * set software update settings  
     
 EVENTS:

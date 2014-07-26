@@ -289,6 +289,14 @@ class InboxFile():
     def __del__(self):
         lg.out(6, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
 
+    def close(self):
+        self.close_file()
+        self.queue = None
+
+    def close_file(self):
+        os.close(self.fd)
+        self.fd = None
+
     def process(self, newdata):
         os.write(self.fd, newdata)
         self.bytes_received += len(newdata)
@@ -323,7 +331,21 @@ class OutboxFile():
             os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
 
     def __del__(self):
-        lg.out(6, 'udp_file_queue.OutboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
+        lg.out(6, 'udp_file_queue.OutboxFile.__del__ {%s} [%d] file:%r' % (
+            os.path.basename(self.filename), self.stream_id, self.fileobj))
+
+    def close(self):
+        if self.fileobj:
+            self.close_file()
+        self.queue = None
+        self.buffer = ''
+        self.description = None
+        self.result_defer = None
+
+    def close_file(self):
+        # if self.fileobj:
+        self.fileobj.close()
+        self.fileobj = None
 
     def is_done(self):
         return self.size == self.bytes_delivered and self.eof
@@ -341,6 +363,7 @@ class OutboxFile():
                 if not self.buffer:
                     print 'EOF!!!', self.filename
                     self.eof = True
+                    self.close_file()
                     break
             try:
                 self.stream.write(self.buffer)
@@ -351,6 +374,9 @@ class OutboxFile():
             has_sends = True
         return has_sends
           
+
+
+
 
 
 
