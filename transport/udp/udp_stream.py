@@ -164,7 +164,8 @@ class UDPStream():
                 output = ''.join((
                     struct.pack('i', block_id),
                     block[0]))
-                if block_id != 5:
+                import random
+                if random.randint(0, 9) != 0:
                     self.send_data_packet_func(self.stream_id, self.consumer, output)
                 # DEBUG
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
