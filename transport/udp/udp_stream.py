@@ -136,6 +136,7 @@ class UDPStream():
                 print 'ack', block_id, block_rtt
                 has_progress = True
             if has_progress:
+                print 'has_progress', self.output_blocks_not_acked
                 self.send_blocks()
                 self.sent_raw_data_callback(self.consumer, block_size)
 
@@ -165,8 +166,8 @@ class UDPStream():
                     struct.pack('i', block_id),
                     block[0]))
                 import random
-                if random.randint(0, 9) >= 3:
-                    # 30 % percent lost
+                if random.randint(0, 9) >= 1:
+                    # 10 % percent lost
                     self.send_data_packet_func(self.stream_id, self.consumer, output)
                 # DEBUG
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
