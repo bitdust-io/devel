@@ -358,7 +358,7 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
             # just want to send once even if both customer and supplier
             continue
         if contact in inqueue and inqueue[contact] > 2:
-            # now only 2 protocols is working: tcp and dhtudp
+            # now only 2 protocols is working: tcp and udp
             lg.out(8, '        skip sending to %s' % contact)
             continue
 #        found_previous_packets = 0

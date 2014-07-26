@@ -24,10 +24,10 @@ from transport import gate
 
 def main():
     lg.set_debug_level(24)
-    options = { 'idurl': misc.getLocalID(),}
-    options['host'] = nameurl.GetName(misc.getLocalID())+'@'+'somehost.org'
-    options['dht_port'] = int(settings.getDHTPort())
-    options['udp_port'] = int(settings.getUDPPort())
+    # options = { 'idurl': misc.getLocalID(),}
+    # options['host'] = nameurl.GetName(misc.getLocalID())+'@'+'somehost.org'
+    # options['dht_port'] = int(settings.getDHTPort())
+    # options['udp_port'] = int(settings.getUDPPort())
     udp.listen(int(settings.getUDPPort())) 
     dht_service.init(int(settings.getDHTPort()))
     # dht_service.connect()

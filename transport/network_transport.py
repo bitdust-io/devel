@@ -155,11 +155,11 @@ class NetworkTransport(automat.Automat):
             default_host = bpio.ReadTextFile(settings.ExternalIPFilename())+':'+str(settings.getTCPPort())
             options['host'] = id_contact or default_host
             options['tcp_port'] = int(settings.getTCPPort())
-        elif self.proto == 'dhtudp':
+        elif self.proto == 'udp':
             default_host = nameurl.GetName(misc.getLocalID())+'@'+settings.IdentityServerName()
             options['host'] = id_contact or default_host
             options['dht_port'] = int(settings.getDHTPort())
-            options['udp_port'] = int(settings.getDHTUDPPort())
+            options['udp_port'] = int(settings.getUDPPort())
         self.interface.receive(options) 
 
     def doCreateProxy(self, arg):

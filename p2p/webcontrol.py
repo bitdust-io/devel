@@ -5238,25 +5238,25 @@ class NetworkSettingsPage(Page):
                 '/'+_PAGE_SETTINGS+'/'+'other.upnp-enabled', request.path,
                 'yes' if settings.enableUPNP() else 'no')
         src += '</td>\n'
-        src += '<td width=50% valign=top nowrap><h3>DHTUDP transport</h3>\n'
+        src += '<td width=50% valign=top nowrap><h3>UDP transport</h3>\n'
         src += '<p>enable transport: <a href="%s?back=%s">%s</a></p>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'transport.transport-dhtudp.transport-dhtudp-enable', request.path,
-            'yes' if settings.enableDHTUDP() else 'no')
-        if settings.enableDHTUDP():
+            '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-enable', request.path,
+            'yes' if settings.enableUDP() else 'no')
+        if settings.enableUDP():
             src += '<p>use for sending: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-dhtudp.transport-dhtudp-sending-enable', request.path,
-                'yes' if settings.enableDHTUDPsending() else 'no')
+                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-sending-enable', request.path,
+                'yes' if settings.enableUDPsending() else 'no')
             src += '<br><p>use for receiving: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-dhtudp.transport-dhtudp-receiving-enable', request.path,
-                'yes' if settings.enableDHTUDPreceiving() else 'no')
+                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-receiving-enable', request.path,
+                'yes' if settings.enableUDPreceiving() else 'no')
             src += '<p>UDP port for data transport: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-dhtudp.transport-dhtudp-port', request.path,
-                settings.getDHTUDPPort())
-            src += '<p>UDP port for DHT network: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-dhtudp.transport-dht-port', request.path,
-                settings.getDHTPort())
+                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-port', request.path,
+                settings.getUDPPort())
         src += '</td>\n'
         src += '</tr></table>\n'
+        src += '<p>UDP port for DHT network: <a href="%s?back=%s">%s</a></h3>\n' % (
+            '/'+_PAGE_SETTINGS+'/'+'network.network-dht-port', request.path,
+            settings.getDHTPort())
         # src += '<br><p><a href="http://bitpie.net/network.html" target=_blank>Read info about network protocol transports</a></p>\n'
         
 #        src += '<br><h3>outgoing bandwidth limit: <a href="%s?back=%s">%s</a></h3>\n' % (
@@ -7348,12 +7348,12 @@ def InitSettingsTreePages():
     'transport-tcp-port':       SettingsTreeNumericNonZeroPositiveNode,
     'transport-tcp-sending-enable':   SettingsTreeYesNoNode,
     'transport-tcp-receiving-enable': SettingsTreeYesNoNode,
-    'transport-dhtudp':         SettingsTreeNode,
-    'transport-dhtudp-port':    SettingsTreeNumericPositiveNode,
-    'transport-dht-port':       SettingsTreeNumericPositiveNode,
-    'transport-dhtudp-enable':  SettingsTreeYesNoNode,
-    'transport-dhtudp-sending-enable':   SettingsTreeYesNoNode,
-    'transport-dhtudp-receiving-enable': SettingsTreeYesNoNode,
+    'transport-udp':            SettingsTreeNode,
+    'transport-udp-port':       SettingsTreeNumericPositiveNode,
+    'transport-udp-enable':     SettingsTreeYesNoNode,
+    'transport-udp-sending-enable':   SettingsTreeYesNoNode,
+    'transport-udp-receiving-enable': SettingsTreeYesNoNode,
+    'network-dht-port':         SettingsTreeNumericPositiveNode,
     }
 
 class SettingsTreeNode(Page):
@@ -7460,18 +7460,18 @@ class SettingsTreeNode(Page):
         lg.out(8, 'webcontrol.SettingsTreeNode.modified %s %s' % (self.path, self.value))
 
         if self.path in (
-                'transport.transport-dhtudp.transport-dhtudp-port',
-                'transport.transport-dhtudp.transport-dht-port',
                 'transport.transport-tcp.transport-tcp-port',
                 'transport.transport-tcp.transport-tcp-enable',
                 'transport.transport-tcp.transport-tcp-receiving-enable',
-                'transport.transport-dhtudp.transport-dhtudp-enable',
-                'transport.transport-dhtudp.transport-dhtudp-receiving-enable',
+                'transport.transport-udp.transport-udp-port',
+                'transport.transport-udp.transport-udp-enable',
+                'transport.transport-udp.transport-udp-receiving-enable',
+                'network.network-dht-port',
                 ):
             network_connector.A('reconnect')
             p2p_connector.A('reconnect')
 
-        elif self.path in (
+        if self.path in (
                 'storage.suppliers',
                 'storage.needed',
                 # 'storage.donated',
@@ -7479,40 +7479,39 @@ class SettingsTreeNode(Page):
             fire_hire.ClearLastFireTime()
             backup_monitor.A('restart')
 
-        elif self.path in (
+        if self.path in (
                 'storage.donated',
                 ):
             customers_rejector.A('restart')
 
-        elif self.path == 'logs.stream-enable':
+        if self.path == 'logs.stream-enable':
             if settings.enableWebStream():
                 misc.StartWebStream()
             else:
                 misc.StopWebStream()
 
-        elif self.path == 'logs.stream-port':
+        if self.path == 'logs.stream-port':
             misc.StopWebStream()
             if settings.enableWebStream():
                 reactor.callLater(0, misc.StartWebStream)
 
-        elif self.path == 'logs.traffic-port':
+        if self.path == 'logs.traffic-port':
             misc.StopWebTraffic()
             if settings.enableWebTraffic():
                 reactor.callLater(0, misc.StartWebTraffic)
 
-        elif self.path == 'logs.debug-level':
+        if self.path == 'logs.debug-level':
             try:
                 lg.set_debug_level(int(self.value))
             except:
                 lg.out(1, 'webcontrol.SettingsTreeNode.modified ERROR wrong value!')
 
-        elif self.path == 'backup.backup-block-size':
+        if self.path == 'backup.backup-block-size':
             settings.setBackupBlockSize(self.value)
 
-        elif self.path == 'backup.backup-max-block-size':
+        if self.path == 'backup.backup-max-block-size':
             settings.setBackupMaxBlockSize(self.value)
             
-
     def body(self, request):
         global SettingsTreeNodesDict
         lg.out(12, 'webcontrol.SettingsTreeNode.body path='+self.path)

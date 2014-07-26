@@ -50,8 +50,8 @@ def idurl_to_id(idurl):
     proto, host, port, filename = nameurl.UrlParse(idurl)
     assert proto == 'http'
     user_id = filename.replace('.xml', '') + '@' + host
-    if port:
-        user_id += ':' + port
+    if port and port not in ['80', 80, ]:
+        user_id += ':%s' % str(port)
     return user_id
 
 def id_to_idurl(user_id):

@@ -101,7 +101,7 @@ def active_protos():
 
 def inbox(newpacket, info, status, message):
     # here need to mark this protocol as working
-    if info.proto in ['tcp', 'udp',]:
+    if info.proto in ['tcp',]:
         if not net_misc.IpIsLocal(str(info.host).split(':')[0]):
             # but we want to check that this packet is come from the Internet, not our local network
             # because we do not want to use this proto as first method if it is not working for all
@@ -109,7 +109,7 @@ def inbox(newpacket, info, status, message):
                 lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
                 lg.out(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
                 active_protos().add(info.proto)
-    elif info.proto in ['dhtudp',]:
+    elif info.proto in ['udp',]:
         if info.proto not in active_protos():
             lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
             lg.out(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
@@ -284,12 +284,12 @@ class P2PConnector(automat.Automat):
         if first != 'tcp' and 'tcp' in active_protos():
             lg.out(2, 'p2p_connector._check_to_use_best_proto tcp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
-        #if we are using dhtudp and it is working - this is fantastic!
-        if first == 'dhtudp' and 'dhtudp' in active_protos():
+        #if we are using udp and it is working - this is fantastic!
+        if first == 'udp' and 'udp' in active_protos():
             return True
-        #dhtudp seems to be working and first contact is not working - so switch to dhtudp
-        if first != 'dhtudp' and 'dhtudp' in active_protos():
-            lg.out(2, 'p2p_connector._check_to_use_best_proto dhtudp is not first but it works active_protos()=%s' % str(active_protos()))
+        #udp seems to be working and first contact is not working - so switch to udp
+        if first != 'udp' and 'udp' in active_protos():
+            lg.out(2, 'p2p_connector._check_to_use_best_proto udp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
         #in other cases - do nothing
         return True
@@ -307,13 +307,14 @@ class P2PConnector(automat.Automat):
             #take (but not remove) any item from the set
             wantedproto = active_protos().pop()
             active_protos().add(wantedproto)
-        #if dhtudp method is not the first but it works - switch to dhtudp
-        if first != 'dhtudp' and 'dhtudp' in active_protos():
-            wantedproto = 'dhtudp'
+        #if udp method is not the first but it works - switch to udp
+        if first != 'udp' and 'udp' in active_protos():
+            wantedproto = 'udp'
         #if tcp method is not the first but it works - switch to tcp
         if first != 'tcp' and 'tcp' in active_protos():
             wantedproto = 'tcp'
-        lg.out(4, 'p2p_connector.PopWorkingProto will pop %s contact   order=%s active_protos()=%s' % (wantedproto, str(order), str(active_protos())))
+        lg.out(4, 'p2p_connector.PopWorkingProto will pop %s contact order=%s active_protos()=%s' % (
+            wantedproto, str(order), str(active_protos())))
         # now move best proto on the top
         # other users will use this method to send to us
         lid.popProtoContact(wantedproto)
@@ -328,16 +329,14 @@ class P2PConnector(automat.Automat):
         if s.intersection([
             'transport.transport-tcp.transport-tcp-enable',
             'transport.transport-tcp.transport-tcp-receiving-enable',
-            'transport.transport-dhtudp.transport-dhtudp-enable',
-            'transport.transport-dhtudp.transport-dhtudp-receiving-enable',
+            'transport.transport-udp.transport-udp-enable',
+            'transport.transport-udp.transport-udp-receiving-enable',
             ]):
             return True
         if 'transport.transport-tcp.transport-tcp-port' in s and settings.enableTCP():
             return True
-        if 'transport.transport-dhtudp.transport-dhtudp-port' in s and settings.enableDHTUDP():
-            return True
-        if 'transport.transport-dhtudp.transport-dht-port' in s and settings.enableDHTUDP():
-            return True
+        # if 'transport.transport-udp.transport-udp-port' in s and settings.enableUDP():
+        #     return True
         return False
     
     def _update_my_identity(self):
@@ -354,7 +353,7 @@ class P2PConnector(automat.Automat):
         #prepare contacts data
         cdict = {}
         cdict['tcp'] = 'tcp://'+nowip+':'+settings.getTCPPort()
-        cdict['dhtudp'] = 'dhtudp://%s@%s' % (lid.getIDName().lower(), lid.getIDHost())
+        cdict['udp'] = 'udp://%s@%s' % (lid.getIDName().lower(), lid.getIDHost())
         #making full order list
         for proto in cdict.keys():
             if proto not in order:

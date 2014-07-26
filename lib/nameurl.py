@@ -15,7 +15,7 @@ We assume BitPie.NET URLs are of the form::
 
     ssh://host.name.com:port/fooobar.xml  (maybe no foobar.xml)
     tcp://123.45.67.89:4321
-    dhtudp://veselin@my.identityserver.net:8080/some_folder/veselin
+    udp://veselin@my.identityserver.net:8080/some_folder/veselin
     
 Tried built-in methods ``urlparse()`` and ``urlsplit()`` 
 and they move the location from the second to the 3rd

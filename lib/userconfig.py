@@ -139,6 +139,9 @@ _DefaultXMLConfig = ur"""<settings>
   </emergency-text>
  </emergency>
  <network>
+  <network-dht-port>
+   14441
+  </network-dht-port>
   <network-proxy>
    <network-proxy-enable>
     False
@@ -181,30 +184,19 @@ _DefaultXMLConfig = ur"""<settings>
     True
    </transport-tcp-receiving-enable>
   </transport-tcp>
-  <transport-dhtudp>
-   <transport-dhtudp-enable>
-    False
-   </transport-dhtudp-enable>
-   <transport-dhtudp-sending-enable>
-    True
-   </transport-dhtudp-sending-enable>
-   <transport-dhtudp-receiving-enable>
-    True
-   </transport-dhtudp-receiving-enable>
-   <transport-dhtudp-port>
-    9993
-   </transport-dhtudp-port>
-   <transport-dht-port>
-    14441
-   </transport-dht-port>
-  </transport-dhtudp>
   <transport-udp>
    <transport-udp-enable>
     False
    </transport-udp-enable>
    <transport-udp-port>
-    14442
+    8882
    </transport-udp-port>
+   <transport-udp-sending-enable>
+    True
+   </transport-udp-sending-enable>
+   <transport-udp-receiving-enable>
+    True
+   </transport-udp-receiving-enable>
   </transport-udp>
  </transport>
  <personal>
@@ -289,13 +281,10 @@ _PublicOptions = [
     'transport.transport-tcp.transport-tcp-enable',
     'transport.transport-tcp.transport-tcp-sending-enable',
     'transport.transport-tcp.transport-tcp-receiving-enable',
-    'transport.transport-dhtudp.transport-dhtudp-enable',
-    'transport.transport-dhtudp.transport-dhtudp-sending-enable',
-    'transport.transport-dhtudp.transport-dhtudp-receiving-enable',
-    'transport.transport-dhtudp.transport-dhtudp-port',
-    'transport.transport-dhtudp.transport-dht-port',                        
     'transport.transport-udp.transport-udp-enable',
     'transport.transport-udp.transport-udp-port',
+    'transport.transport-udp.transport-udp-sending-enable',
+    'transport.transport-udp.transport-udp-receiving-enable',
     'id-server.id-server-enable',
     'id-server.id-server-host',
     'id-server.id-server-web-port',
@@ -342,6 +331,7 @@ _InfosDict = {
     'network':                      'Network settings.',
     'network-send-limit':           'The value in kilobytes per second to decrease network load. At the moment the maximum sending speed that BitPie.NET can support is about half megabyte per second. 0 - no limit.',
     'network-receive-limit':        'Limit incoming traffic with a value in kilobytes per second. 0 - no limit.',
+    'network-dht-port':             'UDP port number for Distributed Hash Table communications',    
     'backup':                       'Backups setting',
     'backup-block-size':            'Preferred block size in bytes when doing a backup.',
     'backup-max-block-size':        'Maximum block size in bytes when doing a backup, if you plan to do a huge backups - set higher values to increase the speed.',
@@ -349,17 +339,13 @@ _InfosDict = {
     'transport-tcp':                "transport_tcp uses the standard TCP protocol to transfer packets.",
     'transport-tcp-port':           "Enter the TCP port number for the transport_tcp, it will be used to connect with your machine.",
     'transport-tcp-enable':         "transport_tcp uses the standard TCP protocol to transfer packets.<br>Do you want to use transport_tcp?",
-    'transport-tcp-sending-enable': 'Do you want to use transport_tcp for sending packets?',
-    'transport-tcp-receiving-enable': 'Do you want to use transport_tcp for receiving packets?',
-    'transport-dhtudp':             '',
-    'transport-dht-port':           '',
-    'transport-dhtudp-port':        '',
-    'transport-dhtudp-enable':      '',
-    'transport-dhtudp-sending-enable': '',
-    'transport-dhtudp-receiving-enable': '',
+    'transport-tcp-sending-enable':     'Do you want to use transport_tcp for sending packets?',
+    'transport-tcp-receiving-enable':   'Do you want to use transport_tcp for receiving packets?',
     'transport-udp':                'transport_udp send and receive UDP datagrams to transfer data from peer to peer',
     'transport-udp-enable':         'transport_udp send and receive UDP datagrams to transfer data from peer to peer',
     'transport-udp-port':           'Set a UDP port for incoming UDP packets',
+    'transport-udp-sending-enable':     'Do you want to use transport_udp for sending packets?',
+    'transport-udp-receiving-enable':   'Do you want to use transport_udp for receiving packets?',
     'upnp-enabled':                 'Do you want to use UPnP to configure port forwarding?',
     'debug-level':                  "Higher values will produce more log messages.",
     'stream-enable':                "Go to http://127.0.0.1:[logs port number] to browse the program log.",
@@ -411,20 +397,18 @@ _LabelsDict = {
     'network':                              'network',
     'network-send-limit':                   'outgoing bandwidth limit',
     'network-receive-limit':                'incoming bandwidth limit',
+    'network-dht-port':                     'DHT port number',
     'transport':                            'transports',
     'transport-tcp':                        'transport_tcp',
     'transport-tcp-port':                   'TCP port',
     'transport-tcp-enable':                 'transport_tcp enable',
     'transport-tcp-sending-enable':         'transport_tcp sending enable',
     'transport-tcp-receiving-enable':       'transport_tcp receiving enable',
-    'transport-dhtudp':                     'transport_dhtudp',
-    'transport-dhtudp-port':                'dhtudp UDP port',
-    'transport-dht-port':                   'DHT port',
-    'transport-dhtudp-enable':              'transport_dhtudp enable',
-    'transport-dhtudp-sending-enable':      'transport_dhtudp sending enable',
-    'transport-dhtudp-receiving-enable':    'transport_dhtudp receiving enable',
     'transport-udp':                        'transport_udp',
     'transport-udp-port':                   'UDP port',
+    'transport-udp-enable':                 'transport_udp enable',
+    'transport-udp-sending-enable':         'transport_udp sending enable',
+    'transport-udp-receiving-enable':       'transport_udp receiving enable',
     'logs':                                 'logs',
     'debug-level':                          'debug level',
     'stream-enable':                        'enable logs',

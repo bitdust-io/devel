@@ -432,12 +432,12 @@ class IdRegistrator(automat.Automat):
         cdict = {}
         if settings.enableTCP():
             cdict['tcp'] = 'tcp://'+externalIP+':'+settings.getTCPPort()
-        if settings.enableDHTUDP():
+        if settings.enableUDP():
             try:
                 protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])
-                if port and port != '80':
-                    host += '_%d' % int(port) 
-                cdict['dhtudp'] = 'dhtudp://%s@%s' % (login.lower(), host)
+                if port and port not in ['80', 80, ]:
+                    host += ':%s' % str(port) 
+                cdict['udp'] = 'udp://%s@%s' % (login.lower(), host)
             except:
                 lg.exc()
         for c in misc.validTransports:

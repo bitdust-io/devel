@@ -77,9 +77,6 @@ import packet_out
 
 #------------------------------------------------------------------------------ 
 
-XMLRPC_DEFAULT_PORT_NUMBERS = {
-   'tcp': 9010, }
-
 INSTALLED_TRANSPORTS = {}
 
 try:
@@ -337,6 +334,7 @@ def inbox(info):
         os.write(fd, data)
         os.close(fd)
         return None
+    _LastInboxPacketTime = time.time()
     lg.out(16, "gate.inbox [%s] from %s|%s by %s://%s" % (
         newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
         nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
@@ -655,8 +653,8 @@ def parseCommandLine():
     oparser.set_default('debug', 10)
     oparser.add_option("-t", "--tcpport", dest="tcpport", type="int", help="specify port for TCP transport")
     oparser.set_default('tcpport', settings.getTCPPort())
-    oparser.add_option("-u", "--udpport", dest="udpport", type="int", help="specify port for DHTUDP transport")
-    oparser.set_default('udpport', settings.getDHTUDPPort())
+    oparser.add_option("-u", "--udpport", dest="udpport", type="int", help="specify port for UDP transport")
+    oparser.set_default('udpport', settings.getUDPPort())
     oparser.add_option("-p", "--dhtport", dest="dhtport", type="int", help="specify UDP port for DHT network")
     oparser.set_default('dhtport', settings.getDHTPort())
     oparser.add_option("-s", "--packetsize", dest="packetsize", type="int", help="set size of UDP datagrams")
@@ -678,11 +676,11 @@ def main():
     key.InitMyKey()
     (options, args) = parseCommandLine()
     settings.override('transport.transport-tcp.transport-tcp-port', options.tcpport)
-    settings.override('transport.transport-dhtudp.transport-dhtudp-port', options.udpport)
-    settings.override('transport.transport-dhtudp.transport-dht-port', options.dhtport)
+    settings.override('transport.transport-udp.transport-udp-port', options.udpport)
+    settings.override('network.network-dht-port', options.dhtport)
     lg.set_debug_level(options.debug)
     tmpfile.init()
-    if 'dhtudp' in INSTALLED_TRANSPORTS.keys():
+    if 'udp' in INSTALLED_TRANSPORTS.keys():
         import lib.udp
         lib.udp.listen(options.udpport)
         import dht.dht_service

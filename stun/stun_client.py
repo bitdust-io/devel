@@ -117,7 +117,7 @@ class StunClient(automat.Automat):
         if arg:
             self.listen_port, self.callback = arg
         else:
-            self.listen_port, self.callback = int(settings.getDHTUDPPort()), None
+            self.listen_port, self.callback = int(settings.getUDPPort()), None
         udp.proto(self.listen_port).add_callback(self._datagram_received)
 
     def doReportSuccess(self, arg):

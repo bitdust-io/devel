@@ -35,10 +35,13 @@ _BaseDirPath = ''   # location for ".bitpie" folder, lets keep all program DB in
                     # Windows7: c:\\Users\\[user]\\.bitpie
 _UserConfig = None  # user settings read from file .bitpie/metadata/userconfig
 _OverrideDict = {}  # list of values to replace some of user settings 
+_InitDone = False    
+
+#------------------------------------------------------------------------------ 
+
 _BandwidthLimit = None 
 _BackupBlockSize = None
 _BackupMaxBlockSize = None
-_InitDone = False    
 
 #------------------------------------------------------------------------------ 
 #---INIT-----------------------------------------------------------------------
@@ -1033,14 +1036,6 @@ def DefaultUDPPort():
     """
     return 8882
 
-def DefaultDHTUDPPort():
-    """
-    A default UDP port number for transport_dhtudp.
-    Set this to 0 to find a random port - seems more secure at a first view.
-    However other ports are still a constant values - not a big deal :-).
-    """
-    return 9993
-
 def DefaultDHTPort():
     """
     A default UDP port number for DHT network.
@@ -1258,19 +1253,6 @@ def getTransportPort(proto):
         return getUDPPort()
     raise
 
-def getTCPPort():
-    """
-    Get a port number for tranport_tcp from user config.  
-    """
-    return (uconfig("transport.transport-tcp.transport-tcp-port"))
-
-def setTCPPort(port):
-    """
-    Set a port number for tranport_tcp in the user config.  
-    """
-    uconfig().set("transport.transport-tcp.transport-tcp-port", str(port))
-    uconfig().update()
-
 def enableTCP(enable=None):
     """
     Switch on/off transport_tcp in the settings or get current state.
@@ -1299,6 +1281,46 @@ def enableTCPreceiving(enable=None):
     uconfig().set('transport.transport-tcp.transport-tcp-receiving-enable', str(enable))
     uconfig().update()
 
+def getTCPPort():
+    """
+    Get a port number for tranport_tcp from user config.  
+    """
+    return (uconfig("transport.transport-tcp.transport-tcp-port"))
+
+def setTCPPort(port):
+    """
+    Set a port number for tranport_tcp in the user config.  
+    """
+    uconfig().set("transport.transport-tcp.transport-tcp-port", str(port))
+    uconfig().update()
+
+def enableUDP(enable=None):
+    """
+    Switch on/off transport_udp in the settings or get current state.
+    """
+    if enable is None:
+        return uconfig('transport.transport-udp.transport-udp-enable').lower() == 'true'
+    uconfig().set('transport.transport-udp.transport-udp-enable', str(enable))
+    uconfig().update()
+
+def enableUDPsending(enable=None):
+    """
+    Switch on/off sending over udp in the settings or get current state.
+    """
+    if enable is None:
+        return uconfig('transport.transport-udp.transport-udp-sending-enable').lower() == 'true'
+    uconfig().set('transport.transport-udp.transport-udp-sending-enable', str(enable))
+    uconfig().update()
+    
+def enableUDPreceiving(enable=None):
+    """
+    Switch on/off receiving over udp in the settings or get current state.
+    """
+    if enable is None:
+        return uconfig('transport.transport-udp.transport-udp-receiving-enable').lower() == 'true'
+    uconfig().set('transport.transport-udp.transport-udp-receiving-enable', str(enable))
+    uconfig().update()
+
 def getUDPPort():
     """
     Get a port number for tranport_udp from user config.  
@@ -1312,66 +1334,17 @@ def setUDPPort(port):
     uconfig().set("transport.transport-udp.transport-udp-port", str(port))
     uconfig().update()
 
-def enableUDP(enable=None):
-    """
-    Switch on/off transport_udp in the settings or get current state.
-    """
-    if enable is None:
-        return uconfig('transport.transport-udp.transport-udp-enable').lower() == 'true'
-    uconfig().set('transport.transport-udp.transport-udp-enable', str(enable))
-    uconfig().update()
-
-def enableDHTUDP(enable=None):
-    """
-    Switch on/off dhtudp transport in the settings or get current state.
-    """
-    if enable is None:
-        return uconfig('transport.transport-dhtudp.transport-dhtudp-enable').lower() == 'true'
-    uconfig().set('transport.transport-dhtudp.transport-dhtudp-enable', str(enable))
-    uconfig().update()
-
-def enableDHTUDPsending(enable=None):
-    """
-    Switch on/off sending over dhtudp in the settings or get current state.
-    """
-    if enable is None:
-        return uconfig('transport.transport-dhtudp.transport-dhtudp-sending-enable').lower() == 'true'
-    uconfig().set('transport.transport-dhtudp.transport-dhtudp-sending-enable', str(enable))
-    uconfig().update()
-    
-def enableDHTUDPreceiving(enable=None):
-    """
-    Switch on/off receiving over dhtudp in the settings or get current state.
-    """
-    if enable is None:
-        return uconfig('transport.transport-dhtudp.transport-dhtudp-receiving-enable').lower() == 'true'
-    uconfig().set('transport.transport-dhtudp.transport-dhtudp-receiving-enable', str(enable))
-    uconfig().update()
-
 def getDHTPort():
     """
     Get a UDP port number for entangled "DHT" network.  
     """
-    return uconfig("transport.transport-dhtudp.transport-dht-port")
+    return uconfig("network.network-dht-port")
 
 def setDHTPort(port):
     """
     Set a UDP port number for entangled "DHT" network.  
     """
-    uconfig().set("transport.transport-dhtudp.transport-dht-port", str(port))
-    uconfig().update()
-    
-def getDHTUDPPort():
-    """
-    Get a main UDP port number for dhtudp transport.  
-    """
-    return uconfig("transport.transport-dhtudp.transport-dhtudp-port")
-
-def setDHTUDPPort(port):
-    """
-    Set a main UDP port number for dhtudp transport.  
-    """
-    uconfig().set("transport.transport-dhtudp.transport-dhtudp-port", str(port))
+    uconfig().set("network.network-dht-port", str(port))
     uconfig().update()
     
 def enableTransport(proto, enable=None):
@@ -1874,24 +1847,18 @@ def _checkSettings():
 
     if getDonatedString() == '':
         uconfig().set("storage.donated", DefaultDonatedString())
-    # donatedV, donatedS = diskspace.SplitString(getDonatedString())
-    # if not donatedS:
-    #     uconfig().set("storage.donated", str(getDonatedString()))
+    donatedV, donatedS = diskspace.SplitString(getDonatedString())
+    if not donatedS:
+        uconfig().set("storage.donated", str(getDonatedString())+' bytes')
 
     if getNeededString() == '':
         uconfig().set("storage.needed", DefaultNeededString())
-    # neededV, neededS = diskspace.SplitString(getNeededString())
-    # if not neededS:
-    #     uconfig().set("storage.needed", str(getNeededString())+' Mb')
+    neededV, neededS = diskspace.SplitString(getNeededString())
+    if not neededS:
+        uconfig().set("storage.needed", str(getNeededString())+' bytes')
 
     if getDebugLevelStr() == "":
         uconfig().set("logs.debug-level", str(defaultDebugLevel()))
-
-#    if SendTimeOutEmail() == "":
-#        uconfig().set("other.emailSendTimeout", str(DefaultSendTimeOutEmail()))
-
-#    if ReceiveTimeOutEmail() == "":
-#        uconfig().set("other.emailReceiveTimeout", str(DefaultReceiveTimeOutEmail()))
 
     if getTCPPort() == "":
         uconfig().set("transport.transport-tcp.transport-tcp-port", str(DefaultTCPPort()))
@@ -1899,17 +1866,8 @@ def _checkSettings():
     if getUDPPort() == "":
         uconfig().set("transport.transport-udp.transport-udp-port", str(DefaultUDPPort()))
 
-    if getDHTUDPPort() == "":
-        uconfig().set("transport.transport-dhtudp.transport-dhtudp-port", str(DefaultDHTUDPPort()))
-
     if getDHTPort() == "":
-        uconfig().set("transport.transport-dhtudp.transport-dht-port", str(DefaultDHTPort()))
-
-#    if getSSHPort() == "":
-#        uconfig().set("transport.transport-ssh.transport-ssh-port", str(DefaultSSHPort()))
-
-#    if getHTTPPort() == "":
-#        uconfig().set("transport.transport-http.transport-http-port", str(DefaultHTTPPort()))
+        uconfig().set("network.network-dht-port", str(DefaultDHTPort()))
 
     if getUpdatesMode().strip() not in getUpdatesModeValues():
         uconfig().set('updates.updates-mode', getUpdatesModeValues()[0])

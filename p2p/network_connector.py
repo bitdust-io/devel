@@ -184,9 +184,10 @@ class NetworkConnector(Automat):
         return settings.enableUPNP() and time.time() - self.last_upnp_time < 60*60
 
     def isConnectionAlive(self, arg):
-        if udp.get_last_datagram_time() < 5*60 and settings.enableDHTUDP():
-            return True
-        if gate.last_inbox_time() < 3*60:
+        if time.time() - udp.get_last_datagram_time() < 60:
+            if settings.enableUDP() and settings.enableUDPreceiving():
+                return True
+        if time.time() - gate.last_inbox_time() < 60:
             return True
         if 'receive' in gate.transport_states().values():
             return True
@@ -228,10 +229,10 @@ class NetworkConnector(Automat):
         lg.out(6, 'network_connector.doSetUp')
         # net_misc.SetConnectionDoneCallbackFunc(ConnectionDoneCallback)
         # net_misc.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
-        dhtudp_port = int(settings.getDHTUDPPort())
-        if not udp.proto(dhtudp_port):
-            udp.listen(dhtudp_port)
-        stun_server.A('start', dhtudp_port) 
+        udp_port = int(settings.getUDPPort())
+        if not udp.proto(udp_port):
+            udp.listen(udp_port)
+        stun_server.A('start', udp_port) 
         if settings.enableIdServer():       
             id_server.A('start', (settings.getIdServerWebPort(), 
                                   settings.getIdServerTCPPort()))  
@@ -244,10 +245,6 @@ class NetworkConnector(Automat):
         """
         lg.out(6, 'network_connector.doSetDown')
         shutlist = []
-        dhtudp_port = int(settings.getDHTUDPPort())
-        # d_udp = udp.close_all() # (dhtudp_port)
-        # if d_udp:
-        #     shutlist.append(d_udp)
         d_dht = dht_service.disconnect()
         if d_dht:
             shutlist.append(d_dht)

@@ -694,8 +694,8 @@ def makeDefaultIdentity(name='', ip=''):
     cdict = {}
     if settings.enableTCP() and settings.enableTCPreceiving():
         cdict['tcp'] = 'tcp://'+ip+':'+settings.getTCPPort()
-    if settings.enableDHTUDP():
-        cdict['dhtudp'] = 'dhtudp://%s@%s' % (name.lower(), servername)
+    if settings.enableUDP():
+        cdict['udp'] = 'udp://%s@%s' % (name.lower(), servername)
 
     for c in lib.misc.validTransports:
         if cdict.has_key(c):

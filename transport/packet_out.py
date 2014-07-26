@@ -513,14 +513,18 @@ class PacketOut(automat.Automat):
         # now need to decide which transport to use
         # let's prepare his contacts first
         byproto = self.remote_identity.getContactsByProto()
-        tcp_contact = byproto.get('tcp', None)
-        dhtudp_contact = byproto.get('dhtudp', None)
+        tcp_contact = None
+        if settings.enableTCP() and settings.enableTCPsending():
+            tcp_contact = byproto.get('tcp', None)
+        udp_contact = None
+        if settings.enableUDP() and settings.enableUDPsending():
+            udp_contact = byproto.get('udp', None)
         working_protos = stats.peers_protos().get(self.remote_idurl, set())
         # tcp seems to be the most stable proto
         # now let's check if we know his local IP and 
         # he enabled tcp in his settings to be able to receive packets from others 
         # try to send to his local IP first, not external
-        if tcp_contact and localIP and settings.enableTCPsending():
+        if tcp_contact and localIP:
             if gate.is_installed('tcp') and gate.can_send(proto):
                 proto, host, port, fn = nameurl.UrlParse(tcp_contact)
                 if port:
@@ -530,7 +534,7 @@ class PacketOut(automat.Automat):
                 self.automat('items-sent')
                 return
         # tcp is the best proto - if it is working - this is the best case!!!
-        if tcp_contact and 'tcp' in working_protos and settings.enableTCPsending():
+        if tcp_contact and 'tcp' in working_protos:
             proto, host, port, fn = nameurl.UrlParse(tcp_contact)
             if host.strip() and gate.is_installed(proto) and gate.can_send(proto):  
                 if port:
@@ -539,10 +543,10 @@ class PacketOut(automat.Automat):
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
                 return
-        # dhtudp contact
-        if dhtudp_contact and 'dhtudp' in working_protos and settings.enableDHTUDPsending():
-            proto, host = nameurl.IdContactSplit(dhtudp_contact)
-            if host.strip() and gate.is_installed('dhtudp') and gate.can_send(proto):
+        # udp contact
+        if udp_contact and 'udp' in working_protos:
+            proto, host = nameurl.IdContactSplit(udp_contact)
+            if host.strip() and gate.is_installed('udp') and gate.can_send(proto):
                 gate.send_file(proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
@@ -553,13 +557,14 @@ class PacketOut(automat.Automat):
             if port:
                 host = host+':'+str(port)
             # if method exist but empty - don't use it
-            if host.strip() and settings.transportSendingIsEnabled(proto):
+            if host.strip():
                 # try sending with tcp even if it is switched off in the settings
                 if gate.is_installed(proto) and gate.can_send(proto):
-                    gate.send_file(proto, host, self.filename, self.description)
-                    self.items.append(WorkItem(proto, host))
-                    self.automat('items-sent')
-                    return
+                    if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
+                        gate.send_file(proto, host, self.filename, self.description)
+                        self.items.append(WorkItem(proto, host))
+                        self.automat('items-sent')
+                        return
         self.automat('nothing-to-send')
         lg.out(6, 'packet_out._push WARNING no supported protocols with %s' % self.remote_idurl)
         
