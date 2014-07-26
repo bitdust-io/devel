@@ -48,6 +48,10 @@ class UDPStream():
         self.bytes_sent = 0
         self.bytes_acked = 0
         self.creation_time = time.time() 
+        lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
+        
+    def __del__(self):
+        lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
         self.consumer.stream = None
