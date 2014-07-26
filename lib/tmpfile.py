@@ -39,7 +39,7 @@ _SubDirs = {
     'tcp-in':   60*10,
     # 10 minutes for incoming tcp files
     
-    'dhtudp-in': 60*10,
+    'udp-in': 60*10,
     
     'propagate': 60*10,
     # propagate happens often enough,

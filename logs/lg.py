@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: log
+.. module:: lg
 
 """
 
@@ -179,7 +179,7 @@ def set_debug_level(level):
     """
     global _DebugLevel
     if _DebugLevel > level:
-        out(level, 'bpio.SetDebug _DebugLevel=' + str(level))
+        out(level, 'lg.SetDebug _DebugLevel=' + str(level))
     _DebugLevel = level
 
 
@@ -350,8 +350,9 @@ def disable_output():
 
 def disable_logs():
     """
-    Celar _LogsEnabled flag, so calls to Dprint will do nothing.
-    Must be used in production release to increase performance. 
+    Clear _LogsEnabled flag, so calls to ``log()`` and ``exc()`` will do nothing.
+    Must be used in production release to increase performance.
+    However I plan to comment all lines with ``lg.log()`` at all.  
     """
     global _LogsEnabled
     _LogsEnabled = False
@@ -385,7 +386,7 @@ def restore_original_stdout():
         sys.stdout = _OriginalStdOut
         _std_out.close()
     except:
-        traceback.print_last(file=open('bpio.shutdown.error', 'w'))
+        traceback.print_last(file=open('bitpie.error', 'w'))
 
 
 def set_weblog_func(webstreamfunc):

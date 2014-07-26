@@ -1774,9 +1774,10 @@ def LoopAttenuation(current_delay, faster, min, max):
     global _AttenuationFactor
     if faster:
         return min
-    else:
-        if current_delay < max:
-            return current_delay * _AttenuationFactor   
+    if current_delay < max:
+        current_delay *= _AttenuationFactor
+        if current_delay > max:
+            current_delay = max
     return current_delay
 
 #------------------------------------------------------------------------------ 

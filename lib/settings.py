@@ -1262,7 +1262,7 @@ def getTCPPort():
     """
     Get a port number for tranport_tcp from user config.  
     """
-    return uconfig("transport.transport-tcp.transport-tcp-port")
+    return (uconfig("transport.transport-tcp.transport-tcp-port"))
 
 def setTCPPort(port):
     """
@@ -1303,7 +1303,7 @@ def getUDPPort():
     """
     Get a port number for tranport_udp from user config.  
     """
-    return uconfig("transport.transport-udp.transport-udp-port")
+    return int(uconfig("transport.transport-udp.transport-udp-port"))
 
 def setUDPPort(port):
     """

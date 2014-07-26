@@ -229,21 +229,19 @@ class CommandsProtocol(BasicProtocol):
             return
         if version != self.SoftwareVersion:
             return
-        lg.out(24, '>>> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
+        lg.out(24, '>>> [%s] (%d bytes) from %s' % (
+            command, len(payload), str(address)))
         self.run_callbacks((command, payload), address)
         
     def sendCommand(self, command, data, address):
-        try:
-            datagram = self.SoftwareVersion + str(command.lower())[0] + data
-        except:
-            # print address, datagram, type(datagram), command
-            lg.exc()
-            return False
+        datagram = ''.join((
+            self.SoftwareVersion,
+            command,
+            data))
         lg.out(24, '<<< [%s] (%d bytes) to %s' % (command, len(data), address))
         return self.sendDatagram(datagram, address) 
-        
-        
-        
+
+#------------------------------------------------------------------------------ 
 
 def main():
     bpio.init()

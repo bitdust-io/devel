@@ -198,6 +198,14 @@ _DefaultXMLConfig = ur"""<settings>
     14441
    </transport-dht-port>
   </transport-dhtudp>
+  <transport-udp>
+   <transport-udp-enable>
+    False
+   </transport-udp-enable>
+   <transport-udp-port>
+    14442
+   </transport-udp-port>
+  </transport-udp>
  </transport>
  <personal>
   <personal-name>
@@ -286,6 +294,8 @@ _PublicOptions = [
     'transport.transport-dhtudp.transport-dhtudp-receiving-enable',
     'transport.transport-dhtudp.transport-dhtudp-port',
     'transport.transport-dhtudp.transport-dht-port',                        
+    'transport.transport-udp.transport-udp-enable',
+    'transport.transport-udp.transport-udp-port',
     'id-server.id-server-enable',
     'id-server.id-server-host',
     'id-server.id-server-web-port',
@@ -309,9 +319,9 @@ _InfosDict = {
     'updates-mode':                 "You can choose one of the install modes. Software must be restarted after installation of the new version.",
     'updates-shedule':              "You can setup updating schedule here.",
     'storage':                      "Here you can manage your storage settings.",
-    'suppliers':            "Number of remote suppliers which keeps your backups.<br><font color=red>WARNING!</font> You will lost all your backups after changing suppliers number.",
-    'needed':             "How many megabytes you need to store your files?",
-    'donated':            "How many megabytes you ready to donate to other users?",
+    'suppliers':                    "Number of remote suppliers which keeps your backups.<br><font color=red>WARNING!</font> You will lost all your backups after changing suppliers number.",
+    'needed':                       "How many megabytes you need to store your files?",
+    'donated':                      "How many megabytes you ready to donate to other users?",
     'folder-backups':               "Place for your local backups files.",
     'folder-restore':               'Location where your restored files should be placed.',
     'folder-customers':             'Place for donated space, other users will keep their files here.',
@@ -347,6 +357,8 @@ _InfosDict = {
     'transport-dhtudp-enable':      '',
     'transport-dhtudp-sending-enable': '',
     'transport-dhtudp-receiving-enable': '',
+    'transport-udp':                '',
+    'transport-udp-port':           '',
     'upnp-enabled':                 'Do you want to use UPnP to configure port forwarding?',
     'debug-level':                  "Higher values will produce more log messages.",
     'stream-enable':                "Go to http://127.0.0.1:[logs port number] to browse the program log.",
@@ -410,6 +422,8 @@ _LabelsDict = {
     'transport-dhtudp-enable':              'transport_dhtudp enable',
     'transport-dhtudp-sending-enable':      'transport_dhtudp sending enable',
     'transport-dhtudp-receiving-enable':    'transport_dhtudp receiving enable',
+    'transport-udp':                        'transport_udp',
+    'transport-udp-port':                   'UDP port',
     'logs':                                 'logs',
     'debug-level':                          'debug level',
     'stream-enable':                        'enable logs',
