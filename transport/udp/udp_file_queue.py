@@ -172,8 +172,11 @@ class InboxFile():
         self.size = size
         self.bytes_received = 0
         self.started = time.time()
-        lg.out(6, 'udp_file_queue.InboxFile {%s} [%d] from %s' % (
+        lg.out(6, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s' % (
             os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
+        
+    def __del__(self):
+        lg.out(6, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
 
     def process(self, newdata):
         os.write(self.fd, newdata)
@@ -205,6 +208,9 @@ class OutboxFile():
         self.fileobj = open(self.filename, 'rb')
         lg.out(6, 'udp_file_queue.OutboxFile {%s} [%d] to %s' % (
             os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
+
+    def __del__(self):
+        lg.out(6, 'udp_file_queue.OutboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
 
     def process(self):
         if self.eof:
