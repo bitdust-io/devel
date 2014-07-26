@@ -165,8 +165,8 @@ class UDPStream():
                     struct.pack('i', block_id),
                     block[0]))
                 import random
-                if random.randint(0, 9) != 0:
-                    # 10 % percent lost
+                if random.randint(0, 9) >= 3:
+                    # 30 % percent lost
                     self.send_data_packet_func(self.stream_id, self.consumer, output)
                 # DEBUG
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
