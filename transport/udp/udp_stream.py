@@ -105,7 +105,7 @@ class UDPStream():
                 block_size = len(outblock[0])
                 self.bytes_acked += block_size
                 block_rtt = time.time() - outblock[1]
-                print block_id, block_rtt
+                print 'ack', block_id, block_rtt
                 has_progress = True
             if has_progress:
                 self.sent_raw_data_callback(self.consumer, block_size)
@@ -137,6 +137,7 @@ class UDPStream():
                 # DEBUG
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
+                print 'send block', unique_id, self.bytes_sent
 
 #------------------------------------------------------------------------------ 
 
