@@ -68,16 +68,20 @@ class UDPStream():
         self.blocks_to_ack.add(block_id)
         eof_state = False
         if block_id == self.input_block_id + 1:
-            newdata = [] 
+            newdata = []
+            print 'data',
             while True:
+                next_block_id = self.input_block_id + 1
                 try:
-                    newdata.append(self.input_blocks.pop(self.input_block_id + 1))
+                    newdata.append(self.input_blocks.pop(next_block_id))
                 except:
                     break
-                self.input_block_id += 1
+                self.input_block_id = next_block_id
+                print next_block_id,
             newdata = ''.join(newdata)
             if self.consumer:
                 eof_state = self.received_raw_data_callback(self.consumer, newdata)
+            print '   : %d bytes, eof=%r' % (len(newdata), eof_state)
         if self.consumer:
             if block_id % BLOCKS_PER_ACK == 0 or eof_state:
                 ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
