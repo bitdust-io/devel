@@ -197,7 +197,7 @@ class UDPStream():
     def resend(self):
         activitiy = len(self.output_blocks.keys()) + len(self.blocks_to_ack)
         if activitiy > 0:
-            print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
+            # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0
         else:
             self.resend_inactivity_counter += 1
