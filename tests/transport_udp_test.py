@@ -45,18 +45,19 @@ def main():
                           bpio.ReadBinaryFile(sys.argv[1]), misc.getLocalID())
         bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
         def _try_reconnect():
-            sess = udp_session.get(sys.argv[2])
+            sess = udp_session.get_by_peer_id(sys.argv[2])
             reconnect = False
             if not sess:
                 reconnect = True
-                print 'sessions', udp_session.sessions()
+                print 'sessions', udp_session.sessions(),
+                print map(lambda s: s.peer_id, udp_session.sessions())
             else:
                 if sess.state != 'CONNECTED':
                     print 'state: ', sess.state
                     reconnect = True
             if reconnect:
-                # print 'reconnect', sess 
-                # udp_session.add_pending_outbox_file(sys.argv[1]+'.signed', sys.argv[2], 'descr', Deferred(), False)
+                print 'reconnect', sess 
+                udp_session.add_pending_outbox_file(sys.argv[1]+'.signed', sys.argv[2], 'descr', Deferred(), False)
                 udp_node.A('connect', sys.argv[2])
             reactor.callLater(0.5, _try_reconnect)
         def _try_connect():
