@@ -89,7 +89,7 @@ class UDPStream():
         # print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
         if block_id == self.input_block_id + 1:
             newdata = []
-            print 'newdata',
+            # print 'newdata',
             while True:
                 next_block_id = self.input_block_id + 1
                 try:
@@ -97,11 +97,11 @@ class UDPStream():
                 except:
                     break
                 self.input_block_id = next_block_id
-                print next_block_id,
+                # print next_block_id,
             newdata = ''.join(newdata)
             if self.consumer:
                 eof_state = self.received_raw_data_callback(self.consumer, newdata)
-            print '%d bytes, eof=%r' % (len(newdata), eof_state)
+            print 'received %d bytes, eof=%r' % (len(newdata), eof_state)
         if self.consumer:
             # want to send the first ack asap
             if block_id % BLOCKS_PER_ACK == 1 or eof_state:
@@ -129,7 +129,7 @@ class UDPStream():
                 self.bytes_acked += block_size
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
-                print 'ack', block_id, self.last_ack_rtt
+                # print 'ack', block_id, self.last_ack_rtt
                 has_progress = True
                 self.sent_raw_data_callback(self.consumer, block_size)
             print 'progress:', has_progress, self.output_blocks.keys()
@@ -169,7 +169,8 @@ class UDPStream():
                         # print 'skip', block_id, dt, self.last_ack_rtt 
                         continue
                 else:
-                    print 'go', block_id
+                    pass
+                    # print 'go', block_id
                 time_sent = relative_time
                 self.output_blocks[block_id] = (piece, time_sent)
                 data_size = len(piece)
