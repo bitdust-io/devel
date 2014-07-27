@@ -142,7 +142,7 @@ class UDPStream():
     def write(self, data):
         if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
             raise BufferOverflow('buffer size is %d' % self.output_buffer_size)
-        print 'write', len(data)
+        # print 'write', len(data)
         outp = cStringIO.StringIO(data)
         while True:
             piece = outp.read(BLOCK_SIZE)
@@ -190,7 +190,7 @@ class UDPStream():
         ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
         self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
         self.output_blocks_acks += list(self.blocks_to_ack)
-        print 'send ack', len(self.output_blocks_acks), self.blocks_to_ack
+        print 'send ack', len(self.output_blocks_acks), len(self.blocks_to_ack)
         self.blocks_to_ack.clear()
         self.last_ack_moment = time.time()
 
