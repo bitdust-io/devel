@@ -139,9 +139,8 @@ class UDPStream():
             if len(acks) == 0:
                 print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
                 self.stop_resending()
-                sum_not_acked_blocks = sum(
-                    lambda block_id: len(self.output_blocks[block_id][0]), 
-                    self.output_blocks.keys())
+                sum_not_acked_blocks = sum(map(lambda block: len(block[0]), 
+                                               self.output_blocks.values()))
                 self.consumer.on_zero_ack(sum_not_acked_blocks)
                 return            
             print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
