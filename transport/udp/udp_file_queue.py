@@ -304,6 +304,8 @@ class InboxFile():
         self.bytes_received += len(newdata)
         
     def is_done(self):
+        if self.bytes_received == self.size:
+            print 'DONE!!!!!!!!!!!!!!'
         return self.bytes_received == self.size
 
 #------------------------------------------------------------------------------ 

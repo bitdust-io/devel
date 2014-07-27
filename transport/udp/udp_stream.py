@@ -73,7 +73,7 @@ class UDPStream():
         lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-        print 'udp_stream.close %d in:%d out%d acked:%d resend:%d' % (
+        print 'udp_stream.close %d in:%d out:%d acked:%d resend:%d' % (
             self.stream_id, self.bytes_in, self.bytes_sent, self.bytes_acked, self.resend_bytes)
         self.consumer.stream = None
         self.consumer = None
@@ -123,7 +123,7 @@ class UDPStream():
                 try:
                     outblock = self.output_blocks.pop(block_id)
                 except KeyError:
-                    lg.out(10, 'udp_stream.ack_received WARNING block %d not found' % (block_id))
+                    # lg.out(10, 'udp_stream.ack_received WARNING block %d not found' % (block_id))
                     continue
                 acked_progress += 1
                 block_size = len(outblock[0])
@@ -166,7 +166,7 @@ class UDPStream():
                     dt = relative_time - time_sent 
                     if dt > RTT_MAX_LIMIT:
                         self.resend_bytes += data_size
-                        print 'resend', block_id, dt, self.last_ack_rtt
+                        print 're -',
                     else:
                         # print 'skip', block_id, dt, self.last_ack_rtt 
                         continue
@@ -201,6 +201,7 @@ class UDPStream():
         self.last_ack_moment = time.time()
 
     def resend(self):
+        print 'resend out:%s acks:%s' % (self.output_blocks.keys(), len(self.blocks_to_ack))
         next_resend = min(max(self.last_ack_rtt, RTT_MIN_LIMIT), RTT_MAX_LIMIT)
         if time.time() - self.last_ack_moment > RTT_MAX_LIMIT:
             if len(self.blocks_to_ack) > 0:
