@@ -40,18 +40,15 @@ RTT_MAX_LIMIT = 0.1
 #------------------------------------------------------------------------------ 
 
 class UDPStream():
-    def __init__(self, stream_id, consumer,
-                 send_data_packet_func,
-                 send_ack_packet_func, 
-                 received_raw_data_callback,
-                 sent_raw_data_callback):
+    def __init__(self, stream_id, consumer, producer):
         self.stream_id = stream_id
         self.consumer = consumer
+        self.producer = producer
         self.consumer.stream = self
-        self.send_data_packet_func = send_data_packet_func
-        self.send_ack_packet_func = send_ack_packet_func
-        self.received_raw_data_callback = received_raw_data_callback
-        self.sent_raw_data_callback = sent_raw_data_callback
+        # self.send_data_packet_func = send_data_packet_func
+        # self.send_ack_packet_func = send_ack_packet_func
+        # self.received_raw_data_callback = received_raw_data_callback
+        # self.sent_raw_data_callback = sent_raw_data_callback
         self.output_buffer_size = 0
         self.output_blocks = {}
         self.output_blocks_acks = []
@@ -79,10 +76,11 @@ class UDPStream():
         self.stop_resending()
         self.consumer.stream = None
         self.consumer = None
-        self.send_data_packet_func = None
-        self.send_ack_packet_func = None
-        self.received_raw_data_callback = None
-        self.sent_raw_data_callback = None
+        self.producer = None
+        # self.send_data_packet_func = None
+        # self.send_ack_packet_func = None
+        # self.received_raw_data_callback = None
+        # self.sent_raw_data_callback = None
         
     def block_received(self, inpt):
         if self.consumer:
@@ -106,8 +104,7 @@ class UDPStream():
                     # print next_block_id,
                 num_blocks = len(newdata)
                 newdata = ''.join(newdata)
-                if self.consumer:
-                    eof_state = self.received_raw_data_callback(self.consumer, newdata)
+                eof_state = self.consumer.on_received_raw_data_callback(self.consumer, newdata)
                 print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
             # want to send the first ack asap
             if time.time() - self.last_ack_moment > RTT_MAX_LIMIT \
@@ -137,7 +134,7 @@ class UDPStream():
                 self.bytes_acked += block_size
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
-                self.sent_raw_data_callback(self.consumer, block_size)
+                self.consumer.sent_raw_data_callback(self.consumer, block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if not raw_bytes:
                 print 'STOP IT NOW!!!!, ZERO ACK!!!!'
@@ -188,7 +185,7 @@ class UDPStream():
                 import random
                 if random.randint(0, 9) >= 1:
                     # 10 % percent lost
-                    self.send_data_packet_func(self.stream_id, self.consumer, output)
+                    self.producer.do_send_data(self.stream_id, self.consumer, output)
                 # DEBUG
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
@@ -198,7 +195,7 @@ class UDPStream():
     def send_ack(self):
         if self.consumer:
             ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
-            self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
+            self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
             self.output_blocks_acks += list(self.blocks_to_ack)
             print 'send ack', len(self.output_blocks_acks), len(self.blocks_to_ack)
             self.blocks_to_ack.clear()

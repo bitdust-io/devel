@@ -108,9 +108,7 @@ class FileQueue:
             outfile.registration = d
         self.outboxFiles[stream_id] = outfile
         self.streams[stream_id] = udp_stream.UDPStream(
-            stream_id, outfile, 
-            self.do_send_data, self.do_send_ack, 
-            self.on_received_raw_data, self.on_sent_raw_data)
+            stream_id, outfile, self)
         
     def start_inbox_file(self, stream_id, data_size):
         infile = InboxFile(self, stream_id, data_size)
@@ -121,9 +119,7 @@ class FileQueue:
         infile.registration = d
         self.inboxFiles[stream_id] = infile
         self.streams[stream_id] = udp_stream.UDPStream(
-            stream_id, infile,  
-            self.do_send_data, self.do_send_ack, 
-            self.on_received_raw_data, self.on_sent_raw_data)
+            stream_id, infile, self)
 
     def close_stream(self, stream_id):
         s = self.streams.pop(stream_id)
