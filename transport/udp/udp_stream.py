@@ -201,7 +201,7 @@ class UDPStream():
             self.resend_inactivity_counter = 0
         else:
             self.resend_inactivity_counter += 1
-        next_resend = min(max(self.last_ack_rtt, RTT_MIN_LIMIT), RTT_MAX_LIMIT)
+        next_resend = max(min(self.last_ack_rtt, RTT_MAX_LIMIT), RTT_MIN_LIMIT)
         if self.resend_inactivity_counter > 50:
             print 'drop resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             next_resend *= 100.0
