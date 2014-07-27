@@ -214,6 +214,9 @@ class UDPStream():
             self.resend_task = reactor.callLater(next_resend, self.resend)
             return
         self.send_blocks()
+        
+     cp /usr/share/modem/bin/state_3g_huawei /usr/local/sbin/state_3g_modem
+     b8ff61115332
 
 #------------------------------------------------------------------------------ 
 
