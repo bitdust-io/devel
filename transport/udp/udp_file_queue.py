@@ -133,6 +133,7 @@ class FileQueue:
         else:
             lg.out(6, 'udp_file_queue.file_received WARNING transfer_id is None, stream_id=%d' % stream_id)
         self.close_inbox_file(stream_id)
+        self.close_stream(stream_id)
         # self.receivedFiles[stream_id] = time.time()
         # self.erase_old_stream_ids()
 
@@ -147,6 +148,7 @@ class FileQueue:
         if outfile.transfer_id:
             self.report_outbox_file(outfile.transfer_id, 'finished', outfile.size)
         self.close_outbox_file(stream_id)
+        self.close_stream(stream_id)
 
     def failed_outbox_queue_item(self, filename, description='', error_message='', result_defer=None, single=False):
         lg.out(18, 'udp_file_queue.failed_outbox_queue_item %s because %s' % (filename, error_message))
@@ -155,6 +157,10 @@ class FileQueue:
                 self.session.peer_id, filename, 0, description, error_message)
         if result_defer:
             result_defer.callback(((filename, description), 'failed', error_message))
+        
+    def close_stream(self, stream_id):
+        s = self.streams.pop(stream_id)
+        s.close()
         
     def close_outbox_file(self, stream_id):
         self.outboxFiles[stream_id].close()
@@ -246,6 +252,7 @@ class FileQueue:
         if infile.is_done():
             self.report_inbox_file(infile.transfer_id, 'finished', infile.bytes_received)
             self.close_inbox_file(stream_id)
+            self.close_stream(stream_id)
             # self.receivedFiles[stream_id] = time.time()
             # self.erase_old_stream_ids()
             del infile
@@ -266,6 +273,7 @@ class FileQueue:
             outfile = self.outboxFiles[stream_id]
             self.report_outbox_file(outfile.transfer_id, 'finished', outfile.size)
             self.close_outbox_file(stream_id)
+            self.close_stream(stream_id)
 
     def on_outbox_file_register_failed(self, err, stream_id):
         lg.out(2, 'udp_file_queue.on_outbox_file_register_failed ERROR failed to register, stream_id=%s :\n%s' % (str(stream_id), str(err)))
