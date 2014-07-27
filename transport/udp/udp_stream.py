@@ -136,17 +136,22 @@ class UDPStream():
                 self.last_ack_rtt = relative_time - outblock[1]
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
-            if len(acks) == 0:
-                print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
-                self.stop_resending()
-                sum_not_acked_blocks = sum(map(lambda block: len(block[0]), 
-                                               self.output_blocks.values()))
-                self.consumer.on_zero_ack(sum_not_acked_blocks)
-                return            
-            print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
-            print 'rtt:', self.last_ack_rtt, 'eof:', eof 
-#            self.output_blocks_not_acked.clear()
-            self.resend()
+            if len(acks) > 0:
+                print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
+                print 'rtt:', self.last_ack_rtt, 'eof:', eof 
+                self.resend()
+                return
+            print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
+            self.stop_resending()
+            sum_not_acked_blocks = sum(map(lambda block: len(block[0]), 
+                                           self.output_blocks.values()))
+            self.output_blocks.clear()
+            self.output_buffer_size = 0                
+            self.bytes_acked += sum_not_acked_blocks
+            relative_time = time.time() - self.creation_time
+            self.last_ack_rtt = relative_time - outblock[1]
+            self.consumer.on_zero_ack(sum_not_acked_blocks)
+            return            
 
     def write(self, data):
         if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
@@ -192,7 +197,6 @@ class UDPStream():
                     # self.producer.do_send_data(self.stream_id, self.consumer, output)
                 self.producer.do_send_data(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
-                # self.output_blocks_not_acked.add(block_id)
                 # print 'send block', block_id, self.bytes_sent, self.bytes_acked, self.resend_bytes
 
     def send_ack(self):
