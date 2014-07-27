@@ -78,8 +78,6 @@ class UDPNode(automat.Automat):
         self.my_address = None
         self.my_current_incomings = []
         self.notified = False
-        self.process_sessions_delay = MIN_PROCESS_SESSIONS_DELAY
-        self.process_sessions_task = None
         
     def state_changed(self, oldstate, newstate):
         """
