@@ -192,7 +192,7 @@ class UDPStream():
 #                # if block_id in self.output_blocks_not_acked:
 #                    self.blocks_to_ack.add(block_id)
         ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
-        print 'send ack', self.blocks_to_ack, self.output_blocks_acks
+        print 'send ack', len(self.output_blocks_acks), self.blocks_to_ack
         self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
         self.output_blocks_acks.update(self.blocks_to_ack)
         self.blocks_to_ack.clear()

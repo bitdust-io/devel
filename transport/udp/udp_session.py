@@ -57,7 +57,7 @@ def create(node, peer_address, peer_id=None):
     """
     lg.out(10, 'udp_session.create  peer_address=%s' % str(peer_address))
     s = UDPSession(node, peer_address, peer_id)
-    sessions()[s.peer_address] = s
+    sessions()[s.id] = s
     return s
 
 
@@ -103,6 +103,8 @@ def process_sessions():
     global _ProcessSessionsDelay
     has_activity = False
     for s in sessions().values():
+        if not s.file_queue:
+            continue
         has_outbox = s.file_queue.process_outbox_queue()
         has_sends = s.file_queue.process_outbox_files()    
         if has_sends or has_outbox:
