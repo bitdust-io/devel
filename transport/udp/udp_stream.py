@@ -66,6 +66,7 @@ class UDPStream():
         self.last_ack_moment = 0
         self.last_ack_rtt = RTT_MIN_LIMIT
         self.resend_task = None
+        self.resend_inactivity_counter = 0
         self.creation_time = time.time() 
         lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
@@ -195,7 +196,14 @@ class UDPStream():
 
     def resend(self):
         print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
+        activitiy = len(self.output_blocks.keys()) + len(self.blocks_to_ack)
+        if activitiy > 0:
+            self.resend_inactivity_counter = 0
+        else:
+            self.resend_inactivity_counter += 1
         next_resend = min(max(self.last_ack_rtt, RTT_MIN_LIMIT), RTT_MAX_LIMIT)
+        if self.resend_inactivity_counter > 50:
+            next_resend *= 100.0
         if len(self.blocks_to_ack) > 0:
             if time.time() - self.last_ack_moment > RTT_MAX_LIMIT:
                 self.send_ack()
