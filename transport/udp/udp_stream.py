@@ -76,10 +76,7 @@ class UDPStream():
     def close(self):
         print 'udp_stream.close %d in:%d out:%d acked:%d resend:%d' % (
             self.stream_id, self.bytes_in, self.bytes_sent, self.bytes_acked, self.resend_bytes)
-        if self.resend_task:
-            if self.resend_task.active():
-                self.resend_task.cancel()
-                self.resend_task = None
+        self.stop_resending()
         self.consumer.stream = None
         self.consumer = None
         self.send_data_packet_func = None
@@ -123,6 +120,7 @@ class UDPStream():
         if self.consumer:
             acks = []
             eof = False
+            raw_bytes = ''
             while True:
                 raw_bytes = inpt.read(4)
                 if not raw_bytes:
@@ -141,6 +139,10 @@ class UDPStream():
                 self.last_ack_rtt = relative_time - outblock[1]
                 self.sent_raw_data_callback(self.consumer, block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
+            if not raw_bytes:
+                print 'STOP IT NOW!!!!, ZERO ACK!!!!'
+                self.stop_resending()
+                return            
             print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
             print 'rtt:', self.last_ack_rtt, 'eof:', eof 
 #            self.output_blocks_not_acked.clear()
@@ -226,6 +228,12 @@ class UDPStream():
             return
         if self.resend_task.cancelled:
             self.resend_task = None
+            
+    def stop_resending(self):
+        if self.resend_task:
+            if self.resend_task.active():
+                self.resend_task.cancel()
+                self.resend_task = None
         
 #------------------------------------------------------------------------------ 
 

@@ -181,20 +181,7 @@ class FileQueue:
         lg.out(18, 'udp_file_queue.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         udp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
-           
-    def on_received_raw_data(self, infile, newdata):
-        infile.process(newdata)
-        if infile.is_done():
-            self.inbox_file_done(infile, 'finished')
-            return True
-        return False
 
-    def on_sent_raw_data(self, outfile, bytes_delivered):
-        outfile.count_size(bytes_delivered)
-        if outfile.is_done():
-            self.outbox_file_done(outfile, 'finished')
-            return True
-        return False
 
     def on_received_data_packet(self, payload):
         inp = cStringIO.StringIO(payload)
@@ -214,6 +201,7 @@ class FileQueue:
             return
         if stream_id not in self.streams.keys():
             if stream_id in self.dead_streams:
+                self.do_send_ack(stream_id, None, '')
                 print 'old block', stream_id
                 return
             self.start_inbox_file(stream_id, data_size)
@@ -245,6 +233,20 @@ class FileQueue:
             lg.exc()
             self.session.automat('shutdown') 
         inp.close()
+           
+    def on_received_raw_data(self, infile, newdata):
+        infile.process(newdata)
+        if infile.is_done():
+            self.inbox_file_done(infile, 'finished')
+            return True
+        return False
+
+    def on_sent_raw_data(self, outfile, bytes_delivered):
+        outfile.count_size(bytes_delivered)
+        if outfile.is_done():
+            self.outbox_file_done(outfile, 'finished')
+            return True
+        return False
 
     def on_inbox_file_registered(self, response, stream_id):
         try:
