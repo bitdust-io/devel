@@ -195,14 +195,15 @@ class UDPStream():
         self.last_ack_moment = time.time()
 
     def resend(self):
-        print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
         activitiy = len(self.output_blocks.keys()) + len(self.blocks_to_ack)
         if activitiy > 0:
+            print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0
         else:
             self.resend_inactivity_counter += 1
         next_resend = min(max(self.last_ack_rtt, RTT_MIN_LIMIT), RTT_MAX_LIMIT)
         if self.resend_inactivity_counter > 50:
+            print 'drop resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             next_resend *= 100.0
         if len(self.blocks_to_ack) > 0:
             if time.time() - self.last_ack_moment > RTT_MAX_LIMIT:
