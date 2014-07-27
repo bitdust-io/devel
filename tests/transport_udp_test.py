@@ -50,7 +50,7 @@ def main():
                 print 'reconnect', sess 
                 udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
                 udp_node.A('connect', sys.argv[2])
-            reactor.callLater(5, _try_reconnect)
+            reactor.callLater(0.5, _try_reconnect)
         def _try_connect():
             if udp_node.A().state == 'LISTEN':
                 print 'connect'
