@@ -104,7 +104,7 @@ class UDPStream():
                     # print next_block_id,
                 num_blocks = len(newdata)
                 newdata = ''.join(newdata)
-                eof_state = self.consumer.on_received_raw_data(self.consumer, newdata)
+                eof_state = self.consumer.on_received_raw_data(newdata)
                 print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
             # want to send the first ack asap
             if time.time() - self.last_ack_moment > RTT_MAX_LIMIT \
@@ -134,7 +134,7 @@ class UDPStream():
                 self.bytes_acked += block_size
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
-                self.consumer.on_sent_raw_data(self.consumer, block_size)
+                self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if not raw_bytes:
                 print 'STOP IT NOW!!!!, ZERO ACK!!!!'
