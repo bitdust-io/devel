@@ -94,7 +94,7 @@ class UDPStream():
             print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
             if block_id == self.input_block_id + 1:
                 newdata = []
-                print 'newdata',
+                # print 'newdata',
                 while True:
                     next_block_id = self.input_block_id + 1
                     try:
@@ -102,11 +102,12 @@ class UDPStream():
                     except:
                         break
                     self.input_block_id = next_block_id
-                    print next_block_id,
+                    # print next_block_id,
+                num_blocks = len(newdata)
                 newdata = ''.join(newdata)
                 if self.consumer:
                     eof_state = self.received_raw_data_callback(self.consumer, newdata)
-                print 'received %d bytes, eof=%r' % (len(newdata), eof_state)
+                print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
             # want to send the first ack asap
             if time.time() - self.last_ack_moment > RTT_MAX_LIMIT \
                 or block_id % BLOCKS_PER_ACK == 1 \
@@ -116,7 +117,7 @@ class UDPStream():
     
     def ack_received(self, inpt):
         if self.consumer:
-            acked_progress = 0
+            acks = []
             while True:
                 raw_bytes = inpt.read(4)
                 if not raw_bytes:
@@ -127,15 +128,14 @@ class UDPStream():
                 except KeyError:
                     # lg.out(10, 'udp_stream.ack_received WARNING block %d not found' % (block_id))
                     continue
-                acked_progress += 1
+                acks.append(block_id)
                 block_size = len(outblock[0])
                 self.output_buffer_size -= block_size 
                 self.bytes_acked += block_size
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
-                print 'ack', block_id, self.last_ack_rtt, self.bytes_acked
                 self.sent_raw_data_callback(self.consumer, block_size)
-            print 'ack progress:', acked_progress, 'blocks,   more:', len(self.output_blocks.keys())
+            print 'acks', acks, 'more:', len(self.output_blocks.keys()), 'rtt:', self.last_ack_rtt
 #            self.output_blocks_not_acked.clear()
             self.resend()
 
