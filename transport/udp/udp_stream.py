@@ -101,7 +101,7 @@ class UDPStream():
             newdata = ''.join(newdata)
             if self.consumer:
                 eof_state = self.received_raw_data_callback(self.consumer, newdata)
-            print 'received %d bytes, eof=%r' % (len(newdata), eof_state)
+            # print 'received %d bytes, eof=%r' % (len(newdata), eof_state)
         if self.consumer:
             # want to send the first ack asap
             if block_id % BLOCKS_PER_ACK == 1 or eof_state:
@@ -163,7 +163,7 @@ class UDPStream():
                 piece, time_sent = self.output_blocks[block_id]
                 if time_sent >= 0:
                     dt = relative_time - time_sent 
-                    if dt > self.last_ack_rtt * 4:
+                    if dt > self.last_ack_rtt * 20:
                         print 'resend', block_id, dt, self.last_ack_rtt
                     else:
                         # print 'skip', block_id, dt, self.last_ack_rtt 
