@@ -37,18 +37,6 @@ BUFFER_SIZE = BLOCK_SIZE * 8
 RTT_MIN_LIMIT = 0.001
 RTT_MAX_LIMIT = 2.0
 
-
-
-MIN_PROCESS_SESSIONS_DELAY = 0.01
-MAX_PROCESS_SESSIONS_DELAY = 1.0
-  
-  
-MAX_ACK_TIME_OUT = 1.0
-MIN_ACK_TIME_OUT = 0.05
-
-MAX_TIMEOUTS_RATIO = 0.5
-FINE_TIMEOUTS_RATIO = 0.0
-
 #------------------------------------------------------------------------------ 
 
 class UDPStream():

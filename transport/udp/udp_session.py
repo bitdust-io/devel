@@ -23,7 +23,7 @@ from twisted.internet import reactor
 
 from logs import lg
 
-from lib import bpio
+from lib import misc
 from lib import automat
 from lib import udp
 
@@ -31,10 +31,17 @@ import udp_file_queue
 
 #------------------------------------------------------------------------------ 
 
+MIN_PROCESS_SESSIONS_DELAY = 0.01
+MAX_PROCESS_SESSIONS_DELAY = 1.0
+  
+#------------------------------------------------------------------------------ 
+
 _SessionsDict = {}
 _KnownPeersDict = {}
 _KnownUserIDsDict = {}
 _PendingOutboxFiles = []
+_ProcessSessionsTask = None
+_ProcessSessionsDelay = MIN_PROCESS_SESSIONS_DELAY
 
 #------------------------------------------------------------------------------ 
 
@@ -89,6 +96,33 @@ def add_pending_outbox_file(filename, host, description='', result_defer=None, s
     """
     global _PendingOutboxFiles
     _PendingOutboxFiles.append((filename, host, description, result_defer, single, time.time()))
+
+
+def process_sessions():
+    global _ProcessSessionsTask
+    global _ProcessSessionsDelay
+    has_activity = False
+    for s in sessions().values():
+        has_outbox = s.file_queue.process_outbox_queue()
+        has_sends = s.file_queue.process_outbox_files()    
+        if has_sends or has_outbox:
+            has_activity = True
+    if has_activity:
+        _ProcessSessionsTask = reactor.callLater(0, process_sessions)        
+    else:
+        _ProcessSessionsDelay = misc.LoopAttenuation(
+            _ProcessSessionsDelay, has_activity, 
+            MIN_PROCESS_SESSIONS_DELAY, MAX_PROCESS_SESSIONS_DELAY,)
+        # attenuation
+        _ProcessSessionsTask = reactor.callLater(_ProcessSessionsDelay, 
+                                                 process_sessions)        
+
+def stop_process_sessions(self):
+    global _ProcessSessionsTask
+    if _ProcessSessionsTask:
+        if _ProcessSessionsTask.active():
+            _ProcessSessionsTask.cancel()
+            _ProcessSessionsTask = None
 
 #------------------------------------------------------------------------------ 
 

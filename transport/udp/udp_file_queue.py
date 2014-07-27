@@ -92,8 +92,8 @@ class FileQueue:
         has_sends = False
         for outfile in self.outboxFiles.values():
             has_sends = has_sends or outfile.process()
-        for stream in self.streams.values():
-            stream.process()
+        #for stream in self.streams.values():
+        #    stream.process()
         return has_sends
 
     def start_outbox_file(self, filename, filesize, description, result_defer, single):

@@ -236,7 +236,7 @@ class UDPNode(automat.Automat):
         self.my_id = udp_interface.idurl_to_id(self.my_idurl)
         udp.proto(self.listen_port).add_callback(self._datagram_received)
         # udp.add_datagram_receiver_callback(self._datagram_received)
-        self._start_process_sessions()
+        udp_session.process_sessions()
 
     def doStartStunClient(self, arg):
         """
@@ -326,7 +326,7 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
-        self._stop_process_sessions()
+        udp_session.stop_process_sessions()
         for s in udp_session.sessions().values():
             lg.out(18, 'udp_node.doShutdown  send "shutdown" to %s' % s)
             s.automat('shutdown')
@@ -412,36 +412,6 @@ class UDPNode(automat.Automat):
         value = value.split('\n')
         self.automat('dht-read-result', value)
     
-    
-    def _start_process_sessions(self):
-        if not self.process_sessions_task:
-            reactor.callLater(0, self._process_sessions)
-        
-    def _stop_process_sessions(self):
-        if self.process_sessions_task:
-            if not self.process_sessions_task.cancelled:
-                self.process_sessions_task.cancel()
-                self.process_sessions_task = None
-        
-    def _process_sessions(self):
-        has_activity = False
-        for s in udp_session.sessions().values():
-            # has_timeouts = s.stream.timeout_incoming_files()
-            has_outbox = s.file_queue.process_outbox_queue()
-            has_sends = s.file_queue.process_outbox_files()    
-            if has_sends or has_outbox:
-                has_activity = True
-        if has_activity:
-            self.process_sessions_task = reactor.callLater(0, self._process_sessions)        
-        else:
-            self.process_sessions_delay = misc.LoopAttenuation(
-                self.process_sessions_delay, has_activity, 
-                MIN_PROCESS_SESSIONS_DELAY, 
-                MAX_PROCESS_SESSIONS_DELAY,)
-            # attenuation
-            self.process_sessions_task = reactor.callLater(self.process_sessions_delay, 
-                                                           self._process_sessions)        
-
 #------------------------------------------------------------------------------ 
 
 
