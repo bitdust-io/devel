@@ -392,11 +392,13 @@ class OutboxFile():
         return False
     
     def on_zero_ack(self, bytes_left):
+        print 'on_zero_ack', bytes_left, self.size, self.bytes_delivered,
         self.count_size(bytes_left)
         if self.is_done():
             status = 'finished'
         else:
             status = 'interrupted'
+        print status
         self.queue.on_outbox_file_done(self, status)
         return True
 
