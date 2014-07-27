@@ -54,7 +54,7 @@ class UDPStream():
         self.sent_raw_data_callback = sent_raw_data_callback
         self.output_buffer_size = 0
         self.output_blocks = {}
-        self.output_blocks_not_acked = set()
+#        self.output_blocks_not_acked = set()
         self.output_block_id = 0
         self.input_blocks = {}
         self.input_block_id = 0
@@ -116,8 +116,8 @@ class UDPStream():
                     break
                 block_id = struct.unpack('i', raw_bytes)[0]
                 fail = False
-                if block_id not in self.output_blocks_not_acked:
-                    fail = True
+#                if block_id not in self.output_blocks_not_acked:
+#                    fail = True
                 try:
                     outblock = self.output_blocks.pop(block_id)
                 except KeyError:
@@ -133,7 +133,7 @@ class UDPStream():
                 has_progress = True
                 self.sent_raw_data_callback(self.consumer, block_size)
             print 'progress:', has_progress, self.output_blocks.keys()
-            self.output_blocks_not_acked.clear()
+#            self.output_blocks_not_acked.clear()
             self.resend()
 
     def write(self, data):
@@ -158,13 +158,18 @@ class UDPStream():
         if self.consumer:
             relative_time = time.time() - self.creation_time
             for block_id in self.output_blocks.keys():
-                if block_id in self.output_blocks_not_acked:
-                    continue
+                # if block_id in self.output_blocks_not_acked:
+                    # continue
                 piece, time_sent = self.output_blocks[block_id]
                 if time_sent >= 0:
-                    if relative_time - time_sent < self.last_ack_rtt:
-                        print 'skip', block_id, relative_time - time_sent, self.last_ack_rtt 
+                    dt = relative_time - time_sent 
+                    if dt < self.last_ack_rtt:
+                        print 'skip', block_id, dt, self.last_ack_rtt 
                         continue
+                    else:
+                        print 'resend', block_id, dt, self.last_ack_rtt
+                else:
+                    print 'go', block_id
                 time_sent = relative_time
                 self.output_blocks[block_id] = (piece, time_sent)
                 data_size = len(piece)
@@ -178,14 +183,14 @@ class UDPStream():
                 # DEBUG
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
-                self.output_blocks_not_acked.add(block_id)
+                # self.output_blocks_not_acked.add(block_id)
                 print 'send block', block_id, self.bytes_sent
 
     def send_ack(self):
-        if len(self.blocks_to_ack) == 0:
-            for block_id in self.output_blocks.keys():
-                if block_id in self.output_blocks_not_acked:
-                    self.blocks_to_ack.add(block_id)
+#        if len(self.blocks_to_ack) == 0:
+#            for block_id in self.output_blocks.keys():
+#                # if block_id in self.output_blocks_not_acked:
+#                    self.blocks_to_ack.add(block_id)
         ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
         print 'send ack', self.blocks_to_ack 
         self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
