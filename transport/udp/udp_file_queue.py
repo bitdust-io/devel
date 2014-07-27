@@ -190,6 +190,7 @@ class FileQueue:
             #     stream_id, self.session.peer_address))
             # self.session.automat('shutdown')
             print 'old ack', stream_id 
+            self.session.automat('shutdown')
             return
         try:
             self.streams[stream_id].ack_received(inp)
