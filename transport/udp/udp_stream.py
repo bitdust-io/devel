@@ -158,7 +158,7 @@ class UDPStream():
                 piece, time_sent = self.output_blocks[block_id]
                 if time_sent >= 0:
                     dt = relative_time - time_sent 
-                    if dt > self.last_ack_rtt * 20:
+                    if dt > self.last_ack_rtt * 100:
                         print 'resend', block_id, dt, self.last_ack_rtt
                     else:
                         # print 'skip', block_id, dt, self.last_ack_rtt 
