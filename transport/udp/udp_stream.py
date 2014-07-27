@@ -202,18 +202,18 @@ class UDPStream():
 
     def resend(self):
         next_resend = min(max(self.last_ack_rtt, RTT_MIN_LIMIT), RTT_MAX_LIMIT)
+        if time.time() - self.last_ack_moment > RTT_MAX_LIMIT:
+            if len(self.blocks_to_ack) > 0:
+                self.send_ack()        
+        self.send_blocks()
         if self.resend_task is None:
-            self.send_blocks()
             self.resend_task = reactor.callLater(next_resend, self.resend) 
+            return
+        if self.resend_task.called:
+            self.resend_task = reactor.callLater(next_resend, self.resend)
             return
         if self.resend_task.cancelled:
             self.resend_task = None
-            return
-        if self.resend_task.called:
-            self.send_blocks()
-            self.resend_task = reactor.callLater(next_resend, self.resend)
-            return
-        self.send_blocks()
         
 #------------------------------------------------------------------------------ 
 
