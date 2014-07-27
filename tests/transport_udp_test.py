@@ -39,6 +39,7 @@ def main():
     reactor.addSystemEventTrigger('before', 'shutdown', gate.shutdown)
     gate.init()
     gate.start()
+    gate.stop_packets_timeout_loop()
     if len(sys.argv) >= 3:
         p = signed.Packet(commands.Data(), misc.getLocalID(), 
                           misc.getLocalID(), misc.getLocalID(), 
