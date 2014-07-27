@@ -149,7 +149,6 @@ class UDPStream():
             self.output_buffer_size = 0                
             self.bytes_acked += sum_not_acked_blocks
             relative_time = time.time() - self.creation_time
-            self.last_ack_rtt = relative_time - outblock[1]
             self.consumer.on_zero_ack(sum_not_acked_blocks)
             return            
 
