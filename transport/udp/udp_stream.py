@@ -54,7 +54,7 @@ class UDPStream():
         self.sent_raw_data_callback = sent_raw_data_callback
         self.output_buffer_size = 0
         self.output_blocks = {}
-        self.output_blocks_acks = set()
+        self.output_blocks_acks = []
         self.output_block_id = 0
         self.input_blocks = {}
         self.input_block_id = 0
@@ -130,7 +130,7 @@ class UDPStream():
                 self.bytes_acked += block_size
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
-                # print 'ack', block_id, self.last_ack_rtt
+                print 'ack', block_id, self.last_ack_rtt, self.bytes_acked
                 self.sent_raw_data_callback(self.consumer, block_size)
             print 'ack progress:', acked_progress, 'blocks,   more:', len(self.output_blocks.keys())
 #            self.output_blocks_not_acked.clear()
@@ -194,9 +194,9 @@ class UDPStream():
 #                # if block_id in self.output_blocks_not_acked:
 #                    self.blocks_to_ack.add(block_id)
         ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
-        print 'send ack', len(self.output_blocks_acks), self.blocks_to_ack
         self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
-        self.output_blocks_acks.update(self.blocks_to_ack)
+        self.output_blocks_acks += list(self.blocks_to_ack)
+        print 'send ack', len(self.output_blocks_acks), self.blocks_to_ack
         self.blocks_to_ack.clear()
         self.last_ack_moment = time.time()
 
