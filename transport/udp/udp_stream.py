@@ -131,9 +131,8 @@ class UDPStream():
                 self.last_ack_rtt = relative_time - outblock[1]
                 print 'ack', block_id, self.last_ack_rtt
                 has_progress = True
-            if has_progress:
                 self.sent_raw_data_callback(self.consumer, block_size)
-            print 'has_progress', self.output_blocks.keys()
+            print 'progress:', has_progress, self.output_blocks.keys()
             self.output_blocks_not_acked.clear()
             self.resend()
 
