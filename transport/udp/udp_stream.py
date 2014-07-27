@@ -76,6 +76,10 @@ class UDPStream():
     def close(self):
         print 'udp_stream.close %d in:%d out:%d acked:%d resend:%d' % (
             self.stream_id, self.bytes_in, self.bytes_sent, self.bytes_acked, self.resend_bytes)
+        if self.resend_task:
+            if self.resend_task.active():
+                self.resend_task.cancel()
+                self.resend_task = None
         self.consumer.stream = None
         self.consumer = None
         self.send_data_packet_func = None
@@ -190,12 +194,13 @@ class UDPStream():
                 # print 'send block', block_id, self.bytes_sent, self.bytes_acked, self.resend_bytes
 
     def send_ack(self):
-        ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
-        self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
-        self.output_blocks_acks += list(self.blocks_to_ack)
-        print 'send ack', len(self.output_blocks_acks), len(self.blocks_to_ack)
-        self.blocks_to_ack.clear()
-        self.last_ack_moment = time.time()
+        if self.consumer:
+            ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
+            self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
+            self.output_blocks_acks += list(self.blocks_to_ack)
+            print 'send ack', len(self.output_blocks_acks), len(self.blocks_to_ack)
+            self.blocks_to_ack.clear()
+            self.last_ack_moment = time.time()
 
     def resend(self):
         activitiy = len(self.output_blocks.keys()) + len(self.blocks_to_ack)
