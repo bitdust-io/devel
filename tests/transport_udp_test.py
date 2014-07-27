@@ -39,7 +39,6 @@ def main():
     reactor.addSystemEventTrigger('before', 'shutdown', gate.shutdown)
     gate.init()
     gate.start()
-    gate.stop_packets_timeout_loop()
     if len(sys.argv) >= 3:
         p = signed.Packet(commands.Data(), misc.getLocalID(), 
                           misc.getLocalID(), misc.getLocalID(), 
@@ -64,6 +63,7 @@ def main():
         def _try_connect():
             if udp_node.A().state == 'LISTEN':
                 print 'connect'
+                gate.stop_packets_timeout_loop()
                 udp_session.add_pending_outbox_file(sys.argv[1]+'.signed', sys.argv[2], 'descr', Deferred(), False)
                 udp_node.A('connect', sys.argv[2])
                 reactor.callLater(5, _try_reconnect)
