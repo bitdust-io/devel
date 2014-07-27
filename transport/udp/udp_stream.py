@@ -123,12 +123,12 @@ class UDPStream():
                 if not raw_bytes:
                     break
                 block_id = struct.unpack('i', raw_bytes)[0]
+                acks.append(block_id)
                 try:
                     outblock = self.output_blocks.pop(block_id)
                 except KeyError:
                     # lg.out(10, 'udp_stream.ack_received WARNING block %d not found' % (block_id))
                     continue
-                acks.append(block_id)
                 block_size = len(outblock[0])
                 self.output_buffer_size -= block_size 
                 self.bytes_acked += block_size
@@ -136,7 +136,7 @@ class UDPStream():
                 self.last_ack_rtt = relative_time - outblock[1]
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
-            if not raw_bytes:
+            if len(acks) == 0:
                 print 'STOP IT NOW!!!!, ZERO ACK!!!!'
                 self.stop_resending()
                 return            
