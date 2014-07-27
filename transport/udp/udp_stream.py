@@ -92,7 +92,7 @@ class UDPStream():
         print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
         if block_id == self.input_block_id + 1:
             newdata = []
-            # print 'newdata',
+            print 'newdata',
             while True:
                 next_block_id = self.input_block_id + 1
                 try:
@@ -100,15 +100,17 @@ class UDPStream():
                 except:
                     break
                 self.input_block_id = next_block_id
-                # print next_block_id,
+                print next_block_id,
             newdata = ''.join(newdata)
             if self.consumer:
                 eof_state = self.received_raw_data_callback(self.consumer, newdata)
-            # print 'received %d bytes, eof=%r' % (len(newdata), eof_state)
+            print 'received %d bytes, eof=%r' % (len(newdata), eof_state)
         if self.consumer:
             # want to send the first ack asap
-            if block_id % BLOCKS_PER_ACK == 1 or eof_state:
-                self.send_ack()
+            if time.time() - self.last_ack_moment > RTT_MAX_LIMIT \
+                or block_id % BLOCKS_PER_ACK == 1 \
+                or eof_state:
+                    self.send_ack()
     
     def ack_received(self, inpt):
         if self.consumer:
