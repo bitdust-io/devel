@@ -118,8 +118,6 @@ class UDPStream():
                 fail = False
                 if block_id not in self.output_blocks_not_acked:
                     fail = True
-                else:
-                    self.output_blocks_not_acked.discard(block_id)
                 try:
                     outblock = self.output_blocks.pop(block_id)
                 except KeyError:
@@ -134,8 +132,9 @@ class UDPStream():
                 print 'ack', block_id, self.last_ack_rtt
                 has_progress = True
             if has_progress:
-                print 'has_progress', self.output_blocks_not_acked, self.output_blocks.keys()
                 self.sent_raw_data_callback(self.consumer, block_size)
+            print 'has_progress', self.output_blocks.keys()
+            self.output_blocks_not_acked.clear()
             self.resend()
 
     def write(self, data):
