@@ -190,7 +190,7 @@ class UDPStream():
                 # if random.randint(0, 9) >= 1:
                     # 10 % percent lost
                     # self.producer.do_send_data(self.stream_id, self.consumer, output)
-                self.producer.send_data_packet(self.stream_id, self.consumer, output)
+                self.producer.do_send_data(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
                 # self.output_blocks_not_acked.add(block_id)
                 # print 'send block', block_id, self.bytes_sent, self.bytes_acked, self.resend_bytes
