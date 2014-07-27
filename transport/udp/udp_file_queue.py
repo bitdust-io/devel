@@ -47,7 +47,7 @@ class FileQueue:
         self.outboxFiles.clear()
         self.inboxFiles.clear()
         for filename, description, result_defer, single in self.outboxQueue:
-            self.failed_outbox_queue_item(filename, description, 'session was closed', result_defer, single)
+            self.on_failed_outbox_queue_item(filename, description, 'session was closed', result_defer, single)
         self.outboxQueue = []
 
     def do_send_data(self, stream_id, outfile, output):
@@ -79,12 +79,12 @@ class FileQueue:
             # somehow file may be removed before we start sending it
             # so I check it here and skip not existed files
             if not os.path.isfile(filename):
-                self.failed_outbox_queue_item(filename, description, 'file not exist', result_defer, single)
+                self.on_failed_outbox_queue_item(filename, description, 'file not exist', result_defer, single)
                 continue
             try:
                 filesize = os.path.getsize(filename)
             except:
-                self.failed_outbox_queue_item(filename, description, 'can not get file size', result_defer, single)
+                self.on_failed_outbox_queue_item(filename, description, 'can not get file size', result_defer, single)
                 continue
             self.start_outbox_file(filename, filesize, description, result_defer, single)
         return has_reads
@@ -125,40 +125,6 @@ class FileQueue:
             self.do_send_data, self.do_send_ack, 
             self.on_received_raw_data, self.on_sent_raw_data)
 
-    def inbox_file_done(self, infile, status, error_message=None):
-        stream_id = infile.stream_id
-        if infile.registration:
-            return
-        if infile.transfer_id:
-            self.report_inbox_file(infile.transfer_id, status, infile.bytes_received, error_message)
-        else:
-            lg.out(6, 'udp_file_queue.file_received WARNING transfer_id is None, stream_id=%d' % stream_id)
-        self.close_stream(stream_id)
-        self.close_inbox_file(stream_id)
-        # self.receivedFiles[stream_id] = time.time()
-        # self.erase_old_stream_ids()
-
-    def outbox_file_done(self, outfile, status, error_message=None):
-        stream_id = outfile.stream_id
-        lg.out(18, 'udp_file_queue.outbox_file_done %s %s because %s' % (stream_id, status, error_message))
-        if outfile.result_defer:
-            outfile.result_defer.callback((outfile, status, error_message))
-            outfile.result_defer = None
-        if outfile.registration:
-            return
-        if outfile.transfer_id:
-            self.report_outbox_file(outfile.transfer_id, 'finished', outfile.size)
-        self.close_stream(stream_id)
-        self.close_outbox_file(stream_id)
-
-    def failed_outbox_queue_item(self, filename, description='', error_message='', result_defer=None, single=False):
-        lg.out(18, 'udp_file_queue.failed_outbox_queue_item %s because %s' % (filename, error_message))
-        if not single:
-            udp_interface.interface_cancelled_file_sending(
-                self.session.peer_id, filename, 0, description, error_message)
-        if result_defer:
-            result_defer.callback(((filename, description), 'failed', error_message))
-        
     def close_stream(self, stream_id):
         s = self.streams.pop(stream_id)
         s.close()
@@ -182,6 +148,7 @@ class FileQueue:
         udp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
 
+    #------------------------------------------------------------------------------ 
 
     def on_received_data_packet(self, payload):
         inp = cStringIO.StringIO(payload)
@@ -233,21 +200,33 @@ class FileQueue:
             lg.exc()
             self.session.automat('shutdown') 
         inp.close()
+
+    def on_inbox_file_done(self, infile, status, error_message=None):
+        stream_id = infile.stream_id
+        if infile.registration:
+            return
+        if infile.transfer_id:
+            self.report_inbox_file(infile.transfer_id, status, infile.bytes_received, error_message)
+        else:
+            lg.out(6, 'udp_file_queue.file_received WARNING transfer_id is None, stream_id=%d' % stream_id)
+        self.close_stream(stream_id)
+        self.close_inbox_file(stream_id)
+        # self.receivedFiles[stream_id] = time.time()
+        # self.erase_old_stream_ids()
+
+    def on_outbox_file_done(self, outfile, status, error_message=None):
+        stream_id = outfile.stream_id
+        lg.out(18, 'udp_file_queue.outbox_file_done %s %s because %s' % (stream_id, status, error_message))
+        if outfile.result_defer:
+            outfile.result_defer.callback((outfile, status, error_message))
+            outfile.result_defer = None
+        if outfile.registration:
+            return
+        if outfile.transfer_id:
+            self.report_outbox_file(outfile.transfer_id, 'finished', outfile.size)
+        self.close_stream(stream_id)
+        self.close_outbox_file(stream_id)
            
-    def on_received_raw_data(self, infile, newdata):
-        infile.process(newdata)
-        if infile.is_done():
-            self.inbox_file_done(infile, 'finished')
-            return True
-        return False
-
-    def on_sent_raw_data(self, outfile, bytes_delivered):
-        outfile.count_size(bytes_delivered)
-        if outfile.is_done():
-            self.outbox_file_done(outfile, 'finished')
-            return True
-        return False
-
     def on_inbox_file_registered(self, response, stream_id):
         try:
             transfer_id = int(response)
@@ -286,6 +265,15 @@ class FileQueue:
         lg.out(2, 'udp_file_queue.on_outbox_file_register_failed ERROR failed to register, stream_id=%s :\n%s' % (str(stream_id), str(err)))
         lg.out(6, 'udp_file_queue.on_outbox_file_register_failed close session %s' % self.session)
         self.session.automat('shutdown')
+
+    def on_failed_outbox_queue_item(self, filename, description='', error_message='', result_defer=None, single=False):
+        lg.out(18, 'udp_file_queue.failed_outbox_queue_item %s because %s' % (filename, error_message))
+        if not single:
+            udp_interface.interface_cancelled_file_sending(
+                self.session.peer_id, filename, 0, description, error_message)
+        if result_defer:
+            result_defer.callback(((filename, description), 'failed', error_message))
+        
             
      
 #------------------------------------------------------------------------------ 
@@ -321,6 +309,14 @@ class InboxFile():
     def is_done(self):
         # print 'is done', self.bytes_received, self.size
         return self.bytes_received == self.size
+
+    def on_received_raw_data(self, newdata):
+        self.process(newdata)
+        if self.is_done():
+            self.queue.on_inbox_file_done(self, 'finished')
+            return True
+        return False
+
 
 #------------------------------------------------------------------------------ 
 
@@ -392,6 +388,13 @@ class OutboxFile():
             has_sends = True
         return has_sends
           
+    def on_sent_raw_data(self, bytes_delivered):
+        self.count_size(bytes_delivered)
+        if self.is_done():
+            self.queue.on_outbox_file_done(self, 'finished')
+            return True
+        return False
+
 
 
 
