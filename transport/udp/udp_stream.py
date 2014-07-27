@@ -137,8 +137,12 @@ class UDPStream():
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if len(acks) == 0:
-                print 'STOP IT NOW!!!!, ZERO ACK!!!!'
+                print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
                 self.stop_resending()
+                sum_not_acked_blocks = sum(
+                    lambda block_id: len(self.output_blocks[block_id][0]), 
+                    self.output_blocks.keys())
+                self.consumer.on_zero_ack(sum_not_acked_blocks)
                 return            
             print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
             print 'rtt:', self.last_ack_rtt, 'eof:', eof 
