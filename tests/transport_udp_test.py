@@ -13,6 +13,10 @@ from lib import misc
 from lib import settings
 from lib import nameurl
 from lib import udp
+from lib import bpio
+from lib import commands
+
+from crypto import signed
 
 from dht import dht_service
 
@@ -36,6 +40,10 @@ def main():
     gate.init()
     gate.start()
     if len(sys.argv) >= 3:
+        p = signed.Packet(commands.Data(), misc.getLocalID(), 
+                          misc.getLocalID(), misc.getLocalID(), 
+                          bpio.ReadBinaryFile(sys.argv[1]), misc.getLocalID())
+        bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
         def _try_reconnect():
             sess = udp_session.get(sys.argv[2])
             reconnect = False
@@ -48,13 +56,13 @@ def main():
                     reconnect = True
             if reconnect:
                 print 'reconnect', sess 
-                udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
+                udp_session.add_pending_outbox_file(sys.argv[1]+'.signed', sys.argv[2], 'descr', Deferred(), False)
                 udp_node.A('connect', sys.argv[2])
             reactor.callLater(0.5, _try_reconnect)
         def _try_connect():
             if udp_node.A().state == 'LISTEN':
                 print 'connect'
-                udp_session.add_pending_outbox_file(sys.argv[1], sys.argv[2], 'descr', Deferred(), False)
+                udp_session.add_pending_outbox_file(sys.argv[1]+'.signed', sys.argv[2], 'descr', Deferred(), False)
                 udp_node.A('connect', sys.argv[2])
                 reactor.callLater(5, _try_reconnect)
             else:
