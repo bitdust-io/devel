@@ -233,8 +233,8 @@ class CommandsProtocol(BasicProtocol):
         if version != self.SoftwareVersion:
             return
         self.bytes_in += payloadsz + 2
-        # lg.out(24, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
-        #     command, payloadsz + 2, str(address), self.bytes_in))
+        lg.out(24, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
+            command, payloadsz + 2, str(address), self.bytes_in))
         self.run_callbacks((command, payload), address)
         
     def sendCommand(self, command, data, address):
@@ -245,8 +245,8 @@ class CommandsProtocol(BasicProtocol):
             data))
         result = self.sendDatagram(datagram, address)
         self.bytes_out += payloadsz + 2
-        # lg.out(24, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
-        #     command, payloadsz + 2, address, self.bytes_out))
+        lg.out(24, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
+            command, payloadsz + 2, address, self.bytes_out))
         return result
             
          

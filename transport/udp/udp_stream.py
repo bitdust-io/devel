@@ -62,6 +62,7 @@ class UDPStream():
         self.bytes_in = 0
         self.bytes_sent = 0
         self.bytes_acked = 0
+        self.resend_bytes = 0
         self.last_ack_moment = 0
         self.last_ack_rtt = RTT_MIN_LIMIT
         self.resend_task = None
@@ -72,6 +73,8 @@ class UDPStream():
         lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
+        print 'udp_stream.close %d in:%d out%d acked:%d resend:%d' % (
+            self.stream_id, self.bytes_in, self.bytes_sent, self.bytes_acked, self.resend_bytes)
         self.consumer.stream = None
         self.consumer = None
         self.send_data_packet_func = None
@@ -86,7 +89,7 @@ class UDPStream():
         self.bytes_in += len(data)
         self.blocks_to_ack.add(block_id)
         eof_state = False
-        print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
+        # print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
         if block_id == self.input_block_id + 1:
             newdata = []
             # print 'newdata',
@@ -156,9 +159,11 @@ class UDPStream():
                 # if block_id in self.output_blocks_acked:
                     # continue
                 piece, time_sent = self.output_blocks[block_id]
+                data_size = len(piece)
                 if time_sent >= 0:
                     dt = relative_time - time_sent 
                     if dt > RTT_MAX_LIMIT:
+                        self.resend_bytes += data_size
                         print 'resend', block_id, dt, self.last_ack_rtt
                     else:
                         # print 'skip', block_id, dt, self.last_ack_rtt 
@@ -168,7 +173,6 @@ class UDPStream():
                     # print 'go', block_id
                 time_sent = relative_time
                 self.output_blocks[block_id] = (piece, time_sent)
-                data_size = len(piece)
                 output = ''.join((
                     struct.pack('i', block_id),
                     piece))
