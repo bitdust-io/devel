@@ -91,7 +91,7 @@ class UDPStream():
             self.bytes_in += len(data)
             self.blocks_to_ack.add(block_id)
             eof_state = False
-            print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
+            # print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
             if block_id == self.input_block_id + 1:
                 newdata = []
                 # print 'newdata',
@@ -135,7 +135,7 @@ class UDPStream():
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
                 self.sent_raw_data_callback(self.consumer, block_size)
-            print 'acks', acks, 'more:', len(self.output_blocks.keys()), 'rtt:', self.last_ack_rtt
+            print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 'rtt:', self.last_ack_rtt
 #            self.output_blocks_not_acked.clear()
             self.resend()
 
@@ -164,7 +164,7 @@ class UDPStream():
                     dt = relative_time - time_sent 
                     if dt > RTT_MAX_LIMIT:
                         self.resend_bytes += data_size
-                        print 're -',
+                        # print 're -',
                     else:
                         # print 'skip', block_id, dt, self.last_ack_rtt 
                         continue
@@ -184,7 +184,7 @@ class UDPStream():
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
                 # self.output_blocks_not_acked.add(block_id)
-                print 'send block', block_id, self.bytes_sent, self.bytes_acked, self.resend_bytes
+                # print 'send block', block_id, self.bytes_sent, self.bytes_acked, self.resend_bytes
 
     def send_ack(self):
         ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
