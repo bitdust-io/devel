@@ -215,9 +215,6 @@ class UDPStream():
             return
         self.send_blocks()
         
-     cp /usr/share/modem/bin/state_3g_huawei /usr/local/sbin/state_3g_modem
-     b8ff61115332
-
 #------------------------------------------------------------------------------ 
 
 class BufferOverflow(Exception):
