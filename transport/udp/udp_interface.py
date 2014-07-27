@@ -109,7 +109,7 @@ class GateInterface():
             return result_defer
         s = udp_session.get_by_peer_id(host)
         if s:
-            s.stream.append_outbox_file(filename, description, result_defer, single)
+            s.file_queue.append_outbox_file(filename, description, result_defer, single)
         else:
             udp_session.add_pending_outbox_file(filename, host, description, result_defer, single)
             udp_node.A('connect', host)
@@ -136,7 +136,7 @@ class GateInterface():
         """
         """
         for sess in udp_session.sessions().values():
-            for out_file in sess.stream.outboxFiles.values():
+            for out_file in sess.file_queue.outboxFiles.values():
                 if out_file.transfer_id and out_file.transfer_id == transferID:
                     out_file.cancel()
                     return True
@@ -146,7 +146,7 @@ class GateInterface():
         """
         """
         for sess in udp_session.sessions().values():
-            for in_file in sess.stream.inboxFiles.values():
+            for in_file in sess.file_queue.inboxFiles.values():
                 if in_file.transfer_id and in_file.transfer_id == transferID:
                     lg.out(6, 'udp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
                     sess.automat('shutdown')
@@ -157,7 +157,7 @@ class GateInterface():
         """
         """
         for sess in udp_session.sessions().values():
-            for fn, descr, result_defer, single in sess.stream.outboxQueue:
+            for fn, descr, result_defer, single in sess.file_queue.outboxQueue:
                 if fn == filename and sess.peer_id == host:
                     lg.out(6, 'udp_interface.cancel_outbox_file    host=%s  want to close session' % host)
                     sess.automat('shutdown')
