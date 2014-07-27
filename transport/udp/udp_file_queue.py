@@ -35,6 +35,7 @@ class FileQueue:
         self.outboxFiles = {}
         self.inboxFiles = {}
         self.outboxQueue = []
+        self.dead_streams = set()
         
     def make_unique_stream_id(self):
         return int(str(random.randint(100,999))+str(int(time.time() * 100.0))[7:])
@@ -161,6 +162,7 @@ class FileQueue:
     def close_stream(self, stream_id):
         s = self.streams.pop(stream_id)
         s.close()
+        self.dead_streams.add(stream_id)
         
     def close_outbox_file(self, stream_id):
         self.outboxFiles[stream_id].close()
@@ -211,6 +213,9 @@ class FileQueue:
             self.session.automat('shutdown') 
             return
         if stream_id not in self.streams.keys():
+            if stream_id in self.dead_streams:
+                print 'old block', stream_id
+                return
             self.start_inbox_file(stream_id, data_size)
         try:
             self.streams[stream_id].block_received(inp)
