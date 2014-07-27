@@ -136,7 +136,7 @@ class UDPStream():
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
                 self.sent_raw_data_callback(self.consumer, block_size)
-                eof = self.consumer.size == self.bytes_acked
+                eof = self.consumer and self.consumer.size == self.bytes_acked
             print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
             print 'rtt:', self.last_ack_rtt, 'eof:', eof 
 #            self.output_blocks_not_acked.clear()
