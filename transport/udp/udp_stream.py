@@ -89,7 +89,7 @@ class UDPStream():
         self.bytes_in += len(data)
         self.blocks_to_ack.add(block_id)
         eof_state = False
-        # print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
+        print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
         if block_id == self.input_block_id + 1:
             newdata = []
             # print 'newdata',
@@ -184,7 +184,7 @@ class UDPStream():
                 # self.send_data_packet_func(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
                 # self.output_blocks_not_acked.add(block_id)
-                # print 'send block', block_id, self.bytes_sent
+                print 'send block', block_id, self.bytes_sent, self.bytes_acked, self.resend_bytes
 
     def send_ack(self):
 #        if len(self.blocks_to_ack) == 0:
