@@ -128,6 +128,7 @@ class UDPStream():
                     continue
                 acked_progress += 1
                 block_size = len(outblock[0])
+                self.output_buffer_size -= block_size 
                 self.bytes_acked += block_size
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
@@ -140,6 +141,7 @@ class UDPStream():
     def write(self, data):
         if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
             raise BufferOverflow('buffer size is %d' % self.output_buffer_size)
+        print 'write', len(data)
         outp = cStringIO.StringIO(data)
         while True:
             piece = outp.read(BLOCK_SIZE)
@@ -192,7 +194,7 @@ class UDPStream():
         self.last_ack_moment = time.time()
 
     def resend(self):
-        print 'resend out:%s acks:%s' % (self.output_blocks.keys(), len(self.blocks_to_ack))
+        print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
         next_resend = min(max(self.last_ack_rtt, RTT_MIN_LIMIT), RTT_MAX_LIMIT)
         if len(self.blocks_to_ack) > 0:
             if time.time() - self.last_ack_moment > RTT_MAX_LIMIT:
