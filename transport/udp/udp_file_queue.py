@@ -186,9 +186,10 @@ class FileQueue:
         if stream_id not in self.streams.keys():
             inp.close()
             # if not self.receivedFiles.has_key(stream_id):
-            lg.out(8, 'udp_file_queue.ack_received WARNING unknown stream_id=%d in ACK packet from %s' % (
-                stream_id, self.session.peer_address))
-            # self.session.automat('shutdown') 
+            # lg.out(8, 'udp_file_queue.ack_received WARNING unknown stream_id=%d in ACK packet from %s' % (
+            #     stream_id, self.session.peer_address))
+            # self.session.automat('shutdown')
+            print 'old ack', stream_id 
             return
         try:
             self.streams[stream_id].ack_received(inp)
