@@ -86,7 +86,7 @@ class UDPStream():
         self.bytes_in += len(data)
         self.blocks_to_ack.add(block_id)
         eof_state = False
-        # print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
+        print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
         if block_id == self.input_block_id + 1:
             newdata = []
             # print 'newdata',
@@ -109,7 +109,7 @@ class UDPStream():
     
     def ack_received(self, inpt):
         if self.consumer:
-            has_progress = False
+            acked_progress = 0
             while True:
                 raw_bytes = inpt.read(4)
                 if not raw_bytes:
@@ -130,9 +130,9 @@ class UDPStream():
                 relative_time = time.time() - self.creation_time
                 self.last_ack_rtt = relative_time - outblock[1]
                 # print 'ack', block_id, self.last_ack_rtt
-                has_progress = True
+                acked_progress += 1
                 self.sent_raw_data_callback(self.consumer, block_size)
-            print 'progress:', has_progress, self.output_blocks.keys()
+            print 'ack progress:', acked_progress, 'blocks,   more:', self.output_blocks.keys()
 #            self.output_blocks_not_acked.clear()
             self.resend()
 
