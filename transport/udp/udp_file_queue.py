@@ -189,8 +189,12 @@ class FileQueue:
             # lg.out(8, 'udp_file_queue.ack_received WARNING unknown stream_id=%d in ACK packet from %s' % (
             #     stream_id, self.session.peer_address))
             # self.session.automat('shutdown')
-            print 'old ack', stream_id 
-            self.session.automat('shutdown')
+            if stream_id in self.dead_streams:
+                # print 'old ack', stream_id
+                pass
+            else:
+                print 'ack what a stream ???', stream_id 
+            # self.session.automat('shutdown')
             return
         try:
             self.streams[stream_id].ack_received(inp)
