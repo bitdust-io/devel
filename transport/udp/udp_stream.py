@@ -145,8 +145,7 @@ class UDPStream():
             if not piece:
                 break
             self.output_block_id += 1
-            relative_time = time.time() - self.creation_time
-            self.output_blocks[self.output_block_id] = (piece, relative_time)
+            self.output_blocks[self.output_block_id] = (piece, -1)
             self.output_buffer_size += len(piece)
         outp.close()
         self.resend()
@@ -157,14 +156,21 @@ class UDPStream():
         
     def send_blocks(self):
         if self.consumer:
+            relative_time = time.time() - self.creation_time
             for block_id in self.output_blocks.keys():
                 if block_id in self.output_blocks_not_acked:
                     continue
-                block = self.output_blocks[block_id]
-                data_size = len(block[0])
+                piece, time_sent = self.output_blocks[block_id]
+                if time_sent >= 0:
+                    if relative_time - time_sent < self.last_ack_rtt:
+                        print 'skip', block_id, relative_time - time_sent, self.last_ack_rtt 
+                        continue
+                time_sent = relative_time
+                self.output_blocks[block_id] = (piece, time_sent)
+                data_size = len(piece)
                 output = ''.join((
                     struct.pack('i', block_id),
-                    block[0]))
+                    piece))
                 import random
                 if random.randint(0, 9) >= 1:
                     # 10 % percent lost
