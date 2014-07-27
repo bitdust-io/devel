@@ -3,6 +3,8 @@ import time
 import cStringIO
 import struct
 
+from twisted.internet import reactor
+
 from logs import lg
 
 from lib import udp
@@ -27,18 +29,25 @@ bytes:
 UDP_DATAGRAM_SIZE = 508
 BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14 
 
+BLOCKS_PER_ACK = 16
 
-  
-BLOCK_RETRIES = 999999
-MAX_WINDOW_SIZE = 32
-MIN_WINDOW_SIZE = 1
-MAX_ACK_TIME_OUT = 4.0
-MIN_ACK_TIME_OUT = 0.5
-MAX_TIMEOUTS_RATIO = 0.5
-FINE_TIMEOUTS_RATIO = 0.0
 MAX_BUFFER_SIZE = 64*1024
 BUFFER_SIZE = BLOCK_SIZE * 8
-BLOCKS_PER_ACK = 16
+
+RTT_MIN_LIMIT = 0.001
+RTT_MAX_LIMIT = 2.0
+
+
+
+MIN_PROCESS_SESSIONS_DELAY = 0.01
+MAX_PROCESS_SESSIONS_DELAY = 1.0
+  
+  
+MAX_ACK_TIME_OUT = 1.0
+MIN_ACK_TIME_OUT = 0.05
+
+MAX_TIMEOUTS_RATIO = 0.5
+FINE_TIMEOUTS_RATIO = 0.0
 
 #------------------------------------------------------------------------------ 
 
@@ -65,6 +74,9 @@ class UDPStream():
         self.bytes_in = 0
         self.bytes_sent = 0
         self.bytes_acked = 0
+        self.last_ack_moment = 0
+        self.last_ack_rtt = RTT_MIN_LIMIT
+        self.resend_task = None
         self.creation_time = time.time() 
         lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
@@ -103,11 +115,9 @@ class UDPStream():
                 eof_state = self.received_raw_data_callback(self.consumer, newdata)
             print '   : %d bytes, eof=%r' % (len(newdata), eof_state)
         if self.consumer:
-            if block_id % BLOCKS_PER_ACK == 0 or eof_state:
-                ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
-                print 'send ack', self.blocks_to_ack 
-                self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
-                self.blocks_to_ack.clear()
+            # want to send the first ack asap
+            if block_id % BLOCKS_PER_ACK == 1 or eof_state:
+                self.send_ack()
     
     def ack_received(self, inpt):
         if self.consumer:
@@ -132,13 +142,13 @@ class UDPStream():
                 block_size = len(outblock[0])
                 self.bytes_acked += block_size
                 relative_time = time.time() - self.creation_time
-                block_rtt = relative_time - outblock[1]
-                print 'ack', block_id, block_rtt
+                self.last_ack_rtt = relative_time - outblock[1]
+                print 'ack', block_id, self.last_ack_rtt
                 has_progress = True
             if has_progress:
                 print 'has_progress', self.output_blocks_not_acked, self.output_blocks.keys()
-                self.send_blocks()
                 self.sent_raw_data_callback(self.consumer, block_size)
+            self.resend()
 
     def write(self, data):
         if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
@@ -153,7 +163,11 @@ class UDPStream():
             self.output_blocks[self.output_block_id] = (piece, relative_time)
             self.output_buffer_size += len(piece)
         outp.close()
-        self.send_blocks()
+        self.resend()
+        
+    # def process(self):
+    #     if time.time() - self.last_ack_moment > MIN_ACK_TIME_OUT:
+    #         self.send_ack()
         
     def send_blocks(self):
         if self.consumer:
@@ -174,6 +188,32 @@ class UDPStream():
                 self.bytes_sent += data_size
                 self.output_blocks_not_acked.add(block_id)
                 print 'send block', block_id, self.bytes_sent
+
+    def send_ack(self):
+        if len(self.blocks_to_ack) == 0:
+            for block_id in self.output_blocks.keys():
+                if block_id in self.output_blocks_not_acked:
+                    self.blocks_to_ack.add(block_id)
+            ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
+            print 'send ack', self.blocks_to_ack 
+            self.send_ack_packet_func(self.stream_id, self.consumer, ack_data)
+            self.blocks_to_ack.clear()
+            self.last_ack_moment = time.time()
+
+    def resend(self):
+        next_resend = min(max(self.last_ack_rtt, RTT_MIN_LIMIT), RTT_MAX_LIMIT)
+        if self.resend_task is None:
+            self.send_blocks()
+            self.resend_task = reactor.callLater(next_resend, self.resend) 
+            return
+        if self.resend_task.cancelled:
+            self.resend_task = None
+            return
+        if self.resend_task.called:
+            self.send_blocks()
+            self.resend_task = reactor.callLater(next_resend, self.resend)
+            return
+        self.send_blocks()
 
 #------------------------------------------------------------------------------ 
 
