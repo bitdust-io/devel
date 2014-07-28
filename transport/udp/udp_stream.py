@@ -251,9 +251,9 @@ class UDPStream():
 #            next_resend = RTT_MAX_LIMIT * 4.0
 #        if self.resend_inactivity_counter > 50:
 #            next_resend = RTT_MAX_LIMIT * 16.0
-        if self.resend_counter % 100 == 1:
+        if self.resend_counter % 500 == 1:
             print 'resend out:%d acks:%d' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
-            print 'rtt=%r, next=%r' % (rtt_current, next_resend)
+            print 'rtt=%r, next=%r, iterations=%d' % (rtt_current, next_resend, self.resend_counter)
         next_resend *= self.resend_inactivity_counter
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
