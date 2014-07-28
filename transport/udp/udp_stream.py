@@ -29,12 +29,12 @@ bytes:
 UDP_DATAGRAM_SIZE = 508
 BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14 
 
-BLOCKS_PER_ACK = 8
+BLOCKS_PER_ACK = 16
 
 MAX_BUFFER_SIZE = 64*1024
 BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
-RTT_MIN_LIMIT = 0.001
+RTT_MIN_LIMIT = 0.002
 RTT_MAX_LIMIT = 0.5
 
 #------------------------------------------------------------------------------ 
@@ -279,7 +279,7 @@ class UDPStream():
             self.resend_inactivity_counter = 0.0
         else:
             self.resend_inactivity_counter += 1.0
-        next_resend = rtt_current * self.resend_inactivity_counter * 1.0
+        next_resend = rtt_current * self.resend_inactivity_counter * 2.0
         if self.resend_counter % 1000 == 0:
             current_rate_in = 0.0
             current_rate_out = 0.0

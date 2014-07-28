@@ -396,8 +396,7 @@ class OutboxFile():
         if self.is_done():
             self.queue.on_outbox_file_done(self, 'finished')
             return True
-        else:
-            self.process()
+        self.process()
         return False
     
     def on_zero_ack(self, bytes_left):
