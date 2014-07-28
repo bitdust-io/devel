@@ -61,7 +61,8 @@ class UDPStream():
         self.bytes_acked = 0
         self.resend_bytes = 0
         self.last_ack_moment = 0
-        self.last_ack_rtt = RTT_MIN_LIMIT
+        self.rtt_avarage = RTT_MIN_LIMIT
+        self.rtt_acks_counter = 1.0
         self.resend_task = None
         self.resend_inactivity_counter = 0
         self.creation_time = time.time() 
@@ -133,12 +134,17 @@ class UDPStream():
                 self.output_buffer_size -= block_size 
                 self.bytes_acked += block_size
                 relative_time = time.time() - self.creation_time
-                self.last_ack_rtt = relative_time - outblock[1]
+                last_ack_rtt = relative_time - outblock[1]
+                self.rtt_avarage += last_ack_rtt
+                self.rtt_acks_counter += 1.0
+                if self.rtt_acks_counter > 100:
+                    self.rtt_acks_counter = 5.0
+                    self.rtt_avarage = (self.rtt_avarage / 100.0) * 5.0 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if len(acks) > 0:
                 print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
-                print 'rtt:', self.last_ack_rtt, 'eof:', eof, 
+                print 'rtt:', self.rtt_avarage/self.rtt_acks_counter, 'eof:', eof, 
                 print 'acked:', self.bytes_acked, 'sent:', self.bytes_sent, 'resend:', self.resend_bytes 
                 self.resend()
                 return
@@ -176,7 +182,7 @@ class UDPStream():
                 data_size = len(piece)
                 if time_sent >= 0:
                     dt = relative_time - time_sent 
-                    if dt > self.last_ack_rtt * 8.0:
+                    if dt > (self.rtt_avarage/self.rtt_acks_counter) * 8.0:
                         self.resend_bytes += data_size
                         # print 're -'s,
                     else:
@@ -215,7 +221,8 @@ class UDPStream():
             self.resend_inactivity_counter = 0
         else:
             self.resend_inactivity_counter += 1
-        next_resend = max(min(self.last_ack_rtt, RTT_MAX_LIMIT), RTT_MIN_LIMIT)
+        rtt_current = self.rtt_avarage / self.rtt_acks_counter
+        next_resend = max(min(rtt_current, RTT_MAX_LIMIT), RTT_MIN_LIMIT)
         if self.resend_inactivity_counter > 10:
             if self.resend_inactivity_counter % 10 == 10:
                 print 'drop resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
