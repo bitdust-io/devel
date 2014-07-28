@@ -218,7 +218,8 @@ class FileQueue:
 
     def on_outbox_file_done(self, outfile, status, error_message=None):
         stream_id = outfile.stream_id
-        lg.out(18, 'udp_file_queue.outbox_file_done %s %s because %s' % (stream_id, status, error_message))
+        lg.out(18, 'udp_file_queue.outbox_file_done %s (%d bytes) %s because %s' % (
+            stream_id, outfile.size, status, error_message))
         if outfile.result_defer:
             outfile.result_defer.callback((outfile, status, error_message))
             outfile.result_defer = None

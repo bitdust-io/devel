@@ -71,7 +71,7 @@ class UDPStream():
         self.resend_task = None
         self.resend_inactivity_counter = 0
         self.resend_counter = 0
-        self.limit_send_bytes_per_sec = int(0.1 * 125000) # 1 Mbps limit ~ 122 KB/s 
+        self.limit_send_bytes_per_sec = int(4 * 125000) # 1 Mbps limit ~ 122 KB/s 
         self.creation_time = time.time() 
         lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
@@ -154,7 +154,7 @@ class UDPStream():
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if acks > 0:
                 self.input_acks_counter += 1
-                print 'ack blocks:(%d|%d)' % (acks, len(self.output_blocks.keys())) 
+                # print 'ack blocks:(%d|%d)' % (acks, len(self.output_blocks.keys())) 
                 self.resend()
                 return
             print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
@@ -277,7 +277,7 @@ class UDPStream():
 #            next_resend = RTT_MAX_LIMIT * 4.0
 #        if self.resend_inactivity_counter > 50:
 #            next_resend = RTT_MAX_LIMIT * 16.0
-        next_resend = rtt_current * self.resend_inactivity_counter
+        next_resend = rtt_current * self.resend_inactivity_counter * 2.0
         if self.resend_counter % 100 == 0:
             print 'resend out:%d acks:%d' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
             print 'rtt=%r, next=%r, iterations=%d' % (rtt_current, next_resend, self.resend_counter)
