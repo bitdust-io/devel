@@ -139,7 +139,7 @@ class UDPStream():
             if len(acks) > 0:
                 print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
                 print 'rtt:', self.last_ack_rtt, 'eof:', eof, 
-                print 'acked:', self.bytes_acked, 'sent:', self.bytes_sent 
+                print 'acked:', self.bytes_acked, 'sent:', self.bytes_sent, 'resend:', self.resend_bytes 
                 self.resend()
                 return
             print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
@@ -176,7 +176,7 @@ class UDPStream():
                 data_size = len(piece)
                 if time_sent >= 0:
                     dt = relative_time - time_sent 
-                    if dt > self.last_ack_rtt * 4.0:
+                    if dt > self.last_ack_rtt * 8.0:
                         self.resend_bytes += data_size
                         # print 're -'s,
                     else:
