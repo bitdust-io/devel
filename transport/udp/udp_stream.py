@@ -29,7 +29,7 @@ bytes:
 UDP_DATAGRAM_SIZE = 508
 BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14 
 
-BLOCKS_PER_ACK = 4
+BLOCKS_PER_ACK = 16
 
 MAX_BUFFER_SIZE = 64*1024
 BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
@@ -51,7 +51,7 @@ class UDPStream():
         # self.sent_raw_data_callback = sent_raw_data_callback
         self.output_buffer_size = 0
         self.output_blocks = {}
-        self.output_blocks_acks = []
+        # self.output_blocks_acks = []
         self.output_block_id = 0
         self.output_blocks_counter = 0
         self.output_acks_counter = 0
@@ -73,7 +73,7 @@ class UDPStream():
         self.resend_task = None
         self.resend_inactivity_counter = 0
         self.resend_counter = 0
-        self.limit_send_bytes_per_sec = 5 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
+        self.limit_send_bytes_per_sec = 1 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
         self.creation_time = time.time() 
         lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
@@ -112,19 +112,21 @@ class UDPStream():
             eof_state = False
             # print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
             if block_id == self.input_block_id + 1:
-                newdata = []
+                newdata = cStringIO.StringIO()
+                newblocks = 0
                 # print 'newdata',
                 while True:
                     next_block_id = self.input_block_id + 1
                     try:
-                        newdata.append(self.input_blocks.pop(next_block_id))
-                    except:
+                        blockdata = self.input_blocks.pop(next_block_id)
+                    except KeyError:
                         break
+                    newdata.write(blockdata)
                     self.input_block_id = next_block_id
+                    newblocks += 1
                     # print next_block_id,
-                num_blocks = len(newdata)
-                newdata = ''.join(newdata)
-                eof_state = self.consumer.on_received_raw_data(newdata)
+                eof_state = self.consumer.on_received_raw_data(newdata.getvalue())
+                newdata.close()
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
             # want to send the first ack asap
             if time.time() - self.last_ack_moment > RTT_MAX_LIMIT \
@@ -247,7 +249,7 @@ class UDPStream():
         ack_len = len(ack_data)
         self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
         self.bytes_in_acks += ack_len 
-        self.output_blocks_acks += list(self.blocks_to_ack)
+        # self.output_blocks_acks += list(self.blocks_to_ack)
         self.output_acks_counter += 1
         relative_time = time.time() - self.creation_time
         current_rate = 0.0
