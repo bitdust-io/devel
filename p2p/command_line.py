@@ -665,7 +665,8 @@ def option_name_to_path(name, default=''):
 
 def cmd_set_directly(opts, args, overDict):
     def print_all_settings():
-        for path in settings.uconfig().default_order:
+        from lib import userconfig
+        for path in userconfig.all_options():
             if path.strip() == '':
                 continue
             if path not in userconfig.public_options():

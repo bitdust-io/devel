@@ -295,6 +295,87 @@ _PublicOptions = [
     'other.upnp-enabled',
     ]
     
+
+_AllOptions = [
+    'general',
+    'general.general-backups',
+    'general.general-local-backups-enable',
+    'general.general-wait-suppliers-enable',
+    'general.general-autorun',
+    'general.general-display-mode',
+    'general.general-desktop-shortcut',
+    'general.general-start-menu-shortcut',
+    'backup',
+    'backup.private-key-size',
+    'backup.backup-block-size',
+    'backup.backup-max-block-size',
+    'updates',
+    'updates.updates-mode',
+    'updates.updates-shedule',
+    'storage',
+    'storage.suppliers',
+    'storage.needed',
+    'storage.donated',
+    'folder',
+    'folder.folder-customers',
+    'folder.folder-backups',
+    'folder.folder-restore',
+    'folder.folder-messages',
+    'folder.folder-receipts',
+    'emergency',
+    'emergency.emergency-first',
+    'emergency.emergency-second',
+    'emergency.emergency-email',
+    'emergency.emergency-phone',
+    'emergency.emergency-fax',
+    'emergency.emergency-text',
+    'network',
+    'network.network-dht-port',
+    'network.network-proxy',
+    'network.network-proxy.network-proxy-enable',
+    'network.network-proxy.network-proxy-host',
+    'network.network-proxy.network-proxy-port',
+    'network.network-proxy.network-proxy-username',
+    'network.network-proxy.network-proxy-password',
+    'network.network-proxy.network-proxy-ssl',
+    'network.network-send-limit',
+    'network.network-receive-limit',
+    'transport',
+    'transport.transport-tcp',
+    'transport.transport-tcp.transport-tcp-port',
+    'transport.transport-tcp.transport-tcp-enable',
+    'transport.transport-tcp.transport-tcp-sending-enable',
+    'transport.transport-tcp.transport-tcp-receiving-enable',
+    'transport.transport-udp',
+    'transport.transport-udp.transport-udp-enable',
+    'transport.transport-udp.transport-udp-port',
+    'transport.transport-udp.transport-udp-sending-enable',
+    'transport.transport-udp.transport-udp-receiving-enable',
+    'personal',
+    'personal.personal-name',
+    'personal.personal-surname',
+    'personal.personal-nickname',
+    'personal.personal-betatester',
+    'id-server',
+    'id-server.id-server-enable',
+    'id-server.id-server-host',
+    'id-server.id-server-web-port',
+    'id-server.id-server-tcp-port',
+    'logs',
+    'logs.debug-level',
+    'logs.stream-enable',
+    'logs.stream-port',
+    'logs.traffic-enable',
+    'logs.traffic-port',
+    'logs.memdebug-enable',
+    'logs.memdebug-port',
+    'logs.memprofile-enable',
+    'other',
+    'other.upnp-enabled',
+    'other.upnp-at-startup',
+]
+    
+    
 _InfosDict = {
     'general':                      "General options.",
     'general-backups':              'How many backup copies of each directory to keep, oldest will be removed automatically? ( 0 = unlimited )',
@@ -821,6 +902,11 @@ def default_xml_config():
     global _DefaultXMLConfig
     return _DefaultXMLConfig
 
+
+def all_options():
+    global _AllOptions
+    return _AllOptions 
+
 #-------------------------------------------------------------------------------
 
 def main():
@@ -831,6 +917,7 @@ def main():
     uc = UserConfig(settings.UserConfigFilename())
     uc.update()
     print uc.print_all_html()
+    print "',\n'".join(uc.default_order)
 
 
 if __name__ == "__main__":
