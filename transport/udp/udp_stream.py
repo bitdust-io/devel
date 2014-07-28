@@ -137,9 +137,9 @@ class UDPStream():
                 last_ack_rtt = relative_time - outblock[1]
                 self.rtt_avarage += last_ack_rtt
                 self.rtt_acks_counter += 1.0
-                if self.rtt_acks_counter > 100:
+                if self.rtt_acks_counter > 1000:
                     self.rtt_acks_counter = 5.0
-                    self.rtt_avarage = (self.rtt_avarage / 100.0) * 5.0 
+                    self.rtt_avarage = (self.rtt_avarage / 1000.0) * 5.0 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if len(acks) > 0:
