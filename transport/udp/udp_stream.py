@@ -203,7 +203,7 @@ class UDPStream():
             current_rate = self.bytes_sent / relative_time
         if current_rate > self.limit_send_bytes_per_sec:
             return False
-        resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
+        resend_time_limit = 4 * BLOCKS_PER_ACK * rtt_current
         new_blocks_counter = 0 
         for block_id in self.output_blocks.keys():
             piece, time_sent = self.output_blocks[block_id]
@@ -291,7 +291,7 @@ class UDPStream():
             print 'in:(%d|%d|%d)' % (self.input_blocks_counter, self.bytes_in, self.bytes_in_acks),
             print 'out:(%d|%d|%d)' % (self.output_blocks_counter, self.bytes_acked, self.resend_bytes),
             print 'rate:(%d|%d)' % (int(current_rate_in), int(current_rate_out)),  
-            print 'rtt=%s, loops=%d' % (round(rtt_current, 6), self.resend_counter)
+            print 'time:(%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], self.resend_counter)
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return
