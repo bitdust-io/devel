@@ -73,7 +73,7 @@ class UDPStream():
         self.resend_task = None
         self.resend_inactivity_counter = 0
         self.resend_counter = 0
-        self.limit_send_bytes_per_sec = 100 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
+        self.limit_send_bytes_per_sec = 5 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
         self.creation_time = time.time() 
         lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
