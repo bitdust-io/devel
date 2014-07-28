@@ -29,12 +29,12 @@ bytes:
 UDP_DATAGRAM_SIZE = 508
 BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14 
 
-BLOCKS_PER_ACK = 120
+BLOCKS_PER_ACK = 8
 
 MAX_BUFFER_SIZE = 64*1024
 BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
-RTT_MIN_LIMIT = 0.001
+RTT_MIN_LIMIT = 0.0001
 RTT_MAX_LIMIT = 0.5
 
 #------------------------------------------------------------------------------ 
@@ -244,7 +244,7 @@ class UDPStream():
                 self.send_ack()
         if len(self.output_blocks):        
             self.send_blocks()
-        if self.rtt_acks_counter % 10 == 1:
+        if self.rtt_acks_counter % 50 == 1:
             print 'resend rtt=%r, next=%r' % (rtt_current, next_resend)
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
