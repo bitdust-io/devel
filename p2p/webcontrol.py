@@ -41,6 +41,7 @@ from lib import bpio
 from lib import misc
 from lib import net_misc
 from lib import settings
+from lib import userconfig
 from lib import diskspace
 from lib import dirsize
 from lib import diskusage
@@ -7521,7 +7522,7 @@ class SettingsTreeNode(Page):
         back = arg(request, 'back')
         childs = settings.uconfig().get_childs(self.path).keys()
         lg.out(12, 'webcontrol.SettingsTreeNode.body childs='+str(childs))
-        for path in settings.uconfig().default_order:
+        for path in userconfig.all_options():
             if path.strip() == '':
                 continue
             if path not in childs:
@@ -7859,10 +7860,8 @@ class SettingsPage(Page):
     def renderPage(self, request):
         global _SettingsTreeNodesDict
         lg.out(6, 'webcontrol.SettingsPage.renderPage args=%s' % str(request.args))
-
         src = ''
-
-        for path in settings.uconfig().default_order:
+        for path in userconfig.all_options():
             if path.strip() == '':
                 continue
 #            if path not in settings.uconfig().public_options:
@@ -7900,10 +7899,10 @@ class SettingsListPage(Page):
     def renderPage(self, request):
         src = ''
         src += '<table>\n'
-        for path in settings.uconfig().default_order:
+        for path in userconfig.all_options():
             if path.strip() == '':
                 continue
-            if path not in settings.uconfig.public_options():
+            if path not in userconfig.public_options():
                 continue
             value = settings.uconfig().data.get(path, '').replace('\n', ' ')
             label = settings.uconfig().labels.get(path, '')
