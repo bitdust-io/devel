@@ -187,7 +187,7 @@ class UDPStream():
                 current_rate = self.bytes_sent / relative_time
             if current_rate > self.limit_send_bytes_per_sec:
                 return
-            resend_time_limit = 8 * BLOCKS_PER_ACK * rtt_current
+            resend_time_limit = 4 * BLOCKS_PER_ACK * rtt_current
             new_blocks_counter = 0 
             for block_id in self.output_blocks.keys():
                 piece, time_sent = self.output_blocks[block_id]
