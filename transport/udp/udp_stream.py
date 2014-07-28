@@ -53,10 +53,12 @@ class UDPStream():
         self.output_blocks = {}
         self.output_blocks_acks = []
         self.output_block_id = 0
+        self.output_blocks_counter = 0
         self.input_blocks = {}
         self.input_block_id = 0
         self.blocks_to_ack = set()
         self.bytes_in = 0
+        self.bytes_in_acks = 0
         self.bytes_sent = 0
         self.bytes_acked = 0
         self.resend_bytes = 0
@@ -187,7 +189,7 @@ class UDPStream():
                 current_rate = self.bytes_sent / relative_time
             if current_rate > self.limit_send_bytes_per_sec:
                 return
-            resend_time_limit = 4 * BLOCKS_PER_ACK * rtt_current
+            resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
             new_blocks_counter = 0 
             for block_id in self.output_blocks.keys():
                 piece, time_sent = self.output_blocks[block_id]
@@ -215,22 +217,36 @@ class UDPStream():
                     # self.producer.do_send_data(self.stream_id, self.consumer, output)
                 self.producer.do_send_data(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
+                self.output_blocks_counter += 1
                 new_blocks_counter += 1
             if new_blocks_counter > 0:
-                print 'send blocks', new_blocks_counter, len(self.output_blocks.keys()), 
-                print self.bytes_sent, self.bytes_acked, self.resend_bytes, rtt_current, resend_time_limit
+                print 'send blocks:(%d|%d|%d)' % (new_blocks_counter, len(self.output_blocks.keys()), self.output_blocks_counter), 
+                print 'bytes:(%d|%d|%d)' % (self.bytes_acked, self.bytes_sent, self.resend_bytes),  
+                print 'time:(%r|%r)' % (rtt_current, relative_time),
+                print 'rate:(%r)' % current_rate
 
     def send_ack(self):
         if self.consumer:
             ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
             self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
+            self.bytes_in_acks += len(ack_data)
             self.output_blocks_acks += list(self.blocks_to_ack)
-            print 'send ack', len(self.output_blocks_acks), len(self.blocks_to_ack), self.bytes_in
+            relative_time = time.time() - self.creation_time
+            current_rate = 0.0
+            if relative_time > 0.0: 
+                current_rate = self.bytes_in / relative_time
+            print 'send ack blocks:(%d|%d)' % (len(self.blocks_to_ack), len(self.output_blocks_acks)), 
+            print 'bytes:(%d|%d)' % (self.bytes_in, self.bytes_in_acks),
+            print 'time:(%r)' % relative_time,
+            print 'rate:(%r)' % current_rate
             self.blocks_to_ack.clear()
             self.last_ack_moment = time.time()
 
     def resend(self):
         self.resend_counter += 1
+        if not self.consumer:
+            print 'stop resending, consumer is None'
+            return
         activitiy = len(self.output_blocks.keys()) # + len(self.blocks_to_ack)
         if activitiy > 0:
             # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
