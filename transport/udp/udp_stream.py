@@ -182,11 +182,12 @@ class UDPStream():
         if self.consumer:
             relative_time = time.time() - self.creation_time
             current_rate = self.limit_send_bytes_per_sec
+            rtt_current = self.rtt_avarage / self.rtt_acks_counter
             if relative_time > 0.0: 
                 current_rate = self.bytes_sent / relative_time
             if current_rate > self.limit_send_bytes_per_sec:
                 return
-            resend_time_limit = 8 * BLOCKS_PER_ACK * self.rtt_avarage / self.rtt_acks_counter
+            resend_time_limit = 8 * BLOCKS_PER_ACK * rtt_current
             new_blocks_counter = 0 
             for block_id in self.output_blocks.keys():
                 piece, time_sent = self.output_blocks[block_id]
@@ -217,7 +218,7 @@ class UDPStream():
                 new_blocks_counter += 1
             if new_blocks_counter > 0:
                 print 'send blocks', new_blocks_counter, len(self.output_blocks.keys()), 
-                print self.bytes_sent, self.bytes_acked, self.resend_bytes, resend_time_limit
+                print self.bytes_sent, self.bytes_acked, self.resend_bytes, rtt_current, resend_time_limit
 
     def send_ack(self):
         if self.consumer:
@@ -238,21 +239,22 @@ class UDPStream():
             self.resend_inactivity_counter += 1
         rtt_current = self.rtt_avarage / self.rtt_acks_counter
         next_resend = max(min(rtt_current, RTT_MAX_LIMIT), RTT_MIN_LIMIT)
-        if self.resend_inactivity_counter > 5:
-            # if self.resend_inactivity_counter % 10 == 1:
-            #     print 'drop resend out:%s acks:%s' % (
-            #         len(self.output_blocks.keys()), len(self.blocks_to_ack))
-            next_resend = RTT_MAX_LIMIT * 4.0
-        if self.resend_inactivity_counter > 50:
-            next_resend = RTT_MAX_LIMIT * 16.0
         if len(self.blocks_to_ack) > 0:
             if time.time() - self.last_ack_moment > next_resend:
                 self.send_ack()
         if len(self.output_blocks):        
             self.send_blocks()
+#        if self.resend_inactivity_counter > 5:
+#            # if self.resend_inactivity_counter % 10 == 1:
+#            #     print 'drop resend out:%s acks:%s' % (
+#            #         len(self.output_blocks.keys()), len(self.blocks_to_ack))
+#            next_resend = RTT_MAX_LIMIT * 4.0
+#        if self.resend_inactivity_counter > 50:
+#            next_resend = RTT_MAX_LIMIT * 16.0
         if self.resend_counter % 100 == 1:
             print 'resend out:%d acks:%d' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
             print 'rtt=%r, next=%r' % (rtt_current, next_resend)
+        next_resend *= self.resend_inactivity_counter
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return
@@ -261,6 +263,7 @@ class UDPStream():
             return
         if self.resend_task.cancelled:
             self.resend_task = None
+            return
             
     def stop_resending(self):
         if self.resend_task:
