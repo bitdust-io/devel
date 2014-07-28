@@ -272,7 +272,7 @@ class UDPStream():
             self.resend_inactivity_counter = 0.0
         else:
             self.resend_inactivity_counter += 1.0
-        next_resend = rtt_current * self.resend_inactivity_counter * 8.0
+        next_resend = rtt_current * self.resend_inactivity_counter * 1.0
         if self.resend_counter % 100 == 0:
             print 'resend out:%d acks:%d' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
             print 'rtt=%r, next=%r, iterations=%d' % (rtt_current, next_resend, self.resend_counter)
