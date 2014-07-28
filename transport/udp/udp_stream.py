@@ -79,8 +79,10 @@ class UDPStream():
         lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-        print 'udp_stream.close %d in:%d out:%d acked:%d resend:%d' % (
-            self.stream_id, self.bytes_in, self.bytes_sent, self.bytes_acked, self.resend_bytes)
+        lg.out(18, 'udp_stream.close %d in:(%d|%d-%d|%d) out:(%d|%d|%d)' % (self.stream_id, 
+            self.input_blocks_counter, self.bytes_in,
+            self.output_acks_counter, self.bytes_in_acks,
+            self.output_blocks_counter, self.bytes_acked, self.resend_bytes,))
         self.stop_resending()
         self.consumer.stream = None
         self.consumer = None
@@ -147,9 +149,10 @@ class UDPStream():
                 last_ack_rtt = relative_time - outblock[1]
                 self.rtt_avarage += last_ack_rtt
                 self.rtt_acks_counter += 1.0
-                if self.rtt_acks_counter > 1000:
-                    self.rtt_acks_counter = 5.0
-                    self.rtt_avarage = (self.rtt_avarage / 1000.0) * 5.0 
+                if self.rtt_avarage > 1000000 or self.rtt_acks_counter > 1000000:
+                    rtt = self.rtt_avarage / self.rtt_acks_counter
+                    self.rtt_acks_counter = BLOCKS_PER_ACK * 2
+                    self.rtt_avarage = rtt * self.rtt_acks_counter 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if acks > 0:
@@ -264,20 +267,12 @@ class UDPStream():
                 activity = activity or self.send_ack()
         if len(self.output_blocks):        
             activity = activity or self.send_blocks()
-        # activity = len(self.output_blocks.keys()) # + len(self.blocks_to_ack)
         if activity:
             # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0.0
         else:
             self.resend_inactivity_counter += 1.0
-#        if self.resend_inactivity_counter > 5:
-#            # if self.resend_inactivity_counter % 10 == 1:
-#            #     print 'drop resend out:%s acks:%s' % (
-#            #         len(self.output_blocks.keys()), len(self.blocks_to_ack))
-#            next_resend = RTT_MAX_LIMIT * 4.0
-#        if self.resend_inactivity_counter > 50:
-#            next_resend = RTT_MAX_LIMIT * 16.0
-        next_resend = rtt_current * self.resend_inactivity_counter * 2.0
+        next_resend = rtt_current * self.resend_inactivity_counter * 8.0
         if self.resend_counter % 100 == 0:
             print 'resend out:%d acks:%d' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
             print 'rtt=%r, next=%r, iterations=%d' % (rtt_current, next_resend, self.resend_counter)
