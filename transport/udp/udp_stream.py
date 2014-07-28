@@ -291,7 +291,7 @@ class UDPStream():
             print 'in:(%d|%d|%d)' % (self.input_blocks_counter, self.bytes_in, self.bytes_in_acks),
             print 'out:(%d|%d|%d)' % (self.output_blocks_counter, self.bytes_acked, self.resend_bytes),
             print 'rate:(%d|%d)' % (int(current_rate_in), int(current_rate_out)),  
-            print 'time:(%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], self.resend_counter)
+            print 'time:(%s|%s|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], self.resend_counter)
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return
