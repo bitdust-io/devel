@@ -186,7 +186,7 @@ _DefaultXMLConfig = ur"""<settings>
   </transport-tcp>
   <transport-udp>
    <transport-udp-enable>
-    False
+    True
    </transport-udp-enable>
    <transport-udp-port>
     8882
@@ -459,14 +459,11 @@ class UserConfig:
 
         doc1 = self._parse(default_xml_config())
         self._load(
-            self.default_data,
-            doc1.documentElement,
-            order=self.default_order, )
+            self.default_data, doc1.documentElement, order=self.default_order, )
 
         doc2 = self._parse(self.xmlsrc)
         self._load(
-            self.data,
-            doc2.documentElement)
+            self.data, doc2.documentElement)
 
         self._validate(True)
 

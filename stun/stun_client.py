@@ -190,10 +190,10 @@ class StunClient(automat.Automat):
         try:
             port = int(response['stun_port'])
         except:
+            lg.exc()
             # Unknown stun port, let's use default port, even if we use some another port
             # TODO need to put that default port in the settings 
             port = int(settings.DefaultUDPPort())
-            # lg.exc()
         if port:
             self.automat('found-one-peer', (node_ip_address, port))
         else:
