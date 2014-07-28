@@ -35,7 +35,7 @@ MAX_BUFFER_SIZE = 64*1024
 BUFFER_SIZE = BLOCK_SIZE * 8 # int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
 RTT_MIN_LIMIT = 0.001
-RTT_MAX_LIMIT = 0.1
+RTT_MAX_LIMIT = 0.5
 
 #------------------------------------------------------------------------------ 
 
@@ -176,9 +176,9 @@ class UDPStream():
                 data_size = len(piece)
                 if time_sent >= 0:
                     dt = relative_time - time_sent 
-                    if dt > self.last_ack_rtt * 2:
+                    if dt > self.lasst_ack_rtt * 2.0:
                         self.resend_bytes += data_size
-                        # print 're -',
+                        # print 're -'s,
                     else:
                         # print 'skip', block_id, dt, self.last_ack_rtt 
                         continue
