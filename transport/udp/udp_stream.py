@@ -183,8 +183,8 @@ class UDPStream():
                 current_rate = self.bytes_sent / relative_time
             if current_rate > self.limit_send_bytes_per_sec:
                 return
-            resend_time_limit = 2 * BLOCKS_PER_ACK * self.rtt_avarage/self.rtt_acks_counter
-            new_blocks_counter = 0
+            resend_time_limit = 8 * BLOCKS_PER_ACK * self.rtt_avarage / self.rtt_acks_counter
+            new_blocks_counter = 0 
             for block_id in self.output_blocks.keys():
                 piece, time_sent = self.output_blocks[block_id]
                 data_size = len(piece)
@@ -213,7 +213,8 @@ class UDPStream():
                 self.bytes_sent += data_size
                 new_blocks_counter += 1
             if new_blocks_counter > 0:
-                print 'send blocks', new_blocks_counter, len(self.output_blocks.keys()), self.bytes_sent, self.bytes_acked, self.resend_bytes
+                print 'send blocks', new_blocks_counter, len(self.output_blocks.keys()), 
+                print self.bytes_sent, self.bytes_acked, self.resend_bytes, resend_time_limit
 
     def send_ack(self):
         if self.consumer:
