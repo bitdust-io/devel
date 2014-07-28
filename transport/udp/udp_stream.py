@@ -182,7 +182,7 @@ class UDPStream():
                 data_size = len(piece)
                 if time_sent >= 0:
                     dt = relative_time - time_sent 
-                    if dt > (self.rtt_avarage/self.rtt_acks_counter) * 16.0:
+                    if dt > (self.rtt_avarage/self.rtt_acks_counter) * 32.0:
                         self.resend_bytes += data_size
                         # print 're -'s,
                     else:
