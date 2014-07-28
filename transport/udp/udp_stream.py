@@ -228,11 +228,11 @@ class UDPStream():
             self.bytes_sent += data_size
             self.output_blocks_counter += 1
             new_blocks_counter += 1
-        if new_blocks_counter > 0:
-            print 'send blocks %d|%d|%d' % (new_blocks_counter, len(self.output_blocks.keys()), self.output_blocks_counter), 
-            print 'bytes:(%d|%d|%d)' % (self.bytes_acked, self.bytes_sent, self.resend_bytes),  
-            print 'time:(%s|%s)' % (str(rtt_current)[:8], str(relative_time)[:8]),
-            print 'rate:(%r)' % current_rate
+        # if new_blocks_counter > 0:
+        #     print 'send blocks %d|%d|%d' % (new_blocks_counter, len(self.output_blocks.keys()), self.output_blocks_counter), 
+        #     print 'bytes:(%d|%d|%d)' % (self.bytes_acked, self.bytes_sent, self.resend_bytes),  
+        #     print 'time:(%s|%s)' % (str(rtt_current)[:8], str(relative_time)[:8]),
+        #     print 'rate:(%r)' % current_rate
         return new_blocks_counter > 0
 
     def send_ack(self):
@@ -248,10 +248,10 @@ class UDPStream():
         current_rate = 0.0
         if relative_time > 0.0: 
             current_rate = self.bytes_in / relative_time
-        print 'send ack %d|%d|%d' % (len(self.blocks_to_ack), len(self.output_blocks_acks), self.output_acks_counter), 
-        print 'bytes:(%d|%d)' % (self.bytes_in, self.bytes_in_acks),
-        print 'time:(%r)' % relative_time,
-        print 'rate:(%r)' % current_rate
+        # print 'send ack %d|%d|%d' % (len(self.blocks_to_ack), len(self.output_blocks_acks), self.output_acks_counter), 
+        # print 'bytes:(%d|%d)' % (self.bytes_in, self.bytes_in_acks),
+        # print 'time:(%r)' % relative_time,
+        # print 'rate:(%r)' % current_rate
         self.blocks_to_ack.clear()
         self.last_ack_moment = time.time()
         return ack_len > 0
@@ -275,9 +275,18 @@ class UDPStream():
         else:
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 1.0
-        if self.resend_counter % 50 == 0:
-            print 'resend out:%d acks:%d' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
-            print 'rtt=%r, next=%r, iterations=%d' % (rtt_current, next_resend, self.resend_counter)
+        if self.resend_counter % 1000 == 0:
+            current_rate_in = 0.0
+            current_rate_out = 0.0
+            relative_time = time.time() - self.creation_time
+            if relative_time > 0.0: 
+                current_rate_in = self.bytes_in / relative_time
+                current_rate_out = self.bytes_sent / relative_time
+            print 'resend (%d:%d)' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
+            print 'rtt=%r, next=%r, iterations=%d' % (rtt_current, next_resend, self.resend_counter),
+            print 'in:(%d|%d|%d)' % (self.input_blocks_counter, self.bytes_in, self.bytes_in_acks),
+            print 'out:(%d|%d|%d)' % (self.output_blocks_counter, self.bytes_acked, self.resend_bytes),
+            print 'rate:(%d|%d)' % (int(current_rate_in), int(current_rate_out))  
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return
