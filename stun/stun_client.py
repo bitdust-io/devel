@@ -167,7 +167,7 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        lg.out(18, 'stun_client.doStun to %s' % str(self.peer_address))
+        # lg.out(18, 'stun_client.doStun to %s' % str(self.peer_address))
         udp.send_command(self.listen_port, udp.CMD_STUN, '', self.peer_address)
 
     def _datagram_received(self, datagram, address):
@@ -177,7 +177,7 @@ class StunClient(automat.Automat):
         
     def _found_nodes(self, nodes):
         # addresses = map(lambda x: x.address, nodes)
-        lg.out(18, 'stun_client.found_nodes %d nodes' % len(nodes))
+        # lg.out(18, 'stun_client.found_nodes %d nodes' % len(nodes))
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('stun_port')
@@ -186,7 +186,6 @@ class StunClient(automat.Automat):
             self.automat('peers-not-found')
         
     def _got_stun_port(self, response, node_ip_address):
-        # lg.out(18, 'stun_client.got_stun_port response=%s' % str(response) )
         try:
             port = int(response['stun_port'])
         except:
@@ -194,6 +193,7 @@ class StunClient(automat.Automat):
             # Unknown stun port, let's use default port, even if we use some another port
             # TODO need to put that default port in the settings 
             port = int(settings.DefaultUDPPort())
+        lg.out(18, 'stun_client.got_stun_port %s' % str((node_ip_address, port)))
         if port:
             self.automat('found-one-peer', (node_ip_address, port))
         else:
