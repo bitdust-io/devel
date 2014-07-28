@@ -92,7 +92,7 @@ def out(level, s, nl='\n'):
     if _WebStreamFunc is not None:
         _WebStreamFunc(level, s_ + nl)
     _LogLinesCounter += 1
-    if _LogLinesCounter % 1000 == 0:
+    if _LogLinesCounter % 10000 == 0:
         out(2, '[%s]' % time.asctime())
 
 
