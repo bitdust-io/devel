@@ -12,8 +12,8 @@ EVENTS:
     * :red:`found-one-peer`
     * :red:`peers-not-found`
     * :red:`start`
-    * :red:`timer-02sec`
-    * :red:`timer-3sec`
+    * :red:`timer-01sec`
+    * :red:`timer-1sec`
 """
 
 import os
@@ -53,8 +53,8 @@ class StunClient(automat.Automat):
     """
 
     timers = {
-        'timer-02sec': (0.2, ['REQUEST']),
-        'timer-3sec': (3.0, ['REQUEST']),
+        'timer-1sec': (1.0, ['REQUEST']),
+        'timer-01sec': (0.1, ['REQUEST']),
         }
 
     def init(self):
@@ -64,13 +64,13 @@ class StunClient(automat.Automat):
         
     def A(self, event, arg):
         #---STOPPED---
-        if self.state is 'STOPPED':
+        if self.state == 'STOPPED':
             if event == 'start' :
                 self.state = 'RANDOM_PEER'
                 self.doInit(arg)
                 self.doDHTFindRandomNode(arg)
         #---RANDOM_PEER---
-        elif self.state is 'RANDOM_PEER':
+        elif self.state == 'RANDOM_PEER':
             if event == 'found-one-peer' :
                 self.state = 'REQUEST'
                 self.doRememberPeer(arg)
@@ -82,17 +82,17 @@ class StunClient(automat.Automat):
                 self.state = 'STOPPED'
                 self.doReportFailed(arg)
         #---REQUEST---
-        elif self.state is 'REQUEST':
+        elif self.state == 'REQUEST':
             if event == 'datagram-received' and self.isMyIPPort(arg) :
                 self.state = 'KNOW_MY_IP'
                 self.doReportSuccess(arg)
-            elif event == 'timer-3sec' :
+            elif event == 'timer-1sec' :
                 self.state = 'RANDOM_PEER'
                 self.doDHTFindRandomNode(arg)
-            elif event == 'timer-02sec' :
+            elif event == 'timer-01sec' :
                 self.doStun(arg)
         #---KNOW_MY_IP---
-        elif self.state is 'KNOW_MY_IP':
+        elif self.state == 'KNOW_MY_IP':
             if event == 'start' :
                 self.state = 'RANDOM_PEER'
                 self.doInit(arg)
