@@ -31,7 +31,7 @@ import udp_file_queue
 
 #------------------------------------------------------------------------------ 
 
-MIN_PROCESS_SESSIONS_DELAY = 0.01
+MIN_PROCESS_SESSIONS_DELAY = 0.001
 MAX_PROCESS_SESSIONS_DELAY = 1.0
   
 #------------------------------------------------------------------------------ 
