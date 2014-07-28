@@ -79,6 +79,8 @@ class UDPStream():
         self.consumer.stream = None
         self.consumer = None
         self.producer = None
+        self.blocks_to_ack.clear()
+        self.output_blocks.clear()
         # self.send_data_packet_func = None
         # self.send_ack_packet_func = None
         # self.received_raw_data_callback = None
@@ -226,7 +228,7 @@ class UDPStream():
             self.last_ack_moment = time.time()
 
     def resend(self):
-        activitiy = len(self.output_blocks.keys()) + len(self.blocks_to_ack)
+        activitiy = len(self.output_blocks.keys()) # + len(self.blocks_to_ack)
         if activitiy > 0:
             # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0
