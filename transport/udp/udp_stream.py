@@ -34,7 +34,7 @@ BLOCKS_PER_ACK = 8
 MAX_BUFFER_SIZE = 64*1024
 BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
-RTT_MIN_LIMIT = 0.00001
+RTT_MIN_LIMIT = 0.001
 RTT_MAX_LIMIT = 0.5
 
 #------------------------------------------------------------------------------ 
