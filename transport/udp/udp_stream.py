@@ -65,6 +65,7 @@ class UDPStream():
         self.rtt_acks_counter = 1.0
         self.resend_task = None
         self.resend_inactivity_counter = 0
+        self.limit_send_bytes_per_sec = 1 * 125000 # 1 Mbps limit ~ 122 KB/s 
         self.creation_time = time.time() 
         lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
@@ -177,12 +178,19 @@ class UDPStream():
     def send_blocks(self):
         if self.consumer:
             relative_time = time.time() - self.creation_time
+            current_rate = self.limit_send_bytes_per_sec
+            if relative_time > 0.0: 
+                current_rate = self.bytes_sent / relative_time
+            if current_rate > self.limit_send_bytes_per_sec:
+                return
+            resend_time_limit = 2 * BLOCKS_PER_ACK * self.rtt_avarage/self.rtt_acks_counter
+            new_blocks_counter = 0
             for block_id in self.output_blocks.keys():
                 piece, time_sent = self.output_blocks[block_id]
                 data_size = len(piece)
                 if time_sent >= 0:
-                    dt = relative_time - time_sent 
-                    if dt > (self.rtt_avarage/self.rtt_acks_counter) * 32.0:
+                    dt = relative_time - time_sent
+                    if dt > resend_time_limit:
                         self.resend_bytes += data_size
                         # print 're -'s,
                     else:
@@ -203,7 +211,9 @@ class UDPStream():
                     # self.producer.do_send_data(self.stream_id, self.consumer, output)
                 self.producer.do_send_data(self.stream_id, self.consumer, output)
                 self.bytes_sent += data_size
-                # print 'send block', block_id, self.bytes_sent, self.bytes_acked, self.resend_bytes
+                new_blocks_counter += 1
+            if new_blocks_counter > 0:
+                print 'send blocks', new_blocks_counter, len(self.output_blocks.keys()), self.bytes_sent, self.bytes_acked, self.resend_bytes
 
     def send_ack(self):
         if self.consumer:
