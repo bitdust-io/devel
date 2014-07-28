@@ -149,9 +149,7 @@ class UDPStream():
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if len(acks) > 0:
-                print 'ack', len(acks), 'blocks,     more:', len(self.output_blocks.keys()), 
-                print 'rtt:', self.rtt_avarage/self.rtt_acks_counter, 'eof:', eof, 
-                print 'acked:', self.bytes_acked, 'sent:', self.bytes_sent, 'resend:', self.resend_bytes 
+                print 'ack blocks:(%d|%d)' % (len(acks), len(self.output_blocks.keys())) 
                 self.resend()
                 return
             print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
@@ -222,7 +220,7 @@ class UDPStream():
             if new_blocks_counter > 0:
                 print 'send blocks:(%d|%d|%d)' % (new_blocks_counter, len(self.output_blocks.keys()), self.output_blocks_counter), 
                 print 'bytes:(%d|%d|%d)' % (self.bytes_acked, self.bytes_sent, self.resend_bytes),  
-                print 'time:(%r|%r)' % (rtt_current, relative_time),
+                print 'time:(%s|%s)' % (str(rtt_current)[:8], str(relative_time)[:8]),
                 print 'rate:(%r)' % current_rate
 
     def send_ack(self):
