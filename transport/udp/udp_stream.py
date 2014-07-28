@@ -59,6 +59,8 @@ class UDPStream():
         self.input_block_id = 0
         self.input_blocks_counter = 0
         self.input_acks_counter = 0
+        self.input_duplicated_blocks = 0
+        self.input_duplicated_bytes = 0
         self.blocks_to_ack = set()
         self.bytes_in = 0
         self.bytes_in_acks = 0
@@ -79,9 +81,10 @@ class UDPStream():
         lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-        lg.out(18, 'udp_stream.close %d in:(%d|%d-%d|%d) out:(%d|%d|%d)' % (self.stream_id, 
+        lg.out(18, 'udp_stream.close %d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d' % (self.stream_id, 
             self.input_blocks_counter, self.bytes_in,
             self.output_acks_counter, self.bytes_in_acks,
+            self.input_duplicated_blocks, self.input_duplicated_bytes,
             self.output_blocks_counter, self.bytes_acked, self.resend_bytes,))
         self.stop_resending()
         self.consumer.stream = None
@@ -99,6 +102,8 @@ class UDPStream():
             block_id = struct.unpack('i', inpt.read(4))[0]
             data = inpt.read()
             if block_id in self.input_blocks.keys():
+                self.input_duplicated_blocks += 1
+                self.input_duplicated_bytes += len(data)
                 print 'duplicated', block_id
             self.input_blocks[block_id] = data
             self.input_blocks_counter += 1
@@ -283,10 +288,10 @@ class UDPStream():
                 current_rate_in = self.bytes_in / relative_time
                 current_rate_out = self.bytes_sent / relative_time
             print 'resend (%d:%d)' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
-            print 'rtt=%r, next=%r, iterations=%d' % (rtt_current, next_resend, self.resend_counter),
             print 'in:(%d|%d|%d)' % (self.input_blocks_counter, self.bytes_in, self.bytes_in_acks),
             print 'out:(%d|%d|%d)' % (self.output_blocks_counter, self.bytes_acked, self.resend_bytes),
             print 'rate:(%d|%d)' % (int(current_rate_in), int(current_rate_out))  
+            print 'rtt=%r, loops=%d' % (round(rtt_current, 7), self.resend_counter),
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return
