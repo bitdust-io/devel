@@ -19,6 +19,8 @@ EVENTS:
     * :red:`space-overflow`
 """
 
+import os
+
 from logs import lg
 
 from lib import automat
@@ -104,7 +106,10 @@ class CustomersRejector(automat.Automat):
         removed_customers = []
         spent_bytes = 0
         donated_bytes = settings.getDonatedBytes()
-        space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
+        if os.path.isfile(settings.CustomersSpaceFile()):
+            space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
+        else:
+            space_dict = {'free': donated_bytes}
         used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
         lg.out(8, 'customers_rejector.doTestMyCapacity donated=%d' % donated_bytes)
         try: 
