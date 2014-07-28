@@ -98,6 +98,8 @@ class UDPStream():
         if self.consumer:
             block_id = struct.unpack('i', inpt.read(4))[0]
             data = inpt.read()
+            if block_id in self.input_blocks.keys():
+                print 'duplicated', block_id
             self.input_blocks[block_id] = data
             self.input_blocks_counter += 1
             self.bytes_in += len(data)
@@ -255,10 +257,10 @@ class UDPStream():
         return ack_len > 0
 
     def resend(self):
-        self.resend_counter += 1
         if not self.consumer:
             print 'stop resending, consumer is None'
             return
+        self.resend_counter += 1
         rtt_current = self.rtt_avarage / self.rtt_acks_counter
         rtt_current = max(min(rtt_current, RTT_MAX_LIMIT), RTT_MIN_LIMIT)
         activity = False
@@ -273,7 +275,7 @@ class UDPStream():
         else:
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 1.0
-        if self.resend_counter % 100 == 0:
+        if self.resend_counter % 50 == 0:
             print 'resend out:%d acks:%d' % (len(self.output_blocks.keys()), len(self.blocks_to_ack)),
             print 'rtt=%r, next=%r, iterations=%d' % (rtt_current, next_resend, self.resend_counter)
         if self.resend_task is None:
