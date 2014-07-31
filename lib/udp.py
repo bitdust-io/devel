@@ -253,7 +253,7 @@ class CommandsProtocol(BasicProtocol):
             inp.close()
             lg.out(18, 'udp.datagramReceived WARNING - different software version: %s' % version)
             return
-        self.bytes_in += datagramsz
+        # self.bytes_in += datagramsz
         handled = False
         try:
             if self.command_filter_callback:
@@ -264,6 +264,7 @@ class CommandsProtocol(BasicProtocol):
             payload = inp.read()
             self.run_callbacks((command, payload), address)
         inp.close()
+        self.bytes_in += datagramsz
         lg.out(18, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
             command, datagramsz, str(address), self.bytes_in))
         
