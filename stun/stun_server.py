@@ -120,6 +120,7 @@ class StunServer(automat.Automat):
         """
         """
         self.automat('datagram-received', (datagram, address))
+        return False
         
 
 def main():

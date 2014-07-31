@@ -22,6 +22,7 @@ EVENTS:
 """
 
 import time
+import struct
 
 from twisted.internet import reactor
 
@@ -40,6 +41,7 @@ from dht import dht_service
 import udp_connector
 import udp_session
 import udp_interface
+import udp_stream
 
 #------------------------------------------------------------------------------ 
 
@@ -232,8 +234,9 @@ class UDPNode(automat.Automat):
         self.my_idurl = options['idurl']
         self.listen_port = int(options['udp_port']) 
         self.my_id = udp_interface.idurl_to_id(self.my_idurl)
-        udp.proto(self.listen_port).add_callback(self._datagram_received)
+        # udp.proto(self.listen_port).insert_callback(0, self._datagram_received)
         # udp.add_datagram_receiver_callback(self._datagram_received)
+        udp.proto(self.listen_port).set_command_filter_callback(self._datagram_received)
         udp_session.process_sessions()
 
     def doStartStunClient(self, arg):
@@ -353,18 +356,43 @@ class UDPNode(automat.Automat):
         """
         udp_interface.interface_receiving_failed('state is %s' % self.state)
 
-    def _datagram_received(self, datagram, address):
+    def _datagram_received(self, command, inp, address):
         """
         """
-        try:
-            command, payload = datagram
-        except:
-            return
+        if command == udp.CMD_DATA:
+            try:
+                stream_id = struct.unpack('i', inp.read(4))[0]
+                data_size = struct.unpack('i', inp.read(4))[0]
+            except:
+                lg.exc()
+                return True
+            stream = udp_stream.streams().get(stream_id, None)
+            if stream:
+                stream.block_received(inp)
+                return True
+            else:
+                payload = ''.join((stream_id, data_size, inp.read()))
+        elif command == udp.CMD_ACK:
+            try:
+                stream_id = struct.unpack('i', inp.read(4))[0]
+            except:
+                lg.exc()
+                return True
+            stream = udp_stream.streams().get(stream_id, None)
+            if stream:
+                stream.ack_received(inp)
+                return True
+            else:
+                payload = ''.join((stream_id, inp.read()))
+        else:
+            payload = inp.read()
+        datagram = (command, payload)
         # lg.out(18, '>>> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
         s = udp_session.get(address)
         if s:
             s.automat('datagram-received', (datagram, address))
         self.automat('datagram-received', (datagram, address))
+        return False
         
     def _stun_finished(self, result, address=None):
         self.automat(result, address)

@@ -39,6 +39,16 @@ RTT_MAX_LIMIT = 0.5
 
 #------------------------------------------------------------------------------ 
 
+_Streams = {}
+
+#------------------------------------------------------------------------------ 
+
+def streams():
+    global _Streams
+    return _Streams
+
+#------------------------------------------------------------------------------ 
+
 class UDPStream():
     def __init__(self, stream_id, consumer, producer):
         self.stream_id = stream_id
@@ -74,18 +84,21 @@ class UDPStream():
         self.resend_inactivity_counter = 0
         self.resend_counter = 0
         self.limit_send_bytes_per_sec = 4 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
-        self.creation_time = time.time() 
+        self.creation_time = time.time()
+        streams()[self.stream_id] = self
         lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
     def __del__(self):
         lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-        lg.out(18, 'udp_stream.close %d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d' % (self.stream_id, 
+        lg.out(18, 'udp_stream.close %d|%d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d' % (
+            self.stream_id, len(streams()), 
             self.input_blocks_counter, self.bytes_in,
             self.output_acks_counter, self.bytes_in_acks,
             self.input_duplicated_blocks, self.input_duplicated_bytes,
             self.output_blocks_counter, self.bytes_acked, self.resend_bytes,))
+        streams().pop(self.stream_id)
         self.stop_resending()
         self.consumer.stream = None
         self.consumer = None

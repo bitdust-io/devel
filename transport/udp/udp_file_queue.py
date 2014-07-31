@@ -193,7 +193,7 @@ class FileQueue:
                 # print 'old ack', stream_id
                 pass
             else:
-                print 'ack what a stream ???', stream_id 
+                lg.out(8, 'udp_file_queue.on_received_ack_packet WARNING  %s - what a stream ???' % stream_id) 
             # self.session.automat('shutdown')
             return
         try:

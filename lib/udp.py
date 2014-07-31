@@ -9,6 +9,7 @@
 
 import sys
 import time
+import cStringIO
 
 from twisted.internet import reactor
 from twisted.internet import protocol
@@ -147,6 +148,9 @@ class BasicProtocol(protocol.DatagramProtocol):
         # lg.out(6, 'udp.BasicProtocol.__del__ %r' % id(self))
         # protocol.DatagramProtocol.__del__(self)
 
+    def insert_callback(self, index, cb):
+        self.callbacks.insert(index, cb)
+
     def add_callback(self, cb):
         self.callbacks.append(cb)
         
@@ -155,7 +159,8 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def run_callbacks(self, data, address):
         for cb in self.callbacks:
-            cb(data, address)
+            if cb(data, address):
+                break
 
     def datagramReceived(self, datagram, address):
         self.run_callbacks(datagram, address)
@@ -219,37 +224,64 @@ class CommandsProtocol(BasicProtocol):
     SoftwareVersion = '1'
     bytes_in = 0
     bytes_out = 0
+    command_filter_callback = None
     
+    def set_command_filter_callback(self, cb):
+        self.command_filter_callback = cb
+        
     def datagramReceived(self, datagram, address):
         global _LastDatagramReceivedTime
         _LastDatagramReceivedTime = time.time()
+        inp = cStringIO.StringIO()
         try:
-            version = datagram[0]
-            command = datagram[1]
-            payload = datagram[2:]
-            payloadsz = len(payload)
+            # version = datagram[0]
+            # command = datagram[1]
+            # payload = datagram[2:]
+            # payloadsz = len(payload)
+            datagramsz = len(datagram)
+            version = inp.read(1)
+            command = inp.read(1)
         except:
+            inp.close()
+            lg.exc()
             return
         if version != self.SoftwareVersion:
+            inp.close()
             return
-        self.bytes_in += payloadsz + 2
+        self.bytes_in += datagramsz
+        handled = False
+        try:
+            if self.command_filter_callback:
+                handled = self.command_filter_callback(command, inp, address)
+        except:
+            lg.exc()
+        if not handled:
+            payload = inp.read()
+            self.run_callbacks((command, payload), address)
+        inp.close()
         # lg.out(24, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
         #     command, payloadsz + 2, str(address), self.bytes_in))
-        self.run_callbacks((command, payload), address)
         
     def sendCommand(self, command, data, address):
         payloadsz = len(data)
-        datagram = ''.join((
-            self.SoftwareVersion,
-            command,
-            data))
-        result = self.sendDatagram(datagram, address)
+        outp = cStringIO.StringIO()
+        try:
+            outp.write(self.SoftwareVersion)
+            outp.write(command)
+            outp.write(data)
+            # datagram = ''.join((
+            #     self.SoftwareVersion,
+            #     command,
+            #     data))
+            result = self.sendDatagram(outp.getvalue(), address)
+        except:
+            outp.close()
+            return None
+        outp.close()
         self.bytes_out += payloadsz + 2
         # lg.out(24, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
         #     command, payloadsz + 2, address, self.bytes_out))
         return result
-            
-         
 
 #------------------------------------------------------------------------------ 
 

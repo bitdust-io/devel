@@ -285,7 +285,7 @@ class UDPSession(automat.Automat):
             self.file_queue.on_received_data_packet(payload)
         elif command == udp.CMD_ACK:
             self.file_queue.on_received_ack_packet(payload)
-        elif command == udp.CMD_GREETING:
+        if command == udp.CMD_GREETING:
             try:
                 new_peer_id, new_peer_idurl = payload.split(' ')
             except:

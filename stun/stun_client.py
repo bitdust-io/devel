@@ -174,6 +174,7 @@ class StunClient(automat.Automat):
         """
         """
         self.automat('datagram-received', (datagram, address))
+        return False
         
     def _found_nodes(self, nodes):
         # addresses = map(lambda x: x.address, nodes)
