@@ -232,7 +232,7 @@ class CommandsProtocol(BasicProtocol):
     def datagramReceived(self, datagram, address):
         global _LastDatagramReceivedTime
         _LastDatagramReceivedTime = time.time()
-        inp = cStringIO.StringIO()
+        inp = cStringIO.StringIO(datagram)
         try:
             # version = datagram[0]
             # command = datagram[1]
@@ -247,7 +247,7 @@ class CommandsProtocol(BasicProtocol):
             return
         if version != self.SoftwareVersion:
             inp.close()
-            lg.out(18, 'udp.datagramReceived WARNING - different software version')
+            lg.out(18, 'udp.datagramReceived WARNING - different software version: %s' % version)
             return
         self.bytes_in += datagramsz
         handled = False
