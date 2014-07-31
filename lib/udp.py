@@ -141,6 +141,8 @@ class BasicProtocol(protocol.DatagramProtocol):
         self.port = None
         self.callbacks = []
         self.stopping = False
+        self.bytes_in = 0
+        self.bytes_out = 0
     
     def __del__(self):
         """
@@ -163,6 +165,7 @@ class BasicProtocol(protocol.DatagramProtocol):
                 break
 
     def datagramReceived(self, datagram, address):
+        self.bytes_in += len(datagram)
         self.run_callbacks(datagram, address)
         
     def sendDatagram(self, datagram, address):
@@ -175,6 +178,7 @@ class BasicProtocol(protocol.DatagramProtocol):
         except:
             # lg.exc()
             return False
+        self.bytes_out += len(datagram)
         return True
         
     def startProtocol(self):
@@ -222,9 +226,9 @@ class CommandsProtocol(BasicProtocol):
     """
     
     SoftwareVersion = '1'
-    bytes_in = 0
-    bytes_out = 0
-    command_filter_callback = None
+    
+    def __init__(self):
+        self.command_filter_callback = None
     
     def set_command_filter_callback(self, cb):
         self.command_filter_callback = cb

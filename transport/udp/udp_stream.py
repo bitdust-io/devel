@@ -47,6 +47,31 @@ def streams():
     global _Streams
     return _Streams
 
+def command_received(command, inp, address):
+    if command == udp.CMD_DATA:
+        try:
+            stream_id = struct.unpack('i', inp.read(4))[0]
+            data_size = struct.unpack('i', inp.read(4))[0]
+        except:
+            lg.exc()
+            return True
+        stream = streams().get(stream_id, None)
+        if stream:
+            stream.block_received(inp)
+            return True
+    elif command == udp.CMD_ACK:
+        try:
+            stream_id = struct.unpack('i', inp.read(4))[0]
+        except:
+            lg.exc()
+            return True
+        stream = streams().get(stream_id, None)
+        if stream:
+            stream.ack_received(inp)
+            return True
+    print 'not handled'
+    return False
+
 #------------------------------------------------------------------------------ 
 
 class UDPStream():
