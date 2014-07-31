@@ -174,7 +174,7 @@ class StunClient(automat.Automat):
     def _datagram_received(self, datagram, address):
         """
         """
-        lg.out(10, 'stun_client._datagram_received')
+        lg.out(10, 'stun_client._datagram_received %r' % datagram)
         self.automat('datagram-received', (datagram, address))
         return False
         

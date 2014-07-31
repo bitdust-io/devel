@@ -40,12 +40,19 @@ RTT_MAX_LIMIT = 0.5
 #------------------------------------------------------------------------------ 
 
 _Streams = {}
+_DeadStreams = set()
 
 #------------------------------------------------------------------------------ 
 
 def streams():
     global _Streams
     return _Streams
+
+
+def dead_streams():
+    global _DeadStreams
+    return _DeadStreams
+
 
 def command_received(command, inp, address):
     if command == udp.CMD_DATA:
