@@ -38,9 +38,7 @@ MAX_PROCESS_SESSIONS_DELAY = 1.0
 
 _SessionsDict = {}
 _SessionsDictByPeerAddress = {}
-# _SessionsDictByPeerAddress.setdefault([])
 _SessionsDictByPeerID = {}
-# _SessionsDictByPeerID.setdefault([])
 _KnownPeersDict = {}
 _KnownUserIDsDict = {}
 _PendingOutboxFiles = []
@@ -69,11 +67,17 @@ def sessions_by_peer_id():
 def create(node, peer_address, peer_id=None):
     """
     """
-    lg.out(10, 'udp_session.create  peer_address=%s' % str(peer_address))
+    lg.out(10, 'udp_session.create peer_address=%s' % str(peer_address))
     s = UDPSession(node, peer_address, peer_id)
     sessions()[s.id] = s
-    sessions_by_peer_address()[peer_address].append(s)
-    sessions_by_peer_id()[peer_id].append(s)
+    try:
+        sessions_by_peer_address()[peer_address].append(s)
+    except:
+        sessions_by_peer_address()[peer_address] = [s,]
+    try:
+        sessions_by_peer_id()[peer_id].append(s)
+    except:
+        sessions_by_peer_id()[peer_id] = [s,]
     return s
 
 
@@ -138,6 +142,7 @@ def process_sessions():
         # attenuation
         _ProcessSessionsTask = reactor.callLater(_ProcessSessionsDelay, 
                                                  process_sessions)        
+
 
 def stop_process_sessions(self):
     global _ProcessSessionsTask
