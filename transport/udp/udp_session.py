@@ -38,9 +38,9 @@ MAX_PROCESS_SESSIONS_DELAY = 1.0
 
 _SessionsDict = {}
 _SessionsDictByPeerAddress = {}
-_SessionsDictByPeerAddress.setdefault([])
+# _SessionsDictByPeerAddress.setdefault([])
 _SessionsDictByPeerID = {}
-_SessionsDictByPeerID.setdefault([])
+# _SessionsDictByPeerID.setdefault([])
 _KnownPeersDict = {}
 _KnownUserIDsDict = {}
 _PendingOutboxFiles = []
@@ -156,8 +156,8 @@ class UDPSession(automat.Automat):
     fast = True
 
     timers = {
-        'timer-1min': (60, ['CONNECTED']),
-        'timer-1sec': (1.0, ['PING','GREETING']),
+        'timer-1min':  (60,   ['CONNECTED']),
+        'timer-1sec':  (1.0,  ['PING','GREETING']),
         'timer-30sec': (30.0, ['GREETING']),
         'timer-10sec': (10.0, ['PING','CONNECTED']),
         }
