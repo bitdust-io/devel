@@ -37,6 +37,10 @@ MAX_PROCESS_SESSIONS_DELAY = 1.0
 #------------------------------------------------------------------------------ 
 
 _SessionsDict = {}
+_SessionsDictByPeerAddress = {}
+_SessionsDictByPeerAddress.setdefault([])
+_SessionsDictByPeerID = {}
+_SessionsDictByPeerID.setdefault([])
 _KnownPeersDict = {}
 _KnownUserIDsDict = {}
 _PendingOutboxFiles = []
@@ -52,12 +56,24 @@ def sessions():
     return _SessionsDict
 
 
+def sessions_by_peer_address():
+    global _SessionsDictByPeerAddress
+    return _SessionsDictByPeerAddress
+
+
+def sessions_by_peer_id():
+    global _SessionsDictByPeerID
+    return _SessionsDictByPeerID
+
+
 def create(node, peer_address, peer_id=None):
     """
     """
     lg.out(10, 'udp_session.create  peer_address=%s' % str(peer_address))
     s = UDPSession(node, peer_address, peer_id)
     sessions()[s.id] = s
+    sessions_by_peer_address()[peer_address].append(s)
+    sessions_by_peer_id()[peer_id].append(s)
     return s
 
 
@@ -66,18 +82,22 @@ def get(peer_address):
     """
     # lg.out(18, 'udp_session.get %s %s' % (str(peer_address), 
     #     str(map(lambda s:s.peer_address, sessions().values()))))
-    for id, s in sessions().items():
-        if s.peer_address == peer_address:
-            return s 
+    for s in sessions_by_peer_address().get(peer_address, []):
+        return s
+    # for id, s in sessions().items():
+    #     if s.peer_address == peer_address:
+    #         return s 
     return None
 
 
 def get_by_peer_id(peer_id):
     """
     """
-    for id, s in sessions().items():
-        if s.peer_id == peer_id:
-            return s 
+    for s in sessions_by_peer_id().get(peer_id, []):
+        return s
+    # for id, s in sessions().items():
+    #     if s.peer_id == peer_id:
+    #         return s 
     return None
 
 
@@ -354,6 +374,12 @@ class UDPSession(automat.Automat):
         self.file_queue = None
         self.node = None
         sessions().pop(self.id)
+        sessions_by_peer_address()[self.peer_address].remove(self)
+        if len(sessions_by_peer_address()[self.peer_address]) == 0:
+            sessions_by_peer_address().pop(self.peer_address)
+        sessions_by_peer_id()[self.peer_id].remove(self)
+        if len(sessions_by_peer_id()[self.peer_id]) == 0:
+            sessions_by_peer_id()[self.peer_id].pop(self.peer_id)            
         automat.objects().pop(self.index)
 
 

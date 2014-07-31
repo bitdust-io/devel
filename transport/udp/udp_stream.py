@@ -9,6 +9,8 @@ from logs import lg
 
 from lib import udp
 
+import udp_session
+
 #------------------------------------------------------------------------------ 
 
 """
@@ -54,7 +56,7 @@ def dead_streams():
     return _DeadStreams
 
 
-def command_received(command, inp, address):
+def command_received(command, inp, datagram, address):
     if command == udp.CMD_DATA:
         try:
             stream_id = struct.unpack('i', inp.read(4))[0]
@@ -76,7 +78,12 @@ def command_received(command, inp, address):
         if stream:
             stream.ack_received(inp)
             return True
-    print 'not handled'
+    elif command in (udp.CMD_ALIVE, udp.CMD_GREETING, udp.CMD_PING,):
+        sess = udp_session.get(address)
+        if sess:
+            sess.automat('datagram-received', (datagram, address))
+            return True
+    print 'not handled', command, datagram[:14]
     return False
 
 #------------------------------------------------------------------------------ 

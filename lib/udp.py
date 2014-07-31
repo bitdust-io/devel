@@ -258,7 +258,7 @@ class CommandsProtocol(BasicProtocol):
         handled = False
         try:
             if self.command_filter_callback:
-                handled = self.command_filter_callback(command, inp, address)
+                handled = self.command_filter_callback(command, datagram, inp, address)
         except:
             lg.exc()
         if not handled:
