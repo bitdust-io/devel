@@ -132,6 +132,8 @@ class UDPSession(automat.Automat):
     """
     This class implements all the functionality of the ``udp_session()`` state machine.
     """
+    
+    fast = True
 
     timers = {
         'timer-1min': (60, ['CONNECTED']),
