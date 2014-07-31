@@ -67,6 +67,8 @@ class UDPNode(automat.Automat):
     This class implements all the functionality of the ``udp_node()`` state machine.
     """
 
+    fast = True
+
     timers = {
         'timer-10sec': (10.0, ['LISTEN']),
         }
