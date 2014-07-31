@@ -174,7 +174,7 @@ class StunClient(automat.Automat):
     def _datagram_received(self, datagram, address):
         """
         """
-        lg.out(10, 'stun_client._datagram_received %s' % str(datagram))
+        # lg.out(10, 'stun_client._datagram_received %s' % str(datagram))
         self.automat('datagram-received', (datagram, address))
         return False
         
@@ -202,3 +202,5 @@ class StunClient(automat.Automat):
             self.automat('found-one-peer', (node_ip_address, port))
         else:
             self.automat('peers-not-found')
+
+
