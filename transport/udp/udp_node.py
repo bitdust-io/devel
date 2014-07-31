@@ -303,7 +303,7 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
-        lg.out(18, 'doDHTReadMyIncomings')
+        # lg.out(18, 'doDHTReadMyIncomings')
         d = dht_service.get_value(self.my_id+':incomings')
         d.addCallback(self._got_my_incomings)
 
@@ -395,7 +395,7 @@ class UDPNode(automat.Automat):
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
     def _got_my_incomings(self, value):
-        lg.out(18, 'incomings: ' + str(value))
+        # lg.out(18, 'incomings: ' + str(value))
         if type(value) != dict:
             self.automat('dht-read-result', [])
             return
