@@ -229,6 +229,7 @@ class CommandsProtocol(BasicProtocol):
     
     def __init__(self):
         self.command_filter_callback = None
+        BasicProtocol.__init__(self)
     
     def set_command_filter_callback(self, cb):
         self.command_filter_callback = cb
