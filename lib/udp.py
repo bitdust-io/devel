@@ -247,6 +247,7 @@ class CommandsProtocol(BasicProtocol):
             return
         if version != self.SoftwareVersion:
             inp.close()
+            lg.out(18, 'udp.datagramReceived WARNING - different software version')
             return
         self.bytes_in += datagramsz
         handled = False
