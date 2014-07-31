@@ -50,7 +50,7 @@ def main():
             if not sess:
                 reconnect = True
                 print 'sessions', udp_session.sessions(),
-                print map(lambda s: s.peer_id, udp_session.sessions())
+                print map(lambda s: s.peer_id, udp_session.sessions().values())
             else:
                 if sess.state != 'CONNECTED':
                     print 'state: ', sess.state
