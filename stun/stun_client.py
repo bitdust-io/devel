@@ -130,6 +130,7 @@ class StunClient(automat.Automat):
             ip, port = payload.split(':')
             port = int(port)
         except:
+            lg.exc()
             return False
         oldip = bpio._read_data(settings.ExternalIPFilename()).strip()
         bpio._write_data(settings.ExternalIPFilename(), ip)
