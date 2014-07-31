@@ -56,7 +56,7 @@ def dead_streams():
     return _DeadStreams
 
 
-def command_received(command, inp, datagram, address):
+def command_received(command, datagram, inp, address):
     if command == udp.CMD_DATA:
         try:
             stream_id = struct.unpack('i', inp.read(4))[0]
@@ -83,7 +83,7 @@ def command_received(command, inp, datagram, address):
         if sess:
             sess.automat('datagram-received', (datagram, address))
             return True
-    print 'not handled', command, datagram[:14]
+    print 'not handled', command
     return False
 
 #------------------------------------------------------------------------------ 
