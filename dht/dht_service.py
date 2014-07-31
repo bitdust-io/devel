@@ -165,7 +165,7 @@ def random_key():
 
 
 def set_node_data(key, value):
-    lg.out(18, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
+    # lg.out(18, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
     node().data[key] = value    
   
 #------------------------------------------------------------------------------ 
@@ -177,16 +177,16 @@ class DHTNode(DistributedTupleSpacePeer):
         
     @rpcmethod
     def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
-        lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-            base64.b32encode(key), str(value)[:10]))
+        # lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+        #     base64.b32encode(key), str(value)[:10]))
         return DistributedTupleSpacePeer.store(self, key, value, 
             originalPublisherID=originalPublisherID, age=age, **kwargs)
 
     @rpcmethod
     def request(self, key):
         value = str(self.data.get(key, None))
-        lg.out(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
-            base64.b32encode(key), str(value)[:10]))
+        # lg.out(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
+        #     base64.b32encode(key), str(value)[:10]))
         return {str(key): value}
 
     def reconnect(self, knownNodeAddresses=None):
