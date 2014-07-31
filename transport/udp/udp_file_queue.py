@@ -352,6 +352,7 @@ class OutboxFile():
             os.path.basename(self.filename), self.stream_id, self.fileobj))
 
     def close(self):
+        lg.out(6, 'udp_file_queue.OutboxFile.close')
         if self.fileobj:
             self.close_file()
         self.queue = None
