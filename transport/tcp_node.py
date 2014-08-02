@@ -303,11 +303,12 @@ class TCPFactory(protocol.ClientFactory):
             if result_defer:
                 result_defer.callback((filename, description, 'failed', 'connection failed'))
         self.pendingoutboxfiles = []
-        lg.out(18, 'tcp_node.clientConnectionFailed from %s  :   %s closed, %d more started' % (
-            str(destaddress), self, len(started_connections())))
+        # lg.out(18, 'tcp_node.clientConnectionFailed from %s  :   %s closed, %d more started' % (
+        #     str(destaddress), self, len(started_connections())))
         
     def add_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.pendingoutboxfiles.append((filename, description, result_defer, single))
+        tcp_stream.process_streams()
         
 #------------------------------------------------------------------------------ 
 

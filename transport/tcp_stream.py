@@ -260,7 +260,7 @@ class TCPFileStream():
         # else:
         #     lg.out(6, 'tcp_stream.outbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
         if outfile.single:
-            lg.out(18, 'tcp_stream.outbox_file_done close single connection %s' % str(self.connection))
+            # lg.out(18, 'tcp_stream.outbox_file_done close single connection %s' % str(self.connection))
             self.connection.automat('disconnect') 
         del outfile
 
