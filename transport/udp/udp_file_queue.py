@@ -135,12 +135,12 @@ class FileQueue:
         del self.inboxFiles[stream_id]   
 
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
-        lg.out(18, 'udp_file_queue.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
+        # lg.out(18, 'udp_file_queue.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         udp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
-        lg.out(18, 'udp_file_queue.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
+        # lg.out(18, 'udp_file_queue.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         udp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
 
@@ -362,15 +362,17 @@ class OutboxFile():
         self.started = time.time()
         self.timeout = max( int(self.size/settings.SendingSpeedLimit()), 5)
         self.fileobj = open(self.filename, 'rb')
-        lg.out(6, 'udp_file_queue.OutboxFile {%s} [%d] to %s' % (
-            os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
+        # lg.out(6, 'udp_file_queue.OutboxFile {%s} [%d] to %s' % (
+        #     os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
 
     def __del__(self):
-        lg.out(6, 'udp_file_queue.OutboxFile.__del__ {%s} [%d] file:%r' % (
-            os.path.basename(self.filename), self.stream_id, self.fileobj))
+        """
+        """
+        # lg.out(6, 'udp_file_queue.OutboxFile.__del__ {%s} [%d] file:%r' % (
+        #     os.path.basename(self.filename), self.stream_id, self.fileobj))
 
     def close(self):
-        lg.out(6, 'udp_file_queue.OutboxFile.close')
+        # lg.out(6, 'udp_file_queue.OutboxFile.close')
         if self.fileobj:
             self.close_file()
         self.queue = None
