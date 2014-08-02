@@ -215,7 +215,7 @@ class TCPFileStream():
         del self.inboxFiles[file_id]   
         
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
-        # lg.out(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
+        lg.out(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         tcp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
