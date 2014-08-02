@@ -66,9 +66,11 @@ class FileQueue:
 
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.append((filename, description, result_defer, single))
+        print 'append_outbox_file'
         
     def insert_outbox_file(self, filename, description='', result_defer=None, single=False):
-        self.outboxQueue.insert(0, (filename, description, result_defer, single))    
+        self.outboxQueue.insert(0, (filename, description, result_defer, single))
+        print 'insert_outbox_file'    
         
     def process_outbox_queue(self):
         has_reads = False
