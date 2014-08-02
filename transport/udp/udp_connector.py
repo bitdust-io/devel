@@ -149,12 +149,13 @@ class DHTUDPConnector(automat.Automat):
         automat.objects().pop(self.index)
 
     def _got_peer_incomings(self, value):
+        lg.out(18, 'udp_connector._got_peer_incomings %r' % value)
         current_incomings = []
         if type(value) == dict:
             try:
                 current_incomings = value.values()[0].split('\n')
             except:
-                pass
+                lg.exc()
         new_incomings = []
         for incoming in current_incomings:
             try:
