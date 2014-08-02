@@ -42,6 +42,15 @@ class NetworkTransport(automat.Automat):
         self.interface = interface
         automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8)         
 
+    def call(self, method_name, *args):
+#        if self.state != 'LISTENING':
+#            return fail(Exception('%s can not accept calls right now' % self))
+        method = getattr(self.interface, method_name, None)
+        if method is None:
+            lg.out(2, 'network_transport.call ERROR method %s not found in ptoto s' % (method_name, self.proto))
+            return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
+        return method(*args)
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the state machine.
@@ -181,12 +190,3 @@ class NetworkTransport(automat.Automat):
         self.interface = None
         self.proto = None
 
-    def call(self, method_name, *args):
-#        if self.state != 'LISTENING':
-#            return fail(Exception('%s can not accept calls right now' % self))
-        method = getattr(self.interface, method_name, None)
-        if method is None:
-            lg.out(2, 'network_transport.call ERROR method %s not found in ptoto s' % (method_name, self.proto))
-            return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
-        return method(*args)
-        

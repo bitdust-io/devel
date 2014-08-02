@@ -121,6 +121,44 @@ def receive(options):
     return _Listener
 
 
+def connect_to(host):
+    """
+    """
+    if host in started_connections():
+        return False
+    for peeraddr, connections in opened_connections().items():
+        if peeraddr == host:
+            return True
+        for connection in connections:
+            if connection.getConnectionAddress():
+                if connection.getConnectionAddress() == host:
+                    return True
+    connection = TCPFactory(host)
+    connection.connector = reactor.connectTCP(host[0], host[1], connection)
+    started_connections()[host] = connection
+    return False
+    
+
+def disconnect_from(host):
+    """
+    """
+    ok = False
+    for peeraddr, connections in opened_connections().items():
+        alll = False
+        if peeraddr == host:
+            alll = True
+        for connection in connections:
+            if alll:
+                connection.automat('disconnect')
+                ok = True
+                continue
+            if connection.getConnectionAddress():
+                if connection.getConnectionAddress() == host:
+                    connection.automat('disconnect')
+                    return True
+    return ok
+    
+
 def disconnect():
     """
     """

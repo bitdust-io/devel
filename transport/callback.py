@@ -228,7 +228,6 @@ def run_queue_item_status_callbacks(pkt_out, status, error_message):
 def run_begin_file_sending_callbacks(outboxfile):
     """
     """
-    
 
 
 def run_finish_file_sending_callbacks(pkt_out, item, status, size, error_message):

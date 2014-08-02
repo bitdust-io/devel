@@ -85,10 +85,15 @@ class GateInterface():
         host = (host[0], int(host[1]))
         return tcp_node.send(filename, host, description, True)
     
-    def connect_to_host(self, host):
+    def connect_to(self, host):
         """
         """
-        return tcp_node.connect(host) 
+        return tcp_node.connect_to(host) 
+
+    def disconnect_from(self, host):
+        """
+        """
+        return tcp_node.disconnect_from(host) 
     
     def cancel_file_sending(self, transferID):
         """

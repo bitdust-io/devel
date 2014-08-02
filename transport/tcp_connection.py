@@ -380,11 +380,15 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             # so we check it here and skip not existed files
             if not os.path.isfile(filename):
                 self.failed_outbox_queue_item(filename, description, 'file not exist')
+                if single:
+                    self.automat('shutdown')
                 continue
             try:
                 filesize = os.path.getsize(filename)
             except:
                 self.failed_outbox_queue_item(filename, description, 'can not get file size')
+                if single:
+                    self.automat('shutdown')
                 continue
             self.stream.create_outbox_file(filename, filesize, description, result_defer, single)
         return has_reads

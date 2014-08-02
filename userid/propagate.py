@@ -52,6 +52,7 @@ from userid import known_servers
 from transport import gate
 from transport import stats
 from transport import packet_out
+from transport import callback
 
 from dht import dht_service
 
@@ -66,6 +67,7 @@ def init():
     Need to call that at start up to link with transport_control. 
     """
     lg.out(4, "propagate.init ")
+    # callback.add_finish_file_sending_callback(OnFileSent)
 
 
 def shutdown():
@@ -300,6 +302,11 @@ def HandleCustomersAck(ackpacket, info):
 
 def HandleAck(ackpacket, info):
     lg.out(16, "propagate.HandleAck %r %r" % (ackpacket, info))
+
+
+def OnFileSent(pkt_out, item, status, size, error_message):
+    """
+    """
 
 
 def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):

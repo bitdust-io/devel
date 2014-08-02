@@ -371,9 +371,13 @@ def send_work_item(proto, host, filename, description):
 
 #------------------------------------------------------------------------------ 
 
-def connect_to_peer(proto, remote_idurl):
-    return transport(proto).call('connect', remote_idurl)
+def connect_to(proto, host):
+    return transport(proto).call('connect_to', host)
     
+    
+def disconnect_from(proto, host):
+    return transport(proto).call('disconnect_from', host)
+
     
 def send_file(proto, host, filename, description=''):
     # print 'send_file', proto, host, filename, description
