@@ -41,49 +41,49 @@ RTT_MAX_LIMIT = 0.5
 
 #------------------------------------------------------------------------------ 
 
-_Streams = {}
-_DeadStreams = set()
+# _Streams = {}
+# _DeadStreams = set()
 
 #------------------------------------------------------------------------------ 
 
-def streams():
-    global _Streams
-    return _Streams
+# def streams():
+#     global _Streams
+#     return _Streams
 
 
-def dead_streams():
-    global _DeadStreams
-    return _DeadStreams
+# def dead_streams():
+#     global _DeadStreams
+#     return _DeadStreams
 
 
-def command_received(command, datagram, inp, address):
-    if command == udp.CMD_DATA:
-        try:
-            stream_id = struct.unpack('i', inp.read(4))[0]
-            data_size = struct.unpack('i', inp.read(4))[0]
-        except:
-            lg.exc()
-            return True
-        stream = streams().get(stream_id, None)
-        if stream:
-            stream.block_received(inp)
-            return True
-    elif command == udp.CMD_ACK:
-        try:
-            stream_id = struct.unpack('i', inp.read(4))[0]
-        except:
-            lg.exc()
-            return True
-        stream = streams().get(stream_id, None)
-        if stream:
-            stream.ack_received(inp)
-            return True
-    elif command in (udp.CMD_ALIVE, udp.CMD_GREETING, udp.CMD_PING,):
-        sess = udp_session.get(address)
-        if sess:
-            sess.automat('datagram-received', (datagram, address))
-            return True
-    return False
+#def command_received(command, datagram, inp, address):
+#    if command == udp.CMD_DATA:
+#        try:
+#            stream_id = struct.unpack('i', inp.read(4))[0]
+#            data_size = struct.unpack('i', inp.read(4))[0]
+#        except:
+#            lg.exc()
+#            return True
+#        stream = streams().get(stream_id, None)
+#        if stream:
+#            stream.block_received(inp)
+#            return True
+#    elif command == udp.CMD_ACK:
+#        try:
+#            stream_id = struct.unpack('i', inp.read(4))[0]
+#        except:
+#            lg.exc()
+#            return True
+#        stream = streams().get(stream_id, None)
+#        if stream:
+#            stream.ack_received(inp)
+#            return True
+#    elif command in (udp.CMD_ALIVE, udp.CMD_GREETING, udp.CMD_PING,):
+#        sess = udp_session.get(address)
+#        if sess:
+#            sess.automat('datagram-received', (datagram, address))
+#            return True
+#    return False
 
 #------------------------------------------------------------------------------ 
 
@@ -116,6 +116,8 @@ class UDPStream():
         self.bytes_acked = 0
         self.resend_bytes = 0
         self.last_ack_moment = 0
+        self.last_ack_received_time = 0
+        self.last_block_received_time = 0
         self.rtt_avarage = RTT_MIN_LIMIT
         self.rtt_acks_counter = 1.0
         self.resend_task = None
@@ -123,20 +125,20 @@ class UDPStream():
         self.resend_counter = 0
         self.limit_send_bytes_per_sec = 1 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
         self.creation_time = time.time()
-        streams()[self.stream_id] = self
+        # streams()[self.stream_id] = self
         lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
     def __del__(self):
         lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-        lg.out(18, 'udp_stream.close %d|%d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d' % (
-            self.stream_id, len(streams()), 
+        lg.out(18, 'udp_stream.close %d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d' % (
+            self.stream_id, # len(streams()), 
             self.input_blocks_counter, self.bytes_in,
             self.output_acks_counter, self.bytes_in_acks,
             self.input_duplicated_blocks, self.input_duplicated_bytes,
             self.output_blocks_counter, self.bytes_acked, self.resend_bytes,))
-        streams().pop(self.stream_id)
+        # streams().pop(self.stream_id)
         self.stop_resending()
         self.consumer.stream = None
         self.consumer = None
@@ -160,6 +162,7 @@ class UDPStream():
             self.input_blocks_counter += 1
             self.bytes_in += len(data)
             self.blocks_to_ack.add(block_id)
+            self.last_block_received_time = time.time() - self.creation_time
             eof_state = False
             # print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
             if block_id == self.input_block_id + 1:
@@ -216,6 +219,7 @@ class UDPStream():
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
             if acks > 0:
+                self.last_ack_received_time = time.time() - self.creation_time
                 self.input_acks_counter += 1
                 # print 'ack blocks:(%d|%d)' % (acks, len(self.output_blocks.keys())) 
                 self.resend()
@@ -322,11 +326,16 @@ class UDPStream():
         rtt_current = self.rtt_avarage / self.rtt_acks_counter
         rtt_current = max(min(rtt_current, RTT_MAX_LIMIT), RTT_MIN_LIMIT)
         activity = False
+        relative_time = time.time() - self.creation_time
         if len(self.blocks_to_ack) > 0:
             if time.time() - self.last_ack_moment > rtt_current:
                 activity = activity or self.send_ack()
+            if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2.0:
+                self.producer.on_timeout_receiving(self.stream_id)
         if len(self.output_blocks):        
             activity = activity or self.send_blocks()
+            if relative_time - self.last_ack_received_time > RTT_MAX_LIMIT * 4.0:
+                self.producer.on_timeout_sending(self.stream_id)
         if activity:
             # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0.0
@@ -336,7 +345,6 @@ class UDPStream():
         if self.resend_counter % 10 == 0:
             current_rate_in = 0.0
             current_rate_out = 0.0
-            relative_time = time.time() - self.creation_time
             if relative_time > 0.0: 
                 current_rate_in = self.bytes_in / relative_time
                 current_rate_out = self.bytes_sent / relative_time

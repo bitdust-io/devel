@@ -226,7 +226,7 @@ class FileQueue:
         if outfile.registration:
             return
         if outfile.transfer_id:
-            self.report_outbox_file(outfile.transfer_id, 'finished', outfile.size)
+            self.report_outbox_file(outfile.transfer_id, 'finished', outfile.bytes_sent)
         self.close_stream(stream_id)
         self.close_outbox_file(stream_id)
            
@@ -260,9 +260,15 @@ class FileQueue:
         self.outboxFiles[stream_id].registration = None
         if self.outboxFiles[stream_id].is_done():
             outfile = self.outboxFiles[stream_id]
-            self.report_outbox_file(outfile.transfer_id, 'finished', outfile.size)
+            self.report_outbox_file(outfile.transfer_id, 'finished', outfile.bytes_delivered)
             self.close_stream(stream_id)
             self.close_outbox_file(stream_id)
+        if self.outboxFiles[stream_id].is_cancelled():
+            outfile = self.outboxFiles[stream_id]
+            self.report_outbox_file(outfile.transfer_id, 'failed', outfile.bytes_delivered, 'cancelled')
+            self.close_stream(stream_id)
+            self.close_outbox_file(stream_id)
+            
 
     def on_outbox_file_register_failed(self, err, stream_id):
         lg.out(2, 'udp_file_queue.on_outbox_file_register_failed ERROR failed to register, stream_id=%s :\n%s' % (str(stream_id), str(err)))
@@ -276,9 +282,23 @@ class FileQueue:
                 self.session.peer_id, filename, 0, description, error_message)
         if result_defer:
             result_defer.callback(((filename, description), 'failed', error_message))
-        
-            
-     
+
+    def on_timeout_sending(self, stream_id):
+        lg.out(18, 'udp_file_queue.on_timeout_sending stream_id=%s ' % stream_id)
+        outfile = self.outboxFiles[stream_id]
+        if outfile.transfer_id:
+            self.report_outbox_file(outfile.transfer_id, 'failed', outfile.bytes_sent, 'timeout')
+        self.close_stream(stream_id)
+        self.close_outbox_file(stream_id)
+
+    def on_timeout_receiving(self, stream_id):
+        lg.out(18, 'udp_file_queue.on_timeout_receiving stream_id=%s ' % stream_id)
+        infile = self.inboxFiles[stream_id]
+        if infile.transfer_id:
+            self.report_inbox_file(infile.transfer_id, 'failed', infile.bytes_received, 'timeout')
+        self.close_stream(stream_id)
+        self.close_inbox_file(stream_id)
+
 #------------------------------------------------------------------------------ 
 
 class InboxFile():
@@ -320,9 +340,7 @@ class InboxFile():
             return True
         return False
 
-
 #------------------------------------------------------------------------------ 
-
 
 class OutboxFile():
     def __init__(self, queue, stream_id, filename, size, description='', 
@@ -366,10 +384,17 @@ class OutboxFile():
         self.fileobj = None
 
     def is_done(self):
-        return self.size == self.bytes_delivered and self.eof
+        return self.eof and self.size == self.bytes_delivered
+    
+    def is_cancelled(self):
+        return self.eof and self.size != self.bytes_delivered
     
     def count_size(self, more_bytes_delivered):
         self.bytes_delivered += more_bytes_delivered
+    
+    def cancel(self):
+        self.eof = True
+        self.close_file()
     
     def process(self):
         if self.eof:
@@ -379,7 +404,7 @@ class OutboxFile():
             if not self.buffer:
                 self.buffer = self.fileobj.read(udp_stream.BUFFER_SIZE)
                 if not self.buffer:
-                    print 'EOF!!!', self.filename
+                    # print 'EOF!!!', self.filename
                     self.eof = True
                     self.close_file()
                     break
@@ -401,152 +426,12 @@ class OutboxFile():
         return False
     
     def on_zero_ack(self, bytes_left):
-        print 'on_zero_ack', bytes_left, self.size, self.bytes_delivered,
+        # print 'on_zero_ack', bytes_left, self.size, self.bytes_delivered,
         self.count_size(bytes_left)
         if self.is_done():
-            status = 'finished'
+            self.queue.on_outbox_file_done(self, 'finished')
         else:
-            status = 'interrupted'
-        print status
-        self.queue.on_outbox_file_done(self, status)
+            self.queue.on_outbox_file_done(self, 'failed', 'transfer interrupted')
+        # print status
         return True
-
-
-
-
-
-
-
-
-
-#    def erase_old_stream_ids(self):
-#        if len(self.receivedFiles) > 10:
-#            stream_ids = self.receivedFiles.keys()
-#            cur_tm = time.time()
-#            for stream_id in stream_ids:
-#                if cur_tm - self.receivedFiles[stream_id] > 60 * 20:
-#                    del self.receivedFiles[stream_id]
-#            del stream_ids 
-
-#    def timeout_incoming_files(self):
-#        for stream_id in self.inboxFiles.keys():
-#            if self.inboxFiles[stream_id].is_timed_out():
-#                lg.out(6, 'udp_file_queue.data_received WARNING inbox file is timed out, close session %s' % str(self.session))
-#                self.session.automat('shutdown')
-#                return True
-#        return False
-
-
-
-#------------------------------------------------------------------------------ 
-
-
-
-
-#    def close(self):
-#        try:
-#            if self.bytes_received > 0 and self.bytes_extra > self.bytes_received * 0.1:
-#                lg.out(10, 'udp_file_queue.InboxFile.close WARNING %s%% garbage traffic from %s' % (
-#                    str(self.bytes_extra/float(self.bytes_received)), self.stream.session.peer_address))
-#        except:
-#            lg.exc()
-#        try:
-#            os.close(self.fd)
-#        except:
-#            lg.exc()
-#
-#    def get_bytes_received(self):
-#        return self.bytes_received
-#
-#    def input_block(self, block_id, block_data):
-#        if block_id not in self.blocks:
-#            self.blocks[block_id] = block_data
-#            self.bytes_received += len(block_data)
-#        else:
-#            self.bytes_extra += len(block_data)
-#        self.last_block_time = time.time()
-#        self.block_timeout = max( int(len(block_data)/settings.SendingSpeedLimit()), 3) 
-#    
-#    def build(self):
-#        for block_id in xrange(len(self.blocks)):
-#            os.write(self.fd, self.blocks[block_id])
-#        # os.close(self.fd)
-#        # lg.out(10, 'transport_udp_server.InboxFile.build [%s] stream_id=%d, blocks=%d' % (
-#        #     os.path.basename(self.filename), self.stream_id, self.num_blocks))
-#
-#    def is_done(self):
-#        return len(self.blocks) == self.num_blocks
-#
-#    def is_timed_out(self):
-#        if self.block_timeout == 0:
-#            return False
-#        return time.time() - self.last_block_time > self.block_timeout
-
-  
-
-#    def close(self):
-#        pass
-#
-#    def cancel(self):
-#        lg.out(6, 'udp_file_queue.OutboxFile.cancel timeout=%d' % self.timeout)
-#        self.timeout = 0
-#
-#    def get_bytes_sent(self):
-#        return self.bytes_sent 
-#
-#    def report_block(self, block_id):
-#        if not self.blocks.has_key(block_id):
-#            lg.out(10, 'udp_file_queue.report_block WARNING unknown block_id from %s: [%d]' % (str(self.stream.session.peer_address), block_id))
-#            return
-#        self.bytes_sent += len(self.blocks[block_id])
-#        del self.blocks[block_id]
-#        # sys.stdout.write('%d <<<\n' % block_id)
-#
-#    def check_blocks_timeouts(self):
-#        if self.blocks_counter < 10:
-#            return 0
-#        ratio = float(self.blocks_timeouts) / float(self.blocks_counter)
-#        self.blocks_counter = 0
-#        self.blocks_timeouts = 0
-#        return ratio
-#        
-#    def send_block(self, block_id):
-#        # global _SendControlFunc
-#        if not self.blocks.has_key(block_id):
-#            lg.out(8, 'udp_file_queue.send_block WARNING block_id=%d not found, stream_id=%s, transfer_id=%s, blocks: %d' % (
-#                block_id, self.stream_id, str(self.transfer_id), len(self.blocks) ))
-#            return False
-#        data = self.blocks[block_id]
-#        # if _SendControlFunc is not None:
-#        #     more_bytes = _SendControlFunc(self.stream.last_bytes_sent, len(data))
-#        #     if more_bytes < len(data):
-#        #         return False
-#        self.stream.last_bytes_sent = len(data)
-#        datagram = ''
-#        datagram += struct.pack('i', self.stream_id)
-#        datagram += struct.pack('i', block_id)
-#        datagram += struct.pack('i', self.num_blocks)
-#        datagram += struct.pack('i', len(data))
-#        datagram += data
-#        self.bytes_out += len(data)
-#        return self.stream.send_data(udp.CMD_DATA, datagram)
-#
-#    def read_blocks(self):
-#        fin = open(self.filename, 'rb')
-#        block_id = 0
-#        while True:
-#            block_data = fin.read(BLOCK_SIZE)
-#            if block_data == '':
-#                break
-#            self.blocks[block_id] = block_data
-#            block_id += 1  
-#        fin.close()
-#        self.num_blocks = block_id
-#        self.block_id = 0     
-#    
-#    def is_done(self):  
-#        return len(self.blocks) == 0
-#      
-#    def is_timed_out(self):
-#        return time.time() - self.started > self.timeout
 

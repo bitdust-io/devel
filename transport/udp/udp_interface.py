@@ -145,7 +145,6 @@ class GateInterface():
     def cancel_file_receiving(self, transferID):
         """
         """
-        return False
         for sess in udp_session.sessions().values():
             for in_file in sess.file_queue.inboxFiles.values():
                 if in_file.transfer_id and in_file.transfer_id == transferID:
