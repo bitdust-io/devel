@@ -264,12 +264,11 @@ class FileQueue:
             self.report_outbox_file(outfile.transfer_id, 'finished', outfile.bytes_delivered)
             self.close_stream(stream_id)
             self.close_outbox_file(stream_id)
-        if self.outboxFiles[stream_id].is_cancelled():
+        elif self.outboxFiles[stream_id].is_cancelled():
             outfile = self.outboxFiles[stream_id]
             self.report_outbox_file(outfile.transfer_id, 'failed', outfile.bytes_delivered, 'cancelled')
             self.close_stream(stream_id)
             self.close_outbox_file(stream_id)
-            
 
     def on_outbox_file_register_failed(self, err, stream_id):
         lg.out(2, 'udp_file_queue.on_outbox_file_register_failed ERROR failed to register, stream_id=%s :\n%s' % (str(stream_id), str(err)))

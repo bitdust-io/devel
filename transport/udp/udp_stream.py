@@ -226,7 +226,7 @@ class UDPStream():
                 # print 'ack blocks:(%d|%d)' % (acks, len(self.output_blocks.keys())) 
                 self.resend()
                 return
-            print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
+            # print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
             self.stop_resending()
             sum_not_acked_blocks = sum(map(lambda block: len(block[0]), 
                                            self.output_blocks.values()))
