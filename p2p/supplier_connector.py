@@ -263,7 +263,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        lg.out(14, 'supplier_connector.doReportConnect')
+        # lg.out(14, 'supplier_connector.doReportConnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'CONNECTED')
 
@@ -271,7 +271,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        lg.out(14, 'supplier_connector.doReportNoService')
+        # lg.out(14, 'supplier_connector.doReportNoService')
         for cb in self.callbacks.values():
             cb(self.idurl, 'NO_SERVICE')
 
@@ -279,12 +279,12 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        lg.out(14, 'supplier_connector.doReportDisconnect')
+        # lg.out(14, 'supplier_connector.doReportDisconnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'DISCONNECTED')
 
     def _supplier_acked(self, response, info):
-        lg.out(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
+        # lg.out(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
 
 
