@@ -37,6 +37,7 @@ def init(success_func=None, fail_func=None):
     Call to initialize identitydb and cache several important IDs.
     """
     lg.out(4, 'identitycache.init')
+    identitydb.clear()
     identitydb.init()
     if success_func:
         success_func('')

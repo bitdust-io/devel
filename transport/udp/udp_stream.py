@@ -344,7 +344,8 @@ class UDPStream():
         else:
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 2.0
-        if self.resend_counter % 10 == 0:
+        # DEBUG
+        if self.resend_counter % 2 == 0:
             current_rate_in = 0.0
             current_rate_out = 0.0
             if relative_time > 0.0: 
@@ -356,6 +357,7 @@ class UDPStream():
             print 'rate:(%d|%d)' % (int(current_rate_in), int(current_rate_out)),  
             print 'time:(%s|%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], 
                                           self.resend_counter, self.resend_inactivity_counter)
+        # DEBUG
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return

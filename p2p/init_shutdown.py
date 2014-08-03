@@ -366,7 +366,7 @@ def start_logs_rotate():
                 file_size = 0
             total_sz += file_size 
             # if the file is bigger than 10mb and we are not in testing mode - erase it
-            if file_size > 1024*1024*10 and bpio.DebugLevel < 8:
+            if file_size > 1024*1024*10 and not lg.is_debug(8):
                 if os.access(filepath, os.W_OK):
                     remove_list.append((filepath, 'big file'))
                     continue

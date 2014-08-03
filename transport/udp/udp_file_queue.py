@@ -63,14 +63,13 @@ class FileQueue:
             ack_data))
         return self.session.send_packet(udp.CMD_ACK, newoutput)
 
-
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.append((filename, description, result_defer, single))
-        print 'append_outbox_file'
+        udp_session.process_sessions()
         
     def insert_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.insert(0, (filename, description, result_defer, single))
-        print 'insert_outbox_file'    
+        udp_session.process_sessions()
         
     def process_outbox_queue(self):
         has_reads = False
@@ -137,12 +136,12 @@ class FileQueue:
         del self.inboxFiles[stream_id]   
 
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
-        # lg.out(18, 'udp_file_queue.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
+        lg.out(18, 'udp_file_queue.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         udp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
-        # lg.out(18, 'udp_file_queue.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
+        lg.out(18, 'udp_file_queue.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         udp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
 

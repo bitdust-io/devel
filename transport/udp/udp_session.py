@@ -133,18 +133,19 @@ def process_sessions():
         has_sends = s.file_queue.process_outbox_files()    
         if has_sends or has_outbox:
             has_activity = True
-    if has_activity:
-        _ProcessSessionsTask = reactor.callLater(0, process_sessions)        
-    else:
-        _ProcessSessionsDelay = misc.LoopAttenuation(
-            _ProcessSessionsDelay, has_activity, 
-            MIN_PROCESS_SESSIONS_DELAY, MAX_PROCESS_SESSIONS_DELAY,)
-        # attenuation
-        _ProcessSessionsTask = reactor.callLater(_ProcessSessionsDelay, 
-                                                 process_sessions)        
+    if _ProcessSessionsTask is None or _ProcessSessionsTask.called:
+        if has_activity:
+            _ProcessSessionsTask = reactor.callLater(0, process_sessions)        
+        else:
+            _ProcessSessionsDelay = misc.LoopAttenuation(
+                _ProcessSessionsDelay, has_activity, 
+                MIN_PROCESS_SESSIONS_DELAY, MAX_PROCESS_SESSIONS_DELAY,)
+            # attenuation
+            _ProcessSessionsTask = reactor.callLater(_ProcessSessionsDelay, 
+                                                     process_sessions)        
 
 
-def stop_process_sessions(self):
+def stop_process_sessions():
     global _ProcessSessionsTask
     if _ProcessSessionsTask:
         if _ProcessSessionsTask.active():
