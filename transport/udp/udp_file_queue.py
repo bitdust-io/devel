@@ -242,17 +242,15 @@ class FileQueue:
             transfer_id = int(response)
         except:
             transfer_id = None
-        infile = self.inboxFiles[stream_id]
-        print 'on_inbox_file_registered', stream_id, transfer_id, infile.filename 
-        infile.transfer_id = transfer_id
-        infile.registration = None
-        if infile.is_done():
-            self.report_inbox_file(infile, 'finished')
+        print 'on_inbox_file_registered', stream_id, transfer_id, self.inboxFiles[stream_id].filename 
+        self.inboxFiles[stream_id].transfer_id = transfer_id
+        self.inboxFiles[stream_id].registration = None
+        if self.inboxFiles[stream_id].is_done():
+            self.report_inbox_file(self.inboxFiles[stream_id], 'finished')
             self.close_stream(stream_id)
             self.close_inbox_file(stream_id)
             # self.receivedFiles[stream_id] = time.time()
             # self.erase_old_stream_ids()
-            del infile
             
     def on_inbox_file_register_failed(self, err, stream_id):
         lg.out(2, 'udp_file_queue.on_inbox_file_register_failed ERROR failed to register, stream_id=%s' % (str(stream_id)))
