@@ -96,7 +96,11 @@ def out(level, s, nl='\n'):
         out(2, '[%s]' % time.asctime())
 
 
-def exc(level=0, maxTBlevel=100, exc_info=None):
+def exc():
+    exception(0, 100, None)
+
+
+def exception(level, maxTBlevel, exc_info):
     """
     This is second most common method in the project.
     Print detailed info about last exception to the logs.

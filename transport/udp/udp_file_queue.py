@@ -141,10 +141,13 @@ class FileQueue:
             transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, infile, status, error_message=None):
-        lg.out(18, 'udp_file_queue.report_inbox_file {%s} %s %s %d' % (
-            os.path.basename(infile.filename), infile.transfer_id, status, infile.bytes_received))
-        udp_interface.interface_unregister_file_receiving(
-            infile.transfer_id, status, infile.bytes_received, error_message)
+        try:
+            lg.out(18, 'udp_file_queue.report_inbox_file {%s} %s %s %d' % (
+                os.path.basename(infile.filename), infile.transfer_id, status, infile.bytes_received))
+            udp_interface.interface_unregister_file_receiving(
+                infile.transfer_id, status, infile.bytes_received, error_message)
+        except:
+            lg.exc()
 
     #------------------------------------------------------------------------------ 
 
