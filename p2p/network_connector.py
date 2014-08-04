@@ -189,7 +189,8 @@ class NetworkConnector(Automat):
                 return True
         if time.time() - gate.last_inbox_time() < 60:
             return True
-        if 'receive' in gate.transport_states().values():
+        transport_states = map(lambda t: t.state, gate.transports().values())
+        if 'LISTENING' in transport_states:
             return True
         return False
     
