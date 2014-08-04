@@ -157,11 +157,19 @@ class GateInterface():
         """
         """
         for sess in udp_session.sessions().values():
-            for fn, descr, result_defer, single in sess.file_queue.outboxQueue:
+            i = 0
+            while i < len(sess.file_queue.outboxQueue):
+                fn, descr, result_defer, single = sess.file_queue.outboxQueue[i]
                 if fn == filename and sess.peer_id == host:
-                    lg.out(6, 'udp_interface.cancel_outbox_file    host=%s  want to close session' % host)
-                    sess.automat('shutdown')
+                    lg.out(6, 'udp_interface.cancel_outbox_file host=%s want to close session' % host)
+                    sess.file_queue.outboxQueue.pop(i)
                     return True
+                i += 1
+#        for fn, descr, result_defer, single in sess.file_queue.outboxQueue:
+#            if fn == filename and sess.peer_id == host:
+#                lg.out(6, 'udp_interface.cancel_outbox_file    host=%s  want to close session' % host)
+#                sess.automat('shutdown')
+#                return True
         return False
 
 #------------------------------------------------------------------------------ 
