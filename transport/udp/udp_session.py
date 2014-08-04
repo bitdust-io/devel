@@ -323,13 +323,13 @@ class UDPSession(automat.Automat):
                 if new_peer_id != self.peer_id:
                     lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
             else:
-                # lg.out(4, 'udp_session.doReceiveData got peer id (%s) for session %s from GREETING packet' % (new_peer_id, self))
+                lg.out(14, 'udp_session.doReceiveData detected peer id : %s for session %s from GREETING packet' % (new_peer_id, self.peer_address))
                 self.peer_id = new_peer_id
             if self.peer_idurl:
                 if new_peer_idurl != self.peer_idurl:
                     lg.warn('session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
             else:
-                # lg.out(4, 'udp_session.doReceiveData got peer idurl (%s) for session %s from GREETING packet' % (new_peer_id, self))
+                lg.out(14, 'udp_session.doReceiveData detected peer idurl : %s for session %s from GREETING packet' % (new_peer_idurl, self.peer_address))
                 self.peer_idurl = new_peer_idurl
             for s in sessions().values():
                 if self.id == s.id:

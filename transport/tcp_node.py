@@ -235,10 +235,11 @@ def cancel_file_sending(transferID):
     """
     for connections in opened_connections().values():
         for connection in connections:
-            for out_file in connection.stream.outboxFiles.values():
-                if out_file.transfer_id and out_file.transfer_id == transferID:
-                    out_file.cancel()
-                    return True
+            if connection.stream:
+                for out_file in connection.stream.outboxFiles.values():
+                    if out_file.transfer_id and out_file.transfer_id == transferID:
+                        out_file.cancel()
+                        return True
     lg.warn('%r not found' % transferID)
     return False
    
