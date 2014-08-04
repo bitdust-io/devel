@@ -256,8 +256,7 @@ class FileQueue:
             # self.erase_old_stream_ids()
             
     def on_inbox_file_register_failed(self, err, stream_id):
-        lg.out(2, 'udp_file_queue.on_inbox_file_register_failed ERROR failed to register, stream_id=%s' % (str(stream_id)))
-        lg.out(6, 'udp_file_queue.on_inbox_file_register_failed close session %s' % self.session)
+        lg.out(2, 'udp_file_queue.on_inbox_file_register_failed ERROR failed to register, stream_id=%s, err: %s' % (str(stream_id), err))
         self.session.automat('shutdown')
 
     def on_outbox_file_registered(self, response, stream_id):
