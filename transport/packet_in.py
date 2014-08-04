@@ -165,7 +165,7 @@ class PacketIn(automat.Automat):
         """
         Condition method.
         """
-        return identitycache.HasKey(self.sender_idurl)
+        return self.sender_idurl is not None and identitycache.HasKey(self.sender_idurl)
 
     def doInit(self, arg):
         """
@@ -203,7 +203,7 @@ class PacketIn(automat.Automat):
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gate.inbox(self)
         if newpacket is None:
-            lg.out(14, '<<< IN <<<  !!!NONE!!!   [%s]   %s from %s %s' % (
+            lg.out(14, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
                          self.proto.upper().ljust(5), self.status.ljust(8), 
                          self.host, os.path.basename(self.filename),))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
