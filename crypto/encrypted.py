@@ -132,7 +132,8 @@ class Block:
         Validate signature to verify the ``encrypted_block``.
         """
         if not self.Ready():
-            lg.out(4, "encrypted_block.Valid WARNING block is not ready yet " + str(self))
+            # lg.out(4, "encrypted_block.Valid WARNING block is not ready yet " + str(self))
+            lg.warn("block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
         ConIdentity = contacts.getContact(misc.getLocalID())

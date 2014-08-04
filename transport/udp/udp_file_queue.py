@@ -209,12 +209,12 @@ class FileQueue:
         inp.close()
 
     def on_inbox_file_done(self, infile, status, error_message=None):
-        print 'on_inbox_file_done',
-        print infile.stream_id, infile.registration, 
-        print infile.transfer_id, infile.filename, 
+        # print 'on_inbox_file_done',
+        # print infile.stream_id, infile.registration, 
+        # print infile.transfer_id, infile.filename, 
         stream_id = infile.stream_id
         if infile.registration:
-            print '... registration in process'
+            # print '... registration in process'
             return
         if infile.transfer_id:
             self.report_inbox_file(infile, status, error_message)
@@ -224,7 +224,7 @@ class FileQueue:
         #     lg.out(6, 'udp_file_queue.file_received WARNING transfer_id is None, stream_id=%d' % stream_id)
         # self.receivedFiles[stream_id] = time.time()
         # self.erase_old_stream_ids()
-        print ' - closed'
+        # print ' - closed'
 
     def on_outbox_file_done(self, outfile, status, error_message=None):
         stream_id = outfile.stream_id
@@ -245,7 +245,7 @@ class FileQueue:
             transfer_id = int(response)
         except:
             transfer_id = None
-        print 'on_inbox_file_registered', stream_id, transfer_id, self.inboxFiles[stream_id].filename 
+        # print 'on_inbox_file_registered', stream_id, transfer_id, self.inboxFiles[stream_id].filename 
         self.inboxFiles[stream_id].transfer_id = transfer_id
         self.inboxFiles[stream_id].registration = None
         if self.inboxFiles[stream_id].is_done():

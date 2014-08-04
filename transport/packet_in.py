@@ -171,7 +171,6 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        print 'onInit', arg
         self.proto, self.host, self.sender_idurl, self.filename, self.size = arg
         self.time = time.time()
         self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 10)
@@ -193,7 +192,7 @@ class PacketIn(automat.Automat):
         Action method.
         """
         d = identitycache.immediatelyCaching(self.sender_idurl)
-        d.addCallback(self._remote_identity_cached)
+        d.addCallback(self._remote_identity_cached, arg)
         d.addErrback(lambda err: self.automat('failed'))
 
     def doReadAndUnserialize(self, arg):
@@ -250,9 +249,9 @@ class PacketIn(automat.Automat):
         items().pop(self.transfer_id)
         automat.objects().pop(self.index)
 
-    def _remote_identity_cached(self, xmlsrc):
+    def _remote_identity_cached(self, xmlsrc, arg):
         sender_identity = contacts.getContact(self.sender_idurl)
         if sender_identity is None:
             self.automat('failed')
         else:
-            self.automat('remote-id-cached')
+            self.automat('remote-id-cached', arg)
