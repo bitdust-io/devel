@@ -47,7 +47,7 @@ class NetworkTransport(automat.Automat):
 #            return fail(Exception('%s can not accept calls right now' % self))
         method = getattr(self.interface, method_name, None)
         if method is None:
-            lg.out(2, 'network_transport.call ERROR method %s not found in ptoto s' % (method_name, self.proto))
+            lg.out(2, 'network_transport.call ERROR method %s not found in protos' % (method_name, self.proto))
             return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
         return method(*args)
 

@@ -149,8 +149,8 @@ class DHTUDPConnector(automat.Automat):
         automat.objects().pop(self.index)
 
     def _got_peer_incomings(self, value):
-        lg.out(18, 'udp_connector._got_peer_incomings:')
-        lg.out(18, str(value))
+        # lg.out(18, 'udp_connector._got_peer_incomings:')
+        # lg.out(18, str(value))
         current_incomings = []
         if type(value) == dict:
             try:

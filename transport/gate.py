@@ -258,14 +258,14 @@ def transport_state_changed(proto, oldstate, newstate):
     if _StartingDeferred:
         still_starting = False
         for transp in transports().values():
-            if transp.state not in ['LISTENING', 'OFFLINE']:
+            if transp.state not in ['LISTENING', 'OFFLINE',]:
                 still_starting = True
         if not still_starting:
             _StartingDeferred.callback(True)
     if _StoppingDeferred:
         still_stopping = False
         for transp in transports().values():
-            if transp.state not in ['OFFLINE']:
+            if transp.state not in ['OFFLINE',]:
                 still_stopping = True
         if not still_stopping:
             _StoppingDeferred.callback(True)
@@ -529,9 +529,9 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
             proto, host, os.path.basename(filename)))
         return None
     transfer_id = make_transfer_ID()
-    # lg.out(14, '>>> OUT >>> ?%d? send {%s} via [%s] to %s at %s' % (
-    #     transfer_id, os.path.basename(filename), proto, 
-    #     nameurl.GetName(receiver_idurl), host))
+    lg.out(14, '>>> OUT >>> ?%d? send {%s} via [%s] to %s at %s' % (
+        transfer_id, os.path.basename(filename), proto, 
+        nameurl.GetName(receiver_idurl), host))
     if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
         lg.out(2, 'gate.on_register_file_sending ERROR  [%s] [%s]' % (pkt_out.remote_idurl, receiver_idurl))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
@@ -546,12 +546,12 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
         lg.out(6, 'gate.unregister_file_sending WARNING %s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
-    # if status == 'finished':
-    #     lg.out(14, '<<< OUT <<< !%d! [%s] %s with %d bytes' % (
-    #         transfer_id, work_item.proto, status.upper(), bytes_sent))
-    # else:
-    #     lg.out(14, '<<< OUT <<< #%d# [%s] %s : %s' % (
-    #         transfer_id, work_item.proto, status.upper(), error_message))
+    if status == 'finished':
+        lg.out(14, '<<< OUT <<< !%d! [%s] %s with %d bytes' % (
+            transfer_id, work_item.proto, status.upper(), bytes_sent))
+    else:
+        lg.out(14, '<<< OUT <<< #%d# [%s] %s : %s' % (
+            transfer_id, work_item.proto, status.upper(), error_message))
     return True
 
 def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
