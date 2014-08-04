@@ -67,7 +67,7 @@ def sessions_by_peer_id():
 def create(node, peer_address, peer_id=None):
     """
     """
-    lg.out(10, 'udp_session.create peer_address=%s' % str(peer_address))
+    lg.out(14, 'udp_session.create peer_address=%s' % str(peer_address))
     s = UDPSession(node, peer_address, peer_id)
     sessions()[s.id] = s
     try:

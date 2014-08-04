@@ -116,8 +116,8 @@ class DHTUDPConnector(automat.Automat):
         """
         Action method.
         """
-        # lg.out(10, 'udp_connector.doStartNewSession wants to start a new session')
         peer_address = arg
+        lg.out(18, 'udp_connector.doStartNewSession wants to start a new session with %s at %s' % (self.peer_id, peer_address))
         s = udp_session.get(peer_address)
         if s:
             return
