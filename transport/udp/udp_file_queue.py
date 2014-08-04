@@ -465,7 +465,7 @@ class OutboxFile():
     def on_sent_raw_data(self, bytes_delivered):
         self.count_size(bytes_delivered)
         if self.is_done():
-            print 'on_sent_raw_data', self
+            # print 'on_sent_raw_data', self
             self.queue.on_outbox_file_done(self, 'finished')
             return True
         self.process()
@@ -475,7 +475,7 @@ class OutboxFile():
         # print 'on_zero_ack', bytes_left, self.size, self.bytes_delivered,
         self.count_size(bytes_left)
         if self.is_done():
-            print 'on_zero_ack done', self
+            # print 'on_zero_ack done', self
             self.queue.on_outbox_file_done(self, 'finished')
         else:
             self.queue.on_outbox_file_done(self, 'failed', 'transfer interrupted')
