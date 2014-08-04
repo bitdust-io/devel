@@ -218,6 +218,9 @@ def SendingSpeedLimit():
     """
     return 5 * 1024 
 
+def ReceivingSpeedLimit():
+    return 5 * 1024
+
 def DefaultBandwidthInLimit():
     """
     Incoming bandwidth limit in Kilobytes per second, 0 - unlimited.
