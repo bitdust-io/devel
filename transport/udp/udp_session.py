@@ -17,6 +17,7 @@ EVENTS:
         
 """
 
+import os
 import time
 
 from twisted.internet import reactor
@@ -63,6 +64,12 @@ def sessions_by_peer_id():
     global _SessionsDictByPeerID
     return _SessionsDictByPeerID
 
+
+def pending_outbox_files():
+    global _PendingOutboxFiles
+    return _PendingOutboxFiles
+
+#------------------------------------------------------------------------------ 
 
 def create(node, peer_address, peer_id=None):
     """
@@ -118,8 +125,21 @@ def close(peer_address):
 def add_pending_outbox_file(filename, host, description='', result_defer=None, single=False):
     """
     """
-    global _PendingOutboxFiles
-    _PendingOutboxFiles.append((filename, host, description, result_defer, single, time.time()))
+    pending_outbox_files().append((filename, host, description, result_defer, single, time.time()))
+
+
+def remove_pending_outbox_file(host, filename):
+    ok = False
+    i = 0
+    while i < len(pending_outbox_files()):
+        fn, hst, description, result_defer, single, tm = pending_outbox_files()[i] 
+        if fn == filename and host == hst:
+            lg.out(14, 'udp_interface.cancel_outbox_file removed pending %s for %s' % (os.path.basename(fn), hst))
+            pending_outbox_files().pop(i)
+            ok = True
+        else:
+            i += 1
+    return ok
 
 
 def process_sessions():
@@ -335,11 +355,11 @@ class UDPSession(automat.Automat):
                 if self.id == s.id:
                     continue
                 if self.peer_id == s.peer_id:
-                    lg.warn(' got GREETING from another address, close session %s' % s)
+                    lg.warn('got GREETING from another address, close session %s' % s)
                     s.automat('shutdown')
                     continue
                 if self.peer_idurl == s.peer_idurl:
-                    lg.warn(' got GREETING from another idurl, close session %s' % s)
+                    lg.warn('got GREETING from another idurl, close session %s' % s)
                     s.automat('shutdown')
                     continue
         elif command == udp.CMD_PING:

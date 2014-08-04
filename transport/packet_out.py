@@ -403,8 +403,7 @@ class PacketOut(automat.Automat):
         for i in self.items:
             if i.transfer_id:
                 gate.transport(i.proto).call('cancel_file_sending', i.transfer_id)
-            else:
-                gate.transport(i.proto).call('cancel_outbox_file', i.host, self.filename)
+            gate.transport(i.proto).call('cancel_outbox_file', i.host, self.filename)
                 
     def doReportStarted(self, arg):
         """

@@ -24,7 +24,7 @@ import udp_stream
 
 #------------------------------------------------------------------------------ 
 
-MAX_SIMULTANEOUS_STREAMS = 4
+MAX_SIMULTANEOUS_STREAMS = 1
 
 #------------------------------------------------------------------------------ 
 
@@ -397,7 +397,7 @@ class OutboxFile():
         self.started = time.time()
         # self.timeout = max(float(self.size)/settings.SendingSpeedLimit(), 5.0)
         self.fileobj = open(self.filename, 'rb')
-        lg.out(18, 'udp_file_queue.OutboxFile {%s} [%d] to %s' % (
+        lg.out(18, 'udp_file_queue.OutboxFile.__init__ {%s} [%d] to %s' % (
             os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
 
     def __del__(self):

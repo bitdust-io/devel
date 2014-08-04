@@ -132,6 +132,30 @@ class GateInterface():
         """
         """
 
+    def cancel_outbox_file(self, host, filename):
+        """
+        """
+        ok = False
+        for sess in udp_session.sessions().values():
+            if sess.peer_id != host:
+                continue
+            i = 0
+            while i < len(sess.file_queue.outboxQueue):
+                fn, descr, result_defer, single = sess.file_queue.outboxQueue[i]
+                if fn == filename:
+                    lg.out(14, 'udp_interface.cancel_outbox_file removed %s in %s' % (os.path.basename(fn), sess))
+                    sess.file_queue.outboxQueue.pop(i)
+                    ok = True
+                else:
+                    i += 1
+        udp_session.remove_pending_outbox_file(host, filename)
+#        for fn, descr, result_defer, single in sess.file_queue.outboxQueue:
+#            if fn == filename and sess.peer_id == host:
+#                lg.out(6, 'udp_interface.cancel_outbox_file    host=%s  want to close session' % host)
+#                sess.automat('shutdown')
+#                return True
+        return ok
+
     def cancel_file_sending(self, transferID):
         """
         """
@@ -151,25 +175,6 @@ class GateInterface():
                     lg.out(6, 'udp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
                     sess.automat('shutdown')
                     return True
-        return False
-
-    def cancel_outbox_file(self, host, filename):
-        """
-        """
-        for sess in udp_session.sessions().values():
-            i = 0
-            while i < len(sess.file_queue.outboxQueue):
-                fn, descr, result_defer, single = sess.file_queue.outboxQueue[i]
-                if fn == filename and sess.peer_id == host:
-                    lg.out(6, 'udp_interface.cancel_outbox_file host=%s want to close session' % host)
-                    sess.file_queue.outboxQueue.pop(i)
-                    return True
-                i += 1
-#        for fn, descr, result_defer, single in sess.file_queue.outboxQueue:
-#            if fn == filename and sess.peer_id == host:
-#                lg.out(6, 'udp_interface.cancel_outbox_file    host=%s  want to close session' % host)
-#                sess.automat('shutdown')
-#                return True
         return False
 
 #------------------------------------------------------------------------------ 
