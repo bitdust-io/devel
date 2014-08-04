@@ -126,20 +126,20 @@ class UDPStream():
         self.limit_send_bytes_per_sec = 1 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
         self.creation_time = time.time()
         # streams()[self.stream_id] = self
-        # lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
+        lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
         
     def __del__(self):
         """
         """
-        # lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
+        lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-#        lg.out(18, 'udp_stream.close %d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d' % (
-#            self.stream_id, # len(streams()), 
-#            self.input_blocks_counter, self.bytes_in,
-#            self.output_acks_counter, self.bytes_in_acks,
-#            self.input_duplicated_blocks, self.input_duplicated_bytes,
-#            self.output_blocks_counter, self.bytes_acked, self.resend_bytes,))
+        lg.out(18, 'udp_stream.close %d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d' % (
+            self.stream_id, # len(streams()), 
+            self.input_blocks_counter, self.bytes_in,
+            self.output_acks_counter, self.bytes_in_acks,
+            self.input_duplicated_blocks, self.input_duplicated_bytes,
+            self.output_blocks_counter, self.bytes_acked, self.resend_bytes,))
         # streams().pop(self.stream_id)
         self.stop_resending()
         self.consumer.stream = None
@@ -147,10 +147,6 @@ class UDPStream():
         self.producer = None
         self.blocks_to_ack.clear()
         self.output_blocks.clear()
-        # self.send_data_packet_func = None
-        # self.send_ack_packet_func = None
-        # self.received_raw_data_callback = None
-        # self.sent_raw_data_callback = None
         
     def block_received(self, inpt):
         if self.consumer:
@@ -184,7 +180,7 @@ class UDPStream():
                 eof_state = self.consumer.on_received_raw_data(newdata.getvalue())
                 newdata.close()
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
-            # want to send the first ack asap
+            # want to send the first ack asap - started from 1
             if time.time() - self.last_ack_moment > RTT_MAX_LIMIT \
                 or block_id % BLOCKS_PER_ACK == 1 \
                 or eof_state:

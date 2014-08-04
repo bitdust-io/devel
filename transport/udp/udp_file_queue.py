@@ -363,7 +363,7 @@ class InboxFile():
     
     def is_timed_out(self):
         return self.timeout # self.timeout == -1
-    
+
     def on_received_raw_data(self, newdata):
         self.process(newdata)
         if self.is_done():
