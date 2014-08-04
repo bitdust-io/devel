@@ -263,7 +263,7 @@ class UDPNode(automat.Automat):
         except:
             lg.exc()
             return
-        lg.out(18, 'udp_node.doStartNewSession wants to start a new session with UNKNOWN peer at %s' % address)
+        lg.out(18, 'udp_node.doStartNewSession wants to start a new session with UNKNOWN peer at %s' % str(address))
         s = udp_session.create(self, address)
         s.automat('init')
         s.automat('datagram-received', arg)
