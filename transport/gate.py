@@ -561,7 +561,7 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     Plug-in's code must create a temporary file and write incoming data into that file.
     """
     transfer_id = make_transfer_ID()
-    lg.out(14, '>>> IN >>> ?%d? receive {%s} via [%s] from %s at %s' % (
+    lg.out(14, '>>> IN >>> %d receive {%s} via [%s] from %s at %s' % (
         transfer_id, os.path.basename(filename), proto, 
         nameurl.GetName(sender_idurl), host))
     packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))

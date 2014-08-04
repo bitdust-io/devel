@@ -205,10 +205,9 @@ def interface_register_file_receiving(host, sender_idurl, filename, size):
     """
     """
     if proxy():
-        print 'ok', proxy()
         return proxy().callRemote('register_file_receiving', 'udp', host, sender_idurl, filename, size)
     else:
-        print 'None'
+        print 'proxy is none'
 
 
 def interface_unregister_file_sending(transfer_id, status, bytes_sent, error_message=None):
@@ -223,6 +222,8 @@ def interface_unregister_file_receiving(transfer_id, status, bytes_received, err
     """
     if proxy():
         return proxy().callRemote('unregister_file_receiving', transfer_id, status, bytes_received, error_message)
+    else:
+        print 'proxy is none'
 
 
 def interface_cancelled_file_sending(host, filename, size, description=None, error_message=None):

@@ -69,6 +69,7 @@ class PacketIn(automat.Automat):
     """
     This class implements all the functionality of the ``packet_in()`` state machine.
     """
+    fast = True
     
     def __init__(self, transfer_id):
         self.transfer_id = transfer_id
