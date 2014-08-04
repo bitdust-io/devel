@@ -573,13 +573,13 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     """
     pkt_in = packet_in.get(transfer_id)
     assert pkt_in != None
+    if status == 'finished':
+        lg.out(14, '<<< IN <<< !%d! [%s] %s with %d bytes' % (
+            transfer_id, pkt_in.proto, status.upper(), bytes_received))
+    else:
+        lg.out(14, '<<< IN <<< #%d# [%s] %s : %s' % (
+            transfer_id, pkt_in.proto, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
-    # if status == 'finished':
-    #     lg.out(14, '<<< IN <<< !%d! [%s] %s with %d bytes' % (
-    #         transfer_id, pkt_in.proto, status.upper(), bytes_received))
-    # else:
-    #     lg.out(14, '<<< IN <<< #%d# [%s] %s : %s' % (
-    #         transfer_id, pkt_in.proto, status.upper(), error_message))
     return True
 
 def on_cancelled_file_sending(proto, host, filename, size, description='', error_message=None):
