@@ -304,7 +304,7 @@ class restore(automat.Automat):
                 lg.exc()
         # either way the payload of packet is saved
         if not bpio.WriteFile(filename, NewPacket.Payload):
-            lg.out(6, "restore.doSavePacket WARNING unable to write to %s" % filename)
+            lg.warn("unable to write to %s" % filename)
             return
         lg.out(6, "restore.doSavePacket %s saved" % packetID)
         if self.packetInCallback is not None:

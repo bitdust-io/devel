@@ -191,16 +191,16 @@ def erase(name, filename, why='no reason'):
         try:
             _FilesDict[name].pop(filename, '')
         except:
-            lg.out(4, 'tmpfile.erase WARNING we do not know about file %s in sub folder %s' %(filename, name))
+            lg.warn('we do not know about file %s in sub folder %s' %(filename, name))
     else:
-        lg.out(4, 'tmpfile.erase WARNING we do not know sub folder ' + name)
+        lg.warn('we do not know sub folder ' + name)
 
     if not os.path.exists(filename):
-        lg.out(6, 'tmpfile.erase WARNING %s not exist' % filename)
+        lg.warn('%s not exist' % filename)
         return
 
     if not os.access(filename, os.W_OK):
-        lg.out(4, 'tmpfile.erase WARNING %s no write permissions' % filename)
+        lg.warn('%s no write permissions' % filename)
         return
 
     try:

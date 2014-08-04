@@ -111,7 +111,7 @@ class TCPFileStream():
         if not self.inboxFiles.has_key(file_id):
             if len(self.inboxFiles) >= 2 * MAX_SIMULTANEOUS_OUTGOING_FILES:
                 # too many incoming files, seems remote guy is cheating - drop that session!
-                lg.out(6, 'tcp_stream.data_received WARNING too many incoming files, close connection %s' % str(self.connection))
+                lg.warn('too many incoming files, close connection %s' % str(self.connection))
                 self.connection.automat('disconnect') 
                 return
             self.create_inbox_file(file_id, file_size)
@@ -236,7 +236,7 @@ class TCPFileStream():
         if infile.transfer_id:
             self.report_inbox_file(infile.transfer_id, status, infile.get_bytes_received(), error_message)
         else:
-            lg.out(6, 'tcp_stream.inbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
+            lg.warn('transfer_id is None, file_id=%s' % (str(file_id)))
         del infile
         # self.receivedFiles[file_id] = time.time()
         
@@ -258,7 +258,7 @@ class TCPFileStream():
         if outfile.transfer_id:
             self.report_outbox_file(outfile.transfer_id, status, outfile.get_bytes_sent(), error_message)
         # else:
-        #     lg.out(6, 'tcp_stream.outbox_file_done WARNING transfer_id is None, file_id=%s' % (str(file_id)))
+        #     lg.warn('transfer_id is None, file_id=%s' % (str(file_id)))
         if outfile.single:
             # lg.out(18, 'tcp_stream.outbox_file_done close single connection %s' % str(self.connection))
             self.connection.automat('disconnect') 

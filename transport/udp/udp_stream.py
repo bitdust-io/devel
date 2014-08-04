@@ -205,7 +205,7 @@ class UDPStream():
                 try:
                     outblock = self.output_blocks.pop(block_id)
                 except KeyError:
-                    # lg.out(10, 'udp_stream.ack_received WARNING block %d not found' % (block_id))
+                    # lg.warn('block %d not found' % (block_id))
                     continue
                 block_size = len(outblock[0])
                 self.output_buffer_size -= block_size 

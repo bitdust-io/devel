@@ -880,7 +880,7 @@ def OnTrayIconCommand(cmd):
         SendCommandToGUI('toolbar')
 
     else:
-        lg.out(2, 'webcontrol.OnTrayIconCommand WARNING: ' + str(cmd))
+        lg.warn('wrong command: ' + str(cmd))
 
 #def OnInstallMessage(txt):
 #    global installing_process_str
@@ -920,7 +920,7 @@ def OnReadLocalFiles():
 def SendCommandToGUI(cmd):
     global _GUICommandCallbacks
     if isinstance(cmd, unicode):
-        lg.out(2, 'SendCommandToGUI WARNING cmd is unicode' + str(cmd))
+        lg.warn('cmd is unicode' + str(cmd))
     try:
         for f in _GUICommandCallbacks:
             f(str(cmd))
@@ -968,7 +968,7 @@ class LocalSite(server.Site):
 
     def buildProtocol(self, addr):
         # if addr.host != '127.0.0.1':
-        #     lg.out(2, 'webcontrol.LocalSite.buildProtocol WARNING NETERROR connection from ' + str(addr))
+        #     lg.warn('NETERROR connection from ' + str(addr))
         #     return None
         try:
             res = server.Site.buildProtocol(self, addr)
@@ -1113,7 +1113,7 @@ class Page(resource.Resource):
         return ret
 
     def renderPage(self, request):
-        lg.out(4, 'webcontrol.Page.renderPage WARNING base page requested, but should not !')
+        lg.warn('base page requested, but should not !')
         return html(request, body='ERROR!')
 
     def created(self):
@@ -1400,7 +1400,7 @@ class InstallPage(Page):
             elif action == 'back':
                 installer.A('back')
             else:
-                lg.out(2, 'webcontrol.InstallPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
     def renderRestorePage(self, request):
@@ -1497,7 +1497,7 @@ class InstallPage(Page):
             elif action == 'restore-start':
                 installer.A(action, { 'idurl': self.idurl, 'keysrc': self.keysrc } )
             else:
-                lg.out(2, 'webcontrol.InstallPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
     def renderWizardPage(self, request):
@@ -1576,7 +1576,7 @@ class InstallPage(Page):
                 self.role = 5
                 install_wizard.A('select-try-it')
             else:
-                lg.out(2, 'webcontrol.renderWizardSelectRolePage WARNING incorrect args: %s' % str(request.args))
+                lg.warn('incorrect args: %s' % str(request.args))
         return result
 
     def renderWizardJustTryItPage(self, request):
@@ -1606,7 +1606,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                lg.out(2, 'webcontrol.renderWizardJustTryItPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
     def renderWizardBetaTestPage(self, request):
@@ -1652,7 +1652,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                lg.out(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
     def renderWizardDonatorPage(self, request):
@@ -1682,7 +1682,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                lg.out(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
     def renderWizardFREEBackupsPage(self, request):
@@ -1715,7 +1715,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                lg.out(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
     def renderWizardMostSecurePage(self, request):
@@ -1748,7 +1748,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                lg.out(2, 'webcontrol.renderWizardBetaTestPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
     def renderWizardStoragePage(self, request):
@@ -1921,7 +1921,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                lg.out(2, 'webcontrol.renderWizardStoragePage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
     def renderWizardContactsPage(self, request):
@@ -1970,7 +1970,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                lg.out(2, 'webcontrol.renderWizardContactsPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
 
 #    def renderWizardUpdatesPage(self, request):
@@ -2022,7 +2022,7 @@ class InstallPage(Page):
 #            elif action == 'back':
 #                install_wizard.A('back')
 #            else:
-#                lg.out(2, 'webcontrol.renderWizardUpdatesPage WARNING incorrect action: %s' % action)
+#                lg.warn('incorrect action: %s' % action)
 #        return result
 
     def renderLastPage(self, request):
@@ -2043,7 +2043,7 @@ class InstallPage(Page):
             elif action == 'back':
                 install_wizard.A('back')
             else:
-                lg.out(2, 'webcontrol.renderLastPage WARNING incorrect action: %s' % action)
+                lg.warn('incorrect action: %s' % action)
         return result
         
 
@@ -6713,7 +6713,7 @@ class ShedulePage(Page):
 #     def load_from_data(self, request):
 #         backupdir = unicode(misc.unpack_url_param(arg(request, 'backupdir'), None))
 #         if backupdir is None:
-#             lg.out(1, 'webcontrol.BackupShedulePage.load WARNING backupdir=%s' % str(backupdir))
+#             lg.warn('backupdir=%s' % str(backupdir))
 #             return schedule.empty()
 #         current = backup_db.GetSchedule(backupdir)
 #         if current is None:

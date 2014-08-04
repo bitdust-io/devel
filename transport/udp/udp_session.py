@@ -321,13 +321,13 @@ class UDPSession(automat.Automat):
             udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
             if self.peer_id:
                 if new_peer_id != self.peer_id:
-                    lg.out(4, 'udp_session.doReceiveData WARNING session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
+                    lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
             else:
                 # lg.out(4, 'udp_session.doReceiveData got peer id (%s) for session %s from GREETING packet' % (new_peer_id, self))
                 self.peer_id = new_peer_id
             if self.peer_idurl:
                 if new_peer_idurl != self.peer_idurl:
-                    lg.out(4, 'udp_session.doReceiveData WARNING session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
+                    lg.warn('session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
             else:
                 # lg.out(4, 'udp_session.doReceiveData got peer idurl (%s) for session %s from GREETING packet' % (new_peer_id, self))
                 self.peer_idurl = new_peer_idurl
@@ -335,11 +335,11 @@ class UDPSession(automat.Automat):
                 if self.id == s.id:
                     continue
                 if self.peer_id == s.peer_id:
-                    lg.out(6, 'udp_session.doReceiveData WARNING  got GREETING from another address, close session %s' % s)
+                    lg.warn(' got GREETING from another address, close session %s' % s)
                     s.automat('shutdown')
                     continue
                 if self.peer_idurl == s.peer_idurl:
-                    lg.out(6, 'udp_session.doReceiveData WARNING  got GREETING from another idurl, close session %s' % s)
+                    lg.warn(' got GREETING from another idurl, close session %s' % s)
                     s.automat('shutdown')
                     continue
         elif command == udp.CMD_PING:

@@ -316,7 +316,7 @@ def step2(info, version_digest):
 
     bpstarter_server_digest = info.get(settings.WindowsStarterFileName(), None)
     if bpstarter_server_digest is None:
-        lg.out(2, 'bpupdate.step2 WARNING windows starter executable is not found in the info file')
+        lg.warn('windows starter executable is not found in the info file')
         reactor.callLater(0.5, step4, version_digest)
         #fail('windows starter executable is not found in the info file')
         return
@@ -455,12 +455,12 @@ def check_shedule_dict_correct(d):
             d.has_key('daytime') and
             d.has_key('details') and
             d.has_key('lasttime')):
-        lg.out(2, 'bpupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
+        lg.warn('incorrect data: ' + str(d))
         return False
     try:
         float(d['interval'])
     except:
-        lg.out(2, 'bpupdate.check_shedule_dict_correct WARNING incorrect data: ' + str(d))
+        lg.warn('incorrect data: ' + str(d))
         return False
     return True
 
@@ -615,7 +615,7 @@ def loop(first_start=False):
 
     delay = nexttime - time.time()
     if delay < 0:
-        lg.out(2, 'bpupdate.loop WARNING delay=%s %s' % (str(delay), shed))
+        lg.warn('delay=%s %s' % (str(delay), shed))
         delay = 10
 
     lg.out(6, 'bpupdate.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))

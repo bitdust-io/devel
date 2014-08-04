@@ -114,7 +114,7 @@ def shutdown():
         try:
             _CurrentProcess.kill()
         except:
-            lg.out(4, 'localtester.shutdown WARNING can not kill bptester')
+            lg.warn('can not kill bptester')
         del _CurrentProcess
         _CurrentProcess = None
 

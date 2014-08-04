@@ -446,17 +446,17 @@ class BackupRebuilder(automat.Automat):
         if state in ['in queue', 'shutdown', 'exist']:
             return
         if state != 'received':
-            lg.out(4, "backup_rebuilder.FileReceived WARNING incorrect state [%s] for packet %s" % (str(state), str(newpacket)))
+            lg.warn("incorrect state [%s] for packet %s" % (str(state), str(newpacket)))
             return
         packetID = newpacket.PacketID
         filename = os.path.join(settings.getLocalBackupsDir(), packetID)
         if not newpacket.Valid():
             # TODO 
             # if we didn't get a valid packet ... re-request it or delete it?
-            lg.out(2, "backup_rebuilder.FileReceived WARNING " + packetID + " is not a valid packet")
+            lg.warn("" + packetID + " is not a valid packet")
             return
         if os.path.exists(filename):
-            lg.out(4, "backup_rebuilder.FileReceived WARNING rewriting existed file" + filename)
+            lg.warn("rewriting existed file" + filename)
             try: 
                 os.remove(filename)
             except:

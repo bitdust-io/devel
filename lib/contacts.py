@@ -91,7 +91,7 @@ def getContact(idurl):
     if contactsdb.is_correspondent(idurl):
         return identitycache.FromCache(idurl)
     if identitycache.HasKey(idurl):
-        # lg.out(2, "contacts.getContact WARNING who is %s ?" % nameurl.GetName(idurl))
+        # lg.warn("who is %s ?" % nameurl.GetName(idurl))
         return identitycache.FromCache(idurl)
     lg.out(6, "contacts.getContact %s is not found" % nameurl.GetName(idurl))
     # TODO

@@ -51,7 +51,7 @@ _UDPListener = None
 def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
-        lg.out(4, 'dht_service.init WARNING, already created a DHTNode')
+        lg.out(', already created a DHTNode')
         return
     lg.out(4, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
@@ -72,7 +72,7 @@ def shutdown():
         _MyNode = None
         lg.out(4, 'dht_service.shutdown')
     else:
-        lg.out(4, 'dht_service.shutdown WARNING - DHTNode not exist')
+        lg.warn('DHTNode not exist')
 
 
 def node():
@@ -99,7 +99,7 @@ def disconnect():
 #        _UDPListener = None
 #        return d
 #    else:
-#        lg.out(6, 'dht_service.disconnect WARNING - UDPListener is None')
+#        lg.warn('- UDPListener is None')
     return None
 
 

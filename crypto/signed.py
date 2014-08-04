@@ -150,7 +150,7 @@ class Packet:
             8) etc.
         """
         if not self.Ready():
-            lg.out(4, "signed.Valid WARNING packet is not ready yet " + str(self))
+            lg.warn("packet is not ready yet " + str(self))
             return False
         if not commands.IsCommand(self.Command):
             lg.out(1, "signed.Valid bad Command " + str(self.Command))
@@ -218,13 +218,13 @@ def Unserialize(data):
         return None
     newobject = misc.StringToObject(data)
     if newobject is None:
-        # lg.out(6, "signed.Unserialize WARNING result is None")
+        # lg.warn("result is None")
         return None
     if type(newobject) != types.InstanceType:
-        lg.out(6, "signed.Unserialize WARNING not an instance: " + str(newobject))
+        lg.warn("not an instance: " + str(newobject))
         return None
     if not str(newobject.__class__).count('signed.Packet'):
-        lg.out(6, "signed.Unserialize WARNING not a packet: " + str(newobject.__class__))
+        lg.warn("not a packet: " + str(newobject.__class__))
         return None
     return newobject
 

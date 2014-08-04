@@ -143,15 +143,15 @@ class DataSender(automat.Automat):
                 for supplierNum in packetsBySupplier.keys():
                     supplier_idurl = contacts.getSupplierID(supplierNum)
                     if not supplier_idurl:
-                        lg.out(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (supplierNum, backupID))
+                        lg.warn('?supplierNum? %s for %s' % (supplierNum, backupID))
                         continue
                     for packetID in packetsBySupplier[supplierNum]:
                         backupID_, blockNum, supplierNum_, dataORparity = packetid.BidBnSnDp(packetID)
                         if backupID_ != backupID:
-                            lg.out(2, 'data_sender.doScanAndQueue WARNING ?backupID? %s for %s' % (packetID, backupID))
+                            lg.warn('?backupID? %s for %s' % (packetID, backupID))
                             continue
                         if supplierNum_ != supplierNum:
-                            lg.out(2, 'data_sender.doScanAndQueue WARNING ?supplierNum? %s for %s' % (packetID, backupID))
+                            lg.warn('?supplierNum? %s for %s' % (packetID, backupID))
                             continue
                         if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
                             log.write('%s in the send queue to %s\n' % (packetID, supplier_idurl))

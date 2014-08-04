@@ -219,7 +219,7 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
                     Parities[PSegNum] = Parities[PSegNum] ^ b
             # else :
                 #TODO
-                # lg.out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
+                # lg.warn('strange read under INTSIZE bytes')
                 # lg.out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
         for PSegNum in range(myeccmap.paritysegments):

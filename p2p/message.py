@@ -126,11 +126,11 @@ def Message(request):
     lg.out(6, "message.Message from " + str(request.OwnerID))
     senderidentity = contacts.getCorrespondent(request.OwnerID)
     if not senderidentity:
-        lg.out(4,"message.Message WARNING had sender not in correspondents list " + request.OwnerID)
+        lg.warn("had sender not in correspondents list " + request.OwnerID)
         return
     Amessage = misc.StringToObject(request.Payload)
     if Amessage is None:
-        lg.out(4,"message.Message WARNING wrong Payload, can not extract message from request")
+        lg.warn("wrong Payload, can not extract message from request")
         return
     clearmessage = Amessage.ClearBody()
     SaveMessage(clearmessage)

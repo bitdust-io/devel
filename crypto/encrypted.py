@@ -132,13 +132,13 @@ class Block:
         Validate signature to verify the ``encrypted_block``.
         """
         if not self.Ready():
-            # lg.out(4, "encrypted_block.Valid WARNING block is not ready yet " + str(self))
+            # lg.warn("block is not ready yet " + str(self))
             lg.warn("block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
         ConIdentity = contacts.getContact(misc.getLocalID())
         if ConIdentity is None:
-            lg.out(2, "encrypted_block.Valid WARNING could not get Identity so returning False")
+            lg.warn("could not get Identity so returning False")
             return False
         result = key.Verify(ConIdentity, hashsrc, self.Signature)    # At block level only work on own stuff
         return result

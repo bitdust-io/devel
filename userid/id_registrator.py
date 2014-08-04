@@ -419,7 +419,7 @@ class IdRegistrator(automat.Automat):
 #                self.new_identity = lid
 #                lg.out(2, 'id_registrator.create_new_identity   found existing local identity!!!!!!!!!!')
 #                return
-#            lg.out(2, 'id_registrator.create_new_identity WARNING existing local identity is not VALID')
+#            lg.warn('existing local identity is not VALID')
     
         login = bpio.ReadTextFile(settings.UserNameFilename())
         externalIP = bpio.ReadTextFile(settings.ExternalIPFilename())

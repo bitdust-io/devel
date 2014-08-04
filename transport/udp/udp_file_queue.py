@@ -166,7 +166,7 @@ class FileQueue:
             # too many incoming streams, seems remote side is cheating - drop that session!
             # TODO : need to add some protection - keep a list of bad guys?  
             inp.close()
-            lg.out(6, 'udp_file_queue.data_received WARNING too many incoming files, close session %s' % str(self.session))
+            lg.warn('too many incoming files, close session %s' % str(self.session))
             self.session.automat('shutdown') 
             return
         if stream_id not in self.streams.keys():
@@ -193,14 +193,14 @@ class FileQueue:
         if stream_id not in self.streams.keys():
             inp.close()
             # if not self.receivedFiles.has_key(stream_id):
-            # lg.out(8, 'udp_file_queue.ack_received WARNING unknown stream_id=%d in ACK packet from %s' % (
+            # lg.warn('unknown stream_id=%d in ACK packet from %s' % (
             #     stream_id, self.session.peer_address))
             # self.session.automat('shutdown')
             if stream_id in self.dead_streams:
                 # print 'old ack', stream_id
                 pass
             else:
-                lg.out(8, 'udp_file_queue.on_received_ack_packet WARNING  %s - what a stream ???' % stream_id) 
+                lg.warn(' %s - what a stream ???' % stream_id) 
             # self.session.automat('shutdown')
             return
         try:
@@ -223,7 +223,7 @@ class FileQueue:
         self.close_stream(stream_id)
         self.close_inbox_file(stream_id)
         # else:
-        #     lg.out(6, 'udp_file_queue.file_received WARNING transfer_id is None, stream_id=%d' % stream_id)
+        #     lg.warn('transfer_id is None, stream_id=%d' % stream_id)
         # self.receivedFiles[stream_id] = time.time()
         # self.erase_old_stream_ids()
         # print ' - closed'
@@ -442,6 +442,7 @@ class OutboxFile():
     def on_sent_raw_data(self, bytes_delivered):
         self.count_size(bytes_delivered)
         if self.is_done():
+            print 'on_sent_raw_data', self
             self.queue.on_outbox_file_done(self, 'finished')
             return True
         self.process()
@@ -451,6 +452,7 @@ class OutboxFile():
         # print 'on_zero_ack', bytes_left, self.size, self.bytes_delivered,
         self.count_size(bytes_left)
         if self.is_done():
+            print 'on_zero_ack done'
             self.queue.on_outbox_file_done(self, 'finished')
         else:
             self.queue.on_outbox_file_done(self, 'failed', 'transfer interrupted')

@@ -58,7 +58,7 @@ def shutdown():
 def run(args_list):
     global _CurrentProcess
     if _CurrentProcess is not None:
-        lg.out(4, 'run_upnpc.run WARNING only one process at once')
+        lg.warn('only one process at once')
         return None
 
     if bpio.Windows():

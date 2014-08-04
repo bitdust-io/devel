@@ -227,7 +227,7 @@ def cancel_file_receiving(transferID):
                 if in_file.transfer_id and in_file.transfer_id == transferID:
                     connection.automat('disconnect')
                     return True
-    lg.out(8, 'tcp_node.cancel_file_receiving WARNING %r not found' % transferID)
+    lg.warn('%r not found' % transferID)
     return False
 
 def cancel_file_sending(transferID):
@@ -239,7 +239,7 @@ def cancel_file_sending(transferID):
                 if out_file.transfer_id and out_file.transfer_id == transferID:
                     out_file.cancel()
                     return True
-    lg.out(8, 'tcp_node.cancel_file_sending WARNING %r not found' % transferID)
+    lg.warn('%r not found' % transferID)
     return False
    
 def cancel_outbox_file(host, filename):

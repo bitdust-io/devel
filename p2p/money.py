@@ -267,7 +267,7 @@ def SearchMissingReceipts(last_receipt_id=-1):
         try:
             os.remove(filepath)
         except:
-            lg.out(4, 'money.SearchMissingReceipts.try2remove WARNING can not remove ' + filepath)
+            lg.warn('can not remove ' + filepath)
         lg.out(6, 'money.SearchMissingReceipts.try2remove %s removed' % filepath)
 
     existing_receipts = set()

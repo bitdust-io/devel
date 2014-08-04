@@ -58,7 +58,7 @@ def remove_interest(creator_id, packet_id):
     if interested_parties().has_key(comboID):
         del interested_parties()[comboID]
     else:
-        lg.out(10, 'callback.remove_interest WARNING  party %r not found' % comboID)
+        lg.warn(' party %r not found' % comboID)
 
 
 def find_interested_party(newpacket, info):

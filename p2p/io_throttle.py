@@ -282,7 +282,7 @@ class SupplierQueue:
                 reactor.callLater(0, callOnFail, self.remoteID, packetID, 'offline')
             return
         if packetID in self.fileSendQueue:
-            # lg.out(4, "io_throttle.SupplierSendFile WARNING packet %s already in the queue for %s" % (packetID, self.remoteName))
+            # lg.warn("packet %s already in the queue for %s" % (packetID, self.remoteName))
             if callOnFail is not None:
                 reactor.callLater(0, callOnFail, self.remoteID, packetID, 'in queue')
             return
@@ -334,7 +334,7 @@ class SupplierQueue:
                 continue
             # the data file to send no longer exists - it is failed situation
             if not os.path.exists(fileToSend.fileName):
-                lg.out(4, "io_throttle.RunSend WARNING file %s not exist" % (fileToSend.fileName))
+                lg.warn("file %s not exist" % (fileToSend.fileName))
                 packetsFialed[packetID] = 'not exist'
                 continue
             # do not send too many packets, need to wait for ack
@@ -425,10 +425,10 @@ class SupplierQueue:
             return
         self.ackedCount += 1
         if newpacket.PacketID not in self.fileSendQueue:
-            lg.out(4, "io_throttle.FileSendAck WARNING packet %s not in sending queue for %s" % (newpacket.PacketID, self.remoteName))
+            lg.warn("packet %s not in sending queue for %s" % (newpacket.PacketID, self.remoteName))
             return
         if newpacket.PacketID not in self.fileSendDict.keys():
-            lg.out(4, "io_throttle.FileSendAck WARNING packet %s not in sending dict for %s" % (newpacket.PacketID, self.remoteName))
+            lg.warn("packet %s not in sending dict for %s" % (newpacket.PacketID, self.remoteName))
             return
         self.fileSendDict[newpacket.PacketID].ackTime = time.time()
         if newpacket.Command == commands.Ack():
@@ -461,7 +461,7 @@ class SupplierQueue:
             return
         self.failedCount += 1
         if PacketID not in self.fileSendDict.keys():
-            lg.out(4, "io_throttle.FileSendFailed WARNING packet %s not in send dict" % PacketID)
+            lg.warn("packet %s not in send dict" % PacketID)
             return
         self.fileSendDict[PacketID].result = why
         fileToSend = self.fileSendDict[PacketID]
@@ -486,7 +486,7 @@ class SupplierQueue:
                 reactor.callLater(0, callOnReceived, packetID, 'shutdown')
             return
         if packetID in self.fileRequestQueue:
-            # lg.out(4, "io_throttle.SupplierRequestFile WARNING packet %s already in the queue for %s" % (packetID, self.remoteName))
+            # lg.warn("packet %s already in the queue for %s" % (packetID, self.remoteName))
             if callOnReceived:
                 reactor.callLater(0, callOnReceived, packetID, 'in queue')
             return
@@ -717,7 +717,7 @@ class IOThrottle:
         if packetID not in [ settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName(), ]:
             filename = os.path.join(settings.getLocalBackupsDir(), packetID)
             if os.path.exists(filename):
-                lg.out(4, "io_throttle.QueueRequestFile WARNING %s already exist " % filename)
+                lg.warn("%s already exist " % filename)
                 if callOnReceived:
                     reactor.callLater(0, callOnReceived, packetID, 'exist')
                 return

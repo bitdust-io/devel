@@ -189,7 +189,7 @@ def start():
     """
     global _StartingDeferred
     if _StartingDeferred:
-        lg.out(4, 'gate.start WARNING already called')
+        lg.warn('already called')
         return _StartingDeferred
     _StartingDeferred = Deferred()
     _StartingDeferred.addCallback(started)
@@ -221,7 +221,7 @@ def stop():
     """
     global _StoppingDeferred
     if _StoppingDeferred:
-        lg.out(4, 'gate.stop WARNING already called')
+        lg.warn('already called')
         return _StoppingDeferred
     _StoppingDeferred = Deferred()
     _StoppingDeferred.addCallback(stopped)
@@ -312,7 +312,7 @@ def inbox(info):
         lg.exc()
         return None
     if newpacket is None:
-        lg.out(2, "gate.inbox WARNING newpacket from %s://%s is None" % (info.proto, info.host))
+        lg.warn("newpacket from %s://%s is None" % (info.proto, info.host))
         return None
     try:
         Command = newpacket.Command
@@ -403,7 +403,7 @@ def make_transfer_ID():
 def cancel_output_file(transferID, why=None):
     pkt_out, work_item = packet_out.search_by_transfer_id(transferID)
     if pkt_out is None:
-        lg.out(6, 'gate.cancel_output_file WARNING %s is not found' % str(transferID))
+        lg.warn('%s is not found' % str(transferID))
         return False
     pkt_out.automat('cancel', why)
     lg.out(14, 'gate.cancel_output_file    %s' % transferID)
@@ -543,7 +543,7 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     """
     pkt_out, work_item = packet_out.search_by_transfer_id(transfer_id)
     if pkt_out is None:
-        lg.out(6, 'gate.unregister_file_sending WARNING %s is not found' % str(transfer_id))
+        lg.warn('%s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
     if status == 'finished':

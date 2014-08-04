@@ -362,7 +362,7 @@ class UDPNode(automat.Automat):
         """
         """
         command, payload = datagram
-        # lg.out(18, '>>>>>> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
+        lg.out(18, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
         s = udp_session.get(address)
         if s:
             s.automat('datagram-received', (datagram, address))
@@ -374,7 +374,7 @@ class UDPNode(automat.Automat):
         
     def _got_my_address(self, value):
         if type(value) != dict:
-            lg.out(4, 'udp_node._got_my_address WARNING   can not read my address')
+            lg.warn('  can not read my address')
             self.automat('dht-write-failed')
             return
         hkey = dht_service.key_to_hash(self.my_id+':address')

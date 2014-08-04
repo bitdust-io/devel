@@ -111,7 +111,7 @@ def search_by_response_packet(newpacket):
         #     nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
         #     p.callbacks.keys()))
     # if len(result) == 0:
-        # lg.out(18, 'packet_out.search_by_response_packet WARNING - not found [%s/%s/%s]:%s %s' % (
+        # lg.warn('- not found [%s/%s/%s]:%s %s' % (
         #     nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
         #     nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     return result
@@ -148,7 +148,7 @@ class PacketOut(automat.Automat):
                 self.remote_idurl = self.outpacket.CreatorID.strip()       
             else:
                 self.remote_idurl = None
-                lg.out(2, 'packet_out.__init__ WARNING sending a packet we did not make, and that is not Data packet')
+                lg.warn('sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contacts.getContact(self.remote_idurl)
         self.hash = '%s%s%s%s' % (str(self.time), self.outpacket.Command, 
                                   self.outpacket.PacketID, str(self.remote_idurl))
@@ -388,7 +388,7 @@ class PacketOut(automat.Automat):
                 # lg.out(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
                 ok = True
         if not ok:
-            lg.out(8, 'packet_out.doSetTransferID WARNING not found item for %r:%r' % (proto, host))
+            lg.warn('not found item for %r:%r' % (proto, host))
 
     def doSaveResponse(self, arg):
         """
@@ -505,7 +505,7 @@ class PacketOut(automat.Automat):
                         workitem_sent = True
             if not workitem_sent:
                 self.automat('nothing-to-send')
-                lg.out(6, 'packet_out._push  (wide)  WARNING no supported protocols with %s' % self.remote_idurl)
+                lg.warn('(wide) no supported protocols with %s' % self.remote_idurl)
             else:
                 self.automat('items-sent')
             return
@@ -566,5 +566,5 @@ class PacketOut(automat.Automat):
                         self.automat('items-sent')
                         return
         self.automat('nothing-to-send')
-        lg.out(6, 'packet_out._push WARNING no supported protocols with %s' % self.remote_idurl)
+        lg.warn('no supported protocols with %s' % self.remote_idurl)
         

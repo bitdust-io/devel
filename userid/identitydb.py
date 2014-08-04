@@ -106,7 +106,7 @@ def idset(idurl, id_obj):
             _Contact2IDURL[contact] = set()
         else:
             if len(_Contact2IDURL[contact]) >= 1 and idurl not in _Contact2IDURL[contact]:
-                lg.out(6, 'identitydb.idset WARNING another user have same contact: ' + str(list(_Contact2IDURL[contact])))
+                lg.warn('another user have same contact: ' + str(list(_Contact2IDURL[contact])))
         _Contact2IDURL[contact].add(idurl)
         if not _IDURL2Contacts.has_key(idurl):
             _IDURL2Contacts[idurl] = set()

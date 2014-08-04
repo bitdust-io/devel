@@ -53,7 +53,7 @@ CMD_MYIPPORT = 'm'
 
 def listen(port, proto=None):
     if port in listeners().keys():
-        lg.out(6, 'udp.listen  WARNING already started on port %d' % port)
+        lg.warn('already started on port %d' % port)
         lg.out(6, '            %s' % str(listeners().keys()))
         return listeners()[port]
     if proto is None:
@@ -120,7 +120,7 @@ def listener(port):
 def send_command(from_port, command, data, address):
     p = proto(from_port)
     if not p:
-        lg.out(6, 'udp.send_command WARNING port %d is not opened to listen' % from_port)
+        lg.warn('port %d is not opened to listen' % from_port)
         return False
     result = p.sendCommand(command, data, address)
     p = None
@@ -252,7 +252,7 @@ class CommandsProtocol(BasicProtocol):
             return
         if version != self.SoftwareVersion:
             inp.close()
-            lg.out(18, 'udp.datagramReceived WARNING - different software version: %s' % version)
+            lg.warn('- different software version: %s' % version)
             return
         # self.bytes_in += datagramsz
         handled = False

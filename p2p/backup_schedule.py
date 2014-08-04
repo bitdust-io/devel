@@ -345,22 +345,22 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #            sh_interval = int(sh_interval)
 #            time.strptime(sh_time, '%H:%M')
 #    except:
-#        lg.out(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
+#        lg.warn('incorrect shedule '+s)
 #        lg.exc()
 #        return None
 #    if sh_type in labels().keys():
 #        sh_type = labels()[sh_type]
 #    if sh_type not in labels().values():
-#        lg.out(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
+#        lg.warn('incorrect shedule '+s)
 #        return None
 #    sh_details_new = ''
 #    for i in range(len(sh_details)/3):
 #        label = sh_details[i*3:i*3+3]
 #        if sh_type == 'weekly' and not label in calendar.day_abbr:
-#            lg.out(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
+#            lg.warn('incorrect shedule '+s)
 #            return None
 #        if sh_type == 'monthly' and not label in calendar.month_abbr:
-#            lg.out(2, 'backup_schedule.unpack WARNING incorrect shedule '+s)
+#            lg.warn('incorrect shedule '+s)
 #            return None
 #        sh_details_new += label + ' '
 #    return {'type': sh_type,
@@ -374,7 +374,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #    if typ in types().keys():
 #        typ = types()[typ]
 #    if typ not in types().values():
-#        lg.out(2, 'backup_schedule.split WARNING incorrect shedule '+str(t))
+#        lg.warn('incorrect shedule '+str(t))
 #        return default()
 #    return {
 #        'type':         typ,

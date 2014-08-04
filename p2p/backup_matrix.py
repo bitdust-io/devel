@@ -289,7 +289,7 @@ def ReadRawListFiles(supplierNum, listFileText):
             # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
             words = line.split(' ')
             if len(words) < 4:
-                lg.out(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
+                lg.warn('incorrect line:[%s]' % line)
                 continue
             try:
                 pathID, versionName = packetid.SplitBackupID(words[0])
@@ -298,7 +298,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                 minBlockNum, maxBlockNum = words[2].split('-')
                 maxBlockNum = int(maxBlockNum)
             except:
-                lg.out(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
+                lg.warn('incorrect line:[%s]' % line)
                 continue
             if lineSupplierNum != supplierNum:
                 # this mean supplier have old files and we do not need that 
@@ -328,7 +328,7 @@ def ReadRawListFiles(supplierNum, listFileText):
             if len(words) > 3:
                 # "0/0/123/4567/F20090709034221PM/0-Data" "3" "0-5" "missing" "Data:1,3" "Parity:0,1,2"
                 if words[3].strip() != 'missing':
-                    lg.out(2, 'backup_matrix.ReadRawListFiles WARNING incorrect line:[%s]' % line)
+                    lg.warn('incorrect line:[%s]' % line)
                     continue
                 for missingBlocksString in words[4:]:
                     try:
@@ -452,7 +452,7 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
     elif dataORparity == 'Parity':
         remote_files()[backupID][blockNum]['P'][supplierNum] = flag
     else:
-        lg.out(4, 'backup_matrix.RemoteFileReport WARNING incorrect backup ID: %s' % backupID)
+        lg.warn('incorrect backup ID: %s' % backupID)
     # if we know only 5 blocks stored on remote machine
     # but we have backed up 6th block - remember this  
     remote_max_block_numbers()[backupID] = max(remote_max_block_numbers().get(backupID, -1), blockNum)

@@ -202,13 +202,13 @@ class FSItemInfo():
             for filename in bpio.list_dir_safe(versionpath):
                 filepath = os.path.join(versionpath, filename)
                 if not packetid.IsPacketNameCorrect(filename):
-                    lg.out(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
+                    lg.warn('incorrect file name found: %s' % filepath)
                     continue
                 try:
                     blockNum, supplierNum, dataORparity = filename.split('-')
                     blockNum, supplierNum = int(blockNum), int(supplierNum)
                 except:
-                    lg.out(4, 'backup_fs.read_versions WARNING incorrect file name found: %s' % filepath)
+                    lg.warn('incorrect file name found: %s' % filepath)
                     continue
                 try:
                     sz = long(os.path.getsize(filepath))
@@ -809,7 +809,7 @@ def DeleteBackupID(backupID):
     if info is None:
         return False
     if not info.has_version(versionName):
-        lg.out(4, 'backup_fs.DeleteBackupID WARNING %s do not have version %s' % (pathID, versionName))
+        lg.warn('%s do not have version %s' % (pathID, versionName))
         return False 
     info.delete_version(versionName)
     return True

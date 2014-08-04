@@ -166,7 +166,7 @@ def Load(filepath=None):
     if filepath is None:
         filepath = settings.BackupIndexFilePath()
     if not os.path.isfile(filepath):
-        lg.out(2, 'backup_control.Load WARNING file %s not exist' % filepath)
+        lg.warn('file %s not exist' % filepath)
         WriteIndex(filepath)
         # return False
     src = bpio.ReadTextFile(filepath)
@@ -448,7 +448,7 @@ class Task():
                 lg.exc()
                 return
         if not backup_fs.pathExist(sourcePath):
-            lg.out(4, 'backup_control.Task.run WARNING path not exist: %s' % sourcePath)
+            lg.warn('path not exist: %s' % sourcePath)
             reactor.callLater(0, OnTaskFailed, self.pathID, 'not exist')
             return
         dataID = misc.NewBackupID()

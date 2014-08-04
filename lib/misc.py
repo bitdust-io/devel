@@ -223,7 +223,7 @@ def NewBackupID(time_st=None):
         time_st = time.localtime()
     ampm = time.strftime("%p", time_st)
     if ampm == '':
-        lg.out(2, 'misc.NewBackupID WARNING time.strftime("%p") returns empty string')
+        lg.warn('time.strftime("%p") returns empty string')
         ampm = 'AM' if time.time() % 86400 < 43200 else 'PM'
     result = "F" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
     return result
@@ -1014,7 +1014,7 @@ def validateTransports(orderL):
         if isValidTransport(transport):
             transports.append(transport)
         else:
-            lg.out(6, 'misc.validateTransports WARNING invalid entry int transport list: %s , ignored' % str(transport))
+            lg.warn('invalid entry int transport list: %s , ignored' % str(transport))
     if len(transports) == 0:
         lg.out(1, 'misc.validateTransports ERROR no valid transports, using default transports ' + str(validTransports))
         transports = validTransports

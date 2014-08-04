@@ -408,26 +408,26 @@ def from_compact_string(s):
                 try:
                     time.strptime(sh_time, '%H:%M:%S')
                 except:
-                    lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule time: ' + s)
+                    lg.warn('incorrect schedule time: ' + s)
                     lg.exc()
                     return None
     except:
-        lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule string: ' + s)
+        lg.warn('incorrect schedule string: ' + s)
         lg.exc()
         return None
     if sh_type in all_labels.keys():
         sh_type = all_labels[sh_type]
     if sh_type not in all_labels.values():
-        lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule type: ' + s)
+        lg.warn('incorrect schedule type: ' + s)
         return None
     sh_details_new = ''
     for i in range(len(sh_details) / 3):
         label = sh_details[i*3:i*3+3]
         if sh_type == 'weekly' and not label in calendar.day_abbr:
-            lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
+            lg.warn('incorrect schedule details: ' + s)
             return None
         if sh_type == 'monthly' and not label in calendar.month_abbr:
-            lg.out(2, 'schedule.compact_string_to_dict WARNING incorrect schedule details: ' + s)
+            lg.warn('incorrect schedule details: ' + s)
             return None
         sh_details_new += label + ' '
     return Schedule(sh_type, str(sh_time), str(sh_interval), sh_details_new.strip())   

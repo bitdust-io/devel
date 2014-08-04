@@ -307,7 +307,7 @@ class FireHire(automat.Automat):
         desired_number = settings.getSuppliersNumberDesired()
         needed_suppliers = current_suppliers[:desired_number]
         if '' in needed_suppliers:
-            lg.out(4, 'fire_hire.isStillNeeded WARNING found empty suppliers!!!')
+            lg.warn('found empty suppliers!!!')
             return True
         supplier_idurl = arg
         s = set(needed_suppliers)
@@ -432,11 +432,11 @@ class FireHire(automat.Automat):
         current_suppliers = contacts.getSupplierIDs()
         desired_suppliers = settings.getSuppliersNumberDesired()
         if len(current_suppliers) < desired_suppliers:
-            lg.out(4, 'fire_hire.doRemoveSuppliers WARNING must have more suppliers %d<%d' % (
+            lg.warn('must have more suppliers %d<%d' % (
                 len(current_suppliers), desired_suppliers))
         for supplier_idurl in self.dismiss_list:
             if supplier_idurl not in current_suppliers:
-                lg.out(4, 'fire_hire.doRemoveSuppliers WARNING %s not a supplier' % supplier_idurl)
+                lg.warn('%s not a supplier' % supplier_idurl)
                 continue
             pos = current_suppliers.index(supplier_idurl)
             # current_suppliers.remove(supplier_idurl)

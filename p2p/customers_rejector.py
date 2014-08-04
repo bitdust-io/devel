@@ -142,16 +142,16 @@ class CustomersRejector(automat.Automat):
                     current_customers.remove(customer_idurl)
                     removed_customers.append(customer_idurl)
                 else:
-                    lg.out(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
-                lg.out(4, 'customers_rejector.doTestMyCapacity WARNING %s allocated space unknown' % customer_idurl)
+                    lg.warn('%s not customers' % customer_idurl)
+                lg.warn('%s allocated space unknown' % customer_idurl)
                 continue 
             if allocated_bytes <= 0:
                 if customer_idurl in current_customers:
                     current_customers.remove(customer_idurl)
                     removed_customers.append(customer_idurl)
                 else:
-                    lg.out(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
-                lg.out(4, 'customers_rejector.doTestMyCapacity WARNING %s allocated_bytes==0' % customer_idurl)
+                    lg.warn('%s not customers' % customer_idurl)
+                lg.warn('%s allocated_bytes==0' % customer_idurl)
                 continue
             try:
                 files_size = int(used_dict.get(customer_idurl, 0))
@@ -161,17 +161,17 @@ class CustomersRejector(automat.Automat):
                     current_customers.remove(customer_idurl)
                     removed_customers.append(customer_idurl)
                 else:
-                    lg.out(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
-                lg.out(4, 'customers_rejector.doTestMyCapacity WARNING %s used_dict have wrong value' % customer_idurl)
+                    lg.warn('%s not customers' % customer_idurl)
+                lg.warn('%s used_dict have wrong value' % customer_idurl)
                 continue
             if ratio > 1.0:
                 if customer_idurl in current_customers:
                     current_customers.remove(customer_idurl)
                     removed_customers.append(customer_idurl)
                 else:
-                    lg.out(4, 'customers_rejector.doTestMyCapacity WARNING %s not customers' % customer_idurl)
+                    lg.warn('%s not customers' % customer_idurl)
                 spent_bytes -= allocated_bytes
-                lg.out(4, 'customers_rejector.doTestMyCapacity WARNING %s space overflow, where is bptester?' % customer_idurl)
+                lg.warn('%s space overflow, where is bptester?' % customer_idurl)
                 continue
             used_space_ratio_dict[customer_idurl] = ratio
         customers_sorted = sorted(current_customers, 

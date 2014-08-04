@@ -201,26 +201,26 @@ class IdServer(automat.Automat):
         """
         lg.out(6,"id_server.save_identity " + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
-            lg.out(2,"id_server.save_identity WARNING input file too big - ignoring ")
+            lg.warn("input file too big - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file too big')
             # os.remove(inputfilename)
             return
         newxml = bpio.ReadTextFile(inputfilename)
         if len(newxml.strip()) < 500:
-            lg.out(2,"id_server.save_identity WARNING input file too small - ignoring ")
+            lg.warn("input file too small - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file too small')
             # os.remove(inputfilename)
             return
         try:    
             newidentity = identity.identity(xmlsrc=newxml)
         except:
-            lg.out(2,"id_server.save_identity WARNING input file is wrong - ignoring ")
+            lg.warn("input file is wrong - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file is wrong')
             # os.remove(inputfilename)
             return
         tmpfile.erase('idsrv', inputfilename, 'id received')
         if not newidentity.Valid():
-            lg.out(2,"id_server.save_identity WARNING has non-Valid packet")
+            lg.warn("has non-Valid packet")
             return
         matchid = ""
         for idurl in newidentity.sources:
@@ -230,23 +230,23 @@ class IdServer(automat.Automat):
                 matchid = idurl
                 break
         if matchid == "":
-            lg.out(2,"id_server.save_identity WARNING identity is not for this nameserver")
+            lg.warn("identity is not for this nameserver")
             return
         protocol, host, port, filename = nameurl.UrlParse(matchid)
         name, justxml = filename.split(".")
         #SECURITY check that name is simple
         if justxml != "xml":
-            lg.out(2,"id_server.save_identity WARNING identity name " + filename)
+            lg.warn("identity name " + filename)
             return
         if len(name) > settings.MaximumUsernameLength():
-            lg.out(2,"id_server.save_identity WARNING identity name " + filename)
+            lg.warn("identity name " + filename)
             return
         if len(name) < settings.MinimumUsernameLength():
-            lg.out(2,"id_server.save_identity WARNING identity name " + filename)
+            lg.warn("identity name " + filename)
             return
         for c in name:
             if c not in settings.LegalUsernameChars():
-                lg.out(2,"id_server.save_identity WARNING identity name " + filename)
+                lg.warn("identity name " + filename)
                 return
         localfilename = os.path.join(settings.IdentityServerDir(), filename)
     #    lg.out(8,"id_server.SaveIdentity with filename " + localfilename)
@@ -257,7 +257,7 @@ class IdServer(automat.Automat):
             oldxml = bpio.ReadTextFile(localfilename)
             oldidentity = identity.identity(xmlsrc=oldxml)
             if oldidentity.publickey != newidentity.publickey:
-                lg.out(4,"id_server.save_identity WARNING new public key does not match old " + localfilename)
+                lg.warn("new public key does not match old " + localfilename)
                 return
         if newxml != oldxml:
             if not os.path.exists(localfilename):
@@ -292,7 +292,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
             self.disconnect()
             # self.transport.loseConnection()
             lg.exc()
-            lg.out(4, 'id_server.stringReceived WARNING incorrect data from %s\n' % str(self.transport.getPeer()))
+            lg.warn('incorrect data from %s\n' % str(self.transport.getPeer()))
             return
         if command == 'h':
             # lg.out(6, 'id_server.stringReceived HELLO received from %s' % payload)
@@ -301,7 +301,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
         if command != 'd':
             self.disconnect()
             # self.transport.loseConnection()
-            lg.out(4, 'id_server.stringReceived WARNING not a "data" packet from %s' % str(self.transport.getPeer()))
+            lg.warn('not a "data" packet from %s' % str(self.transport.getPeer()))
             return
         inp = cStringIO.StringIO(payload)
         try:
@@ -312,7 +312,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
             self.disconnect()
             # self.transport.loseConnection()
             lg.exc()
-            lg.out(4, 'id_server.stringReceived WARNING wrong data from %s' % str(self.transport.getPeer()))
+            lg.warn('wrong data from %s' % str(self.transport.getPeer()))
             return
         if self.fin is None:
             self.fin, self.fpath = tmpfile.make('idsrv', '.xml')
