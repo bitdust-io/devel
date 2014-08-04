@@ -171,6 +171,7 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
+        lg.out(18, 'packet_in.doInit %s' % str(arg))
         self.proto, self.host, self.sender_idurl, self.filename, self.size = arg
         self.time = time.time()
         self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 10)
