@@ -330,7 +330,7 @@ class InboxFile():
 
     def close(self):
         lg.out(18, 'udp_file_queue.InboxFile.close %d : %d received' % (
-            self.stream_id,))
+            self.stream_id, self.bytes_received))
         self.close_file()
         self.queue = None
 
