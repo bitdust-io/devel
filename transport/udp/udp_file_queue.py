@@ -303,6 +303,8 @@ class FileQueue:
 
 class InboxFile():
     def __init__(self, queue, stream_id, size):
+        """
+        """
         self.transfer_id = None
         self.registration = None
         self.queue = queue
@@ -311,11 +313,13 @@ class InboxFile():
         self.size = size
         self.bytes_received = 0
         self.started = time.time()
-        lg.out(18, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s' % (
-            os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
+        # lg.out(18, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s' % (
+        #     os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
         
     def __del__(self):
-        lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
+        """
+        """
+        # lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
 
     def close(self):
         self.close_file()
@@ -345,6 +349,8 @@ class InboxFile():
 class OutboxFile():
     def __init__(self, queue, stream_id, filename, size, description='', 
                  result_defer=None, single=False):
+        """
+        """
         self.transfer_id = None
         self.registration = None
         self.queue = queue
@@ -362,14 +368,14 @@ class OutboxFile():
         self.started = time.time()
         self.timeout = max( int(self.size/settings.SendingSpeedLimit()), 5)
         self.fileobj = open(self.filename, 'rb')
-        lg.out(6, 'udp_file_queue.OutboxFile {%s} [%d] to %s' % (
-            os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
+        # lg.out(6, 'udp_file_queue.OutboxFile {%s} [%d] to %s' % (
+        #     os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
 
     def __del__(self):
         """
         """
-        lg.out(6, 'udp_file_queue.OutboxFile.__del__ {%s} [%d] file:%r' % (
-            os.path.basename(self.filename), self.stream_id, self.fileobj))
+        # lg.out(6, 'udp_file_queue.OutboxFile.__del__ {%s} [%d] file:%r' % (
+        #     os.path.basename(self.filename), self.stream_id, self.fileobj))
 
     def close(self):
         # lg.out(6, 'udp_file_queue.OutboxFile.close')
