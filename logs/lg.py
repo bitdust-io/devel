@@ -101,7 +101,7 @@ def warn(message, level=2):
     modul = os.path.basename(cod.co_filename).replace('.py', '') 
     caller = cod.co_name
     # caller = inspect.
-    out(level, '%s.%s WARNING : %s' % (modul, caller, message))
+    out(level, '%s.%s WARNING %s' % (modul, caller, message))
 
 def exc():
     exception(0, 100, None)

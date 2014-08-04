@@ -193,7 +193,7 @@ class NetworkConnector(Automat):
         if 'LISTENING' in transport_states:
             return True
         return False
-    
+
 #        global _CounterSuccessConnections
 #        global _CounterFailedConnections
 #        global _LastSuccessConnectionTime

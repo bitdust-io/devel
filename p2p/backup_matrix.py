@@ -473,7 +473,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
     if packetID is not None:
         backupID, blockNum, supplierNum, dataORparity = packetid.Split(packetID)  
         if backupID is None:
-            lg.out(8, 'backup_matrix.LocalFileReport WARNING incorrect filename: ' + packetID)
+            lg.warn('incorrect filename: ' + packetID)
             return
     else:
         blockNum = int(blockNum)
@@ -482,10 +482,10 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
     filename = packetID
     if dataORparity not in ['Data', 'Parity']:
-        lg.out(4, 'backup_matrix.LocalFileReport WARNING Data or Parity? ' + filename)
+        lg.warn('Data or Parity? ' + filename)
         return
     if supplierNum >= contacts.numSuppliers():
-        lg.out(4, 'backup_matrix.LocalFileReport WARNING supplier number %d > %d %s' % (supplierNum, contacts.numSuppliers(), filename))
+        lg.warn('supplier number %d > %d %s' % (supplierNum, contacts.numSuppliers(), filename))
         return
     if not local_files().has_key(backupID):
         local_files()[backupID] = {}
