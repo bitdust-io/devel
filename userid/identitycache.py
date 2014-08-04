@@ -183,40 +183,35 @@ def scheduleForCaching(url):
 
 #------------------------------------------------------------------------------ 
 
-def immediatelyCaching(url, success_func=None, fail_func=None):
+def immediatelyCaching(url):
     """
     A smart method to start caching some identity and get results in callbacks.
     """
     global _CachingTasks
     if _CachingTasks.has_key(url):
         return _CachingTasks[url]
-    
     def _getPageSuccess(src, url, res):
         global _CachingTasks
         _CachingTasks.pop(url)
         if UpdateAfterChecking(url, src):
-            if success_func is not None:
-                success_func(url+'\n'+src)
+            # if success_func is not None:
+            #     success_func(url+'\n'+src)
             res.callback(src)
         else:
-            if fail_func is not None:
-                fail_func(url+'\n'+src)
+            # if fail_func is not None:
+            #     fail_func(url+'\n'+src)
             res.errback(Exception(src))
-        
     def _getPageFail(x, url, res):
         global _CachingTasks
         _CachingTasks.pop(url)
-        if fail_func is not None:
-            fail_func(x)
+        # if fail_func is not None:
+        #     fail_func(x)
         res.errback(x)
-        
     result = Deferred()
     d = net_misc.getPageTwisted(url)
     d.addCallback(_getPageSuccess, url, result)
     d.addErrback(_getPageFail, url, result)
-    
     _CachingTasks[url] = result
-    
     return result
 
 #------------------------------------------------------------------------------ 

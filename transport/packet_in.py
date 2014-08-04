@@ -14,7 +14,9 @@ BitPie.NET packet_in() Automat
 
 EVENTS:
     * :red:`cancel`
+    * :red:`failed`
     * :red:`register-item`
+    * :red:`remote-id-cached`
     * :red:`unregister-item`
     * :red:`unserialize-failed`
     * :red:`valid-inbox-packet`
@@ -29,6 +31,9 @@ from lib import automat
 from lib import bpio
 from lib import tmpfile
 from lib import settings
+from lib import contacts
+
+from userid import identitycache
 
 import gate
 import stats
@@ -107,11 +112,14 @@ class PacketIn(automat.Automat):
                 self.doReportFailed(arg)
                 self.doEraseInputFile(arg)
                 self.doDestroyMe(arg)
-            elif event == 'unregister-item' and self.isTransferFinished(arg) :
-                self.state = 'INBOX?'
-                self.doReadAndUnserialize(arg)
             elif event == 'cancel' :
                 self.doCancelItem(arg)
+            elif event == 'unregister-item' and self.isTransferFinished(arg) and not self.isRemoteIdentityCached(arg) :
+                self.state = 'CACHING'
+                self.doCacheRemoteIdentity(arg)
+            elif event == 'unregister-item' and self.isTransferFinished(arg) and self.isRemoteIdentityCached(arg) :
+                self.state = 'INBOX?'
+                self.doReadAndUnserialize(arg)
         #---INBOX?---
         elif self.state == 'INBOX?':
             if event == 'valid-inbox-packet' :
@@ -130,6 +138,16 @@ class PacketIn(automat.Automat):
         #---DONE---
         elif self.state == 'DONE':
             pass
+        #---CACHING---
+        elif self.state == 'CACHING':
+            if event == 'failed' :
+                self.state = 'FAILED'
+                self.doReportFailed(arg)
+                self.doEraseInputFile(arg)
+                self.doDestroyMe(arg)
+            elif event == 'remote-id-cached' :
+                self.state = 'INBOX?'
+                self.doReadAndUnserialize(arg)
 
     def isTransferFinished(self, arg):
         """
@@ -141,6 +159,12 @@ class PacketIn(automat.Automat):
         if self.size and self.size>0 and self.size != bytes_received:
             return False
         return True
+
+    def isRemoteIdentityCached(self, arg):
+        """
+        Condition method.
+        """
+        return identitycache.HasKey(self.sender_idurl)
 
     def doInit(self, arg):
         """
@@ -161,6 +185,14 @@ class PacketIn(automat.Automat):
         Action method.
         """
         gate.transport(self.proto).call('cancel_file_receiving', self.transfer_id)
+
+    def doCacheRemoteIdentity(self, arg):
+        """
+        Action method.
+        """
+        d = identitycache.immediatelyCaching(self.sender_idurl)
+        d.addCallback(self._remote_identity_cached)
+        d.addErrback(lambda err: self.automat('failed'))
 
     def doReadAndUnserialize(self, arg):
         """
@@ -216,4 +248,9 @@ class PacketIn(automat.Automat):
         items().pop(self.transfer_id)
         automat.objects().pop(self.index)
 
-
+    def _remote_identity_cached(self, xmlsrc):
+        sender_identity = contacts.getContact(self.sender_idurl)
+        if sender_identity is None:
+            self.automat('failed')
+        else:
+            self.automat('remote-id-cached')
