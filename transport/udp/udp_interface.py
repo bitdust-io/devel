@@ -205,7 +205,10 @@ def interface_register_file_receiving(host, sender_idurl, filename, size):
     """
     """
     if proxy():
+        print 'ok', proxy()
         return proxy().callRemote('register_file_receiving', 'udp', host, sender_idurl, filename, size)
+    else:
+        print 'None'
 
 
 def interface_unregister_file_sending(transfer_id, status, bytes_sent, error_message=None):

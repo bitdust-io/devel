@@ -345,7 +345,7 @@ class UDPStream():
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 2.0
         # DEBUG
-        if self.resend_counter % 2 == 0:
+        if False and self.resend_counter % 10 == 0:
             current_rate_in = 0.0
             current_rate_out = 0.0
             if relative_time > 0.0: 

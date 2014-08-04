@@ -177,7 +177,7 @@ def make(name, extension='', prefix=''):
         lg.out(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
         lg.exc()
         return None, ''
-    lg.out(18, 'tmpfile.make ' + filename)
+    # lg.out(18, 'tmpfile.make ' + filename)
     return fd, filename
 
 

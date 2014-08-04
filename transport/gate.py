@@ -153,7 +153,7 @@ def init(transportslist=None):
     _XMLRPCURL = "http://localhost:%d" % int(_XMLRPCPort)
     if not transportslist:
         transportslist = INSTALLED_TRANSPORTS.keys()
-    lg.out(6, 'gate.init  XML-RPC: %s,  transports: %s' % (_XMLRPCURL, transportslist))
+    lg.out(6, 'gate.init  XML-RPC: %s, transports: %s' % (_XMLRPCURL, transportslist))
     for proto in transportslist:
         iface = None
         if proto == 'tcp':
@@ -164,7 +164,7 @@ def init(transportslist=None):
             raise Exception('transport not supported: %s'  % proto)
         _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
         transport(proto).automat('init', _XMLRPCURL)
-        # lg.out(6, 'gate.init want to start transport [%s]: %s' % (proto, str(ret)[:20].upper()))
+        lg.out(6, 'gate.init want to start transport [%s]' % proto)
     return True
 
 
@@ -561,10 +561,10 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     Plug-in's code must create a temporary file and write incoming data into that file.
     """
     transfer_id = make_transfer_ID()
+    lg.out(14, '>>> IN >>> ?%d? receive {%s} via [%s] from %s at %s' % (
+        transfer_id, os.path.basename(filename), proto, 
+        nameurl.GetName(sender_idurl), host))
     packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))
-    # lg.out(14, '>>> IN >>> ?%d? receive {%s} via [%s] from %s at %s' % (
-    #     transfer_id, os.path.basename(filename), proto, 
-    #     nameurl.GetName(sender_idurl), host))
     return transfer_id
 
 def on_unregister_file_receiving(transfer_id, status, bytes_received, error_message=''):
