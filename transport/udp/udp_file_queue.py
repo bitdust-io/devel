@@ -176,7 +176,7 @@ class FileQueue:
                 inp.close()
                 # lg.warn('too many incoming files for session %s' % str(self.session))
                 # self.session.automat('shutdown')
-                print 'too many incoming files', stream_id
+                print 'too many incoming files', stream_id, self.session.peer_id
                 self.do_send_ack(stream_id, None, '') 
                 return
             self.start_inbox_file(stream_id, data_size)
