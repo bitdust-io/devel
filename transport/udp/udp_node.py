@@ -277,6 +277,9 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
+        if self.my_address is None:
+            lg.out(18, 'dp_node.doCheckAndStartNewSessions SKIP because my_address is None')
+            return
         if type(arg) != list:
             raise Exception('Wrong type') 
         self.my_current_incomings = arg
@@ -292,7 +295,11 @@ class UDPNode(automat.Automat):
             s = udp_session.get(incoming_user_address) 
             if s:
                 continue
-            lg.out(18, 'udp_connector.doCheckAndStartNewSessions wants to start a new session with incoming peer %s at %s' % (
+            s = udp_session.get_by_peer_id(incoming_user_id)
+            if s:
+                lg.out(18, 'udp_node.doCheckAndStartNewSessions SKIP because found existing by peer id:%s %s' % (incoming_user_id, s))
+                continue
+            lg.out(18, 'udp_node.doCheckAndStartNewSessions wants to start a new session with incoming peer %s at %s' % (
                 incoming_user_id, incoming_user_address))
             s = udp_session.create(self, incoming_user_address, incoming_user_id)
             s.automat('init')
