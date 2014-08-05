@@ -202,6 +202,8 @@ class UDPNode(automat.Automat):
             return True
         if udp_connector.get(user_id) is not None:
             return True
+        lg.out(18, 'udp_node.isKnownUser %s not found in %s' % (
+            user_id, udp_session.sessions_by_peer_id().keys()))
         return False
 
     def isKnowMyAddress(self, arg):

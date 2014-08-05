@@ -115,6 +115,7 @@ class UDPStream():
         self.bytes_sent = 0
         self.bytes_acked = 0
         self.resend_bytes = 0
+        self.resend_blocks = 0
         self.last_ack_moment = 0
         self.last_ack_received_time = 0
         self.last_block_received_time = 0
@@ -134,12 +135,13 @@ class UDPStream():
         lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-        lg.out(18, 'udp_stream.close %d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d' % (
+        lg.out(18, 'udp_stream.close %d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d' % (
             self.stream_id, # len(streams()), 
             self.input_blocks_counter, self.bytes_in,
             self.output_acks_counter, self.bytes_in_acks,
             self.input_duplicated_blocks, self.input_duplicated_bytes,
-            self.output_blocks_counter, self.bytes_acked, self.resend_bytes,))
+            self.output_blocks_counter, self.bytes_acked, 
+            self.resend_blocks, self.resend_bytes,))
         # streams().pop(self.stream_id)
         self.stop_resending()
         self.consumer.stream = None
@@ -267,6 +269,7 @@ class UDPStream():
                 dt = relative_time - time_sent
                 if dt > resend_time_limit:
                     self.resend_bytes += data_size
+                    self.resend_blocks += 1
                     # print 're -'s,
                 else:
                     # print 'skip', block_id, dt, self.last_ack_rtt 
@@ -333,7 +336,7 @@ class UDPStream():
         if len(self.output_blocks):        
             activity = activity or self.send_blocks()
             if relative_time - self.last_ack_received_time > RTT_MAX_LIMIT * 4.0:
-                self.producer.on_timeout_sending()
+                self.producer.on_timeout_sending(self.stream_id)
         if activity:
             # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0.0
