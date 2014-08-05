@@ -159,6 +159,11 @@ class FileQueue:
             inp.close()
             lg.exc()
             return
+        if not self.session.peer_id:
+            inp.close()
+            self.do_send_ack(stream_id, None, '')
+            print 'peer id is unknown yet', stream_id
+            return
         if stream_id not in self.streams.keys():
             if stream_id in self.dead_streams:
                 inp.close()
