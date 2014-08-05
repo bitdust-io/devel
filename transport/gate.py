@@ -529,8 +529,8 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
             proto, host, os.path.basename(filename)))
         return None
     transfer_id = make_transfer_ID()
-    lg.out(14, '>>> OUT >>> ?%d? send {%s} via [%s] to %s at %s' % (
-        transfer_id, os.path.basename(filename), proto, 
+    lg.out(14, '>>> OUT >>> %s (%d) send {%s} via [%s] to %s at %s' % (
+        pkt_out.description, transfer_id, os.path.basename(filename), proto, 
         nameurl.GetName(receiver_idurl), host))
     if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
         lg.out(2, 'gate.on_register_file_sending ERROR  [%s] [%s]' % (pkt_out.remote_idurl, receiver_idurl))
@@ -547,10 +547,10 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
     if status == 'finished':
-        lg.out(14, '<<< OUT <<< !%d! [%s] %s with %d bytes' % (
-            transfer_id, work_item.proto, status.upper(), bytes_sent))
+        lg.out(14, '<<< OUT <<< %s (%d) [%s] %s with %d bytes' % (
+            pkt_out.description, transfer_id, work_item.proto, status.upper(), bytes_sent))
     else:
-        lg.out(14, '<<< OUT <<< #%d# [%s] %s : %s' % (
+        lg.out(14, '<<< OUT <<< %s (%d) [%s] %s : %s' % (
             transfer_id, work_item.proto, status.upper(), error_message))
     return True
 

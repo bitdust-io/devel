@@ -140,6 +140,7 @@ class StunClient(automat.Automat):
         if oldip != ip:
             import p2p.network_connector
             p2p.network_connector.A('reconnect')
+        lg.out(4, 'stun_client.doReportSuccess my IP:PORT is %s:%d' % (ip, port))
 
     def doReportFailed(self, arg):
         """
