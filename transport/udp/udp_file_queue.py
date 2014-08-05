@@ -159,19 +159,20 @@ class FileQueue:
             inp.close()
             lg.exc()
             return
-        if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS:
-            # too many incoming streams, seems remote side is cheating - drop that session!
-            # TODO : need to add some protection - keep a list of bad guys?  
-            inp.close()
-            # lg.warn('too many incoming files for session %s' % str(self.session))
-            # self.session.automat('shutdown')
-            print 'too many incoming files'
-            self.do_send_ack(stream_id, None, '') 
-            return
         if stream_id not in self.streams.keys():
             if stream_id in self.dead_streams:
+                inp.close()
                 self.do_send_ack(stream_id, None, '')
                 print 'old block', stream_id
+                return
+            if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS:
+                # too many incoming streams, seems remote side is cheating - drop that session!
+                # TODO : need to add some protection - keep a list of bad guys?  
+                inp.close()
+                # lg.warn('too many incoming files for session %s' % str(self.session))
+                # self.session.automat('shutdown')
+                print 'too many incoming files'
+                self.do_send_ack(stream_id, None, '') 
                 return
             self.start_inbox_file(stream_id, data_size)
         try:
