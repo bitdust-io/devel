@@ -120,7 +120,8 @@ class UDPNode(automat.Automat):
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
             elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
-                self.doStartNewSession(arg)
+                #self.doStartNewSession(arg)
+                pass
             elif event == 'stun-failed' :
                 self.state = 'OFFLINE'
                 self.doUpdateMyAddress(arg)
@@ -141,7 +142,8 @@ class UDPNode(automat.Automat):
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
             elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
-                self.doStartNewSession(arg)
+                #self.doStartNewSession(arg)
+                pass
             elif event == 'connect' and not self.isKnowMyAddress(arg) :
                 self.state = 'STUN'
                 self.doStartStunClient(arg)
@@ -156,7 +158,8 @@ class UDPNode(automat.Automat):
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
             elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
-                self.doStartNewSession(arg)
+                #self.doStartNewSession(arg)
+                pass
             elif event == 'connect' and not self.isKnowMyAddress(arg) :
                 self.state = 'STUN'
                 self.doStartStunClient(arg)
@@ -298,10 +301,10 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
-        self.my_address = arg
         if self.my_address:
             lg.out(4, 'udp_node.doUpdateMyAddress old=%s new=%s' % (str(self.my_address), str(arg)))
-            bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
+        self.my_address = arg
+        # bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
         #TODO call top level code to notify about my external IP changes
 
     def doDHTReadMyIncomings(self, arg):

@@ -117,9 +117,16 @@ class DHTUDPConnector(automat.Automat):
         Action method.
         """
         peer_address = arg
-        lg.out(18, 'udp_connector.doStartNewSession wants to start a new session with %s at %s' % (self.peer_id, peer_address))
+        if self.node.my_address is None:
+            lg.out(18, 'udp_connector.doStartNewSession to %s at %s SKIP because my_address is None' % (self.peer_id, peer_address))
+            return
         s = udp_session.get(peer_address)
         if s:
+            lg.out(18, 'udp_connector.doStartNewSession SKIP because found existing : %s' % s)
+            return
+        s = udp_session.get_by_peer_id(self.peer_id)
+        if s:
+            lg.out(18, 'udp_connector.doStartNewSession SKIP because found existing by peer id:%s %s' % (self.peer_id, s))
             return
         s = udp_session.create(self.node, peer_address, self.peer_id)
         s.automat('init', (self.listen_port, self.my_id, self.my_address))
