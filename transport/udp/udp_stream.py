@@ -127,7 +127,7 @@ class UDPStream():
         self.limit_send_bytes_per_sec = 1 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
         self.creation_time = time.time()
         # streams()[self.stream_id] = self
-        lg.out(18, 'udp_stream.__init__ %d' % self.stream_id)
+        lg.out(18, 'udp_stream.__init__ %d peer_id:%s' % (self.stream_id, self.producer.session.peer_id))
         
     def __del__(self):
         """
@@ -164,7 +164,7 @@ class UDPStream():
             self.blocks_to_ack.add(block_id)
             self.last_block_received_time = time.time() - self.creation_time
             eof_state = False
-            # print 'block', block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
+            print 'block', self.stream_id, block_id, self.bytes_in, block_id % BLOCKS_PER_ACK
             if block_id == self.input_block_id + 1:
                 newdata = cStringIO.StringIO()
                 newblocks = 0
@@ -221,10 +221,10 @@ class UDPStream():
             if acks > 0:
                 self.last_ack_received_time = time.time() - self.creation_time
                 self.input_acks_counter += 1
-                # print 'ack blocks:(%d|%d)' % (acks, len(self.output_blocks.keys())) 
+                print 'ack %s blocks:(%d|%d)' % (self.stream_id, acks, len(self.output_blocks.keys())) 
                 self.resend()
                 return
-            # print 'STOP IT NOW!!!!, ZERO ACK!!!! SEEMS FINE.!!!'
+            print 'zero ack %s' % self.stream_id
             self.stop_resending()
             sum_not_acked_blocks = sum(map(lambda block: len(block[0]), 
                                            self.output_blocks.values()))

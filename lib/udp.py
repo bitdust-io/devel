@@ -266,9 +266,9 @@ class CommandsProtocol(BasicProtocol):
             self.run_callbacks((command, payload), address)
         inp.close()
         self.bytes_in += datagramsz
-        if command in [CMD_DATA, CMD_ACK]:
-            lg.out(18, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
-                command, datagramsz, str(address), self.bytes_in))
+        # if command in [CMD_DATA, CMD_ACK]:
+        #     lg.out(18, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
+        #         command, datagramsz, str(address), self.bytes_in))
         
     def sendCommand(self, command, data, address):
         payloadsz = len(data)
@@ -287,9 +287,9 @@ class CommandsProtocol(BasicProtocol):
             return None
         outp.close()
         self.bytes_out += payloadsz + 2
-        if command in [CMD_DATA, CMD_ACK]:
-            lg.out(18, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
-                command, payloadsz + 2, address, self.bytes_out))
+        # if command in [CMD_DATA, CMD_ACK]:
+        #     lg.out(18, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
+        #         command, payloadsz + 2, address, self.bytes_out))
         return result
 
 #------------------------------------------------------------------------------ 
