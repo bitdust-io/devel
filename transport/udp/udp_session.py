@@ -148,6 +148,8 @@ def process_sessions():
     global _ProcessSessionsDelay
     has_activity = False
     for s in sessions().values():
+        if not s.peer_id:
+            continue
         if not s.file_queue:
             continue
         has_outbox = s.file_queue.process_outbox_queue()
