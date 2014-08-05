@@ -321,7 +321,7 @@ class UDPStream():
 
     def resend(self):
         if not self.consumer:
-            print 'stop resending, consumer is None'
+            # print 'stop resending, consumer is None'
             return
         self.resend_counter += 1
         rtt_current = self.rtt_avarage / self.rtt_acks_counter

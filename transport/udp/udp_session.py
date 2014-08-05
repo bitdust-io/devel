@@ -81,10 +81,11 @@ def create(node, peer_address, peer_id=None):
         sessions_by_peer_address()[peer_address].append(s)
     except:
         sessions_by_peer_address()[peer_address] = [s,]
-    try:
-        sessions_by_peer_id()[peer_id].append(s)
-    except:
-        sessions_by_peer_id()[peer_id] = [s,]
+    if peer_id:
+        try:
+            sessions_by_peer_id()[peer_id].append(s)
+        except:
+            sessions_by_peer_id()[peer_id] = [s,]
     return s
 
 
@@ -345,6 +346,10 @@ class UDPSession(automat.Automat):
             else:
                 lg.out(14, 'udp_session.doReceiveData detected peer id : %s for session %s from GREETING packet' % (new_peer_id, self.peer_address))
                 self.peer_id = new_peer_id
+                try:
+                    sessions_by_peer_id()[self.peer_id].append(self)
+                except:
+                    sessions_by_peer_id()[self.peer_id] = [self,]
             if self.peer_idurl:
                 if new_peer_idurl != self.peer_idurl:
                     lg.warn('session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
@@ -403,9 +408,10 @@ class UDPSession(automat.Automat):
         sessions_by_peer_address()[self.peer_address].remove(self)
         if len(sessions_by_peer_address()[self.peer_address]) == 0:
             sessions_by_peer_address().pop(self.peer_address)
-        sessions_by_peer_id()[self.peer_id].remove(self)
-        if len(sessions_by_peer_id()[self.peer_id]) == 0:
-            sessions_by_peer_id().pop(self.peer_id)            
+        if self.peer_id in sessions_by_peer_id().keys():
+            sessions_by_peer_id()[self.peer_id].remove(self)
+            if len(sessions_by_peer_id()[self.peer_id]) == 0:
+                sessions_by_peer_id().pop(self.peer_id)            
         automat.objects().pop(self.index)
 
 
