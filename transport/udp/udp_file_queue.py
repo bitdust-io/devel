@@ -176,7 +176,7 @@ class FileQueue:
                 inp.close()
                 # lg.warn('too many incoming files for session %s' % str(self.session))
                 # self.session.automat('shutdown')
-                print 'too many incoming files'
+                print 'too many incoming files', stream_id
                 self.do_send_ack(stream_id, None, '') 
                 return
             self.start_inbox_file(stream_id, data_size)
@@ -205,7 +205,7 @@ class FileQueue:
                 # print 'old ack', stream_id
                 pass
             else:
-                lg.warn(' %s - what a stream ???' % stream_id) 
+                lg.warn('%s - what a stream ???' % stream_id) 
             # self.session.automat('shutdown')
             return
         try:
@@ -233,9 +233,9 @@ class FileQueue:
         # self.erase_old_stream_ids()
         # print ' - closed'
 
-    def on_outbox_file_done(self, outfile, status, error_message=None):
+    def on_outbox_file_done(self, outfile, status, error_message=''):
         stream_id = outfile.stream_id
-        lg.out(18, 'udp_file_queue.outbox_file_done %s (%d bytes) %s because %s' % (
+        lg.out(18, 'udp_file_queue.on_outbox_file_done %s (%d bytes) %s "%s"' % (
             stream_id, outfile.size, status, error_message))
         if outfile.result_defer:
             outfile.result_defer.callback((outfile, status, error_message))
@@ -473,7 +473,7 @@ class OutboxFile():
     def on_sent_raw_data(self, bytes_delivered):
         self.count_size(bytes_delivered)
         if self.is_done():
-            # print 'on_sent_raw_data', self
+            print 'on_sent_raw_data', self
             self.queue.on_outbox_file_done(self, 'finished')
             return True
         self.process()
@@ -483,7 +483,7 @@ class OutboxFile():
         # print 'on_zero_ack', bytes_left, self.size, self.bytes_delivered,
         self.count_size(bytes_left)
         if self.is_done():
-            # print 'on_zero_ack done', self
+            print 'on_zero_ack done', self
             self.queue.on_outbox_file_done(self, 'finished')
         else:
             self.queue.on_outbox_file_done(self, 'failed', 'transfer interrupted')
