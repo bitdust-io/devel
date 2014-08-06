@@ -180,15 +180,19 @@ class UDPStream():
                     self.input_block_id = next_block_id
                     newblocks += 1
                     # print next_block_id,
-                eof_state = self.consumer.on_received_raw_data(newdata.getvalue())
+                self.consumer.on_received_raw_data(newdata.getvalue())
                 newdata.close()
+                if self.consumer.is_done():
+                    eof_state = True
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
             # want to send the first ack asap - started from 1
-            if time.time() - self.last_ack_moment > RTT_MAX_LIMIT \
-                or block_id % BLOCKS_PER_ACK == 1 \
-                or eof_state:
-                    # self.send_ack()
-                    self.resend()
+            is_ack_timed_out = time.time() - self.last_ack_moment > RTT_MAX_LIMIT
+            is_first_block_in_group = block_id % BLOCKS_PER_ACK 
+            if is_ack_timed_out or is_first_block_in_group or eof_state:
+                self.resend()
+            if eof_state:
+                self.producer.on_inbox_file_done(self.consumer, 'finished')
+                
     
     def ack_received(self, inpt):
         if self.consumer:

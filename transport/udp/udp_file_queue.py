@@ -379,10 +379,6 @@ class InboxFile():
 
     def on_received_raw_data(self, newdata):
         self.process(newdata)
-        if self.is_done():
-            self.queue.on_inbox_file_done(self, 'finished')
-            return True
-        return False
 
 #------------------------------------------------------------------------------ 
 
