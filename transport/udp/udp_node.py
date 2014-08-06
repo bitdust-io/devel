@@ -294,6 +294,7 @@ class UDPNode(automat.Automat):
                 continue
             s = udp_session.get(incoming_user_address) 
             if s:
+                lg.out(18, 'udp_node.doCheckAndStartNewSessions SKIP because found existing %s' % s)
                 continue
             s = udp_session.get_by_peer_id(incoming_user_id)
             if s:
@@ -377,7 +378,7 @@ class UDPNode(automat.Automat):
         command, payload = datagram
         # lg.out(18, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
         s = udp_session.get(address)
-        if s:
+        if s and s.peer_id and s.peer_idurl:
             s.automat('datagram-received', (datagram, address))
         self.automat('datagram-received', (datagram, address))
         return False
