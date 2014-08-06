@@ -107,8 +107,7 @@ class Automat(object):
     
           reactor.callLater(0, self.event, 'event-01', arg1, arg2, ... )
           
-    If ``fast = True`` it will use ``reactor.callWhenRunning()``,
-    call with no delays, default is False.
+    If ``fast = True`` it will call state machine method directly. 
     """
           
     def __init__(self, name, state, debug_level=18):
@@ -194,8 +193,8 @@ class Automat(object):
         If ``self.fast=False`` - the ``self.A()`` method will be executed in delayed call.
         """ 
         if self.fast:
-            reactor.callWhenRunning(self.event, event, arg)
-            # self.event(event, arg)
+            # reactor.callWhenRunning(self.event, event, arg)
+            self.event(event, arg)
         else:
             reactor.callLater(0, self.event, event, arg)
             # reactor.callWhenRunning(self.event, event, arg)

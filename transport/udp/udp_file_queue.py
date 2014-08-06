@@ -100,6 +100,8 @@ class FileQueue:
 
     def start_outbox_file(self, filename, filesize, description, result_defer, single):
         stream_id = self.make_unique_stream_id()
+        lg.out(18, 'udp_file_queue.start_outbox_file %d %s %s %d %s' % (
+            stream_id, description, os.path.basename(filename), filesize, self.session.peer_id))
         outfile = OutboxFile(self, stream_id, filename, filesize, description, result_defer, single)
         if not single:
             d = udp_interface.interface_register_file_sending(
@@ -112,6 +114,7 @@ class FileQueue:
             stream_id, outfile, self)
         
     def start_inbox_file(self, stream_id, data_size):
+        lg.out(18, 'udp_file_queue.start_inbox_file %d %d %s' % (stream_id, data_size, self.session.peer_id))
         infile = InboxFile(self, stream_id, data_size)
         d = udp_interface.interface_register_file_receiving(
             self.session.peer_id, self.session.peer_idurl, infile.filename, infile.size)

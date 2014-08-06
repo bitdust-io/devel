@@ -162,7 +162,7 @@ class PacketOut(automat.Automat):
         self.items = []
         self.results = []
         self.response_packet = None
-        automat.Automat.__init__(self, 'OUT(%s)' % self.md5, 'AT_STARTUP', 20)
+        automat.Automat.__init__(self, 'OUT(%s)' % self.md5, 'AT_STARTUP', 18)
         
     def is_timed_out(self):
         if self.time is None or self.timeout is None:
