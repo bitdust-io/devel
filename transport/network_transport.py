@@ -40,8 +40,8 @@ class NetworkTransport(automat.Automat):
     def __init__(self, proto, interface):
         self.proto = proto
         self.interface = interface
-        automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8)         
-
+        automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8)
+        
     def call(self, method_name, *args):
 #        if self.state != 'LISTENING':
 #            return fail(Exception('%s can not accept calls right now' % self))

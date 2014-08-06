@@ -223,19 +223,19 @@ def start():
     if _StartingDeferred:
         lg.warn('already called')
         return _StartingDeferred
+    lg.out(4, 'gate.start')
     _StartingDeferred = Deferred()
     _StartingDeferred.addCallback(started)
     did_something = False
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto): 
-            if transp.state != 'LISTENING':
+            if transp.state not in ['LISTENING', 'STARTING', ]:
+                lg.out(4, '    send "start" to %s' % transp)
                 transp.automat('start')
                 did_something = True
     if not did_something:
-        lg.out(4, 'gate.start  skipped')
+        lg.out(4, '    will fire starting deferred')
         _StartingDeferred.callback(True)
-    else:
-        lg.out(4, 'gate.start')
     return _StartingDeferred 
     
         
@@ -243,9 +243,10 @@ def started(x):
     global _StartingDeferred
     lg.out(4, 'gate.started')
     _StartingDeferred = None
-    global _PacketsTimeOutTask
-    if not _PacketsTimeOutTask:
-        _PacketsTimeOutTask = reactor.callLater(10, packets_timeout_loop)
+    packets_timeout_loop()
+    # global _PacketsTimeOutTask
+    # if not _PacketsTimeOutTask:
+    #     _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
     
             
 def stop():
@@ -255,18 +256,18 @@ def stop():
     if _StoppingDeferred:
         lg.warn('already called')
         return _StoppingDeferred
+    lg.out(4, 'gate.stop')
     _StoppingDeferred = Deferred()
     _StoppingDeferred.addCallback(stopped)
     did_something = False
     for transp in transports().values():
-        if transp.state != 'OFFLINE':
+        if transp.state not in ['OFFLINE', 'STOPPING', ]:
             transp.automat('stop')
+            lg.out(4, '    send "stop" to %s' % transp)
             did_something = True
     if not did_something:
-        lg.out(4, 'gate.stop   skipped')
+        lg.out(4, '    will fire stopping deferred')
         _StoppingDeferred.callback(True) 
-    else:
-        lg.out(4, 'gate.stop')
     return _StoppingDeferred   
         
 
@@ -301,8 +302,9 @@ def transport_state_changed(proto, oldstate, newstate):
                 still_stopping = True
         if not still_stopping:
             _StoppingDeferred.callback(True)
-    lg.out(6, 'gate.transport_state_changed %s starting=%r stopping=%r' % (
-        proto.upper(), bool(_StartingDeferred), bool(_StoppingDeferred)))
+    lg.out(6, 'gate.transport_state_changed %s %s->%s starting=%s stopping=%s' % (
+        proto.upper(), oldstate, newstate, 
+        str(_StartingDeferred), str(_StoppingDeferred)))
 
 #------------------------------------------------------------------------------ 
 
