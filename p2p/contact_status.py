@@ -239,7 +239,7 @@ class ContactStatus(automat.Automat):
 
     def isPingPacket(self, arg):
         pkt_out = arg
-        return pkt_out.outpacket.Command == commands.Identity() and pkt_out.wide is True
+        return pkt_out.outpacket and pkt_out.outpacket.Command == commands.Identity() and pkt_out.wide is True
 
     def isDataPacket(self, arg):
         outpacket, status, error = arg
