@@ -62,8 +62,11 @@ class FileQueue:
         newoutput = ''.join((
             struct.pack('i', stream_id),
             ack_data))
-        lg.out(18, '<-out ACK %d %s' % (stream_id,
-            ','.join(map(lambda x: str(struct.unpack('i', x)[0]), [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
+        if ack_data:
+            lg.out(18, '<-out ACK %d %s' % (stream_id,
+                ','.join(map(lambda x: str(struct.unpack('i', x)[0]), [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
+        else:
+            lg.out(18, '<-out ACK %d ZERO' % stream_id)
         return self.session.send_packet(udp.CMD_ACK, newoutput)
 
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):
@@ -167,14 +170,14 @@ class FileQueue:
             return
         if not self.session.peer_id:
             inp.close()
+            lg.warn('peer id is unknown yet %s' % stream_id)
             self.do_send_ack(stream_id, None, '')
-            print 'peer id is unknown yet', stream_id
             return
         if stream_id not in self.streams.keys():
             if stream_id in self.dead_streams:
                 inp.close()
                 self.do_send_ack(stream_id, None, '')
-                print 'old block', stream_id
+                lg.warn('old block %s' % stream_id)
                 return
             if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS:
                 # too many incoming streams, seems remote side is cheating - drop that session!
@@ -182,7 +185,7 @@ class FileQueue:
                 inp.close()
                 # lg.warn('too many incoming files for session %s' % str(self.session))
                 # self.session.automat('shutdown')
-                print 'too many incoming files', stream_id, self.session.peer_id
+                lg.warn('too many incoming files %s %s' % (stream_id, self.session.peer_id))
                 self.do_send_ack(stream_id, None, '') 
                 return
             self.start_inbox_file(stream_id, data_size)
