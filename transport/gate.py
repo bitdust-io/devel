@@ -551,7 +551,7 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
             pkt_out.description, transfer_id, work_item.proto, status.upper(), bytes_sent))
     else:
         lg.out(14, '<<< OUT <<< %s (%d) [%s] %s : %s' % (
-            transfer_id, work_item.proto, status.upper(), error_message))
+            pkt_out.description, transfer_id, work_item.proto, status.upper(), error_message))
     return True
 
 def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
