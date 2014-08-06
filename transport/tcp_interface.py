@@ -45,15 +45,28 @@ def proxy():
 
 class GateInterface():
     
-    def init(self, gate_xml_rpc_url):
+    def init(self, xml_rpc_url_or_object):
         """
         """
         global _GateProxy
         lg.out(4, 'tcp_interface.init')
-        if not _GateProxy:
-            _GateProxy = xmlrpc.Proxy(gate_xml_rpc_url, allowNone=True)
+        if type(xml_rpc_url_or_object) == str:
+            _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
+        else:
+            _GateProxy = xml_rpc_url_or_object
         proxy().callRemote('transport_started', 'tcp')
         return True
+
+    def shutdown(self):
+        """
+        """
+        lg.out(4, 'tcp_interface.shutdown')
+        ret = self.disconnect()
+        global _GateProxy
+        if _GateProxy:
+            # del _GateProxy
+            _GateProxy = None
+        return ret
 
     def receive(self, options):
         lg.out(4, 'tcp_interface.receive')
@@ -66,15 +79,6 @@ class GateInterface():
         tcp_node.close_connections()
         return tcp_node.disconnect()
     
-    def shutdown(self):
-        lg.out(4, 'tcp_interface.shutdown')
-        ret = self.disconnect()
-        global _GateProxy
-        if _GateProxy:
-            del _GateProxy
-            _GateProxy = None
-        return ret
-
     def send_file(self, filename, host, description=''):
         host = host.split(':')
         host = (host[0], int(host[1]))

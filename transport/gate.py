@@ -51,11 +51,15 @@ import sys
 import time
 import optparse
 
-from twisted.web import server
 from twisted.web import xmlrpc
+from twisted.web import server
 from twisted.internet import reactor
 from twisted.internet import task
-from twisted.internet.defer import Deferred, DeferredList, succeed
+from twisted.internet.defer import Deferred 
+from twisted.internet.defer import maybeDeferred 
+from twisted.internet.defer import fail
+from twisted.python import failure
+
 
 from logs import lg
 
@@ -95,6 +99,7 @@ except:
 
 _TransportsDict = {}
 _DoingShutdown = False
+_LocalListener = None
 _XMLRPCListener = None
 _XMLRPCPort = None
 _XMLRPCURL = ''
@@ -139,6 +144,7 @@ def init(transportslist=None):
     """
     Initialize the transports gate - this will start all installed transports.
     """
+    global _LocalListener
     global _XMLRPCListener
     global _XMLRPCPort
     global _XMLRPCURL
@@ -146,32 +152,51 @@ def init(transportslist=None):
     global _TransportsDict
     global INSTALLED_TRANSPORTS
     lg.out(4, 'gate.init')
-    if _XMLRPCListener or _DoingShutdown:
+    if _DoingShutdown:
         return False
-    _XMLRPCListener = reactor.listenTCP(0, server.Site(TransportGateXMLRPCServer()))
-    _XMLRPCPort = _XMLRPCListener.getHost().port
-    _XMLRPCURL = "http://localhost:%d" % int(_XMLRPCPort)
-    if not transportslist:
-        transportslist = INSTALLED_TRANSPORTS.keys()
-    lg.out(6, 'gate.init  XML-RPC: %s, transports: %s' % (_XMLRPCURL, transportslist))
-    for proto in transportslist:
-        iface = None
-        if proto == 'tcp':
-            iface = tcp_interface.GateInterface()
-        elif proto == 'udp':
-            iface = udp_interface.GateInterface()
-        if iface is None:
-            raise Exception('transport not supported: %s'  % proto)
-        _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
-        transport(proto).automat('init', _XMLRPCURL)
-        lg.out(6, 'gate.init want to start transport [%s]' % proto)
-    return True
+    if True:
+        _LocalListener = TransportGateLocalProxy()
+        if not transportslist:
+            transportslist = INSTALLED_TRANSPORTS.keys()
+        lg.out(6, 'gate.init transports: %s' % str(transportslist))
+        for proto in transportslist:
+            iface = None
+            if proto == 'tcp':
+                iface = tcp_interface.GateInterface()
+            elif proto == 'udp':
+                iface = udp_interface.GateInterface()
+            if iface is None:
+                raise Exception('transport not supported: %s'  % proto)
+            _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
+            transport(proto).automat('init', _LocalListener)
+            lg.out(6, 'gate.init want to start transport [%s]' % proto)
+        return True
+    else:
+        _XMLRPCListener = reactor.listenTCP(0, server.Site(TransportGateXMLRPCServer()))
+        _XMLRPCPort = _XMLRPCListener.getHost().port
+        _XMLRPCURL = "http://localhost:%d" % int(_XMLRPCPort)
+        if not transportslist:
+            transportslist = INSTALLED_TRANSPORTS.keys()
+        lg.out(6, 'gate.init  XML-RPC: %s, transports: %s' % (_XMLRPCURL, transportslist))
+        for proto in transportslist:
+            iface = None
+            if proto == 'tcp':
+                iface = tcp_interface.GateInterface()
+            elif proto == 'udp':
+                iface = udp_interface.GateInterface()
+            if iface is None:
+                raise Exception('transport not supported: %s'  % proto)
+            _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
+            transport(proto).automat('init', _XMLRPCURL)
+            lg.out(6, 'gate.init want to start transport [%s]' % proto)
+        return True
 
 
 def shutdown():
     """
     Shut down the gate, need to stop all transports.
     """
+    global _LocalListener
     global _XMLRPCListener
     global _XMLRPCPort
     global _XMLRPCURL
@@ -182,6 +207,13 @@ def shutdown():
     _DoingShutdown = True
     for transp in transports().values():
         transp.automat('shutdown')
+    if _XMLRPCListener:
+        del _XMLRPCListener
+        _XMLRPCListener = None
+        _XMLRPCPort = None
+        _XMLRPCURL = None
+    if _LocalListener:
+        _LocalListener = None
 
 
 def start():
@@ -450,15 +482,15 @@ def current_bytes_received():
 def packets_timeout_loop():
     global _PacketsTimeOutTask
     # lg.out(18, 'gate.packets_timeout_loop')
-    _PacketsTimeOutTask = reactor.callLater(10, packets_timeout_loop)
+    _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
     for pkt_in in packet_in.items().values():
         if pkt_in.is_timed_out():
-            lg.out(28, 'gate.packets_timeout_loop %r is timed out' % pkt_in)
-            # pkt_in.automat('cancel', 'timeout')
+            lg.out(18, 'gate.packets_timeout_loop %r is timed out' % pkt_in)
+            pkt_in.automat('cancel', 'timeout')
     for pkt_out in packet_out.queue():
         if pkt_out.is_timed_out():
-            lg.out(28, 'gate.packets_timeout_loop %r is timed out' % pkt_out)
-            # pkt_out.automat('cancel', 'timeout')
+            lg.out(18, 'gate.packets_timeout_loop %r is timed out' % pkt_out)
+            pkt_out.automat('cancel', 'timeout')
 
 def stop_packets_timeout_loop():
     global _PacketsTimeOutTask
@@ -623,6 +655,42 @@ class OutputFile():
         self.description = description
         self.started = time.time()
         
+#------------------------------------------------------------------------------ 
+
+class TransportGateLocalProxy():
+    """
+    A class to handle calls from transport plug-ins in the main thread.
+    """
+    def __init__(self):
+        self.methods = {
+            'transport_started': on_transport_started,
+            'receiving_started': on_receiving_started,
+            'receiving_failed': on_receiving_failed,
+            'disconnected': on_disconnected,
+            'start_connecting': on_start_connecting,
+            'session_opened': on_session_opened,
+            'message_received': on_message_received,
+            'connection_failed': on_connection_failed,
+            'register_file_sending': on_register_file_sending,
+            'unregister_file_sending': on_unregister_file_sending,
+            'register_file_receiving': on_register_file_receiving,
+            'unregister_file_receiving': on_unregister_file_receiving,
+            'cancelled_file_sending': on_cancelled_file_sending,
+        }
+        
+    def callRemote(self, method, *args):
+        m = self.methods.get(method)
+        if not m:
+            lg.warn('unsupported method: %s' % method)
+            return fail('unsupported method: %s' % method) 
+        _d = Deferred()
+        def _call():
+            r = maybeDeferred(m, *args)
+            r.addCallback(_d.callback)
+            r.addErrback(_d.errback)
+        reactor.callLater(0, _call)
+        return _d 
+
 #------------------------------------------------------------------------------ 
 
 class TransportGateXMLRPCServer(xmlrpc.XMLRPC):

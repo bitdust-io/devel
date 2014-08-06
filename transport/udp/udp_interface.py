@@ -66,12 +66,15 @@ def id_to_idurl(user_id):
 
 class GateInterface():
 
-    def init(self, gate_xml_rpc_url):
+    def init(self, xml_rpc_url_or_object):
         """
         """
         global _GateProxy
-        lg.out(4, 'udp_interface.init')
-        _GateProxy = xmlrpc.Proxy(gate_xml_rpc_url, allowNone=True)
+        lg.out(4, 'udp_interface.init %s' % xml_rpc_url_or_object)
+        if type(xml_rpc_url_or_object) == str:
+            _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
+        else:
+            _GateProxy = xml_rpc_url_or_object
         _GateProxy.callRemote('transport_started', 'udp')
         return True
 
@@ -82,7 +85,7 @@ class GateInterface():
         lg.out(4, 'udp_interface.shutdown')
         ret = self.disconnect()
         if _GateProxy:
-            del _GateProxy
+            # del _GateProxy
             _GateProxy = None
         return ret
 

@@ -110,27 +110,27 @@ class FileQueue:
         lg.out(18, 'udp_file_queue.start_outbox_file %d %s %s %d %s' % (
             stream_id, description, os.path.basename(filename), filesize, self.session.peer_id))
         outfile = OutboxFile(self, stream_id, filename, filesize, description, result_defer, single)
+        outstream = udp_stream.UDPStream(stream_id, outfile, self)
+        self.streams[stream_id] = outstream
+        self.outboxFiles[stream_id] = outfile
         if not single:
             d = udp_interface.interface_register_file_sending(
                 self.session.peer_id, self.session.peer_idurl, filename, description)
             d.addCallback(self.on_outbox_file_registered, stream_id)
             d.addErrback(self.on_outbox_file_register_failed, stream_id)
-            outfile.registration = d
-        self.outboxFiles[stream_id] = outfile
-        self.streams[stream_id] = udp_stream.UDPStream(
-            stream_id, outfile, self)
+            self.outboxFiles[stream_id].registration = d
         
     def start_inbox_file(self, stream_id, data_size):
         lg.out(18, 'udp_file_queue.start_inbox_file %d %d %s' % (stream_id, data_size, self.session.peer_id))
         infile = InboxFile(self, stream_id, data_size)
+        instream = udp_stream.UDPStream(stream_id, infile, self)
+        self.streams[stream_id] = instream
+        self.inboxFiles[stream_id] = infile
         d = udp_interface.interface_register_file_receiving(
             self.session.peer_id, self.session.peer_idurl, infile.filename, infile.size)
         d.addCallback(self.on_inbox_file_registered, stream_id)
         d.addErrback(self.on_inbox_file_register_failed, stream_id)
-        infile.registration = d
-        self.inboxFiles[stream_id] = infile
-        self.streams[stream_id] = udp_stream.UDPStream(
-            stream_id, infile, self)
+        self.inboxFiles[stream_id].registration = d
 
     def close_stream(self, stream_id):
         s = self.streams.pop(stream_id)
