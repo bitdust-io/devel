@@ -165,16 +165,17 @@ class PacketIn(automat.Automat):
         """
         Condition method.
         """
-        return self.sender_idurl is not None and identitycache.HasKey(self.sender_idurl)
+        return self.sender_idurl and identitycache.HasKey(self.sender_idurl)
 
     def doInit(self, arg):
         """
         Action method.
         """
-        # lg.out(18, 'packet_in.doInit %s' % str(arg))
         self.proto, self.host, self.sender_idurl, self.filename, self.size = arg
         self.time = time.time()
         self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 10)
+        if not self.sender_idurl:
+            lg.warn('sender_idurl is None: %s' % str(arg))
 
     def doEraseInputFile(self, arg):
         """
