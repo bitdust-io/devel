@@ -192,6 +192,8 @@ class NetworkConnector(Automat):
         transport_states = map(lambda t: t.state, gate.transports().values())
         if 'LISTENING' in transport_states:
             return True
+        if 'STARTING' in transport_states:
+            return True
         return False
 
 #        global _CounterSuccessConnections
