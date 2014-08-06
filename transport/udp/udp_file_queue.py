@@ -55,12 +55,14 @@ class FileQueue:
             struct.pack('i', stream_id),
             struct.pack('i', outfile.size),
             output))
+        lg.out(18, '<-out DATA %d %d' % (stream_id, len(output)))
         return self.session.send_packet(udp.CMD_DATA, newoutput)
     
     def do_send_ack(self, stream_id, infile, ack_data):
         newoutput = ''.join((
             struct.pack('i', stream_id),
             ack_data))
+        lg.out(18, '<-out ACK %d %d' % (stream_id, len(ack_data)))
         return self.session.send_packet(udp.CMD_ACK, newoutput)
 
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):

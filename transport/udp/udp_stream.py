@@ -165,7 +165,7 @@ class UDPStream():
             self.blocks_to_ack.add(block_id)
             self.last_block_received_time = time.time() - self.creation_time
             eof_state = False
-            # lg.out(18, '>>> DATA %d %d %d %d' % (self.stream_id, block_id, self.bytes_in, block_id % BLOCKS_PER_ACK))
+            lg.out(18, 'in-> DATA %d %d %d %d' % (self.stream_id, block_id, self.bytes_in, block_id % BLOCKS_PER_ACK))
             if block_id == self.input_block_id + 1:
                 newdata = cStringIO.StringIO()
                 newblocks = 0
@@ -219,7 +219,7 @@ class UDPStream():
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
-                # lg.out(18, '>>> ACK %d %d' % (self.stream_id, block_id))
+                lg.out(18, 'in-> ACK %d %d' % (self.stream_id, block_id))
             if acks > 0:
                 self.last_ack_received_time = time.time() - self.creation_time
                 self.input_acks_counter += 1
@@ -313,10 +313,11 @@ class UDPStream():
         current_rate = 0.0
         if relative_time > 0.0: 
             current_rate = self.bytes_in / relative_time
-        # print 'send ack %d|%d|%d' % (len(self.blocks_to_ack), len(self.output_blocks_acks), self.output_acks_counter), 
-        # print 'bytes:(%d|%d)' % (self.bytes_in, self.bytes_in_acks),
-        # print 'time:(%r)' % relative_time,
-        # print 'rate:(%r)' % current_rate
+        # if lg.is_debug(18):
+        #     print 'send ack %d|%d|%d' % (len(self.blocks_to_ack), len(self.output_blocks_acks), self.output_acks_counter), 
+        #     print 'bytes:(%d|%d)' % (self.bytes_in, self.bytes_in_acks),
+        #     print 'time:(%r)' % relative_time,
+        #     print 'rate:(%r)' % current_rate
         self.blocks_to_ack.clear()
         self.last_ack_moment = time.time()
         return ack_len > 0

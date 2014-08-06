@@ -179,7 +179,12 @@ class GateInterface():
         return False
 
 #------------------------------------------------------------------------------ 
-    
+
+def proxy_errback(x):
+    lg.out('udp_interface.proxy_errback: %s' % x)
+
+#------------------------------------------------------------------------------ 
+
 def interface_transport_started():
     """
     """
@@ -228,14 +233,18 @@ def interface_unregister_file_sending(transfer_id, status, bytes_sent, error_mes
     """
     """
     if proxy():
-        return proxy().callRemote('unregister_file_sending', transfer_id, status, bytes_sent, error_message)
+        return proxy().callRemote(
+            'unregister_file_sending', transfer_id, status, bytes_sent, error_message,
+                ).addErrback(proxy_errback)
 
 
 def interface_unregister_file_receiving(transfer_id, status, bytes_received, error_message=None):
     """
     """
     if proxy():
-        return proxy().callRemote('unregister_file_receiving', transfer_id, status, bytes_received, error_message)
+        return proxy().callRemote(
+            'unregister_file_receiving', transfer_id, status, bytes_received, error_message
+                ).addErrback(proxy_errback)
     else:
         lg.warn('proxy is none')
 
