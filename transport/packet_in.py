@@ -165,6 +165,8 @@ class PacketIn(automat.Automat):
         """
         Condition method.
         """
+        if not self.sender_idurl:
+            return True
         return self.sender_idurl and identitycache.HasKey(self.sender_idurl)
 
     def doInit(self, arg):
