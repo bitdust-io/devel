@@ -165,7 +165,7 @@ class UDPStream():
             self.blocks_to_ack.add(block_id)
             self.last_block_received_time = time.time() - self.creation_time
             eof_state = False
-            lg.out(18, '>>> DATA %d %d %d %d' % (self.stream_id, block_id, self.bytes_in, block_id % BLOCKS_PER_ACK))
+            # lg.out(18, '>>> DATA %d %d %d %d' % (self.stream_id, block_id, self.bytes_in, block_id % BLOCKS_PER_ACK))
             if block_id == self.input_block_id + 1:
                 newdata = cStringIO.StringIO()
                 newblocks = 0
@@ -219,7 +219,7 @@ class UDPStream():
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
-                lg.out(18, '>>> ACK %d %d' % (self.stream_id, block_id))
+                # lg.out(18, '>>> ACK %d %d' % (self.stream_id, block_id))
             if acks > 0:
                 self.last_ack_received_time = time.time() - self.creation_time
                 self.input_acks_counter += 1
@@ -345,8 +345,8 @@ class UDPStream():
         else:
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 2.0
-        # DEBUG
-        if False and self.resend_counter % 10 == 0:
+        if lg.is_debug(18) and self.resend_counter % 10 == 1:
+            # DEBUG
             current_rate_in = 0.0
             current_rate_out = 0.0
             if relative_time > 0.0: 
@@ -358,7 +358,6 @@ class UDPStream():
             print 'rate:(%d|%d)' % (int(current_rate_in), int(current_rate_out)),  
             print 'time:(%s|%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], 
                                           self.resend_counter, self.resend_inactivity_counter)
-        # DEBUG
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return
