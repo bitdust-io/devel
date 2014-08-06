@@ -165,10 +165,8 @@ class UDPStream():
             self.blocks_to_ack.add(block_id)
             self.last_block_received_time = time.time() - self.creation_time
             eof_state = False
-            lg.out(18, 'in-> DATA %d %d %d %d' % (self.stream_id, block_id, self.bytes_in, block_id % BLOCKS_PER_ACK))
             if block_id == self.input_block_id + 1:
                 newdata = cStringIO.StringIO()
-                newblocks = 0
                 # print 'newdata',
                 while True:
                     next_block_id = self.input_block_id + 1
@@ -178,13 +176,17 @@ class UDPStream():
                         break
                     newdata.write(blockdata)
                     self.input_block_id = next_block_id
-                    newblocks += 1
                     # print next_block_id,
                 self.consumer.on_received_raw_data(newdata.getvalue())
                 newdata.close()
                 if self.consumer.is_done():
                     eof_state = True
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
+                lg.out(18, 'in-> DATA %d %d-%d %s' % (
+                    self.stream_id, block_id, self.input_block_id, eof_state))
+            else:
+                lg.out(18, 'in-> DATA %d %d' % (
+                    self.stream_id, block_id))
             # want to send the first ack asap - started from 1
             is_ack_timed_out = time.time() - self.last_ack_moment > RTT_MAX_LIMIT
             is_first_block_in_group = block_id % BLOCKS_PER_ACK 
