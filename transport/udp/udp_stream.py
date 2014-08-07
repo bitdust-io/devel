@@ -158,7 +158,7 @@ class UDPStream():
             if block_id in self.input_blocks.keys():
                 self.input_duplicated_blocks += 1
                 self.input_duplicated_bytes += len(data)
-                print 'duplicated', block_id
+                lg.warn('duplicated %d %d' % (self.stream_id, block_id))
             self.input_blocks[block_id] = data
             self.input_blocks_counter += 1
             self.bytes_in += len(data)
@@ -182,8 +182,8 @@ class UDPStream():
                 if self.consumer.is_done():
                     eof_state = True
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
-                lg.out(18, 'in-> DATA %d %d-%d %s %s' % (
-                    self.stream_id, block_id, self.input_block_id, eof_state, str(self.blocks_to_ack)))
+                # lg.out(18, 'in-> DATA %d %d-%d %s %s' % (
+                #     self.stream_id, block_id, self.input_block_id, eof_state, str(self.blocks_to_ack)))
             else:
                 lg.out(18, 'in-> DATA %d %d %s' % (
                     self.stream_id, block_id, str(self.blocks_to_ack)))
@@ -225,7 +225,7 @@ class UDPStream():
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
-                lg.out(18, 'in-> ACK %d %d' % (self.stream_id, block_id))
+                # lg.out(18, 'in-> ACK %d %d' % (self.stream_id, block_id))
             if acks > 0:
                 self.last_ack_received_time = time.time() - self.creation_time
                 self.input_acks_counter += 1

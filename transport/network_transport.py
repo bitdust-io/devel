@@ -13,7 +13,7 @@ EVENTS:
     * :red:`start`
     * :red:`stop`
     * :red:`stopped`
-    * :red:`transport-started`
+    * :red:`transport-initialized`
 """
 
 import platform
@@ -60,7 +60,8 @@ class NetworkTransport(automat.Automat):
         """
         Method to to catch the moment when automat's state were changed.
         """
-        gate.transport_state_changed(self.proto, oldstate, newstate)
+        from p2p import network_connector
+        network_connector.NetworkTransportStateChanged(self.proto, oldstate, newstate)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -127,12 +128,12 @@ class NetworkTransport(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'start' :
                 self.StartNow=True
-            elif event == 'transport-started' and self.StartNow :
+            elif event == 'transport-initialized' and self.StartNow :
                 self.state = 'STARTING'
                 self.doCreateProxy(arg)
                 self.StartNow=False
                 self.doStart(arg)
-            elif event == 'transport-started' and not self.StartNow :
+            elif event == 'transport-initialized' and not self.StartNow :
                 self.state = 'OFFLINE'
                 self.doCreateProxy(arg)
 
@@ -181,6 +182,13 @@ class NetworkTransport(automat.Automat):
         if arg:
             self.interface.create_proxy(arg)
 
+#    def doNotifyNWConnector(self, arg):
+#        """
+#        Action method.
+#        """
+#        # from p2p import network_connector
+#        # network_connector.NetworkTransportInitialized(self.proto)
+
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
@@ -189,4 +197,5 @@ class NetworkTransport(automat.Automat):
         automat.objects().pop(self.index)
         self.interface = None
         self.proto = None
+
 

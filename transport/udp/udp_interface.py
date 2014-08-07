@@ -75,7 +75,7 @@ class GateInterface():
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
             _GateProxy = xml_rpc_url_or_object
-        _GateProxy.callRemote('transport_started', 'udp')
+        _GateProxy.callRemote('transport_initialized', 'udp')
         return True
 
     def shutdown(self):
@@ -188,11 +188,11 @@ def proxy_errback(x):
 
 #------------------------------------------------------------------------------ 
 
-def interface_transport_started():
+def interface_transport_initialized():
     """
     """
     if proxy():
-        return proxy().callRemote('transport_started', 'udp')
+        return proxy().callRemote('transport_initialized', 'udp')
 
 
 def interface_receiving_started(host, new_options=None):

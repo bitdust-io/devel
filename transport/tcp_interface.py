@@ -54,7 +54,7 @@ class GateInterface():
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
             _GateProxy = xml_rpc_url_or_object
-        proxy().callRemote('transport_started', 'tcp')
+        proxy().callRemote('transport_initialized', 'tcp')
         return True
 
     def shutdown(self):
@@ -116,9 +116,9 @@ class GateInterface():
 
 #------------------------------------------------------------------------------ 
 
-def interface_transport_started(xmlrpcurl):
+def interface_transport_initialized(xmlrpcurl):
     if proxy():
-        return proxy().callRemote('transport_started', 'tcp', xmlrpcurl)
+        return proxy().callRemote('transport_initialized', 'tcp', xmlrpcurl)
     
     
 def interface_receiving_started(host, new_options=None):

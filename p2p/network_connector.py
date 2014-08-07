@@ -27,6 +27,7 @@ If BitPie.NET get disconnected it will ping "http://google.com" to know what is 
 
 
 EVENTS:
+    * :red:`all-transports-ready`
     * :red:`connection-done`
     * :red:`got-network-info`
     * :red:`init`
@@ -36,6 +37,7 @@ EVENTS:
     * :red:`network-up`
     * :red:`reconnect`
     * :red:`timer-1hour`
+    * :red:`timer-20sec`
     * :red:`timer-5sec`
     * :red:`upnp-done`
     
@@ -82,6 +84,9 @@ _NetworkConnector = None
 _CounterSuccessConnections = 0
 _CounterFailedConnections = 0
 _LastSuccessConnectionTime = 0
+_TransportsInitialization = []
+_TransportsStarting = []
+_TransportsStopping = []
 
 #------------------------------------------------------------------------------
 
@@ -105,12 +110,15 @@ class NetworkConnector(Automat):
     timers = {
         'timer-1hour': (3600, ['DISCONNECTED']),
         'timer-5sec': (5.0, ['DISCONNECTED','CONNECTED']),
+        'timer-20sec': (20.0, ['GATE_INIT']),
         }
 
     fast = False
-    last_upnp_time = 0
-    last_reconnect_time = 0
-    last_internet_state = 'disconnected'
+    
+    def init(self):
+        self.last_upnp_time = 0
+        self.last_reconnect_time = 0
+        self.last_internet_state = 'disconnected'
 
     def state_changed(self, oldstate, newstate):
         automats.set_global_state('NETWORK ' + newstate)
@@ -121,10 +129,8 @@ class NetworkConnector(Automat):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init' :
-                self.state = 'UP'
-                self.doSetUp(arg)
-                self.Disconnects=0
-                self.Reset=False
+                self.state = 'GATE_INIT'
+                self.doInitGate(arg)
         #---UPNP---
         elif self.state == 'UPNP':
             if event == 'upnp-done' :
@@ -179,6 +185,13 @@ class NetworkConnector(Automat):
             if event == 'network-down' :
                 self.state = 'NETWORK?'
                 self.doCheckNetworkInterfaces(arg)
+        #---GATE_INIT---
+        elif self.state == 'GATE_INIT':
+            if event == 'timer-20sec' or event == 'all-transports-ready' :
+                self.state = 'UP'
+                self.doSetUp(arg)
+                self.Disconnects=0
+                self.Reset=False
 
     def isNeedUPNP(self, arg):
         return settings.enableUPNP() and time.time() - self.last_upnp_time < 60*60
@@ -228,6 +241,13 @@ class NetworkConnector(Automat):
     def isTimePassed(self, arg):
         return time.time() - self.last_reconnect_time < 15
 
+    def doInitGate(self, arg):
+        """
+        Action method.
+        """
+        global _TransportsInitialization
+        _TransportsInitialization = gate.init()
+
     def doSetUp(self, arg):
         lg.out(6, 'network_connector.doSetUp')
         # net_misc.SetConnectionDoneCallbackFunc(ConnectionDoneCallback)
@@ -240,25 +260,19 @@ class NetworkConnector(Automat):
             id_server.A('start', (settings.getIdServerWebPort(), 
                                   settings.getIdServerTCPPort()))  
         dht_service.connect()
-        gate.start().addCallback(
-            lambda x: reactor.callLater(0, self.automat, 'network-up'))
+        global _TransportsStarting
+        _TransportsStarting = gate.start()
 
     def doSetDown(self, arg):
         """
         """
         lg.out(6, 'network_connector.doSetDown')
-        shutlist = []
-        d_dht = dht_service.disconnect()
-        if d_dht:
-            shutlist.append(d_dht)
-        d_gate = gate.stop()
-        if d_gate:
-            shutlist.append(d_gate)
+        dht_service.disconnect()
         stun_server.A('stop')
         if settings.enableIdServer():
-            id_server.A('stop')   
-        DeferredList(shutlist).addCallback(
-            lambda x: reactor.callLater(0, self.automat, 'network-down'))
+            id_server.A('stop')
+        global _TransportsStopping    
+        _TransportsStopping = gate.stop()
 
     def doUPNP(self, arg):
         self.last_upnp_time = time.time()
@@ -295,7 +309,6 @@ class NetworkConnector(Automat):
         self.last_reconnect_time = time.time()
 
 #------------------------------------------------------------------------------ 
-
 
 def UpdateUPNP():
     """
@@ -378,6 +391,40 @@ def NetworkAddressChangedCallback(newaddress):
     Called when user's IP were changed to start reconnect process.
     """
     A('reconnect')
+
+
+#def NetworkTransportInitialized(proto):
+#    """
+#    """
+#    global _TransportsInitialization
+#    _TransportsInitialization.remove(proto)
+#    if len(_TransportsInitialization) == 0:
+#        A('all-transports-ready')
+
+
+def NetworkTransportStateChanged(proto, oldstate, newstate):
+    global _TransportsInitialization
+    global _TransportsStarting
+    global _TransportsStopping
+    lg.out(6, 'NetworkTransportStateChanged %s : %s->%s network_connector state is %s' % (
+        proto, oldstate, newstate, A().state))
+    # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
+    if A().state == 'GATE_INIT':
+        if newstate in ['STARTING', 'OFFLINE',]:
+            _TransportsInitialization.remove(proto)
+            if len(_TransportsInitialization) == 0:
+                A('all-transports-ready')                
+    elif A().state == 'UP':
+        if newstate in ['LISTENING', 'OFFLINE',]:
+            _TransportsStarting.remove(proto)
+            if len(_TransportsStarting) == 0:
+                A('network-up')
+    elif A().state == 'DOWN':
+        if newstate == 'OFFLINE':
+            _TransportsStopping.remove(proto)
+            if len(_TransportsStopping) == 0:
+                A('network-down')
+    # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
 
 
 

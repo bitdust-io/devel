@@ -105,8 +105,8 @@ _XMLRPCPort = None
 _XMLRPCURL = ''
 _LastTransferID = None
 _LastInboxPacketTime = 0
-_StartingDeferred = None
-_StoppingDeferred = None
+#_StartingDeferred = None
+#_StoppingDeferred = None
 _PacketsTimeOutTask = None
                 
 #------------------------------------------------------------------------------ 
@@ -143,6 +143,7 @@ def last_inbox_time():
 def init(transportslist=None):
     """
     Initialize the transports gate - this will start all installed transports.
+    Return a list if started transports.
     """
     global _LocalListener
     global _XMLRPCListener
@@ -153,7 +154,8 @@ def init(transportslist=None):
     global INSTALLED_TRANSPORTS
     lg.out(4, 'gate.init')
     if _DoingShutdown:
-        return False
+        return []
+    result = []
     if True:
         _LocalListener = TransportGateLocalProxy()
         if not transportslist:
@@ -169,8 +171,8 @@ def init(transportslist=None):
                 raise Exception('transport not supported: %s'  % proto)
             _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
             transport(proto).automat('init', _LocalListener)
-            lg.out(6, 'gate.init want to start transport [%s]' % proto)
-        return True
+            result.append(proto)
+            lg.out(6, 'gate.init initialized transport [%s]' % proto)
     else:
         _XMLRPCListener = reactor.listenTCP(0, server.Site(TransportGateXMLRPCServer()))
         _XMLRPCPort = _XMLRPCListener.getHost().port
@@ -188,8 +190,9 @@ def init(transportslist=None):
                 raise Exception('transport not supported: %s'  % proto)
             _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
             transport(proto).automat('init', _XMLRPCURL)
+            result.append(proto)
             lg.out(6, 'gate.init want to start transport [%s]' % proto)
-        return True
+    return result
 
 
 def shutdown():
@@ -219,24 +222,36 @@ def shutdown():
 def start():
     """
     """
-    global _StartingDeferred
-    if _StartingDeferred:
-        lg.warn('already called')
-        return _StartingDeferred
     lg.out(4, 'gate.start')
-    _StartingDeferred = Deferred()
-    _StartingDeferred.addCallback(started)
-    did_something = False
+    result = []
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto): 
-            if transp.state not in ['LISTENING', 'STARTING', ]:
+            if transp.state != 'LISTENING':
                 lg.out(4, '    send "start" to %s' % transp)
                 transp.automat('start')
-                did_something = True
-    if not did_something:
-        lg.out(4, '    will fire starting deferred')
-        _StartingDeferred.callback(True)
-    return _StartingDeferred 
+                result.append(proto)
+            else:
+                lg.out(4, '    %s is ready')
+    return result
+
+
+    # global _StartingDeferred
+    # if _StartingDeferred:
+    #     lg.warn('already called')
+    #     return _StartingDeferred
+    # _StartingDeferred = Deferred()
+    # _StartingDeferred.addCallback(started)
+#    count_started = 0
+#    for proto, transp in transports().items():
+#        if settings.transportIsEnabled(proto): 
+#            if transp.state != 'LISTENING' and transp.state != 'STARTING':
+#                lg.out(4, '    send "start" to %s' % transp)
+#                transp.automat('start')
+#                count_started += 1
+#    if count_started == 0:
+#        lg.out(4, '    fire starting deferred now because no transport were started')
+#        _StartingDeferred.callback(True)
+#     return _StartingDeferred 
     
         
 def started(x):
@@ -244,6 +259,7 @@ def started(x):
     lg.out(4, 'gate.started')
     _StartingDeferred = None
     packets_timeout_loop()
+    return x
     # global _PacketsTimeOutTask
     # if not _PacketsTimeOutTask:
     #     _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
@@ -252,59 +268,70 @@ def started(x):
 def stop():
     """
     """
-    global _StoppingDeferred
-    if _StoppingDeferred:
-        lg.warn('already called')
-        return _StoppingDeferred
     lg.out(4, 'gate.stop')
-    _StoppingDeferred = Deferred()
-    _StoppingDeferred.addCallback(stopped)
-    did_something = False
-    for transp in transports().values():
-        if transp.state not in ['OFFLINE', 'STOPPING', ]:
-            transp.automat('stop')
-            lg.out(4, '    send "stop" to %s' % transp)
-            did_something = True
-    if not did_something:
-        lg.out(4, '    will fire stopping deferred')
-        _StoppingDeferred.callback(True) 
-    return _StoppingDeferred   
+    result = []
+    for proto, transp in transports().items():
+        if settings.transportIsEnabled(proto): 
+            if transp.state != 'OFFLINE':
+                lg.out(4, '    send "stop" to %s' % transp)
+                transp.automat('stop')
+                result.append(proto)
+            else:
+                lg.out(4, '    %s is ready')
+    return result
+#    global _StoppingDeferred
+#    if _StoppingDeferred:
+#        lg.warn('already called')
+#        return _StoppingDeferred
+#    lg.out(4, 'gate.stop')
+#    _StoppingDeferred = Deferred()
+#    _StoppingDeferred.addCallback(stopped)
+#    did_something = False
+#    for transp in transports().values():
+#        if transp.state not in ['OFFLINE', 'STOPPING', ]:
+#            transp.automat('stop')
+#            lg.out(4, '    send "stop" to %s' % transp)
+#            did_something = True
+#    if not did_something:
+#        lg.out(4, '    will fire stopping deferred')
+#        _StoppingDeferred.callback(True) 
+#    return _StoppingDeferred   
         
 
-def stopped(x):
-    global _StoppingDeferred
-    lg.out(4, 'gate.stopped')
-    _StoppingDeferred = None
-    global _PacketsTimeOutTask
-    if _PacketsTimeOutTask:
-        if _PacketsTimeOutTask.active():
-            _PacketsTimeOutTask.cancel()
-            _PacketsTimeOutTask = None
+#def stopped(x):
+#    global _StoppingDeferred
+#    lg.out(4, 'gate.stopped')
+#    _StoppingDeferred = None
+#    global _PacketsTimeOutTask
+#    if _PacketsTimeOutTask:
+#        if _PacketsTimeOutTask.active():
+#            _PacketsTimeOutTask.cancel()
+#            _PacketsTimeOutTask = None
 
 #------------------------------------------------------------------------------ 
 
-def transport_state_changed(proto, oldstate, newstate):
-    """
-    """
-    global _StartingDeferred
-    global _StoppingDeferred
-    if _StartingDeferred:
-        still_starting = False
-        for transp in transports().values():
-            if transp.state not in ['LISTENING', 'OFFLINE',]:
-                still_starting = True
-        if not still_starting:
-            _StartingDeferred.callback(True)
-    if _StoppingDeferred:
-        still_stopping = False
-        for transp in transports().values():
-            if transp.state not in ['OFFLINE',]:
-                still_stopping = True
-        if not still_stopping:
-            _StoppingDeferred.callback(True)
-    lg.out(6, 'gate.transport_state_changed %s %s->%s starting=%s stopping=%s' % (
-        proto.upper(), oldstate, newstate, 
-        str(_StartingDeferred), str(_StoppingDeferred)))
+#def transport_state_changed(proto, oldstate, newstate):
+#    """
+#    """
+#    global _StartingDeferred
+#    global _StoppingDeferred
+#    lg.out(6, 'gate.transport_state_changed %s %s->%s starting=%s stopping=%s' % (
+#        proto.upper(), oldstate, newstate, 
+#        str(_StartingDeferred), str(_StoppingDeferred)))
+#    if _StartingDeferred:
+#        still_starting = False
+#        for transp in transports().values():
+#            if transp.state not in ['LISTENING', 'OFFLINE',]:
+#                still_starting = True
+#        if not still_starting:
+#            _StartingDeferred.callback(True)
+#    if _StoppingDeferred:
+#        still_stopping = False
+#        for transp in transports().values():
+#            if transp.state not in ['OFFLINE',]:
+#                still_stopping = True
+#        if not still_stopping:
+#            _StoppingDeferred.callback(True)
 
 #------------------------------------------------------------------------------ 
 
@@ -503,10 +530,10 @@ def stop_packets_timeout_loop():
 
 #------------------------------------------------------------------------------ 
 
-def on_transport_started(proto, xmlrpcurl=None):
+def on_transport_initialized(proto, xmlrpcurl=None):
     """
     """
-    transport(proto).automat('transport-started', xmlrpcurl)
+    transport(proto).automat('transport-initialized', xmlrpcurl)
     return True
 
 def on_receiving_started(proto, host, options_modified=None):
@@ -665,7 +692,7 @@ class TransportGateLocalProxy():
     """
     def __init__(self):
         self.methods = {
-            'transport_started': on_transport_started,
+            'transport_initialized': on_transport_initialized,
             'receiving_started': on_receiving_started,
             'receiving_failed': on_receiving_failed,
             'disconnected': on_disconnected,
@@ -703,7 +730,7 @@ class TransportGateXMLRPCServer(xmlrpc.XMLRPC):
     def __init__(self):
         xmlrpc.XMLRPC.__init__(self, allowNone=True)
         self.methods = {
-            'transport_started': on_transport_started,
+            'transport_initialized': on_transport_initialized,
             'receiving_started': on_receiving_started,
             'receiving_failed': on_receiving_failed,
             'disconnected': on_disconnected,

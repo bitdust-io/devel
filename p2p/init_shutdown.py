@@ -154,8 +154,8 @@ def init_connection():
     from lib import settings
     dht_service.init(int(settings.getDHTPort()), settings.DHTDBFile())
 
-    from transport import gate
-    gate.init()
+    # from transport import gate
+    # gate.init()
     
     from transport import bandwidth
     from transport import callback
