@@ -56,8 +56,12 @@ class FileQueue:
             struct.pack('i', stream_id),
             struct.pack('i', outfile.size),
             output))
-        lg.out(18, '<-out DATA %d %s %s' % (
-            stream_id, struct.unpack('i', output[:4])[0], outfile.eof))
+        if len(output) > 0:
+            lg.out(18, '<-out DATA %d %s %s' % (
+                stream_id, struct.unpack('i', output[:4])[0], outfile.eof))
+        else:
+            lg.out(18, '<-out DATA %d ZERO BLOCK %s' % (
+                stream_id, outfile.eof))
         return self.session.send_packet(udp.CMD_DATA, newoutput)
     
     def do_send_ack(self, stream_id, infile, ack_data):
