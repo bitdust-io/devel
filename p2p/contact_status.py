@@ -175,6 +175,8 @@ class ContactStatus(automat.Automat):
     A class to keep track of user's online status.
     """
     
+    fast = True
+    
     timers = {
         'timer-20sec': (20.0, ['PING','ACK?']),
         }

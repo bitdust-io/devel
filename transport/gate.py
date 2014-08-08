@@ -277,7 +277,7 @@ def stop():
                 transp.automat('stop')
                 result.append(proto)
             else:
-                lg.out(4, '    %s is ready')
+                lg.out(4, '    %s already stopped' % proto)
     return result
 #    global _StoppingDeferred
 #    if _StoppingDeferred:

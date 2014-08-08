@@ -20,6 +20,8 @@ This is a daily stats - a single file for every day.
 import os
 import time
 
+from twisted.internet import reactor
+
 from logs import lg 
 
 from lib import bpio
@@ -53,9 +55,10 @@ def init():
     read_bandwidthOUT()
     CountTimeIn = time.time()
     CountTimeOut = time.time()
+    reactor.addSystemEventTrigger('before', 'shutdown', save)
     
     
-def shutodwn():
+def shutdown():
     """
     """
     lg.out(4, 'bandwidth.shutdown')
@@ -250,9 +253,12 @@ def IN(idurl, size):
             clear_bandwidthIN()
             CountTimeIn = time.time()
     currentV = int(BandInDict.get(idurl, 0))
-    currentV += size
-    BandInDict[idurl] = currentV
-    saveIN()
+    newV = currentV + size
+    BandInDict[idurl] = newV
+    curMB = int(currentV / (1024.0 * 1024.0))
+    newMB = int(newV / (1024.0 * 1024.0))
+    if curMB == 0 or curMB != newMB:
+        saveIN()
 
 
 def OUT(idurl, size):
@@ -270,9 +276,12 @@ def OUT(idurl, size):
             clear_bandwidthOUT()
             CountTimeOut = time.time()
     currentV = int(BandOutDict.get(idurl, 0))
-    currentV += size
-    BandOutDict[idurl] = currentV
-    saveOUT()
+    newV = currentV + size
+    BandOutDict[idurl] = newV
+    curMB = int(currentV / (1024.0 * 1024.0))
+    newMB = int(newV / (1024.0 * 1024.0))
+    if curMB == 0 or curMB != newMB:
+        saveOUT()
 
 
 def INfile(newpacket, pkt_in, status, error_message):
