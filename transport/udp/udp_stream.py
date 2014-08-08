@@ -311,12 +311,20 @@ class UDPStream():
             if relative_time > 0.0: 
                 current_rate_in = self.bytes_in / relative_time
                 current_rate_out = self.bytes_sent / relative_time
+            try:
+                rcv = self.consumer.bytes_received
+            except:
+                rcv = 0
+            try:
+                dlvr = self.consumer.bytes_delivered
+            except:
+                dlvr = 0
             s = ''
             s += '(%d:%d) ' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             s += 'in:(%d|%d|%d|%d) ' % (self.input_blocks_counter, self.bytes_in, 
-                                        self.consumer.bytes_received, self.bytes_in_acks)
+                                        rcv, self.bytes_in_acks)
             s += 'out:(%d|%d|%d|%d) ' % (self.output_blocks_counter, self.bytes_sent,
-                                      self.consumer.bytes_delivered, self.resend_bytes)
+                                      dlvr, self.resend_bytes)
             s += 'rate:(%d|%d) ' % (int(current_rate_in), int(current_rate_out))  
             s += 'time:(%s|%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], 
                                           self.resend_counter, self.resend_inactivity_counter)
