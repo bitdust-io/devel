@@ -33,7 +33,7 @@ BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14
 
 BLOCKS_PER_ACK = 16
 
-MAX_BUFFER_SIZE = 64*1024
+MAX_BUFFER_SIZE = 16*1024
 BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
 RTT_MIN_LIMIT = 0.002
@@ -73,7 +73,7 @@ class UDPStream():
         self.last_ack_moment = 0
         self.last_ack_received_time = 0
         self.last_block_received_time = 0
-        self.rtt_avarage = RTT_MIN_LIMIT
+        self.rtt_avarage = RTT_MAX_LIMIT
         self.rtt_acks_counter = 1.0
         self.resend_task = None
         self.resend_inactivity_counter = 0
@@ -296,7 +296,7 @@ class UDPStream():
                 activity = activity or self.send_ack()
             if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2.0:
                 self.producer.on_timeout_receiving(self.stream_id)
-        if len(self.output_blocks):        
+        if len(self.output_blocks) > 0:        
             activity = activity or self.send_blocks()
             if relative_time - self.last_ack_received_time > RTT_MAX_LIMIT * 4.0:
                 self.producer.on_timeout_sending(self.stream_id)
