@@ -55,7 +55,8 @@ class FileQueue:
             struct.pack('i', stream_id),
             struct.pack('i', outfile.size),
             output))
-        lg.out(18, '<-out DATA %d %s' % (stream_id, struct.unpack('i', output[:4])[0]))
+        lg.out(18, '<-out DATA %d %s %s' % (
+            stream_id, struct.unpack('i', output[:4])[0], outfile.eof))
         return self.session.send_packet(udp.CMD_DATA, newoutput)
     
     def do_send_ack(self, stream_id, infile, ack_data):
@@ -468,6 +469,7 @@ class OutboxFile():
             if not self.buffer:
                 self.buffer = self.fileobj.read(udp_stream.BUFFER_SIZE)
                 if not self.buffer:
+                    lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state')
                     # print 'EOF!!!', self.filename
                     self.eof = True
                     self.close_file()
