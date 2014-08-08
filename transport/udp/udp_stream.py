@@ -244,7 +244,7 @@ class UDPStream():
                 pass
                 # print 'go', block_id
             time_sent = relative_time
-            self.output_blocks[block_id][1] = time_sent
+            self.output_blocks[block_id] = (piece, time_sent)
             output = ''.join((
                 struct.pack('i', block_id),
                 piece))
