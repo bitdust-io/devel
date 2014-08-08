@@ -135,13 +135,13 @@ class UDPStream():
                     eof_state = True
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
             # want to send the first ack asap - started from 1
-            is_ack_timed_out = time.time() - self.last_ack_moment > RTT_MAX_LIMIT
+            is_ack_timed_out = (time.time() - self.last_ack_moment) > RTT_MAX_LIMIT
             is_first_block_in_group = ( (block_id % BLOCKS_PER_ACK) == 1)
             lg.out(18, 'in-> DATA %d %d %d %d %s %s %s' % (
                 self.stream_id, block_id, len(self.blocks_to_ack), 
                 self.input_block_id, is_ack_timed_out, is_first_block_in_group, eof_state))
             if is_ack_timed_out or is_first_block_in_group or eof_state:
-                self.resend()
+                self.resend(need_to_ack=True)
             if eof_state:
                 self.producer.on_inbox_file_done(self.consumer, 'finished')
                 
@@ -226,7 +226,7 @@ class UDPStream():
             data_size = len(piece)
             if time_sent >= 0:
                 dt = relative_time - time_sent
-                if dt > resend_time_limit:
+                if dt > resend_time_limit and self.last_ack_received_time > 0:
                     self.resend_bytes += data_size
                     self.resend_blocks += 1
                     # print 're -'s,
@@ -279,7 +279,7 @@ class UDPStream():
         self.last_ack_moment = time.time()
         return ack_len > 0
 
-    def resend(self):
+    def resend(self, need_to_ack=False):
         if not self.consumer:
             # print 'stop resending, consumer is None'
             return
@@ -289,7 +289,8 @@ class UDPStream():
         activity = False
         relative_time = time.time() - self.creation_time
         if len(self.blocks_to_ack) > 0:
-            if time.time() - self.last_ack_moment > rtt_current or self.consumer.is_done():
+            is_ack_timed_out = (time.time() - self.last_ack_moment) > rtt_current
+            if need_to_ack or is_ack_timed_out or self.consumer.is_done():
                 activity = activity or self.send_ack()
             if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2.0:
                 self.producer.on_timeout_receiving(self.stream_id)
