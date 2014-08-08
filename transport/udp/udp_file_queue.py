@@ -25,6 +25,7 @@ import udp_stream
 #------------------------------------------------------------------------------ 
 
 MAX_SIMULTANEOUS_STREAMS = 4
+NUMBER_OF_STREAMS_TO_REMEMBER = 10
 
 #------------------------------------------------------------------------------ 
 
@@ -35,7 +36,7 @@ class FileQueue:
         self.outboxFiles = {}
         self.inboxFiles = {}
         self.outboxQueue = []
-        self.dead_streams = set()
+        self.dead_streams = []
         
     def make_unique_stream_id(self):
         return int(str(random.randint(100, 999))+str(int(time.time() * 100.0))[7:])
@@ -137,7 +138,9 @@ class FileQueue:
     def close_stream(self, stream_id):
         s = self.streams.pop(stream_id)
         s.close()
-        self.dead_streams.add(stream_id)
+        self.dead_streams.append(stream_id)
+        if len(self.dead_streams) > NUMBER_OF_STREAMS_TO_REMEMBER:
+            self.dead_streams.pop(0)
         
     def close_outbox_file(self, stream_id):
         self.outboxFiles[stream_id].close()

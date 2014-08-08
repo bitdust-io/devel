@@ -111,7 +111,12 @@ class UDPStream():
         
     def block_received(self, inpt):
         if self.consumer:
-            block_id = struct.unpack('i', inpt.read(4))[0]
+            block_id = inpt.read(4)
+            if not block_id:
+                if self.producer:
+                    self.producer.do_send_ack(self.stream_id, None, '')
+                return
+            block_id = struct.unpack('i', block_id)[0]
             data = inpt.read()
             if block_id in self.input_blocks.keys():
                 self.input_duplicated_blocks += 1
@@ -314,6 +319,11 @@ class UDPStream():
             activity = activity or self.send_blocks()
             if relative_time - self.last_ack_received_time > RTT_MAX_LIMIT * 4.0:
                 self.producer.on_timeout_sending(self.stream_id)
+        else:
+            if self.bytes_sent > 0:
+                if relative_time - self.last_ack_received_time > rtt_current * 2.0:
+                    self.producer.do_send_data(self.stream_id, self.consumer, '')
+                    activity = True
         if activity:
             # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0.0
