@@ -487,6 +487,10 @@ class OutboxFile():
             # lg.out(18, 'on_sent_raw_data: %s' % self.stream_id)
             self.queue.on_outbox_file_done(self, 'finished')
             return True
+        if self.is_timed_out():
+            return False
+        if self.is_cancelled():
+            return False
         self.process()
         return False
     

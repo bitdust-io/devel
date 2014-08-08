@@ -73,7 +73,7 @@ class UDPStream():
         self.last_ack_moment = 0
         self.last_ack_received_time = 0
         self.last_block_received_time = 0
-        self.rtt_avarage = RTT_MAX_LIMIT
+        self.rtt_avarage = RTT_MIN_LIMIT # RTT_MAX_LIMIT
         self.rtt_acks_counter = 1.0
         self.resend_task = None
         self.resend_inactivity_counter = 0
