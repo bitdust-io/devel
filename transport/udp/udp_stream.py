@@ -105,7 +105,7 @@ class UDPStream():
         self.consumer = None
         self.producer = None
         self.input_blocks.clear()
-        self.blocks_to_ack.clear()
+        self.blocks_to_ack = []
         self.output_blocks.clear()
         self.output_blocks_ids = []
         
