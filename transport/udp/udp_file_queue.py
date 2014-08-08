@@ -334,8 +334,8 @@ class FileQueue:
             return
         if self.outboxFiles[stream_id].transfer_id:
             self.report_outbox_file(self.outboxFiles[stream_id], 'failed', 'timeout sending')
-        self.close_stream(stream_id)
         self.close_outbox_file(stream_id)
+        self.close_stream(stream_id)
 
 #------------------------------------------------------------------------------ 
 
@@ -460,6 +460,8 @@ class OutboxFile():
     
     def process(self):
         if self.eof:
+            return False
+        if self.fileobj is None:
             return False
         has_sends = False
         while True:
