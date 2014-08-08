@@ -89,8 +89,12 @@ class UDPStream():
         lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
+        try:
+            pir_id = self.producer.session.peer_id
+        except:
+            pir_id = '???'
         lg.out(18, 'udp_stream.close %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d' % (
-            self.stream_id, self.producer.session.peer_id,
+            self.stream_id, pir_id,
             self.input_blocks_counter, self.bytes_in,
             self.output_acks_counter, self.bytes_in_acks,
             self.input_duplicated_blocks, self.input_duplicated_bytes,
