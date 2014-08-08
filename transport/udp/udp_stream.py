@@ -92,7 +92,7 @@ class UDPStream():
         try:
             pir_id = self.producer.session.peer_id
         except:
-            pir_id = '???'
+            pir_id = 'None'
         lg.out(18, 'udp_stream.close %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d' % (
             self.stream_id, pir_id,
             self.input_blocks_counter, self.bytes_in,
