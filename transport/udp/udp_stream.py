@@ -134,8 +134,9 @@ class UDPStream():
                 if self.consumer.is_done():
                     eof_state = True
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
-                lg.out(18, 'in-> DATA %d %d-%d %s %d' % (
-                    self.stream_id, block_id, self.input_block_id, eof_state, len(self.blocks_to_ack)))
+                lg.out(18, 'in-> DATA %d %d %d %d %s %d' % (
+                    self.stream_id, block_id, len(self.blocks_to_ack), 
+                    self.input_block_id, eof_state))
             else:
                 lg.out(18, 'in-> DATA %d %d %d' % (
                     self.stream_id, block_id, len(self.blocks_to_ack)))
