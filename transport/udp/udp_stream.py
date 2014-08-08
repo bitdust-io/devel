@@ -80,22 +80,22 @@ class UDPStream():
         self.resend_counter = 0
         self.limit_send_bytes_per_sec = 10 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
         self.creation_time = time.time()
-        # lg.out(18, 'udp_stream.__init__ %d peer_id:%s session:%s' % (
-        #     self.stream_id, self.producer.session.peer_id, self.producer.session))
+        lg.out(18, 'udp_stream.__init__ %d peer_id:%s session:%s' % (
+            self.stream_id, self.producer.session.peer_id, self.producer.session))
         
     def __del__(self):
         """
         """
-        # lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
+        lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-#        lg.out(18, 'udp_stream.close %d in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d' % (
-#            self.stream_id, 
-#            self.input_blocks_counter, self.bytes_in,
-#            self.output_acks_counter, self.bytes_in_acks,
-#            self.input_duplicated_blocks, self.input_duplicated_bytes,
-#            self.output_blocks_counter, self.bytes_acked, 
-#            self.resend_blocks, self.resend_bytes,))
+        lg.out(18, 'udp_stream.close %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d' % (
+            self.stream_id, self.producer.session.peer_id,
+            self.input_blocks_counter, self.bytes_in,
+            self.output_acks_counter, self.bytes_in_acks,
+            self.input_duplicated_blocks, self.input_duplicated_bytes,
+            self.output_blocks_counter, self.bytes_acked, 
+            self.resend_blocks, self.resend_bytes,))
         self.stop_resending()
         self.consumer.stream = None
         self.consumer = None
@@ -281,7 +281,7 @@ class UDPStream():
         return ack_len > 0
 
     def resend(self):
-        if not self.consumer or not self.producer:
+        if not self.consumer:
             # print 'stop resending, consumer is None'
             return
         self.resend_counter += 1
@@ -304,7 +304,7 @@ class UDPStream():
         else:
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 2.0
-        if lg.is_debug(18) and self.resend_counter % 10 == 1:
+        if lg.is_debug(18) and self.resend_counter % 10 == 1 and self.producer:
             # DEBUG
             current_rate_in = 0.0
             current_rate_out = 0.0

@@ -353,13 +353,14 @@ class InboxFile():
         self.cancelled = False
         self.timeout = False
         # self.timeout = max(float(self.size)/settings.ReceivingSpeedLimit(), 5.0)
-        # lg.out(18, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s' % (
-        #     os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
+        lg.out(18, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s with %d bytes' % (
+            os.path.basename(self.filename), self.stream_id, 
+            str(self.queue.session.peer_address), self.size))
         
     def __del__(self):
         """
         """
-        # lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
+        lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
 
     def close(self):
         # lg.out(18, 'udp_file_queue.InboxFile.close %d : %d received' % (
@@ -411,8 +412,9 @@ class OutboxFile():
         self.started = time.time()
         # self.timeout = max(float(self.size)/settings.SendingSpeedLimit(), 5.0)
         self.fileobj = open(self.filename, 'rb')
-        # lg.out(18, 'udp_file_queue.OutboxFile.__init__ {%s} [%d] to %s' % (
-        #     os.path.basename(self.filename), self.stream_id, str(self.queue.session.peer_address)))
+        lg.out(18, 'udp_file_queue.OutboxFile.__init__ {%s} [%d] to %s with %d bytes' % (
+            os.path.basename(self.filename), self.stream_id, 
+            str(self.queue.session.peer_address), self.size))
 
     def __del__(self):
         """
