@@ -2,14 +2,13 @@
 import time
 import cStringIO
 import struct
+import bisect
 
 from twisted.internet import reactor
 
 from logs import lg
 
 from lib import udp
-
-import udp_session
 
 #------------------------------------------------------------------------------ 
 
@@ -53,6 +52,7 @@ class UDPStream():
         # self.sent_raw_data_callback = sent_raw_data_callback
         self.output_buffer_size = 0
         self.output_blocks = {}
+        self.output_blocks_ids = []
         # self.output_blocks_acks = []
         self.output_block_id = 0
         self.output_blocks_counter = 0
@@ -63,7 +63,7 @@ class UDPStream():
         self.input_acks_counter = 0
         self.input_duplicated_blocks = 0
         self.input_duplicated_bytes = 0
-        self.blocks_to_ack = set()
+        self.blocks_to_ack = []
         self.bytes_in = 0
         self.bytes_in_acks = 0
         self.bytes_sent = 0
@@ -100,8 +100,10 @@ class UDPStream():
         self.consumer.stream = None
         self.consumer = None
         self.producer = None
+        self.input_blocks.clear()
         self.blocks_to_ack.clear()
         self.output_blocks.clear()
+        self.output_blocks_ids = []
         
     def block_received(self, inpt):
         if self.consumer:
@@ -114,7 +116,8 @@ class UDPStream():
             self.input_blocks[block_id] = data
             self.input_blocks_counter += 1
             self.bytes_in += len(data)
-            self.blocks_to_ack.add(block_id)
+            # self.blocks_to_ack.add(block_id)
+            bisect.insort(self.blocks_to_ack, block_id)
             self.last_block_received_time = time.time() - self.creation_time
             eof_state = False
             if block_id == self.input_block_id + 1:
@@ -148,7 +151,7 @@ class UDPStream():
     
     def ack_received(self, inpt):
         if self.consumer:
-            acks = 0
+            acks = []
             eof = False
             raw_bytes = ''
             while True:
@@ -156,11 +159,12 @@ class UDPStream():
                 if not raw_bytes:
                     break
                 block_id = struct.unpack('i', raw_bytes)[0]
-                acks += 1
+                acks.append(block_id)
                 try:
+                    self.output_blocks_ids.remove(block_id)
                     outblock = self.output_blocks.pop(block_id)
                 except KeyError:
-                    # lg.warn('block %d not found' % (block_id))
+                    lg.warn('block %d not found, stream_id=%d' % (block_id, self.stream_id))
                     continue
                 block_size = len(outblock[0])
                 self.output_buffer_size -= block_size 
@@ -175,9 +179,9 @@ class UDPStream():
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
-                lg.out(18, 'in-> ACK %d %d %d %s' % (
-                    self.stream_id, block_id, len(self.output_blocks), eof))
-            if acks > 0:
+            lg.out(18, 'in-> ACK %d %s %d %s' % (
+                self.stream_id, acks, len(self.output_blocks), eof))
+            if len(acks) > 0:
                 self.last_ack_received_time = time.time() - self.creation_time
                 self.input_acks_counter += 1
                 # print 'ack %s blocks:(%d|%d)' % (self.stream_id, acks, len(self.output_blocks.keys())) 
@@ -188,6 +192,7 @@ class UDPStream():
             sum_not_acked_blocks = sum(map(lambda block: len(block[0]), 
                                            self.output_blocks.values()))
             self.output_blocks.clear()
+            self.output_blocks_ids = []
             self.output_buffer_size = 0                
             self.bytes_acked += sum_not_acked_blocks
             relative_time = time.time() - self.creation_time
@@ -204,6 +209,7 @@ class UDPStream():
             if not piece:
                 break
             self.output_block_id += 1
+            bisect.insort(self.output_blocks_ids, self.output_block_id)
             self.output_blocks[self.output_block_id] = (piece, -1)
             self.output_buffer_size += len(piece)
         outp.close()
@@ -221,7 +227,8 @@ class UDPStream():
             return False
         resend_time_limit = 4 * BLOCKS_PER_ACK * rtt_current
         new_blocks_counter = 0 
-        for block_id in self.output_blocks.keys():
+        # for block_id in self.output_blocks.keys():
+        for block_id in self.output_blocks_ids:
             piece, time_sent = self.output_blocks[block_id]
             data_size = len(piece)
             if time_sent >= 0:
@@ -237,7 +244,7 @@ class UDPStream():
                 pass
                 # print 'go', block_id
             time_sent = relative_time
-            self.output_blocks[block_id] = (piece, time_sent)
+            self.output_blocks[block_id][1] = time_sent
             output = ''.join((
                 struct.pack('i', block_id),
                 piece))
@@ -275,7 +282,7 @@ class UDPStream():
         #     print 'bytes:(%d|%d)' % (self.bytes_in, self.bytes_in_acks),
         #     print 'time:(%r)' % relative_time,
         #     print 'rate:(%r)' % current_rate
-        self.blocks_to_ack.clear()
+        self.blocks_to_ack = []
         self.last_ack_moment = time.time()
         return ack_len > 0
 
