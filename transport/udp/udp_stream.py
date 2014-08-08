@@ -134,11 +134,11 @@ class UDPStream():
                 if self.consumer.is_done():
                     eof_state = True
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
-                # lg.out(18, 'in-> DATA %d %d-%d %s %s' % (
-                #     self.stream_id, block_id, self.input_block_id, eof_state, str(self.blocks_to_ack)))
-            # else:
-                # lg.out(18, 'in-> DATA %d %d %s' % (
-                #     self.stream_id, block_id, str(self.blocks_to_ack)))
+                lg.out(18, 'in-> DATA %d %d-%d %s %d' % (
+                    self.stream_id, block_id, self.input_block_id, eof_state, len(self.blocks_to_ack)))
+            else:
+                lg.out(18, 'in-> DATA %d %d %d' % (
+                    self.stream_id, block_id, len(self.blocks_to_ack)))
             # want to send the first ack asap - started from 1
             is_ack_timed_out = time.time() - self.last_ack_moment > RTT_MAX_LIMIT
             is_first_block_in_group = block_id % BLOCKS_PER_ACK 
@@ -177,7 +177,7 @@ class UDPStream():
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
-                # lg.out(18, 'in-> ACK %d %d' % (self.stream_id, block_id))
+                lg.out(18, 'in-> ACK %d %d' % (self.stream_id, block_id))
             if acks > 0:
                 self.last_ack_received_time = time.time() - self.creation_time
                 self.input_acks_counter += 1
@@ -313,8 +313,10 @@ class UDPStream():
                 current_rate_out = self.bytes_sent / relative_time
             s = ''
             s += '(%d:%d) ' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
-            s += 'in:(%d|%d|%d) ' % (self.input_blocks_counter, self.bytes_in, self.bytes_in_acks)
-            s += 'out:(%d|%d|%d) ' % (self.output_blocks_counter, self.bytes_acked, self.resend_bytes)
+            s += 'in:(%d|%d|%d|%d) ' % (self.input_blocks_counter, self.bytes_in, 
+                                        self.consumer.bytes_received, self.bytes_in_acks)
+            s += 'out:(%d|%d|%d|%d) ' % (self.output_blocks_counter, self.bytes_sent,
+                                      self.consumer.bytes_delivered, self.resend_bytes)
             s += 'rate:(%d|%d) ' % (int(current_rate_in), int(current_rate_out))  
             s += 'time:(%s|%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], 
                                           self.resend_counter, self.resend_inactivity_counter)
