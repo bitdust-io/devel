@@ -177,7 +177,8 @@ class UDPStream():
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
                 self.consumer.on_sent_raw_data(block_size)
                 eof = self.consumer and self.consumer.size == self.bytes_acked
-                lg.out(18, 'in-> ACK %d %d' % (self.stream_id, block_id))
+                lg.out(18, 'in-> ACK %d %d %d %b' % (
+                    self.stream_id, block_id, len(self.output_blocks), eof))
             if acks > 0:
                 self.last_ack_received_time = time.time() - self.creation_time
                 self.input_acks_counter += 1
