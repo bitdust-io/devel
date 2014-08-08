@@ -281,7 +281,7 @@ class UDPStream():
         return ack_len > 0
 
     def resend(self):
-        if not self.consumer:
+        if not self.consumer or not self.producer:
             # print 'stop resending, consumer is None'
             return
         self.resend_counter += 1
@@ -318,7 +318,8 @@ class UDPStream():
             s += 'rate:(%d|%d) ' % (int(current_rate_in), int(current_rate_out))  
             s += 'time:(%s|%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], 
                                           self.resend_counter, self.resend_inactivity_counter)
-            lg.out(18, 'udp_stream.resend %s %s' % (self.producer.session.peer_id, s))
+            lg.out(18, 'udp_stream.resend %d %s %s' % (
+                self.stream_id, self.producer.session.peer_id, s))
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return
