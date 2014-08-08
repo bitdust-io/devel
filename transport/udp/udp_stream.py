@@ -317,13 +317,12 @@ class UDPStream():
                 self.producer.on_timeout_receiving(self.stream_id)
         if len(self.output_blocks) > 0:        
             activity = activity or self.send_blocks()
-            if relative_time - self.last_ack_received_time > RTT_MAX_LIMIT * 4.0:
+            last_ack_dt = relative_time - self.last_ack_received_time
+            if last_ack_dt > RTT_MAX_LIMIT * 4.0:
                 self.producer.on_timeout_sending(self.stream_id)
-        else:
-            if self.bytes_sent > 0:
-                if relative_time - self.last_ack_received_time > rtt_current * 2.0:
-                    self.producer.do_send_data(self.stream_id, self.consumer, '')
-                    activity = True
+            elif last_ack_dt > rtt_current * 2.0:
+                self.producer.do_send_data(self.stream_id, self.consumer, '')
+                activity = True
         if activity:
             # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0.0
