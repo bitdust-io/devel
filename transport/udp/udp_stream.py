@@ -162,6 +162,7 @@ class UDPStream():
             acks = []
             eof = False
             raw_bytes = ''
+            self.last_ack_received_time = time.time() - self.creation_time
             while True:
                 raw_bytes = inpt.read(4)
                 if not raw_bytes:
@@ -210,7 +211,6 @@ class UDPStream():
                 relative_time = time.time() - self.creation_time
                 self.consumer.on_zero_ack(sum_not_acked_blocks)
                 return            
-            self.last_ack_received_time = time.time() - self.creation_time
             self.input_acks_counter += 1
             # print 'ack %s blocks:(%d|%d)' % (self.stream_id, acks, len(self.output_blocks.keys())) 
             self.resend()

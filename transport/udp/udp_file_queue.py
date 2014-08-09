@@ -29,6 +29,10 @@ NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS * 4
 
 #------------------------------------------------------------------------------ 
 
+_StreamCounter = 0
+
+#------------------------------------------------------------------------------ 
+
 class FileQueue:
     def __init__(self, session):
         self.session = session
@@ -39,7 +43,12 @@ class FileQueue:
         self.dead_streams = []
         
     def make_unique_stream_id(self):
-        return int(str(random.randint(100, 999))+str(int(time.time() * 100.0))[7:])
+        # return int(str(random.randint(100, 999))+str(int(time.time() * 100.0))[7:])
+        global _StreamCounter
+        _StreamCounter += 1
+        if _StreamCounter >= 10000:
+            _StreamCounter = 1
+        return random.randint(100, 999)*10000 + _StreamCounter 
         
     def close(self):
         for stream in self.streams.values():
