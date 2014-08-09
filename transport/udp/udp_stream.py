@@ -176,7 +176,7 @@ class UDPStream():
                 try:
                     self.output_blocks_ids.remove(block_id)
                     outblock = self.output_blocks.pop(block_id)
-                except KeyError:
+                except:
                     lg.warn('block %d not found, stream_id=%d' % (block_id, self.stream_id))
                     continue
                 block_size = len(outblock[0])
@@ -335,7 +335,7 @@ class UDPStream():
         else:
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 2.0
-        if lg.is_debug(18) and self.resend_counter % 10 == 1 and self.producer:
+        if lg.is_debug(18) and self.resend_counter % 50 == 1 and self.producer:
             # DEBUG
             current_rate_in = 0.0
             current_rate_out = 0.0
