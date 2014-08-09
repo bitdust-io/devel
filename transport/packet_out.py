@@ -51,6 +51,17 @@ import stats
 #------------------------------------------------------------------------------ 
 
 _OutboxQueue = []
+_PacketsCounter = 0
+
+#------------------------------------------------------------------------------ 
+
+def get_packets_counter():
+    global _PacketsCounter
+    return _PacketsCounter
+
+def increment_packets_counter():
+    global _PacketsCounter
+    _PacketsCounter += 1  
 
 #------------------------------------------------------------------------------ 
 
@@ -150,11 +161,12 @@ class PacketOut(automat.Automat):
                 self.remote_idurl = None
                 lg.warn('sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contacts.getContact(self.remote_idurl)
-        self.hash = '%s%s%s%s' % (str(self.time), self.outpacket.Command, 
-                                  self.outpacket.PacketID, str(self.remote_idurl))
-        h = hashlib.md5()
-        h.update(self.hash)
-        self.md5 = h.hexdigest()
+        # self.hash = '%s%s%s%s' % (str(self.time), self.outpacket.Command, 
+        #                           self.outpacket.PacketID, str(self.remote_idurl))
+        # h = hashlib.md5()
+        # h.update(self.hash)
+        # self.md5 = h.hexdigest()
+        # self.md5 = self.description
         self.timeout = None
         self.packetdata = None
         self.filename = None
@@ -162,7 +174,9 @@ class PacketOut(automat.Automat):
         self.items = []
         self.results = []
         self.response_packet = None
-        automat.Automat.__init__(self, 'OUT(%s)' % self.md5, 'AT_STARTUP', 20)
+        self.label = '%s-%d' % (self.description, get_packets_counter())
+        automat.Automat.__init__(self, 'OUT(%s)' % self.label, 'AT_STARTUP', 20)
+        increment_packets_counter()
         
     def is_timed_out(self):
         if self.time is None or self.timeout is None:

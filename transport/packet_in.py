@@ -43,7 +43,18 @@ import packet_out
 #------------------------------------------------------------------------------ 
 
 _InboxItems = {}
+_PacketsCounter = 0
 
+#------------------------------------------------------------------------------ 
+
+def get_packets_counter():
+    global _PacketsCounter
+    return _PacketsCounter
+
+def increment_packets_counter():
+    global _PacketsCounter
+    _PacketsCounter += 1  
+    
 #------------------------------------------------------------------------------ 
 
 def items():
@@ -63,7 +74,8 @@ def create(transfer_id):
 
 def get(transfer_id):
     return items().get(transfer_id, None)
-    
+
+#------------------------------------------------------------------------------ 
 
 class PacketIn(automat.Automat):
     """
@@ -83,7 +95,9 @@ class PacketIn(automat.Automat):
         self.bytes_received = None
         self.status = None
         self.error_message = None
-        automat.Automat.__init__(self, 'IN(%r)' % self.transfer_id, 'AT_STARTUP', 20)
+        self.label = '%s-%d' % (self.transfer_id, get_packets_counter())
+        automat.Automat.__init__(self, 'IN(%s)' % self.label, 'AT_STARTUP', 20)
+        increment_packets_counter()
         
     def is_timed_out(self):
         if self.time is None or self.timeout is None:

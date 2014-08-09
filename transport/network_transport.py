@@ -196,6 +196,6 @@ class NetworkTransport(automat.Automat):
         gate.transports().pop(self.proto)
         automat.objects().pop(self.index)
         self.interface = None
-        self.proto = None
+        # self.proto = None
 
 

@@ -46,14 +46,9 @@ class UDPStream():
         self.consumer = consumer
         self.producer = producer
         self.consumer.stream = self
-        # self.send_data_packet_func = send_data_packet_func
-        # self.send_ack_packet_func = send_ack_packet_func
-        # self.received_raw_data_callback = received_raw_data_callback
-        # self.sent_raw_data_callback = sent_raw_data_callback
         self.output_buffer_size = 0
         self.output_blocks = {}
         self.output_blocks_ids = []
-        # self.output_blocks_acks = []
         self.output_block_id = 0
         self.output_blocks_counter = 0
         self.output_acks_counter = 0
@@ -326,6 +321,9 @@ class UDPStream():
             last_ack_dt = relative_time - self.last_ack_received_time
             if last_ack_dt > RTT_MAX_LIMIT * 4.0:
                 self.producer.on_timeout_sending(self.stream_id)
+                lg.out(18, 'rtt=%r, last ack at %r' % (
+                    rtt_current, self.last_ack_received_time))
+                lg.out(18, str(self.output_blocks))
             # elif last_ack_dt > rtt_current * 2.0:
             #     self.producer.do_send_data(self.stream_id, self.consumer, '')
             #     activity = True
