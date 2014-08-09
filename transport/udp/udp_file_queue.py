@@ -355,7 +355,7 @@ class FileQueue:
         if outfile.registration:
             return
         if outfile.transfer_id:
-            self.report_outbox_file(outfile, outfile.status, outfile.error_message)
+            self.report_outbox_file(outfile)
         if outfile.result_defer:
             outfile.result_defer.callback((outfile, outfile.status, outfile.error_message))
             outfile.result_defer = None
