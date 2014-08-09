@@ -153,11 +153,11 @@ class FileQueue:
         self.inboxFiles[stream_id].close()   
         del self.inboxFiles[stream_id]   
 
-    def report_outbox_file(self, outfile, status, error_message=''):    
+    def report_outbox_file(self, outfile):    
         lg.out(18, 'udp_file_queue.report_outbox_file %s %s %d bytes "%s"' % (
-            outfile.transfer_id, status, outfile.bytes_delivered, error_message))
+            outfile.transfer_id, outfile.status, outfile.bytes_delivered, outfile.error_message))
         udp_interface.interface_unregister_file_sending(
-            outfile.transfer_id, status, outfile.bytes_delivered, error_message)
+            outfile.transfer_id, outfile.status, outfile.bytes_delivered, outfile.error_message)
 
     def report_inbox_file(self, infile, status, error_message=''):
         lg.out(18, 'udp_file_queue.report_inbox_file {%s} %s %s %d bytes "%s"' % (
@@ -251,17 +251,19 @@ class FileQueue:
         # self.erase_old_stream_ids()
         # print ' - closed'
 
-    def on_outbox_file_done(self, outfile, status, error_message=''):
-        stream_id = outfile.stream_id
+    def on_outbox_file_done(self, stream_id):
+        assert stream_id in self.inboxFiles.keys()
+        outfile = self.outboxFiles[stream_id]
         lg.out(18, 'udp_file_queue.on_outbox_file_done %s (%d bytes) %s "%s"' % (
-            stream_id, outfile.size, status, error_message))
-        if outfile.result_defer:
-            outfile.result_defer.callback((outfile, status, error_message))
-            outfile.result_defer = None
+            stream_id, outfile.size, outfile.status, outfile.error_message))
+        # outfile.status = 'finished'
         if outfile.registration:
             return
         if outfile.transfer_id:
-            self.report_outbox_file(outfile, 'finished')
+            self.report_outbox_file(outfile)
+        if outfile.result_defer:
+            outfile.result_defer.callback((outfile, outfile.status, outfile.error_message))
+            outfile.result_defer = None
         self.close_stream(stream_id)
         self.close_outbox_file(stream_id)
            
@@ -300,20 +302,25 @@ class FileQueue:
         if stream_id not in self.outboxFiles.keys():
             lg.warn('stream %d not found in the outboxFiles' % stream_id)
             return
-        self.outboxFiles[stream_id].transfer_id = transfer_id
-        self.outboxFiles[stream_id].registration = None
-        if self.outboxFiles[stream_id].is_done():
-            self.report_outbox_file(self.outboxFiles[stream_id], 'finished')
+        outfile = self.outboxFiles[stream_id]
+        outfile.transfer_id = transfer_id
+        outfile.registration = None
+        if outfile.status:
+            self.report_outbox_file(outfile) 
             self.close_stream(stream_id)
             self.close_outbox_file(stream_id)
-        elif self.outboxFiles[stream_id].is_cancelled():
-            self.report_outbox_file(self.outboxFiles[stream_id], 'failed', 'cancelled')
-            self.close_stream(stream_id)
-            self.close_outbox_file(stream_id)
-        elif self.outboxFiles[stream_id].is_timed_out():
-            self.report_outbox_file(self.outboxFiles[stream_id], 'failed', 'timeout sending')
-            self.close_stream(stream_id)
-            self.close_outbox_file(stream_id)
+#        if self.outboxFiles[stream_id].is_done():
+#            self.report_outbox_file(self.outboxFiles[stream_id], 'finished')
+#            self.close_stream(stream_id)
+#            self.close_outbox_file(stream_id)
+#        elif self.outboxFiles[stream_id].is_cancelled():
+#            self.report_outbox_file(self.outboxFiles[stream_id], 'failed', 'cancelled')
+#            self.close_stream(stream_id)
+#            self.close_outbox_file(stream_id)
+#        elif self.outboxFiles[stream_id].is_timed_out():
+#            self.report_outbox_file(self.outboxFiles[stream_id], 'failed', 'timeout sending')
+#            self.close_stream(stream_id)
+#            self.close_outbox_file(stream_id)
 
     def on_outbox_file_register_failed(self, err, stream_id):
         lg.out(2, 'udp_file_queue.on_outbox_file_register_failed ERROR failed to register, stream_id=%s :\n%s' % (str(stream_id), str(err)))
@@ -341,17 +348,21 @@ class FileQueue:
         lg.out(2, '!'*80)
 
     def on_timeout_sending(self, stream_id):
-        lg.out(18, 'udp_file_queue.on_timeout_sending stream_id=%s ' % stream_id)
         assert stream_id in self.outboxFiles.keys()
-        self.outboxFiles[stream_id].timeout = True
-        if self.outboxFiles[stream_id].registration:
+        outfile = self.outboxFiles[stream_id]
+        lg.out(18, 'udp_file_queue.on_timeout_sending stream_id=%s %d/%d bytes sent : %s' % (
+            stream_id, outfile.bytes_delivered, self.bytes_sent, self.error_message))
+        if outfile.registration:
             return
-        if self.outboxFiles[stream_id].transfer_id:
-            self.report_outbox_file(self.outboxFiles[stream_id], 'failed', 'timeout sending')
+        if outfile.transfer_id:
+            self.report_outbox_file(outfile, outfile.status, outfile.error_message)
+        if outfile.result_defer:
+            outfile.result_defer.callback((outfile, outfile.status, outfile.error_message))
+            outfile.result_defer = None
         self.close_outbox_file(stream_id)
         self.close_stream(stream_id)
         lg.out(2, '!'*80)
-
+        
 #------------------------------------------------------------------------------ 
 
 class InboxFile():
@@ -426,6 +437,8 @@ class OutboxFile():
         self.eof = False
         self.cancelled = False
         self.timeout = False
+        self.status = None
+        self.error_message = ''
         self.started = time.time()
         self.fileobj = open(self.filename, 'rb')
         lg.out(18, 'udp_file_queue.OutboxFile.__init__ {%s} [%d] to %s with %d bytes' % (
@@ -510,11 +523,13 @@ class OutboxFile():
     
     def on_zero_ack(self, bytes_left):
         # print 'on_zero_ack', bytes_left, self.size, self.bytes_delivered,
+        lg.out(18, 'on_zero_ack done: %s' % self.stream_id)
         self.count_size(bytes_left)
         if self.is_done():
-            lg.out(18, 'on_zero_ack done: %s' % self.stream_id)
-            self.queue.on_outbox_file_done(self, 'finished')
+            self.status = 'finished'
         else:
-            self.queue.on_outbox_file_done(self, 'failed', 'transfer interrupted')
+            self.status = 'failed'
+            self.error_message = 'transfer interrupted'
+        self.queue.on_outbox_file_done(self.stream_id)
         # print status
         return True

@@ -323,7 +323,14 @@ class UDPStream():
                 lg.out(18, 'rtt=%r, last ack at %r' % (
                     rtt_current, self.last_ack_received_time))
                 lg.out(18, str(self.output_blocks.keys()))
+                if self.last_ack_received_time == 0:
+                    self.consumer.error_message = 'sending failed'
+                else:
+                    self.consumer.error_message = 'timeout sending'
+                self.consumer.status = 'failed'
+                self.consumer.timeout = True
                 self.producer.on_timeout_sending(self.stream_id)
+                return
             # elif last_ack_dt > rtt_current * 2.0:
             #     self.producer.do_send_data(self.stream_id, self.consumer, '')
             #     activity = True
