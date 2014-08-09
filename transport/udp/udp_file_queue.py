@@ -56,25 +56,24 @@ class FileQueue:
             struct.pack('i', stream_id),
             struct.pack('i', outfile.size),
             output))
-        if len(output) > 0:
-            lg.out(18, '<-out DATA %d %s %s' % (
-                stream_id, struct.unpack('i', output[:4])[0], outfile.eof))
-        else:
-            lg.out(18, '<-out DATA %d ZERO BLOCK %s' % (
-                stream_id, outfile.eof))
+        # if len(output) > 0:
+        #     lg.out(18, '<-out DATA %d %s %s' % (
+        #         stream_id, struct.unpack('i', output[:4])[0], outfile.eof))
+        # else:
+        #     lg.out(18, '<-out DATA %d ZERO BLOCK %s' % (
+        #         stream_id, outfile.eof))
         return self.session.send_packet(udp.CMD_DATA, newoutput)
     
     def do_send_ack(self, stream_id, infile, ack_data):
         newoutput = ''.join((
             struct.pack('i', stream_id),
             ack_data))
-        if ack_data:
-            lg.out(18, '<-out ACK %d %s' % (stream_id,
-                ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
-                             [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
-        else:
-
-            lg.out(18, '<-out ACK %d ZERO' % stream_id)
+        # if ack_data:
+        #     lg.out(18, '<-out ACK %d %s' % (stream_id,
+        #         ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
+        #                      [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
+        # else:
+        #     lg.out(18, '<-out ACK %d ZERO' % stream_id)
         return self.session.send_packet(udp.CMD_ACK, newoutput)
 
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):
@@ -362,14 +361,14 @@ class InboxFile():
         self.cancelled = False
         self.timeout = False
         # self.timeout = max(float(self.size)/settings.ReceivingSpeedLimit(), 5.0)
-        lg.out(18, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s with %d bytes' % (
-            os.path.basename(self.filename), self.stream_id, 
-            str(self.queue.session.peer_address), self.size))
+        # lg.out(18, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s with %d bytes' % (
+        #     os.path.basename(self.filename), self.stream_id, 
+        #     str(self.queue.session.peer_address), self.size))
         
     def __del__(self):
         """
         """
-        lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
+        # lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (os.path.basename(self.filename), self.stream_id,))
 
     def close(self):
         # lg.out(18, 'udp_file_queue.InboxFile.close %d : %d received' % (
@@ -422,9 +421,9 @@ class OutboxFile():
         self.started = time.time()
         # self.timeout = max(float(self.size)/settings.SendingSpeedLimit(), 5.0)
         self.fileobj = open(self.filename, 'rb')
-        lg.out(18, 'udp_file_queue.OutboxFile.__init__ {%s} [%d] to %s with %d bytes' % (
-            os.path.basename(self.filename), self.stream_id, 
-            str(self.queue.session.peer_address), self.size))
+        # lg.out(18, 'udp_file_queue.OutboxFile.__init__ {%s} [%d] to %s with %d bytes' % (
+        #     os.path.basename(self.filename), self.stream_id, 
+        #     str(self.queue.session.peer_address), self.size))
 
     def __del__(self):
         """
@@ -477,7 +476,7 @@ class OutboxFile():
             if not self.buffer:
                 self.buffer = self.fileobj.read(udp_stream.BUFFER_SIZE)
                 if not self.buffer:
-                    lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state')
+                    # lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state')
                     # print 'EOF!!!', self.filename
                     self.eof = True
                     self.close_file()

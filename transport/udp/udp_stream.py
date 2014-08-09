@@ -80,26 +80,25 @@ class UDPStream():
         self.resend_counter = 0
         self.limit_send_bytes_per_sec = 10 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s 
         self.creation_time = time.time()
-        lg.out(18, 'udp_stream.__init__ %d peer_id:%s session:%s' % (
-            self.stream_id, self.producer.session.peer_id, self.producer.session))
+        # lg.out(18, 'udp_stream.__init__ %d peer_id:%s session:%s' % (
+        #     self.stream_id, self.producer.session.peer_id, self.producer.session))
         
     def __del__(self):
         """
         """
-        lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
+        # lg.out(18, 'udp_stream.__del__ %d' % self.stream_id)
         
     def close(self):
-        try:
-            pir_id = self.producer.session.peer_id
-        except:
-            pir_id = 'None'
-        lg.out(18, 'udp_stream.close %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d' % (
-            self.stream_id, pir_id,
-            self.input_blocks_counter, self.bytes_in,
-            self.output_acks_counter, self.bytes_in_acks,
-            self.input_duplicated_blocks, self.input_duplicated_bytes,
-            self.output_blocks_counter, self.bytes_acked, 
-            self.resend_blocks, self.resend_bytes,))
+        # try:
+        #     pir_id = self.producer.session.peer_id
+        # except:
+        #     pir_id = 'None'
+        # lg.out(18, 'udp_stream.close %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d' % (
+        #     self.stream_id, pir_id, self.input_blocks_counter, self.bytes_in,
+        #     self.output_acks_counter, self.bytes_in_acks,
+        #     self.input_duplicated_blocks, self.input_duplicated_bytes,
+        #     self.output_blocks_counter, self.bytes_acked, 
+        #     self.resend_blocks, self.resend_bytes,))
         self.stop_resending()
         self.consumer.stream = None
         self.consumer = None
@@ -153,9 +152,9 @@ class UDPStream():
             # want to send the first ack asap - started from 1
             is_ack_timed_out = (time.time() - self.last_ack_moment) > RTT_MAX_LIMIT
             is_first_block_in_group = ( (block_id % BLOCKS_PER_ACK) == 1)
-            lg.out(18, 'in-> DATA %d %d %d %d %s %s %s' % (
-                self.stream_id, block_id, len(self.blocks_to_ack), 
-                self.input_block_id, is_ack_timed_out, is_first_block_in_group, eof_state))
+            # lg.out(18, 'in-> DATA %d %d %d %d %s %s %s' % (
+            #     self.stream_id, block_id, len(self.blocks_to_ack), 
+            #     self.input_block_id, is_ack_timed_out, is_first_block_in_group, eof_state))
             if is_ack_timed_out or is_first_block_in_group or eof_state:
                 self.resend(need_to_ack=True)
             if eof_state:
@@ -197,9 +196,9 @@ class UDPStream():
                 sz = self.consumer.size
             except:
                 sz = -1 
-            lg.out(18, 'in-> ACK %d %s %d %s %d %d' % (
-                self.stream_id, acks, len(self.output_blocks), eof,
-                sz, self.bytes_acked))
+            # lg.out(18, 'in-> ACK %d %s %d %s %d %d' % (
+            #     self.stream_id, acks, len(self.output_blocks), eof,
+            #     sz, self.bytes_acked))
             if eof:
                 self.producer.on_outbox_file_done(self.consumer, 'finished')
                 return
@@ -360,8 +359,8 @@ class UDPStream():
             s += 'rate:(%d|%d) ' % (int(current_rate_in), int(current_rate_out))  
             s += 'time:(%s|%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], 
                                           self.resend_counter, self.resend_inactivity_counter)
-            lg.out(18, 'udp_stream.resend %d %s %s' % (
-                self.stream_id, self.producer.session.peer_id, s))
+            # lg.out(18, 'udp_stream.resend %d %s %s' % (
+            #     self.stream_id, self.producer.session.peer_id, s))
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 
             return
