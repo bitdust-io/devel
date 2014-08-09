@@ -475,6 +475,9 @@ class OutboxFile():
         self.fileobj.close()
         self.fileobj = None
 
+    def is_eof(self):
+        return self.eof
+
     def is_done(self):
         return self.eof and self.size == self.bytes_delivered
     

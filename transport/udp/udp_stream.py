@@ -38,6 +38,8 @@ BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_AC
 RTT_MIN_LIMIT = 0.002
 RTT_MAX_LIMIT = 0.5
 
+MAX_ACK_TIMEOUTS = 5
+
 #------------------------------------------------------------------------------ 
 
 class UDPStream():
@@ -56,6 +58,7 @@ class UDPStream():
         self.input_block_id = 0
         self.input_blocks_counter = 0
         self.input_acks_counter = 0
+        self.input_acks_timeouts_counter = 0
         self.input_duplicated_blocks = 0
         self.input_duplicated_bytes = 0
         self.blocks_to_ack = []
@@ -219,7 +222,7 @@ class UDPStream():
                 break
             self.output_block_id += 1
             bisect.insort(self.output_blocks_ids, self.output_block_id)
-            self.output_blocks[self.output_block_id] = (piece, -1)
+            self.output_blocks[self.output_block_id] = [piece, -1]
             self.output_buffer_size += len(piece)
         outp.close()
         lg.out(18, 'WRITE %r' % self.output_blocks_ids)
@@ -230,7 +233,7 @@ class UDPStream():
             return False
         relative_time = time.time() - self.creation_time
         rtt_current = self.rtt_avarage / self.rtt_acks_counter
-        resend_time_limit = 4 * BLOCKS_PER_ACK * rtt_current
+        resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
         new_blocks_counter = 0 
         for block_id in self.output_blocks_ids:
             if relative_time > 0.0: 
@@ -246,7 +249,7 @@ class UDPStream():
                 else:
                     continue
             time_sent = relative_time
-            self.output_blocks[block_id] = (piece, time_sent)
+            self.output_blocks[block_id][1] = time_sent
             output = ''.join((
                 struct.pack('i', block_id),
                 piece))
@@ -303,22 +306,27 @@ class UDPStream():
                 activity = activity or self.send_ack()
             if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2.0:
                 self.producer.on_timeout_receiving(self.stream_id)
-        if len(self.output_blocks) > 0:        
-            activity = activity or self.send_blocks()
+        if len(self.output_blocks) > 0:
             last_ack_dt = relative_time - self.last_ack_received_time
-            if last_ack_dt > RTT_MAX_LIMIT * 4.0:
-                lg.out(18, 'rtt=%r, last ack at %r' % (
-                    rtt_current, self.last_ack_received_time))
-                lg.out(18, str(self.output_blocks.keys()))
-                lg.out(18, str(self.output_blocks_ids))
-                if self.last_ack_received_time == 0:
-                    self.consumer.error_message = 'sending failed'
+            if last_ack_dt > RTT_MAX_LIMIT:
+                self.input_acks_timeouts_counter += 1
+                if self.input_acks_timeouts_counter < MAX_ACK_TIMEOUTS:
+                    latest_block_id = self.output_blocks_ids[0]
+                    self.output_blocks[latest_block_id][1] = -1
+                    lg.out(18, 'RESEND ONE %d %d' % (self.stream_id, latest_block_id))
                 else:
-                    self.consumer.error_message = 'timeout sending'
-                self.consumer.status = 'failed'
-                self.consumer.timeout = True
-                self.producer.on_timeout_sending(self.stream_id)
-                return
+                    lg.out(18, 'rtt=%r, last ack at %r' % (
+                        rtt_current, self.last_ack_received_time))
+                    lg.out(18, ','.join(map(lambda bid: '%d:%d' % (bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
+                    if self.last_ack_received_time == 0:
+                        self.consumer.error_message = 'sending failed'
+                    else:
+                        self.consumer.error_message = 'timeout sending'
+                    self.consumer.status = 'failed'
+                    self.consumer.timeout = True
+                    self.producer.on_timeout_sending(self.stream_id)
+                    return
+            activity = activity or self.send_blocks()
             # elif last_ack_dt > rtt_current * 2.0:
             #     self.producer.do_send_data(self.stream_id, self.consumer, '')
             #     activity = True
