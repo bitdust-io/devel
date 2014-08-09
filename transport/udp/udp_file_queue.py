@@ -498,9 +498,9 @@ class OutboxFile():
             # self.queue.on_outbox_file_done(self, 'finished')
             return True
         if self.is_timed_out():
-            return True
+            return False
         if self.is_cancelled():
-            return True
+            return False
         self.process()
         return False
     
