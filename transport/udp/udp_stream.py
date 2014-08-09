@@ -196,7 +196,7 @@ class UDPStream():
                 self.stream_id, acks, len(self.output_blocks), eof,
                 sz, self.bytes_acked))
             if eof:
-                self.queue.on_outbox_file_done(self, 'finished')
+                self.producer.on_outbox_file_done(self, 'finished')
                 return
             if len(acks) == 0:
                 # print 'zero ack %s' % self.stream_id
