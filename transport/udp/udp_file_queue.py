@@ -186,8 +186,8 @@ class FileQueue:
         if stream_id not in self.streams.keys():
             if stream_id in self.dead_streams:
                 inp.close()
+                lg.warn('old block %s' % stream_id)
                 self.do_send_ack(stream_id, None, '')
-                # lg.warn('old block %s' % stream_id)
                 return
             if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS:
                 # too many incoming streams, seems remote side is cheating - drop that session!

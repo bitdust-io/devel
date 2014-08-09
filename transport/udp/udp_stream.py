@@ -112,11 +112,15 @@ class UDPStream():
     def block_received(self, inpt):
         if self.consumer:
             block_id = inpt.read(4)
-            if not block_id:
-                if self.producer:
-                    self.producer.do_send_ack(self.stream_id, None, '')
+#            if not block_id:
+#                if self.producer:
+#                    self.producer.do_send_ack(self.stream_id, None, '')
+#                return
+            try:
+                block_id = struct.unpack('i', block_id)[0]
+            except:
+                lg.exc()
                 return
-            block_id = struct.unpack('i', block_id)[0]
             data = inpt.read()
             if block_id in self.input_blocks.keys():
                 self.input_duplicated_blocks += 1
