@@ -24,8 +24,8 @@ import udp_stream
 
 #------------------------------------------------------------------------------ 
 
-MAX_SIMULTANEOUS_STREAMS = 16
-NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS * 4
+MAX_SIMULTANEOUS_STREAMS_PER_SESSION = 2
+NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS_PER_SESSION * 4
 
 #------------------------------------------------------------------------------ 
 
@@ -95,7 +95,7 @@ class FileQueue:
         
     def process_outbox_queue(self):
         has_reads = False
-        while len(self.outboxQueue) > 0 and len(self.streams) < MAX_SIMULTANEOUS_STREAMS:        
+        while len(self.outboxQueue) > 0 and len(self.streams) < MAX_SIMULTANEOUS_STREAMS_PER_SESSION:        
             filename, description, result_defer, single = self.outboxQueue.pop(0)
             has_reads = True
             # we have a queue of files to be sent
@@ -197,7 +197,7 @@ class FileQueue:
                 lg.warn('old block %s' % stream_id)
                 self.do_send_ack(stream_id, None, '')
                 return
-            if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS:
+            if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
                 # too many incoming streams, seems remote side is cheating - drop that session!
                 # TODO : need to add some protection - keep a list of bad guys?  
                 inp.close()
