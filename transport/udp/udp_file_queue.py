@@ -351,7 +351,7 @@ class FileQueue:
         assert stream_id in self.outboxFiles.keys()
         outfile = self.outboxFiles[stream_id]
         lg.out(18, 'udp_file_queue.on_timeout_sending stream_id=%s %d/%d bytes sent : %s' % (
-            stream_id, outfile.bytes_delivered, outfile.bytes_sent, self.error_message))
+            stream_id, outfile.bytes_delivered, outfile.bytes_sent, outfile.error_message))
         if outfile.registration:
             return
         if outfile.transfer_id:
