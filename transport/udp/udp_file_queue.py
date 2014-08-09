@@ -252,7 +252,7 @@ class FileQueue:
         # print ' - closed'
 
     def on_outbox_file_done(self, stream_id):
-        assert stream_id in self.inboxFiles.keys()
+        assert stream_id in self.outboxFiles.keys()
         outfile = self.outboxFiles[stream_id]
         lg.out(18, 'udp_file_queue.on_outbox_file_done %s (%d bytes) %s "%s"' % (
             stream_id, outfile.size, outfile.status, outfile.error_message))
