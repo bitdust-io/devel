@@ -87,11 +87,11 @@ class FileQueue:
 
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.append((filename, description, result_defer, single))
-        udp_session.process_sessions()
+        # udp_session.process_sessions()
         
     def insert_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.insert(0, (filename, description, result_defer, single))
-        udp_session.process_sessions()
+        # udp_session.process_sessions()
         
     def process_outbox_queue(self):
         has_reads = False

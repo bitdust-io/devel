@@ -185,8 +185,8 @@ class UDPSession(automat.Automat):
     fast = True
 
     timers = {
-        'timer-1min':  (60,   ['CONNECTED']),
-        'timer-1sec':  (1.0,  ['PING','GREETING']),
+        'timer-1min': (60, ['CONNECTED']),
+        'timer-1sec': (1.0, ['PING','GREETING']),
         'timer-30sec': (30.0, ['GREETING']),
         'timer-10sec': (10.0, ['PING','CONNECTED']),
         }
@@ -239,7 +239,8 @@ class UDPSession(automat.Automat):
                 self.state = 'GREETING'
                 self.doReceiveData(arg)
             elif event == 'datagram-received' and not self.isPingOrGreeting(arg) :
-                self.doReceiveData(arg)
+                #self.doReceiveData(arg)
+                pass
             elif event == 'shutdown' or event == 'timer-10sec' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
@@ -251,7 +252,8 @@ class UDPSession(automat.Automat):
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'datagram-received' and not self.isGreetingOrAlive(arg) :
-                self.doReceiveData(arg)
+                #self.doReceiveData(arg)
+                pass
             elif event == 'datagram-received' and self.isGreetingOrAlive(arg) :
                 self.state = 'CONNECTED'
                 self.doReceiveData(arg)
@@ -391,13 +393,21 @@ class UDPSession(automat.Automat):
         """
         global _PendingOutboxFiles
         i = 0
+        outgoings = 0
         while i < len(_PendingOutboxFiles):
             filename, host, description, result_defer, single, tm = _PendingOutboxFiles.pop(i)
             if host == self.peer_id:
-                self.file_queue.append_outbox_file(filename, description, result_defer, single)
+                outgoings += 1
+                # small trick to speed up service packets - they have a high priority
+                if description.startswith('Identity') or description.startswith('Ack'):
+                    self.file_queue.insert_outbox_file(filename, description, result_defer, single)
+                else:
+                    self.file_queue.append_outbox_file(filename, description, result_defer, single)
             else:
                 _PendingOutboxFiles.insert(i, (filename, host, description, result_defer, single, tm))
                 i += 1
+        if outgoings > 0:
+            reactor.callLater(0, process_sessions)
 
     def doDestroyMe(self, arg):
         """
