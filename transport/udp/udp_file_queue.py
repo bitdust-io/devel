@@ -332,6 +332,7 @@ class FileQueue:
             self.report_inbox_file(self.inboxFiles[stream_id], 'failed', 'timeout receiving')
         self.close_stream(stream_id)
         self.close_inbox_file(stream_id)
+        lg.out(2, '!'*80)
 
     def on_timeout_sending(self, stream_id):
         lg.out(18, 'udp_file_queue.on_timeout_sending stream_id=%s ' % stream_id)
@@ -343,6 +344,7 @@ class FileQueue:
             self.report_outbox_file(self.outboxFiles[stream_id], 'failed', 'timeout sending')
         self.close_outbox_file(stream_id)
         self.close_stream(stream_id)
+        lg.out(2, '!'*80)
 
 #------------------------------------------------------------------------------ 
 
