@@ -95,8 +95,8 @@ class PacketIn(automat.Automat):
         self.bytes_received = None
         self.status = None
         self.error_message = None
-        self.label = '%s-%d' % (self.transfer_id, get_packets_counter())
-        automat.Automat.__init__(self, 'IN(%s)' % self.label, 'AT_STARTUP', 20)
+        self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 20)
         increment_packets_counter()
         
     def is_timed_out(self):

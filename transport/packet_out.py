@@ -174,8 +174,8 @@ class PacketOut(automat.Automat):
         self.items = []
         self.results = []
         self.response_packet = None
-        self.label = '%s-%d' % (self.description, get_packets_counter())
-        automat.Automat.__init__(self, 'OUT(%s)' % self.label, 'AT_STARTUP', 20)
+        self.label = 'out_%d_%s' % (get_packets_counter(), self.description)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 20)
         increment_packets_counter()
         
     def is_timed_out(self):
