@@ -469,11 +469,11 @@ class OutboxFile():
     def process(self):
         if self.eof:
             return False
-        if self.fileobj is None:
-            return False
         has_sends = False
         while True:
             if not self.buffer:
+                if not self.fileobj:
+                    return False
                 self.buffer = self.fileobj.read(udp_stream.BUFFER_SIZE)
                 if not self.buffer:
                     # lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state')
