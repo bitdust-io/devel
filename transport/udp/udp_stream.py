@@ -313,6 +313,7 @@ class UDPStream():
                 if self.input_acks_timeouts_counter < MAX_ACK_TIMEOUTS:
                     latest_block_id = self.output_blocks_ids[0]
                     self.output_blocks[latest_block_id][1] = -1
+                    self.last_ack_received_time = relative_time
                     lg.out(18, 'RESEND ONE %d %d' % (self.stream_id, latest_block_id))
                 else:
                     lg.out(18, 'rtt=%r, last ack at %r' % (
