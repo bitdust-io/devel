@@ -106,10 +106,6 @@ class UDPStream():
     def block_received(self, inpt):
         if self.consumer:
             block_id = inpt.read(4)
-#            if not block_id:
-#                if self.producer:
-#                    self.producer.do_send_ack(self.stream_id, None, '')
-#                return
             try:
                 block_id = struct.unpack('i', block_id)[0]
             except:
@@ -123,13 +119,11 @@ class UDPStream():
             self.input_blocks[block_id] = data
             self.input_blocks_counter += 1
             self.bytes_in += len(data)
-            # self.blocks_to_ack.add(block_id)
             bisect.insort(self.blocks_to_ack, block_id)
             self.last_block_received_time = time.time() - self.creation_time
             eof_state = False
             if block_id == self.input_block_id + 1:
                 newdata = cStringIO.StringIO()
-                # print 'newdata',
                 while True:
                     next_block_id = self.input_block_id + 1
                     try:
@@ -138,18 +132,17 @@ class UDPStream():
                         break
                     newdata.write(blockdata)
                     self.input_block_id = next_block_id
-                    # print next_block_id,
-                eof_state = self.consumer.on_received_raw_data(newdata.getvalue())
+                try:
+                    eof_state = self.consumer.on_received_raw_data(newdata.getvalue())
+                except:
+                    lg.exc()
                 newdata.close()
-#                if self.consumer.is_done():
-#                    eof_state = True
-                # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
             # want to send the first ack asap - started from 1
             is_ack_timed_out = (time.time() - self.last_ack_moment) > RTT_MAX_LIMIT
             is_first_block_in_group = ( (block_id % BLOCKS_PER_ACK) == 1)
-#            lg.out(18, 'in-> DATA %d %d %d %d %s %s %s' % (
-#                self.stream_id, block_id, len(self.blocks_to_ack), 
-#                self.input_block_id, is_ack_timed_out, is_first_block_in_group, eof_state))
+            lg.out(18, 'in-> DATA %d %d %d %d %s %s %s' % (
+                self.stream_id, block_id, len(self.blocks_to_ack), 
+                self.input_block_id, is_ack_timed_out, is_first_block_in_group, eof_state))
             if is_ack_timed_out or is_first_block_in_group or eof_state:
                 self.resend(need_to_ack=True)
             if eof_state:
@@ -188,13 +181,13 @@ class UDPStream():
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
                 eof = self.consumer.on_sent_raw_data(block_size)
                 # eof = self.consumer and (self.consumer.size == self.bytes_acked)
-#            try:
-#                sz = self.consumer.size
-#            except:
-#                sz = -1 
-#            lg.out(18, 'in-> ACK %d %s %d %s %d %d' % (
-#                self.stream_id, acks, len(self.output_blocks), eof,
-#                sz, self.bytes_acked))
+            try:
+                sz = self.consumer.size
+            except:
+                sz = -1 
+            lg.out(18, 'in-> ACK %d %s %d %s %d %d' % (
+                self.stream_id, acks, len(self.output_blocks), eof,
+                sz, self.bytes_acked))
             if eof:
                 self.consumer.status = 'finished'
                 self.producer.on_outbox_file_done(self.stream_id)
