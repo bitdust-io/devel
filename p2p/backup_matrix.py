@@ -178,17 +178,17 @@ def GetActiveArray():
             activeArray[i] = 0
     return activeArray
 
-def SuppliersChangedNumbers(newSupplierList):
+def SuppliersChangedNumbers(oldSupplierList):
     """
-    Return list of possitions of changed suppliers,
+    Return list of positions of changed suppliers,
     say if suppliers 1 and 3 were changed it should return [1,3].
     """
     changedList = []
-    for i in xrange(contacts.numSuppliers()):
-        suplier_idurl = contacts.getSupplierID(i)
+    for i in xrange(len(oldSupplierList)):
+        suplier_idurl = oldSupplierList[i]
         if not suplier_idurl:
             continue
-        if newSupplierList[i] != suplier_idurl:
+        if contacts.getSupplierID(i) != suplier_idurl:
             changedList.append(i)
     return changedList
 

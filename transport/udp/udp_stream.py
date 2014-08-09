@@ -210,7 +210,7 @@ class UDPStream():
 
     def write(self, data):
         if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
-            raise BufferOverflow('buffer size is %d' % self.output_buffer_size)
+            raise BufferOverflow(self.output_buffer_size)
         # print 'write', len(data)
         outp = cStringIO.StringIO(data)
         while True:
@@ -222,22 +222,20 @@ class UDPStream():
             self.output_blocks[self.output_block_id] = (piece, -1)
             self.output_buffer_size += len(piece)
         outp.close()
+        lg.out(18, 'WRITE %r' % self.output_blocks_ids)
         self.resend()
         
     def send_blocks(self):
         if not self.consumer:
             return False
         relative_time = time.time() - self.creation_time
-        current_rate = self.limit_send_bytes_per_sec
         rtt_current = self.rtt_avarage / self.rtt_acks_counter
-        if relative_time > 0.0: 
-            current_rate = self.bytes_sent / relative_time
-        if current_rate > self.limit_send_bytes_per_sec:
-            return False
         resend_time_limit = 4 * BLOCKS_PER_ACK * rtt_current
         new_blocks_counter = 0 
-        # for block_id in self.output_blocks.keys():
         for block_id in self.output_blocks_ids:
+            if relative_time > 0.0: 
+                if self.bytes_sent / relative_time > self.limit_send_bytes_per_sec:
+                    break
             piece, time_sent = self.output_blocks[block_id]
             data_size = len(piece)
             if time_sent >= 0:
@@ -245,13 +243,8 @@ class UDPStream():
                 if dt > resend_time_limit and self.last_ack_received_time > 0:
                     self.resend_bytes += data_size
                     self.resend_blocks += 1
-                    # print 're -'s,
                 else:
-                    # print 'skip', block_id, dt, self.last_ack_rtt 
                     continue
-            else:
-                pass
-                # print 'go', block_id
             time_sent = relative_time
             self.output_blocks[block_id] = (piece, time_sent)
             output = ''.join((
@@ -317,6 +310,7 @@ class UDPStream():
                 lg.out(18, 'rtt=%r, last ack at %r' % (
                     rtt_current, self.last_ack_received_time))
                 lg.out(18, str(self.output_blocks.keys()))
+                lg.out(18, str(self.output_blocks_ids))
                 if self.last_ack_received_time == 0:
                     self.consumer.error_message = 'sending failed'
                 else:
@@ -334,7 +328,7 @@ class UDPStream():
         else:
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 2.0
-        if lg.is_debug(18) and self.resend_counter % 50 == 1 and self.producer:
+        if lg.is_debug(18) and self.resend_counter % 10 == 1 and self.producer:
             # DEBUG
             current_rate_in = 0.0
             current_rate_out = 0.0
@@ -358,7 +352,7 @@ class UDPStream():
             s += 'rate:(%d|%d) ' % (int(current_rate_in), int(current_rate_out))  
             s += 'time:(%s|%s|%d|%d)' % (str(rtt_current)[:8], str(relative_time)[:6], 
                                           self.resend_counter, self.resend_inactivity_counter)
-            lg.out(18, 'udp_stream.resend %d %s %s' % (
+            lg.out(18, 'RESEND %d %s %s' % (
                 self.stream_id, self.producer.session.peer_id, s))
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.resend) 

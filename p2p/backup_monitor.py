@@ -109,6 +109,9 @@ class BackupMonitor(automat.Automat):
         'timer-20sec': (20.0, ['SUPPLIERS?']),
         }
     
+    def init(self):
+        self.current_suppliers = []
+    
     def state_changed(self, oldstate, newstate):
         """
         This method is called every time when my state is changed. 
@@ -127,6 +130,7 @@ class BackupMonitor(automat.Automat):
             elif event == 'restart' or ( event == 'instant' and self.RestartAgain ) :
                 self.state = 'FIRE_HIRE'
                 self.RestartAgain=False
+                self.doRememberSuppliers(arg)
                 fire_hire.A('restart')
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
@@ -163,6 +167,7 @@ class BackupMonitor(automat.Automat):
             if event == 'suppliers-changed' and self.isSuppliersNumberChanged(arg) :
                 self.state = 'LIST_FILES'
                 self.doDeleteAllBackups(arg)
+                self.doRememberSuppliers(arg)
                 list_files_orator.A('need-files')
             elif event == 'fire-hire-finished' :
                 self.state = 'LIST_FILES'
@@ -170,6 +175,7 @@ class BackupMonitor(automat.Automat):
             elif event == 'suppliers-changed' and not self.isSuppliersNumberChanged(arg) :
                 self.state = 'LIST_FILES'
                 self.doUpdateSuppliers(arg)
+                self.doRememberSuppliers(arg)
                 list_files_orator.A('need-files')
             elif event == 'restart' :
                 self.RestartAgain=True
@@ -179,6 +185,22 @@ class BackupMonitor(automat.Automat):
         Condition method.
         """
         return contacts.numSuppliers() != contacts.numSuppliers()
+
+    def doSuppliersInit(self, arg):
+        """
+        Action method.
+        """
+        for supplier_idurl in contacts.getSupplierIDs():
+            if supplier_idurl:
+                sc = supplier_connector.by_idurl(supplier_idurl)
+                if sc is None:
+                    sc = supplier_connector.create(supplier_idurl)
+
+    def doRememberSuppliers(self, arg):
+        """
+        Action method.
+        """
+        self.current_suppliers = contacts.getSupplierIDs()
         
     def doDeleteAllBackups(self, arg):
         """
@@ -196,35 +218,28 @@ class BackupMonitor(automat.Automat):
         backup_matrix.ClearLocalInfo()
         # finally save the list of current suppliers and clear all stats 
         # backup_matrix.suppliers_set().UpdateSuppliers(contacts.getSupplierIDs())
+        io_throttle.DeleteAllSuppliers()
         
     def doUpdateSuppliers(self, arg):
         """
         Action method.
         """
-        supplierList = contacts.getSupplierIDs()
+        # supplierList = contacts.getSupplierIDs()
         # take a list of suppliers positions that was changed
-        changedSupplierNums = backup_matrix.SuppliersChangedNumbers(supplierList)
+        changedSupplierNums = backup_matrix.SuppliersChangedNumbers(self.current_suppliers)
         # notify io_throttle that we do not neeed already this suppliers
         for supplierNum in changedSupplierNums:
             lg.out(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
-                supplierNum, nameurl.GetName(contacts.getSupplierIDs[supplierNum]), 
-                nameurl.GetName(supplierList[supplierNum])))
-            io_throttle.DeleteSuppliers([contacts.getSupplierIDs[supplierNum],])
+                supplierNum, 
+                nameurl.GetName(self.current_suppliers[supplierNum]),
+                nameurl.GetName(contacts.getSupplierIDs[supplierNum]),))
+            suplier_idurl = self.current_suppliers[supplierNum] 
+            io_throttle.DeleteSuppliers([suplier_idurl,])
             # erase (set to 0) remote info for this guys
             backup_matrix.ClearSupplierRemoteInfo(supplierNum)
         # finally save the list of current suppliers and clear all stats 
         # backup_matrix.suppliers_set().UpdateSuppliers(supplierList)
         
-    def doSuppliersInit(self, arg):
-        """
-        Action method.
-        """
-        for supplier_idurl in contacts.getSupplierIDs():
-            if supplier_idurl:
-                sc = supplier_connector.by_idurl(supplier_idurl)
-                if sc is None:
-                    sc = supplier_connector.create(supplier_idurl)
-
     def doPrepareListBackups(self, arg):
         if backup_control.HasRunningBackup():
             # if some backups are running right now no need to rebuild something - too much use of CPU

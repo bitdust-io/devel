@@ -505,7 +505,7 @@ class OutboxFile():
                     return False
                 self.buffer = self.fileobj.read(udp_stream.BUFFER_SIZE)
                 if not self.buffer:
-                    lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state')
+                    lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state %d' % self.stream_id)
                     # print 'EOF!!!', self.filename
                     self.eof = True
                     self.close_file()

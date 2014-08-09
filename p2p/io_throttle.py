@@ -121,11 +121,16 @@ def DeleteBackupRequests(backupName):
     """
     return throttle().DeleteBackupRequests(backupName)
 
-def DeleteSuppliers(supplierIdentities):
+def DeleteSuppliers(suppliers_IDURLs):
     """
     Erase the whole queue with this peer and remove him from throttle() completely. 
     """
-    return throttle().DeleteSuppliers(supplierIdentities)
+    return throttle().DeleteSuppliers(suppliers_IDURLs)
+
+def DeleteAllSuppliers():
+    """
+    """
+    return throttle().DeleteSuppliers(throttle().supplierQueues.keys())
 
 def OutboxStatus(pkt_out, status, error):
     """
@@ -133,6 +138,8 @@ def OutboxStatus(pkt_out, status, error):
     return throttle().OutboxStatus(pkt_out, status, error)
     
 def IsSendingQueueEmpty():
+    """
+    """
     return throttle().IsSendingQueueEmpty()
 
 def HasPacketInSendQueue(supplierIDURL, packetID):
@@ -680,12 +687,12 @@ class IOThrottle:
         self.paintFunc = func
 
 
-    def DeleteSuppliers(self, supplierIdentities):
-        for supplierIdentity in supplierIdentities:
-            if supplierIdentity:
-                if self.supplierQueues.has_key(supplierIdentity):
-                    self.supplierQueues[supplierIdentity].RemoveSupplierWork()
-                    del self.supplierQueues[supplierIdentity]
+    def DeleteSuppliers(self, suppliers_IDURLs):
+        for supplierIDURL in suppliers_IDURLs:
+            if supplierIDURL:
+                if self.supplierQueues.has_key(supplierIDURL):
+                    self.supplierQueues[supplierIDURL].RemoveSupplierWork()
+                    del self.supplierQueues[supplierIDURL]
 
 
     def DeleteBackupRequests(self, backupName):
