@@ -243,7 +243,7 @@ class UDPNode(automat.Automat):
         self.my_id = udp_interface.idurl_to_id(self.my_idurl)
         udp.proto(self.listen_port).add_callback(self._datagram_received)
         # udp.proto(self.listen_port).set_command_filter_callback(udp_stream.command_received)
-        udp_session.process_sessions()
+        reactor.callLater(0, udp_session.process_sessions)
 
     def doStartStunClient(self, arg):
         """

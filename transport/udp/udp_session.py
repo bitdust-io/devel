@@ -152,6 +152,8 @@ def process_sessions():
             continue
         if not s.file_queue:
             continue
+        if s.state != 'CONNECTED':
+            continue
         has_outbox = s.file_queue.process_outbox_queue()
         has_sends = s.file_queue.process_outbox_files()    
         if has_sends or has_outbox:
