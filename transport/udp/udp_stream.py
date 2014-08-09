@@ -155,6 +155,7 @@ class UDPStream():
             if is_ack_timed_out or is_first_block_in_group or eof_state:
                 self.resend(need_to_ack=True)
             if eof_state:
+                self.producer.do_send_ack(self.stream_id, self.consumer, '')
                 self.producer.on_inbox_file_done(self.consumer, 'finished')
                 
     
@@ -315,8 +316,6 @@ class UDPStream():
             is_ack_timed_out = (time.time() - self.last_ack_moment) > rtt_current
             if need_to_ack or is_ack_timed_out:
                 activity = activity or self.send_ack()
-            if self.consumer.is_done():
-                self.producer.do_send_ack(self.stream_id, self.consumer, '')
             if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2.0:
                 self.producer.on_timeout_receiving(self.stream_id)
         if len(self.output_blocks) > 0:        
