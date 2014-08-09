@@ -24,8 +24,8 @@ import udp_stream
 
 #------------------------------------------------------------------------------ 
 
-MAX_SIMULTANEOUS_STREAMS = 4
-NUMBER_OF_STREAMS_TO_REMEMBER = 10
+MAX_SIMULTANEOUS_STREAMS = 16
+NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS * 4
 
 #------------------------------------------------------------------------------ 
 
@@ -272,6 +272,9 @@ class FileQueue:
             transfer_id = None
         # print 'on_inbox_file_registered', stream_id, transfer_id, self.inboxFiles[stream_id].filename
         # assert stream_id in self.inboxFiles.keys()
+        if stream_id not in self.inboxFiles.keys():
+            lg.warn('stream %d not found in the inboxFiles' % stream_id)
+            return
         self.inboxFiles[stream_id].transfer_id = transfer_id
         self.inboxFiles[stream_id].registration = None
         if self.inboxFiles[stream_id].is_done():
@@ -294,6 +297,9 @@ class FileQueue:
             transfer_id = int(response)
         except:
             transfer_id = None
+        if stream_id not in self.outboxFiles.keys():
+            lg.warn('stream %d not found in the outboxFiles' % stream_id)
+            return
         self.outboxFiles[stream_id].transfer_id = transfer_id
         self.outboxFiles[stream_id].registration = None
         if self.outboxFiles[stream_id].is_done():
