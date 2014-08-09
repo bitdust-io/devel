@@ -394,6 +394,7 @@ class InboxFile():
 
     def on_received_raw_data(self, newdata):
         self.process(newdata)
+        return self.is_done() 
 
 #------------------------------------------------------------------------------ 
 
@@ -494,12 +495,12 @@ class OutboxFile():
         self.count_size(bytes_delivered)
         if self.is_done():
             # lg.out(18, 'on_sent_raw_data: %s' % self.stream_id)
-            self.queue.on_outbox_file_done(self, 'finished')
+            # self.queue.on_outbox_file_done(self, 'finished')
             return True
         if self.is_timed_out():
-            return False
+            return True
         if self.is_cancelled():
-            return False
+            return True
         self.process()
         return False
     

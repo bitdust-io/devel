@@ -141,10 +141,10 @@ class UDPStream():
                     newdata.write(blockdata)
                     self.input_block_id = next_block_id
                     # print next_block_id,
-                self.consumer.on_received_raw_data(newdata.getvalue())
+                eof_state = self.consumer.on_received_raw_data(newdata.getvalue())
                 newdata.close()
-                if self.consumer.is_done():
-                    eof_state = True
+#                if self.consumer.is_done():
+#                    eof_state = True
                 # print 'received %d bytes in %d blocks, eof=%r' % (len(newdata), num_blocks, eof_state)
             # want to send the first ack asap - started from 1
             is_ack_timed_out = (time.time() - self.last_ack_moment) > RTT_MAX_LIMIT
@@ -186,8 +186,8 @@ class UDPStream():
                     rtt = self.rtt_avarage / self.rtt_acks_counter
                     self.rtt_acks_counter = BLOCKS_PER_ACK * 2
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
-                self.consumer.on_sent_raw_data(block_size)
-                eof = self.consumer and (self.consumer.size == self.bytes_acked)
+                eof = self.consumer.on_sent_raw_data(block_size)
+                # eof = self.consumer and (self.consumer.size == self.bytes_acked)
             try:
                 sz = self.consumer.size
             except:
@@ -195,23 +195,25 @@ class UDPStream():
             lg.out(18, 'in-> ACK %d %s %d %s %d %d' % (
                 self.stream_id, acks, len(self.output_blocks), eof,
                 sz, self.bytes_acked))
-            if len(acks) > 0:
-                self.last_ack_received_time = time.time() - self.creation_time
-                self.input_acks_counter += 1
-                # print 'ack %s blocks:(%d|%d)' % (self.stream_id, acks, len(self.output_blocks.keys())) 
-                self.resend()
+            if eof:
+                self.queue.on_outbox_file_done(self, 'finished')
                 return
-            # print 'zero ack %s' % self.stream_id
-            self.stop_resending()
-            sum_not_acked_blocks = sum(map(lambda block: len(block[0]), 
-                                           self.output_blocks.values()))
-            self.output_blocks.clear()
-            self.output_blocks_ids = []
-            self.output_buffer_size = 0                
-            self.bytes_acked += sum_not_acked_blocks
-            relative_time = time.time() - self.creation_time
-            self.consumer.on_zero_ack(sum_not_acked_blocks)
-            return            
+            if len(acks) == 0:
+                # print 'zero ack %s' % self.stream_id
+                self.stop_resending()
+                sum_not_acked_blocks = sum(map(lambda block: len(block[0]), 
+                                               self.output_blocks.values()))
+                self.output_blocks.clear()
+                self.output_blocks_ids = []
+                self.output_buffer_size = 0                
+                self.bytes_acked += sum_not_acked_blocks
+                relative_time = time.time() - self.creation_time
+                self.consumer.on_zero_ack(sum_not_acked_blocks)
+                return            
+            self.last_ack_received_time = time.time() - self.creation_time
+            self.input_acks_counter += 1
+            # print 'ack %s blocks:(%d|%d)' % (self.stream_id, acks, len(self.output_blocks.keys())) 
+            self.resend()
 
     def write(self, data):
         if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
@@ -311,8 +313,10 @@ class UDPStream():
         relative_time = time.time() - self.creation_time
         if len(self.blocks_to_ack) > 0:
             is_ack_timed_out = (time.time() - self.last_ack_moment) > rtt_current
-            if need_to_ack or is_ack_timed_out or self.consumer.is_done():
+            if need_to_ack or is_ack_timed_out:
                 activity = activity or self.send_ack()
+            if self.consumer.is_done():
+                self.producer.do_send_ack(self.stream_id, self.consumer, '')
             if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2.0:
                 self.producer.on_timeout_receiving(self.stream_id)
         if len(self.output_blocks) > 0:        
@@ -320,9 +324,9 @@ class UDPStream():
             last_ack_dt = relative_time - self.last_ack_received_time
             if last_ack_dt > RTT_MAX_LIMIT * 4.0:
                 self.producer.on_timeout_sending(self.stream_id)
-            elif last_ack_dt > rtt_current * 2.0:
-                self.producer.do_send_data(self.stream_id, self.consumer, '')
-                activity = True
+            # elif last_ack_dt > rtt_current * 2.0:
+            #     self.producer.do_send_data(self.stream_id, self.consumer, '')
+            #     activity = True
         if activity:
             # print 'resend out:%s acks:%s' % (len(self.output_blocks.keys()), len(self.blocks_to_ack))
             self.resend_inactivity_counter = 0.0
