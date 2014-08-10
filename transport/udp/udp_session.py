@@ -29,6 +29,7 @@ from lib import automat
 from lib import udp
 
 import udp_file_queue
+import udp_stream
 
 #------------------------------------------------------------------------------ 
 
@@ -322,6 +323,9 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
+        if udp_stream._Debug:
+            if not (self.peer_address.count('37.18.255.42') or self.peer_address.count('37.18.255.38')):
+                return
         udp.send_command(self.node.listen_port, udp.CMD_PING, '', self.peer_address)
 
     def doReceiveData(self, arg):
