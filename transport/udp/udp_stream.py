@@ -178,7 +178,8 @@ class UDPStream():
                 self.resend(need_to_ack=True)
             if eof_state:
                 self.producer.do_send_ack(self.stream_id, self.consumer, '')
-                self.producer.on_inbox_file_done(self.consumer, 'finished')
+                self.consumer.status = 'finished'
+                self.producer.on_inbox_file_done(self.stream_id)
     
     def ack_received(self, inpt):
         if self.consumer:
