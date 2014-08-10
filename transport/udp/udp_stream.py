@@ -38,7 +38,7 @@ BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_AC
 RTT_MIN_LIMIT = 0.002
 RTT_MAX_LIMIT = 1
 
-# MAX_ACK_TIMEOUTS = 5
+MAX_ACK_TIMEOUTS = 5
 
 #------------------------------------------------------------------------------ 
 
@@ -335,39 +335,39 @@ class UDPStream():
             is_ack_timed_out = (time.time() - self.last_ack_moment) > rtt_current
             if need_to_ack or is_ack_timed_out:
                 activity = activity or self.send_ack()
-#        else:
-#            if self.bytes_sent == 0 and relative_time > 0:
-#                if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2:
-#                    if _Debug:
-#                        lg.out(18, 'rtt=%r, last block in %r' % (
-#                            rtt_current, self.last_block_received_time))
-#                    self.consumer.error_message = 'receiving timeout'
-#                    self.consumer.status = 'failed'
-#                    self.consumer.timeout = True
-#                    self.producer.on_timeout_receiving(self.stream_id)
-#                    return
+        else:
+            if self.bytes_sent == 0 and relative_time > 0:
+                if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 10.0:
+                    if _Debug:
+                        lg.out(18, 'rtt=%r, last block in %r' % (
+                            rtt_current, self.last_block_received_time))
+                    self.consumer.error_message = 'receiving timeout'
+                    self.consumer.status = 'failed'
+                    self.consumer.timeout = True
+                    self.producer.on_timeout_receiving(self.stream_id)
+                    return
         if len(self.output_blocks) > 0:
             reply_dt = self.last_block_sent_time - self.last_ack_received_time
             if reply_dt > RTT_MAX_LIMIT * 2:
-#                self.input_acks_timeouts_counter += 1
-#                if self.input_acks_timeouts_counter < MAX_ACK_TIMEOUTS:
-#                    latest_block_id = self.output_blocks_ids[0]
-#                    self.output_blocks[latest_block_id][1] = -1
-#                    self.last_ack_received_time = relative_time
-#                    lg.out(18, 'RESEND ONE %d %d' % (self.stream_id, latest_block_id))
-#                else:
-                if _Debug:
-                    lg.out(18, 'rtt=%r, last ack at %r, last block was %r' % (
-                        rtt_current, self.last_ack_received_time, self.last_block_sent_time))
-                    lg.out(18, ','.join(map(lambda bid: '%d:%d' % (bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
-                if self.last_ack_received_time == 0:
-                    self.consumer.error_message = 'sending failed'
+                self.input_acks_timeouts_counter += 1
+                if self.input_acks_timeouts_counter < MAX_ACK_TIMEOUTS:
+                    latest_block_id = self.output_blocks_ids[0]
+                    self.output_blocks[latest_block_id][1] = -1
+                    self.last_ack_received_time = relative_time
+                    lg.out(18, 'RESEND ONE %d %d' % (self.stream_id, latest_block_id))
                 else:
-                    self.consumer.error_message = 'remote side stopped responding'
-                self.consumer.status = 'failed'
-                self.consumer.timeout = True
-                self.producer.on_timeout_sending(self.stream_id)
-                return
+                    if _Debug:
+                        lg.out(18, 'rtt=%r, last ack at %r, last block was %r' % (
+                            rtt_current, self.last_ack_received_time, self.last_block_sent_time))
+                        lg.out(18, ','.join(map(lambda bid: '%d:%d' % (bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
+                    if self.last_ack_received_time == 0:
+                        self.consumer.error_message = 'sending failed'
+                    else:
+                        self.consumer.error_message = 'remote side stopped responding'
+                    self.consumer.status = 'failed'
+                    self.consumer.timeout = True
+                    self.producer.on_timeout_sending(self.stream_id)
+                    return
             activity = activity or self.send_blocks()
         if activity:
             self.resend_inactivity_counter = 0.0

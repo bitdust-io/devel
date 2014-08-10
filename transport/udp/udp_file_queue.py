@@ -24,7 +24,7 @@ import udp_stream
 
 #------------------------------------------------------------------------------ 
 
-MAX_SIMULTANEOUS_STREAMS_PER_SESSION = 2
+MAX_SIMULTANEOUS_STREAMS_PER_SESSION = 4
 NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS_PER_SESSION * 4
 
 #------------------------------------------------------------------------------ 
