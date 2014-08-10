@@ -44,7 +44,7 @@ RTT_MAX_LIMIT = 1
 
 _Streams = {}
 _GlobalLimitSendBytesPerSec = 100.0 * 125000
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------ 
 
@@ -171,7 +171,7 @@ class UDPStream():
             is_ack_timed_out = (time.time() - self.last_ack_moment) > RTT_MAX_LIMIT
             is_first_block_in_group = ( (block_id % BLOCKS_PER_ACK) == 1)
             if _Debug:
-                lg.out(18, 'in-> DATA %d %d %d %d %s %s %s' % (
+                lg.out(24, 'in-> DATA %d %d %d %d %s %s %s' % (
                     self.stream_id, block_id, len(self.blocks_to_ack), 
                     self.input_block_id, is_ack_timed_out, is_first_block_in_group, eof_state))
             if is_ack_timed_out or is_first_block_in_group or eof_state:
@@ -217,7 +217,7 @@ class UDPStream():
             except:
                 sz = -1 
             if _Debug:
-                lg.out(18, 'in-> ACK %d %s %d %s %d %d' % (
+                lg.out(24, 'in-> ACK %d %s %d %s %d %d' % (
                     self.stream_id, acks, len(self.output_blocks), eof,
                     sz, self.bytes_acked))
             if eof:
