@@ -1189,7 +1189,7 @@ def update_proxy_settings():
 
 def getBandOutLimit(): 
     """
-    Get from user config current outgoing bandwidth limit in kilo bytes per second.
+    This is a current outgoing bandwidth limit in bytes per second.
     """
     try:
         return int(uconfig('network.network-send-limit'))
@@ -1198,7 +1198,7 @@ def getBandOutLimit():
 
 def getBandInLimit():
     """
-    Get from user config current incoming bandwidth limit in kilo bytes per second.
+    This is a current incoming bandwidth limit in bytes per second.
     """
     try:
         return int(uconfig('network.network-receive-limit'))

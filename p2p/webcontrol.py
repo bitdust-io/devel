@@ -5254,18 +5254,23 @@ class NetworkSettingsPage(Page):
                 '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-port', request.path,
                 settings.getUDPPort())
         src += '</td>\n'
-        src += '</tr></table>\n'
+        src += '</tr>\n'
+        src += '<tr>\n'
+        src += '<td width=50% valign=top nowrap><h3>Distributed Hash Table</h3>\n'
         src += '<p>UDP port for DHT network: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'network.network-dht-port', request.path,
             settings.getDHTPort())
-        # src += '<br><p><a href="http://bitpie.net/network.html" target=_blank>Read info about network protocol transports</a></p>\n'
-        
-#        src += '<br><h3>outgoing bandwidth limit: <a href="%s?back=%s">%s</a></h3>\n' % (
-#            '/'+_PAGE_SETTINGS+'/'+'network.network-send-limit', request.path,
-#            str(settings.getBandOutLimit()))
-#        src += '<br><h3>incoming bandwidth limit: <a href="%s?back=%s">%s</a></h3>\n' % (
-#            '/'+_PAGE_SETTINGS+'/'+'network.network-receive-limit', request.path,
-#            str(settings.getBandInLimit()))
+        src += '</td>\n'
+        src += '<td width=50% valign=top nowrap><h3>Bandwidth</h3>\n'
+        src += '<p>outgoing bandwidth limit: <a href="%s?back=%s">%s</a> (bytes/sec.)</p>\n' % (
+            '/'+_PAGE_SETTINGS+'/'+'network.network-send-limit', request.path,
+            str(settings.getBandOutLimit()))
+        src += '<p>incoming bandwidth limit: <a href="%s?back=%s">%s</a> (bytes/sec.)</p>\n' % (
+            '/'+_PAGE_SETTINGS+'/'+'network.network-receive-limit', request.path,
+            str(settings.getBandInLimit()))
+        src += '</td>\n'
+        src += '</tr>\n'
+        src += '</table>\n'
         return html(request, body=src,  back=arg(request, 'back', '/'+_PAGE_CONFIG), title='network settings')
 
 
@@ -7471,6 +7476,10 @@ class SettingsTreeNode(Page):
                 ):
             network_connector.A('reconnect')
             p2p_connector.A('reconnect')
+
+        if self.path in ('network.network-send-limit',):
+            from transport.udp import udp_stream 
+            udp_stream.set_global_limit_send_bytes_per_sec(int(self.value))
 
         if self.path in (
                 'storage.suppliers',

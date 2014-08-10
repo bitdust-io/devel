@@ -43,7 +43,7 @@ RTT_MAX_LIMIT = 1
 #------------------------------------------------------------------------------ 
 
 _Streams = {}
-_GlobalLimitSendBytesPerSec = 2.0 * 125000
+_GlobalLimitSendBytesPerSec = 100.0 * 125000
 _Debug = True
 
 #------------------------------------------------------------------------------ 
@@ -92,13 +92,12 @@ class UDPStream():
         self.last_ack_received_time = 0
         self.last_block_received_time = 0
         self.last_block_sent_time = 0
-        self.rtt_avarage = RTT_MIN_LIMIT # RTT_MAX_LIMIT
+        self.rtt_avarage = RTT_MIN_LIMIT 
         self.rtt_acks_counter = 1.0
         self.resend_task = None
         self.resend_inactivity_counter = 0
         self.resend_counter = 0
         self.current_send_bytes_per_sec = 0
-        # self.limit_send_bytes_per_sec = 0.5 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s
         streams()[self.stream_id] = self
         self.creation_time = time.time()
         self.limit_send_bytes_per_sec = get_global_limit_send_bytes_per_sec() / len(streams())
