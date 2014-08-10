@@ -163,7 +163,7 @@ _DefaultXMLConfig = ur"""<settings>
    </network-proxy-ssl>
   </network-proxy>
   <network-send-limit>
-   0
+   250000
   </network-send-limit>
   <network-receive-limit>
    0

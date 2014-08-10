@@ -223,15 +223,16 @@ def ReceivingSpeedLimit():
 
 def DefaultBandwidthInLimit():
     """
-    Incoming bandwidth limit in Kilobytes per second, 0 - unlimited.
+    Incoming bandwidth limit in bytes per second, 0 - unlimited.
     """
-    return 0
+    return 0 
 
 def DefaultBandwidthOutLimit():
     """
-    Outgoing bandwidth limit in Kilobytes per second, 0 - unlimited.
+    Outgoing bandwidth limit in bytes per second, 0 - unlimited.
     """
-    return 0
+    # 1 Mbps = 125000 B/s ~ 122 KB/s
+    return 2 * 125000 
 
 def SendTimeOut():
     """

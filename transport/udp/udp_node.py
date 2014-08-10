@@ -244,7 +244,7 @@ class UDPNode(automat.Automat):
         udp.proto(self.listen_port).add_callback(self._datagram_received)
         bandoutlimit = settings.getBandOutLimit()
         if bandoutlimit == 0:
-            bandoutlimit = 10 * 125000 # 1 Mbps = 125000 B/s ~ 122 KB/s
+            bandoutlimit = settings.DefaultBandwidthOutLimit()
         udp_stream.set_global_limit_send_bytes_per_sec(bandoutlimit)
         # udp.proto(self.listen_port).set_command_filter_callback(udp_stream.command_received)
         reactor.callLater(0, udp_session.process_sessions)

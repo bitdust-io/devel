@@ -15,15 +15,29 @@ from lib import udp
 """
 Datagram Format
 
-[Data] packet
+DATA packet:
 
-bytes:
-  0        software version number
-  1        command identifier, see ``lib.udp`` module
-  2-5      stream_id 
-  6-9      total data size to be transferred, peer must know when to stop receiving
-  10-13    block_id, outgoing blocks are counted from 1
-  from 14  payload data   
+    bytes:
+      0        software version number
+      1        command identifier, see ``lib.udp`` module
+      2-5      stream_id 
+      6-9      total data size to be transferred, 
+               peer must know when to stop receiving
+      10-13    block_id, outgoing blocks are counted from 1
+      from 14  payload data
+  
+  
+ACK packet:
+    
+    bytes:
+      0        software version number
+      1        command identifier, see ``lib.udp`` module
+      2-5      stream_id
+      6-9      block_id1
+      10-13    block_id2
+      14-17    block_id3
+      ...
+      
   
 """
 
@@ -32,8 +46,8 @@ BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14
 
 BLOCKS_PER_ACK = 16
 
-MAX_BUFFER_SIZE = 16*1024
-BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
+OUTPUT_BUFFER_SIZE = 16*1024
+CHUNK_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
 RTT_MIN_LIMIT = 0.002
 RTT_MAX_LIMIT = 1
@@ -241,9 +255,8 @@ class UDPStream():
             self.resend()
 
     def write(self, data):
-        if self.output_buffer_size + len(data) > MAX_BUFFER_SIZE:
+        if self.output_buffer_size + len(data) > OUTPUT_BUFFER_SIZE:
             raise BufferOverflow(self.output_buffer_size)
-        # print 'write', len(data)
         outp = cStringIO.StringIO(data)
         while True:
             piece = outp.read(BLOCK_SIZE)
@@ -324,7 +337,6 @@ class UDPStream():
 
     def resend(self, need_to_ack=False):
         if not self.consumer:
-            # print 'stop resending, consumer is None'
             return
         self.resend_counter += 1
         rtt_current = self.rtt_avarage / self.rtt_acks_counter
