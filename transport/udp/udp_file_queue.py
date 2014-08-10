@@ -190,13 +190,15 @@ class FileQueue:
             return
         if not self.session.peer_id:
             inp.close()
-            lg.warn('peer id is unknown yet %s' % stream_id)
+            if udp_stream._Debug:
+                lg.warn('peer id is unknown yet %s' % stream_id)
             self.do_send_ack(stream_id, None, '')
             return
         if stream_id not in self.streams.keys():
             if stream_id in self.dead_streams:
                 inp.close()
-                lg.warn('old block %s' % stream_id)
+                if udp_stream._Debug:
+                    lg.warn('old block %s' % stream_id)
                 self.do_send_ack(stream_id, None, '')
                 return
             if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
@@ -205,7 +207,8 @@ class FileQueue:
                 inp.close()
                 # lg.warn('too many incoming files for session %s' % str(self.session))
                 # self.session.automat('shutdown')
-                lg.warn('too many incoming files %s %s' % (stream_id, self.session.peer_id))
+                if udp_stream._Debug:
+                    lg.warn('too many incoming files %s %s' % (stream_id, self.session.peer_id))
                 self.do_send_ack(stream_id, None, '') 
                 return
             self.start_inbox_file(stream_id, data_size)
@@ -234,7 +237,8 @@ class FileQueue:
                 # print 'old ack', stream_id
                 pass
             else:
-                lg.warn('%s - what a stream ???' % stream_id) 
+                if udp_stream._Debug:
+                    lg.warn('%s - what a stream ???' % stream_id) 
             # self.session.automat('shutdown')
             return
         try:
@@ -272,7 +276,8 @@ class FileQueue:
            
     def on_inbox_file_registered(self, response, stream_id):
         if stream_id not in self.inboxFiles.keys():
-            lg.warn('stream %d not found in the inboxFiles' % stream_id)
+            if udp_stream._Debug:
+                lg.warn('stream %d not found in the inboxFiles' % stream_id)
             return
         try:
             transfer_id = int(response)
@@ -292,7 +297,8 @@ class FileQueue:
 
     def on_outbox_file_registered(self, response, stream_id):
         if stream_id not in self.outboxFiles.keys():
-            lg.warn('stream %d not found in the outboxFiles' % stream_id)
+            if udp_stream._Debug:
+                lg.warn('stream %d not found in the outboxFiles' % stream_id)
             return
         try:
             transfer_id = int(response)
