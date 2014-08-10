@@ -273,6 +273,7 @@ class FileQueue:
             outfile.result_defer = None
         self.close_stream(stream_id)
         self.close_outbox_file(stream_id)
+        self.process_outbox_queue()
            
     def on_inbox_file_registered(self, response, stream_id):
         if stream_id not in self.inboxFiles.keys():
