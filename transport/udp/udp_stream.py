@@ -44,7 +44,7 @@ RTT_MAX_LIMIT = 1
 
 _Streams = {}
 _GlobalLimitSendBytesPerSec = 100.0 * 125000
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------ 
 
