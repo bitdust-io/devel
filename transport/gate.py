@@ -232,6 +232,7 @@ def start():
                 result.append(proto)
             else:
                 lg.out(4, '    %s is ready')
+    reactor.callLater(5, packets_timeout_loop)
     return result
 
 
@@ -258,7 +259,7 @@ def started(x):
     global _StartingDeferred
     lg.out(4, 'gate.started')
     _StartingDeferred = None
-    packets_timeout_loop()
+    # packets_timeout_loop()
     return x
     # global _PacketsTimeOutTask
     # if not _PacketsTimeOutTask:
@@ -269,6 +270,7 @@ def stop():
     """
     """
     lg.out(4, 'gate.stop')
+    stop_packets_timeout_loop()
     result = []
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto): 
