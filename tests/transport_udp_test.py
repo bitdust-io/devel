@@ -50,7 +50,7 @@ def main():
     if len(sys.argv) >= 3:
         p = signed.Packet(commands.Data(), misc.getLocalID(), 
                           misc.getLocalID(), misc.getLocalID(), 
-                          bpio.ReadBinaryFile(sys.argv[1]), misc.getLocalID())
+                          bpio.ReadBinaryFile(sys.argv[1]), sys.argv[2])
         # bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
         def _try_reconnect():
             sess = udp_session.get_by_peer_id(sys.argv[2])
@@ -80,6 +80,7 @@ def main():
         # _try_connect()
         def _send():
             gate.outbox(p)
+            reactor.callLater(5, _send)
         _send()
     reactor.run()
     

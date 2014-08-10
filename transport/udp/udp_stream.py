@@ -285,7 +285,8 @@ class UDPStream():
             self.output_blocks_counter += 1
             self.last_block_sent_time = relative_time
             new_blocks_counter += 1
-        self.current_send_bytes_per_sec = self.bytes_sent / relative_time
+        if relative_time > 0:
+            self.current_send_bytes_per_sec = self.bytes_sent / relative_time
         # if new_blocks_counter > 0:
         #     print 'send blocks %d|%d|%d' % (new_blocks_counter, len(self.output_blocks.keys()), self.output_blocks_counter), 
         #     print 'bytes:(%d|%d|%d)' % (self.bytes_acked, self.bytes_sent, self.resend_bytes),  
