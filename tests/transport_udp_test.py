@@ -82,8 +82,8 @@ def main():
             from transport.udp import udp_stream
             print '_send', udp_stream.streams().keys()
             gate.outbox(p)
-            if c < 20:
-                reactor.callLater(0.01, _send, c+1)
+            # if c < 20:
+            #     reactor.callLater(0.01, _send, c+1)
         reactor.callLater(10, _send, 0)
     reactor.run()
     
