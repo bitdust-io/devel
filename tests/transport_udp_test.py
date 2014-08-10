@@ -28,6 +28,7 @@ from transport import gate
 
 def main():
     lg.set_debug_level(24)
+    lg.life_begins()
     # options = { 'idurl': misc.getLocalID(),}
     # options['host'] = nameurl.GetName(misc.getLocalID())+'@'+'somehost.org'
     # options['dht_port'] = int(settings.getDHTPort())
@@ -39,6 +40,7 @@ def main():
     reactor.addSystemEventTrigger('before', 'shutdown', gate.shutdown)
     gate.init()
     gate.start()
+    # [filename] [peer id]
     if len(sys.argv) >= 3:
         p = signed.Packet(commands.Data(), misc.getLocalID(), 
                           misc.getLocalID(), misc.getLocalID(), 
