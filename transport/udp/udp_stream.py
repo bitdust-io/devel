@@ -32,7 +32,7 @@ BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14
 
 BLOCKS_PER_ACK = 16
 
-MAX_BUFFER_SIZE = 64*1024
+MAX_BUFFER_SIZE = 16*1024
 BUFFER_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
 RTT_MIN_LIMIT = 0.002
@@ -255,7 +255,7 @@ class UDPStream():
             self.output_buffer_size += len(piece)
         outp.close()
         if _Debug:
-            lg.out(18, 'WRITE %r' % self.output_blocks_ids)
+            lg.out(24, 'WRITE %r' % self.output_blocks_ids)
         self.resend()
         
     def send_blocks(self):
