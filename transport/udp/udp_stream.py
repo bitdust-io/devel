@@ -362,7 +362,7 @@ class UDPStream():
         else:
             self.resend_inactivity_counter += 1.0
         next_resend = rtt_current * self.resend_inactivity_counter * 2.0
-        if lg.is_debug(18) and self.resend_counter % 10 == 1 and self.producer:
+        if lg.is_debug(18) and self.resend_counter % 5 == 1 and self.producer:
             # DEBUG
             current_rate_in = 0.0
             current_rate_out = 0.0

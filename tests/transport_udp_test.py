@@ -79,6 +79,8 @@ def main():
                 reactor.callLater(1, _try_connect)
         # _try_connect()
         def _send():
+            from transport.udp import udp_stream
+            print '_send', udp_stream.streams().keys()
             gate.outbox(p)
             reactor.callLater(5, _send)
         _send()
