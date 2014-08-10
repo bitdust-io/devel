@@ -29,6 +29,12 @@ from transport import gate
 def main():
     lg.set_debug_level(24)
     lg.life_begins()
+    from crypto import key
+    key.InitMyKey()
+    from userid import identitycache
+    identitycache.init()
+    from lib import tmpfile
+    tmpfile.init()
     # options = { 'idurl': misc.getLocalID(),}
     # options['host'] = nameurl.GetName(misc.getLocalID())+'@'+'somehost.org'
     # options['dht_port'] = int(settings.getDHTPort())
@@ -45,7 +51,7 @@ def main():
         p = signed.Packet(commands.Data(), misc.getLocalID(), 
                           misc.getLocalID(), misc.getLocalID(), 
                           bpio.ReadBinaryFile(sys.argv[1]), misc.getLocalID())
-        bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
+        # bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
         def _try_reconnect():
             sess = udp_session.get_by_peer_id(sys.argv[2])
             reconnect = False
@@ -71,7 +77,10 @@ def main():
                 reactor.callLater(5, _try_reconnect)
             else:
                 reactor.callLater(1, _try_connect)
-        _try_connect()
+        # _try_connect()
+        def _send():
+            gate.outbox(p)
+        _send()
     reactor.run()
     
         
