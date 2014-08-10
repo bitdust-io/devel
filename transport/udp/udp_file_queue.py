@@ -489,6 +489,8 @@ class OutboxFile():
         lg.out(18, 'udp_file_queue.OutboxFile.cancel %s %d/%d' % (
             self.stream_id, self.bytes_sent, self.bytes_delivered))
         self.cancelled = True
+        self.status = 'failed'
+        self.error_message = 'transfer cancelled'
         # self.eof = True
         # self.close_file()
     
@@ -521,9 +523,9 @@ class OutboxFile():
         if self.is_done():
             return True
         if self.is_timed_out():
-            return False
+            return True
         if self.is_cancelled():
-            return False
+            return True
         self.process()
         return False
     
