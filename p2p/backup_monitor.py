@@ -184,7 +184,7 @@ class BackupMonitor(automat.Automat):
         """
         Condition method.
         """
-        return contacts.numSuppliers() != contacts.numSuppliers()
+        return contacts.numSuppliers() != len(self.current_suppliers)
 
     def doSuppliersInit(self, arg):
         """

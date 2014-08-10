@@ -325,12 +325,12 @@ def ReadRawListFiles(supplierNum, listFileText):
                     lg.out(8, '        V%s - remove, version is not found in the index' % backupID)
                 continue
             missingBlocksSet = {'Data': set(), 'Parity': set()}
-            if len(words) > 3:
-                # "0/0/123/4567/F20090709034221PM/0-Data" "3" "0-5" "missing" "Data:1,3" "Parity:0,1,2"
-                if words[3].strip() != 'missing':
+            if len(words) > 4:
+                # "0/0/123/4567/F20090709034221PM/0-Data" "3" "0-5" "434353" "missing" "Data:1,3" "Parity:0,1,2"
+                if words[4].strip() != 'missing':
                     lg.warn('incorrect line:[%s]' % line)
                     continue
-                for missingBlocksString in words[4:]:
+                for missingBlocksString in words[5:]:
                     try:
                         dp, blocks = missingBlocksString.split(':')
                         missingBlocksSet[dp] = set(blocks.split(','))
