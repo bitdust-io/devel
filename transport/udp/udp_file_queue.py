@@ -489,8 +489,8 @@ class OutboxFile():
         lg.out(18, 'udp_file_queue.OutboxFile.cancel %s %d/%d' % (
             self.stream_id, self.bytes_sent, self.bytes_delivered))
         self.cancelled = True
-        self.eof = True
-        self.close_file()
+        # self.eof = True
+        # self.close_file()
     
     def process(self):
         if self.eof:
