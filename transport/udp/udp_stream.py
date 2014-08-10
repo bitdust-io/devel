@@ -335,17 +335,17 @@ class UDPStream():
             is_ack_timed_out = (time.time() - self.last_ack_moment) > rtt_current
             if need_to_ack or is_ack_timed_out:
                 activity = activity or self.send_ack()
-        else:
-            if self.bytes_sent == 0 and relative_time > 0:
-                if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2:
-                    if _Debug:
-                        lg.out(18, 'rtt=%r, last block in %r' % (
-                            rtt_current, self.last_block_received_time))
-                    self.consumer.error_message = 'receiving timeout'
-                    self.consumer.status = 'failed'
-                    self.consumer.timeout = True
-                    self.producer.on_timeout_receiving(self.stream_id)
-                    return
+#        else:
+#            if self.bytes_sent == 0 and relative_time > 0:
+#                if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 2:
+#                    if _Debug:
+#                        lg.out(18, 'rtt=%r, last block in %r' % (
+#                            rtt_current, self.last_block_received_time))
+#                    self.consumer.error_message = 'receiving timeout'
+#                    self.consumer.status = 'failed'
+#                    self.consumer.timeout = True
+#                    self.producer.on_timeout_receiving(self.stream_id)
+#                    return
         if len(self.output_blocks) > 0:
             reply_dt = self.last_block_sent_time - self.last_ack_received_time
             if reply_dt > RTT_MAX_LIMIT * 2:
