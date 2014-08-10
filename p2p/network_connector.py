@@ -262,6 +262,8 @@ class NetworkConnector(Automat):
         dht_service.connect()
         global _TransportsStarting
         _TransportsStarting = gate.start()
+        if len(_TransportsStarting) == 0:
+            self.automat('network-up')
 
     def doSetDown(self, arg):
         """
@@ -273,6 +275,8 @@ class NetworkConnector(Automat):
             id_server.A('stop')
         global _TransportsStopping    
         _TransportsStopping = gate.stop()
+        if len(_TransportsStopping) == 0:
+            self.automat('network-down')
 
     def doUPNP(self, arg):
         self.last_upnp_time = time.time()
