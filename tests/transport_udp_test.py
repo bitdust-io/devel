@@ -78,11 +78,12 @@ def main():
             else:
                 reactor.callLater(1, _try_connect)
         # _try_connect()
-        def _send():
+        def _send(c):
             from transport.udp import udp_stream
             print '_send', udp_stream.streams().keys()
             gate.outbox(p)
-            reactor.callLater(5, _send)
+            if c < 20:
+                reactor.callLater(0.01, _send, c+1)
         _send()
     reactor.run()
     
