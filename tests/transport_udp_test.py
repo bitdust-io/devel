@@ -84,7 +84,7 @@ def main():
             gate.outbox(p)
             if c < 20:
                 reactor.callLater(0.01, _send, c+1)
-        _send()
+        _send(0)
     reactor.run()
     
         
