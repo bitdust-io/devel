@@ -579,6 +579,6 @@ class PacketOut(automat.Automat):
                         self.automat('items-sent')
                         return
         self.automat('nothing-to-send')
-        lg.warn('no supported protocols with %s : %s %s %s' % (
-            self.remote_idurl, tcp_contact, udp_contact, working_protos))
+        lg.warn('no supported protocols with %s : %s %s %s, byproto:%s' % (
+            self.remote_idurl, tcp_contact, udp_contact, working_protos, str(byproto)))
         
