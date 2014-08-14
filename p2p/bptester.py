@@ -54,13 +54,13 @@ if __name__ == "__main__":
 try:
     from logs import lg
     from lib import bpio
-    from lib.signed import Unserialize
     from lib.nameurl import FilenameUrl
     from lib.settings import init as settings_init
     from lib.settings import CustomersSpaceFile, CustomersUsedSpaceFile, getCustomersFilesDir, LocalTesterLogFilename
     from lib.settings import BackupIndexFileName
     from lib.contacts import init as contacts_init
     from lib.commands import init as commands_init
+    from crypto.signed import Unserialize
 except:
     import traceback
     printlog(traceback.format_exc())

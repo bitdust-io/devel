@@ -107,7 +107,7 @@ def run(UI='', options=None, args=None, overDict=None):
     #---memdebug---
     if settings.uconfig('logs.memdebug-enable') == 'True':
         try:
-            import lib.memdebug as memdebug
+            from logs import memdebug
             memdebug_port = int(settings.uconfig('logs.memdebug-port'))
             memdebug.start(memdebug_port)
             reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)
