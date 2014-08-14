@@ -200,7 +200,7 @@ class BackupMonitor(automat.Automat):
         """
         Action method.
         """
-        self.current_suppliers = contacts.getSupplierIDs()
+        self.current_suppliers = list(contacts.getSupplierIDs())
         
     def doDeleteAllBackups(self, arg):
         """
