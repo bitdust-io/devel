@@ -567,14 +567,14 @@ def cmd_recover(opts, args, overDict):
 def cmd_key(opts, args, overDict):
     if len(args) == 2:
         if args[1] == 'copy':
-            from crypto import key 
+            from crypt import key 
             TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             misc.setClipboardText(TextToSave)
             print 'now you can "paste" with Ctr+V your private key where you want.'
             del TextToSave
             return 0
         elif args[1] == 'print':
-            from crypto import key 
+            from crypt import key 
             TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             print 
             print TextToSave
@@ -582,7 +582,7 @@ def cmd_key(opts, args, overDict):
     elif len(args) == 3:
         if args[1] == 'copy':
             filenameto = args[2]
-            from crypto import key 
+            from crypt import key 
             TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
             if not bpio.AtomicWriteFile(filenameto, TextToSave):
                 print 'error writing to', filenameto

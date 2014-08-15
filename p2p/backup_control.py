@@ -43,8 +43,8 @@ from transport import callback
 
 from raid import eccmap
 
-from crypto import encrypted
-from crypto import key
+from crypt import encrypted
+from crypt import key
 
 import backup
 import backup_tar

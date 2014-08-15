@@ -83,8 +83,8 @@ from lib import automat
 from raid import eccmap
 from raid import raid_worker
 
-from crypto import encrypted
-from crypto import key
+from crypt import encrypted
+from crypt import key
 
 import data_sender
 import events

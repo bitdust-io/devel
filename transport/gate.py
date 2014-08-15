@@ -70,7 +70,7 @@ from lib import commands
 from lib import nameurl
 from lib import tmpfile
 
-from crypto import signed
+from crypt import signed
 
 from userid import identitycache
 
@@ -784,7 +784,7 @@ def main():
     identitycache.init()
     identitycache.UpdateAfterChecking('http://37.18.255.33:8084/vps_1000.xml', 
         open('C:\\Documents and Settings\\veselin\\.bitpie\\identitycache\\http###37.18.255.33(#8084#)#vps_1000.xml').read())
-    from crypto import key
+    from crypt import key
     key.InitMyKey()
     (options, args) = parseCommandLine()
     settings.override('transport.transport-tcp.transport-tcp-port', options.tcpport)

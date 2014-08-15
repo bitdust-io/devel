@@ -1,11 +1,7 @@
 #!/usr/bin/python
 
-print 'starting py2exe_build_starter.py '
-
 import os
 import sys
-
-print '\n'.join(sys.path)
 
 
 # ModuleFinder can't handle runtime changes to __path__, but win32com uses them

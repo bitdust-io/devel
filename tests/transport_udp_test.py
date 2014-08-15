@@ -16,7 +16,7 @@ from lib import udp
 from lib import bpio
 from lib import commands
 
-from crypto import signed
+from crypt import signed
 
 from dht import dht_service
 
@@ -29,7 +29,7 @@ from transport import gate
 def main():
     lg.set_debug_level(24)
     lg.life_begins()
-    from crypto import key
+    from crypt import key
     key.InitMyKey()
     from userid import identitycache
     identitycache.init()

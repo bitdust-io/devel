@@ -86,7 +86,7 @@ from lib import automat
 from raid import raid_worker
 from raid import eccmap
 
-from crypto import encrypted
+from crypt import encrypted
 
 import io_throttle
 import events

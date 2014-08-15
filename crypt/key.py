@@ -7,9 +7,9 @@
 #
 
 """
-.. module:: crypto
+.. module:: key
 
-Here is a bunch of crypto methods used in all parts of the software.
+Here is a bunch of cryptography methods used in all parts of the software.
 BitPie.NET uses PyCrypto library:
     https://www.dlitz.net/software/pycrypto/
 For most of BitPie.NET code (outside ssh I think) we will only use ascii encoded string versions of keys.

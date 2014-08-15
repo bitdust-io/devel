@@ -54,7 +54,7 @@ from lib import misc
 from lib import settings
 from lib import net_misc
 
-from crypto import key
+from crypt import key
 
 from userid import identitycache
 from userid import identity

@@ -90,7 +90,7 @@ class Block:
 
     def SessionKey(self):
         """
-        Return original SessionKey from ``EncryptedSessionKey`` using ``crypto.key.DecryptLocalPK()`` method.
+        Return original SessionKey from ``EncryptedSessionKey`` using ``crypt.key.DecryptLocalPK()`` method.
         """
         return key.DecryptLocalPK(self.EncryptedSessionKey)
 
@@ -104,7 +104,7 @@ class Block:
 
     def GenerateHash(self):
         """
-        Create a hash for that ``encrypted_block`` using ``crypto.key.Hash()``.
+        Create a hash for that ``encrypted_block`` using ``crypt.key.Hash()``.
         """
         return key.Hash(self.GenerateHashBase())
 
@@ -117,7 +117,7 @@ class Block:
 
     def GenerateSignature(self):
         """
-        Call ``crypto.key.Sign()`` to generate signature.
+        Call ``crypt.key.Sign()`` to generate signature.
         """
         return key.Sign(self.GenerateHash())
 

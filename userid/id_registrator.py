@@ -46,7 +46,7 @@ from lib import nameurl
 from lib import net_misc
 from lib import tmpfile
 
-from crypto import key
+from crypt import key
 
 from transport import gate
 from transport import callback

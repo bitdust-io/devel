@@ -76,7 +76,7 @@ from lib import settings
 from lib import packetid
 from lib import nameurl
 
-from crypto import signed
+from crypt import signed
 
 from userid import identity
 from userid import identitycache

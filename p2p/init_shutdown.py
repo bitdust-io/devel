@@ -410,7 +410,7 @@ def check_install():
     lg.out(2, 'init_shutdown.check_install ')
     from lib import settings
     from userid import identity
-    from crypto import key
+    from crypt import key
 
     keyfilename = settings.KeyFileName()
     keyfilenamelocation = settings.KeyFileNameLocation()

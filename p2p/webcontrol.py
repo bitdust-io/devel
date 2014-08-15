@@ -59,7 +59,7 @@ from transport import packet_out
 from userid import id_restorer
 from userid import propagate
 
-from crypto import key
+from crypt import key
 
 import initializer
 import shutdowner

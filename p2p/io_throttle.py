@@ -44,7 +44,7 @@ from lib import commands
 from lib import misc
 from lib import nameurl
 
-from crypto import signed
+from crypt import signed
 
 from transport import gate
 from transport import callback

@@ -43,8 +43,8 @@ from lib import commands
 from lib import settings
 from lib import tmpfile
 
-from crypto import signed
-from crypto import key
+from crypt import signed
+from crypt import key
 
 from userid import identitycache
 from userid import known_servers
@@ -52,7 +52,6 @@ from userid import known_servers
 from transport import gate
 from transport import stats
 from transport import packet_out
-from transport import callback
 
 from dht import dht_service
 

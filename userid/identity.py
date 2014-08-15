@@ -119,7 +119,7 @@ from lib import settings
 from lib import bpio
 from lib import nameurl
 
-from crypto import key
+from crypt import key
 
 #------------------------------------------------------------------------------ 
 

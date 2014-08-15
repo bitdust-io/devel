@@ -4,7 +4,7 @@
 #
 
 """
-.. module:: crypto
+.. module:: crypt
 
 """
 

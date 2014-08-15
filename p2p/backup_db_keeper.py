@@ -72,9 +72,9 @@ from lib import automat
 
 from transport import gate
 
-from crypto import encrypted
-from crypto import signed
-from crypto import key
+from crypt import encrypted
+from crypt import signed
+from crypt import key
 
 import p2p_connector
 import contact_status

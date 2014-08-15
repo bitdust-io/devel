@@ -41,6 +41,9 @@ python -OO py2exe_build.py -q py2exe
 rm -rf py2exe_build.py
 popd
 
+@echo.
+@echo It is fine?
+pause
 
 @echo.
 @echo [ copy binary files ]

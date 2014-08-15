@@ -1,11 +1,7 @@
 #!/usr/bin/python
 
-print 'starting py2exe_build.py '
-
 import os
 import sys
-
-print '\n'.join(sys.path)
 
 # ModuleFinder can't handle runtime changes to __path__, but win32com uses them
 try:
@@ -49,6 +45,7 @@ includes = [
     'encodings.*',
     'twisted.web.resource',
     'optparse',
+    'crypt',
     ]
 
 excludes =[

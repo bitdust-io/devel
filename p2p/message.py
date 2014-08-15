@@ -70,8 +70,8 @@ from lib import settings
 from lib import packetid
 from lib import nameurl
 
-from crypto import signed
-from crypto import key
+from crypt import signed
+from crypt import key
 
 from userid import identitycache
 

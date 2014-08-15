@@ -104,19 +104,19 @@ class Packet:
 
     def GenerateHash(self):
         """
-        Call ``crypto.key.Hash`` to create a hash code for that ``packet``.
+        Call ``crypt.key.Hash`` to create a hash code for that ``packet``.
         """
         return key.Hash(self.GenerateHashBase())
 
     def GenerateSignature(self):
         """
-        Call ``crypto.key.Sign`` to generate digital signature.
+        Call ``crypt.key.Sign`` to generate digital signature.
         """
         return key.Sign(self.GenerateHash())
 
     def SignatureChecksOut(self):
         """
-        This check correctness of signature, uses ``crypto.key.Verify``.
+        This check correctness of signature, uses ``crypt.key.Verify``.
         To verify we need 3 things:
             - the packet ``Creator`` identity ( it keeps the public key ),
             - hash of that packet - just call ``GenerateHash()`` to make it,

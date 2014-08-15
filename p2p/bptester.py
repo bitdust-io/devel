@@ -40,34 +40,29 @@ def printlog(txt):
     """
     Write a line to the log file.
     """
-    LogFile = open(logfilepath(), 'a')
-    LogFile.write(txt+'\n')
-    LogFile.close()
+    lf = open(logfilepath(), 'a')
+    lf.write(txt+'\n')
+    lf.close()
     
 #------------------------------------------------------------------------------ 
 
-if __name__ == "__main__":
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+# if __name__ == "__main__":
+#     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+#     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+#     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
 try:
     from logs import lg
     from lib import bpio
-    from lib.nameurl import FilenameUrl
-    from lib.settings import init as settings_init
-    from lib.settings import CustomersSpaceFile, CustomersUsedSpaceFile, getCustomersFilesDir, LocalTesterLogFilename
-    from lib.settings import BackupIndexFileName
-    from lib.contacts import init as contacts_init
-    from lib.commands import init as commands_init
-    from crypto.signed import Unserialize
+    from lib import nameurl 
+    from lib import settings
+    from lib import contacts
+    from lib import commands
+    from crypt import signed  
 except:
     import traceback
     printlog(traceback.format_exc())
     sys.exit(2)
-
-# sys.stdout = myoutput
-# sys.stderr = myoutput
 
 #-------------------------------------------------------------------------------
 
@@ -77,11 +72,11 @@ def SpaceTime():
     Check if he use more space than we gave him and if packets is too old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    space = bpio._read_dict(CustomersSpaceFile())
+    space = bpio._read_dict(settings.CustomersSpaceFile())
     if space is None:
-        printlog('SpaceTime ERROR can not read file ' + CustomersSpaceFile())
+        printlog('SpaceTime ERROR can not read file ' + settings.CustomersSpaceFile())
         return
-    customers_dir = getCustomersFilesDir()
+    customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         printlog('SpaceTime ERROR customers folder not exist')
         return
@@ -92,7 +87,7 @@ def SpaceTime():
         if not os.path.isdir(onecustdir):
             remove_list[onecustdir] = 'is not a folder'
             continue
-        idurl = FilenameUrl(customer_filename)
+        idurl = nameurl.FilenameUrl(customer_filename)
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
@@ -112,7 +107,7 @@ def SpaceTime():
                 return False
             if not os.path.isfile(path):
                 return True
-            if name in [BackupIndexFileName(),]:
+            if name in [settings.BackupIndexFileName(),]:
                 return False
             stats = os.stat(path)
             timedict[path] = stats.st_ctime
@@ -151,7 +146,7 @@ def SpaceTime():
         except:
             printlog('SpaceTime ERROR removing ' + path)
     del remove_list
-    bpio._write_dict(CustomersUsedSpaceFile(), used_space)
+    bpio._write_dict(settings.CustomersUsedSpaceFile(), used_space)
 
 #------------------------------------------------------------------------------
 
@@ -159,11 +154,11 @@ def UpdateCustomers():
     """
     Test packets after list of customers was changed.
     """
-    space = bpio._read_dict(CustomersSpaceFile())
+    space = bpio._read_dict(settings.CustomersSpaceFile())
     if space is None:
         printlog('UpdateCustomers ERROR space file can not be read' )
         return
-    customers_dir = getCustomersFilesDir()
+    customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         printlog('UpdateCustomers ERROR customers folder not exist')
         return
@@ -173,7 +168,7 @@ def UpdateCustomers():
         if not os.path.isdir(onecustdir):
             remove_list[onecustdir] = 'is not a folder'
             continue
-        idurl = FilenameUrl(customer_filename)
+        idurl = nameurl.FilenameUrl(customer_filename)
         if idurl is None:
             remove_list[onecustdir] = 'wrong folder name'
             continue
@@ -207,9 +202,9 @@ def Validate():
     Check all packets to be valid.
     """
     printlog('Validate ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    contacts_init()
-    commands_init()
-    customers_dir = getCustomersFilesDir()
+    contacts.init()
+    commands.init()
+    customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
         return
     for customer_filename in os.listdir(customers_dir):
@@ -221,7 +216,7 @@ def Validate():
                 return False
             if not os.path.isfile(path):
                 return True
-            if name in [BackupIndexFileName(),]:
+            if name in [settings.BackupIndexFileName(),]:
                 return False
             packetsrc = bpio.ReadBinaryFile(path)
             if not packetsrc:
@@ -231,7 +226,7 @@ def Validate():
                 except:
                     printlog('Validate ERROR removing ' + path)
                     return False
-            p = Unserialize(packetsrc)
+            p = signed.Unserialize(packetsrc)
             if p is None:
                 try:
                     os.remove(path) # if is is no good it is of no use to anyone
@@ -264,7 +259,7 @@ def main():
     bpio.init()
     lg.disable_logs()
     lg.disable_output()
-    settings_init()
+    settings.init()
     lg.set_debug_level(0)
     commands = {
         'update_customers' : UpdateCustomers,

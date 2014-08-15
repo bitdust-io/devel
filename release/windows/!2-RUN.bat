@@ -12,10 +12,10 @@ sleep 2
 
 @echo.
 @echo [ replacing files ]
-rmdir "%APPDATA%\.bitpie\bin" /S /Q 
-mkdir "%APPDATA%\.bitpie\bin"
-xcopy "bin\*" "%APPDATA%\.bitpie\bin\" /E /R /H /Y /Q
-cd "%APPDATA%\.bitpie\bin\"
+rmdir "%USERPROFILE%\.bitpie\bin" /S /Q 
+mkdir "%USERPROFILE%\.bitpie\bin"
+xcopy "bin\*" "%USERPROFILE%\.bitpie\bin\" /E /R /H /Y /Q
+cd "%USERPROFILE%\.bitpie\bin\"
 
 
 @echo.
