@@ -1,5 +1,0 @@
-#!/bin/bash
-
-grepnkill upload_server.py
-
-exit 0

@@ -501,7 +501,11 @@ def main():
             lg.out(0, 'BitPie.NET already started, found another process: %s' % str(appList))
             bpio.shutdown()
             return 0
-        ret = run('', opts, args, overDict)
+        try:
+            ret = run('', opts, args, overDict)
+        except:
+            lg.exc()
+            ret = 1
         bpio.shutdown()
         return ret
 
@@ -544,7 +548,11 @@ def main():
                 bpio.shutdown()
                 return 1
         else:
-            ret = run('', opts, args, overDict)
+            try:
+                ret = run('', opts, args, overDict)
+            except:
+                lg.exc()
+                ret = 1
             bpio.shutdown()
             return ret
 
@@ -569,7 +577,11 @@ def main():
                 bpio.shutdown()
                 return 0
         if len(appList) == 0:
-            ret = run('show', opts, args, overDict)
+            try:
+                ret = run('show', opts, args, overDict)
+            except:
+                lg.exc()
+                ret = 1
             bpio.shutdown()
             return ret
         
