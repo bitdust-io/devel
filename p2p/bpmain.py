@@ -267,7 +267,7 @@ def kill():
     found = False
     while True:
         appList = bpio.find_process([
-            'bpmain.exe',
+            'bitpie.exe',
             'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
@@ -312,7 +312,7 @@ def wait_then_kill(x):
     total_count = 0
     while True:
         appList = bpio.find_process([
-            'bpmain.exe',
+            'bitpie.exe',
             'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
@@ -468,7 +468,7 @@ def main():
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':
         appList = bpio.find_process([
-            'bpmain.exe',
+            'bitpie.exe',
             'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
@@ -508,7 +508,7 @@ def main():
     #---restart---
     elif cmd == 'restart':
         appList = bpio.find_process([
-            'bpmain.exe',
+            'bitpie.exe',
             'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
@@ -555,7 +555,7 @@ def main():
             'bpgui.py',
             ])
         appList = bpio.find_process([
-            'bpmain.exe',
+            'bitpie.exe',
             'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
@@ -581,7 +581,7 @@ def main():
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
         appList = bpio.find_process([
-            'bpmain.exe',
+            'bitpie.exe',
             'bpmain.py',
             'bitpie.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
@@ -635,7 +635,7 @@ def main():
             lg.out(0, 'You are running BitPie.NET from sources, uninstall command is available only for binary version.')
             bpio.shutdown()
             return 0
-        appList = bpio.find_process(['bpmain.exe',])
+        appList = bpio.find_process(['bitpie.exe',])
         if len(appList) > 0:
             lg.out(0, 'found main BitPie.NET process...   ', '')
             try:

@@ -26,12 +26,7 @@ git rev-list --count HEAD >revnum.txt
 @echo.
 @echo current version number is: 
 type version_number
-@echo.
-
-
 python -c "v=list(open('version_number').read().split('.'));v[-2]=str(int(v[-2])+1);v[-1]=open('revnum.txt').read();open('version_number','w').write('.'.join(v))"
-
-
 @echo.
 @echo new version is: 
 type version_number

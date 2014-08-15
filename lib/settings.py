@@ -451,34 +451,34 @@ def FilesDigestsFilename():
     This file keeps MD5 checksum of all binary files for Windows release.
     Every Windows repository have such file, this is link for "stable" repo::
     
-        http://bitpie.net/repo/stable/info.txt
+        http://bitpie.net/repo/stable/files.txt
         
     Local copy of this file is also stored in the file::
     
-        .bitpie/metadata/info
+        .bitpie/metadata/files
         
     Our bpstarter.exe read local copy and than can request a public copy and compare the content.
     If some files were changed or new files added to the repo - it will update the local binaries from repo.
     The idea is to update only modified files when new release will be published.
     """
-    return 'info.txt'
+    return 'files.txt'
 
 def CurrentVersionDigestsFilename():
     """
-    This file keeps a MD5 checksum of the file "info.txt", see ``FilesDigestsFilename()``.
+    This file keeps a MD5 checksum of the file "files.txt", see ``FilesDigestsFilename()``.
     It is also placed in the Windows repository::
     
-        http://bitpie.net/repo/stable/version.txt
+        http://bitpie.net/repo/stable/checksum.txt
             
-    If some binary files have been changed - the file "info.txt" also changed and 
+    If some binary files have been changed - the file "files.txt" also changed and 
     its checksum also.
     Locally this is stored in the file::
         
-        .bitpie/metadata/version
+        .bitpie/metadata/checksum
         
-    The software check "version.txt" first and if it is not the same - further download "info.txt". 
+    The software check "checksum" file first and if it is not the same - further download "files.txt". 
     """
-    return 'version.txt'
+    return 'checksum.txt'
 
 def LegalUsernameChars():
     """
@@ -740,9 +740,10 @@ def GUIOptionsFilename():
 
 def UpdateSheduleFilename():
     """
-    Under Windows the update process is done in the bpstarter.exe file.
-    Periodically, the main file bpmain.exe request file "version.txt" (from currently used repository) 
-    to check for new software release.
+    Under Windows software update process is made by bpstarter.exe file.
+    Periodically, the main file process "bitpie.exe" requests 
+    the file "checksum.txt" (from user configurable repository location) 
+    to check for new software release of that repository.
     Main process can restart itself thru bpstarter to be able to update the binaries.
     User can set a schedule to check for updates in the settings. 
     """
@@ -864,15 +865,15 @@ def RepoFile():
 
 def VersionFile():
     """
-    A place for local copy of "version.txt" file, see ``CurrentVersionDigestsFilename()``. 
+    A place for local copy of "checksum.txt" file, see ``CurrentVersionDigestsFilename()``. 
     """
-    return os.path.join(MetaDataDir(), 'version')
+    return os.path.join(MetaDataDir(), 'checksum')
 
 def InfoFile():
     """
-    A place for local copy of "info.txt" file, see ``FilesDigestsFilename()``.
+    A place for local copy of "files.txt" file, see ``FilesDigestsFilename()``.
     """ 
-    return os.path.join(MetaDataDir(), 'info')
+    return os.path.join(MetaDataDir(), 'files')
 
 def RevisionNumberFile():
     """
@@ -941,7 +942,7 @@ def getIconLaunchFilename():
     Not used.
     For Windows platforms this should target to executable file to run when clicked on Desktop icon. 
     """
-    return os.path.join(bpio.getExecutableDir(), 'bpmain.exe')
+    return os.path.join(bpio.getExecutableDir(), 'bitpie.exe')
 
 def getIconLinkFilename():
     """

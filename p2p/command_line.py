@@ -66,7 +66,7 @@ def run(opts, args, overDict, pars):
         lg.set_debug_level(0)
 
     appList = bpio.find_process([
-        'bpmain.exe',
+        'bitpie.exe',
         'bpmain.py',
         'bitpie.py',
         'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
@@ -802,7 +802,7 @@ def cmd_uninstall(opts, args, overDict):
         found = False
         while True:
             appList = bpio.find_process([
-                'bpmain.exe',
+                'bitpie.exe',
                 'bpmain.py',
                 'bitpie.py',
                 'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
@@ -837,7 +837,7 @@ def cmd_uninstall(opts, args, overDict):
         def _try():
             lg.out(0, '_try')
             appList = bpio.find_process([
-                'bpmain.exe',
+                'bitpie.exe',
                 'bpgui.exe',
                 'bppipe.exe',
                 'bptester.exe',
@@ -862,7 +862,7 @@ def cmd_uninstall(opts, args, overDict):
         _try()
 #            time.sleep(1)
     appList = bpio.find_process([
-        'bpmain.exe',
+        'bitpie.exe',
         'bpgui.exe',
         'bppipe.exe',
         'bptester.exe',

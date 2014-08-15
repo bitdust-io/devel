@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #bpstarter.py
 #
-# <<<COPYRIGHT>>>-2011
+# <<<COPYRIGHT>>>
 #
 #
 #
@@ -17,13 +17,11 @@ It is used to check and update binaries at start up.
 import os
 import sys
 import hashlib
-import platform
 import time
 import subprocess
-import tempfile
-import win32process
 
 from distutils.dir_util import copy_tree
+
 from twisted.python.win32 import cmdLineQuote
 
 import EasyDialogs
@@ -47,10 +45,10 @@ DefaultRepo = 'devel'
 DefaultUpdateLocationURL = 'http://bitpie.net/repo/devel/'
 
 UpdateFolder = 'windows/'
-FilesDigestsFilename = 'info.txt'
-CurrentVersionDigestsFilename = 'version.txt'
+FilesDigestsFilename = 'files.txt'
+CurrentVersionDigestsFilename = 'checksum.txt'
 WGetFilename = 'wget.exe'
-MainExecutableFilename = 'bpmain.exe'
+MainExecutableFilename = 'bitpie.exe'
 StarterFilename = 'bpstarter.exe'
 
 LogFilePath = sharedPath('bpstarter.log', 'logs')
@@ -83,7 +81,7 @@ def logcheck():
 def logwrite(txt, mode='a'):
     global LogFilePath
     fout = open(LogFilePath, mode)
-    fout.write(txt)
+    fout.write(time.strftime('%H:%M:%S  ')+txt)
     fout.close()
 
 def read_file(filename, mode='rb'):
@@ -162,103 +160,9 @@ def launch(show):
         else:
             subprocess.Popen([MainExecutableFilename,])
     except:
-        return 'error starting bpmain.exe'
+        return 'error starting %s' % MainExecutableFilename
     return 0
 
-def uninstall():
-    def make_bat_file():
-        wait_appname = StarterFilename
-        local_dir = os.path.abspath(os.path.dirname(os.path.abspath(sys.executable)))
-        dirs2delete = [ sharedPath(None, '.'), os.path.join(tempfile.gettempdir(), 'bitpie') ]
-        logwrite('make_bat_file\n')
-        batfileno, batfilename = tempfile.mkstemp('.bat', 'BitPie.NET-uninstall-')
-        logwrite('batfilename:%s\n' % batfilename)
-        logwrite('local_dir:%s\n' % local_dir)
-        logwrite('dirs2delete:%s\n' % '\n'.join(dirs2delete))
-        batsrc = ''
-        batsrc += 'cd "%s"\n' % local_dir
-        batsrc += 'del search.log /Q\n'
-        batsrc += ':again\n'
-        batsrc += 'sleep 1\n'
-        batsrc += 'tasklist /FI "IMAGENAME eq %s" /FO CSV > search.log\n' % wait_appname
-        batsrc += 'FOR /F %%A IN (search.log) DO IF %%-zA EQU 0 GOTO again\n'
-        batsrc += 'cd "%s"\n' % os.path.dirname(os.path.abspath(batfilename))
-        for dirpath in dirs2delete:
-            batsrc += 'rmdir /S /Q "%s"\n' % os.path.abspath(dirpath)
-            one_copy = 'if exist "%s\\NUL" rmdir /S /Q "%s"\n' % (os.path.abspath(dirpath), os.path.abspath(dirpath))
-            batsrc += (one_copy * 20) 
-        batsrc += 'rem del /F /S /Q "%s"\n' % os.path.abspath(batfilename)
-        os.write(batfileno, batsrc)
-        os.close(batfileno)
-        logwrite('bat source:\n')
-        logwrite(batsrc)
-        return os.path.abspath(batfilename)
-    
-    def remove_registry_uninstall():
-        try:
-            import _winreg
-        except:
-            return False
-        unistallpath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall" 
-        regpath = unistallpath + "\\BitPie.NET"
-    
-        # open
-        try:
-            reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, regpath, 0, _winreg.KEY_ALL_ACCESS)
-        except:
-            try:
-                reg = _winreg.CreateKey(_winreg.HKEY_LOCAL_MACHINE, regpath)
-            except:
-                return False
-    
-        # check
-        i = 0
-        while True:
-            try:
-                name, value, typ = _winreg.EnumValue(reg, i)
-            except:
-                break
-            i += 1
-            try:
-                _winreg.DeleteKey(reg, name)
-            except:
-                try:
-                    _winreg.DeleteValue(reg, name)
-                except:
-                    pass
-    
-        # delete
-        _winreg.CloseKey(reg)
-        try:
-            reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, unistallpath, 0, _winreg.KEY_ALL_ACCESS)
-        except:
-            return False
-        try:
-            _winreg.DeleteKey(reg, 'BitPie.NET')
-        except:
-            _winreg.CloseKey(reg)
-            return False
-        _winreg.CloseKey(reg)
-        return True
-    
-    logwrite('uninstall()\n')
-    ret = stop_all([
-            'bpstarter.exe',
-            'bpmain.exe',
-            'bpgui.exe'
-            'bptester.exe',
-            'bppipe.exe'])
-    if ret != 0:
-        return ret  
-    logwrite('start uninstalling\n')
-    remove_registry_uninstall()
-    batfilename = make_bat_file()
-    #misc.UpdateRegistryUninstall(True)
-    cmd = os.path.abspath(batfilename).replace('\\', '/')
-    logwrite('cmd:%s\n' % cmd)
-    p = subprocess.Popen(cmd, shell=True, creationflags=win32process.CREATE_NO_WINDOW,)
-    return ret
-       
 
 def main():
     logwrite('main()\n')
@@ -279,7 +183,7 @@ def main():
         #we want to check if another instance is running
         return stop_all([
             'bpstarter.exe',
-            'bpmain.exe',
+            'bitpie.exe',
             'bpmain.py',
             'bpgui.exe',
             'bpgui.py',
@@ -299,9 +203,9 @@ def main():
         show = True
 
     if not show:
-        #if bpmain.exe or bpgui.exe is running - stop it.
+        #if bitpie.exe or bpgui.exe is running - stop it.
         search_list.extend([
-            'bpmain.exe',
+            'bitpie.exe',
             'bpmain.py',
             'bpgui.exe',
             'bpgui.py',
@@ -369,18 +273,18 @@ def main():
         # digests are equal so our binaries have latest version - ready to start
         logwrite('version was not changed\n')
 
-        # also try to remove info.txt and version.txt in the current folder
+        # also try to remove files.txt and checksum.txt in the current folder
         # they can be here because included in the installation release
         # so they needed only during first start of the bpstarter.exe
         # if we did not start with param "install" - we do not need them at all
         if sys.argv.count('install') == 0:
             try:
-                if os.path.exists('info.txt'):
-                    os.remove('info.txt')
-                if os.path.exists('version.txt'):
-                    os.remove('version.txt')
+                if os.path.exists('files.txt'):
+                    os.remove('files.txt')
+                if os.path.exists('checksum.txt'):
+                    os.remove('checksum.txt')
             except:
-                logwrite('can not remove info.txt or version.txt from current folder\n')
+                logwrite('can not remove files.txt or checksum.txt from current folder\n')
         return launch(show)
 
     # so versions is not the same - save the new version 
@@ -511,7 +415,7 @@ def main():
         except KeyboardInterrupt:
             return 'canceled'
 
-    #finally - start bpmain.exe and exit
+    #finally - start bitpie.exe and exit
     return launch(show)
 
 
@@ -543,8 +447,8 @@ def run():
         os.makedirs(sharedPath('', 'metadata'))
 
     logcheck()
-    if sys.argv.count('uninstall'):
-        return uninstall()
+    # if sys.argv.count('uninstall'):
+    #     return uninstall()
 
     try:
         UpdateRepo, UpdateLocationURL = read_file(RepoFileName, 'r').split('\n')
@@ -597,7 +501,7 @@ def run():
         cmdargs = [StarterFilename,]
         if sys.argv.count('show') or sys.argv.count('install'):
             cmdargs.append('show')
-        logwrite('launch %s cmdargs=%s' % (exepath, str(cmdargs)))
+        logwrite('launch %s cmdargs=%s\n' % (exepath, str(cmdargs)))
         os.spawnv(os.P_DETACH, exepath, cmdargs)
         sys.exit(0)
 

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+
+grepnkill upload_server.py
+/bin/rm -f nohup.upload_server.start.out
+nohup python upload_server.py $1 $2 > nohup.upload_server.start.out  &
+sleep 1
+cat nohup.upload_server.start.out
+exit 0
