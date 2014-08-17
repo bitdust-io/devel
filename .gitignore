@@ -2,3 +2,6 @@
 *.pyo
 *.pyd
 *.~vsd
+release/windows/bin/
+release/windows/build/
+release/windows/starter/

@@ -1776,16 +1776,14 @@ class InstallPage(Page):
                 self.restoredir = misc.unpack_url_param(arg(request, '_restoredir'), self.restoredir)
             else:
                 raise 'Not found target location: ' + str(request.args)
-        self.needed = arg(request, 'needed', self.needed)
-        if self.needed == '':
-            self.needed = str(settings.DefaultNeededBytes())
-        self.donated = arg(request, 'donated', self.donated)
-        if self.donated == '':
-            self.donated = str(settings.DefaultDonatedBytes())
-        neededV = misc.ToInt(misc.DigitsOnly(str(self.needed)), settings.DefaultNeededBytes())
-        self.needed = str(int(neededV))
-        donatedV = misc.ToInt(misc.DigitsOnly(str(self.donated)), settings.DefaultDonatedBytes())
-        self.donated = str(int(donatedV))
+        self.neededMB = arg(request, 'needed', self.needed)
+        if self.neededMB == '':
+            self.neededMB = str(int(settings.DefaultNeededBytes()/(1024*1024)))
+        self.donatedMB = arg(request, 'donated', self.donated)
+        if self.donatedMB == '':
+            self.donatedMB = str(int(settings.DefaultDonatedBytes()/(1024*1024)))
+        neededV = diskspace.GetBytesFromString(self.neededMB+' Mb', settings.DefaultNeededBytes())  
+        donatedV = diskspace.GetBytesFromString(self.donatedMB+' Mb', settings.DefaultDonatedBytes()) 
         mounts = []
         freeSpaceIsOk = True
         if bpio.Windows():
@@ -1796,12 +1794,12 @@ class InstallPage(Page):
                 color = '#ffffff'
                 if self.customersdir[0].upper() == d[0].upper():
                     color = '#60e060'
-                    if (donatedV) * 1024 * 1024 >= free:
+                    if donatedV >= free:
                         color = '#e06060'
                         freeSpaceIsOk = False
                 if self.localbackupsdir[0].upper() == d[0].upper():
                     color = '#60e060'
-                    if (neededV) * 1024 * 1024 >= free:
+                    if neededV >= free:
                         color = '#e06060'
                         freeSpaceIsOk = False
                 mounts.append((d[0:2],
@@ -1816,12 +1814,12 @@ class InstallPage(Page):
                 color = '#ffffff'
                 if bpio.getMountPointLinux(self.customersdir) == mnt:
                     color = '#60e060'
-                    if (donatedV) * 1024 * 1024 >= free:
+                    if donatedV >= free:
                         color = '#e06060'
                         freeSpaceIsOk = False
                 if bpio.getMountPointLinux(self.localbackupsdir) == mnt:
                     color = '#60e060'
-                    if (neededV) * 1024 * 1024 >= free:
+                    if neededV >= free:
                         color = '#e06060'
                         freeSpaceIsOk = False
                 mounts.append((mnt, 
@@ -1862,7 +1860,7 @@ class InstallPage(Page):
         src += '<td align=left nowrap valign=top width=100>'
         src += '<font size="+1"><b>megabytes needed</b></font>\n'
         src += '<br><br>'
-        src += '<input type="text" name="needed" size="10" value="%s" />\n' % self.needed
+        src += '<input type="text" name="needed" size="10" value="%s" />\n' % str(round(neededV/(1024*1024), 2)) 
         src += '</td>\n'
         src += '<td align=right valign=top nowrap>\n'
         # src += '<b>local backups location:</b><br>\n'
@@ -1879,7 +1877,7 @@ class InstallPage(Page):
         src += '<td align=left nowrap valign=top width=100>'
         src += '<font size="+1"><b>megabytes donated</b></font>\n'
         src += '<br><br>'
-        src += '<input type="text" name="donated" size="10" value="%s" />\n' % self.donated
+        src += '<input type="text" name="donated" size="10" value="%s" />\n' % str(round(donatedV/(1024*1024), 2))
         src += '</td>\n'
         src += '<td align=right valign=top nowrap>\n'
         # src += '<b>donated space location:</b><br>\n'
@@ -1913,8 +1911,8 @@ class InstallPage(Page):
         if action:
             if action == 'next' and arg(request, 'submit').strip() == 'next':
                 if ok:
-                    install_wizard.A('next', {'needed': self.needed,
-                                              'donated': self.donated,
+                    install_wizard.A('next', {'needed': self.neededMB,
+                                              'donated': self.donatedMB,
                                               'customersdir': self.customersdir, 
                                               'localbackupsdir': self.localbackupsdir,
                                               'restoredir': self.restoredir,})

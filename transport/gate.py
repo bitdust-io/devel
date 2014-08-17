@@ -60,7 +60,6 @@ from twisted.internet.defer import maybeDeferred
 from twisted.internet.defer import fail
 from twisted.python import failure
 
-
 from logs import lg
 
 from lib import bpio

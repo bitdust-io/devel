@@ -45,7 +45,6 @@ includes = [
     'encodings.*',
     'twisted.web.resource',
     'optparse',
-    'crypt',
     ]
 
 excludes =[
@@ -61,7 +60,6 @@ excludes =[
     '_ssl',
     '_tkinter',
     'cherrypy',
-    'crypt',
     'difflib',
     'dl',
     'doctest',
@@ -126,12 +124,17 @@ setup(
     console = [
         {
             'script': 'bppipe.py',
+            'icon_resources': [(1, "icons/tray_icon.ico")],
         },
-
         {
             'script': 'bptester.py',
+            'icon_resources': [(1, "icons/tray_icon.ico")],
         },
-
+        {
+            'script': 'bpworker.py',
+            'icon_resources': [(1, "icons/tray_icon.ico")],
+            'unbuffered': True,
+        },
     ],
 
     windows = [
@@ -156,9 +159,11 @@ setup(
             'includes': includes,
             'excludes': excludes,
             'ignores':  ignores,
+            # 'unbuffered': True,
             'ascii': 1,
             'optimize': 2,
             'skip_archive': 1,
+            'dist_dir': 'release/windows/build',
         },
     },
 

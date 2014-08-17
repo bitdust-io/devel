@@ -32,16 +32,13 @@ EVENTS:
 
 import os
 import sys
-import base64
 
-import pp
+from parallelp import pp
 
 try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in raid_worker.py')
-
-from twisted.internet import protocol
 
 from logs import lg
 
@@ -55,18 +52,27 @@ import rebuild
 #------------------------------------------------------------------------------ 
 
 _MODULES = (
-'os',
-'cStringIO',
-'struct',
-'logs.lg',
-'raid.read', 
-'raid.make',
-'raid.rebuild', 
-'raid.eccmap',
-'lib.settings', 
-'lib.bpio',
-'lib.misc',
-'lib.packetid',)
+    'os',
+    'cStringIO',
+    'struct',
+    'logs.lg',
+    'raid.read', 
+    'raid.make',
+    'raid.rebuild', 
+    'raid.eccmap',
+    'lib.settings', 
+    'lib.bpio',
+    'lib.misc',
+    'lib.packetid',
+    )
+
+_VALID_TASKS = {
+    'make': make.do_in_memory,
+    'read': read.raidread,
+    'rebuild': rebuild.rebuild,
+}
+
+#------------------------------------------------------------------------------ 
 
 _RaidWorker = None
 
@@ -202,6 +208,7 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
+        os.environ['PYTHONUNBUFFERED'] = '1'
         self.processor = pp.Server(secret='bitpie')
         self.automat('process-started')
 
@@ -226,20 +233,15 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
+        global _VALID_TASKS
+        global _MODULES
         if len(self.activetasks) >= self.processor.get_ncpus():
             lg.out(12, 'raid_worker.doStartTask SKIP active=%d cpus=%d' % (
                 len(self.activetasks), self.processor.get_ncpus()))
             return
         try:
             task_id, cmd, params = self.tasks.pop(0)
-            func = None
-            if cmd == 'make':
-                func = make.do_in_memory
-            elif cmd == 'read':
-                func = read.raidread
-            elif cmd == 'rebuild': 
-                # TODO:
-                func = rebuild.rebuild
+            func = _VALID_TASKS[cmd]
         except:
             lg.exc()
             return

@@ -1,0 +1,11 @@
+#
+# <<<COPYRIGHT>>>
+#
+#
+#
+#
+
+"""
+.. module:: parallelp
+
+"""

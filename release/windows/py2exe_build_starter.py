@@ -58,7 +58,6 @@ excludes = [
     '_ssl',
     '_tkinter',
     'cherrypy',
-    'crypt',
     'difflib',
     'dl',
     'doctest',
@@ -127,6 +126,7 @@ setup(
             'compressed': True,
             'optimize': 2,
             'bundle_files': 2,
+            'dist_dir': 'release\windows\starter',
         },
     },
 

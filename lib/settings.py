@@ -321,17 +321,17 @@ def MaximumUsernameLength():
     """
     return 20
 
-def DefaultDonatedString():
+def DefaultDonatedBytes():
     """
     Default donated space value - user can set this at any moment in the settings.
     """
-    return '8 Gb' # 8 * 1024 * 1014 * 1024 # 8GB
+    return 8 * 1024 * 1014 * 1024 # 8GB
 
-def DefaultNeededString():
+def DefaultNeededBytes():
     """
     Default needed space value.
     """
-    return '4 Gb' # 4 * 1024 * 1024 * 1024 # 4GB
+    return 4 * 1024 * 1024 * 1024 # 4GB
 
 def MinimumDonatedBytes():
     """
@@ -1851,13 +1851,13 @@ def _checkSettings():
         uconfig().set("storage.suppliers", str(DefaultDesiredSuppliers()))
 
     if getDonatedString() == '':
-        uconfig().set("storage.donated", DefaultDonatedString())
+        uconfig().set("storage.donated", '%d bytes' % DefaultDonatedBytes())
     donatedV, donatedS = diskspace.SplitString(getDonatedString())
     if not donatedS:
         uconfig().set("storage.donated", str(getDonatedString())+' bytes')
 
     if getNeededString() == '':
-        uconfig().set("storage.needed", DefaultNeededString())
+        uconfig().set("storage.needed", '%d bytes' % DefaultNeededBytes())
     neededV, neededS = diskspace.SplitString(getNeededString())
     if not neededS:
         uconfig().set("storage.needed", str(getNeededString())+' bytes')

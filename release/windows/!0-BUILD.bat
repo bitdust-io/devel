@@ -3,7 +3,7 @@
 
 @echo.
 @echo [ clear working space ]
-if exist ..\..\dist\NUL rmdir /S /Q ..\..\dist
+REM if exist ..\..\dist\NUL rmdir /S /Q ..\..\dist
 if exist ..\..\build\NUL rmdir /S /Q ..\..\build
 if exist bin\NUL rmdir /S /Q bin
 mkdir bin
@@ -39,17 +39,8 @@ cp py2exe_build.py ..\..
 pushd ..\..
 python -OO py2exe_build.py -q py2exe
 rm -rf py2exe_build.py
+rmdir /S /Q build
 popd
-
-@echo.
-@echo It is fine?
-pause
-
-@echo.
-@echo [ copy binary files ]
-xcopy ..\..\dist\*.*     build\    /E /R /H /Y /Q
-rmdir /S /Q ..\..\dist
-rmdir /S /Q ..\..\build
 
 
 @echo.

@@ -7,14 +7,19 @@ xcopy build\*                                   bin  /E /R /H /Y /Q
 
 
 @echo.
-@echo [ copy starter files ]
+@echo [ copy bpstarter files ]
 xcopy starter\*                                 bin\ /E /R /H /Y /Q
 
 
 REM @echo.
-REM @echo [ fixing "unchanged" files ]
-REM if exist unchanged\NUL xcopy unchanged\*        bin\ /E /R /H /Y /Q
-REM if exist bin\win32com\gen_py\NUL rmdir /S /Q    bin\win32com\gen_py\
+REM @echo [ copy bpworker files ]
+REM xcopy worker\*                                 bin\ /E /R /H /Y /Q
+
+
+@echo.
+@echo [ fixing "unchanged" files ]
+if exist unchanged\NUL xcopy unchanged\*        bin\ /E /R /H /Y /Q
+if exist bin\win32com\gen_py\NUL rmdir /S /Q    bin\win32com\gen_py\
 
 
 @echo.
@@ -34,6 +39,17 @@ xcopy ..\..\icons\*.ico                         bin\icons /Y /Q
 @echo [ copy fonts ]
 mkdir bin\fonts
 xcopy ..\..\fonts\*.ttf                         bin\fonts /Y /Q
+
+
+@echo.
+@echo [ patch to make pp working ]
+del bin\raid\read.*
+del bin\raid\make.*
+del bin\raid\rebuild.*
+xcopy ..\..\raid\read.py                        bin\raid\ /Y /Q
+xcopy ..\..\raid\make.py                        bin\raid\ /Y /Q
+xcopy ..\..\raid\rebuild.py                     bin\raid\ /Y /Q
+REM xcopy ..\..\parallelp\pp\ppworker.py            bin\parallelp\pp /Y /Q
 
 
 @echo.
