@@ -1,10 +1,12 @@
 @echo off
 
 @echo.
-@echo [ upload datahaven-testing.msi to datahaven.net ]
-mv advinstaller/output/datahaven.msi advinstaller/output/datahaven-testing.msi
-pscp advinstaller/output/datahaven-testing.msi datahaven.net:/var/www/
-ssh veselinux@datahaven.net "cd /var/www; chmod u+x datahaven-testing.msi;"
+@echo [ upload bitpie-testing.msi to bitpie.net ]
+pushd advinstaller\output\
+rename bitpie.msi bitpie-testing.msi
+scp bitpie-testing.msi veselin@bitpie.net:/var/www/download
+popd
+REM ssh veselin@bitpie.net "chmod u+x /var/www/download/bitpie-testing.msi"
 
 @echo.
 @echo [ DONE ]

@@ -3,15 +3,30 @@
 
 @echo.
 @echo [ update revision number ]
-xcopy revnum.txt                                bin\           /Y /Q
-xcopy revnum.txt                                ..\..          /Y /Q
-set /p REVNUM= <revnum.txt
+git rev-list --count HEAD >revnum
+xcopy revnum                                bin\           /Y /Q
+set /p REVNUM= <revnum
+
+
+@echo.
+@echo current version number is: 
+type version
+python -c "v=list(open('version').read().split('.'));v[-2]=str(int(v[-2])+1);v[-1]=open('revnum').read();open('version','w').write('.'.join(v))"
+xcopy version   bin\     /Y /Q
+@echo.
+@echo new version is: 
+type version
+@echo.
+
+
+@echo.
 @echo [ revision number is %REVNUM% ]
 
 
 @echo.
-@echo [ making checksum.txt and files.txt files ]
-python checksum.py bin files.txt 1>checksum.txt 2>checksum.err
+@echo [ generate md5 hashes in "checksum" and "files" ]
+python checksum.py bin files 1>checksum
+@echo.
 
 
 @echo.

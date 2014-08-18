@@ -4,13 +4,7 @@ import os
 import sys
 
 
-# ModuleFinder can't handle runtime changes to __path__, but win32com uses them
 try:
-    # py2exe 0.6.4 introduced a replacement modulefinder.
-    # This means we have to add package paths there, not to the built-in
-    # one.  If this new modulefinder gets integrated into Python, then
-    # we might be able to revert this some day.
-    # if this doesn't work, try import modulefinder
     try:
         import py2exe.mf as modulefinder
     except ImportError:
@@ -24,7 +18,6 @@ try:
         for p in m.__path__[1:]:
             modulefinder.AddPackagePath(extra, p)
 except ImportError:
-    # no build path setup, no worries.
     pass
 
 
@@ -105,14 +98,13 @@ setup(
 
     description = 'BitPie.NET Starter',
 
-    version = open('release/windows/version_number').read().strip(), 
+    version = open('release/windows/version').read().strip(), 
 
     windows = [
 
         {
             'script': 'bpstarter.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
-            # 'uac_info': "requireAdministrator",
         },
 
     ],
