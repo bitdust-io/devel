@@ -445,9 +445,9 @@ class IdRegistrator(automat.Automat):
                 ident.contacts.append(cdict[c])
         ident.publickey = key.MyPublicKey()
         ident.date = time.ctime() #time.strftime('%b %d, %Y')
-        revnum = bpio.ReadTextFile(settings.RevisionNumberFile()).strip()
+        vernum = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         repo, location = misc.ReadRepoLocation()
-        ident.version = (revnum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
+        ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
         ident.sign()
         bpio.WriteFile(settings.LocalIdentityFilename()+'.new', ident.serialize())
         self.new_identity = ident

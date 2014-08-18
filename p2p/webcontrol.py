@@ -95,9 +95,9 @@ labels = {}
 menu_order = []
 installing_process_str = ''
 install_page_ready = True
-global_version = ''
-local_version = ''
-revision_number = ''
+global_checksum = ''
+local_checksum = ''
+version_number = ''
 root_page_src = ''
 centered_page_src = ''
 url_history = [] # ['/main']
@@ -259,14 +259,12 @@ def init(port = 6001):
     # callback.add_queue_item_status_callback(OnPacketOut)
 
     def version():
-        global local_version
-        global revision_number
-        lg.out(6, 'webcontrol.init.version')
+        global version_number
+        global local_checksum
         if bpio.Windows() and bpio.isFrozen():
-            local_version = bpio.ReadBinaryFile(settings.VersionFile())
-        else:
-            local_version = None
-        revision_number = bpio.ReadTextFile(settings.RevisionNumberFile()).strip()
+            local_checksum = bpio.ReadBinaryFile(settings.CheckSumFile())
+        version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
+        lg.out(6, 'webcontrol.init.version : %s' % version_number)
 
     def html():
         global root_page_src
@@ -538,8 +536,9 @@ def html_from_args(request, **kwargs):
 
 def html_from_dict(request, d):
     global root_page_src
-    global local_version
-    global global_version
+    global version_number
+    global global_checksum
+    global local_checksum
     global url_history
     global pagename_history
     if not d.has_key('encoding'):
@@ -578,7 +577,7 @@ def html_from_dict(request, d):
         if d['home'] == '':
             d['home'] = '&nbsp;'
     if bpio.Windows() and bpio.isFrozen():
-        if global_version != '' and global_version != local_version:
+        if global_checksum != '' and global_checksum != local_checksum:
             if request.path != '/'+_PAGE_SOFTWARE_UPDATE: 
                 d['home'] += '&nbsp;&nbsp;&nbsp;<a href="%s">[update software]</a>' % ('/'+_PAGE_SOFTWARE_UPDATE)
     d['refresh'] = '<a href="%s">refresh</a>' % request.path
@@ -683,14 +682,14 @@ def OnSingleStateChanged(index, id, name, new_state):
 
 def OnGlobalVersionReceived(txt):
     lg.out(4, 'webcontrol.OnGlobalVersionReceived ' + txt)
-    global global_version
-    global local_version
+    global global_checksum
+    global local_checksum
     if txt == 'failed':
         return
-    global_version = txt
-    lg.out(6, '  global:' + str(global_version))
-    lg.out(6, '  local :' + str(local_version))
-    SendCommandToGUI('version: ' + str(global_version) + ' ' + str(local_version))
+    global_checksum = txt.strip()
+    lg.out(6, '  global:' + str(global_checksum))
+    lg.out(6, '  local :' + str(local_checksum))
+    SendCommandToGUI('version: ' + str(global_checksum) + ' ' + str(local_checksum))
 
 def OnAliveStateChanged(idurl):
     if contacts.IsSupplier(idurl):
@@ -5277,19 +5276,18 @@ class SoftwareUpdatePage(Page):
     pagename = _PAGE_SOFTWARE_UPDATE
     debug = True
     def _check_callback(self, x, request):
-        global local_version
-        global revision_number
-        local_version = bpio.ReadBinaryFile(settings.VersionFile())
+        global version_number
         src = '<h1>update software</h1>\n'
-        src += '<p>your software revision number is <b>%s</b></p>\n' % revision_number
+        src += '<p>your software revision number is <b>%s</b></p>\n' % version_number
         src += self._body_windows_frozen(request)
         back = '/'+_PAGE_CONFIG
         request.write(html_from_args(request, body=str(src), title='update software', back=back))
         request.finish()
 
     def _body_windows_frozen(self, request, repo_msg=None):
-        global local_version
-        global global_version
+        global version_number
+        global local_checksum
+        global global_checksum
         try:
             repo, update_url = bpio.ReadTextFile(settings.RepoFile()).split('\n')
         except:
@@ -5298,16 +5296,16 @@ class SoftwareUpdatePage(Page):
         if repo == '':
             repo = 'test' 
         button = None
-        if global_version == '':
+        if global_checksum == '':
             button = (' check latest version ', True, 'check')
         else:
-            if local_version == '':
+            if local_checksum == '':
                 button = (' update BitPie.NET now ', True, 'update')
             else:
-                if local_version != global_version:
+                if local_checksum != global_checksum:
                     button = (' update BitPie.NET now ', True, 'update')
                 else:
-                    button = (' BitPie.NET updated! ', False, 'check')
+                    button = (' BitPie.NET is up to date ', False, 'check')
         src = ''
         src += '<h3>Update repository</h3>\n'
         src += '<form action="%s" method="post">\n' % request.path
@@ -5374,9 +5372,8 @@ class SoftwareUpdatePage(Page):
         return src
     
     def renderPage(self, request):
-        global local_version
-        global global_version
-        global revision_number
+        global global_checksum
+        global version_number
         action = arg(request, 'action')
         repo_msg = None
         update_msg = None
@@ -5400,11 +5397,11 @@ class SoftwareUpdatePage(Page):
             repo = {'development': 'devel', 'testing': 'test', 'stable': 'stable'}.get(repo, 'test')
             repo_file_src = '%s\n%s' % (repo, settings.UpdateLocationURL(repo))
             bpio.WriteFile(settings.RepoFile(), repo_file_src)
-            global_version = ''
+            global_checksum = ''
             repo_msg = ('repository changed', 'green')
             
         src = '<h1>update software</h1>\n'
-        src += '<p>Current revision number is <b>%s</b></p>\n' % revision_number
+        src += '<p>Current revision number is <b>%s</b></p>\n' % version_number
         if update_msg is not None:
             src += '<h3><font color=green>%s</font></h3>\n' % update_msg
             back = '/'+_PAGE_CONFIG
@@ -6814,7 +6811,7 @@ class DevReportPage(Page):
             _DevReportProcess = '%d/%d' % (x,y)
         
     def renderPage(self, request):
-        global local_version
+        # global local_version
         global _DevReportProcess
 
         subject = arg(request, 'subject')

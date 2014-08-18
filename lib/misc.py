@@ -1668,7 +1668,7 @@ def UpdateRegistryUninstall(uninstall=False):
     values = {
         'DisplayIcon':      '%s,0' % str(bpio.getExecutableFilename()),
         'DisplayName':      'BitPie.NET',
-        'DisplayVersion':   'rev'+bpio.ReadTextFile(settings.RevisionNumberFile()).strip(),
+        'DisplayVersion':   bpio.ReadTextFile(settings.VersionNumberFile()).strip(),
         'InstallLocation:': settings.BaseDir(),
         'NoModify':         1,
         'NoRepair':         1,

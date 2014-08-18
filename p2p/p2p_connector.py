@@ -139,7 +139,7 @@ class P2PConnector(automat.Automat):
     
     def init(self):
         self.identity_changed = False
-        self.revision_number = ''
+        self.version_number = ''
 
     def state_changed(self, oldstate, newstate):
         automats.set_global_state('P2P ' + newstate)
@@ -240,8 +240,8 @@ class P2PConnector(automat.Automat):
         propagate.single(arg, wide=True)
 
     def doInit(self, arg):
-        self.revision_number = bpio.ReadTextFile(settings.RevisionNumberFile()).strip()
-        lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(self.revision_number))
+        self.version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
+        lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(self.version_number))
         callback.add_inbox_callback(inbox)
         
     def doUpdateMyIdentity(self, arg):
@@ -377,7 +377,7 @@ class P2PConnector(automat.Automat):
     #        lid.pushProtoContact('tcp')
         #update software version number
         repo, location = misc.ReadRepoLocation()
-        lid.version = (self.revision_number.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
+        lid.version = (self.version_number.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
         #generate signature with changed content
         lid.sign()
         #remember the identity

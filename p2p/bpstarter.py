@@ -41,10 +41,10 @@ StarterFilename = os.path.basename(sys.argv[0].lower()) #'bpstarter.exe'
 
 UpdateRepo = ''
 UpdateLocationURL = ''
-DefaultRepo = 'devel'
-DefaultUpdateLocationURL = 'http://bitpie.net/repo/devel/'
+DefaultRepo = 'stable'
+DefaultUpdateLocationURL = 'http://bitpie.net/repo/stable/'
 
-UpdateFolder = 'windows/'
+# UpdateFolder = 'windows/'
 FilesDigestsFilename = 'files'
 CurrentVersionDigestsFilename = 'checksum'
 WGetFilename = 'wget.exe'
@@ -53,14 +53,21 @@ StarterFilename = 'bpstarter.exe'
 
 LogFilePath = sharedPath('bpstarter.log', 'logs')
 RepoFileName = sharedPath('repo', 'metadata')
-FilesDigestsLocalPath = sharedPath('info', 'metadata')
-CurrentVersionDigestsLocalPath = sharedPath('version', 'metadata')
+FilesDigestsLocalPath = os.path.join(
+    os.path.dirname(os.path.abspath(sys.executable)), FilesDigestsFilename)
+CurrentVersionDigestsLocalPath = os.path.join(
+    os.path.dirname(os.path.abspath(sys.executable)), CurrentVersionDigestsFilename)
+# FilesDigestsLocalPath = sharedPath('files', 'metadata')
+# CurrentVersionDigestsLocalPath = sharedPath('checksum', 'metadata')
 WGetLogFilename = sharedPath('wget.log', 'logs')
 
 #ONLY LOWER CASE
 ExcludesFiles = [
+    'msvcm90.dll',
+    'msvcp90.dll',
+    'msvcr90.dll',
+    'python27.dll', 
     'w9xpopen.exe',
-    'MSVCR71.dll'.lower(),
     'python25.dll',
     WGetFilename,
     StarterFilename,
@@ -188,6 +195,7 @@ def main():
             'bpgui.exe',
             'bpgui.py',
             'bitpie.py',
+            'bpworker.py',
             ])
 
     search_list = ['bpstarter.exe',]
@@ -215,50 +223,40 @@ def main():
         if res != 0:
             return res
 
-    #read file "info"
+    #read file "files"
     if os.path.isfile(FilesDigestsLocalPath):
         src = read_file(FilesDigestsLocalPath, 'r')
         if src == '':
             logwrite('file %s is empty\n' % FilesDigestsLocalPath)
-    else:
-        logwrite('file not found: %s\n' % FilesDigestsLocalPath)
-        src = read_file(os.path.join(os.path.dirname(
-            os.path.abspath(sys.executable)), FilesDigestsFilename), 'r')
-        if src != '':
-            logwrite('take %s from the current executable folder\n' % FilesDigestsFilename)
         else:
-            logwrite('file %s in the current executable folder is empty or not exist\n' % FilesDigestsFilename)
-            
-    logwrite('info length: ' + str(len(src)) + '\n')
+            logwrite('read "%s"\n' % FilesDigestsLocalPath)
+    else:
+        src = ''
+        logwrite('file not found: %s\n' % FilesDigestsLocalPath)
+    logwrite('length: ' + str(len(src)) + '\n')
 
+    #read file "checksum"
     if os.path.isfile(CurrentVersionDigestsLocalPath):
         cur_version = read_file(CurrentVersionDigestsLocalPath, 'r').strip()
         if cur_version == '':
             logwrite('file %s is empty\n' % CurrentVersionDigestsLocalPath)
-    else:
-        logwrite('file not found: %s\n' % CurrentVersionDigestsLocalPath)
-        cur_version = read_file(os.path.join(os.path.dirname(
-            os.path.abspath(sys.executable)), CurrentVersionDigestsFilename), 'r').strip()
-        if cur_version != '':
-            logwrite('take %s from the current executable folder\n' % CurrentVersionDigestsFilename)
         else:
-            logwrite('file %s in the current executable folder is empty or not exist\n' % CurrentVersionDigestsFilename)
+            logwrite('read %s\n' % CurrentVersionDigestsLocalPath)
+    else:
+        cur_version = ''
+        logwrite('file not found: %s\n' % CurrentVersionDigestsLocalPath)
+    logwrite('current checksum is: %s\n' % cur_version)
 
-    logwrite('current version is: %s\n' % cur_version)
-
-    #if local info is not exist, or it is empty - we want to download it from the server
+    #if local info is not exist, or it is empty - need to download it from the server
     if src.strip() == '':
         url = UpdateLocationURL + FilesDigestsFilename
         logwrite('want to download %s\n' % url)
-
         if run_wget(url, FilesDigestsLocalPath):
             logwrite('wget error url=%s\n' % url)
             return 1
-
         if not os.path.isfile(FilesDigestsLocalPath):
             logwrite('file not found %s\n' % FilesDigestsLocalPath)
             return 1
-
         src = read_file(FilesDigestsLocalPath, 'r')
         if src == '':
             logwrite('error when reading from file %s\n' % FilesDigestsLocalPath)
@@ -272,19 +270,18 @@ def main():
     if new_version == cur_version and cur_version != '':
         # digests are equal so our binaries have latest version - ready to start
         logwrite('version was not changed\n')
-
         # also try to remove files "files" and "checksum" in the current folder
         # they can be here because included in the installation release
         # so they needed only during first start of the bpstarter.exe
         # if we did not start with param "install" - we do not need them at all
-        if sys.argv.count('install') == 0:
-            try:
-                if os.path.exists(FilesDigestsFilename):
-                    os.remove(FilesDigestsFilename)
-                if os.path.exists(CurrentVersionDigestsFilename):
-                    os.remove(CurrentVersionDigestsFilename)
-            except:
-                logwrite('can not remove files "files" or "checksum" from current folder\n')
+#        if sys.argv.count('install') == 0:
+#            try:
+#                if os.path.exists(FilesDigestsFilename):
+#                    os.remove(FilesDigestsFilename)
+#                if os.path.exists(CurrentVersionDigestsFilename):
+#                    os.remove(CurrentVersionDigestsFilename)
+#            except:
+#                logwrite('can not remove files "files" or "checksum" from current folder\n')
         return launch(show)
 
     # so versions is not the same - save the new version 
@@ -296,7 +293,7 @@ def main():
     except:
         logwrite('error writing to %s\n' % CurrentVersionDigestsLocalPath)
 
-    #reading files hash values from info file
+    #reading files hash values from "files" file
     current_info = {}
     for line in src.strip().split('\n'):
         words = line.split(' ')
@@ -307,8 +304,7 @@ def main():
         if os.path.basename(fname.lower()) in ExcludesFiles:
             continue
         current_info[fname] = words[0].strip()
-
-    logwrite('current info files ' + str(len(current_info)) +'\n')
+    logwrite('current files number: ' + str(len(current_info)) +'\n')
 
     #read hash values for all files in the current folder
     local_info = {}
@@ -323,8 +319,7 @@ def main():
             abspath = os.path.abspath(os.path.join(root, fname))
             relpath = abspath[len(fullpath)+1:]
             local_info[relpath] = file_hash(abspath)
-
-    logwrite('local files %s\n' % str(len(local_info)) )
+    logwrite('local files: %s\n' % str(len(local_info)) )
 
     #compare hash values
     download_list = []
@@ -360,7 +355,7 @@ def main():
 
             #we want to download needed files
             for path in download_list:
-                url = UpdateLocationURL + UpdateFolder + path
+                url = UpdateLocationURL + path
                 url = url.replace('\\', '/')
                 filename = os.path.join('.', path)
                 dirname = os.path.dirname(filename)
@@ -479,6 +474,7 @@ def run():
         if res != 0:
             logwrite('can not stop BitPie.NET: %s\n' % res)
             sys.exit(res)
+            return
 
         logwrite('copy files to %s\n' % sharedPath('', 'bin'))
         try:
@@ -486,8 +482,7 @@ def run():
                        sharedPath('', 'bin'))
         except:
             logwrite('can not copy tree %s to %s\n' % (
-                os.path.dirname(executable_filename),
-                sharedPath('', 'bin')))
+                os.path.dirname(executable_filename), sharedPath('', 'bin')))
 
         logwrite('cd to bin\n')
         os.chdir(sharedPath('', 'bin'))

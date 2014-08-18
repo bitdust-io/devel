@@ -873,15 +873,27 @@ def InfoFile():
     """
     A place for local copy of "files" file, see ``FilesDigestsFilename()``.
     """ 
-    return os.path.join(MetaDataDir(), 'files')
+    # return os.path.join(MetaDataDir(), 'files')
+    return os.path.join(bpio.getExecutableDir(), 'files')
 
 def RevisionNumberFile():
     """
     We keep track of Subversion revision number and store it in the binary folder.
     This is a sort of "product version".
-    Probably not very best idea, we need to use a widely used software version format. 
+    Probably not very best idea, we need to use a widely used software version format.
+    This is not used anymore - switched to ``VersionNumberFile()``. 
     """
-    return os.path.join(bpio.getExecutableDir(), 'revnum.txt')
+    return os.path.join(bpio.getExecutableDir(), 'revnum')
+
+def VersionNumberFile():
+    """
+    """
+    return os.path.join(bpio.getExecutableDir(), 'version')
+
+def CheckSumFile():
+    """
+    """
+    return os.path.join(bpio.getExecutableDir(), 'checksum')
 
 def SuppliersFile():
     return os.path.join(MetaDataDir(), 'suppliers')

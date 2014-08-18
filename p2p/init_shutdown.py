@@ -215,10 +215,13 @@ def init_modules():
     lg.out(2,"init_shutdown.init_modules")
 
     import local_tester
-    reactor.callLater(5, local_tester.init)
+    reactor.callLater(0, local_tester.init)
+    
+    import software_update
+    reactor.callLater(0, software_update.init)
 
     import webcontrol
-    webcontrol.OnInitFinalDone()
+    reactor.callLater(0, webcontrol.OnInitFinalDone)
 
 
 def shutdown(x=None):

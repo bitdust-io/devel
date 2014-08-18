@@ -19,10 +19,10 @@
     <ROW Property="InstanceId" Value="#0"/>
     <ROW Property="Manufacturer" Value="BitPie.NET Inc."/>
     <ROW Property="MyUserHomeDir" Value="?"/>
-    <ROW Property="ProductCode" Value="1033:{4C152EFC-04C3-4801-8B0A-EF1AAA60FBDC} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{2ACB4F04-0667-4EB3-ADF6-B30853C93E62} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="BitPie.NET"/>
-    <ROW Property="ProductVersion" Value="0.1.2.438" Type="32"/>
+    <ROW Property="ProductVersion" Value="0.0.3.440" Type="32"/>
     <ROW Property="RUNAPPLICATION" Value="1" Type="4"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{1D2E14B7-8093-406E-9EDD-CEE00645A486}"/>
@@ -289,7 +289,7 @@
     <ROW File="_RSA.pyo" Component_="DSA.pyo" FileName="_RSA.pyo" Attributes="0" SourcePath="src\bin\Crypto\PublicKey\_RSA.pyo" SelfReg="false" NextFile="_slowmath.pyo"/>
     <ROW File="_SHA256.pyo" Component_="hashalgo.pyo" FileName="_SHA256.pyo" Attributes="0" SourcePath="src\bin\Crypto\Hash\_SHA256.pyo" SelfReg="false" NextFile="__init__.pyo_2"/>
     <ROW File="_UserFriendlyRNG.pyo" Component_="random.pyo" FileName="_USERF~1.PYO|_UserFriendlyRNG.pyo" Attributes="0" SourcePath="src\bin\Crypto\Random\_UserFriendlyRNG.pyo" SelfReg="false" NextFile="__init__.pyo_7"/>
-    <ROW File="__future__.pyo" Component_="abc.pyo" FileName="__FUTU~1.PYO|__future__.pyo" Attributes="0" SourcePath="src\bin\__future__.pyo" SelfReg="false"/>
+    <ROW File="__future__.pyo" Component_="abc.pyo" FileName="__FUTU~1.PYO|__future__.pyo" Attributes="0" SourcePath="src\bin\__future__.pyo" SelfReg="false" NextFile="software_update.pyo"/>
     <ROW File="__init__.pyo" Component_="encrypted.pyo" FileName="__init__.pyo" Attributes="0" SourcePath="src\bin\crypt\__init__.pyo" SelfReg="false" NextFile="AES.pyo"/>
     <ROW File="__init__.pyo_1" Component_="AES.pyo" FileName="__init__.pyo" Attributes="0" SourcePath="src\bin\Crypto\Cipher\__init__.pyo" SelfReg="false" NextFile="hashalgo.pyo"/>
     <ROW File="__init__.pyo_10" Component_="dyld.pyo" FileName="__init__.pyo" Attributes="0" SourcePath="src\bin\ctypes\macholib\__init__.pyo" SelfReg="false" NextFile="util.pyo"/>
@@ -935,6 +935,7 @@
     <ROW File="signed.pyo" Component_="encrypted.pyo" FileName="signed.pyo" Attributes="0" SourcePath="src\bin\crypt\signed.pyo" SelfReg="false" NextFile="__init__.pyo"/>
     <ROW File="smtplib.pyo" Component_="abc.pyo" FileName="smtplib.pyo" Attributes="0" SourcePath="src\bin\smtplib.pyo" SelfReg="false" NextFile="socket.pyo"/>
     <ROW File="socket.pyo" Component_="abc.pyo" FileName="socket.pyo" Attributes="0" SourcePath="src\bin\socket.pyo" SelfReg="false" NextFile="dbapi2.pyo"/>
+    <ROW File="software_update.pyo" Component_="backup.pyo" FileName="SOFTWA~1.PYO|software_update.pyo" Attributes="0" SourcePath="src\bin\p2p\software_update.pyo" SelfReg="false" NextFile="version"/>
     <ROW File="softwareupdate.png" Component_="addbackup.png" FileName="SOFTWA~1.PNG|software-update.png" Attributes="0" SourcePath="src\bin\icons\software-update.png" SelfReg="false" NextFile="states.ico"/>
     <ROW File="spawn.pyo" Component_="errors.pyo" FileName="spawn.pyo" Attributes="0" SourcePath="src\bin\distutils\spawn.pyo" SelfReg="false" NextFile="sysconfig.pyo"/>
     <ROW File="sqlite3.dll" Component_="sqlite3.dll" FileName="sqlite3.dll" Attributes="0" SourcePath="src\bin\sqlite3.dll" SelfReg="false" NextFile="sre.pyo"/>
@@ -1041,6 +1042,7 @@
     <ROW File="uu.pyo" Component_="abc.pyo" FileName="uu.pyo" Attributes="0" SourcePath="src\bin\uu.pyo" SelfReg="false" NextFile="uuid.pyo"/>
     <ROW File="uu_codec.pyo" Component_="aliases.pyo" FileName="uu_codec.pyo" Attributes="0" SourcePath="src\bin\encodings\uu_codec.pyo" SelfReg="false" NextFile="zlib_codec.pyo"/>
     <ROW File="uuid.pyo" Component_="abc.pyo" FileName="uuid.pyo" Attributes="0" SourcePath="src\bin\uuid.pyo" SelfReg="false" NextFile="w9xpopen.exe"/>
+    <ROW File="version" Component_="abc.pyo" FileName="version" Attributes="0" SourcePath="src\bin\version" SelfReg="false"/>
     <ROW File="version.pyo" Component_="crypto.pyo" FileName="version.pyo" Attributes="0" SourcePath="src\bin\OpenSSL\version.pyo" SelfReg="false" NextFile="__init__.pyo_26"/>
     <ROW File="versions.pyo" Component_="compat.pyo" FileName="versions.pyo" Attributes="0" SourcePath="src\bin\twisted\python\versions.pyo" SelfReg="false" NextFile="win32.pyo"/>
     <ROW File="w9xpopen.exe" Component_="w9xpopen.exe" FileName="w9xpopen.exe" Attributes="0" SourcePath="src\bin\w9xpopen.exe" SelfReg="false" NextFile="warnings.pyo" DigSign="true"/>

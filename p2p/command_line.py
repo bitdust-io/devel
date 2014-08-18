@@ -151,10 +151,13 @@ def run(opts, args, overDict, pars):
 
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:
-        revnum = bpio.ReadTextFile(settings.RevisionNumberFile()).strip()
+        ver = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
+        chksum = bpio.ReadTextFile(settings.CheckSumFile()).strip()
         repo, location = misc.ReadRepoLocation()
-        print 'revision:  ', revnum
-        print 'repository:', repo
+        print 'checksum:   ', chksum 
+        print 'version:    ', ver
+        print 'repository: ', repo
+        print 'location:   ', location
         return 0
 
     #---states---

@@ -705,9 +705,9 @@ def makeDefaultIdentity(name='', ip=''):
     ident.date = time.strftime('%b %d, %Y')
     ident.postage = "1"
 
-    revnum = bpio.ReadTextFile(settings.RevisionNumberFile())
+    vernum = bpio.ReadTextFile(settings.VersionNumberFile())
     repo, location = lib.misc.ReadRepoLocation()
-    ident.version = (revnum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
+    ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
 
     ident.sign()
 

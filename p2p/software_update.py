@@ -74,8 +74,8 @@ def init():
     if not bpio.isFrozen() or not bpio.Windows():
         lg.out(6, 'software_update.init finishing')
         return
-    if not os.path.isfile(settings.VersionFile()):
-        bpio.WriteFile(settings.VersionFile(), '')
+    # if not os.path.isfile(settings.VersionFile()):
+    #     bpio.WriteFile(settings.VersionFile(), '')
     SetLocalDir(bpio.getExecutableDir())
     if settings.getUpdatesMode() != settings.getUpdatesModeValues()[2]:
         lg.out(6, 'software_update.init starting the loop')
@@ -290,9 +290,9 @@ def step1(version_digest):
     global _UpdatingByUser
 
     _CurrentVersionDigest = str(version_digest).strip()
-    local_version = bpio.ReadBinaryFile(settings.VersionFile()).strip()
-    if local_version == _CurrentVersionDigest:
-        lg.out(6, 'software_update.step1 no need to update')
+    local_checksum = bpio.ReadBinaryFile(settings.CheckSumFile()).strip()
+    if local_checksum == _CurrentVersionDigest:
+        lg.out(6, 'software_update.step1 no need to update, checksums are equal')
         _UpdatingInProgress = False
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
@@ -347,7 +347,7 @@ def step4(version_digest):
     global _UpdatingByUser
 
     _CurrentVersionDigest = str(version_digest)
-    local_version = bpio.ReadBinaryFile(settings.VersionFile())
+    local_version = bpio.ReadBinaryFile(settings.CheckSumFile())
     if local_version == _CurrentVersionDigest:
         lg.out(6, 'software_update.step4 no need to update')
         _UpdatingInProgress = False
@@ -653,7 +653,7 @@ def check():
         global _CurrentVersionDigest
         global _NewVersionNotifyFunc
         _CurrentVersionDigest = str(x)
-        local_version = bpio.ReadBinaryFile(settings.VersionFile())
+        local_version = bpio.ReadBinaryFile(settings.CheckSumFile())
         lg.out(6, 'software_update.check._success local=%s current=%s' % (local_version, _CurrentVersionDigest))
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
