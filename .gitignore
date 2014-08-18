@@ -2,6 +2,14 @@
 *.pyo
 *.pyd
 *.~vsd
+release/windows/checksum
+release/windows/files
+release/windows/revnum
+release/windows/version
 release/windows/bin/
 release/windows/build/
 release/windows/starter/
+release/windows/upload/
+release/windows/advinstaller/bitpie-cache/
+release/windows/advinstaller/output/
+release/windows/advinstaller/src/

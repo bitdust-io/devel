@@ -1138,7 +1138,7 @@ def ReadRepoLocation():
     This method reutrn a tuple of two strings: "name of the current repo" and "repository location".
     """
     if bpio.Linux():
-        repo_file = os.path.join(bpio.getExecutableDir(), 'repo.txt')
+        repo_file = os.path.join(bpio.getExecutableDir(), 'repo')
         if os.path.isfile(repo_file):
             src = bpio.ReadTextFile(repo_file)
             if src:
@@ -1146,8 +1146,7 @@ def ReadRepoLocation():
                     return src.split('\n')[0].strip(), src.split('\n')[1].strip() 
                 except:
                     lg.exc()
-        return 'sources', 'http://bitpie.net/download.html'
-            
+        return 'sources', 'http://bitpie.net/download/'
     src = bpio.ReadTextFile(settings.RepoFile()).strip()
     if src == '':
         return settings.DefaultRepo(), settings.UpdateLocationURL(settings.DefaultRepo())

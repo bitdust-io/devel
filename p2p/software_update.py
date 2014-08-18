@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#bpupdate.py
+#software_update.py
 #
 #
 # <<<COPYRIGHT>>>
@@ -10,7 +10,7 @@
 #
 
 """
-.. module:: bpupdate
+.. module:: software_update
 
 A code for Windows platforms to check for updates and download latest binaries.   
 """
@@ -23,10 +23,9 @@ import calendar
 try:
     from twisted.internet import reactor
 except:
-    sys.exit('Error initializing twisted.internet.reactor in bpupdate.py')
+    sys.exit('Error initializing twisted.internet.reactor in software_update.py')
 
 from twisted.internet.defer import Deferred
-
 
 if __name__ == '__main__':
     sys.path.append(os.path.abspath('..'))
@@ -42,12 +41,10 @@ from lib import tmpfile
 from lib import schedule
 
 import backup_control
-import init_shutdown
 
 #-------------------------------------------------------------------------------
 
 _CloseFunc = None
-#_CloseFlag = 0
 _LocalDir = ''
 _UpdateList = []
 _ShedulerTask = None
@@ -72,20 +69,19 @@ _SheduleTypesDict = {
 #------------------------------------------------------------------------------
 
 def init():
-    lg.out(4, 'bpupdate.init')
-    update_shedule_file(settings.getUpdatesSheduleData())
+    lg.out(4, 'software_update.init')
+    # update_shedule_file(settings.getUpdatesSheduleData())
     if not bpio.isFrozen() or not bpio.Windows():
-        lg.out(6, 'bpupdate.init finishing')
+        lg.out(6, 'software_update.init finishing')
         return
     if not os.path.isfile(settings.VersionFile()):
         bpio.WriteFile(settings.VersionFile(), '')
     SetLocalDir(bpio.getExecutableDir())
     if settings.getUpdatesMode() != settings.getUpdatesModeValues()[2]:
-        lg.out(6, 'bpupdate.init starting the loop')
+        lg.out(6, 'software_update.init starting the loop')
         reactor.callLater(0, loop, True)
     else:
-        lg.out(6, 'bpupdate.init skip, update mode is: %s' % settings.getUpdatesMode())
-        
+        lg.out(6, 'software_update.init skip, update mode is: %s' % settings.getUpdatesMode())
 
 #------------------------------------------------------------------------------
 
@@ -93,29 +89,36 @@ def SetUpdateWindowObject(obj):
     global _UpdateWindowObject
     _UpdateWindowObject = obj
 
+
 def SetLocalDir(local_dir):
     global _LocalDir
     _LocalDir = local_dir
+
 
 def GetLocalDir():
     global _LocalDir
     return _LocalDir
 
+
 def SetCloseFunc(func):
     global _CloseFunc
     _CloseFunc = func
+
 
 def SetGuiMessageFunc(func):
     global _GuiMessageFunc
     _GuiMessageFunc = func
 
+
 def SetNewVersionNotifyFunc(func):
     global _NewVersionNotifyFunc
     _NewVersionNotifyFunc = func
 
+
 def CurrentVersionDigest():
     global _CurrentVersionDigest
     return _CurrentVersionDigest
+
 
 def UpdatingInProgress():
     global _UpdatingInProgress
@@ -128,6 +131,7 @@ def write2log(txt):
     print >>out_file, txt
     out_file.close()
 
+
 def write2window(txt, state=True):
     global _GuiMessageFunc
     global _UpdatingByUser
@@ -135,11 +139,13 @@ def write2window(txt, state=True):
     if _GuiMessageFunc is not None:
         _GuiMessageFunc(txt, proto='U', state=state)
 
+
 def write2window_sameline(txt, state=True):
     global _GuiMessageFunc
     global _UpdatingByUser
     if _GuiMessageFunc is not None:
         _GuiMessageFunc(txt, proto='U', state=state)
+
 
 def set_bat_filename(filename):
     global _UpdateWindowObject
@@ -155,7 +161,7 @@ def set_bat_filename(filename):
 def fail(txt):
     global _NewVersionNotifyFunc
     global _UpdatingInProgress
-    lg.out(1, 'bpupdate.fail ' + str(txt))
+    lg.out(1, 'software_update.fail ' + str(txt))
     write2window('there are some errors during updating: ' + str(txt))
     _UpdatingInProgress = False
 
@@ -164,13 +170,13 @@ def fail(txt):
 def download_version():
     repo, locationURL = misc.ReadRepoLocation()
     url = locationURL + settings.CurrentVersionDigestsFilename()
-    lg.out(6, 'bpupdate.download_version ' + str(url))
+    lg.out(6, 'software_update.download_version ' + str(url))
     return net_misc.getPageTwisted(url)
 
+
 def download_info():
-    
     def _done(src, result):
-        lg.out(6, 'bpupdate.download_info.done ')
+        lg.out(6, 'software_update.download_info.done ')
         lines = src.split('\n')
         files_dict = {}
         for line in lines:
@@ -180,16 +186,13 @@ def download_info():
             files_dict[words[1].strip()] = words[0].strip()
         result.callback(files_dict)
         return src
-    
     def _fail(x, result):
-        lg.out(1, 'bpupdate.download_info FAILED')
+        lg.out(1, 'software_update.download_info FAILED')
         result.errback(Exception('error downloading info'))
         return x
-    
     repo, locationURL = misc.ReadRepoLocation()
     url = locationURL + settings.FilesDigestsFilename()
-
-    lg.out(6, 'bpupdate.download_info ' + str(url))
+    lg.out(6, 'software_update.download_info ' + str(url))
     result = Deferred()
     d = net_misc.getPageTwisted(url)
     d.addCallback(_done, result)
@@ -199,7 +202,7 @@ def download_info():
 def download_and_replace_starter(output_func = None):
     repo, locationURL = misc.ReadRepoLocation()
     url = settings.WindowsStarterFileURL(repo)
-    lg.out(6, 'bpupdate.download_and_replace_starter  ' + str(url))
+    lg.out(6, 'software_update.download_and_replace_starter  ' + str(url))
     result = Deferred()
     
     def _done(x, filename):
@@ -219,9 +222,9 @@ def download_and_replace_starter(output_func = None):
 
         try:
             os.rename(filename, local_filename)
-            lg.out(4, 'bpupdate.download_and_replace_starter  file %s was updated' % local_filename)
+            lg.out(4, 'software_update.download_and_replace_starter  file %s was updated' % local_filename)
         except:
-            lg.out(1, 'bpupdate.download_and_replace_starter ERROR can not rename %s to %s ' % (filename, local_filename))
+            lg.out(1, 'software_update.download_and_replace_starter ERROR can not rename %s to %s ' % (filename, local_filename))
             lg.exc()
             result.errback(Exception('can not rename the file ' + filename))
             return
@@ -237,11 +240,11 @@ def download_and_replace_starter(output_func = None):
         result.callback(1)
 
     def _done_python27_dll(x, filename):
-        lg.out(4, 'bpupdate.download_and_replace_starter file %s was updated' % filename)
+        lg.out(4, 'software_update.download_and_replace_starter file %s was updated' % filename)
         result.callback(1)
 
     def _fail(x, filename):
-        lg.out(1, 'bpupdate.download_and_replace_starter FAILED')
+        lg.out(1, 'software_update.download_and_replace_starter FAILED')
         if output_func:
             try:
                 output_func(x.getErrorMessage())
@@ -250,7 +253,7 @@ def download_and_replace_starter(output_func = None):
         try:
             os.remove(filename)
         except:
-            lg.out(1, 'bpupdate.download_and_replace_starter ERROR can not remove ' + filename)
+            lg.out(1, 'software_update.download_and_replace_starter ERROR can not remove ' + filename)
         result.errback(Exception('error downloading starter'))
 
     fileno, filename = tmpfile.make('other', '.starter')
@@ -263,10 +266,10 @@ def download_and_replace_starter(output_func = None):
 #-------------------------------------------------------------------------------
 
 def step0():
-    lg.out(4, 'bpupdate.step0')
+    lg.out(4, 'software_update.step0')
     global _UpdatingInProgress
     if _UpdatingInProgress:
-        lg.out(6, 'bpupdate.step0  _UpdatingInProgress is True, skip.')
+        lg.out(6, 'software_update.step0  _UpdatingInProgress is True, skip.')
         return
 
     repo, locationURL = misc.ReadRepoLocation()
@@ -280,7 +283,7 @@ def step0():
     d.addErrback(fail)
 
 def step1(version_digest):
-    lg.out(4, 'bpupdate.step1')
+    lg.out(4, 'software_update.step1')
     global _UpdatingInProgress
     global _CurrentVersionDigest
     global _NewVersionNotifyFunc
@@ -289,7 +292,7 @@ def step1(version_digest):
     _CurrentVersionDigest = str(version_digest).strip()
     local_version = bpio.ReadBinaryFile(settings.VersionFile()).strip()
     if local_version == _CurrentVersionDigest:
-        lg.out(6, 'bpupdate.step1 no need to update')
+        lg.out(6, 'software_update.step1 no need to update')
         _UpdatingInProgress = False
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
@@ -298,7 +301,7 @@ def step1(version_digest):
     appList = bpio.find_process(['bpgui.', ])
     if len(appList) > 0:
         if not _UpdatingByUser:
-            lg.out(6, 'bpupdate.step1 bpgui is running, ask user to update.')
+            lg.out(6, 'software_update.step1 bpgui is running, ask user to update.')
             _UpdatingInProgress = False
             if _NewVersionNotifyFunc is not None:
                 _NewVersionNotifyFunc(_CurrentVersionDigest)
@@ -309,7 +312,7 @@ def step1(version_digest):
     d.addErrback(fail)
 
 def step2(info, version_digest):
-    lg.out(4, 'bpupdate.step2')
+    lg.out(4, 'software_update.step2')
     if not isinstance(info, dict):
         fail('wrong data')
         return
@@ -330,14 +333,14 @@ def step2(info, version_digest):
 
 
 def step3(version_digest):
-    lg.out(4, 'bpupdate.step3')
+    lg.out(4, 'software_update.step3')
     d = download_and_replace_starter(write2window)
     d.addCallback(lambda x: step4(version_digest))
     d.addErrback(fail)
 
 
 def step4(version_digest):
-    lg.out(4, 'bpupdate.step4')
+    lg.out(4, 'software_update.step4')
     global _UpdatingInProgress
     global _CurrentVersionDigest
     global _NewVersionNotifyFunc
@@ -346,14 +349,14 @@ def step4(version_digest):
     _CurrentVersionDigest = str(version_digest)
     local_version = bpio.ReadBinaryFile(settings.VersionFile())
     if local_version == _CurrentVersionDigest:
-        lg.out(6, 'bpupdate.step4 no need to update')
+        lg.out(6, 'software_update.step4 no need to update')
         _UpdatingInProgress = False
         return
 
-    lg.out(6, 'bpupdate.step4 local=%s current=%s ' % (local_version, _CurrentVersionDigest))
+    lg.out(6, 'software_update.step4 local=%s current=%s ' % (local_version, _CurrentVersionDigest))
 
     if settings.getUpdatesMode() == settings.getUpdatesModeValues()[2] and not _UpdatingByUser:
-        lg.out(6, 'bpupdate.step4 run scheduled, but mode is %s, skip now' % settings.getUpdatesMode())
+        lg.out(6, 'software_update.step4 run scheduled, but mode is %s, skip now' % settings.getUpdatesMode())
         return
 
     if _UpdatingByUser or settings.getUpdatesMode() == settings.getUpdatesModeValues()[0]:
@@ -363,7 +366,7 @@ def step4(version_digest):
             try:
                 os.remove(info_file_path)
             except:
-                lg.out(1, 'bpupdate.step4 ERROR can no remove ' + info_file_path )
+                lg.out(1, 'software_update.step4 ERROR can no remove ' + info_file_path )
                 lg.exc()
 
         param = ''
@@ -387,18 +390,25 @@ def is_running():
 
 
 def read_shedule_dict():
-    lg.out(8, 'bpupdate.read_shedule_dict')
-    d = bpio._read_dict(settings.UpdateSheduleFilename())
-    if d is None or not check_shedule_dict_correct(d):
-        d = make_blank_shedule()
+    lg.out(8, 'software_update.read_shedule_dict')
+    # d = bpio._read_dict(settings.UpdateSheduleFilename())
+    # if d is None or not check_shedule_dict_correct(d):
+    #     d = make_blank_shedule()
+    d = string_to_shedule(settings.getUpdatesSheduleData())
+    d['mode'] = settings.getUpdatesMode()
     return d
 
 
 def write_shedule_dict(d):
-    lg.out(8, 'bpupdate.write_shedule_dict')
+    lg.out(8, 'software_update.write_shedule_dict')
     if d is None or not check_shedule_dict_correct(d):
         return
-    bpio._write_dict(settings.UpdateSheduleFilename(), d)
+    old = string_to_shedule(settings.getUpdatesSheduleData())
+    d ['lasttime'] = old.get('lasttime', '')
+    settings.setUpdatesSheduleData(shedule_to_string(d))
+    if d.has_key('mode'):
+        settings.setUpdatesMode(d['mode'])
+    # bpio._write_dict(settings.UpdateSheduleFilename(), d)
 
 
 def blank_shedule(type):
@@ -442,11 +452,11 @@ def blank_shedule(type):
     return d
 
 
-def make_blank_shedule(type='daily'):
-    lg.out(8, 'bpupdate.make_blank_shedule')
-    d = blank_shedule(type)
-    bpio._write_dict(settings.UpdateSheduleFilename(), d)
-    return d
+#def make_blank_shedule(type='daily'):
+#    lg.out(8, 'software_update.make_blank_shedule')
+#    d = blank_shedule(type)
+#    # bpio._write_dict(settings.UpdateSheduleFilename(), d)
+#    return d
 
 
 def check_shedule_dict_correct(d):
@@ -499,16 +509,17 @@ def string_to_shedule(raw_data):
     d['lasttime'] = (l[4].strip() if len(l) >= 5 else '')
     return d
 
-def update_shedule_file(raw_data):
-    d = string_to_shedule(raw_data)
-    write_shedule_dict(d)
+
+# def update_shedule_file(raw_data):
+#     d = string_to_shedule(raw_data)
+#     write_shedule_dict(d)
 
 #------------------------------------------------------------------------------
 
 def run():
     global _UpdatingInProgress
     global _UpdatingByUser
-    lg.out(6, 'bpupdate.run')
+    lg.out(6, 'software_update.run')
     if _UpdatingInProgress:
         lg.out(6, '  update is in progress, finish.')
         return
@@ -519,7 +530,7 @@ def run():
 def run_sheduled_update():
     global _UpdatingByUser
     global _UpdatingInProgress
-    lg.out(6, 'bpupdate.run_sheduled_update')
+    lg.out(6, 'software_update.run_sheduled_update')
     if _UpdatingInProgress:
         lg.out(6, '  update is in progress, finish.')
         return
@@ -585,15 +596,15 @@ def next(d):
 #        return maths.shedule_next_monthly(lasttime, d['interval'], d['daytime'], months_numbers)
 
     else:
-        lg.out(1, 'bpupdate.loop ERROR wrong shedule type')
+        lg.out(1, 'software_update.loop ERROR wrong shedule type')
         return None    
 
 def loop(first_start=False):
     global _ShedulerTask
-    lg.out(4, 'bpupdate.loop mode=' + str(settings.getUpdatesMode()))
+    lg.out(4, 'software_update.loop mode=' + str(settings.getUpdatesMode()))
 
     if settings.getUpdatesMode() == settings.getUpdatesModeValues()[2]:
-        lg.out(4, 'bpupdate.loop is finishing. updates is turned off')
+        lg.out(4, 'software_update.loop is finishing. updates is turned off')
         return
 
     shed = schedule.Schedule(from_dict=read_shedule_dict())
@@ -603,11 +614,11 @@ def loop(first_start=False):
         nexttime = time.time() + 5
     
     if nexttime is None:
-        lg.out(1, 'bpupdate.loop ERROR calculating shedule interval')
+        lg.out(1, 'software_update.loop ERROR calculating shedule interval')
         return
     
     if nexttime < 0:
-        lg.out(1, 'bpupdate.loop nexttime=%s' % str(nexttime))
+        lg.out(1, 'software_update.loop nexttime=%s' % str(nexttime))
         return
 
     # DEBUG
@@ -618,13 +629,13 @@ def loop(first_start=False):
         lg.warn('delay=%s %s' % (str(delay), shed))
         delay = 10
 
-    lg.out(6, 'bpupdate.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))
+    lg.out(6, 'software_update.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))
     _ShedulerTask = reactor.callLater(delay, run_sheduled_update)
 
 
 def update_sheduler():
     global _ShedulerTask
-    lg.out(4, 'bpupdate.update_sheduler')
+    lg.out(4, 'software_update.update_sheduler')
 ##    if not bpio.isFrozen() or not bpio.Windows():
 ##        return
     if _ShedulerTask is not None:
@@ -636,21 +647,21 @@ def update_sheduler():
 
 
 def check():
-    lg.out(4, 'bpupdate.check')
+    lg.out(4, 'software_update.check')
 
     def _success(x):
         global _CurrentVersionDigest
         global _NewVersionNotifyFunc
         _CurrentVersionDigest = str(x)
         local_version = bpio.ReadBinaryFile(settings.VersionFile())
-        lg.out(6, 'bpupdate.check._success local=%s current=%s' % (local_version, _CurrentVersionDigest))
+        lg.out(6, 'software_update.check._success local=%s current=%s' % (local_version, _CurrentVersionDigest))
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
         return x
 
     def _fail(x):
         global _NewVersionNotifyFunc
-        lg.out(10, 'bpupdate.check._fail NETERROR ' + x.getErrorMessage())
+        lg.out(10, 'software_update.check._fail NETERROR ' + x.getErrorMessage())
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc('failed')
         return x

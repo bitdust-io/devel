@@ -433,25 +433,25 @@ def DefaultRepo():
     This is to be able to run different code in the network and so be able to test new features
     without any chances to broke the whole network.
     """
-    return 'devel'
+    return 'stable'
 
-def UpdateLocationURL(repo=DefaultRepo()):
+def UpdateLocationURL(repo='stable'):
     """
     Return a given repository location for Windows.
     """
-    if repo == 'devel':
-        return 'http://bitpie.net/devel/'
-    elif repo == 'stable':
-        return 'http://bitpie.net/stable/'
+    if repo == 'stable':
+        return 'http://bitpie.net/repo/stable/'
+    elif repo == 'devel':
+        return 'http://bitpie.net/repo/devel/'
     else: 
-        return 'http://bitpie.net/stable/'
+        return 'http://bitpie.net/repo/test/'
 
 def FilesDigestsFilename():
     """
     This file keeps MD5 checksum of all binary files for Windows release.
     Every Windows repository have such file, this is link for "stable" repo::
     
-        http://bitpie.net/repo/stable/files.txt
+        http://bitpie.net/repo/stable/files
         
     Local copy of this file is also stored in the file::
     
@@ -461,24 +461,24 @@ def FilesDigestsFilename():
     If some files were changed or new files added to the repo - it will update the local binaries from repo.
     The idea is to update only modified files when new release will be published.
     """
-    return 'files.txt'
+    return 'files'
 
 def CurrentVersionDigestsFilename():
     """
-    This file keeps a MD5 checksum of the file "files.txt", see ``FilesDigestsFilename()``.
+    This file keeps a MD5 checksum of the file "files", see ``FilesDigestsFilename()``.
     It is also placed in the Windows repository::
     
-        http://bitpie.net/repo/stable/checksum.txt
+        http://bitpie.net/repo/stable/checksum
             
-    If some binary files have been changed - the file "files.txt" also changed and 
+    If some binary files have been changed - the file "files" also changed and 
     its checksum also.
     Locally this is stored in the file::
         
         .bitpie/metadata/checksum
         
-    The software check "checksum" file first and if it is not the same - further download "files.txt". 
+    The software check "checksum" file first and if it is not the same - further download "files". 
     """
-    return 'checksum.txt'
+    return 'checksum'
 
 def LegalUsernameChars():
     """
@@ -742,7 +742,7 @@ def UpdateSheduleFilename():
     """
     Under Windows software update process is made by bpstarter.exe file.
     Periodically, the main file process "bitpie.exe" requests 
-    the file "checksum.txt" (from user configurable repository location) 
+    the file "checksum" (from user configurable repository location) 
     to check for new software release of that repository.
     Main process can restart itself thru bpstarter to be able to update the binaries.
     User can set a schedule to check for updates in the settings. 
@@ -849,7 +849,7 @@ def UpdateLogFilename():
     """
     A place to store logs from update porcess.
     """
-    return os.path.join(LogsDir(), 'bpupdate.log')
+    return os.path.join(LogsDir(), 'software_update.log')
 
 def AutomatsLog():
     """
@@ -865,13 +865,13 @@ def RepoFile():
 
 def VersionFile():
     """
-    A place for local copy of "checksum.txt" file, see ``CurrentVersionDigestsFilename()``. 
+    A place for local copy of "checksum" file, see ``CurrentVersionDigestsFilename()``. 
     """
     return os.path.join(MetaDataDir(), 'checksum')
 
 def InfoFile():
     """
-    A place for local copy of "files.txt" file, see ``FilesDigestsFilename()``.
+    A place for local copy of "files" file, see ``FilesDigestsFilename()``.
     """ 
     return os.path.join(MetaDataDir(), 'files')
 
@@ -1558,6 +1558,10 @@ def getUpdatesMode():
     User can set different modes to update the BitPie.NET software.
     """
     return uconfig('updates.updates-mode')
+
+def setUpdatesMode(mode):
+    uconfig().set('updates.updates-mode', mode)
+    uconfig().update()
 
 def getUpdatesModeValues():
     """

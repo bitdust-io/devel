@@ -80,7 +80,8 @@ import restore_monitor
 import io_throttle
 import message
 import events
-import ratings 
+import ratings
+import software_update
 
 #-------------------------------------------------------------------------------
 
@@ -151,14 +152,14 @@ _PAGE_RECEIPT = 'receipt'
 _PAGE_DIR_SELECT = 'dirselect'
 _PAGE_INSTALL = 'install'
 _PAGE_INSTALL_NETWORK_SETTINGS = 'installproxy'
-_PAGE_UPDATE = 'update'
+_PAGE_SOFTWARE_UPDATE = 'softwareupdate'
 _PAGE_MESSAGES = 'messages'
 _PAGE_MESSAGE = 'message'
 _PAGE_NEW_MESSAGE = 'newmessage'
 _PAGE_CORRESPONDENTS = 'correspondents'
 _PAGE_SHEDULE = 'shedule'
 _PAGE_BACKUP_SHEDULE = 'backup_schedule'
-_PAGE_UPDATE_SHEDULE = 'updateshedule'
+_PAGE_SOFTWARE_UPDATE_SHEDULE = 'updateshedule'
 _PAGE_DEV_REPORT = 'devreport'
 _PAGE_BACKUP_SETTINGS = 'backupsettings'
 _PAGE_SECURITY = 'security'
@@ -189,7 +190,7 @@ _SettingsItems = {
     '1|security'            :('/'+_PAGE_SECURITY,           'icons/private-key.png'),
     '2|network'             :('/'+_PAGE_NETWORK_SETTINGS,   'icons/network-settings.png'),
     '3|emergency'           :('/'+_PAGE_EMERGENCY,          'icons/emergency01.png'),
-    '4|updates'             :('/'+_PAGE_UPDATE,             'icons/software-update.png'),
+    '4|updates'             :('/'+_PAGE_SOFTWARE_UPDATE,    'icons/software-update.png'),
     '5|development'         :('/'+_PAGE_DEVELOPMENT,        'icons/python.png'),
     #'5|shutdown'            :('/?action=exit',              'icons/exit.png'),
     }
@@ -320,7 +321,7 @@ def init(port = 6001):
         root.putChild(_PAGE_STORAGE, StoragePage())
         root.putChild(_PAGE_CONFIG, ConfigPage())
         root.putChild(_PAGE_BACKUP_SETTINGS, BackupSettingsPage())
-        # root.putChild(_PAGE_UPDATE, UpdatePage())
+        root.putChild(_PAGE_SOFTWARE_UPDATE, SoftwareUpdatePage())
         root.putChild(_PAGE_SETTINGS, SettingsPage())
         root.putChild(_PAGE_SETTINGS_LIST, SettingsListPage())
         root.putChild(_PAGE_SECURITY, SecurityPage())
@@ -336,7 +337,7 @@ def init(port = 6001):
         root.putChild(_PAGE_NEW_MESSAGE, NewMessagePage())
         root.putChild(_PAGE_CORRESPONDENTS, CorrespondentsPage())
         # root.putChild(_PAGE_BACKUP_SHEDULE, BackupShedulePage())
-        # root.putChild(_PAGE_UPDATE_SHEDULE, UpdateShedulePage())
+        root.putChild(_PAGE_SOFTWARE_UPDATE_SHEDULE, SoftwareUpdateShedulePage())
         root.putChild(_PAGE_DEV_REPORT, DevReportPage())
         root.putChild(_PAGE_DEVELOPMENT, DevelopmentPage())
         # root.putChild(_PAGE_BIT_COIN_SETTINGS, BitCoinSettingsPage())
@@ -578,8 +579,8 @@ def html_from_dict(request, d):
             d['home'] = '&nbsp;'
     if bpio.Windows() and bpio.isFrozen():
         if global_version != '' and global_version != local_version:
-            if request.path != '/'+_PAGE_UPDATE: 
-                d['home'] += '&nbsp;&nbsp;&nbsp;<a href="%s">[update software]</a>' % ('/'+_PAGE_UPDATE)
+            if request.path != '/'+_PAGE_SOFTWARE_UPDATE: 
+                d['home'] += '&nbsp;&nbsp;&nbsp;<a href="%s">[update software]</a>' % ('/'+_PAGE_SOFTWARE_UPDATE)
     d['refresh'] = '<a href="%s">refresh</a>' % request.path
     if d.has_key('reload'):
         d['reload_tag'] = '<meta http-equiv="refresh" content="%s">' % d.get('reload', '600')
@@ -5272,159 +5273,159 @@ class NetworkSettingsPage(Page):
         return html(request, body=src,  back=arg(request, 'back', '/'+_PAGE_CONFIG), title='network settings')
 
 
-#class UpdatePage(Page):
-#    pagename = _PAGE_UPDATE
-#    debug = False
-#    def _check_callback(self, x, request):
-#        global local_version
-#        global revision_number
-#        local_version = bpio.ReadBinaryFile(settings.VersionFile())
-#        src = '<h1>update software</h1>\n'
-#        src += '<p>your software revision number is <b>%s</b></p>\n' % revision_number
-#        src += self._body_windows_frozen(request)
-#        back = '/'+_PAGE_CONFIG
-#        request.write(html_from_args(request, body=str(src), title='update software', back=back))
-#        request.finish()
-#
-#    def _body_windows_frozen(self, request, repo_msg=None):
-#        global local_version
-#        global global_version
-#        try:
-#            repo, update_url = bpio.ReadTextFile(settings.RepoFile()).split('\n')
-#        except:
-#            repo = settings.DefaultRepo()
-#            update_url = settings.UpdateLocationURL()
-#        if repo == '':
-#            repo = 'test' 
-#        button = None
-#        if global_version == '':
-#            button = (' check latest version ', True, 'check')
-#        else:
-#            if local_version == '':
-#                button = (' update BitPie.NET now ', True, 'update')
-#            else:
-#                if local_version != global_version:
-#                    button = (' update BitPie.NET now ', True, 'update')
-#                else:
-#                    button = (' BitPie.NET updated! ', False, 'check')
-#        src = ''
-#        src += '<h3>Update repository</h3>\n'
-#        src += '<form action="%s" method="post">\n' % request.path
-#        src += '<table align=center>\n'
-#        src += '<tr><td align=left>\n'
-#        src += '<input id="test" type="radio" name="repo" value="testing" %s />\n' % ('checked' if repo=='test' else '')
-#        src += '</td></tr>\n'
-#        src += '<tr><td align=left>\n'
-#        src += '<input id="devel" type="radio" name="repo" value="development" %s />\n' % ('checked' if repo=='devel' else '') 
-#        src += '</td></tr>\n'
-#        src += '<tr><td align=left>\n'
-#        src += '<input id="stable" type="radio" name="repo" value="stable" %s />\n' % ('checked' if repo=='stable' else '')
-#        src += '</td></tr>\n'
-#        src += '<tr><td align=center>\n'
-#        if repo_msg is not None:
-#            src += '<p><font color=%s>%s</font></p>\n' % (repo_msg[1], repo_msg[0])
-#        src += '<input type="hidden" name="action" value="repo" />\n'
-#        src += '<br><input type="submit" name="submit" value=" set "/>\n'
-#        src += '</td></tr>\n'
-#        src += '</table>\n'
-#        src += '</form>\n'
-#        src += '<h3>Update schedule</h3>\n'
-#        shed = schedule.Schedule(from_dict=bpupdate.read_shedule_dict())
-#        next = shed.next_time()
-#        src += '<p>'
-#        if next is None:
-#            src += 'icorrect schedule<br>\n'
-#        elif next < 0:
-#            src += 'not scheduled<br>\n'
-#        else:
-#            src += shed.html_description() + ',<br>\n'
-#            src += shed.html_next_start() + ',<br>\n'
-#        src += '<a href="%s?back=%s">change schedule</a>\n' % ('/'+_PAGE_UPDATE_SHEDULE, request.path)
-#        src += '</p>\n' 
-#        if button is not None:
-#            src += '<br><br><form action="%s" method="post">\n' % request.path
-#            src += '<table align=center>\n'
-#            src += '<tr><td>\n'
-#            src += '<input type="hidden" name="action" value="%s" />\n' % button[2]
-#            src += '<input type="submit" name="submit" value="%s" %s />\n' % (button[0], ('disabled' if not button[1] else '')) 
-#            src += '</td></tr>\n'
-#            src += '</table>\n'
-#            src += '</form>\n'
-#        src += '<br>\n'
-#        return src 
-#        
-#    def _body_windows_soures(self, request):
-#        src = '<p>Running from python sources.</p>\n'
-#        return src
-#
-#    def _body_linux_deb(self, request):
-#        src = ''
-#        src += '<table align=center><tr><td><div align=left>\n'
-#        src += '<p>You can manually update BitPie.NET<br>\n'
-#        src += 'from command line using apt-get:</p>\n'
-#        src += '<code><br>\n'
-#        src += 'sudo apt-get update<br>\n'
-#        src += 'sudo apt-get install bitpie-stable\n'
-#        src += '</code></div></td></tr></table>\n'
-#        return src
-#           
-#    def _body_linux_sources(self, request):
-#        src = '<p>Running from python sources.</p>\n'
-#        return src
-#    
-#    def renderPage(self, request):
-#        global local_version
-#        global global_version
-#        global revision_number
-#        action = arg(request, 'action')
-#        repo_msg = None
-#        update_msg = None
-#
-#        if action == 'update':
-#            if self.debug or (bpio.Windows() and bpio.isFrozen()):
-#                if not bpupdate.is_running():
-#                    bpupdate.run()
-#                    update_msg = 'preparing update process ...'
-#
-#        elif action == 'check':
-#            if self.debug or (bpio.Windows() and bpio.isFrozen()):
-#                d = bpupdate.check()
-#                d.addCallback(self._check_callback, request)
-#                d.addErrback(self._check_callback, request)
-#                request.notifyFinish().addErrback(self._check_callback, request)
-#                return NOT_DONE_YET
-#            
-#        elif action == 'repo':
-#            repo = arg(request, 'repo')
-#            repo = {'development': 'devel', 'testing': 'test', 'stable': 'stable'}.get(repo, 'test')
-#            repo_file_src = '%s\n%s' % (repo, settings.UpdateLocationURL(repo))
-#            bpio.WriteFile(settings.RepoFile(), repo_file_src)
-#            global_version = ''
-#            repo_msg = ('repository changed', 'green')
-#            
-#        src = '<h1>update software</h1>\n'
-#        src += '<p>Current revision number is <b>%s</b></p>\n' % revision_number
-#        if update_msg is not None:
-#            src += '<h3><font color=green>%s</font></h3>\n' % update_msg
-#            back = '/'+_PAGE_CONFIG
-#            return html(request, body=src, title='update software', back=back)
-#        
-#        if bpio.Windows():
-#            if bpio.isFrozen():
-#                src += self._body_windows_frozen(request, repo_msg)
-#            else:
-#                if self.debug:
-#                    src += self._body_windows_frozen(request, repo_msg)
-#                else:
-#                    src += self._body_windows_soures(request)
-#        else:
-#            if bpio.getExecutableDir().count('/usr/share/bitpie'):
-#                src += self._body_linux_deb(request)
-#            else:
-#                src += self._body_linux_sources(request)
-#                
-#        back = '/'+_PAGE_CONFIG
-#        return html(request, body=src, title='update software', back=back)
+class SoftwareUpdatePage(Page):
+    pagename = _PAGE_SOFTWARE_UPDATE
+    debug = True
+    def _check_callback(self, x, request):
+        global local_version
+        global revision_number
+        local_version = bpio.ReadBinaryFile(settings.VersionFile())
+        src = '<h1>update software</h1>\n'
+        src += '<p>your software revision number is <b>%s</b></p>\n' % revision_number
+        src += self._body_windows_frozen(request)
+        back = '/'+_PAGE_CONFIG
+        request.write(html_from_args(request, body=str(src), title='update software', back=back))
+        request.finish()
+
+    def _body_windows_frozen(self, request, repo_msg=None):
+        global local_version
+        global global_version
+        try:
+            repo, update_url = bpio.ReadTextFile(settings.RepoFile()).split('\n')
+        except:
+            repo = settings.DefaultRepo()
+            update_url = settings.UpdateLocationURL()
+        if repo == '':
+            repo = 'test' 
+        button = None
+        if global_version == '':
+            button = (' check latest version ', True, 'check')
+        else:
+            if local_version == '':
+                button = (' update BitPie.NET now ', True, 'update')
+            else:
+                if local_version != global_version:
+                    button = (' update BitPie.NET now ', True, 'update')
+                else:
+                    button = (' BitPie.NET updated! ', False, 'check')
+        src = ''
+        src += '<h3>Update repository</h3>\n'
+        src += '<form action="%s" method="post">\n' % request.path
+        src += '<table align=center>\n'
+        src += '<tr><td align=left>\n'
+        src += '<input id="test" type="radio" name="repo" value="testing" %s />\n' % ('checked' if repo=='test' else '')
+        src += '</td></tr>\n'
+        src += '<tr><td align=left>\n'
+        src += '<input id="devel" type="radio" name="repo" value="development" %s />\n' % ('checked' if repo=='devel' else '') 
+        src += '</td></tr>\n'
+        src += '<tr><td align=left>\n'
+        src += '<input id="stable" type="radio" name="repo" value="stable" %s />\n' % ('checked' if repo=='stable' else '')
+        src += '</td></tr>\n'
+        src += '<tr><td align=center>\n'
+        if repo_msg is not None:
+            src += '<p><font color=%s>%s</font></p>\n' % (repo_msg[1], repo_msg[0])
+        src += '<input type="hidden" name="action" value="repo" />\n'
+        src += '<br><input type="submit" name="submit" value=" set "/>\n'
+        src += '</td></tr>\n'
+        src += '</table>\n'
+        src += '</form>\n'
+        src += '<h3>Update schedule</h3>\n'
+        shed = schedule.Schedule(from_dict=software_update.read_shedule_dict())
+        next = shed.next_time()
+        src += '<p>'
+        if next is None:
+            src += 'icorrect schedule<br>\n'
+        elif next < 0:
+            src += 'not scheduled<br>\n'
+        else:
+            src += shed.html_description() + ',<br>\n'
+            src += shed.html_next_start() + ',<br>\n'
+        src += '<a href="%s?back=%s">change schedule</a>\n' % ('/'+_PAGE_SOFTWARE_UPDATE_SHEDULE, request.path)
+        src += '</p>\n' 
+        if button is not None:
+            src += '<br><br><form action="%s" method="post">\n' % request.path
+            src += '<table align=center>\n'
+            src += '<tr><td>\n'
+            src += '<input type="hidden" name="action" value="%s" />\n' % button[2]
+            src += '<input type="submit" name="submit" value="%s" %s />\n' % (button[0], ('disabled' if not button[1] else '')) 
+            src += '</td></tr>\n'
+            src += '</table>\n'
+            src += '</form>\n'
+        src += '<br>\n'
+        return src 
+        
+    def _body_windows_soures(self, request):
+        src = '<p>Running from python sources.</p>\n'
+        return src
+
+    def _body_linux_deb(self, request):
+        src = ''
+        src += '<table align=center><tr><td><div align=left>\n'
+        src += '<p>You can manually update BitPie.NET<br>\n'
+        src += 'from command line using apt-get:</p>\n'
+        src += '<code><br>\n'
+        src += 'sudo apt-get update<br>\n'
+        src += 'sudo apt-get install bitpie-stable\n'
+        src += '</code></div></td></tr></table>\n'
+        return src
+           
+    def _body_linux_sources(self, request):
+        src = '<p>Running from python sources.</p>\n'
+        return src
+    
+    def renderPage(self, request):
+        global local_version
+        global global_version
+        global revision_number
+        action = arg(request, 'action')
+        repo_msg = None
+        update_msg = None
+
+        if action == 'update':
+            if self.debug or (bpio.Windows() and bpio.isFrozen()):
+                if not software_update.is_running():
+                    software_update.run()
+                    update_msg = 'preparing update process ...'
+
+        elif action == 'check':
+            if self.debug or (bpio.Windows() and bpio.isFrozen()):
+                d = software_update.check()
+                d.addCallback(self._check_callback, request)
+                d.addErrback(self._check_callback, request)
+                request.notifyFinish().addErrback(self._check_callback, request)
+                return NOT_DONE_YET
+            
+        elif action == 'repo':
+            repo = arg(request, 'repo')
+            repo = {'development': 'devel', 'testing': 'test', 'stable': 'stable'}.get(repo, 'test')
+            repo_file_src = '%s\n%s' % (repo, settings.UpdateLocationURL(repo))
+            bpio.WriteFile(settings.RepoFile(), repo_file_src)
+            global_version = ''
+            repo_msg = ('repository changed', 'green')
+            
+        src = '<h1>update software</h1>\n'
+        src += '<p>Current revision number is <b>%s</b></p>\n' % revision_number
+        if update_msg is not None:
+            src += '<h3><font color=green>%s</font></h3>\n' % update_msg
+            back = '/'+_PAGE_CONFIG
+            return html(request, body=src, title='update software', back=back)
+        
+        if bpio.Windows():
+            if bpio.isFrozen():
+                src += self._body_windows_frozen(request, repo_msg)
+            else:
+                if self.debug:
+                    src += self._body_windows_frozen(request, repo_msg)
+                else:
+                    src += self._body_windows_soures(request)
+        else:
+            if bpio.getExecutableDir().count('/usr/share/bitpie'):
+                src += self._body_linux_deb(request)
+            else:
+                src += self._body_linux_sources(request)
+                
+        back = '/'+_PAGE_CONFIG
+        return html(request, body=src, title='update software', back=back)
 
 
 class DevelopmentPage(Page):
@@ -6768,34 +6769,37 @@ class ShedulePage(Page):
 #         return src
 
 
-#class UpdateShedulePage(ShedulePage):
-#    pagename = _PAGE_UPDATE_SHEDULE
-#    available_types = {  '0': 'none',
-#                         '1': 'hourly',
-#                         '2': 'daily',
-#                         '3': 'weekly',
-#                         '4': 'monthly',}
-#
-#    def load_from_data(self, request):
-#        return schedule.Schedule(from_dict=bpupdate.read_shedule_dict())
-#
-#    def save(self, request):
-#        current = self.read_from_html(request)
-#        settings.setUpdatesSheduleData(current.to_string())
-#        bpupdate.update_shedule_file(settings.getUpdatesSheduleData())
-#        bpupdate.update_sheduler()
-#        lg.out(6, 'webcontrol.UpdateShedulePage.save success')
-#
-#    def print_shedule(self, request):
-#        src = '<h3>update schedule</h3>\n'
-#        stored = self.load_from_data(request)
-#        src += '<p>'
-#        description = stored.html_description()
-#        next_start = stored.html_next_start()
-#        src += description + ',<br>\n'
-#        src += next_start
-#        src += '</p>\n'
-#        return src
+class SoftwareUpdateShedulePage(ShedulePage):
+    pagename = _PAGE_SOFTWARE_UPDATE_SHEDULE
+    available_types = {  '0': 'none',
+                         '1': 'hourly',
+                         '2': 'daily',
+                         '3': 'weekly',
+                         '4': 'monthly',}
+
+    def load_from_data(self, request):
+        return schedule.Schedule(from_dict=software_update.read_shedule_dict())
+
+    def save(self, request):
+        current = self.read_from_html(request)
+        d = current.to_dict()
+        # d['mode'] = settings.getUpdatesMode()
+        software_update.write_shedule_dict(d)
+        # settings.setUpdatesSheduleData(current.to_string())
+        # bpupdate.update_shedule_file(settings.getUpdatesSheduleData())
+        software_update.update_sheduler()
+        lg.out(6, 'webcontrol.UpdateShedulePage.save success')
+
+    def print_shedule(self, request):
+        src = '<h3>update schedule</h3>\n'
+        stored = self.load_from_data(request)
+        src += '<p>'
+        description = stored.html_description()
+        next_start = stored.html_next_start()
+        src += description + ',<br>\n'
+        src += next_start
+        src += '</p>\n'
+        return src
 
 
 _DevReportProcess = ''

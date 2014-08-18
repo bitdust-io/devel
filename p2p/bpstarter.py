@@ -45,8 +45,8 @@ DefaultRepo = 'devel'
 DefaultUpdateLocationURL = 'http://bitpie.net/repo/devel/'
 
 UpdateFolder = 'windows/'
-FilesDigestsFilename = 'files.txt'
-CurrentVersionDigestsFilename = 'checksum.txt'
+FilesDigestsFilename = 'files'
+CurrentVersionDigestsFilename = 'checksum'
 WGetFilename = 'wget.exe'
 MainExecutableFilename = 'bitpie.exe'
 StarterFilename = 'bpstarter.exe'
@@ -273,18 +273,18 @@ def main():
         # digests are equal so our binaries have latest version - ready to start
         logwrite('version was not changed\n')
 
-        # also try to remove files.txt and checksum.txt in the current folder
+        # also try to remove files "files" and "checksum" in the current folder
         # they can be here because included in the installation release
         # so they needed only during first start of the bpstarter.exe
         # if we did not start with param "install" - we do not need them at all
         if sys.argv.count('install') == 0:
             try:
-                if os.path.exists('files.txt'):
-                    os.remove('files.txt')
-                if os.path.exists('checksum.txt'):
-                    os.remove('checksum.txt')
+                if os.path.exists(FilesDigestsFilename):
+                    os.remove(FilesDigestsFilename)
+                if os.path.exists(CurrentVersionDigestsFilename):
+                    os.remove(CurrentVersionDigestsFilename)
             except:
-                logwrite('can not remove files.txt or checksum.txt from current folder\n')
+                logwrite('can not remove files "files" or "checksum" from current folder\n')
         return launch(show)
 
     # so versions is not the same - save the new version 
