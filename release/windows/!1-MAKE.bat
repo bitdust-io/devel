@@ -31,6 +31,7 @@ if exist bin\win32com\gen_py\NUL rmdir /S /Q    bin\win32com\gen_py\
 @echo [ copy misc files ]
 xcopy ..\..\LICENSE.txt                         bin\ /Y /Q
 xcopy ..\..\README.txt                          bin\ /Y /Q
+xcopy ..\..\CHANGELOG.txt                       bin\ /Y /Q
 
 
 @echo.
