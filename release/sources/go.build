@@ -12,7 +12,11 @@ pushd ../..
 git archive master | (cd release/sources/workspace; tar x)
 popd
 
-# python update_setup_py.py setup.py workspace/setup.py
+echo "[ remove some files ]"
+cd workspace
+rm commit.bat
+rm commit.sh
+rm -rf screenshots
 
 echo "[ sources done ]"
 
