@@ -1,0 +1,3 @@
+2014-08-20 Veselin Penev <penev.veselin@bitpie.net>
+
+    * new tray icons for Microsoft Windows
