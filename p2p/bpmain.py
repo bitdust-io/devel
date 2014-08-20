@@ -70,13 +70,15 @@ def run(UI='', options=None, args=None, overDict=None):
         if bpio.Linux():
             icons_dict = {
                 'red':      'icon-red-24x24.png',
+                'yellow':   'icon-yellow-24x24.png',
                 'green':    'icon-green-24x24.png',
                 'gray':     'icon-gray-24x24.png', }
         else:
             icons_dict = {
-                'red':      'icon-red.png',
-                'green':    'icon-green.png',
-                'gray':     'icon-gray.png', }
+                'red':      'icon-red-16x16.png',
+                'yellow':   'icon-yellow-16x16.png',
+                'green':    'icon-green-16x16.png',
+                'gray':     'icon-gray-16x16.png', }
         import tray_icon
         icons_path = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), 'icons')))
         lg.out(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)

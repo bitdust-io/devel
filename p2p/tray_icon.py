@@ -150,7 +150,7 @@ def control(cmd):
         _ControlFunc(cmd)
 
 
-def set(name):
+def set_icon(name):
     global _IconObject
     if _IconObject is not None:
         _IconObject.SetIcon(name)
@@ -158,34 +158,34 @@ def set(name):
       
 def state_changed_old(network, p2p, central):
     if network == 'DISCONNECTED':
-        set('gray')
+        set_icon('gray')
         return
     if [ network, p2p, central ].count('CONNECTED') == 3:
-        set('green')
+        set_icon('green')
         return
     if [ network, p2p ].count('CONNECTED') == 2:
-        set('yellow')
+        set_icon('yellow')
         return
     if network == 'CONECTED' and p2p == 'DISCONNECTED':
-        set('red')
+        set_icon('red')
         return
-    set('gray')
+    set_icon('gray')
 
 
 def state_changed(network, p2p):
     if network == 'DISCONNECTED':
-        set('gray')
+        set_icon('gray')
         return
     if [ network, p2p, ].count('CONNECTED') == 2:
-        set('green')
+        set_icon('green')
         return
     if network == 'CONECTED' and p2p == 'DISCONNECTED':
-        set('red')
+        set_icon('red')
         return
     if [ network, p2p ].count('CONNECTED') == 1:
-        set('yellow')
+        set_icon('yellow')
         return
-    set('gray')
+    set_icon('gray')
 
 
 def SetControlFunc(f):
