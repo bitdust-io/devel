@@ -2,6 +2,7 @@
 *.pyo
 *.pyd
 *.~vsd
+release/datahaven/
 release/windows/checksum
 release/windows/files
 release/windows/revnum
@@ -12,4 +13,9 @@ release/windows/starter/
 release/windows/upload/
 release/windows/advinstaller/bitpie-cache/
 release/windows/advinstaller/output/
-release/windows/advinstaller/src/
+release/windows_devel/advinstaller/bitpie-cache/
+release/windows_devel/advinstaller/output/
+release/windows_devel/bin/
+release/windows_stable/advinstaller/bitpie-cache/
+release/windows_stable/advinstaller/output/
+release/windows_stable/bin/

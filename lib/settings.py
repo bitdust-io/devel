@@ -435,7 +435,7 @@ def DefaultRepo():
     """
     return 'stable'
 
-def UpdateLocationURL(repo='stable'):
+def DefaultRepoURL(repo='stable'):
     """
     Return a given repository location for Windows.
     """
@@ -455,7 +455,7 @@ def FilesDigestsFilename():
         
     Local copy of this file is also stored in the file::
     
-        .bitpie/metadata/files
+        .bitpie/bin/files
         
     Our bpstarter.exe read local copy and than can request a public copy and compare the content.
     If some files were changed or new files added to the repo - it will update the local binaries from repo.
@@ -474,7 +474,7 @@ def CurrentVersionDigestsFilename():
     its checksum also.
     Locally this is stored in the file::
         
-        .bitpie/metadata/checksum
+        .bitpie/bin/checksum
         
     The software check "checksum" file first and if it is not the same - further download "files". 
     """
@@ -937,17 +937,17 @@ def DHTDBFile():
 
 def WindowsStarterFileName():
     """
-    Return a file name of the Windows starte: "bpstarter.exe".
+    Return a file name of the Windows starter: "bpstarter.exe".
     """
     return 'bpstarter.exe'
 
 def WindowsStarterFileURL(repo=DefaultRepo()):
     """
     Return a public URL of the "bpstarter.exe" file, according to given ``repo``.
-    When we need to modify the starter code we place it in the repository along with other binaries.
-    It will be downloaded by all users and updated.  
+    When need to modify the starter code need to place it in the repository along with other binaries.
+    It will be downloaded automatically by all users and updated.  
     """
-    return UpdateLocationURL(repo) + 'windows/' + WindowsStarterFileName()
+    return DefaultRepoURL(repo) + WindowsStarterFileName()
 
 def getIconLaunchFilename():
     """

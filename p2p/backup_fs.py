@@ -1330,12 +1330,12 @@ def Calculate():
                     _FilesCount += 1
                     if i[id].exist():
                         _SizeFiles += i[id].size
-                        lg.out(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
+                        # lg.out(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
                 for version in i[id].list_versions():
                     versionSize = i[id].get_version_info(version)[1]
                     if versionSize > 0:
                         _SizeBackups += versionSize
-                        lg.out(16, '        [version] %s : %d bytes' % (i[id].path+'/'+version, versionSize))
+                        # lg.out(16, '        [version] %s : %d bytes' % (i[id].path+'/'+version, versionSize))
                 _ItemsCount += 1
             elif isinstance(i[id], dict):
                 sub_folder_size = recursive_calculate(i[id])
@@ -1349,12 +1349,12 @@ def Calculate():
                 _FilesCount += 1
                 if i[INFO_KEY].exist():
                     _SizeFiles += i[INFO_KEY].size
-                    lg.out(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
+                    # lg.out(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
             for version in i[INFO_KEY].list_versions():
                 versionSize = i[INFO_KEY].get_version_info(version)[1]
                 if versionSize > 0:
                     _SizeBackups += versionSize 
-                    lg.out(16, '        [version] %s : %d bytes' % (i[INFO_KEY].path+'/'+version, versionSize))
+                    # lg.out(16, '        [version] %s : %d bytes' % (i[INFO_KEY].path+'/'+version, versionSize))
             _ItemsCount += 1
         return folder_size
     ret = recursive_calculate(fsID())

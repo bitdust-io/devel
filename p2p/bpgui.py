@@ -235,13 +235,13 @@ def getExecutableDir():
 
 def about():
     try:
-        revnum = open('revnum.txt').read()
+        vernum = open('version').read()
     except:
-        revnum = '0'
+        vernum = '0'
     return '''<html>
 <b>BitPie.NET<b> is a peer-to-peer backup utility.<br>
-Current release number is %s.<br>
-</html>''' % (revnum,)
+Current release is %s.<br>
+</html>''' % (vernum,)
 
 #------------------------------------------------------------------------------ 
 
@@ -633,7 +633,7 @@ class MyHtmlWindow(wx.html.HtmlWindow):
             self.UnRegisterClick()
             if not self.is_child:
                 src = '<html><center><br><br>\n'
-                src += '<h1>BitPie.NET is turned off<br>\nor some error happens in the main process</h1><br><br>\n'
+                src += '<h1>BitPie.NET is not working<br>\nor some error happens in the main process</h1><br><br>\n'
                 src += 'Go <a href="%s">Back</a>\n' % self.current_url
                 src += 'or just close this window.<br><br><br>\n'
                 src += '<font size=-2>\n'
@@ -694,7 +694,7 @@ class MyHtmlWindow(wx.html.HtmlWindow):
                 WriteText('OnFormSubmit.errback: %s\n' % str(err))
             self.UnRegisterClick()
             src = '<html><center><br><br><br><br>\n'
-            src += 'BitPie.NET is turned off or some errors happens.<br><br>\n'
+            src += 'BitPie.NET is not working or some errors happens.<br><br>\n'
             src += 'Error message is:<br>\n'
             src += err.getErrorMessage()
             src += '<br><br>\n'
@@ -1160,8 +1160,8 @@ class MyCountersWindow(wx.Frame):
 class MyUpdateSoftwareDialog(wx.MessageDialog):
     def __init__(self, parent):
         msg = 'New software version is available.\n'
-        msg += 'Would you like to update BitPie.NET now?'
-        label = 'Update BitPie.NET'
+        msg += 'Would you like to update BitPie.NET Software now?'
+        label = 'Update BitPie.NET Software'
         wx.MessageDialog.__init__(self, parent, msg, label, wx.OK | wx.CANCEL)
  
 #------------------------------------------------------------------------------ 
@@ -1195,7 +1195,7 @@ class MyFrame(wx.Frame):
         #---menu
         if False:
             menuFile = wx.Menu()
-            self.Bind(wx.EVT_MENU, self.OnClose, menuFile.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window, BitPie.NET will go in background."))
+            self.Bind(wx.EVT_MENU, self.OnClose, menuFile.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window, BitPie.NET will work in background."))
             menuView = wx.Menu()
             self.Bind(wx.EVT_MENU, self.OnLogs, menuView.Append(-1, "&Logs", "Browse system messages"))
             self.Bind(wx.EVT_MENU, self.OnTraffic, menuView.Append(-1, "&Traffic", "View packets traffic"))
@@ -1215,11 +1215,11 @@ class MyFrame(wx.Frame):
         # self.statusBar = self.CreateStatusBar(2)
         self.CreateStatusBar(2)
         if platform.uname()[0] == 'Windows': 
-            self.SetStatusWidths([-1, 240])
-            self.SetStatusText('  \xa9 2014, BitPie.NET', 1)
+            self.SetStatusWidths([-1, 200])
+            self.SetStatusText('  \xa9 2014, BitPie.NET Inc.', 1)
         else:
-            self.SetStatusWidths([-1, 340])
-            self.SetStatusText(u'  \u00a9 2014, BitPie.NET'.encode('utf8'), 1)
+            self.SetStatusWidths([-1, 300])
+            self.SetStatusText(u'  \u00a9 2014, BitPie.NET Inc.'.encode('utf8'), 1)
         
         # self.statusTextTimer = None
 
@@ -1295,7 +1295,7 @@ class MyFrame(wx.Frame):
                     if global_and_local_tuple[0] != global_and_local_tuple[1]:
                         dialog = MyUpdateSoftwareDialog(self)
                         if dialog.ShowModal() == wx.ID_OK:
-                            self.html.OnCommandOpen('/update?action=update')
+                            self.html.OnCommandOpen('/softwareupdate?action=update')
         except:
             pass
 

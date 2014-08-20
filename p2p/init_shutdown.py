@@ -218,6 +218,8 @@ def init_modules():
     reactor.callLater(0, local_tester.init)
     
     import software_update
+    import webcontrol
+    software_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
     reactor.callLater(0, software_update.init)
 
     import webcontrol

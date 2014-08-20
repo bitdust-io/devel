@@ -55,7 +55,7 @@ _GuiMessageFunc = None
 _NewVersionNotifyFunc = None
 _CurrentVersionDigest = ''
 _CurrentRepo = ''
-_CurrentUpdateLocationURL = ''
+_CurrentDefaultRepoURL = ''
 
 _SheduleTypesDict = {
     '0': 'none',
@@ -201,8 +201,8 @@ def download_info():
 
 def download_and_replace_starter(output_func = None):
     repo, locationURL = misc.ReadRepoLocation()
-    url = settings.WindowsStarterFileURL(repo)
-    lg.out(6, 'software_update.download_and_replace_starter  ' + str(url))
+    url = locationURL + settings.WindowsStarterFileName()
+    lg.out(6, 'software_update.download_and_replace_starter ' + str(url))
     result = Deferred()
     
     def _done(x, filename):
@@ -215,11 +215,8 @@ def download_and_replace_starter(output_func = None):
                 output_func('error opening downloaded starter file')
             result.errback(Exception('error opening downloaded starter file'))
             return
-
         local_filename = os.path.join(GetLocalDir(), settings.WindowsStarterFileName())
-
         bpio.backup_and_remove(local_filename)
-
         try:
             os.rename(filename, local_filename)
             lg.out(4, 'software_update.download_and_replace_starter  file %s was updated' % local_filename)
@@ -228,15 +225,14 @@ def download_and_replace_starter(output_func = None):
             lg.exc()
             result.errback(Exception('can not rename the file ' + filename))
             return
-        
         python27dll_path = os.path.join(GetLocalDir(), 'python27.dll')
         if not os.path.exists(python27dll_path):
-            url = settings.UpdateLocationURL('test') + 'windows/' + 'python27.dll' 
+            lg.out(4, 'software_update.download_and_replace_starter file "python27.dll" not found download from "%s" repo' % repo)
+            url = settings.DefaultRepoURL(repo) + 'python27.dll' 
             d = net_misc.downloadHTTP(url, python27dll_path)
             d.addCallback(_done_python27_dll, filename)
             d.addErrback(_fail, filename)
             return
-        
         result.callback(1)
 
     def _done_python27_dll(x, filename):
@@ -611,7 +607,7 @@ def loop(first_start=False):
     nexttime = shed.next_time()
 #    nexttime = next(d)
     if first_start:
-        nexttime = time.time() + 5
+        nexttime = time.time()
     
     if nexttime is None:
         lg.out(1, 'software_update.loop ERROR calculating shedule interval')
@@ -627,7 +623,7 @@ def loop(first_start=False):
     delay = nexttime - time.time()
     if delay < 0:
         lg.warn('delay=%s %s' % (str(delay), shed))
-        delay = 10
+        delay = 0
 
     lg.out(6, 'software_update.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))
     _ShedulerTask = reactor.callLater(delay, run_sheduled_update)

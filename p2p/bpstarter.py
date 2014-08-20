@@ -40,11 +40,10 @@ def sharedPath(filename, subdir='logs'):
 StarterFilename = os.path.basename(sys.argv[0].lower()) #'bpstarter.exe'
 
 UpdateRepo = ''
-UpdateLocationURL = ''
+DefaultRepoURL = ''
 DefaultRepo = 'stable'
-DefaultUpdateLocationURL = 'http://bitpie.net/repo/stable/'
+DefaultDefaultRepoURL = 'http://bitpie.net/repo/stable/'
 
-# UpdateFolder = 'windows/'
 FilesDigestsFilename = 'files'
 CurrentVersionDigestsFilename = 'checksum'
 WGetFilename = 'wget.exe'
@@ -175,10 +174,10 @@ def main():
     logwrite('main()\n')
     
     global ExcludesFiles
-    global UpdateLocationURL
+    global DefaultRepoURL
     global UpdateRepo
     global RepoFileName
-    global DefaultUpdateLocationURL
+    global DefaultDefaultRepoURL
     global DefaultRepo
     global FilesDigestsFilename
     global FilesDigestsLocalPath
@@ -249,7 +248,7 @@ def main():
 
     #if local info is not exist, or it is empty - need to download it from the server
     if src.strip() == '':
-        url = UpdateLocationURL + FilesDigestsFilename
+        url = DefaultRepoURL + FilesDigestsFilename
         logwrite('want to download %s\n' % url)
         if run_wget(url, FilesDigestsLocalPath):
             logwrite('wget error url=%s\n' % url)
@@ -349,13 +348,13 @@ def main():
 
             if dlgshow:
                 dlg = EasyDialogs.ProgressBar(
-                    'Updating BitPie.NET',
+                    'Downloading BitPie.NET binaries',
                     len(download_list),
                     '')
 
             #we want to download needed files
             for path in download_list:
-                url = UpdateLocationURL + path
+                url = DefaultRepoURL + path
                 url = url.replace('\\', '/')
                 filename = os.path.join('.', path)
                 dirname = os.path.dirname(filename)
@@ -415,10 +414,10 @@ def main():
 
 
 def run():
-    global UpdateLocationURL
+    global DefaultRepoURL
     global UpdateRepo
     global RepoFileName
-    global DefaultUpdateLocationURL
+    global DefaultDefaultRepoURL
     global DefaultRepo
     global FilesDigestsFilename
     global FilesDigestsLocalPath
@@ -446,20 +445,20 @@ def run():
     #     return uninstall()
 
     try:
-        UpdateRepo, UpdateLocationURL = read_file(RepoFileName, 'r').split('\n')
+        UpdateRepo, DefaultRepoURL = read_file(RepoFileName, 'r').split('\n')
     except:
         logwrite('can\'t read repo file from %s\n' % RepoFileName)
         UpdateRepo = ''
-        UpdateLocationURL = ''
-    if UpdateRepo.strip() == '' or UpdateLocationURL.strip() == '':
+        DefaultRepoURL = ''
+    if UpdateRepo.strip() == '' or DefaultRepoURL.strip() == '':
         logwrite('empty repo file, use default repo\n')
         UpdateRepo = DefaultRepo
-        UpdateLocationURL = DefaultUpdateLocationURL
+        DefaultRepoURL = DefaultDefaultRepoURL
 
     logwrite('[%s]--------------------------------------\n' % time.asctime())
     logwrite('sys.argv:%s \n' % (str(sys.argv)))
     logwrite('update repo: %s\n' % UpdateRepo)
-    logwrite('update location: %s\n' % UpdateLocationURL)
+    logwrite('update location: %s\n' % DefaultRepoURL)
     logwrite('is bin folder exist? : %s\n' % str(binDirExist))
     logwrite('executable filename is [%s]\n' % executable_filename)
     logwrite('shared location is     [%s]\n' % sharedStarterFilename)

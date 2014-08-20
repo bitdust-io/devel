@@ -6,7 +6,7 @@
 del advinstaller\output\*   /Q /F
 
 
-set /p VER= <version
+set /p VER= <..\windows\version
 @echo.
 @echo [ updating version number : %VER% ]
 C:\work\soft\AdvancedInstaller\bin\x86\AdvancedInstaller.com /edit advinstaller\bitpie.aip /SetVersion "%VER%" 
@@ -14,7 +14,7 @@ C:\work\soft\AdvancedInstaller\bin\x86\AdvancedInstaller.com /edit advinstaller\
 
 @echo.
 @echo [ building .msi installer ]
-C:\work\soft\AdvancedInstaller\bin\x86\AdvancedInstaller.com /build advinstaller\bitpie.aip 
+C:\work\soft\AdvancedInstaller\bin\x86\AdvancedInstaller.com  /build advinstaller\bitpie.aip
 
 
 @echo.

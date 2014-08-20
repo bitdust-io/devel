@@ -1149,10 +1149,10 @@ def ReadRepoLocation():
         return 'sources', 'http://bitpie.net/download/'
     src = bpio.ReadTextFile(settings.RepoFile()).strip()
     if src == '':
-        return settings.DefaultRepo(), settings.UpdateLocationURL(settings.DefaultRepo())
+        return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     l = src.split('\n')
     if len(l) < 2:
-        return settings.DefaultRepo(), settings.UpdateLocationURL(settings.DefaultRepo())
+        return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     return l[0], l[1]   
 
 #-------------------------------------------------------------------------------

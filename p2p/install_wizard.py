@@ -44,7 +44,7 @@ except:
 
 from logs import lg
 
-from lib import bpio
+from lib import misc
 from lib import settings
 from lib.automat import Automat
 
@@ -209,9 +209,14 @@ class InstallWizard(Automat):
         if self.role == 'BETA_TEST':
             settings.uconfig().set('personal.personal-betatester', 'True')
             if self.role_args and self.role_args.get('development', '').lower() == 'true':
-                settings.uconfig().set("logs.debug-level", '10')
+                settings.uconfig().set("logs.debug-level", '14')
                 settings.uconfig().set("logs.stream-enable", 'True')
-                lg.set_debug_level(10)
+                lg.set_debug_level(14)
+        repo, locationURL = misc.ReadRepoLocation()
+        if repo == 'test':
+            settings.uconfig().set("logs.debug-level", '18')
+        elif repo == 'devel':
+            settings.uconfig().set("logs.debug-level", '12')
         settings.uconfig().update()
 
 #    def doSaveUpdates(self, arg):

@@ -159,7 +159,7 @@ _PAGE_NEW_MESSAGE = 'newmessage'
 _PAGE_CORRESPONDENTS = 'correspondents'
 _PAGE_SHEDULE = 'shedule'
 _PAGE_BACKUP_SHEDULE = 'backup_schedule'
-_PAGE_SOFTWARE_UPDATE_SHEDULE = 'updateshedule'
+_PAGE_SOFTWARE_UPDATE_SHEDULE = 'softwareupdateshedule'
 _PAGE_DEV_REPORT = 'devreport'
 _PAGE_BACKUP_SETTINGS = 'backupsettings'
 _PAGE_SECURITY = 'security'
@@ -411,18 +411,21 @@ def show(x=None):
     try:
         if bpio.Windows():
             if bpio.isFrozen():
-                pypath = os.path.abspath('bpgui.exe')
+                pypath = os.path.abspath(os.path.join(os.path.dirname(sys.executable), 'bpgui.exe'))
+                lg.out(4, 'webcontrol.show : "%s"' % pypath)
                 os.spawnv(os.P_DETACH, pypath, ('bpgui.exe',))
             else:
                 pypath = sys.executable
+                lg.out(4, 'webcontrol.show : "%s bpgui.py"' % pypath)
                 os.spawnv(os.P_DETACH, pypath, ('python', 'bpgui.py',))
         else:
             pid = os.fork()
             if pid == 0:
-                if lg.is_debug(30):
-                    os.execlp('python', 'python', 'bpgui.py', 'logs')
-                else:
-                    os.execlp('python', 'python', 'bpgui.py',)
+                # if lg.is_debug(30):
+                #     os.execlp('python', 'python', 'bpgui.py', 'logs')
+                # else:
+                lg.out(4, 'webcontrol.show : "python bpgui.py"')
+                os.execlp('python', 'python', 'bpgui.py',)
     except:
         lg.exc()
 
@@ -4295,8 +4298,9 @@ class SuppliersPage(Page):
             src += '</td></tr></table>\n'
             src += html_comment(
                 'List of your suppliers is empty.\n'+
-                'This may be due to the fact that the connection to the Central server is not finished yet\n'+
-                'or the Central server can not find the number of users that meet your requirements.')
+                'This may be due to the fact that the connection with other users \n'+
+                'is not yet established or BitPie.NET can not find the number \n'+
+                'of users that meet your requirements.')
 
         #---links---
         if contacts.numSuppliers() > 0:
@@ -5278,7 +5282,7 @@ class SoftwareUpdatePage(Page):
     def _check_callback(self, x, request):
         global version_number
         src = '<h1>update software</h1>\n'
-        src += '<p>your software revision number is <b>%s</b></p>\n' % version_number
+        src += '<p>current version is <b>%s</b></p>\n' % version_number
         src += self._body_windows_frozen(request)
         back = '/'+_PAGE_CONFIG
         request.write(html_from_args(request, body=str(src), title='update software', back=back))
@@ -5292,7 +5296,7 @@ class SoftwareUpdatePage(Page):
             repo, update_url = bpio.ReadTextFile(settings.RepoFile()).split('\n')
         except:
             repo = settings.DefaultRepo()
-            update_url = settings.UpdateLocationURL()
+            update_url = settings.DefaultRepoURL()
         if repo == '':
             repo = 'test' 
         button = None
@@ -5395,7 +5399,7 @@ class SoftwareUpdatePage(Page):
         elif action == 'repo':
             repo = arg(request, 'repo')
             repo = {'development': 'devel', 'testing': 'test', 'stable': 'stable'}.get(repo, 'test')
-            repo_file_src = '%s\n%s' % (repo, settings.UpdateLocationURL(repo))
+            repo_file_src = '%s\n%s' % (repo, settings.DefaultRepoURL(repo))
             bpio.WriteFile(settings.RepoFile(), repo_file_src)
             global_checksum = ''
             repo_msg = ('repository changed', 'green')
