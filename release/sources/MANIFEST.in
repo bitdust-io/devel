@@ -1,0 +1,5 @@
+recursive-include datahaven/icons *
+recursive-include datahaven/fonts *
+include datahaven/p2p/dhncentral.xml
+include datahaven/revnum.txt
+include datahaven/LICENSE.txt

@@ -4,8 +4,8 @@
 @echo.
 @echo [ update revision number ]
 git rev-list --count HEAD >revnum
-REM xcopy revnum                                bin\           /Y /Q
 set /p REVNUM= <revnum
+del revnum
 
 
 @echo.

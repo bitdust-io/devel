@@ -1,0 +1,19 @@
+#!/bin/bash
+
+cd ~/bitpie/release/sources
+
+echo "[ prepare workspace folder ]"
+rm -rf workspace
+mkdir workspace
+cp MANIFEST.in workspace
+
+echo "[ export from git repo into workspace ]"
+pushd ../..
+git archive master | (cd release/sources/workspace; tar x)
+popd
+
+# python update_setup_py.py setup.py workspace/setup.py
+
+echo "[ sources done ]"
+
+
