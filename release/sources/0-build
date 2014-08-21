@@ -20,12 +20,18 @@ regexp="s/{version}/$version/g;"
 perl -i -pe $regexp workspace/setup.py 
 
 echo "[ remove some files ]"
-cd workspace
-rm commit.bat
-rm commit.sh
-rm -rf screenshots
-rm -rf release
+cd workspace/bitpie
+rm -v commit.bat
+rm -v commit.sh
+rm -vrf screenshots
+rm -vrf release
 
+echo "[ move some files to the top level ]"
+mv -v *.txt ..
+mv -v *.md ..
+
+cd ..
+cd ..
 echo "[ sources done ]"
 
 
