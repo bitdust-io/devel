@@ -23,7 +23,9 @@ echo "[ remove some files ]"
 cd workspace/bitpie
 rm -v commit.bat
 rm -v commit.sh
+rm -rf screenshots/*
 rm -vrf screenshots
+rm -rf release/*
 rm -vrf release
 
 echo "[ move some files to the top level ]"
