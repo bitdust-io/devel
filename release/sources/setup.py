@@ -1,9 +1,9 @@
 from distutils.core import setup
 
-setup(  name='datahaven',
-        version='rev{revision}',
-        author='Vincent Cate, DataHaven.NET LTD',
-        author_email='datahaven.net@gmail.com',
+setup(  name='bitpie',
+        version='{version}',
+        author='Veselin Penev, BitPie.NET Inc.',
+        author_email='veselin@bitpie.net',
         maintainer='Veselin Penev',
         maintainer_email='penev.veselin@gmail.com',
         url='http://datahaven.net',
