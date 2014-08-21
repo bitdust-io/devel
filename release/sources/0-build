@@ -30,7 +30,6 @@ rm -vrf release
 
 echo "[ move some files to the top level ]"
 mv -v *.txt ..
-mv -v *.md ..
 
 cd ..
 cd ..

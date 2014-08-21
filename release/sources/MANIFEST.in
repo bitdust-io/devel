@@ -1,6 +1,6 @@
-recursive-include automats *
-recursive-include icons *
-recursive-include fonts *
+recursive-include bitpie/automats *
+recursive-include bitpie/icons *
+recursive-include bitpie/fonts *
 
 include LICENSE.txt
 include README.txt
