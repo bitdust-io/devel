@@ -409,8 +409,16 @@ def main():
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
         # sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+        from distutils.sysconfig import get_python_lib
+        sys.path.append(os.path.join(get_python_lib(), 'bitpie'))
+        try:
+            from logs import lg
+        except:
+            print 'ERROR! can not import working code.  Python Path:'
+            print '\n'.join(sys.path)
+            return 1
 
-    from logs import lg
+    # from logs import lg
     from lib import bpio
 
     # init IO module, update locale
