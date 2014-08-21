@@ -8,9 +8,9 @@ mkdir workspace
 cp MANIFEST.in workspace
 
 echo "[ export from git repo into workspace ]"
-pushd ../..
+pushd ../.. >/dev/null
 git archive master | (cd release/sources/workspace; tar x)
-popd
+popd >/dev/null
 
 echo "[ remove some files ]"
 cd workspace
