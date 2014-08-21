@@ -1,6 +1,7 @@
+recursive-include automats *
 recursive-include icons *
 recursive-include fonts *
+
 include LICENSE.txt
 include README.txt
 include CHANGELOG.txt
-
