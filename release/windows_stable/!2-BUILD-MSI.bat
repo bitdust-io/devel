@@ -6,7 +6,7 @@
 del advinstaller\output\*   /Q /F
 
 
-set /p VER= <..\windows\version
+set /p VER= <..\version
 @echo.
 @echo [ updating version number : %VER% ]
 C:\work\soft\AdvancedInstaller\bin\x86\AdvancedInstaller.com /edit advinstaller\bitpie.aip /SetVersion "%VER%" 
