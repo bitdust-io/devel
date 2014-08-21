@@ -12,6 +12,12 @@ pushd ../.. >/dev/null
 git archive master | (cd release/sources/workspace; tar x)
 popd >/dev/null
 
+echo "[ prepare setup.py file ]"
+cp setup.py workspace
+version=`cat ../version`
+regexp="s/{version}/$version/g;"
+perl -i -pe $regexp workspace/setup.py 
+
 echo "[ remove some files ]"
 cd workspace
 rm commit.bat
