@@ -1,0 +1,15 @@
+#!/bin/sh
+
+cd ~/bitpie/release/sources
+
+
+echo '[ run "python setup.py sdist" ]'
+rm -rf bitpie.tar.gz
+cd workspace
+rm -rf dist
+python setup.py sdist
+
+
+echo "[ publish sources ]"
+cp dist/*.tar.gz /var/www/download/bitpie.tar.gz
+cp -v dist/*.tar.gz /var/www/download/
