@@ -5,11 +5,12 @@ cd ~/bitpie/release/sources
 echo "[ prepare workspace folder ]"
 rm -rf workspace
 mkdir workspace
+mkdir workspace/bitpie
 cp MANIFEST.in workspace
 
 echo "[ export from git repo into workspace ]"
 pushd ../.. >/dev/null
-git archive master | (cd release/sources/workspace; tar x)
+git archive master | (cd release/sources/workspace/bitpie; tar x)
 popd >/dev/null
 
 echo "[ prepare setup.py file ]"
@@ -23,6 +24,7 @@ cd workspace
 rm commit.bat
 rm commit.sh
 rm -rf screenshots
+rm -rf release
 
 echo "[ sources done ]"
 
