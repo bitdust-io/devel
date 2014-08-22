@@ -20,24 +20,26 @@ Install
 
 Seems like in Ubuntu you just need to install all dependencies at first step:
 
-sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging python-pp
+    sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging python-pp
 
 
 Windows ussers can use links bellow and install packages by hands.
 
-Clone, download or copy folder "bitpie" in any place you want on your HDD.
+If you installed from sources using command "python setup.py install", can do it this way:
+    
+    python -c "from bitpie.bitpie import main; main()"
 
-To start from command line:
+But I recomend to just download and extract sources in any place you want and just run the main script:
 
-cd bitpie
-python bitpie.py show
+    cd bitpie
+    python bitpie.py show
 
 
 You will have to create a new "Identity" for you to be able to communicate with others,
 program will ask you to do that during first start. 
 If you run on a system without graphical interface you need to register from command line by hands:
 
-python bitpie.py register <your_nickname>
+    python bitpie.py register <your_nickname>
 
 
 I recommend you to create another copy of your Private Key in a safe place to be able to recover your data in the future.
