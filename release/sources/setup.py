@@ -11,7 +11,6 @@ setup(  name='bitpie',
         long_description='''  ''',
         download_url='http://bitpie.net',
         license='Copyright BitPie.NET Inc., 2014',
-        include_package_data = True,
         
         keywords='''p2p, peer to peer, peer, to, 
                     backup, restore, storage, data, recover,
@@ -64,6 +63,14 @@ setup(  name='bitpie',
             'bitpie.transport.udp',
             'bitpie.userid',
             ],
+
+        package_data = {
+            '': ['*.txt',],
+            'bitpie': ['icons/*',
+                       'fonts/*',
+                       'automats/*',],
+            },
+
 )
 
 
