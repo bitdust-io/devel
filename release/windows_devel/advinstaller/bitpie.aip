@@ -20,10 +20,10 @@
     <ROW Property="InstanceId" Value="#0"/>
     <ROW Property="Manufacturer" Value="BitPie.NET Inc."/>
     <ROW Property="MyUserHomeDir" Value="?"/>
-    <ROW Property="ProductCode" Value="1033:{B2A1B0AB-E27B-4015-B27A-2533DB030959} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{BAF33FEB-ED65-4EF8-ACB5-CBEBEA437E05} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="BitPie.NET (development release)"/>
-    <ROW Property="ProductVersion" Value="0.1.1.441" Type="32"/>
+    <ROW Property="ProductVersion" Value="0.1.2.470" Type="32"/>
     <ROW Property="RUNAPPLICATION" Value="1" Type="4"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{1D2E14B7-8093-406E-9EDD-CEE00645A486}"/>
@@ -222,6 +222,7 @@
     <ROW File="AES.pyo" Component_="AES.pyo" FileName="AES.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Cipher\AES.pyo" SelfReg="false" NextFile="blockalgo.pyo"/>
     <ROW File="Arial_Narrow.ttf" Component_="Arial_Narrow.ttf" FileName="ARIAL_~1.TTF|Arial_Narrow.ttf" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\fonts\Arial_Narrow.ttf" SelfReg="false" NextFile="form.pyo"/>
     <ROW File="BmpImagePlugin.pyo" Component_="abc.pyo" FileName="BMPIMA~1.PYO|BmpImagePlugin.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\BmpImagePlugin.pyo" SelfReg="false" NextFile="bpgui.exe"/>
+    <ROW File="CHANGELOG.txt" Component_="abc.pyo" FileName="CHANGE~1.TXT|CHANGELOG.txt" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\CHANGELOG.txt" SelfReg="false" NextFile="icongray16x16.png"/>
     <ROW File="CLSIDToClass.pyo" Component_="build.pyo" FileName="CLSIDT~1.PYO|CLSIDToClass.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\win32com\client\CLSIDToClass.pyo" SelfReg="false" NextFile="dynamic.pyo"/>
     <ROW File="Counter.pyo" Component_="asn1.pyo" FileName="Counter.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Util\Counter.pyo" SelfReg="false" NextFile="number.pyo"/>
     <ROW File="Crypto.Cipher._AES.pyd" Component_="abc.pyo" FileName="CRYPTO~1.PYD|Crypto.Cipher._AES.pyd" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto.Cipher._AES.pyd" SelfReg="false" NextFile="Crypto.Cipher._DES.pyd"/>
@@ -287,7 +288,7 @@
     <ROW File="_RSA.pyo" Component_="DSA.pyo" FileName="_RSA.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\PublicKey\_RSA.pyo" SelfReg="false" NextFile="_slowmath.pyo"/>
     <ROW File="_SHA256.pyo" Component_="hashalgo.pyo" FileName="_SHA256.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Hash\_SHA256.pyo" SelfReg="false" NextFile="__init__.pyo_2"/>
     <ROW File="_UserFriendlyRNG.pyo" Component_="random.pyo" FileName="_USERF~1.PYO|_UserFriendlyRNG.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Random\_UserFriendlyRNG.pyo" SelfReg="false" NextFile="__init__.pyo_7"/>
-    <ROW File="__future__.pyo" Component_="abc.pyo" FileName="__FUTU~1.PYO|__future__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\__future__.pyo" SelfReg="false"/>
+    <ROW File="__future__.pyo" Component_="abc.pyo" FileName="__FUTU~1.PYO|__future__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\__future__.pyo" SelfReg="false" NextFile="CHANGELOG.txt"/>
     <ROW File="__init__.pyo" Component_="encrypted.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\crypt\__init__.pyo" SelfReg="false" NextFile="AES.pyo"/>
     <ROW File="__init__.pyo_1" Component_="AES.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Cipher\__init__.pyo" SelfReg="false" NextFile="hashalgo.pyo"/>
     <ROW File="__init__.pyo_10" Component_="dyld.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\ctypes\macholib\__init__.pyo" SelfReg="false" NextFile="util.pyo"/>
@@ -686,16 +687,18 @@
     <ROW File="http_headers.pyo" Component_="client.pyo" FileName="HTTP_H~1.PYO|http_headers.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\web\http_headers.pyo" SelfReg="false" NextFile="iweb.pyo"/>
     <ROW File="httplib.pyo" Component_="abc.pyo" FileName="httplib.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\httplib.pyo" SelfReg="false" NextFile="addbackup.png"/>
     <ROW File="hz.pyo" Component_="aliases.pyo" FileName="hz.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\encodings\hz.pyo" SelfReg="false" NextFile="idna.pyo"/>
-    <ROW File="icon128x128.png" Component_="addbackup.png" FileName="ICON12~2.PNG|icon128x128.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon128x128.png" SelfReg="false" NextFile="icon256x256.png"/>
-    <ROW File="icon128x128gray.png" Component_="addbackup.png" FileName="ICON12~1.PNG|icon128x128-gray.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon128x128-gray.png" SelfReg="false" NextFile="icon128x128.png"/>
     <ROW File="icon256x256.png" Component_="addbackup.png" FileName="ICON25~1.PNG|icon256x256.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon256x256.png" SelfReg="false" NextFile="localfiles48.png"/>
     <ROW File="icongray.png" Component_="addbackup.png" FileName="ICON-G~2.PNG|icon-gray.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-gray.png" SelfReg="false" NextFile="icongreen24x24.png"/>
+    <ROW File="icongray16x16.png" Component_="addbackup.png" FileName="ICON-G~5.PNG|icon-gray-16x16.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-gray-16x16.png" SelfReg="false" NextFile="icongreen16x16.png"/>
     <ROW File="icongray24x24.png" Component_="addbackup.png" FileName="ICON-G~1.PNG|icon-gray-24x24.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-gray-24x24.png" SelfReg="false" NextFile="icongray.png"/>
     <ROW File="icongreen.png" Component_="addbackup.png" FileName="ICON-G~4.PNG|icon-green.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-green.png" SelfReg="false" NextFile="iconred24x24.png"/>
+    <ROW File="icongreen16x16.png" Component_="addbackup.png" FileName="ICON-G~6.PNG|icon-green-16x16.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-green-16x16.png" SelfReg="false" NextFile="iconred16x16.png"/>
     <ROW File="icongreen24x24.png" Component_="addbackup.png" FileName="ICON-G~3.PNG|icon-green-24x24.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-green-24x24.png" SelfReg="false" NextFile="icongreen.png"/>
     <ROW File="iconred.png" Component_="addbackup.png" FileName="icon-red.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-red.png" SelfReg="false" NextFile="iconyellow24x24.png"/>
+    <ROW File="iconred16x16.png" Component_="addbackup.png" FileName="ICON-R~2.PNG|icon-red-16x16.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-red-16x16.png" SelfReg="false" NextFile="iconyellow16x16.png"/>
     <ROW File="iconred24x24.png" Component_="addbackup.png" FileName="ICON-R~1.PNG|icon-red-24x24.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-red-24x24.png" SelfReg="false" NextFile="iconred.png"/>
-    <ROW File="iconyellow.png" Component_="addbackup.png" FileName="ICON-Y~2.PNG|icon-yellow.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-yellow.png" SelfReg="false" NextFile="icon128x128gray.png"/>
+    <ROW File="iconyellow.png" Component_="addbackup.png" FileName="ICON-Y~2.PNG|icon-yellow.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-yellow.png" SelfReg="false" NextFile="icon256x256.png"/>
+    <ROW File="iconyellow16x16.png" Component_="addbackup.png" FileName="ICON-Y~3.PNG|icon-yellow-16x16.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-yellow-16x16.png" SelfReg="false"/>
     <ROW File="iconyellow24x24.png" Component_="addbackup.png" FileName="ICON-Y~1.PNG|icon-yellow-24x24.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\icon-yellow-24x24.png" SelfReg="false" NextFile="iconyellow.png"/>
     <ROW File="id_registrator.pyo" Component_="identity.pyo" FileName="ID_REG~1.PYO|id_registrator.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\userid\id_registrator.pyo" SelfReg="false" NextFile="id_restorer.pyo"/>
     <ROW File="id_restorer.pyo" Component_="identity.pyo" FileName="ID_RES~1.PYO|id_restorer.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\userid\id_restorer.pyo" SelfReg="false" NextFile="id_server.pyo"/>
@@ -998,9 +1001,8 @@
     <ROW File="traceback.pyo" Component_="abc.pyo" FileName="TRACEB~1.PYO|traceback.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\traceback.pyo" SelfReg="false" NextFile="bandwidth.pyo"/>
     <ROW File="traffic.ico" Component_="addbackup.png" FileName="traffic.ico" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\traffic.ico" SelfReg="false" NextFile="traffic32.png"/>
     <ROW File="traffic32.png" Component_="addbackup.png" FileName="TRAFFI~1.PNG|traffic32.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\traffic32.png" SelfReg="false" NextFile="tray_icon.ico"/>
-    <ROW File="tray_icon.ico" Component_="addbackup.png" FileName="TRAY_I~1.ICO|tray_icon.ico" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\tray_icon.ico" SelfReg="false" NextFile="tray_icon1.ico"/>
+    <ROW File="tray_icon.ico" Component_="addbackup.png" FileName="TRAY_I~1.ICO|tray_icon.ico" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\tray_icon.ico" SelfReg="false" NextFile="unknownuser01.png"/>
     <ROW File="tray_icon.pyo" Component_="backup.pyo" FileName="TRAY_I~1.PYO|tray_icon.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\tray_icon.pyo" SelfReg="false" NextFile="webcontrol.pyo"/>
-    <ROW File="tray_icon1.ico" Component_="addbackup.png" FileName="TRAY_I~2.ICO|tray_icon1.ico" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\tray_icon1.ico" SelfReg="false" NextFile="unknownuser01.png"/>
     <ROW File="tty.pyo" Component_="abc.pyo" FileName="tty.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\tty.pyo" SelfReg="false" NextFile="common.pyo"/>
     <ROW File="types.pyo" Component_="abc.pyo" FileName="types.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\types.pyo" SelfReg="false" NextFile="unicodedata.pyd"/>
     <ROW File="udp.pyo" Component_="automat.pyo" FileName="udp.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\lib\udp.pyo" SelfReg="false" NextFile="userconfig.pyo"/>

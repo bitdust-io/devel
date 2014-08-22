@@ -12,7 +12,8 @@ sleep 2
 
 @echo.
 @echo [ replacing files ]
-rmdir "%USERPROFILE%\.bitpie\bin" /S /Q 
+mv -f "%USERPROFILE%\.bitpie\bin" "%USERPROFILE%\.bitpie\bin.off\"
+REM rmdir "%USERPROFILE%\.bitpie\bin" /S /Q 
 mkdir "%USERPROFILE%\.bitpie\bin"
 xcopy "bin\*" "%USERPROFILE%\.bitpie\bin\" /E /R /H /Y /Q
 cd "%USERPROFILE%\.bitpie\bin\"

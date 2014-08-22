@@ -103,7 +103,7 @@ setup(
 
     description = 'BitPie.NET',
 
-    version = open('release/windows/version').read().strip(), 
+    version = open('release/version').read().strip(), 
 
     console = [
         {

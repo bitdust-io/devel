@@ -98,7 +98,7 @@ setup(
 
     description = 'BitPie.NET Starter',
 
-    version = open('release/windows/version').read().strip(), 
+    version = open('release/version').read().strip(), 
 
     windows = [
 

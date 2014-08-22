@@ -13,7 +13,8 @@ set /p REVNUM= <revnum
 @echo.
 @echo current version number is: 
 type ..\version
-python -c "v=list(open('..\version').read().strip().split('.'));v[-2]=str(int(v[-2])+1);v[-1]=open('revnum').read().strip();open('..\version','w').write(('.'.join(v)).strip())"
+@echo.
+python -c "v=list(open('../version').read().strip().split('.'));v[-2]=str(int(v[-2])+1);v[-1]=open('revnum').read().strip();open('../version','w').write(('.'.join(v)).strip())"
 xcopy ..\version   bin\     /Y /Q
 del revnum
 @echo.
@@ -27,3 +28,4 @@ set /p VER= <..\version
 @echo.
 @echo [ version UPDATED ]
 @echo.
+pause
