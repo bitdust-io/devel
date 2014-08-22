@@ -67,10 +67,9 @@ setup(  name='bitpie',
             ],
 
         package_data = {
-            'bitpie': [ 'automats/*', 'icons/*', 'fonts/*', ],
-            'bitpie.dht.entangled' : ['dht/entangled/*', ],
-            'bitpie.parallelp': ['parallelp/README', ],
-            'bitpie.parallelp.pp': ['parallelp/pp/*', ],
+            'bitpie': [ 'automats/*', 'icons/*', 'fonts/*', 'parallelp/README', ],
+            'bitpie.dht' : ['dht/entangled/*', ],
+            'bitpie.parallelp': ['parallelp/pp/*', ],
             },
 
 )
