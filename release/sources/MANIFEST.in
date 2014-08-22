@@ -1,7 +1,10 @@
 recursive-include bitpie/automats *
 recursive-include bitpie/icons *
 recursive-include bitpie/fonts *
+recursive-include bitpie/dht/entangled *
+recursive-include bitpie/parallelp/pp *
 
+include bitpie/parallelp/README
 include LICENSE.txt
 include README.txt
 include CHANGELOG.txt

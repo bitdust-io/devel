@@ -8,7 +8,7 @@ setup(  name='bitpie',
         maintainer_email='veselin@bitpie.net',
         url='http://bitpie.net',
         description='p2p communication tool',
-        long_description='''  ''',
+        long_description='p2p communication tool',
         download_url='http://bitpie.net',
         license='Copyright BitPie.NET Inc., 2014',
         
@@ -67,19 +67,11 @@ setup(  name='bitpie',
             ],
 
         package_data = {
-            'bitpie': ['icons/*',
-                       'fonts/*',
-                       'automats/*',
-                       # '*.txt',
-                       ],
+            'bitpie': [ 'automats/*', 'icons/*', 'fonts/*', ],
+            'bitpie.dht.entangled' : ['dht/entangled/*', ],
+            'bitpie.parallelp': ['parallelp/README', ],
+            'bitpie.parallelp.pp': ['parallelp/pp/*', ],
             },
-
-        data_files = [
-            ('bitpie', ['README.txt',
-                        'CHANGELOG.txt',
-                        'LICENSE.txt',
-                        ])
-            ],
 
 )
 
