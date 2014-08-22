@@ -7,7 +7,7 @@ echo '[ run "python setup.py sdist" ]'
 rm -rf bitpie.tar.gz
 cd workspace
 rm -rf dist
-python setup.py sdist
+python setup.py sdist >sdist.log
 
 
 echo "[ publish sources ]"
