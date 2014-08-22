@@ -28,8 +28,8 @@ rm -vrf screenshots
 rm -rf release/*
 rm -vrf release
 
-# echo "[ move some files to the top level ]"
-# mv -v *.txt ..
+echo "[ move some files to the top level ]"
+mv -v *.txt ..
 
 cd ..
 cd ..

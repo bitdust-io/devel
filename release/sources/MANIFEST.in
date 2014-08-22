@@ -2,6 +2,6 @@ recursive-include bitpie/automats *
 recursive-include bitpie/icons *
 recursive-include bitpie/fonts *
 
-include bitpie/LICENSE.txt
-include bitpie/README.txt
-include bitpie/CHANGELOG.txt
+include LICENSE.txt
+include README.txt
+include CHANGELOG.txt
