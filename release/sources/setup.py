@@ -68,8 +68,16 @@ setup(  name='bitpie',
             'bitpie': ['icons/*',
                        'fonts/*',
                        'automats/*',
-                       '*.txt',],
+                       # '*.txt',
+                       ],
             },
+
+        data_files = [
+            ('bitpie', ['README.txt',
+                        'CHANGELOG.txt',
+                        'LICENSE.txt',
+                        ])
+            ],
 
 )
 
