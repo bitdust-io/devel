@@ -246,7 +246,7 @@ class NetworkConnector(Automat):
         Action method.
         """
         global _TransportsInitialization
-        _TransportsInitialization = gate.init()
+        _TransportsInitialization = gate.init(nw_connector=self)
 
     def doSetUp(self, arg):
         lg.out(6, 'network_connector.doSetUp')
@@ -311,6 +311,31 @@ class NetworkConnector(Automat):
 
     def doRememberTime(self, arg):
         self.last_reconnect_time = time.time()
+    
+    def on_network_transport_state_changed(self, proto, oldstate, newstate):
+        global _TransportsInitialization
+        global _TransportsStarting
+        global _TransportsStopping
+        lg.out(6, 'network_connector.on_network_transport_state_changed %s : %s->%s network_connector state is %s' % (
+            proto, oldstate, newstate, A().state))
+        # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
+        if A().state == 'GATE_INIT':
+            if newstate in ['STARTING', 'OFFLINE',]:
+                _TransportsInitialization.remove(proto)
+                if len(_TransportsInitialization) == 0:
+                    A('all-transports-ready')                
+        elif A().state == 'UP':
+            if newstate in ['LISTENING', 'OFFLINE',]:
+                _TransportsStarting.remove(proto)
+                if len(_TransportsStarting) == 0:
+                    A('network-up')
+        elif A().state == 'DOWN':
+            if newstate == 'OFFLINE':
+                _TransportsStopping.remove(proto)
+                if len(_TransportsStopping) == 0:
+                    A('network-down')
+        # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
+    
 
 #------------------------------------------------------------------------------ 
 
@@ -405,30 +430,6 @@ def NetworkAddressChangedCallback(newaddress):
 #    if len(_TransportsInitialization) == 0:
 #        A('all-transports-ready')
 
-
-def NetworkTransportStateChanged(proto, oldstate, newstate):
-    global _TransportsInitialization
-    global _TransportsStarting
-    global _TransportsStopping
-    lg.out(6, 'NetworkTransportStateChanged %s : %s->%s network_connector state is %s' % (
-        proto, oldstate, newstate, A().state))
-    # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
-    if A().state == 'GATE_INIT':
-        if newstate in ['STARTING', 'OFFLINE',]:
-            _TransportsInitialization.remove(proto)
-            if len(_TransportsInitialization) == 0:
-                A('all-transports-ready')                
-    elif A().state == 'UP':
-        if newstate in ['LISTENING', 'OFFLINE',]:
-            _TransportsStarting.remove(proto)
-            if len(_TransportsStarting) == 0:
-                A('network-up')
-    elif A().state == 'DOWN':
-        if newstate == 'OFFLINE':
-            _TransportsStopping.remove(proto)
-            if len(_TransportsStopping) == 0:
-                A('network-down')
-    # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
 
 
 

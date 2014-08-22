@@ -55,7 +55,6 @@ def run(UI='', options=None, args=None, overDict=None):
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
         try:
             from tray_icon import USE_TRAY_ICON
-            # lg.out(4, 'bpmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
             if bpio.Linux() and not bpio.X11_is_running():
                 USE_TRAY_ICON = False
             if USE_TRAY_ICON:
@@ -66,6 +65,7 @@ def run(UI='', options=None, args=None, overDict=None):
             lg.exc()
     else:
         USE_TRAY_ICON = False
+    lg.out(4, 'bpmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
     if USE_TRAY_ICON:
         if bpio.Linux():
             icons_dict = {

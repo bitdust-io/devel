@@ -117,6 +117,10 @@ def osinfofull():
     o += '=====================================================\n'
     o += '=====================================================\n'
     o += 'platform.uname(): ' + str(platform.uname()) + '\n'
+    try:
+        o += '__file__: ' + str(__file__) + '\n'
+    except:
+        o += 'variable __file__ is not defined\n'
     o += 'sys.executable: ' + sys.executable + '\n'
     o += 'os.path.abspath("."): ' + os.path.abspath('.') + '\n'
     o += 'os.path.abspath(sys.argv[0]): ' + os.path.abspath(sys.argv[0]) + '\n'
@@ -801,7 +805,10 @@ def getExecutableDir():
     if main_is_frozen():
         path = os.path.dirname(os.path.abspath(sys.executable))
     else:
-        path = os.path.dirname(os.path.abspath(sys.argv[0]))
+        try:
+            path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        except:
+            path = os.path.dirname(os.path.abspath(sys.argv[0]))
 #    if Windows():
 #        return shortPath(path)
     return unicode(path)

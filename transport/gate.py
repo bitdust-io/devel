@@ -139,7 +139,7 @@ def last_inbox_time():
     
 #------------------------------------------------------------------------------ 
 
-def init(transportslist=None):
+def init(transportslist=None, nw_connector=None):
     """
     Initialize the transports gate - this will start all installed transports.
     Return a list if started transports.
@@ -168,7 +168,7 @@ def init(transportslist=None):
                 iface = udp_interface.GateInterface()
             if iface is None:
                 raise Exception('transport not supported: %s'  % proto)
-            _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
+            _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface, nw_connector)
             transport(proto).automat('init', _LocalListener)
             result.append(proto)
             lg.out(6, 'gate.init initialized transport [%s]' % proto)
