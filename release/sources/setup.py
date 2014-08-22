@@ -65,10 +65,10 @@ setup(  name='bitpie',
             ],
 
         package_data = {
-            '': ['*.txt',],
             'bitpie': ['icons/*',
                        'fonts/*',
-                       'automats/*',],
+                       'automats/*',
+                       '*.txt',],
             },
 
 )
