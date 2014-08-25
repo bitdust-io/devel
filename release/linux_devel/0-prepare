@@ -63,7 +63,7 @@ cp -T debian/bitpie-autostart.desktop workspace/autostart/bitpie.desktop
 cp -T debian/bitpie.default workspace/default/bitpie-update 
 
 echo "build sources"
-../sources/go.build
+../sources/0-build
 
 echo "copy sources"
 cp -r ../sources/workspace/bitpie/* workspace/src/
