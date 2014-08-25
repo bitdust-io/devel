@@ -1,0 +1,174 @@
+#!/bin/sh
+#
+
+
+DEFAULTS_FILE="/etc/default/bitpie-update"
+
+REPOCONFIG="deb http://bitpie.net/deb/devel devel main"
+
+APT_GET="`which apt-get 2> /dev/null`"
+APT_CONFIG="`which apt-config 2> /dev/null`"
+
+SOURCES_PREAMBLE="### THIS FILE IS AUTOMATICALLY CONFIGURED ###
+# You may comment out this entry, but any other modifications may be lost.\n"
+
+apt_config_val() {
+  APTVAR="$1"
+  if [ -x "$APT_CONFIG" ]; then
+    "$APT_CONFIG" dump | sed -e "/^$APTVAR /"'!d' -e "s/^$APTVAR \"\(.*\)\".*/\1/"
+  fi
+}
+
+install_key() {
+  APT_KEY="`which apt-key 2> /dev/null`"
+  if [ -x "$APT_KEY" ]; then
+    "$APT_KEY" add - >/dev/null 2>&1 <<KEYDATA
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+mI0ETyVpIQEEAMx6LmakgzSke1cUm4f0AYvXR+FtylH2gPbYQQxCgax1E9Jz/kEq
+5+Kv4XZq+gYcxS6IA/PNia6mJVYARPhHAyTbF+svv6S5Jd7qztUqur9J6iP/hqsT
+seIjocVciM81C3vIbr+RTmLPqDVvz5ic2y5g2I4nv68kbp1PgO2gbQErABEBAAG0
+IFZlc2VsaW4gUGVuZXYgPHZlc2VsbG92QG1haWwucnU+iLgEEwECACIFAk8laSEC
+GwMGCwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJELZYOyo9a3KHMuoD/24JJVxB
+8hubpNSdC03WJrbWws9jaajehIgq9R4Vo9FGLJzznqSTYCo2f80hVo8AjxjIPps3
+oyNKPKkZdUecUCOriDC3/hNybw5dU9/irNZlhVskvGktUgaECe1RO/dSGSEhT9Kw
+nbLGo8/ACPtI9uDdcFAY2MhmaenSMje11Xv4uI0ETyVpIQEEAMX0uRa//iTooqvk
+uD905AYYa+jbqk/kcmBbnXCHM+qenXGwAkqdgv+1F7213ZQEJSi0/xnb+l2ukJf5
+EocrMQQ7ahEp4bub6zKmnWdFLL5awEshA2pw6bVNhe/cU5heuuiINAommknhGwF6
+axMWD7RWeOiDoMqSsWxPSo93iNKzABEBAAGInwQYAQIACQUCTyVpIQIbDAAKCRC2
+WDsqPWtyh5e7BACbZ/4T1S7hud0aPR8nDnmEJGTcp907arJ/l/Z32auswpHVM7tu
+kkxVWHPNBD4sOY0w3uW22poLkoUI4n96OyatvNAOhKYnEZKpPrD2X9pa7jRy2KnP
+ce5z7IJVNKABDLsjFCgqH9IUYcthOCfCJ1qchDnBXybeON34Q+B0sXuQgg==
+=o/7y
+-----END PGP PUBLIC KEY BLOCK-----
+KEYDATA
+  fi
+}
+
+find_apt_sources() {
+  APTDIR=$(apt_config_val Dir)
+  APTETC=$(apt_config_val 'Dir::Etc')
+  APT_SOURCES="$APTDIR$APTETC$(apt_config_val 'Dir::Etc::sourcelist')"
+  APT_SOURCESDIR="$APTDIR$APTETC$(apt_config_val 'Dir::Etc::sourceparts')"
+}
+
+update_bad_sources() {
+  if [ ! "$REPOCONFIG" ]; then
+    return 0
+  fi
+
+  find_apt_sources
+
+  SOURCELIST="$APT_SOURCESDIR/bitpie.list"
+  if [ ! -r "$SOURCELIST" ]; then
+    return 0
+  fi
+
+  ACTIVECONFIGS=$(grep -v "^[[:space:]]*\(#.*\)\?$" "$SOURCELIST" 2>/dev/null)
+
+  REPOMATCH=$(grep "^[[:space:]#]*\b$REPOCONFIG\b" "$SOURCELIST" 2>/dev/null)
+
+  MATCH_DISABLED=$(echo "$REPOMATCH" | grep "^[[:space:]]*#" 2>/dev/null)
+
+  BADCONFIG=1
+  if [ "$REPOMATCH" ]; then
+    if [ ! "$MATCH_DISABLED" ]; then
+      BADCONFIG=0
+    else
+      if [ ! "$ACTIVECONFIGS" ]; then
+        BADCONFIG=0
+      fi
+    fi
+  fi
+
+  if [ $BADCONFIG -eq 0 ]; then
+    return 0
+  fi
+
+  DISABLE=""
+  if [ ! "$ACTIVECONFIGS" ]; then
+    DISABLE="#"
+  fi
+  printf "$SOURCES_PREAMBLE" > "$SOURCELIST"
+  printf "$DISABLE$REPOCONFIG\n" >> "$SOURCELIST"
+  if [ $? -eq 0 ]; then
+    return 0
+  fi
+  return 2
+}
+
+create_sources_lists() {
+  if [ ! "$REPOCONFIG" ]; then
+    return 0
+  fi
+
+  find_apt_sources
+
+  SOURCELIST="$APT_SOURCESDIR/bitpie.list"
+  if [ -d "$APT_SOURCESDIR" ]; then
+    printf "$SOURCES_PREAMBLE" > "$SOURCELIST"
+    printf "$REPOCONFIG\n" >> "$SOURCELIST"
+    if [ $? -eq 0 ]; then
+      return 0
+    fi
+  fi
+  return 2
+}
+
+clean_sources_lists() {
+  if [ ! "$REPOCONFIG" ]; then
+    return 0
+  fi
+
+  find_apt_sources
+
+  rm -f "$APT_SOURCESDIR/bitpie.list" 
+}
+
+handle_distro_upgrade() {
+  if [ ! "$REPOCONFIG" ]; then
+    return 0
+  fi
+
+  find_apt_sources
+  SOURCELIST="$APT_SOURCESDIR/bitpie.list"
+  if [ -r "$SOURCELIST" ]; then
+    REPOLINE=$(grep -E "^[[:space:]]*#[[:space:]]*$REPOCONFIG[[:space:]]*# disabled on upgrade to .*" "$SOURCELIST")
+    if [ $? -eq 0 ]; then
+      sed -i -e "s,^[[:space:]]*#[[:space:]]*\($REPOCONFIG\)[[:space:]]*# disabled on upgrade to .*,\1," \
+        "$SOURCELIST"
+      LOGGER=$(which logger 2> /dev/null)
+      if [ "$LOGGER" ]; then
+        "$LOGGER" -t "$0" "Reverted repository modification: $REPOLINE."
+      fi
+    fi
+  fi
+}
+
+
+## MAIN ##
+DEFAULTS_FILE="/etc/default/bitpie-update"
+if [ -r "$DEFAULTS_FILE" ]; then
+  . "$DEFAULTS_FILE"
+fi
+
+if [ "$repo_add_once" = "true" ]; then
+  install_key
+  create_sources_lists
+  RES=$?
+  if [ $RES -ne 2 ]; then
+    sed -i -e 's/[[:space:]]*repo_add_once=.*/repo_add_once="false"/' "$DEFAULTS_FILE"
+  fi
+else
+  update_bad_sources
+fi
+
+if [ "$repo_reenable_on_distupgrade" = "true" ]; then
+  handle_distro_upgrade
+fi
+
+apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitpie.list" -o Dir::Etc::sourceparts="-" 
+apt-get install bitpie
+
+exit 0

@@ -1,0 +1,35 @@
+#!/bin/sh
+
+#echo "starting bitpie.prerm"
+
+set -e
+
+INSTALLATOR=""
+if [ -f /usr/share/bitpie/user.txt ]; then
+    INSTALLATOR=`cat /usr/share/bitpie/user.txt`
+fi    
+
+if [ "$1" = remove ] ; then
+
+    if [ -n "$INSTALLATOR" ]; then
+        #echo "stopping bitpie from user $INSTALLATOR"
+        nohup su $INSTALLATOR -c "/usr/bin/bitpie stop" >/dev/null &
+    fi
+
+    rm -f /usr/share/bitpie/user.txt
+    
+    find /usr/share/bitpie -type f -name '*.pyc' -exec rm -f {} \;
+    
+    if [ -n "$SUDO_USER" ]; then
+        if [ -d "/home/$SUDO_USER/.config/autostart/" ] ; then
+            rm -rf /home/$SUDO_USER/.config/autostart/bitpie.desktop
+        fi
+    fi
+fi
+
+#echo "bitpie.prerm done"
+
+#DEBHELPER#
+
+exit 0
+

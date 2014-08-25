@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+cd ~/bitpie/release/linux_devel
+
+echo "building .deb file"
+cd workspace
+debuild > ../debuild.log
+cd ..
+
+tail -13 debuild.log
+
+echo "DONE!"
+
+exit 0
+
+

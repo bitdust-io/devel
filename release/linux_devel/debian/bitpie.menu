@@ -1,0 +1,6 @@
+?package(bitpie):needs="x11" \
+  section="Applications/File Management" \
+  hints="Backup" \
+  title="BitPie.NET" \
+  icon="/usr/share/pixmaps/bitpie.xpm" \
+  command="bitpie show"
