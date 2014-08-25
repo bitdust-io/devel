@@ -6,7 +6,7 @@ cd ~/bitpie/release/linux_devel
 
 echo "building .deb file"
 cd workspace
-debuild > ../build.log
+debuild -k2928CF2E > ../build.log
 cd ..
 
 tail -13 build.log
