@@ -6,10 +6,10 @@ cd ~/bitpie/release/linux_devel
 
 echo "building .deb file"
 cd workspace
-debuild > ../debuild.log
+debuild > ../build.log
 cd ..
 
-tail -13 debuild.log
+tail -13 build.log
 
 echo "DONE!"
 
