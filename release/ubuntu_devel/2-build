@@ -2,11 +2,11 @@
 
 set -e
 
-cd ~/bitpie/release/linux_devel
+cd ~/bitpie/release/ubuntu_devel
 
 echo "building .deb file"
 cd workspace
-debuild -k2928CF2E > ../build.log
+debuild -kB3A000A9 > ../build.log
 cd ..
 
 tail -13 build.log

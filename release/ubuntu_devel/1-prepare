@@ -2,7 +2,7 @@
 
 set -e
 
-cd ~/bitpie/release/linux_devel
+cd ~/bitpie/release/ubuntu_devel
 
 version=`cat ../version`
 dirname="bitpie-$version.orig"
