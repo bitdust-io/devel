@@ -1255,6 +1255,7 @@ class InstallPage(Page):
         self.pksize = settings.DefaultPrivateKeySize()
         self.needed = ''
         self.donated = ''
+        self.suppliers = ''
         self.bandin = ''
         self.bandout = ''
         self.customersdir = settings.getCustomersFilesDir()
@@ -1782,12 +1783,15 @@ class InstallPage(Page):
         self.neededMB = arg(request, 'needed', self.needed)
         if self.neededMB == '':
             self.neededMB = str(int(settings.DefaultNeededBytes()/(1024*1024)))
+        neededV = diskspace.GetBytesFromString(self.neededMB+' Mb', settings.DefaultNeededBytes())  
         self.donatedMB = arg(request, 'donated', self.donated)
         if self.donatedMB == '':
             self.donatedMB = str(int(settings.DefaultDonatedBytes()/(1024*1024)))
-        neededV = diskspace.GetBytesFromString(self.neededMB+' Mb', settings.DefaultNeededBytes())  
         donatedV = diskspace.GetBytesFromString(self.donatedMB+' Mb', settings.DefaultDonatedBytes())
-        suppliersNumber = settings.
+        self.suppliersNum = arg(request, 'suppliers', self.suppliers)
+        if self.suppliersNum == '':
+            self.suppliersNum = str(settings.DefaultDesiredSuppliers())
+        suppliersN = misc.ToInt(settings.getSuppliersNumberDesired(), settings.DefaultDesiredSuppliers())
         mounts = []
         freeSpaceIsOk = True
         if bpio.Windows():
@@ -1898,7 +1902,15 @@ class InstallPage(Page):
         src += '<td align=left nowrap valign=top width=100>'
         src += '<font size="+1"><b>number of suppliers</b></font>\n'
         src += '<br><br>'
-        src += '<input type="text" name="suppliers" size="3" value="%s" />\n' % str(suppliersNumber)
+        # src += '<input type="text" name="suppliers" size="3" value="%s" />\n' % str(suppliersN)
+        supplier_set = settings.getECCSuppliersNumbers()
+        for i in range(len(supplier_set)):
+            checked = ''
+            if supplier_set[i] == self.suppliersNum:
+                checked = 'checked'
+            src += '<input id="radio%s" type="radio" name="suppliers" value="%s" %s />' % (
+                str(i), supplier_set[i], checked,)
+            src += '<label for="radio%s">%s</label>&nbsp;\n' % (str(i), supplier_set[i],)
         src += '</td>\n'
         src += '<td align=right valign=top nowrap>'
         # src += '<b>location for restored files:</b><br>\n'
@@ -7615,12 +7627,10 @@ class SettingsTreeComboboxNode(SettingsTreeNode):
         back = arg(request, 'back', '/'+_PAGE_CONFIG)
         items = self.listitems()
         message = ('', 'info')
-        
         choice = arg(request, 'choice', None)
         if choice is not None and not ReadOnly():
             self.requestModify(self.path, choice)
             return 'redirect ' + back
-
         src = ''
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<table>\n'
