@@ -2,7 +2,7 @@
 
 
 set /p VER= <..\version
-
+xcopy ..\version   bin\     /Y /Q
 
 @echo. 
 @echo [ update version number ( %VER% ) in binaries ]
