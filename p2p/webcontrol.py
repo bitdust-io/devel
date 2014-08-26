@@ -1786,7 +1786,8 @@ class InstallPage(Page):
         if self.donatedMB == '':
             self.donatedMB = str(int(settings.DefaultDonatedBytes()/(1024*1024)))
         neededV = diskspace.GetBytesFromString(self.neededMB+' Mb', settings.DefaultNeededBytes())  
-        donatedV = diskspace.GetBytesFromString(self.donatedMB+' Mb', settings.DefaultDonatedBytes()) 
+        donatedV = diskspace.GetBytesFromString(self.donatedMB+' Mb', settings.DefaultDonatedBytes())
+        suppliersNumber = settings.
         mounts = []
         freeSpaceIsOk = True
         if bpio.Windows():
@@ -1894,7 +1895,11 @@ class InstallPage(Page):
         # src += '.............................................................................................................................................'
         # src += '<table cellpadding=5 width=90%>'
         src += '<tr>\n'
-        src += '<td width=100>&nbsp;</td>\n'
+        src += '<td align=left nowrap valign=top width=100>'
+        src += '<font size="+1"><b>number of suppliers</b></font>\n'
+        src += '<br><br>'
+        src += '<input type="text" name="suppliers" size="3" value="%s" />\n' % str(suppliersNumber)
+        src += '</td>\n'
         src += '<td align=right valign=top nowrap>'
         # src += '<b>location for restored files:</b><br>\n'
         src += '<font size=-1>%s</font><br>\n' % self.restoredir
@@ -1941,6 +1946,7 @@ class InstallPage(Page):
         src += 'Please, enter information about yourself if you wish. \n'
         src += 'Provide email to contact with you, we do not send spam and do not publish your personal information. \n'
         src += 'This is to be able to notify you if your account balance is running low and your backups is at risk.\n'
+        src += '<br>Right now it is stored locally only\n'
         src += '</td></tr>\n'
         src += '<tr><td align=center>\n'
         src += '<table align=center><tr>\n'
