@@ -1,4 +1,4 @@
-Source: bitpie
+Source: bitpie-stable
 Section: python
 Priority: optional
 Maintainer: Veselin Penev <veselin@bitpie.net>
