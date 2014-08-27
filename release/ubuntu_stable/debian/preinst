@@ -1,0 +1,23 @@
+#!/bin/sh
+
+#echo "starting bitpie.preinst"
+
+set -e
+
+if [ "$1" = install ] ; then
+    if [ -n "$SUDO_USER" ]; then
+        echo "bitpie is installed from user $SUDO_USER, remember this"
+        mkdir -p /usr/share/bitpie/
+        echo "$SUDO_USER" > /usr/share/bitpie/user.txt
+    fi
+fi
+
+#echo "bitpie.preinst done"
+
+
+#DEBHELPER#
+
+exit 0
+
+
+

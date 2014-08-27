@@ -1,0 +1,5 @@
+#!/bin/sh
+
+apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitpie.list" -o Dir::Etc::sourceparts="-"
+apt-get install bitpie
+#echo "BitPie.NET hourly update started" > /tmp/dhn-hourly1

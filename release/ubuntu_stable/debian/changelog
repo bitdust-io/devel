@@ -1,0 +1,6 @@
+bitpie ({version}) unstable; urgency=low
+
+  {changelog}
+
+
+ -- Veselin Penev <veselin@bitpie.net>  {date} +0300

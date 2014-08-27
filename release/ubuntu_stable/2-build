@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+cd ~/bitpie/release/ubuntu_stable
+
+echo "building .deb file"
+cd workspace
+debuild -kB3A000A9 > ../build.log
+cd ..
+
+tail -13 build.log
+
+echo "DONE!"
+
+exit 0
+
+

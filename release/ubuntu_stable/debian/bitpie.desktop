@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=BitPie.NET
+Comment=Distributed peer-to-peer encrypted backup program
+GenericName=BitPie.NET
+Icon=bitpie.png
+Type=Application
+Exec=bitpie show
+Categories=Network;Application;

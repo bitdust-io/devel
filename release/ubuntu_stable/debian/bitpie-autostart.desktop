@@ -1,0 +1,9 @@
+
+[Desktop Entry]
+Type=Application
+Exec=sh -c "sleep 5; bitpie"
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=BitPie.NET
+Comment=Run BitPie.NET at startup
