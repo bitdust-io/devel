@@ -3,7 +3,7 @@ Section: python
 Priority: optional
 Maintainer: Veselin Penev <veselin@bitpie.net>
 Build-Depends: debhelper (>= 7), python-support, python (>=2.6)
-Standards-Version: 3.8.4
+Standards-Version: 3.9.3
 Homepage: http://bitpie.net
 
 Package: bitpie-stable
