@@ -20,5 +20,9 @@ release/windows_stable/advinstaller/bitpie-cache/
 release/windows_stable/advinstaller/output/
 release/windows_stable/bin/
 release/sources/workspace/
-release/linux_devel/workspace/
-release/linux_stable/workspace/
+release/sources/sdist.log
+release/ubuntu_devel/build.log
+release/ubuntu_devel/workspace/
+release/ubuntu_stable/build.log
+release/ubuntu_stable/workspace/
+
