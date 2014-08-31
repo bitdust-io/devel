@@ -130,6 +130,7 @@ MIDDLEWARE_CLASSES = (
     'cms.middleware.toolbar.ToolbarMiddleware',
     'cms.middleware.language.LanguageCookieMiddleware',
     # 'cms.middleware.media.PlaceholderMediaMiddleware',
+    
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
