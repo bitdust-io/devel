@@ -1,4 +1,4 @@
-bitpie ({version}) unstable; urgency=low
+bitpie-stable ({version}) stable; urgency=high
 
   {changelog}
 

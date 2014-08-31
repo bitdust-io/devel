@@ -137,14 +137,19 @@ class _Task(object):
 class _Worker(object):
     """Local worker class
     """
-    command = '\"' + sys.executable + '\" -u \"' + 'bpworker.py' + '\"'
+    # command = '\"' + sys.executable + '\" -u \"' + 'bpworker.py' + '\"'
+    # if is_frozen():
+    #     command = 'bpworker.exe'
     if is_frozen():
-        command = 'bpworker.exe' 
+        command = ['bpworker.exer',]
+    else:
+        command = [sys.executable, '-u', 'bpworker.py']
 
     def __init__(self, restart_on_free, pickle_proto):
         """Initializes local worker"""
         self.restart_on_free = restart_on_free
         self.pickle_proto = pickle_proto
+        print '_Worker', self.command, os.path.abspath('.')
         self.start()
 
     def start(self):

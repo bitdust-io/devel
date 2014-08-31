@@ -9,10 +9,10 @@ dirname="bitpie-$version.orig"
 packagename="bitpie_${version}_all.deb"
 
 echo "remove old files"
-rm -f bitpie*.deb 
-rm -f bitpie*.changes 
-rm -f bitpie*.dsc 
-rm -f bitpie*.gz 
+rm -f bitpie*.deb
+rm -f bitpie*.changes
+rm -f bitpie*.dsc
+rm -f bitpie*.gz
 rm -f bitpie*.upload
 rm -f bitpie*.build
 
@@ -50,7 +50,7 @@ cp debian/prerm workspace/debian
 cp debian/copyright workspace/debian
 cp debian/bitpie.cron.daily workspace/debian 
 # cp debian/bitpie.cron.hourly workspace/debian 
-cp debian/bitpie.menu workspace/shortcuts 
+cp debian/bitpie-stable.menu workspace/shortcuts 
 
 echo "prepare project files"
 cp debian/bitpie.1 workspace/doc
