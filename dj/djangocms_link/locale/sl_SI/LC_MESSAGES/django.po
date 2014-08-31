@@ -1,0 +1,79 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+# simonv <vidmar.simon@gmail.com>, 2011
+# simonv <vidmar.simon@gmail.com>, 2011
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-12 11:05+0100\n"
+"PO-Revision-Date: 2014-03-12 10:05+0000\n"
+"Last-Translator: Patrick Lauber <patrick.lauber@divio.ch>\n"
+"Language-Team: Slovenian (Slovenia) (http://www.transifex.com/projects/p/django-cms/language/sl_SI/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: sl_SI\n"
+"Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
+"X-Poedit-Country: SWITZERLAND\n"
+"X-Poedit-Language: English\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: cms_plugins.py:13
+msgid "Link"
+msgstr "Povezava"
+
+#: forms.py:11 forms.py:14 models.py:12
+msgid "page"
+msgstr "stran"
+
+#: models.py:10
+msgid "name"
+msgstr "ime"
+
+#: models.py:11
+msgid "link"
+msgstr "povezava"
+
+#: models.py:12
+msgid "A link to a page has priority over a text link."
+msgstr "Povezava na stran ima prednost pred povezavo besedila."
+
+#: models.py:13
+msgid "mailto"
+msgstr "pošlji"
+
+#: models.py:13
+msgid "An email adress has priority over a text link."
+msgstr "E-poštni naslov ima prednost pred tekstualno povezavo."
+
+#: models.py:14
+msgid "Phone"
+msgstr ""
+
+#: models.py:15
+msgid "A phone number has priority over a mailto link."
+msgstr ""
+
+#: models.py:16
+msgid "target"
+msgstr ""
+
+#: models.py:17
+msgid "same window"
+msgstr ""
+
+#: models.py:18
+msgid "new window"
+msgstr ""
+
+#: models.py:19
+msgid "parent window"
+msgstr ""
+
+#: models.py:20
+msgid "topmost frame"
+msgstr ""

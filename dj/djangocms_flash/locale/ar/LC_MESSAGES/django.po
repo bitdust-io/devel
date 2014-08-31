@@ -1,0 +1,46 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-06 14:09+0100\n"
+"PO-Revision-Date: 2014-02-06 13:31+0000\n"
+"Last-Translator: Chive <kim@smuzey.ch>\n"
+"Language-Team: Arabic (http://www.transifex.com/projects/p/django-cms/language/ar/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+#: cms_plugins.py:12
+msgid "Flash"
+msgstr "فلاش"
+
+#: models.py:14
+msgid "file"
+msgstr "الملف"
+
+#: models.py:15
+msgid "use swf file"
+msgstr "استخدم ملف swf"
+
+#: models.py:17
+msgid "width"
+msgstr "العرض"
+
+#: models.py:18
+msgid "height"
+msgstr "الطول"
+
+#: templates/cms/plugins/flash.html:40
+msgid "Missing flash plugin. Please download the latest Adobe Flash Player: "
+msgstr "لم يتم العثور على مشغل فلاش. من فضلك قم بتحميل آخر إصدار من مشغل فلاش أدوبي:"
+
+#: templates/cms/plugins/flash.html:42
+msgid "Get Adobe Flash Player"
+msgstr "احصل على مشغل فلاش أدوبي"

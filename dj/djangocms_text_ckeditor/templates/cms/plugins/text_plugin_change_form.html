@@ -1,0 +1,16 @@
+{% extends change_form_template|default:"admin/cms/page/plugin/change_form.html" %}
+{% load admin_static %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>window.CKEDITOR_BASEPATH = "{{ CKEDITOR_BASEPATH }}";</script>
+<script src="{% static "cms/js/modules/cms.base.js" %}"></script>
+<script>
+(function($) {
+// CMS.$ will be passed for $
+$(document).ready(function () {
+	CMS.API.Helpers.csrf('{{ csrf_token }}');
+});
+})(CMS.$);
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-06 14:10+0100\n"
+"PO-Revision-Date: 2014-02-06 13:31+0000\n"
+"Last-Translator: Chive <kim@smuzey.ch>\n"
+"Language-Team: Basque (http://www.transifex.com/projects/p/django-cms/language/eu/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: eu\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: cms_plugins.py:11
+msgid "Teaser"
+msgstr "Iragarkia"
+
+#: models.py:13
+msgid "title"
+msgstr "izenburua"
+
+#: models.py:16
+msgid "image"
+msgstr "irudia"
+
+#: models.py:19
+msgid "page"
+msgstr "orria"
+
+#: models.py:20
+msgid "If present image will be clickable"
+msgstr "Zehazten bada irudia klikagarria izango da"
+
+#: models.py:24
+msgid "link"
+msgstr "esteka"
+
+#: models.py:25
+msgid "If present image will be clickable."
+msgstr "Zehazten bada irudia klikagarria izango da."
+
+#: models.py:27
+msgid "description"
+msgstr "deskribapena"
+
+#: templates/cms/plugins/teaser.html:11
+msgid "more"
+msgstr "gehiago"

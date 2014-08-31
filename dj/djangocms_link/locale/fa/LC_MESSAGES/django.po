@@ -1,0 +1,80 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+# Alireza Savand <alireza.savand@gmail.com>, 2012
+# hamitreza <hamitreza@gmail.com>, 2014
+# Matin M. <moosaei.matin@aol.com>, 2013
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-03-12 11:05+0100\n"
+"PO-Revision-Date: 2014-05-29 20:11+0000\n"
+"Last-Translator: hamitreza <hamitreza@gmail.com>\n"
+"Language-Team: Persian (http://www.transifex.com/projects/p/django-cms/language/fa/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fa\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Poedit-Country: SWITZERLAND\n"
+"X-Poedit-Language: English\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: cms_plugins.py:13
+msgid "Link"
+msgstr "پیوند"
+
+#: forms.py:11 forms.py:14 models.py:12
+msgid "page"
+msgstr "صفحه"
+
+#: models.py:10
+msgid "name"
+msgstr "نام"
+
+#: models.py:11
+msgid "link"
+msgstr "پیوند"
+
+#: models.py:12
+msgid "A link to a page has priority over a text link."
+msgstr "پیوند به صفحه به پیوند متتی به آن اولویت دارد."
+
+#: models.py:13
+msgid "mailto"
+msgstr "ایمیل به"
+
+#: models.py:13
+msgid "An email adress has priority over a text link."
+msgstr "آدرس ایمیل به پیوند متنی به صفحه اولویت دارد "
+
+#: models.py:14
+msgid "Phone"
+msgstr "تلفن"
+
+#: models.py:15
+msgid "A phone number has priority over a mailto link."
+msgstr "شماره تلفن از یک لینک ارسال ایمیل اولویت بیشتری دارد."
+
+#: models.py:16
+msgid "target"
+msgstr "هدف"
+
+#: models.py:17
+msgid "same window"
+msgstr "همان پنجره"
+
+#: models.py:18
+msgid "new window"
+msgstr "پنجره جدید"
+
+#: models.py:19
+msgid "parent window"
+msgstr "پنجره والد"
+
+#: models.py:20
+msgid "topmost frame"
+msgstr "بالاترین فریم"

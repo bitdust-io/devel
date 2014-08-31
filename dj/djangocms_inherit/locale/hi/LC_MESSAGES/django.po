@@ -1,0 +1,44 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-06 14:10+0100\n"
+"PO-Revision-Date: 2014-02-06 13:31+0000\n"
+"Last-Translator: Chive <kim@smuzey.ch>\n"
+"Language-Team: Hindi (http://www.transifex.com/projects/p/django-cms/language/hi/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: hi\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: cms_plugins.py:21
+msgid "Inherit Plugins from Page"
+msgstr "वारिस पृष्ठ से प्लगइन्स"
+
+#: forms.py:13
+msgid "page"
+msgstr "पृष्ठ"
+
+#: forms.py:29
+msgid "Language or Page must be filled out"
+msgstr "भाषा या पृष्ठ से भरा जाना चाहिए"
+
+#: models.py:15
+msgid ""
+"Choose a page to include its plugins into this placeholder, empty will "
+"choose current page"
+msgstr "एक पृष्ठ का चयन इस placeholder में अपनी plugins शामिल करने के लिए, खाली वर्तमान पृष्ठ का चयन होगा"
+
+#: models.py:19
+msgid "language"
+msgstr "भाषा"
+
+#: models.py:20
+msgid "Optional: the language of the plugins you want"
+msgstr "वैकल्पिक: plugins तुम चाहते हो की भाषा"

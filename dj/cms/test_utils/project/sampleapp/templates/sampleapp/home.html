@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load cms_tags i18n %}
+{% load url from future %}
+
+{% block content %}
+	<h2>Sample application home page - on page {% page_attribute page_title %}</h2>
+	<h3>{{ message }}</h3>
+	{% if my_params %}<p>my_params: {{ my_params }}</p>{% endif %}
+	{{ block.super }}
+	<ul>
+		<li>
+			<a href="{% if app %}{% url 'namespaced_app_ns:sample-root' %}{% else %}{% url 'sample-root' %}{% endif %}">Sample app root reverse test</a>
+		</li>
+		<li>
+            {% language 'de' %}
+			<a href="{% if app %}{% url 'namespaced_app_ns:sample-account' %}{% else %}{% url 'sample-account' %}{% endif %}">Sample app account reverse test german</a>
+            {% endlanguage %}
+		</li>
+		<li>
+            {% language 'en' %}
+			<a href="{% if app %}{% url 'namespaced_app_ns:sample-account' %}{% else %}{% url 'sample-account' %}{% endif %}">Sample app account reverse test english</a>
+            {% endlanguage %}
+		</li>
+	</ul>
+	<h4>Sample image  - appmedia works?</h4>
+	<img src="{{ STATIC_URL }}sampleapp/img/gift.jpg" alt="gift">
+    {% placeholder "test" or %}<--noplaceholder-->{% endplaceholder %}
+{% endblock content %}

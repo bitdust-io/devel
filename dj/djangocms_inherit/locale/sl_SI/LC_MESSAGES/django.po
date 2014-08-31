@@ -1,0 +1,44 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-06 14:10+0100\n"
+"PO-Revision-Date: 2014-02-06 13:31+0000\n"
+"Last-Translator: Chive <kim@smuzey.ch>\n"
+"Language-Team: Slovenian (Slovenia) (http://www.transifex.com/projects/p/django-cms/language/sl_SI/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: sl_SI\n"
+"Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
+
+#: cms_plugins.py:21
+msgid "Inherit Plugins from Page"
+msgstr "Podeduj vtičnike s strani"
+
+#: forms.py:13
+msgid "page"
+msgstr "stran"
+
+#: forms.py:29
+msgid "Language or Page must be filled out"
+msgstr "Jezik ali stran mora biti izpolnjnjena"
+
+#: models.py:15
+msgid ""
+"Choose a page to include its plugins into this placeholder, empty will "
+"choose current page"
+msgstr "Izberite stran za vključitev njenega vtičnika na to rezervirano mest, če pustite prazno, bo to trenutna stran"
+
+#: models.py:19
+msgid "language"
+msgstr "jezik"
+
+#: models.py:20
+msgid "Optional: the language of the plugins you want"
+msgstr "Neobvezno:kateri jezik vtičnikov želite"

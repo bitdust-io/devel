@@ -1,0 +1,44 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-06 14:10+0100\n"
+"PO-Revision-Date: 2014-02-06 13:31+0000\n"
+"Last-Translator: Chive <kim@smuzey.ch>\n"
+"Language-Team: Chinese (Taiwan) (http://www.transifex.com/projects/p/django-cms/language/zh_TW/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: cms_plugins.py:21
+msgid "Inherit Plugins from Page"
+msgstr "從網頁繼承插件"
+
+#: forms.py:13
+msgid "page"
+msgstr "網頁"
+
+#: forms.py:29
+msgid "Language or Page must be filled out"
+msgstr "語言或網頁必須被填寫"
+
+#: models.py:15
+msgid ""
+"Choose a page to include its plugins into this placeholder, empty will "
+"choose current page"
+msgstr "選擇一個網頁來將它的插件放入這個佔位空間，留空則會選用目前的網頁"
+
+#: models.py:19
+msgid "language"
+msgstr "語言"
+
+#: models.py:20
+msgid "Optional: the language of the plugins you want"
+msgstr "選填：你想要插件的語言"

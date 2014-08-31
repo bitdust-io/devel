@@ -40,7 +40,7 @@ from lib import settings
 # Global for this file
 MyRsaKey = None 
 # This will be an object
-LocalKey = None
+MyPublicKey = None
 
 #------------------------------------------------------------------------------ 
 
@@ -60,8 +60,8 @@ def InitMyKey(keyfilename=None):
     The size for new key will be taken from settings.  
     """
     global MyRsaKey
-    global LocalKey
-    if LocalKey is not None:
+    global MyPublicKey
+    if MyPublicKey is not None:
         return
     if MyRsaKey is not None:
         return
@@ -73,72 +73,72 @@ def InitMyKey(keyfilename=None):
             keyfilename = newkeyfilename
     if os.path.exists(keyfilename):
         lg.out(4, 'key.InitMyKey load private key from\n        %s' % keyfilename)
-        LocalKey = keys.Key.fromFile(keyfilename)
-        MyRsaKey = LocalKey.keyObject
+        MyPublicKey = keys.Key.fromFile(keyfilename)
+        MyRsaKey = MyPublicKey.keyObject
     else:
         lg.out(4, 'key.InitMyKey generate new private key')
         MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)       
-        LocalKey = keys.Key(MyRsaKey)
-        keystring = LocalKey.toString('openssh')
+        MyPublicKey = keys.Key(MyRsaKey)
+        keystring = MyPublicKey.toString('openssh')
         bpio.WriteFile(keyfilename, keystring)
 
 def ForgetMyKey():
     """
     Remove Private Key from memory.
     """
-    global LocalKey
+    global MyPublicKey
     global MyRsaKey
-    LocalKey = None
+    MyPublicKey = None
     MyRsaKey = None
 
-def isMyLocalKeyReady():
+def isMyMyPublicKeyReady():
     """
     Check if the Key is already loaded into memory.
     """
-    global LocalKey
-    return LocalKey is not None
+    global MyPublicKey
+    return MyPublicKey is not None
 
 def MyPublicKey():
     """
     Return Public part of the Key as openssh string.
     """
-    global LocalKey
+    global MyPublicKey
     InitMyKey()
-    Result = LocalKey.public().toString('openssh')
+    Result = MyPublicKey.public().toString('openssh')
     return Result
 
 def MyPrivateKey():
     """
     Return Private part of the Key as openssh string.
     """
-    global LocalKey
+    global MyPublicKey
     InitMyKey()
-    return LocalKey.toString('openssh')
+    return MyPublicKey.toString('openssh')
 
 def MyPublicKeyObject():
     """
     Return Public part of the Key as object, useful to convert to different formats.
     """
-    global LocalKey
+    global MyPublicKey
     InitMyKey()
-    return LocalKey.public()
+    return MyPublicKey.public()
 
 def MyPrivateKeyObject():
     """
     Return Private part of the Key as object.
     """
-    global LocalKey
+    global MyPublicKey
     InitMyKey()
-    return LocalKey
+    return MyPublicKey
 
 def Sign(inp):
     """
     Sign some ``inp`` string with our Private Key, this calls PyCrypto method ``Crypto.PublicKey.RSA.sign``.
     """
-    global LocalKey
+    global MyPublicKey
     InitMyKey()
     # Makes a list but we just want a string
-    Signature = LocalKey.keyObject.sign(inp, '')
+    Signature = MyPublicKey.keyObject.sign(inp, '')
     # so we take first element in list - need str cause was long    
     result = str(Signature[0]) 
     return result
@@ -201,9 +201,9 @@ def EncryptLocalPK(inp):
     """
     This is just using local key, encrypt ``inp`` string.
     """
-    global LocalKey
+    global MyPublicKey
     InitMyKey()
-    return EncryptBinaryPK(LocalKey, inp)
+    return EncryptBinaryPK(MyPublicKey, inp)
 
 def EncryptBinaryPK(publickey, inp):
     """
@@ -223,7 +223,7 @@ def DecryptLocalPK(inp):
     We only decrypt with our local private key so no argument for that.
     """
     global MyRsaKey
-    global LocalKey
+    global MyPublicKey
     InitMyKey()
     atuple = (inp,)
     padresult = MyRsaKey.decrypt(atuple)

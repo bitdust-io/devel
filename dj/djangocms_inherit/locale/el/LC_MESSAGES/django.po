@@ -1,0 +1,44 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-06 14:10+0100\n"
+"PO-Revision-Date: 2014-02-06 13:31+0000\n"
+"Last-Translator: Chive <kim@smuzey.ch>\n"
+"Language-Team: Greek (http://www.transifex.com/projects/p/django-cms/language/el/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: el\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: cms_plugins.py:21
+msgid "Inherit Plugins from Page"
+msgstr "Κληρονομιά Πρόσθετων από τη Σελίδα"
+
+#: forms.py:13
+msgid "page"
+msgstr "σελίδα"
+
+#: forms.py:29
+msgid "Language or Page must be filled out"
+msgstr "Πρέπει να συμπληρωθεί η Γλώσσα ή η Σελίδα"
+
+#: models.py:15
+msgid ""
+"Choose a page to include its plugins into this placeholder, empty will "
+"choose current page"
+msgstr "Διαλέξτε σελίδα από την οποία θα συμπεριλάβουμε τα πρόσθετα στο συγκεκριμένο placeholder, κενή επιλογή θα διαλέξει την τρέχουσα σελίδα"
+
+#: models.py:19
+msgid "language"
+msgstr "γλώσσα"
+
+#: models.py:20
+msgid "Optional: the language of the plugins you want"
+msgstr "Προαιρετικά: η γλώσσα των πρόσθετων που θέλετε"

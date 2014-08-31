@@ -1,0 +1,46 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# 
+# Translators:
+msgid ""
+msgstr ""
+"Project-Id-Version: django-cms\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2014-02-06 14:09+0100\n"
+"PO-Revision-Date: 2014-02-06 13:31+0000\n"
+"Last-Translator: Chive <kim@smuzey.ch>\n"
+"Language-Team: Kurdish (Iraq) (http://www.transifex.com/projects/p/django-cms/language/ku_IQ/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ku_IQ\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: cms_plugins.py:12
+msgid "Flash"
+msgstr "فلاش"
+
+#: models.py:14
+msgid "file"
+msgstr "پەڕگە"
+
+#: models.py:15
+msgid "use swf file"
+msgstr "swf بەکارهێنانی پەڕگە لە جۆری"
+
+#: models.py:17
+msgid "width"
+msgstr "پانی"
+
+#: models.py:18
+msgid "height"
+msgstr "بەرزی"
+
+#: templates/cms/plugins/flash.html:40
+msgid "Missing flash plugin. Please download the latest Adobe Flash Player: "
+msgstr "پێوەکراوی فلاش وون بووە، تکایە نوێترین ڤێرژنی لێدەری فلاش دابەزێنە"
+
+#: templates/cms/plugins/flash.html:42
+msgid "Get Adobe Flash Player"
+msgstr "دەستکەوتنی ئەدۆب فلاس لێدەر"
