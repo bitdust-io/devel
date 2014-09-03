@@ -24,10 +24,10 @@ from twisted.web import http
 root_pth = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 if not ( len(sys.path) > 0 and sys.path[0] == root_pth ):
     sys.path.insert(0, os.path.join(root_pth))
-sys.path.insert(1, os.path.join(root_pth, 'dj'))
+sys.path.insert(1, os.path.join(root_pth, 'dj', 'asite', 'asite'))
 sys.path.insert(2, os.path.join(root_pth, 'dj', 'asite'))
-# sys.path.insert(3, os.path.join(root_pth, 'dj', 'asite', 'asite'))
-print '\n'.join(sys.path)
+sys.path.insert(3, os.path.join(root_pth, 'dj'))
+# print '\n'.join(sys.path)
 
 from logs import lg
 
@@ -35,8 +35,8 @@ from logs import lg
     
 def init():
     lg.out(4, 'local_site.init')
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "asite.settings") 
-    from dj.django.core.handlers.wsgi import WSGIHandler
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dj.asite.asite.settings") 
+    from django.core.handlers.wsgi import WSGIHandler
     wsgi_resource = wsgi.WSGIResource(reactor, reactor.getThreadPool(), WSGIHandler())
     site = server.Site(wsgi_resource)
     reactor.listenTCP(8080, site)

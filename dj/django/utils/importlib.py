@@ -38,4 +38,13 @@ else:
                 level += 1
             name = _resolve_name(name[level:], package, level)
         __import__(name)
+#        before = sys.modules.keys()
+#        try:
+#            __import__(name)
+#            res = sys.modules[name]
+#        except:
+#            print 'import error %s' % name
+#            print '\n'.join(sys.path)
+#            # print '\n'.join(before)
+#            raise
         return sys.modules[name]

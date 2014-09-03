@@ -232,8 +232,8 @@ class Initializer(automat.Automat):
             d.addCallback(webcontrol.show)
         webcontrol.ready()
         sys.path.append(os.path.abspath('dj'))
-        import local_site
-        local_site.init()
+        # import local_site
+        # local_site.init()
 
     def doPrintMessage(self, arg):
         """

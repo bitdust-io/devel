@@ -123,10 +123,6 @@ class Settings(BaseSettings):
 
         # store the settings module in case someone later cares
         self.SETTINGS_MODULE = settings_module
-        
-        print 'import %s' % self.SETTINGS_MODULE
-        print '\n'.join(sys.path)
-
         try:
             mod = importlib.import_module(self.SETTINGS_MODULE)
         except ImportError as e:
