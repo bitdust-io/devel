@@ -231,6 +231,9 @@ class Initializer(automat.Automat):
         if init_shutdown.UImode == 'show' or not self.is_installed: 
             d.addCallback(webcontrol.show)
         webcontrol.ready()
+        sys.path.append(os.path.abspath('dj'))
+        import local_site
+        local_site.init()
 
     def doPrintMessage(self, arg):
         """

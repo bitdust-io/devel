@@ -38,9 +38,9 @@ from lib import settings
 #------------------------------------------------------------------------------ 
 
 # Global for this file
-MyRsaKey = None 
+_MyRsaKey = None 
 # This will be an object
-MyPublicKey = None
+_MyPubKey = None
 
 #------------------------------------------------------------------------------ 
 
@@ -59,11 +59,11 @@ def InitMyKey(keyfilename=None):
     If file does not exist - the new key will be generated. 
     The size for new key will be taken from settings.  
     """
-    global MyRsaKey
-    global MyPublicKey
-    if MyPublicKey is not None:
+    global _MyRsaKey
+    global _MyPubKey
+    if _MyPubKey is not None:
         return
-    if MyRsaKey is not None:
+    if _MyRsaKey is not None:
         return
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
@@ -73,72 +73,72 @@ def InitMyKey(keyfilename=None):
             keyfilename = newkeyfilename
     if os.path.exists(keyfilename):
         lg.out(4, 'key.InitMyKey load private key from\n        %s' % keyfilename)
-        MyPublicKey = keys.Key.fromFile(keyfilename)
-        MyRsaKey = MyPublicKey.keyObject
+        _MyPubKey = keys.Key.fromFile(keyfilename)
+        _MyRsaKey = _MyPubKey.keyObject
     else:
         lg.out(4, 'key.InitMyKey generate new private key')
-        MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)       
-        MyPublicKey = keys.Key(MyRsaKey)
-        keystring = MyPublicKey.toString('openssh')
+        _MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)       
+        _MyPubKey = keys.Key(_MyRsaKey)
+        keystring = _MyPubKey.toString('openssh')
         bpio.WriteFile(keyfilename, keystring)
 
 def ForgetMyKey():
     """
     Remove Private Key from memory.
     """
-    global MyPublicKey
-    global MyRsaKey
-    MyPublicKey = None
-    MyRsaKey = None
+    global _MyPubKey
+    global _MyRsaKey
+    _MyPubKey = None
+    _MyRsaKey = None
 
-def isMyMyPublicKeyReady():
+def isMyKeyReady():
     """
     Check if the Key is already loaded into memory.
     """
-    global MyPublicKey
-    return MyPublicKey is not None
+    global _MyRsaKey
+    return _MyRsaKey is not None
 
 def MyPublicKey():
     """
     Return Public part of the Key as openssh string.
     """
-    global MyPublicKey
+    global _MyPubKey
     InitMyKey()
-    Result = MyPublicKey.public().toString('openssh')
+    Result = _MyPubKey.public().toString('openssh')
     return Result
 
 def MyPrivateKey():
     """
     Return Private part of the Key as openssh string.
     """
-    global MyPublicKey
+    global _MyPubKey
     InitMyKey()
-    return MyPublicKey.toString('openssh')
+    return _MyPubKey.toString('openssh')
 
 def MyPublicKeyObject():
     """
     Return Public part of the Key as object, useful to convert to different formats.
     """
-    global MyPublicKey
+    global _MyPubKey
     InitMyKey()
-    return MyPublicKey.public()
+    return _MyPubKey.public()
 
 def MyPrivateKeyObject():
     """
     Return Private part of the Key as object.
     """
-    global MyPublicKey
+    global _MyPubKey
     InitMyKey()
-    return MyPublicKey
+    return _MyPubKey
 
 def Sign(inp):
     """
     Sign some ``inp`` string with our Private Key, this calls PyCrypto method ``Crypto.PublicKey.RSA.sign``.
     """
-    global MyPublicKey
+    global _MyPubKey
     InitMyKey()
     # Makes a list but we just want a string
-    Signature = MyPublicKey.keyObject.sign(inp, '')
+    Signature = _MyPubKey.keyObject.sign(inp, '')
     # so we take first element in list - need str cause was long    
     result = str(Signature[0]) 
     return result
@@ -201,9 +201,9 @@ def EncryptLocalPK(inp):
     """
     This is just using local key, encrypt ``inp`` string.
     """
-    global MyPublicKey
+    global _MyPubKey
     InitMyKey()
-    return EncryptBinaryPK(MyPublicKey, inp)
+    return EncryptBinaryPK(_MyPubKey, inp)
 
 def EncryptBinaryPK(publickey, inp):
     """
@@ -222,11 +222,10 @@ def DecryptLocalPK(inp):
     Decrypt ``inp`` string with your Private Key.
     We only decrypt with our local private key so no argument for that.
     """
-    global MyRsaKey
-    global MyPublicKey
+    global _MyRsaKey
     InitMyKey()
     atuple = (inp,)
-    padresult = MyRsaKey.decrypt(atuple)
+    padresult = _MyRsaKey.decrypt(atuple)
     # remove the "1" added in EncryptBinaryPK
     result = padresult[1:]                   
     return result

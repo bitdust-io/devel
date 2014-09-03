@@ -193,11 +193,11 @@ def sharedPath(filename, subdir='logs'):
     return os.path.join(os.path.expanduser('~'), '.bitpie', subdir, filename)
 
 
-def WriteText(txt, filename='view.log', mode='a', sharedLocation=True, subdir='logs'):
-    global ShowLogs
-    if ShowLogs and filename not in ['view-html.log', 'view-form.log',]:
-        sys.stdout.write(txt)
-        return
+def WriteText(txt, filename='bpgui.log', mode='a', sharedLocation=True, subdir='logs'):
+#    global ShowLogs
+#    if ShowLogs and filename not in ['view-html.log', 'view-form.log',]:
+#        sys.stdout.write(txt)
+#        return
     filename_ = filename
     if sharedLocation:
         filename_ = sharedPath(filename, subdir)
@@ -609,7 +609,7 @@ class MyHtmlWindow(wx.html.HtmlWindow):
             tm = time.time()
             # WriteText('OpenURL.callback %s \n' % time.time())
             if self.enable_logs:
-                WriteText(src, 'bpgui-html.log', mode='w')
+                WriteText(src, 'page.html', mode='w')
             self.UnRegisterClick()
             pos = self.GetViewStart()[1]
             self.Freeze()
@@ -677,7 +677,7 @@ class MyHtmlWindow(wx.html.HtmlWindow):
             return
         def callback(src):
             if self.enable_logs:
-                WriteText(src, 'bpgui-form.log', mode='w')
+                WriteText(src, 'form.html', mode='w')
             self.UnRegisterClick()
             pos = self.GetViewStart()[1]
             self.Freeze()

@@ -4,8 +4,10 @@ import os
 gettext = lambda s: s
 PROJECT_PATH = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 
-# import sys
-# sys.path.insert(0, PROJECT_PATH)
+import sys
+# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# print '\n'.join(sys.path)
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -31,7 +33,7 @@ DEFAULT_LANGUAGE = 0
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(PROJECT_PATH, '_localsite.db'),
+        'NAME': os.path.join(PROJECT_PATH, 'asite.db'),
     }
 }
 
@@ -113,7 +115,7 @@ INSTALLED_APPS = (
     # 'djangocms_teaser',
     # 'djangocms_video',
     'reversion',
-    '_localsite',
+    'asite',
 )
 
 MIDDLEWARE_CLASSES = (

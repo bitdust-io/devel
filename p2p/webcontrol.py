@@ -669,7 +669,7 @@ def GetGlobalState():
     return 'unknown'
 
 def check_install():
-    return misc.isLocalIdentityReady() and key.isMyLocalKeyReady()
+    return misc.isLocalIdentityReady() and key.isMyKeyReady()
 
 #------------------------------------------------------------------------------
 
@@ -2379,8 +2379,8 @@ class MainPage(Page):
 
                 src += '<tr>'
                 src += '<td align=left valign=top nowrap>\n'
-                src += spaces + '\n'
-    
+                if spaces:
+                    src += spaces + '\n'    
                 #--- dir/file button
                 if type in [ backup_fs.DIR, backup_fs.PARENT ] :
                     if pathID in self.expanded_dirs:
