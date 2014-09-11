@@ -2,6 +2,7 @@
 *.pyo
 *.pyd
 *.~vsd
+docs/
 release/datahaven/
 release/windows/checksum
 release/windows/files

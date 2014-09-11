@@ -56,6 +56,7 @@ import backup_db_keeper
 import list_files_orator
 import io_throttle
 import p2p_service
+import local_site
 
 #------------------------------------------------------------------------------ 
 
@@ -152,6 +153,7 @@ def ReadIndex(input):
         return False
     backup_fs.Clear()
     count = backup_fs.Unserialize(input)
+    local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())
     commit(new_revision)
     _LoadingFlag = False
     return True

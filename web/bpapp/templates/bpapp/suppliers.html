@@ -1,0 +1,11 @@
+{% extends "bpapp/page.html" %}
+{% block page %}
+<h1>my suppliers</h1>
+  {% if suppliers_list %}
+      {% for supplier in suppliers_list %}
+          <a href='{% url "bpapp:supplier" supplier.id %}'>{{ supplier.idurl }}</a><br>
+      {% endfor %}
+  {% else %}
+      <p>No suppliers are available.</p>
+  {% endif %}
+{% endblock page %}

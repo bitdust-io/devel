@@ -1,0 +1,52 @@
+{% extends "bpapp/page.html" %}
+{% block page %}
+<h1>my files</h1>
+<table width=100% align=center cellspacing=0 cellpadding=0 border=0>
+  <tr>
+    <td align=center width=10%>
+      <a href="/main?action=diradd&showincluded=true" target="_opendir">
+        <img src="/static/icons/folder-add.png">
+      </a>
+    </td>
+    <td align=center width=10%>
+      <a href="/main?action=diraddrecursive&showincluded=true" target="_opendir">
+        <img src="/static/icons/folders-many-add.png">
+      </a>
+    </td>
+    <td align=center width=10%><img src="/static/icons/folder-delete-gray.png"></td>
+    <td align=center width=10%><img src="/static/icons/box-gray.png"></td>
+    <td align=center width=10%><img src="/static/icons/folder-tree-backup-gray.png"></td>
+    <td align=center width=10%><img src="/static/icons/box-delete-gray.png"></td>
+    <td align=center width=10%><img src="/static/icons/select-gray.png"></td>
+    <td align=center width=10%><img src="/static/icons/select-tree-gray.png"></td>
+    <td align=center width=10%><img src="/static/icons/restore-gray.png"></td>
+    <td align=center width=10%><img src="/static/icons/restoretodir-gray.png"></td>
+  </tr>
+  <tr valign=top>
+    <td nowrap><font size=-2 color=gray>add folder<br>to the catalog</font></td>
+    <td nowrap><font size=-2 color=gray>recursive add all<br>sub folders and files</font></td>
+    <td nowrap><font size=-2 color=gray>remove from<br>catalog</font></td>
+    <td nowrap><font size=-2 color=gray>backup to<br>remote peers</font></td>
+    <td nowrap><font size=-2 color=gray>recursive backup<br>a directory</font></td>
+    <td nowrap><font size=-2 color=gray>erase remote<br>data</font></td>
+    <td nowrap><font size=-2 color=gray>select latest<br>versions</font></td>
+    <td nowrap><font size=-2 color=gray>recursive select<br>latest versions</font></td>
+    <td nowrap><font size=-2 color=gray>restore from<br>remote peers</font></td>
+    <td nowrap><font size=-2 color=gray>restore to<br>given folder</font></td>
+  </tr>
+</table>
+<hr width=100%>
+  {% if backup_fs_items_list %}
+      {% for backup_fs_item in backup_fs_items_list %}
+          <a href='{% url "bpapp:backupfsitem" backup_fs_item.id %}'>
+          {{ backup_fs_item.backupid }}  {{ backup_fs_item.size }}  {{backup_fs_item.path}}
+          </a><br>
+      {% endfor %}
+  {% else %}
+      <p>No backups made yet.</p>
+  {% endif %}
+<hr width=100%>
+<p><a href="/main?action=update">Request my suppliers to check my backups now</a></p>
+<p><a href="/backupsettings?back=/main">Check the backup settings</a></p>
+<br>
+{% endblock page %}

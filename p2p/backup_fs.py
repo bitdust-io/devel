@@ -50,7 +50,7 @@ from lib import bpio
 from lib import misc
 from lib import settings        
 from lib import packetid
-from lib import contacts
+from lib import diskspace
 
 #------------------------------------------------------------------------------ 
 
@@ -1172,6 +1172,19 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
     def visitor(path_id, path, info):
         for version in info.list_versions(sorted, reverse):
             lst.append((str(path_id + '/' + version), info.get_version_info(version), path))
+    TraverseByID(visitor)
+    return lst
+
+def ListAllBackupIDsSQL(sorted=False, reverse=False, iterID=None):
+    """
+    Same, but also return items info.
+    """
+    lst = []
+    def visitor(path_id, path, info):
+        for version in info.list_versions(sorted, reverse):
+            szver = info.get_version_info(version)[1]
+            szverstr = diskspace.MakeStringFromBytes(szver) if szver >= 0 else '?'
+            lst.append((len(lst)+1, str(path_id + '/' + version), szverstr, path))
     TraverseByID(visitor)
     return lst
 

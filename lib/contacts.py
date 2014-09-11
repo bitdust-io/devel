@@ -72,6 +72,12 @@ def init():
     contactsdb.load_suppliers(settings.SupplierIDsFilename())
     contactsdb.load_customers(settings.CustomerIDsFilename())
     contactsdb.load_correspondents(settings.CorrespondentIDsFilename())
+    global _SuppliersChangedCallback
+    if _SuppliersChangedCallback is not None:
+        _SuppliersChangedCallback([], contactsdb.suppliers())
+    global _CustomersChangedCallback
+    if _CustomersChangedCallback is not None:
+        _CustomersChangedCallback([], contactsdb.customers())
 
 #------------------------------------------------------------------------------ 
 

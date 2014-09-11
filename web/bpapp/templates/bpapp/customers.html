@@ -1,0 +1,11 @@
+{% extends "bpapp/page.html" %}
+{% block page %}
+<h1>my customers</h1>
+  {% if customers_list %}
+      {% for customer in customers_list %}
+          <a href='{% url "bpapp:customer" customer.id %}'>{{ customer.idurl }}</a><br>
+      {% endfor %}
+  {% else %}
+      <p>You have no customers yet.</p>
+  {% endif %}
+{% endblock page %}
