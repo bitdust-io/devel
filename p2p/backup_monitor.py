@@ -232,7 +232,7 @@ class BackupMonitor(automat.Automat):
             lg.out(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
                 supplierNum, 
                 nameurl.GetName(self.current_suppliers[supplierNum]),
-                nameurl.GetName(contacts.getSupplierIDs[supplierNum]),))
+                nameurl.GetName(contacts.getSupplierIDs()[supplierNum]),))
             suplier_idurl = self.current_suppliers[supplierNum] 
             io_throttle.DeleteSuppliers([suplier_idurl,])
             # erase (set to 0) remote info for this guys
