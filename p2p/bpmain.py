@@ -135,7 +135,7 @@ def run(UI='', options=None, args=None, overDict=None):
 
     lg.out(2,"bpmain.run UI=[%s]" % UI)
 
-    if lg.is_debug(10):
+    if lg.is_debug(20):
         lg.out(0, '\n' + bpio.osinfofull())
 
     lg.out(4, 'bpmain.run import automats')

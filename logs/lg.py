@@ -39,7 +39,7 @@ _TimeCountsDict = {}
 
 #------------------------------------------------------------------------------ 
 
-def out(level, s, nl='\n'):
+def out(level, msg, nl='\n'):
     """
     The core method, most used thing in the whole project.
     Print a line to the log file or console.  
@@ -59,6 +59,7 @@ def out(level, s, nl='\n'):
     global _DebugLevel
     if not _LogsEnabled:
         return
+    s = '' + msg
     if isinstance(s, unicode):
         s = s.encode('utf-8')
     s_ = s
@@ -85,13 +86,20 @@ def out(level, s, nl='\n'):
             _LogFile.write(s + nl)
             _LogFile.flush()
         if not _RedirectStdOut and not _NoOutput:
-            if nl == '\n':
-                try:
-                    print s
-                except:
-                    pass
-            else:
-                sys.stdout.write(s + nl)
+#            if nl == '\n':
+#                try:
+#                    print s
+#                except:
+#                    open('1', 'wb').write(s)
+#                    sys.exit()
+#                    # pass
+#            else:
+            try:
+                s = str(s) + nl
+                sys.stdout.write(s)
+            except:
+                sys.stdout.write(format_exception() + '\n\n' + s)
+                
     if _WebStreamFunc is not None:
         _WebStreamFunc(level, s_ + nl)
     _LogLinesCounter += 1
