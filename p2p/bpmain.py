@@ -523,7 +523,7 @@ def main():
 
     #---detach---
     elif cmd == 'detach':
-        lg.set_debug_level(20)
+        # lg.set_debug_level(20)
         appList = bpio.find_process([
             'bitpie.exe',
             'bpmain.py',
