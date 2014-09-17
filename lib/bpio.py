@@ -60,6 +60,8 @@ def shutdown():
     """
     lg.out(2, 'bpio.shutdown')
     lg.restore_original_stdout()
+    lg.close_log_file()
+    lg.disable_logs()
 
 def InstallLocale():
     """

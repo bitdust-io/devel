@@ -543,13 +543,14 @@ def main():
         # reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart, detach=True)
         # reactor.callLater(0.01, _detach)
         # reactor.run()
+        lg.out(0, 'run and detach main BitPie.NET process')
+        bpio.shutdown()
         result = misc.DoRestart(detach=True)
         try:
             result = result.pid
         except:
             pass
-        lg.out(0, 'run and detach main BitPie.NET process: %s' % str(result))
-        bpio.shutdown()
+        print result
         return 0
 
     #---restart---
