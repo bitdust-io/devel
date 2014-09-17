@@ -1368,7 +1368,7 @@ def DoRestart(param='', detach=False):
         #     from lib import child_process
         #     return child_process.detach(cmdargs)
             # return os.spawnv(os.P_DETACH, pypath, cmdargs)
-            return os.spawnv(os.P_NOWAIT, 'nohup', [pypath,]+cmdargs)
+            return os.spawnv(os.P_NOWAIT, 'nohup', [pypyth,]+cmdargs)
         return os.execvpe(pypyth, cmdargs, os.environ)
             
 def RunBatFile(filename, output_filename=None):
