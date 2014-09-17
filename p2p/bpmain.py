@@ -521,6 +521,35 @@ def main():
         bpio.shutdown()
         return ret
 
+    #---detach---
+    elif cmd == 'detach':
+        # lg.set_debug_level(20)
+        appList = bpio.find_process([
+            'bitpie.exe',
+            'bpmain.py',
+            'bitpie.py',
+            'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+            ])
+        if len(appList) > 0:
+            lg.out(0, 'main BitPie.NET process already started: %s' % str(appList))
+            bpio.shutdown()
+            return 0
+        from lib import misc
+        # from twisted.internet import reactor
+        # def _detach():
+        #     result = misc.DoRestart(detach=True)
+        #     lg.out(0, 'run and detach main BitPie.NET process: %s' % str(result))
+        #     reactor.callLater(2, reactor.stop)
+        # reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart, detach=True)
+        # reactor.callLater(0.01, _detach)
+        # reactor.run()
+        result = misc.DoRestart(detach=True)
+        if result:
+            result = result.pid
+        lg.out(0, 'run and detach main BitPie.NET process: %s' % str(result))
+        bpio.shutdown()
+        return 0
+
     #---restart---
     elif cmd == 'restart':
         appList = bpio.find_process([

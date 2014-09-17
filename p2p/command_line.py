@@ -889,3 +889,20 @@ def cmd_uninstall(opts, args, overDict):
             do_uninstall()
         return ret
 
+
+def cmd_integrate():
+    """
+    A platform-dependent method to make a "system" command called "bitpie".
+    Then you can 
+    
+    Run: 
+        sudo python bitpie.py integrate
+    
+    Ubuntu: 
+        This will create an executable file /bin/bitpie with such content:
+            #!/bin/bash
+            cd /usr/share/bitpie
+            /usr/bin/python bitpie.py
+    Windows:   
+    """
+

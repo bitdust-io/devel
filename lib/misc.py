@@ -1304,7 +1304,7 @@ def removeStartMenuShortcut(filename):
 
 #------------------------------------------------------------------------------ 
 
-def DoRestart(param=''):
+def DoRestart(param='', detach=False):
     """
     A smart and portable way to restart a whole program.
     """
@@ -1316,18 +1316,17 @@ def DoRestart(param=''):
             starter_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsStarterFileName())
             if not os.path.isfile(starter_filepath):
                 lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
-                return
+                return None
             cmdargs = [os.path.basename(starter_filepath),]
             if param != '':
                 cmdargs.append(param)
             lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-            os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
+            return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
 
         else:
             lg.out(2, "misc.DoRestart under Windows param=%s" % param)
             lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
             lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
-
             pypath = sys.executable
             cmdargs = [sys.executable]
             cmdargs.append(sys.argv[0])
@@ -1336,16 +1335,18 @@ def DoRestart(param=''):
                 cmdargs.append(param)
             if cmdargs.count('restart'):
                 cmdargs.remove('restart')
-
+            if cmdargs.count('detach'):
+                cmdargs.remove('detach')
             lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-            # os.spawnve(os.P_DETACH, pypath, cmdargs, os.environ)
-            os.execvpe(pypath, cmdargs, os.environ)
+            if detach:
+                from lib import child_process
+                return child_process.detach(cmdargs)
+            return os.execvpe(pypath, cmdargs, os.environ)
 
     else:
         lg.out(2, "misc.DoRestart under Linux param=%s" % param)
         lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
         lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
-        
         pypyth = sys.executable
         cmdargs = [sys.executable]
         if sys.argv[0] == '/usr/share/bitpie/bitpie.py':
@@ -1354,14 +1355,16 @@ def DoRestart(param=''):
             cmdargs.append(sys.argv[0])
         if param:
             cmdargs.append(param)
-
         pid = os.fork()
-        if pid == 0:
-            lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-            os.execvpe(pypyth, cmdargs, os.environ)
-        else:
-            lg.out(2, "misc.DoRestart os.fork returned "+str(pid))
-            
+        if pid != 0:
+            lg.out(2, "misc.DoRestart os.fork returned: "+str(pid))
+            return None
+        lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
+        if detach:
+            from lib import child_process
+            return child_process.detach(cmdargs)
+            # return os.spawnv(os.P_DETACH, pypath, cmdargs)
+        return os.execvpe(pypyth, cmdargs, os.environ)
             
 def RunBatFile(filename, output_filename=None):
     """

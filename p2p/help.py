@@ -65,7 +65,9 @@ def help():
     return '''usage: python bitpie.py [options] [command] [arguments]
 
 Commands:
-  start                 start BitPie.NET
+  [start]               start BitPie.NET
+  
+  detach                start BitPie.NET in a child process
   
   restart               restart BitPie.NET 
 

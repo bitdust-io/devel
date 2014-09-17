@@ -46,7 +46,7 @@ class ChildProcessProtocol(protocol.ProcessProtocol):
             lg.out(2, '[%s]: %s' % (self.name, line))
             
     def processEnded(self, reason):
-        lg.out(2, 'child process [%s] FINISHED')
+        lg.out(2, 'child process [%s] FINISHED' % self.name)
         
 
 def run(child_name, params=[], base_dir='.', process_protocol=None):
@@ -56,12 +56,12 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
     if bpio.isFrozen() and bpio.Windows():
         progpath = os.path.abspath(os.path.join(base_dir, child_name + '.exe'))
         executable = progpath
-        cmdargs = [progpath]
+        cmdargs = [ progpath ]
         cmdargs.extend(params)
     else:
         progpath = os.path.abspath(os.path.join(base_dir, child_name + '.py'))
         executable = sys.executable
-        cmdargs = [executable, progpath]
+        cmdargs = [ executable, progpath ]
         cmdargs.extend(params)
     if not os.path.isfile(executable):
         lg.out(1, 'child_process.run ERROR %s not found' % executable)
@@ -78,7 +78,7 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
                             _threadAttributes, _bInheritHandles, creationFlags,
                             _newEnvironment, _currentDirectory, startupinfo):
             import win32con
-            flags = win32con.CREATE_NO_WINDOW 
+            flags = win32con.CREATE_NO_WINDOW
             return real_CreateProcess(_appName, _commandLine,
                             _processAttributes, _threadAttributes,
                             _bInheritHandles, flags, _newEnvironment,
@@ -152,6 +152,36 @@ def pipe(cmdargs):
                 universal_newlines=False,)
     except:
         lg.out(1, 'child_process.pipe ERROR executing: %s' + str(cmdargs))
+        lg.exc()
+        return None
+    return p
+
+
+def detach(cmdargs):
+    lg.out(14, "child_process.detach %s" % str(cmdargs))
+    try:
+        if bpio.Windows():
+            import win32process
+            p = nonblocking.Popen(
+                cmdargs,
+                shell=False,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=False,
+                # creationflags = win32process.CREATE_NO_WINDOW | win32process.DETACHED_PROCESS,
+                close_fds=False,)
+        else:
+            p = nonblocking.Popen(
+                cmdargs,
+                shell=False,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=False,
+                close_fds=False,)
+    except:
+        lg.out(1, 'child_process.detach ERROR executing: %s' + str(cmdargs))
         lg.exc()
         return None
     return p

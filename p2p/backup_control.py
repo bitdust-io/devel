@@ -153,7 +153,7 @@ def ReadIndex(input):
         return False
     backup_fs.Clear()
     count = backup_fs.Unserialize(input)
-    local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())
+    # local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())
     commit(new_revision)
     _LoadingFlag = False
     return True

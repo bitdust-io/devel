@@ -86,7 +86,10 @@ def out(level, s, nl='\n'):
             _LogFile.flush()
         if not _RedirectStdOut and not _NoOutput:
             if nl == '\n':
-                print s
+                try:
+                    print s
+                except:
+                    pass
             else:
                 sys.stdout.write(s + nl)
     if _WebStreamFunc is not None:
