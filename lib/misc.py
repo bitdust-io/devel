@@ -1364,7 +1364,7 @@ def DoRestart(param='', detach=False):
         #     from lib import child_process
         #     return child_process.detach(cmdargs)
             # return os.spawnv(os.P_DETACH, pypath, cmdargs)
-            cmdargs.insert(0, pypyth)
+            # cmdargs.insert(0, pypyth)
             lg.out(2, "misc.DoRestart DETACH, run nohup with cmdargs="+str(cmdargs))
             return os.spawnv(os.P_NOWAIT, 'nohup', cmdargs)
         pid = os.fork()
