@@ -304,7 +304,7 @@ def get_new_index():
     """
     global _Counter
     _Counter += 1
-    return _Counter - 1
+    return _Counter
 
 
 def create_index(name):

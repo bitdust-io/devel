@@ -17,12 +17,12 @@ import sys
 
 from twisted.web import wsgi
 from twisted.internet import reactor
-from twisted.application import service, strports
+# from twisted.application import service, strports
 from twisted.web import server 
-from twisted.web import http
+# from twisted.web import http
 
 import sqlite3
-import webbrowser
+# import webbrowser
 
 root_pth = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 if not ( len(sys.path) > 0 and sys.path[0] == root_pth ):
@@ -37,60 +37,107 @@ from lib import settings
 
 #------------------------------------------------------------------------------ 
 
+_Prefix = 'bpapp_'
+
 _SQL = \
 """[create supplier]
-CREATE TABLE bpapp_supplier (
+CREATE TABLE %s (
 id integer NOT NULL PRIMARY KEY, 
-idurl varchar(200) NOT NULL);
+idurl text);
 
 [delete supplier]
-DELETE FROM bpapp_supplier;
+DELETE FROM %s;
 
 [insert supplier]
-INSERT INTO bpapp_supplier VALUES (?,?);
+INSERT INTO %s VALUES (?,?);
 
 [update supplier]
-UPDATE bpapp_supplier SET idurl=? WHERE id=?;
+UPDATE %s SET idurl=? WHERE id=?;
 
 [create customer]
-CREATE TABLE bpapp_customer (
+CREATE TABLE %s (
 id integer NOT NULL PRIMARY KEY, 
-idurl varchar(200) NOT NULL);
+idurl text);
 
 [delete customer]
-DELETE FROM bpapp_customer;
+DELETE FROM %s;
 
 [insert customer]
-INSERT INTO bpapp_customer VALUES (?,?);
+INSERT INTO %s VALUES (?,?);
 
 [update customer]
-UPDATE bpapp_customer SET idurl=? WHERE id=?;
+UPDATE %s SET idurl=? WHERE id=?;
 
 [create backupfsitem]
-CREATE TABLE bpapp_backupfsitem (
+CREATE TABLE %s (
 id integer NOT NULL PRIMARY KEY, 
-backupid text NOT NULL, 
+backupid text, 
 size integer,
 path text);
 
 [delete backupfsitem]
-DELETE FROM bpapp_backupfsitem;
+DELETE FROM %s;
 
 [insert backupfsitem]
-INSERT INTO bpapp_backupfsitem VALUES (?,?,?,?);
+INSERT INTO %s VALUES (?,?,?,?);
 
 [update backupfsitem]
-UPDATE bpapp_backupfsitem SET size=? path=? WHERE backupid=?;
+UPDATE %s SET size=? path=? WHERE backupid=?;
 
 [create localfsitem]
+CREATE TABLE %s (
+id integer NOT NULL PRIMARY KEY, 
+mask text,
+path text);
 
-[create backupmatrixitem]
+[create remotematrixitem]
+CREATE TABLE %s (
+id integer NOT NULL PRIMARY KEY,
+backupid text,
+blocknum integer,
+dataparity integer, 
+suppliernum integer,
+value integer);
 
-[create_table_option]
+[create localmatrixitem]
+CREATE TABLE %s (
+id integer NOT NULL PRIMARY KEY,
+backupid text,
+blocknum integer,
+dataparity integer, 
+suppliernum integer,
+value integer);
 
-[create_table_automat]
+[create option]
+CREATE TABLE %s (
+id integer NOT NULL PRIMARY KEY,
+path text,
+value text,
+type integer,
+label text, 
+info text);
 
-[create_table_rating]"""
+[create automat]
+CREATE TABLE %s (
+id integer NOT NULL PRIMARY KEY,
+automatid integer,
+index integer,
+name text,
+state text);
+
+[create ratingmonth]
+CREATE TABLE %s (
+id integer NOT NULL PRIMARY KEY,
+idurl text,
+all integer,
+alive integer);
+
+[create ratingtotal]
+CREATE TABLE %s (
+id integer NOT NULL PRIMARY KEY,
+idurl text,
+all integer,
+alive integer);"""
 
 #------------------------------------------------------------------------------ 
 
@@ -111,6 +158,11 @@ def dbcur():
     if _DBCursor is None:
         _DBCursor = _DBConnection.cursor()
     return _DBCursor
+
+
+def withprefix(table_name):
+    global _Prefix
+    return _Prefix + table_name
 
     
 def init():
@@ -142,32 +194,30 @@ def shutdown():
 def init_database():
     global _DBConnection
     global _SQL
-    sqllist = _SQL.split('\n\n')
+    parts = _SQL.split('\n\n')
     _SQL = {}
-    for sql in sqllist:
-        lines = sql.splitlines()
-        _SQL[lines[0].strip('[]')] = ''.join(lines[1:])
+    for part in parts:
+        lines = part.splitlines()
+        fullcmd = lines[0].strip('[]')
+        sqlsrc = ''.join(lines[1:])
+        cmd, name = fullcmd.split(' ')
+        _SQL[fullcmd] = sqlsrc % name
     _DBConnection = sqlite3.connect(os.path.join(root_pth, 'web', 'asite.db'))
     dbcur().execute('SELECT SQLITE_VERSION();')
     lg.out(4, "    SQLite version is %s" % dbcur().fetchone())
     dbcur().execute("SELECT name FROM sqlite_master WHERE type='table';")
     tableslist = map(lambda x: str(x[0]), dbcur().fetchall())
     lg.out(4, "    %d tables found" % len(tableslist))
-    if 'bpapp_supplier' in tableslist:
-        lg.out(4, '    "bpapp_supplier" table exist')
+    if withprefix('supplier') in tableslist:
+        lg.out(4, '    "supplier" table exist')
     else:
         dbcur().execute(_SQL['create supplier'])
-        lg.out(4, '    created table "bpapp_supplier"') 
-    if 'bpapp_customer' in tableslist:
-        lg.out(4, '    "bpapp_customer" table exist')
+        lg.out(4, '    created table "supplier"') 
+    if withprefix('customer') in tableslist:
+        lg.out(4, '    "customer" table exist')
     else:
         dbcur().execute(_SQL['create customer'])
-        lg.out(4, '    created table "bpapp_customer"')
-    if 'bpapp_backupfsitem' in tableslist:
-        lg.out(4, '    "bpapp_backupfsitem" table exist')
-    else:
-        dbcur().execute(_SQL['create backupfsitem'])
-        lg.out(4, '    created table "bpapp_backupfsitem"')
+        lg.out(4, '    created table "customer"')
     db().commit()
         
 
