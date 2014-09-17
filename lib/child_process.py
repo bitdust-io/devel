@@ -158,7 +158,7 @@ def pipe(cmdargs):
 
 
 def detach(cmdargs):
-    lg.out(14, "child_process.detach %s" % str(cmdargs))
+    lg.out(2, "child_process.detach %s" % str(cmdargs))
     try:
         if bpio.Windows():
             import win32process
