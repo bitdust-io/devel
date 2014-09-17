@@ -1373,8 +1373,8 @@ def DoRestart(param='', detach=False):
             cmdargs.append('1>/dev/null')
             cmdargs.append('2>/dev/null')
             # return os.spawnve(os.P_NOWAIT, '/usr/bin/nohup', cmdargs, os.environ)
-            cmd = 'nohup ' + (' '.join(cmdargs))
-            lg.out(2, "misc.DoRestart DETACH, run %s" % cmd)
+            cmd = 'nohup ' + (' '.join(cmdargs)) + ' &'
+            lg.out(2, 'misc.DoRestart DETACH, run "%s"' % cmd)
             return os.system(cmd)
         lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
         return os.execvpe(pypyth, cmdargs, os.environ)
