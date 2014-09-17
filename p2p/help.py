@@ -18,6 +18,7 @@ def usage():
     
 Commands:
   start
+  detach
   restart
   stop
   show
