@@ -544,8 +544,10 @@ def main():
         # reactor.callLater(0.01, _detach)
         # reactor.run()
         result = misc.DoRestart(detach=True)
-        if result:
+        try:
             result = result.pid
+        except:
+            pass
         lg.out(0, 'run and detach main BitPie.NET process: %s' % str(result))
         bpio.shutdown()
         return 0
