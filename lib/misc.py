@@ -1355,6 +1355,10 @@ def DoRestart(param='', detach=False):
             cmdargs.append(sys.argv[0])
         if param:
             cmdargs.append(param)
+        if cmdargs.count('restart'):
+            cmdargs.remove('restart')
+        if cmdargs.count('detach'):
+            cmdargs.remove('detach')
         pid = os.fork()
         if pid != 0:
             lg.out(2, "misc.DoRestart os.fork returned: "+str(pid))
