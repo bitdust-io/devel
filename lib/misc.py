@@ -1360,10 +1360,6 @@ def DoRestart(param='', detach=False):
             cmdargs.remove('restart')
         if cmdargs.count('detach'):
             cmdargs.remove('detach')
-        pid = os.fork()
-        if pid != 0:
-            lg.out(2, "misc.DoRestart os.fork returned: "+str(pid))
-            return None
         if detach:
         #     from lib import child_process
         #     return child_process.detach(cmdargs)
@@ -1371,6 +1367,10 @@ def DoRestart(param='', detach=False):
             cmdargs.insert(0, pypyth)
             lg.out(2, "misc.DoRestart DETACH, run nohup with cmdargs="+str(cmdargs))
             return os.spawnv(os.P_NOWAIT, 'nohup', cmdargs)
+        pid = os.fork()
+        if pid != 0:
+            lg.out(2, "misc.DoRestart os.fork returned: "+str(pid))
+            return None
         lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
         return os.execvpe(pypyth, cmdargs, os.environ)
             
