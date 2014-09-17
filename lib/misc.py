@@ -1339,7 +1339,7 @@ def DoRestart(param='', detach=False):
                 cmdargs.remove('detach')
             if detach:
                 from lib import child_process
-                lg.out(2, "misc.DoRestart DETACH cmdargs="+str(cmdargs))
+                lg.out(0, 'run "%s"' % str(' '.join(cmdargs)))
                 return child_process.detach(cmdargs)
             lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             return os.execvpe(pypath, cmdargs, os.environ)
@@ -1374,7 +1374,7 @@ def DoRestart(param='', detach=False):
             cmdargs.append('2>/dev/null')
             # return os.spawnve(os.P_NOWAIT, '/usr/bin/nohup', cmdargs, os.environ)
             cmd = 'nohup ' + (' '.join(cmdargs)) + ' &'
-            lg.out(2, 'misc.DoRestart DETACH, run "%s"' % cmd)
+            lg.out(0, 'run "%s"' % cmd)
             return os.system(cmd)
         lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
         return os.execvpe(pypyth, cmdargs, os.environ)
