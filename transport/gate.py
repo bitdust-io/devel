@@ -520,10 +520,10 @@ def packets_timeout_loop():
         if pkt_in.is_timed_out():
             lg.out(18, 'gate.packets_timeout_loop %r is timed out' % pkt_in)
             pkt_in.automat('cancel', 'timeout')
-    for pkt_out in packet_out.queue():
-        if pkt_out.is_timed_out():
-            lg.out(18, 'gate.packets_timeout_loop %r is timed out' % pkt_out)
-            pkt_out.automat('cancel', 'timeout')
+#    for pkt_out in packet_out.queue():
+#        if pkt_out.is_timed_out():
+#            lg.out(18, 'gate.packets_timeout_loop %r is timed out' % pkt_out)
+#            pkt_out.automat('cancel', 'timeout')
 
 def stop_packets_timeout_loop():
     global _PacketsTimeOutTask
