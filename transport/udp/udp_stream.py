@@ -58,7 +58,7 @@ MAX_ACK_TIMEOUTS = 5
 
 _Streams = {}
 _GlobalLimitSendBytesPerSec = 100.0 * 125000
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------ 
 
