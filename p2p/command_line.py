@@ -166,6 +166,13 @@ def run(opts, args, overDict, pars):
             print 'BitPie.NET is not running at the moment\n'
             return 0
         return cmd_states(opts, args, overDict)
+    
+    #---cache---
+    elif cmd in [ 'cache' ]:
+        if not running:
+            print 'BitPie.NET is not running at the moment\n'
+            return 0
+        return cmd_cache(opts, args, overDict)
 
     #---reconnect---
     elif cmd in [ 'reconnect', ]:
@@ -521,7 +528,7 @@ def cmd_register(opts, args, overDict):
         from lib import settings
         settings.uconfig().set('backup.private-key-size', str(args[2]))
         settings.uconfig().update()
-    import lib.automat as automat
+    import lib.automat  as automat
     import initializer
     import shutdowner
     initializer.A('run-cmd-line-register', args[1])
@@ -620,18 +627,31 @@ def cmd_stats(opts, args, overDict):
 
     return 2
 
+
 def cmd_states(opts, args, overDict):
     url = '%s' % (webcontrol._PAGE_AUTOMATS)
     run_url_command(url).addCallback(print_and_stop)
     reactor.run()
     return 0
-    
+
+
+def cmd_cache(opts, args, overDict):
+    if len(args) < 2:
+        run_url_command(webcontrol._PAGE_MAIN+'?action=cache').addCallback(print_and_stop)
+        reactor.run()
+        return 0
+    elif len(args) == 2 and args[1] == 'clear':
+        run_url_command(webcontrol._PAGE_MAIN+'?action=cacheclear').addCallback(print_and_stop)
+        reactor.run()
+        return 0
+
 def cmd_reconnect(opts, args, overDict):
     url = webcontrol._PAGE_MAIN + '?action=reconnect'
     run_url_command(url).addCallback(print_and_stop)
     reactor.run()
     return 0
-    
+
+
 def option_name_to_path(name, default=''):
     path = default
     if name in [ 'donated', 'shared', 'given', ]:
@@ -665,6 +685,7 @@ def option_name_to_path(name, default=''):
     elif name in [ 'weblog-port' ]:
         path = 'logs.stream-port'
     return path
+
 
 def cmd_set_directly(opts, args, overDict):
     def print_all_settings():

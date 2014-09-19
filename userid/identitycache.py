@@ -76,6 +76,12 @@ def PrintAllInCache():
     For debug, print completely all cache. 
     """
     identitydb.print_cache()
+    
+    
+def Items():
+    """
+    """
+    return identitydb.cache()
 
 
 def HasKey(url):
@@ -83,6 +89,10 @@ def HasKey(url):
     Check for some user IDURL in the cache.
     """
     return identitydb.has_key(url)
+
+
+def HasFile(url):
+    return identitydb.has_file(url)
 
 
 def FromCache(url):
@@ -197,21 +207,25 @@ def immediatelyCaching(url):
             # if success_func is not None:
             #     success_func(url+'\n'+src)
             res.callback(src)
+            lg.out(14, '    [cached] %s' % url)
         else:
             # if fail_func is not None:
             #     fail_func(url+'\n'+src)
             res.errback(Exception(src))
+            lg.out(14, '    [cache error] %s' % url)
     def _getPageFail(x, url, res):
         global _CachingTasks
         _CachingTasks.pop(url)
         # if fail_func is not None:
         #     fail_func(x)
         res.errback(x)
+        lg.out(14, '    [cache failed] %s' % url)
     result = Deferred()
     d = net_misc.getPageTwisted(url)
     d.addCallback(_getPageSuccess, url, result)
     d.addErrback(_getPageFail, url, result)
     _CachingTasks[url] = result
+    lg.out(14, 'identitycache.immediatelyCaching %s' % url)
     return result
 
 #------------------------------------------------------------------------------ 

@@ -58,6 +58,7 @@ from transport import packet_out
 
 from userid import id_restorer
 from userid import propagate
+from userid import identitycache
 
 from crypt import key
 
@@ -2971,6 +2972,25 @@ class MainPage(Page):
                 szver = diskspace.MakeStringFromBytes(versionInfo[1]) if versionInfo[1] >= 0 else '?'
                 src += html_comment('  %s %s %s' % (backupID.ljust(37), szver.ljust(20), localPath))
             return html(request, body=str(src),)
+        
+        #---cache---
+        elif action == 'cache':
+            src = ''
+            l = identitycache.Items().keys()
+            if len(l) > 0:
+                for idurl in l:
+                    st = '' if identitycache.HasFile(idurl) else '[file not exist]'
+                    src += html_comment('  %s %s' % (idurl, st))
+            else:
+                src += html_comment('  empty')
+            return html(request, body=str(src),)
+
+        #---cacheclear---
+        elif action == 'cacheclear':
+            identitycache.Clear()
+            src = html_comment('  empty')
+            return html(request, body=str(src),)
+        
         else:
             return None
             
@@ -4108,14 +4128,25 @@ class SuppliersPage(Page):
         action = arg(request, 'action')
         #---action call---
         if action == 'call':
-            
             # transport_control.ClearAliveTimeSuppliers()
             # contact_status.check_contacts(contacts.getSupplierIDs())
-            propagate.SlowSendSuppliers(0.2)
+            propagate.SlowSendSuppliers(0.1)
             # request.redirect(request.path)
             # request.finish()
             # return NOT_DONE_YET
             #SendCommandToGUI('open %s' % request.path)
+            
+        #---action callalive---    
+        elif action == 'callalive':
+            for suplier_idurl in contacts.getSupplierIDs():
+                if contact_status.isOnline(suplier_idurl):
+                    propagate.PingContact(suplier_idurl)
+
+        #---action cacheids---    
+        elif action == 'cacheids':
+            for suplier_idurl in contacts.getSupplierIDs():
+                identitycache.immediatelyCaching(suplier_idurl).addCallback(
+                    lambda src: OnAliveStateChanged(suplier_idurl))
             
         #---action request---
         elif action == 'request':
@@ -4323,6 +4354,8 @@ class SuppliersPage(Page):
         #---links---
         if contacts.numSuppliers() > 0:
             src += '<p><a href="?action=call&back=%s">Call all suppliers to find out who is alive</a></p><br>\n' % back 
+            src += '<p><a href="?action=callalive&back=%s">Call only alive suppliers now - just to test</a></p><br>\n' % back
+            src += '<p><a href="?action=cacheids&back=%s">Request suppliers\'s identities</a></p><br>\n' % back
         src += '<p><a href="?action=request&back=%s">Request list of suppliers from Central server</a></p>\n' % (back)
         src += '<p><a href="%s?back=%s">Switch to Customers</a></p>\n' % ('/'+_PAGE_CUSTOMERS, back)
         if self.show_ratings:

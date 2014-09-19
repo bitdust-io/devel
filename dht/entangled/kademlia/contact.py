@@ -54,5 +54,6 @@ class Contact(object):
         host Node's C{_protocol} object).
         """
         def _sendRPC(*args, **kwargs):
+            # print 'sendRPC', name, self.address, self.port, self.commTime
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
         return _sendRPC

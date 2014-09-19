@@ -51,6 +51,8 @@ Commands:
   storage                                                         
   reconnect
   states
+  cache
+  cache clear
   money
   money transfer <username or idurl> <amount>
   money receipts 
@@ -78,7 +80,7 @@ Commands:
 
   register <account name> [private key size]
                         generate a new private key and register new account
-                        key size can be 1024 or 2048
+                        key size can be 1024, 2048 or 4096
 
   recover <private key filename> [idurl or username]
                         recover existing account with your private key file
@@ -156,6 +158,10 @@ Commands:
   reconnect             restart network connection
 
   states                print state machines info
+  
+  cache                 show list of cached identities
+  
+  cache clear           erase all identities from the cache 
   
   money                 show the financial status 
 

@@ -234,7 +234,8 @@ class SupplierFinder(automat.Automat):
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')
-            d.addBoth(self._got_target_idurl)
+            d.addCallback(self._got_target_idurl)
+            d.addErrback(self._reqiest_error)
         else:
             self.automat('users-not-found')
     
@@ -256,13 +257,26 @@ class SupplierFinder(automat.Automat):
             # self.automat('user-already-supplier')
             return response
         d = identitycache.immediatelyCaching(idurl)
-        d.addCallback(lambda x: self.automat('found-one-user', idurl))
+        # d.addCallback(lambda x: self.automat('found-one-user', idurl))
+        d.addCallback(lambda src: self._got_target_identity(src, idurl))
         d.addErrback(lambda x: self.automat('users-not-found'))
         return response
+    
+    def _request_error(self, err):
+        lg.out(3, str(err))
             
-    def _got_target_identity(self, pagesrc, idurl):
-        self.automat('found-one-user', idurl)
-        
+    def _got_target_identity(self, src, idurl):
+        """
+        Need to check that remote user is supported at least one of our protocols.
+        """
+        ident = identitycache.FromCache(idurl)
+        remoteprotos = set(ident.getProtoOrder())
+        myprotos = set(misc.getLocalIdentity().getProtoOrder())
+        if len(myprotos.intersection(remoteprotos)) > 0:
+            self.automat('found-one-user', idurl)
+        else:
+            self.automat('users-not-found')
+            
     def _supplier_connector_state(self, supplier_idurl, newstate):
         if supplier_idurl != self.target_idurl:
             return

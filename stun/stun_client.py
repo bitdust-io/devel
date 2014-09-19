@@ -162,6 +162,7 @@ class StunClient(automat.Automat):
         def _find(x):
             d = dht_service.find_node(dht_service.random_key())
             d.addCallback(self._found_nodes)
+            d.addErrback(self._not_found_nodes)
         d = dht_service.reconnect()
         d.addCallback(_find)
 
@@ -185,9 +186,14 @@ class StunClient(automat.Automat):
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('stun_port')
-            d.addBoth(self._got_stun_port, node.address)
+            d.addCallback(self._got_stun_port, node.address)
+            d.addErrback(self._request_error)
         else:
             self.automat('peers-not-found')
+            
+    def _not_found_nodes(self, err):
+        lg.out(1, str(err))
+        self.automat('peers-not-found')
         
     def _got_stun_port(self, response, node_ip_address):
         try:
@@ -204,4 +210,7 @@ class StunClient(automat.Automat):
         else:
             self.automat('peers-not-found')
 
+    def _request_error(self, err):
+        lg.out(1, str(err))
+        
 

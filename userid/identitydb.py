@@ -36,6 +36,12 @@ _LocalIPs = {}
 
 #------------------------------------------------------------------------------ 
 
+def cache():
+    global _IdentityCache
+    return _IdentityCache
+
+#------------------------------------------------------------------------------ 
+
 def init():
     """
     Need to call before all other methods.
@@ -89,6 +95,17 @@ def has_key(idurl):
     """
     global _IdentityCache
     return _IdentityCache.has_key(idurl)
+
+def has_file(idurl):
+    """
+    """
+    try:
+        partfilename = nameurl.UrlFilename(idurl)
+    except:
+        lg.out(1, "identitydb.has_file ERROR %s is not correct" % str(idurl))
+        return None
+    filename = os.path.join(settings.IdentityCacheDir(), partfilename)
+    return os.path.exists(filename)
 
 def idset(idurl, id_obj):
     """
@@ -167,12 +184,10 @@ def get(url):
         except:
             lg.out(1, "identitydb.get ERROR %s is incorrect" % str(url))
             return None
-        
         filename = os.path.join(settings.IdentityCacheDir(), partfilename)
         if not os.path.exists(filename):
             lg.out(6, "identitydb.get file %s not exist" % os.path.basename(filename))
             return None
-        
         idxml = bpio.ReadTextFile(filename)
         if idxml:
             idobj = identity.identity(xmlsrc=idxml)
@@ -184,9 +199,16 @@ def get(url):
             else:
                 lg.out(1, "identitydb.get ERROR url=%s url2=%s" % (url, url2))
                 return None
-
         lg.out(6, "identitydb.get %s not found" % nameurl.GetName(url))
         return None
+
+def get_filename(idurl):
+    try:
+        partfilename = nameurl.UrlFilename(idurl)
+    except:
+        lg.out(1, "identitydb.get_filename ERROR %s is incorrect" % str(idurl))
+        return None
+    return os.path.join(settings.IdentityCacheDir(), partfilename)
 
 def get_idurls_by_contact(contact):
     """

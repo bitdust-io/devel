@@ -140,7 +140,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
                         exec 'remoteException = %s("%s") from %s' % (exceptionClassName, message.response, address)
                     except Exception:
                         # We could not recreate the exception; create a generic one
-                        remoteException = Exception(message.response)
+                        remoteException = Exception(str(message.response) + (' from %s' % str(address)))
                     df.errback(remoteException)
                 else:
                     # We got a result from the RPC
