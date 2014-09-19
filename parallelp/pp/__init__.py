@@ -98,7 +98,6 @@ class _Task(object):
         """Finalizes the task.
 
            For internal use only"""
-        print 'finalize', sresult
         self.sresult = sresult
         if self.callback:
             self.__unpickle()

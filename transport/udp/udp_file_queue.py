@@ -539,6 +539,8 @@ class OutboxFile():
         else:
             self.status = 'failed'
             self.error_message = 'transfer interrupted'
+            lg.out(6, 'udp_file_queue.on_zero_ack WARNING eof=%r size=%d delivered=%d' % (
+                self.eof, self.size, self.bytes_delivered))
         self.queue.on_outbox_file_done(self.stream_id)
         # print status
         return True

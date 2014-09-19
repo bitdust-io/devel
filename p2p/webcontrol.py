@@ -2987,8 +2987,10 @@ class MainPage(Page):
 
         #---cacheclear---
         elif action == 'cacheclear':
+            src = ''
+            src += html_comment('  %d items cached, removing ...' % identitycache.CacheLen())
             identitycache.Clear()
-            src = html_comment('  empty')
+            src += html_comment('  cache is empty')
             return html(request, body=str(src),)
         
         else:
@@ -4356,7 +4358,7 @@ class SuppliersPage(Page):
             src += '<p><a href="?action=call&back=%s">Call all suppliers to find out who is alive</a></p><br>\n' % back 
             src += '<p><a href="?action=callalive&back=%s">Call only alive suppliers now - just to test</a></p><br>\n' % back
             src += '<p><a href="?action=cacheids&back=%s">Request suppliers\'s identities</a></p><br>\n' % back
-        src += '<p><a href="?action=request&back=%s">Request list of suppliers from Central server</a></p>\n' % (back)
+        # src += '<p><a href="?action=request&back=%s">Request list of suppliers from Central server</a></p>\n' % (back)
         src += '<p><a href="%s?back=%s">Switch to Customers</a></p>\n' % ('/'+_PAGE_CUSTOMERS, back)
         if self.show_ratings:
             src += '<p><a href="%s?ratings=0&back=%s">Hide monthly ratings</a></p>\n' % (request.path, back)
