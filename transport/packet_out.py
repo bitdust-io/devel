@@ -153,6 +153,7 @@ class PacketOut(automat.Automat):
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.payloadsize = len(self.outpacket.Payload)
         if self.outpacket.CreatorID == misc.getLocalID():
+            # our data will go to
             self.remote_idurl = self.outpacket.RemoteID.strip()
         else:
             if self.outpacket.Command == commands.Data():      
@@ -342,7 +343,8 @@ class PacketOut(automat.Automat):
             os.write(fileno, self.packetdata)
             os.close(fileno)
             self.filesize = len(self.packetdata)
-            self.timeout = max(int(self.filesize/settings.SendingSpeedLimit()), settings.SendTimeOut())
+            self.timeout = max(int(self.filesize/(settings.SendingSpeedLimit()/len(queue()))), 
+                               settings.SendTimeOut())
         except:
             lg.exc()
             self.packetdata = None

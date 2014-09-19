@@ -408,13 +408,16 @@ def outbox(outpacket, wide=False, callbacks={}):
     """
     Sends `packet` to the network.
     
-        :param outpacket: an instance of packet
+        :param outpacket: an instance of ``signed.Packet``
         :param wide:  set to True if you need to send the packet 
                       to all contacts of Remote Identity
         :param callbacks: provide a callback methods to get response
     """
-    lg.out(16, "gate.outbox [%s] to %s" % (
-        outpacket.Command, nameurl.GetName(outpacket.RemoteID),))
+    lg.out(16, "gate.outbox [%s] owner:%s creator:%s remote:%s" % (
+        outpacket.Command, 
+        nameurl.GetName(outpacket.OwnerID),
+        nameurl.GetName(outpacket.CreatorID),
+        nameurl.GetName(outpacket.RemoteID),))
     return packet_out.create(outpacket, wide, callbacks)
 
 
