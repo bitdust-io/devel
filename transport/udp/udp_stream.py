@@ -349,7 +349,7 @@ class UDPStream():
             if need_to_ack or is_ack_timed_out:
                 activity = activity or self.send_ack()
         else:
-            if self.bytes_sent == 0 and relative_time > 0:
+            if self.bytes_acked == 0 and relative_time > 0:
                 if relative_time - self.last_block_received_time > RTT_MAX_LIMIT * 10.0:
                     if _Debug:
                         lg.out(18, 'rtt=%r, last block in %r' % (
