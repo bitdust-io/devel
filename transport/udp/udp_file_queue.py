@@ -130,7 +130,7 @@ class FileQueue:
         outstream = udp_stream.UDPStream(stream_id, outfile, self)
         self.streams[stream_id] = outstream
         self.outboxFiles[stream_id] = outfile
-        outstream.automat('init')
+        # outstream.automat('init')
         if not single:
             d = udp_interface.interface_register_file_sending(
                 self.session.peer_id, self.session.peer_idurl, filename, description)
@@ -144,7 +144,7 @@ class FileQueue:
         instream = udp_stream.UDPStream(stream_id, infile, self)
         self.streams[stream_id] = instream
         self.inboxFiles[stream_id] = infile
-        instream.automat('init')
+        # instream.automat('init')
         d = udp_interface.interface_register_file_receiving(
             self.session.peer_id, self.session.peer_idurl, infile.filename, infile.size)
         d.addCallback(self.on_inbox_file_registered, stream_id)
