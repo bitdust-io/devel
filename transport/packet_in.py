@@ -247,13 +247,8 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-#        if arg is None:
-#            stats.count_inbox(self.sender_idurl, self.proto, 'failed', self.bytes_received)
-#            # callback.run_inbox_callbacks(None, self, self.status, self.error_message)
-#        else:
         status, bytes_received, error_message = arg
         stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
-        # callback.run_inbox_callbacks(None, self, status, error_message)
 
     def doReportCacheFailed(self, arg):
         """
@@ -261,6 +256,7 @@ class PacketIn(automat.Automat):
         """
         status, bytes_received, error_message = arg
         stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+        lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
 
     def doDestroyMe(self, arg):
         """
