@@ -199,7 +199,6 @@ def immediatelyCaching(url):
     """
     global _CachingTasks
     if _CachingTasks.has_key(url):
-        print _CachingTasks
         return _CachingTasks[url]
     def _getPageSuccess(src, url, res):
         global _CachingTasks
