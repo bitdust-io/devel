@@ -184,7 +184,7 @@ class GateInterface():
 #------------------------------------------------------------------------------ 
 
 def proxy_errback(x):
-    lg.out('udp_interface.proxy_errback: %s' % x)
+    lg.out(6, 'udp_interface.proxy_errback ERROR %s' % x)
 
 #------------------------------------------------------------------------------ 
 
