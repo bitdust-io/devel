@@ -403,7 +403,7 @@ class UDPStream(automat.Automat):
         if activity:
             self.resend_inactivity_counter = 1
         else:
-            self.resend_inactivity_counter *= 2
+            self.resend_inactivity_counter += 1
         lg.out(18, 'doResendBlocks %d' % self.resend_inactivity_counter)        
 
     def doResendAck(self, arg):
@@ -436,7 +436,7 @@ class UDPStream(automat.Automat):
         if activity:
             self.resend_inactivity_counter = 1
         else:
-            self.resend_inactivity_counter *= 2
+            self.resend_inactivity_counter += 1
         
     def doSendZeroAck(self, arg):
         """
