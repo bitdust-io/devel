@@ -151,7 +151,7 @@ class PacketIn(automat.Automat):
         elif self.state == 'CACHING':
             if event == 'failed' :
                 self.state = 'FAILED'
-                self.doReportFailed(arg)
+                self.doReportCacheFailed(arg)
                 self.doEraseInputFile(arg)
                 self.doDestroyMe(arg)
             elif event == 'remote-id-cached' :
@@ -166,7 +166,7 @@ class PacketIn(automat.Automat):
         status, bytes_received, error_message = arg
         if status != 'finished':
             return False
-        if self.size and self.size>0 and self.size != bytes_received:
+        if self.size and self.size > 0 and self.size != bytes_received:
             return False
         return True
 
@@ -206,7 +206,7 @@ class PacketIn(automat.Automat):
         """
         d = identitycache.immediatelyCaching(self.sender_idurl)
         d.addCallback(self._remote_identity_cached, arg)
-        d.addErrback(lambda err: self.automat('failed'))
+        d.addErrback(lambda err: self.automat('failed', arg))
 
     def doReadAndUnserialize(self, arg):
         """
@@ -247,13 +247,20 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        if arg is None:
-            stats.count_inbox(self.sender_idurl, self.proto, 'failed', self.bytes_received)
-            # callback.run_inbox_callbacks(None, self, self.status, self.error_message)
-        else:
-            status, bytes_received, error_message = arg
-            stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
-            # callback.run_inbox_callbacks(None, self, status, error_message)
+#        if arg is None:
+#            stats.count_inbox(self.sender_idurl, self.proto, 'failed', self.bytes_received)
+#            # callback.run_inbox_callbacks(None, self, self.status, self.error_message)
+#        else:
+        status, bytes_received, error_message = arg
+        stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+        # callback.run_inbox_callbacks(None, self, status, error_message)
+
+    def doReportCacheFailed(self, arg):
+        """
+        Action method.
+        """
+        status, bytes_received, error_message = arg
+        stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
 
     def doDestroyMe(self, arg):
         """
