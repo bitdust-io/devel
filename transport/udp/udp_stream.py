@@ -416,9 +416,6 @@ class UDPStream(automat.Automat):
         if relative_time > 0.0: 
             current_rate = self.bytes_in / relative_time
             if self.limit_receive_bytes_per_sec > 0 and current_rate > self.limit_receive_bytes_per_sec:
-                if _Debug:
-                    lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
-                        self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
                 limit_reached = True
         activity = False
         if first_block_in_group or period_avarage == 0:
@@ -429,7 +426,9 @@ class UDPStream(automat.Automat):
                 if last_ack_timeout:
                     activity = self._send_ack()
             else:
-                pass
+                if _Debug:
+                    lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
+                        self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
         if activity:
             self.resend_inactivity_counter = 0.0
         else:
