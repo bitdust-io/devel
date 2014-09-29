@@ -530,7 +530,7 @@ def stop_packets_timeout_loop():
     if _PacketsTimeOutTask:
         if _PacketsTimeOutTask.active():
             _PacketsTimeOutTask.cancel()
-            _PacketsTimeOutTask = None
+        _PacketsTimeOutTask = None
 
 #------------------------------------------------------------------------------ 
 
@@ -588,6 +588,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     Must return a unique transfer ID so plug-in will know that ID.
     After finishing that given transfer - that ID is passed to `unregister_file_sending()`.
     """
+    lg.out(18, 'on_register_file_sending %s %s' % (filename, description))
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
         lg.out(2, 'gate.on_register_file_sending ERROR packet_out not found: %r %r %r' % (
@@ -606,6 +607,7 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     """
     Called from transport plug-in after finish sending a single file.
     """
+    lg.out(18, 'on_unregister_file_sending %s %s' % (transfer_id, status))
     pkt_out, work_item = packet_out.search_by_transfer_id(transfer_id)
     if pkt_out is None:
         lg.warn('%s is not found' % str(transfer_id))
@@ -777,15 +779,15 @@ def parseCommandLine():
     return options, args
 
 def main():
-    # global INSTALLED_TRANSPORTS
-    # del INSTALLED_TRANSPORTS['tcp']
+    global INSTALLED_TRANSPORTS
+    del INSTALLED_TRANSPORTS['tcp']
     # INSTALLED_TRANSPORTS.pop('udp')
     bpio.init()
     settings.init()
     misc.init()
     identitycache.init()
-    identitycache.UpdateAfterChecking('http://37.18.255.33:8084/vps_1000.xml', 
-        open('C:\\Documents and Settings\\veselin\\.bitpie\\identitycache\\http###37.18.255.33(#8084#)#vps_1000.xml').read())
+    # identitycache.UpdateAfterChecking('http://megafaq.ru/vps_1001.xml', 
+    #     open('C:\\Documents and Settings\\veselin\\.bitpie\\identitycache\\http###37.18.255.33(#8084#)#vps_1000.xml').read())
     from crypt import key
     key.InitMyKey()
     (options, args) = parseCommandLine()

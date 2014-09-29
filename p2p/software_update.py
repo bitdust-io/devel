@@ -637,7 +637,6 @@ def update_sheduler():
     if _ShedulerTask is not None:
         if _ShedulerTask.active():
             _ShedulerTask.cancel()
-        del _ShedulerTask
         _ShedulerTask = None
     loop()
 

@@ -176,7 +176,7 @@ def stop_process_sessions():
     if _ProcessSessionsTask:
         if _ProcessSessionsTask.active():
             _ProcessSessionsTask.cancel()
-            _ProcessSessionsTask = None
+        _ProcessSessionsTask = None
 
 #------------------------------------------------------------------------------ 
 

@@ -115,7 +115,7 @@ class BackupRebuilder(automat.Automat):
         self.missingPackets = 0 
         self.missingSuppliers = set()
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         """
         This method is called every time when my state is changed.
         Need to notify backup_monitor() machine about my new state. 

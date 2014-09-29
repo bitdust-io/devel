@@ -70,11 +70,6 @@ class DHTUDPConnector(automat.Automat):
         name = 'udp_connector[%s]' % self.peer_id
         automat.Automat.__init__(self, name, 'AT_STARTUP')
 
-    def state_changed(self, oldstate, newstate):
-        """
-        Method to to catch the moment when automat's state were changed.
-        """
-
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':

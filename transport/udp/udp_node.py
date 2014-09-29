@@ -83,10 +83,6 @@ class UDPNode(automat.Automat):
         self.my_current_incomings = []
         self.notified = False
         
-    def state_changed(self, oldstate, newstate):
-        """
-        """
-        
     def A(self, event, arg):
         #---LISTEN---
         if self.state == 'LISTEN':
@@ -242,10 +238,10 @@ class UDPNode(automat.Automat):
         self.listen_port = int(options['udp_port']) 
         self.my_id = udp_interface.idurl_to_id(self.my_idurl)
         udp.proto(self.listen_port).add_callback(self._datagram_received)
-        bandoutlimit = settings.getBandOutLimit()
-        if bandoutlimit == 0:
-            bandoutlimit = settings.DefaultBandwidthOutLimit()
+        bandoutlimit = settings.getBandOutLimit() or settings.DefaultBandwidthOutLimit()
+        bandinlimit = settings.getBandInLimit() or settings.DefaultBandwidthInLimit()
         udp_stream.set_global_limit_send_bytes_per_sec(bandoutlimit)
+        udp_stream.set_global_limit_receive_bytes_per_sec(bandinlimit)
         # udp.proto(self.listen_port).set_command_filter_callback(udp_stream.command_received)
         reactor.callLater(0, udp_session.process_sessions)
 

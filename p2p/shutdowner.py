@@ -75,7 +75,7 @@ class Shutdowner(automat.Automat):
         self.flagReactor = False
         self.shutdown_param = None
     
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('SHUTDOWN ' + newstate)
         initializer.A('shutdowner.state', newstate)
 

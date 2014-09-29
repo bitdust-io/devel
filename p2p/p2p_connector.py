@@ -141,10 +141,9 @@ class P2PConnector(automat.Automat):
         self.identity_changed = False
         self.version_number = ''
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('P2P ' + newstate)
         initializer.A('p2p_connector.state', newstate)
-        # central_connector.A('p2p_connector.state', newstate)
         tray_icon.state_changed(network_connector.A().state, self.state)
 
     def A(self, event, arg):

@@ -187,7 +187,7 @@ class ContactStatus(automat.Automat):
         automat.Automat.__init__(self, name, state, debug_level)
         lg.out(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
         
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         lg.out(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
         
     def A(self, event, arg):

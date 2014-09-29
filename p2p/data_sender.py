@@ -93,7 +93,7 @@ class DataSender(automat.Automat):
               }
     statistic = {}
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('DATASEND ' + newstate)
 
     def A(self, event, arg):

@@ -79,11 +79,6 @@ class IdServer(automat.Automat):
         self.tcp_port = 6661
         self.hostname = ''
 
-    def state_changed(self, oldstate, newstate):
-        """
-        Method to to catch the moment when automat's state were changed.
-        """
-
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':

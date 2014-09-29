@@ -114,7 +114,7 @@ class Installer(automat.Automat):
     def init(self):
         self.flagCmdLine = False
         
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('INSTALL ' + newstate)
         initializer.A('installer.state', newstate)
         reactor.callLater(0, webcontrol.OnUpdateInstallPage)

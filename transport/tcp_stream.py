@@ -45,8 +45,8 @@ def stop_process_streams():
     if _ProcessStreamsTask:
         if _ProcessStreamsTask.active():
             _ProcessStreamsTask.cancel()
-            _ProcessStreamsTask = None
-            return True
+        _ProcessStreamsTask = None
+        return True
     return False
     
 def process_streams():

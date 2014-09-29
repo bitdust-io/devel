@@ -84,7 +84,7 @@ class ListFilesOrator(Automat):
         'timer-15sec': (15.0, ['REMOTE_FILES']),
         }
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         #automats.set_global_state('ORATOR ' + newstate)
         backup_monitor.A('list_files_orator.state', newstate)
 

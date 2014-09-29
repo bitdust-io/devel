@@ -102,7 +102,7 @@ class IdRestorer(automat.Automat):
             color = msg[1]
         return text, color
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('ID_RESTORE ' + newstate)
         import p2p.installer as installer
         installer.A('id_restorer.state', newstate)

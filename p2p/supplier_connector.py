@@ -103,7 +103,7 @@ class SupplierConnector(automat.Automat):
         Method to initialize additional variables and flags at creation of the state machine.
         """
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         """
         Method to to catch the moment when automat's state were changed.
         """

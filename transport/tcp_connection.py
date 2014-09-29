@@ -70,11 +70,6 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Method to initialize additional variables and flags at creation of the state machine.
         """
 
-    def state_changed(self, oldstate, newstate):
-        """
-        Method to to catch the moment when automat's state were changed.
-        """
-
     def A(self, event, arg):
         #---CONNECTED---
         if self.state == 'CONNECTED':
@@ -135,6 +130,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             if event == 'connection-lost' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+        return None
 
     def isHello(self, arg):
         """

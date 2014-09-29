@@ -176,7 +176,7 @@ class PacketOut(automat.Automat):
         self.results = []
         self.response_packet = None
         self.label = 'out_%d_%s' % (get_packets_counter(), self.description)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 20)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 12)
         increment_packets_counter()
         
     def is_timed_out(self):
@@ -187,29 +187,11 @@ class PacketOut(automat.Automat):
     def set_callback(self, command, cb):
         self.callbacks[command] = cb
         
-    def state_changed(self, oldstate, newstate):
-        """
-        Method to to catch the moment when automat's state were changed.
-        """
-
     def A(self, event, arg):
         #---SENDING---
         if self.state == 'SENDING':
             if event == 'register-item' :
                 self.doSetTransferID(arg)
-            elif ( event == 'unregister-item' or event == 'item-cancelled' ) and not self.isMoreItems(arg) and ( self.Acked or not self.isAckNeeded(arg) ) :
-                self.state = 'SENT'
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-                self.doReportDoneNoAck(arg)
-                self.doDestroyMe(arg)
-            elif event == 'cancel' :
-                self.state = 'CANCEL'
-                self.doCancelItems(arg)
-                self.doReportCancelItems(arg)
-                self.doPopItems(arg)
-                self.doReportCancelled(arg)
-                self.doDestroyMe(arg)
             elif ( event == 'unregister-item' or event == 'item-cancelled' ) and self.isMoreItems(arg) :
                 self.doPopItem(arg)
                 self.doReportItem(arg)
@@ -220,6 +202,19 @@ class PacketOut(automat.Automat):
                 self.state = 'RESPONSE?'
                 self.doPopItem(arg)
                 self.doReportItem(arg)
+            elif event == 'cancel' :
+                self.state = 'CANCEL'
+                self.doCancelItems(arg)
+                self.doReportCancelItems(arg)
+                self.doPopItems(arg)
+                self.doReportCancelled(arg)
+                self.doDestroyMe(arg)
+            elif ( event == 'unregister-item' or event == 'item-cancelled' ) and not self.isMoreItems(arg) and ( self.Acked or not self.isAckNeeded(arg) ) :
+                self.state = 'SENT'
+                self.doPopItem(arg)
+                self.doReportItem(arg)
+                self.doReportDoneNoAck(arg)
+                self.doDestroyMe(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'run' and self.isRemoteIdentityKnown(arg) :
@@ -256,24 +251,24 @@ class PacketOut(automat.Automat):
                 self.doDestroyMe(arg)
         #---IN_QUEUE---
         elif self.state == 'IN_QUEUE':
-            if event == 'register-item' :
+            if event == 'item-cancelled' and self.isMoreItems(arg) :
+                self.doPopItem(arg)
+            elif event == 'register-item' :
                 self.state = 'SENDING'
                 self.Acked=False
                 self.doSetTransferID(arg)
-            elif event == 'item-cancelled' and not self.isMoreItems(arg) :
-                self.state = 'FAILED'
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-                self.doReportFailed(arg)
-                self.doDestroyMe(arg)
-            elif event == 'item-cancelled' and self.isMoreItems(arg) :
-                self.doPopItem(arg)
             elif event == 'cancel' :
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
                 self.doReportCancelItems(arg)
                 self.doPopItems(arg)
                 self.doReportCancelled(arg)
+                self.doDestroyMe(arg)
+            elif event == 'item-cancelled' and not self.isMoreItems(arg) :
+                self.state = 'FAILED'
+                self.doPopItem(arg)
+                self.doReportItem(arg)
+                self.doReportFailed(arg)
                 self.doDestroyMe(arg)
         #---SENT---
         elif self.state == 'SENT':
@@ -293,6 +288,7 @@ class PacketOut(automat.Automat):
                 self.doSaveResponse(arg)
                 self.doReportDoneWithAck(arg)
                 self.doDestroyMe(arg)
+        return None
 
     def isRemoteIdentityKnown(self, arg):
         """

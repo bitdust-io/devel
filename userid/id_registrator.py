@@ -122,7 +122,7 @@ class IdRegistrator(automat.Automat):
         self.free_idurls = []
         self.new_identity = None
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         """
         Method to to catch the moment when automat's state were changed.
         """

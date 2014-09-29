@@ -57,7 +57,7 @@ class NetworkTransport(automat.Automat):
         Method to initialize additional variables and flags at creation of the state machine.
         """
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         """
         Method to to catch the moment when automat's state were changed.
         """
@@ -138,6 +138,7 @@ class NetworkTransport(automat.Automat):
             elif event == 'transport-initialized' and not self.StartNow :
                 self.state = 'OFFLINE'
                 self.doCreateProxy(arg)
+        return None
 
     def doInit(self, arg):
         """

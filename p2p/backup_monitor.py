@@ -112,7 +112,7 @@ class BackupMonitor(automat.Automat):
     def init(self):
         self.current_suppliers = []
     
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         """
         This method is called every time when my state is changed. 
         """

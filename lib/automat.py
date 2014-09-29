@@ -60,6 +60,8 @@ from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------ 
 
+_Debug = True
+_LogEvents = True
 _Counter = 0 #: Increment by one for every new object, the idea is to keep unique ID's in the index
 _Index = {} #: Index dictionary, unique id (string) to index (int)
 _Objects = {} #: Objects dictionary to store all state machines objects
@@ -109,6 +111,13 @@ class Automat(object):
           
     If ``fast = True`` it will call state machine method directly. 
     """
+    
+    post = False
+    """
+    Sometimes need to set the new state AFTER finish all actions.
+    Set ``post = True`` to call ``self.state = <newstate>``
+    in the ``self.event()`` method, not in the ``self.A()`` method.
+    """
           
     def __init__(self, name, state, debug_level=18):
         self.id, self.index = create_index(name)
@@ -154,9 +163,16 @@ class Automat(object):
         Define this method in subclass to execute some code when creating an object. 
         """
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         """
-        Redefine this method in subclass to be able to catch the moment when automat's state were changed.
+        Redefine this method in subclass to be able to catch the moment 
+        immediately after automat's state were changed.
+        """        
+
+    def state_not_changed(self, curstate, event, arg):
+        """
+        Redefine this method in subclass if you want to do some actions
+        immediately after processing the event, which did not change the automat's state.
         """        
 
     def A(self, event, arg):
@@ -204,20 +220,32 @@ class Automat(object):
         You can call event directly to execute ``self.A()`` immediately. 
         """
         global _StateChangedCallback
-        self.log(self.debug_level * 8, '%s fired with event "%s"' % (self, event))# , sys.getrefcount(Automat)))
+        if _LogEvents:
+            self.log(self.debug_level * 4, '%s fired with event "%s"' % (self, event))
         old_state = self.state
-        try:
-            self.A(event, arg)
-        except:
-            self.log(self.debug_level, traceback.format_exc())
-        new_state = self.state
+        if self.post:
+            try:
+                new_state = self.A(event, arg)
+            except:
+                self.log(self.debug_level, traceback.format_exc())
+                return
+            self.state = new_state
+        else:
+            try:
+                self.A(event, arg)
+            except:
+                self.log(self.debug_level, traceback.format_exc())
+                return
+            new_state = self.state
         if old_state != new_state:
-            self.stopTimers()
-            self.state_changed(old_state, new_state)
             self.log(self.debug_level, '%s(%s): [%s]->[%s]' % (self.id, event, old_state, new_state))
+            self.stopTimers()
+            self.state_changed(old_state, new_state, event, arg)
             self.startTimers()
             if _StateChangedCallback is not None:
                 _StateChangedCallback(self.index, self.id, self.name, new_state)
+        else:
+            self.state_not_changed(self.state, event, arg)
 
     def timer_event(self, name, interval):
         """
@@ -270,6 +298,9 @@ class Automat(object):
         global _LogFilename
         global _LogsCount
         global _LifeBeginsTime
+        global _Debug
+        if not _Debug:
+            return
         if _LogFile is not None:
             import time
             if _LogsCount > 100000:

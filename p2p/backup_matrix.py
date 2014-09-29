@@ -715,9 +715,9 @@ def RepaintingProcess(on_off):
         if _RepaintingTask is not None:
             if _RepaintingTask.active():
                 _RepaintingTask.cancel()
-                _RepaintingTask = None
-                _UpdatedBackupIDs.clear()
-                return
+            _RepaintingTask = None
+            _UpdatedBackupIDs.clear()
+            return
     # TODO:
     # Need to optimize that - do not call in loop!
     # Just make a single call and pass _UpdatedBackupIDs as param.

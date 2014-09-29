@@ -73,7 +73,7 @@ def out(level, msg, nl='\n'):
             mn = dt // 60
             sc = dt - mn * 60
             if _DebugLevel >= 10:
-                s = ('%02d:%2.5f' % (mn, sc)) + s
+                s = ('%02d:%06.3f' % (mn, sc)) + s
             else:
                 s = ('%02d:%02d' % (mn, sc)) + s
         else:

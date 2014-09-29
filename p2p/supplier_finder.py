@@ -78,7 +78,7 @@ class SupplierFinder(automat.Automat):
         """
         self.target_idurl = None
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         """
         Method to to catch the moment when automat's state were changed.
         """

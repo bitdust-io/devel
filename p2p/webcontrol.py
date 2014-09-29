@@ -3954,7 +3954,8 @@ class SupplierPage(Page):
             request.redirect(url)
             request.finish()
             return NOT_DONE_YET
-
+        elif action == 'ping':
+            propagate.single(self.idurl)
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         bytesUsed = backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
         suppliers_count = contacts.numSuppliers()
@@ -3984,6 +3985,8 @@ class SupplierPage(Page):
         src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % ( ratings.month_percent(self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
         src += '</table>\n'
         src += '<br><br>\n'
+        src += '<p><a href="%s?action=ping&back=%s">Ping <b>%s</b> to check his current status now</a></p>\n' % (
+            request.path, back, self.name)
         src += '<p><a href="%s?action=replace&back=%s">Fire <b>%s</b> and find another person to store My Files</a></p>\n' % (
             request.path, back, self.name)
         src += '<p><a href="%s/change?back=%s">I want to swap <b>%s</b> with another person, whom I will choose</a></p>\n' % (
@@ -7039,24 +7042,27 @@ class MonitorTransportsPage(Page):
             src += '<td align=left nowrap><b><font color="#ffffff">transfer ID</font></b></td>\n'
             src += '</tr>\n'
             i = 0
-            for workitem in []: # packet_out.queue():
-                if i % 2: 
-                    src += '<tr>\n'
-                else:
-                    src += '<tr bgcolor="#f0f0f0">\n'
-                src += '<td>%s</td>\n' % nameurl.GetName(workitem.remoteid)
-                src += '<td>%s</td>\n' % workitem.command
-                packetid = workitem.packetid if len(workitem.packetid) < 30 else ('...'+workitem.packetid[-30:])
-                src += '<td>%s</td>\n' % packetid
-                # src += '<td>%s</td>\n' % os.path.basename(workitem.filename)
-                src += '<td>%d</td>\n' % workitem.filesize
-                src += '<td>%s://%s</td>\n' % (workitem.proto, workitem.host) 
-                src += '<td>%s</td>\n' % (str(workitem.transfer_id) or '') 
-                src += '</tr>\n'
+            for pktout in packet_out.queue():
+                for workitem in pktout.items:
+                    if i % 2: 
+                        src += '<tr>\n'
+                    else:
+                        src += '<tr bgcolor="#f0f0f0">\n'
+                    src += '<td>%s</td>\n' % nameurl.GetName(pktout.remote_idurl)
+                    src += '<td>%s</td>\n' % pktout.outpacket.Command
+                    packetid = pktout.outpacket.packetid
+                    if len(packetid) > 30:
+                        packetid = '...' + packetid[-30:]
+                    src += '<td>%s</td>\n' % packetid
+                    # src += '<td>%s</td>\n' % os.path.basename(workitem.filename)
+                    src += '<td>%s</td>\n' % str(pktout.filesize)
+                    src += '<td>%s://%s</td>\n' % (workitem.proto, workitem.host) 
+                    src += '<td>%s</td>\n' % (str(workitem.transfer_id) or '') 
+                    src += '</tr>\n'
                 i += 1
             src += '</table>\n'
         src += '</td>\n<td width=50% valign=top>\n' 
-        src += '<p>current transfers: <b>%d</b>\n</p>\n' % (0, 0)
+        src += '<p>current transfers: <b>%d</b>\n</p>\n' % 0
            # len(gate.transfers_in())+len(gate.transfers_out()))
         if False:
         # if len(index) > 0:
@@ -7532,6 +7538,10 @@ class SettingsTreeNode(Page):
                 ):
             network_connector.A('reconnect')
             p2p_connector.A('reconnect')
+
+        if self.path in ('network.network-receive-limit',):
+            from transport.udp import udp_stream 
+            udp_stream.set_global_limit_receive_bytes_per_sec(int(self.value))
 
         if self.path in ('network.network-send-limit',):
             from transport.udp import udp_stream 

@@ -120,7 +120,7 @@ class NetworkConnector(Automat):
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('NETWORK ' + newstate)
         p2p_connector.A('network_connector.state', newstate)
         tray_icon.state_changed(self.state, p2p_connector.A().state)

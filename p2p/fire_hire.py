@@ -165,7 +165,7 @@ class FireHire(automat.Automat):
         self.restart_interval = 1.0
         self.restart_task = None
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         """
         Method to to catch the moment when automat's state were changed.
         """

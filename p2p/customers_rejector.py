@@ -66,11 +66,6 @@ class CustomersRejector(automat.Automat):
         Method to initialize additional variables and flags at creation of the state machine.
         """
 
-    def state_changed(self, oldstate, newstate):
-        """
-        Method to to catch the moment when automat's state were changed.
-        """
-
     def A(self, event, arg):
         #---READY---
         if self.state == 'READY':

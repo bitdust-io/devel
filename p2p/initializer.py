@@ -100,7 +100,7 @@ class Initializer(automat.Automat):
         self.flagCmdLine = False
         self.is_installed = None
     
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('INIT ' + newstate)
 
     def A(self, event, arg):

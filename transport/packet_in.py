@@ -81,8 +81,7 @@ class PacketIn(automat.Automat):
     """
     This class implements all the functionality of the ``packet_in()`` state machine.
     """
-    fast = True
-    
+
     def __init__(self, transfer_id):
         self.transfer_id = transfer_id
         self.time = None
@@ -96,7 +95,7 @@ class PacketIn(automat.Automat):
         self.status = None
         self.error_message = None
         self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 20)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 12)
         increment_packets_counter()
         
     def is_timed_out(self):
@@ -109,11 +108,6 @@ class PacketIn(automat.Automat):
         Method to initialize additional variables and flags at creation of the state machine.
         """
 
-    def state_changed(self, oldstate, newstate):
-        """
-        Method to to catch the moment when automat's state were changed.
-        """
-
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
@@ -122,13 +116,13 @@ class PacketIn(automat.Automat):
                 self.doInit(arg)
         #---RECEIVING---
         elif self.state == 'RECEIVING':
-            if event == 'unregister-item' and not self.isTransferFinished(arg) :
+            if event == 'cancel' :
+                self.doCancelItem(arg)
+            elif event == 'unregister-item' and not self.isTransferFinished(arg) :
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doEraseInputFile(arg)
                 self.doDestroyMe(arg)
-            elif event == 'cancel' :
-                self.doCancelItem(arg)
             elif event == 'unregister-item' and self.isTransferFinished(arg) and not self.isRemoteIdentityCached(arg) :
                 self.state = 'CACHING'
                 self.doCacheRemoteIdentity(arg)
@@ -163,6 +157,7 @@ class PacketIn(automat.Automat):
             elif event == 'remote-id-cached' :
                 self.state = 'INBOX?'
                 self.doReadAndUnserialize(arg)
+        return None
 
     def isTransferFinished(self, arg):
         """

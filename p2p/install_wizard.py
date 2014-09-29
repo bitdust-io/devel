@@ -77,7 +77,7 @@ class InstallWizard(Automat):
     role_args = None
     role = None
 
-    def state_changed(self, oldstate, newstate):
+    def state_changed(self, oldstate, newstate, event, arg):
         reactor.callLater(0, webcontrol.OnUpdateInstallPage)
         installer.A('install_wizard.state', newstate)
 
