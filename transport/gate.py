@@ -820,7 +820,7 @@ def main():
             lg.out(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))
             globals()['num_out'] += 1
         t = task.LoopingCall(_s)
-        reactor.callLater(1, t.start, 60, True)
+        reactor.callLater(5, t.start, 60, True)
         # reactor.callLater(2, t.stop)
         
     reactor.run()
