@@ -630,8 +630,12 @@ class UDPStream(automat.Automat):
                 except:
                     lg.exc()
                 newdata.close()
+            lg.out(24, 'in-> DATA %d %d-%d %d %d %s %s' % (
+                self.stream_id, block_id, self.input_block_id,
+                self.bytes_in, self.input_blocks_counter, eof_state, 
+                len(self.blocks_to_ack)))
             # self.automat('input-data-collected', (block_id, raw_size, eof_state))
-            reactor.callLater(0, self.automat, 'block-received', (block_id, raw_size, eof_state))
+            # reactor.callLater(0, self.automat, 'block-received', (block_id, raw_size, eof_state))
             self.automat('block-received', (block_id, raw_size, eof_state))
             # self.event('block-received', inpt)
     
