@@ -658,7 +658,7 @@ class UDPStream(automat.Automat):
                 if block_id < 0:
                     lg.out(24, 'in-> ACK %d' % (self.stream_id))
                     self.sending_speed_factor *= 0.9
-                    lg.out(18, 'SPEED DOWN')
+                    lg.out(18, 'SPEED DOWN: %r' % self.sending_speed_factor)
                     reactor.callLater(0, self.automat, 'iterate')
                     return
                 acks.append(block_id)
@@ -684,11 +684,11 @@ class UDPStream(automat.Automat):
             if len(acks) > 0:
                 self.input_acks_counter += 1
                 if self.input_acks_counter % int(BLOCKS_PER_ACK / 2) == 1:
-                    if _Debug:
-                        lg.out(18, 'SPEED UP')
                     self.sending_speed_factor *= 1.05
                     if self.sending_speed_factor > 1.0:
                         self.sending_speed_factor = 1.0
+                    if _Debug:
+                        lg.out(18, 'SPEED UP: %r' % self.sending_speed_factor)
             if _Debug:
                 try:
                     sz = self.consumer.size
