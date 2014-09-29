@@ -379,11 +379,11 @@ class UDPStream(automat.Automat):
         relative_time = time.time() - self.creation_time
         activity = False
         if len(self.output_blocks) > 0:
-            if self.input_acks_counter > 0 and self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
-                if _Debug:
-                    lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
-                        self.output_blocks_counter, self.input_acks_counter))
-            else:
+#            if self.input_acks_counter > 0 and self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
+#                if _Debug:
+#                    lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
+#                        self.output_blocks_counter, self.input_acks_counter))
+#            else:
                 reply_dt = self.last_block_sent_time - self.last_ack_received_time
                 if reply_dt > RTT_MAX_LIMIT * 2:
                     self.input_acks_timeouts_counter += 1
@@ -711,6 +711,11 @@ class UDPStream(automat.Automat):
                         lg.out(18, 'SKIP BLOCK, LIMIT SENDING %d : %r>%r' % (
                             self.stream_id, current_rate, self.limit_send_bytes_per_sec))
                     break
+            if self.input_acks_counter > 0 and self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
+                if _Debug:
+                    lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
+                        self.output_blocks_counter, self.input_acks_counter))
+                break
             piece, time_sent = self.output_blocks[block_id]
             data_size = len(piece)
             if time_sent >= 0:
