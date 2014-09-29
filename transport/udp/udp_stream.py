@@ -409,6 +409,7 @@ class UDPStream(automat.Automat):
         Action method.
         """
         # self.resend_counter += 1
+        some_blocks_to_ack = len(self.blocks_to_ack) > 0
         relative_time = time.time() - self.creation_time
         period_avarage = self._block_period_avarage()
         first_block_in_group = (self.last_received_block_id % BLOCKS_PER_ACK) == 1
@@ -418,17 +419,18 @@ class UDPStream(automat.Automat):
             if self.limit_receive_bytes_per_sec > 0 and current_rate > self.limit_receive_bytes_per_sec:
                 limit_reached = True
         activity = False
-        if first_block_in_group or period_avarage == 0:
-            activity = self._send_ack()
-        else:
-            if not limit_reached:
-                last_ack_timeout = self._last_ack_timed_out()
-                if last_ack_timeout:
-                    activity = self._send_ack()
+        if some_blocks_to_ack:
+            if first_block_in_group or period_avarage == 0:
+                activity = self._send_ack()
             else:
-                if _Debug:
-                    lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
-                        self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
+                if not limit_reached:
+                    last_ack_timeout = self._last_ack_timed_out()
+                    if last_ack_timeout:
+                        activity = self._send_ack()
+                else:
+                    if _Debug:
+                        lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
+                            self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
         if activity:
             self.resend_inactivity_counter = 0.0
         else:
