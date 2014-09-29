@@ -657,7 +657,7 @@ class UDPStream(automat.Automat):
                 block_id = struct.unpack('i', raw_bytes)[0]
                 if block_id < 0:
                     self.sending_speed_factor *= 0.9
-                    self.resend_blocks = 0
+                    lg.out(18, 'SPEED DOWN')
                     break
                 acks.append(block_id)
                 try:
@@ -682,6 +682,8 @@ class UDPStream(automat.Automat):
             if len(acks) > 0:
                 self.input_acks_counter += 1
                 if self.input_acks_counter % int(BLOCKS_PER_ACK / 2) == 1:
+                    if _Debug:
+                        lg.out(18, 'SPEED UP')
                     self.sending_speed_factor *= 1.05
                     if self.sending_speed_factor > 1.0:
                         self.sending_speed_factor = 1.0
