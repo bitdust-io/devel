@@ -420,12 +420,12 @@ class UDPStream(automat.Automat):
                 limit_reached = True
         activity = False
         if some_blocks_to_ack:
-            if first_block_in_group or period_avarage == 0:
+            if period_avarage == 0 or self.output_acks_counter == 0:
                 activity = self._send_ack()
             else:
                 if not limit_reached:
                     last_ack_timeout = self._last_ack_timed_out()
-                    if last_ack_timeout:
+                    if last_ack_timeout or first_block_in_group:
                         activity = self._send_ack()
                 else:
                     if _Debug:
