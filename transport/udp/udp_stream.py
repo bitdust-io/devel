@@ -379,31 +379,32 @@ class UDPStream(automat.Automat):
         relative_time = time.time() - self.creation_time
         activity = False
         if len(self.output_blocks) > 0:
-            if self.input_acks_counter > 0:
-                if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
+            if self.input_acks_counter > 0 and self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
+                if _Debug:
                     lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
                         self.output_blocks_counter, self.input_acks_counter))
-                    return
-            reply_dt = self.last_block_sent_time - self.last_ack_received_time
-            if reply_dt > RTT_MAX_LIMIT * 2:
-                self.input_acks_timeouts_counter += 1
-#                if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
-#                    if _Debug:
-#                        lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
-#                            self._rtt_current(), self.last_ack_received_time, self.last_block_sent_time))
-#                        lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
-#                            bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
-#                    reactor.callLater(0, self.automat, 'timeout')
-#                    return
-                latest_block_id = self.output_blocks_ids[0]
-                self.output_blocks[latest_block_id][1] = -1
-                self.last_ack_received_time = relative_time
-                lg.out(18, 'RESEND %d %d' % (self.stream_id, latest_block_id))
-            activity = self._send_blocks()
+            else:
+                reply_dt = self.last_block_sent_time - self.last_ack_received_time
+                if reply_dt > RTT_MAX_LIMIT * 2:
+                    self.input_acks_timeouts_counter += 1
+    #                if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
+    #                    if _Debug:
+    #                        lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
+    #                            self._rtt_current(), self.last_ack_received_time, self.last_block_sent_time))
+    #                        lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
+    #                            bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
+    #                    reactor.callLater(0, self.automat, 'timeout')
+    #                    return
+                    latest_block_id = self.output_blocks_ids[0]
+                    self.output_blocks[latest_block_id][1] = -1
+                    self.last_ack_received_time = relative_time
+                    lg.out(18, 'RESEND %d %d' % (self.stream_id, latest_block_id))
+                activity = self._send_blocks()
         if activity:
             self.resend_inactivity_counter = 0.0
         else:
-            self.resend_inactivity_counter += 1.0        
+            self.resend_inactivity_counter += 1.0
+        lg.out(18, 'doResendBlocks %d' % self.resend_inactivity_counter)        
 
     def doResendAck(self, arg):
         """
