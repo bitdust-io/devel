@@ -412,7 +412,7 @@ class UDPStream(automat.Automat):
         relative_time = time.time() - self.creation_time
         if relative_time > 0.0: 
             current_rate = self.bytes_in / relative_time
-            if current_rate > self.limit_receive_bytes_per_sec:
+            if self.limit_receive_bytes_per_sec > 0 and current_rate > self.limit_receive_bytes_per_sec:
                 if _Debug:
                     lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
                         self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
@@ -699,7 +699,7 @@ class UDPStream(automat.Automat):
         for block_id in self.output_blocks_ids:
             if relative_time > 0.0: 
                 current_rate = self.bytes_sent / relative_time
-                if current_rate > self.limit_send_bytes_per_sec:
+                if self.limit_send_bytes_per_sec > 0 and current_rate > self.limit_send_bytes_per_sec:
                     if _Debug:
                         lg.out(18, 'SKIP BLOCK, LIMIT SENDING %d : %r>%r' % (
                             self.stream_id, current_rate, self.limit_send_bytes_per_sec))
