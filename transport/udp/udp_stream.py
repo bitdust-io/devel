@@ -382,13 +382,19 @@ class UDPStream(automat.Automat):
             reply_dt = self.last_block_sent_time - self.last_ack_received_time
             if reply_dt > RTT_MAX_LIMIT * 2:
                 self.input_acks_timeouts_counter += 1
-                if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
-                    if _Debug:
-                        lg.out(18, 'rtt=%r, last ack at %r, last block was %r' % (
-                            self._rtt_current(), self.last_ack_received_time, self.last_block_sent_time))
-                        lg.out(18, ','.join(map(lambda bid: '%d:%d' % (bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
-                    reactor.callLater(0, self.automat, 'timeout')
-                    return
+#                if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
+#                    if _Debug:
+#                        lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
+#                            self._rtt_current(), self.last_ack_received_time, self.last_block_sent_time))
+#                        lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
+#                            bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
+#                    reactor.callLater(0, self.automat, 'timeout')
+#                    return
+                if self.input_acks_counter > 0:
+                    if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 4:
+                        lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
+                            self.output_blocks_counter, self.input_acks_counter))
+                        return
                 latest_block_id = self.output_blocks_ids[0]
                 self.output_blocks[latest_block_id][1] = -1
                 self.last_ack_received_time = relative_time
@@ -399,16 +405,10 @@ class UDPStream(automat.Automat):
         else:
             self.resend_inactivity_counter += 1.0        
 
-#    def doCollectInputData(self, arg):
-#        """
-#        Action method.
-#        """
-
     def doResendAck(self, arg):
         """
         Action method.
         """
-        # self.resend_counter += 1
         some_blocks_to_ack = len(self.blocks_to_ack) > 0
         relative_time = time.time() - self.creation_time
         period_avarage = self._block_period_avarage()
@@ -431,6 +431,7 @@ class UDPStream(automat.Automat):
                     if _Debug:
                         lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
                             self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
+                        # self._
         if activity:
             self.resend_inactivity_counter = 0.0
         else:
@@ -697,17 +698,10 @@ class UDPStream(automat.Automat):
             reactor.callLater(0, self.automat, 'close')
 
     def _send_blocks(self):
-#        global _GlobalLimitSendBytesPerSec
-#        if not self.consumer:
-#            return False
         relative_time = time.time() - self.creation_time
         rtt_current = self.rtt_avarage / self.rtt_acks_counter
         resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
         new_blocks_counter = 0
-        # total_send_bytes_per_sec = sum(map(lambda s: s.current_send_bytes_per_sec, streams().values()))
-        # if total_send_bytes_per_sec > _GlobalLimitSendBytesPerSec:
-        #     lg.out(18, 'SKIP, LIMIT SENDING %d' % self.stream_id)
-        #     return False 
         for block_id in self.output_blocks_ids:
             if relative_time > 0.0: 
                 current_rate = self.bytes_sent / relative_time
@@ -727,14 +721,7 @@ class UDPStream(automat.Automat):
                     continue
             time_sent = relative_time
             self.output_blocks[block_id][1] = time_sent
-            output = ''.join((
-                struct.pack('i', block_id),
-                piece))
-            # DEBUG
-            # import random
-            # if random.randint(0, 9) >= 1:
-                # 10 % percent lost
-                # self.producer.do_send_data(self.stream_id, self.consumer, output)
+            output = ''.join((struct.pack('i', block_id), piece))
             self.producer.do_send_data(self.stream_id, self.consumer, output)
             self.bytes_sent += data_size
             self.output_blocks_counter += 1
