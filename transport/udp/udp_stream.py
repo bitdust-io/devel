@@ -210,10 +210,10 @@ class UDPStream(automat.Automat):
         self.last_received_block_time = 0
         self.last_received_block_id = 0
         self.last_block_sent_time = 0
-        self.rtt_avarage = RTT_MIN_LIMIT 
+        self.rtt_avarage = (RTT_MIN_LIMIT + RTT_MAX_LIMIT) / 2.0 
         self.rtt_acks_counter = 1.0
         self.resend_task = None
-        self.resend_inactivity_counter = 0
+        self.resend_inactivity_counter = 1
         self.current_send_bytes_per_sec = 0
         self.need_to_ack_this_block = False
 
@@ -401,9 +401,9 @@ class UDPStream(automat.Automat):
                     lg.out(18, 'RESEND %d %d' % (self.stream_id, latest_block_id))
                 activity = self._send_blocks()
         if activity:
-            self.resend_inactivity_counter = 0.0
+            self.resend_inactivity_counter = 1
         else:
-            self.resend_inactivity_counter += 1.0
+            self.resend_inactivity_counter *= 2
         lg.out(18, 'doResendBlocks %d' % self.resend_inactivity_counter)        
 
     def doResendAck(self, arg):
@@ -434,9 +434,9 @@ class UDPStream(automat.Automat):
                             self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
                         # self._
         if activity:
-            self.resend_inactivity_counter = 0.0
+            self.resend_inactivity_counter = 1
         else:
-            self.resend_inactivity_counter += 1.0
+            self.resend_inactivity_counter *= 2
         
     def doSendZeroAck(self, arg):
         """
@@ -449,7 +449,7 @@ class UDPStream(automat.Automat):
         Action method.
         """
         rtt_current = self._rtt_current()
-        next_resend = rtt_current * self.resend_inactivity_counter #  * 2.0
+        next_resend = max(0.001, rtt_current * self.resend_inactivity_counter) #  * 2.0
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
@@ -465,7 +465,7 @@ class UDPStream(automat.Automat):
         Action method.
         """
         period_avarage = self._block_period_avarage()
-        next_resend = period_avarage * self.resend_inactivity_counter
+        next_resend = max(0.001, period_avarage * self.resend_inactivity_counter)
         if self.resend_task is None:
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
