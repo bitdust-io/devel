@@ -215,6 +215,7 @@ class UDPStream(automat.Automat):
         self.resend_task = None
         self.resend_inactivity_counter = 1
         self.current_send_bytes_per_sec = 0
+        self.sending_speed_factor = 1.0
         self.need_to_ack_this_block = False
 
     def A(self, event, arg):
@@ -347,7 +348,8 @@ class UDPStream(automat.Automat):
         self.creation_time = time.time()
         self.limit_send_bytes_per_sec = get_global_limit_send_bytes_per_sec() / len(streams())
         self.limit_receive_bytes_per_sec = get_global_limit_receive_bytes_per_sec() / len(streams())
-        lg.out(18, 'udp_stream.doInit limits: (in:%r|out:%r)' % (self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec))
+        lg.out(18, 'udp_stream.doInit limits: (in:%r|out:%r)' % (
+            self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec))
 
     def doPushBlocks(self, arg):
         """
@@ -404,7 +406,7 @@ class UDPStream(automat.Automat):
             self.resend_inactivity_counter = 1
         else:
             self.resend_inactivity_counter += 1
-        lg.out(18, 'doResendBlocks %d' % self.resend_inactivity_counter)        
+        # lg.out(18, 'doResendBlocks %d' % self.resend_inactivity_counter)        
 
     def doResendAck(self, arg):
         """
@@ -424,15 +426,14 @@ class UDPStream(automat.Automat):
             if period_avarage == 0 or self.output_acks_counter == 0:
                 activity = self._send_ack()
             else:
-                if not limit_reached:
+                # if not limit_reached:
                     last_ack_timeout = self._last_ack_timed_out()
                     if last_ack_timeout or first_block_in_group:
-                        activity = self._send_ack()
-                else:
-                    if _Debug:
-                        lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
-                            self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
-                        # self._
+                        activity = self._send_ack(limit_reached)
+                # else:
+                #     if _Debug:
+                #         lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
+                #             self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
         if activity:
             self.resend_inactivity_counter = 1
         else:
@@ -654,6 +655,10 @@ class UDPStream(automat.Automat):
                 if not raw_bytes:
                     break
                 block_id = struct.unpack('i', raw_bytes)[0]
+                if block_id < 0:
+                    self.sending_speed_factor *= 0.9
+                    self.resend_blocks = 0
+                    break
                 acks.append(block_id)
                 try:
                     self.output_blocks_ids.remove(block_id)
@@ -676,6 +681,10 @@ class UDPStream(automat.Automat):
                 eof = self.consumer.on_sent_raw_data(block_size)
             if len(acks) > 0:
                 self.input_acks_counter += 1
+                if self.input_acks_counter % int(BLOCKS_PER_ACK / 2) == 1:
+                    self.sending_speed_factor *= 1.05
+                    if self.sending_speed_factor > 1.0:
+                        self.sending_speed_factor = 1.0
             if _Debug:
                 try:
                     sz = self.consumer.size
@@ -705,12 +714,14 @@ class UDPStream(automat.Automat):
         new_blocks_counter = 0
         for block_id in self.output_blocks_ids:
             if relative_time > 0.0: 
-                current_rate = self.bytes_sent / relative_time
-                if self.limit_send_bytes_per_sec > 0 and current_rate > self.limit_send_bytes_per_sec:
-                    if _Debug:
-                        lg.out(18, 'SKIP BLOCK, LIMIT SENDING %d : %r>%r' % (
-                            self.stream_id, current_rate, self.limit_send_bytes_per_sec))
-                    break
+                if self.limit_send_bytes_per_sec > 0:
+                    current_rate = self.bytes_sent / relative_time
+                    current_limit = self.limit_send_bytes_per_sec * self.sending_speed_factor
+                    if current_rate > current_limit:
+                        if _Debug:
+                            lg.out(18, 'SKIP BLOCK LIMIT SENDING %d : %r>%r' % (
+                                self.stream_id, current_rate, self.limit_send_bytes_per_sec))
+                        break
             if self.input_acks_counter > 0 and self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
                 if _Debug:
                     lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
@@ -742,8 +753,11 @@ class UDPStream(automat.Automat):
         #     print 'rate:(%r)' % current_rate
         return new_blocks_counter > 0
 
-    def _send_ack(self):
-        ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
+    def _send_ack(self, limit_reached=False):
+        if limit_reached:
+            ack_data = struct.pack('i', -1)
+        else:
+            ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
         ack_len = len(ack_data)
         self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
         self.bytes_in_acks += ack_len 
