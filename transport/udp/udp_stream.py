@@ -379,6 +379,11 @@ class UDPStream(automat.Automat):
         relative_time = time.time() - self.creation_time
         activity = False
         if len(self.output_blocks) > 0:
+            if self.input_acks_counter > 0:
+                if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
+                    lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
+                        self.output_blocks_counter, self.input_acks_counter))
+                    return
             reply_dt = self.last_block_sent_time - self.last_ack_received_time
             if reply_dt > RTT_MAX_LIMIT * 2:
                 self.input_acks_timeouts_counter += 1
@@ -390,11 +395,6 @@ class UDPStream(automat.Automat):
 #                            bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
 #                    reactor.callLater(0, self.automat, 'timeout')
 #                    return
-                if self.input_acks_counter > 0:
-                    if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 4:
-                        lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
-                            self.output_blocks_counter, self.input_acks_counter))
-                        return
                 latest_block_id = self.output_blocks_ids[0]
                 self.output_blocks[latest_block_id][1] = -1
                 self.last_ack_received_time = relative_time
