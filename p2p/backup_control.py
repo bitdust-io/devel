@@ -56,7 +56,7 @@ import backup_db_keeper
 import list_files_orator
 import io_throttle
 import p2p_service
-import local_site
+#import local_site
 
 #------------------------------------------------------------------------------ 
 

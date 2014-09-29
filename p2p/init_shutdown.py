@@ -132,7 +132,7 @@ def init_contacts(callback=None, errback=None):
         return
 
     from lib import contacts
-    import local_site
+#    import local_site
     # contacts.SetSuppliersChangedCallback(lambda old, new: local_site.update_suppliers(new))
     # contacts.SetCustomersChangedCallback(lambda old, new: local_site.update_customers(new))
     contacts.init()
