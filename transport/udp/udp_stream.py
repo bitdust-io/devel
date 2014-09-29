@@ -656,9 +656,10 @@ class UDPStream(automat.Automat):
                     break
                 block_id = struct.unpack('i', raw_bytes)[0]
                 if block_id < 0:
+                    lg.out(24, 'in-> ACK %d' % (self.stream_id))
                     self.sending_speed_factor *= 0.9
                     lg.out(18, 'SPEED DOWN')
-                    break
+                    return
                 acks.append(block_id)
                 try:
                     self.output_blocks_ids.remove(block_id)
