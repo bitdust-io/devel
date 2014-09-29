@@ -228,19 +228,19 @@ class UDPStream(automat.Automat):
                 self.doPushBlocks(arg)
                 self.doResendBlocks(arg)
                 self.doSendingLoop(arg)
-            elif event == 'ack-received' and not self.isWriteEOF(arg) :
-                self.doResendBlocks(arg)
-                self.doSendingLoop(arg)
+            elif event == 'set-limits' :
+                self.doUpdateLimits(arg)
             elif event == 'ack-received' and ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
                 self.doReportSendDone(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
+            elif event == 'ack-received' and not ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
+                self.doResendBlocks(arg)
+                self.doSendingLoop(arg)
             elif event == 'timeout' :
                 self.doReportSendTimeout(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
-            elif event == 'set-limits' :
-                self.doUpdateLimits(arg)
             elif event == 'close' :
                 self.doReportClosed(arg)
                 self.doCloseStream(arg)
@@ -248,7 +248,9 @@ class UDPStream(automat.Automat):
                 newstate = 'CLOSED'
         #---DOWNTIME---
         elif self.state == 'DOWNTIME':
-            if event == 'block-received' :
+            if event == 'set-limits' :
+                self.doUpdateLimits(arg)
+            elif event == 'block-received' :
                 self.doResendAck(arg)
                 self.doReceivingLoop(arg)
                 newstate = 'RECEIVING'
@@ -261,8 +263,6 @@ class UDPStream(automat.Automat):
                 self.doReportError(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
-            elif event == 'set-limits' :
-                self.doUpdateLimits(arg)
             elif event == 'consume' :
                 self.doPushBlocks(arg)
                 self.doResendBlocks(arg)
@@ -670,7 +670,7 @@ class UDPStream(automat.Automat):
                     self.rtt_acks_counter = BLOCKS_PER_ACK
                     self.rtt_avarage = rtt * self.rtt_acks_counter 
                 eof = self.consumer.on_sent_raw_data(block_size)
-            if len(acks):
+            if len(acks) > 0:
                 self.input_acks_counter += 1
             if _Debug:
                 try:
