@@ -811,7 +811,6 @@ def main():
         return True
     callback.add_inbox_callback(_in)
     if len(args) > 0:
-        identitycache.immediatelyCaching(args[0])
         globals()['num_out'] = 0
         def _s():
             p = signed.Packet(commands.Data(), misc.getLocalID(), 
