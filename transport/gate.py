@@ -254,15 +254,15 @@ def start():
 #     return _StartingDeferred 
     
         
-def started(x):
-    global _StartingDeferred
-    lg.out(4, 'gate.started')
-    _StartingDeferred = None
-    # packets_timeout_loop()
-    return x
-    # global _PacketsTimeOutTask
-    # if not _PacketsTimeOutTask:
-    #     _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
+#def started(x):
+#    global _StartingDeferred
+#    lg.out(4, 'gate.started')
+#    _StartingDeferred = None
+#    # packets_timeout_loop()
+#    return x
+#    # global _PacketsTimeOutTask
+#    # if not _PacketsTimeOutTask:
+#    #     _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
     
             
 def stop():
@@ -280,6 +280,7 @@ def stop():
             else:
                 lg.out(4, '    %s already stopped' % proto)
     return result
+
 #    global _StoppingDeferred
 #    if _StoppingDeferred:
 #        lg.warn('already called')
@@ -819,8 +820,14 @@ def main():
             outbox(p, wide=True)
             lg.out(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))
             globals()['num_out'] += 1
-        t = task.LoopingCall(_s)
-        reactor.callLater(5, t.start, 60, True)
+        old_state_changed = transport('udp').state_changed 
+        def new_state_changed(oldstate, newstate, event, arg):
+            old_state_changed(oldstate, newstate, event, arg)
+            if newstate == 'LISTENING':
+                reactor.callLater(1, _s)
+        transport('udp').state_changed = new_state_changed 
+        # t = task.LoopingCall(_s)
+        # reactor.callLater(5, t.start, 60, True)
         # reactor.callLater(2, t.stop)
         
     reactor.run()
