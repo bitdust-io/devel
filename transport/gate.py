@@ -783,12 +783,11 @@ def main():
     global INSTALLED_TRANSPORTS
     del INSTALLED_TRANSPORTS['tcp']
     # INSTALLED_TRANSPORTS.pop('udp')
+    lg.life_begins()
     bpio.init()
     settings.init()
     misc.init()
     identitycache.init()
-    # identitycache.UpdateAfterChecking('http://megafaq.ru/vps_1001.xml', 
-    #     open('C:\\Documents and Settings\\veselin\\.bitpie\\identitycache\\http###37.18.255.33(#8084#)#vps_1000.xml').read())
     from crypt import key
     key.InitMyKey()
     (options, args) = parseCommandLine()
