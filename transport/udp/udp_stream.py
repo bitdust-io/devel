@@ -406,6 +406,13 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
+        lg.out(24, 'doResendBlocks %d %d %r %r %s' % (
+            self.input_acks_counter,
+            self.output_blocks_counter,
+            self.last_block_sent_time,
+            self.last_ack_received_time,
+            self.output_blocks.keys(), 
+            ))
         if len(self.output_blocks) == 0:
             #---nothing to send
             self.resend_inactivity_counter +=1 
@@ -795,7 +802,7 @@ class UDPStream(automat.Automat):
         relative_time = time.time() - self.creation_time
         new_blocks_counter = 0
         for block_id in blocks_to_send:
-            piece, time_sent = self.output_blocks[block_id]
+            piece = self.output_blocks[block_id][0]
             data_size = len(piece)
             self.output_blocks[block_id][1] = relative_time
             output = ''.join((struct.pack('i', block_id), piece))
