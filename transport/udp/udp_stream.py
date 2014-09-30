@@ -283,18 +283,18 @@ class UDPStream(automat.Automat):
             pass
         #---RECEIVING---
         elif self.state == 'RECEIVING':
-            if event == 'iterate' and not self.isTimeoutReceiving(arg) :
-                self.doResendAck(arg)
-                self.doReceivingLoop(arg)
-            elif event == 'block-received' and not self.isReadEOF(arg) :
+            if event == 'block-received' and not self.isReadEOF(arg) :
                 self.doResendAck(arg)
                 self.doReceivingLoop(arg)
             elif event == 'set-limits' :
                 self.doUpdateLimits(arg)
-            elif event == 'iterate' and self.isTimeoutReceiving(arg) :
+            elif event == 'timeout' :
                 self.doReportReceiveTimeout(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
+            elif event == 'iterate' :
+                self.doResendAck(arg)
+                self.doReceivingLoop(arg)
             elif event == 'close' :
                 self.doReportClosed(arg)
                 self.doCloseStream(arg)
@@ -315,6 +315,10 @@ class UDPStream(automat.Automat):
         elif self.state == 'PAUSE':
             if event == 'consume' :
                 self.doPushBlocks(arg)
+            elif event == 'timeout' :
+                self.doReportSendTimeout(arg)
+                self.doCloseStream(arg)
+                newstate = 'COMPLETION'
             elif event == 'ack-received' and ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
                 self.doReportSendDone(arg)
                 self.doCloseStream(arg)
@@ -354,20 +358,6 @@ class UDPStream(automat.Automat):
         """
         acks, eof, pause = arg
         return pause > 0
-
-    def isTimeoutReceiving(self, arg):
-        """
-        Condition method.
-        """
-        relative_time = time.time() - self.creation_time
-        if len(self.blocks_to_ack) == 0:
-            if self.bytes_acked == 0 and relative_time > 0:
-                if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 10.0:
-                    if _Debug:
-                        lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (
-                            self._rtt_current(), self.last_received_block_time, self.stream_id))
-                    return True
-        return False
 
     def doInit(self, arg):
         """
@@ -446,8 +436,6 @@ class UDPStream(automat.Automat):
                     lg.out(18, 'SENDING BROKEN rtt=%r, last ack at %r, last block was %r' % (
                         self.rtt_avarage / self.rtt_acks_counter, 
                         self.last_ack_received_time, self.last_block_sent_time))
-                    lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
-                        bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
                 reactor.callLater(0, self.automat, 'timeout')
             else:
                 #---resend one "oldest" block
@@ -467,8 +455,6 @@ class UDPStream(automat.Automat):
                     lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
                         self.rtt_avarage / self.rtt_acks_counter, 
                         self.last_ack_received_time, self.last_block_sent_time))
-                    lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
-                        bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
                 reactor.callLater(0, self.automat, 'timeout')
                 return
         #---normal sending, check all pending blocks
@@ -495,18 +481,31 @@ class UDPStream(automat.Automat):
         period_avarage = self._block_period_avarage()
         first_block_in_group = (self.last_received_block_id % BLOCKS_PER_ACK) == 1
         pause_time = 0.0
+        # limit receiving, calculate pause time
         if self.limit_receive_bytes_per_sec > 0 and relative_time > 0:
             current_rate = self.bytes_in / relative_time
             if current_rate > self.limit_receive_bytes_per_sec:
                 pause_time = ( self.bytes_in / self.limit_receive_bytes_per_sec ) - relative_time 
-        activity = False
-        if some_blocks_to_ack:
-            if period_avarage == 0 or self.output_acks_counter == 0:
-                activity = self._send_ack()
-            else:
-                last_ack_timeout = self._last_ack_timed_out()
-                if last_ack_timeout or first_block_in_group:
-                    activity = self._send_ack(pause_time)
+        if not some_blocks_to_ack:
+            # no blocks to ack now
+            if relative_time - self.last_received_block_time > RTT_MIN_LIMIT * 4:
+                # and last block has been long ago 
+                if _Debug:
+                    lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (
+                        self._rtt_current(), self.last_received_block_time, self.stream_id))
+                reactor.callLater(0, self.automat, 'timeout')
+            self.resend_inactivity_counter += 1
+            return
+        # need to send some acks
+        if period_avarage == 0 or self.output_acks_counter == 0:
+            # nothing was send, do send first ack now
+            activity = self._send_ack()
+        else:
+            # last ack has been long ago or
+            # need to send ack now because too many blocks was received at once
+            last_ack_timeout = self._last_ack_timed_out()
+            if last_ack_timeout or first_block_in_group:
+                activity = self._send_ack(pause_time)
         if activity:
             self.resend_inactivity_counter = 1
         else:
