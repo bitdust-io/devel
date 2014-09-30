@@ -232,7 +232,7 @@ class UDPStream(automat.Automat):
                 self.doSendingLoop(arg)
             elif event == 'set-limits' :
                 self.doUpdateLimits(arg)
-            elif event == 'ack-received' and not ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
+            elif event == 'ack-received' and not self.isPaused(arg) and not ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
                 self.doResendBlocks(arg)
                 self.doSendingLoop(arg)
             elif event == 'ack-received' and ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
