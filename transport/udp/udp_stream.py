@@ -22,7 +22,6 @@ EVENTS:
     * :red:`iterate`
     * :red:`resume`
     * :red:`set-limits`
-    * :red:`suspend`
     * :red:`timeout`
 
 """
@@ -240,7 +239,8 @@ class UDPStream(automat.Automat):
                 self.doReportSendDone(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
-            elif event == 'suspend' :
+            elif event == 'ack-received' and self.isPaused(arg) :
+                self.doResumeLater(arg)
                 newstate = 'PAUSE'
             elif event == 'timeout' :
                 self.doReportSendTimeout(arg)
@@ -341,12 +341,18 @@ class UDPStream(automat.Automat):
         """
         Condition method.
         """
-        acks, eof = arg
+        acks, eof, pause = arg
         return eof
     
     def isZeroAck(self, arg):
-        acks, eof = arg
+        acks, eof, pause = arg
         return len(acks) == 0
+
+    def isPaused(self, arg):
+        """
+        Condition method.
+        """
+        acks, eof, pause = arg
 
     def isTimeoutReceiving(self, arg):
         """
@@ -472,12 +478,14 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        rtt_current = self._rtt_current()
-        next_resend = max(0.001, rtt_current * self.resend_inactivity_counter) #  * 2.0
         if self.resend_task is None:
+            rtt_current = self._rtt_current()
+            next_resend = max(0.001, rtt_current * self.resend_inactivity_counter) #  * 2.0
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
         if self.resend_task.called:
+            rtt_current = self._rtt_current()
+            next_resend = max(0.001, rtt_current * self.resend_inactivity_counter) #  * 2.0
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
         if self.resend_task.cancelled:
@@ -488,17 +496,27 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        period_avarage = self._block_period_avarage()
-        next_resend = max(0.001, period_avarage * self.resend_inactivity_counter)
         if self.resend_task is None:
+            period_avarage = self._block_period_avarage()
+            next_resend = max(0.001, period_avarage * self.resend_inactivity_counter)
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
         if self.resend_task.called:
+            period_avarage = self._block_period_avarage()
+            next_resend = max(0.001, period_avarage * self.resend_inactivity_counter)
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
         if self.resend_task.cancelled:
             self.resend_task = None
             return
+
+    def doResumeLater(self, arg):
+        """
+        Action method.
+        """
+        acks, eof, pause = arg
+        if pause > 0:
+            reactor.callLater(pause, self.automat, 'resume')
 
     def doReportSendDone(self, arg):
         """
@@ -723,15 +741,20 @@ class UDPStream(automat.Automat):
                 try:
                     sz = self.consumer.size
                 except:
-                    sz = -1 
-                lg.out(24, 'in-> ACK %d %s %d %s %d %d' % (
-                    self.stream_id, acks, len(self.output_blocks), eof, sz, self.bytes_acked))
+                    sz = -1
+                if pause_time > 0:
+                    lg.out(24, 'in-> ACK %d PAUSE:%r %s %d %s %d %d' % (
+                        self.stream_id, pause_time, acks, len(self.output_blocks), 
+                        eof, sz, self.bytes_acked))
+                else:
+                    lg.out(24, 'in-> ACK %d %s %d %s %d %d' % (
+                        self.stream_id, acks, len(self.output_blocks), eof, sz, self.bytes_acked))
             # self.automat('output-data-acked', (acks, eof))
             # reactor.callLater(0, self.automat, 'ack-received', (acks, eof))
-            self.automat('ack-received', (acks, eof))
-            if pause_time > 0:
-                self.automat('suspend')
-                reactor.callLater(pause_time, self.automat, 'resume')
+            self.automat('ack-received', (acks, eof, pause_time))
+#            if pause_time > 0:
+#                self.automat('suspend')
+#                reactor.callLater(pause_time, self.automat, 'resume')
 
     def on_consume(self, data):
         if self.consumer:
