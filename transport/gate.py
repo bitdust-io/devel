@@ -516,11 +516,11 @@ def current_bytes_received():
 def packets_timeout_loop():
     global _PacketsTimeOutTask
     # lg.out(18, 'gate.packets_timeout_loop')
-    _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
-    for pkt_in in packet_in.items().values():
-        if pkt_in.is_timed_out():
-            lg.out(18, 'gate.packets_timeout_loop %r is timed out' % pkt_in)
-            pkt_in.automat('cancel', 'timeout')
+#    _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
+#    for pkt_in in packet_in.items().values():
+#        if pkt_in.is_timed_out():
+#            lg.out(18, 'gate.packets_timeout_loop %r is timed out' % pkt_in)
+#            pkt_in.automat('cancel', 'timeout')
 #    for pkt_out in packet_out.queue():
 #        if pkt_out.is_timed_out():
 #            lg.out(18, 'gate.packets_timeout_loop %r is timed out' % pkt_out)
