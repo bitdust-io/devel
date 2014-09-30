@@ -780,22 +780,23 @@ class UDPStream(automat.Automat):
                             lg.out(18, 'SKIP BLOCK LIMIT SENDING %d : %r>%r' % (
                                 self.stream_id, current_rate, self.limit_send_bytes_per_sec))
                         break
-            if self.input_acks_counter > 0 and self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
-                if _Debug:
-                    lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
-                        self.output_blocks_counter, self.input_acks_counter))
-                break
+            if self.input_acks_counter > 0:
+                if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
+                    if _Debug:
+                        lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
+                            self.output_blocks_counter, self.input_acks_counter))
+                    break
             piece, time_sent = self.output_blocks[block_id]
             data_size = len(piece)
             if time_sent >= 0:
-                dt = relative_time - time_sent
-                if dt > resend_time_limit and self.last_ack_received_time > 0:
-                    self.resend_bytes += data_size
-                    self.resend_blocks += 1
-                else:
-                    continue
-            time_sent = relative_time
-            self.output_blocks[block_id][1] = time_sent
+                continue
+#                dt = relative_time - time_sent
+#                if dt > resend_time_limit and self.last_ack_received_time > 0:
+#                    self.resend_bytes += data_size
+#                    self.resend_blocks += 1
+#                else:
+#                    continue
+            self.output_blocks[block_id][1] = relative_time
             output = ''.join((struct.pack('i', block_id), piece))
             self.producer.do_send_data(self.stream_id, self.consumer, output)
             self.bytes_sent += data_size
