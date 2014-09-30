@@ -7342,7 +7342,6 @@ def InitSettingsTreePages():
     lg.out(4, 'webcontrol.init.options')
     SettingsTreeAddComboboxList('suppliers', settings.getECCSuppliersNumbers())
     SettingsTreeAddComboboxList('updates-mode', settings.getUpdatesModeValues())
-    SettingsTreeAddComboboxList('general-display-mode', settings.getGeneralDisplayModeValues())
     SettingsTreeAddComboboxList('emergency-first', settings.getEmergencyMethods())
     SettingsTreeAddComboboxList('emergency-second', settings.getEmergencyMethods())
 

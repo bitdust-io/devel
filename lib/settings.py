@@ -1620,23 +1620,23 @@ def getGeneralWaitSuppliers():
     """
     return uconfig('general.general-wait-suppliers-enable').lower() == 'true'
 
-def getGeneralAutorun():
-    """
-    Return True if user want to start BitPie.NET at system start up.
-    """
-    return uconfig('general.general-autorun').lower() == 'true'
+#def getGeneralAutorun():
+#    """
+#    Return True if user want to start BitPie.NET at system start up.
+#    """
+#    return uconfig('general.general-autorun').lower() == 'true'
 
-def getGeneralDisplayMode():
-    """
-    Get current GUI display mode from settings. 
-    """
-    return uconfig('general.general-display-mode')
+#def getGeneralDisplayMode():
+#    """
+#    Get current GUI display mode from settings. 
+#    """
+#    return uconfig('general.general-display-mode')
 
-def getGeneralDisplayModeValues():
-    """
-    List available display modes.
-    """
-    return ('iconify window', 'normal window', 'maximized window',)
+#def getGeneralDisplayModeValues():
+#    """
+#    List available display modes.
+#    """
+#    return ('iconify window', 'normal window', 'maximized window',)
 
 ##def getGeneralShowProgress():
 ##    return uconfig('general.general-show-progress').lower() == 'true'
@@ -1893,8 +1893,8 @@ def _checkSettings():
     if getUpdatesMode().strip() not in getUpdatesModeValues():
         uconfig().set('updates.updates-mode', getUpdatesModeValues()[0])
 
-    if getGeneralDisplayMode().strip() not in getGeneralDisplayModeValues():
-        uconfig().set('general.general-display-mode', getGeneralDisplayModeValues()[0])
+#    if getGeneralDisplayMode().strip() not in getGeneralDisplayModeValues():
+#        uconfig().set('general.general-display-mode', getGeneralDisplayModeValues()[0])
 
     if getEmergencyFirstMethod() not in getEmergencyMethods():
         uconfig().set('emergency.emergency-first', getEmergencyMethods()[0])

@@ -55,18 +55,6 @@ _DefaultXMLConfig = ur"""<settings>
   <general-wait-suppliers-enable>
    True
   </general-wait-suppliers-enable>
-  <general-autorun>
-   True
-  </general-autorun>
-  <general-display-mode>
-   iconify window
-  </general-display-mode>
-  <general-desktop-shortcut>
-   True
-  </general-desktop-shortcut>
-  <general-start-menu-shortcut>
-   True
-  </general-start-menu-shortcut>
  </general>
  <backup>
   <private-key-size>
@@ -381,7 +369,7 @@ _AllOptions = [
     
 _InfosDict = {
     'general':                      "General options.",
-    'general-backups':              'How many backup copies of each directory to keep, oldest will be removed automatically? ( 0 = unlimited )',
+    'general-backups':              'How many backup copies of each directory to keep, oldest will be removed automatically. ( 0 = unlimited )',
     'general-autorun':              "Starting the application during system startup.",
     'general-display-mode':         "Specifies how you want the window to display when you start the software.",
     'general-desktop-shortcut':     "Place shortcut on the Desktop?",

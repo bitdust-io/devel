@@ -359,14 +359,14 @@ class UDPStream(automat.Automat):
         """
         Condition method.
         """
-#        relative_time = time.time() - self.creation_time
-#        if len(self.blocks_to_ack) == 0:
-#            if self.bytes_acked == 0 and relative_time > 0:
-#                if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 10.0:
-#                    if _Debug:
-#                        lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (
-#                            self._rtt_current(), self.last_received_block_time, self.stream_id))
-#                    return True
+        relative_time = time.time() - self.creation_time
+        if len(self.blocks_to_ack) == 0:
+            if self.bytes_acked == 0 and relative_time > 0:
+                if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 10.0:
+                    if _Debug:
+                        lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (
+                            self._rtt_current(), self.last_received_block_time, self.stream_id))
+                    return True
         return False
 
     def doInit(self, arg):
