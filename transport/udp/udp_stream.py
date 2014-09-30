@@ -204,8 +204,8 @@ class UDPStream(automat.Automat):
         self.bytes_in_acks = 0
         self.bytes_sent = 0
         self.bytes_acked = 0
-        # self.resend_bytes = 0
-        # self.resend_blocks = 0
+        self.resend_bytes = 0
+        self.resend_blocks = 0
         self.last_ack_moment = 0
         self.last_ack_received_time = 0
         self.last_received_block_time = 0
@@ -586,12 +586,12 @@ class UDPStream(automat.Automat):
                 pir_id = self.producer.session.peer_id
             except:
                 pir_id = 'None'
-            lg.out(18, 'doCloseStream %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d rate:%r|%r' % (
+            lg.out(18, 'doCloseStream %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
                 self.stream_id, pir_id, self.input_blocks_counter, self.bytes_in,
                 self.output_acks_counter, self.bytes_in_acks,
                 self.input_duplicated_blocks, self.input_duplicated_bytes,
                 self.output_blocks_counter, self.bytes_acked, 
-                # self.resend_blocks, self.resend_bytes,
+                self.resend_blocks, self.resend_bytes,
                 self.bytes_in / (time.time() - self.creation_time),
                 self.bytes_sent / (time.time() - self.creation_time),))
             del pir_id
@@ -780,36 +780,28 @@ class UDPStream(automat.Automat):
                             lg.out(18, 'SKIP BLOCK LIMIT SENDING %d : %r>%r' % (
                                 self.stream_id, current_rate, self.limit_send_bytes_per_sec))
                         break
-            if self.input_acks_counter > 0:
-                if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
-                    if _Debug:
-                        lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
-                            self.output_blocks_counter, self.input_acks_counter))
-                    break
+            if self.input_acks_counter > 0 and self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
+                if _Debug:
+                    lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
+                        self.output_blocks_counter, self.input_acks_counter))
+                break
             piece, time_sent = self.output_blocks[block_id]
             data_size = len(piece)
-            block_is_timed_out = time_sent >= 0 and relative_time - time_sent > resend_time_limit  
-#            if time_sent >= 0:
-#                if relative_time - time_sent < resend_time_limit:
-#                    continue
-#                self.resend_bytes += data_size
-#                self.resend_blocks += 1
-                # if relative_time - time_sent > resend_time_limit: # and self.last_ack_received_time > 0:
-                #     self.resend_bytes += data_size
-                #     self.resend_blocks += 1
-                # else:
-                #     continue
-            self.output_blocks[block_id][1] = relative_time
+            if time_sent >= 0:
+                dt = relative_time - time_sent
+                if dt > resend_time_limit and self.last_ack_received_time > 0:
+                    self.resend_bytes += data_size
+                    self.resend_blocks += 1
+                else:
+                    continue
+            time_sent = relative_time
+            self.output_blocks[block_id][1] = time_sent
             output = ''.join((struct.pack('i', block_id), piece))
             self.producer.do_send_data(self.stream_id, self.consumer, output)
             self.bytes_sent += data_size
             self.output_blocks_counter += 1
             self.last_block_sent_time = relative_time
             new_blocks_counter += 1
-            if block_is_timed_out:
-                self.resend_bytes += data_size
-                self.resend_blocks += 1
-                break
         if relative_time > 0:
             self.current_send_bytes_per_sec = self.bytes_sent / relative_time
         # if new_blocks_counter > 0:
