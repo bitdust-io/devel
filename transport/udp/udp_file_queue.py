@@ -81,13 +81,6 @@ class FileQueue:
         newoutput = ''.join((
             struct.pack('i', stream_id),
             ack_data))
-        if udp_stream._Debug:
-            if ack_data:
-                lg.out(24, '<-out ACK %d %s' % (stream_id,
-                    ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
-                                 [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
-            else:
-                lg.out(24, '<-out ACK %d ZERO' % stream_id)
         return self.session.send_packet(udp.CMD_ACK, newoutput)
 
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):
