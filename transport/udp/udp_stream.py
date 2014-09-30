@@ -313,7 +313,9 @@ class UDPStream(automat.Automat):
                 newstate = 'CLOSED'
         #---PAUSE---
         elif self.state == 'PAUSE':
-            if event == 'ack-received' and ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
+            if event == 'consume' :
+                self.doPushBlocks(arg)
+            elif event == 'ack-received' and ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
                 self.doReportSendDone(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
@@ -800,9 +802,14 @@ class UDPStream(automat.Automat):
         self.last_ack_moment = time.time()
         if _Debug:
             if ack_len > 0:
-                lg.out(24, '<-out ACK %d %s' % (self.stream_id,
-                    ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
-                                 [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
+                if pause_time == 0.0:
+                    lg.out(24, '<-out ACK %d %s' % (self.stream_id,
+                        ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
+                                     [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
+                else:
+                    lg.out(24, '<-out ACK %d PAUSE:%r %s' % (self.stream_id,
+                        pause_time, ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
+                                     [ack_data[i:i+4] for i in range(0, len(ack_data)-8, 4)]))))
             else:
                 lg.out(24, '<-out ACK %d ZERO' % self.stream_id)
         self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
