@@ -443,8 +443,9 @@ class UDPStream(automat.Automat):
             if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
                 #---timeout sending : too many timed out acks
                 if _Debug:
-                    lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
-                        self._rtt_current(), self.last_ack_received_time, self.last_block_sent_time))
+                    lg.out(18, 'SENDING BROKEN rtt=%r, last ack at %r, last block was %r' % (
+                        self.rtt_avarage / self.rtt_acks_counter, 
+                        self.last_ack_received_time, self.last_block_sent_time))
                     lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
                         bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
                 reactor.callLater(0, self.automat, 'timeout')
@@ -458,6 +459,18 @@ class UDPStream(automat.Automat):
                     lg.out(18, 'RESEND ONE %d %d' % (self.stream_id, latest_block_id))
                 self._send_blocks([latest_block_id,])
             return
+        if relative_time - self.last_ack_received_time > RTT_MAX_LIMIT * 4 and \
+            relative_time - self.last_block_sent_time > RTT_MAX_LIMIT * 4 and \
+            self.state == 'SENDING':
+            #---no activity at all
+                if _Debug:
+                    lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
+                        self.rtt_avarage / self.rtt_acks_counter, 
+                        self.last_ack_received_time, self.last_block_sent_time))
+                    lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
+                        bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
+                reactor.callLater(0, self.automat, 'timeout')
+                return
         #---normal sending, check all pending blocks
         rtt_current = self.rtt_avarage / self.rtt_acks_counter
         resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
