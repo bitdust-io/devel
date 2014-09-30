@@ -406,30 +406,65 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
+        if len(self.output_blocks) == 0:
+            #---nothing to send
+            self.resend_inactivity_counter +=1 
+            return
         relative_time = time.time() - self.creation_time
-        activity = False
-        if len(self.output_blocks) > 0:
-            reply_dt = self.last_block_sent_time - self.last_ack_received_time
-            if reply_dt > RTT_MAX_LIMIT * 2:
-                self.input_acks_timeouts_counter += 1
-                if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
+        if self.limit_send_bytes_per_sec > 0:
+            #---skip sending : limit reached 
+            if relative_time > 0.0: 
+                current_rate = self.bytes_sent / relative_time
+                current_limit = self.limit_send_bytes_per_sec #  * self.sending_speed_factor
+                if current_rate > current_limit:
                     if _Debug:
-                        lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
-                            self._rtt_current(), self.last_ack_received_time, self.last_block_sent_time))
-                        lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
-                            bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
-                    reactor.callLater(0, self.automat, 'timeout')
+                        lg.out(18, 'SKIP BLOCK LIMIT SENDING %d : %r>%r' % (
+                            self.stream_id, current_rate, self.limit_send_bytes_per_sec))
+                    self.resend_inactivity_counter += 1
                     return
+        if self.input_acks_counter > 0:
+            #---skip sending : too few acks
+            if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
+                if _Debug:
+                    lg.out(18, 'SKIP SENDING, too few acks:%d blocks:%d' % (
+                        self.input_acks_counter, self.output_blocks_counter))
+                self.resend_inactivity_counter += 1
+                return
+        if self.last_block_sent_time - self.last_ack_received_time > RTT_MAX_LIMIT * 2:
+            #---last ack is timed out
+            self.input_acks_timeouts_counter += 1
+            if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
+                #---timeout sending : too many timed out acks
+                if _Debug:
+                    lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
+                        self._rtt_current(), self.last_ack_received_time, self.last_block_sent_time))
+                    lg.out(18, ','.join(map(lambda bid: '%d:%d' % (
+                        bid, self.output_blocks[bid][1]), self.output_blocks_ids)))
+                reactor.callLater(0, self.automat, 'timeout')
+            else:
+                #---resend one "oldest" block
                 latest_block_id = self.output_blocks_ids[0]
-                self.output_blocks[latest_block_id][1] = -1
-                self.last_ack_received_time = relative_time
-                lg.out(18, 'RESEND %d %d' % (self.stream_id, latest_block_id))
-            activity = self._send_blocks()
-        if activity:
-            self.resend_inactivity_counter = 1
-        else:
-            self.resend_inactivity_counter += 1
-        # lg.out(18, 'doResendBlocks %d' % self.resend_inactivity_counter)        
+                # self.output_blocks[latest_block_id][1] = -2
+                # self.last_ack_received_time = relative_time # fake ack
+                self.resend_inactivity_counter += 1
+                if _Debug:
+                    lg.out(18, 'RESEND ONE %d %d' % (self.stream_id, latest_block_id))
+                self._send_blocks([latest_block_id,])
+            return
+        #---normal sending, check all pending blocks
+        rtt_current = self.rtt_avarage / self.rtt_acks_counter
+        resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
+        blocks_to_send_now = []
+        for block_id in self.output_blocks_ids:
+            time_sent = self.output_blocks[block_id][1]
+            if time_sent >= 0: # already sent that block at least one time
+                if relative_time - time_sent < resend_time_limit:
+                    # this block is not yet timed out - skip, not need to resend
+                    continue
+            blocks_to_send_now.append(block_id)
+        self.resend_inactivity_counter = 1
+        self._send_blocks(blocks_to_send_now)
+        del blocks_to_send_now
 
     def doResendAck(self, arg):
         """
@@ -449,14 +484,9 @@ class UDPStream(automat.Automat):
             if period_avarage == 0 or self.output_acks_counter == 0:
                 activity = self._send_ack()
             else:
-                # if not limit_reached:
-                    last_ack_timeout = self._last_ack_timed_out()
-                    if last_ack_timeout or first_block_in_group:
-                        activity = self._send_ack(pause_time)
-                # else:
-                #     if _Debug:
-                #         lg.out(18, 'SKIP ACK, LIMIT RECEIVING %d : %r>%r' % (
-                #             self.stream_id, current_rate, self.limit_receive_bytes_per_sec))
+                last_ack_timeout = self._last_ack_timed_out()
+                if last_ack_timeout or first_block_in_group:
+                    activity = self._send_ack(pause_time)
         if activity:
             self.resend_inactivity_counter = 1
         else:
@@ -475,13 +505,11 @@ class UDPStream(automat.Automat):
         Action method.
         """
         if self.resend_task is None:
-            rtt_current = self._rtt_current()
-            next_resend = max(0.001, rtt_current * self.resend_inactivity_counter) #  * 2.0
+            next_resend = self._rtt_current() * self.resend_inactivity_counter
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
         if self.resend_task.called:
-            rtt_current = self._rtt_current()
-            next_resend = max(0.001, rtt_current * self.resend_inactivity_counter) #  * 2.0
+            next_resend = self._rtt_current() * self.resend_inactivity_counter
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
         if self.resend_task.cancelled:
@@ -493,13 +521,11 @@ class UDPStream(automat.Automat):
         Action method.
         """
         if self.resend_task is None:
-            period_avarage = self._block_period_avarage()
-            next_resend = max(0.001, period_avarage * self.resend_inactivity_counter)
+            next_resend = max(0.001, self._block_period_avarage() * self.resend_inactivity_counter)
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
         if self.resend_task.called:
-            period_avarage = self._block_period_avarage()
-            next_resend = max(0.001, period_avarage * self.resend_inactivity_counter)
+            next_resend = max(0.001, self._block_period_avarage() * self.resend_inactivity_counter)
             self.resend_task = reactor.callLater(next_resend, self.automat, 'iterate') 
             return
         if self.resend_task.cancelled:
@@ -765,37 +791,13 @@ class UDPStream(automat.Automat):
         if self.consumer:
             reactor.callLater(0, self.automat, 'close')
 
-    def _send_blocks(self):
+    def _send_blocks(self, blocks_to_send):
         relative_time = time.time() - self.creation_time
-        rtt_current = self.rtt_avarage / self.rtt_acks_counter
-        resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
         new_blocks_counter = 0
-        for block_id in self.output_blocks_ids:
-            if relative_time > 0.0: 
-                if self.limit_send_bytes_per_sec > 0:
-                    current_rate = self.bytes_sent / relative_time
-                    current_limit = self.limit_send_bytes_per_sec #  * self.sending_speed_factor
-                    if current_rate > current_limit:
-                        if _Debug:
-                            lg.out(18, 'SKIP BLOCK LIMIT SENDING %d : %r>%r' % (
-                                self.stream_id, current_rate, self.limit_send_bytes_per_sec))
-                        break
-            if self.input_acks_counter > 0 and self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
-                if _Debug:
-                    lg.out(18, 'SKIP RESEND blocks:%d acks:%d' % (
-                        self.output_blocks_counter, self.input_acks_counter))
-                break
+        for block_id in blocks_to_send:
             piece, time_sent = self.output_blocks[block_id]
             data_size = len(piece)
-            if time_sent >= 0:
-                dt = relative_time - time_sent
-                if dt > resend_time_limit and self.last_ack_received_time > 0:
-                    self.resend_bytes += data_size
-                    self.resend_blocks += 1
-                else:
-                    continue
-            time_sent = relative_time
-            self.output_blocks[block_id][1] = time_sent
+            self.output_blocks[block_id][1] = relative_time
             output = ''.join((struct.pack('i', block_id), piece))
             self.producer.do_send_data(self.stream_id, self.consumer, output)
             self.bytes_sent += data_size
@@ -804,12 +806,6 @@ class UDPStream(automat.Automat):
             new_blocks_counter += 1
         if relative_time > 0:
             self.current_send_bytes_per_sec = self.bytes_sent / relative_time
-        # if new_blocks_counter > 0:
-        #     print 'send blocks %d|%d|%d' % (new_blocks_counter, len(self.output_blocks.keys()), self.output_blocks_counter), 
-        #     print 'bytes:(%d|%d|%d)' % (self.bytes_acked, self.bytes_sent, self.resend_bytes),  
-        #     print 'time:(%s|%s)' % (str(rtt_current)[:8], str(relative_time)[:8]),
-        #     print 'rate:(%r)' % current_rate
-        return new_blocks_counter > 0
 
     def _send_ack(self, pause_time=0.0):
         ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
