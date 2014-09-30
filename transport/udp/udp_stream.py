@@ -353,6 +353,7 @@ class UDPStream(automat.Automat):
         Condition method.
         """
         acks, eof, pause = arg
+        return pause > 0
 
     def isTimeoutReceiving(self, arg):
         """
