@@ -160,7 +160,7 @@ class Automat(object):
 
     def init(self):
         """
-        Define this method in subclass to execute some code when creating an object. 
+        Define this method in subclass to execute some code when creating an object.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):

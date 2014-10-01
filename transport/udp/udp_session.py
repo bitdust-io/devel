@@ -199,12 +199,17 @@ class UDPSession(automat.Automat):
         self.peer_address = peer_address
         self.peer_id = peer_id
         self.peer_idurl = None
-        self.last_datagram_received_time = 0
-        self.bytes_sent = 0
-        self.bytes_received = 0
         self.file_queue = udp_file_queue.FileQueue(self) 
         name = 'udp_session[%s:%d]' % (self.peer_address[0], self.peer_address[1])
         automat.Automat.__init__(self, name, 'AT_STARTUP')
+
+    def init(self):
+        """
+        """
+        self.last_datagram_received_time = 0
+        self.bytes_sent = 0
+        self.bytes_received = 0
+        self.rtts = {}
 
     def send_packet(self, command, payload):
         self.bytes_sent += len(payload)
@@ -310,7 +315,8 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
+        rtt_id_out = self._rtt_start('ALIVE')
+        udp.send_command(self.node.listen_port, udp.CMD_ALIVE, rtt_id_out, self.peer_address)
 
     def doGreeting(self, arg):
         """
@@ -326,7 +332,8 @@ class UDPSession(automat.Automat):
 #        if udp_stream._Debug:
 #            if not (self.peer_address.count('37.18.255.42') or self.peer_address.count('37.18.255.38')):
 #                return
-        udp.send_command(self.node.listen_port, udp.CMD_PING, '', self.peer_address)
+        rtt_id_out = self._rtt_start('PING')
+        udp.send_command(self.node.listen_port, udp.CMD_PING, rtt_id_out, self.peer_address)
 
     def doReceiveData(self, arg):
         """
@@ -344,12 +351,27 @@ class UDPSession(automat.Automat):
             self.file_queue.on_received_data_packet(payload)
         elif command == udp.CMD_ACK:
             self.file_queue.on_received_ack_packet(payload)
+        elif command == udp.CMD_PING:
+            rtt_id_out = self._rtt_start('PING')
+            payloadout = str(self.node.my_id)+' '+str(self.node.my_idurl)+' '+rtt_id_out
+            udp.send_command(self.node.listen_port, udp.CMD_GREETING, payloadout, self.peer_address)
+        elif command == udp.CMD_ALIVE:
+            rtt_id_in = payload
+            self._rtt_finish(rtt_id_in)
         elif command == udp.CMD_GREETING:
+            parts = payload.split(' ')
             try:
-                new_peer_id, new_peer_idurl = payload.split(' ')
+                new_peer_id  = parts[0]
+                new_peer_idurl  = parts[1]
+                if len(parts) >= 3:
+                    rtt_id_in = parts[2]
+                else:
+                    rtt_id_in = None
             except:
-                return 
-            udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
+                return
+            self._rtt_finish(rtt_id_in)
+            rtt_id_out = self._rtt_start('ALIVE')
+            udp.send_command(self.node.listen_port, udp.CMD_ALIVE, rtt_id_out, self.peer_address)
             if self.peer_id:
                 if new_peer_id != self.peer_id:
                     lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
@@ -377,9 +399,6 @@ class UDPSession(automat.Automat):
                     lg.warn('got GREETING from another idurl, close session %s' % s)
                     s.automat('shutdown')
                     continue
-        elif command == udp.CMD_PING:
-            payload = str(self.node.my_id)+' '+str(self.node.my_idurl)
-            udp.send_command(self.node.listen_port, udp.CMD_GREETING, payload, self.peer_address)
 
     def doNotifyConnected(self, arg):
         """
@@ -432,4 +451,45 @@ class UDPSession(automat.Automat):
                 sessions_by_peer_id().pop(self.peer_id)            
         automat.objects().pop(self.index)
 
-
+    def _rtt_start(self, name):
+        if len(self.rtts) > 10:
+            oldest_rtt_moment = time.time()
+            oldest_rtt_id = None
+            for rtt_id in self.rtts.keys():
+                rtt_data = self.rtts[rtt_id]
+                if rtt_data[1] >= 0 and rtt_data[1] < oldest_rtt_moment:
+                    oldest_rtt_moment = rtt_data[1]
+                    oldest_rtt_id = rtt_id
+            if oldest_rtt_id:
+                rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
+                del self.rtts[oldest_rtt_id]
+                lg.out(18, 'udp_session._rtt_start removed oldest RTT %s:%r' % (
+                    oldest_rtt_id, rtt))
+        i = 0
+        while name+str(i) in self.rtts.keys():
+            i += 1
+        new_rtt_id = name+str(i)
+        self.rtts[new_rtt_id] = [time.time(), -1]
+        return new_rtt_id
+        
+    def _rtt_finish(self, rtt_id_in):
+        if rtt_id_in is None or rtt_id_in not in self.rtts:
+            for rtt_id in self.rtts.keys():
+                if self.rtts[1] == -1:
+                    rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
+                    del self.rtts[rtt_id]
+                    lg.out(18, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
+                        rtt_id, rtt))
+                    return
+            lg.warn('rtt %s not found in %s' % (rtt_id_in, self))
+            return
+        self.rtts[rtt_id_in][1] = time.time()
+        rtt = self.rtts[rtt_id_in][1] - self.rtts[rtt_id_in][0]
+        lg.out(18, 'udp_session._rtt_finish registered RTT %s:%r' % (
+            rtt_id_in, rtt))
+        while len(self.rtts) > 10:
+            i = self.rtts.popitem()
+            lg.out(18, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
+        
+        
+        
