@@ -437,19 +437,19 @@ class UDPSession(automat.Automat):
         new_rtt_id = name+str(i)
         self.rtts[new_rtt_id] = [time.time(), -1]
         lg.out(18, 'udp_session._rtt_start added new RTT %s' % new_rtt_id)
-        oldest_rtt_moment = time.time()
-        oldest_rtt_id = None
-        for rtt_id in self.rtts.keys():
-            rtt_data = self.rtts[rtt_id]
-            if rtt_data[1] >= 0:
-                if rtt_data[1] < oldest_rtt_moment:
+        if len(self.rtts) > 10:
+            oldest_rtt_moment = time.time()
+            oldest_rtt_id = None
+            for rtt_id in self.rtts.keys():
+                rtt_data = self.rtts[rtt_id]
+                if rtt_data[0] < oldest_rtt_moment:
                     oldest_rtt_moment = rtt_data[1]
                     oldest_rtt_id = rtt_id
-        if oldest_rtt_id:
-            rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
-            del self.rtts[oldest_rtt_id]
-            lg.out(18, 'udp_session._rtt_start removed oldest RTT %s  %r' % (
-                oldest_rtt_id, rtt))
+            if oldest_rtt_id:
+                rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
+                del self.rtts[oldest_rtt_id]
+                lg.out(18, 'udp_session._rtt_start removed oldest RTT %s  %r' % (
+                    oldest_rtt_id, rtt))
         while len(self.rtts) > 10:
             i = self.rtts.popitem()
             lg.out(18, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
