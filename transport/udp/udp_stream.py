@@ -396,13 +396,13 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        lg.out(24, 'doResendBlocks %d %d %r %r %s' % (
-            self.input_acks_counter,
-            self.output_blocks_counter,
-            self.last_block_sent_time,
-            self.last_ack_received_time,
-            self.output_blocks.keys(), 
-            ))
+#        lg.out(24, 'doResendBlocks %d %d %r %r %s' % (
+#            self.input_acks_counter,
+#            self.output_blocks_counter,
+#            self.last_block_sent_time,
+#            self.last_ack_received_time,
+#            self.output_blocks.keys(), 
+#            ))
         if len(self.output_blocks) == 0:
             #---nothing to send
             self.resend_inactivity_counter +=1 
