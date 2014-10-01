@@ -212,7 +212,7 @@ class UDPStream(automat.Automat):
         self.last_received_block_id = 0
         self.last_block_sent_time = 0
         self.rtt_avarage = 0.0 
-        self.rtt_acks_counter = 0.0
+        self.rtt_counter = 0.0
         self.resend_task = None
         self.resend_inactivity_counter = 1
         self.current_send_bytes_per_sec = 0
@@ -369,13 +369,13 @@ class UDPStream(automat.Automat):
         for rtt_id, rtt_data in self.producer.session.rtts.items():
             if rtt_data[1] != -1:
                 self.rtt_avarage += rtt_data[1] - rtt_data[0]
-                self.rtt_acks_counter += 1.0
-        if self.rtt_acks_counter == 0.0:
+                self.rtt_counter += 1.0
+        if self.rtt_counter < 1.0:
             self.rtt_avarage = (RTT_MIN_LIMIT + RTT_MAX_LIMIT) / 2.0 
-            self.rtt_acks_counter = 1.0
+            self.rtt_counter = 1.0
         lg.out(18, 'udp_stream.doInit limits: (in=%r|out=%r)  rtt: (%r|%d)' % (
             self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec,
-            self.rtt_avarage / self.rtt_acks_counter, self.rtt_acks_counter,))
+            self.rtt_avarage / self.rtt_counter, self.rtt_counter,))
 
     def doPushBlocks(self, arg):
         """
@@ -442,7 +442,7 @@ class UDPStream(automat.Automat):
                 #---timeout sending : too many timed out acks
                 if _Debug:
                     lg.out(18, 'SENDING BROKEN rtt=%r, last ack at %r, last block was %r' % (
-                        self.rtt_avarage / self.rtt_acks_counter, 
+                        self.rtt_avarage / self.rtt_counter, 
                         self.last_ack_received_time, self.last_block_sent_time))
                 reactor.callLater(0, self.automat, 'timeout')
             else:
@@ -461,12 +461,12 @@ class UDPStream(automat.Automat):
             #---no activity at all
                 if _Debug:
                     lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
-                        self.rtt_avarage / self.rtt_acks_counter, 
+                        self.rtt_avarage / self.rtt_counter, 
                         self.last_ack_received_time, self.last_block_sent_time))
                 reactor.callLater(0, self.automat, 'timeout')
                 return
         #---normal sending, check all pending blocks
-        rtt_current = self.rtt_avarage / self.rtt_acks_counter
+        rtt_current = self.rtt_avarage / self.rtt_counter
         resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
         blocks_to_send_now = []
         for block_id in self.output_blocks_ids:
@@ -775,11 +775,11 @@ class UDPStream(automat.Automat):
                 relative_time = time.time() - self.creation_time
                 last_ack_rtt = relative_time - outblock[1]
                 self.rtt_avarage += last_ack_rtt
-                self.rtt_acks_counter += 1.0
-                if self.rtt_acks_counter > BLOCKS_PER_ACK * 100:
-                    rtt = self.rtt_avarage / self.rtt_acks_counter
-                    self.rtt_acks_counter = BLOCKS_PER_ACK
-                    self.rtt_avarage = rtt * self.rtt_acks_counter 
+                self.rtt_counter += 1.0
+                if self.rtt_counter > BLOCKS_PER_ACK * 100:
+                    rtt = self.rtt_avarage / self.rtt_counter
+                    self.rtt_counter = BLOCKS_PER_ACK
+                    self.rtt_avarage = rtt * self.rtt_counter 
                 eof = self.consumer.on_sent_raw_data(block_size)
             if len(acks) > 0:
                 self.input_acks_counter += 1
@@ -867,7 +867,7 @@ class UDPStream(automat.Automat):
             self.resend_task = None
 
     def _rtt_current(self):
-        rtt_current = self.rtt_avarage / self.rtt_acks_counter
+        rtt_current = self.rtt_avarage / self.rtt_counter
         rtt_current = max(min(rtt_current, RTT_MAX_LIMIT), RTT_MIN_LIMIT)
         return rtt_current
     
