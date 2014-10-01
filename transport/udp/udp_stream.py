@@ -496,6 +496,7 @@ class UDPStream(automat.Automat):
                 reactor.callLater(0, self.automat, 'timeout')
             self.resend_inactivity_counter += 1
             return
+        activity = False
         # need to send some acks
         if period_avarage == 0 or self.output_acks_counter == 0:
             # nothing was send, do send first ack now
