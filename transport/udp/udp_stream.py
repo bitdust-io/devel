@@ -211,8 +211,8 @@ class UDPStream(automat.Automat):
         self.last_received_block_time = 0
         self.last_received_block_id = 0
         self.last_block_sent_time = 0
-        self.rtt_avarage = (RTT_MIN_LIMIT + RTT_MAX_LIMIT) / 2.0 
-        self.rtt_acks_counter = 1.0
+        self.rtt_avarage = 0.0 
+        self.rtt_acks_counter = 0.0
         self.resend_task = None
         self.resend_inactivity_counter = 1
         self.current_send_bytes_per_sec = 0
@@ -366,8 +366,16 @@ class UDPStream(automat.Automat):
         self.creation_time = time.time()
         self.limit_send_bytes_per_sec = get_global_limit_send_bytes_per_sec() / len(streams())
         self.limit_receive_bytes_per_sec = get_global_limit_receive_bytes_per_sec() / len(streams())
-        lg.out(18, 'udp_stream.doInit limits: (in:%r|out:%r)' % (
-            self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec))
+        for rtt_id, rtt_data in self.producer.session.rtts.items():
+            if rtt_data[1] != -1:
+                self.rtt_avarage += rtt_data[1] - rtt_data[0]
+                self.rtt_acks_counter += 1.0
+        if self.rtt_acks_counter == 0.0:
+            self.rtt_avarage = (RTT_MIN_LIMIT + RTT_MAX_LIMIT) / 2.0 
+            self.rtt_acks_counter = 1.0
+        lg.out(18, 'udp_stream.doInit limits: (in=%r|out=%r)  rtt: (%r|%d)' % (
+            self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec,
+            self.rtt_avarage / self.rtt_acks_counter, self.rtt_acks_counter,))
 
     def doPushBlocks(self, arg):
         """

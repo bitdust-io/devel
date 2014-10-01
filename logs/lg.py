@@ -78,7 +78,7 @@ def out(level, msg, nl='\n'):
                 s = ('%02d:%02d' % (mn, sc)) + s
         else:
             s = time.strftime('%H:%M:%S') + s
-    if is_debug(24):
+    if is_debug(30):
         currentThreadName = threading.currentThread().getName()
         s = s + ' {%s}' % currentThreadName.lower()
     if is_debug(level):
