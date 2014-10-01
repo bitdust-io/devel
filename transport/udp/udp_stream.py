@@ -488,7 +488,7 @@ class UDPStream(automat.Automat):
                 pause_time = ( self.bytes_in / self.limit_receive_bytes_per_sec ) - relative_time 
         if not some_blocks_to_ack:
             # no blocks to ack now
-            if relative_time - self.last_received_block_time > RTT_MIN_LIMIT * 4:
+            if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 4:
                 # and last block has been long ago 
                 if _Debug:
                     lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (

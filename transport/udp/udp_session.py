@@ -466,7 +466,7 @@ class UDPSession(automat.Automat):
             if oldest_rtt_id:
                 rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
                 del self.rtts[oldest_rtt_id]
-                lg.out(18, 'udp_session._rtt_start removed oldest RTT %s:%r' % (
+                lg.out(18, 'udp_session._rtt_start removed oldest RTT %s  %r' % (
                     oldest_rtt_id, rtt))
             for rtt_id in remove_list:
                 lg.out(18, 'udp_session._rtt_start removed not finished RTT %s' % (rtt_id))
@@ -494,7 +494,7 @@ class UDPSession(automat.Automat):
 #            return
         self.rtts[rtt_id_in][1] = time.time()
         rtt = self.rtts[rtt_id_in][1] - self.rtts[rtt_id_in][0]
-        lg.out(18, 'udp_session._rtt_finish registered RTT %s:%r' % (
+        lg.out(18, 'udp_session._rtt_finish registered RTT %s  %r' % (
             rtt_id_in, rtt))
         while len(self.rtts) > 10:
             i = self.rtts.popitem()
