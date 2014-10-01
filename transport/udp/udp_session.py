@@ -219,14 +219,17 @@ class UDPSession(automat.Automat):
     def A(self, event, arg):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'datagram-received' :
-                self.doReceiveData(arg)
-            elif event == 'timer-10sec' :
+            if event == 'timer-10sec' :
                 self.doAlive(arg)
             elif event == 'shutdown' or ( event == 'timer-1min' and not self.isSessionActive(arg) ) :
                 self.state = 'CLOSED'
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
+            elif event == 'datagram-received' and self.isGreetingOrAlive(arg) :
+                self.doReceiveData(arg)
+                self.doAlive(arg)
+            elif event == 'datagram-received' and not self.isGreetingOrAlive(arg) :
+                self.doReceiveData(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init' :
@@ -243,9 +246,13 @@ class UDPSession(automat.Automat):
             elif event == 'shutdown' or event == 'timer-10sec' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'datagram-received' and self.isPingOrGreeting(arg) :
+            elif event == 'datagram-received' and self.isGreeting(arg) :
                 self.state = 'GREETING'
                 self.doReceiveData(arg)
+                self.doAlive(arg)
+            elif event == 'datagram-received' and self.isPing(arg) :
+                self.doReceiveData(arg)
+                self.doGreeting(arg)
         #---GREETING---
         elif self.state == 'GREETING':
             if event == 'timer-1sec' :
@@ -256,6 +263,7 @@ class UDPSession(automat.Automat):
             elif event == 'datagram-received' and self.isGreetingOrAlive(arg) :
                 self.state = 'CONNECTED'
                 self.doReceiveData(arg)
+                self.doAlive(arg)
                 self.doNotifyConnected(arg)
                 self.doCheckPendingFiles(arg)
         #---CLOSED---
@@ -263,13 +271,20 @@ class UDPSession(automat.Automat):
             pass
         return None
 
-    def isPingOrGreeting(self, arg):
+    def isPing(self, arg):
         """
         Condition method.
         """
         command = arg[0][0]
-        return ( command == udp.CMD_PING or command == udp.CMD_GREETING)
+        return ( command == udp.CMD_PING )
 
+    def isGreeting(self, arg):
+        """
+        Condition method.
+        """
+        command = arg[0][0]
+        return ( command == udp.CMD_GREETING )
+        
     def isGreetingOrAlive(self, arg):
         """
         Condition method.
@@ -330,9 +345,10 @@ class UDPSession(automat.Automat):
         elif command == udp.CMD_ACK:
             self.file_queue.on_received_ack_packet(payload)
         elif command == udp.CMD_PING:
-            rtt_id_out = self._rtt_start('GREETING')
-            payloadout = str(self.node.my_id)+' '+str(self.node.my_idurl)+' '+rtt_id_out
-            udp.send_command(self.node.listen_port, udp.CMD_GREETING, payloadout, self.peer_address)
+            pass
+#            rtt_id_out = self._rtt_start('GREETING')
+#            payloadout = str(self.node.my_id)+' '+str(self.node.my_idurl)+' '+rtt_id_out
+#            udp.send_command(self.node.listen_port, udp.CMD_GREETING, payloadout, self.peer_address)
         elif command == udp.CMD_ALIVE:
             pass
             # rtt_id_in = payload
@@ -350,7 +366,7 @@ class UDPSession(automat.Automat):
                 return
             self._rtt_finish(rtt_id_in)
             # rtt_id_out = self._rtt_start('ALIVE')
-            udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
+            # udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
             if self.peer_id:
                 if new_peer_id != self.peer_id:
                     lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
@@ -429,6 +445,7 @@ class UDPSession(automat.Automat):
             if len(sessions_by_peer_id()[self.peer_id]) == 0:
                 sessions_by_peer_id().pop(self.peer_id)            
         automat.objects().pop(self.index)
+
 
     def _rtt_start(self, name):
         i = 0
