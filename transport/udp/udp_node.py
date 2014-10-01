@@ -138,7 +138,6 @@ class UDPNode(automat.Automat):
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
             elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
-                #self.doStartNewSession(arg)
                 pass
             elif event == 'connect' and not self.isKnowMyAddress(arg) :
                 self.state = 'STUN'
@@ -154,7 +153,6 @@ class UDPNode(automat.Automat):
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
             elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
-                #self.doStartNewSession(arg)
                 pass
             elif event == 'connect' and not self.isKnowMyAddress(arg) :
                 self.state = 'STUN'
@@ -176,6 +174,7 @@ class UDPNode(automat.Automat):
                 self.GoOn=False
                 self.doNotifyDisconnected(arg)
                 self.doStartStunClient(arg)
+        return None
 
     def isKnownPeer(self, arg):
         """

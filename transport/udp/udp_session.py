@@ -475,7 +475,7 @@ class UDPSession(automat.Automat):
     def _rtt_finish(self, rtt_id_in):
         if rtt_id_in is None or rtt_id_in not in self.rtts:
             for rtt_id in self.rtts.keys():
-                if self.rtts[1] == -1:
+                if self.rtts[rtt_id][1] == -1:
                     rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
                     del self.rtts[rtt_id]
                     lg.out(18, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
