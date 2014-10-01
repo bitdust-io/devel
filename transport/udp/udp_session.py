@@ -247,7 +247,6 @@ class UDPSession(automat.Automat):
                 self.state = 'GREETING'
                 self.doReceiveData(arg)
             elif event == 'datagram-received' and not self.isPingOrGreeting(arg) :
-                #self.doReceiveData(arg)
                 pass
             elif event == 'shutdown' or event == 'timer-10sec' :
                 self.state = 'CLOSED'
@@ -260,7 +259,6 @@ class UDPSession(automat.Automat):
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'datagram-received' and not self.isGreetingOrAlive(arg) :
-                #self.doReceiveData(arg)
                 pass
             elif event == 'datagram-received' and self.isGreetingOrAlive(arg) :
                 self.state = 'CONNECTED'
@@ -270,6 +268,7 @@ class UDPSession(automat.Automat):
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
+        return None
 
     def isPing(self, arg):
         """

@@ -116,7 +116,6 @@ class UDPNode(automat.Automat):
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
             elif event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
-                #self.doStartNewSession(arg)
                 pass
             elif event == 'stun-failed' :
                 self.state = 'OFFLINE'
