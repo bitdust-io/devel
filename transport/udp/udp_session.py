@@ -469,6 +469,7 @@ class UDPSession(automat.Automat):
             i += 1
         new_rtt_id = name+str(i)
         self.rtts[new_rtt_id] = [time.time(), -1]
+        lg.out(18, 'udp_session._rtt_start added new RTT %s' % new_rtt_id)
         return new_rtt_id
         
     def _rtt_finish(self, rtt_id_in):
