@@ -240,17 +240,12 @@ class UDPSession(automat.Automat):
         elif self.state == 'PING':
             if event == 'timer-1sec' :
                 self.doPing(arg)
-            elif event == 'datagram-received' and self.isPing(arg) :
-                self.state = 'GREETING'
-                self.doReceiveData(arg)
-            elif event == 'datagram-received' and self.isGreeting(arg) :
-                self.state = 'GREETING'
-                self.doReceiveData(arg)
-            elif event == 'datagram-received' and not self.isPingOrGreeting(arg) :
-                pass
             elif event == 'shutdown' or event == 'timer-10sec' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+            elif event == 'datagram-received' and self.isPingOrGreeting(arg) :
+                self.state = 'GREETING'
+                self.doReceiveData(arg)
         #---GREETING---
         elif self.state == 'GREETING':
             if event == 'timer-1sec' :
@@ -258,8 +253,6 @@ class UDPSession(automat.Automat):
             elif event == 'shutdown' or event == 'timer-30sec' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'datagram-received' and not self.isGreetingOrAlive(arg) :
-                pass
             elif event == 'datagram-received' and self.isGreetingOrAlive(arg) :
                 self.state = 'CONNECTED'
                 self.doReceiveData(arg)
@@ -269,20 +262,6 @@ class UDPSession(automat.Automat):
         elif self.state == 'CLOSED':
             pass
         return None
-
-    def isPing(self, arg):
-        """
-        Condition method.
-        """
-        command = arg[0][0]
-        return command == udp.CMD_PING
-
-    def isGreeting(self, arg):
-        """
-        Condition method.
-        """
-        command = arg[0][0]
-        return command == udp.CMD_GREETING
 
     def isPingOrGreeting(self, arg):
         """
@@ -314,14 +293,14 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        rtt_id_out = self._rtt_start('ALIVE')
-        udp.send_command(self.node.listen_port, udp.CMD_ALIVE, rtt_id_out, self.peer_address)
+        udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
 
     def doGreeting(self, arg):
         """
         Action method.
         """
-        payload = str(self.node.my_id)+' '+str(self.node.my_idurl)
+        rtt_id_out = self._rtt_start('GREETING')
+        payload = str(self.node.my_id)+' '+str(self.node.my_idurl)+' '+rtt_id_out
         udp.send_command(self.node.listen_port, udp.CMD_GREETING, payload, self.peer_address)
 
     def doPing(self, arg):
@@ -351,12 +330,13 @@ class UDPSession(automat.Automat):
         elif command == udp.CMD_ACK:
             self.file_queue.on_received_ack_packet(payload)
         elif command == udp.CMD_PING:
-            rtt_id_out = self._rtt_start('PING')
+            rtt_id_out = self._rtt_start('GREETING')
             payloadout = str(self.node.my_id)+' '+str(self.node.my_idurl)+' '+rtt_id_out
             udp.send_command(self.node.listen_port, udp.CMD_GREETING, payloadout, self.peer_address)
         elif command == udp.CMD_ALIVE:
-            rtt_id_in = payload
-            self._rtt_finish(rtt_id_in)
+            pass
+            # rtt_id_in = payload
+            # self._rtt_finish(rtt_id_in)
         elif command == udp.CMD_GREETING:
             parts = payload.split(' ')
             try:
@@ -369,8 +349,8 @@ class UDPSession(automat.Automat):
             except:
                 return
             self._rtt_finish(rtt_id_in)
-            rtt_id_out = self._rtt_start('ALIVE')
-            udp.send_command(self.node.listen_port, udp.CMD_ALIVE, rtt_id_out, self.peer_address)
+            # rtt_id_out = self._rtt_start('ALIVE')
+            udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
             if self.peer_id:
                 if new_peer_id != self.peer_id:
                     lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
