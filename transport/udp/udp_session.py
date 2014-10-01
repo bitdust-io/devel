@@ -454,16 +454,23 @@ class UDPSession(automat.Automat):
         if len(self.rtts) > 10:
             oldest_rtt_moment = time.time()
             oldest_rtt_id = None
+            remove_list = []
             for rtt_id in self.rtts.keys():
                 rtt_data = self.rtts[rtt_id]
-                if rtt_data[1] >= 0 and rtt_data[1] < oldest_rtt_moment:
-                    oldest_rtt_moment = rtt_data[1]
-                    oldest_rtt_id = rtt_id
+                if rtt_data[1] >= 0:
+                    if rtt_data[1] < oldest_rtt_moment:
+                        oldest_rtt_moment = rtt_data[1]
+                        oldest_rtt_id = rtt_id
+                else:
+                    remove_list.append(rtt_id)
             if oldest_rtt_id:
                 rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
                 del self.rtts[oldest_rtt_id]
                 lg.out(18, 'udp_session._rtt_start removed oldest RTT %s:%r' % (
                     oldest_rtt_id, rtt))
+            for rtt_id in remove_list:
+                lg.out(18, 'udp_session._rtt_start removed not finished RTT %s' % (rtt_id))
+                self.rtts.pop(rtt_id)
         i = 0
         while name+str(i) in self.rtts.keys():
             i += 1
@@ -474,15 +481,17 @@ class UDPSession(automat.Automat):
         
     def _rtt_finish(self, rtt_id_in):
         if rtt_id_in is None or rtt_id_in not in self.rtts:
-            for rtt_id in self.rtts.keys():
-                if self.rtts[rtt_id][1] == -1:
-                    rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
-                    del self.rtts[rtt_id]
-                    lg.out(18, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
-                        rtt_id, rtt))
-                    return
-            lg.warn('rtt %s not found in %s' % (rtt_id_in, self))
             return
+#             or rtt_id_in not in self.rtts:
+#            for rtt_id in self.rtts.keys():
+#                if self.rtts[rtt_id][1] == -1:
+#                    rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
+#                    del self.rtts[rtt_id]
+#                    lg.out(18, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
+#                        rtt_id, rtt))
+#                    return
+#            lg.warn('rtt %s not found in %s' % (rtt_id_in, self))
+#            return
         self.rtts[rtt_id_in][1] = time.time()
         rtt = self.rtts[rtt_id_in][1] - self.rtts[rtt_id_in][0]
         lg.out(18, 'udp_session._rtt_finish registered RTT %s:%r' % (
