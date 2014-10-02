@@ -368,13 +368,17 @@ class UDPStream(automat.Automat):
         self.creation_time = time.time()
         self.limit_send_bytes_per_sec = get_global_limit_send_bytes_per_sec() / len(streams())
         self.limit_receive_bytes_per_sec = get_global_limit_receive_bytes_per_sec() / len(streams())
+        min_rtt = RTT_MAX_LIMIT
         for rtt_id, rtt_data in self.producer.session.rtts.items():
             if rtt_data[1] != -1:
-                self.rtt_avarage += rtt_data[1] - rtt_data[0]
-                self.rtt_counter += 1.0
-        if self.rtt_counter < 1.0:
-            self.rtt_avarage = (RTT_MIN_LIMIT + RTT_MAX_LIMIT) / 2.0 
-            self.rtt_counter = 1.0
+                rtt = rtt_data[1] - rtt_data[0]
+                if rtt < min_rtt:
+                    min_rtt = rtt
+        if min_rtt < RTT_MAX_LIMIT:
+            self.rtt_avarage = min_rtt
+        else:
+            self.rtt_avarage = min_rtt(RTT_MIN_LIMIT + RTT_MAX_LIMIT) / 2.0
+        self.rtt_counter = 1.0
         lg.out(18, 'udp_stream.doInit limits: (in=%r|out=%r)  rtt: (%r|%d)' % (
             self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec,
             self.rtt_avarage / self.rtt_counter, self.rtt_counter,))
