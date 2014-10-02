@@ -526,6 +526,7 @@ class UDPSession(automat.Automat):
         self._rtt_finish(self.my_rtt_id)
         self.my_rtt_id = '0'
         to_remove = []
+        good_rtts = {}
         min_rtt = sys.float_info.max
         for rtt_id in self.rtts.keys():
             if self.rtts[rtt_id][1] == -1:
@@ -534,11 +535,12 @@ class UDPSession(automat.Automat):
                 rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
                 if rtt < min_rtt:
                     min_rtt = rtt
+                good_rtts[rtt_id] = rtt 
         self.min_rtt = min_rtt
         for rtt_id in to_remove:
             # print 'doFinishAllRTTs closed', rtt_id
             del self.rtts[rtt_id]
-        # print self.rtts.keys()
+        lg.out(18, 'udp_session.doFinishAllRTTs: %r' % good_rtts)# print self.rtts.keys()
         
     def doDestroyMe(self, arg):
         """
