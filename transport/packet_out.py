@@ -511,7 +511,8 @@ class PacketOut(automat.Automat):
                     gate.is_installed(proto):
                         if proto == 'tcp' and localIP:
                             host = localIP
-                        gate.send_file(proto, host, self.filename, self.description)
+                        d = gate.send_file(proto, host, self.filename, self.description)
+                        d.
                         self.items.append(WorkItem(proto, host))
                         workitem_sent = True
             if not workitem_sent:

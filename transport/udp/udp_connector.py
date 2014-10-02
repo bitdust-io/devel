@@ -100,6 +100,7 @@ class DHTUDPConnector(automat.Automat):
         #---FAILED---
         elif self.state == 'FAILED':
             pass
+        return None
 
     def doInit(self, arg):
         """

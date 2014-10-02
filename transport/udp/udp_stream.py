@@ -290,13 +290,13 @@ class UDPStream(automat.Automat):
                 self.doReceivingLoop(arg)
             elif event == 'set-limits' :
                 self.doUpdateLimits(arg)
+            elif event == 'iterate' :
+                self.doResendAck(arg)
+                self.doReceivingLoop(arg)
             elif event == 'timeout' :
                 self.doReportReceiveTimeout(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
-            elif event == 'iterate' :
-                self.doResendAck(arg)
-                self.doReceivingLoop(arg)
             elif event == 'close' :
                 self.doReportClosed(arg)
                 self.doCloseStream(arg)

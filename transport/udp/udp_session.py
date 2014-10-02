@@ -30,7 +30,7 @@ from lib import automat
 from lib import udp
 
 import udp_file_queue
-import udp_stream
+import udp_interface
 
 #------------------------------------------------------------------------------ 
 
@@ -227,6 +227,8 @@ class UDPSession(automat.Automat):
                 self.doAlive(arg)
             elif event == 'shutdown' or ( event == 'timer-1min' and not self.isSessionActive(arg) ) :
                 self.state = 'CLOSED'
+                self.doSetErrorMessage(event,arg)
+                self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
             elif event == 'datagram-received' and self.isGreeting(arg) :
@@ -247,6 +249,9 @@ class UDPSession(automat.Automat):
                 self.doPing(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
+                self.doSetErrorMessage(event,arg)
+                self.doClosePendingFiles(arg)
+                self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
         #---PING---
         elif self.state == 'PING':
@@ -255,6 +260,9 @@ class UDPSession(automat.Automat):
                 self.doPing(arg)
             elif event == 'shutdown' or event == 'timer-10sec' :
                 self.state = 'CLOSED'
+                self.doSetErrorMessage(event,arg)
+                self.doClosePendingFiles(arg)
+                self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
             elif event == 'datagram-received' and self.isGreeting(arg) :
                 self.state = 'GREETING'
@@ -274,6 +282,9 @@ class UDPSession(automat.Automat):
                 self.doGreeting(arg)
             elif event == 'shutdown' or event == 'timer-30sec' :
                 self.state = 'CLOSED'
+                self.doSetErrorMessage(event,arg)
+                self.doClosePendingFiles(arg)
+                self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
             elif event == 'datagram-received' and self.isAlive(arg) :
                 self.state = 'CONNECTED'
@@ -491,7 +502,7 @@ class UDPSession(automat.Automat):
         i = 0
         outgoings = 0
         while i < len(_PendingOutboxFiles):
-            filename, host, description, result_defer, single, tm = _PendingOutboxFiles.pop(i)
+            filename, host, description, result_defer, single, tm = _PendingOutboxFiles[i]
             if host == self.peer_id:
                 outgoings += 1
                 # small trick to speed up service packets - they have a high priority
@@ -499,12 +510,34 @@ class UDPSession(automat.Automat):
                     self.file_queue.insert_outbox_file(filename, description, result_defer, single)
                 else:
                     self.file_queue.append_outbox_file(filename, description, result_defer, single)
+                _PendingOutboxFiles.pop(i)
             else:
-                _PendingOutboxFiles.insert(i, (filename, host, description, result_defer, single, tm))
+                # _PendingOutboxFiles.insert(i, (filename, host, description, result_defer, single, tm))
                 i += 1
         if outgoings > 0:
             reactor.callLater(0, process_sessions)
 
+    def doClosePendingFiles(self, arg):
+        """
+        Action method.
+        """
+        global _PendingOutboxFiles
+        i = 0
+        outgoings = 0
+        while i < len(_PendingOutboxFiles):
+            filename, host, description, result_defer, single, tm = _PendingOutboxFiles[i]
+            if host == self.peer_id:
+                outgoings += 1
+                udp_interface.interface_cancelled_file_sending(
+                    self.peer_id, filename, 0, description, self.error_message)
+                if result_defer:
+                    result_defer.callback(((filename, description), 'failed', self.error_message))
+                _PendingOutboxFiles.pop(i)
+            else:
+                i += 1
+        if outgoings > 0:
+            reactor.callLater(0, process_sessions)
+        
     def doStartRTT(self, arg):
         """
         Action method.
@@ -541,6 +574,19 @@ class UDPSession(automat.Automat):
             del self.rtts[rtt_id]
         lg.out(18, 'udp_session.doFinishAllRTTs: %r' % good_rtts)# print self.rtts.keys()
         
+    def doSetErrorMessage(self, event, arg):
+        """
+        Action method.
+        """
+        self.error_message = 'session has been closed'
+        if event.count('timer'):
+            if self.state == 'CONNECTED':
+                self.error_message = 'remote peer is not active'
+            elif self.state == 'GREETING':
+                self.error_message = 'greeting timeout'
+            elif self.state == 'PING':
+                self.error_message = 'ping remote machine has failed'
+
     def doDestroyMe(self, arg):
         """
         Action method.
