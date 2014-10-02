@@ -233,9 +233,6 @@ class UDPSession(automat.Automat):
                 self.doAcceptGreeting(arg)
                 self.doFinishRTT(arg)
                 self.doAlive(arg)
-            elif event == 'datagram-received' and self.isAlive(arg) :
-                self.doAcceptAlive(arg)
-                self.doFinishAllRTTs(arg)
             elif event == 'datagram-received' and self.isPayloadData(arg) :
                 self.doReceiveData(arg)
             elif event == 'datagram-received' and self.isPing(arg) :
@@ -278,19 +275,13 @@ class UDPSession(automat.Automat):
             elif event == 'shutdown' or event == 'timer-30sec' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'datagram-received' and self.isGreeting(arg) :
-                self.state = 'CONNECTED'
-                self.doAcceptGreeting(arg)
-                self.doFinishRTT(arg)
-                self.doAlive(arg)
-                self.doNotifyConnected(arg)
-                self.doCheckPendingFiles(arg)
             elif event == 'datagram-received' and self.isAlive(arg) :
                 self.state = 'CONNECTED'
                 self.doAcceptAlive(arg)
                 self.doFinishAllRTTs(arg)
                 self.doNotifyConnected(arg)
                 self.doCheckPendingFiles(arg)
+                self.doAlive(arg)
             elif event == 'datagram-received' and self.isPing(arg) :
                 self.doAcceptPing(arg)
                 self.doStartRTT(arg)
@@ -413,12 +404,14 @@ class UDPSession(automat.Automat):
         # self._rtt_finish(rtt_id_in)
         # rtt_id_out = self._rtt_start('ALIVE')
         # udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
+        first_greeting = False
         if self.peer_id:
             if new_peer_id != self.peer_id:
                 lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
         else:
             lg.out(14, 'udp_session.doAcceptGreeting detected peer id : %s for session %s' % (new_peer_id, self.peer_address))
             self.peer_id = new_peer_id
+            first_greeting = True
             try:
                 sessions_by_peer_id()[self.peer_id].append(self)
             except:
@@ -429,17 +422,19 @@ class UDPSession(automat.Automat):
         else:
             lg.out(14, 'udp_session.doAcceptGreeting detected peer idurl : %s for session %s' % (new_peer_idurl, self.peer_address))
             self.peer_idurl = new_peer_idurl
-        for s in sessions().values():
-            if self.id == s.id:
-                continue
-            if self.peer_id == s.peer_id:
-                lg.warn('got GREETING from another address, close session %s' % s)
-                s.automat('shutdown')
-                continue
-            if self.peer_idurl == s.peer_idurl:
-                lg.warn('got GREETING from another idurl, close session %s' % s)
-                s.automat('shutdown')
-                continue
+            first_greeting = True
+        if first_greeting:
+            for s in sessions().values():
+                if self.id == s.id:
+                    continue
+                if self.peer_id == s.peer_id:
+                    lg.warn('got GREETING from another address, close session %s' % s)
+                    s.automat('shutdown')
+                    continue
+                if self.peer_idurl == s.peer_idurl:
+                    lg.warn('got GREETING from another idurl, close session %s' % s)
+                    s.automat('shutdown')
+                    continue
 
     def doAcceptAlive(self, arg):
         """
