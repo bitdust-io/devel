@@ -18,6 +18,7 @@ EVENTS:
 """
 
 import os
+import sys
 import time
 
 from twisted.internet import reactor
@@ -212,6 +213,7 @@ class UDPSession(automat.Automat):
         self.my_rtt_id = '0' # out
         self.peer_rtt_id = '0' # in
         self.rtts = {}
+        self.min_rtt = None
 
     def send_packet(self, command, payload):
         self.bytes_sent += len(payload)
@@ -524,9 +526,15 @@ class UDPSession(automat.Automat):
         self._rtt_finish(self.my_rtt_id)
         self.my_rtt_id = '0'
         to_remove = []
+        min_rtt = sys.float_info.max
         for rtt_id in self.rtts.keys():
             if self.rtts[rtt_id][1] == -1:
                 to_remove.append(rtt_id)
+            else:
+                rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
+                if rtt < min_rtt:
+                    min_rtt = rtt
+        self.min_rtt = min_rtt
         for rtt_id in to_remove:
             # print 'doFinishAllRTTs closed', rtt_id
             del self.rtts[rtt_id]
