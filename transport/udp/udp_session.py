@@ -355,7 +355,7 @@ class UDPSession(automat.Automat):
         # rtt_id_out = self._rtt_start('PING')
         udp.send_command(self.node.listen_port, udp.CMD_PING, 
                          self.my_rtt_id, self.peer_address)
-        print 'doPing', self.my_rtt_id
+        # # print 'doPing', self.my_rtt_id
         self.my_rtt_id = '0'
 
     def doGreeting(self, arg):
@@ -367,7 +367,7 @@ class UDPSession(automat.Automat):
             str(self.node.my_id), str(self.node.my_idurl), 
             str(self.peer_rtt_id), str(self.my_rtt_id),)
         udp.send_command(self.node.listen_port, udp.CMD_GREETING, payload, self.peer_address)
-        print 'doGreeting', self.peer_rtt_id, self.my_rtt_id
+        # print 'doGreeting', self.peer_rtt_id, self.my_rtt_id
         self.peer_rtt_id = '0'
         self.my_rtt_id = '0'
                 
@@ -376,7 +376,7 @@ class UDPSession(automat.Automat):
         Action method.
         """
         udp.send_command(self.node.listen_port, udp.CMD_ALIVE, self.peer_rtt_id, self.peer_address)
-        print 'doAlive', self.peer_rtt_id
+        # print 'doAlive', self.peer_rtt_id
         self.peer_rtt_id = '0'
 
     def doAcceptPing(self, arg):
@@ -385,7 +385,7 @@ class UDPSession(automat.Automat):
         """
         address, command, payload = self._dispatch_datagram(arg)
         self.peer_rtt_id = payload.strip()
-        print 'doAcceptPing', self.peer_rtt_id
+        # print 'doAcceptPing', self.peer_rtt_id
 
     def doAcceptGreeting(self, arg):
         """
@@ -407,7 +407,7 @@ class UDPSession(automat.Automat):
         except:
             lg.exc()
             return
-        print 'doAcceptGreeting', self.peer_rtt_id, self.my_rtt_id
+        # print 'doAcceptGreeting', self.peer_rtt_id, self.my_rtt_id
         # self._rtt_finish(rtt_id_in)
         # rtt_id_out = self._rtt_start('ALIVE')
         # udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
@@ -415,7 +415,7 @@ class UDPSession(automat.Automat):
             if new_peer_id != self.peer_id:
                 lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
         else:
-            lg.out(14, 'udp_session.doReceiveData detected peer id : %s for session %s from GREETING packet' % (new_peer_id, self.peer_address))
+            lg.out(14, 'udp_session.doAcceptGreeting detected peer id : %s for session %s' % (new_peer_id, self.peer_address))
             self.peer_id = new_peer_id
             try:
                 sessions_by_peer_id()[self.peer_id].append(self)
@@ -425,7 +425,7 @@ class UDPSession(automat.Automat):
             if new_peer_idurl != self.peer_idurl:
                 lg.warn('session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
         else:
-            lg.out(14, 'udp_session.doReceiveData detected peer idurl : %s for session %s from GREETING packet' % (new_peer_idurl, self.peer_address))
+            lg.out(14, 'udp_session.doAcceptGreeting detected peer idurl : %s for session %s' % (new_peer_idurl, self.peer_address))
             self.peer_idurl = new_peer_idurl
         for s in sessions().values():
             if self.id == s.id:
@@ -445,7 +445,7 @@ class UDPSession(automat.Automat):
         """        
         address, command, payload = self._dispatch_datagram(arg)
         self.my_rtt_id = payload.strip()
-        print 'doAcceptAlive', self.my_rtt_id        
+        # print 'doAcceptAlive', self.my_rtt_id        
 
     def doReceiveData(self, arg):
         """
@@ -474,13 +474,13 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        # print 'CONNECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        # # print 'CONNECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 
     def doNotifyDisconnected(self, arg):
         """
         Action method.
         """
-        # print 'DISCONNECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+        # # print 'DISCONNECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 
     def doCheckPendingFiles(self, arg):
         """
@@ -528,9 +528,9 @@ class UDPSession(automat.Automat):
             if self.rtts[rtt_id][1] == -1:
                 to_remove.append(rtt_id)
         for rtt_id in to_remove:
-            print 'doFinishAllRTTs closed', rtt_id
+            # print 'doFinishAllRTTs closed', rtt_id
             del self.rtts[rtt_id]
-        print self.rtts.keys()
+        # print self.rtts.keys()
         
     def doDestroyMe(self, arg):
         """
@@ -566,7 +566,7 @@ class UDPSession(automat.Automat):
             i += 1
         new_rtt_id = name+str(i)
         self.rtts[new_rtt_id] = [time.time(), -1]
-        lg.out(18, 'udp_session._rtt_start added new RTT %s' % new_rtt_id)
+        # lg.out(18, 'udp_session._rtt_start added new RTT %s' % new_rtt_id)
         if len(self.rtts) > 10:
             oldest_rtt_moment = time.time()
             oldest_rtt_id = None
@@ -578,16 +578,16 @@ class UDPSession(automat.Automat):
             if oldest_rtt_id:
                 rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
                 del self.rtts[oldest_rtt_id]
-                lg.out(18, 'udp_session._rtt_start removed oldest RTT %s  %r' % (
-                    oldest_rtt_id, rtt))
+                # lg.out(18, 'udp_session._rtt_start removed oldest RTT %s  %r' % (
+                #     oldest_rtt_id, rtt))
         while len(self.rtts) > 10:
             i = self.rtts.popitem()
-            lg.out(18, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
-        print 'rtt start', new_rtt_id, self.peer_id
+            # lg.out(18, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
+        # print 'rtt start', new_rtt_id, self.peer_id
         return new_rtt_id
         
     def _rtt_finish(self, rtt_id_in):
-        print 'rtt finish', rtt_id_in, self.peer_id
+        # print 'rtt finish', rtt_id_in, self.peer_id
         if rtt_id_in == '0' or rtt_id_in not in self.rtts:
             return
 #             or rtt_id_in not in self.rtts:
@@ -602,8 +602,8 @@ class UDPSession(automat.Automat):
 #            return
         self.rtts[rtt_id_in][1] = time.time()
         rtt = self.rtts[rtt_id_in][1] - self.rtts[rtt_id_in][0]
-        lg.out(18, 'udp_session._rtt_finish registered RTT %s  %r' % (
-            rtt_id_in, rtt))
+        # lg.out(18, 'udp_session._rtt_finish registered RTT %s  %r' % (
+            # rtt_id_in, rtt))
         
         
         

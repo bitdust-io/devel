@@ -71,6 +71,9 @@ from logs import lg
 from lib import udp
 from lib import automat
 
+#------------------------------------------------------------------------------ 
+
+_Debug = False
 
 #------------------------------------------------------------------------------ 
 
@@ -92,7 +95,6 @@ MAX_ACK_TIMEOUTS = 3
 _Streams = {}
 _GlobalLimitReceiveBytesPerSec = 1.0 * 125000
 _GlobalLimitSendBytesPerSec = 100.0 * 125000
-_Debug = True
 
 #------------------------------------------------------------------------------ 
 
@@ -629,7 +631,7 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        print 'error'
+        lg.out(2, 'udp_stream.doReportError')
 
     def doCloseStream(self, arg):
         """
@@ -640,7 +642,7 @@ class UDPStream(automat.Automat):
                 pir_id = self.producer.session.peer_id
             except:
                 pir_id = 'None'
-            lg.out(18, 'doCloseStream %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
+            lg.out(24, 'doCloseStream %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
                 self.stream_id, pir_id, self.input_blocks_counter, self.bytes_in,
                 self.output_acks_counter, self.bytes_in_acks,
                 self.input_duplicated_blocks, self.input_duplicated_bytes,
@@ -682,7 +684,7 @@ class UDPStream(automat.Automat):
         streams().pop(self.stream_id)
         automat.objects().pop(self.index)
         reactor.callLater(0, balance_streams_limits)
-        lg.out(18, 'doDestroyMe %s' % (str(self.stream_id)))
+        # lg.out(18, 'doDestroyMe %s' % (str(self.stream_id)))
 
     def on_block_received(self, inpt):
         if self.consumer:
@@ -704,11 +706,11 @@ class UDPStream(automat.Automat):
             if block_id in self.input_blocks.keys():
                 self.input_duplicated_blocks += 1
                 self.input_duplicated_bytes += len(data)
-                if _Debug:
-                    lg.warn('duplicated %d %d' % (self.stream_id, block_id))
+                lg.warn('duplicated %d %d' % (self.stream_id, block_id))
             elif block_id < self.input_block_id:
-                if _Debug:
-                    lg.warn('old %d %d current: %d' % (self.stream_id, block_id, self.input_block_id))
+                self.input_duplicated_blocks += 1
+                self.input_duplicated_bytes += len(data)
+                lg.warn('old %d %d current: %d' % (self.stream_id, block_id, self.input_block_id))
             else:                
                 self.input_blocks[block_id] = data
                 bisect.insort(self.blocks_to_ack, block_id)
@@ -728,10 +730,11 @@ class UDPStream(automat.Automat):
                 except:
                     lg.exc()
                 newdata.close()
-            lg.out(24, 'in-> DATA %d %d-%d %d %d %s %s' % (
-                self.stream_id, block_id, self.input_block_id,
-                self.bytes_in, self.input_blocks_counter, eof_state, 
-                len(self.blocks_to_ack)))
+            if _Debug:
+                lg.out(24, 'in-> DATA %d %d-%d %d %d %s %s' % (
+                    self.stream_id, block_id, self.input_block_id,
+                    self.bytes_in, self.input_blocks_counter, eof_state, 
+                    len(self.blocks_to_ack)))
             # self.automat('input-data-collected', (block_id, raw_size, eof_state))
             # reactor.callLater(0, self.automat, 'block-received', (block_id, raw_size, eof_state))
             self.automat('block-received', (block_id, raw_size, eof_state))
@@ -766,8 +769,7 @@ class UDPStream(automat.Automat):
                     self.output_blocks_ids.remove(block_id)
                     outblock = self.output_blocks.pop(block_id)
                 except:
-                    if _Debug:
-                        lg.warn('block %d not found, stream_id=%d' % (block_id, self.stream_id))
+                    lg.warn('block %d not found, stream_id=%d' % (block_id, self.stream_id))
                     continue
                 block_size = len(outblock[0])
                 self.output_buffer_size -= block_size 
@@ -815,7 +817,7 @@ class UDPStream(automat.Automat):
             self.event('consume', data)
         
     def on_close(self):
-        lg.out(18, 'on_close %s' % self.stream_id)
+        # lg.out(18, 'on_close %s' % self.stream_id)
         if self.consumer:
             reactor.callLater(0, self.automat, 'close')
 
