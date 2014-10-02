@@ -369,7 +369,7 @@ class UDPStream(automat.Automat):
         self.limit_send_bytes_per_sec = get_global_limit_send_bytes_per_sec() / len(streams())
         self.limit_receive_bytes_per_sec = get_global_limit_receive_bytes_per_sec() / len(streams())
         min_rtt = RTT_MAX_LIMIT
-        for rtt_id, rtt_data in self.producer.session.rtts.items():
+        for rtt_data in self.producer.session.rtts.values():
             if rtt_data[1] != -1:
                 rtt = rtt_data[1] - rtt_data[0]
                 if rtt < min_rtt:
