@@ -209,6 +209,8 @@ class UDPSession(automat.Automat):
         self.last_datagram_received_time = 0
         self.bytes_sent = 0
         self.bytes_received = 0
+        self.this_rtt_id = None # out
+        self.last_rtt_id = None # in
         self.rtts = {}
 
     def send_packet(self, command, payload):
@@ -225,16 +227,18 @@ class UDPSession(automat.Automat):
                 self.state = 'CLOSED'
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
-            elif event == 'datagram-received' and self.isGreetingOrAlive(arg) :
+            elif event == 'datagram-received' and self.isGreeting(arg) :
                 self.doReceiveData(arg)
+                self.doFinishRTT(arg)
                 self.doAlive(arg)
-            elif event == 'datagram-received' and not self.isGreetingOrAlive(arg) :
+            elif event == 'datagram-received' and not self.isGreeting(arg) :
                 self.doReceiveData(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init' :
                 self.state = 'PING'
                 self.doInit(arg)
+                self.doStartRTT(arg)
                 self.doPing(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
@@ -242,6 +246,7 @@ class UDPSession(automat.Automat):
         #---PING---
         elif self.state == 'PING':
             if event == 'timer-1sec' :
+                self.doStartRTT(arg)
                 self.doPing(arg)
             elif event == 'shutdown' or event == 'timer-10sec' :
                 self.state = 'CLOSED'
@@ -250,17 +255,29 @@ class UDPSession(automat.Automat):
                 self.state = 'GREETING'
                 self.doReceiveData(arg)
                 self.doAlive(arg)
+                self.doFinishRTT(arg)
             elif event == 'datagram-received' and self.isPing(arg) :
+                self.state = 'GREETING'
                 self.doReceiveData(arg)
+                self.doFinishRTT(arg)
+                self.doStartRTT(arg)
                 self.doGreeting(arg)
         #---GREETING---
         elif self.state == 'GREETING':
             if event == 'timer-1sec' :
+                self.doStartRTT(arg)
                 self.doGreeting(arg)
             elif event == 'shutdown' or event == 'timer-30sec' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'datagram-received' and self.isGreetingOrAlive(arg) :
+            elif event == 'datagram-received' and self.isGreeting(arg) :
+                self.state = 'CONNECTED'
+                self.doReceiveData(arg)
+                self.doFinishRTT(arg)
+                self.doAlive(arg)
+                self.doNotifyConnected(arg)
+                self.doCheckPendingFiles(arg)
+            elif event == 'datagram-received' and self.isAlive(arg) :
                 self.state = 'CONNECTED'
                 self.doReceiveData(arg)
                 self.doAlive(arg)
@@ -284,13 +301,20 @@ class UDPSession(automat.Automat):
         """
         command = arg[0][0]
         return ( command == udp.CMD_GREETING )
-        
-    def isGreetingOrAlive(self, arg):
+
+    def isAlive(self, arg):
         """
         Condition method.
         """
         command = arg[0][0]
-        return ( command == udp.CMD_ALIVE or command == udp.CMD_GREETING)
+        return ( command == udp.CMD_ALIVE )
+        
+#    def isGreetingOrAlive(self, arg):
+#        """
+#        Condition method.
+#        """
+#        command = arg[0][0]
+#        return ( command == udp.CMD_ALIVE or command == udp.CMD_GREETING)
 
     def isSessionActive(self, arg):
         """
@@ -359,12 +383,12 @@ class UDPSession(automat.Automat):
                 new_peer_id  = parts[0]
                 new_peer_idurl  = parts[1]
                 if len(parts) >= 3:
-                    rtt_id_in = parts[2]
+                    self.last_rtt_id = parts[2]
                 else:
-                    rtt_id_in = None
+                    self.last_rtt_id = None
             except:
                 return
-            self._rtt_finish(rtt_id_in)
+            # self._rtt_finish(rtt_id_in)
             # rtt_id_out = self._rtt_start('ALIVE')
             # udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
             if self.peer_id:
@@ -446,6 +470,17 @@ class UDPSession(automat.Automat):
                 sessions_by_peer_id().pop(self.peer_id)            
         automat.objects().pop(self.index)
 
+    def doFinishRTT(self, arg):
+        """
+        Action method.
+        """
+        self._rtt_finish(self.last_rtt_id)
+
+    def doStartRTT(self, arg):
+        """
+        Action method.
+        """
+        self.this_rtt_id = self._rtt_start(self.state)
 
     def _rtt_start(self, name):
         i = 0
@@ -470,9 +505,11 @@ class UDPSession(automat.Automat):
         while len(self.rtts) > 10:
             i = self.rtts.popitem()
             lg.out(18, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
+        print 'rtt start', new_rtt_id
         return new_rtt_id
         
     def _rtt_finish(self, rtt_id_in):
+        print 'rtt finish', rtt_id_in
         if rtt_id_in is None or rtt_id_in not in self.rtts:
             return
 #             or rtt_id_in not in self.rtts:
