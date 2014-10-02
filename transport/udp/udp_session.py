@@ -232,6 +232,7 @@ class UDPSession(automat.Automat):
                 self.doFinishRTT(arg)
                 self.doAlive(arg)
             elif event == 'datagram-received' and self.isAlive(arg) :
+                self.doAcceptAlive(arg)
                 self.doFinishAllRTTs(arg)
             elif event == 'datagram-received' and self.isPayloadData(arg) :
                 self.doReceiveData(arg)
@@ -284,6 +285,7 @@ class UDPSession(automat.Automat):
                 self.doCheckPendingFiles(arg)
             elif event == 'datagram-received' and self.isAlive(arg) :
                 self.state = 'CONNECTED'
+                self.doAcceptAlive(arg)
                 self.doFinishAllRTTs(arg)
                 self.doNotifyConnected(arg)
                 self.doCheckPendingFiles(arg)
@@ -295,7 +297,6 @@ class UDPSession(automat.Automat):
         elif self.state == 'CLOSED':
             pass
         return None
-
 
     def isPayloadData(self, arg):
         """
@@ -582,11 +583,11 @@ class UDPSession(automat.Automat):
         while len(self.rtts) > 10:
             i = self.rtts.popitem()
             lg.out(18, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
-        print 'rtt start', new_rtt_id, self.node.my_id
+        print 'rtt start', new_rtt_id, self.peer_id
         return new_rtt_id
         
     def _rtt_finish(self, rtt_id_in):
-        print 'rtt finish', rtt_id_in, self.node.my_id
+        print 'rtt finish', rtt_id_in, self.peer_id
         if rtt_id_in == '0' or rtt_id_in not in self.rtts:
             return
 #             or rtt_id_in not in self.rtts:
