@@ -209,8 +209,8 @@ class UDPSession(automat.Automat):
         self.last_datagram_received_time = 0
         self.bytes_sent = 0
         self.bytes_received = 0
-        self.this_rtt_id = None # out
-        self.last_rtt_id = None # in
+        self.my_rtt_id = '0' # out
+        self.peer_rtt_id = '0' # in
         self.rtts = {}
 
     def send_packet(self, command, payload):
@@ -228,11 +228,16 @@ class UDPSession(automat.Automat):
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
             elif event == 'datagram-received' and self.isGreeting(arg) :
-                self.doReceiveData(arg)
+                self.doAcceptGreeting(arg)
                 self.doFinishRTT(arg)
                 self.doAlive(arg)
-            elif event == 'datagram-received' and not self.isGreeting(arg) :
+            elif event == 'datagram-received' and self.isAlive(arg) :
+                self.doFinishAllRTTs(arg)
+            elif event == 'datagram-received' and self.isPayloadData(arg) :
                 self.doReceiveData(arg)
+            elif event == 'datagram-received' and self.isPing(arg) :
+                self.doAcceptPing(arg)
+                self.doGreeting(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init' :
@@ -253,13 +258,13 @@ class UDPSession(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'datagram-received' and self.isGreeting(arg) :
                 self.state = 'GREETING'
-                self.doReceiveData(arg)
-                self.doAlive(arg)
+                self.doAcceptGreeting(arg)
                 self.doFinishRTT(arg)
+                self.doStartRTT(arg)
+                self.doGreeting(arg)
             elif event == 'datagram-received' and self.isPing(arg) :
                 self.state = 'GREETING'
-                self.doReceiveData(arg)
-                self.doFinishRTT(arg)
+                self.doAcceptPing(arg)
                 self.doStartRTT(arg)
                 self.doGreeting(arg)
         #---GREETING---
@@ -272,21 +277,32 @@ class UDPSession(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'datagram-received' and self.isGreeting(arg) :
                 self.state = 'CONNECTED'
-                self.doReceiveData(arg)
+                self.doAcceptGreeting(arg)
                 self.doFinishRTT(arg)
                 self.doAlive(arg)
                 self.doNotifyConnected(arg)
                 self.doCheckPendingFiles(arg)
             elif event == 'datagram-received' and self.isAlive(arg) :
                 self.state = 'CONNECTED'
-                self.doReceiveData(arg)
-                self.doAlive(arg)
+                self.doFinishAllRTTs(arg)
                 self.doNotifyConnected(arg)
                 self.doCheckPendingFiles(arg)
+            elif event == 'datagram-received' and self.isPing(arg) :
+                self.doAcceptPing(arg)
+                self.doStartRTT(arg)
+                self.doGreeting(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
+
+
+    def isPayloadData(self, arg):
+        """
+        Condition method.
+        """
+        command = arg[0][0]
+        return ( command == udp.CMD_DATA or command == udp.CMD_ACK )
 
     def isPing(self, arg):
         """
@@ -328,20 +344,6 @@ class UDPSession(automat.Automat):
         """
         # self.listen_port, self.my_id, self.my_address = arg
 
-    def doAlive(self, arg):
-        """
-        Action method.
-        """
-        udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
-
-    def doGreeting(self, arg):
-        """
-        Action method.
-        """
-        rtt_id_out = self._rtt_start('GREETING')
-        payload = str(self.node.my_id)+' '+str(self.node.my_idurl)+' '+rtt_id_out
-        udp.send_command(self.node.listen_port, udp.CMD_GREETING, payload, self.peer_address)
-
     def doPing(self, arg):
         """
         Action method.
@@ -349,8 +351,97 @@ class UDPSession(automat.Automat):
 #        if udp_stream._Debug:
 #            if not (self.peer_address.count('37.18.255.42') or self.peer_address.count('37.18.255.38')):
 #                return
-        rtt_id_out = self._rtt_start('PING')
-        udp.send_command(self.node.listen_port, udp.CMD_PING, rtt_id_out, self.peer_address)
+        # rtt_id_out = self._rtt_start('PING')
+        udp.send_command(self.node.listen_port, udp.CMD_PING, 
+                         self.my_rtt_id, self.peer_address)
+        print 'doPing', self.my_rtt_id
+        self.my_rtt_id = '0'
+
+    def doGreeting(self, arg):
+        """
+        Action method.
+        """
+        # rtt_id_out = self._rtt_start('GREETING')
+        payload = "%s %s %s %s" % (
+            str(self.node.my_id), str(self.node.my_idurl), 
+            str(self.peer_rtt_id), str(self.my_rtt_id),)
+        udp.send_command(self.node.listen_port, udp.CMD_GREETING, payload, self.peer_address)
+        print 'doGreeting', self.peer_rtt_id, self.my_rtt_id
+        self.peer_rtt_id = '0'
+        self.my_rtt_id = '0'
+                
+    def doAlive(self, arg):
+        """
+        Action method.
+        """
+        udp.send_command(self.node.listen_port, udp.CMD_ALIVE, self.peer_rtt_id, self.peer_address)
+        print 'doAlive', self.peer_rtt_id
+        self.peer_rtt_id = '0'
+
+    def doAcceptPing(self, arg):
+        """
+        Action method.
+        """
+        address, command, payload = self._dispatch_datagram(arg)
+        self.peer_rtt_id = payload.strip()
+
+    def doAcceptGreeting(self, arg):
+        """
+        Action method.
+        """
+        address, command, payload = self._dispatch_datagram(arg)
+        parts = payload.split(' ')
+        try:
+            new_peer_id  = parts[0]
+            new_peer_idurl  = parts[1]
+            if len(parts) >= 4:
+                self.peer_rtt_id = parts[3]
+            else:
+                self.peer_rtt_id = '0'
+            if len(parts) >= 3:
+                self.my_rtt_id = parts[2]
+            else:
+                self.my_rtt_id = '0'
+        except:
+            lg.exc()
+            return
+        # self._rtt_finish(rtt_id_in)
+        # rtt_id_out = self._rtt_start('ALIVE')
+        # udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
+        if self.peer_id:
+            if new_peer_id != self.peer_id:
+                lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
+        else:
+            lg.out(14, 'udp_session.doReceiveData detected peer id : %s for session %s from GREETING packet' % (new_peer_id, self.peer_address))
+            self.peer_id = new_peer_id
+            try:
+                sessions_by_peer_id()[self.peer_id].append(self)
+            except:
+                sessions_by_peer_id()[self.peer_id] = [self,]
+        if self.peer_idurl:
+            if new_peer_idurl != self.peer_idurl:
+                lg.warn('session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
+        else:
+            lg.out(14, 'udp_session.doReceiveData detected peer idurl : %s for session %s from GREETING packet' % (new_peer_idurl, self.peer_address))
+            self.peer_idurl = new_peer_idurl
+        for s in sessions().values():
+            if self.id == s.id:
+                continue
+            if self.peer_id == s.peer_id:
+                lg.warn('got GREETING from another address, close session %s' % s)
+                s.automat('shutdown')
+                continue
+            if self.peer_idurl == s.peer_idurl:
+                lg.warn('got GREETING from another idurl, close session %s' % s)
+                s.automat('shutdown')
+                continue
+
+    def doAcceptAlive(self, arg):
+        """
+        Action method.
+        """        
+        address, command, payload = self._dispatch_datagram(arg)
+        self.my_rtt_id = payload.strip()        
 
     def doReceiveData(self, arg):
         """
@@ -368,56 +459,12 @@ class UDPSession(automat.Automat):
             self.file_queue.on_received_data_packet(payload)
         elif command == udp.CMD_ACK:
             self.file_queue.on_received_ack_packet(payload)
-        elif command == udp.CMD_PING:
-            pass
-#            rtt_id_out = self._rtt_start('GREETING')
-#            payloadout = str(self.node.my_id)+' '+str(self.node.my_idurl)+' '+rtt_id_out
-#            udp.send_command(self.node.listen_port, udp.CMD_GREETING, payloadout, self.peer_address)
-        elif command == udp.CMD_ALIVE:
-            pass
-            # rtt_id_in = payload
-            # self._rtt_finish(rtt_id_in)
-        elif command == udp.CMD_GREETING:
-            parts = payload.split(' ')
-            try:
-                new_peer_id  = parts[0]
-                new_peer_idurl  = parts[1]
-                if len(parts) >= 3:
-                    self.last_rtt_id = parts[2]
-                else:
-                    self.last_rtt_id = None
-            except:
-                return
-            # self._rtt_finish(rtt_id_in)
-            # rtt_id_out = self._rtt_start('ALIVE')
-            # udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
-            if self.peer_id:
-                if new_peer_id != self.peer_id:
-                    lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
-            else:
-                lg.out(14, 'udp_session.doReceiveData detected peer id : %s for session %s from GREETING packet' % (new_peer_id, self.peer_address))
-                self.peer_id = new_peer_id
-                try:
-                    sessions_by_peer_id()[self.peer_id].append(self)
-                except:
-                    sessions_by_peer_id()[self.peer_id] = [self,]
-            if self.peer_idurl:
-                if new_peer_idurl != self.peer_idurl:
-                    lg.warn('session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
-            else:
-                lg.out(14, 'udp_session.doReceiveData detected peer idurl : %s for session %s from GREETING packet' % (new_peer_idurl, self.peer_address))
-                self.peer_idurl = new_peer_idurl
-            for s in sessions().values():
-                if self.id == s.id:
-                    continue
-                if self.peer_id == s.peer_id:
-                    lg.warn('got GREETING from another address, close session %s' % s)
-                    s.automat('shutdown')
-                    continue
-                if self.peer_idurl == s.peer_idurl:
-                    lg.warn('got GREETING from another idurl, close session %s' % s)
-                    s.automat('shutdown')
-                    continue
+#        elif command == udp.CMD_PING:
+#            pass
+#        elif command == udp.CMD_ALIVE:
+#            pass
+#        elif command == udp.CMD_GREETING:
+#            pass
 
     def doNotifyConnected(self, arg):
         """
@@ -453,6 +500,34 @@ class UDPSession(automat.Automat):
         if outgoings > 0:
             reactor.callLater(0, process_sessions)
 
+    def doStartRTT(self, arg):
+        """
+        Action method.
+        """
+        self.my_rtt_id = self._rtt_start(self.state)
+
+    def doFinishRTT(self, arg):
+        """
+        Action method.
+        """
+        self._rtt_finish(self.my_rtt_id)
+        self.my_rtt_id = '0'
+
+    def doFinishAllRTTs(self, arg):
+        """
+        Action method.
+        """
+        self._rtt_finish(self.my_rtt_id)
+        self.my_rtt_id = '0'
+        to_remove = []
+        for rtt_id in self.rtts.keys():
+            if self.rtts[rtt_id][1] == -1:
+                to_remove.append(rtt_id)
+        for rtt_id in to_remove:
+            print 'doFinishAllRTTs closed', rtt_id
+            del self.rtts[rtt_id]
+        print self.rtts.keys()
+        
     def doDestroyMe(self, arg):
         """
         Action method.
@@ -470,17 +545,16 @@ class UDPSession(automat.Automat):
                 sessions_by_peer_id().pop(self.peer_id)            
         automat.objects().pop(self.index)
 
-    def doFinishRTT(self, arg):
-        """
-        Action method.
-        """
-        self._rtt_finish(self.last_rtt_id)
-
-    def doStartRTT(self, arg):
-        """
-        Action method.
-        """
-        self.this_rtt_id = self._rtt_start(self.state)
+    def _dispatch_datagram(self, arg):
+        self.last_datagram_received_time = time.time()
+        try:
+            datagram, address = arg
+            command, payload = datagram
+        except:
+            lg.exc()
+            return None, None, None
+        assert address == self.peer_address
+        return address, command, payload         
 
     def _rtt_start(self, name):
         i = 0
@@ -510,7 +584,7 @@ class UDPSession(automat.Automat):
         
     def _rtt_finish(self, rtt_id_in):
         print 'rtt finish', rtt_id_in
-        if rtt_id_in is None or rtt_id_in not in self.rtts:
+        if rtt_id_in == '0' or rtt_id_in not in self.rtts:
             return
 #             or rtt_id_in not in self.rtts:
 #            for rtt_id in self.rtts.keys():
