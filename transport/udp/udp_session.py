@@ -286,6 +286,10 @@ class UDPSession(automat.Automat):
                 self.doAcceptPing(arg)
                 self.doStartRTT(arg)
                 self.doGreeting(arg)
+            elif event == 'datagram-received' and self.isGreeting(arg) :
+                self.doAcceptGreeting(arg)
+                self.doFinishRTT(arg)
+                self.doAlive(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
