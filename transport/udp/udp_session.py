@@ -384,6 +384,7 @@ class UDPSession(automat.Automat):
         """
         address, command, payload = self._dispatch_datagram(arg)
         self.peer_rtt_id = payload.strip()
+        print 'doAcceptPing', self.peer_rtt_id
 
     def doAcceptGreeting(self, arg):
         """
@@ -405,6 +406,7 @@ class UDPSession(automat.Automat):
         except:
             lg.exc()
             return
+        print 'doAcceptGreeting', self.peer_rtt_id, self.my_rtt_id
         # self._rtt_finish(rtt_id_in)
         # rtt_id_out = self._rtt_start('ALIVE')
         # udp.send_command(self.node.listen_port, udp.CMD_ALIVE, '', self.peer_address)
@@ -441,7 +443,8 @@ class UDPSession(automat.Automat):
         Action method.
         """        
         address, command, payload = self._dispatch_datagram(arg)
-        self.my_rtt_id = payload.strip()        
+        self.my_rtt_id = payload.strip()
+        print 'doAcceptAlive', self.my_rtt_id        
 
     def doReceiveData(self, arg):
         """
@@ -579,11 +582,11 @@ class UDPSession(automat.Automat):
         while len(self.rtts) > 10:
             i = self.rtts.popitem()
             lg.out(18, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
-        print 'rtt start', new_rtt_id
+        print 'rtt start', new_rtt_id, self.node.my_id
         return new_rtt_id
         
     def _rtt_finish(self, rtt_id_in):
-        print 'rtt finish', rtt_id_in
+        print 'rtt finish', rtt_id_in, self.node.my_id
         if rtt_id_in == '0' or rtt_id_in not in self.rtts:
             return
 #             or rtt_id_in not in self.rtts:
