@@ -194,7 +194,14 @@ class UDPSession(automat.Automat):
         'timer-30sec': (30.0, ['GREETING']),
         'timer-10sec': (10.0, ['PING','CONNECTED']),
         }
-    
+
+    MESSAGES = {
+        'MSG_1': 'remote peer is not active',
+        'MSG_2': 'greeting is timed out',
+        'MSG_3': 'ping remote machine has failed',
+        'MSG_4': 'session has been closed at startup',
+        }
+   
     def __init__(self, node, peer_address, peer_id=None):
         self.node = node
         self.peer_address = peer_address
@@ -203,6 +210,9 @@ class UDPSession(automat.Automat):
         self.file_queue = udp_file_queue.FileQueue(self) 
         name = 'udp_session[%s:%d]' % (self.peer_address[0], self.peer_address[1])
         automat.Automat.__init__(self, name, 'AT_STARTUP')
+
+    def msg(self, msgid, arg=None):
+        return self.MESSAGES.get(msgid, '')
 
     def init(self):
         """
@@ -227,7 +237,7 @@ class UDPSession(automat.Automat):
                 self.doAlive(arg)
             elif event == 'shutdown' or ( event == 'timer-1min' and not self.isSessionActive(arg) ) :
                 self.state = 'CLOSED'
-                self.doSetErrorMessage(event,arg)
+                self.doSetErrorMessage(event,self.msg('MSG_1', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -249,7 +259,7 @@ class UDPSession(automat.Automat):
                 self.doPing(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
-                self.doSetErrorMessage(event,arg)
+                self.doSetErrorMessage(event,self.msg('MSG_4', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -260,7 +270,7 @@ class UDPSession(automat.Automat):
                 self.doPing(arg)
             elif event == 'shutdown' or event == 'timer-10sec' :
                 self.state = 'CLOSED'
-                self.doSetErrorMessage(event,arg)
+                self.doSetErrorMessage(event,self.msg('MSG_3', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -282,7 +292,7 @@ class UDPSession(automat.Automat):
                 self.doGreeting(arg)
             elif event == 'shutdown' or event == 'timer-30sec' :
                 self.state = 'CLOSED'
-                self.doSetErrorMessage(event,arg)
+                self.doSetErrorMessage(event,self.msg('MSG_2', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -535,8 +545,8 @@ class UDPSession(automat.Automat):
                 _PendingOutboxFiles.pop(i)
             else:
                 i += 1
-        if outgoings > 0:
-            reactor.callLater(0, process_sessions)
+        # if outgoings > 0:
+        #     reactor.callLater(0, process_sessions)
         
     def doStartRTT(self, arg):
         """
@@ -578,14 +588,10 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        self.error_message = 'session has been closed'
-        if event.count('timer'):
-            if self.state == 'CONNECTED':
-                self.error_message = 'remote peer is not active'
-            elif self.state == 'GREETING':
-                self.error_message = 'greeting timeout'
-            elif self.state == 'PING':
-                self.error_message = 'ping remote machine has failed'
+        if event.count('shutdown'):
+            self.error_message = 'session has been closed'
+        else:
+            self.error_message = arg
 
     def doDestroyMe(self, arg):
         """
