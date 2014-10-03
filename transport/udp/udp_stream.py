@@ -804,16 +804,14 @@ class UDPStream(automat.Automat):
 #                    if _Debug:
 #                        lg.out(18, 'SPEED UP: %r' % self.sending_speed_factor)
             else:
-                sum_not_acked_blocks = sum(map(lambda block: len(block[0]),
-                                               self.output_blocks.values()))
-                self.bytes_acked += sum_not_acked_blocks
-                eof = self.consumer.on_sent_raw_data(sum_not_acked_blocks)
-                # eof = True
-                # self.output_blocks.clear()
-                # self.output_blocks_ids = []
-                # self.output_buffer_size = 0
-                # relative_time = time.time() - self.creation_time
-                return                 
+                if pause_time == 0.0:
+                    sum_not_acked_blocks = sum(map(lambda block: len(block[0]),
+                                                   self.output_blocks.values()))
+                    self.bytes_acked += sum_not_acked_blocks
+                    eof = self.consumer.on_sent_raw_data(sum_not_acked_blocks)
+                    if _Debug:
+                        lg.out(18, '    ZERO FINISH %d eof:%r acked:%d tail:%d' % (
+                            self.stream_id, eof, self.bytes_acked, sum_not_acked_blocks))
             if _Debug:
                 try:
                     sz = self.consumer.size

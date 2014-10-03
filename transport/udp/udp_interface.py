@@ -106,13 +106,18 @@ class GateInterface():
     def send_file(self, filename, host, description='', single=False):
         """
         """
+        # lg.out(20, 'udp_interface.send_file %s %s %s' % (filename, host, description))
         result_defer = Deferred()
-        if udp_node.A().state not in ['LISTEN', 'DHT_READ',]:
-            result_defer.callback(False)
-            return result_defer
+#        if udp_node.A().state not in ['LISTEN', 'DHT_READ',]:
+#            result_defer.callback(False)
+#            lg.out(4, 'udp_interface.send_file WARNING udp_node state is %s' % udp_node.A().state)
+#            return result_defer
         s = udp_session.get_by_peer_id(host)
         if s:
-            s.file_queue.append_outbox_file(filename, description, result_defer, single)
+            if description.startswith('Identity') or description.startswith('Ack'):
+                s.file_queue.insert_outbox_file(filename, description, result_defer, single)
+            else:
+                s.file_queue.append_outbox_file(filename, description, result_defer, single)
         else:
             udp_session.add_pending_outbox_file(filename, host, description, result_defer, single)
             udp_node.A('connect', host)
