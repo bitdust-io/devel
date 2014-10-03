@@ -503,7 +503,9 @@ class UDPStream(automat.Automat):
         if self.limit_receive_bytes_per_sec > 0 and relative_time > 0:
             current_rate = self.bytes_in / relative_time
             if current_rate > self.limit_receive_bytes_per_sec:
-                pause_time = ( self.bytes_in / self.limit_receive_bytes_per_sec ) - relative_time 
+                pause_time = ( self.bytes_in / self.limit_receive_bytes_per_sec ) - relative_time
+                if pause_time < 0:
+                    pause_time = 0.0 
         if not some_blocks_to_ack:
             # no blocks to ack now
             if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 2:
@@ -870,7 +872,7 @@ class UDPStream(automat.Automat):
         self.last_ack_moment = time.time()
         if _Debug:
             if ack_len > 0:
-                if pause_time == 0.0:
+                if pause_time <= 0.0:
                     lg.out(24, '<-out ACK %d %s' % (self.stream_id,
                         ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
                                      [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
