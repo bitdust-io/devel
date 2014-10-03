@@ -749,7 +749,7 @@ class UDPStream(automat.Automat):
             if _Debug:
                 lg.out(24, 'in-> DATA %d %d-%d %d %d %s %s' % (
                     self.stream_id, block_id, self.input_block_id,
-                    self.bytes_in, self.input_blocks_counter, eof, 
+                    self.bytes_in, self.input_blocks_counter, self.eof, 
                     len(self.blocks_to_ack)))
             # self.automat('input-data-collected', (block_id, raw_size, eof_state))
             # reactor.callLater(0, self.automat, 'block-received', (block_id, raw_size, eof_state))
@@ -891,17 +891,10 @@ class UDPStream(automat.Automat):
         self.blocks_to_ack = []
         self.last_ack_moment = time.time()
         if _Debug:
-            if ack_len > 0:
-                if pause_time <= 0.0:
-                    lg.out(24, '<-out ACK %d %s' % (self.stream_id,
-                        ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
-                                     [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
-                else:
-                    lg.out(24, '<-out ACK %d PAUSE:%r %s' % (self.stream_id,
-                        pause_time, ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
-                                     [ack_data[i:i+4] for i in range(0, len(ack_data)-8, 4)]))))
+            if pause_time <= 0.0:
+                lg.out(24, '<-out ACK %d %r %r' % (self.stream_id, self.eof, acks,))
             else:
-                lg.out(24, '<-out ACK %d ZERO' % self.stream_id)
+                lg.out(24, '<-out ACK %d %r PAUSE:%r %r' % (self.stream_id, self.eof, pause_time, acks))
         self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
         return ack_len > 0
             
