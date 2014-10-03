@@ -505,7 +505,8 @@ class UDPStream(automat.Automat):
             if current_rate > self.limit_receive_bytes_per_sec:
                 pause_time = ( self.bytes_in / self.limit_receive_bytes_per_sec ) - relative_time
                 if pause_time < 0:
-                    pause_time = 0.0 
+                    lg.warn('pause is %r, stream_id=%d' % (pause_time, self.stream_id)) 
+                    pause_time = 0.0
         if not some_blocks_to_ack:
             # no blocks to ack now
             if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 2:
