@@ -73,7 +73,7 @@ from lib import automat
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------ 
 
@@ -709,8 +709,8 @@ class UDPStream(automat.Automat):
                 return
             data = inpt.read()
             self.last_received_block_time = time.time() - self.creation_time
+            self.input_blocks_counter += 1
             if block_id != -1:
-                self.input_blocks_counter += 1
                 self.bytes_in += len(data)
                 self.last_received_block_id = block_id
                 eof = False
@@ -746,11 +746,17 @@ class UDPStream(automat.Automat):
                     self.eof = eof
                     if _Debug:
                         lg.out(18, '    EOF : %d' % self.stream_id)
-            if _Debug:
-                lg.out(24, 'in-> DATA %d %d-%d %d %d %s %s' % (
-                    self.stream_id, block_id, self.input_block_id,
-                    self.bytes_in, self.input_blocks_counter, self.eof, 
-                    len(self.blocks_to_ack)))
+                if _Debug:
+                    lg.out(24, 'in-> BLOCK %d %r %d-%d %d %d %d' % (
+                        self.stream_id, self.eof, block_id, self.input_block_id,
+                        self.bytes_in, self.input_blocks_counter, 
+                        len(self.blocks_to_ack)))
+            else:
+                if _Debug:
+                    lg.out(24, 'in-> BLOCK %d %r EMPTY %d %d' % (
+                        self.stream_id, self.eof, 
+                        self.bytes_in, self.input_blocks_counter))
+                
             # self.automat('input-data-collected', (block_id, raw_size, eof_state))
             # reactor.callLater(0, self.automat, 'block-received', (block_id, raw_size, eof_state))
             self.automat('block-received', (block_id, data))
@@ -880,10 +886,10 @@ class UDPStream(automat.Automat):
             self.current_send_bytes_per_sec = self.bytes_sent / relative_time
         if _Debug:
             if new_blocks_counter > 0:
-                lg.out(24, '<-out DATA %d %r %r' % (
+                lg.out(24, '<-out BLOCK %d %r %r' % (
                     self.stream_id, self.eof, blocks_to_send))
             else:
-                lg.out(24, '<-out DATA %d %r EMPTY BLOCK' % (
+                lg.out(24, '<-out BLOCK %d %r EMPTY' % (
                     self.stream_id, self.eof))
 
     def _send_ack(self, acks, pause_time=0.0):
