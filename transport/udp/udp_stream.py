@@ -501,9 +501,11 @@ class UDPStream(automat.Automat):
         pause_time = 0.0
         # limit receiving, calculate pause time
         if self.limit_receive_bytes_per_sec > 0 and relative_time > 0:
-            current_rate = self.bytes_in / relative_time
-            if current_rate > self.limit_receive_bytes_per_sec:
-                pause_time = ( self.bytes_in / self.limit_receive_bytes_per_sec ) - relative_time
+            # current_rate = self.bytes_in / relative_time
+            max_receive_available = self.limit_receive_bytes_per_sec * relative_time
+            if self.bytes_in > max_receive_available:
+                # pause_time = ( self.bytes_in / self.limit_receive_bytes_per_sec ) - relative_time
+                pause_time = (self.bytes_in - max_receive_available) / self.limit_receive_bytes_per_sec
                 if pause_time < 0:
                     lg.warn('pause is %r, stream_id=%d' % (pause_time, self.stream_id)) 
                     pause_time = 0.0
