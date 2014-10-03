@@ -505,9 +505,9 @@ class UDPStream(automat.Automat):
                 if pause_time < 0:
                     lg.warn('pause is %r, stream_id=%d' % (pause_time, self.stream_id)) 
                     pause_time = 0.0
-        if not some_blocks_to_ack and pause_time == 0.0:
-            # no blocks to ack now
-            if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 2:
+        if not some_blocks_to_ack and pause_time == 0.0 and not self.eof:
+            # no blocks to ack now, no need to pause and not rich EOF
+            if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 3:
                 # and last block has been long ago 
                 if _Debug:
                     lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (
