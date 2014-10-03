@@ -22,7 +22,6 @@ EVENTS:
     * :red:`register-item`
     * :red:`remote-identity-on-hand`
     * :red:`run`
-    * :red:`timer-20sec`
     * :red:`unregister-item`
     * :red:`write-error`
 """
@@ -303,7 +302,7 @@ class PacketOut(automat.Automat):
                 self.doSaveResponse(arg)
                 self.doReportDoneWithAck(arg)
                 self.doDestroyMe(arg)
-            elif event == 'cancel' or event == 'timer-20sec' :
+            elif event == 'cancel' :
                 self.state = 'CANCEL'
                 self.doErrMsg(event,self.msg('MSG_3', arg))
                 self.doReportCancelItems(arg)
