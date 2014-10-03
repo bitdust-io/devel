@@ -812,14 +812,8 @@ class UDPStream(automat.Automat):
                     eof = self.consumer.on_sent_raw_data(block_size)
                 if len(acks) > 0:
                     self.input_acks_counter += 1
-    #                if self.input_acks_counter % int(BLOCKS_PER_ACK / 2) == 1:
-    #                    self.sending_speed_factor *= 1.05
-    #                    if self.sending_speed_factor > 1.0:
-    #                        self.sending_speed_factor = 1.0
-    #                    if _Debug:
-    #                        lg.out(18, 'SPEED UP: %r' % self.sending_speed_factor)
                 else:
-                    if pause_time == 0.0:
+                    if pause_time == 0.0 and eof_flag is not None and eof_flag:
                         sum_not_acked_blocks = sum(map(lambda block: len(block[0]),
                                                        self.output_blocks.values()))
                         self.bytes_acked += sum_not_acked_blocks
