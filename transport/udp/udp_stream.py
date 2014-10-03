@@ -766,7 +766,8 @@ class UDPStream(automat.Automat):
                 raw_bytes = ''
                 self.last_ack_received_time = time.time() - self.creation_time
                 raw_bytes = inpt.read(1)
-                eof_flag = struct.unpack('?', raw_bytes)[0]
+                if raw_bytes:
+                    eof_flag = struct.unpack('?', raw_bytes)[0]
                 while True:
                     raw_bytes = inpt.read(4)
                     if not raw_bytes:
@@ -820,7 +821,8 @@ class UDPStream(automat.Automat):
                         if _Debug:
                             lg.out(18, '    ZERO FINISH %d eof:%r acked:%d tail:%d' % (
                                 self.stream_id, eof, self.bytes_acked, sum_not_acked_blocks))
-                eof = eof or eof_flag
+                if eof_flag is not None:
+                    eof = eof or eof_flag
                 if self.eof != eof:
                     self.eof = eof
                     if _Debug:
