@@ -224,7 +224,8 @@ class FileQueue:
                 # lg.warn('too many incoming files for session %s' % str(self.session))
                 # self.session.automat('shutdown')
                 if udp_stream._Debug:
-                    lg.warn('SEND ZERO ACK, too many incoming files %s %s' % (stream_id, self.session.peer_id))
+                    lg.warn('SEND ZERO ACK, too many active streams: %d  skipped: %s %s' % (
+                        len(self.streams), stream_id, self.session.peer_id))
                 self.do_send_ack(stream_id, None, '') 
                 return
             self.start_inbox_file(stream_id, data_size)

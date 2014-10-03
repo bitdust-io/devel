@@ -427,22 +427,14 @@ class UDPStream(automat.Automat):
                             self.stream_id, current_rate, self.limit_send_bytes_per_sec))
                     self.resend_inactivity_counter += 1
                     return
-        if self.input_acks_counter > 0:
-            #---skip sending : too few acks
-            if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
-                if _Debug:
-                    lg.out(18, 'SKIP SENDING, too few acks:%d blocks:%d' % (
-                        self.input_acks_counter, self.output_blocks_counter))
-                self.resend_inactivity_counter += 1
-                return
         if self.last_block_sent_time - self.last_ack_received_time > RTT_MAX_LIMIT * 2:
             #---last ack is timed out
             self.input_acks_timeouts_counter += 1
             if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
                 #---timeout sending : too many timed out acks
                 if _Debug:
-                    lg.out(18, 'SENDING BROKEN rtt=%r, last ack at %r, last block was %r' % (
-                        self.rtt_avarage / self.rtt_counter, 
+                    lg.out(18, 'SENDING BROKEN %d rtt=%r, last ack at %r, last block was %r' % (
+                        self.stream_id, self.rtt_avarage / self.rtt_counter, 
                         self.last_ack_received_time, self.last_block_sent_time))
                 reactor.callLater(0, self.automat, 'timeout')
             else:
@@ -455,15 +447,23 @@ class UDPStream(automat.Automat):
                     lg.out(18, 'RESEND ONE %d %d' % (self.stream_id, latest_block_id))
                 self._send_blocks([latest_block_id,])
             return
-        if relative_time - self.last_ack_received_time > RTT_MAX_LIMIT * 4 and \
-            relative_time - self.last_block_sent_time > RTT_MAX_LIMIT * 4 and \
-            self.state == 'SENDING':
+        if relative_time - self.last_ack_received_time > RTT_MAX_LIMIT * 2 and \
+                relative_time - self.last_block_sent_time > RTT_MAX_LIMIT * 2 and \
+                    self.state == 'SENDING':
             #---no activity at all
+            if _Debug:
+                lg.out(18, 'TIMEOUT SENDING %d rtt=%r, last ack at %r, last block was %r' % (
+                    self.stream_id, self.rtt_avarage / self.rtt_counter, 
+                    self.last_ack_received_time, self.last_block_sent_time))
+            reactor.callLater(0, self.automat, 'timeout')
+            return
+        if self.input_acks_counter > 0:
+            #---skip sending : too few acks
+            if self.output_blocks_counter / self.input_acks_counter > BLOCKS_PER_ACK * 2:
                 if _Debug:
-                    lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r' % (
-                        self.rtt_avarage / self.rtt_counter, 
-                        self.last_ack_received_time, self.last_block_sent_time))
-                reactor.callLater(0, self.automat, 'timeout')
+                    lg.out(18, 'SKIP SENDING %d, too few acks:%d blocks:%d' % (
+                        self.stream_id, self.input_acks_counter, self.output_blocks_counter))
+                self.resend_inactivity_counter += 1
                 return
         #---normal sending, check all pending blocks
         rtt_current = self.rtt_avarage / self.rtt_counter
@@ -496,7 +496,7 @@ class UDPStream(automat.Automat):
                 pause_time = ( self.bytes_in / self.limit_receive_bytes_per_sec ) - relative_time 
         if not some_blocks_to_ack:
             # no blocks to ack now
-            if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 4:
+            if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 2:
                 # and last block has been long ago 
                 if _Debug:
                     lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (
