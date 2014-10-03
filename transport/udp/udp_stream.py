@@ -348,7 +348,7 @@ class UDPStream(automat.Automat):
         Condition method.
         """
         acks, pause = arg
-        return len(acks) == 0
+        return len(acks) == 0 and pause == 0.0
 
     def isPaused(self, arg):
         """
