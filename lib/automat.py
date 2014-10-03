@@ -61,7 +61,7 @@ from twisted.internet.defer import Deferred, fail
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_LogEvents = False
+_LogEvents = True
 _Counter = 0 #: Increment by one for every new object, the idea is to keep unique ID's in the index
 _Index = {} #: Index dictionary, unique id (string) to index (int)
 _Objects = {} #: Objects dictionary to store all state machines objects

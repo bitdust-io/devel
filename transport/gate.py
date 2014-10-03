@@ -589,7 +589,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     Must return a unique transfer ID so plug-in will know that ID.
     After finishing that given transfer - that ID is passed to `unregister_file_sending()`.
     """
-    lg.out(18, 'on_register_file_sending %s %s' % (filename, description))
+    lg.out(18, 'gate.on_register_file_sending %s %s' % (filename, description))
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
         lg.out(2, 'gate.on_register_file_sending ERROR packet_out not found: %r %r %r' % (

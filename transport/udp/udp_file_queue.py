@@ -53,14 +53,26 @@ class FileQueue:
         n = max(contacts.numberForContact(self.session.peer_idurl), 0) % 89
         return (n+10)*1000000 + random.randint(10, 99)*10000 + _StreamCounter % 10000 
         
+    def report_failed_outbox_queue(self, error_message):
+        for filename, description, result_defer, single in self.outboxQueue:
+            self.on_failed_outbox_queue_item(
+                filename, description, error_message, result_defer, single)
+    
+    def report_failed_outbox_files(self, error_message):
+        for outfile in self.outboxFiles.values():
+            outfile.status = 'failed'
+            outfile.error_message = error_message
+            self.report_outbox_file(outfile)
+            
+    def report_failed_inbox_files(self, error_message):
+        for infile in self.inboxFiles.values():
+            infile.status = 'failed'
+            infile.error_message = error_message
+            self.report_inbox_file(infile)
+        
     def close(self):
         for stream in self.streams.values():
             stream.on_close()
-        # self.streams.clear()
-        # self.outboxFiles.clear()
-        # self.inboxFiles.clear()
-        for filename, description, result_defer, single in self.outboxQueue:
-            self.on_failed_outbox_queue_item(filename, description, 'session was closed', result_defer, single)
         self.outboxQueue = []
 
     def do_send_data(self, stream_id, outfile, output):
@@ -86,10 +98,14 @@ class FileQueue:
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.append((filename, description, result_defer, single))
         # udp_session.process_sessions()
+        lg.out(18, 'udp_file_queue.append_outbox_file %s for %s : %s' % (
+            os.path.basename(filename), self.session.peer_id, description) )
         
     def insert_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.insert(0, (filename, description, result_defer, single))
         # udp_session.process_sessions()
+        lg.out(18, 'udp_file_queue.insert_outbox_file %s for %s : %s' % (
+            os.path.basename(filename), self.session.peer_id, description) )
         
     def process_outbox_queue(self):
         has_reads = False
@@ -114,14 +130,13 @@ class FileQueue:
         has_sends = False
         for outfile in self.outboxFiles.values():
             has_sends = has_sends or outfile.process()
-        #for stream in self.streams.values():
-        #    stream.process()
         return has_sends
 
     def start_outbox_file(self, filename, filesize, description, result_defer, single):
         stream_id = self.make_unique_stream_id()
-        lg.out(18, 'udp_file_queue.start_outbox_file %d %s %s %d %s' % (
-            stream_id, description, os.path.basename(filename), filesize, self.session.peer_id))
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.start_outbox_file %d %s %s %d %s' % (
+                stream_id, description, os.path.basename(filename), filesize, self.session.peer_id))
         self.outboxFiles[stream_id] = OutboxFile(self, stream_id, filename, filesize, description, result_defer, single)
         self.streams[stream_id] = udp_stream.create(stream_id, self.outboxFiles[stream_id], self) 
         if not single:
@@ -132,7 +147,8 @@ class FileQueue:
             self.outboxFiles[stream_id].registration = d
         
     def start_inbox_file(self, stream_id, data_size):
-        lg.out(18, 'udp_file_queue.start_inbox_file %d %d %s' % (stream_id, data_size, self.session.peer_id))
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.start_inbox_file %d %d %s' % (stream_id, data_size, self.session.peer_id))
         self.inboxFiles[stream_id] = InboxFile(self, stream_id, data_size)
         self.streams[stream_id] = udp_stream.create(stream_id, self.inboxFiles[stream_id], self)
         d = udp_interface.interface_register_file_receiving(
@@ -147,28 +163,33 @@ class FileQueue:
         self.dead_streams.append(stream_id)
         if len(self.dead_streams) > NUMBER_OF_STREAMS_TO_REMEMBER:
             self.dead_streams.pop(0)
-        lg.out(18, 'erase_stream %s' % stream_id)
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.erase_stream %s' % stream_id)
         
     def close_outbox_file(self, stream_id):
-        lg.out(18, 'close_outbox_file %r' % stream_id)
+        # if udp_stream._Debug:
+        #     lg.out(18, 'close_outbox_file %r' % stream_id)
         self.outboxFiles[stream_id].close()
         del self.outboxFiles[stream_id]
 
     def close_inbox_file(self, stream_id):
-        lg.out(18, 'close_inbox_file %r' % stream_id)
+        # if udp_stream._Debug:
+        #     lg.out(18, 'close_inbox_file %r' % stream_id)
         self.inboxFiles[stream_id].close()   
         del self.inboxFiles[stream_id]   
 
     def report_outbox_file(self, outfile):    
-        lg.out(18, 'udp_file_queue.report_outbox_file %s %s %d bytes "%s"' % (
-            outfile.transfer_id, outfile.status, outfile.bytes_delivered, outfile.error_message))
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.report_outbox_file %s %s %d bytes "%s"' % (
+                outfile.transfer_id, outfile.status, outfile.bytes_delivered, outfile.error_message))
         udp_interface.interface_unregister_file_sending(
             outfile.transfer_id, outfile.status, outfile.bytes_delivered, outfile.error_message)
 
     def report_inbox_file(self, infile):
-        lg.out(18, 'udp_file_queue.report_inbox_file {%s} %s %s %d bytes "%s"' % (
-            os.path.basename(infile.filename), infile.transfer_id, 
-            infile.status, infile.bytes_received, infile.error_message))
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.report_inbox_file {%s} %s %s %d bytes "%s"' % (
+                os.path.basename(infile.filename), infile.transfer_id, 
+                infile.status, infile.bytes_received, infile.error_message))
         udp_interface.interface_unregister_file_receiving(
             infile.transfer_id, infile.status, infile.bytes_received, infile.error_message)
 
@@ -253,8 +274,6 @@ class FileQueue:
             return
         if infile.transfer_id:
             self.report_inbox_file(infile)
-        # self.close_stream(stream_id)
-        # self.close_inbox_file(stream_id)
         s = self.streams[stream_id]
         s.on_close()
         s = None
@@ -272,8 +291,6 @@ class FileQueue:
         if outfile.result_defer:
             outfile.result_defer.callback((outfile, outfile.status, outfile.error_message))
             outfile.result_defer = None
-        # self.close_stream(stream_id)
-        # self.close_outbox_file(stream_id)
         s = self.streams[stream_id]
         s.on_close()
         s = None
@@ -281,8 +298,7 @@ class FileQueue:
            
     def on_inbox_file_registered(self, response, stream_id):
         if stream_id not in self.inboxFiles.keys():
-            if udp_stream._Debug:
-                lg.warn('stream %d not found in the inboxFiles' % stream_id)
+            lg.warn('stream %d not found in the inboxFiles' % stream_id)
             return
         try:
             transfer_id = int(response)
@@ -291,12 +307,11 @@ class FileQueue:
         infile = self.inboxFiles[stream_id]
         infile.transfer_id = transfer_id
         infile.registration = None
-        lg.out(18, 'on_inbox_file_registered %d transfer_id=%r status=%s' % (
-            stream_id, transfer_id, infile.status))
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.on_inbox_file_registered %d transfer_id=%r status=%s' % (
+                stream_id, transfer_id, infile.status))
         if infile.status:
             self.report_inbox_file(infile)
-            # self.close_stream(stream_id)
-            # self.close_inbox_file(stream_id)
             s = self.streams[stream_id]
             s.on_close()
             s = None
@@ -307,8 +322,7 @@ class FileQueue:
 
     def on_outbox_file_registered(self, response, stream_id):
         if stream_id not in self.outboxFiles.keys():
-            if udp_stream._Debug:
-                lg.warn('stream %d not found in the outboxFiles' % stream_id)
+            lg.warn('stream %d not found in the outboxFiles' % stream_id)
             return
         try:
             transfer_id = int(response)
@@ -317,12 +331,11 @@ class FileQueue:
         outfile = self.outboxFiles[stream_id]
         outfile.transfer_id = transfer_id
         outfile.registration = None
-        lg.out(18, 'on_outbox_file_registered %d transfer_id=%r status=%s' % (
-            stream_id, transfer_id, outfile.status))
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.on_outbox_file_registered %d transfer_id=%r status=%s' % (
+                stream_id, transfer_id, outfile.status))
         if outfile.status:
             self.report_outbox_file(outfile) 
-            # self.close_stream(stream_id)
-            # self.close_outbox_file(stream_id)
             s = self.streams[stream_id]
             s.on_close()
             s = None
@@ -333,7 +346,8 @@ class FileQueue:
         self.session.automat('shutdown')
 
     def on_failed_outbox_queue_item(self, filename, description='', error_message='', result_defer=None, single=False):
-        lg.out(18, 'udp_file_queue.failed_outbox_queue_item %s because %s' % (filename, error_message))
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.failed_outbox_queue_item %s because %s' % (filename, error_message))
         if not single:
             udp_interface.interface_cancelled_file_sending(
                 self.session.peer_id, filename, 0, description, error_message)
@@ -352,8 +366,6 @@ class FileQueue:
             self.report_inbox_file(infile)
         if udp_stream._Debug:
             lg.out(2, '!'*80)
-        # self.close_stream(stream_id)
-        # self.close_inbox_file(stream_id)
         s = self.streams[stream_id]
         s.on_close()
         s = None
@@ -371,8 +383,6 @@ class FileQueue:
         if outfile.result_defer:
             outfile.result_defer.callback((outfile, outfile.status, outfile.error_message))
             outfile.result_defer = None
-        # self.close_stream(stream_id)
-        # self.close_outbox_file(stream_id)
         if udp_stream._Debug:
             lg.out(2, '!'*80)
         s = self.streams[stream_id]
@@ -380,16 +390,8 @@ class FileQueue:
         s = None
 
     def on_close_stream(self, stream_id):
-        lg.out(18, 'on_close_stream %s' % stream_id)
-#        del self.streams[stream_id]
-#        # s.on_close()
-#        self.dead_streams.append(stream_id)
-#        if len(self.dead_streams) > NUMBER_OF_STREAMS_TO_REMEMBER:
-#            self.dead_streams.pop(0)
-#        if stream_id in self.inboxFiles.keys():
-#            self.close_inbox_file(stream_id)
-#        if stream_id in self.outboxFiles.keys():
-#            self.close_outbox_file(stream_id)        
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.on_close_stream %s' % stream_id)
         self.erase_stream(stream_id)
         
     def on_close_consumer(self, consumer):
@@ -418,28 +420,24 @@ class InboxFile():
         self.cancelled = False
         self.timeout = False
         self.status = None
-        self.error_message = None
+        self.error_message = ''
         if udp_stream._Debug:
             lg.out(18, 'udp_file_queue.InboxFile.__init__ {%s} [%d] from %s with %d bytes' % (
                 os.path.basename(self.filename), self.stream_id, 
                 str(self.queue.session.peer_address), self.size))
         
-#    def __del__(self):
-#        """
-#        """
-#        if udp_stream._Debug:
-#            lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (
-#                os.path.basename(self.filename), self.stream_id,))
+    def __del__(self):
+        """
+        """
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (
+                os.path.basename(self.filename), self.stream_id,))
 
     def set_stream_callback(self, stream_callback):
         self.stream_callback = stream_callback
 
     def clear_stream_callback(self):
         self.stream_callback = None
-        
-#    def clear_stream_call(self):
-#        del self.stream
-#        self.stream = None
          
     def close(self):
         if udp_stream._Debug:
@@ -448,7 +446,6 @@ class InboxFile():
         self.close_file()
         self.queue = None
         self.stream_callback = None
-        # self.stream = None
 
     def close_file(self):
         os.close(self.fd)
@@ -459,11 +456,10 @@ class InboxFile():
         self.bytes_received += len(newdata)
         
     def is_done(self):
-        # print 'is done', self.bytes_received, self.size
         return self.bytes_received == self.size
     
     def is_timed_out(self):
-        return self.timeout # self.timeout == -1
+        return self.timeout 
 
     def on_received_raw_data(self, newdata):
         self.process(newdata)
@@ -501,28 +497,23 @@ class OutboxFile():
                 os.path.basename(self.filename), self.stream_id, 
                 str(self.queue.session.peer_address), self.size))
 
-#    def __del__(self):
-#        """
-#        """
-#        if udp_stream._Debug:
-#            lg.out(18, 'udp_file_queue.OutboxFile.__del__ {%s} [%d] file:%r' % (
-#                os.path.basename(self.filename), self.stream_id, self.fileobj))
+    def __del__(self):
+        """
+        """
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.OutboxFile.__del__ {%s} [%d] file:%r' % (
+                os.path.basename(self.filename), self.stream_id, self.fileobj))
 
     def set_stream_callback(self, stream_callback):
         self.stream_callback = stream_callback
 
     def clear_stream_callback(self):
         self.stream_callback = None
-        
-#    def clear_stream(self):
-#        del self.stream
-#        self.stream = None 
 
     def close(self):
         if udp_stream._Debug:
             lg.out(18, 'udp_file_queue.OutboxFile.close %s %d/%d' % (
                 self.stream_id, self.bytes_sent, self.bytes_delivered))
-        # if self.fileobj:
         self.close_file()
         self.queue = None
         self.stream_callback = None
@@ -531,7 +522,6 @@ class OutboxFile():
         self.result_defer = None
 
     def close_file(self):
-        # if self.fileobj:
         self.fileobj.close()
         self.fileobj = None
 
@@ -543,22 +533,20 @@ class OutboxFile():
     
     def is_cancelled(self):
         return self.cancelled
-        # return self.eof and self.bytes_sent >= self.size and self.size != self.bytes_delivered and self.timeout > 0
     
     def is_timed_out(self):
-        return self.timeout # self.timeout == -1
+        return self.timeout 
     
     def count_size(self, more_bytes_delivered):
         self.bytes_delivered += more_bytes_delivered
     
     def cancel(self):
-        lg.out(18, 'udp_file_queue.OutboxFile.cancel %s %d/%d' % (
-            self.stream_id, self.bytes_sent, self.bytes_delivered))
+        if udp_stream._Debug:
+            lg.out(18, 'udp_file_queue.OutboxFile.cancel %s %d/%d' % (
+                self.stream_id, self.bytes_sent, self.bytes_delivered))
         self.cancelled = True
         self.status = 'failed'
         self.error_message = 'transfer cancelled'
-        # self.eof = True
-        # self.close_file()
     
     def process(self):
         if self.eof:
@@ -573,7 +561,6 @@ class OutboxFile():
                     if udp_stream._Debug:
                         lg.out(18, 'udp_file_queue.OutboxFile.process reach EOF state %d' % self.stream_id)
                     self.eof = True
-                    # self.close_file()
                     break
             if not self.stream_callback:
                 break
@@ -597,18 +584,3 @@ class OutboxFile():
         self.process()
         return False
     
-#    def on_zero_ack(self, bytes_left):
-#        # print 'on_zero_ack', bytes_left, self.size, self.bytes_delivered,
-#        if udp_stream._Debug:
-#            lg.out(18, 'on_zero_ack done: %s' % self.stream_id)
-#        self.count_size(bytes_left)
-#        if self.is_done():
-#            self.status = 'finished'
-#        else:
-#            self.status = 'failed'
-#            self.error_message = 'transfer interrupted'
-#            lg.out(6, 'udp_file_queue.on_zero_ack WARNING eof=%r size=%d delivered=%d' % (
-#                self.eof, self.size, self.bytes_delivered))
-#        self.queue.on_outbox_file_done(self.stream_id)
-#        # print status
-#        return True

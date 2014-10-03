@@ -129,6 +129,8 @@ def add_pending_outbox_file(filename, host, description='', result_defer=None, s
     """
     """
     pending_outbox_files().append((filename, host, description, result_defer, single, time.time()))
+    lg.out(18, 'udp_session.add_pending_outbox_file %s for %s : %s' % (
+        os.path.basename(filename), host, description) )
 
 
 def remove_pending_outbox_file(host, filename):
@@ -237,7 +239,7 @@ class UDPSession(automat.Automat):
                 self.doAlive(arg)
             elif event == 'shutdown' or ( event == 'timer-1min' and not self.isSessionActive(arg) ) :
                 self.state = 'CLOSED'
-                self.doSetErrorMessage(event,self.msg('MSG_1', arg))
+                self.doErrMsg(event,self.msg('MSG_1', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -259,7 +261,7 @@ class UDPSession(automat.Automat):
                 self.doPing(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
-                self.doSetErrorMessage(event,self.msg('MSG_4', arg))
+                self.doErrMsg(event,self.msg('MSG_4', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -270,7 +272,7 @@ class UDPSession(automat.Automat):
                 self.doPing(arg)
             elif event == 'shutdown' or event == 'timer-10sec' :
                 self.state = 'CLOSED'
-                self.doSetErrorMessage(event,self.msg('MSG_3', arg))
+                self.doErrMsg(event,self.msg('MSG_3', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -292,7 +294,7 @@ class UDPSession(automat.Automat):
                 self.doGreeting(arg)
             elif event == 'shutdown' or event == 'timer-30sec' :
                 self.state = 'CLOSED'
-                self.doSetErrorMessage(event,self.msg('MSG_2', arg))
+                self.doErrMsg(event,self.msg('MSG_2', arg))
                 self.doClosePendingFiles(arg)
                 self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
@@ -511,8 +513,10 @@ class UDPSession(automat.Automat):
         global _PendingOutboxFiles
         i = 0
         outgoings = 0
+        # print 'doCheckPendingFiles', self.peer_id, len(_PendingOutboxFiles)
         while i < len(_PendingOutboxFiles):
             filename, host, description, result_defer, single, tm = _PendingOutboxFiles[i]
+            # print filename, host, description, 
             if host == self.peer_id:
                 outgoings += 1
                 # small trick to speed up service packets - they have a high priority
@@ -521,9 +525,12 @@ class UDPSession(automat.Automat):
                 else:
                     self.file_queue.append_outbox_file(filename, description, result_defer, single)
                 _PendingOutboxFiles.pop(i)
+                # print 'pop'
             else:
                 # _PendingOutboxFiles.insert(i, (filename, host, description, result_defer, single, tm))
                 i += 1
+                # print 'skip'
+        # print len(_PendingOutboxFiles)
         if outgoings > 0:
             reactor.callLater(0, process_sessions)
 
@@ -533,11 +540,14 @@ class UDPSession(automat.Automat):
         """
         global _PendingOutboxFiles
         i = 0
-        outgoings = 0
+        # outgoings = 0
+        # print 'doClosePendingFiles', self.peer_id, len(_PendingOutboxFiles)
         while i < len(_PendingOutboxFiles):
             filename, host, description, result_defer, single, tm = _PendingOutboxFiles[i]
+            # print filename, host, description, 
             if host == self.peer_id:
-                outgoings += 1
+                # print 'pop'
+                # outgoings += 1
                 udp_interface.interface_cancelled_file_sending(
                     self.peer_id, filename, 0, description, self.error_message)
                 if result_defer:
@@ -545,8 +555,13 @@ class UDPSession(automat.Automat):
                 _PendingOutboxFiles.pop(i)
             else:
                 i += 1
+                # print 'skip'
+        # print len(_PendingOutboxFiles)
         # if outgoings > 0:
         #     reactor.callLater(0, process_sessions)
+        self.file_queue.report_failed_inbox_files(self.error_message)
+        self.file_queue.report_failed_outbox_files(self.error_message)
+        self.file_queue.report_failed_outbox_queue(self.error_message)
         
     def doStartRTT(self, arg):
         """
@@ -584,7 +599,7 @@ class UDPSession(automat.Automat):
             del self.rtts[rtt_id]
         lg.out(18, 'udp_session.doFinishAllRTTs: %r' % good_rtts)# print self.rtts.keys()
         
-    def doSetErrorMessage(self, event, arg):
+    def doErrMsg(self, event, arg):
         """
         Action method.
         """
@@ -597,6 +612,7 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
+        lg.out(18, 'udp_session.doDestroyMe %s' % self)
         self.file_queue.close()
         self.file_queue = None
         self.node = None
@@ -609,6 +625,7 @@ class UDPSession(automat.Automat):
             if len(sessions_by_peer_id()[self.peer_id]) == 0:
                 sessions_by_peer_id().pop(self.peer_id)            
         automat.objects().pop(self.index)
+
 
     def _dispatch_datagram(self, arg):
         self.last_datagram_received_time = time.time()

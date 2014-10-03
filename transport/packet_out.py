@@ -22,6 +22,7 @@ EVENTS:
     * :red:`register-item`
     * :red:`remote-identity-on-hand`
     * :red:`run`
+    * :red:`timer-20sec`
     * :red:`unregister-item`
     * :red:`write-error`
 """
@@ -144,12 +145,29 @@ class PacketOut(automat.Automat):
     """
     This class implements all the functionality of the ``packet_out()`` state machine.
     """
+
+    timers = {
+        'timer-20sec': (20.0, ['RESPONSE?']),
+        }
+
+    MESSAGES = {
+        'MSG_1': 'file in queue was cancelled',
+        'MSG_2': 'sending file was cancelled',
+        'MSG_3': 'response waiting were cancelled',
+        }
     
     def __init__(self, outpacket, wide, callbacks={}):
-        self.time = time.time()
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = callbacks
+        self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
+        self.label = 'out_%d_%s' % (get_packets_counter(), self.description)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 12)
+        increment_packets_counter()
+
+    def init(self):
+        self.error_message = None 
+        self.time = time.time()
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.payloadsize = len(self.outpacket.Payload)
         if self.outpacket.CreatorID == misc.getLocalID():
@@ -175,10 +193,10 @@ class PacketOut(automat.Automat):
         self.items = []
         self.results = []
         self.response_packet = None
-        self.label = 'out_%d_%s' % (get_packets_counter(), self.description)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 12)
-        increment_packets_counter()
-        
+
+    def msg(self, msgid, arg=None):
+        return self.MESSAGES.get(msgid, '')
+            
     def is_timed_out(self):
         if self.time is None or self.timeout is None:
             return False
@@ -205,6 +223,7 @@ class PacketOut(automat.Automat):
             elif event == 'cancel' :
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
+                self.doErrMsg(event,self.msg('MSG_2', arg))
                 self.doReportCancelItems(arg)
                 self.doPopItems(arg)
                 self.doReportCancelled(arg)
@@ -260,6 +279,7 @@ class PacketOut(automat.Automat):
             elif event == 'cancel' :
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
+                self.doErrMsg(event,self.msg('MSG_1', arg))
                 self.doReportCancelItems(arg)
                 self.doPopItems(arg)
                 self.doReportCancelled(arg)
@@ -278,15 +298,16 @@ class PacketOut(automat.Automat):
             pass
         #---RESPONSE?---
         elif self.state == 'RESPONSE?':
-            if event == 'cancel' :
-                self.state = 'CANCEL'
-                self.doReportCancelItems(arg)
-                self.doReportCancelled(arg)
-                self.doDestroyMe(arg)
-            elif event == 'inbox-packet' and self.isResponse(arg) :
+            if event == 'inbox-packet' and self.isResponse(arg) :
                 self.state = 'SENT'
                 self.doSaveResponse(arg)
                 self.doReportDoneWithAck(arg)
+                self.doDestroyMe(arg)
+            elif event == 'cancel' or event == 'timer-20sec' :
+                self.state = 'CANCEL'
+                self.doErrMsg(event,self.msg('MSG_3', arg))
+                self.doReportCancelItems(arg)
+                self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
         return None
 
@@ -440,13 +461,13 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        msg = arg
-        if not isinstance(msg, str):
-            msg = 'cancelled'
+        # msg = self.error_message
+        # if not isinstance(msg, str):
+        #     msg = 'cancelled'
         for item in self.results:
             stats.count_outbox(self.remote_idurl, item.proto, 'failed', 0)
             callback.run_finish_file_sending_callbacks(
-                self, item, 'failed', 0, msg)
+                self, item, 'failed', 0, self.error_message)
 
     def doReportDoneWithAck(self, arg):
         """
@@ -480,6 +501,15 @@ class PacketOut(automat.Automat):
             msg = 'cancelled'
         callback.run_queue_item_status_callbacks(self, 'failed', msg)
 
+    def doErrMsg(self, event, arg):
+        """
+        Action method.
+        """
+        if event.count('timer'):
+            self.error_message = 'timeout responding from remote side'
+        else:
+            self.error_message = arg
+
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
@@ -489,6 +519,7 @@ class PacketOut(automat.Automat):
         self.callbacks.clear()
         queue().remove(self)
         automat.objects().pop(self.index)
+
 
     def _remote_identity_cached(self, xmlsrc):
         self.remote_identity = contacts.getContact(self.remote_idurl)

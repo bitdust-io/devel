@@ -73,7 +73,7 @@ from lib import automat
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------ 
 
@@ -572,8 +572,12 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
+        lg.out(18, 'udp_stream.doReportSendDone %r %r' % (self.consumer, self.consumer.is_done()))
         if self.consumer.is_done():
             self.consumer.status = 'finished'
+        else:
+            self.consumer.status = 'failed'
+            self.consumer.error_message = 'sending was not finished correctly'
         # reactor.callLater(0, self.producer.on_outbox_file_done, self.stream_id)
         self.producer.on_outbox_file_done(self.stream_id)
         # reactor.callLater(0, self.automat, 'close')
@@ -789,6 +793,17 @@ class UDPStream(automat.Automat):
 #                        self.sending_speed_factor = 1.0
 #                    if _Debug:
 #                        lg.out(18, 'SPEED UP: %r' % self.sending_speed_factor)
+            else:
+                sum_not_acked_blocks = sum(map(lambda block: len(block[0]),
+                                               self.output_blocks.values()))
+                self.bytes_acked += sum_not_acked_blocks
+                eof = self.consumer.on_sent_raw_data(sum_not_acked_blocks)
+                # eof = True
+                # self.output_blocks.clear()
+                # self.output_blocks_ids = []
+                # self.output_buffer_size = 0
+                # relative_time = time.time() - self.creation_time
+                return                 
             if _Debug:
                 try:
                     sz = self.consumer.size
@@ -815,7 +830,7 @@ class UDPStream(automat.Automat):
             self.event('consume', data)
         
     def on_close(self):
-        # lg.out(18, 'on_close %s' % self.stream_id)
+        lg.out(18, 'udp_stream.on_close %s' % self.stream_id)
         if self.consumer:
             reactor.callLater(0, self.automat, 'close')
 
