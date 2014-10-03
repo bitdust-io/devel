@@ -878,6 +878,13 @@ class UDPStream(automat.Automat):
         self.last_block_sent_time = relative_time
         if relative_time > 0:
             self.current_send_bytes_per_sec = self.bytes_sent / relative_time
+        if _Debug:
+            if new_blocks_counter > 0:
+                lg.out(24, '<-out DATA %d %r %r' % (
+                    self.stream_id, self.eof, blocks_to_send))
+            else:
+                lg.out(24, '<-out DATA %d %r EMPTY BLOCK' % (
+                    self.stream_id, self.eof))
 
     def _send_ack(self, acks, pause_time=0.0):
         ack_data = struct.pack('?', self.eof)
