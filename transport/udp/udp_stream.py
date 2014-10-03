@@ -218,6 +218,7 @@ class UDPStream(automat.Automat):
         self.resend_task = None
         self.resend_inactivity_counter = 1
         self.current_send_bytes_per_sec = 0
+        self.eof = False
         # self.sending_speed_factor = 1.0
         self.need_to_ack_this_block = False
 
@@ -234,10 +235,10 @@ class UDPStream(automat.Automat):
                 self.doSendingLoop(arg)
             elif event == 'set-limits' :
                 self.doUpdateLimits(arg)
-            elif event == 'ack-received' and not self.isPaused(arg) and not ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
+            elif event == 'ack-received' and not ( self.isEOF(arg) or self.isZeroAck(arg) ) and not self.isPaused(arg) :
                 self.doResendBlocks(arg)
                 self.doSendingLoop(arg)
-            elif event == 'ack-received' and ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
+            elif event == 'ack-received' and ( self.isZeroAck(arg) or self.isEOF(arg) ) :
                 self.doReportSendDone(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
@@ -285,12 +286,12 @@ class UDPStream(automat.Automat):
             pass
         #---RECEIVING---
         elif self.state == 'RECEIVING':
-            if event == 'block-received' and not self.isReadEOF(arg) :
-                self.doResendAck(arg)
-                self.doReceivingLoop(arg)
-            elif event == 'set-limits' :
+            if event == 'set-limits' :
                 self.doUpdateLimits(arg)
             elif event == 'iterate' :
+                self.doResendAck(arg)
+                self.doReceivingLoop(arg)
+            elif event == 'block-received' and not self.isEOF(arg) :
                 self.doResendAck(arg)
                 self.doReceivingLoop(arg)
             elif event == 'timeout' :
@@ -302,7 +303,7 @@ class UDPStream(automat.Automat):
                 self.doCloseStream(arg)
                 self.doDestroyMe(arg)
                 newstate = 'CLOSED'
-            elif event == 'block-received' and self.isReadEOF(arg) :
+            elif event == 'block-received' and self.isEOF(arg) :
                 self.doResendAck(arg)
                 self.doSendZeroAck(arg)
                 self.doReportReceiveDone(arg)
@@ -321,7 +322,7 @@ class UDPStream(automat.Automat):
                 self.doReportSendTimeout(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
-            elif event == 'ack-received' and ( self.isZeroAck(arg) or self.isWriteEOF(arg) ) :
+            elif event == 'ack-received' and ( self.isZeroAck(arg) or self.isEOF(arg) ) :
                 self.doReportSendDone(arg)
                 self.doCloseStream(arg)
                 newstate = 'COMPLETION'
@@ -336,29 +337,24 @@ class UDPStream(automat.Automat):
                 newstate = 'CLOSED'
         return newstate
 
-    def isReadEOF(self, arg):
+    def isEOF(self, arg):
         """
         Condition method.
         """
-        block_id, raw_size, eof_state = arg
-        return eof_state
+        return self.eof
 
-    def isWriteEOF(self, arg):
+    def isZeroAck(self, arg):
         """
         Condition method.
         """
-        acks, eof, pause = arg
-        return eof
-    
-    def isZeroAck(self, arg):
-        acks, eof, pause = arg
+        acks, pause = arg
         return len(acks) == 0
 
     def isPaused(self, arg):
         """
         Condition method.
         """
-        acks, eof, pause = arg
+        acks, pause = arg
         return pause > 0
 
     def doInit(self, arg):
@@ -509,7 +505,7 @@ class UDPStream(automat.Automat):
                 if pause_time < 0:
                     lg.warn('pause is %r, stream_id=%d' % (pause_time, self.stream_id)) 
                     pause_time = 0.0
-        if not some_blocks_to_ack:
+        if not some_blocks_to_ack and pause_time == 0.0:
             # no blocks to ack now
             if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 2:
                 # and last block has been long ago 
@@ -579,7 +575,7 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        acks, eof, pause = arg
+        acks, pause = arg
         if pause > 0:
             reactor.callLater(pause, self.automat, 'resume')
 
@@ -718,7 +714,7 @@ class UDPStream(automat.Automat):
             self.bytes_in += len(data)
             self.last_received_block_time = time.time() - self.creation_time
             self.last_received_block_id = block_id
-            eof_state = False
+            eof = False
             raw_size = 0
             if block_id in self.input_blocks.keys():
                 self.input_duplicated_blocks += 1
@@ -743,18 +739,22 @@ class UDPStream(automat.Automat):
                     raw_size += len(blockdata)
                     self.input_block_id = next_block_id
                 try:
-                    eof_state = self.consumer.on_received_raw_data(newdata.getvalue())
+                    eof = self.consumer.on_received_raw_data(newdata.getvalue())
                 except:
                     lg.exc()
                 newdata.close()
+            if self.eof != eof:
+                self.eof = eof
+                if _Debug:
+                    lg.out(18, '    EOF : %d' % self.stream_id)
             if _Debug:
                 lg.out(24, 'in-> DATA %d %d-%d %d %d %s %s' % (
                     self.stream_id, block_id, self.input_block_id,
-                    self.bytes_in, self.input_blocks_counter, eof_state, 
+                    self.bytes_in, self.input_blocks_counter, eof, 
                     len(self.blocks_to_ack)))
             # self.automat('input-data-collected', (block_id, raw_size, eof_state))
             # reactor.callLater(0, self.automat, 'block-received', (block_id, raw_size, eof_state))
-            self.automat('block-received', (block_id, raw_size, eof_state))
+            self.automat('block-received')
             # self.event('block-received', inpt)
     
     def on_ack_received(self, inpt):
@@ -817,6 +817,10 @@ class UDPStream(automat.Automat):
                     if _Debug:
                         lg.out(18, '    ZERO FINISH %d eof:%r acked:%d tail:%d' % (
                             self.stream_id, eof, self.bytes_acked, sum_not_acked_blocks))
+            if self.eof != eof:
+                self.eof = eof
+                if _Debug:
+                    lg.out(18, '    EOF : %d' % self.stream_id)
             if _Debug:
                 try:
                     sz = self.consumer.size
@@ -831,7 +835,7 @@ class UDPStream(automat.Automat):
                         self.stream_id, acks, len(self.output_blocks), eof, sz, self.bytes_acked))
             # self.automat('output-data-acked', (acks, eof))
             # reactor.callLater(0, self.automat, 'ack-received', (acks, eof))
-            self.automat('ack-received', (acks, eof, pause_time))
+            self.automat('ack-received', (acks, pause_time))
 #            if pause_time > 0:
 #                self.automat('suspend')
 #                reactor.callLater(pause_time, self.automat, 'resume')
