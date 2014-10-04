@@ -741,7 +741,7 @@ class UDPStream(automat.Automat):
                 if block_id in self.input_blocks.keys():
                     self.input_duplicated_blocks += 1
                     self.input_duplicated_bytes += len(data)
-                    lg.warn('duplicated %d %d' % (self.stream_id, block_id))
+                    # lg.warn('duplicated %d %d' % (self.stream_id, block_id))
                 elif block_id < self.input_block_id:
                     self.input_duplicated_blocks += 1
                     self.input_duplicated_bytes += len(data)
