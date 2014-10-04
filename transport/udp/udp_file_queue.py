@@ -76,6 +76,10 @@ class FileQueue:
         self.outboxQueue = []
 
     def do_send_data(self, stream_id, outfile, output):
+        if udp_stream._Debug:
+            import random
+            if random.randint(1,100) > 90:
+                return True
         newoutput = ''.join((
             struct.pack('i', stream_id),
             struct.pack('i', outfile.size),
@@ -83,6 +87,10 @@ class FileQueue:
         return self.session.send_packet(udp.CMD_DATA, newoutput)
     
     def do_send_ack(self, stream_id, infile, ack_data):
+        if udp_stream._Debug:
+            import random
+            if random.randint(1,100) > 90:
+                return True
         newoutput = ''.join((
             struct.pack('i', stream_id),
             ack_data))

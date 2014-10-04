@@ -380,7 +380,7 @@ class UDPStream(automat.Automat):
                 break
             self.output_block_id += 1
             bisect.insort(self.output_blocks_ids, self.output_block_id)
-            self.output_blocks[self.output_block_id] = [piece, -1]
+            self.output_blocks[self.output_block_id] = [piece, -1, 0]
             self.output_buffer_size += len(piece)
         outp.close()
         if _Debug:
@@ -469,14 +469,20 @@ class UDPStream(automat.Automat):
 #            return
         #---normal sending, check all pending blocks
         rtt_current = self.rtt_avarage / self.rtt_counter
-        resend_time_limit = 2 * BLOCKS_PER_ACK * rtt_current
+        resend_time_limit = BLOCKS_PER_ACK * rtt_current
         blocks_to_send_now = []
         for block_id in self.output_blocks_ids:
-            time_sent = self.output_blocks[block_id][1]
-            if time_sent >= 0: # already sent that block at least one time
-                if relative_time - time_sent < resend_time_limit:
-                    # this block is not yet timed out - skip, not need to resend
-                    continue
+            time_sent, acks_missed = self.output_blocks[block_id][1:2]
+            # already sent that block at least one time
+            timed_out = time_sent >= 0 and relative_time - time_sent < resend_time_limit
+            if not timed_out and acks_missed < 3:
+                # this block is not yet timed out ...
+                # and just a fiew acks were received after it was sent ... 
+                # skip now, not need to resend
+                if _Debug:
+                    lg.out(24, 'SKIP RESENDING BLOCK %d dt: %r<%r missed acks: %d' % (
+                        block_id, relative_time - time_sent, resend_time_limit, acks_missed))
+                continue
             blocks_to_send_now.append(block_id)
         self.resend_inactivity_counter = 1
         self._send_blocks(blocks_to_send_now)
@@ -808,6 +814,8 @@ class UDPStream(automat.Automat):
                         self.rtt_counter = BLOCKS_PER_ACK
                         self.rtt_avarage = rtt * self.rtt_counter 
                     eof = self.consumer.on_sent_raw_data(block_size)
+                for block_id in self.output_blocks_ids:
+                    self.output_blocks[block_id][2] += 1
                 if len(acks) > 0:
                     self.input_acks_counter += 1
                 else:
