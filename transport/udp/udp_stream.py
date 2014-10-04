@@ -875,8 +875,8 @@ class UDPStream(automat.Automat):
             new_blocks_counter += 1
             self.last_block_sent_time = relative_time
             if _Debug:
-                lg.out(24, '<-out BLOCK %d %r %r %r' % (
-                    self.stream_id, self.eof, block_id, ))
+                lg.out(24, '<-out BLOCK %d %r %r %d/%d' % (
+                    self.stream_id, self.eof, block_id, self.bytes_sent, self.bytes_acked))
         if new_blocks_counter == 0:
             if relative_time - self.last_block_sent_time > MAX_BLOCKS_INTERVAL:
                 output = ''.join((struct.pack('i', -1), ''))
