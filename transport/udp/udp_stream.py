@@ -472,7 +472,7 @@ class UDPStream(automat.Automat):
             time_sent, acks_missed = self.output_blocks[block_id][1:3]
             timed_out = time_sent >= 0 and (relative_time - time_sent > resend_time_limit)
         #--- decide to send the block now
-            if time_sent == -1 or timed_out or acks_missed >= 3:
+            if time_sent == -1 or timed_out or (acks_missed > 2 and ((acks_missed % 3) == 0)):
                 blocks_to_send_now.append(block_id)
                 # if _Debug:
                 #     lg.out(24, 'SENDING BLOCK %d %r %r %r' % (
@@ -657,8 +657,8 @@ class UDPStream(automat.Automat):
                 pir_id = self.producer.session.peer_id
             except:
                 pir_id = 'None'
-            lg.out(24, 'udp_stream.doCloseStream %d %s' % (self.stream_id, pir_id))
-            lg.out(24, '    in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
+            lg.out(18, 'udp_stream.doCloseStream %d %s' % (self.stream_id, pir_id))
+            lg.out(18, '    in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
                 self.input_blocks_counter, self.bytes_in,
                 self.output_acks_counter, self.bytes_in_acks,
                 self.input_duplicated_blocks, self.input_duplicated_bytes,
@@ -863,7 +863,7 @@ class UDPStream(automat.Automat):
             self.event('consume', data)
         
     def on_close(self):
-        lg.out(18, 'udp_stream.on_close %s' % self.stream_id)
+        # lg.out(18, 'udp_stream.on_close %s' % self.stream_id)
         if self.consumer:
             reactor.callLater(0, self.automat, 'close')
 
