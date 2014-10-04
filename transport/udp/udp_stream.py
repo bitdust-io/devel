@@ -477,9 +477,10 @@ class UDPStream(automat.Automat):
             timed_out = time_sent >= 0 and relative_time - time_sent < resend_time_limit
             if time_sent == -1 or timed_out or acks_missed >= 3:
                 blocks_to_send_now.append(block_id)
-#                if _Debug:
-#                    lg.out(24, 'SKIP RESENDING BLOCK %d dt: %r<%r missed acks: %d' % (
-#                        block_id, relative_time - time_sent, resend_time_limit, acks_missed))
+            else:
+                if _Debug:
+                    lg.out(24, 'SKIP SENDING BLOCK %d %r %r %r' % (
+                        block_id, time_sent, timed_out, acks_missed))
 #            else:
 #                # this block is not yet timed out ...
 #                # and just a fiew acks were received after it was sent ... 
@@ -727,7 +728,7 @@ class UDPStream(automat.Automat):
                 elif block_id < self.input_block_id:
                     self.input_duplicated_blocks += 1
                     self.input_duplicated_bytes += len(data)
-                    lg.warn('old %d %d current: %d' % (self.stream_id, block_id, self.input_block_id))
+                    # lg.warn('old %d %d current: %d' % (self.stream_id, block_id, self.input_block_id))
                 else:                
                     self.input_blocks[block_id] = data
                     bisect.insort(self.blocks_to_ack, block_id)
