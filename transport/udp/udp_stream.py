@@ -884,17 +884,10 @@ class UDPStream(automat.Automat):
         self.blocks_to_ack = []
         self.last_ack_moment = time.time()
         if _Debug:
-            if ack_len > 0:
-                if pause_time <= 0.0:
-                    lg.out(24, '<-out ACK %d %s' % (self.stream_id,
-                        ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
-                                     [ack_data[i:i+4] for i in range(0, len(ack_data), 4)]))))
-                else:
-                    lg.out(24, '<-out ACK %d PAUSE:%r %s' % (self.stream_id,
-                        pause_time, ','.join(map(lambda x: str(struct.unpack('i', x)[0]), 
-                                     [ack_data[i:i+4] for i in range(0, len(ack_data)-8, 4)]))))
+            if pause_time <= 0.0:
+                lg.out(24, '<-out ACK %d %r %r' % (self.stream_id, self.eof, self.blocks_to_ack)) 
             else:
-                lg.out(24, '<-out ACK %d ZERO' % self.stream_id)
+                lg.out(24, '<-out ACK %d %r %r PAUSE:%r' % (self.stream_id, self.eof, self.blocks_to_ack, pause_time)) 
         self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
         return ack_len > 0
             
