@@ -179,7 +179,7 @@ class UDPStream(automat.Automat):
             lg.out(18, 'udp_stream.__init__ %d peer_id:%s session:%s' % (
                 self.stream_id, self.producer.session.peer_id, self.producer.session))
         name = 'udp_stream[%s]' % (self.stream_id)
-        automat.Automat.__init__(self, name, 'AT_STARTUP', 8)
+        automat.Automat.__init__(self, name, 'AT_STARTUP', 4)
         
 #    def __del__(self):
 #        """
@@ -412,8 +412,7 @@ class UDPStream(automat.Automat):
         #---skip sending : limit reached 
             if relative_time > 0.0: 
                 current_rate = self.bytes_sent / relative_time
-                current_limit = self.limit_send_bytes_per_sec #  * self.sending_speed_factor
-                if current_rate > current_limit:
+                if current_rate > self.limit_send_bytes_per_sec:
                     if _Debug:
                         lg.out(18, 'SKIP BLOCK LIMIT SENDING %d : %r>%r' % (
                             self.stream_id, current_rate, self.limit_send_bytes_per_sec))
@@ -864,6 +863,10 @@ class UDPStream(automat.Automat):
         for block_id in blocks_to_send:
             piece = self.output_blocks[block_id][0]
             data_size = len(piece)
+            if self.limit_send_bytes_per_sec > 0 and relative_time > 0:
+                current_rate = (self.bytes_sent + data_size) / relative_time
+                if current_rate > self.limit_send_bytes_per_sec:
+                    continue
             self.output_blocks[block_id][1] = relative_time
             output = ''.join((struct.pack('i', block_id), piece))
             self.producer.do_send_data(self.stream_id, self.consumer, output)
@@ -871,6 +874,9 @@ class UDPStream(automat.Automat):
             self.output_blocks_counter += 1
             new_blocks_counter += 1
             self.last_block_sent_time = relative_time
+            if _Debug:
+                lg.out(24, '<-out BLOCK %d %r %r %r' % (
+                    self.stream_id, self.eof, block_id, ))
         if new_blocks_counter == 0:
             if relative_time - self.last_block_sent_time > MAX_BLOCKS_INTERVAL:
                 output = ''.join((struct.pack('i', -1), ''))
@@ -880,10 +886,6 @@ class UDPStream(automat.Automat):
                     lg.out(24, '<-out BLOCK %d %r EMPTY dt=%r' % (
                         self.stream_id, self.eof, relative_time - self.last_block_sent_time))
                 self.last_block_sent_time = relative_time
-        else:
-            if _Debug:
-                lg.out(24, '<-out BLOCK %d %r %r' % (
-                    self.stream_id, self.eof, blocks_to_send))
         if relative_time > 0:
             self.current_send_bytes_per_sec = self.bytes_sent / relative_time
 
