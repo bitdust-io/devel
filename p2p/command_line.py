@@ -680,6 +680,10 @@ def option_name_to_path(name, default=''):
         path = 'transport.transport-udp.transport-udp-port'
     elif name in [ 'dht-port' ]:
         path = 'network.network-dht-port'
+    elif name in [ 'limit-send' ]:
+        path = 'network.network-send-limit'
+    elif name in [ 'limit-receive' ]:
+        path = 'network.network-receive-limit'
     elif name in [ 'weblog' ]:
         path = 'logs.stream-enable'
     elif name in [ 'weblog-port' ]:
