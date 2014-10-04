@@ -472,7 +472,7 @@ class UDPStream(automat.Automat):
         resend_time_limit = BLOCKS_PER_ACK * rtt_current
         blocks_to_send_now = []
         for block_id in self.output_blocks_ids:
-            time_sent, acks_missed = self.output_blocks[block_id][1:2]
+            time_sent, acks_missed = self.output_blocks[block_id][1:3]
             # already sent that block at least one time
             timed_out = time_sent >= 0 and relative_time - time_sent < resend_time_limit
             if not timed_out and acks_missed < 3:
