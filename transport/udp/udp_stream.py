@@ -221,9 +221,9 @@ class UDPStream(automat.Automat):
         self.loop = None
         self.resend_inactivity_counter = 1
         self.current_send_bytes_per_sec = 0
+        self.current_receive_bytes_per_sec = 0
         self.eof = False
-        # self.sending_speed_factor = 1.0
-        self.need_to_ack_this_block = False
+        self.last_progress_report = 0
 
     def A(self, event, arg):
         newstate = self.state
@@ -497,6 +497,8 @@ class UDPStream(automat.Automat):
         period_avarage = self._block_period_avarage()
         first_block_in_group = (self.last_received_block_id % BLOCKS_PER_ACK) == 1
         pause_time = 0.0
+        if relative_time > 0:
+            self.current_receive_bytes_per_sec = self.bytes_in / relative_time
         #--- limit receiving, calculate pause time
         if self.limit_receive_bytes_per_sec > 0 and relative_time > 0:
             #current_rate = self.bytes_in / relative_time
@@ -539,6 +541,13 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            relative_time = time.time() - self.creation_time
+            if relative_time - self.last_progress_report > 1.0:
+                self.last_progress_report = relative_time
+                lg.out(18, 'udp_stream.doSendingLoop %d : %d/%d/%d rate=%r' % (
+                    self.stream_id, self.bytes_sent, self.bytes_acked, 
+                    self.consumer.size, self.current_send_bytes_per_sec))
         if self.loop is None:
             next_iteration = min(MAX_BLOCKS_INTERVAL, 
                                  self._rtt_current() * self.resend_inactivity_counter)
@@ -557,6 +566,13 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            relative_time = time.time() - self.creation_time
+            if relative_time - self.last_progress_report > 1.0:
+                self.last_progress_report = relative_time
+                lg.out(18, 'udp_stream.doReceivingLoop %d : %d/%d/%d rate=%r' % (
+                    self.stream_id, self.bytes_in, self.consumer.bytes_received, 
+                    self.consumer.size, self.current_receive_bytes_per_sec))
         if self.loop is None:
             next_iteration = min(MAX_ACKS_INTERVAL, 
                              max(RTT_MIN_LIMIT/2.0, 
@@ -761,7 +777,6 @@ class UDPStream(automat.Automat):
                     lg.out(24, 'in-> BLOCK %d %r EMPTY %d %d' % (
                         self.stream_id, self.eof, 
                         self.bytes_in, self.input_blocks_counter))
-                
             # self.automat('input-data-collected', (block_id, raw_size, eof_state))
             # reactor.callLater(0, self.automat, 'block-received', (block_id, raw_size, eof_state))
             self.automat('block-received', (block_id, data))
