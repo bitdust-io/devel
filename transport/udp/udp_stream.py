@@ -487,11 +487,6 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        #--- EOF state
-        if self.eof:
-            self._send_ack([])
-            self.resend_inactivity_counter += 1
-            return
         some_blocks_to_ack = len(self.blocks_to_ack) > 0
         relative_time = time.time() - self.creation_time
         period_avarage = self._block_period_avarage()
@@ -527,7 +522,8 @@ class UDPStream(automat.Automat):
         #--- last ack has been long ago or
         # need to send ack now because too many blocks was received at once
             last_ack_timeout = self._last_ack_timed_out()
-            if last_ack_timeout or first_block_in_group:
+        #--- EOF state
+            if last_ack_timeout or first_block_in_group or self.eof:
                 activity = self._send_ack(self.blocks_to_ack, pause_time)
         if activity:
             self.resend_inactivity_counter = 1
