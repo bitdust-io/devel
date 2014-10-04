@@ -541,7 +541,7 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
+        if _Debug or True:
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
@@ -566,7 +566,7 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
+        if _Debug or True:
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
