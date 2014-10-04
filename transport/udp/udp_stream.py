@@ -505,16 +505,16 @@ class UDPStream(automat.Automat):
                 if pause_time < 0:
                     lg.warn('pause is %r, stream_id=%d' % (pause_time, self.stream_id)) 
                     pause_time = 0.0
-        if not some_blocks_to_ack and pause_time == 0.0 and not self.eof:
-            # no blocks to ack now, no need to pause and not rich EOF
-            if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 3:
-                # and last block has been long ago 
-                if _Debug:
-                    lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (
-                        self._rtt_current(), self.last_received_block_time, self.stream_id))
-                reactor.callLater(0, self.automat, 'timeout')
-            self.resend_inactivity_counter += 1
-            return
+#        if not some_blocks_to_ack and pause_time == 0.0 and not self.eof:
+#            # no blocks to ack now, no need to pause and not rich EOF
+#            if relative_time - self.last_received_block_time > RTT_MAX_LIMIT * 3:
+#                # and last block has been long ago 
+#                if _Debug:
+#                    lg.out(18, 'TIMEOUT RECEIVING rtt=%r, last block in %r, stream_id=%s' % (
+#                        self._rtt_current(), self.last_received_block_time, self.stream_id))
+#                reactor.callLater(0, self.automat, 'timeout')
+#            self.resend_inactivity_counter += 1
+#            return
         activity = False
         # need to send some acks
         if period_avarage == 0 or self.output_acks_counter == 0:
@@ -759,14 +759,17 @@ class UDPStream(automat.Automat):
     
     def on_ack_received(self, inpt):
         if self.consumer:
+            eof = False
+            eof_flag = None
             acks = []
             pause_time = 0.0
-            eof = False
-            raw_bytes = ''
             self.last_ack_received_time = time.time() - self.creation_time
+            raw_bytes = inpt.read(1)
+            if len(raw_bytes) > 0:
+                eof_flag = struct.unpack('?', raw_bytes)[0]
             while True:
                 raw_bytes = inpt.read(4)
-                if not raw_bytes:
+                if len(raw_bytes) > 0:
                     break
                 block_id = struct.unpack('i', raw_bytes)[0]
                 if block_id >= 0:
@@ -817,6 +820,8 @@ class UDPStream(automat.Automat):
                     if _Debug:
                         lg.out(18, '    ZERO FINISH %d eof:%r acked:%d tail:%d' % (
                             self.stream_id, eof, self.bytes_acked, sum_not_acked_blocks))
+            if eof_flag is not None:
+                eof = eof or eof_flag
             if self.eof != eof:
                 self.eof = eof
                 if _Debug:
@@ -868,7 +873,8 @@ class UDPStream(automat.Automat):
             self.current_send_bytes_per_sec = self.bytes_sent / relative_time
 
     def _send_ack(self, pause_time=0.0):
-        ack_data = ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
+        ack_data = struct.pack('?', self.eof)
+        ack_data += ''.join(map(lambda bid: struct.pack('i', bid), self.blocks_to_ack))
         if pause_time > 0:
             ack_data += struct.pack('i', -1)
             ack_data += struct.pack('f', pause_time)
