@@ -73,7 +73,7 @@ from lib import automat
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------ 
 
@@ -406,9 +406,9 @@ class UDPStream(automat.Automat):
         if len(self.output_blocks) == 0:
         #---nothing to send
             self.resend_inactivity_counter +=1
-            if relative_time - self.last_block_sent_time > MAX_BLOCKS_INTERVAL:
-                self._send_blocks([]) 
-                return
+            # if relative_time - self.last_block_sent_time > MAX_BLOCKS_INTERVAL:
+            #     self._send_blocks([]) 
+            return
         if self.limit_send_bytes_per_sec > 0:
         #---skip sending : limit reached 
             if relative_time > 0.0: 
@@ -437,9 +437,9 @@ class UDPStream(automat.Automat):
                     lg.out(18, 'SKIP SENDING %d, too few acks:%d blocks:%d' % (
                         self.stream_id, self.input_acks_counter, self.output_blocks_counter))
                 self.resend_inactivity_counter += 1
-                if relative_time - self.last_block_sent_time > MAX_BLOCKS_INTERVAL:
-                    self._send_blocks([]) 
-                    return
+#                if relative_time - self.last_block_sent_time > MAX_BLOCKS_INTERVAL:
+#                    self._send_blocks([]) 
+                return
         if self.last_block_sent_time - self.last_ack_received_time > RTT_MAX_LIMIT * 2:
         #---last ack is timed out
             self.input_acks_timeouts_counter += 1
