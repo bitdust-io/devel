@@ -475,15 +475,16 @@ class UDPStream(automat.Automat):
             time_sent, acks_missed = self.output_blocks[block_id][1:3]
             # already sent that block at least one time
             timed_out = time_sent >= 0 and relative_time - time_sent < resend_time_limit
-            if not timed_out and acks_missed < 3:
-                # this block is not yet timed out ...
-                # and just a fiew acks were received after it was sent ... 
-                # skip now, not need to resend
-                if _Debug:
-                    lg.out(24, 'SKIP RESENDING BLOCK %d dt: %r<%r missed acks: %d' % (
-                        block_id, relative_time - time_sent, resend_time_limit, acks_missed))
-                continue
-            blocks_to_send_now.append(block_id)
+            if time_sent == -1 or timed_out or acks_missed >= 3:
+                blocks_to_send_now.append(block_id)
+#                if _Debug:
+#                    lg.out(24, 'SKIP RESENDING BLOCK %d dt: %r<%r missed acks: %d' % (
+#                        block_id, relative_time - time_sent, resend_time_limit, acks_missed))
+#            else:
+#                # this block is not yet timed out ...
+#                # and just a fiew acks were received after it was sent ... 
+#                # skip now, not need to resend
+#                continue
         self.resend_inactivity_counter = 1
         self._send_blocks(blocks_to_send_now)
         del blocks_to_send_now
