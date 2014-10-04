@@ -60,7 +60,7 @@ from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
 _LogEvents = False
 _Counter = 0 #: Increment by one for every new object, the idea is to keep unique ID's in the index
 _Index = {} #: Index dictionary, unique id (string) to index (int)
