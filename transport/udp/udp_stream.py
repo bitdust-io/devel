@@ -828,7 +828,7 @@ class UDPStream(automat.Automat):
                             lg.out(18, '    ZERO FINISH %d eof:%r acked:%d tail:%d' % (
                                 self.stream_id, eof, self.bytes_acked, sum_not_acked_blocks))
                 if eof_flag is not None:
-                    eof = eof or eof_flag
+                    eof = eof and eof_flag
                 if self.eof != eof:
                     self.eof = eof
                     if _Debug:
