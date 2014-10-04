@@ -408,7 +408,7 @@ class UDPStream(automat.Automat):
             self.resend_inactivity_counter +=1
             if relative_time - self.last_block_sent_time > MAX_BLOCKS_INTERVAL:
                 self._send_blocks([]) 
-                return
+            return
         if self.limit_send_bytes_per_sec > 0:
         #---skip sending : limit reached 
             if relative_time > 0.0: 
@@ -439,7 +439,7 @@ class UDPStream(automat.Automat):
                 self.resend_inactivity_counter += 1
                 if relative_time - self.last_block_sent_time > MAX_BLOCKS_INTERVAL:
                     self._send_blocks([]) 
-                    return
+                return
         if self.last_block_sent_time - self.last_ack_received_time > RTT_MAX_LIMIT * 2:
         #---last ack is timed out
             self.input_acks_timeouts_counter += 1
