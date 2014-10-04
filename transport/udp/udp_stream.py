@@ -652,7 +652,7 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
+        if _Debug or True:
             try:
                 pir_id = self.producer.session.peer_id
             except:
@@ -801,7 +801,8 @@ class UDPStream(automat.Automat):
                         self.output_blocks_ids.remove(block_id)
                         outblock = self.output_blocks.pop(block_id)
                     except:
-                        lg.warn('block %d not found, stream_id=%d' % (block_id, self.stream_id))
+                        if _Debug:
+                            lg.warn('block %d not found, stream_id=%d' % (block_id, self.stream_id))
                         continue
                     block_size = len(outblock[0])
                     self.output_buffer_size -= block_size 
