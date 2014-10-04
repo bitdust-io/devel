@@ -487,6 +487,11 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
+        #--- EOF state
+        if self.eof:
+            self._send_ack([])
+            self.resend_inactivity_counter += 1
+            return
         some_blocks_to_ack = len(self.blocks_to_ack) > 0
         relative_time = time.time() - self.creation_time
         period_avarage = self._block_period_avarage()
@@ -770,11 +775,11 @@ class UDPStream(automat.Automat):
                 raw_bytes = ''
                 self.last_ack_received_time = time.time() - self.creation_time
                 raw_bytes = inpt.read(1)
-                if raw_bytes:
+                if len(raw_bytes) > 0:
                     eof_flag = struct.unpack('?', raw_bytes)[0]
                 while True:
                     raw_bytes = inpt.read(4)
-                    if not raw_bytes:
+                    if len(raw_bytes) == 0:
                         break
                     block_id = struct.unpack('i', raw_bytes)[0]
                     if block_id >= 0:
