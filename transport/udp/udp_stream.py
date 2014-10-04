@@ -73,7 +73,7 @@ from lib import automat
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------ 
 
@@ -657,8 +657,9 @@ class UDPStream(automat.Automat):
                 pir_id = self.producer.session.peer_id
             except:
                 pir_id = 'None'
-            lg.out(24, 'doCloseStream %d %s in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
-                self.stream_id, pir_id, self.input_blocks_counter, self.bytes_in,
+            lg.out(24, 'udp_stream.doCloseStream %d %s' % (self.stream_id, pir_id))
+            lg.out(24, '    in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
+                self.input_blocks_counter, self.bytes_in,
                 self.output_acks_counter, self.bytes_in_acks,
                 self.input_duplicated_blocks, self.input_duplicated_bytes,
                 self.output_blocks_counter, self.bytes_acked, 
@@ -899,9 +900,9 @@ class UDPStream(automat.Automat):
 
     def _send_ack(self, acks, pause_time=0.0):
         if len(acks) == 0 and pause_time == 0.0 and not self.eof:
-            if _Debug:
-                lg.out(24, 'X-out ACK SKIP %d %d %r %r' % (
-                    self.stream_id, len(acks), pause_time, self.eof))
+#            if _Debug:
+#                lg.out(24, 'X-out ACK SKIP %d %d %r %r' % (
+#                    self.stream_id, len(acks), pause_time, self.eof))
             return
         ack_data = struct.pack('?', self.eof)
         ack_data += ''.join(map(lambda bid: struct.pack('i', bid), acks))
