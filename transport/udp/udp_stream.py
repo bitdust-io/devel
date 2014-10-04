@@ -907,9 +907,11 @@ class UDPStream(automat.Automat):
         self.last_ack_moment = time.time()
         if _Debug:
             if pause_time <= 0.0:
-                lg.out(24, '<-out ACK %d %r %r' % (self.stream_id, self.eof, acks,))
+                lg.out(24, '<-out ACK %d %r %r %d/%d' % (
+                    self.stream_id, self.eof, acks, self.bytes_in, self.consumer.bytes_received))
             else:
-                lg.out(24, '<-out ACK %d %r PAUSE:%r %r' % (self.stream_id, self.eof, pause_time, acks))
+                lg.out(24, '<-out ACK %d %r PAUSE:%r %r' % (
+                    self.stream_id, self.eof, pause_time, acks))
         self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
         return ack_len > 0
             
