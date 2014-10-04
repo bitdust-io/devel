@@ -875,10 +875,10 @@ class UDPStream(automat.Automat):
                 output = ''.join((struct.pack('i', -1), ''))
                 self.producer.do_send_data(self.stream_id, self.consumer, output)
                 self.output_blocks_counter += 1
-                self.last_block_sent_time = relative_time
                 if _Debug:
-                    lg.out(24, '<-out BLOCK %d %r EMPTY' % (
-                        self.stream_id, self.eof))
+                    lg.out(24, '<-out BLOCK %d %r EMPTY dt=%r' % (
+                        self.stream_id, self.eof, relative_time - self.last_block_sent_time))
+                self.last_block_sent_time = relative_time
         else:
             if _Debug:
                 lg.out(24, '<-out BLOCK %d %r %r' % (
