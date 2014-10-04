@@ -890,6 +890,11 @@ class UDPStream(automat.Automat):
             self.current_send_bytes_per_sec = self.bytes_sent / relative_time
 
     def _send_ack(self, acks, pause_time=0.0):
+        if len(acks) == 0 and pause_time == 0.0 and not self.eof:
+            if _Debug:
+                lg.out(24, 'X-out ACK SKIP %d %d %r %r' % (
+                    self.stream_id, len(acks), pause_time, self.eof))
+            return
         ack_data = struct.pack('?', self.eof)
         ack_data += ''.join(map(lambda bid: struct.pack('i', bid), acks))
         if pause_time > 0:
