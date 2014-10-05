@@ -2,7 +2,7 @@
 
 
 @echo.
-@echo [ check if DHN is running at the moment and stop all processes found ]
+@echo [ check if BitPie.NET is running at the moment and stop all processes found ]
 tasklist /FI "IMAGENAME eq bitpie.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bitpie.exe" >NUL && ( taskkill  /IM bitpie.exe /F /T )
 tasklist /FI "IMAGENAME eq bpstarter.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bpstarter.exe" >NUL && ( taskkill  /IM bpstarter.exe /F /T )
 tasklist /FI "IMAGENAME eq bpgui.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bpgui.exe" >NUL && ( taskkill  /IM bpgui.exe /F /T )
