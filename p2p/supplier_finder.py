@@ -235,7 +235,7 @@ class SupplierFinder(automat.Automat):
             node = random.choice(nodes)
             d = node.request('idurl')
             d.addCallback(self._got_target_idurl)
-            d.addErrback(self._reqiest_error)
+            d.addErrback(self._request_error)
         else:
             self.automat('users-not-found')
     
@@ -263,7 +263,8 @@ class SupplierFinder(automat.Automat):
         return response
     
     def _request_error(self, err):
-        lg.out(3, str(err))
+        lg.out(2, '_request_error' + str(err))
+        self.automat('users-not-found')
             
     def _got_target_identity(self, src, idurl):
         """

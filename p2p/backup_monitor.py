@@ -47,6 +47,7 @@ EVENTS:
     * :red:`list_files_orator.state`
     * :red:`restart`
     * :red:`suppliers-changed`
+    * :red:`timer-5sec`
 """
 
 
@@ -105,8 +106,7 @@ class BackupMonitor(automat.Automat):
     """
     
     timers = {
-        'timer-1sec': (1.0, ['RESTART','SUPPLIERS?']),
-        'timer-20sec': (20.0, ['SUPPLIERS?']),
+        'timer-5sec': (5.0, ['READY']),
         }
     
     def init(self):
@@ -132,6 +132,8 @@ class BackupMonitor(automat.Automat):
                 self.RestartAgain=False
                 self.doRememberSuppliers(arg)
                 fire_hire.A('restart')
+            elif event == 'timer-5sec' :
+                self.doOverallCheckUp(arg)
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
             if ( event == 'list_files_orator.state' and arg == 'NO_FILES' ) :
@@ -179,6 +181,7 @@ class BackupMonitor(automat.Automat):
                 list_files_orator.A('need-files')
             elif event == 'restart' :
                 self.RestartAgain=True
+        return None
 
     def isSuppliersNumberChanged(self, arg):
         """
@@ -311,7 +314,18 @@ class BackupMonitor(automat.Automat):
         collected = gc.collect()
         lg.out(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
 
+    def doOverallCheckUp(self, arg):
+        """
+        Action method.
+        """
+        if '' in contacts.getSupplierIDs():
+            lg.out(6, 'backup_monitor.doOverallCheckUp found empty supplier')
+            Restart()
+            return
+        # TODO 
+        
 #------------------------------------------------------------------------------ 
+
 
 def Restart():
     """

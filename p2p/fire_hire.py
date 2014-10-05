@@ -378,7 +378,7 @@ class FireHire(automat.Automat):
                 if idurl:
                     result.add(idurl)
         result = list(result)
-        lg.out(10, 'fire_hire.doDecideToDismissSuppliers %s' % result)
+        lg.out(10, 'fire_hire.doDecideToDismiss %s' % result)
         self.automat('made-decision', result)
 
     def doRememberSuppliers(self, arg):
