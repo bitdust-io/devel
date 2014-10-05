@@ -88,10 +88,10 @@ CHUNK_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # BLOCK_SIZE * int(float(BLOCKS_PER_ACK
 RTT_MIN_LIMIT = 0.002
 RTT_MAX_LIMIT = 3
 
-MAX_BLOCKS_INTERVAL = 10     
+MAX_BLOCKS_INTERVAL = 5     
 MAX_ACK_TIMEOUTS = 3
-MAX_ACKS_INTERVAL = 10
-RECEIVING_TIMEOUT = 30
+MAX_ACKS_INTERVAL = 5
+RECEIVING_TIMEOUT = 20
 
 #------------------------------------------------------------------------------ 
 
@@ -509,17 +509,17 @@ class UDPStream(automat.Automat):
                 if pause_time < 0:
                     lg.warn('pause is %r, stream_id=%d' % (pause_time, self.stream_id)) 
                     pause_time = 0.0
-        if not some_blocks_to_ack and pause_time == 0.0 and not self.eof:
+        # if not some_blocks_to_ack and pause_time == 0.0 and not self.eof:
         #--- no blocks to ack now, no need to pause and not rich EOF
-            if relative_time - self.last_received_block_time > RECEIVING_TIMEOUT:
+        if relative_time - self.last_received_block_time > RECEIVING_TIMEOUT:
         #--- and last block has been long ago
                 if _Debug:
                     lg.out(18, 'TIMEOUT RECEIVING %d rtt=%r, last block in %r, reltime: %r, eof: %r, blocks to ack: %d' % (
                         self.stream_id, self._rtt_current(), self.last_received_block_time,
                         relative_time, self.eof, len(self.blocks_to_ack),))
-                # reactor.callLater(0, self.automat, 'timeout')
-                # return
-            self.resend_inactivity_counter += 1
+                reactor.callLater(0, self.automat, 'timeout')
+                return
+            # self.resend_inactivity_counter += 1
         activity = False
         #--- need to send some acks
         if period_avarage == 0 or self.output_acks_counter == 0:
@@ -545,11 +545,11 @@ class UDPStream(automat.Automat):
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
-                lg.out(self.debug_level, 'udp_stream[%d] : %r%% %d/%d/%d %rbps dt:%rsec' % (
+                lg.out(self.debug_level, 'udp_stream[%d] | %r%% sent | %d/%d/%d | %r bps | dt: %r sec' % (
                     self.stream_id, round(100.0*(float(self.bytes_acked)/self.consumer.size),2),
                     self.bytes_sent, self.bytes_acked,
                     self.consumer.size, int(self.current_send_bytes_per_sec),
-                    relative_time-self.last_ack_received_time))
+                    round(relative_time-self.last_ack_received_time,4)))
         if self.loop is None:
             next_iteration = min(MAX_BLOCKS_INTERVAL, 
                                  self._rtt_current() * self.resend_inactivity_counter)
@@ -572,11 +572,11 @@ class UDPStream(automat.Automat):
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
-                lg.out(18, 'udp_stream[%d] : %r%% %d/%d/%d %dbps dt:%rsec' % (self.stream_id, 
+                lg.out(18, 'udp_stream[%d] | %r%% received | %d/%d/%d | %dbps | dt: %r sec' % (self.stream_id, 
                     round(100.0*(float(self.consumer.bytes_received)/self.consumer.size),2), 
                     self.bytes_in, self.consumer.bytes_received, 
                     self.consumer.size, int(self.current_receive_bytes_per_sec),
-                    relative_time-self.last_received_block_time))
+                    round(relative_time-self.last_received_block_time, 4)))
         if self.loop is None:
             next_iteration = min(MAX_ACKS_INTERVAL, 
                              max(RTT_MIN_LIMIT/2.0, 
