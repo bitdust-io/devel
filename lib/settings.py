@@ -225,14 +225,15 @@ def DefaultBandwidthInLimit():
     """
     Incoming bandwidth limit in bytes per second, 0 - unlimited.
     """
-    return 0 
+    # 1 Mbps = 125000 B/s ~ 122 KB/s
+    return 100 * 1250000 
 
 def DefaultBandwidthOutLimit():
     """
     Outgoing bandwidth limit in bytes per second, 0 - unlimited.
     """
     # 1 Mbps = 125000 B/s ~ 122 KB/s
-    return 2 * 125000 
+    return 100 * 125000 
 
 def SendTimeOut():
     """
@@ -325,13 +326,13 @@ def DefaultDonatedBytes():
     """
     Default donated space value - user can set this at any moment in the settings.
     """
-    return 8 * 1024 * 1014 * 1024 # 8GB
+    return 8 * 1024 * 1014 * 1024 # 8 GB
 
 def DefaultNeededBytes():
     """
     Default needed space value.
     """
-    return 4 * 1024 * 1024 * 1024 # 4GB
+    return 1 * 1024 * 1024 * 1024 # 1 GB
 
 def MinimumDonatedBytes():
     """

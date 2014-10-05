@@ -83,7 +83,7 @@ _DefaultXMLConfig = ur"""<settings>
    7
   </suppliers>
   <needed>
-   4 Gb
+   1 Gb
   </needed>
   <donated>
    8 Gb
@@ -151,10 +151,10 @@ _DefaultXMLConfig = ur"""<settings>
    </network-proxy-ssl>
   </network-proxy>
   <network-send-limit>
-   250000
+   12500000
   </network-send-limit>
   <network-receive-limit>
-   0
+   12500000
   </network-receive-limit>
  </network>
  <transport>

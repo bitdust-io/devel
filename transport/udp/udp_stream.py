@@ -678,6 +678,11 @@ class UDPStream(automat.Automat):
         """
         if _Debug or True:
             pir_id = self.producer.session.peer_id
+            dt = time.time() - self.creation_time
+            if dt == 0:
+                dt = 1.0
+            ratein = self.bytes_in / dt
+            rateout = self.bytes_sent / dt
             lg.out(18, 'udp_stream.doCloseStream %d %s' % (self.stream_id, pir_id))
             lg.out(18, '    in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
                 self.input_blocks_counter, self.bytes_in,
@@ -685,8 +690,7 @@ class UDPStream(automat.Automat):
                 self.input_duplicated_blocks, self.input_duplicated_bytes,
                 self.output_blocks_counter, self.bytes_acked, 
                 self.resend_blocks, self.resend_bytes,
-                self.bytes_in / (time.time() - self.creation_time),
-                self.bytes_sent / (time.time() - self.creation_time),))
+                ratein, rateout,))
             del pir_id
         self._stop_resending()
         # self.consumer.clear_stream()
