@@ -428,8 +428,8 @@ class UDPStream(automat.Automat):
                             lg.out(18, 'TIMEOUT SENDING rtt=%r, last ack at %r, last block was %r, reltime is %r' % (
                                 self.rtt_avarage / self.rtt_counter,
                                 self.last_ack_received_time, self.last_block_sent_time, relative_time))
-                        # reactor.callLater(0, self.automat, 'timeout')
-                        # return
+                        reactor.callLater(0, self.automat, 'timeout')
+                        return
         #--- skip sending : too few acks
                 if _Debug:
                     lg.out(18, 'SKIP SENDING %d, too few acks:%d blocks:%d' % (
