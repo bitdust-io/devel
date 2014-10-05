@@ -281,6 +281,10 @@ def ReadRawListFiles(supplierNum, listFileText):
                         lg.out(8, '        F%s - remove, not found in the index' % pth)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
+            try:
+                pth = line.split(' ')[0]
+            except:
+                pth = line
             if not backup_fs.ExistsID(pth):
                 if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():
                     paths2remove.add(pth)
