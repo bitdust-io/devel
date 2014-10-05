@@ -545,10 +545,11 @@ class UDPStream(automat.Automat):
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
-                lg.out(self.debug_level, 'udp_stream[%d] : %r%% %d/%d/%d rate=%r' % (
+                lg.out(self.debug_level, 'udp_stream[%d] : %r%% %d/%d/%d %rbps dt:%rsec' % (
                     self.stream_id, round(100.0*(float(self.bytes_acked)/self.consumer.size),2),
                     self.bytes_sent, self.bytes_acked,
-                    self.consumer.size, self.current_send_bytes_per_sec))
+                    self.consumer.size, int(self.current_send_bytes_per_sec),
+                    relative_time-self.last_ack_received_time))
         if self.loop is None:
             next_iteration = min(MAX_BLOCKS_INTERVAL, 
                                  self._rtt_current() * self.resend_inactivity_counter)
@@ -571,10 +572,11 @@ class UDPStream(automat.Automat):
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
-                lg.out(18, 'udp_stream[%d] : %r%% %d/%d/%d rate=%r' % (self.stream_id, 
+                lg.out(18, 'udp_stream[%d] : %r%% %d/%d/%d %dbps dt:%rsec' % (self.stream_id, 
                     round(100.0*(float(self.consumer.bytes_received)/self.consumer.size),2), 
                     self.bytes_in, self.consumer.bytes_received, 
-                    self.consumer.size, self.current_receive_bytes_per_sec))
+                    self.consumer.size, int(self.current_receive_bytes_per_sec),
+                    relative_time-self.last_received_block_time))
         if self.loop is None:
             next_iteration = min(MAX_ACKS_INTERVAL, 
                              max(RTT_MIN_LIMIT/2.0, 
