@@ -140,7 +140,7 @@ class _Worker(object):
     # if is_frozen():
     #     command = 'bpworker.exe'
     if is_frozen():
-        command = ['bpworker.exer',]
+        command = ['bpworker.exe',]
     else:
         command = [sys.executable, '-u', 'bpworker.py']
 
@@ -148,7 +148,7 @@ class _Worker(object):
         """Initializes local worker"""
         self.restart_on_free = restart_on_free
         self.pickle_proto = pickle_proto
-        print '_Worker', self.command, os.path.abspath('.')
+        # print '_Worker', self.command, os.path.abspath('.')
         self.start()
 
     def start(self):
