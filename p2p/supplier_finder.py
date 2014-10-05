@@ -57,7 +57,7 @@ def A(event=None, arg=None):
     global _SupplierFinder
     if _SupplierFinder is None:
         # set automat name and starting state here
-        _SupplierFinder = SupplierFinder('supplier_finder', 'AT_STARTUP', 6)
+        _SupplierFinder = SupplierFinder('supplier_finder', 'AT_STARTUP', 4)
     if event is not None:
         _SupplierFinder.automat(event, arg)
     return _SupplierFinder

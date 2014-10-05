@@ -74,7 +74,7 @@ from lib import automat
 #------------------------------------------------------------------------------ 
 
 _Debug = False
-# _Debug = True
+_Debug = True
 
 #------------------------------------------------------------------------------ 
 
@@ -181,7 +181,7 @@ class UDPStream(automat.Automat):
             lg.out(18, 'udp_stream.__init__ %d peer_id:%s session:%s' % (
                 self.stream_id, self.producer.session.peer_id, self.producer.session))
         name = 'udp_stream[%s]' % (self.stream_id)
-        automat.Automat.__init__(self, name, 'AT_STARTUP', 8)
+        automat.Automat.__init__(self, name, 'AT_STARTUP', 18)
         
 #    def __del__(self):
 #        """
@@ -366,7 +366,8 @@ class UDPStream(automat.Automat):
         else:
             self.rtt_avarage = (RTT_MIN_LIMIT + RTT_MAX_LIMIT) / 2.0
         self.rtt_counter = 1.0
-        lg.out(18, 'udp_stream.doInit limits: (in=%r|out=%r)  rtt=%r' % (
+        lg.out(18, 'udp_stream.doInit %d with %s limits: (in=%r|out=%r)  rtt=%r' % (
+            self.stream_id, self.producer.session.peer_id,
             self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec,
             self.rtt_avarage))
 
@@ -547,7 +548,7 @@ class UDPStream(automat.Automat):
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
-                lg.out(self.debug_level, 'udp_stream[%d] | %r%% sent | %d/%d/%d | %r bps | dt: %r sec' % (
+                lg.out(self.debug_level, 'udp_stream[%d] | %r%% sent | %d/%d/%d | %r bps | %r sec dt' % (
                     self.stream_id, round(100.0*(float(self.bytes_acked)/self.consumer.size),2),
                     self.bytes_sent, self.bytes_acked,
                     self.consumer.size, int(self.current_send_bytes_per_sec),
@@ -574,11 +575,12 @@ class UDPStream(automat.Automat):
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
-                lg.out(18, 'udp_stream[%d] | %r%% received | %d/%d/%d | %dbps | dt: %r sec' % (self.stream_id, 
+                lg.out(18, 'udp_stream[%d] | %r%% received | %d/%d/%d | %dbps | %r sec dt | from %s' % (self.stream_id, 
                     round(100.0*(float(self.consumer.bytes_received)/self.consumer.size),2), 
                     self.bytes_in, self.consumer.bytes_received, 
                     self.consumer.size, int(self.current_receive_bytes_per_sec),
-                    round(relative_time-self.last_received_block_time, 4)))
+                    round(relative_time-self.last_received_block_time, 4),
+                    self.producer.session.peer_id))
         if self.loop is None:
             next_iteration = min(MAX_ACKS_INTERVAL, 
                              max(RTT_MIN_LIMIT/2.0, 
@@ -675,10 +677,7 @@ class UDPStream(automat.Automat):
         Action method.
         """
         if _Debug or True:
-            try:
-                pir_id = self.producer.session.peer_id
-            except:
-                pir_id = 'None'
+            pir_id = self.producer.session.peer_id
             lg.out(18, 'udp_stream.doCloseStream %d %s' % (self.stream_id, pir_id))
             lg.out(18, '    in:%d|%d acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
                 self.input_blocks_counter, self.bytes_in,
