@@ -83,7 +83,7 @@ import packet_out
 INSTALLED_TRANSPORTS = {}
 
 try:
-    import tcp_interface
+    from tcp import tcp_interface
     INSTALLED_TRANSPORTS['tcp'] = True
 except:
     lg.exc()
@@ -104,8 +104,6 @@ _XMLRPCPort = None
 _XMLRPCURL = ''
 _LastTransferID = None
 _LastInboxPacketTime = 0
-#_StartingDeferred = None
-#_StoppingDeferred = None
 _PacketsTimeOutTask = None
                 
 #------------------------------------------------------------------------------ 
@@ -234,37 +232,7 @@ def start():
     reactor.callLater(5, packets_timeout_loop)
     return result
 
-
-    # global _StartingDeferred
-    # if _StartingDeferred:
-    #     lg.warn('already called')
-    #     return _StartingDeferred
-    # _StartingDeferred = Deferred()
-    # _StartingDeferred.addCallback(started)
-#    count_started = 0
-#    for proto, transp in transports().items():
-#        if settings.transportIsEnabled(proto): 
-#            if transp.state != 'LISTENING' and transp.state != 'STARTING':
-#                lg.out(4, '    send "start" to %s' % transp)
-#                transp.automat('start')
-#                count_started += 1
-#    if count_started == 0:
-#        lg.out(4, '    fire starting deferred now because no transport were started')
-#        _StartingDeferred.callback(True)
-#     return _StartingDeferred 
-    
         
-#def started(x):
-#    global _StartingDeferred
-#    lg.out(4, 'gate.started')
-#    _StartingDeferred = None
-#    # packets_timeout_loop()
-#    return x
-#    # global _PacketsTimeOutTask
-#    # if not _PacketsTimeOutTask:
-#    #     _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
-    
-            
 def stop():
     """
     """
@@ -280,60 +248,6 @@ def stop():
             else:
                 lg.out(4, '    %s already stopped' % proto)
     return result
-
-#    global _StoppingDeferred
-#    if _StoppingDeferred:
-#        lg.warn('already called')
-#        return _StoppingDeferred
-#    lg.out(4, 'gate.stop')
-#    _StoppingDeferred = Deferred()
-#    _StoppingDeferred.addCallback(stopped)
-#    did_something = False
-#    for transp in transports().values():
-#        if transp.state not in ['OFFLINE', 'STOPPING', ]:
-#            transp.automat('stop')
-#            lg.out(4, '    send "stop" to %s' % transp)
-#            did_something = True
-#    if not did_something:
-#        lg.out(4, '    will fire stopping deferred')
-#        _StoppingDeferred.callback(True) 
-#    return _StoppingDeferred   
-        
-
-#def stopped(x):
-#    global _StoppingDeferred
-#    lg.out(4, 'gate.stopped')
-#    _StoppingDeferred = None
-#    global _PacketsTimeOutTask
-#    if _PacketsTimeOutTask:
-#        if _PacketsTimeOutTask.active():
-#            _PacketsTimeOutTask.cancel()
-#            _PacketsTimeOutTask = None
-
-#------------------------------------------------------------------------------ 
-
-#def transport_state_changed(proto, oldstate, newstate):
-#    """
-#    """
-#    global _StartingDeferred
-#    global _StoppingDeferred
-#    lg.out(6, 'gate.transport_state_changed %s %s->%s starting=%s stopping=%s' % (
-#        proto.upper(), oldstate, newstate, 
-#        str(_StartingDeferred), str(_StoppingDeferred)))
-#    if _StartingDeferred:
-#        still_starting = False
-#        for transp in transports().values():
-#            if transp.state not in ['LISTENING', 'OFFLINE',]:
-#                still_starting = True
-#        if not still_starting:
-#            _StartingDeferred.callback(True)
-#    if _StoppingDeferred:
-#        still_stopping = False
-#        for transp in transports().values():
-#            if transp.state not in ['OFFLINE',]:
-#                still_stopping = True
-#        if not still_stopping:
-#            _StoppingDeferred.callback(True)
 
 #------------------------------------------------------------------------------ 
 
@@ -489,7 +403,6 @@ def cancel_outbox_file(proto, host, filename, why=None):
         lg.out(2, 'gate.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename),))
         return None
     pkt_out.automat('cancel', why)
-    # return transport(proto).call('cancel_outbox_file', host, filename)
 
 #------------------------------------------------------------------------------ 
 
