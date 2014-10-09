@@ -133,7 +133,7 @@ class DHTUDPConnector(automat.Automat):
         """
         d = dht_service.get_value(self.peer_id+':incomings')
         d.addCallback(self._got_peer_incomings)
-        d.addErrback(lambda x, key: self.automat, 'dht-write-failed')
+        d.addErrback(lambda x: self.automat('dht-write-failed'))
 
     def doDHTReadPeerAddress(self, arg):
         """
@@ -141,7 +141,7 @@ class DHTUDPConnector(automat.Automat):
         """
         d = dht_service.get_value(self.peer_id+':address')
         d.addCallback(self._got_peer_address)
-        d.addErrback(lambda x, key: self.automat, 'dht-read-failed')
+        d.addErrback(lambda x: self.automat('dht-read-failed'))
 
     def doDestroyMe(self, arg):
         """
@@ -180,6 +180,7 @@ class DHTUDPConnector(automat.Automat):
         del current_incomings
         d = dht_service.set_value(self.peer_id+':incomings', new_value)
         d.addCallback(self._wrote_peers_incomings)
+        d.addErrback(lambda x: self.automat('dht-write-failed'))
         
     def _wrote_peers_incomings(self, nodes):
         if len(nodes) > 0:

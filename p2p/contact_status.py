@@ -90,6 +90,15 @@ def shutdown():
     _ShutdownFlag = True
     
 
+def isKnown(idurl):
+    """
+    """
+    if idurl in [None, 'None', '']:
+        return False
+    global _ContactsStatusDict
+    return idurl in _ContactsStatusDict.keys()
+
+
 def isOnline(idurl):
     """
     Return True if given contact's state is ONLINE.

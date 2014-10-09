@@ -13,17 +13,31 @@ BitPie.NET nickname_holder() Automat
     </a>
 
 EVENTS:
+    * :red:`dht-read-failed`
+    * :red:`dht-read-success`
+    * :red:`dht-write-failed`
+    * :red:`dht-write-success`
     * :red:`init`
-    * :red:`key-exist`
-    * :red:`key-not-exist`
+    * :red:`set-new-nickname`
     * :red:`timer-5min`
-    * :red:`write-failed`
-    * :red:`write-success`
 """
 
-import automat
+import os
+import sys
+
+from logs import lg
+
+from lib import automat
+from lib import settings
+from lib import misc
+
+from dht import dht_service
+
+#------------------------------------------------------------------------------ 
 
 _NicknameHolder = None
+
+#------------------------------------------------------------------------------ 
 
 def A(event=None, arg=None):
     """
@@ -32,11 +46,12 @@ def A(event=None, arg=None):
     global _NicknameHolder
     if _NicknameHolder is None:
         # set automat name and starting state here
-        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP')
+        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 6)
     if event is not None:
         _NicknameHolder.automat(event, arg)
     return _NicknameHolder
 
+#------------------------------------------------------------------------------ 
 
 class NicknameHolder(automat.Automat):
     """
@@ -51,113 +66,173 @@ class NicknameHolder(automat.Automat):
         """
         Method to initialize additional variables and flags at creation of the state machine.
         """
-
-    def state_changed(self, oldstate, newstate):
-        """
-        Method to to catch the moment when automat's state were changed.
-        """
+        self.nickname = None
+        self.key = None
+        self.dht_read_defer = None
 
     def A(self, event, arg):
-        """
-        The state machine code, generated using `visio2python <http://code.google.com/p/visio2python/>`_ tool.
-        """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init' :
                 self.state = 'DHT_READ'
-                self.doInit(arg)
+                self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
         #---READY---
         elif self.state == 'READY':
-            if event == 'timer-5min' :
+            if event == 'set-new-nickname' or event == 'timer-5min' :
                 self.state = 'DHT_READ'
+                self.doSetNickname(arg)
+                self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
-            if event == 'key-exist' and self.isMyOwnKey(arg) :
+            if event == 'set-new-nickname' :
+                self.doSetNickname(arg)
+                self.doMakeKey(arg)
+                self.doDHTReadKey(arg)
+            elif event == 'dht-read-success' and self.isMyOwnKey(arg) :
                 self.state = 'READY'
                 self.doReportNicknameOwn(arg)
-            elif event == 'key-not-exist' :
+            elif event == 'dht-read-failed' :
                 self.state = 'DHT_WRITE'
                 self.Attempts=0
                 self.doDHTWriteKey(arg)
-            elif event == 'key-exist' and not self.isMyOwnKey(arg) :
+            elif event == 'dht-read-success' and not self.isMyOwnKey(arg) :
                 self.doReportNicknameExist(arg)
                 self.doNextKey(arg)
                 self.doDHTReadKey(arg)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
-            if event == 'write-failed' and self.Attempts>5 :
+            if event == 'set-new-nickname' :
+                self.state = 'DHT_READ'
+                self.doSetNickname(arg)
+                self.doMakeKey(arg)
+                self.doDHTReadKey(arg)
+            elif event == 'dht-write-failed' and self.Attempts>5 :
                 self.state = 'READY'
                 self.Attempts=0
                 self.doReportNicknameFailed(arg)
-            elif event == 'write-failed' and self.Attempts<=5 :
+            elif event == 'dht-write-failed' and self.Attempts<=5 :
                 self.state = 'DHT_READ'
                 self.Attempts+=1
                 self.doNextKey(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'write-success' :
+            elif event == 'dht-write-success' :
                 self.state = 'READY'
                 self.Attempts=0
                 self.doReportNicknameRegistered(arg)
-
+        return None
 
     def isMyOwnKey(self, arg):
         """
         Condition method.
         """
+        return arg == misc.getLocalID()
+
+    def doSetNickname(self, arg):
+        """
+        Action method.
+        """
+        self.nickname = arg
 
     def doMakeKey(self, arg):
         """
         Action method.
         """
-
-    def doReportNicknameFailed(self, arg):
-        """
-        Action method.
-        """
-
-    def doReportNicknameOwn(self, arg):
-        """
-        Action method.
-        """
-
-    def doReportNicknameRegistered(self, arg):
-        """
-        Action method.
-        """
-
-    def doDHTWriteKey(self, arg):
-        """
-        Action method.
-        """
-
-    def doReportNicknameExist(self, arg):
-        """
-        Action method.
-        """
+        self.key = self.nickname + ':' + '0'
 
     def doNextKey(self, arg):
         """
         Action method.
         """
+        try:
+            nik, number = self.key.rsplit(':', 1)
+            number = int(number)
+        except:
+            lg.exc()
+            number = 0
+        number += 1
+        self.key = self.nickname + ':' + str(number)
 
     def doDHTReadKey(self, arg):
         """
         Action method.
         """
-
-    def doInit(self, arg):
+        if self.dht_read_defer is not None:
+            self.dht_read_defer.pause()
+            self.dht_read_defer.cancel()
+            self.dht_read_defer = None
+        d = dht_service.get_value(self.key)
+        d.addCallback(self._dht_read_result)
+        d.addErrback(self._dht_read_failed)
+        self.dht_read_defer = d
+        
+    def doDHTWriteKey(self, arg):
         """
         Action method.
         """
+        d = dht_service.set_value(self.key, misc.getLocalID())
+        d.addCallback(self._dht_write_result)
+        d.addErrback(lambda x: self.automat('dht-write-failed'))
 
+    def doReportNicknameOwn(self, arg):
+        """
+        Action method.
+        """
+        lg.out(8, 'nickname_holder.doReportNicknameOwn : %s' % self.key)
+
+    def doReportNicknameRegistered(self, arg):
+        """
+        Action method.
+        """
+        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
+
+    def doReportNicknameExist(self, arg):
+        """
+        Action method.
+        """
+        lg.out(8, 'nickname_holder.doReportNicknameExist : %s' % self.key)
+
+    def doReportNicknameFailed(self, arg):
+        """
+        Action method.
+        """
+        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s' % self.key)
+
+    def _dht_read_result(self, value):
+        self.dht_read_defer = None
+        if type(value) != dict:
+            self.automat('dht-read-failed')
+            return
+        try:
+            v = value.values()[0]
+        except:
+            lg.exc()
+            self.automat('dht-read-failed')
+            return
+        self.automat('dht-read-success', v)
+        
+    def _dht_read_failed(self, x):
+        self.dht_read_defer = None
+        self.automat('dht-read-failed', x)
+    
+    def _dht_write_result(self, nodes):
+        if len(nodes) > 0:
+            self.automat('dht-write-success')
+        else:
+            self.automat('dht-write-failed')        
+
+#------------------------------------------------------------------------------ 
 
 
 def main():
     from twisted.internet import reactor
-    reactor.callWhenRunning(A, 'init')
+    lg.set_debug_level(24)
+    settings.init()
+    misc.init()
+    dht_service.init(int(settings.getDHTPort()))
+    reactor.callWhenRunning(A, 'init', sys.argv[1])
     reactor.run()
 
 if __name__ == "__main__":

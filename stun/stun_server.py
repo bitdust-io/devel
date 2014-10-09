@@ -125,7 +125,6 @@ class StunServer(automat.Automat):
 
 def main():
     from twisted.internet import reactor
-    from dht import dht_service
     bpio.init()
     dht_service.init(4000)
     udp.listen(8882)

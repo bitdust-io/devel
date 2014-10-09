@@ -157,7 +157,7 @@ def write_to_dht():
     """
     lg.out(6, "propagate.write_to_dht")
     LocalIdentity = misc.getLocalIdentity()
-    dht_service.set_value(LocalIdentity.getIDURL(), LocalIdentity.serialize())
+    return dht_service.set_value(LocalIdentity.getIDURL(), LocalIdentity.serialize())
 
 #------------------------------------------------------------------------------ 
 
@@ -396,11 +396,11 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
     del alreadysent
 
 
-def PingContact(idurl):
+def PingContact(idurl, ack_handler=None):
     """
     Called from outside when need to "ping" some user, this will just send my Identity to that guy, 
     he will need to respond.
     """
-    SendToID(idurl, NeedAck=True)
+    SendToID(idurl, NeedAck=True, AckHandler=ack_handler)
 
 

@@ -13,29 +13,49 @@ BitPie.NET nickname_observer() Automat
     </a>
 
 EVENTS:
-    * :red:`key-exist`
-    * :red:`key-not-exist`
+    * :red:`dht-read-failed`
+    * :red:`dht-read-success`
+    * :red:`find-one`
     * :red:`observe-many`
-    * :red:`observe-one`
     * :red:`stop`
 """
 
-import automat
+import os
+import sys
+
+from twisted.internet.defer import Deferred
+
+from logs import lg
+
+from lib import automat
+from lib import settings
+from lib import misc
+
+from dht import dht_service
+
+#------------------------------------------------------------------------------ 
 
 _NicknameObserver = None
 
-def A(event=None, arg=None):
-    """
-    Access method to interact with the state machine.
-    """
-    global _NicknameObserver
-    if _NicknameObserver is None:
-        # set automat name and starting state here
-        _NicknameObserver = NicknameObserver('nickname_observer', 'AT_STARTUP')
-    if event is not None:
-        _NicknameObserver.automat(event, arg)
-    return _NicknameObserver
+#------------------------------------------------------------------------------ 
 
+def find_one(nickname, attempts=3, results_callback=None):
+    """
+    """
+    lg.out(12, 'nickname_observer.find_one %s %d' % (nickname, attempts))
+    observer = NicknameObserver('nickname_observer', 'AT_STARTUP', 2)
+    observer.automat('find-one', (nickname, attempts, results_callback))
+    return observer
+
+def observe_many(nickname, attempts=10, results_callback=None):
+    """
+    """
+    lg.out(12, 'nickname_observer.observe_many %s %d' % (nickname, attempts))
+    observer = NicknameObserver('nickname_observer', 'AT_STARTUP', 2)
+    observer.automat('observe-many', (nickname, attempts, results_callback))
+    return observer
+
+#------------------------------------------------------------------------------ 
 
 class NicknameObserver(automat.Automat):
     """
@@ -46,129 +66,187 @@ class NicknameObserver(automat.Automat):
         """
         Method to initialize additional variables and flags at creation of the state machine.
         """
-
-    def state_changed(self, oldstate, newstate):
-        """
-        Method to to catch the moment when automat's state were changed.
-        """
+        self.nickname = None
+        self.attempts = None
+        self.key = None
+        self.dht_read_defer = None
+        self.result_callback = None
+        self.log_events = True
 
     def A(self, event, arg):
-        """
-        The state machine code, generated using `visio2python <http://code.google.com/p/visio2python/>`_ tool.
-        """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'observe-many' :
                 self.state = 'DHT_LOOP'
-                self.doInitLoop(arg)
-                self.doNextKey(arg)
+                self.doInit(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'observe-one' :
+            elif event == 'find-one' :
                 self.state = 'DHT_FIND'
-                self.doInitSearch(arg)
-                self.doMakeKey(arg)
+                self.doInit(arg)
                 self.doDHTReadKey(arg)
         #---DHT_LOOP---
         elif self.state == 'DHT_LOOP':
             if event == 'stop' :
                 self.state = 'STOPPED'
                 self.doDestroyMe(arg)
-            elif event == 'key-not-exist' and self.isMoreNeeded(arg) :
-                self.doReportNicknameNotExist(arg)
+            elif event == 'dht-read-failed' and self.isMoreAttemptsNeeded(arg) :
                 self.doNextKey(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'key-exist' :
+            elif event == 'dht-read-success' and not self.isMoreAttemptsNeeded(arg) :
+                self.state = 'FINISHED'
+                self.doReportNicknameExist(arg)
+                self.doReportFinished(arg)
+                self.doDestroyMe(arg)
+            elif event == 'dht-read-success' and self.isMoreAttemptsNeeded(arg) :
                 self.doReportNicknameExist(arg)
                 self.doNextKey(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'key-not-exist' and not self.isMoreNeeded(arg) :
+            elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(arg) :
                 self.state = 'FINISHED'
-                self.doReportFinished(arg)
+                self.doReportNicknameNotExist(arg)
                 self.doDestroyMe(arg)
-        #---FINISHED---
-        elif self.state == 'FINISHED':
-            pass
         #---DHT_FIND---
         elif self.state == 'DHT_FIND':
-            if event == 'key-exist' :
+            if event == 'dht-read-success' :
                 self.state = 'FOUND'
                 self.doReportNicknameExist(arg)
                 self.doDestroyMe(arg)
-            elif event == 'key-not-exist' and not self.isMoreNeeded(arg) :
-                self.state = 'FINISHED'
-                self.doReportFinished(arg)
-                self.doDestroyMe(arg)
-            elif event == 'key-not-exist' and self.isMoreNeeded(arg) :
-                self.doReportNicknameNotExist(arg)
+            elif event == 'dht-read-failed' and self.isMoreAttemptsNeeded(arg) :
                 self.doNextKey(arg)
                 self.doDHTReadKey(arg)
+            elif event == 'stop' :
+                self.state = 'STOPPED'
+                self.doDestroyMe(arg)
+            elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(arg) :
+                self.state = 'NOT_FOUND'
+                self.doReportNicknameNotExist(arg)
+                self.doDestroyMe(arg)
         #---FOUND---
         elif self.state == 'FOUND':
             pass
         #---STOPPED---
         elif self.state == 'STOPPED':
             pass
+        #---NOT_FOUND---
+        elif self.state == 'NOT_FOUND':
+            pass
+        #---FINISHED---
+        elif self.state == 'FINISHED':
+            pass
+        return None
 
-
-    def isMoreNeeded(self, arg):
+    def isMoreAttemptsNeeded(self, arg):
         """
         Condition method.
         """
+        return self.attempts > 0
 
-    def doMakeKey(self, arg):
+    def doInit(self, arg):
         """
         Action method.
         """
-
-    def doInitSearch(self, arg):
+        self.nickname, self.attempts, self.result_callback = arg
+        try:
+            nik, number = self.nickname.rsplit(':', 1)
+            number = int(number)
+        except:
+            nik = self.nickname
+            number = 0
+        self.key = nik + ':' + str(number)
+        
+    def doNextKey(self, arg):
         """
         Action method.
         """
-
-    def doReportFinished(self, arg):
+        try:
+            nik, number = self.key.rsplit(':', 1)
+            number = int(number)
+        except:
+            lg.exc()
+            number = 0
+        number += 1
+        self.key = self.nickname + ':' + str(number)
+        self.attempts -= 1
+        
+    def doDHTReadKey(self, arg):
         """
         Action method.
         """
+        if self.dht_read_defer is not None:
+            self.dht_read_defer.pause()
+            self.dht_read_defer.cancel()
+            self.dht_read_defer = None
+        d = dht_service.get_value(self.key)
+        d.addCallback(self._dht_read_result)
+        d.addErrback(self._dht_read_failed)
+        self.dht_read_defer = d
 
     def doReportNicknameExist(self, arg):
         """
         Action method.
         """
-
-    def doDestroyMe(self, arg):
-        """
-        Remove all references to the state machine object to destroy it.
-        """
-        automat.objects().pop(self.index)
-        global _NicknameObserver
-        del _NicknameObserver
-        _NicknameObserver = None
-
-    def doInitLoop(self, arg):
-        """
-        Action method.
-        """
-
-    def doNextKey(self, arg):
-        """
-        Action method.
-        """
-
-    def doDHTReadKey(self, arg):
-        """
-        Action method.
-        """
+        lg.out(8, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, arg))
+        if self.result_callback is not None:
+            self.result_callback('exist', self.key, arg)
 
     def doReportNicknameNotExist(self, arg):
         """
         Action method.
         """
+        lg.out(8, 'nickname_observer.doReportNicknameNotExist : %s' % self.nickname)
+        if self.result_callback is not None:
+            self.result_callback('not exist', self.nickname, arg)
 
+    def doReportFinished(self, arg):
+        """
+        Action method.
+        """
+        lg.out(8, 'nickname_observer.doReportFinished')
+        if self.result_callback is not None:
+            self.result_callback('finished', '', '')
+        
+    def doDestroyMe(self, arg):
+        """
+        Remove all references to the state machine object to destroy it.
+        """
+        automat.objects().pop(self.index)
 
+    def _dht_read_result(self, value):
+        self.dht_read_defer = None
+        if type(value) != dict:
+            self.automat('dht-read-failed')
+            return
+        try:
+            v = value.values()[0]
+        except:
+            lg.exc()
+            self.automat('dht-read-failed')
+            return
+        self.automat('dht-read-success', v)
+        
+    def _dht_read_failed(self, x):
+        self.dht_read_defer = None
+        self.automat('dht-read-failed', x)
+
+#------------------------------------------------------------------------------ 
 
 def main():
+    if len(sys.argv) < 3:
+        print 'usage: nickname_observer.py <"many"|"one"> <nickname> <attempts>'
+        return
     from twisted.internet import reactor
-    reactor.callWhenRunning(A, 'init')
+    lg.set_debug_level(24)
+    settings.init()
+    misc.init()
+    dht_service.init(int(settings.getDHTPort()))
+    def _result(result, nickname):
+        print result, nickname
+        if result == 'finished':
+            reactor.stop()
+    if sys.argv[1] == 'many':
+        observe_many(sys.argv[2], int(sys.argv[3]), _result)
+    else:
+        find_one(sys.argv[2], int(sys.argv[3]), _result)
     reactor.run()
 
 if __name__ == "__main__":

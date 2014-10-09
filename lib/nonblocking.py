@@ -36,7 +36,7 @@ if subprocess.mswindows:
     import msvcrt
 else:
     import select
-    import fcntl
+    import fcntl #@UnresolvedImport
     import signal
 
 class Popen(subprocess.Popen):

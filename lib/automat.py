@@ -49,8 +49,6 @@ of Information Technologies, Mechanics and Optics, Programming Technologies Depa
 `Page <http://is.ifmo.ru/english>`_.     
 """
 
-import os
-import sys
 import time
 import traceback
 
@@ -126,6 +124,7 @@ class Automat(object):
         self.name = name
         self.state = state
         self.debug_level = debug_level
+        self.log_events = False
         self._timers = {}
         self.init()
         self.startTimers()
@@ -138,21 +137,21 @@ class Automat(object):
         if self is None:
             return
         o = self
-        id = self.id
+        automatid = self.id
         name = self.name
         debug_level = self.debug_level
         if _Index is None:
-            self.log(debug_level, 'automat.__del__ WARNING Index is None: %r %r' % (id, name))
+            self.log(debug_level, 'automat.__del__ WARNING Index is None: %r %r' % (automatid, name))
             return
-        index = _Index.get(id, None)
+        index = _Index.get(automatid, None)
         if index is None:
-            self.log(debug_level, 'automat.__del__ WARNING %s not found' % id)
+            self.log(debug_level, 'automat.__del__ WARNING %s not found' % automatid)
             return
-        del _Index[id]
+        del _Index[automatid]
         self.log(debug_level, 'DESTROYED AUTOMAT %s with index %d' % (str(o), index))
         del o
         if _StateChangedCallback is not None:
-            _StateChangedCallback(index, id, name, '')
+            _StateChangedCallback(index, automatid, name, '')
 
     def __repr__(self):
         """
@@ -211,18 +210,16 @@ class Automat(object):
         If ``self.fast=False`` - the ``self.A()`` method will be executed in delayed call.
         """ 
         if self.fast:
-            # reactor.callWhenRunning(self.event, event, arg)
             self.event(event, arg)
         else:
-            reactor.callLater(0, self.event, event, arg)
-            # reactor.callWhenRunning(self.event, event, arg)
+            reactor.callLater(0, self.event, event, arg) #@UndefinedVariable 
 
     def event(self, event, arg=None):
         """
         You can call event directly to execute ``self.A()`` immediately. 
         """
         global _StateChangedCallback
-        if _LogEvents:
+        if _LogEvents or self.log_events:
             self.log(self.debug_level * 4, '%s fired with event "%s"' % (self, event))
         old_state = self.state
         if self.post:
@@ -262,10 +259,9 @@ class Automat(object):
         """
         Stop all state machine timers.
         """
-        for name, timer in self._timers.items():
+        for name, timer in self._timers.items(): #@UnusedVariable 
             if timer.running:
                 timer.stop()
-                # self.log(self.debug_level * 4, '%s.stopTimers timer %s stopped' % (self, name))
         self._timers.clear()
 
     def startTimers(self):
@@ -304,7 +300,6 @@ class Automat(object):
         if not _Debug:
             return
         if _LogFile is not None:
-            import time
             if _LogsCount > 100000:
                 _LogFile.close()
                 _LogFile = open(_LogFilename, 'w')
@@ -345,14 +340,14 @@ def create_index(name):
     Generate unique ID, and put it into Index dict, increment counter 
     """
     global _Index
-    id = name
+    automatid = name
     if _Index.has_key(id):
         i = 1
-        while _Index.has_key(id + '(' + str(i) + ')'):
+        while _Index.has_key(automatid + '(' + str(i) + ')'):
             i += 1
-        id = name + '(' + str(i) + ')'
-    _Index[id] = get_new_index()
-    return id, _Index[id]
+        automatid = name + '(' + str(i) + ')'
+    _Index[automatid] = get_new_index()
+    return automatid, _Index[automatid]
 
 def set_object(index, obj):
     """

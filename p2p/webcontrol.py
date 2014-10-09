@@ -6468,20 +6468,30 @@ class NewMessagePage(Page):
 
 class CorrespondentsPage(Page):
     pagename = _PAGE_CORRESPONDENTS
+    
+    def created(self):
+        self.results = []
+    
+#    def _check_name_cb(self, x, request, name):
+#        idurl = 'http://' + settings.IdentityServerName() + '/' + name + '.xml'
+#        contacts.addCorrespondent(idurl)
+#        contacts.saveCorrespondentIDs()
+#        propagate.SendToID(idurl) #, lambda packet: self._ack_handler(packet, request, idurl))
+#        src = self._body(request, '', '%s was found' % name, 'success')
+#        request.write(html_from_args(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU)))
+#        request.finish()
+#
+#    def _check_name_eb(self, x, request, name):
+#        src = self._body(request, name, '%s was not found' % name, 'failed')
+#        request.write(html_from_args(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU)))
+#        request.finish()
+        
+    def _nickname_observer_result(self, result, nik, idurl):
+        self.results.append((result, nik, idurl))
+        SendCommandToGUI('update')
 
-    def _check_name_cb(self, x, request, name):
-        idurl = 'http://' + settings.IdentityServerName() + '/' + name + '.xml'
-        contacts.addCorrespondent(idurl)
-        contacts.saveCorrespondentIDs()
-        propagate.SendToID(idurl) #, lambda packet: self._ack_handler(packet, request, idurl))
-        src = self._body(request, '', '%s was found' % name, 'success')
-        request.write(html_from_args(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU)))
-        request.finish()
-
-    def _check_name_eb(self, x, request, name):
-        src = self._body(request, name, '%s was not found' % name, 'failed')
-        request.write(html_from_args(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU)))
-        request.finish()
+    def _ack_handler(self, ackpacket, info):
+        SendCommandToGUI('update')
 
     def _body(self, request, name, msg, typ):
         #idurls = contacts.getContactsAndCorrespondents()
@@ -6492,13 +6502,44 @@ class CorrespondentsPage(Page):
         src += '<form action="%s" method="post">\n' % request.path
         src += 'enter user name:<br>\n'
         src += '<input type="text" name="name" value="%s" size="20" />\n' % name
-        src += '<input type="submit" name="button" value=" add " />'
-        src += '<input type="hidden" name="action" value="add" />\n'
+        src += '<input type="submit" name="button" value=" check " />\n'
+        src += '<input type="hidden" name="action" value="check" />\n'
         src += '</form><br><br>\n'
         src += html_message(msg, typ)
-        src += '<br><br>\n'
+        for tupl in self.results:
+            try:
+                result, niknum, idurl = tupl
+                nik, num = niknum.rsplit(':', 1)
+            except:
+                lg.exc()
+                continue 
+            src += '#d : <br><b>%s</b>' % (num, nik)
+            if idurl == misc.getLocalID():
+                src += ' - <b>it is me!</b>\n'
+                continue
+            status = contact_status.isKnown(idurl)
+            if not status:
+                status = '?'
+            else:
+                if contact_status.isOnline(idurl):
+                    status = 'online'
+                else:
+                    status = 'offline'
+            src += ' - %s &nbsp;&nbsp;&nbsp; <font color=gray>%s</font>;' % (
+                str(status), idurl)
+            src += '<form action="%s" method="post">\n' % request.path
+            src += '<input type="submit" name="button" value=" ping " />\n'
+            src += '<input type="hidden" name="action" value="ping" />\n'
+            src += '<input type="hidden" name="idurl" value="%s" />\n' % idurl
+            src += '</form>\n'
+            src += '<form action="%s" method="post">\n' % request.path
+            src += '<input type="submit" name="button" value=" add " />\n'
+            src += '<input type="hidden" name="action" value="add" />\n'
+            src += '<input type="hidden" name="idurl" value="%s" />\n' % idurl
+            src += '</form>\n'
+        src += '<br>\n'
         if len(idurls) == 0:
-            src += '<p>you have no friends</p>\n'
+            src += '' # '<p>you have no friends</p>\n'
         else:
             w, h = misc.calculate_best_dimension(len(idurls))
             imgW = 64
@@ -6551,21 +6592,17 @@ class CorrespondentsPage(Page):
         name = arg(request, 'name', nameurl.GetName(idurl))
         msg = ''
         typ = 'info'
-        if action == 'add':
-            idurl = 'http://' + settings.IdentityServerName() + '/' + name + '.xml'
+        if action == 'check':
             if not misc.ValidUserName(name):
                 msg = 'incorrect user name'
                 typ = 'error'
-            elif idurl in idurls:
-                msg = '%s is your friend already' % name
-                typ = 'error' 
             else:
-                lg.out(6, 'webcontrol.CorrespondentsPage.renderPage (add) will request ' + idurl)
-                res = net_misc.getPageTwisted(idurl)
-                res.addCallback(self._check_name_cb, request, name)
-                res.addErrback(self._check_name_eb, request, name)
-                request.notifyFinish().addErrback(self._check_name_eb, request, name)
-                return NOT_DONE_YET
+                self.results = []
+                from userid import nickname_observer
+                nickname_observer.find_one(name, 
+                    results_callback=self._nickname_observer_result)
+                msg = 'checking "%s"' % name
+                typ = 'info'
         elif action == 'remove':
             if idurl in contacts.getCorrespondentIDs():
                 contacts.removeCorrespondent(idurl)
@@ -6576,6 +6613,11 @@ class CorrespondentsPage(Page):
             else:
                 msg = '%s is not your friend' % name
                 typ = 'error'
+        elif action == 'ping':
+            propagate.PingContact(arg(request, 'idurl'), self._ack_handler)
+        elif action == 'add':
+            contacts.addCorrespondent(arg(request, 'idurl'))
+            contacts.saveCorrespondentIDs()
         src = self._body(request, name, msg, typ)
         return html(request, body=src, back=arg(request, 'back', _PAGE_CORRESPONDENTS))
 

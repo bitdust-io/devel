@@ -43,6 +43,10 @@ import known_nodes
 
 #------------------------------------------------------------------------------ 
 
+_Debug = False
+
+#------------------------------------------------------------------------------ 
+
 _MyNode = None
 _UDPListener = None
 
@@ -51,7 +55,8 @@ _UDPListener = None
 def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
-        lg.out(', already created a DHTNode')
+        if _Debug:
+            lg.out(', already created a DHTNode')
         return
     lg.out(4, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
@@ -70,7 +75,8 @@ def shutdown():
         _MyNode._dataStore._db.close()
         del _MyNode
         _MyNode = None
-        lg.out(4, 'dht_service.shutdown')
+        if _Debug:
+            lg.out(4, 'dht_service.shutdown')
     else:
         lg.warn('DHTNode not exist')
 
@@ -83,10 +89,12 @@ def node():
 def connect():
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
-        lg.out(6, 'dht_service.connect did RESET refresher task')
+        if _Debug:
+            lg.out(6, 'dht_service.connect did RESET refresher task')
     else:
         node().joinNetwork(known_nodes.nodes())
-        lg.out(6, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
+        if _Debug:
+            lg.out(6, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
     return True
 
 
@@ -104,7 +112,8 @@ def disconnect():
 
 
 def reconnect():
-    # lg.out(16, 'dht_service.reconnect')
+    if _Debug:
+        lg.out(16, 'dht_service.reconnect')
     return node().reconnect()
 
 
@@ -119,17 +128,20 @@ def okay(result, method, key, arg=None):
         v = str(result.values())
     else:
         v = 'None'
-    # lg.out(16, 'dht_service.okay   %s(%s)   result=%s' % (method, key, v[:20]))
+    if _Debug:
+        lg.out(18, 'dht_service.okay   %s(%s)   result=%s' % (method, key, v[:20]))
     return result
 
 
 def error(err, method, key):
-    lg.out(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
+    if _Debug:
+        lg.out(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
     return None  
 
 
 def get_value(key):
-    # lg.out(16, 'dht_service.get_value key=[%s]' % key)
+    if _Debug:
+        lg.out(18, 'dht_service.get_value key=[%s]' % key)
     d = node().iterativeFindValue(key_to_hash(key))
     d.addCallback(okay, 'get_value', key)
     d.addErrback(error, 'get_value', key)
@@ -137,14 +149,16 @@ def get_value(key):
         
 
 def set_value(key, value):
-    # lg.out(16, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
+    if _Debug:
+        lg.out(18, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
     d = node().iterativeStore(key_to_hash(key), value)
     d.addCallback(okay, 'set_value', key, value)
     d.addErrback(error, 'set_value', key)
     return d
 
 def delete_key(key):
-    # lg.out(16, 'dht_service.delete_key [%s]' % key)
+    if _Debug:
+        lg.out(16, 'dht_service.delete_key [%s]' % key)
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(okay, 'delete_value', key)
     d.addErrback(error, 'delete_key', key)
@@ -153,7 +167,8 @@ def delete_key(key):
 
 def find_node(node_id):
     node_id64 = base64.b64encode(node_id)
-    # lg.out(16, 'dht_service.find_node   node_id=[%s]' % node_id64)
+    if _Debug:
+        lg.out(16, 'dht_service.find_node   node_id=[%s]' % node_id64)
     d = node().iterativeFindNode(node_id)
     d.addCallback(okay, 'find_node', node_id64)
     d.addErrback(error, 'find_node', node_id64)
@@ -165,7 +180,8 @@ def random_key():
 
 
 def set_node_data(key, value):
-    # lg.out(18, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
+    if _Debug:
+        lg.out(18, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
     node().data[key] = value    
   
 #------------------------------------------------------------------------------ 
@@ -175,18 +191,20 @@ class DHTNode(DistributedTupleSpacePeer):
         DistributedTupleSpacePeer.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
         
-#    @rpcmethod
-#    def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
-#        # lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-#        #     base64.b32encode(key), str(value)[:10]))
-#        return DistributedTupleSpacePeer.store(self, key, value, 
-#            originalPublisherID=originalPublisherID, age=age, **kwargs)
+    if _Debug:
+        @rpcmethod
+        def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
+            lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+                base64.b32encode(key), str(value)[:10]))
+            return DistributedTupleSpacePeer.store(self, key, value, 
+                originalPublisherID=originalPublisherID, age=age, **kwargs)
 
     @rpcmethod
     def request(self, key):
         value = str(self.data.get(key, None))
-        # lg.out(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
-        #     base64.b32encode(key), str(value)[:10]))
+        if _Debug:
+            lg.out(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
+                base64.b32encode(key), str(value)[:10]))
         return {str(key): value}
 
     def reconnect(self, knownNodeAddresses=None):
