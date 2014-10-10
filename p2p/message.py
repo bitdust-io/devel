@@ -189,16 +189,16 @@ def DeleteMessage(messageuid):
 def SendMessage(RemoteID, messagebody, PacketID=""):
     """
     PREPRO:
-    We should probably check that we have a recent copy of the remote identity in ``identitycache``.
-    Or else transport_control needs to be able to fetch identities again 
+    We should probably check that we have a recent copy of the remote identity in the ``identitycache``.
+    Or else transport gate needs to be able to fetch identities again 
     when it needs to do more than X retries.
     GUI calls this to send the message.
     """
     lg.out(6, "message.SendMessage to: " + str(RemoteID) )
     #TODO ERROR HERE (return Defer)
-    if not identitycache.scheduleForCaching(RemoteID):
-        lg.out(2, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
-        return
+    # if not identitycache.scheduleForCaching(RemoteID):
+    #     lg.out(2, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
+    #     return
     RemoteIdentity = identitycache.FromCache(RemoteID)
     if not RemoteIdentity:
         lg.out(2, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
