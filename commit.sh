@@ -2,6 +2,6 @@
 git add -u :/
 git status
 read -p "OK?"
-git commit -m "`LANG=en_EN date`"
+git commit 
 git push origin
 
