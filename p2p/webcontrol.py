@@ -59,6 +59,7 @@ from transport import packet_out
 from userid import id_restorer
 from userid import propagate
 from userid import identitycache
+from userid import nickname_holder
 
 from crypt import key
 
@@ -157,6 +158,7 @@ _PAGE_SOFTWARE_UPDATE = 'softwareupdate'
 _PAGE_MESSAGES = 'messages'
 _PAGE_MESSAGE = 'message'
 _PAGE_NEW_MESSAGE = 'newmessage'
+_PAGE_SET_NICKNAME = 'setnickname'
 _PAGE_CORRESPONDENTS = 'correspondents'
 _PAGE_SHEDULE = 'shedule'
 _PAGE_BACKUP_SHEDULE = 'backup_schedule'
@@ -335,6 +337,7 @@ def init(port = 6001):
         root.putChild(_PAGE_MESSAGES, MessagesPage())
         root.putChild(_PAGE_NEW_MESSAGE, NewMessagePage())
         root.putChild(_PAGE_CORRESPONDENTS, CorrespondentsPage())
+        root.putChild(_PAGE_SET_NICKNAME, SetNickNamePage())
         # root.putChild(_PAGE_BACKUP_SHEDULE, BackupShedulePage())
         root.putChild(_PAGE_SOFTWARE_UPDATE_SHEDULE, SoftwareUpdateShedulePage())
         root.putChild(_PAGE_DEV_REPORT, DevReportPage())
@@ -6357,16 +6360,97 @@ class MessagePage(Page):
 
 class MessagesPage(Page):
     pagename = _PAGE_MESSAGES
-    sortby = 0
-    sortreverse = False
+    
+    def created(self):
+        self.sortby = 0
+        self.sortreverse = False
+        self.conversations = False
+
+    def _body_conversations(self, request):
+        myid = misc.getLocalID()
+        cdict = message.DictAllConversations()
+        conversations_list = cdict.keys()
+        src = ''
+        src += '<hr width=50%>'
+        src += '<table width=80% cellpadding=5 cellspacing=0>\n'
+        src += '<tr align=left>\n'
+        # src += '<th><a href="%s?sortby=1">From</a></th>\n' % request.path
+        src += '<th><a href="%s?sortby=2">Recipient</a></th>\n' % request.path
+        src += '<th><a href="%s?sortby=4">Subject</a></th>\n' % request.path
+        src += '<th><a href="%s?sortby=3">Received/Created</a></th>\n' % request.path
+        src += '</tr>\n'
+        for key in conversations_list:
+            print key, cdict[key]
+            try:
+                recipient, subj = key.split(' ', 1)
+            except:
+                lg.exc()
+                continue
+#            for msg in cdict[key]: 
+#                mid = msg[0]
+#                recipient = msg[2]
+#                bgcolor = '#DDDDFF'
+#                if myid != msg[2]:
+#                    bgcolor = '#DDFFDD'
+#                    recipient = msg[3]
+            bgcolor = '#DDDDFF'
+            mid = subj
+            src += '<tr bgcolor="%s">\n' % bgcolor
+            src += '<td><a  href="%s/key%s">' % (request.path, mid)
+            src += recipient
+            src += '</a></td>\n'
+            src += '<td><a href="%s/%s">' % (request.path, mid)
+            src += subj # str(msg[1])
+            src += '</a></td>\n'
+            src += '<td><a href="%s/%s">' % (request.path, mid)
+            src += '' # msg[4]
+            src += '</a></td>\n'
+            # src += '<a href="%s?action=delete&mid=%s"><td>' % (request.path, mid)
+            # src += '<img src="%s" /></td></a>\n' % iconurl(request, 'icons/delete-message.png')
+            src += '</tr>\n'
+        src += '</table><br><br>\n'
+        return src
+
+    def _body_messages_by_date(self, request, reverse_order):
+        myid = misc.getLocalID()
+        mlist = message.ListAllMessages()
+        mlist.sort(key=lambda item: item[self.sortby], reverse=reverse_order)
+        src = ''
+        src += '<hr width=50%>'
+        src += '<table width=80% cellpadding=5 cellspacing=0>\n'
+        src += '<tr align=left>\n'
+        src += '<th><a href="%s?sortby=1">From</a></th>\n' % request.path
+        src += '<th><a href="%s?sortby=2">To</a></th>\n' % request.path
+        src += '<th><a href="%s?sortby=3">Received/Created</a></th>\n' % request.path
+        src += '<th><a href="%s?sortby=4">Subject</a></th>\n' % request.path
+        src += '<td>&nbsp;</td>\n'
+        src += '</tr>\n'
+        for i in range(len(mlist)):
+            msg = mlist[i]
+            mid = msg[0]
+            bgcolor = '#DDDDFF'
+            if myid != msg[1]:
+                bgcolor = '#DDFFDD'
+            src += '<tr bgcolor="%s">\n' % bgcolor
+            for m in msg[1:]:
+                src += '<td>'
+                src += '<a href="%s/%s">\n' % (request.path, mid)
+                src += str(m)
+                src += '</a>'
+                src += '</td>\n'
+            # src += '</a>\n'
+            src += '<td><a href="%s?action=delete&mid=%s">' % (request.path, mid)
+            src += '<img src="%s" /></a></td>\n' % iconurl(request, 'icons/delete-message.png')
+            src += '</tr>\n'
+        src += '</table><br><br>\n'
+        return src  
     
     def renderPage(self, request):
         action = arg(request, 'action')
+        back = arg(request, 'back', '/'+_PAGE_MENU) 
         mid = arg(request, 'mid')
         if action == 'delete' and mid:
             message.DeleteMessage(mid)
-        myname = misc.getIDName()
-        mlist = message.ListAllMessages()
         _sortby = arg(request, 'sortby', '')
         if _sortby != '':
             _sortby = misc.ToInt(arg(request, 'sortby'), 0)
@@ -6376,40 +6460,27 @@ class MessagesPage(Page):
         _reverse = self.sortreverse
         if self.sortby == 0:
             _reverse = not _reverse
-        mlist.sort(key=lambda item: item[self.sortby], reverse=_reverse)
+        if arg(request, 'conversations') == '1':
+            self.conversations = True
+        elif arg(request, 'conversations') == '0':
+            self.conversations = False
+        print 'MessagesPage', self.conversations, arg(request, 'conversations')
         src = ''
         src += '<h1>messages</h1>\n'
+        src += '<a href="%s?back=%s">Set my nickname</a><br><br>\n' % (
+            _PAGE_SET_NICKNAME, request.path)
+        src += '<a href="%s?back=%s">Edit my correspondents list</a><br><br>\n' % (
+            _PAGE_CORRESPONDENTS, request.path)
         src += '<a href="%s?back=%s">Create a new message</a><br><br>\n' % (
             _PAGE_NEW_MESSAGE, request.path)
-        src += '<a href="%s?back=%s">Edit my correspondents list</a><br><br><br>\n' % (
-            _PAGE_CORRESPONDENTS, request.path)
-        if len(mlist) == 0:
-            src += '<p>you have no messages</p>\n'
+        if self.conversations:
+            src += '<a href="%s?conversations=0&back=%s">Show conversations</a><br>\n' % (request.path, back)
         else:
-            src += '<table width=80% cellpadding=5 cellspacing=0>\n'
-            src += '<tr align=left>\n'
-            src += '<th><a href="%s?sortby=1">From</a></th>\n' % request.path
-            src += '<th><a href="%s?sortby=2">To</a></th>\n' % request.path
-            src += '<th><a href="%s?sortby=3">Received/Created</a></th>\n' % request.path
-            src += '<th><a href="%s?sortby=4">Subject</a></th>\n' % request.path
-            src += '</tr>\n'
-            for i in range(len(mlist)):
-                msg = mlist[i]
-                mid = msg[0]
-                bgcolor = '#DDDDFF'
-                if myname != msg[1]:
-                    bgcolor = '#DDFFDD'
-                src += '<tr bgcolor="%s">\n' % bgcolor
-                src += '<a href="%s/%s">\n' % (request.path, mid)
-                for m in msg[1:]:
-                    src += '<td>'
-                    src += str(m)
-                    src += '</td>\n'
-                src += '</a>\n'
-                src += '<a href="%s?action=delete&mid=%s"><td>' % (request.path, mid)
-                src += '<img src="%s" /></td></a>\n' % iconurl(request, 'icons/delete-message.png')
-                src += '</tr>\n'
-            src += '</table><br><br>\n'
+            src += '<a href="%s?conversations=1&back=%s">Show messages by date</a><br>\n' % (request.path, back)
+        if self.conversations:
+            src += self._body_conversations(request)
+        else:
+            src += self._body_messages_by_date(request, _reverse)
         return html(request, body=src, title='messages', back=arg(request, 'back', '/'+_PAGE_MENU))
 
     def getChild(self, path, request):
@@ -6422,14 +6493,15 @@ class NewMessagePage(Page):
     pagename = _PAGE_NEW_MESSAGE
     
     def renderPage(self, request):
-        idurls = contacts.getContactsAndCorrespondents()
-        idurls.sort()
+        # idurls = contacts.getContactsAndCorrespondents()
+        correspondents_dict = contacts.getCorrespondentsDict()
+        correspondents_names = sorted(correspondents_dict.keys(), key=lambda k: correspondents_dict[key])
         recipient = arg(request, 'recipient', '')
+        # recipient_nick = arg(request, 'recipientnick', '')
         subject = arg(request, 'subject')
         body = arg(request, 'body')
         action = arg(request, 'action').lower().strip()
         errmsg = ''
-
         if action == 'send':
             if recipient:
                 msgbody = message.MakeMessage(recipient, subject, body)
@@ -6439,7 +6511,6 @@ class NewMessagePage(Page):
                 request.finish()
                 return NOT_DONE_YET
             errmsg = 'need to choose recipient'
-
         src = ''
         src += '<h1>new message</h1>\n'
         if errmsg:
@@ -6449,12 +6520,12 @@ class NewMessagePage(Page):
         src += '<tr><td align=right>'
         src += '<b>To:</b></td>\n'
         src += '<td><select name="recipient">\n'
-        for idurl in ['',] + idurls:
-            name = nameurl.GetName(idurl)
+        for idurl in correspondents_names:
+            nickname = correspondents_dict[idurl]
             src += '<option value="%s"' % idurl
             if idurl == recipient:
                 src += ' selected '
-            src += '>%s</option>\n' % name
+            src += '>%s</option>\n' % nickname
         src += '</select></td>\n'
         src += '<td align=right><a href="%s?back=%s">Add new correspondent</a></td></tr>\n' % (
             '/'+_PAGE_CORRESPONDENTS, request.path)
@@ -6462,8 +6533,9 @@ class NewMessagePage(Page):
         src += '<td colspan=2><input type="text" name="subject" value="%s" size="51" /></td></tr>\n' % subject
         src += '</table>\n'
         src += '<textarea name="body" rows="10" cols="60">%s</textarea><br><br>\n' % body
-        src += '<input type="submit" name="action" value=" Send " /><br>\n'
-        src += '</form>'
+        src += '<input type="submit" name="action" value=" Send " />\n'
+        src += '</form>\n'
+        src += '<br><br><a href="%s">[return]</a>\n' % _PAGE_MESSAGES
         return html(request, body=src, back=_PAGE_MESSAGES)
 
 class CorrespondentsPage(Page):
@@ -6471,21 +6543,8 @@ class CorrespondentsPage(Page):
     
     def created(self):
         self.results = []
+        self.last_nickname = None
     
-#    def _check_name_cb(self, x, request, name):
-#        idurl = 'http://' + settings.IdentityServerName() + '/' + name + '.xml'
-#        contacts.addCorrespondent(idurl)
-#        contacts.saveCorrespondentIDs()
-#        propagate.SendToID(idurl) #, lambda packet: self._ack_handler(packet, request, idurl))
-#        src = self._body(request, '', '%s was found' % name, 'success')
-#        request.write(html_from_args(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU)))
-#        request.finish()
-#
-#    def _check_name_eb(self, x, request, name):
-#        src = self._body(request, name, '%s was not found' % name, 'failed')
-#        request.write(html_from_args(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU)))
-#        request.finish()
-        
     def _nickname_observer_result(self, result, nik, idurl):
         self.results.append((result, nik, idurl))
         SendCommandToGUI('update')
@@ -6493,50 +6552,65 @@ class CorrespondentsPage(Page):
     def _ack_handler(self, ackpacket, info):
         SendCommandToGUI('update')
 
-    def _body(self, request, name, msg, typ):
-        #idurls = contacts.getContactsAndCorrespondents()
+    def _body(self, request, nickname, msg, typ):
         idurls = contacts.getCorrespondentIDs()
         idurls.sort()
         src = ''
         src += '<h1>friends</h1>\n'
         src += '<form action="%s" method="post">\n' % request.path
         src += 'enter user name:<br>\n'
-        src += '<input type="text" name="name" value="%s" size="20" />\n' % name
-        src += '<input type="submit" name="button" value=" check " />\n'
+        src += '<input type="text" name="nickname" value="%s" size="20" />\n' % nickname
+        src += '<input type="submit" name="submit" value=" check " />\n'
         src += '<input type="hidden" name="action" value="check" />\n'
         src += '</form><br><br>\n'
         src += html_message(msg, typ)
+        src += '<table>\n'
         for tupl in self.results:
+            src += '<tr>'
+            result, niknum, idurl = tupl
+            if result == 'finished':
+                src += '<td>search finished</td></tr>\n'
+                break
+            if result == 'not exist':
+                src += '<td><b>%s</b> not exist</td></tr>\n' % niknum
+                break
             try:
-                result, niknum, idurl = tupl
                 nik, num = niknum.rsplit(':', 1)
+                num = int(num)
             except:
                 lg.exc()
-                continue 
-            src += '#d : <br><b>%s</b>' % (num, nik)
+                break
+            src += '<td>' 
+            src += '#%d : <b>%s</b>' % (num, nik)
             if idurl == misc.getLocalID():
-                src += ' - <b>it is me!</b>\n'
+                src += ' - <b>it is me!</b></td></tr>\n'
                 continue
             status = contact_status.isKnown(idurl)
             if not status:
-                status = '?'
+                status = ''
             else:
                 if contact_status.isOnline(idurl):
                     status = 'online'
                 else:
                     status = 'offline'
-            src += ' - %s &nbsp;&nbsp;&nbsp; <font color=gray>%s</font>;' % (
-                str(status), idurl)
+            src += '&nbsp;&nbsp;&nbsp; <font color=gray>%s</font> %s' % (
+                idurl, status)
+            src += '</td><td>\n'
             src += '<form action="%s" method="post">\n' % request.path
-            src += '<input type="submit" name="button" value=" ping " />\n'
+            src += '<input type="submit" name="submit" value=" ping " />\n'
             src += '<input type="hidden" name="action" value="ping" />\n'
-            src += '<input type="hidden" name="idurl" value="%s" />\n' % idurl
+            src += '<input type="hidden" name="pingidurl" value="%s" />\n' % idurl
             src += '</form>\n'
-            src += '<form action="%s" method="post">\n' % request.path
-            src += '<input type="submit" name="button" value=" add " />\n'
-            src += '<input type="hidden" name="action" value="add" />\n'
-            src += '<input type="hidden" name="idurl" value="%s" />\n' % idurl
+            src += '</td><td>\n'
+            src += '<form action="%s" method="post">' % request.path
+            src += '<input type="submit" name="submit" value=" add " />'
+            src += '<input type="hidden" name="action" value="add" />'
+            src += '<input type="hidden" name="addidurl" value="%s" />' % idurl
+            src += '<input type="hidden" name="addnickname" value="%s" />' % nik
             src += '</form>\n'
+            src += '</td>\n'
+            src += '</tr>\n'
+        src += '</table>\n'
         src += '<br>\n'
         if len(idurls) == 0:
             src += '' # '<p>you have no friends</p>\n'
@@ -6562,14 +6636,9 @@ class CorrespondentsPage(Page):
                     if not name:
                         src += '&nbsp;\n'
                         continue
-                    # central_status = central_service.get_user_status(idurl)
-                    central_status = '?'
                     icon = 'icons/offline-user01.png'
-                    state = 'offline'
-                    #if contact_status.isOnline(idurl):
-                    if central_status in ['!', '=']:
+                    if contact_status.isOnline(idurl):
                         icon = 'icons/online-user01.png'
-                        state = 'online '
                     if w >= 5 and len(name) > 10:
                         name = name[0:9] + '<br>' + name[9:]
                     src += '<img src="%s" width=%d height=%d>' % (
@@ -6582,45 +6651,148 @@ class CorrespondentsPage(Page):
                 src += '</tr>\n'
             src += '</table>\n'
         src += '<br><br>\n'
+        src += '<a href="%s">[return]</a>\n' % _PAGE_MESSAGES
         return src
 
     def renderPage(self, request):
         idurls = contacts.getCorrespondentIDs()
         idurls.sort()
         action = arg(request, 'action')
-        idurl = nameurl.UnQuote(arg(request, 'idurl'))
-        name = arg(request, 'name', nameurl.GetName(idurl))
+        nickname = arg(request, 'nickname', self.last_nickname or '')
+        print 'CorrespondentsPage', action, nickname, self.last_nickname, self.results 
+        # idurl = nameurl.UnQuote(arg(request, 'idurl'))
+        # name = arg(request, 'name', nameurl.GetName(idurl))
         msg = ''
         typ = 'info'
         if action == 'check':
-            if not misc.ValidUserName(name):
-                msg = 'incorrect user name'
+            self.last_nickname = nickname
+            if not misc.ValidUserName(nickname):
+                msg = 'incorrect nickname'
                 typ = 'error'
             else:
                 self.results = []
                 from userid import nickname_observer
-                nickname_observer.find_one(name, 
+                nickname_observer.observe_many(nickname, 
                     results_callback=self._nickname_observer_result)
-                msg = 'checking "%s"' % name
+                msg = 'checking <b>%s</b> ...' % nickname
                 typ = 'info'
         elif action == 'remove':
+            self.last_nickname = None
+            self.results = []
+            idurl = nameurl.UnQuote(arg(request, 'idurl'))
+            # name = nameurl.GetName(idurl)
             if idurl in contacts.getCorrespondentIDs():
-                contacts.removeCorrespondent(idurl)
+                nickname = contacts.removeCorrespondent(idurl) or nameurl.GetName(idurl)
                 contacts.saveCorrespondentIDs()
-                msg = '%s were removed from friends list' % name
+                msg = '%s were removed from friends list' % nickname
                 typ = 'success'
                 name = ''
             else:
                 msg = '%s is not your friend' % name
                 typ = 'error'
         elif action == 'ping':
-            propagate.PingContact(arg(request, 'idurl'), self._ack_handler)
+            propagate.PingContact(arg(request, 'pingidurl'), self._ack_handler)
         elif action == 'add':
-            contacts.addCorrespondent(arg(request, 'idurl'))
-            contacts.saveCorrespondentIDs()
-        src = self._body(request, name, msg, typ)
+            self.results = []
+            self.last_nickname = None
+            if not contacts.IsCorrespondent(arg(request, 'addidurl')):
+                contacts.addCorrespondent(arg(request, 'addidurl'), arg(request, 'addnickname'))
+                contacts.saveCorrespondentIDs()
+        src = self._body(request, nickname, msg, typ)
         return html(request, body=src, back=arg(request, 'back', _PAGE_CORRESPONDENTS))
 
+class SetNickNamePage(Page):
+    pagename = _PAGE_SET_NICKNAME
+    
+    def created(self):
+        self.results = []
+        self.holder_result = None
+        self.last_nickname = None
+
+    def _nickname_observer_result(self, result, nik, idurl):
+        self.results.append((result, nik, idurl))
+        SendCommandToGUI('update')
+        
+    def _nickname_holder_result(self, result, key):
+        try:
+            nik, num = key.rsplit(':', 1)
+        except:
+            lg.exc()
+        self.holder_result = (num, nik, result) 
+        SendCommandToGUI('update')
+
+    def renderPage(self, request):
+        current_nickname = settings.uconfig().get('personal.personal-nickname').strip() or misc.getLocalIdentity().getIDName()
+        nickname = arg(request, 'nickname', self.last_nickname or current_nickname)
+        submit = arg(request, 'submit').strip()
+        print 'SetNickNamePage', nickname, submit, current_nickname, self.results, self.holder_result 
+        if submit == 'test':
+            self.results = []
+            self.last_nickname = nickname
+            from userid import nickname_observer
+            nickname_observer.find_one(nickname, 
+                results_callback=self._nickname_observer_result)
+            msg = 'checking <b>%s</b> ...' % nickname
+            typ = 'info'
+        elif submit == 'set':
+            self.results = []
+            self.last_nickname = nickname
+            settings.uconfig().set('personal.personal-nickname', nickname)
+            settings.uconfig().update()
+            nickname_holder.A('set', (nickname, self._nickname_holder_result))
+            msg = 'your nickname is <b>%s</b> now' % nickname
+            typ = 'info'
+        else:
+            msg = ''
+            typ = 'info'
+        src = ''
+        src += '<h1>my nickname</h1>\n'
+        src += '<form action="%s" method="post">\n' % request.path
+        src += 'set your nickname:<br>\n'
+        src += '<input type="text" name="nickname" value="%s" size="20" />\n' % nickname
+        src += '<input type="submit" name="submit" value=" test " />\n'
+        src += '<input type="submit" name="submit" value=" set " />\n'
+        src += '</form><br><br>\n'
+        src += '<table>\n'
+        src += html_message(msg, typ)
+        for tupl in self.results:
+            src += '<tr>'
+            result, niknum, idurl = tupl
+            if result == 'finished':
+                src += '<td>search finished</td></tr>\n'
+                break
+            if result == 'not exist':
+                src += '<td><b>%s</b> not exist</td></tr>\n' % niknum
+                break
+            try:
+                nik, num = niknum.rsplit(':', 1)
+                num = int(num)
+            except:
+                lg.exc()
+                break
+            src += '<td>' 
+            src += '#%d : <b>%s</b>' % (num, nik)
+            if idurl == misc.getLocalID():
+                src += ' - <b>it is me!</b></td></tr>\n'
+                continue
+            status = contact_status.isKnown(idurl)
+            if not status:
+                status = ''
+            else:
+                if contact_status.isOnline(idurl):
+                    status = 'online'
+                else:
+                    status = 'offline'
+            src += '&nbsp;&nbsp;&nbsp; <font color=gray>%s</font> %s' % (
+                idurl, status)
+            src += '</tr>\n'
+        src += '</table>\n'
+        if self.holder_result:
+            src += '#%s : <b>%s</b> - %s' % self.holder_result
+        src += '<br>\n'
+        return html(request, body=src, back=arg(request, 'back', _PAGE_MESSAGES))
+
+#------------------------------------------------------------------------------ 
 
 class ShedulePage(Page):
     pagename = _PAGE_SHEDULE

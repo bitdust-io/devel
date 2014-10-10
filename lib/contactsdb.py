@@ -24,7 +24,7 @@ import bpio
 
 _customerids = []      # comes from settings.CustomerIDsFilename() 
 _supplierids = []      # comes from settings.SupplierIDsFilename()  
-_correspondentids = [] # comes from settings.CorrespondentIDsFilename()
+_correspondents = []   # comes from settings.CorrespondentIDsFilename()
 
 #-------------------------------------------------------------------------------
 
@@ -58,14 +58,20 @@ def correspondents():
     """
     Return list of correspondent ID's.
     """
-    global _correspondentids
-    return _correspondentids
+    global _correspondents
+    return _correspondents
+
+
+def correspondents_ids():
+    global _correspondents
+    return map(lambda tupl: tupl[0], _correspondents) 
+
 
 def contacts_full():
     """
     Return a union of suppliers, customers and correspondents. 
     """
-    return list(set(contacts() + correspondents()))
+    return list(set(contacts() + correspondents_ids()))
 
 def set_suppliers(idlist):
     """
@@ -89,8 +95,8 @@ def set_correspondents(idlist):
     """
     Set correspondents list.
     """
-    global _correspondentids
-    _correspondentids = list(idlist)
+    global _correspondents
+    _correspondents = list(idlist)
 
 def add_customer(idurl):
     """
@@ -108,23 +114,24 @@ def add_supplier(idurl):
     _supplierids.append(idurl)
     return len(_supplierids) - 1
 
-def add_correspondent(idurl):
+def add_correspondent(idurl, nickname=''):
     """
     Add correspondent and return its position in the list.
     """
-    global _correspondentids
-    _correspondentids.append(idurl)
-    return len(_correspondentids) - 1
+    global _correspondents
+    _correspondents.append((idurl, nickname))
+    return len(_correspondents) - 1
 
 def remove_correspondent(idurl):
     """
     Remove correspondent with given ID and return True if success.
     """
-    global _correspondentids
-    if idurl in _correspondentids:
-        _correspondentids.remove(idurl)
-        return True
-    return False
+    global _correspondents
+    for tupl in _correspondents:
+        if idurl == tupl[0]:
+            _correspondents.remove(tupl)
+            return tupl[1]
+    return None
 
 def clear_suppliers():
     """
@@ -144,8 +151,8 @@ def clear_correspondents():
     """
     Remove all correspondents.
     """
-    global _correspondentids
-    _correspondentids = []
+    global _correspondents
+    _correspondents = []
 
 #-------------------------------------------------------------------------------
 
@@ -165,7 +172,7 @@ def is_correspondent(idurl):
     """
     Return True if given ID is found in correspondents list. 
     """
-    return idurl in correspondents()
+    return idurl in correspondents_ids()
 
 def num_customers():
     """
@@ -251,7 +258,7 @@ def save_correspondents(path):
     """
     Write current correspondents list on the disk, ``path`` is a file path to save.
     """
-    bpio._write_list(path, correspondents())
+    bpio._write_list(path, map(lambda t: "%s %s" % t, correspondents()))
 
 def load_suppliers(path):
     """
@@ -278,6 +285,10 @@ def load_correspondents(path):
     lst = bpio._read_list(path)
     if lst is None:
         lst = list()
+    for i in xrange(len(lst)):
+        lst[i] = tuple(lst[i].split(' ', 1))
+        if len(lst[i]) < 2:
+            lst[i] = (lst[i][0], '')
     set_correspondents(lst)
 
 

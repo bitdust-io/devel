@@ -136,16 +136,12 @@ def Message(request):
     SaveMessage(clearmessage)
     if OnIncommingMessageFunc is not None:
         OnIncommingMessageFunc(request, SplitMessage(clearmessage))
-    # transport_control.SendAck(request)
     p2p_service.SendAck(request)
 
-def MakeMessage(to, subj, body, dt=datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")):
+def MakeMessage(to, subj, body, 
+                dt=datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")):
     lg.out(6, "message.MakeMessage to " + to)
-    msg = ( misc.getLocalID(),
-            to,
-            subj,
-            dt,
-            body)
+    msg = ( misc.getLocalID(), to, subj, dt, body )
     return '\n'.join(msg)
 
 def SplitMessage(clearmessage):
@@ -224,15 +220,32 @@ def ListAllMessages():
         if not filename.endswith('.message'):
             continue
         msgpath = os.path.join(settings.getMessagesDir(), filename)
-        # msgpath = settings.getMessagesDir() + os.sep + filename
         if not os.path.exists(msgpath):
             continue
         msg = LoadMessage(msgpath)
-        messageuid = filename.split('.')[0]
-        msgtupple = (messageuid, nameurl.GetName(msg[0]), nameurl.GetName(msg[1]), msg[3], msg[2])
+        msgtupple = (filename.split('.')[0], msg[0], msg[1], msg[3], msg[2])
         mlist.append(msgtupple)
         i += 1
     return mlist
+
+def DictAllConversations():
+    cdict = {}
+    i = 0
+    for filename in os.listdir(settings.getMessagesDir()):
+        if not filename.endswith('.message'):
+            continue
+        msgpath = os.path.join(settings.getMessagesDir(), filename)
+        if not os.path.exists(msgpath):
+            continue
+        msg = LoadMessage(msgpath)
+        collocutor = msg[0] if msg[0] != misc.getLocalID() else msg[1]
+        key = collocutor + ' ' + msg[2]  
+        if not cdict.has_key(key):
+            cdict[key] = []
+        dt = time.mktime(time.strptime(msg[3], "%Y/%m/%d %I:%M:%S %p"))
+        msgtupple = (filename.split('.')[0], dt, msg[0], msg[1], msg[2])
+        cdict[key].append(msgtupple)
+    return cdict
 
 def SortMessagesList(mlist, sort_by_column):
     order = {}

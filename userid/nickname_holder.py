@@ -17,8 +17,7 @@ EVENTS:
     * :red:`dht-read-success`
     * :red:`dht-write-failed`
     * :red:`dht-write-success`
-    * :red:`init`
-    * :red:`set-new-nickname`
+    * :red:`set`
     * :red:`timer-5min`
 """
 
@@ -69,29 +68,27 @@ class NicknameHolder(automat.Automat):
         self.nickname = None
         self.key = None
         self.dht_read_defer = None
+        self.result_callback = None
 
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'set' :
                 self.state = 'DHT_READ'
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
         #---READY---
         elif self.state == 'READY':
-            if event == 'set-new-nickname' or event == 'timer-5min' :
+            if event == 'set' or event == 'timer-5min' :
                 self.state = 'DHT_READ'
+                self.doDHTEraseKey(arg)
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
-            if event == 'set-new-nickname' :
-                self.doSetNickname(arg)
-                self.doMakeKey(arg)
-                self.doDHTReadKey(arg)
-            elif event == 'dht-read-success' and self.isMyOwnKey(arg) :
+            if event == 'dht-read-success' and self.isMyOwnKey(arg) :
                 self.state = 'READY'
                 self.doReportNicknameOwn(arg)
             elif event == 'dht-read-failed' :
@@ -102,14 +99,13 @@ class NicknameHolder(automat.Automat):
                 self.doReportNicknameExist(arg)
                 self.doNextKey(arg)
                 self.doDHTReadKey(arg)
-        #---DHT_WRITE---
-        elif self.state == 'DHT_WRITE':
-            if event == 'set-new-nickname' :
-                self.state = 'DHT_READ'
+            elif event == 'set' :
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'dht-write-failed' and self.Attempts>5 :
+        #---DHT_WRITE---
+        elif self.state == 'DHT_WRITE':
+            if event == 'dht-write-failed' and self.Attempts>5 :
                 self.state = 'READY'
                 self.Attempts=0
                 self.doReportNicknameFailed(arg)
@@ -122,6 +118,11 @@ class NicknameHolder(automat.Automat):
                 self.state = 'READY'
                 self.Attempts=0
                 self.doReportNicknameRegistered(arg)
+            elif event == 'set' :
+                self.state = 'DHT_READ'
+                self.doSetNickname(arg)
+                self.doMakeKey(arg)
+                self.doDHTReadKey(arg)
         return None
 
     def isMyOwnKey(self, arg):
@@ -134,7 +135,14 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        self.nickname = arg
+        if arg is None:
+            a, c = None, None
+        else:
+            a, c = arg
+        self.nickname = a or \
+                        settings.uconfig().get('personal.personal-nickname').strip() or \
+                        misc.getLocalIdentity().getIDName()
+        self.result_callback = c
 
     def doMakeKey(self, arg):
         """
@@ -176,29 +184,43 @@ class NicknameHolder(automat.Automat):
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
+    def doDHTEraseKey(self, arg):
+        """
+        Action method.
+        """
+        dht_service.delete_key(self.key)
+        
     def doReportNicknameOwn(self, arg):
         """
         Action method.
         """
         lg.out(8, 'nickname_holder.doReportNicknameOwn : %s' % self.key)
+        if self.result_callback:
+            self.result_callback('my own', self.key)
 
     def doReportNicknameRegistered(self, arg):
         """
         Action method.
         """
         lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
+        if self.result_callback:
+            self.result_callback('registered', self.key)
 
     def doReportNicknameExist(self, arg):
         """
         Action method.
         """
         lg.out(8, 'nickname_holder.doReportNicknameExist : %s' % self.key)
+        if self.result_callback:
+            self.result_callback('exist', self.key)
 
     def doReportNicknameFailed(self, arg):
         """
         Action method.
         """
         lg.out(8, 'nickname_holder.doReportNicknameFailed : %s' % self.key)
+        if self.result_callback:
+            self.result_callback('failed', self.key)
 
     def _dht_read_result(self, value):
         self.dht_read_defer = None

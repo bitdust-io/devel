@@ -487,6 +487,13 @@ def LegalUsernameChars():
     """
     return set("abcdefghijklmnopqrstuvwxyz0123456789-_")
 
+def LegalNickNameChars():
+    """
+    A set of correct chars that can be used for user account names.
+    """
+    return set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,{}[]()@!$^&*=+")
+                
+
 #------------------------------------------------------------------------------ 
 #--- FOLDERS ------------------------------------------------------------------
 #------------------------------------------------------------------------------ 

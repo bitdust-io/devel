@@ -232,7 +232,12 @@ def getCorrespondentIDs():
     """
     Return a list of correspondents ID's.
     """
-    return contactsdb.correspondents()
+    return contactsdb.correspondents_ids()
+
+def getCorrespondentsDict():
+    """
+    """
+    return dict(contactsdb.correspondents())
 
 def getContactsAndCorrespondents():
     """
@@ -368,11 +373,11 @@ def saveCorrespondentIDs():
 
 #-------------------------------------------------------------------------------
 
-def addCorrespondent(idurl):
+def addCorrespondent(idurl, nickname=''):
     """
     Add a new correspondent.
     """
-    return contactsdb.add_correspondent(idurl)
+    return contactsdb.add_correspondent(idurl, nickname)
     
 def removeCorrespondent(idurl):
     """

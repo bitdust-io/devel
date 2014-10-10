@@ -103,7 +103,7 @@ class NicknameObserver(automat.Automat):
                 self.doDHTReadKey(arg)
             elif event == 'dht-read-failed' and not self.isMoreAttemptsNeeded(arg) :
                 self.state = 'FINISHED'
-                self.doReportNicknameNotExist(arg)
+                self.doReportFinished(arg)
                 self.doDestroyMe(arg)
         #---DHT_FIND---
         elif self.state == 'DHT_FIND':

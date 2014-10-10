@@ -64,14 +64,17 @@ from lib import bpio
 from lib import net_misc
 from lib import settings
 from lib import misc
+from lib import udp
 
 from transport import gate
+
 from dht import dht_service
-from lib import udp
+
 from stun import stun_server
 from stun import stun_client
 
 from userid import id_server
+from userid import nickname_holder
 
 import p2p_connector
 import shutdowner
@@ -260,6 +263,7 @@ class NetworkConnector(Automat):
             id_server.A('start', (settings.getIdServerWebPort(), 
                                   settings.getIdServerTCPPort()))  
         dht_service.connect()
+        nickname_holder.A('set', None)
         global _TransportsStarting
         _TransportsStarting = gate.start()
         if len(_TransportsStarting) == 0:

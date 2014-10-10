@@ -476,6 +476,19 @@ def ValidUserName(username):
         return False
     return True
 
+def ValidNickName(username):
+    """
+    A method to validate account name entered by user.
+    """
+    if len(username) < settings.MinimumUsernameLength():
+        return False
+    if len(username) > settings.MaximumUsernameLength():
+        return False
+    for c in username:
+        if c not in settings.LegalNickNameChars():
+            return False
+    return True
+
 def ValidEmail(email, full_check=True):
     """
     A method to validate typed email address.
