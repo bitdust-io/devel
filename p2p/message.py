@@ -197,11 +197,11 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
     lg.out(6, "message.SendMessage to: " + str(RemoteID) )
     #TODO ERROR HERE (return Defer)
     if not identitycache.scheduleForCaching(RemoteID):
-        lg.out(1, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
+        lg.out(2, "message.SendMessage ERROR. Can't find identity: " + str(RemoteID))
         return
-    RemoteIdentity=identitycache.FromCache(RemoteID)
-    if RemoteIdentity == '':
-        lg.out(1, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
+    RemoteIdentity = identitycache.FromCache(RemoteID)
+    if not RemoteIdentity:
+        lg.out(2, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
         return
     Amessage = MessageClass(RemoteIdentity, messagebody)
     MyID = misc.getLocalID()
@@ -210,7 +210,6 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
     Payload = misc.ObjectToString(Amessage)
     lg.out(6, "message.SendMessage  about to send to " + RemoteID)
     result = signed.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
-    # transport_control.outboxAck(result)
     gate.outbox(result)
 
 def ListAllMessages():

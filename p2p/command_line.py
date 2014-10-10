@@ -929,7 +929,6 @@ def cmd_message(opts, args, overDict):
         url = webcontrol._PAGE_NEW_MESSAGE + '?conversations=0&action=send&recipient=%s&subject=%s&body=%s' % (
             misc.pack_url_param(args[2]), misc.pack_url_param(args[3]), 
             misc.pack_url_param(args[4]))
-        print url
         run_url_command(url).addCallback(print_and_stop)
         reactor.run()
         return 0

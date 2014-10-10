@@ -165,6 +165,11 @@ Commands:
   cache                 show list of cached identities
   
   cache clear           erase all identities from the cache 
+
+  messages list         list all messages
+
+  message send <nickname or idurl> <subject> <body>
+                        send a message to given user
   
   set <option> [value]  to modify program setting
 

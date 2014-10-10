@@ -6606,7 +6606,6 @@ class NewMessagePage(Page):
         body = misc.unpack_url_param(arg(request, 'body'), '')
         action = arg(request, 'action').lower().strip()
         errmsg = ''
-        print 'NewMessagePage', action, recipient, subject, body
         if action == 'send':
             if recipient:
                 msgbody = message.MakeMessage(recipient, subject, body)
