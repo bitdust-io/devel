@@ -20,10 +20,10 @@
     <ROW Property="InstanceId" Value="#0"/>
     <ROW Property="Manufacturer" Value="BitPie.NET Inc."/>
     <ROW Property="MyUserHomeDir" Value="?"/>
-    <ROW Property="ProductCode" Value="1033:{E168475C-A4C7-48DB-9D32-2E4291A3E49D} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{00E89916-DA99-4C89-AC30-B38540471989} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="BitPie.NET (testing release)"/>
-    <ROW Property="ProductVersion" Value="0.1.5.697" Type="32"/>
+    <ROW Property="ProductVersion" Value="0.1.6.709" Type="32"/>
     <ROW Property="RUNAPPLICATION" Value="1" Type="4"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{1D2E14B7-8093-406E-9EDD-CEE00645A486}"/>
@@ -102,6 +102,7 @@
     <ROW Directory="sqlite3_Dir" Directory_Parent="bin_Dir" DefaultDir="sqlite3" DirectoryOptions="3"/>
     <ROW Directory="ssh_Dir" Directory_Parent="conch_Dir" DefaultDir="ssh" DirectoryOptions="3"/>
     <ROW Directory="stun_Dir" Directory_Parent="bin_Dir" DefaultDir="stun" DirectoryOptions="3"/>
+    <ROW Directory="tcp_Dir" Directory_Parent="transport_Dir" DefaultDir="tcp" DirectoryOptions="3"/>
     <ROW Directory="temp_Dir" Directory_Parent="APPDIR" DefaultDir="temp"/>
     <ROW Directory="transport_Dir" Directory_Parent="bin_Dir" DefaultDir="TRANSP~1|transport" DirectoryOptions="3"/>
     <ROW Directory="twisted_Dir" Directory_Parent="bin_Dir" DefaultDir="twisted" DirectoryOptions="3"/>
@@ -202,6 +203,7 @@
     <ROW Component="sqlite3.dll" ComponentId="{792D15E4-AA89-4489-B064-C0068299EAA5}" Directory_="bin_Dir" Attributes="0" KeyPath="sqlite3.dll"/>
     <ROW Component="stun_client.pyo" ComponentId="{76E380E6-89BD-478B-9B71-B98D495667F8}" Directory_="stun_Dir" Attributes="0" KeyPath="stun_client.pyo" Type="0"/>
     <ROW Component="tar.exe" ComponentId="{B95E4C9D-D4D6-4859-8F63-3682C8E50C72}" Directory_="bin_Dir" Attributes="0" KeyPath="tar.exe"/>
+    <ROW Component="tcp_connection.pyo" ComponentId="{03604CA8-3A84-43D6-BC63-BD727E27E200}" Directory_="tcp_Dir" Attributes="0" KeyPath="tcp_connection.pyo_1" Type="0"/>
     <ROW Component="udp_connector.pyo" ComponentId="{82AC5DBC-CAC0-41F7-ADE2-D6B2DF127C67}" Directory_="udp_Dir" Attributes="0" KeyPath="udp_connector.pyo" Type="0"/>
     <ROW Component="upnpc.exe" ComponentId="{744A9490-019B-44CD-8191-A666A6D048D4}" Directory_="bin_Dir" Attributes="0" KeyPath="upnpc.exe"/>
     <ROW Component="util.pyo" ComponentId="{2A0E0ABB-067C-4947-B027-B5CE816BAB2D}" Directory_="ctypes_Dir" Attributes="0" KeyPath="util.pyo" Type="0"/>
@@ -215,7 +217,7 @@
     <ROW Component="xmlrpc_server.pyo" ComponentId="{E1C8A2BB-4169-44C2-A40E-0AE4D5552ED0}" Directory_="interface_Dir" Attributes="0" KeyPath="xmlrpc_server.pyo" Type="0"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
-    <ROW Feature="MainFeature" Title="MainFeature" Description="Distributed backup network" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="AES.pyo Arial_Narrow.ttf DSA.pyo EasyDialogsResources.pyo FortunaAccumulator.pyo KDF.pyo LIBEAY32.dll MyUserHomeDir SHORTCUTDIR SSLEAY32.dll __init__.pyo __init__.pyo_1 __init__.pyo_2 __init__.pyo_3 __init__.pyo_4 __init__.pyo_5 __init__.pyo_6 __init__.pyo_7 __init__.pyo_8 _controls.pyo _version.pyo abc.pyo abstract.pyo adapter.pyo addbackup.png aliases.pyo asn1.pyo automat.pyo backup.pyo banana.pyo bandwidth.pyo base.pyo base64mime.pyo basic.pyo bitpie.exe bpgui.exe bppipe.exe bpstarter.exe bptester.exe bpworker.exe build.pyo client.pyo combo.pyo common.pyo compat.pyo constants.pyo copyright.pyo credentials.pyo crefutil.pyo crypto.pyo dbapi2.pyo debug.pyo decoder.pyo defcache.pyo dht_service.pyo dialog.pyo domreg.pyo dtuple.pyo dyld.pyo eccmap.pyo encrypted.pyo errors.pyo expat.pyo expatreader.pyo fallback.pyo form.pyo gzip.exe hashalgo.pyo identity.pyo lg.pyo list.pyo msvcm90.dll msvcp90.dll msvcr90.dll octets.pyo pct_warnings.pyo ppauto.pyo python27.dll pythoncom27.dll pywintypes27.dll random.pyo repo shell.pyo sqlite3.dll stun_client.pyo tar.exe udp_connector.pyo upnpc.exe util.pyo w9xpopen.exe wget.exe wxbase28uh_net_vc.dll wxbase28uh_vc.dll wxmsw28uh_adv_vc.dll wxmsw28uh_core_vc.dll wxmsw28uh_html_vc.dll xmlrpc_server.pyo"/>
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Distributed backup network" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="AES.pyo Arial_Narrow.ttf DSA.pyo EasyDialogsResources.pyo FortunaAccumulator.pyo KDF.pyo LIBEAY32.dll MyUserHomeDir SHORTCUTDIR SSLEAY32.dll __init__.pyo __init__.pyo_1 __init__.pyo_2 __init__.pyo_3 __init__.pyo_4 __init__.pyo_5 __init__.pyo_6 __init__.pyo_7 __init__.pyo_8 _controls.pyo _version.pyo abc.pyo abstract.pyo adapter.pyo addbackup.png aliases.pyo asn1.pyo automat.pyo backup.pyo banana.pyo bandwidth.pyo base.pyo base64mime.pyo basic.pyo bitpie.exe bpgui.exe bppipe.exe bpstarter.exe bptester.exe bpworker.exe build.pyo client.pyo combo.pyo common.pyo compat.pyo constants.pyo copyright.pyo credentials.pyo crefutil.pyo crypto.pyo dbapi2.pyo debug.pyo decoder.pyo defcache.pyo dht_service.pyo dialog.pyo domreg.pyo dtuple.pyo dyld.pyo eccmap.pyo encrypted.pyo errors.pyo expat.pyo expatreader.pyo fallback.pyo form.pyo gzip.exe hashalgo.pyo identity.pyo lg.pyo list.pyo msvcm90.dll msvcp90.dll msvcr90.dll octets.pyo pct_warnings.pyo ppauto.pyo python27.dll pythoncom27.dll pywintypes27.dll random.pyo repo shell.pyo sqlite3.dll stun_client.pyo tar.exe tcp_connection.pyo udp_connector.pyo upnpc.exe util.pyo w9xpopen.exe wget.exe wxbase28uh_net_vc.dll wxbase28uh_vc.dll wxmsw28uh_adv_vc.dll wxmsw28uh_core_vc.dll wxmsw28uh_html_vc.dll xmlrpc_server.pyo"/>
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
@@ -288,7 +290,7 @@
     <ROW File="_RSA.pyo" Component_="DSA.pyo" FileName="_RSA.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\PublicKey\_RSA.pyo" SelfReg="false" NextFile="_slowmath.pyo"/>
     <ROW File="_SHA256.pyo" Component_="hashalgo.pyo" FileName="_SHA256.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Hash\_SHA256.pyo" SelfReg="false" NextFile="__init__.pyo_2"/>
     <ROW File="_UserFriendlyRNG.pyo" Component_="random.pyo" FileName="_USERF~1.PYO|_UserFriendlyRNG.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Random\_UserFriendlyRNG.pyo" SelfReg="false" NextFile="__init__.pyo_7"/>
-    <ROW File="__future__.pyo" Component_="abc.pyo" FileName="__FUTU~1.PYO|__future__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\__future__.pyo" SelfReg="false"/>
+    <ROW File="__future__.pyo" Component_="abc.pyo" FileName="__FUTU~1.PYO|__future__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\__future__.pyo" SelfReg="false" NextFile="tcp_connection.pyo_1"/>
     <ROW File="__init__.pyo" Component_="encrypted.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\crypt\__init__.pyo" SelfReg="false" NextFile="AES.pyo"/>
     <ROW File="__init__.pyo_1" Component_="AES.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Cipher\__init__.pyo" SelfReg="false" NextFile="hashalgo.pyo"/>
     <ROW File="__init__.pyo_10" Component_="dyld.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\ctypes\macholib\__init__.pyo" SelfReg="false" NextFile="util.pyo"/>
@@ -352,6 +354,7 @@
     <ROW File="__init__.pyo_63" Component_="__init__.pyo_7" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\xml\__init__.pyo" SelfReg="false" NextFile="xmllib.pyo"/>
     <ROW File="__init__.pyo_64" Component_="adapter.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\interface\__init__.pyo" SelfReg="false" NextFile="__init__.pyo_65"/>
     <ROW File="__init__.pyo_65" Component_="__init__.pyo_8" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\__init__.pyo" SelfReg="false" NextFile="zope.interface._zope_interface_coptimizations.pyd"/>
+    <ROW File="__init__.pyo_66" Component_="tcp_connection.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp\__init__.pyo" SelfReg="false" NextFile="nickname_holder.pyo"/>
     <ROW File="__init__.pyo_7" Component_="random.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Random\__init__.pyo" SelfReg="false" NextFile="asn1.pyo"/>
     <ROW File="__init__.pyo_8" Component_="asn1.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Util\__init__.pyo" SelfReg="false" NextFile="__init__.pyo_9"/>
     <ROW File="__init__.pyo_9" Component_="pct_warnings.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\__init__.pyo" SelfReg="false" NextFile="Crypto.Cipher._AES.pyd"/>
@@ -811,6 +814,8 @@
     <ROW File="network_transport.pyo" Component_="bandwidth.pyo" FileName="NETWOR~1.PYO|network_transport.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\network_transport.pyo" SelfReg="false" NextFile="packet_in.pyo"/>
     <ROW File="networksettings.png" Component_="addbackup.png" FileName="NETWOR~1.PNG|network-settings.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\network-settings.png" SelfReg="false" NextFile="network24x24.png"/>
     <ROW File="new.pyo" Component_="abc.pyo" FileName="new.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\new.pyo" SelfReg="false" NextFile="ntpath.pyo"/>
+    <ROW File="nickname_holder.pyo" Component_="identity.pyo" FileName="NICKNA~1.PYO|nickname_holder.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\userid\nickname_holder.pyo" SelfReg="false" NextFile="nickname_observer.pyo"/>
+    <ROW File="nickname_observer.pyo" Component_="identity.pyo" FileName="NICKNA~2.PYO|nickname_observer.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\userid\nickname_observer.pyo" SelfReg="false"/>
     <ROW File="node.pyo" Component_="constants.pyo" FileName="node.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\dht\entangled\kademlia\node.pyo" SelfReg="false" NextFile="protocol.pyo"/>
     <ROW File="node.pyo_1" Component_="dtuple.pyo" FileName="node.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\dht\entangled\node.pyo" SelfReg="false" NextFile="__init__.pyo_13"/>
     <ROW File="nonblocking.pyo" Component_="automat.pyo" FileName="NONBLO~1.PYO|nonblocking.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\lib\nonblocking.pyo" SelfReg="false" NextFile="packetid.pyo"/>
@@ -954,7 +959,7 @@
     <ROW File="states.ico" Component_="addbackup.png" FileName="states.ico" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\states.ico" SelfReg="false" NextFile="states321.png"/>
     <ROW File="states321.png" Component_="addbackup.png" FileName="STATES~1.PNG|states32-1.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\states32-1.png" SelfReg="false" NextFile="storage01.png"/>
     <ROW File="static.pyo" Component_="client.pyo" FileName="static.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\web\static.pyo" SelfReg="false" NextFile="template.pyo"/>
-    <ROW File="stats.pyo" Component_="bandwidth.pyo" FileName="stats.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\stats.pyo" SelfReg="false" NextFile="tcp_connection.pyo"/>
+    <ROW File="stats.pyo" Component_="bandwidth.pyo" FileName="stats.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\stats.pyo" SelfReg="false" NextFile="udp_connector.pyo"/>
     <ROW File="status.pyo" Component_="list.pyo" FileName="status.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\pywin\dialogs\status.pyo" SelfReg="false" NextFile="__init__.pyo_35"/>
     <ROW File="stdio.pyo" Component_="abstract.pyo" FileName="stdio.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\internet\stdio.pyo" SelfReg="false" NextFile="task.pyo"/>
     <ROW File="storage01.png" Component_="addbackup.png" FileName="STORAG~1.PNG|storage01.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\storage01.png" SelfReg="false" NextFile="tools24x24.png"/>
@@ -979,10 +984,10 @@
     <ROW File="tarfile.pyo" Component_="abc.pyo" FileName="tarfile.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\tarfile.pyo" SelfReg="false" NextFile="tempfile.pyo"/>
     <ROW File="task.pyo" Component_="abstract.pyo" FileName="task.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\internet\task.pyo" SelfReg="false" NextFile="tcp.pyo"/>
     <ROW File="tcp.pyo" Component_="abstract.pyo" FileName="tcp.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\internet\tcp.pyo" SelfReg="false" NextFile="threads.pyo"/>
-    <ROW File="tcp_connection.pyo" Component_="bandwidth.pyo" FileName="TCP_CO~1.PYO|tcp_connection.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp_connection.pyo" SelfReg="false" NextFile="tcp_interface.pyo"/>
-    <ROW File="tcp_interface.pyo" Component_="bandwidth.pyo" FileName="TCP_IN~1.PYO|tcp_interface.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp_interface.pyo" SelfReg="false" NextFile="tcp_node.pyo"/>
-    <ROW File="tcp_node.pyo" Component_="bandwidth.pyo" FileName="tcp_node.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp_node.pyo" SelfReg="false" NextFile="tcp_stream.pyo"/>
-    <ROW File="tcp_stream.pyo" Component_="bandwidth.pyo" FileName="TCP_ST~1.PYO|tcp_stream.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp_stream.pyo" SelfReg="false" NextFile="udp_connector.pyo"/>
+    <ROW File="tcp_connection.pyo_1" Component_="tcp_connection.pyo" FileName="TCP_CO~1.PYO|tcp_connection.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp\tcp_connection.pyo" SelfReg="false" NextFile="tcp_interface.pyo_1"/>
+    <ROW File="tcp_interface.pyo_1" Component_="tcp_connection.pyo" FileName="TCP_IN~1.PYO|tcp_interface.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp\tcp_interface.pyo" SelfReg="false" NextFile="tcp_node.pyo_1"/>
+    <ROW File="tcp_node.pyo_1" Component_="tcp_connection.pyo" FileName="tcp_node.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp\tcp_node.pyo" SelfReg="false" NextFile="tcp_stream.pyo_1"/>
+    <ROW File="tcp_stream.pyo_1" Component_="tcp_connection.pyo" FileName="TCP_ST~1.PYO|tcp_stream.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp\tcp_stream.pyo" SelfReg="false" NextFile="__init__.pyo_66"/>
     <ROW File="tempfile.pyo" Component_="abc.pyo" FileName="tempfile.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\tempfile.pyo" SelfReg="false" NextFile="textwrap.pyo"/>
     <ROW File="template.pyo" Component_="client.pyo" FileName="template.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\web\template.pyo" SelfReg="false" NextFile="util.pyo_2"/>
     <ROW File="text_file.pyo" Component_="errors.pyo" FileName="TEXT_F~1.PYO|text_file.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\distutils\text_file.pyo" SelfReg="false" NextFile="__init__.pyo_15"/>
