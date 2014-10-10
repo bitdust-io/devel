@@ -1,9 +1,9 @@
-2014-08-20 Veselin Penev <veselin@bitpie.net>
+  2014-08-20 Veselin Penev <veselin@bitpie.net>
 
     * new tray icons for Microsoft Windows
     
     
-2014-10-10 Veselin Penev <veselin@bitpie.net>
+  2014-10-10 Veselin Penev <veselin@bitpie.net>
 
     * switched on a new imporved UDP transport - can use UDP to transfer packets now
     * upgrade messaging service - safe p2p encrypted chat 
