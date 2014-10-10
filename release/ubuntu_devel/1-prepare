@@ -43,7 +43,7 @@ cp debian/rules workspace/debian/
 cp debian/install workspace/debian/
 python -c "import sys;src=open(sys.argv[1]).read();src=src.replace('{version}',sys.argv[2]);open(sys.argv[1],'w').write(src);" workspace/debian/control $version
 cp debian/changelog workspace/debian/
-python -c "import sys,time;src=open(sys.argv[1]).read();src=src.replace('{version}',sys.argv[2]);src=src.replace('{date}',time.strftime('%a, %d %b %Y %H:%M:%S'));src=src.replace('{changelog}',open('../../CHANGELOG.txt').read());open(sys.argv[1],'w').write(src);" workspace/debian/changelog $version
+python -c "import sys,time;src=open(sys.argv[1]).read();src=src.replace('{version}',sys.argv[2]);src=src.replace('{date}',time.strftime('%a, %d %b %Y %H:%M:%S')); chlg=open('../../CHANGELOG.txt').read(); chlg=chlg[chlg.rfind('Veselin Penev <veselin@bitpie.net>')-12:]; src=src.replace('{changelog}',chlg); open(sys.argv[1],'w').write(src);" workspace/debian/changelog $version
 cp debian/preinst workspace/debian
 cp debian/postinst workspace/debian
 cp debian/prerm workspace/debian
