@@ -793,7 +793,7 @@ def OnListCustomers():
         
 # msg is (sender, to, subject, dt, body)
 def OnIncomingMessage(packet, msg):
-    lg.out(6, 'webcontrol.OnIncomingMessage %r' % msg)
+    lg.out(6, 'webcontrol.OnIncomingMessage %r' % str(msg))
     if currentVisiblePageName() in [ _PAGE_MESSAGES, _PAGE_CONVERSATION ]:
         SendCommandToGUI('update')
 
@@ -6358,13 +6358,13 @@ class MessagePage(Page):
         src = ''
         if msg[0] == misc.getLocalID():
             recipient = msg[1]
-            nickfrom = settings.getNickName()
+            nickfrom = settings.getNickName() or nameurl.GetName(misc.getLocalID())
             nickto = nicks.get(msg[1], nameurl.GetName(msg[1]))
             src += '<h1>message to %s</h1>\n' % nickto 
         else:
             recipient = msg[0]
             nickfrom = nicks.get(msg[0], nameurl.GetName(msg[0]))
-            nickto = settings.getNickName()
+            nickto = settings.getNickName() or nameurl.GetName(misc.getLocalID())
             src += '<h1>message from %s</h1>\n' % nickfrom
         src += '<table width=90%><tr><td align=center>'
         src += '<table>\n'
@@ -6419,11 +6419,11 @@ class ConversationPage(Page):
             if msg[2] == self.recipient:
                 align = 'left'
                 fromuser = self.recipient_nickname
-                touser = settings.getNickName() 
+                touser = settings.getNickName() or nameurl.GetName(misc.getLocalID()) 
                 bgcolor = '#DDDDFF'
             else:
                 align = 'right'
-                fromuser = settings.getNickName()
+                fromuser = settings.getNickName() or nameurl.GetName(misc.getLocalID())
                 touser = self.recipient_nickname
                 bgcolor = '#DDFFDD'
             src += '<tr><td align=%s>\n' % (align)
@@ -6456,8 +6456,8 @@ class MessagesPage(Page):
         self.conversations = True
 
     def _body_conversations(self, request):
-        myid = misc.getLocalID()
         nicks = contacts.getCorrespondentsDict()
+        nicks[misc.getLocalID()] = settings.getNickName() or nameurl.GetName(misc.getLocalID())
         cdict = message.DictAllConversations()
         conversations_list = cdict.keys()
         src = ''
@@ -6503,7 +6503,7 @@ class MessagesPage(Page):
     def _body_messages_by_date(self, request, reverse_order):
         myid = misc.getLocalID()
         nicks = contacts.getCorrespondentsDict()
-        nicks[misc.getLocalID()] = settings.getNickName()
+        nicks[misc.getLocalID()] = settings.getNickName() or nameurl.GetName(misc.getLocalID())
         mlist = message.ListAllMessages()
         mlist.sort(key=lambda item: item[self.sortby], reverse=reverse_order)
         src = ''
