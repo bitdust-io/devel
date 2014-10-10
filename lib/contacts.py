@@ -282,6 +282,14 @@ def getCorrespondent(ID):
         return identitycache.FromCache(ID)
     return ''
 
+def getCorrespondentNickname(correspondent_idurl):
+    """
+    """
+    for idurl, nickname in contactsdb.correspondents():
+        if idurl == correspondent_idurl:
+            return nickname
+    return ''
+
 def isKnown(idurl):
     """
     Return True if this is a known ID.

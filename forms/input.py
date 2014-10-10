@@ -346,7 +346,7 @@ class TextAreaInput(wx.TextCtrl, FormControlMixin):
             src = parser.GetSource()[tag.GetBeginPos():tag.GetEndPos1()]
         else:
             src = ''
-        self.SetFont(wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT))
+        # self.SetFont(wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT))
         self.SetValue(src)
         cols = int(GetParam(tag, "COLS", 22))
         width = int(float(self.GetCharWidth()) * cols)

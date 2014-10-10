@@ -1573,6 +1573,17 @@ def getEmergencyMethods():
         'fax',
         'other',)
 
+def getNickName():
+    """
+    """
+    return uconfig('personal.personal-nickname').strip()
+
+def setNickName(nickname):
+    """
+    """
+    uconfig().set('personal.personal-nickname', nickname.strip())
+    uconfig().update()
+
 def getUpdatesMode():
     """
     User can set different modes to update the BitPie.NET software.

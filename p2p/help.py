@@ -53,15 +53,18 @@ Commands:
   states
   cache
   cache clear
-  money
-  money transfer <username or idurl> <amount>
-  money receipts 
-  money receipt <receipt ID>
+  messages list
+  message send <nickname or idurl> <subject> <body>
   set <option> [value]
   version
   help
 '''    
-#   schedule <folder> [schedule in compact format]
+    
+#  schedule <folder> [schedule in compact format]
+#  money
+#  money transfer <username or idurl> <amount>
+#  money receipts 
+#  money receipt <receipt ID>
 
 
 def help():
@@ -163,16 +166,6 @@ Commands:
   
   cache clear           erase all identities from the cache 
   
-  money                 show the financial status 
-
-  money transfer <username or idurl> <amount>
-                        transfer money to another user 
-
-  money receipts        show receipts history
-
-  money receipt <receipt ID>
-                        show single receipt info
-  
   set <option> [value]  to modify program setting
 
   version               display current software version
@@ -188,6 +181,16 @@ Commands:
 #  schedule <folder> [schedule in compact format]
 #                        set or get a schedule for a folder to start backups automatically
 #   help schedule         print format description to set scheduled backup
+#  money                 show the financial status 
+#
+#  money transfer <username or idurl> <amount>
+#                        transfer money to another user 
+#
+#  money receipts        show receipts history
+#
+#  money receipt <receipt ID>
+#                        show single receipt info
+#  
   
 
 

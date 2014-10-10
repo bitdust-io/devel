@@ -81,7 +81,7 @@ import p2p_service
 
 #------------------------------------------------------------------------------ 
 
-OnIncommingMessageFunc = None
+OnIncomingMessageFunc = None
 
 #------------------------------------------------------------------------------ 
 
@@ -122,7 +122,7 @@ def Message(request):
         4) call the GUI
         5) send an "Ack" back to sender
     """
-    global OnIncommingMessageFunc
+    global OnIncomingMessageFunc
     lg.out(6, "message.Message from " + str(request.OwnerID))
     senderidentity = contacts.getCorrespondent(request.OwnerID)
     if not senderidentity:
@@ -134,8 +134,8 @@ def Message(request):
         return
     clearmessage = Amessage.ClearBody()
     SaveMessage(clearmessage)
-    if OnIncommingMessageFunc is not None:
-        OnIncommingMessageFunc(request, SplitMessage(clearmessage))
+    if OnIncomingMessageFunc is not None:
+        OnIncomingMessageFunc(request, SplitMessage(clearmessage))
     p2p_service.SendAck(request)
 
 def MakeMessage(to, subj, body, 
@@ -214,6 +214,10 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
     gate.outbox(result)
 
 def ListAllMessages():
+    """
+    Return a list of tuples:
+        (messageID, sender, to, datetime, subject) 
+    """
     mlist = []
     i = 0
     for filename in os.listdir(settings.getMessagesDir()):
@@ -229,7 +233,33 @@ def ListAllMessages():
     return mlist
 
 def DictAllConversations():
+    """
+    Return a dict of tuples by string:
+        "<recipient> <subject>" -> (messageID, datetime, sender, to)
+    """
     cdict = {}
+    for filename in os.listdir(settings.getMessagesDir()):
+        if not filename.endswith('.message'):
+            continue
+        msgpath = os.path.join(settings.getMessagesDir(), filename)
+        if not os.path.exists(msgpath):
+            continue
+        msg = LoadMessage(msgpath) # (sender, to, subject, datetime, body)
+        recipient = msg[0] if msg[0] != misc.getLocalID() else msg[1]
+        key = recipient + ' ' + msg[2]  
+        if not cdict.has_key(key):
+            cdict[key] = []
+        # dt = time.mktime(time.strptime(msg[3], "%Y/%m/%d %I:%M:%S %p"))
+        msgtupple = (filename.split('.')[0], msg[3], msg[0], msg[1])
+        cdict[key].append(msgtupple)
+    return cdict
+
+def ReadConversation(recipient, subject, index=None, limit=None):
+    """
+    Return a list of tuples:
+        (messageID, datetime, sender, to, body)
+    """
+    result = []
     i = 0
     for filename in os.listdir(settings.getMessagesDir()):
         if not filename.endswith('.message'):
@@ -237,15 +267,19 @@ def DictAllConversations():
         msgpath = os.path.join(settings.getMessagesDir(), filename)
         if not os.path.exists(msgpath):
             continue
-        msg = LoadMessage(msgpath)
-        collocutor = msg[0] if msg[0] != misc.getLocalID() else msg[1]
-        key = collocutor + ' ' + msg[2]  
-        if not cdict.has_key(key):
-            cdict[key] = []
-        dt = time.mktime(time.strptime(msg[3], "%Y/%m/%d %I:%M:%S %p"))
-        msgtupple = (filename.split('.')[0], dt, msg[0], msg[1], msg[2])
-        cdict[key].append(msgtupple)
-    return cdict
+        msg = LoadMessage(msgpath) # (sender, to, subject, datetime, body)
+        if recipient != msg[0] and recipient != msg[1]:
+            continue
+        if subject != msg[2]:
+            continue
+        i += 1
+        if index is not None and i <= index:
+            continue
+        if limit is not None and len(result) > limit:
+            continue
+        msgtupple = (filename.split('.')[0], msg[3], msg[0], msg[1], msg[4])
+        result.append(msgtupple)
+    return result
 
 def SortMessagesList(mlist, sort_by_column):
     order = {}

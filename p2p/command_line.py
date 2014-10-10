@@ -212,6 +212,12 @@ def run(opts, args, overDict, pars):
             return 0
         return cmd_storage(opts, args, overDict)
     
+    elif cmd == 'msg' or cmd == 'message' or cmd == 'messages':
+        if not running:
+            print 'BitPie.NET is not running at the moment\n'
+            return 0
+        return cmd_message(opts, args, overDict)
+    
 #    elif cmd == 'uninstall':
 #        return cmd_uninstall(opts, args, overDict)
     
@@ -612,19 +618,16 @@ def cmd_stats(opts, args, overDict):
         run_url_command(url).addCallback(print_and_stop)
         reactor.run()
         return 0
-
     elif len(args) >= 3 and args[1] == 'remote': 
         url = '%s/%s%s' % (webcontrol._PAGE_MAIN, webcontrol._PAGE_BACKUP_REMOTE_FILES, args[2].replace('/','_'))
         run_url_command(url).addCallback(print_and_stop)
         reactor.run()
         return 0
-
     elif len(args) >= 3 and args[1] == 'local': 
         url = '%s/%s%s' % (webcontrol._PAGE_MAIN, webcontrol._PAGE_BACKUP_LOCAL_FILES, args[2].replace('/','_'))
         run_url_command(url).addCallback(print_and_stop)
         reactor.run()
         return 0
-
     return 2
 
 
@@ -644,6 +647,7 @@ def cmd_cache(opts, args, overDict):
         run_url_command(webcontrol._PAGE_MAIN+'?action=cacheclear').addCallback(print_and_stop)
         reactor.run()
         return 0
+    return 2
 
 def cmd_reconnect(opts, args, overDict):
     url = webcontrol._PAGE_MAIN + '?action=reconnect'
@@ -913,6 +917,23 @@ def cmd_uninstall(opts, args, overDict):
         if ret == 0:
             do_uninstall()
         return ret
+
+
+def cmd_message(opts, args, overDict):
+    if len(args) < 2 or args[1] == 'list':
+        url = webcontrol._PAGE_MESSAGES + '?conversations=0'
+        run_url_command(url).addCallback(print_and_stop)
+        reactor.run()
+        return 0
+    if len(args) >= 5 and args[1] in [ 'send', ]:
+        url = webcontrol._PAGE_NEW_MESSAGE + '?conversations=0&action=send&recipient=%s&subject=%s&body=%s' % (
+            misc.pack_url_param(args[2]), misc.pack_url_param(args[3]), 
+            misc.pack_url_param(args[4]))
+        print url
+        run_url_command(url).addCallback(print_and_stop)
+        reactor.run()
+        return 0
+    return 2
 
 
 def cmd_integrate():
