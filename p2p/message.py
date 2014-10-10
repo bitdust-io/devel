@@ -127,7 +127,8 @@ def Message(request):
     senderidentity = contacts.getCorrespondent(request.OwnerID)
     if not senderidentity:
         lg.warn("had sender not in correspondents list " + request.OwnerID)
-        return
+        # return
+        contacts.addCorrespondent(request.OwnerID, nameurl.GetName(request.OwnerID))
     Amessage = misc.StringToObject(request.Payload)
     if Amessage is None:
         lg.warn("wrong Payload, can not extract message from request")
@@ -186,6 +187,16 @@ def DeleteMessage(messageuid):
     lg.out(6, "message.DeleteMessage %s" % messageuid)
     return True
 
+def DoSendMessage(RemoteIdentity, messagebody, PacketID):
+    Amessage = MessageClass(RemoteIdentity, messagebody)
+    MyID = misc.getLocalID()
+    if PacketID == "":
+        PacketID = packetid.UniqueID()
+    Payload = misc.ObjectToString(Amessage)
+    lg.out(6, "message.SendMessage  about to send to " + RemoteIdentity.getIDURL())
+    result = signed.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteIdentity.getIDURL())
+    gate.outbox(result)
+
 def SendMessage(RemoteID, messagebody, PacketID=""):
     """
     PREPRO:
@@ -201,16 +212,12 @@ def SendMessage(RemoteID, messagebody, PacketID=""):
     #     return
     RemoteIdentity = identitycache.FromCache(RemoteID)
     if not RemoteIdentity:
-        lg.out(2, "message.SendMessage ERROR. Can't retreive identity: " + str(RemoteID))
+        d = identitycache.immediatelyCaching(RemoteID)
+        d.addCallback(lambda src: DoSendMessage(
+            identitycache.FromCache(RemoteID), messagebody, PacketID))
+        d.addErrback(lambda err: lg.warn('Can\'t retreive identity ' + RemoteID))
         return
-    Amessage = MessageClass(RemoteIdentity, messagebody)
-    MyID = misc.getLocalID()
-    if PacketID == "":
-        PacketID = packetid.UniqueID()
-    Payload = misc.ObjectToString(Amessage)
-    lg.out(6, "message.SendMessage  about to send to " + RemoteID)
-    result = signed.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteID)
-    gate.outbox(result)
+    DoSendMessage(RemoteIdentity, messagebody, PacketID)
 
 def ListAllMessages():
     """

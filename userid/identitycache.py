@@ -204,20 +204,14 @@ def immediatelyCaching(url):
         global _CachingTasks
         _CachingTasks.pop(url)
         if UpdateAfterChecking(url, src):
-            # if success_func is not None:
-            #     success_func(url+'\n'+src)
             res.callback(src)
             lg.out(14, '    [cached] %s' % url)
         else:
-            # if fail_func is not None:
-            #     fail_func(url+'\n'+src)
             res.errback(Exception(src))
             lg.out(14, '    [cache error] %s' % url)
     def _getPageFail(x, url, res):
         global _CachingTasks
         _CachingTasks.pop(url)
-        # if fail_func is not None:
-        #     fail_func(x)
         res.errback(x)
         lg.out(14, '    [cache failed] %s' % url)
     result = Deferred()
