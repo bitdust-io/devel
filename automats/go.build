@@ -2,9 +2,8 @@
 
 echo "convert PDF to images"
 pdftoppm -rx 300 -ry 300 -png automats.pdf automats
-# convert -density 300 automats.pdf automats.png
 
 echo "renaming images"
-# python -c "import os; lines=open('index.txt').read().splitlines(); os.rename('automats-%s.png' % l.split()[0], '%s.png' % l.split()[1][:-2]) for l in lines;
+python -c "import os; map(lambda l: os.rename('automats-%02.d.png'%int(l.split()[0]), '%s.png'%l.split()[1][:-2]), open('index.txt').read().splitlines());"
 
 echo "DONE"

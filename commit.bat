@@ -2,5 +2,6 @@
 git add -u :/
 git status
 pause 
-git commit -m "%Date:~% at %Time:~0,8%"
+rem git commit -m "%Date:~% at %Time:~0,8%"
+git commit 
 git push origin
