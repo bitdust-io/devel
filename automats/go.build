@@ -1,13 +1,10 @@
 #!/bin/bash
 
 echo "convert PDF to images"
-# pdftoppm -rx 300 -ry 300 -png automats.pdf automats
+pdftoppm -rx 300 -ry 300 -png automats.pdf automats
 # convert -density 300 automats.pdf automats.png
 
 echo "renaming images"
-while read LN; do
-    echo "$LN"
-done < "index.txt"
-# mv automats-0.png       initializer.png
+# python -c "import os; lines=open('index.txt').read().splitlines(); os.rename('automats-%s.png' % l.split()[0], '%s.png' % l.split()[1][:-2]) for l in lines;
 
 echo "DONE"
