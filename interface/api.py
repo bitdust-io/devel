@@ -1,0 +1,129 @@
+#!/usr/bin/python
+#api.py
+#
+# <<<COPYRIGHT>>>
+#
+#
+#
+#
+
+"""
+.. module:: api
+
+Here is a bunch of methods to interact with BitPie.NET software.
+"""
+
+#------------------------------------------------------------------------------ 
+
+def stop():
+    from logs import lg
+    lg.out(2, 'api.stop sending event "stop" to the shutdowner() machine')
+    from p2p import shutdowner
+    shutdowner.A('stop', 'exit')
+    
+
+def restart():
+    from logs import lg
+    from lib import bpio
+    from p2p import shutdowner
+    appList = bpio.find_process(['bpgui.',])
+    if len(appList) > 0:
+        lg.out(2, 'api.restart found bpgui process, added param "show", sending event "stop" to the shutdowner() machine')
+        shutdowner.A('stop', 'restartnshow')
+        return 'restarted with GUI'
+    lg.out(2, 'api.restart did not found bpgui process, just do the restart, sending event "stop" to the shutdowner() machine')
+    shutdowner.A('stop', 'restart')
+    return 'restarted'
+
+
+def show():
+    from p2p import webcontrol
+    webcontrol.show()
+    
+#------------------------------------------------------------------------------ 
+
+def backups_list():
+    from p2p import backup_fs
+    result = []
+    for pathID, localPath, item in backup_fs.IterateIDs():
+        result.append((pathID, localPath, item))
+    return result
+
+def backups_id_list():
+    from p2p import backup_fs
+    from lib import contacts
+    from lib import diskspace
+    result = []
+    for backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
+        if versionInfo[1] >= 0 and contacts.numSuppliers() > 0:
+            szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1]/contacts.numSuppliers()) 
+        else:
+            szver = '?'
+        szver = diskspace.MakeStringFromBytes(versionInfo[1]) if versionInfo[1] >= 0 else '?'
+        result.append((backupID, szver, localPath))
+    return result
+
+def backup_start_id(pathID):
+    from p2p import backup_fs
+    from p2p import backup_control
+    localPath = backup_fs.ToPath(pathID)
+    if localPath is not None:
+        if backup_fs.pathExist(localPath):
+            backup_control.StartSingle(pathID)
+            backup_fs.Calculate()
+            backup_control.Save()
+            return (localPath, 'backup started : %s' % pathID)
+    else:
+        return 'item %s not found' % pathID
+    
+def backup_start_path(path):
+    from p2p import backup_fs
+    from p2p import backup_control
+    localPath = unicode(path)
+    if not backup_fs.pathExist(localPath):
+        return 'local path %s not found' % path
+    result = []
+    pathID = backup_fs.ToID(localPath)
+    if pathID is None:
+        if backup_fs.pathIsDir(localPath):
+            pathID, iter, iterID = backup_fs.AddDir(localPath, True)
+            result.append('new folder was added: %s' % localPath)
+        else:
+            pathID, iter, iterID = backup_fs.AddFile(localPath, True)
+            result.append('new file was added: %s' % localPath)
+    backup_control.StartSingle(pathID)
+    backup_fs.Calculate()
+    backup_control.Save()
+    result.append('backup started: %s' % pathID)
+    return result
+        
+def backup_dir_add(dirpath):
+    from p2p import backup_fs
+    from p2p import backup_control
+    from lib import dirsize
+    newPathID, iter, iterID = backup_fs.AddDir(dirpath, True)
+    dirsize.ask(dirpath, backup_control.FoundFolderSize, (newPathID, None))
+    backup_fs.Calculate()
+    backup_control.Save()
+    return 'new folder was added: %s %s' % (newPathID, dirpath)
+
+def backup_file_add(filepath):    
+    from p2p import backup_fs
+    from p2p import backup_control
+    newPathID, iter, iterID = backup_fs.AddFile(filepath, True)
+    backup_fs.Calculate()
+    backup_control.Save()
+    return 'new file was added: %s %s' % (newPathID, filepath)
+
+def backup_tree_add(dirpath):
+    from p2p import backup_fs
+    from p2p import backup_control
+    from lib import packetid
+    newPathID, iter, iterID, num = backup_fs.AddLocalPath(dirpath, True)
+    backup_fs.Calculate()
+    backup_control.Save()
+    if not newPathID:
+        return 'nothing was added to catalog'
+    return '%d items were added to catalog, parent path ID is: %s  %s' % (
+        num, newPathID, dirpath)
+
