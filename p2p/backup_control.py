@@ -135,7 +135,7 @@ def WriteIndex(filepath=None):
     src += backup_fs.Serialize()
     return bpio.AtomicWriteFile(filepath, src)
 
-def ReadIndex(input):
+def ReadIndex(inpt):
     """
     Read index data base, ``input`` is a ``cStringIO.StringIO`` object which keeps the data.
     This is a simple text format, see ``p2p.backup_fs.Serialize()`` method.
@@ -146,13 +146,13 @@ def ReadIndex(input):
         return False
     _LoadingFlag = True
     try:
-        new_revision = int(input.readline().rstrip('\n'))
+        new_revision = int(inpt.readline().rstrip('\n'))
     except:
         _LoadingFlag = False
         lg.exc()
         return False
     backup_fs.Clear()
-    count = backup_fs.Unserialize(input)
+    count = backup_fs.Unserialize(inpt)
     # local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())
     commit(new_revision)
     _LoadingFlag = False
@@ -175,9 +175,9 @@ def Load(filepath=None):
     if not src:
         lg.out(2, 'backup_control.Load ERROR reading file %s' % filepath)
         return False
-    input = cStringIO.StringIO(src)
-    ret = ReadIndex(input)
-    input.close()
+    inpt = cStringIO.StringIO(src)
+    ret = ReadIndex(inpt)
+    inpt.close()
     backup_fs.Scan()
     backup_fs.Calculate()
     return ret

@@ -4,7 +4,7 @@
 #
 
 """
-.. module:: idsrv
+.. module:: interface
 
 """
 

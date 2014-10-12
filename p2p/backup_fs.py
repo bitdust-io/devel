@@ -272,11 +272,8 @@ class FSItemInfo():
         
     def serialize(self, encoding='utf-8'):
         e = self.unicodename.encode(encoding)
-        return '%s %d %d %s\n%s\n' % (self.path, 
-                                         self.type, 
-                                         self.size,
-                                         self.pack_versions(),
-                                         e,)
+        return '%s %d %d %s\n%s\n' % (self.path, self.type, 
+                                      self.size, self.pack_versions(), e,)
         
     def unserialize(self, src, decoding='utf-8'):
         try:
@@ -582,6 +579,7 @@ def SetFile(item, iter=None, iterID=None):
     if iterID is None:
         iterID = fsID()
     parts = item.path.split('/')
+    print parts
     for j in range(len(parts)):
         part = parts[j]
         id = misc.ToInt(part, part)
@@ -589,6 +587,7 @@ def SetFile(item, iter=None, iterID=None):
             if not iter.has_key(item.name()):
                 iter[item.name()] = id
                 iterID[id] = item
+                print 'create', id, item.name()
             return True
         found = False
         for name in iter.keys():
@@ -598,6 +597,7 @@ def SetFile(item, iter=None, iterID=None):
                 if iter[name][0] == id:
                     iter = iter[name]
                     iterID = iterID[id]
+                    print 'found', id, name
                     found = True
                     break
                 continue
@@ -1424,13 +1424,13 @@ def Serialize(iterID=None):
     lg.out(6, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
     return src
 
-def Unserialize(input, iter=None, iterID=None):
+def Unserialize(inpt, iter=None, iterID=None):
     """
     Read index from ``StringIO`` object.
     """
     count = 0
     while True:
-        src = input.readline() + input.readline() # 2 times because we take 2 lines for every item
+        src = inpt.readline() + inpt.readline() # 2 times because we take 2 lines for every item
         if src.strip() == '':
             break
         item = FSItemInfo()
@@ -1453,7 +1453,18 @@ def main():
     """
     For tests.
     """
-    import pprint
+    filepath = settings.BackupIndexFilePath()
+    src = bpio.ReadTextFile(filepath)
+    print src
+    inpt = cStringIO.StringIO(src)
+    inpt.readline()
+    count = Unserialize(inpt)
+    inpt.close()
+    Scan()
+    Calculate()
+    
+    
+#    import pprint
 #    bpio.init()
 #    for path in sys.argv[1:]:
 #        print path, AddLocalPath(path, True)

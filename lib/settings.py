@@ -765,6 +765,11 @@ def LocalPortFilename():
     """
     return os.path.join(MetaDataDir(), 'localport')
 
+def LocalXMLRPCPortFilename():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'localxmlrpcport')
+
 def BackupInfoFileNameOld():
     """
     Long time ago backup data base were stored in that file. Obsolete, see ``BackupIndexFileName()``..
@@ -1019,6 +1024,16 @@ def MerchantURL():
 #------------------------------------------------------------------------------ 
 #---PORT NUMBERS---------------------------------------------------------------
 #------------------------------------------------------------------------------ 
+
+def DefaultXMLRPCPort():
+    """
+    """
+    return 8082
+
+def DefaultJsonRPCPort():
+    """
+    """
+    return 8083
 
 def DefaultSSHPort():
     """

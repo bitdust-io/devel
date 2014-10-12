@@ -27,8 +27,6 @@ def show():
     """
     import webcontrol
     webcontrol.show()
-    
-    
     return 0
 
 
@@ -217,8 +215,6 @@ def parser():
                         action='store_true',
                         help='start web server to debug memory usage, need cherrypy and dozer modules',)
     parser.add_option_group(group)
-
-
     group = OptionGroup(parser, "Network")
     group.add_option('--tcp-port',
                         dest='tcp_port',

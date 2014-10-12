@@ -2600,7 +2600,7 @@ class MainPage(Page):
                 self.listExpandedDirs = None
                 self.listExpandedVersions = None
 
-        #---fileselected---
+        #---fileadd---
         elif action == 'fileadd':
             openfile = unicode(misc.unpack_url_param(arg(request, 'openfile'), ''))
             if openfile:
@@ -6482,7 +6482,7 @@ class MessagesPage(Page):
             src += '<tr bgcolor="%s">\n' % bgcolor
             conversation_id = base64.urlsafe_b64encode(key)
             src += '<tr bgcolor="%s">\n' % bgcolor
-            src += '<td><a  href="%s/key%s">' % (request.path, conversation_id)
+            src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
             src += nicks.get(recipient, nameurl.GetName(recipient))
             src += '</a></td>\n'
             src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
