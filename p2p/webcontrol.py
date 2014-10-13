@@ -1265,7 +1265,7 @@ class InstallPage(Page):
         self.pksize = settings.DefaultPrivateKeySize()
         self.needed = ''
         self.donated = ''
-        self.suppliers = ''
+        self.suppliers = str(settings.DefaultDesiredSuppliers())
         self.bandin = ''
         self.bandout = ''
         self.customersdir = settings.getCustomersFilesDir()
@@ -1916,11 +1916,11 @@ class InstallPage(Page):
         supplier_set = settings.getECCSuppliersNumbers()
         for i in range(len(supplier_set)):
             checked = ''
-            if supplier_set[i] == self.suppliersNum:
+            if str(supplier_set[i]) == self.suppliersNum:
                 checked = 'checked'
             src += '<input id="radio%s" type="radio" name="suppliers" value="%s" %s />' % (
                 str(i), supplier_set[i], checked,)
-            src += '<label for="radio%s">%s</label>&nbsp;\n' % (str(i), supplier_set[i],)
+            src += '<label for="radio%s"></label>&nbsp;\n' % (str(i),) #  supplier_set[i],)
         src += '</td>\n'
         src += '<td align=right valign=top nowrap>'
         # src += '<b>location for restored files:</b><br>\n'
@@ -6461,43 +6461,44 @@ class MessagesPage(Page):
         cdict = message.DictAllConversations()
         conversations_list = cdict.keys()
         src = ''
-        src += '<hr width=50%>'
-        src += '<table width=95% cellpadding=5 cellspacing=0>\n'
-        src += '<tr align=left>\n'
-        src += '<th><a href="%s?sortby=1">Recipient</a></th>\n' % request.path
-        src += '<th><a href="%s?sortby=2">Subject</a></th>\n' % request.path
-        src += '<th><a href="%s?sortby=3">Received/Created</a></th>\n' % request.path
-        src += '</tr>\n'
-        i = 0
-        for key in conversations_list:
-            try:
-                recipient, subj = key.split(' ', 1)
-            except:
-                lg.exc()
-                continue
-            last_msg_datetime = cdict[key][0][1]
-            bgcolor = '#DDDDFF'
-            if i % 2:
-                bgcolor = '#DDFFDD'
-            src += '<tr bgcolor="%s">\n' % bgcolor
-            conversation_id = base64.urlsafe_b64encode(key)
-            src += '<tr bgcolor="%s">\n' % bgcolor
-            src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
-            src += nicks.get(recipient, nameurl.GetName(recipient))
-            src += '</a></td>\n'
-            src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
-            src += subj
-            src += '</a></td>\n'
-            src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
-            src += last_msg_datetime
-            src += '</a></td>\n'
-            # src += '<a href="%s?action=delete&mid=%s"><td>' % (request.path, mid)
-            # src += '<img src="%s" /></td></a>\n' % iconurl(request, 'icons/delete-message.png')
+        src += '<hr width=50%>\n'
+        if len(conversations_list) > 0:
+            src += '<table width=95% cellpadding=5 cellspacing=0>\n'
+            src += '<tr align=left>\n'
+            src += '<th><a href="%s?sortby=1">Recipient</a></th>\n' % request.path
+            src += '<th><a href="%s?sortby=2">Subject</a></th>\n' % request.path
+            src += '<th><a href="%s?sortby=3">Received/Created</a></th>\n' % request.path
             src += '</tr>\n'
-            src += html_comment('  %s %s %s' % (
-                nicks.get(recipient, nameurl.GetName(recipient)), subj, last_msg_datetime))
-            i += 1
-        src += '</table><br><br>\n'
+            i = 0
+            for key in conversations_list:
+                try:
+                    recipient, subj = key.split(' ', 1)
+                except:
+                    lg.exc()
+                    continue
+                last_msg_datetime = cdict[key][0][1]
+                bgcolor = '#DDDDFF'
+                if i % 2:
+                    bgcolor = '#DDFFDD'
+                src += '<tr bgcolor="%s">\n' % bgcolor
+                conversation_id = base64.urlsafe_b64encode(key)
+                src += '<tr bgcolor="%s">\n' % bgcolor
+                src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
+                src += nicks.get(recipient, nameurl.GetName(recipient))
+                src += '</a></td>\n'
+                src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
+                src += subj
+                src += '</a></td>\n'
+                src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
+                src += last_msg_datetime
+                src += '</a></td>\n'
+                # src += '<a href="%s?action=delete&mid=%s"><td>' % (request.path, mid)
+                # src += '<img src="%s" /></td></a>\n' % iconurl(request, 'icons/delete-message.png')
+                src += '</tr>\n'
+                src += html_comment('  %s %s %s' % (
+                    nicks.get(recipient, nameurl.GetName(recipient)), subj, last_msg_datetime))
+                i += 1
+            src += '</table><br><br>\n'
         return src
 
     def _body_messages_by_date(self, request, reverse_order):
@@ -6507,47 +6508,48 @@ class MessagesPage(Page):
         mlist = message.ListAllMessages()
         mlist.sort(key=lambda item: item[self.sortby], reverse=reverse_order)
         src = ''
-        src += '<hr width=50%>'
-        src += '<table width=95% cellpadding=5 cellspacing=0>\n'
-        src += '<tr align=left>\n'
-        src += '<th><a href="%s?sortby=1">From</a></th>\n' % request.path
-        src += '<th><a href="%s?sortby=2">To</a></th>\n' % request.path
-        src += '<th><a href="%s?sortby=3">Subject</a></th>\n' % request.path
-        src += '<th><a href="%s?sortby=4">Received/Created</a></th>\n' % request.path
-        src += '<td>&nbsp;</td>\n'
-        src += '</tr>\n'
-        for i in range(len(mlist)):
-            msg = mlist[i]
-            mid = msg[0]
-            bgcolor = '#DDDDFF'
-            if myid != msg[1]:
-                bgcolor = '#DDFFDD'
-            src += '<tr bgcolor="%s">\n' % bgcolor
-            #--- from
-            src += '<td><a href="%s/%s">\n' % (request.path, mid)
-            src += nicks.get(msg[1], nameurl.GetName(msg[1]))
-            src += '</a></td>\n'
-            #--- to
-            src += '<td><a href="%s/%s">\n' % (request.path, mid)
-            src += nicks.get(msg[2], nameurl.GetName(msg[2]))
-            src += '</a></td>\n'
-            #--- subject
-            src += '<td><a href="%s/%s">\n' % (request.path, mid)
-            src += msg[4]
-            src += '</a></td>\n'
-            #--- received/created
-            src += '<td nowrap><a href="%s/%s">\n' % (request.path, mid)
-            src += msg[3]
-            src += '</a></td>\n'
-            #--- delete button
-            src += '<td><a href="%s?action=delete&mid=%s">' % (request.path, mid)
-            src += '<img src="%s" /></a></td>\n' % iconurl(request, 'icons/delete-message.png')
+        src += '<hr width=50%>\n'
+        if len(mlist) > 0:
+            src += '<table width=95% cellpadding=5 cellspacing=0>\n'
+            src += '<tr align=left>\n'
+            src += '<th><a href="%s?sortby=1">From</a></th>\n' % request.path
+            src += '<th><a href="%s?sortby=2">To</a></th>\n' % request.path
+            src += '<th><a href="%s?sortby=3">Subject</a></th>\n' % request.path
+            src += '<th><a href="%s?sortby=4">Received/Created</a></th>\n' % request.path
+            src += '<td>&nbsp;</td>\n'
             src += '</tr>\n'
-            src += html_comment('  %s -> %s  "%s"  at %s' % (
-                nicks.get(msg[1], nameurl.GetName(msg[1])),
-                nicks.get(msg[2], nameurl.GetName(msg[2])),
-                msg[4], msg[3]))
-        src += '</table><br><br>\n'
+            for i in range(len(mlist)):
+                msg = mlist[i]
+                mid = msg[0]
+                bgcolor = '#DDDDFF'
+                if myid != msg[1]:
+                    bgcolor = '#DDFFDD'
+                src += '<tr bgcolor="%s">\n' % bgcolor
+                #--- from
+                src += '<td><a href="%s/%s">\n' % (request.path, mid)
+                src += nicks.get(msg[1], nameurl.GetName(msg[1]))
+                src += '</a></td>\n'
+                #--- to
+                src += '<td><a href="%s/%s">\n' % (request.path, mid)
+                src += nicks.get(msg[2], nameurl.GetName(msg[2]))
+                src += '</a></td>\n'
+                #--- subject
+                src += '<td><a href="%s/%s">\n' % (request.path, mid)
+                src += msg[4]
+                src += '</a></td>\n'
+                #--- received/created
+                src += '<td nowrap><a href="%s/%s">\n' % (request.path, mid)
+                src += msg[3]
+                src += '</a></td>\n'
+                #--- delete button
+                src += '<td><a href="%s?action=delete&mid=%s">' % (request.path, mid)
+                src += '<img src="%s" /></a></td>\n' % iconurl(request, 'icons/delete-message.png')
+                src += '</tr>\n'
+                src += html_comment('  %s -> %s  "%s"  at %s' % (
+                    nicks.get(msg[1], nameurl.GetName(msg[1])),
+                    nicks.get(msg[2], nameurl.GetName(msg[2])),
+                    msg[4], msg[3]))
+            src += '</table><br><br>\n'
         return src  
     
     def renderPage(self, request):

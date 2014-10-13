@@ -194,7 +194,7 @@ class ContactStatus(automat.Automat):
         self.idurl = idurl
         self.time_connected = None
         automat.Automat.__init__(self, name, state, debug_level)
-        lg.out(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
+        # lg.out(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
         
     def state_changed(self, oldstate, newstate, event, arg):
         lg.out(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))

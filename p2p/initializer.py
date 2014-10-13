@@ -38,6 +38,7 @@ EVENTS:
     * :red:`init-contacts-done`
     * :red:`init-local-done`
     * :red:`init-modules-done`
+    * :red:`init-services-done`
     * :red:`installer.state`
     * :red:`p2p_connector.state`
     * :red:`run`
@@ -62,6 +63,8 @@ from logs import lg
 from lib import bpio
 from lib import automat
 from lib import automats
+
+from services import switchable_service
 
 import installer
 import shutdowner
@@ -125,11 +128,7 @@ class Initializer(automat.Automat):
                 shutdowner.A('ready')
         #---LOCAL---
         elif self.state == 'LOCAL':
-            if event == 'init-local-done' and self.isInstalled(arg) :
-                self.state = 'CONTACTS'
-                self.doShowGUI(arg)
-                self.doInitContacts(arg)
-            elif event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg) :
+            if event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg) :
                 self.state = 'INSTALL'
                 self.doShowGUI(arg)
                 installer.A('init')
@@ -140,6 +139,10 @@ class Initializer(automat.Automat):
                 self.doPrintMessage(arg)
                 shutdowner.A('ready')
                 shutdowner.A('stop', "exit")
+            elif event == 'init-local-done' and self.isInstalled(arg) :
+                self.state = 'SERVICES'
+                self.doShowGUI(arg)
+                self.doInitServices(arg)
         #---CONTACTS---
         elif self.state == 'CONTACTS':
             if event == 'init-contacts-done' :
@@ -193,6 +196,15 @@ class Initializer(automat.Automat):
         #---EXIT---
         elif self.state == 'EXIT':
             pass
+        #---SERVICES---
+        elif self.state == 'SERVICES':
+            if event == 'init-services-done' :
+                self.state = 'CONTACTS'
+                self.doInitContacts(arg)
+            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
+                self.state = 'EXIT'
+                self.doDestroyMe(arg)
+        return None
 
     def isInstalled(self, arg):
         if self.is_installed is None:
@@ -210,8 +222,17 @@ class Initializer(automat.Automat):
         reactor.callLater(0, webcontrol.OnUpdateStartingPage)
 
     def doInitLocal(self, arg):
+        """
+        """
         maybeDeferred(init_shutdown.init_local, arg).addCallback(
             lambda x: self.automat('init-local-done'))
+
+
+    def doInitServices(self, arg):
+        """
+        Action method.
+        """
+        switchable_service.init_all()
 
     def doInitContacts(self, arg):
         init_shutdown.init_contacts(
@@ -247,5 +268,4 @@ class Initializer(automat.Automat):
         del _Initializer
         _Initializer = None
         automat.objects().pop(self.index)
-
 
