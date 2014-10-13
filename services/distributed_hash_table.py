@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: dht_service
+.. module:: service_distributed_hash_table
 
 """
 
@@ -20,6 +20,7 @@ class DistributedHashTableService(SwitchableService):
     
     def dependent_on(self):
         return ['udp_datagrams', ]
-    
+
+
     
     

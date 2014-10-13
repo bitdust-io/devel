@@ -232,8 +232,8 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
-        switchable_service.init_all()
-        reactor.callLater(0, self.automat('init-services-done'))
+        switchable_service.init_all(
+            callback=lambda : self.automat('init-services-done'))
 
     def doInitContacts(self, arg):
         init_shutdown.init_contacts(

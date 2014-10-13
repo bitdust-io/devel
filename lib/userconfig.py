@@ -174,7 +174,7 @@ _DefaultXMLConfig = ur"""<settings>
   </transport-tcp>
   <transport-udp>
    <transport-udp-enable>
-    False
+    True
    </transport-udp-enable>
    <transport-udp-port>
     8882
@@ -198,7 +198,7 @@ _DefaultXMLConfig = ur"""<settings>
   
   </personal-nickname>
   <personal-betatester>
-   True
+   False
   </personal-betatester>
  </personal>
  <id-server>

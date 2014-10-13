@@ -579,7 +579,6 @@ def SetFile(item, iter=None, iterID=None):
     if iterID is None:
         iterID = fsID()
     parts = item.path.split('/')
-    print parts
     for j in range(len(parts)):
         part = parts[j]
         id = misc.ToInt(part, part)
@@ -587,7 +586,6 @@ def SetFile(item, iter=None, iterID=None):
             if not iter.has_key(item.name()):
                 iter[item.name()] = id
                 iterID[id] = item
-                print 'create', id, item.name()
             return True
         found = False
         for name in iter.keys():
@@ -597,7 +595,6 @@ def SetFile(item, iter=None, iterID=None):
                 if iter[name][0] == id:
                     iter = iter[name]
                     iterID = iterID[id]
-                    print 'found', id, name
                     found = True
                     break
                 continue

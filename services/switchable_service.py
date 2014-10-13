@@ -28,6 +28,7 @@ from lib import automat
 
 #------------------------------------------------------------------------------ 
 
+
 _ServicesDict = {}
 
 #------------------------------------------------------------------------------ 
@@ -38,6 +39,11 @@ def services():
     global _ServicesDict
     return _ServicesDict
 
+def installed():
+    return [
+        'distributed_hash_table',
+        ]
+
 #------------------------------------------------------------------------------ 
 
 class ServiceAlreadyExist(Exception):
@@ -45,9 +51,10 @@ class ServiceAlreadyExist(Exception):
 
 #------------------------------------------------------------------------------ 
 
-def init_all():
+def init_all(callback=None):
     """
     """
+    
 
 #------------------------------------------------------------------------------ 
 
