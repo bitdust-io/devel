@@ -54,7 +54,8 @@ class ServiceAlreadyExist(Exception):
 def init_all(callback=None):
     """
     """
-    
+    if callback:
+        callback()
 
 #------------------------------------------------------------------------------ 
 
