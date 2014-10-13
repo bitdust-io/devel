@@ -1,9 +1,0 @@
-#!/bin/bash
-
-echo "convert PDF to images"
-pdftoppm -rx 300 -ry 300 -png automats.pdf automats
-
-echo "renaming images"
-python -c "import os; map(lambda l: os.rename('automats-%02.d.png'%int(l.split()[0]), '%s.png'%l.split()[1][:-2]), open('index.txt').read().splitlines());"
-
-echo "DONE"

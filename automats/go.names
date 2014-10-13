@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "rename files"
+python -c "import os; map(lambda l: os.rename('automats-%02.d.png'%(int(l.split()[0])+1), '%s.png'%l.split()[1][:-2]), open('index.txt').read().splitlines());"
+
+echo "DONE"
