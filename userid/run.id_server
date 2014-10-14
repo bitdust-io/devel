@@ -1,3 +1,4 @@
 #!/bin/bash 
 
+grepnkill id_server.py
 nohup python id_server.py 1>log.id_server 2>err.id_server &
