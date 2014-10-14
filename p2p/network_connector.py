@@ -66,7 +66,7 @@ from lib import settings
 from lib import misc
 from lib import udp
 
-from transport import gate
+from transport import gateway
 
 from dht import dht_service
 
@@ -203,9 +203,9 @@ class NetworkConnector(Automat):
         if time.time() - udp.get_last_datagram_time() < 60:
             if settings.enableUDP() and settings.enableUDPreceiving():
                 return True
-        if time.time() - gate.last_inbox_time() < 60:
+        if time.time() - gateway.last_inbox_time() < 60:
             return True
-        transport_states = map(lambda t: t.state, gate.transports().values())
+        transport_states = map(lambda t: t.state, gateway.transports().values())
         if 'LISTENING' in transport_states:
             return True
         if 'STARTING' in transport_states:
@@ -249,7 +249,7 @@ class NetworkConnector(Automat):
         Action method.
         """
         global _TransportsInitialization
-        _TransportsInitialization = gate.init(nw_connector=self)
+        _TransportsInitialization = gateway.init(nw_connector=self)
 
     def doSetUp(self, arg):
         lg.out(6, 'network_connector.doSetUp')
@@ -265,7 +265,7 @@ class NetworkConnector(Automat):
         dht_service.connect()
         nickname_holder.A('set', None)
         global _TransportsStarting
-        _TransportsStarting = gate.start()
+        _TransportsStarting = gateway.start()
         if len(_TransportsStarting) == 0:
             self.automat('network-up')
 
@@ -278,7 +278,7 @@ class NetworkConnector(Automat):
         if settings.enableIdServer():
             id_server.A('stop')
         global _TransportsStopping    
-        _TransportsStopping = gate.stop()
+        _TransportsStopping = gateway.stop()
         if len(_TransportsStopping) == 0:
             self.automat('network-down')
 

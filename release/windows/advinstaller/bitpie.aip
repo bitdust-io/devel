@@ -20,10 +20,10 @@
     <ROW Property="InstanceId" Value="#0"/>
     <ROW Property="Manufacturer" Value="BitPie.NET Inc."/>
     <ROW Property="MyUserHomeDir" Value="?"/>
-    <ROW Property="ProductCode" Value="1033:{3EB3D618-C8CC-422C-93F5-AD6242AA4D0B} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{A18335B0-7CAA-48C0-989A-D1984A7E1588} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="BitPie.NET (testing release)"/>
-    <ROW Property="ProductVersion" Value="0.1.7.726" Type="32"/>
+    <ROW Property="ProductVersion" Value="0.1.8.732" Type="32"/>
     <ROW Property="RUNAPPLICATION" Value="1" Type="4"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{1D2E14B7-8093-406E-9EDD-CEE00645A486}"/>
@@ -72,6 +72,7 @@
     <ROW Directory="forms_Dir" Directory_Parent="bin_Dir" DefaultDir="forms" DirectoryOptions="3"/>
     <ROW Directory="icons_Dir" Directory_Parent="bin_Dir" DefaultDir="icons" DirectoryOptions="3"/>
     <ROW Directory="identitycache_Dir" Directory_Parent="APPDIR" DefaultDir="IDENTI~1|identitycache"/>
+    <ROW Directory="importlib_Dir" Directory_Parent="bin_Dir" DefaultDir="IMPORT~1|importlib" DirectoryOptions="3"/>
     <ROW Directory="interface_1_Dir" Directory_Parent="zope_Dir" DefaultDir="INTERF~1|interface" DirectoryOptions="3"/>
     <ROW Directory="interface_Dir" Directory_Parent="bin_Dir" DefaultDir="INTERF~1|interface" DirectoryOptions="3"/>
     <ROW Directory="internet_Dir" Directory_Parent="twisted_Dir" DefaultDir="internet" DirectoryOptions="3"/>
@@ -137,6 +138,7 @@
     <ROW Component="__init__.pyo_6" ComponentId="{8032FD9F-0B15-42B8-B0FE-046E50D584AA}" Directory_="win32com_Dir" Attributes="0" KeyPath="__init__.pyo_57" Type="0"/>
     <ROW Component="__init__.pyo_7" ComponentId="{536A60AC-490A-4662-B3BA-DB2833CAE537}" Directory_="xml_Dir" Attributes="0" KeyPath="__init__.pyo_63" Type="0"/>
     <ROW Component="__init__.pyo_8" ComponentId="{FB1260C7-870A-4B5C-B98C-9534E62F5F19}" Directory_="zope_Dir" Attributes="0" KeyPath="__init__.pyo_65" Type="0"/>
+    <ROW Component="__init__.pyo_9" ComponentId="{11798FC2-0EEE-47D3-A5A0-F3761580D11F}" Directory_="importlib_Dir" Attributes="0" KeyPath="__init__.pyo_68" Type="0"/>
     <ROW Component="_controls.pyo" ComponentId="{DCE2830F-5752-49A0-B198-AECF1EE85CE5}" Directory_="wxPython_Dir" Attributes="0" KeyPath="_controls.pyo_1" Type="0"/>
     <ROW Component="_version.pyo" ComponentId="{733FAE49-579C-4609-A2DC-244625EF4E98}" Directory_="conch_Dir" Attributes="0" KeyPath="_version.pyo" Type="0"/>
     <ROW Component="abc.pyo" ComponentId="{9B725B4D-28C7-4A4C-8399-BA34E67E3160}" Directory_="bin_Dir" Attributes="0" KeyPath="checksum" Type="0"/>
@@ -203,7 +205,7 @@
     <ROW Component="shell.pyo" ComponentId="{BE288835-1B45-4F11-9889-60A2BB5C51C4}" Directory_="shell_Dir" Attributes="0" KeyPath="shell.pyo" Type="0"/>
     <ROW Component="sqlite3.dll" ComponentId="{792D15E4-AA89-4489-B064-C0068299EAA5}" Directory_="bin_Dir" Attributes="0" KeyPath="sqlite3.dll"/>
     <ROW Component="stun_client.pyo" ComponentId="{76E380E6-89BD-478B-9B71-B98D495667F8}" Directory_="stun_Dir" Attributes="0" KeyPath="stun_client.pyo" Type="0"/>
-    <ROW Component="switchable_service.pyo" ComponentId="{2452DA22-DE16-45B4-845C-BFAAA233A7AC}" Directory_="services_Dir" Attributes="0" KeyPath="switchable_service.pyo" Type="0"/>
+    <ROW Component="switchable_service.pyo" ComponentId="{2452DA22-DE16-45B4-845C-BFAAA233A7AC}" Directory_="services_Dir" Attributes="0" KeyPath="__init__.pyo_67" Type="0"/>
     <ROW Component="tar.exe" ComponentId="{B95E4C9D-D4D6-4859-8F63-3682C8E50C72}" Directory_="bin_Dir" Attributes="0" KeyPath="tar.exe"/>
     <ROW Component="tcp_connection.pyo" ComponentId="{03604CA8-3A84-43D6-BC63-BD727E27E200}" Directory_="tcp_Dir" Attributes="0" KeyPath="tcp_connection.pyo_1" Type="0"/>
     <ROW Component="udp_connector.pyo" ComponentId="{82AC5DBC-CAC0-41F7-ADE2-D6B2DF127C67}" Directory_="udp_Dir" Attributes="0" KeyPath="udp_connector.pyo" Type="0"/>
@@ -219,7 +221,7 @@
     <ROW Component="xmlrpc_server.pyo" ComponentId="{E1C8A2BB-4169-44C2-A40E-0AE4D5552ED0}" Directory_="interface_Dir" Attributes="0" KeyPath="xmlrpc_server.pyo" Type="0"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
-    <ROW Feature="MainFeature" Title="MainFeature" Description="Distributed backup network" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="AES.pyo Arial_Narrow.ttf DSA.pyo EasyDialogsResources.pyo FortunaAccumulator.pyo KDF.pyo LIBEAY32.dll MyUserHomeDir SHORTCUTDIR SSLEAY32.dll __init__.pyo __init__.pyo_1 __init__.pyo_2 __init__.pyo_3 __init__.pyo_4 __init__.pyo_5 __init__.pyo_6 __init__.pyo_7 __init__.pyo_8 _controls.pyo _version.pyo abc.pyo abstract.pyo adapter.pyo addbackup.png aliases.pyo asn1.pyo automat.pyo backup.pyo banana.pyo bandwidth.pyo base.pyo base64mime.pyo basic.pyo bitpie.exe bpgui.exe bppipe.exe bpstarter.exe bptester.exe bpworker.exe build.pyo client.pyo combo.pyo common.pyo compat.pyo constants.pyo copyright.pyo credentials.pyo crefutil.pyo crypto.pyo dbapi2.pyo debug.pyo decoder.pyo defcache.pyo dht_service.pyo dialog.pyo domreg.pyo dtuple.pyo dyld.pyo eccmap.pyo encrypted.pyo errors.pyo expat.pyo expatreader.pyo fallback.pyo form.pyo gzip.exe hashalgo.pyo identity.pyo lg.pyo list.pyo msvcm90.dll msvcp90.dll msvcr90.dll octets.pyo pct_warnings.pyo ppauto.pyo python27.dll pythoncom27.dll pywintypes27.dll random.pyo repo shell.pyo sqlite3.dll stun_client.pyo switchable_service.pyo tar.exe tcp_connection.pyo udp_connector.pyo upnpc.exe util.pyo w9xpopen.exe wget.exe wxbase28uh_net_vc.dll wxbase28uh_vc.dll wxmsw28uh_adv_vc.dll wxmsw28uh_core_vc.dll wxmsw28uh_html_vc.dll xmlrpc_server.pyo"/>
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Distributed backup network" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="AES.pyo Arial_Narrow.ttf DSA.pyo EasyDialogsResources.pyo FortunaAccumulator.pyo KDF.pyo LIBEAY32.dll MyUserHomeDir SHORTCUTDIR SSLEAY32.dll __init__.pyo __init__.pyo_1 __init__.pyo_2 __init__.pyo_3 __init__.pyo_4 __init__.pyo_5 __init__.pyo_6 __init__.pyo_7 __init__.pyo_8 __init__.pyo_9 _controls.pyo _version.pyo abc.pyo abstract.pyo adapter.pyo addbackup.png aliases.pyo asn1.pyo automat.pyo backup.pyo banana.pyo bandwidth.pyo base.pyo base64mime.pyo basic.pyo bitpie.exe bpgui.exe bppipe.exe bpstarter.exe bptester.exe bpworker.exe build.pyo client.pyo combo.pyo common.pyo compat.pyo constants.pyo copyright.pyo credentials.pyo crefutil.pyo crypto.pyo dbapi2.pyo debug.pyo decoder.pyo defcache.pyo dht_service.pyo dialog.pyo domreg.pyo dtuple.pyo dyld.pyo eccmap.pyo encrypted.pyo errors.pyo expat.pyo expatreader.pyo fallback.pyo form.pyo gzip.exe hashalgo.pyo identity.pyo lg.pyo list.pyo msvcm90.dll msvcp90.dll msvcr90.dll octets.pyo pct_warnings.pyo ppauto.pyo python27.dll pythoncom27.dll pywintypes27.dll random.pyo repo shell.pyo sqlite3.dll stun_client.pyo switchable_service.pyo tar.exe tcp_connection.pyo udp_connector.pyo upnpc.exe util.pyo w9xpopen.exe wget.exe wxbase28uh_net_vc.dll wxbase28uh_vc.dll wxmsw28uh_adv_vc.dll wxmsw28uh_core_vc.dll wxmsw28uh_html_vc.dll xmlrpc_server.pyo"/>
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
@@ -357,7 +359,8 @@
     <ROW File="__init__.pyo_64" Component_="adapter.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\interface\__init__.pyo" SelfReg="false" NextFile="__init__.pyo_65"/>
     <ROW File="__init__.pyo_65" Component_="__init__.pyo_8" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\__init__.pyo" SelfReg="false" NextFile="zope.interface._zope_interface_coptimizations.pyd"/>
     <ROW File="__init__.pyo_66" Component_="tcp_connection.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp\__init__.pyo" SelfReg="false" NextFile="nickname_holder.pyo"/>
-    <ROW File="__init__.pyo_67" Component_="switchable_service.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\services\__init__.pyo" SelfReg="false"/>
+    <ROW File="__init__.pyo_67" Component_="switchable_service.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\services\__init__.pyo" SelfReg="false" NextFile="__init__.pyo_68"/>
+    <ROW File="__init__.pyo_68" Component_="__init__.pyo_9" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\importlib\__init__.pyo" SelfReg="false" NextFile="local_service.pyo"/>
     <ROW File="__init__.pyo_7" Component_="random.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Random\__init__.pyo" SelfReg="false" NextFile="asn1.pyo"/>
     <ROW File="__init__.pyo_8" Component_="asn1.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Util\__init__.pyo" SelfReg="false" NextFile="__init__.pyo_9"/>
     <ROW File="__init__.pyo_9" Component_="pct_warnings.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\__init__.pyo" SelfReg="false" NextFile="Crypto.Cipher._AES.pyd"/>
@@ -437,7 +440,7 @@
     <ROW File="address.pyo" Component_="abstract.pyo" FileName="address.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\internet\address.pyo" SelfReg="false" NextFile="base.pyo_1"/>
     <ROW File="advice.pyo" Component_="adapter.pyo" FileName="advice.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\interface\advice.pyo" SelfReg="false" NextFile="declarations.pyo"/>
     <ROW File="aliases.pyo" Component_="aliases.pyo" FileName="aliases.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\encodings\aliases.pyo" SelfReg="false" NextFile="ascii.pyo"/>
-    <ROW File="api.pyo" Component_="xmlrpc_server.pyo" FileName="api.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\interface\api.pyo" SelfReg="false" NextFile="switchable_service.pyo"/>
+    <ROW File="api.pyo" Component_="xmlrpc_server.pyo" FileName="api.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\interface\api.pyo" SelfReg="false" NextFile="__init__.pyo_67"/>
     <ROW File="ascii.pyo" Component_="aliases.pyo" FileName="ascii.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\encodings\ascii.pyo" SelfReg="false" NextFile="base64_codec.pyo"/>
     <ROW File="asn1.pyo" Component_="asn1.pyo" FileName="asn1.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Util\asn1.pyo" SelfReg="false" NextFile="Counter.pyo"/>
     <ROW File="atexit.pyo" Component_="abc.pyo" FileName="atexit.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\atexit.pyo" SelfReg="false" NextFile="base64.pyo"/>
@@ -765,6 +768,7 @@
     <ROW File="linecache.pyo" Component_="abc.pyo" FileName="LINECA~1.PYO|linecache.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\linecache.pyo" SelfReg="false" NextFile="locale.pyo"/>
     <ROW File="list.pyo" Component_="list.pyo" FileName="list.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\pywin\dialogs\list.pyo" SelfReg="false" NextFile="status.pyo"/>
     <ROW File="list_files_orator.pyo" Component_="backup.pyo" FileName="LIST_F~1.PYO|list_files_orator.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\list_files_orator.pyo" SelfReg="false" NextFile="local_tester.pyo"/>
+    <ROW File="local_service.pyo" Component_="switchable_service.pyo" FileName="LOCAL_~1.PYO|local_service.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\services\local_service.pyo" SelfReg="false"/>
     <ROW File="local_tester.pyo" Component_="backup.pyo" FileName="LOCAL_~1.PYO|local_tester.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\local_tester.pyo" SelfReg="false" NextFile="message.pyo_1"/>
     <ROW File="locale.pyo" Component_="abc.pyo" FileName="locale.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\locale.pyo" SelfReg="false" NextFile="__init__.pyo_24"/>
     <ROW File="localfiles48.png" Component_="addbackup.png" FileName="LOCAL-~1.PNG|local-files48.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\local-files48.png" SelfReg="false" NextFile="log32.png"/>
@@ -980,7 +984,6 @@
     <ROW File="subprocess.pyo" Component_="abc.pyo" FileName="SUBPRO~1.PYO|subprocess.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\subprocess.pyo" SelfReg="false" NextFile="tar.exe"/>
     <ROW File="supplier_connector.pyo" Component_="backup.pyo" FileName="SUPPLI~1.PYO|supplier_connector.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\supplier_connector.pyo" SelfReg="false" NextFile="supplier_finder.pyo"/>
     <ROW File="supplier_finder.pyo" Component_="backup.pyo" FileName="SUPPLI~2.PYO|supplier_finder.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\supplier_finder.pyo" SelfReg="false" NextFile="tray_icon.pyo"/>
-    <ROW File="switchable_service.pyo" Component_="switchable_service.pyo" FileName="SWITCH~1.PYO|switchable_service.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\services\switchable_service.pyo" SelfReg="false" NextFile="__init__.pyo_67"/>
     <ROW File="sysconfig.pyo" Component_="errors.pyo" FileName="SYSCON~1.PYO|sysconfig.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\distutils\sysconfig.pyo" SelfReg="false" NextFile="text_file.pyo"/>
     <ROW File="systemd.pyo" Component_="compat.pyo" FileName="systemd.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\python\systemd.pyo" SelfReg="false" NextFile="threadable.pyo"/>
     <ROW File="tag.pyo" Component_="base.pyo" FileName="tag.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\pyasn1\type\tag.pyo" SelfReg="false" NextFile="tagmap.pyo"/>

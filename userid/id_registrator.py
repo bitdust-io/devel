@@ -49,7 +49,7 @@ from lib import tmpfile
 
 from crypt import key
 
-from transport import gate
+from transport import gateway
 from transport import callback
 
 import identity
@@ -460,8 +460,8 @@ class IdRegistrator(automat.Automat):
         Send created identity to the identity server to register it. 
         """
         lg.out(4, 'id_registrator.send_new_identity ')
-        gate.init()
-        gate.start()
+        gateway.init()
+        gateway.start()
         sendfilename = settings.LocalIdentityFilename()+'.new'
         dlist = []
         for idurl in self.new_identity.sources:
@@ -470,7 +470,7 @@ class IdRegistrator(automat.Automat):
             webport, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             srvhost = '%s:%d' % (host, tcpport)
-            dlist.append(gate.send_file_single(
+            dlist.append(gateway.send_file_single(
                 'tcp', srvhost, sendfilename, 'Identity'))
         assert len(self.free_idurls) == 0
         return DeferredList(dlist)

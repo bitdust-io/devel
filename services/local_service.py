@@ -22,100 +22,11 @@ EVENTS:
     * :red:`stop`
 """
 
-import os
-import sys
-import imp
-import importlib
-
-from logs import lg
+#------------------------------------------------------------------------------ 
 
 from lib import automat
 
-#------------------------------------------------------------------------------ 
-
-
-_ServicesDict = {}
-
-#------------------------------------------------------------------------------ 
-
-def services():
-    """
-    """
-    global _ServicesDict
-    return _ServicesDict
-
-def registered_services():
-    return [
-        'distributed_hash_table',
-        ]
-
-def is_started(name):
-    svc = services().get(name, None)
-    if svc is None:
-        return False
-    return svc.state == 'ON'
-
-def is_exist(name):
-    return services().has_key(name)
-
-#------------------------------------------------------------------------------ 
-
-def init_all(callback=None):
-    """
-    """
-    lg.out(2, 'local_service.init_all')
-    for name in registered_services():
-        service_path = os.path.abspath(os.path.join('services', name + '.py'))
-        lg.out(2, '    [%s] from %s' % (name, service_path))
-        try:
-            # py_mod = imp.load_source(name, service_path)
-            py_mod = importlib.import_module('services.'+name)
-        except:
-            lg.exc()
-        try:
-            services()[name] = py_mod.create_service()
-        except:
-            lg.exc()
-    if callback:
-        callback()
-
-
-def shutdown_all(callback=None):
-    """
-    """
-    for svc in services().values():
-        lg.out(2, 'local_service.shutdown_all closing %r' % svc)
-        automat.clear_object(svc.index)
-    services().clear()
-    if callback:
-        callback()
-
-
-def order_all():
-    order = []
-#    while True:
-#        for svc in services().values():
-#            if svc.name not in order:
-#                for depend_name in svc.dependent_on():
-#                    if depend_name not in order:
-#                        order.append(depend_name)
-#                order.append(svc.name)
-#            else:
-#                for depend_name in svc.dependent_on():
-                
-                
-
-# b
-# a
-# 
-
-#------------------------------------------------------------------------------ 
-
-class ServiceAlreadyExist(Exception):
-    pass
-
-class RequireSubclass(Exception):
-    pass
+from driver import services, RequireSubclass, ServiceAlreadyExist
 
 #------------------------------------------------------------------------------ 
 
@@ -272,7 +183,7 @@ class LocalService(automat.Automat):
         """
         for svc in services().values():
             if self.name in svc.dependent_on():
-                lg.out(6, '%r sends "stop" to %r' % (self, svc))
+                # lg.out(6, '%r sends "stop" to %r' % (self, svc))
                 svc.automat('stop')
 
     def doStartService(self, arg):

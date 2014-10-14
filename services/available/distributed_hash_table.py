@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dht_service.py
+#distributed_hash_table.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,11 +8,11 @@
 #
 
 """
-.. module:: service_distributed_hash_table
+.. module:: distributed_hash_table
 
 """
 
-from local_service import LocalService
+from services.local_service import LocalService
 
 def create_service():
     return DistributedHashTableService()

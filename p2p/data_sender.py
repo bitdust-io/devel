@@ -55,8 +55,6 @@ from lib import nameurl
 from lib import automat
 from lib import automats
 
-from transport import gate
-
 import io_throttle
 import backup_matrix
 import fire_hire

@@ -70,7 +70,7 @@ from lib import settings
 from lib import commands
 from lib import automat
 
-from transport import gate
+from transport import gateway
 
 from crypt import encrypted
 from crypt import signed
@@ -180,7 +180,7 @@ class BackupDBKeeper(automat.Automat):
             if not supplierId:
                 continue
             newpacket = signed.Packet(commands.Retrieve(), localID, localID, packetID, Payload, supplierId)
-            gate.outbox(newpacket, callbacks={
+            gateway.outbox(newpacket, callbacks={
                 commands.Data(): self._supplier_response,
                 commands.Fail(): self._supplier_response,}) 
                         # ack_callback=self._supplier_response,
@@ -207,7 +207,7 @@ class BackupDBKeeper(automat.Automat):
             if not contact_status.isOnline(supplierId):
                 continue
             newpacket = signed.Packet(commands.Data(), localID, localID, packetID, Payload, supplierId)
-            gate.outbox(newpacket, callbacks={
+            gateway.outbox(newpacket, callbacks={
                 commands.Ack(): self._supplier_acked,
                 commands.Fail(): self._supplier_acked})
             # callback.register_interest(self._supplier_acked, supplierId, packetID)

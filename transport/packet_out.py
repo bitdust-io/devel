@@ -45,7 +45,7 @@ from lib import net_misc
 from userid import identitycache
 
 import callback
-import gate
+import gateway
 import stats
 
 #------------------------------------------------------------------------------ 
@@ -434,8 +434,8 @@ class PacketOut(automat.Automat):
         """
         for i in self.items:
             if i.transfer_id:
-                gate.transport(i.proto).call('cancel_file_sending', i.transfer_id)
-            gate.transport(i.proto).call('cancel_outbox_file', i.host, self.filename)
+                gateway.transport(i.proto).call('cancel_file_sending', i.transfer_id)
+            gateway.transport(i.proto).call('cancel_outbox_file', i.host, self.filename)
                 
     def doReportStarted(self, arg):
         """
@@ -537,11 +537,11 @@ class PacketOut(automat.Automat):
                 proto, host = nameurl.IdContactSplit(contactmethod)
                 if  host.strip() and \
                     settings.transportSendingIsEnabled(proto) and \
-                    gate.can_send(proto) and \
-                    gate.is_installed(proto):
+                    gateway.can_send(proto) and \
+                    gateway.is_installed(proto):
                         if proto == 'tcp' and localIP:
                             host = localIP
-                        d = gate.send_file(proto, host, self.filename, self.description)
+                        d = gateway.send_file(proto, host, self.filename, self.description)
                         self.items.append(WorkItem(proto, host))
                         workitem_sent = True
             if not workitem_sent:
@@ -566,29 +566,29 @@ class PacketOut(automat.Automat):
         # he enabled tcp in his settings to be able to receive packets from others 
         # try to send to his local IP first, not external
         if tcp_contact and localIP:
-            if gate.is_installed('tcp') and gate.can_send(proto):
+            if gateway.is_installed('tcp') and gateway.can_send(proto):
                 proto, host, port, fn = nameurl.UrlParse(tcp_contact)
                 if port:
                     host = localIP+':'+str(port)
-                gate.send_file(proto, host , self.filename, self.description)
+                gateway.send_file(proto, host , self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
                 return
         # tcp is the best proto - if it is working - this is the best case!!!
         if tcp_contact and 'tcp' in working_protos:
             proto, host, port, fn = nameurl.UrlParse(tcp_contact)
-            if host.strip() and gate.is_installed(proto) and gate.can_send(proto):  
+            if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):  
                 if port:
                     host = host+':'+str(port)
-                gate.send_file(proto, host, self.filename, self.description)
+                gateway.send_file(proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
                 return
         # udp contact
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
-            if host.strip() and gate.is_installed('udp') and gate.can_send(proto):
-                gate.send_file(proto, host, self.filename, self.description)
+            if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
+                gateway.send_file(proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
                 return
@@ -600,9 +600,9 @@ class PacketOut(automat.Automat):
             # if method exist but empty - don't use it
             if host.strip():
                 # try sending with tcp even if it is switched off in the settings
-                if gate.is_installed(proto) and gate.can_send(proto):
+                if gateway.is_installed(proto) and gateway.can_send(proto):
                     if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
-                        gate.send_file(proto, host, self.filename, self.description)
+                        gateway.send_file(proto, host, self.filename, self.description)
                         self.items.append(WorkItem(proto, host))
                         self.automat('items-sent')
                         return

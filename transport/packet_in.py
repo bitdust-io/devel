@@ -35,7 +35,7 @@ from lib import contacts
 
 from userid import identitycache
 
-import gate
+import gateway
 import stats
 import callback
 import packet_out
@@ -198,7 +198,7 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        gate.transport(self.proto).call('cancel_file_receiving', self.transfer_id)
+        gateway.transport(self.proto).call('cancel_file_receiving', self.transfer_id)
 
     def doCacheRemoteIdentity(self, arg):
         """
@@ -214,7 +214,7 @@ class PacketIn(automat.Automat):
         """
         self.status, self.bytes_received, self.error_message = arg
         # DO UNSERIALIZE HERE , no exceptions
-        newpacket = gate.inbox(self)
+        newpacket = gateway.inbox(self)
         if newpacket is None:
             lg.out(14, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
                          self.proto.upper().ljust(5), self.status.ljust(8), 
