@@ -58,7 +58,7 @@ def A(event=None, arg=None):
     global _IdServer
     if _IdServer is None:
         # set automat name and starting state here
-        _IdServer = IdServer('id_server', 'AT_STARTUP')
+        _IdServer = IdServer('id_server', 'AT_STARTUP', 2)
     if event is None:
         return _IdServer
     _IdServer.automat(event, arg)

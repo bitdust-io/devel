@@ -74,7 +74,7 @@ def A(event=None, arg=None):
     global _IdRestorer
     if _IdRestorer is None:
         # set automat name and starting state here
-        _IdRestorer = IdRestorer('id_restorer', 'AT_STARTUP')
+        _IdRestorer = IdRestorer('id_restorer', 'AT_STARTUP', 2)
     if event is not None:
         _IdRestorer.automat(event, arg)
     return _IdRestorer
