@@ -240,6 +240,9 @@ def shutdown(x=None):
     lg.out(2, "init_shutdown.shutdown " + str(x))
     dl = []
 
+    from services import local_service
+    local_service.shutdown_all()
+
     import io_throttle
     io_throttle.shutdown()
 

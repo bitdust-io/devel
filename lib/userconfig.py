@@ -217,7 +217,7 @@ _DefaultXMLConfig = ur"""<settings>
  </id-server>
  <logs>
   <debug-level>
-   0
+   16
   </debug-level>
   <stream-enable>
    False

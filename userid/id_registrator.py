@@ -17,7 +17,8 @@ EVENTS:
     * :red:`start`
     * :red:`stun-failed`
     * :red:`stun-success`
-    * :red:`timer-10sec`
+    * :red:`timer-15sec`
+    * :red:`timer-2min`
     * :red:`timer-30sec`
     * :red:`timer-5sec`
 """
@@ -79,9 +80,10 @@ class IdRegistrator(automat.Automat):
     """
 
     timers = {
+        'timer-2min': (120, ['SEND_ID']),
         'timer-30sec': (30.0, ['NAME_FREE?']),
-        'timer-10sec': (10.0, ['SEND_ID','REQUEST_ID']),
         'timer-5sec': (5.0, ['REQUEST_ID']),
+        'timer-15sec': (15.0, ['REQUEST_ID']),
         }
 
     MESSAGES = {
@@ -191,7 +193,7 @@ class IdRegistrator(automat.Automat):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_10', arg))
                 self.doDestroyMe(arg)
-            elif event == 'timer-10sec' :
+            elif event == 'timer-2min' :
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_13', arg))
                 self.doDestroyMe(arg)
@@ -208,10 +210,11 @@ class IdRegistrator(automat.Automat):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_11', arg))
                 self.doDestroyMe(arg)
-            elif event == 'timer-10sec' :
+            elif event == 'timer-15sec' :
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_12', arg))
                 self.doDestroyMe(arg)
+        return None
 
     def isMyIdentityValid(self, arg):
         """

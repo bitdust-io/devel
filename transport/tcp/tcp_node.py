@@ -187,22 +187,32 @@ def send(filename, remoteaddress, description=None, single=False):
     result_defer = Deferred()
     if remoteaddress in started_connections():
         started_connections()[remoteaddress].add_outbox_file(filename, description, result_defer, single)
+        if single:
+            lg.out(6, 'tcp_node.send single, use started connection to %s, %d already started and %d opened' % (
+                str(remoteaddress), len(started_connections()), len(opened_connections())))
         return result_defer
     for peeraddr, connections in opened_connections().items():
         for connection in connections:
             if peeraddr == remoteaddress:
                 connection.append_outbox_file(filename, description, result_defer, single)
+                if single:
+                    lg.out(6, 'tcp_node.send single, use opened connection to %s, %d already started and %d opened' % (
+                        str(remoteaddress), len(started_connections()), len(opened_connections())))
                 return result_defer
             if connection.getConnectionAddress():
                 if connection.getConnectionAddress() == remoteaddress:
                     connection.append_outbox_file(filename, description, result_defer, single)
+                    if single:
+                        lg.out(6, 'tcp_node.send single, use opened(2) connection to %s, %d already started and %d opened' % (
+                            str(remoteaddress), len(started_connections()), len(opened_connections())))
                     return result_defer
     connection = TCPFactory(remoteaddress)
     connection.add_outbox_file(filename, description, result_defer, single)
     connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection)
     started_connections()[remoteaddress] = connection
-    # lg.out(18, 'tcp_node.send     %s opened, %d started' % (
-    #     str(remoteaddress), len(started_connections())))
+    if single:
+        lg.out(6, 'tcp_node.send opened a single connection to %s, %d already started and %d opened' % (
+            str(remoteaddress), len(started_connections()), len(opened_connections())))
     return result_defer
 
 

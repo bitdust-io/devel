@@ -64,7 +64,7 @@ from lib import bpio
 from lib import automat
 from lib import automats
 
-from services import switchable_service
+from services import local_service
 
 import installer
 import shutdowner
@@ -232,7 +232,7 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
-        switchable_service.init_all(
+        local_service.init_all(
             callback=lambda : self.automat('init-services-done'))
 
     def doInitContacts(self, arg):
