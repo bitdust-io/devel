@@ -1439,7 +1439,7 @@ def Unserialize(inpt, iter=None, iterID=None):
             if not SetDir(item, iter, iterID):
                 raise Exception('Can not put item into the tree: %s' % str(item))
         else:
-            raise Exception('Incorrect entry type')
+            raise Exception('Incorrect entry type: %s' + src)
         count += 1
     lg.out(6, 'backup_fs.Unserialize done with %d indexed files' % count)
     return count
