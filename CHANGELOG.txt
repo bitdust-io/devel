@@ -8,3 +8,7 @@
     * switched on a new imporved UDP transport - can use UDP to transfer packets now
     * upgrade messaging service - safe p2p encrypted chat
     * added command line support to send/list messages
+
+  2014-15-10 Veselin Penev <veselin@bitpie.net>
+    
+    * fixed error in registration part
