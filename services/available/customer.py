@@ -19,7 +19,7 @@ def create_service():
     
 class CustomerService(LocalService):
     
-    name = 'customer'
+    service_name = 'customer'
     
     def dependent_on(self):
         return []

@@ -158,9 +158,6 @@ def init_connection():
     from lib import settings
     dht_service.init(int(settings.getDHTPort()), settings.DHTDBFile())
 
-    # from transport import gate
-    # gate.init()
-    
     from transport import bandwidth
     from transport import callback
     callback.add_inbox_callback(bandwidth.INfile)
@@ -240,8 +237,8 @@ def shutdown(x=None):
     lg.out(2, "init_shutdown.shutdown " + str(x))
     dl = []
 
-    from services import local_service
-    local_service.shutdown_all()
+    from services import driver
+    driver.shutdown()
 
     import io_throttle
     io_throttle.shutdown()
@@ -285,8 +282,8 @@ def shutdown(x=None):
     callback.remove_inbox_callback(bandwidth.INfile)
     callback.remove_finish_file_sending_callback(bandwidth.OUTfile)
     
-    from transport import gate
-    gate.shutdown()
+    from transport import gateway
+    gateway.shutdown()
     
     from dht import dht_service
     dht_service.shutdown()

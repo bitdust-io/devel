@@ -19,10 +19,11 @@ def create_service():
     
 class IdentityPropagateService(LocalService):
     
-    name = 'identity_propagate'
+    service_name = 'identity_propagate'
     
     def dependent_on(self):
-        return []
+        return ['network',
+                ]
     
     def start(self):
         pass

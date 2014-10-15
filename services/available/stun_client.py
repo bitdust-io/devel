@@ -19,11 +19,12 @@ def create_service():
     
 class StunClientService(LocalService):
     
-    name = 'stun_client'
+    service_name = 'stun_client'
     
     def dependent_on(self):
         return ['distributed_hash_table',
                 'udp_datagrams',
+                'network',
                 ]
     
     def start(self):

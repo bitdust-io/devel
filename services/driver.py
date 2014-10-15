@@ -29,7 +29,7 @@ def registered_services():
         'distributed_hash_table',
         'udp_datagrams',
         'tcp_connections',
-        'network_connector',
+        'network',
         'tcp_transport',
         'udp_transport',
         'gateway',
@@ -61,10 +61,10 @@ def is_exist(name):
 
 #------------------------------------------------------------------------------ 
 
-def init_all(callback=None):
+def init(callback=None):
     """
     """
-    lg.out(2, 'local_service.init_all')
+    lg.out(2, 'driver.init')
     available_services_dir = os.path.join(bpio.getExecutableDir(), 'services', 'available')
     for filename in os.listdir(available_services_dir):
         if not filename.endswith('.py'):
@@ -86,40 +86,68 @@ def init_all(callback=None):
         callback()
 
 
-def shutdown_all(callback=None):
+def shutdown(callback=None):
     """
     """
+    lg.out(2, 'driver.shutdown')
     for svc in services().values():
-        lg.out(2, 'local_service.shutdown_all closing %r' % svc)
+        lg.out(2, '    closing %r' % svc)
         automat.clear_object(svc.index)
     services().clear()
     if callback:
         callback()
 
 
-def order_all():
+def build_order():
+    """
+    """
     order = []
     for svc in services().values():
-        if svc.name not in order:
+        if svc.service_name not in order:
             for depend_name in svc.dependent_on():
                 if depend_name not in order:
                     order.append(depend_name)
-                    print 'append', depend_name
-            order.append(svc.name)
-            print 'append parent', svc.name
+            order.append(svc.service_name)
         else:
-            index = order.index(svc.name)
+            index = order.index(svc.service_name)
             for depend_name in svc.dependent_on():
                 if depend_name not in order:
-                    order.insert(index, depend_name)
-                    print 'insert', svc.name, depend_name 
+                    order.insert(index+1, depend_name)
                 else:
-                    if order.index(depend_name) > index:
-                        lg.warn('dependency not satisfied: %s depend on %s' % (
-                            svc.name, depend_name))
-                    else:
-                        print 'ok', svc.name, depend_name 
+                    depend_index = order.index(depend_name)
+                    if index < depend_index:
+                        order.insert(depend_index+1, svc.service_name)
+                        del order[index]
+    for svc_name in services().keys():
+        for depend_name in svc.dependent_on():
+            if order.index(svc_name) < order.index(depend_name):
+                lg.warn('dependency not satisfied: #%d:%s depend on #d:%s' % (
+                    order.index(svc_name), svc.service_name, order.index(depend_name), depend_name,))
     return order
+
+
+def start():
+    """
+    """
+    lg.out(2, 'driver.start')
+    order = build_order()
+    for name in order:
+        svc = services().get(name, None)
+        if not svc:
+            raise ServiceNotFound(name)
+        svc.automat('start')
+        
+        
+def stop():
+    """
+    """
+    lg.out(2, 'driver.stop')
+    order = build_order()
+    for name in order.reverse():
+        svc = services().get(name, None)
+        if not svc:
+            raise ServiceNotFound(name)
+        svc.automat('stop')
 
 #------------------------------------------------------------------------------ 
 
@@ -129,12 +157,16 @@ class ServiceAlreadyExist(Exception):
 class RequireSubclass(Exception):
     pass
 
+class ServiceNotFound(Exception):
+    pass
+
 #------------------------------------------------------------------------------ 
 
 def main():
     lg.set_debug_level(20)
-    init_all()
-    print '\n    '.join(order_all())
+    init()
+    print '\n'.join(build_order())
+    shutdown()
 
 
 if __name__ == '__main__':

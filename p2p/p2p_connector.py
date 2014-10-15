@@ -152,7 +152,6 @@ class P2PConnector(automat.Automat):
             if event == 'init' :
                 self.state = 'NETWORK?'
                 self.doInit(arg)
-                network_connector.A('init')
                 backup_monitor.A('init')
                 backup_db_keeper.A('init')
                 list_files_orator.A('init')

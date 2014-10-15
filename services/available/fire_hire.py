@@ -19,7 +19,7 @@ def create_service():
     
 class FireHireService(LocalService):
     
-    name = 'fire_hire'
+    service_name = 'fire_hire'
     
     def dependent_on(self):
         return []

@@ -19,7 +19,7 @@ def create_service():
     
 class SupplierService(LocalService):
     
-    name = 'supplier'
+    service_name = 'supplier'
     
     def dependent_on(self):
         return ['gateway',

@@ -19,14 +19,19 @@ def create_service():
     
 class GatewayService(LocalService):
     
-    name = 'gateway'
+    service_name = 'gateway'
     
     def dependent_on(self):
-        return ['network_connector',
+        return ['network',
                 ]
     
     def start(self):
-        pass
+        from transport import gateway
+        gateway.init()
+        gateway.start()
+        
+        # global _TransportsInitialization
+        # _TransportsInitialization = gateway.init()
     
     def stop(self):
         pass

@@ -19,7 +19,7 @@ def create_service():
     
 class DataSenderService(LocalService):
     
-    name = 'data_sender'
+    service_name = 'data_sender'
     
     def dependent_on(self):
         return []

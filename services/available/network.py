@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#network_connector.py
+#network.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,24 +8,25 @@
 #
 
 """
-.. module:: network_connector
+.. module:: network
 
 """
 
 from services.local_service import LocalService
 
 def create_service():
-    return NetworkConnectorService()
+    return NetworkService()
     
-class NetworkConnectorService(LocalService):
+class NetworkService(LocalService):
     
-    name = 'network_connector'
+    service_name = 'network'
     
     def dependent_on(self):
         return []
     
     def start(self):
-        pass
+        from p2p import network_connector
+        network_connector.A('init')
     
     def stop(self):
         pass

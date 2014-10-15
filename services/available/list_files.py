@@ -19,7 +19,7 @@ def create_service():
     
 class ListFilesService(LocalService):
     
-    name = 'list_files'
+    service_name = 'list_files'
     
     def dependent_on(self):
         return ['gateway',

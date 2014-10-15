@@ -19,7 +19,7 @@ def create_service():
     
 class IdentityServerService(LocalService):
     
-    name = 'identity_server'
+    service_name = 'identity_server'
     
     def dependent_on(self):
         return ['tcp_connections',

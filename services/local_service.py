@@ -24,6 +24,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
+from logs import lg
+
 from lib import automat
 
 from driver import services, RequireSubclass, ServiceAlreadyExist
@@ -35,14 +37,14 @@ class LocalService(automat.Automat):
     This class implements all the functionality of the ``local_service()`` state machine.
     """
     
-    name = ''
+    service_name = ''
 
     def __init__(self):
-        if self.name == '':
+        if self.service_name == '':
             raise RequireSubclass()
-        if self.name in services().keys():
-            raise ServiceAlreadyExist(self.name)
-        automat.Automat.__init__(self, self.name, 'OFF', 10)
+        if self.service_name in services().keys():
+            raise ServiceAlreadyExist(self.service_name)
+        automat.Automat.__init__(self, self.service_name+'_service', 'OFF', 2)
 
     def init(self):
         """
@@ -182,7 +184,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         for svc in services().values():
-            if self.name in svc.dependent_on():
+            if self.service_name in svc.dependent_on():
                 # lg.out(6, '%r sends "stop" to %r' % (self, svc))
                 svc.automat('stop')
 
@@ -190,12 +192,14 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
+        lg.out(4, '    starting service [%s]' % self.service_name)
         self.start()
 
     def doStopService(self, arg):
         """
         Action method.
         """
+        lg.out(4, '    stopping service [%s]' % self.service_name)
         self.stop()
 
     def doSetCallback(self, arg):
@@ -210,7 +214,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback((self.name, 'started'))
+            self.result_callback((self.service_name, 'started'))
             self.result_callback = None
 
     def doNotifyStopped(self, arg):
@@ -218,7 +222,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback((self.name, 'stopped'))
+            self.result_callback((self.service_name, 'stopped'))
             self.result_callback = None
 
     def doNotifyDependsBroken(self, arg):
@@ -226,7 +230,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback((self.name, 'broken'))
+            self.result_callback((self.service_name, 'broken'))
             self.result_callback = None
 
     def doNotifyNotInstalled(self, arg):
@@ -234,13 +238,16 @@ class LocalService(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback((self.name, 'not installed'))
+            self.result_callback((self.service_name, 'not installed'))
             self.result_callback = None
         
     #------------------------------------------------------------------------------ 
 
     def dependent_on(self):
         return []
+    
+    def is_installed(self):
+        return True
     
     def start(self):
         raise RequireSubclass()

@@ -19,7 +19,7 @@ def create_service():
     
 class BackupDBService(LocalService):
     
-    name = 'backup_db'
+    service_name = 'backup_db'
     
     def dependent_on(self):
         return ['gateway']

@@ -19,7 +19,7 @@ def create_service():
     
 class RestoreMonitorService(LocalService):
     
-    name = 'restore_monitor'
+    service_name = 'restore_monitor'
     
     def dependent_on(self):
         return ['gateway',

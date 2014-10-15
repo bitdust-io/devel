@@ -19,7 +19,7 @@ def create_service():
     
 class PrivateMessagesService(LocalService):
     
-    name = 'private_messages'
+    service_name = 'private_messages'
     
     def dependent_on(self):
         return ['gateway',

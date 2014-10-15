@@ -62,7 +62,6 @@ class NetworkTransport(automat.Automat):
         Method to to catch the moment when automat's state were changed.
         """
         if self.nw_connector:
-        # from p2p import network_connector
             self.nw_connector.on_network_transport_state_changed(self.proto, oldstate, newstate)
 
     def A(self, event, arg):
@@ -185,13 +184,6 @@ class NetworkTransport(automat.Automat):
         if arg:
             self.interface.create_proxy(arg)
 
-#    def doNotifyNWConnector(self, arg):
-#        """
-#        Action method.
-#        """
-#        # from p2p import network_connector
-#        # network_connector.NetworkTransportInitialized(self.proto)
-
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
@@ -199,6 +191,5 @@ class NetworkTransport(automat.Automat):
         gateway.transports().pop(self.proto)
         automat.objects().pop(self.index)
         self.interface = None
-        # self.proto = None
 
 

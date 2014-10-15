@@ -19,7 +19,7 @@ def create_service():
     
 class UDPDatagramsService(LocalService):
     
-    name = 'udp_datagrams'
+    service_name = 'udp_datagrams'
     
     def dependent_on(self):
         return []

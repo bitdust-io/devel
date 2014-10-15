@@ -19,7 +19,7 @@ def create_service():
     
 class DistributedHashTableService(LocalService):
     
-    name = 'distributed_hash_table'
+    service_name = 'distributed_hash_table'
     
     def dependent_on(self):
         return ['udp_datagrams', ]

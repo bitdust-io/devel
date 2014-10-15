@@ -19,7 +19,7 @@ def create_service():
     
 class TCPConnectionsService(LocalService):
     
-    name = 'tcp_connections'
+    service_name = 'tcp_connections'
     
     def dependent_on(self):
         return []

@@ -64,7 +64,7 @@ from lib import bpio
 from lib import automat
 from lib import automats
 
-from services import local_service
+from services import driver
 
 import installer
 import shutdowner
@@ -227,13 +227,14 @@ class Initializer(automat.Automat):
         maybeDeferred(init_shutdown.init_local, arg).addCallback(
             lambda x: self.automat('init-local-done'))
 
-
     def doInitServices(self, arg):
         """
         Action method.
         """
-        local_service.init_all(
-            callback=lambda : self.automat('init-services-done'))
+        driver.init()
+        driver.start()
+            # callback=lambda : self.automat('init-services-done'))
+        self.automat('init-services-done')
 
     def doInitContacts(self, arg):
         init_shutdown.init_contacts(

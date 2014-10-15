@@ -133,7 +133,7 @@ class NetworkConnector(Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init' :
                 self.state = 'GATE_INIT'
-                self.doInitGate(arg)
+                self.doInitGateway(arg)
         #---UPNP---
         elif self.state == 'UPNP':
             if event == 'upnp-done' :
@@ -244,7 +244,7 @@ class NetworkConnector(Automat):
     def isTimePassed(self, arg):
         return time.time() - self.last_reconnect_time < 15
 
-    def doInitGate(self, arg):
+    def doInitGateway(self, arg):
         """
         Action method.
         """
@@ -264,8 +264,6 @@ class NetworkConnector(Automat):
                                   settings.getIdServerTCPPort()))  
         dht_service.connect()
         nickname_holder.A('set', None)
-        global _TransportsStarting
-        _TransportsStarting = gateway.start()
         if len(_TransportsStarting) == 0:
             self.automat('network-up')
 
@@ -323,12 +321,12 @@ class NetworkConnector(Automat):
         lg.out(6, 'network_connector.on_network_transport_state_changed %s : %s->%s network_connector state is %s' % (
             proto, oldstate, newstate, A().state))
         # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
-        if A().state == 'GATE_INIT':
-            if newstate in ['STARTING', 'OFFLINE',]:
-                _TransportsInitialization.remove(proto)
-                if len(_TransportsInitialization) == 0:
-                    A('all-transports-ready')                
-        elif A().state == 'UP':
+#        if A().state == 'GATE_INIT':
+#            if newstate in ['STARTING', 'OFFLINE',]:
+#                _TransportsInitialization.remove(proto)
+#                if len(_TransportsInitialization) == 0:
+#                    A('all-transports-ready')                
+        if A().state == 'UP':
             if newstate in ['LISTENING', 'OFFLINE',]:
                 _TransportsStarting.remove(proto)
                 if len(_TransportsStarting) == 0:

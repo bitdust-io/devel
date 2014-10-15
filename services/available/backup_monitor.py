@@ -19,7 +19,7 @@ def create_service():
     
 class BackupMonitorService(LocalService):
     
-    name = 'backup_monitor'
+    service_name = 'backup_monitor'
     
     def dependent_on(self):
         return ['gateway',

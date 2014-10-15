@@ -19,7 +19,7 @@ def create_service():
     
 class RebuildingService(LocalService):
     
-    name = 'rebuilding'
+    service_name = 'rebuilding'
     
     def dependent_on(self):
         return ['gateway',
