@@ -1835,10 +1835,12 @@ if __name__ == '__main__':
             print '%d/%d' % (x,y)      
         def _done(x):
             print 'DONE', x
-            reactor.stop()  
+            reactor.stop()
+            return x  
         def _fail(x):
             print 'FAIL', x
-            reactor.stop()  
+            reactor.stop()
+            return x  
         d = SendDevReport('subject ', 'some body112', True, _progress)
         if d:
             d.addCallback(_done)

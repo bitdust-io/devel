@@ -7185,10 +7185,11 @@ class DevReportPage(Page):
 
     def progress_callback(self, x, y):
         global _DevReportProcess
-        if x == y:
+        if x == y and y > 0:
             _DevReportProcess = ''
         else:
             _DevReportProcess = '%d/%d' % (x,y)
+            # SendCommandToGUI('update')
         
     def renderPage(self, request):
         # global local_version
@@ -7214,6 +7215,7 @@ class DevReportPage(Page):
                 src += 'compressing ... '
             else:
                 src += 'sending: ' + _DevReportProcess
+            reactor.callLater(0.2, SendCommandToGUI, 'update')
             return html(request, body=src, back='/'+_PAGE_CONFIG, reload='0.2')
         
         src += '<h3>send Message</h3>\n'
