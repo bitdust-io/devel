@@ -214,7 +214,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback((self.service_name, 'started'))
+            self.result_callback(self.service_name, 'started')
             self.result_callback = None
 
     def doNotifyStopped(self, arg):
@@ -222,7 +222,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback((self.service_name, 'stopped'))
+            self.result_callback(self.service_name, 'stopped')
             self.result_callback = None
 
     def doNotifyDependsBroken(self, arg):
@@ -230,7 +230,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback((self.service_name, 'broken'))
+            self.result_callback(self.service_name, 'broken')
             self.result_callback = None
 
     def doNotifyNotInstalled(self, arg):
@@ -238,7 +238,7 @@ class LocalService(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback((self.service_name, 'not installed'))
+            self.result_callback(self.service_name, 'not installed')
             self.result_callback = None
         
     #------------------------------------------------------------------------------ 

@@ -24,8 +24,8 @@ def services():
     global _ServicesDict
     return _ServicesDict
 
-def registered_services():
-    return [
+def enabled_services():
+    return set([
         'distributed_hash_table',
         'udp_datagrams',
         'tcp_connections',
@@ -48,8 +48,8 @@ def registered_services():
         'fire_hire',
         'private_messages',
         'restore_monitor',
-        ]
-
+        ])
+    
 def is_started(name):
     svc = services().get(name, None)
     if svc is None:
@@ -73,6 +73,8 @@ def init(callback=None):
             continue
         # filepath = os.path.join(available_services_dir, filename)
         name = filename[:-3]
+        if name not in enabled_services():
+            continue
         try:
             py_mod = importlib.import_module('services.available.'+name)
         except:
@@ -132,6 +134,8 @@ def start():
     lg.out(2, 'driver.start')
     order = build_order()
     for name in order:
+        if name not in enabled_services():
+            continue
         svc = services().get(name, None)
         if not svc:
             raise ServiceNotFound(name)
@@ -144,10 +148,35 @@ def stop():
     lg.out(2, 'driver.stop')
     order = build_order()
     for name in order.reverse():
+        if name not in enabled_services():
+            continue
         svc = services().get(name, None)
         if not svc:
             raise ServiceNotFound(name)
         svc.automat('stop')
+        
+
+def service_callback(service_name, result):
+    """
+    """
+    lg.out(4, 'driver.service_callback %s : [%s]' % (service_name, result))
+    svc = services().get(service_name, None)
+    if not svc:
+        raise ServiceNotFound(service_name)
+    if result == 'started':
+        for name in services().keys():
+            if name == service_name:
+                continue
+            if name not in enabled_services():
+                continue
+            other_service = services().get(name, None)
+            if not other_service:
+                raise ServiceNotFound(name)
+            if other_service.state == 'ON':
+                continue
+            for depend_name in other_service.dependent_on():
+                if depend_name == service_name:
+                    other_service.automat
 
 #------------------------------------------------------------------------------ 
 

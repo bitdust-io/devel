@@ -87,9 +87,9 @@ _NetworkConnector = None
 _CounterSuccessConnections = 0
 _CounterFailedConnections = 0
 _LastSuccessConnectionTime = 0
-_TransportsInitialization = []
-_TransportsStarting = []
-_TransportsStopping = []
+# _TransportsInitialization = []
+# _TransportsStarting = []
+# _TransportsStopping = []
 
 #------------------------------------------------------------------------------
 
@@ -244,12 +244,12 @@ class NetworkConnector(Automat):
     def isTimePassed(self, arg):
         return time.time() - self.last_reconnect_time < 15
 
-    def doInitGateway(self, arg):
-        """
-        Action method.
-        """
-        global _TransportsInitialization
-        _TransportsInitialization = gateway.init(nw_connector=self)
+#    def doInitGateway(self, arg):
+#        """
+#        Action method.
+#        """
+#        global _TransportsInitialization
+#        _TransportsInitialization = gateway.init(nw_connector=self)
 
     def doSetUp(self, arg):
         lg.out(6, 'network_connector.doSetUp')
@@ -264,8 +264,8 @@ class NetworkConnector(Automat):
                                   settings.getIdServerTCPPort()))  
         dht_service.connect()
         nickname_holder.A('set', None)
-        if len(_TransportsStarting) == 0:
-            self.automat('network-up')
+        # if len(_TransportsStarting) == 0:
+        self.automat('network-up')
 
     def doSetDown(self, arg):
         """
@@ -275,10 +275,10 @@ class NetworkConnector(Automat):
         stun_server.A('stop')
         if settings.enableIdServer():
             id_server.A('stop')
-        global _TransportsStopping    
-        _TransportsStopping = gateway.stop()
-        if len(_TransportsStopping) == 0:
-            self.automat('network-down')
+        # global _TransportsStopping    
+        # _TransportsStopping = gateway.stop()
+        # if len(_TransportsStopping) == 0:
+        self.automat('network-down')
 
     def doUPNP(self, arg):
         self.last_upnp_time = time.time()
@@ -313,31 +313,6 @@ class NetworkConnector(Automat):
 
     def doRememberTime(self, arg):
         self.last_reconnect_time = time.time()
-    
-    def on_network_transport_state_changed(self, proto, oldstate, newstate):
-        global _TransportsInitialization
-        global _TransportsStarting
-        global _TransportsStopping
-        lg.out(6, 'network_connector.on_network_transport_state_changed %s : %s->%s network_connector state is %s' % (
-            proto, oldstate, newstate, A().state))
-        # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
-#        if A().state == 'GATE_INIT':
-#            if newstate in ['STARTING', 'OFFLINE',]:
-#                _TransportsInitialization.remove(proto)
-#                if len(_TransportsInitialization) == 0:
-#                    A('all-transports-ready')                
-        if A().state == 'UP':
-            if newstate in ['LISTENING', 'OFFLINE',]:
-                _TransportsStarting.remove(proto)
-                if len(_TransportsStarting) == 0:
-                    A('network-up')
-        elif A().state == 'DOWN':
-            if newstate == 'OFFLINE':
-                _TransportsStopping.remove(proto)
-                if len(_TransportsStopping) == 0:
-                    A('network-down')
-        # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
-    
 
 #------------------------------------------------------------------------------ 
 

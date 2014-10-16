@@ -166,7 +166,7 @@ def init(transportslist=None, nw_connector=None):
                 iface = udp_interface.GateInterface()
             if iface is None:
                 raise Exception('transport not supported: %s'  % proto)
-            _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface, nw_connector)
+            _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface, on_transport_state_changed)
             transport(proto).automat('init', _LocalListener)
             result.append(proto)
             lg.out(6, 'gateway.init initialized transport [%s]' % proto)
@@ -448,6 +448,30 @@ def stop_packets_timeout_loop():
 
 #------------------------------------------------------------------------------ 
 
+def on_transport_state_changed(transport, oldstate, newstate):
+    global _TransportsInitialization
+    global _TransportsStarting
+    global _TransportsStopping
+    lg.out(6, 'gateway.on_transport_state_changed in %r : %s->%s' % (
+        transport, oldstate, newstate))
+    # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
+#        if A().state == 'GATE_INIT':
+#            if newstate in ['STARTING', 'OFFLINE',]:
+#                _TransportsInitialization.remove(proto)
+#                if len(_TransportsInitialization) == 0:
+#                    A('all-transports-ready')                
+#    if A().state == 'UP':
+#        if newstate in ['LISTENING', 'OFFLINE',]:
+#            _TransportsStarting.remove(proto)
+#            if len(_TransportsStarting) == 0:
+#                A('network-up')
+#    elif A().state == 'DOWN':
+#        if newstate == 'OFFLINE':
+#            _TransportsStopping.remove(proto)
+#            if len(_TransportsStopping) == 0:
+#                A('network-down')
+    # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
+    
 def on_transport_initialized(proto, xmlrpcurl=None):
     """
     """

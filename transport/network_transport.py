@@ -37,10 +37,10 @@ class NetworkTransport(automat.Automat):
     This class implements all the functionality of the ``network_transport()`` state machine.
     """
 
-    def __init__(self, proto, interface, nw_connector=None):
+    def __init__(self, proto, interface, state_changed_callback=None):
         self.proto = proto
         self.interface = interface
-        self.nw_connector = nw_connector
+        self.state_changed_callback = state_changed_callback
         automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8)
         
     def call(self, method_name, *args):
@@ -61,8 +61,8 @@ class NetworkTransport(automat.Automat):
         """
         Method to to catch the moment when automat's state were changed.
         """
-        if self.nw_connector:
-            self.nw_connector.on_network_transport_state_changed(self.proto, oldstate, newstate)
+        if self.state_changed_callback:
+            self.state_changed_callback(self, oldstate, newstate)
 
     def A(self, event, arg):
         #---AT_STARTUP---
