@@ -85,7 +85,7 @@ def save_uploaded_file():
         fout.close()
         files.append(os.path.join('/tmp', fileitem.filename))
     try:
-        settings = open(SETTINGS_FILE_PATH).read().split('\n')[0:5]
+        settings = open(SETTINGS_FILE_PATH).read().split('\n')[:6]
         settings.extend([subject, body, files,])
         settings = tuple(settings)
         SendEmail(settings)
