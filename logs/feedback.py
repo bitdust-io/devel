@@ -92,7 +92,7 @@ def save_uploaded_file():
     except:
         import traceback
         f = open('/tmp/feedback.error', 'w')
-        traceback.print_tb(file=f)
+        traceback.print_last(file=f)
         f.close()
     return True
 
