@@ -47,7 +47,7 @@ def SendEmail(args_9_tuple):
         part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(filePath))
         msg.attach(part)
     s = smtplib.SMTP(HOST, PORT)
-    #s.set_debuglevel(True) # It's nice to see what's going on
+    # s.set_debuglevel(True) # It's nice to see what's going on
     s.ehlo() # identify ourselves, prompting server for supported features
     if s.has_extn('STARTTLS'):
         s.starttls()
@@ -55,6 +55,7 @@ def SendEmail(args_9_tuple):
     s.login(LOGIN, PASSWORD)  # optional
     failed = s.sendmail(FROM, TO, msg.as_string())
     s.close()
+    return failed
 
 
 def print_html_response(txt):
@@ -84,21 +85,20 @@ def save_uploaded_file():
                 break
         fout.close()
         files.append(os.path.join('/tmp', fileitem.filename))
-    try:
-        settings = open(SETTINGS_FILE_PATH).read().split('\n')[:6]
-        settings.extend([subject, body, files,])
-        settings = tuple(settings)
-        SendEmail(settings)
-    except:
-        import traceback
-        f = open('/tmp/feedback.error', 'w')
-        f.write(traceback.format_exc())
-        f.close()
+    settings = open(SETTINGS_FILE_PATH).read().split('\n')[:6]
+    settings.extend([subject, body, files,])
+    settings = tuple(settings)
+    SendEmail(settings)
     return True
 
-if not save_uploaded_file():
-    print_html_response('ready')
-else:
-    print_html_response('done')
+if __name__ == '__main__':
+#    settings = open('test.conf').read().split('\n')[:6]
+#    settings.extend(['test', 'test\ntest\ntest', [],])
+#    settings = tuple(settings)
+#    SendEmail(settings)
+    if not save_uploaded_file():
+        print_html_response('ready')
+    else:
+        print_html_response('done')
     
     
