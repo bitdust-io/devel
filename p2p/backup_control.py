@@ -152,13 +152,7 @@ def ReadIndex(inpt):
         lg.exc()
         return False
     backup_fs.Clear()
-    try:
-        count = backup_fs.Unserialize(inpt)
-    except:
-        lg.exc()
-        import pprint
-        pprint.pprint(backup_fs.fs())
-        pprint.pprint(backup_fs.fsID())
+    count = backup_fs.Unserialize(inpt)
     # local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())
     commit(new_revision)
     _LoadingFlag = False
@@ -236,8 +230,7 @@ def IncomingSupplierBackupIndex(newpacket):
     try:
         session_key = key.DecryptLocalPK(b.EncryptedSessionKey)
         padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData)
-        good_data = padded_data[:int(b.Length)]
-        input = cStringIO.StringIO(good_data)
+        input = cStringIO.StringIO(padded_data[:int(b.Length)])
         supplier_revision = input.readline().rstrip('\n')
         if supplier_revision:
             supplier_revision = int(supplier_revision)
@@ -262,13 +255,6 @@ def IncomingSupplierBackupIndex(newpacket):
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
             revision(), newpacket.RemoteID))
     input.close()
-    supplierPath = settings.SupplierPath(newpacket.RemoteID)
-    if not os.path.isdir(supplierPath):
-        try:
-            os.makedirs(supplierPath)
-        except:
-            lg.exc()
-    bpio.WriteFile(os.path.join(supplierPath, 'myindex'), good_data)
     # backup_db_keeper.A('incoming-db-info', newpacket)
         
 #------------------------------------------------------------------------------ 
