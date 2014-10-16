@@ -85,8 +85,9 @@ def save_uploaded_file():
         fout.close()
         files.append(os.path.join('/tmp', fileitem.filename))
     try:
-        settings = open(SETTINGS_FILE_PATH).read().split('\n')
-        settings = tuple(settings[:5]+[subject, body, files,])
+        settings = open(SETTINGS_FILE_PATH).read().split('\n')[0:5]
+        settings.extend([subject, body, files,])
+        settings = tuple(settings)
         SendEmail(settings)
     except:
         import traceback
