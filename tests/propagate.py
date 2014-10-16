@@ -13,8 +13,8 @@ def main():
     lg.set_debug_level(24)
     
     # TEST
-    import transport.gateway
-    transport.gateway.init(['tcp',])
+    import transport.gate
+    transport.gate.init(['tcp',])
     import userid.propagate
     userid.propagate.SendServers()
     reactor.run()

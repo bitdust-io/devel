@@ -178,7 +178,6 @@ def GetActiveArray():
             activeArray[i] = 0
     return activeArray
 
-
 def SuppliersChangedNumbers(oldSupplierList):
     """
     Return list of positions of changed suppliers,
@@ -192,7 +191,6 @@ def SuppliersChangedNumbers(oldSupplierList):
         if contacts.getSupplierID(i) != suplier_idurl:
             changedList.append(i)
     return changedList
-
 
 def SaveLatestRawListFiles(idurl, listFileText):
     """

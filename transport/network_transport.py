@@ -28,7 +28,7 @@ from lib import misc
 from lib import settings
 from lib import nameurl
 
-import gateway
+import gate
 
 #------------------------------------------------------------------------------ 
 
@@ -196,7 +196,7 @@ class NetworkTransport(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        gateway.transports().pop(self.proto)
+        gate.transports().pop(self.proto)
         automat.objects().pop(self.index)
         self.interface = None
         # self.proto = None

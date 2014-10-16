@@ -52,7 +52,8 @@ import subprocess
 try:
     from logs import lg
 except:
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), '..')))
+    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
 
 from logs import lg
 

@@ -75,7 +75,7 @@ from crypt import key
 
 from userid import identitycache
 
-from transport import gateway
+from transport import gate
 
 import p2p_service
 
@@ -195,7 +195,7 @@ def DoSendMessage(RemoteIdentity, messagebody, PacketID):
     Payload = misc.ObjectToString(Amessage)
     lg.out(6, "message.SendMessage  about to send to " + RemoteIdentity.getIDURL())
     result = signed.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteIdentity.getIDURL())
-    gateway.outbox(result)
+    gate.outbox(result)
 
 def SendMessage(RemoteID, messagebody, PacketID=""):
     """

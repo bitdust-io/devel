@@ -49,7 +49,7 @@ from crypt import key
 from userid import identitycache
 from userid import known_servers
 
-from transport import gateway
+from transport import gate
 from transport import stats
 from transport import packet_out
 
@@ -326,7 +326,7 @@ def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
         thePayload,
         idurl)
     # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
-    gateway.outbox(p, wide, callbacks={
+    gate.outbox(p, wide, callbacks={
         commands.Ack(): AckHandler,
         commands.Fail(): AckHandler}) 
     if wide:
@@ -385,7 +385,7 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
             contact)
         lg.out(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
         # callback.register_interest(AckHandler, signed.RemoteID, signed.PacketID)
-        gateway.outbox(p, wide, callbacks={
+        gate.outbox(p, wide, callbacks={
             commands.Ack(): AckHandler,
             commands.Fail(): AckHandler}) 
         if wide:
