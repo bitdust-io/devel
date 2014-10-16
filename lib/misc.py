@@ -1836,8 +1836,12 @@ if __name__ == '__main__':
         def _done(x):
             print 'DONE', x
             reactor.stop()  
+        def _fail(x):
+            print 'FAIL', x
+            reactor.stop()  
         d = SendDevReport('subject ', 'some body112', True, _progress)
         if d:
-            d.addBoth(_done)
+            d.addCallback(_done)
+            d.addErrback(_fail)
         reactor.run()
         
