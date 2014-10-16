@@ -1611,7 +1611,7 @@ def SendDevReportOld(subject, body, includelogs):
         lg.exc()
         
 
-def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=None):
+def SendDevReport(subject, body, includelogs, progress=None):
     """
     Send a developer report to our public cgi script at:
         http://bitpie.net/cgi-bin/feedback.py
@@ -1649,12 +1649,13 @@ def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=No
         if zipfilename:
             files['upload'] = zipfilename
         data = {'subject': subject, 'body': body}
-        r = net_misc.uploadHTTP('http://bitpie.net/cgi-bin/feedback.py', files, data, progress, receiverDeferred)
-        r.addErrback(lambda err: lg.out(2, 'misc.SendDevReport ERROR : %s' % str(err)))            
-        return True 
+        return net_misc.uploadHTTP('http://bitpie.net/cgi-bin/feedback.py', files, data, progress)
+        # r.addErrback(lambda err: lg.out(2, 'misc.SendDevReport ERROR : %s' % str(err)))
+        # r.addCallback(lambda src: lg.out(2, 'misc.SendDevReport : %s' % str(src)))            
+        # return r 
     except:
         lg.exc()
-    return False
+    return None
 
 #------------------------------------------------------------------------------ 
 
@@ -1827,8 +1828,8 @@ if __name__ == '__main__':
         def _done(x):
             print 'DONE', x
             reactor.stop()  
-        d = Deferred()
-        d.addBoth(_done)
-        SendDevReport('subject ', 'some body112', True, _progress, d)
+        d = SendDevReport('subject ', 'some body112', True, _progress)
+        if d:
+            d.addBoth(_done)
         reactor.run()
         
