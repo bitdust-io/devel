@@ -18,6 +18,8 @@ import time
 #------------------------------------------------------------------------------ 
 
 SETTINGS_FILE_PATH = '/home/veselin/feedback.conf'
+MAIL_SERVER_CERTIFICATE_FILE_PATH = '/home/veselin/mail.bitpie.net.cert'
+MAIL_SERVER_KEY_FILE_PATH = '/home/veselin/mail.bitpie.net.key'
 
 #------------------------------------------------------------------------------ 
 
@@ -46,7 +48,10 @@ def SendEmail(args_9_tuple):
         Encoders.encode_base64(part)
         part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(filePath))
         msg.attach(part)
-    s = smtplib.SMTP(HOST, PORT)
+    s = smtplib.SMTP_SSL(HOST, PORT, 
+                         keyfile=MAIL_SERVER_KEY_FILE_PATH,
+                         certfile=MAIL_SERVER_CERTIFICATE_FILE_PATH,
+                         timeout=30,)
     # s.set_debuglevel(True) # It's nice to see what's going on
     s.ehlo() # identify ourselves, prompting server for supported features
     if s.has_extn('STARTTLS'):
