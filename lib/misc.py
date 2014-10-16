@@ -35,6 +35,10 @@ import cPickle
 
 from twisted.python.win32 import cmdLineQuote
 
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
+
 from logs import lg 
 
 import userid.identity
@@ -1645,7 +1649,8 @@ def SendDevReport(subject, body, includelogs, progress=None, receiverDeferred=No
         if zipfilename:
             files['upload'] = zipfilename
         data = {'subject': subject, 'body': body}
-        net_misc.uploadHTTP('http://bitpie.net/cgi-bin/feedback.py', files, data, progress, receiverDeferred)            
+        r = net_misc.uploadHTTP('http://bitpie.net/cgi-bin/feedback.py', files, data, progress, receiverDeferred)
+        r.addErrback(lambda err: lg.out(2, 'misc.SendDevReport ERROR : %s' % str(err)))            
         return True 
     except:
         lg.exc()

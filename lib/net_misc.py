@@ -827,6 +827,7 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     agent = client.Agent(reactor)
     request = agent.request("POST", url, headers, myProducer)
     request.addCallback(lambda response: response.deliverBody(myReceiver))
+    return request
     
 #------------------------------------------------------------------------------ 
  

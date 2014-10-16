@@ -84,9 +84,15 @@ def save_uploaded_file():
                 break
         fout.close()
         files.append(os.path.join('/tmp', fileitem.filename))
-    settings = open(SETTINGS_FILE_PATH).read().split('\n')
-    settings = tuple(settings+[subject, body, files])
-    SendEmail(settings)
+    try:
+        settings = open(SETTINGS_FILE_PATH).read().split('\n')
+        settings = tuple(settings+[subject, body, files])
+        SendEmail(settings)
+    except:
+        import traceback
+        f = open('/tmp/feedback.error', 'w')
+        traceback.print_tb(file=f)
+        f.close()
     return True
 
 if not save_uploaded_file():
