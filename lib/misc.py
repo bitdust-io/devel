@@ -1628,8 +1628,16 @@ def SendDevReport(subject, body, includelogs, progress=None):
             filesList.append(settings.UserConfigFilename())
             filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.exe.log'))
             filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.log'))
-            for filename in os.listdir(settings.LogsDir()):
+            lst = os.listdir(settings.LogsDir())
+            lst.sort(key=lambda fn: os.path.getatime(os.path.join(settings.LogsDir(),fn)), 
+                     reverse=True)
+            totalsz = 0
+            for filename in lst:
                 filepath = os.path.join(settings.LogsDir(), filename)
+                sz = os.path.getsize(filepath)
+                if totalsz + sz > 1024*1024*10:
+                    continue
+                totalsz += sz
                 filesList.append(filepath)
         if len(filesList) > 0:
             import zipfile
@@ -1640,8 +1648,8 @@ def SendDevReport(subject, body, includelogs, progress=None):
             for filename in filesList:
                 if os.path.isfile(filename):
                     try:
-                        # if os.path.getsize(filename) < 1024*1024*10:
-                        zfile.write(filename, os.path.basename(filename))
+                        if os.path.getsize(filename) < 1024*1024*10:
+                            zfile.write(filename, os.path.basename(filename))
                     except:
                         pass
             zfile.close()
