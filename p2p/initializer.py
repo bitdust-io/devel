@@ -232,8 +232,9 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
-        local_service.init_all(
-            callback=lambda : self.automat('init-services-done'))
+        # local_service.init_all(
+        #     callback=lambda : self.automat('init-services-done'))
+        self.automat('init-services-done')
 
     def doInitContacts(self, arg):
         init_shutdown.init_contacts(
