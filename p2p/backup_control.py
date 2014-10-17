@@ -449,7 +449,7 @@ class Task():
             except:
                 lg.exc()
                 return
-        if not backup_fs.pathExist(sourcePath):
+        if not bpio.pathExist(sourcePath):
             lg.warn('path not exist: %s' % sourcePath)
             reactor.callLater(0, OnTaskFailed, self.pathID, 'not exist')
             return
@@ -470,7 +470,7 @@ class Task():
             # self.defer.callback('error', self.pathID)
             return 
         compress_mode = 'none' # 'gz'
-        if backup_fs.pathIsDir(sourcePath):
+        if bpio.pathIsDir(sourcePath):
             backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
         else:    
             backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)

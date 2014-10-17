@@ -41,8 +41,11 @@ Those dictionaries are trees - replicates the file system structure.
 
 import os
 import sys
-import stat
 import cStringIO
+
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 from logs import lg
         
@@ -161,11 +164,11 @@ class FSItemInfo():
         self.size = sz
     
     def read_stats(self, path):
-        if not pathExist(path):
+        if not bpio.pathExist(path):
             self.size = -1
             return
         # if self.type in [DIR, PARENT]:
-        if pathIsDir(path):
+        if bpio.pathIsDir(path):
 #            dirsize.ask(path, callback=lambda pth, sz, arg: self.set_size(sz))
             self.size = -1
             return
@@ -181,8 +184,8 @@ class FSItemInfo():
         self.size = long(s.st_size)
         
     def read_versions(self, path):
-        path = portablePath(path)
-        if not pathExist(path):
+        path = bpio.portablePath(path)
+        if not bpio.pathExist(path):
             return 0
         if not os.access(path, os.R_OK):
             return 0
@@ -195,7 +198,7 @@ class FSItemInfo():
             if not packetid.IsCanonicalVersion(version):
                 continue
             versionpath = os.path.join(path, version)
-            if not pathExist(versionpath):
+            if not bpio.pathExist(versionpath):
                 continue
             if not os.access(versionpath, os.R_OK):
                 return 0
@@ -296,87 +299,6 @@ class FSItemInfo():
 
 #------------------------------------------------------------------------------ 
 
-def portablePath(path):
-    """
-    Fix path to fit for our use:
-        - do convert to absolute path
-        - for Windows: 
-            - change all separators to Linux format: "\\"->"/" and "\"=>"/"
-            - convert disk letter to lower case
-        - convert to unicode 
-    """
-    p = os.path.abspath(path)
-    if not isinstance(p, unicode):
-        # p = p.encode('utf-8')
-        p = unicode(p)
-    if bpio.Windows():
-        p = p.replace('\\', '/') # .replace('\\\\', '/')
-        if len(p) >= 2 and p[1] == ':':
-            p = p[0].lower() + p[1:]
-    if p.endswith('/') and len(p) > 1:
-        p = p.rstrip('/')
-    return p # unicode(p) #.encode('utf-8')
-
-def pathExist(localpath):
-    """
-    My own "portable" version of built-in ``os.path.exist()`` method.
-    """
-    if os.path.exists(localpath):
-        return True
-    p = portablePath(localpath)
-    if os.path.exists(p):
-        return True
-#    if os.path.exists(p.decode('utf-8')):
-#        return True
-    return False
-
-def pathIsDir(localpath):
-    """
-    Assume localpath is exist and return True if this is a folder.
-    """
-    # print 'pathIsDir', type(localpath), str(localpath)
-    # try to use the original path
-    if os.path.isdir(localpath):
-        return True
-    if os.path.isfile(localpath):
-        return False
-    # don't know... let's try portable path
-    p = portablePath(localpath)
-    if os.path.isdir(p):
-        return True
-    if os.path.isfile(p):
-        return False
-    # may be path is not exist at all?
-    if not os.path.exists(localpath):
-        return False
-    if not os.path.exists(p):
-        return False
-    # ok, on Linux we have devices, mounts, links ...
-    if bpio.Linux():
-        try:
-            st = os.path.stat(localpath)
-            return stat.S_ISDIR(st.st_mode)
-        except:
-            return False 
-    # now we are in really big trouble
-    raise Exception('Path not exist: %s' % p)
-    return False
-
-def pathIsDriveLetter(path):
-    """
-    Return True if ``path`` is a Windows drive letter.
-    """
-    p = path.rstrip('/').rstrip('\\')
-    if len(p) != 2:
-        return False
-    if p[1] != ':':
-        return False
-    if not p[0].isalpha():
-        return False
-    return True
-
-#------------------------------------------------------------------------------ 
-
 def MakeID(iter, startID=-1):
     """
     Create a new unique number for the folder to create a index ID.
@@ -402,7 +324,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
     """
     if not os.path.isfile(path):
         raise Exception('File not exist')
-    parts = portablePath(path).split('/')
+    parts = bpio.portablePath(path).split('/')
     if not iter:
         iter = fs()
     if not iterID:
@@ -414,7 +336,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
         if not name:
             continue
         p = '/'.join(parts[:i+1])
-        if not pathIsDir(p):
+        if not bpio.pathIsDir(p):
             raise Exception('Directory not exist: %s' % str(p))
         if not iter.has_key(name):
             # made a new ID for this folder, ID starts from 0. new folders will get the last ID +1 
@@ -468,7 +390,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
         
     Parameter ``path`` must be in "portable" form.  
     """
-    parts = portablePath(path).split('/')
+    parts = bpio.portablePath(path).split('/')
     if not iter:
         iter = fs()
     if not iterID:
@@ -479,7 +401,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
         if not name:
             continue
         p = '/'.join(parts[:i+1])
-        if not pathIsDir(p):
+        if not bpio.pathIsDir(p):
             raise Exception('Directory not exist: %s' % str(p))
         if not iter.has_key(name):
             id = MakeID(iter)
@@ -528,13 +450,13 @@ def AddLocalPath(localpath, read_stats=False):
     def recursive_read_dir(path, path_id, iter, iterID):
         c = 0
         lastID = -1
-        path = portablePath(path)
+        path = bpio.portablePath(path)
         if not os.access(path, os.R_OK):
             return c
         for localname in bpio.list_dir_safe(path):
             p = os.path.join(path, localname)  # .encode("utf-8")
             name = unicode(localname) 
-            if pathIsDir(p):
+            if bpio.pathIsDir(p):
                 if not iter.has_key(name):
                     id = MakeID(iter, lastID)
                     ii = FSItemInfo(name, path_id+'/'+str(id), DIR)
@@ -556,8 +478,8 @@ def AddLocalPath(localpath, read_stats=False):
                 c += 1
                 lastID = id
         return c    
-    localpath = portablePath(localpath) 
-    if pathIsDir(localpath):
+    localpath = bpio.portablePath(localpath) 
+    if bpio.pathIsDir(localpath):
         path_id, iter, iterID = AddDir(localpath, read_stats)
         num = recursive_read_dir(localpath, path_id, iter, iterID)
         return path_id, iter, iterID, num
@@ -657,7 +579,7 @@ def WalkByPath(path, iter=None):
     if iter is None:
         iter = fs()
     path_id = ''
-    parts = portablePath(path).split('/')
+    parts = bpio.portablePath(path).split('/')
     for j in range(len(parts)):
         name = parts[j]
         if not iter.has_key(name):
@@ -702,7 +624,7 @@ def WalkByID(pathID, iterID=None):
             if not iterID[id].has_key(INFO_KEY):
                 raise Exception('Error, directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
-            if pathIsDriveLetter(name):
+            if bpio.pathIsDriveLetter(name) or bpio.pathIsNetworkLocation(name):
                 path += name
             else:
                 path += '/' + name 
@@ -738,7 +660,7 @@ def DeleteByID(pathID, iter=None, iterID=None):
             if not iterID[id].has_key(INFO_KEY):
                 raise Exception('Error, directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
-            if pathIsDriveLetter(name):
+            if bpio.pathIsDriveLetter(name) or bpio.pathIsNetworkLocation(name):
                 path += name
             else:
                 path += '/' + name 
@@ -768,7 +690,7 @@ def DeleteByPath(path, iter=None, iterID=None):
     if iterID is None:
         iterID = fsID()
     path_id = ''
-    parts = portablePath(path).split('/')
+    parts = bpio.portablePath(path).split('/')
     for j in range(len(parts)):
         name = parts[j]  # .encode('utf-8') # parts[j]
         if not iter.has_key(name):
@@ -1095,7 +1017,7 @@ def ListByPath(path, iter=None):
     """
     List sub items in the index at given ``path``. 
     """
-    path = portablePath(path)
+    path = bpio.portablePath(path)
     iter_and_id = WalkByPath(path, iter)
     if iter_and_id is None:
         return None
@@ -1230,11 +1152,11 @@ def MakeLocalDir(basedir, pathID):
         
     Do some checking and call built-in method ``os.makedirs()``.
     """
-    if not pathIsDir(basedir):
+    if not bpio.pathIsDir(basedir):
         raise Exception('Directory not exist: %s' % basedir)
     path = os.path.join(basedir, pathID)
     if os.path.exists(path):
-        if not pathIsDir(path):
+        if not bpio.pathIsDir(path):
             raise Exception('Can not create directory %s' % path)
     else:
         os.makedirs(path)
@@ -1244,12 +1166,12 @@ def DeleteLocalDir(basedir, pathID):
     """
     Remove local sub folder at given ``basedir`` root path. 
     """
-    if not pathIsDir(basedir):
+    if not bpio.pathIsDir(basedir):
         raise Exception('Directory not exist: %s' % basedir)
     path = os.path.join(basedir, pathID)
     if not os.path.exists(path):
         return
-    if not pathIsDir(path):
+    if not bpio.pathIsDir(path):
         raise Exception('Error, %s is not a directory' % path)
     bpio.rmdir_recursive(path, ignore_errors=True)
     
@@ -1258,12 +1180,12 @@ def DeleteLocalBackup(basedir, backupID):
     Remove local files for that backup.
     """
     count_and_size = [0, 0,]
-    if not pathIsDir(basedir):
+    if not bpio.pathIsDir(basedir):
         raise Exception('Directory not exist: %s' % basedir)
     backupDir = os.path.join(basedir, backupID)
-    if not pathExist(backupDir):
+    if not bpio.pathExist(backupDir):
         return count_and_size[0], count_and_size[1]
-    if not pathIsDir(backupDir):
+    if not bpio.pathIsDir(backupDir):
         raise Exception('Error, %s is not a directory' % backupDir)
     def visitor(fullpath):
         if os.path.isfile(fullpath):
@@ -1290,7 +1212,7 @@ def Scan(basedir=None):
         info.read_stats(path)
         if info.exist():
             sum[0] += info.size
-        versions_path = portablePath(os.path.join(basedir, path_id))
+        versions_path = bpio.portablePath(os.path.join(basedir, path_id))
         sum[1] += info.read_versions(versions_path)
     TraverseByID(visitor, iterID)
     return sum[0], sum[1]
@@ -1310,7 +1232,7 @@ def ScanID(pathID, basedir=None):
             return
         iter = iter[INFO_KEY]
     iter.read_stats(path)
-    iter.read_versions(portablePath(os.path.join(basedir, pathID)))
+    iter.read_versions(bpio.portablePath(os.path.join(basedir, pathID)))
     
 def Calculate():
     """
@@ -1452,14 +1374,13 @@ def main():
     """
     filepath = settings.BackupIndexFilePath()
     src = bpio.ReadTextFile(filepath)
-    print src
     inpt = cStringIO.StringIO(src)
     inpt.readline()
     count = Unserialize(inpt)
     inpt.close()
     Scan()
     Calculate()
-    
+    print ToPath('2')
     
 #    import pprint
 #    bpio.init()

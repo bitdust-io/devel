@@ -64,11 +64,12 @@ def backups_id_list():
     return result
 
 def backup_start_id(pathID):
+    from lib import bpio
     from p2p import backup_fs
     from p2p import backup_control
     localPath = backup_fs.ToPath(pathID)
     if localPath is not None:
-        if backup_fs.pathExist(localPath):
+        if bpio.pathExist(localPath):
             backup_control.StartSingle(pathID)
             backup_fs.Calculate()
             backup_control.Save()
@@ -77,15 +78,16 @@ def backup_start_id(pathID):
         return 'item %s not found' % pathID
     
 def backup_start_path(path):
+    from lib import bpio
     from p2p import backup_fs
     from p2p import backup_control
     localPath = unicode(path)
-    if not backup_fs.pathExist(localPath):
+    if not bpio.pathExist(localPath):
         return 'local path %s not found' % path
     result = []
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
-        if backup_fs.pathIsDir(localPath):
+        if bpio.pathIsDir(localPath):
             pathID, iter, iterID = backup_fs.AddDir(localPath, True)
             result.append('new folder was added: %s' % localPath)
         else:

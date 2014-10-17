@@ -67,9 +67,9 @@ _MODULES = (
     )
 
 _VALID_TASKS = {
-    'make': make.do_in_memory,
-    'read': read.raidread,
-    'rebuild': rebuild.rebuild,
+    'make': (make.do_in_memory, (make.RoundupFile, make.ReadBinaryFile, make.WriteFile)),
+    'read': (read.raidread, (read.RebuildOne, read.ReadBinaryFile,)),
+    'rebuild': (rebuild.rebuild, ()),
 }
 
 #------------------------------------------------------------------------------ 
@@ -236,12 +236,13 @@ class RaidWorker(automat.Automat):
             return
         try:
             task_id, cmd, params = self.tasks.pop(0)
-            func = _VALID_TASKS[cmd]
+            func, depfuncs = _VALID_TASKS[cmd]
         except:
             lg.exc()
             return
         self.activetasks[task_id] = self.processor.submit(func, params,
-            modules=_MODULES, 
+            modules=_MODULES,
+            depfuncs=depfuncs,
             callback=lambda result: self._job_done(task_id, cmd, params, result))
         lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
             task_id, len(self.activetasks), self.processor.get_ncpus()))

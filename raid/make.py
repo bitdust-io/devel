@@ -33,12 +33,11 @@ import sys
 import struct
 import time
 import cStringIO
+import platform
 
 if __name__ == '__main__':
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
-
-import lib.misc
 
 import raid.eccmap
 
@@ -59,6 +58,69 @@ def shutdown():
 
 #------------------------------------------------------------------------------ 
 
+def RoundupFile(filename, stepsize):
+    """
+    For some things we need to have files which are round sizes, 
+    for example some encryption needs files that are multiples of 8 bytes.
+    This function rounds file up to the next multiple of step size.
+    """
+    try:
+        size = os.path.getsize(filename)
+    except:
+        return
+    mod = size % stepsize
+    increase = 0
+    if mod > 0:
+        increase = stepsize - mod
+        file = open(filename, 'a')         
+        file.write(' ' * increase)
+        file.close()
+
+def ReadBinaryFile(filename):
+    """
+    """
+    if not os.path.isfile(filename):
+        return ''
+    if not os.access(filename, os.R_OK):
+        return ''
+    try:
+        file = open(filename, "rb")
+        data = file.read()
+        file.close()
+        return data
+    except:
+        return ''
+
+def WriteFile(filename, data):
+    """
+    """
+    f = open(filename, "wb")
+    f.write(data)
+    f.close()
+#    
+#    try:
+#        tmpfilename = filename + ".new"
+#        f = open(tmpfilename, "wb")
+#        f.write(data)
+#        f.flush()
+#        #from http://docs.python.org/library/os.html on os.fsync
+#        os.fsync(f.fileno())
+#        f.close()
+#        #in Unix the rename will overwrite an existing file,
+#        #but in Windows it fails, so have to remove existing
+#        if platform.uname()[0] == "Windows" and os.path.exists(filename):
+#            os.remove(filename)
+#        os.rename(tmpfilename, filename)
+#    except:
+#        try:
+#            f.close() # make sure file gets closed
+#        except:
+#            pass
+#        return False
+#    return True
+
+#------------------------------------------------------------------------------ 
+
 def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):
     # lg.out(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
     #     os.path.basename(filename), eccmapname, backupId, blockNumber))
@@ -75,8 +137,8 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
     myeccmap = raid.eccmap.eccmap(eccmapname)
     INTSIZE = 4 # settings.IntSize()
     # any padding at end and block.Length fixes
-    lib.misc.RoundupFile(filename, myeccmap.datasegments*INTSIZE)     
-    wholefile = lib.bpio.ReadBinaryFile(filename)
+    RoundupFile(filename, myeccmap.datasegments*INTSIZE)     
+    wholefile = ReadBinaryFile(filename)
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments                 
 
@@ -102,7 +164,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
         # and store current position in the data
         # so start from zero 
         #dfds[DSegNum] = [0, bpio.ReadBinaryFile(FileName)]
-        dfds[DSegNum] = cStringIO.StringIO(lib.bpio.ReadBinaryFile(FileName))
+        dfds[DSegNum] = cStringIO.StringIO(ReadBinaryFile(FileName))
 
     pfds = {}
     for PSegNum in xrange(myeccmap.paritysegments):
@@ -147,7 +209,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
     
     for PSegNum, data in pfds.items():
         FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
-        lib.bpio.WriteFile(FileName, pfds[PSegNum].getvalue())
+        WriteFile(FileName, pfds[PSegNum].getvalue())
 
     for f in dfds.values():
         f.close()
@@ -168,8 +230,8 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
 def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
     myeccmap = raid.eccmap.eccmap(eccmapname)
     INTSIZE = 4 # settings.IntSize()
-    lib.misc.RoundupFile(filename,myeccmap.datasegments*INTSIZE)      # any padding at end and block.Length fixes
-    wholefile = lib.bpio.ReadBinaryFile(filename)
+    RoundupFile(filename,myeccmap.datasegments*INTSIZE)      # any padding at end and block.Length fixes
+    wholefile = ReadBinaryFile(filename)
     length = len(wholefile)
     seglength = (length + myeccmap.datasegments - 1)/myeccmap.datasegments                 # PREPRO -
 
@@ -246,7 +308,8 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
 
 
 def main():
-    lib.lg.set_debug_level(18)
+    from logs import lg
+    lg.set_debug_level(18)
     raidmake(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], sys.argv[6]=='1')
     
 

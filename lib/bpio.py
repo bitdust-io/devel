@@ -41,6 +41,7 @@ from logs import lg
 LocaleInstalled = False
 PlatformInfo = None
 X11isRunning = None
+Original_isdir = None
 
 #------------------------------------------------------------------------------
 
@@ -52,6 +53,9 @@ def init():
     InstallLocale()
     if Linux():
         lg.setup_unbuffered_stdout()
+    global Original_isdir
+    Original_isdir = os.path.isdir
+    os.path.isdir = pathIsDir
     # StartCountingOpenedFiles()
         
 def shutdown():
@@ -753,19 +757,124 @@ def _encode(s):
         return s.encode('utf-8')
     return s
 
+#def portablePath(path):
+#    """
+#    For Windows changes all separators to Linux format: 
+#        - "\\" -> "/" 
+#        - "\" -> "/"
+#    If ``path`` is unicode convert to utf-8. 
+#    """
+#    p = path
+#    if Windows():
+#        p = p.replace('\\\\', '/').replace('\\', '/')
+#    if isinstance(p, unicode):
+#        return p.encode('utf-8')
+#    return p
+
+
 def portablePath(path):
     """
-    For Windows changes all separators to Linux format: 
-        - "\\" -> "/" 
-        - "\" -> "/"
-    If ``path`` is unicode convert to utf-8. 
+    Fix path to fit for our use:
+        - do convert to absolute path
+        - for Windows: 
+            - change all separators to Linux format: "\\"->"/" and "\"=>"/"
+            - convert disk letter to lower case
+        - convert to unicode 
     """
-    p = path
+    p = os.path.abspath(path)
+    if not isinstance(p, unicode):
+        # p = p.encode('utf-8')
+        p = unicode(p)
     if Windows():
-        p = p.replace('\\\\', '/').replace('\\', '/')
-    if isinstance(p, unicode):
-        return p.encode('utf-8')
-    return p
+        p = p.replace('\\', '/') # .replace('\\\\', '/')
+        if len(p) >= 2:
+            if p[1] == ':':
+                p = p[0].lower() + p[1:]
+            elif p[:2] == '//':
+                p = '\\\\' + p[2:]
+    if p.endswith('/') and len(p) > 1:
+        p = p.rstrip('/')
+    return p # unicode(p) #.encode('utf-8')
+
+def pathExist(localpath):
+    """
+    My own "portable" version of built-in ``os.path.exist()`` method.
+    """
+    if os.path.exists(localpath):
+        return True
+    p = portablePath(localpath)
+    if os.path.exists(p):
+        return True
+    if Windows() and pathIsNetworkLocation(localpath):
+        return True
+    return False
+
+def pathIsDir(localpath):
+    """
+    Assume localpath is exist and return True if this is a folder.
+    """
+    # print 'pathIsDir', type(localpath), str(localpath)
+    # try to use the original path
+    global Original_isdir
+    if Original_isdir is None:
+        Original_isdir = os.path.isdir
+    if Original_isdir(localpath):
+        return True
+    if os.path.exists(localpath) and os.path.isfile(localpath):
+        return False
+    # don't know... let's try portable path
+    p = portablePath(localpath)
+    if Original_isdir(p):
+        return True
+    if os.path.exists(localpath) and os.path.isfile(p):
+        return False
+    if Windows() and pathIsNetworkLocation(localpath):
+        return True
+    # may be path is not exist at all?
+    if not os.path.exists(localpath):
+        return False
+    if not os.path.exists(p):
+        return False
+    # ok, on Linux we have devices, mounts, links ...
+    if Linux():
+        try:
+            import stat
+            st = os.path.stat(localpath)
+            return stat.S_ISDIR(st.st_mode)
+        except:
+            return False 
+    # now we are in really big trouble
+    raise Exception('Path not exist: %s' % p)
+    return False
+
+def pathIsDriveLetter(path):
+    """
+    Return True if ``path`` is a Windows drive letter.
+    """
+    p = path.rstrip('/').rstrip('\\')
+    if len(p) != 2:
+        return False
+    if p[1] != ':':
+        return False
+    if not p[0].isalpha():
+        return False
+    return True
+
+def pathIsNetworkLocation(path):
+    """
+    Return True if ``path`` is a Windows network location.
+
+        >>> pathIsNetworkLocation(r'\\remote_machine')
+        True
+    """
+    p = path.rstrip('/').rstrip('\\')
+    if len(p) < 3:
+        return False
+    if not p.startswith('\\\\'):
+        return False
+    if p[2:].count('\\') or p[2:].count('/'):
+        return False
+    return True
 
 #------------------------------------------------------------------------------ 
 

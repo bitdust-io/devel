@@ -19,6 +19,7 @@ import math
 import cStringIO
 import base64
 import re
+import tempfile
 
 try:
     from twisted.internet import reactor 
@@ -2375,7 +2376,7 @@ class MainPage(Page):
             for type, pathID, localPath, sizeInBytes, versions in self.listExpandedDirs:
                 # if localPath in [settings.BackupIndexFileName(),]:
                 #    continue
-                isExist = backup_fs.pathExist(localPath)
+                isExist = bpio.pathExist(localPath)
                 x, x, name = localPath.rpartition('/')
                 if len(name) == 2 and name[1] == ':':
                     name = name.capitalize()
@@ -2749,10 +2750,10 @@ class MainPage(Page):
         #---startpath---
         elif action == 'startpath':
             localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
-            if backup_fs.pathExist(localPath):
+            if bpio.pathExist(localPath):
                 pathID = backup_fs.ToID(localPath)
                 if pathID is None:
-                    if backup_fs.pathIsDir(localPath):
+                    if bpio.pathIsDir(localPath):
                         pathID, iter, iterID = backup_fs.AddDir(localPath, True)
                         self.htmlComment += html_comment('new folder was added:')
                     else:
@@ -2774,7 +2775,7 @@ class MainPage(Page):
             if pathID:
                 localPath = backup_fs.ToPath(pathID)
                 if localPath is not None:
-                    if backup_fs.pathExist(localPath):
+                    if bpio.pathExist(localPath):
                         backup_control.StartSingle(pathID)
                         backup_fs.Calculate()
                         backup_control.Save()
@@ -2895,8 +2896,13 @@ class MainPage(Page):
                 localPath = backup_fs.ToPath(pathID)
                 if not localPath:
                     continue
-                restoreDir = os.path.dirname(localPath)
-                restore_monitor.Start(backupID, restoreDir, self._itemRestored) 
+                localDir = os.path.dirname(localPath)
+                if not os.access(localDir, os.W_OK):
+                    try:
+                        localDir = tempfile.mkdtemp(dir=localPath)
+                    except:
+                        localDir = tempfile.mkdtemp(prefix=os.path.basename(localPath))
+                restore_monitor.Start(backupID, localDir, self._itemRestored) 
             self.selected_backups.clear()
             
         #---restoretodir---
@@ -2921,6 +2927,11 @@ class MainPage(Page):
                 localPath = localPath.lstrip('/')
                 # get the base folder - tar extract will take care of creating all directoriy tree 
                 localDir = os.path.dirname(localPath)
+                if not os.access(localDir, os.W_OK):
+                    try:
+                        localDir = tempfile.mkdtemp(dir=localPath)
+                    except:
+                        localDir = tempfile.mkdtemp(prefix=os.path.basename(localPath))
                 # make a restore dir, keep the folders tree, this will be a relative path
                 restoreDir = os.path.join(settings.getRestoreDir(), localDir)
                 restore_monitor.Start(backupID, restoreDir)
@@ -2940,6 +2951,11 @@ class MainPage(Page):
                                 # TODO - also may need to check other options like network drive (//) or so 
                                 localPath = localPath[3:]
                             localDir = os.path.dirname(localPath.lstrip('/'))
+                            if not os.access(localDir, os.W_OK):
+                                try:
+                                    localDir = tempfile.mkdtemp(dir=localPath)
+                                except:
+                                    localDir = tempfile.mkdtemp(prefix=os.path.basename(localPath))
                             restoreDir = os.path.join(dest, localDir)
                             restore_monitor.Start(backupID, restoreDir)
                         else:

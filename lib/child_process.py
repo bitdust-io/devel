@@ -130,7 +130,7 @@ def pipe(cmdargs):
     Execute a process in different way, create a Pipe to do read/write operations with child process.
     See ``lib.nonblocking`` module.
     """
-    lg.out(14, "child_process.pipe %s" % str(cmdargs))
+    lg.out(6, "child_process.pipe %s" % str(cmdargs))
     try:
         if bpio.Windows():
             import win32process

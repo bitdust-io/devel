@@ -40,8 +40,6 @@ import threading
 
 from logs import lg
 
-from lib import bpio
-
 #------------------------------------------------------------------------------ 
 
 __suppliers2eccmap = {
@@ -231,6 +229,27 @@ def GetCorrectableErrors(suppliers_number):
 
 #------------------------------------------------------------------------------ 
 
+def ReadTextFile(filename):
+    """
+    Read text file and return its content.
+    Also replace line endings: \r\n with \n - convert to Linux file format.
+    """
+    if not os.path.isfile(filename):
+        return ''
+    if not os.access(filename, os.R_OK):
+        return ''
+    try:
+        file=open(filename,"r")
+        data=file.read()
+        file.close()
+        # Windows/Linux trouble with text files
+        return data.replace('\r\n','\n')
+    except:
+        lg.exc()
+    return ''
+
+#------------------------------------------------------------------------------ 
+
 class eccmap:
     """
     A class to do many operations with ecc map. 
@@ -335,7 +354,7 @@ class eccmap:
             filename = os.path.join("..", fname)
         maxdata = 0
         maxparity = 0
-        s = bpio.ReadTextFile(filename)
+        s = ReadTextFile(filename)
         for PS in re.split("\]",s):
             good = PS.lstrip("\[\,")
             oneset = []

@@ -104,7 +104,7 @@ def extracttar(tarfile, outdir):
     if not os.path.isfile(tarfile):
         lg.out(1, 'backup_tar.extracttar ERROR %s not found' % tarfile)
         return None
-    # lg.out(12, "backup_tar.extracttar %s %s" % (tarfile, outdir))
+    lg.out(6, "backup_tar.extracttar %s %s" % (tarfile, outdir))
     if bpio.Windows():
         if bpio.isFrozen():
             commandpath = 'bppipe.exe'

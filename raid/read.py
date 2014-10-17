@@ -40,8 +40,6 @@ import os
 import sys
 import struct
 
-
-import lib.bpio
 import raid.eccmap
 
 INTSIZE = 4
@@ -63,6 +61,21 @@ def shutdown():
 
 #------------------------------------------------------------------------------ 
 
+def ReadBinaryFile(filename):
+    """
+    """
+    if not os.path.isfile(filename):
+        return ''
+    if not os.access(filename, os.R_OK):
+        return ''
+    try:
+        file = open(filename, "rb")
+        data = file.read()
+        file.close()
+        return data
+    except:
+        return ''
+
 #RebuildOne_new and RebuildOne_orig are just for debugging purposes
 def RebuildOne(inlist, listlen, outfilename):
     readsize = 1 # vary from 1 byte to 4 bytes
@@ -72,7 +85,6 @@ def RebuildOne(inlist, listlen, outfilename):
         try:
             raidfiles[filenum] = open(inlist[filenum], "rb")
         except:
-            lib.exc()
             for f in raidfiles:
                 try:
                     f.close()
@@ -101,7 +113,7 @@ def RebuildOne(inlist, listlen, outfilename):
 def RebuildOne_new(inlist, listlen, outfilename):
     # INTSIZE = settings.IntSize()
     fds = range(0,listlen)   # just need a list of this size
-    wholefile = lib.bpio.ReadBinaryFile(inlist[0])
+    wholefile = ReadBinaryFile(inlist[0])
     seglength = len(wholefile)   # just needed length of file
     for filenum in xrange(listlen):
         fds[filenum]=open(inlist[filenum],"r")
@@ -119,7 +131,7 @@ def RebuildOne_new(inlist, listlen, outfilename):
 def RebuildOne_orig(inlist, listlen, outfilename):
         # INTSIZE = settings.IntSize()
         fds = range(0,listlen)   # just need a list of this size
-        wholefile = lib.bpio.ReadBinaryFile(inlist[0])
+        wholefile = ReadBinaryFile(inlist[0])
         seglength=len(wholefile)   # just needed length of file
         for filenum in range(0, listlen):
                 fds[filenum]=open(inlist[filenum],"rb")
