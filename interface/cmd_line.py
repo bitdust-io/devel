@@ -294,7 +294,8 @@ def cmd_backups(opts, args, overDict):
         if not os.path.exists(localpath):
             print_text('path %s not exist\n' % args[2])
             return 1
-        if os.path.isdir(localpath):
+        from lib import bpio
+        if bpio.pathIsDir(localpath):
             m = 'backup_dir_add'
         else:
             m = 'backup_file_add'
@@ -302,7 +303,8 @@ def cmd_backups(opts, args, overDict):
     
     elif args[1] == 'addtree' and len(args) >= 3:
         localpath = os.path.abspath(args[2])
-        if not os.path.isdir(localpath):
+        from lib import bpio
+        if not bpio.pathIsDir(localpath):
             print_text('folder %s not exist\n' % args[2])
             return 1
         return call_xmlrpc_method_and_stop('backup_tree_add', localpath)
@@ -333,7 +335,8 @@ def cmd_restore(opts, args, overDict):
 def cmd_schedule(opts, args, overDict):
     if len(args) < 2:
         return 2
-    if not os.path.isdir(os.path.abspath(args[1])):
+    from lib import bpio
+    if not bpio.pathIsDir(os.path.abspath(args[1])):
         print_text('folder %s not exist\n' % args[1])
         return 1
     backupDir = os.path.abspath(args[1])

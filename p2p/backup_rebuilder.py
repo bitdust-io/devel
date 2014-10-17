@@ -88,7 +88,7 @@ def A(event=None, arg=None):
     """
     global _BackupRebuilder
     if _BackupRebuilder is None:
-        _BackupRebuilder = BackupRebuilder('backup_rebuilder', 'STOPPED', 12)
+        _BackupRebuilder = BackupRebuilder('backup_rebuilder', 'STOPPED', 4)
     if event is not None:
         _BackupRebuilder.automat(event, arg)
     return _BackupRebuilder
@@ -114,6 +114,7 @@ class BackupRebuilder(automat.Automat):
         self.workingBlocksQueue = []            # list of missing blocks we work on for current backup
         self.missingPackets = 0 
         self.missingSuppliers = set()
+        self.log_events = True
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -295,13 +296,13 @@ class BackupRebuilder(automat.Automat):
                         if availableSuppliers[supplierNum]:
                             # if supplier is not alive - we can't request from him           
                             if not io_throttle.HasPacketInRequestQueue(supplierID, PacketID):
-                                io_throttle.QueueRequestFile(
-                                    self.FileReceived, 
-                                    misc.getLocalID(), 
-                                    PacketID, 
-                                    misc.getLocalID(), 
-                                    supplierID)
-                                requests_count += 1
+                                if io_throttle.QueueRequestFile(
+                                        self.FileReceived, 
+                                        misc.getLocalID(), 
+                                        PacketID, 
+                                        misc.getLocalID(), 
+                                        supplierID):
+                                    requests_count += 1
                     else:
                         # count this packet as missing
                         self.missingPackets += 1
@@ -313,13 +314,13 @@ class BackupRebuilder(automat.Automat):
                     if remoteParity[supplierNum] == 1: 
                         if availableSuppliers[supplierNum]:
                             if not io_throttle.HasPacketInRequestQueue(supplierID, PacketID):
-                                io_throttle.QueueRequestFile(
-                                    self.FileReceived, 
-                                    misc.getLocalID(), 
-                                    PacketID, 
-                                    misc.getLocalID(), 
-                                    supplierID)
-                                requests_count += 1
+                                if io_throttle.QueueRequestFile(
+                                        self.FileReceived, 
+                                        misc.getLocalID(), 
+                                        PacketID, 
+                                        misc.getLocalID(), 
+                                        supplierID):
+                                    requests_count += 1
                     else:
                         self.missingPackets += 1
                         # self.missingSuppliers.add(supplierNum)

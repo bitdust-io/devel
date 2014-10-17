@@ -282,17 +282,17 @@ class SupplierQueue:
     def SupplierSendFile(self, fileName, packetID, ownerID, callOnAck=None, callOnFail=None):
         if self.shutdown: 
             lg.out(10, "io_throttle.SupplierSendFile finishing to %s, shutdown is True" % self.remoteName)
-            return        
+            return False       
         if contact_status.isOffline(self.remoteID):
             lg.out(10, "io_throttle.SupplierSendFile %s is offline, so packet %s is failed" % (self.remoteName, packetID))
             if callOnFail is not None:
                 reactor.callLater(0, callOnFail, self.remoteID, packetID, 'offline')
-            return
+            return False
         if packetID in self.fileSendQueue:
-            # lg.warn("packet %s already in the queue for %s" % (packetID, self.remoteName))
+            lg.warn("packet %s already in the queue for %s" % (packetID, self.remoteName))
             if callOnFail is not None:
                 reactor.callLater(0, callOnFail, self.remoteID, packetID, 'in queue')
-            return
+            return False
         self.fileSendQueue.append(packetID)
         self.fileSendDict[packetID] = FileToSend(
             fileName, 
@@ -304,6 +304,7 @@ class SupplierQueue:
         lg.out(10, "io_throttle.SupplierSendFile %s to %s, queue=%d" % (packetID, self.remoteName, len(self.fileSendQueue)))
         # reactor.callLater(0, self.DoSend)
         self.DoSend()
+        return True
             
             
     def RunSend(self):
@@ -491,18 +492,19 @@ class SupplierQueue:
             lg.out(10, "io_throttle.SupplierRequestFile finishing to %s, shutdown is True" % self.remoteName)
             if callOnReceived:
                 reactor.callLater(0, callOnReceived, packetID, 'shutdown')
-            return
+            return False
         if packetID in self.fileRequestQueue:
-            # lg.warn("packet %s already in the queue for %s" % (packetID, self.remoteName))
+            lg.warn("packet %s already in the queue for %s" % (packetID, self.remoteName))
             if callOnReceived:
                 reactor.callLater(0, callOnReceived, packetID, 'in queue')
-            return
+            return False
         self.fileRequestQueue.append(packetID)
         self.fileRequestDict[packetID] = FileToRequest(
             callOnReceived, creatorID, packetID, ownerID, self.remoteID)
         lg.out(10, "io_throttle.SupplierRequestFile for %s from %s, queue length is %d" % (packetID, self.remoteName, len(self.fileRequestQueue)))
         # reactor.callLater(0, self.DoRequest)
         self.DoRequest()
+        return True
 
 
     def RunRequest(self):
@@ -708,12 +710,12 @@ class IOThrottle:
             lg.out(2, "io_throttle.QueueSendFile ERROR %s not exist" % fileName)
             if callOnFail is not None:
                 reactor.callLater(.01, callOnFail, remoteID, packetID, 'not exist')
-            return
+            return False
         if remoteID not in self.supplierQueues.keys():
             self.supplierQueues[remoteID] = SupplierQueue(remoteID, self.creatorID)
             lg.out(6, "io_throttle.QueueSendFile made a new queue for %s" % nameurl.GetName(remoteID))
-        self.supplierQueues[remoteID].SupplierSendFile(
-            fileName, packetID, ownerID, callOnAck, callOnFail,)
+        return self.supplierQueues[remoteID].SupplierSendFile(
+                   fileName, packetID, ownerID, callOnAck, callOnFail,)
             
             
     # return result in the callback: callOnReceived(packet or packetID, state)
@@ -727,13 +729,14 @@ class IOThrottle:
                 lg.warn("%s already exist " % filename)
                 if callOnReceived:
                     reactor.callLater(0, callOnReceived, packetID, 'exist')
-                return
+                return False
         if remoteID not in self.supplierQueues.keys():
             # made a new queue for this man
             self.supplierQueues[remoteID] = SupplierQueue(remoteID, self.creatorID)
             lg.out(6, "io_throttle.QueueRequestFile made a new queue for %s" % nameurl.GetName(remoteID))
         # lg.out(10, "io_throttle.QueueRequestFile asking for %s from %s" % (packetID, nameurl.GetName(remoteID)))
-        self.supplierQueues[remoteID].SupplierRequestFile(callOnReceived, creatorID, packetID, ownerID)
+        return self.supplierQueues[remoteID].SupplierRequestFile(
+                   callOnReceived, creatorID, packetID, ownerID)
 
 
     def OutboxStatus(self, pkt_out, status, error):

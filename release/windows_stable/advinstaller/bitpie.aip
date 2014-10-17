@@ -20,10 +20,10 @@
     <ROW Property="InstanceId" Value="#0"/>
     <ROW Property="Manufacturer" Value="BitPie.NET Inc."/>
     <ROW Property="MyUserHomeDir" Value="?"/>
-    <ROW Property="ProductCode" Value="1033:{394AE0E1-17C1-4DE0-865C-E13DBC39F39F} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{B6CA950D-491D-458E-A369-7C607C4C52BE} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="BitPie.NET"/>
-    <ROW Property="ProductVersion" Value="0.1.6.709" Type="32"/>
+    <ROW Property="ProductVersion" Value="0.1.9.759" Type="32"/>
     <ROW Property="RUNAPPLICATION" Value="1" Type="4"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{1D2E14B7-8093-406E-9EDD-CEE00645A486}"/>
@@ -72,6 +72,7 @@
     <ROW Directory="forms_Dir" Directory_Parent="bin_Dir" DefaultDir="forms" DirectoryOptions="3"/>
     <ROW Directory="icons_Dir" Directory_Parent="bin_Dir" DefaultDir="icons" DirectoryOptions="3"/>
     <ROW Directory="identitycache_Dir" Directory_Parent="APPDIR" DefaultDir="IDENTI~1|identitycache"/>
+    <ROW Directory="importlib_Dir" Directory_Parent="bin_Dir" DefaultDir="IMPORT~1|importlib" DirectoryOptions="3"/>
     <ROW Directory="interface_1_Dir" Directory_Parent="zope_Dir" DefaultDir="INTERF~1|interface" DirectoryOptions="3"/>
     <ROW Directory="interface_Dir" Directory_Parent="bin_Dir" DefaultDir="INTERF~1|interface" DirectoryOptions="3"/>
     <ROW Directory="internet_Dir" Directory_Parent="twisted_Dir" DefaultDir="internet" DirectoryOptions="3"/>
@@ -96,6 +97,7 @@
     <ROW Directory="pywin_Dir" Directory_Parent="bin_Dir" DefaultDir="pywin" DirectoryOptions="3"/>
     <ROW Directory="raid_Dir" Directory_Parent="bin_Dir" DefaultDir="raid" DirectoryOptions="3"/>
     <ROW Directory="sax_Dir" Directory_Parent="xml_Dir" DefaultDir="sax" DirectoryOptions="3"/>
+    <ROW Directory="services_Dir" Directory_Parent="bin_Dir" DefaultDir="services" DirectoryOptions="3"/>
     <ROW Directory="shell_Dir" Directory_Parent="win32com_Dir" DefaultDir="shell" DirectoryOptions="3"/>
     <ROW Directory="shtoom_Dir" Directory_Parent="lib_Dir" DefaultDir="shtoom" DirectoryOptions="3"/>
     <ROW Directory="spread_Dir" Directory_Parent="twisted_Dir" DefaultDir="spread" DirectoryOptions="3"/>
@@ -136,6 +138,7 @@
     <ROW Component="__init__.pyo_6" ComponentId="{E5D19069-D1FC-4DB1-864B-15184CA44A7F}" Directory_="win32com_Dir" Attributes="0" KeyPath="__init__.pyo_57" Type="0"/>
     <ROW Component="__init__.pyo_7" ComponentId="{5FFF6805-83C0-4357-B36C-AA00981ED3B3}" Directory_="xml_Dir" Attributes="0" KeyPath="__init__.pyo_63" Type="0"/>
     <ROW Component="__init__.pyo_8" ComponentId="{4B45C332-79A0-416A-9E61-34A90AAF593D}" Directory_="zope_Dir" Attributes="0" KeyPath="__init__.pyo_65" Type="0"/>
+    <ROW Component="__init__.pyo_9" ComponentId="{A7FCAC6F-5F9F-41EC-8C78-D5109BE9182D}" Directory_="importlib_Dir" Attributes="0" KeyPath="__init__.pyo_67" Type="0"/>
     <ROW Component="_controls.pyo" ComponentId="{5F3B454A-5BE7-4EAC-8840-D21DD3078F62}" Directory_="wxPython_Dir" Attributes="0" KeyPath="_controls.pyo_1" Type="0"/>
     <ROW Component="_version.pyo" ComponentId="{E2C6D7E1-A3B5-4836-AEE9-D5DCEED54279}" Directory_="conch_Dir" Attributes="0" KeyPath="_version.pyo" Type="0"/>
     <ROW Component="abc.pyo" ComponentId="{04084D2B-690F-4D12-BEEA-AC4FF3148FFC}" Directory_="bin_Dir" Attributes="0" KeyPath="abc.pyo" Type="0"/>
@@ -188,6 +191,7 @@
     <ROW Component="identity.pyo" ComponentId="{E29DA130-D65A-4279-A7E2-95A475E08844}" Directory_="userid_Dir" Attributes="0" KeyPath="identity.pyo" Type="0"/>
     <ROW Component="lg.pyo" ComponentId="{573AF3BE-7CE9-401D-9B9B-EE222887865D}" Directory_="logs_1_Dir" Attributes="0" KeyPath="lg.pyo" Type="0"/>
     <ROW Component="list.pyo" ComponentId="{E9C7ADB2-2969-4B28-968B-BB9FB5580302}" Directory_="dialogs_Dir" Attributes="0" KeyPath="list.pyo" Type="0"/>
+    <ROW Component="local_service.pyo" ComponentId="{EFF0B9CB-9BB2-441F-B93B-BBA7EDA332EA}" Directory_="services_Dir" Attributes="0" KeyPath="local_service.pyo" Type="0"/>
     <ROW Component="msvcm90.dll" ComponentId="{8E49C2A6-07AB-4059-B207-FA3FE79BCCFF}" Directory_="bin_Dir" Attributes="0" KeyPath="msvcm90.dll"/>
     <ROW Component="msvcp90.dll" ComponentId="{2CC6C402-E809-4D4E-B288-4FF741215EFE}" Directory_="bin_Dir" Attributes="0" KeyPath="msvcp90.dll"/>
     <ROW Component="msvcr90.dll" ComponentId="{14B4897E-364E-414C-8D12-785D39BE63B3}" Directory_="bin_Dir" Attributes="0" KeyPath="msvcr90.dll"/>
@@ -217,7 +221,7 @@
     <ROW Component="xmlrpc_server.pyo" ComponentId="{3E333DD3-BE03-40B6-A494-7160B96172EC}" Directory_="interface_Dir" Attributes="0" KeyPath="xmlrpc_server.pyo" Type="0"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFeatsComponent">
-    <ROW Feature="MainFeature" Title="MainFeature" Description="Distributed backup network" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="AES.pyo Arial_Narrow.ttf DSA.pyo EasyDialogsResources.pyo FortunaAccumulator.pyo KDF.pyo LIBEAY32.dll MyUserHomeDir SHORTCUTDIR SSLEAY32.dll __init__.pyo __init__.pyo_1 __init__.pyo_2 __init__.pyo_3 __init__.pyo_4 __init__.pyo_5 __init__.pyo_6 __init__.pyo_7 __init__.pyo_8 _controls.pyo _version.pyo abc.pyo abstract.pyo adapter.pyo addbackup.png aliases.pyo asn1.pyo automat.pyo backup.pyo banana.pyo bandwidth.pyo base.pyo base64mime.pyo basic.pyo bitpie.exe bpgui.exe bppipe.exe bpstarter.exe bptester.exe bpworker.exe build.pyo client.pyo combo.pyo common.pyo compat.pyo constants.pyo copyright.pyo credentials.pyo crefutil.pyo crypto.pyo dbapi2.pyo debug.pyo decoder.pyo defcache.pyo dht_service.pyo dialog.pyo domreg.pyo dtuple.pyo dyld.pyo eccmap.pyo encrypted.pyo errors.pyo expat.pyo expatreader.pyo fallback.pyo form.pyo gzip.exe hashalgo.pyo identity.pyo lg.pyo list.pyo msvcm90.dll msvcp90.dll msvcr90.dll octets.pyo pct_warnings.pyo ppauto.pyo python27.dll pythoncom27.dll pywintypes27.dll random.pyo repo shell.pyo sqlite3.dll stun_client.pyo tar.exe tcp_connection.pyo udp_connector.pyo upnpc.exe util.pyo w9xpopen.exe wget.exe wxbase28uh_net_vc.dll wxbase28uh_vc.dll wxmsw28uh_adv_vc.dll wxmsw28uh_core_vc.dll wxmsw28uh_html_vc.dll xmlrpc_server.pyo"/>
+    <ROW Feature="MainFeature" Title="MainFeature" Description="Distributed backup network" Display="1" Level="1" Directory_="APPDIR" Attributes="0" Components="AES.pyo Arial_Narrow.ttf DSA.pyo EasyDialogsResources.pyo FortunaAccumulator.pyo KDF.pyo LIBEAY32.dll MyUserHomeDir SHORTCUTDIR SSLEAY32.dll __init__.pyo __init__.pyo_1 __init__.pyo_2 __init__.pyo_3 __init__.pyo_4 __init__.pyo_5 __init__.pyo_6 __init__.pyo_7 __init__.pyo_8 __init__.pyo_9 _controls.pyo _version.pyo abc.pyo abstract.pyo adapter.pyo addbackup.png aliases.pyo asn1.pyo automat.pyo backup.pyo banana.pyo bandwidth.pyo base.pyo base64mime.pyo basic.pyo bitpie.exe bpgui.exe bppipe.exe bpstarter.exe bptester.exe bpworker.exe build.pyo client.pyo combo.pyo common.pyo compat.pyo constants.pyo copyright.pyo credentials.pyo crefutil.pyo crypto.pyo dbapi2.pyo debug.pyo decoder.pyo defcache.pyo dht_service.pyo dialog.pyo domreg.pyo dtuple.pyo dyld.pyo eccmap.pyo encrypted.pyo errors.pyo expat.pyo expatreader.pyo fallback.pyo form.pyo gzip.exe hashalgo.pyo identity.pyo lg.pyo list.pyo local_service.pyo msvcm90.dll msvcp90.dll msvcr90.dll octets.pyo pct_warnings.pyo ppauto.pyo python27.dll pythoncom27.dll pywintypes27.dll random.pyo repo shell.pyo sqlite3.dll stun_client.pyo tar.exe tcp_connection.pyo udp_connector.pyo upnpc.exe util.pyo w9xpopen.exe wget.exe wxbase28uh_net_vc.dll wxbase28uh_vc.dll wxmsw28uh_adv_vc.dll wxmsw28uh_core_vc.dll wxmsw28uh_html_vc.dll xmlrpc_server.pyo"/>
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
@@ -355,6 +359,8 @@
     <ROW File="__init__.pyo_64" Component_="adapter.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\interface\__init__.pyo" SelfReg="false" NextFile="__init__.pyo_65"/>
     <ROW File="__init__.pyo_65" Component_="__init__.pyo_8" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\__init__.pyo" SelfReg="false" NextFile="zope.interface._zope_interface_coptimizations.pyd"/>
     <ROW File="__init__.pyo_66" Component_="tcp_connection.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\transport\tcp\__init__.pyo" SelfReg="false" NextFile="nickname_holder.pyo"/>
+    <ROW File="__init__.pyo_67" Component_="__init__.pyo_9" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\importlib\__init__.pyo" SelfReg="false" NextFile="api.pyo"/>
+    <ROW File="__init__.pyo_68" Component_="local_service.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\services\__init__.pyo" SelfReg="false"/>
     <ROW File="__init__.pyo_7" Component_="random.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Random\__init__.pyo" SelfReg="false" NextFile="asn1.pyo"/>
     <ROW File="__init__.pyo_8" Component_="asn1.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Util\__init__.pyo" SelfReg="false" NextFile="__init__.pyo_9"/>
     <ROW File="__init__.pyo_9" Component_="pct_warnings.pyo" FileName="__init__.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\__init__.pyo" SelfReg="false" NextFile="Crypto.Cipher._AES.pyd"/>
@@ -434,6 +440,7 @@
     <ROW File="address.pyo" Component_="abstract.pyo" FileName="address.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\internet\address.pyo" SelfReg="false" NextFile="base.pyo_1"/>
     <ROW File="advice.pyo" Component_="adapter.pyo" FileName="advice.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\interface\advice.pyo" SelfReg="false" NextFile="declarations.pyo"/>
     <ROW File="aliases.pyo" Component_="aliases.pyo" FileName="aliases.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\encodings\aliases.pyo" SelfReg="false" NextFile="ascii.pyo"/>
+    <ROW File="api.pyo" Component_="xmlrpc_server.pyo" FileName="api.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\interface\api.pyo" SelfReg="false" NextFile="local_service.pyo"/>
     <ROW File="ascii.pyo" Component_="aliases.pyo" FileName="ascii.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\encodings\ascii.pyo" SelfReg="false" NextFile="base64_codec.pyo"/>
     <ROW File="asn1.pyo" Component_="asn1.pyo" FileName="asn1.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\Util\asn1.pyo" SelfReg="false" NextFile="Counter.pyo"/>
     <ROW File="atexit.pyo" Component_="abc.pyo" FileName="atexit.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\atexit.pyo" SelfReg="false" NextFile="base64.pyo"/>
@@ -761,6 +768,7 @@
     <ROW File="linecache.pyo" Component_="abc.pyo" FileName="LINECA~1.PYO|linecache.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\linecache.pyo" SelfReg="false" NextFile="locale.pyo"/>
     <ROW File="list.pyo" Component_="list.pyo" FileName="list.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\pywin\dialogs\list.pyo" SelfReg="false" NextFile="status.pyo"/>
     <ROW File="list_files_orator.pyo" Component_="backup.pyo" FileName="LIST_F~1.PYO|list_files_orator.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\list_files_orator.pyo" SelfReg="false" NextFile="local_tester.pyo"/>
+    <ROW File="local_service.pyo" Component_="local_service.pyo" FileName="LOCAL_~1.PYO|local_service.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\services\local_service.pyo" SelfReg="false" NextFile="__init__.pyo_68"/>
     <ROW File="local_tester.pyo" Component_="backup.pyo" FileName="LOCAL_~1.PYO|local_tester.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\local_tester.pyo" SelfReg="false" NextFile="message.pyo_1"/>
     <ROW File="locale.pyo" Component_="abc.pyo" FileName="locale.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\locale.pyo" SelfReg="false" NextFile="__init__.pyo_24"/>
     <ROW File="localfiles48.png" Component_="addbackup.png" FileName="LOCAL-~1.PNG|local-files48.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\local-files48.png" SelfReg="false" NextFile="log32.png"/>
@@ -815,7 +823,7 @@
     <ROW File="networksettings.png" Component_="addbackup.png" FileName="NETWOR~1.PNG|network-settings.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\network-settings.png" SelfReg="false" NextFile="network24x24.png"/>
     <ROW File="new.pyo" Component_="abc.pyo" FileName="new.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\new.pyo" SelfReg="false" NextFile="ntpath.pyo"/>
     <ROW File="nickname_holder.pyo" Component_="identity.pyo" FileName="NICKNA~1.PYO|nickname_holder.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\userid\nickname_holder.pyo" SelfReg="false" NextFile="nickname_observer.pyo"/>
-    <ROW File="nickname_observer.pyo" Component_="identity.pyo" FileName="NICKNA~2.PYO|nickname_observer.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\userid\nickname_observer.pyo" SelfReg="false"/>
+    <ROW File="nickname_observer.pyo" Component_="identity.pyo" FileName="NICKNA~2.PYO|nickname_observer.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\userid\nickname_observer.pyo" SelfReg="false" NextFile="__init__.pyo_67"/>
     <ROW File="node.pyo" Component_="constants.pyo" FileName="node.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\dht\entangled\kademlia\node.pyo" SelfReg="false" NextFile="protocol.pyo"/>
     <ROW File="node.pyo_1" Component_="dtuple.pyo" FileName="node.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\dht\entangled\node.pyo" SelfReg="false" NextFile="__init__.pyo_13"/>
     <ROW File="nonblocking.pyo" Component_="automat.pyo" FileName="NONBLO~1.PYO|nonblocking.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\lib\nonblocking.pyo" SelfReg="false" NextFile="packetid.pyo"/>

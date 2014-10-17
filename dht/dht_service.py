@@ -58,11 +58,12 @@ def init(udp_port, db_file_path=None):
         if _Debug:
             lg.out(', already created a DHTNode')
         return
-    lg.out(4, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         # db_file_path = './dht%s' % str(udp_port)
         db_file_path = settings.DHTDBFile()
-    dataStore = SQLiteDataStore(dbFile=db_file_path)
+    dbPath = bpio.portablePath(db_file_path)
+    lg.out(4, 'dht_service.init UDP port is %d, DB file path: %s' % (udp_port, dbPath))
+    dataStore = SQLiteDataStore(dbFile=dbPath)
     # _MyNode = DistributedTupleSpacePeer(udp_port, dataStore)
     _MyNode = DHTNode(udp_port, dataStore)
     _MyNode.listenUDP()
@@ -222,20 +223,23 @@ def parseCommandLine():
     oparser = optparse.OptionParser()
     oparser.add_option("-p", "--udpport", dest="udpport", type="int", help="specify UDP port for DHT network")
     oparser.set_default('udpport', settings.DefaultDHTPort())
+    oparser.add_option("-d", "--dhtdb", dest="dhtdb", help="specify DHT database file location")
+    oparser.set_default('dhtdb', settings.DHTDBFile())
     (options, args) = oparser.parse_args()
     return options, args
 
-def main():
+def main(a):
     bpio.init()
     settings.init()
     lg.set_debug_level(18)
     (options, args) = parseCommandLine()
-    init(options.udpport)
+    init(options.udpport, a) # options.dhtdb)
     connect()
     if len(args) == 0:
         pass
     elif len(args) > 0:
         def _r(x):
+            print x
             reactor.stop()
         cmd = args[0] 
         if cmd == 'get':

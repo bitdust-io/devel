@@ -41,7 +41,7 @@ from logs import lg
 LocaleInstalled = False
 PlatformInfo = None
 X11isRunning = None
-Original_isdir = None
+#Original_isdir = None
 
 #------------------------------------------------------------------------------
 
@@ -50,12 +50,13 @@ def init():
     This method must be called firstly, before any logs will be printed.
     This installs a system locale, so all output messages will have a correct encoding. 
     """
+    # global Original_isdir
+    # Original_isdir = os.path.isdir
+    # os.path.isdir = pathIsDir
+
     InstallLocale()
     if Linux():
         lg.setup_unbuffered_stdout()
-    global Original_isdir
-    Original_isdir = os.path.isdir
-    os.path.isdir = pathIsDir
     # StartCountingOpenedFiles()
         
 def shutdown():
@@ -815,16 +816,16 @@ def pathIsDir(localpath):
     """
     # print 'pathIsDir', type(localpath), str(localpath)
     # try to use the original path
-    global Original_isdir
-    if Original_isdir is None:
-        Original_isdir = os.path.isdir
-    if Original_isdir(localpath):
+#    global Original_isdir
+#    if Original_isdir is None:
+#        Original_isdir = os.path.isdir
+    if os.path.isdir(localpath):
         return True
     if os.path.exists(localpath) and os.path.isfile(localpath):
         return False
     # don't know... let's try portable path
     p = portablePath(localpath)
-    if Original_isdir(p):
+    if os.path.isdir(p):
         return True
     if os.path.exists(localpath) and os.path.isfile(p):
         return False

@@ -1853,13 +1853,13 @@ class InstallPage(Page):
             message += '\n<br>' + html_message('you must donate at least %f MB' % (
                 round(settings.MinimumDonatedBytes()/(1024.0*1024.0), 2)), 'notify')
             ok = False
-        if not os.path.isdir(self.customersdir):
+        if not bpio.pathIsDir(self.customersdir):
             message += '\n<br>' + html_message('directory %s not exist' % self.customersdir, 'error')
             ok = False
         if not os.access(self.customersdir, os.W_OK):
             message += '\n<br>' + html_message('folder %s does not have write permissions' % self.customersdir, 'error')
             ok = False
-        if not os.path.isdir(self.localbackupsdir):
+        if not bpio.pathIsDir(self.localbackupsdir):
             message += '\n<br>' + html_message('directory %s not exist' % self.localbackupsdir, 'error')
             ok = False
         if not os.access(self.localbackupsdir, os.W_OK):
@@ -4443,7 +4443,7 @@ class CustomerPage(Page):
         bytesGiven = int(spaceDict.get(self.idurl, 0))
         dataDir = settings.getCustomersFilesDir()
         customerDir = os.path.join(dataDir, nameurl.UrlFilename(self.idurl))
-        if os.path.isdir(customerDir):
+        if bpio.pathIsDir(customerDir):
             bytesUsed = bpio.getDirectorySize(customerDir)
         else:
             bytesUsed = 0
@@ -4495,7 +4495,7 @@ class CustomerFilesPage(Page):
         src = '<h1>%s</h1>\n' % title
         list_files = []
         customer_dir = settings.getCustomerFilesDir(self.idurl)
-        if os.path.isdir(customer_dir):
+        if bpio.pathIsDir(customer_dir):
             for filename in os.listdir(customer_dir):
                 list_files.append(filename)
         if len(list_files) > 0:

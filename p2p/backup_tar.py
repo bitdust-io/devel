@@ -39,7 +39,7 @@ def backuptar(directorypath, recursive_subfolders=True, compress=None):
     Returns file descriptor for process that makes tar archive.
     In other words executes a child process and create a Pipe to communicate with it.
     """
-    if not os.path.isdir(directorypath):
+    if not bpio.pathIsDir(directorypath):
         lg.out(1, 'backup_tar.backuptar ERROR %s not found' % directorypath)
         return None
     subdirs = 'subdirs'

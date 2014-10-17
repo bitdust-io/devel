@@ -167,14 +167,16 @@ class DataSender(automat.Automat):
                         if not os.path.isfile(filename):
                             log.write('%s is not file\n' % filename)
                             continue
-                        io_throttle.QueueSendFile(
-                            filename, 
-                            packetID, 
-                            supplier_idurl, 
-                            misc.getLocalID(), 
-                            self._packetAcked, 
-                            self._packetFailed)
-                        log.write('io_throttle.QueueSendFile %s\n' % packetID)
+                        if io_throttle.QueueSendFile(
+                                filename, 
+                                packetID, 
+                                supplier_idurl, 
+                                misc.getLocalID(), 
+                                self._packetAcked, 
+                                self._packetFailed):
+                            log.write('io_throttle.QueueSendFile %s\n' % packetID)
+                        else:
+                            log.write('io_throttle.QueueSendFile FAILED %s\n' % packetID)
                         # lg.out(6, '  %s for %s' % (packetID, backupID))
         self.automat('scan-done')
         log.flush()
