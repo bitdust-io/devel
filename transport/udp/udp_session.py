@@ -191,10 +191,10 @@ class UDPSession(automat.Automat):
     fast = True
 
     timers = {
-        'timer-1min':  (60, ['CONNECTED', 'PING']),
-        'timer-1sec':  (1.0, ['PING','GREETING']),
+        'timer-1min': (60, ['CONNECTED']),
+        'timer-1sec': (1.0, ['PING','GREETING']),
         'timer-30sec': (30.0, ['GREETING']),
-        'timer-10sec': (10.0, ['CONNECTED']),
+        'timer-10sec': (10.0, ['PING','CONNECTED']),
         }
 
     MESSAGES = {
@@ -270,12 +270,6 @@ class UDPSession(automat.Automat):
             if event == 'timer-1sec' :
                 self.doStartRTT(arg)
                 self.doPing(arg)
-            elif event == 'shutdown' or event == 'timer-1min' :
-                self.state = 'CLOSED'
-                self.doErrMsg(event,self.msg('MSG_3', arg))
-                self.doClosePendingFiles(arg)
-                self.doNotifyDisconnected(arg)
-                self.doDestroyMe(arg)
             elif event == 'datagram-received' and self.isGreeting(arg) :
                 self.state = 'GREETING'
                 self.doAcceptGreeting(arg)
@@ -287,6 +281,12 @@ class UDPSession(automat.Automat):
                 self.doAcceptPing(arg)
                 self.doStartRTT(arg)
                 self.doGreeting(arg)
+            elif event == 'shutdown' or event == 'timer-10sec' :
+                self.state = 'CLOSED'
+                self.doErrMsg(event,self.msg('MSG_3', arg))
+                self.doClosePendingFiles(arg)
+                self.doNotifyDisconnected(arg)
+                self.doDestroyMe(arg)
         #---GREETING---
         elif self.state == 'GREETING':
             if event == 'timer-1sec' :

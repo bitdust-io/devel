@@ -244,7 +244,15 @@ def main():
             reactor.stop()
         cmd = args[0] 
         if cmd == 'get':
-            get_value(args[1]).addBoth(_r)
+            if len(args) > 2:
+                from twisted.internet.task import LoopingCall
+                def _k(x):
+                    print x
+                def _s():
+                    get_value(args[1]).addBoth(_k)
+                LoopingCall(_s).start(int(args[2]))
+            else:
+                get_value(args[1]).addBoth(_r)
         elif cmd == 'set':
             set_value(args[1], args[2]).addBoth(_r)
         elif cmd == 'find':

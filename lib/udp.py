@@ -288,8 +288,8 @@ class CommandsProtocol(BasicProtocol):
         outp.close()
         self.bytes_out += payloadsz + 2
         # if command in [CMD_DATA, CMD_ACK]:
-        #     lg.out(18, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
-        #         command, payloadsz + 2, address, self.bytes_out))
+        lg.out(18, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
+            command, payloadsz + 2, address, self.bytes_out))
         return result
 
 #------------------------------------------------------------------------------ 
