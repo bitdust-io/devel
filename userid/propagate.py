@@ -401,6 +401,6 @@ def PingContact(idurl, ack_handler=None):
     Called from outside when need to "ping" some user, this will just send my Identity to that guy, 
     he will need to respond.
     """
-    SendToID(idurl, NeedAck=True, AckHandler=ack_handler)
+    SendToID(idurl, NeedAck=True, AckHandler=ack_handler, wide=True)
 
 

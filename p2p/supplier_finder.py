@@ -13,7 +13,6 @@ EVENTS:
     * :red:`supplier-connected`
     * :red:`supplier-not-connected`
     * :red:`timer-10sec`
-    * :red:`user-already-supplier`
     * :red:`users-not-found`
 
 """
@@ -47,6 +46,15 @@ import supplier_connector
 #------------------------------------------------------------------------------ 
 
 _SupplierFinder = None
+_SuppliersToHire = []
+
+#------------------------------------------------------------------------------ 
+
+def AddSupplierToHire(idurl):
+    """
+    """
+    global _SuppliersToHire
+    _SuppliersToHire.append(idurl)
 
 #------------------------------------------------------------------------------ 
 
@@ -86,11 +94,17 @@ class SupplierFinder(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'start' :
+            if event == 'start' and not self.isSomeCandidatesListed(arg) :
                 self.state = 'RANDOM_USER'
                 self.Attempts=0
                 self.doInit(arg)
                 self.doDHTFindRandomUser(arg)
+            elif event == 'start' and self.isSomeCandidatesListed(arg) :
+                self.state = 'ACK?'
+                self.doInit(arg)
+                self.doPopCandidate(arg)
+                self.Attempts=1
+                self.doSendMyIdentity(arg)
         #---ACK?---
         elif self.state == 'ACK?':
             if event == 'inbox-packet' and self.isAckFromUser(arg) :
@@ -121,8 +135,6 @@ class SupplierFinder(automat.Automat):
                 self.doRememberUser(arg)
                 self.Attempts+=1
                 self.doSendMyIdentity(arg)
-            elif event == 'user-already-supplier' :
-                self.doDHTFindRandomUser(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'supplier-connected' :
@@ -139,6 +151,7 @@ class SupplierFinder(automat.Automat):
             elif self.Attempts<5 and event == 'supplier-not-connected' :
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
+        return None
 
     def isAckFromUser(self, arg):
         """
@@ -150,6 +163,14 @@ class SupplierFinder(automat.Automat):
                 return True
         return False
 
+
+    def isSomeCandidatesListed(self, arg):
+        """
+        Condition method.
+        """
+        global _SuppliersToHire
+        return len(_SuppliersToHire) > 0
+        
 #    def isServiceAccepted(self, arg):
 #        """
 #        Condition method.
@@ -207,6 +228,13 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         self.target_idurl = arg
+        
+    def doPopCandidate(self, arg):
+        """
+        Action method.
+        """
+        global _SuppliersToHire
+        self.target_idurl = _SuppliersToHire.pop() 
 
     def doDestroyMe(self, arg):
         """

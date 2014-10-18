@@ -20,10 +20,10 @@
     <ROW Property="InstanceId" Value="#0"/>
     <ROW Property="Manufacturer" Value="BitPie.NET Inc."/>
     <ROW Property="MyUserHomeDir" Value="?"/>
-    <ROW Property="ProductCode" Value="1033:{89E3EE82-A526-444B-B265-7733E1C8A31D} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{9C45EED5-5E01-4EFE-A9F8-1998A1FC8B6A} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="BitPie.NET (testing release)"/>
-    <ROW Property="ProductVersion" Value="0.1.9.759" Type="32"/>
+    <ROW Property="ProductVersion" Value="0.1.10.760" Type="32"/>
     <ROW Property="RUNAPPLICATION" Value="1" Type="4"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{1D2E14B7-8093-406E-9EDD-CEE00645A486}"/>

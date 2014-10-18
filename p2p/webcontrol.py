@@ -73,6 +73,7 @@ import p2p_connector
 import fire_hire
 import contact_status
 import customers_rejector
+import supplier_finder
 
 import p2p_service
 import backup_fs
@@ -4201,7 +4202,6 @@ class SuppliersPage(Page):
                 if contacts.IsSupplier(idurl):
                     fire_hire.AddSupplierToFire(idurl)
                     backup_monitor.Restart()
-                    # fire_hire.A('fire-him-now', [idurl,])
         
         #---action change---
         elif action == 'change':
@@ -4216,8 +4216,9 @@ class SuppliersPage(Page):
                 if not newidurl.startswith('http://'):
                     newidurl = 'http://'+settings.IdentityServerName()+'/'+newidurl+'.xml'
                 if contacts.IsSupplier(idurl):
-                    # fire_hire.A('fire-him-now', (idurl, newidurl))
-                    fire_hire.A('fire-him-now', [idurl,])
+                    fire_hire.AddSupplierToFire(idurl)
+                    supplier_finder.AddSupplierToHire(newidurl)
+                    backup_monitor.Restart()
 
         #---draw page---
         src = ''
@@ -7201,36 +7202,40 @@ class DevReportPage(Page):
 
     def progress_callback(self, x, y):
         global _DevReportProcess
-        if x == y and y > 0:
-            _DevReportProcess = ''
-        else:
-            _DevReportProcess = '%d/%d' % (x,y)
-            # SendCommandToGUI('update')
+        # if x == y and y > 0:
+        #     _DevReportProcess = ''
+        # else:
+        _DevReportProcess = '%d/%d' % (x,y)
+        # SendCommandToGUI('update')
         
     def renderPage(self, request):
         # global local_version
         global _DevReportProcess
-
-        subject = arg(request, 'subject')
-        body = arg(request, 'body')
+        subject = arg(request, 'subject', 'BitPie.NET developer report')
+        body = arg(request, 'body', 'sent from %s at %s' % (misc.getLocalID(), time.asctime()))
         action = arg(request, 'action').lower().strip()
         includelogs = arg(request, 'includelogs', 'True')
-
         src = ''
         if action == 'send' and _DevReportProcess == '':
             misc.SendDevReport(subject, body, includelogs=='True', 
                 progress=self.progress_callback)
             _DevReportProcess = '0/0'
-            # src += '<br><br><br><h3>Thank you for your help!</h3>'
-            # return html(request, body=src, back=_PAGE_CONFIG, reload='5')
-            
         if _DevReportProcess:
+            try:
+                x, y = _DevReportProcess.split('/')
+            except:
+                x = y = '0'
             src += '<br><br><br><h3>Thank you for your help !!!</h3>'
             src += '<br><br><h3>progress</h3>\n'
-            if _DevReportProcess == '0/0':
+            if x == '0' and y == '0':
                 src += 'compressing ... '
+            elif x != y and y != '0':
+                src += 'sending: %s bytes' + _DevReportProcess
             else:
-                src += 'sending: ' + _DevReportProcess
+                _DevReportProcess = ''
+                src += '<br><br><br>Your message was sent to Veselin Penev.\n'
+                src += '<h3>Thank you for your help!</h3>\n'
+                return html(request, body=src, back=_PAGE_CONFIG, reload='5')
             reactor.callLater(0.2, SendCommandToGUI, 'update')
             return html(request, body=src, back='/'+_PAGE_CONFIG, reload='0.2')
         

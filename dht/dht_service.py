@@ -157,6 +157,7 @@ def set_value(key, value):
     d.addErrback(error, 'set_value', key)
     return d
 
+
 def delete_key(key):
     if _Debug:
         lg.out(16, 'dht_service.delete_key [%s]' % key)
@@ -228,12 +229,12 @@ def parseCommandLine():
     (options, args) = oparser.parse_args()
     return options, args
 
-def main(a):
+def main():
     bpio.init()
     settings.init()
     lg.set_debug_level(18)
     (options, args) = parseCommandLine()
-    init(options.udpport, a) # options.dhtdb)
+    init(options.udpport, options.dhtdb)
     connect()
     if len(args) == 0:
         pass

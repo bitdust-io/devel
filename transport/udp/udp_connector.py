@@ -152,8 +152,8 @@ class DHTUDPConnector(automat.Automat):
         automat.objects().pop(self.index)
 
     def _got_peer_incomings(self, value):
-        # lg.out(18, 'udp_connector._got_peer_incomings:')
-        # lg.out(18, str(value))
+        lg.out(18, 'udp_connector._got_peer_incomings:')
+        lg.out(18, str(value))
         current_incomings = []
         if type(value) == dict:
             try:
@@ -185,11 +185,12 @@ class DHTUDPConnector(automat.Automat):
     def _wrote_peers_incomings(self, nodes):
         if len(nodes) > 0:
             self.automat('dht-write-success')
+            print nodes
         else:
             self.automat('dht-write-failed')
         
     def _got_peer_address(self, value):
-        # lg.out(18, 'udp_connector._got_peer_address  %r' % value)
+        lg.out(18, 'udp_connector._got_peer_address  %r' % value)
         if type(value) != dict:
             self.automat('dht-read-failed')
             return
@@ -199,7 +200,7 @@ class DHTUDPConnector(automat.Automat):
         except:
             self.automat('dht-read-failed')            
             return
-        # print '_got_peer_address', value.values(), (peer_ip, peer_port)
+        print '_got_peer_address', value.values(), (peer_ip, peer_port)
         self.automat('dht-read-success', (peer_ip, peer_port))
 
 

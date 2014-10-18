@@ -36,8 +36,13 @@ class Contact(object):
         else:
             return True
         
+    def __repr__(self, *args, **kwargs):
+        return str(self)
+        
+        
     def __str__(self):
-        return '<%s.%s object; IP address: %s, UDP port: %d>' % (self.__module__, self.__class__.__name__, self.address, self.port)
+        return '%s at <%s:%d>' % (
+            self.__class__.__name__, self.address, self.port)
     
     def __getattr__(self, name):
         """ This override allows the host node to call a method of the remote
