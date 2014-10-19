@@ -143,7 +143,7 @@ class DHTUDPConnector(automat.Automat):
         """
         key = self.peer_id+':incoming'+str(self.KeyPosition)
         d = dht_service.get_value(key)
-        d.addCallback(self._got_peer_incoming)
+        d.addCallback(self._got_peer_incoming, self.KeyPosition)
         d.addErrback(lambda x: self.automat('dht-read-failed'))
 
     def doDHTWriteIncoming(self, arg):
@@ -199,9 +199,8 @@ class DHTUDPConnector(automat.Automat):
         connectors().pop(self.id)
         automat.objects().pop(self.index)
 
-    def _got_peer_incoming(self, value):
-        lg.out(18, 'udp_connector._got_peer_incoming:')
-        lg.out(18, str(value))
+    def _got_peer_incoming(self, value, position):
+        lg.out(18, 'udp_connector._got_peer_incoming at position %d: %d' % (position, len(str(value))))
         incoming = None 
         if type(value) != dict:
             self.automat('dht-read-failed')
