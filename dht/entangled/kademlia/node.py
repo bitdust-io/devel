@@ -129,6 +129,7 @@ class Node(object):
 #        df.addCallback(self._refreshKBuckets)
         #protocol.reactor.callLater(10, self.printContacts)
         self._joinDeferred.addCallback(self._persistState)
+        self._joinDeferred.addErrback(self._joinNetworkFailed)
         # Start refreshing k-buckets periodically, if necessary
         self.refresher = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode) #IGNORE:E1101
         #twisted.internet.reactor.run()
@@ -675,6 +676,10 @@ class Node(object):
                  'closestNodes': self.findNode(self.id)}
         now = int(time.time())
         self._dataStore.setItem('nodeState', state, now, now, self.id)
+        
+    def _joinNetworkFailed(self, err):
+        print 'failed joining DHT network'
+        print err
 
     def _refreshNode(self):
         """ Periodically called to perform k-bucket refreshes and data

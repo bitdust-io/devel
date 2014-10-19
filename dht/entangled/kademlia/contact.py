@@ -58,7 +58,12 @@ class Contact(object):
         This happens via this contact's C{_networkProtocol} object (i.e. the
         host Node's C{_protocol} object).
         """
+#        import sys, os
+#        cod = sys._getframe().f_back.f_code
+#        modul = os.path.basename(cod.co_filename).replace('.py', '') 
+#        caller = cod.co_name
+#        print 'contact.__getattr__ from %s.%s' % (modul, caller)
         def _sendRPC(*args, **kwargs):
-            # print 'sendRPC', name, self.address, self.port, self.commTime
+#            print 'sendRPC', name, self.address, self.port, self.commTime
             return self._networkProtocol.sendRPC(self, name, args, **kwargs)
         return _sendRPC

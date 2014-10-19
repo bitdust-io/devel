@@ -56,7 +56,7 @@ def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
         if _Debug:
-            lg.out(', already created a DHTNode')
+            lg.out('dht_service.init SKIP, already created a DHTNode')
         return
     if db_file_path is None:
         # db_file_path = './dht%s' % str(udp_port)
@@ -76,8 +76,7 @@ def shutdown():
         _MyNode._dataStore._db.close()
         del _MyNode
         _MyNode = None
-        if _Debug:
-            lg.out(4, 'dht_service.shutdown')
+        lg.out(4, 'dht_service.shutdown')
     else:
         lg.warn('DHTNode not exist')
 
@@ -137,7 +136,7 @@ def okay(result, method, key, arg=None):
 def error(err, method, key):
     if _Debug:
         lg.out(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
-    return None  
+    return err  
 
 
 def get_value(key):
@@ -196,8 +195,9 @@ class DHTNode(DistributedTupleSpacePeer):
     if _Debug:
         @rpcmethod
         def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
-            lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-                base64.b32encode(key), str(value)[:10]))
+            if _Debug:
+                lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+                    base64.b32encode(key), str(value)[:10]))
             return DistributedTupleSpacePeer.store(self, key, value, 
                 originalPublisherID=originalPublisherID, age=age, **kwargs)
 
