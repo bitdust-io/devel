@@ -46,6 +46,11 @@ import udp_stream
 
 #------------------------------------------------------------------------------ 
 
+_Debug = False
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------ 
+
 _UDPNode = None
 
 #------------------------------------------------------------------------------ 
@@ -57,7 +62,7 @@ def A(event=None, arg=None):
     global _UDPNode
     if _UDPNode is None:
         # set automat name and starting state here
-        _UDPNode = UDPNode('udp_node', 'AT_STARTUP', 8)
+        _UDPNode = UDPNode('udp_node', 'AT_STARTUP', 14)
     if event is not None:
         _UDPNode.automat(event, arg)
     return _UDPNode
@@ -190,8 +195,9 @@ class UDPNode(automat.Automat):
             return True
         if udp_connector.get(user_id) is not None:
             return True
-        lg.out(18, 'udp_node.isKnownUser %s not found in %s' % (
-            user_id, udp_session.sessions_by_peer_id().keys()))
+        if _Debug:
+            lg.out(_DebugLevel, 'udp_node.isKnownUser %s not found in %s' % (
+                user_id, udp_session.sessions_by_peer_id().keys()))
         return False
 
     def isKnowMyAddress(self, arg):
@@ -257,7 +263,8 @@ class UDPNode(automat.Automat):
         except:
             lg.exc()
             return
-        lg.out(18, 'udp_node.doStartNewSession wants to start a new session with UNKNOWN peer at %s' % str(address))
+        if _Debug:
+            lg.out(_DebugLevel, 'udp_node.doStartNewSession wants to start a new session with UNKNOWN peer at %s' % str(address))
         s = udp_session.create(self, address)
         s.automat('init')
         s.automat('datagram-received', arg)
@@ -267,7 +274,8 @@ class UDPNode(automat.Automat):
         Action method.
         """
         if self.my_address is None:
-            lg.out(18, 'dp_node.doCheckAndStartNewSession SKIP because my_address is None')
+            if _Debug: 
+                lg.out(_DebugLevel, 'dp_node.doCheckAndStartNewSession SKIP because my_address is None')
             return
         incoming_str = arg
         if incoming_str is None:
@@ -282,14 +290,17 @@ class UDPNode(automat.Automat):
             return
         s = udp_session.get(incoming_user_address) 
         if s:
-            lg.out(18, 'udp_node.doCheckAndStartNewSessions SKIP because found existing %s' % s)
+            if _Debug:
+                lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSessions SKIP because found existing %s' % s)
             return
         s = udp_session.get_by_peer_id(incoming_user_id)
         if s:
-            lg.out(18, 'udp_node.doCheckAndStartNewSession SKIP because found existing by peer id:%s %s' % (incoming_user_id, s))
+            if _Debug:            
+                lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSession SKIP because found existing by peer id:%s %s' % (incoming_user_id, s))
             return
-        lg.out(18, 'udp_node.doCheckAndStartNewSession wants to start a new session with incoming peer %s at %s' % (
-            incoming_user_id, incoming_user_address))
+        if _Debug:            
+            lg.out(_DebugLevel, 'udp_node.doCheckAndStartNewSession wants to start a new session with incoming peer %s at %s' % (
+                incoming_user_id, incoming_user_address))
         s = udp_session.create(self, incoming_user_address, incoming_user_id)
         s.automat('init')
 
@@ -298,7 +309,8 @@ class UDPNode(automat.Automat):
         Action method.
         """
         if self.my_address:
-            lg.out(4, 'udp_node.doUpdateMyAddress old=%s new=%s' % (str(self.my_address), str(arg)))
+            if _Debug:            
+                lg.out(4, 'udp_node.doUpdateMyAddress old=%s new=%s' % (str(self.my_address), str(arg)))
         self.my_address = arg
         # bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
         #TODO call top level code to notify about my external IP changes
@@ -311,7 +323,8 @@ class UDPNode(automat.Automat):
         if self.IncomingPosition >= 10:
             self.IncomingPosition = 0
         key = self.my_id + ':incoming' + str(self.IncomingPosition)
-        lg.out(18, 'doDHTReadNextIncoming  key=%s' % key)
+        if _Debug:            
+            lg.out(_DebugLevel, 'udp_node.doDHTReadNextIncoming  key=%s' % key)
         d = dht_service.get_value(key)
         d.addCallback(self._got_my_incoming, self.IncomingPosition)
         d.addErrback(self._failed_my_incoming, self.IncomingPosition)
@@ -338,7 +351,8 @@ class UDPNode(automat.Automat):
         """
         udp_session.stop_process_sessions()
         for s in udp_session.sessions().values():
-            lg.out(18, 'udp_node.doShutdown  send "shutdown" to %s' % s)
+            if _Debug:            
+                lg.out(_DebugLevel, 'udp_node.doShutdown  send "shutdown" to %s' % s)
             s.automat('shutdown')
         # udp.remove_datagram_receiver_callback(self._datagram_received)
         self.automat('disconnected')
@@ -357,7 +371,8 @@ class UDPNode(automat.Automat):
         if not self.notified:
             udp_interface.interface_receiving_started(self.my_id)
             self.notified = True
-            lg.out(4, 'udp_node.doNotifyConnected  my host is %s' % self.my_id)
+            if _Debug:            
+                lg.out(4, 'udp_node.doNotifyConnected  my host is %s' % self.my_id)
         
     def doNotifyFailed(self, arg):
         """
@@ -369,7 +384,7 @@ class UDPNode(automat.Automat):
         """
         """
         command, payload = datagram
-        # lg.out(18, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
+        # lg.out(_DebugLevel, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
         s = udp_session.get(address)
         if s:
             s.automat('datagram-received', (datagram, address))
@@ -386,12 +401,14 @@ class UDPNode(automat.Automat):
             return
         hkey = dht_service.key_to_hash(self.my_id+':address')
         if hkey not in value.keys():
-            lg.out(4, 'udp_node._got_my_address ERROR   wrong key in response')
+            if _Debug:            
+                lg.out(4, 'udp_node._got_my_address ERROR   wrong key in response')
             self.automat('dht-write-failed')
             return
         value = value[hkey].strip('\n').strip()
         if value != '%s:%d' % (self.my_address[0], self.my_address[1]):
-            lg.out(4, 'udp_node._got_my_address ERROR   value not fit: %s' % str(value)[:20])
+            if _Debug:            
+                lg.out(4, 'udp_node._got_my_address ERROR   value not fit: %s' % str(value)[:20])
             self.automat('dht-write-failed')
             return
         self.automat('dht-write-success')
@@ -407,20 +424,24 @@ class UDPNode(automat.Automat):
     def _got_my_incoming(self, value, position):
         # print position, value
         if type(value) != dict:
-            lg.out(18, 'no incoming at position: %d' % position)
+            if _Debug:            
+                lg.out(_DebugLevel, 'udp_node._got_my_incoming no incoming at position: %d' % position)
             self.automat('dht-read-result', None)
             return
         hkey = dht_service.key_to_hash(self.my_id+':incoming'+str(position))
         if hkey not in value.keys():
-            lg.out(18, 'no incoming at position: %d\n%r' % (position, value))
+            if _Debug:
+                lg.out(_DebugLevel, 'udp_node._got_my_incoming no incoming at position: %d\n%r' % (position, value))
             self.automat('dht-read-result', None)
             return
-        lg.out(18, 'incoming found: %s' % str(value))
+        if _Debug:
+            lg.out(_DebugLevel, 'udp_node._got_my_incoming incoming found: %s' % str(value))
         self.automat('dht-read-result', value[hkey])
     
     def _failed_my_incoming(self, err, position):
         # print err
-        lg.out(18, 'incoming empty: %s' % str(position))
+        if _Debug:
+            lg.out(_DebugLevel, 'udp_node._got_my_incoming incoming empty: %s' % str(position))
         self.automat('dht-read-result', None)
         
 #------------------------------------------------------------------------------ 
