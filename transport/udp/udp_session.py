@@ -134,6 +134,8 @@ def add_pending_outbox_file(filename, host, description='', result_defer=None, s
 
 
 def remove_pending_outbox_file(host, filename):
+    """
+    """
     ok = False
     i = 0
     while i < len(pending_outbox_files()):
@@ -145,6 +147,23 @@ def remove_pending_outbox_file(host, filename):
         else:
             i += 1
     return ok
+
+
+def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
+    """
+    """
+    global _PendingOutboxFiles
+    i = 0
+    while i < len(_PendingOutboxFiles):
+        filename, host, description, result_defer, single, tm = _PendingOutboxFiles[i]
+        if host == remote_host:
+            udp_interface.interface_cancelled_file_sending(
+                remote_host, filename, 0, description, error_message)
+            if result_defer:
+                result_defer.callback(((filename, description), 'failed', error_message))
+            _PendingOutboxFiles.pop(i)
+        else:
+            i += 1
 
 
 def process_sessions():
@@ -538,27 +557,7 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        global _PendingOutboxFiles
-        i = 0
-        # outgoings = 0
-        # print 'doClosePendingFiles', self.peer_id, len(_PendingOutboxFiles)
-        while i < len(_PendingOutboxFiles):
-            filename, host, description, result_defer, single, tm = _PendingOutboxFiles[i]
-            # print filename, host, description, 
-            if host == self.peer_id:
-                # print 'pop'
-                # outgoings += 1
-                udp_interface.interface_cancelled_file_sending(
-                    self.peer_id, filename, 0, description, self.error_message)
-                if result_defer:
-                    result_defer.callback(((filename, description), 'failed', self.error_message))
-                _PendingOutboxFiles.pop(i)
-            else:
-                i += 1
-                # print 'skip'
-        # print len(_PendingOutboxFiles)
-        # if outgoings > 0:
-        #     reactor.callLater(0, process_sessions)
+        report_and_remove_pending_outbox_files_to_host(self.peer_id, self.error_message)
         self.file_queue.report_failed_inbox_files(self.error_message)
         self.file_queue.report_failed_outbox_files(self.error_message)
         self.file_queue.report_failed_outbox_queue(self.error_message)
