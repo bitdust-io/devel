@@ -283,11 +283,11 @@ class UDPNode(automat.Automat):
         s = udp_session.get(incoming_user_address) 
         if s:
             lg.out(18, 'udp_node.doCheckAndStartNewSessions SKIP because found existing %s' % s)
-            continue
+            return
         s = udp_session.get_by_peer_id(incoming_user_id)
         if s:
             lg.out(18, 'udp_node.doCheckAndStartNewSession SKIP because found existing by peer id:%s %s' % (incoming_user_id, s))
-            continue
+            return
         lg.out(18, 'udp_node.doCheckAndStartNewSession wants to start a new session with incoming peer %s at %s' % (
             incoming_user_id, incoming_user_address))
         s = udp_session.create(self, incoming_user_address, incoming_user_id)
