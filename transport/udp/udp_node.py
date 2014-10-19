@@ -313,7 +313,7 @@ class UDPNode(automat.Automat):
         key = self.my_id + ':incoming' + str(self.IncomingPosition)
         lg.out(18, 'doDHTReadNextIncoming  key=%s' % key)
         d = dht_service.get_value(key)
-        d.addCallback(self._got_my_incoming)
+        d.addCallback(self._got_my_incoming, self.IncomingPosition)
         d.addErrback(lambda e: self.automat('dht-read-result', None))
 
     def doDHTRemoveMyIncoming(self, arg):
@@ -404,14 +404,14 @@ class UDPNode(automat.Automat):
         d.addCallback(self._got_my_address)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
-    def _got_my_incoming(self, value):
+    def _got_my_incoming(self, value, position):
         if type(value) != dict:
-            lg.out(18, 'no incoming at position: %d' % self.IncomingPosition)
+            lg.out(18, 'no incoming at position: %d' % position)
             self.automat('dht-read-result', None)
             return
-        hkey = dht_service.key_to_hash(self.my_id+':incoming'+self.IncomingPosition)
+        hkey = dht_service.key_to_hash(self.my_id+':incoming'+position)
         if hkey not in value.keys():
-            lg.out(18, 'no incoming at position: %d\n%r' % (self.IncomingPosition, value))
+            lg.out(18, 'no incoming at position: %d\n%r' % (position, value))
             self.automat('dht-read-result', None)
             return
         lg.out(18, 'incoming found: %s' % str(value))
