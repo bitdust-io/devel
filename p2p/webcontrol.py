@@ -702,6 +702,7 @@ def OnGlobalVersionReceived(txt):
     SendCommandToGUI('version: ' + str(global_checksum) + ' ' + str(local_checksum))
 
 def OnAliveStateChanged(idurl):
+    upd = False
     if contacts.IsSupplier(idurl):
         if currentVisiblePageName() in [_PAGE_SUPPLIERS, 
                                         _PAGE_SUPPLIER, 
@@ -710,14 +711,18 @@ def OnAliveStateChanged(idurl):
                                         _PAGE_BACKUP,
                                         _PAGE_BACKUP_DIAGRAM,
                                         _PAGE_BACKUP_LOCAL_FILES,
-                                        _PAGE_BACKUP_REMOTE_FILES,]:
-            SendCommandToGUI('update')
+                                        _PAGE_BACKUP_REMOTE_FILES,
+                                        _PAGE_CORRESPONDENTS,]:
+            upd = True
     if contacts.IsCustomer(idurl):
         if currentVisiblePageName() in [_PAGE_CUSTOMERS, _PAGE_CUSTOMER]:
-            SendCommandToGUI('update')
+            upd = True
     if contacts.IsCorrespondent(idurl):
         if currentVisiblePageName() == _PAGE_CORRESPONDENTS:
-            SendCommandToGUI('update')
+            upd = True
+    if upd:
+        SendCommandToGUI('update')
+
 
 def OnInitFinalDone():
     if currentVisiblePageName() in [_PAGE_MAIN,]:
@@ -789,13 +794,14 @@ def OnListCustomers():
     if currentVisiblePageName() == _PAGE_CUSTOMERS:
         SendCommandToGUI('update')
         
-#def OnMarketList():
-#    if currentVisiblePageName() == _PAGE_MONEY_MARKET_LIST:
-#        SendCommandToGUI('update')
-        
 # msg is (sender, to, subject, dt, body)
 def OnIncomingMessage(packet, msg):
     lg.out(6, 'webcontrol.OnIncomingMessage %r' % str(msg))
+    if currentVisiblePageName() in [ _PAGE_MESSAGES, _PAGE_CONVERSATION ]:
+        SendCommandToGUI('update')
+
+def OnOutgoingMessage(packet, msg, remote_identity, packetID):
+    lg.out(6, 'webcontrol.OnOutgoingMessage %r' % str(msg))
     if currentVisiblePageName() in [ _PAGE_MESSAGES, _PAGE_CONVERSATION ]:
         SendCommandToGUI('update')
 
@@ -3376,13 +3382,9 @@ class BackupPage(Page, BackupIDSplit):
                     src += '&nbsp;\n'
                     continue
                 if idurl:
-                    icon = 'icons/offline-user01.png'
+                    icon = contact_status.getStatusIcon(idurl)
                 else:
                     icon = 'icons/unknown-user01.png'
-                state = 'offline'
-                if contact_status.isOnline(idurl):
-                    icon = 'icons/online-user01.png'
-                    state = 'online '
                 if w >= 5 and len(name) > 10:
                     name = name[0:9] + '<br>' + name[9:]
                 src += '<a href="%s">' % link
@@ -3644,13 +3646,11 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
                     src += '&nbsp;\n'
                     continue
                 if idurl:
-                    icon = 'icons/offline-user01.png'
+                    icon = contact_status.getStatusIcon(idurl)
+                    state = contact_status.getStatusLabel(idurl)
                 else:
                     icon = 'icons/unknown-user01.png'
-                state = 'offline'
-                if contact_status.isOnline(idurl):
-                    icon = 'icons/online-user01.png'
-                    state = 'online '
+                    state = 'offline'
                 if w >= 5 and len(name) > 10:
                     name = name[0:9] + '<br>' + name[9:]
                 src += '<a href="%s">' % link
@@ -3736,13 +3736,11 @@ class BackupRemoteFilesPage(Page, BackupIDSplit):
                     src += '&nbsp;\n'
                     continue
                 if idurl:
-                    icon = 'icons/offline-user01.png'
+                    icon = contact_status.getStatusIcon(idurl)
+                    state = contact_status.getStatusLabel(idurl)
                 else:
                     icon = 'icons/unknown-user01.png'
-                state = 'offline'
-                if contact_status.isOnline(idurl):
-                    icon = 'icons/online-user01.png'
-                    state = 'online '
+                    state = 'offline'
                 if w >= 5 and len(name) > 10:
                     name = name[0:9] + '<br>' + name[9:]
                 src += '<a href="%s">' % link
@@ -3987,6 +3985,9 @@ class SupplierPage(Page):
             return NOT_DONE_YET
         elif action == 'ping':
             propagate.single(self.idurl)
+            request.redirect(request.path)
+            request.finish()
+            return NOT_DONE_YET
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         bytesUsed = backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
         suppliers_count = contacts.numSuppliers()
@@ -4007,11 +4008,8 @@ class SupplierPage(Page):
         src += '<tr><td>gives you</td><td>%s on his HDD</td></tr>\n' % diskspace.MakeStringFromBytes(bytesNeededPerSupplier)
         src += '<tr><td>your files takes</td><td>%s at the moment</td></tr>\n' % diskspace.MakeStringFromBytes(bytesUsedPerSupplier)
         src += '<tr><td>currenly taken</td><td>%3.2f%% space given to you</td></tr>\n' % percUsed
-        src += '<tr><td>current status is</td><td>'
-        if contact_status.isOnline(self.idurl):
-            src += '<font color="green">online</font>\n'
-        else:
-            src += '<font color="red">offline</font>\n'
+        src += '<tr><td>current status is</td><td>\n'
+        src += '<font>%s</font>\n' % contact_status.getStatusLabel(self.idurl)
         src += '</td></tr>\n'
         src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % ( ratings.month_percent(self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
         src += '</table>\n'
@@ -4212,10 +4210,10 @@ class SuppliersPage(Page):
                     try:
                         idurl = contacts.getSupplierID(int(idurl))
                     except:
-                        idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                        idurl = ''
                 if not newidurl.startswith('http://'):
-                    newidurl = 'http://'+settings.IdentityServerName()+'/'+newidurl+'.xml'
-                if contacts.IsSupplier(idurl):
+                    newidurl = ''
+                if contacts.IsSupplier(idurl) and newidurl != '':
                     fire_hire.AddSupplierToFire(idurl)
                     supplier_finder.AddSupplierToHire(newidurl)
                     backup_monitor.Restart()
@@ -4259,14 +4257,11 @@ class SuppliersPage(Page):
                     
         #---icon---
                     if idurl:
-                        icon = 'icons/offline-user01.png'
+                        icon = contact_status.getStatusIcon(idurl)
+                        state = contact_status.getStatusLabel(idurl)
                     else:
                         icon = 'icons/unknown-user01.png'
-                    state = 'offline'
-                    if contact_status.isOnline(idurl):
-                        icon = 'icons/online-user01.png'
-                        state = 'online '
-
+                        state = 'offline'
 #                    if w >= 5 and len(name) > 20:
 #                        name = name[0:19] + '<br>' + name[19:]
                     src += '<a href="%s">' % link
@@ -4462,10 +4457,7 @@ class CustomerPage(Page):
         src += '<tr><td>he use</td><td>%s at the moment</td></tr>\n' % diskspace.MakeStringFromBytes(bytesUsed)
         src += '<tr><td>currently used</td><td>%3.2f%% of his taken space</td></tr>\n' % percUsed
         src += '<tr><td>current status is</td><td>'
-        if contact_status.isOnline(self.idurl):
-            src += '<font color="green">online</font>\n'
-        else:
-            src += '<font color="red">offline</font>\n'
+        src += '<font>%s</font>\n' % contact_status.getStatusLabel(self.idurl)
         src += '</td></tr>\n'
         src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % ( ratings.month_percent(self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
         src += '</table>\n'
@@ -4584,12 +4576,8 @@ class CustomersPage(Page):
                         continue
 
         #---icon---
-                    icon = 'icons/offline-user01.png'
-                    state = 'offline'
-                    if contact_status.isOnline(idurl):
-                        icon = 'icons/online-user01.png'
-                        state = 'online '
-
+                    icon = contact_status.getStatusIcon(idurl)
+                    state = contact_status.getStatusLabel(idurl)
                     # if w >= 5 and len(name) > 10:
                     #     name = name[0:9] + '<br>' + name[9:]
                     src += '<a href="%s">' % link
@@ -6713,12 +6701,9 @@ class CorrespondentsPage(Page):
                 continue
             status = contact_status.isKnown(idurl)
             if not status:
-                status = ''
+                status = 'unknown'
             else:
-                if contact_status.isOnline(idurl):
-                    status = 'online'
-                else:
-                    status = 'offline'
+                status = contact_status.getStatusLabel(idurl)
             src += '&nbsp;&nbsp;&nbsp; <font color=gray>%s</font> %s' % (
                 idurl, status)
             src += '</td><td>\n'
@@ -6758,19 +6743,16 @@ class CorrespondentsPage(Page):
                         src += '&nbsp;\n'
                         continue
                     idurl = idurls[n]
-                    name = nameurl.GetName(idurl)
-                    if not name:
-                        src += '&nbsp;\n'
-                        continue
-                    icon = 'icons/offline-user01.png'
-                    if contact_status.isOnline(idurl):
-                        icon = 'icons/online-user01.png'
+                    name = contacts.getCorrespondentsDict().get(idurl, nameurl.GetName(idurl))
+                    icon = contact_status.getStatusIcon(idurl)
                     if w >= 5 and len(name) > 10:
                         name = name[0:9] + '<br>' + name[9:]
                     src += '<img src="%s" width=%d height=%d>' % (
                         iconurl(request, icon), imgW, imgH,)
                     src += '<br>\n'
-                    src += '%s' % name
+                    src += '%s<br>\n' % name
+                    src += '&nbsp;<a href="%s?action=ping&pingidurl=%s&back=%s">[ping]</a>\n' % (
+                        request.path, nameurl.Quote(idurl), arg(request, 'back', '/'+_PAGE_MENU))
                     src += '&nbsp;[<a href="%s?action=remove&idurl=%s&back=%s">x</a>]\n' % (
                         request.path, nameurl.Quote(idurl), arg(request, 'back', '/'+_PAGE_MENU))
                     src += '</td>\n'
@@ -6795,6 +6777,7 @@ class CorrespondentsPage(Page):
             else:
                 self.results = []
                 from userid import nickname_observer
+                nickname_observer.stop_all()
                 nickname_observer.observe_many(nickname, 
                     results_callback=self._nickname_observer_result)
                 msg = 'checking <b>%s</b> ...' % nickname
@@ -6815,6 +6798,9 @@ class CorrespondentsPage(Page):
                 typ = 'error'
         elif action == 'ping':
             propagate.PingContact(arg(request, 'pingidurl'), self._ack_handler)
+            request.redirect(request.path)
+            request.finish()
+            return NOT_DONE_YET
         elif action == 'add':
             self.results = []
             self.last_nickname = None
@@ -6853,6 +6839,7 @@ class SetNickNamePage(Page):
             self.results = []
             self.last_nickname = nickname
             from userid import nickname_observer
+            nickname_observer.stop_all()
             nickname_observer.find_one(nickname, 
                 results_callback=self._nickname_observer_result)
             msg = 'checking <b>%s</b> ...' % nickname
@@ -6862,7 +6849,7 @@ class SetNickNamePage(Page):
             self.last_nickname = nickname
             settings.setNickName(nickname)
             nickname_holder.A('set', (nickname, self._nickname_holder_result))
-            msg = 'your nickname is <b>%s</b> now' % nickname
+            msg = 'writing your nickname ...'
             typ = 'info'
         else:
             msg = ''
@@ -6899,12 +6886,9 @@ class SetNickNamePage(Page):
                 continue
             status = contact_status.isKnown(idurl)
             if not status:
-                status = ''
+                status = 'unknown'
             else:
-                if contact_status.isOnline(idurl):
-                    status = 'online'
-                else:
-                    status = 'offline'
+                status = contact_status.getStatusLabel(idurl)
             src += '&nbsp;&nbsp;&nbsp; <font color=gray>%s</font> %s' % (
                 idurl, status)
             src += '</tr>\n'

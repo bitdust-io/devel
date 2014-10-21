@@ -50,6 +50,12 @@ class XMLRPCServer(xmlrpc.XMLRPC):
 #            'backups_update':           api.backups_update,
 #            
 #            'restore_single':           api.restore_single,
+
+            'list_messages':            api.list_messages,
+            'send_message':             api.send_message,
+            
+            'find_peer_by_nickname':    api.find_peer_by_nickname,
+            'list_correspondents':      api.list_correspondents,
         }
 
     def lookupProcedure(self, procedurePath):

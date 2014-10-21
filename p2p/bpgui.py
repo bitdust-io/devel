@@ -1179,7 +1179,7 @@ class MyFrame(wx.Frame):
         self.base_addr = base_addr
         self.base_port = base_port
         
-        self.SetMinSize((800, 480))
+        self.SetMinSize((int(WindowSize[0]/2), int(WindowSize[1]/2)))
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
         #---windows

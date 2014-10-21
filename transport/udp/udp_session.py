@@ -218,8 +218,8 @@ class UDPSession(automat.Automat):
     timers = {
         'timer-1min': (60, ['CONNECTED']),
         'timer-1sec': (1.0, ['PING','GREETING']),
-        'timer-30sec': (30.0, ['GREETING']),
-        'timer-10sec': (10.0, ['PING','CONNECTED']),
+        'timer-30sec': (30.0, ['PING','GREETING']),
+        'timer-10sec': (10.0, ['CONNECTED']),
         }
 
     MESSAGES = {
@@ -306,7 +306,7 @@ class UDPSession(automat.Automat):
                 self.doAcceptPing(arg)
                 self.doStartRTT(arg)
                 self.doGreeting(arg)
-            elif event == 'shutdown' or event == 'timer-10sec' :
+            elif event == 'shutdown' or event == 'timer-30sec' :
                 self.state = 'CLOSED'
                 self.doErrMsg(event,self.msg('MSG_3', arg))
                 self.doClosePendingFiles(arg)

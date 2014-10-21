@@ -23,6 +23,7 @@ EVENTS:
 
 import os
 import sys
+import time
 
 from logs import lg
 
@@ -180,7 +181,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        d = dht_service.set_value(self.key, misc.getLocalID())
+        d = dht_service.set_value(self.key, misc.getLocalID(), age=int(time.time()))
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 

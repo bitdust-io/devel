@@ -82,6 +82,7 @@ import p2p_service
 #------------------------------------------------------------------------------ 
 
 OnIncomingMessageFunc = None
+OnOutgoingMessageFunc = None
 
 #------------------------------------------------------------------------------ 
 
@@ -188,6 +189,9 @@ def DeleteMessage(messageuid):
     return True
 
 def DoSendMessage(RemoteIdentity, messagebody, PacketID):
+    """
+    """
+    global OnOutgoingMessageFunc
     Amessage = MessageClass(RemoteIdentity, messagebody)
     MyID = misc.getLocalID()
     if PacketID == "":
@@ -196,6 +200,8 @@ def DoSendMessage(RemoteIdentity, messagebody, PacketID):
     lg.out(6, "message.SendMessage  about to send to " + RemoteIdentity.getIDURL())
     result = signed.Packet(commands.Message(),  MyID, MyID, PacketID, Payload, RemoteIdentity.getIDURL())
     gate.outbox(result)
+    if OnOutgoingMessageFunc:
+        OnOutgoingMessageFunc(result, messagebody, RemoteIdentity, PacketID)
 
 def SendMessage(RemoteID, messagebody, PacketID=""):
     """

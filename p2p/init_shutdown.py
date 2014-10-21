@@ -175,6 +175,7 @@ def init_connection():
     import message
     message.init()
     message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
+    message.OnOutgoingMessageFunc = webcontrol.OnOutgoingMessage
 
     from userid import propagate
     propagate.init()

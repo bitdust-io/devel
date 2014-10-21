@@ -228,6 +228,7 @@ class DHTUDPConnector(automat.Automat):
             incoming_user_address = (incoming_user_address[0], int(incoming_user_address[1]))
         except:
             lg.exc()
+            lg.out(2, '%r' % incoming)
             self.automat('dht-read-failed')
             return
         self.automat('dht-read-success', (incoming_peer_id, incoming_user_address))
@@ -246,6 +247,7 @@ class DHTUDPConnector(automat.Automat):
             peer_ip, peer_port = value.values()[0].split(':')
             peer_port = int(peer_port)
         except:
+            lg.exc()
             self.automat('dht-read-failed')            
             return
         if _Debug:

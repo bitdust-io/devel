@@ -260,7 +260,6 @@ def wait_then_kill(x):
 
 def run_now(opts, args):
     from lib import bpio
-    bpio.init()
     from logs import lg
     lg.life_begins()
     if opts.no_logs:
@@ -347,240 +346,252 @@ def cmd_schedule(opts, args, overDict):
     if shed is None:
         print_text(schedule.format()+'\n')
         return 0
-    return call_xmlrpc_method_and_stop('setschedule', backupDir, 
-                                       shed.type, shed.interval, shed.daytime, shed.details,)
+    return call_xmlrpc_method_and_stop(
+        'setschedule', backupDir, shed.type, shed.interval, shed.daytime, shed.details,)
 
 
-def cmd_suppliers(opts, args, overDict):
-    if len(args) < 2 or args[1] in [ 'list', 'ls' ]:
-        url = webcontrol._PAGE_SUPPLIERS
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-
-    elif args[1] in [ 'call', 'cl' ]:
-        url = webcontrol._PAGE_SUPPLIERS + '?action=call'
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-
-    elif args[1] in [ 'replace', 'rep', 'rp' ] and len(args) >= 3:
-        contacts.init()
-        idurl = args[2].strip()
-        if not idurl.startswith('http://'):
-            try:
-                idurl = contacts.getSupplierID(int(idurl))
-            except:
-                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
-        if not idurl:
-            print_text('supplier IDURL is None\n')
-            return 0
-        name = nameurl.GetName(idurl)
-        url = webcontrol._PAGE_SUPPLIERS + '?action=replace&idurl=%s' % misc.pack_url_param(idurl)
-        run_url_command(url).addCallback(_wait_replace_supplier_and_stop, name, 0)
-        reactor.run()
-        return 0
-    
-    elif args[1] in [ 'change', 'ch' ] and len(args) >= 4:
-        contacts.init()
-        idurl = args[2].strip()
-        if not idurl.startswith('http://'):
-            try:
-                idurl = contacts.getSupplierID(int(idurl))
-            except:
-                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
-        if not idurl:
-            print_text('supplier IDURL is None\n')
-            return 0
-        newidurl = args[3].strip()
-        if not newidurl.startswith('http://'):
-            newidurl = 'http://'+settings.IdentityServerName()+'/'+newidurl+'.xml'
-        name = nameurl.GetName(idurl)
-        newname = nameurl.GetName(newidurl)
-        url = webcontrol._PAGE_SUPPLIERS + '?action=change&idurl=%s&newidurl=%s' % (misc.pack_url_param(idurl), misc.pack_url_param(newidurl))
-        run_url_command(url).addCallback(_wait_replace_supplier_and_stop, name, 0)
-        reactor.run()
-        return 0
-    
+def cmd_message(opts, args, overDict):
+    if len(args) < 2 or args[1] == 'list':
+        return call_xmlrpc_method_and_stop('list_messages')
+    if len(args) >= 5 and args[1] in [ 'send', ]:
+        return call_xmlrpc_method_and_stop('send_message', args[2], args[3], args[4]) 
     return 2
 
 
-def cmd_customers(opts, args, overDict):
-    def _wait_remove_customer_and_stop(src, customer_name, count=0):
-        customers = []
-        for s in find_comments(src):
-            if s.count('[online ]') or s.count('[offline]'):
-                customers.append(s[18:38].strip())
-        if customer_name not in customers:
-            print_text('  customer %s is removed !' % customer_name)
-            print_and_stop(src)
-            return
-        if count >= 20:
-            print_text(' time is out\n')
-            reactor.stop()
-            return
-        else:
-            def _check_again(customer_name, count):
-                sys.stdout.write('.')
-                run_url_command(webcontrol._PAGE_CUSTOMERS).addCallback(_wait_remove_customer_and_stop, customer_name, count)
-            reactor.callLater(1, _check_again, customer_name, count+1)
-
-    if len(args) < 2 or args[1] in [ 'list', 'ls', ]:
-        url = webcontrol._PAGE_CUSTOMERS
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-
-    elif args[1] in [ 'call', 'cl', ]:
-        url = webcontrol._PAGE_CUSTOMERS + '?action=call'
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-
-    elif args[1] in [ 'remove', 'rm', ] and len(args) >= 3:
-        contacts.init()
-        idurl = args[2].strip()
-        if not idurl.startswith('http://'):
-            try:
-                idurl = contacts.getCustomerID(int(idurl))
-            except:
-                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
-        name = nameurl.GetName(idurl)
-        url = webcontrol._PAGE_CUSTOMERS + '?action=remove&idurl=%s' % misc.pack_url_param(idurl)
-        run_url_command(url).addCallback(_wait_remove_customer_and_stop, name, 0)
-        reactor.run()
-        return 0
-    
-    return 2
-
-
-def cmd_register(opts, args, overDict):
+def cmd_friend(opts, args, overDict):
     if len(args) < 2:
-        return 2
-    if len(args) >= 3:
-        from lib import settings
-        settings.uconfig().set('backup.private-key-size', str(args[2]))
-        settings.uconfig().update()
-    import lib.automat  as automat
-    import initializer
-    import shutdowner
-    initializer.A('run-cmd-line-register', args[1])
-    reactor.run()
-    # shutdowner.A('reactor-stopped')
-    automat.objects().clear()
-    print
-    return 0
+        return call_xmlrpc_method_and_stop('list_correspondents')
+    elif len(args) > 2 and args[1] == 'find':
+        return call_xmlrpc_method_and_stop('find_peer_by_nickname', unicode(args[2]))
+    return 2    
 
 
-def cmd_recover(opts, args, overDict):
-    if len(args) < 2:
-        return 2
-    src = bpio.ReadBinaryFile(args[1])
-    if len(src) > 1024*10:
-        print_text('file is too big for private key')
-        return 0
-    try:
-        lines = src.split('\n')
-        idurl = lines[0]
-        txt = '\n'.join(lines[1:])
-        if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
-            idurl = ''
-            txt = src
-    except:
-        #exc()
-        idurl = ''
-        txt = src
-    if idurl == '' and len(args) >= 3:
-        idurl = args[2]
-        if not idurl.startswith('http://'):
-            idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
-    if idurl == '':
-        print_text('BitPie.NET need to know your username to recover your account\n')
-        return 2
-    # import lib.automat as automat
-    import initializer
-    import shutdowner
-    initializer.A('run-cmd-line-recover', { 'idurl': idurl, 'keysrc': txt })
-    reactor.run()
-    # automat.objects().clear()
-    print
-    return 0
+#def cmd_suppliers(opts, args, overDict):
+#    if len(args) < 2 or args[1] in [ 'list', 'ls' ]:
+#        url = webcontrol._PAGE_SUPPLIERS
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#
+#    elif args[1] in [ 'call', 'cl' ]:
+#        url = webcontrol._PAGE_SUPPLIERS + '?action=call'
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#
+#    elif args[1] in [ 'replace', 'rep', 'rp' ] and len(args) >= 3:
+#        contacts.init()
+#        idurl = args[2].strip()
+#        if not idurl.startswith('http://'):
+#            try:
+#                idurl = contacts.getSupplierID(int(idurl))
+#            except:
+#                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+#        if not idurl:
+#            print_text('supplier IDURL is None\n')
+#            return 0
+#        name = nameurl.GetName(idurl)
+#        url = webcontrol._PAGE_SUPPLIERS + '?action=replace&idurl=%s' % misc.pack_url_param(idurl)
+#        run_url_command(url).addCallback(_wait_replace_supplier_and_stop, name, 0)
+#        reactor.run()
+#        return 0
+#    
+#    elif args[1] in [ 'change', 'ch' ] and len(args) >= 4:
+#        contacts.init()
+#        idurl = args[2].strip()
+#        if not idurl.startswith('http://'):
+#            try:
+#                idurl = contacts.getSupplierID(int(idurl))
+#            except:
+#                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+#        if not idurl:
+#            print_text('supplier IDURL is None\n')
+#            return 0
+#        newidurl = args[3].strip()
+#        if not newidurl.startswith('http://'):
+#            newidurl = 'http://'+settings.IdentityServerName()+'/'+newidurl+'.xml'
+#        name = nameurl.GetName(idurl)
+#        newname = nameurl.GetName(newidurl)
+#        url = webcontrol._PAGE_SUPPLIERS + '?action=change&idurl=%s&newidurl=%s' % (misc.pack_url_param(idurl), misc.pack_url_param(newidurl))
+#        run_url_command(url).addCallback(_wait_replace_supplier_and_stop, name, 0)
+#        reactor.run()
+#        return 0
+#    
+#    return 2
 
+#def cmd_customers(opts, args, overDict):
+#    def _wait_remove_customer_and_stop(src, customer_name, count=0):
+#        customers = []
+#        for s in find_comments(src):
+#            if s.count('[online ]') or s.count('[offline]'):
+#                customers.append(s[18:38].strip())
+#        if customer_name not in customers:
+#            print_text('  customer %s is removed !' % customer_name)
+#            print_and_stop(src)
+#            return
+#        if count >= 20:
+#            print_text(' time is out\n')
+#            reactor.stop()
+#            return
+#        else:
+#            def _check_again(customer_name, count):
+#                sys.stdout.write('.')
+#                run_url_command(webcontrol._PAGE_CUSTOMERS).addCallback(_wait_remove_customer_and_stop, customer_name, count)
+#            reactor.callLater(1, _check_again, customer_name, count+1)
+#
+#    if len(args) < 2 or args[1] in [ 'list', 'ls', ]:
+#        url = webcontrol._PAGE_CUSTOMERS
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#
+#    elif args[1] in [ 'call', 'cl', ]:
+#        url = webcontrol._PAGE_CUSTOMERS + '?action=call'
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#
+#    elif args[1] in [ 'remove', 'rm', ] and len(args) >= 3:
+#        contacts.init()
+#        idurl = args[2].strip()
+#        if not idurl.startswith('http://'):
+#            try:
+#                idurl = contacts.getCustomerID(int(idurl))
+#            except:
+#                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+#        name = nameurl.GetName(idurl)
+#        url = webcontrol._PAGE_CUSTOMERS + '?action=remove&idurl=%s' % misc.pack_url_param(idurl)
+#        run_url_command(url).addCallback(_wait_remove_customer_and_stop, name, 0)
+#        reactor.run()
+#        return 0
+#    
+#    return 2
 
-def cmd_key(opts, args, overDict):
-    if len(args) == 2:
-        if args[1] == 'copy':
-            from crypt import key 
-            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
-            misc.setClipboardText(TextToSave)
-            print_text('now you can "paste" with Ctr+V your private key where you want.')
-            del TextToSave
-            return 0
-        elif args[1] == 'print':
-            from crypt import key 
-            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
-            print 
-            print_text(TextToSave)
-            return 0
-    elif len(args) == 3:
-        if args[1] == 'copy':
-            filenameto = args[2]
-            from crypt import key 
-            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
-            if not bpio.AtomicWriteFile(filenameto, TextToSave):
-                print_text('error writing to %s' % filenameto)
-                return 1
-            print_text('your private key were copied to file %s' % filenameto)
-            del TextToSave
-            return 0
-    return 2
+#def cmd_register(opts, args, overDict):
+#    if len(args) < 2:
+#        return 2
+#    if len(args) >= 3:
+#        from lib import settings
+#        settings.uconfig().set('backup.private-key-size', str(args[2]))
+#        settings.uconfig().update()
+#    import lib.automat  as automat
+#    import initializer
+#    import shutdowner
+#    initializer.A('run-cmd-line-register', args[1])
+#    reactor.run()
+#    # shutdowner.A('reactor-stopped')
+#    automat.objects().clear()
+#    print
+#    return 0
+
+#def cmd_recover(opts, args, overDict):
+#    if len(args) < 2:
+#        return 2
+#    src = bpio.ReadBinaryFile(args[1])
+#    if len(src) > 1024*10:
+#        print_text('file is too big for private key')
+#        return 0
+#    try:
+#        lines = src.split('\n')
+#        idurl = lines[0]
+#        txt = '\n'.join(lines[1:])
+#        if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
+#            idurl = ''
+#            txt = src
+#    except:
+#        #exc()
+#        idurl = ''
+#        txt = src
+#    if idurl == '' and len(args) >= 3:
+#        idurl = args[2]
+#        if not idurl.startswith('http://'):
+#            idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+#    if idurl == '':
+#        print_text('BitPie.NET need to know your username to recover your account\n')
+#        return 2
+#    # import lib.automat as automat
+#    import initializer
+#    import shutdowner
+#    initializer.A('run-cmd-line-recover', { 'idurl': idurl, 'keysrc': txt })
+#    reactor.run()
+#    # automat.objects().clear()
+#    print
+#    return 0
+
+#def cmd_key(opts, args, overDict):
+#    if len(args) == 2:
+#        if args[1] == 'copy':
+#            from crypt import key 
+#            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
+#            misc.setClipboardText(TextToSave)
+#            print_text('now you can "paste" with Ctr+V your private key where you want.')
+#            del TextToSave
+#            return 0
+#        elif args[1] == 'print':
+#            from crypt import key 
+#            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
+#            print 
+#            print_text(TextToSave)
+#            return 0
+#    elif len(args) == 3:
+#        if args[1] == 'copy':
+#            filenameto = args[2]
+#            from crypt import key 
+#            TextToSave = misc.getLocalID() + "\n" + key.MyPrivateKey()
+#            if not bpio.AtomicWriteFile(filenameto, TextToSave):
+#                print_text('error writing to %s' % filenameto)
+#                return 1
+#            print_text('your private key were copied to file %s' % filenameto)
+#            del TextToSave
+#            return 0
+#    return 2
+#    
     
-    
-def cmd_stats(opts, args, overDict):
-    if len(args) == 2:
-        if not packetid.Valid(args[1]):
-            print_text('not valid backup ID')
-            return 0
-        url = '%s/%s%s' % (webcontrol._PAGE_MAIN, webcontrol._PAGE_BACKUP, args[1].replace('/','_'))
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-    elif len(args) >= 3 and args[1] == 'remote': 
-        url = '%s/%s%s' % (webcontrol._PAGE_MAIN, webcontrol._PAGE_BACKUP_REMOTE_FILES, args[2].replace('/','_'))
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-    elif len(args) >= 3 and args[1] == 'local': 
-        url = '%s/%s%s' % (webcontrol._PAGE_MAIN, webcontrol._PAGE_BACKUP_LOCAL_FILES, args[2].replace('/','_'))
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-    return 2
+#def cmd_stats(opts, args, overDict):
+#    if len(args) == 2:
+#        if not packetid.Valid(args[1]):
+#            print_text('not valid backup ID')
+#            return 0
+#        url = '%s/%s%s' % (webcontrol._PAGE_MAIN, webcontrol._PAGE_BACKUP, args[1].replace('/','_'))
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#    elif len(args) >= 3 and args[1] == 'remote': 
+#        url = '%s/%s%s' % (webcontrol._PAGE_MAIN, webcontrol._PAGE_BACKUP_REMOTE_FILES, args[2].replace('/','_'))
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#    elif len(args) >= 3 and args[1] == 'local': 
+#        url = '%s/%s%s' % (webcontrol._PAGE_MAIN, webcontrol._PAGE_BACKUP_LOCAL_FILES, args[2].replace('/','_'))
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#    return 2
 
 
-def cmd_states(opts, args, overDict):
-    url = '%s' % (webcontrol._PAGE_AUTOMATS)
-    return call_xmlrpc_method_and_stop()
-    reactor.run()
-    return 0
+#def cmd_states(opts, args, overDict):
+#    url = '%s' % (webcontrol._PAGE_AUTOMATS)
+#    return call_xmlrpc_method_and_stop()
+#    reactor.run()
+#    return 0
 
 
-def cmd_cache(opts, args, overDict):
-    if len(args) < 2:
-        run_url_command(webcontrol._PAGE_MAIN+'?action=cache').addCallback(print_and_stop)
-        reactor.run()
-        return 0
-    elif len(args) == 2 and args[1] == 'clear':
-        run_url_command(webcontrol._PAGE_MAIN+'?action=cacheclear').addCallback(print_and_stop)
-        reactor.run()
-        return 0
-    return 2
+#def cmd_cache(opts, args, overDict):
+#    if len(args) < 2:
+#        run_url_command(webcontrol._PAGE_MAIN+'?action=cache').addCallback(print_and_stop)
+#        reactor.run()
+#        return 0
+#    elif len(args) == 2 and args[1] == 'clear':
+#        run_url_command(webcontrol._PAGE_MAIN+'?action=cacheclear').addCallback(print_and_stop)
+#        reactor.run()
+#        return 0
+#    return 2
 
-def cmd_reconnect(opts, args, overDict):
-    url = webcontrol._PAGE_MAIN + '?action=reconnect'
-    return call_xmlrpc_method_and_stop()
-    reactor.run()
-    return 0
+#def cmd_reconnect(opts, args, overDict):
+#    url = webcontrol._PAGE_MAIN + '?action=reconnect'
+#    return call_xmlrpc_method_and_stop()
+#    reactor.run()
+#    return 0
 
 
 def option_name_to_path(name, default=''):
@@ -622,244 +633,225 @@ def option_name_to_path(name, default=''):
     return path
 
 
-def cmd_set_directly(opts, args, overDict):
-    def print_all_settings():
-        from lib import userconfig
-        for path in userconfig.all_options():
-            if path.strip() == '':
-                continue
-            if path not in userconfig.public_options():
-                continue
-            value = settings.uconfig().data.get(path, '').replace('\n', ' ')
-            label = settings.uconfig().labels.get(path, '')
-            info = settings.uconfig().infos.get(path, '')
-            print_text('  %s    %s' % (path.ljust(50), value.ljust(20)))
-        return 0
-    name = args[1].lower()
-    if name in [ 'list' ]:
-        return print_all_settings() 
-    path = '' if len(args) < 2 else args[1]
-    path = option_name_to_path(name, path)
-    if path != '':
-        if not settings.uconfig().has(path):
-            print_text('  key "%s" not found' % path)
-        else:
-            old_is = settings.uconfig().get(path)
-            if len(args) > 2:
-                value = ' '.join(args[2:])
-                settings.uconfig().set(path, unicode(value))
-                settings.uconfig().update()
-            info = str(settings.uconfig().get(path, 'info')).replace('None', '').replace('<br>', '\n')
-            info = re.sub(r'<[^>]+>', '', info)
-            label = str(settings.uconfig().get(path, 'label')).replace('None', '')
-            print_text('  XML path: %s' % path)
-            print_text('  label:    %s' % label)
-            print_text('  info:     %s' % info)
-            print_text('  value:    %s' % settings.uconfig().get(path))
-            if len(args) > 2:
-                print_text('  modified: [%s]->[%s]' % (old_is, value))
-        return 0
+#def cmd_set_directly(opts, args, overDict):
+#    def print_all_settings():
+#        from lib import userconfig
+#        for path in userconfig.all_options():
+#            if path.strip() == '':
+#                continue
+#            if path not in userconfig.public_options():
+#                continue
+#            value = settings.uconfig().data.get(path, '').replace('\n', ' ')
+#            label = settings.uconfig().labels.get(path, '')
+#            info = settings.uconfig().infos.get(path, '')
+#            print_text('  %s    %s' % (path.ljust(50), value.ljust(20)))
+#        return 0
+#    name = args[1].lower()
+#    if name in [ 'list' ]:
+#        return print_all_settings() 
+#    path = '' if len(args) < 2 else args[1]
+#    path = option_name_to_path(name, path)
+#    if path != '':
+#        if not settings.uconfig().has(path):
+#            print_text('  key "%s" not found' % path)
+#        else:
+#            old_is = settings.uconfig().get(path)
+#            if len(args) > 2:
+#                value = ' '.join(args[2:])
+#                settings.uconfig().set(path, unicode(value))
+#                settings.uconfig().update()
+#            info = str(settings.uconfig().get(path, 'info')).replace('None', '').replace('<br>', '\n')
+#            info = re.sub(r'<[^>]+>', '', info)
+#            label = str(settings.uconfig().get(path, 'label')).replace('None', '')
+#            print_text('  XML path: %s' % path)
+#            print_text('  label:    %s' % label)
+#            print_text('  info:     %s' % info)
+#            print_text('  value:    %s' % settings.uconfig().get(path))
+#            if len(args) > 2:
+#                print_text('  modified: [%s]->[%s]' % (old_is, value))
+#        return 0
     
-def cmd_set_request(opts, args, overDict):
-    name = args[1].lower()
-    if name in [ 'list' ]:
-        return print_all_settings_and_stop() 
-    path = '' if len(args) < 2 else args[1]
-    path = option_name_to_path(name, path)    
-    if len(args) == 2:
-        return print_single_setting_and_stop(path)
-    action = 'action='
-    leafs = path.split('.')
-    name = leafs[-1]
-    webcontrol.InitSettingsTreePages()
-    cls = webcontrol._SettingsTreeNodesDict.get(name, None)
-    input = ' '.join(args[2:])
-    if cls is None:
-        return 2
-    if cls in [ webcontrol.SettingsTreeTextNode,
-                webcontrol.SettingsTreeUStringNode,
-                webcontrol.SettingsTreePasswordNode,
-                webcontrol.SettingsTreeNumericNonZeroPositiveNode,
-                webcontrol.SettingsTreeNumericPositiveNode,] :
-        action = 'text=' + misc.pack_url_param(input)
-    elif cls in [ webcontrol.SettingsTreeDiskSpaceNode, ]:
-        number = misc.DigitsOnly(input, '.')
-        suffix = input.lstrip('0123456789.-').strip()
-        action = 'number=%s&suffix=%s' % (number, suffix)
-    elif cls in [ webcontrol.SettingsTreeComboboxNode, ]:
-        number = misc.DigitsOnly(input)
-        action = 'choice=%s' % number
-    elif cls in [ webcontrol.SettingsTreeYesNoNode, ]:
-        trueORfalse = 'True' if input.lower().strip() == 'true' else 'False'
-        action = 'choice=%s' % trueORfalse
-    url = webcontrol._PAGE_SETTINGS + '/' + path + '?' + action
-    run_url_command(url).addCallback(lambda src: print_single_setting_and_stop(path, False)) #.addCallback(print_and_stop)
-    reactor.run()
-    return 0
+#def cmd_set_request(opts, args, overDict):
+#    name = args[1].lower()
+#    if name in [ 'list' ]:
+#        return print_all_settings_and_stop() 
+#    path = '' if len(args) < 2 else args[1]
+#    path = option_name_to_path(name, path)    
+#    if len(args) == 2:
+#        return print_single_setting_and_stop(path)
+#    action = 'action='
+#    leafs = path.split('.')
+#    name = leafs[-1]
+#    webcontrol.InitSettingsTreePages()
+#    cls = webcontrol._SettingsTreeNodesDict.get(name, None)
+#    input = ' '.join(args[2:])
+#    if cls is None:
+#        return 2
+#    if cls in [ webcontrol.SettingsTreeTextNode,
+#                webcontrol.SettingsTreeUStringNode,
+#                webcontrol.SettingsTreePasswordNode,
+#                webcontrol.SettingsTreeNumericNonZeroPositiveNode,
+#                webcontrol.SettingsTreeNumericPositiveNode,] :
+#        action = 'text=' + misc.pack_url_param(input)
+#    elif cls in [ webcontrol.SettingsTreeDiskSpaceNode, ]:
+#        number = misc.DigitsOnly(input, '.')
+#        suffix = input.lstrip('0123456789.-').strip()
+#        action = 'number=%s&suffix=%s' % (number, suffix)
+#    elif cls in [ webcontrol.SettingsTreeComboboxNode, ]:
+#        number = misc.DigitsOnly(input)
+#        action = 'choice=%s' % number
+#    elif cls in [ webcontrol.SettingsTreeYesNoNode, ]:
+#        trueORfalse = 'True' if input.lower().strip() == 'true' else 'False'
+#        action = 'choice=%s' % trueORfalse
+#    url = webcontrol._PAGE_SETTINGS + '/' + path + '?' + action
+#    run_url_command(url).addCallback(lambda src: print_single_setting_and_stop(path, False)) #.addCallback(print_and_stop)
+#    reactor.run()
+#    return 0
 
+#def cmd_memory(opts, args, overDict):
+#    url = webcontrol._PAGE_MEMORY
+#    return call_xmlrpc_method_and_stop()
+#    reactor.run()
+#    return 0
 
-def cmd_memory(opts, args, overDict):
-    url = webcontrol._PAGE_MEMORY
-    return call_xmlrpc_method_and_stop()
-    reactor.run()
-    return 0
+#def cmd_storage(opts, args, overDict):
+#    url = webcontrol._PAGE_STORAGE
+#    return call_xmlrpc_method_and_stop()
+#    reactor.run()
+#    return 0
 
+#def cmd_money(opts, args, overDict):
+#    if len(args) == 1:
+#        url = webcontrol._PAGE_MONEY
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#
+#    elif len(args) >= 2 and args[1] == 'receipts': 
+#        url = webcontrol._PAGE_RECEIPTS
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#
+#    elif len(args) >= 3 and args[1] == 'receipt': 
+#        url = '%s/%s' % (webcontrol._PAGE_RECEIPTS, args[2])
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#    
+#    elif len(args) >= 4 and args[1] == 'transfer':
+#        recipient = args[2].strip()
+#        if not recipient.startswith('http://'):
+#            recipient = 'http://'+settings.IdentityServerName()+'/'+recipient+'.xml'
+#        url = '%s?action=commit&recipient=%s&amount=%s' % (webcontrol._PAGE_TRANSFER, misc.pack_url_param(recipient), args[3]) 
+#        return call_xmlrpc_method_and_stop()
+#        reactor.run()
+#        return 0
+#    
+#    return 2
+#    
 
-def cmd_storage(opts, args, overDict):
-    url = webcontrol._PAGE_STORAGE
-    return call_xmlrpc_method_and_stop()
-    reactor.run()
-    return 0
-
-
-def cmd_money(opts, args, overDict):
-    if len(args) == 1:
-        url = webcontrol._PAGE_MONEY
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-
-    elif len(args) >= 2 and args[1] == 'receipts': 
-        url = webcontrol._PAGE_RECEIPTS
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-
-    elif len(args) >= 3 and args[1] == 'receipt': 
-        url = '%s/%s' % (webcontrol._PAGE_RECEIPTS, args[2])
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-    
-    elif len(args) >= 4 and args[1] == 'transfer':
-        recipient = args[2].strip()
-        if not recipient.startswith('http://'):
-            recipient = 'http://'+settings.IdentityServerName()+'/'+recipient+'.xml'
-        url = '%s?action=commit&recipient=%s&amount=%s' % (webcontrol._PAGE_TRANSFER, misc.pack_url_param(recipient), args[3]) 
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-    
-    return 2
-    
-
-def cmd_uninstall(opts, args, overDict):
-    if not bpio.Windows():
-        print_text('This command can be used only under OS Windows.')
-        return 0
-    if not bpio.isFrozen():
-        print_text('You are running BitPie.NET from sources, uninstall command is available only for binary version.')
-        return 0
-    def do_uninstall():
-        lg.out(0, 'command_line.do_uninstall')
-        # batfilename = misc.MakeBatFileToUninstall()
-        # misc.UpdateRegistryUninstall(True)
-        # misc.RunBatFile(batfilename, 'c:/out2.txt')
-    def kill():
-        lg.out(0, 'kill')
-        total_count = 0
-        found = False
-        while True:
-            appList = bpio.find_process([
-                'bitpie.exe',
-                'bpmain.py',
-                'bitpie.py',
-                'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
-                'bpgui.exe',
-                'bpgui.py',
-                'bppipe.exe',
-                'bppipe.py',
-                'bptester.exe',
-                'bptester.py',
-                'bpstarter.exe',
-                ])
-            if len(appList) > 0:
-                found = True
-            for pid in appList:
-                lg.out(0, 'trying to stop pid %d' % pid)
-                bpio.kill_process(pid)
-            if len(appList) == 0:
-                if found:
-                    lg.out(0, 'BitPie.NET stopped\n')
-                else:
-                    lg.out(0, 'BitPie.NET was not started\n')
-                return 0
-            total_count += 1
-            if total_count > 10:
-                lg.out(0, 'some BitPie.NET process found, but can not stop it\n')
-                return 1
-            time.sleep(1)            
-    def wait_then_kill(x):
-        lg.out(0, 'wait_then_kill')
-        total_count = 0
-        #while True:
-        def _try():
-            lg.out(0, '_try')
-            appList = bpio.find_process([
-                'bitpie.exe',
-                'bpgui.exe',
-                'bppipe.exe',
-                'bptester.exe',
-                'bpstarter.exe',
-                ])
-            lg.out(0, 'appList:' + str(appList))
-            if len(appList) == 0:
-                lg.out(0, 'finished')
-                reactor.stop()
-                do_uninstall()
-                return 0
-            total_count += 1
-            lg.out(0, '%d' % total_count)
-            if total_count > 10:
-                lg.out(0, 'not responding')
-                ret = kill()
-                reactor.stop()
-                if ret == 0:
-                    do_uninstall()
-                return ret
-            reactor.callLater(1, _try)
-        _try()
-#            time.sleep(1)
-    appList = bpio.find_process([
-        'bitpie.exe',
-        'bpgui.exe',
-        'bppipe.exe',
-        'bptester.exe',
-        'bpstarter.exe',
-        ])
-    if len(appList) == 0:
-        lg.out(0, 'uninstalling BitPie.NET ...   ')
-        do_uninstall()
-        return 0
-    lg.out(0, 'found BitPie.NET processes ...   ')
-    try:
-        url = webcontrol._PAGE_ROOT+'?action=exit'
-        run_url_command(url).addCallback(wait_then_kill)
-        #reactor.addSystemEventTrigger('before', 'shutdown', do_uninstall)
-        reactor.run()
-        return 0
-    except:
-        lg.exc()
-        ret = kill()
-        if ret == 0:
-            do_uninstall()
-        return ret
-
-
-def cmd_message(opts, args, overDict):
-    if len(args) < 2 or args[1] == 'list':
-        url = webcontrol._PAGE_MESSAGES + '?conversations=0'
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-    if len(args) >= 5 and args[1] in [ 'send', ]:
-        url = webcontrol._PAGE_NEW_MESSAGE + '?conversations=0&action=send&recipient=%s&subject=%s&body=%s' % (
-            misc.pack_url_param(args[2]), misc.pack_url_param(args[3]), 
-            misc.pack_url_param(args[4]))
-        return call_xmlrpc_method_and_stop()
-        reactor.run()
-        return 0
-    return 2
+#def cmd_uninstall(opts, args, overDict):
+#    if not bpio.Windows():
+#        print_text('This command can be used only under OS Windows.')
+#        return 0
+#    if not bpio.isFrozen():
+#        print_text('You are running BitPie.NET from sources, uninstall command is available only for binary version.')
+#        return 0
+#    def do_uninstall():
+#        lg.out(0, 'command_line.do_uninstall')
+#        # batfilename = misc.MakeBatFileToUninstall()
+#        # misc.UpdateRegistryUninstall(True)
+#        # misc.RunBatFile(batfilename, 'c:/out2.txt')
+#    def kill():
+#        lg.out(0, 'kill')
+#        total_count = 0
+#        found = False
+#        while True:
+#            appList = bpio.find_process([
+#                'bitpie.exe',
+#                'bpmain.py',
+#                'bitpie.py',
+#                'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+#                'bpgui.exe',
+#                'bpgui.py',
+#                'bppipe.exe',
+#                'bppipe.py',
+#                'bptester.exe',
+#                'bptester.py',
+#                'bpstarter.exe',
+#                ])
+#            if len(appList) > 0:
+#                found = True
+#            for pid in appList:
+#                lg.out(0, 'trying to stop pid %d' % pid)
+#                bpio.kill_process(pid)
+#            if len(appList) == 0:
+#                if found:
+#                    lg.out(0, 'BitPie.NET stopped\n')
+#                else:
+#                    lg.out(0, 'BitPie.NET was not started\n')
+#                return 0
+#            total_count += 1
+#            if total_count > 10:
+#                lg.out(0, 'some BitPie.NET process found, but can not stop it\n')
+#                return 1
+#            time.sleep(1)            
+#    def wait_then_kill(x):
+#        lg.out(0, 'wait_then_kill')
+#        total_count = 0
+#        #while True:
+#        def _try():
+#            lg.out(0, '_try')
+#            appList = bpio.find_process([
+#                'bitpie.exe',
+#                'bpgui.exe',
+#                'bppipe.exe',
+#                'bptester.exe',
+#                'bpstarter.exe',
+#                ])
+#            lg.out(0, 'appList:' + str(appList))
+#            if len(appList) == 0:
+#                lg.out(0, 'finished')
+#                reactor.stop()
+#                do_uninstall()
+#                return 0
+#            total_count += 1
+#            lg.out(0, '%d' % total_count)
+#            if total_count > 10:
+#                lg.out(0, 'not responding')
+#                ret = kill()
+#                reactor.stop()
+#                if ret == 0:
+#                    do_uninstall()
+#                return ret
+#            reactor.callLater(1, _try)
+#        _try()
+##            time.sleep(1)
+#    appList = bpio.find_process([
+#        'bitpie.exe',
+#        'bpgui.exe',
+#        'bppipe.exe',
+#        'bptester.exe',
+#        'bpstarter.exe',
+#        ])
+#    if len(appList) == 0:
+#        lg.out(0, 'uninstalling BitPie.NET ...   ')
+#        do_uninstall()
+#        return 0
+#    lg.out(0, 'found BitPie.NET processes ...   ')
+#    try:
+#        url = webcontrol._PAGE_ROOT+'?action=exit'
+#        run_url_command(url).addCallback(wait_then_kill)
+#        #reactor.addSystemEventTrigger('before', 'shutdown', do_uninstall)
+#        reactor.run()
+#        return 0
+#    except:
+#        lg.exc()
+#        ret = kill()
+#        if ret == 0:
+#            do_uninstall()
+#        return ret
 
 
 def cmd_integrate():
@@ -906,6 +898,7 @@ def main():
         cmd = args[0].lower()
 
     from lib import bpio
+    bpio.init()
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'run':
@@ -1076,43 +1069,43 @@ def main():
         return cmd_schedule(opts, args, overDict)
 
     #---suppliers---
-    elif cmd in [ 'suppliers', 'supplier', 'sup', 'supp', 'sp', ]:
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_suppliers(opts, args, overDict)
+#    elif cmd in [ 'suppliers', 'supplier', 'sup', 'supp', 'sp', ]:
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_suppliers(opts, args, overDict)
     
     #---customers---
-    elif cmd in [ 'customers', 'customer', 'cus', 'cust', 'cs', ]:
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_customers(opts, args, overDict)
+#    elif cmd in [ 'customers', 'customer', 'cus', 'cust', 'cs', ]:
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_customers(opts, args, overDict)
 
     #---register---
-    elif cmd == 'register':
-        if running:
-            print_text('BitPie.NET already started.\n')
-            return 0
-        return cmd_register(opts, args, overDict)
+#    elif cmd == 'register':
+#        if running:
+#            print_text('BitPie.NET already started.\n')
+#            return 0
+#        return cmd_register(opts, args, overDict)
 
     #---recover---
-    elif cmd == 'recover':
-        if running:
-            print_text('BitPie.NET already started.\n')
-            return 0
-        return cmd_recover(opts, args, overDict)
+#    elif cmd == 'recover':
+#        if running:
+#            print_text('BitPie.NET already started.\n')
+#            return 0
+#        return cmd_recover(opts, args, overDict)
 
     #---key---
-    elif cmd == 'key':
-        return cmd_key(opts, args, overDict)
+#    elif cmd == 'key':
+#        return cmd_key(opts, args, overDict)
 
     #---stats---
-    elif cmd in [ 'stats', 'st' ]:
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_stats(opts, args, overDict)
+#    elif cmd in [ 'stats', 'st' ]:
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_stats(opts, args, overDict)
 
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:
@@ -1126,62 +1119,70 @@ def main():
         return 0
 
     #---states---
-    elif cmd in [ 'states', 'sta', 'automats', 'auto' ]:
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_states(opts, args, overDict)
+#    elif cmd in [ 'states', 'sta', 'automats', 'auto' ]:
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_states(opts, args, overDict)
     
     #---cache---
-    elif cmd in [ 'cache' ]:
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_cache(opts, args, overDict)
+#    elif cmd in [ 'cache' ]:
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_cache(opts, args, overDict)
 
     #---reconnect---
-    elif cmd in [ 'reconnect', ]:
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_reconnect(opts, args, overDict)
+#    elif cmd in [ 'reconnect', ]:
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_reconnect(opts, args, overDict)
         
     #---set---
-    elif cmd == 'set':
-        if len(args) == 1 or args[1].lower() in [ 'help', '?' ]:
-            import help
-            print_text(help.settings_help())
-            return 0
-        if not running:
-            cmd_set_directly(opts, args, overDict)
-            return 0
-        return cmd_set_request(opts, args, overDict)
+#    elif cmd == 'set':
+#        if len(args) == 1 or args[1].lower() in [ 'help', '?' ]:
+#            import help
+#            print_text(help.settings_help())
+#            return 0
+#        if not running:
+#            cmd_set_directly(opts, args, overDict)
+#            return 0
+#        return cmd_set_request(opts, args, overDict)
     
     #---memory---
-    elif cmd == 'memory':
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_memory(opts, args, overDict)
+#    elif cmd == 'memory':
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_memory(opts, args, overDict)
     
     #---money---
-    elif cmd == 'money':
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_money(opts, args, overDict)
+#    elif cmd == 'money':
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_money(opts, args, overDict)
     
-    elif cmd == 'storage':
-        if not running:
-            print_text('BitPie.NET is not running at the moment\n')
-            return 0
-        return cmd_storage(opts, args, overDict)
+#    elif cmd == 'storage':
+#        if not running:
+#            print_text('BitPie.NET is not running at the moment\n')
+#            return 0
+#        return cmd_storage(opts, args, overDict)
     
+    #---messages---
     elif cmd == 'msg' or cmd == 'message' or cmd == 'messages':
         if not running:
             print_text('BitPie.NET is not running at the moment\n')
             return 0
         return cmd_message(opts, args, overDict)
+    
+    #---friends---
+    elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy':
+        if not running:
+            print_text('BitPie.NET is not running at the moment\n')
+            return 0
+        return cmd_friend(opts, args, overDict)
     
 #    elif cmd == 'uninstall':
 #        return cmd_uninstall(opts, args, overDict)

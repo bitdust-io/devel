@@ -43,7 +43,7 @@ def find_one(nickname, attempts=3, results_callback=None):
     """
     """
     lg.out(12, 'nickname_observer.find_one %s %d' % (nickname, attempts))
-    observer = NicknameObserver('nickname_observer', 'AT_STARTUP', 2)
+    observer = NicknameObserver('%s_observer' % nickname, 'AT_STARTUP', 2)
     observer.automat('find-one', (nickname, attempts, results_callback))
     return observer
 
@@ -51,9 +51,17 @@ def observe_many(nickname, attempts=10, results_callback=None):
     """
     """
     lg.out(12, 'nickname_observer.observe_many %s %d' % (nickname, attempts))
-    observer = NicknameObserver('nickname_observer', 'AT_STARTUP', 2)
+    observer = NicknameObserver('%s_observer' % nickname, 'AT_STARTUP', 2)
     observer.automat('observe-many', (nickname, attempts, results_callback))
     return observer
+
+def stop_all():
+    """
+    """
+    for a in automat.objects().values():
+        if isinstance(a, NicknameObserver):
+            lg.out(12, 'nickname_observer.stop_all sends "stop" to %r' % a)
+            a.automat('stop')
 
 #------------------------------------------------------------------------------ 
 

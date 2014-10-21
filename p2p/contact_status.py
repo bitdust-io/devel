@@ -62,6 +62,22 @@ import ratings
 
 #------------------------------------------------------------------------------ 
 
+_StatusLabels = {
+    'CONNECTED': 'online',
+    'ACK?': 'responding',
+    'PING': 'checking',
+    'OFFLINE': 'offline',
+    }
+
+_StatusIcons = {
+    'CONNECTED': 'icons/online-user01.png',
+    'ACK?': 'icons/ackwait-user01.png',
+    'PING': 'icons/ping-user01.png',
+    'OFFLINE': 'icons/offline-user01.png',
+    }
+
+#------------------------------------------------------------------------------ 
+
 _ContactsStatusDict = {}
 _ShutdownFlag = False
 
@@ -129,6 +145,48 @@ def isOffline(idurl):
     return A(idurl).state == 'OFFLINE'
 
 
+def isCheckingNow(idurl):
+    """
+    Return True if given contact's state is PING or ACK?.
+    """
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return False
+    if idurl in [None, 'None', '']:
+        return False
+    global _ContactsStatusDict
+    if idurl not in _ContactsStatusDict.keys():
+        lg.out(6, 'contact_status.isCheckingNow contact %s is not found, made a new instance' % idurl)
+    st = A(idurl).state
+    return st == 'PING' or st == 'ACK?' 
+
+
+def getStatusLabel(idurl):
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return '?'
+    if idurl in [None, 'None', '']:
+        return '?'
+    global _ContactsStatusDict
+    if idurl not in _ContactsStatusDict.keys():
+        lg.out(6, 'contact_status.getStatusLabel contact %s is not found, made a new instance' % idurl)
+    global _StatusLabels
+    return _StatusLabels.get(A(idurl).state, '?')
+
+
+def getStatusIcon(idurl):
+    global _ShutdownFlag
+    if _ShutdownFlag:
+        return '?'
+    if idurl in [None, 'None', '']:
+        return '?'
+    global _ContactsStatusDict
+    if idurl not in _ContactsStatusDict.keys():
+        lg.out(6, 'contact_status.getStatusIcon contact %s is not found, made a new instance' % idurl)
+    global _StatusIcons
+    return _StatusIcons.get(A(idurl).state, '?')
+
+    
 def hasOfflineSuppliers():
     """
     Loops all suppliers and check their state, return True if at least one is OFFLINE.

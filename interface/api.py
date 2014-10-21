@@ -49,6 +49,7 @@ def backups_list():
         result.append((pathID, localPath, item))
     return result
 
+
 def backups_id_list():
     from p2p import backup_fs
     from lib import contacts
@@ -63,6 +64,7 @@ def backups_id_list():
         result.append((backupID, szver, localPath))
     return result
 
+
 def backup_start_id(pathID):
     from lib import bpio
     from p2p import backup_fs
@@ -76,6 +78,7 @@ def backup_start_id(pathID):
             return (localPath, 'backup started : %s' % pathID)
     else:
         return 'item %s not found' % pathID
+
     
 def backup_start_path(path):
     from lib import bpio
@@ -98,6 +101,7 @@ def backup_start_path(path):
     backup_control.Save()
     result.append('backup started: %s' % pathID)
     return result
+
         
 def backup_dir_add(dirpath):
     from p2p import backup_fs
@@ -109,6 +113,7 @@ def backup_dir_add(dirpath):
     backup_control.Save()
     return 'new folder was added: %s %s' % (newPathID, dirpath)
 
+
 def backup_file_add(filepath):    
     from p2p import backup_fs
     from p2p import backup_control
@@ -116,6 +121,7 @@ def backup_file_add(filepath):
     backup_fs.Calculate()
     backup_control.Save()
     return 'new file was added: %s %s' % (newPathID, filepath)
+
 
 def backup_tree_add(dirpath):
     from p2p import backup_fs
@@ -129,3 +135,43 @@ def backup_tree_add(dirpath):
     return '%d items were added to catalog, parent path ID is: %s  %s' % (
         num, newPathID, dirpath)
 
+#------------------------------------------------------------------------------ 
+
+def list_messages():
+    from p2p import message
+    mlist = message.ListAllMessages()
+    mlist.sort(key=lambda item: item[3])
+    return mlist
+    
+    
+def send_message(recipient, subject, body):
+    from p2p import message
+    if not recipient.startswith('http://'):
+        from lib import contacts
+        for idurl, nickname in contacts.getCorrespondentsDict().items():
+            if recipient == nickname:
+                recipient = idurl
+                break 
+    msgbody = message.MakeMessage(recipient, subject, body)
+    message.SendMessage(recipient, msgbody)
+    message.SaveMessage(msgbody)
+    return msgbody
+    
+
+def find_peer_by_nickname(nickname):
+    from twisted.internet.defer import Deferred
+    from userid import nickname_observer
+    nickname_observer.stop_all()
+    d = Deferred()
+    nickname_observer.find_one(nickname, 
+        results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
+    # nickname_observer.observe_many(nickname, 
+        # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
+    return d
+
+
+def list_correspondents():
+    from lib import contacts
+    return contacts.getCorrespondentsDict() 
+    
+    
