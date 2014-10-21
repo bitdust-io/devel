@@ -19,3 +19,9 @@
     * make developer reports working again, set up a script http://bitpie.net/cgi-bin/feedback.py
     * changed UDP PING timeout from 10sec to 1 minute
     * small fixes in the command line interface
+
+  2014-10-21 Veselin Penev <veselin@bitpie.net>
+  
+    * fixed messages - p2p chat is working now! 
+    * did small fixes in: GUI, DHT code, API
+    * changed UDP PING timeout agin, from 1 minute to 30 seconds
