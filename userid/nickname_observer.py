@@ -185,7 +185,7 @@ class NicknameObserver(automat.Automat):
             self.dht_read_defer.cancel()
             self.dht_read_defer = None
         d = dht_service.get_value(self.key)
-        d.addCallback(self._dht_read_result)
+        d.addCallback(self._dht_read_result, self.key)
         d.addErrback(self._dht_read_failed)
         self.dht_read_defer = d
 
@@ -219,14 +219,15 @@ class NicknameObserver(automat.Automat):
         """
         automat.objects().pop(self.index)
 
-    def _dht_read_result(self, value):
+    def _dht_read_result(self, value, key):
         self.dht_read_defer = None
         if type(value) != dict:
             self.automat('dht-read-failed')
             return
         try:
-            v = value.values()[0]
+            v = value[dht_service.key_to_hash(key)]
         except:
+            lg.out(14, '%r' % value)
             lg.exc()
             self.automat('dht-read-failed')
             return

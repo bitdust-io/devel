@@ -981,6 +981,16 @@ def IconFilename():
     """
     return 'tray_icon.ico'
 
+def StyleSheetsFilename():
+    """
+    """
+    return 'styles.css'
+
+def StyleSheetsPath():
+    """
+    """
+    return os.path.join(bpio.getExecutableDir(), 'html', StyleSheetsFilename())
+
 def IconsFolderPath():
     """
     A folder name where application icons is stored.

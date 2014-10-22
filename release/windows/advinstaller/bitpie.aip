@@ -20,10 +20,10 @@
     <ROW Property="InstanceId" Value="#0"/>
     <ROW Property="Manufacturer" Value="BitPie.NET Inc."/>
     <ROW Property="MyUserHomeDir" Value="?"/>
-    <ROW Property="ProductCode" Value="1033:{6A959BB6-6A75-43B3-86F9-4964811FE590} " Type="16"/>
+    <ROW Property="ProductCode" Value="1033:{66FEA9B7-DBD3-488E-BEF7-2186F04CCA4E} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
     <ROW Property="ProductName" Value="BitPie.NET (testing release)"/>
-    <ROW Property="ProductVersion" Value="0.1.11.772" Type="32"/>
+    <ROW Property="ProductVersion" Value="0.1.12.773" Type="32"/>
     <ROW Property="RUNAPPLICATION" Value="1" Type="4"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{1D2E14B7-8093-406E-9EDD-CEE00645A486}"/>
@@ -435,6 +435,7 @@
     <ROW File="_zope_interface_coptimizations.pyo" Component_="adapter.pyo" FileName="_ZOPE_~1.PYO|_zope_interface_coptimizations.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\interface\_zope_interface_coptimizations.pyo" SelfReg="false" NextFile="__init__.pyo_64"/>
     <ROW File="abc.pyo" Component_="abc.pyo" FileName="abc.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\abc.pyo" SelfReg="false" NextFile="atexit.pyo"/>
     <ROW File="abstract.pyo" Component_="abstract.pyo" FileName="abstract.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\internet\abstract.pyo" SelfReg="false" NextFile="address.pyo"/>
+    <ROW File="ackwaituser01.png" Component_="addbackup.png" FileName="ACKWAI~1.PNG|ackwait-user01.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\ackwait-user01.png" SelfReg="false" NextFile="pinguser01.png"/>
     <ROW File="adapter.pyo" Component_="adapter.pyo" FileName="adapter.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\zope\interface\adapter.pyo" SelfReg="false" NextFile="advice.pyo"/>
     <ROW File="addbackup.png" Component_="addbackup.png" FileName="ADDBAC~1.PNG|addbackup.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\addbackup.png" SelfReg="false" NextFile="backupabort48.png"/>
     <ROW File="address.pyo" Component_="abstract.pyo" FileName="address.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\internet\address.pyo" SelfReg="false" NextFile="base.pyo_1"/>
@@ -768,7 +769,7 @@
     <ROW File="linecache.pyo" Component_="abc.pyo" FileName="LINECA~1.PYO|linecache.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\linecache.pyo" SelfReg="false" NextFile="locale.pyo"/>
     <ROW File="list.pyo" Component_="list.pyo" FileName="list.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\pywin\dialogs\list.pyo" SelfReg="false" NextFile="status.pyo"/>
     <ROW File="list_files_orator.pyo" Component_="backup.pyo" FileName="LIST_F~1.PYO|list_files_orator.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\list_files_orator.pyo" SelfReg="false" NextFile="local_tester.pyo"/>
-    <ROW File="local_service.pyo" Component_="switchable_service.pyo" FileName="LOCAL_~1.PYO|local_service.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\services\local_service.pyo" SelfReg="false"/>
+    <ROW File="local_service.pyo" Component_="switchable_service.pyo" FileName="LOCAL_~1.PYO|local_service.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\services\local_service.pyo" SelfReg="false" NextFile="ackwaituser01.png"/>
     <ROW File="local_tester.pyo" Component_="backup.pyo" FileName="LOCAL_~1.PYO|local_tester.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\p2p\local_tester.pyo" SelfReg="false" NextFile="message.pyo_1"/>
     <ROW File="locale.pyo" Component_="abc.pyo" FileName="locale.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\locale.pyo" SelfReg="false" NextFile="__init__.pyo_24"/>
     <ROW File="localfiles48.png" Component_="addbackup.png" FileName="LOCAL-~1.PNG|local-files48.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\local-files48.png" SelfReg="false" NextFile="log32.png"/>
@@ -851,6 +852,7 @@
     <ROW File="pct_warnings.pyo" Component_="pct_warnings.pyo" FileName="PCT_WA~1.PYO|pct_warnings.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\Crypto\pct_warnings.pyo" SelfReg="false" NextFile="KDF.pyo"/>
     <ROW File="pdb.pyo" Component_="abc.pyo" FileName="pdb.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\pdb.pyo" SelfReg="false" NextFile="pickle.pyo"/>
     <ROW File="pickle.pyo" Component_="abc.pyo" FileName="pickle.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\pickle.pyo" SelfReg="false" NextFile="platform.pyo"/>
+    <ROW File="pinguser01.png" Component_="addbackup.png" FileName="PING-U~1.PNG|ping-user01.png" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\icons\ping-user01.png" SelfReg="false"/>
     <ROW File="platform.pyo" Component_="abc.pyo" FileName="platform.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\platform.pyo" SelfReg="false" NextFile="plistlib.pyo"/>
     <ROW File="plistlib.pyo" Component_="abc.pyo" FileName="plistlib.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\plistlib.pyo" SelfReg="false" NextFile="PngImagePlugin.pyo"/>
     <ROW File="plugin.pyo" Component_="copyright.pyo" FileName="plugin.pyo" Version="65535.65535.65535.65535" Attributes="0" SourcePath="..\bin\twisted\plugin.pyo" SelfReg="false" NextFile="__init__.pyo_48"/>

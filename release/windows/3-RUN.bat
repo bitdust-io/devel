@@ -12,9 +12,11 @@ sleep 2
 
 @echo.
 @echo [ replacing files ]
-mv -f "%USERPROFILE%\.bitpie\bin" "%USERPROFILE%\.bitpie\bin.off\"
-REM rmdir "%USERPROFILE%\.bitpie\bin" /S /Q 
-mkdir "%USERPROFILE%\.bitpie\bin"
+pushd "%USERPROFILE%\.bitpie"
+if exist bin.off\NUL rmdir /S /Q bin.off
+if exist bin\NUL rename bin bin.off
+mkdir bin
+popd
 xcopy "bin\*" "%USERPROFILE%\.bitpie\bin\" /E /R /H /Y /Q
 cd "%USERPROFILE%\.bitpie\bin\"
 
@@ -25,6 +27,12 @@ cd "%USERPROFILE%\.bitpie\bin\"
 
 bitpie.exe show
 
+
+@echo.
+@echo [ replacing files back ]
+cd ..
+rmdir /S /Q bin
+if exist bin.off\NUL mv bin.off bin
 
 @echo.
 @echo [ FINISHED ]

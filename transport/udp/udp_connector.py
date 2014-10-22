@@ -149,7 +149,7 @@ class DHTUDPConnector(automat.Automat):
         """
         key = self.peer_id+':incoming'+str(self.KeyPosition)
         d = dht_service.get_value(key)
-        d.addCallback(self._got_peer_incoming, self.KeyPosition)
+        d.addCallback(self._got_peer_incoming, key, self.KeyPosition)
         d.addErrback(lambda x: self.automat('dht-read-failed'))
 
     def doDHTWriteIncoming(self, arg):
@@ -191,8 +191,9 @@ class DHTUDPConnector(automat.Automat):
         """
         Action method.
         """
-        d = dht_service.get_value(self.peer_id+':address')
-        d.addCallback(self._got_peer_address)
+        key = self.peer_id+':address'
+        d = dht_service.get_value(key)
+        d.addCallback(self._got_peer_address, key)
         d.addErrback(lambda x: self.automat('dht-read-failed'))
 
     def doReportFailed(self, arg):
@@ -209,7 +210,7 @@ class DHTUDPConnector(automat.Automat):
         connectors().pop(self.id)
         automat.objects().pop(self.index)
 
-    def _got_peer_incoming(self, value, position):
+    def _got_peer_incoming(self, value, key, position):
         if _Debug:
             lg.out(_DebugLevel, 'udp_connector._got_peer_incoming at position %d: %d' % (position, len(str(value))))
         incoming = None 
@@ -217,8 +218,10 @@ class DHTUDPConnector(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            incoming = value.values()[0]
+            # incoming = value.values()[0]
+            incoming = value[dht_service.key_to_hash(key)]
         except:
+            lg.out(2, '%r' % value)
             lg.exc()
             self.automat('dht-read-failed')
             return
@@ -227,8 +230,8 @@ class DHTUDPConnector(automat.Automat):
             incoming_user_address = incoming_user_address.split(':')
             incoming_user_address = (incoming_user_address[0], int(incoming_user_address[1]))
         except:
-            lg.exc()
             lg.out(2, '%r' % incoming)
+            lg.exc()
             self.automat('dht-read-failed')
             return
         self.automat('dht-read-success', (incoming_peer_id, incoming_user_address))
@@ -239,12 +242,12 @@ class DHTUDPConnector(automat.Automat):
         else:
             self.automat('dht-write-failed')
         
-    def _got_peer_address(self, value):
+    def _got_peer_address(self, value, key):
         if type(value) != dict:
             self.automat('dht-read-failed')
             return
         try:
-            peer_ip, peer_port = value.values()[0].split(':')
+            peer_ip, peer_port = value[dht_service.key_to_hash(key)].split(':')
             peer_port = int(peer_port)
         except:
             lg.exc()

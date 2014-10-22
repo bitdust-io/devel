@@ -102,9 +102,9 @@ install_page_ready = True
 global_checksum = ''
 local_checksum = ''
 version_number = ''
-root_page_src = ''
-header_src = ''
-centered_page_src = ''
+root_html = ''
+centered_html = ''
+header_html = ''
 url_history = [] # ['/main']
 pagename_history = [] # ['main']
 
@@ -274,45 +274,7 @@ def init(port = 6001):
         lg.out(6, 'webcontrol.init.version : %s' % version_number)
 
     def html():
-        global root_page_src
-        global centered_page_src
-        global header_src
-        lg.out(6, 'webcontrol.init.html')
-        root_page_src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html>
-<head>
-<title>%(title)s</title>
-<meta http-equiv="Content-Type" content="text/html; charset=%(encoding)s" />
-%(reload_tag)s
-</head>
-<body>
-%(header)s
-%(align1)s
-%(body)s
-%(debug)s
-%(align2)s
-</body>
-</html>'''
-        centered_page_src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html>
-<head>
-<title>%(title)s</title>
-<meta http-equiv="Content-Type" content="text/html; charset=%(encoding)s" />
-</head>
-<body>
-<center>
-%(body)s
-<font size=-3>Copyright \xa9 2014, BitPie.NET</font>
-</center>
-</body>
-</html>'''  
-        header_src = '''<table width="100%%" align=center cellspacing=0 cellpadding=0><tr>
-<td align=left width=50 nowrap>%(left)s</td>
-<td>&nbsp;</td>
-<td align=center width=50 nowrap>%(center)s</td>
-<td>&nbsp;</td>
-<td align=right width=50 nowrap>%(right)s</td>
-</tr></table>\n'''
+        load_html_templates()
 
     def options():
         InitSettingsTreePages()
@@ -360,7 +322,9 @@ def init(port = 6001):
         root.putChild(_PAGE_TRAFFIC, TrafficPage())
         root.putChild(_PAGE_CONFIRM, ConfirmPage())
         root.putChild(settings.IconFilename(), static.File(settings.IconFilename()))
+        root.putChild(settings.StyleSheetsFilename(), static.File(settings.StyleSheetsPath()))
         root.putChild('icons', static.File(settings.IconsFolderPath()))
+        root.putChild('html', static.File(os.path.join(bpio.getExecutableDir(), 'html')))
         return LocalSite(root)
 
     def done(x):
@@ -373,7 +337,8 @@ def init(port = 6001):
         lg.out(6, 'webcontrol.start_listener')
         def _try(site, result):
             global myweblistener
-            port = random.randint(6001, 6999)
+            # port = random.randint(6001, 6999)
+            port = 6001
             lg.out(4, 'webcontrol.init.start_listener._try port=%d' % port)
             try:
                 l = reactor.listenTCP(port, site)
@@ -421,6 +386,7 @@ def show(x=None):
     if len(appList):
         lg.out(2, 'webcontrol.show SKIP, we found another bpgui process running at the moment, pid=%s' % appList)
         SendCommandToGUI('raise')
+        # webbrowser.open('http://127.0.0.1:%d' % int(local_port))
         return
     try:
         if bpio.Windows():
@@ -493,6 +459,16 @@ def shutdown():
         result.callback(1)
     return result
 
+def load_html_templates():
+    global root_html
+    global centered_html
+    global header_html
+    lg.out(2, 'webcontrol.load_html_templates')
+    pth = os.path.join(bpio.getExecutableDir(), 'html')
+    root_html = open(os.path.join(pth, 'root.html')).read()
+    centered_html = open(os.path.join(pth, 'centered.html')).read()
+    header_html = open(os.path.join(pth, 'header.html')).read()
+
 #------------------------------------------------------------------------------ 
 
 def currentVisiblePageName():
@@ -552,8 +528,8 @@ def html_from_args(request, **kwargs):
     return html_from_dict(request, d)
 
 def html_from_dict(request, d):
-    global root_page_src
-    global header_src
+    global root_html
+    global header_html
     global version_number
     global global_checksum
     global local_checksum
@@ -624,13 +600,14 @@ def html_from_dict(request, d):
         d['align1'] = '<center>'
         d['align2'] = '</center>'
     if not d.has_key('header'):
-        d['header'] = header_src % {'left': d['back'], 
-                                     'center': d['home'], 
-                                     'right': d['next']}
-    return str(root_page_src % d)
+        d['header'] = header_html % ({'left': d['back'], 
+                                     'middle': d['home'], 
+                                     'right': d['next']})
+    d['stylesheets'] = '/' + settings.StyleSheetsFilename()
+    return str(root_html % d)
 
 def html_centered_src(d, request):
-    global centered_page_src
+    global centered_html
     if not d.has_key('encoding'):
         d['encoding'] = locale.getpreferredencoding()
 #    if not d.has_key('iconfile'):
@@ -647,7 +624,7 @@ def html_centered_src(d, request):
         d['title'] = 'BitPie.NET'
     if not d.has_key('body'):
         d['body'] = ''
-    return centered_page_src % d
+    return centered_html % d
 
 
 #    'success': 'green',
@@ -941,15 +918,16 @@ def OnReadLocalFiles():
 
 def SendCommandToGUI(cmd):
     global _GUICommandCallbacks
-    if isinstance(cmd, unicode):
-        lg.warn('cmd is unicode' + str(cmd))
-    try:
-        for f in _GUICommandCallbacks:
-            f(str(cmd))
-    except:
-        lg.exc()
-        return False
     return True
+#    if isinstance(cmd, unicode):
+#        lg.warn('cmd is unicode' + str(cmd))
+#    try:
+#        for f in _GUICommandCallbacks:
+#            f(str(cmd))
+#    except:
+#        lg.exc()
+#        return False
+#    return True
 
 #------------------------------------------------------------------------------
 
@@ -1078,6 +1056,12 @@ class Page(resource.Resource):
             d = {}
             d['body'] = ('<br>' * 10) + '\n<h1>Reconnecting...</h1>\n'
             print >>request, html_centered_src(d, request)
+            request.finish()
+            return NOT_DONE_YET
+        
+        elif arg(request, 'action') == 'reloadhtml':
+            load_html_templates()
+            request.redirect(request.path)
             request.finish()
             return NOT_DONE_YET
 
@@ -3081,7 +3065,7 @@ class MainPage(Page):
 
         src = self._body(request)
         
-        src += '<br><br>\n<table><tr><td>\n<div align=left>\n'
+        src += '<br><br>\n<div align=left>\n'
         availibleSpace = diskspace.MakeStringFromString(settings.getNeededString())
         backupsSizeTotal = backup_fs.sizebackups()
         backupsSizeSupplier = -1 if contacts.numSuppliers() == 0 else backupsSizeTotal/contacts.numSuppliers()
@@ -3091,7 +3075,7 @@ class MainPage(Page):
             '/'+_PAGE_SETTINGS+'/'+'storage.needed?back='+request.path, availibleSpace,)
         src += 'total space used:&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % ('/'+_PAGE_STORAGE, usedSpaceTotal) 
         src += 'used per supplier:&nbsp;%s\n' % (usedSpaceSupplier) 
-        src += '</div></td></tr></table>\n'
+        src += '</div>\n'
 
         src += html_comment('availible space :  %s' % availibleSpace)
         src += html_comment('total space used:  %s' % usedSpaceTotal)
@@ -3140,6 +3124,12 @@ class MenuPage(Page):
             imgH = 4 * imgH / w
         padding = 64/w - 8
         back = arg(request, 'back', request.path)
+        shutdown_link = confirmurl(request, 
+            yes=request.path+'?action=exit', 
+            text='Do you want to stop BitPie.NET?',
+            back=back)
+        next = '<a href="%s">[reload html]</a>&nbsp<a href="%s">[shutdown]</a>' % (
+            request.path+'?action=reloadhtml', shutdown_link, )
         src = ''
         src += '<br><tr><td align=center>\n'
         src += '<table cellpadding=%d cellspacing=2>\n' % padding
@@ -3168,11 +3158,7 @@ class MenuPage(Page):
         src += '</table>\n'
         src += '</td></tr></table>\n'
         src += '<br><br>\n'
-        shutdown_link = confirmurl(request, 
-            yes=request.path+'?action=exit', 
-            text='Do you want to stop BitPie.NET?',
-            back=back)
-        return html(request, body=src, home='', title='menu', back=back, next='<a href="%s">[shutdown]</a>' % shutdown_link)
+        return html(request, body=src, home='', title='menu', back=back, next=next)
 
 #------------------------------------------------------------------------------ 
 

@@ -1,0 +1,35 @@
+html {
+}
+body {
+}
+*:focus {
+    outline: none;
+}
+img {
+    border : 0;
+}
+a {
+    color: #abf;
+} 
+a:link {
+    color: #04f;
+    text-decoration: none; 
+}
+a:visited {
+    color: #04f;
+    text-decoration: none;
+}
+a:hover {
+    color: #017;
+    text-decoration: underline;
+}
+a:active {
+    color: #04f;
+    text-decoration: none;
+}
+a img {
+    outline : none;
+}
+#container {
+    font-family: "Tw Cen MT", "Century Gothic", Futura, "URW Gothic L", Arial, sans-serif;
+}

@@ -286,6 +286,8 @@ class UDPNode(automat.Automat):
             incoming_user_address[1] = int(incoming_user_address[1])
             incoming_user_address = tuple(incoming_user_address)
         except:
+            if _Debug:
+                lg.out(_DebugLevel, '%r' % incoming_str)
             lg.exc()
             return
         s = udp_session.get(incoming_user_address) 
@@ -326,8 +328,8 @@ class UDPNode(automat.Automat):
         if _Debug:            
             lg.out(_DebugLevel, 'udp_node.doDHTReadNextIncoming  key=%s' % key)
         d = dht_service.get_value(key)
-        d.addCallback(self._got_my_incoming, self.IncomingPosition)
-        d.addErrback(self._failed_my_incoming, self.IncomingPosition)
+        d.addCallback(self._got_my_incoming, key, self.IncomingPosition)
+        d.addErrback(self._failed_my_incoming, key, self.IncomingPosition)
 
     def doDHTRemoveMyIncoming(self, arg):
         """
@@ -394,21 +396,22 @@ class UDPNode(automat.Automat):
     def _stun_finished(self, result, address=None):
         self.automat(result, address)
         
-    def _got_my_address(self, value):
+    def _got_my_address(self, value, key):
         if type(value) != dict:
             lg.warn('  can not read my address')
             self.automat('dht-write-failed')
             return
-        hkey = dht_service.key_to_hash(self.my_id+':address')
-        if hkey not in value.keys():
+        try:
+            addr = value[dht_service.key_to_hash(key)].strip('\n').strip()
+        except:
             if _Debug:            
-                lg.out(4, 'udp_node._got_my_address ERROR   wrong key in response')
+                lg.out(4, 'udp_node._got_my_address ERROR   wrong key in response: %r' % value)
+                lg.exc()
             self.automat('dht-write-failed')
             return
-        value = value[hkey].strip('\n').strip()
-        if value != '%s:%d' % (self.my_address[0], self.my_address[1]):
+        if addr != '%s:%d' % (self.my_address[0], self.my_address[1]):
             if _Debug:            
-                lg.out(4, 'udp_node._got_my_address ERROR   value not fit: %s' % str(value)[:20])
+                lg.out(4, 'udp_node._got_my_address ERROR   value not fit: %r' % value)
             self.automat('dht-write-failed')
             return
         self.automat('dht-write-success')
@@ -417,28 +420,29 @@ class UDPNode(automat.Automat):
         if len(nodes) == 0:
             self.automat('dht-write-failed')
             return
-        d = dht_service.get_value(self.my_id+':address')
-        d.addCallback(self._got_my_address)
+        key = self.my_id+':address'
+        d = dht_service.get_value(key)
+        d.addCallback(self._got_my_address, key)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
-    def _got_my_incoming(self, value, position):
-        # print position, value
+    def _got_my_incoming(self, value, key, position):
         if type(value) != dict:
             if _Debug:            
                 lg.out(_DebugLevel, 'udp_node._got_my_incoming no incoming at position: %d' % position)
             self.automat('dht-read-result', None)
             return
-        hkey = dht_service.key_to_hash(self.my_id+':incoming'+str(position))
-        if hkey not in value.keys():
+        try:
+            myincoming = value[dht_service.key_to_hash(key)]
+        except: 
             if _Debug:
-                lg.out(_DebugLevel, 'udp_node._got_my_incoming no incoming at position: %d\n%r' % (position, value))
+                lg.out(_DebugLevel, 'udp_node._got_my_incoming ERROR reading my incoming at position: %d\n%r' % (position, value))
             self.automat('dht-read-result', None)
             return
         if _Debug:
-            lg.out(_DebugLevel, 'udp_node._got_my_incoming incoming found: %s' % str(value))
-        self.automat('dht-read-result', value[hkey])
+            lg.out(_DebugLevel, 'udp_node._got_my_incoming found one: %r' % myincoming)
+        self.automat('dht-read-result', myincoming)
     
-    def _failed_my_incoming(self, err, position):
+    def _failed_my_incoming(self, err, key, position):
         # print err
         if _Debug:
             lg.out(_DebugLevel, 'udp_node._got_my_incoming incoming empty: %s' % str(position))

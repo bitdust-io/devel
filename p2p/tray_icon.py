@@ -130,10 +130,12 @@ def init(icons_path, icons_files=None):
             wx.App.__init__(self, False)
             
         def OnInit(self):
+            # print 'OnInit'
             self.trayicon = MyTaskBarIcon(self.icons_path)
             return True
         
         def OnExit(self):
+            # print 'OnExit'
             self.trayicon.Destroy() 
             
         def SetIcon(self, name):
@@ -200,7 +202,7 @@ if __name__ == "__main__":
         if cmd == 'exit':
             reactor.stop()
             print 'reactor stopped'
-            os._exit(0)
+            # os._exit(0)
             # sys.exit()
         
     from twisted.internet import wxreactor
