@@ -64,7 +64,7 @@ from lib import bpio
 from lib import automat
 from lib import automats
 
-from services import local_service
+# from services import local_service
 
 import installer
 import shutdowner
