@@ -181,8 +181,8 @@ class UDPNode(automat.Automat):
         except:
             lg.exc()
             return False
-        if address == stun_client.A().peer_address:
-            return True
+#        if address  stun_client.A().peer_address:
+#            return True
         s = udp_session.get(address)
         return s is not None
 

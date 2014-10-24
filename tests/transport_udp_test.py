@@ -48,7 +48,7 @@ def main():
     reactor.addSystemEventTrigger('before', 'shutdown', gate.shutdown)
     gate.init()
     gate.start()
-    # [filename] [peer id]
+    # [filename] [peer idurl]
     if len(sys.argv) >= 3:
         p = signed.Packet(commands.Data(), misc.getLocalID(), 
                           misc.getLocalID(), misc.getLocalID(), 
