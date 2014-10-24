@@ -25,10 +25,20 @@ class UDPDatagramsService(LocalService):
         return []
     
     def start(self):
-        pass
+        from lib import udp
+        from lib import settings
+        udp_port = int(settings.getUDPPort())
+        if not udp.proto(udp_port):
+            udp.listen(udp_port)
+        return True
     
     def stop(self):
-        pass
+        from lib import udp
+        from lib import settings
+        udp_port = int(settings.getUDPPort())
+        if udp.proto(udp_port):
+            udp.close(udp_port)
+        return True
     
     
 

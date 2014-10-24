@@ -68,9 +68,9 @@ from services import driver
 
 import installer
 import shutdowner
-import p2p_connector
+# import p2p_connector
 
-import init_shutdown
+# import init_shutdown
 import webcontrol
 
 #------------------------------------------------------------------------------ 
@@ -148,7 +148,6 @@ class Initializer(automat.Automat):
             if event == 'init-contacts-done' :
                 self.state = 'CONNECTION'
                 self.doInitConnection(arg)
-                p2p_connector.A('init')
                 self.doUpdate(arg)
                 shutdowner.A('ready')
             elif ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
@@ -207,6 +206,7 @@ class Initializer(automat.Automat):
         return None
 
     def isInstalled(self, arg):
+        import init_shutdown
         if self.is_installed is None:
             self.is_installed = init_shutdown.check_install() 
         return self.is_installed
@@ -224,6 +224,8 @@ class Initializer(automat.Automat):
     def doInitLocal(self, arg):
         """
         """
+        lg.out(2, 'initializer.doInitLocal')
+        import init_shutdown
         maybeDeferred(init_shutdown.init_local, arg).addCallback(
             lambda x: self.automat('init-local-done'))
 
@@ -231,25 +233,32 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
+        lg.out(2, 'initializer.doInitServices')
         driver.init()
         driver.start()
             # callback=lambda : self.automat('init-services-done'))
         self.automat('init-services-done')
 
     def doInitContacts(self, arg):
+        lg.out(2, 'initializer.doInitContacts')
+        import init_shutdown
         init_shutdown.init_contacts(
             # lambda x: self.automat('init-contacts-done'),
             lambda x: reactor.callLater(2, self.automat, 'init-contacts-done'),
             lambda x: self.automat('init-contacts-done'), )
 
     def doInitConnection(self, arg):
-        init_shutdown.init_connection()
+        lg.out(2, 'initializer.doInitConnection')
+        # init_shutdown.init_connection()
+        pass
 
     def doInitModules(self, arg):
-        maybeDeferred(init_shutdown.init_modules).addCallback(
-            lambda x: self.automat('init-modules-done'))
+        self.automat('init-modules-done')
+        # maybeDeferred(init_shutdown.init_modules).addCallback(
+            # lambda x: self.automat('init-modules-done'))
 
     def doShowGUI(self, arg):
+        import init_shutdown
         d = webcontrol.init()
         if init_shutdown.UImode == 'show' or not self.is_installed: 
             d.addCallback(webcontrol.show)
@@ -270,4 +279,5 @@ class Initializer(automat.Automat):
         del _Initializer
         _Initializer = None
         automat.objects().pop(self.index)
+
 

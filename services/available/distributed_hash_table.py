@@ -22,13 +22,20 @@ class DistributedHashTableService(LocalService):
     service_name = 'distributed_hash_table'
     
     def dependent_on(self):
-        return ['udp_datagrams', ]
+        return ['udp_datagrams', 
+                'network', ]
     
     def start(self):
-        pass
+        from dht import dht_service
+        from lib import settings
+        dht_service.init(int(settings.getDHTPort()), settings.DHTDBFile())
+        dht_service.connect()
+        return True
     
     def stop(self):
-        pass
+        from dht import dht_service
+        dht_service.shutdown()
+        return True
     
     
 

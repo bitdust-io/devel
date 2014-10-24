@@ -23,13 +23,14 @@ class IdentityServerService(LocalService):
     
     def dependent_on(self):
         return ['tcp_connections',
+                'network',
                 ]
     
     def start(self):
-        pass
+        return True
     
     def stop(self):
-        pass
+        return True
     
     
 

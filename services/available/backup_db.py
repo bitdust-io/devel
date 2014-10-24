@@ -25,10 +25,11 @@ class BackupDBService(LocalService):
         return ['gateway']
     
     def start(self):
-        pass
+        return True
     
     def stop(self):
-        pass
+        return True
+    
     
     
 

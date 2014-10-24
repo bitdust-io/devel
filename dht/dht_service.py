@@ -65,7 +65,6 @@ def init(udp_port, db_file_path=None):
     dataStore = SQLiteDataStore(dbFile=db_file_path)
     # _MyNode = DistributedTupleSpacePeer(udp_port, dataStore)
     _MyNode = DHTNode(udp_port, dataStore)
-    _MyNode.listenUDP()
     
 
 def shutdown():
@@ -87,6 +86,8 @@ def node():
 
 
 def connect():
+    if not node().listener:
+        node().listenUDP()
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
@@ -213,6 +214,11 @@ class DHTNode(DistributedTupleSpacePeer):
         need to restart _scheduleNextNodeRefresh
         """
         d = Deferred()
+        if not self.listener:
+            d.errback('Listener not started yet')
+            return d
+        if self.refresher and self.refresher.active():
+            self.refresher.reset(0)
         d.callback(1)
         return d
 

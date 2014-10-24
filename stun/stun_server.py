@@ -40,7 +40,7 @@ def A(event=None, arg=None):
     global _StunServer
     if _StunServer is None:
         # set automat name and starting state here
-        _StunServer = StunServer('stun_server', 'AT_STARTUP')
+        _StunServer = StunServer('stun_server', 'AT_STARTUP', 6)
     if event is not None:
         _StunServer.automat(event, arg)
     return _StunServer

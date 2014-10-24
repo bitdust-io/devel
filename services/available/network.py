@@ -27,9 +27,10 @@ class NetworkService(LocalService):
     def start(self):
         from p2p import network_connector
         network_connector.A('init')
+        return True
     
     def stop(self):
-        pass
+        return True
     
     
 

@@ -28,13 +28,13 @@ class GatewayService(LocalService):
     def start(self):
         from transport import gateway
         gateway.init()
-        gateway.start()
-        
-        # global _TransportsInitialization
-        # _TransportsInitialization = gateway.init()
+        # gateway.start()
+        return True
     
     def stop(self):
-        pass
+        from transport import gateway
+        gateway.shutdown()
+        return True
     
     
 

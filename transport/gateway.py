@@ -224,7 +224,7 @@ def start():
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto): 
             if transp.state != 'LISTENING':
-                lg.out(4, '    send "start" to %s' % transp)
+                lg.out(4, '    sending "start" to %s' % transp)
                 transp.automat('start')
                 result.append(proto)
             else:

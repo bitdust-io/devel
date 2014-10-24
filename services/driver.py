@@ -110,16 +110,20 @@ def build_order():
                 if depend_name not in order:
                     order.append(depend_name)
             order.append(svc.service_name)
-        else:
-            index = order.index(svc.service_name)
-            for depend_name in svc.dependent_on():
-                if depend_name not in order:
-                    order.insert(index+1, depend_name)
-                else:
-                    depend_index = order.index(depend_name)
-                    if index < depend_index:
-                        order.insert(depend_index+1, svc.service_name)
-                        del order[index]
+            continue
+        index = order.index(svc.service_name)
+        depend_index_max = -1 
+        for depend_name in svc.dependent_on():
+            if depend_name not in order:
+                order.insert(index-1, depend_name)
+            else:
+                depend_index = order.index(depend_name)
+                if depend_index > index:
+                    if depend_index > depend_index_max:
+                        depend_index_max = depend_index
+        if depend_index_max > 0:
+            order.insert(depend_index_max+1, svc.service_name)
+            del order[index]
     for svc_name in services().keys():
         for depend_name in svc.dependent_on():
             if order.index(svc_name) < order.index(depend_name):
@@ -139,7 +143,7 @@ def start():
         svc = services().get(name, None)
         if not svc:
             raise ServiceNotFound(name)
-        svc.automat('start')
+        svc.automat('start', service_callback)
         
         
 def stop():
@@ -159,24 +163,25 @@ def stop():
 def service_callback(service_name, result):
     """
     """
-    lg.out(4, 'driver.service_callback %s : [%s]' % (service_name, result))
+    lg.out(12, 'driver.service_callback %s : [%s]' % (service_name, result))
     svc = services().get(service_name, None)
     if not svc:
         raise ServiceNotFound(service_name)
     if result == 'started':
-        for name in services().keys():
-            if name == service_name:
+        for other_name in services().keys():
+            if other_name == service_name:
                 continue
-            if name not in enabled_services():
+            if other_name not in enabled_services():
                 continue
-            other_service = services().get(name, None)
+            other_service = services().get(other_name, None)
             if not other_service:
-                raise ServiceNotFound(name)
+                raise ServiceNotFound(other_name)
             if other_service.state == 'ON':
                 continue
             for depend_name in other_service.dependent_on():
                 if depend_name == service_name:
-                    other_service.automat
+                    lg.out(12, '    sending "start" to %r' % other_service)
+                    other_service.automat('start', service_callback)
 
 #------------------------------------------------------------------------------ 
 

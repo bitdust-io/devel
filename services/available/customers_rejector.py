@@ -25,10 +25,10 @@ class CustomersRejectorService(LocalService):
         return []
     
     def start(self):
-        pass
+        return True
     
     def stop(self):
-        pass
+        return True
     
     
 

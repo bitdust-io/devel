@@ -27,7 +27,6 @@ If BitPie.NET get disconnected it will ping "http://google.com" to know what is 
 
 
 EVENTS:
-    * :red:`all-transports-ready`
     * :red:`connection-done`
     * :red:`got-network-info`
     * :red:`init`
@@ -37,7 +36,6 @@ EVENTS:
     * :red:`network-up`
     * :red:`reconnect`
     * :red:`timer-1hour`
-    * :red:`timer-20sec`
     * :red:`timer-5sec`
     * :red:`upnp-done`
     
@@ -64,17 +62,8 @@ from lib import bpio
 from lib import net_misc
 from lib import settings
 from lib import misc
-from lib import udp
 
-from transport import gateway
-
-from dht import dht_service
-
-from stun import stun_server
-from stun import stun_client
-
-from userid import id_server
-from userid import nickname_holder
+from services import driver
 
 import p2p_connector
 import shutdowner
@@ -87,9 +76,6 @@ _NetworkConnector = None
 _CounterSuccessConnections = 0
 _CounterFailedConnections = 0
 _LastSuccessConnectionTime = 0
-# _TransportsInitialization = []
-# _TransportsStarting = []
-# _TransportsStopping = []
 
 #------------------------------------------------------------------------------
 
@@ -113,7 +99,6 @@ class NetworkConnector(Automat):
     timers = {
         'timer-1hour': (3600, ['DISCONNECTED']),
         'timer-5sec': (5.0, ['DISCONNECTED','CONNECTED']),
-        'timer-20sec': (20.0, ['GATE_INIT']),
         }
 
     fast = False
@@ -122,6 +107,8 @@ class NetworkConnector(Automat):
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'
+        net_misc.SetConnectionDoneCallbackFunc(ConnectionDoneCallback)
+        net_misc.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
 
     def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('NETWORK ' + newstate)
@@ -132,13 +119,14 @@ class NetworkConnector(Automat):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init' :
-                self.state = 'GATE_INIT'
-                self.doInitGateway(arg)
+                self.state = 'UP'
+                self.doSetUp(arg)
+                self.Disconnects=0
+                self.Reset=False
         #---UPNP---
         elif self.state == 'UPNP':
             if event == 'upnp-done' :
                 self.state = 'CONNECTED'
-                stun_client.A('start')
             elif event == 'reconnect' :
                 self.Reset=True
         #---CONNECTED---
@@ -182,102 +170,83 @@ class NetworkConnector(Automat):
                 self.doUPNP(arg)
             elif event == 'network-up' and not self.isNeedUPNP(arg) :
                 self.state = 'CONNECTED'
-                stun_client.A('start')
         #---DOWN---
         elif self.state == 'DOWN':
             if event == 'network-down' :
                 self.state = 'NETWORK?'
                 self.doCheckNetworkInterfaces(arg)
-        #---GATE_INIT---
-        elif self.state == 'GATE_INIT':
-            if event == 'timer-20sec' or event == 'all-transports-ready' :
-                self.state = 'UP'
-                self.doSetUp(arg)
-                self.Disconnects=0
-                self.Reset=False
+        return None
 
     def isNeedUPNP(self, arg):
         return settings.enableUPNP() and time.time() - self.last_upnp_time < 60*60
 
     def isConnectionAlive(self, arg):
-        if time.time() - udp.get_last_datagram_time() < 60:
-            if settings.enableUDP() and settings.enableUDPreceiving():
+        if driver.is_started('udp_datagrams'):
+            from lib import udp
+            if time.time() - udp.get_last_datagram_time() < 60:
+                if settings.enableUDP() and settings.enableUDPreceiving():
+                    return True
+        if driver.is_started('gateway'):
+            from transport import gateway
+            if time.time() - gateway.last_inbox_time() < 60:
                 return True
-        if time.time() - gateway.last_inbox_time() < 60:
-            return True
-        transport_states = map(lambda t: t.state, gateway.transports().values())
-        if 'LISTENING' in transport_states:
-            return True
-        if 'STARTING' in transport_states:
-            return True
+            transport_states = map(lambda t: t.state, gateway.transports().values())
+            if 'LISTENING' in transport_states:
+                return True
+            if 'STARTING' in transport_states:
+                return True
         return False
-
-#        global _CounterSuccessConnections
-#        global _CounterFailedConnections
-#        global _LastSuccessConnectionTime
-#        # if no info yet - we think positive 
-#        if _CounterSuccessConnections == 0 and _CounterFailedConnections == 0:
-#            return True
-#        # if we have only 3 or less failed reports - hope no problems yet 
-#        if _CounterFailedConnections <= 3:
-#            return True
-#        # at least one success report - the connection should be fine
-#        if _CounterSuccessConnections >= 1:
-#            return True
-#        # no success connections after last "drop counters", 
-#        # but last success connection was not so far 
-#        if time.time() - _LastSuccessConnectionTime < 60 * 5:
-#            return True
-#        # more success than failed - connection is not failed for sure
-#        if _CounterSuccessConnections > _CounterFailedConnections:
-#            return True
-#        lg.out(6, 'network_connector.isConnectionAlive    %d/%d' % (_CounterSuccessConnections, _CounterFailedConnections) )
-#        return False
 
     def isNetworkActive(self, arg):
         return len(arg) > 0
     
     def isCurrentInterfaceActive(self, arg):
-        # Not sure about external IP, because if we have white IP it is the same to local IP
+        # I am not sure about external IP, 
+        # because if you have a white IP it should be the same with your local IP
         return ( misc.readLocalIP() in arg ) or ( misc.readExternalIP() in arg ) 
 
     def isTimePassed(self, arg):
         return time.time() - self.last_reconnect_time < 15
 
-#    def doInitGateway(self, arg):
-#        """
-#        Action method.
-#        """
-#        global _TransportsInitialization
-#        _TransportsInitialization = gateway.init(nw_connector=self)
-
     def doSetUp(self, arg):
         lg.out(6, 'network_connector.doSetUp')
-        # net_misc.SetConnectionDoneCallbackFunc(ConnectionDoneCallback)
-        # net_misc.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
-        udp_port = int(settings.getUDPPort())
-        if not udp.proto(udp_port):
-            udp.listen(udp_port)
-        stun_server.A('start', udp_port) 
-        if settings.enableIdServer():       
-            id_server.A('start', (settings.getIdServerWebPort(), 
-                                  settings.getIdServerTCPPort()))  
-        dht_service.connect()
-        nickname_holder.A('set', None)
-        # if len(_TransportsStarting) == 0:
+        if driver.is_started('identity_server'): 
+            if settings.enableIdServer():       
+                from userid import id_server
+                id_server.A('start', (settings.getIdServerWebPort(), 
+                                      settings.getIdServerTCPPort()))
+        if driver.is_started('distributed_hash_table'):
+            from dht import dht_service
+            dht_service.reconnect()
+        if driver.is_started('stun_server'):
+            from stun import stun_server
+            udp_port = int(settings.getUDPPort())
+            stun_server.A('start', udp_port)
+        if driver.is_started('private_messages'):
+            from userid import nickname_holder
+            nickname_holder.A('set', None)
+        if driver.is_started('gateway'):
+            from transport import gateway
+            gateway.start()
         self.automat('network-up')
 
     def doSetDown(self, arg):
         """
         """
         lg.out(6, 'network_connector.doSetDown')
-        dht_service.disconnect()
-        stun_server.A('stop')
-        if settings.enableIdServer():
-            id_server.A('stop')
-        # global _TransportsStopping    
-        # _TransportsStopping = gateway.stop()
-        # if len(_TransportsStopping) == 0:
+        if driver.is_started('distributed_hash_table'):
+            from dht import dht_service
+            dht_service.disconnect()
+        if driver.is_started('stun_server'):
+            from stun import stun_server
+            stun_server.A('stop')
+        if driver.is_started('identity_server'): 
+            if settings.enableIdServer():
+                from userid import id_server
+                id_server.A('stop')
+        if driver.is_started('gateway'):
+            from transport import gateway
+            gateway.stop()
         self.automat('network-down')
 
     def doUPNP(self, arg):

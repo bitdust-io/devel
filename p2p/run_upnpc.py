@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: init_shutdown
+.. module:: run_upnpc
 """
 
 import os
