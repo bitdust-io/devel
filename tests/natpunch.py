@@ -28,7 +28,7 @@ def listen(local_port, servers, incomings_filename):
         for line in open(incomings_filename).read().split('\n'):
             addr = line.split(':')
             addr[1] = int(addr[1])
-            incomings.append(addr)
+            incomings.append(tuple(addr))
         if len(incomings):
             for srv in servers:
                 udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
@@ -86,7 +86,7 @@ def main():
         for line in open(sys.argv[3]).read().split('\n'):
             addr = line.split(':')
             addr[1] = int(addr[1])
-            servers.append(addr)
+            servers.append(tuple(addr))
         listen(port_num, servers, sys.argv[4])
         
     elif sys.argv[1] == 'connect':
@@ -98,7 +98,7 @@ def main():
         for line in open(sys.argv[4]).read().split('\n'):
             addr = line.split(':')
             addr[1] = int(addr[1])
-            servers.append(addr)
+            servers.append(tuple(addr))
         min_port = int(sys.argv[5])
         max_port = int(sys.argv[6])
         connect(port_num, remote_ip, servers, min_port, max_port)
