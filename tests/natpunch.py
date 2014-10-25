@@ -47,6 +47,7 @@ def connect(local_port, remote_ip, servers, min_port, max_port):
     _loop()
 
 def datagram_received(datagram, address, local_port):
+    print datagram, address, local_port
     try:
         cmd, payload = datagram
     except:
