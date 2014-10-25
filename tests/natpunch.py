@@ -48,14 +48,20 @@ def datagram_received(datagram, address, local_port):
     except:
         return
     if sys.argv[1] == 'server':
-        udp.send_command(local_port, udp.CMD_PING, 'ok', address)
+        udp.send_command(local_port, udp.CMD_PING, 'stun %s:%d' % address, address)
     elif sys.argv[1] == 'listen':
-        udp.send_command(local_port, udp.CMD_PING, 'ok', address)
+        if payload.startswith('stun'):
+            print payload
+        elif payload.startswith('ping'):
+            udp.send_command(local_port, udp.CMD_PING, 'ok', address)
     elif sys.argv[1] == 'connect':
-        udp.send_command(local_port, udp.CMD_PING, 'ok', address)
-        if address[0] == sys.argv[3]:
-            print 'OKAY!!!!!!!!!!!!!!', address
-            reactor.stop()
+        if payload.startswith('stun'):
+            print payload
+        elif payload.startswith('ping'):
+            udp.send_command(local_port, udp.CMD_PING, 'ok', address)
+            if address[0] == sys.argv[3]:
+                print 'OKAY!!!!!!!!!!!!!!', address
+                reactor.stop()
 
 
 def main():
