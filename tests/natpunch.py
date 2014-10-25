@@ -15,10 +15,6 @@ from logs import lg
 
 from lib import bpio
 from lib import udp
-from lib import settings
-
-# from stun import stun_client
-# from dht import dht_service
 
 #------------------------------------------------------------------------------ 
 
@@ -47,18 +43,20 @@ def connect(local_port, remote_ip, servers, min_port, max_port):
     _loop()
 
 def datagram_received(datagram, address, local_port):
-    print datagram, address, local_port
     try:
         cmd, payload = datagram
     except:
         return
-    # if cmd != udp.CMD_PING:
-        # return
-    print 'datagram [%s] from %r' % (payload, address)
-#    if address[0] == sys.argv[1]:
-#        print 'OKAY!!!!!!!!!!!!!!', address
-#        udp.send_command(local_port, udp.CMD_PING, 'ok', address)
-#        # reactor.stop()
+    if sys.argv[1] == 'server':
+        udp.send_command(local_port, udp.CMD_PING, 'ok', address)
+    elif sys.argv[1] == 'listen':
+        udp.send_command(local_port, udp.CMD_PING, 'ok', address)
+    elif sys.argv[1] == 'connect':
+        udp.send_command(local_port, udp.CMD_PING, 'ok', address)
+        if address[0] == sys.argv[3]:
+            print 'OKAY!!!!!!!!!!!!!!', address
+            reactor.stop()
+
 
 def main():
     if len(sys.argv) <= 1:
