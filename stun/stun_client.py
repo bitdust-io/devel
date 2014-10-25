@@ -185,7 +185,7 @@ class StunClient(automat.Automat):
         for address in self.stun_servers:
             if address in self.stun_results.keys():
                 continue
-            print 'stun to %s:%d' % address
+            # print 'stun to %s:%d' % address
             udp.send_command(self.listen_port, udp.CMD_STUN, '', address)
 
     def doRecordResult(self, arg):
@@ -199,8 +199,9 @@ class StunClient(automat.Automat):
             port = int(port)
         except:
             lg.exc()
-        print 'my IP:PORT %s:%d from %r' % (ip, port, address)
+        # print 'my IP:PORT %s:%d from %r' % (ip, port, address)
         self.stun_results[address] = (ip, port)
+        # print len(self.stun_results), len(self.stun_servers)
         if len(self.stun_results) >= len(self.stun_servers):
             self.automat('all-responded')
 
@@ -215,7 +216,7 @@ class StunClient(automat.Automat):
         lg.out(18, 'stun_client._find_one_node %d result_list=%d' % (tries, len(result_list)))
         if tries <= 0 or len(result_list) >= 8:
             if len(result_list) > 0:
-                print result_list
+                # print result_list
                 self.automat('found-some-peers', result_list)
             else:
                 self.automat('peers-not-found')
@@ -245,7 +246,7 @@ class StunClient(automat.Automat):
             d.addErrback(lambda x: x)
             l.append(d)
             sent.add(node.address)
-            print 'request stun port from', node
+            # print 'request stun port from', node
         dl = DeferredList(l)
         dl.addCallback(self._got_stun_servers_ports, nodes, tries, result_list)
         # dl.addErrback(self._request_error)
@@ -273,11 +274,6 @@ class StunClient(automat.Automat):
         # lg.out(18, '    %r' % result_list)
         self._find_one_node(tries, result_list)
         
-#        if port:
-#            self.automat('found-one-peer', (node_ip_address, port))
-#        else:
-#            self.automat('peers-not-found')
-
     def _request_error(self, err):
         lg.out(1, str(err))
         
