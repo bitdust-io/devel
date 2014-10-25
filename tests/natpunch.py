@@ -26,21 +26,23 @@ def listen(local_port, servers, incomings_filename):
             addr[1] = int(addr[1])
             incomings.append(tuple(addr))
         if len(incomings):
-            for srv in servers:
-                udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
             for inc in incomings:
                 udp.send_command(local_port, udp.CMD_PING, 'ping', inc)
         reactor.callLater(5, _loop)
+    for srv in servers:
+        udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
     _loop()
+
 
 def connect(local_port, remote_ip, servers, min_port, max_port):
     def _loop():
-        for srv in servers:
-            udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
         for port_num in range(min_port, max_port+1):
             udp.send_command(local_port, udp.CMD_PING, 'ping', (remote_ip, port_num))
         reactor.callLater(5, _loop)
+    for srv in servers:
+        udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
     _loop()
+
 
 def datagram_received(datagram, address, local_port):
     try:
