@@ -175,7 +175,7 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        self._find_one_node(3, [])
+        self._find_one_node(1, [])
 
     def doStun(self, arg):
         """

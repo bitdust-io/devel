@@ -41,8 +41,9 @@ def datagram_received(datagram, address):
         return
     print 'datagram [%s] from %r' % (datagram, address)
     if address[0] == sys.argv[1]:
-        print 'OKAY!!!!!!!!!!!!!!'
-        reactor.stop()
+        print 'OKAY!!!!!!!!!!!!!!', address
+        udp.send_command(int(settings.getUDPPort()), udp.CMD_PING, 'ok', address)
+        # reactor.stop()
 
 def main():
     print 'usage:  natpunch.py  <remote IP> [min port] [max port]'
