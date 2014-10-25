@@ -22,7 +22,7 @@ def listen(local_port, servers, incomings_filename):
     def _loop():
         incomings = []
         for line in open(incomings_filename).read().split('\n'):
-            addr = line.split(':')
+            addr = line.strip().split(':')
             addr[1] = int(addr[1])
             incomings.append(tuple(addr))
         if len(incomings):
@@ -90,7 +90,7 @@ def main():
         udp.proto(port_num).add_callback(lambda d,a: datagram_received(d, a, port_num))
         servers = []
         for line in open(sys.argv[3]).read().split('\n'):
-            addr = line.split(':')
+            addr = line.strip().split(':')
             addr[1] = int(addr[1])
             servers.append(tuple(addr))
         listen(port_num, servers, sys.argv[4])
@@ -102,7 +102,7 @@ def main():
         udp.proto(port_num).add_callback(lambda d,a: datagram_received(d, a, port_num))
         servers = []
         for line in open(sys.argv[4]).read().split('\n'):
-            addr = line.split(':')
+            addr = line.strip().split(':')
             addr[1] = int(addr[1])
             servers.append(tuple(addr))
         min_port = int(sys.argv[5])
