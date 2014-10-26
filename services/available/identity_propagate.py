@@ -26,6 +26,8 @@ class IdentityPropagateService(LocalService):
                 ]
     
     def start(self):
+        from p2p import p2p_connector
+        p2p_connector.A('init')
         return True
     
     def stop(self):

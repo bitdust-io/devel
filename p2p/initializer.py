@@ -35,12 +35,13 @@ The ``initializer()`` machine is doing several operations:
     
     
 EVENTS:
+    * :red:`connected`
+    * :red:`disconnected`
     * :red:`init-contacts-done`
     * :red:`init-local-done`
     * :red:`init-modules-done`
     * :red:`init-services-done`
     * :red:`installer.state`
-    * :red:`p2p_connector.state`
     * :red:`run`
     * :red:`run-cmd-line-recover`
     * :red:`run-cmd-line-register`
@@ -155,13 +156,13 @@ class Initializer(automat.Automat):
                 self.doDestroyMe(arg)
         #---CONNECTION---
         elif self.state == 'CONNECTION':
-            if ( event == 'p2p_connector.state' and arg in [ 'CONNECTED' , 'DISCONNECTED' ] ) :
+            if ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
+                self.state = 'EXIT'
+                self.doDestroyMe(arg)
+            elif event == 'connected' or event == 'disconnected' :
                 self.state = 'MODULES'
                 self.doInitModules(arg)
                 self.doUpdate(arg)
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
-                self.state = 'EXIT'
-                self.doDestroyMe(arg)
         #---MODULES---
         elif self.state == 'MODULES':
             if event == 'init-modules-done' :
@@ -250,7 +251,8 @@ class Initializer(automat.Automat):
     def doInitConnection(self, arg):
         lg.out(2, 'initializer.doInitConnection')
         # init_shutdown.init_connection()
-        pass
+        # TODO
+        self.automat('connected')
 
     def doInitModules(self, arg):
         self.automat('init-modules-done')

@@ -49,7 +49,7 @@ class LocalService(automat.Automat):
             raise RequireSubclass()
         if self.service_name in services().keys():
             raise ServiceAlreadyExist(self.service_name)
-        automat.Automat.__init__(self, self.service_name+'_service', 'OFF', 10)
+        automat.Automat.__init__(self, self.service_name+'_service', 'OFF', 18)
 
     def init(self):
         """
@@ -174,13 +174,13 @@ class LocalService(automat.Automat):
             if depend_service is None:
                 depends_results.append((depend_name, 'not found'))
                 continue
-            if depend_service.state != ['ON',]:
+            if depend_service.state != 'ON':
                 depends_results.append((depend_name, 'not started'))
                 continue
         if len(depends_results) > 0: 
-            self.automat('service-depends-off', depends_results)
+            self.automat('service-depend-off', depends_results)
             return
-        lg.out(4, '    starting service [%s]' % self.service_name)
+        lg.out(4, 'starting service [%s]' % self.service_name)
         try:
             result = self.start()
         except:
@@ -263,6 +263,9 @@ class LocalService(automat.Automat):
         return []
     
     def is_installed(self):
+        return True
+    
+    def is_enabled(self):
         return True
 
     def start(self):

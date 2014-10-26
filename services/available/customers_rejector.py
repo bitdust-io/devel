@@ -22,7 +22,7 @@ class CustomersRejectorService(LocalService):
     service_name = 'customers_rejector'
     
     def dependent_on(self):
-        return []
+        return ['gateway',]
     
     def start(self):
         return True

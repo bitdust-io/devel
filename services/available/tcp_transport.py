@@ -31,6 +31,9 @@ class TCPTransportService(LocalService):
     def stop(self):
         return True
     
+    def is_enabled(self):
+        from lib import settings
+        return settings.enableTCP()
     
 
     

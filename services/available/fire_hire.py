@@ -22,7 +22,8 @@ class FireHireService(LocalService):
     service_name = 'fire_hire'
     
     def dependent_on(self):
-        return []
+        return ['gateway',
+                ]
     
     def start(self):
         return True

@@ -20,7 +20,6 @@ except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
 
-from lib import bpio
 from lib import settings
 from lib import automat
 from lib import udp

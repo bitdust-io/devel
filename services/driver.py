@@ -1,7 +1,23 @@
+#!/usr/bin/python
+#driver.py
+#
+#
+# <<<COPYRIGHT>>>
+#
+#
+#
+#
+
+"""
+.. module:: driver
+
+"""
 
 import os
 import sys
 import importlib
+
+from twisted.internet import reactor 
 
 if __name__ == '__main__':
     import os.path as _p
@@ -14,41 +30,28 @@ from lib import bpio
 
 #------------------------------------------------------------------------------ 
 
-_ServicesDict = {}
+_Services = {}
+_BootUpOrder = []
+_EnabledServices = set()
 
 #------------------------------------------------------------------------------ 
 
 def services():
     """
     """
-    global _ServicesDict
-    return _ServicesDict
+    global _Services
+    return _Services
 
 def enabled_services():
-    return set([
-        'distributed_hash_table',
-        'udp_datagrams',
-        'tcp_connections',
-        'network',
-        'tcp_transport',
-        'udp_transport',
-        'gateway',
-        'identity_server',
-        'identity_propagate',
-        'supplier',
-        'customer',
-        'list_files',
-        'backup_db',
-        'stun_server',
-        'stun_client',
-        'backup_monitor',
-        'rebuilding',
-        'customers_rejector',
-        'data_sender',
-        'fire_hire',
-        'private_messages',
-        'restore_monitor',
-        ])
+    global _EnabledServices
+    return _EnabledServices
+
+def disabled_services():
+    return set()
+    
+def boot_up_order():
+    global _BootUpOrder
+    return _BootUpOrder
     
 def is_started(name):
     svc = services().get(name, None)
@@ -73,7 +76,7 @@ def init(callback=None):
             continue
         # filepath = os.path.join(available_services_dir, filename)
         name = filename[:-3]
-        if name not in enabled_services():
+        if name in disabled_services():
             continue
         try:
             py_mod = importlib.import_module('services.available.'+name)
@@ -84,6 +87,9 @@ def init(callback=None):
             services()[name] = py_mod.create_service()
         except:
             lg.exc()
+        if services()[name].is_enabled():
+            enabled_services().add(name)
+    build_order()
     if callback:
         callback()
 
@@ -103,32 +109,54 @@ def shutdown(callback=None):
 def build_order():
     """
     """
-    order = []
-    for svc in services().values():
-        if svc.service_name not in order:
+    global _BootUpOrder
+    order = list(enabled_services())
+    progress = True
+    fail = False
+    counter = 0
+    while progress and not fail:
+        progress = False
+        counter += 1
+        if counter > len(enabled_services())*len(enabled_services()):
+            lg.warn('dependency recursion')
+            fail = True
+            break
+        for position in range(len(order)):
+            name = order[position]
+            svc = services()[name]
+            depend_position_max = -1 
             for depend_name in svc.dependent_on():
                 if depend_name not in order:
-                    order.append(depend_name)
-            order.append(svc.service_name)
-            continue
-        index = order.index(svc.service_name)
-        depend_index_max = -1 
-        for depend_name in svc.dependent_on():
-            if depend_name not in order:
-                order.insert(index-1, depend_name)
-            else:
-                depend_index = order.index(depend_name)
-                if depend_index > index:
-                    if depend_index > depend_index_max:
-                        depend_index_max = depend_index
-        if depend_index_max > 0:
-            order.insert(depend_index_max+1, svc.service_name)
-            del order[index]
-    for svc_name in services().keys():
-        for depend_name in svc.dependent_on():
-            if order.index(svc_name) < order.index(depend_name):
-                lg.warn('dependency not satisfied: #%d:%s depend on #d:%s' % (
-                    order.index(svc_name), svc.service_name, order.index(depend_name), depend_name,))
+                    fail = True
+                    lg.warn('dependency not satisfied: #%d:%s depend on %s' % (
+                        position, name, depend_name,))
+                    break
+                depend_position = order.index(depend_name)
+                if depend_position > depend_position_max:
+                    depend_position_max = depend_position
+            if fail:
+                break
+            if position < depend_position_max: 
+                # print name, order[depend_position_max] 
+                order.insert(depend_position_max+1, name)
+                del order[position]
+                progress = True
+                break
+    #    for svc_name in services().keys():
+    #        if svc_name not in enabled_services():
+    #            continue
+    #        if svc_name not in order:
+    #            lg.warn('dependency not satisfied: %s' % svc_name)
+    #            continue
+    #        for depend_name in services()[svc_name].dependent_on():
+    #            if depend_name not in order:
+    #                lg.warn('dependency not satisfied: #%d:%s depend on %s' % (
+    #                    order.index(svc_name), svc_name, depend_name,))
+    #                continue
+    #            if order.index(svc_name) < order.index(depend_name):
+    #                lg.warn('dependency recursion: #%d:%s depend on #%d:%s' % (
+    #                    order.index(svc_name), svc_name, order.index(depend_name), depend_name,))
+    _BootUpOrder = order
     return order
 
 
@@ -136,22 +164,14 @@ def start():
     """
     """
     lg.out(2, 'driver.start')
-    order = build_order()
-    for name in order:
-        if name not in enabled_services():
-            continue
-        svc = services().get(name, None)
-        if not svc:
-            raise ServiceNotFound(name)
-        svc.automat('start', service_callback)
+    run(boot_up_order())
         
         
 def stop():
     """
     """
     lg.out(2, 'driver.stop')
-    order = build_order()
-    for name in order.reverse():
+    for name in boot_up_order().reverse():
         if name not in enabled_services():
             continue
         svc = services().get(name, None)
@@ -160,18 +180,37 @@ def stop():
         svc.automat('stop')
         
 
+def run(services_list):
+    """
+    """
+    progress = 0
+    for name in services_list:
+        svc = services().get(name, None)
+        if not svc:
+            raise ServiceNotFound(name)
+        if not svc.is_enabled():
+            continue
+        if svc.state == 'ON':
+            continue
+        # lg.out(8, '    sending "start" to %r' % svc)
+        svc.automat('start', service_callback)
+        progress += 1
+    lg.out(18, 'driver.run services=%d progress=%d' % (len(services_list), progress))
+    return progress
+
+
 def service_callback(service_name, result):
     """
     """
-    lg.out(12, 'driver.service_callback %s : [%s]' % (service_name, result))
+    lg.out(18, 'driver.service_callback %s : [%s]' % (service_name, result))
     svc = services().get(service_name, None)
     if not svc:
         raise ServiceNotFound(service_name)
     if result == 'started':
+        lg.out(4, 'service [%s] STARTED' % service_name)
+        relative_services = []
         for other_name in services().keys():
             if other_name == service_name:
-                continue
-            if other_name not in enabled_services():
                 continue
             other_service = services().get(other_name, None)
             if not other_service:
@@ -180,8 +219,9 @@ def service_callback(service_name, result):
                 continue
             for depend_name in other_service.dependent_on():
                 if depend_name == service_name:
-                    lg.out(12, '    sending "start" to %r' % other_service)
-                    other_service.automat('start', service_callback)
+                    relative_services.append(other_name)
+        if len(relative_services) > 0:
+            run(relative_services)
 
 #------------------------------------------------------------------------------ 
 
@@ -199,7 +239,7 @@ class ServiceNotFound(Exception):
 def main():
     lg.set_debug_level(20)
     init()
-    print '\n'.join(build_order())
+    print '\n'.join(boot_up_order())
     shutdown()
 
 

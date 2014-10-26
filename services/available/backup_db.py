@@ -22,9 +22,12 @@ class BackupDBService(LocalService):
     service_name = 'backup_db'
     
     def dependent_on(self):
-        return ['gateway']
+        return ['gateway',
+                ]
     
     def start(self):
+        from p2p import backup_db_keeper
+        backup_db_keeper.A('init')
         return True
     
     def stop(self):

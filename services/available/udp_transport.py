@@ -23,6 +23,7 @@ class UDPTransportService(LocalService):
     
     def dependent_on(self):
         return ['udp_datagrams',
+                'stun_client',
                 ]
     
     def start(self):
@@ -31,6 +32,8 @@ class UDPTransportService(LocalService):
     def stop(self):
         return True
     
-    
+    def is_enabled(self):
+        from lib import settings
+        return settings.enableUDP()
 
     

@@ -22,8 +22,13 @@ class GatewayService(LocalService):
     service_name = 'gateway'
     
     def dependent_on(self):
-        return ['network',
-                ]
+        from lib import settings
+        depends = ['network',]
+        if settings.enableTCP():
+            depends.append('tcp_transport')
+        if settings.enableUDP():
+            depends.append('udp_transport')
+        return depends
     
     def start(self):
         from transport import gateway
