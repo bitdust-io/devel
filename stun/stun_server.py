@@ -14,12 +14,11 @@ EVENTS:
 import os
 import sys
 
-try:
-    from lib import bpio
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
+from lib import bpio
 from lib import settings
 from lib import automat
 from lib import udp
@@ -101,7 +100,7 @@ class StunServer(automat.Automat):
         """
         Action method.
         """
-        # udp.remove_datagram_receiver_callback(self._datagramReceived)
+        udp.proto(self.listen_port).remove_callback(self._datagramReceived)
 
     def doSendYourIPPort(self, arg):
         """

@@ -72,7 +72,9 @@ from dht import dht_service
 
 from transport import callback
 
-from raid import raid_worker
+from services import driver
+
+# from raid import raid_worker
 
 from userid import propagate
 
@@ -80,12 +82,13 @@ import ratings
 import tray_icon
 import initializer
 import network_connector
-import backup_monitor
-import backup_db_keeper
-import list_files_orator
-import fire_hire
-import data_sender
-import customers_rejector
+
+#import backup_monitor
+#import backup_db_keeper
+#import list_files_orator
+#import fire_hire
+#import data_sender
+#import customers_rejector
 
 #------------------------------------------------------------------------------ 
 
@@ -143,7 +146,6 @@ class P2PConnector(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('P2P ' + newstate)
-        initializer.A('p2p_connector.state', newstate)
         tray_icon.state_changed(network_connector.A().state, self.state)
 
     def A(self, event, arg):
@@ -152,12 +154,6 @@ class P2PConnector(automat.Automat):
             if event == 'init' :
                 self.state = 'NETWORK?'
                 self.doInit(arg)
-                backup_monitor.A('init')
-                backup_db_keeper.A('init')
-                list_files_orator.A('init')
-                fire_hire.A('init')
-                data_sender.A('init')
-                raid_worker.A('init')
         #---NETWORK?---
         elif self.state == 'NETWORK?':
             if ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :
@@ -169,7 +165,7 @@ class P2PConnector(automat.Automat):
         elif self.state == 'CONTACTS':
             if event == 'my-id-propagated' :
                 self.state = 'INCOMMING?'
-                fire_hire.A('restart')
+                #fire_hire.A('restart')
             elif ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) or event == 'reconnect' :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
@@ -182,8 +178,8 @@ class P2PConnector(automat.Automat):
             elif event == 'inbox-packet' and self.isUsingBestProto(arg) :
                 self.state = 'CONNECTED'
                 self.doInitRatings(arg)
-                backup_monitor.A('restart')
-                customers_rejector.A('restart')
+                #backup_monitor.A('restart')
+                #customers_rejector.A('restart')
             elif event == 'reconnect' or ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
@@ -218,6 +214,7 @@ class P2PConnector(automat.Automat):
             elif event == 'my-id-updated' and self.isMyIdentityChanged(arg) :
                 self.state = 'NETWORK?'
                 network_connector.A('reconnect')
+        return None
 
     def isUsingBestProto(self, arg):
         """

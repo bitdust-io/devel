@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#identity_propagate.py
+#p2p_hookups.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,24 +8,26 @@
 #
 
 """
-.. module:: identity_propagate
+.. module:: p2p_hookups
 
 """
 
 from services.local_service import LocalService
 
 def create_service():
-    return IdentityPropagateService()
+    return IdentityServerService()
     
-class IdentityPropagateService(LocalService):
+class IdentityServerService(LocalService):
     
-    service_name = 'identity_propagate'
+    service_name = 'p2p_hookups'
     
     def dependent_on(self):
-        return ['network',
+        return ['gateway',
                 ]
     
     def start(self):
+        from p2p import p2p_connector
+        p2p_connector.A('init')
         return True
     
     def stop(self):

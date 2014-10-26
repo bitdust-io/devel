@@ -65,7 +65,6 @@ from lib import misc
 
 from services import driver
 
-import p2p_connector
 import shutdowner
 import tray_icon
 import run_upnpc
@@ -112,8 +111,10 @@ class NetworkConnector(Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('NETWORK ' + newstate)
-        p2p_connector.A('network_connector.state', newstate)
-        tray_icon.state_changed(self.state, p2p_connector.A().state)
+        if driver.is_started('p2p_hookups'):
+            import p2p_connector
+            p2p_connector.A('network_connector.state', newstate)
+            tray_icon.state_changed(self.state, p2p_connector.A().state)
 
     def A(self, event, arg):
         #---AT_STARTUP---
