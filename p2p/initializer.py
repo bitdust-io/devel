@@ -237,16 +237,18 @@ class Initializer(automat.Automat):
         lg.out(2, 'initializer.doInitServices')
         driver.init()
         driver.start()
-            # callback=lambda : self.automat('init-services-done'))
+        from twisted.internet import reactor
+        # reactor.addSystemEventTrigger('before', 'shutdown', driver.stop)
         self.automat('init-services-done')
 
     def doInitContacts(self, arg):
         lg.out(2, 'initializer.doInitContacts')
-        import init_shutdown
-        init_shutdown.init_contacts(
+        self.automat('init-contacts-done')
+        # import init_shutdown
+        # init_shutdown.init_contacts(
             # lambda x: self.automat('init-contacts-done'),
-            lambda x: reactor.callLater(2, self.automat, 'init-contacts-done'),
-            lambda x: self.automat('init-contacts-done'), )
+            # lambda x: reactor.callLater(2, self.automat, 'init-contacts-done'),
+            # lambda x: self.automat('init-contacts-done'), )
 
     def doInitConnection(self, arg):
         lg.out(2, 'initializer.doInitConnection')
@@ -280,6 +282,6 @@ class Initializer(automat.Automat):
         global _Initializer
         del _Initializer
         _Initializer = None
-        automat.objects().pop(self.index)
+        self.destroy()
 
 

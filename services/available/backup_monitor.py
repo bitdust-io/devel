@@ -22,8 +22,7 @@ class BackupMonitorService(LocalService):
     service_name = 'backup_monitor'
     
     def dependent_on(self):
-        return ['gateway',
-                'list_files',
+        return ['list_files',
                 'fire_hire',
                 'rebuilding',
                 ]

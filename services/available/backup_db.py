@@ -31,6 +31,8 @@ class BackupDBService(LocalService):
         return True
     
     def stop(self):
+        from p2p import backup_db_keeper
+        backup_db_keeper.Destroy()
         return True
     
     

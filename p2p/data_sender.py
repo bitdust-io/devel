@@ -80,16 +80,30 @@ def A(event=None, arg=None):
     return _DataSender
 
 
+def Destroy():
+    """
+    Destroy the state machine and remove the instance from memory. 
+    """
+    global _DataSender
+    if _DataSender is None:
+        return
+    _DataSender.destroy()
+    del _DataSender
+    _DataSender = None
+    
+    
 class DataSender(automat.Automat):
     """
     A class to manage process of sending data packets to remote suppliers.
     """
-    
     timers = {'timer-1min':     (60,     ['READY']),
         'timer-1min': (60, ['READY']),
         'timer-1sec': (1.0, ['SENDING']),
               }
     statistic = {}
+    
+    def init(self):
+        self.log_events = True
 
     def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('DATASEND ' + newstate)
@@ -125,7 +139,7 @@ class DataSender(automat.Automat):
     
     def doScanAndQueue(self, arg):
         global _ShutdownFlag
-        lg.out(10, 'data_sender.doScanAndQueue')
+        lg.out(10, 'data_sender.doScanAndQueue _ShutdownFlag=%r' % _ShutdownFlag)
         log = open(os.path.join(settings.LogsDir(), 'data_sender.log'), 'w')
         log.write('doScanAndQueue %s\n' % time.asctime())
         if _ShutdownFlag:
@@ -244,6 +258,7 @@ def statistic():
     if _DataSender is None:
         return {}
     return _DataSender.statistic
+    
     
 def SetShutdownFlag():
     """

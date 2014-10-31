@@ -132,6 +132,19 @@ def A(event=None, arg=None):
         _P2PConnector.automat(event, arg)
     return _P2PConnector
 
+
+def Destroy():
+    """
+    Destroy p2p_connector() automat and remove its instance from memory.
+    """
+    global _P2PConnector
+    if _P2PConnector is None:
+        return
+    _P2PConnector.destroy()
+    del _P2PConnector
+    _P2PConnector = None
+
+
 class P2PConnector(automat.Automat):
     """
     """
@@ -141,6 +154,7 @@ class P2PConnector(automat.Automat):
         }
     
     def init(self):
+        self.log_events = True
         self.identity_changed = False
         self.version_number = ''
 
@@ -154,6 +168,7 @@ class P2PConnector(automat.Automat):
             if event == 'init' :
                 self.state = 'NETWORK?'
                 self.doInit(arg)
+                network_connector.A('reconnect')
         #---NETWORK?---
         elif self.state == 'NETWORK?':
             if ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :

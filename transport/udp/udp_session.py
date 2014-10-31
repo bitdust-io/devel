@@ -624,7 +624,7 @@ class UDPSession(automat.Automat):
             sessions_by_peer_id()[self.peer_id].remove(self)
             if len(sessions_by_peer_id()[self.peer_id]) == 0:
                 sessions_by_peer_id().pop(self.peer_id)            
-        automat.objects().pop(self.index)
+        self.destroy()
 
 
     def _dispatch_datagram(self, arg):

@@ -44,6 +44,18 @@ def A(event=None, arg=None):
     return _StunServer
 
 
+def Destroy():
+    """
+    Destroy stun_server() automat and remove its instance from memory.
+    """
+    global _StunServer
+    if _StunServer is None:
+        return
+    _StunServer.destroy()
+    del _StunServer
+    _StunServer = None
+
+
 class StunServer(automat.Automat):
     """
     This class implements all the functionality of the ``stun_server()`` state machine.

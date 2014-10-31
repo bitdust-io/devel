@@ -30,6 +30,8 @@ class NetworkService(LocalService):
         return True
     
     def stop(self):
+        from p2p import network_connector
+        network_connector.Destroy()
         return True
     
     

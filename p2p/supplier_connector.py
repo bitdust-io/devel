@@ -251,7 +251,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         connectors().pop(self.idurl)
-        automat.objects().pop(self.index)
+        self.destroy()
         
     def doCleanRequest(self, arg):
         """

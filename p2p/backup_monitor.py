@@ -340,7 +340,7 @@ def shutdown():
     Called from high level modules to finish all things correctly.
     """
     lg.out(4, 'backup_monitor.shutdown')
-    automat.clear_object(A().index)
+    A().destroy()
 
         
 

@@ -22,11 +22,12 @@ class RebuildingService(LocalService):
     service_name = 'rebuilding'
     
     def dependent_on(self):
-        return ['gateway',
-                'customer',
-                'data_sender',]
+        return ['data_sender',
+                ]
     
     def start(self):
+        from p2p import data_sender
+        data_sender.A('init')
         return True
     
     def stop(self):

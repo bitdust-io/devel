@@ -17,7 +17,8 @@ import os
 import sys
 import importlib
 
-from twisted.internet import reactor 
+from twisted.internet import reactor
+from twisted.internet.defer import Deferred, DeferredList 
 
 if __name__ == '__main__':
     import os.path as _p
@@ -33,6 +34,8 @@ from lib import bpio
 _Services = {}
 _BootUpOrder = []
 _EnabledServices = set()
+_StartingDeferred = None
+_StopingDeferred = None
 
 #------------------------------------------------------------------------------ 
 
@@ -87,7 +90,7 @@ def init(callback=None):
             services()[name] = py_mod.create_service()
         except:
             lg.exc()
-        if services()[name].is_enabled():
+        if services()[name].enabled():
             enabled_services().add(name)
     build_order()
     if callback:
@@ -98,10 +101,15 @@ def shutdown(callback=None):
     """
     """
     lg.out(2, 'driver.shutdown')
-    for svc in services().values():
+    while len(services()):
+        name, svc = services().popitem()
+        print sys.getrefcount(svc) 
         lg.out(2, '    closing %r' % svc)
-        automat.clear_object(svc.index)
-    services().clear()
+        svc.automat('shutdown')
+        del svc
+        svc = None
+        enabled_services().discard(name)
+    # services().clear()
     if callback:
         callback()
 
@@ -142,20 +150,6 @@ def build_order():
                 del order[position]
                 progress = True
                 break
-    #    for svc_name in services().keys():
-    #        if svc_name not in enabled_services():
-    #            continue
-    #        if svc_name not in order:
-    #            lg.warn('dependency not satisfied: %s' % svc_name)
-    #            continue
-    #        for depend_name in services()[svc_name].dependent_on():
-    #            if depend_name not in order:
-    #                lg.warn('dependency not satisfied: #%d:%s depend on %s' % (
-    #                    order.index(svc_name), svc_name, depend_name,))
-    #                continue
-    #            if order.index(svc_name) < order.index(depend_name):
-    #                lg.warn('dependency recursion: #%d:%s depend on #%d:%s' % (
-    #                    order.index(svc_name), svc_name, order.index(depend_name), depend_name,))
     _BootUpOrder = order
     return order
 
@@ -163,46 +157,54 @@ def build_order():
 def start():
     """
     """
+    global _StartingDeferred
+    if _StartingDeferred:
+        lg.warn('driver.start already called')
+        return _StartingDeferred
     lg.out(2, 'driver.start')
-    run(boot_up_order())
-        
+    dl = []
+    for name in boot_up_order():
+        svc = services().get(name, None)
+        if not svc:
+            raise ServiceNotFound(name)
+        if not svc.enabled():
+            continue
+        if svc.state == 'ON':
+            continue
+        d = Deferred()
+        dl.append(d)
+        svc.automat('start', d)
+    _StartingDeferred = DeferredList(dl)
+    _StartingDeferred.addCallback(on_started_all_services)
+    return _StartingDeferred
+
         
 def stop():
     """
     """
+    global _StopingDeferred
+    if _StopingDeferred:
+        lg.warn('driver.stop already called')
+        return _StopingDeferred
     lg.out(2, 'driver.stop')
-    for name in boot_up_order().reverse():
-        if name not in enabled_services():
-            continue
+    dl = []
+    for name in reversed(boot_up_order()):
         svc = services().get(name, None)
         if not svc:
             raise ServiceNotFound(name)
-        svc.automat('stop')
-        
+        d = Deferred()
+        dl.append(d)
+        svc.automat('stop', d)
+    _StopingDeferred = DeferredList(dl)
+    _StopingDeferred.addCallback(on_stopped_all_services)
+    return _StopingDeferred
 
-def run(services_list):
-    """
-    """
-    progress = 0
-    for name in services_list:
-        svc = services().get(name, None)
-        if not svc:
-            raise ServiceNotFound(name)
-        if not svc.is_enabled():
-            continue
-        if svc.state == 'ON':
-            continue
-        # lg.out(8, '    sending "start" to %r' % svc)
-        svc.automat('start', service_callback)
-        progress += 1
-    lg.out(18, 'driver.run services=%d progress=%d' % (len(services_list), progress))
-    return progress
+#------------------------------------------------------------------------------ 
 
-
-def service_callback(service_name, result):
+def on_service_callback(result, service_name):
     """
     """
-    lg.out(18, 'driver.service_callback %s : [%s]' % (service_name, result))
+    lg.out(10, 'driver.on_service_callback %s : [%s]' % (service_name, result))
     svc = services().get(service_name, None)
     if not svc:
         raise ServiceNotFound(service_name)
@@ -219,9 +221,30 @@ def service_callback(service_name, result):
                 continue
             for depend_name in other_service.dependent_on():
                 if depend_name == service_name:
-                    relative_services.append(other_name)
+                    relative_services.append(other_service)
         if len(relative_services) > 0:
-            run(relative_services)
+            # global _StartingDeferred
+            # if _StartingDeferred:
+            for relative_service in relative_services:
+                if not relative_service.enabled():
+                    continue
+                if relative_service.state == 'ON':
+                    continue
+                relative_service.automat('start')
+    elif result == 'stopped':
+        lg.out(4, 'service [%s] STOPPED' % service_name)
+    return result
+
+def on_started_all_services(results):
+    lg.out(2, 'driver.on_started_all_services')
+    global _StartingDeferred
+    _StartingDeferred = None
+    
+def on_stopped_all_services(results):
+    lg.out(2, 'driver.on_stopped_all_services')
+    print results
+    global _StopingDeferred
+    _StopingDeferred = None
 
 #------------------------------------------------------------------------------ 
 

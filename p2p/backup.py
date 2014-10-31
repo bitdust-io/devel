@@ -359,7 +359,7 @@ class backup(automat.Automat):
     def doDestroyMe(self, arg):
         self.currentBlockData.close()
         del self.currentBlockData
-        automat.objects().pop(self.index)
+        self.destroy()
         collected = gc.collect()
         lg.out(10, 'backup.doDestroyMe [%s] collected %d objects' % (self.backupID, collected))
 

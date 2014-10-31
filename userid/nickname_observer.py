@@ -209,7 +209,7 @@ class NicknameObserver(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        automat.objects().pop(self.index)
+        self.destroy()
 
     def _dht_read_result(self, value):
         self.dht_read_defer = None

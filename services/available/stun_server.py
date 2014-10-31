@@ -35,6 +35,7 @@ class StunServerService(LocalService):
     def stop(self):
         from stun import stun_server
         stun_server.A('stop')
+        stun_server.Destroy()
         return True
     
     

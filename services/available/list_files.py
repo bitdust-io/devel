@@ -22,8 +22,7 @@ class ListFilesService(LocalService):
     service_name = 'list_files'
     
     def dependent_on(self):
-        return ['gateway',
-                'customer',
+        return ['customer',
                 ]
     
     def start(self):

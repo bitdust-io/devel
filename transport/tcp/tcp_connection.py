@@ -306,7 +306,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         # lg.out(18, 'tcp_connection.doDestroyMe %s' % str(self))
-        automat.objects().pop(self.index)
+        self.destroy()
         if self.peer_address in tcp_node.opened_connections():
             tcp_node.opened_connections()[self.peer_address].remove(self)
             if len(tcp_node.opened_connections()[self.peer_address]) == 0:

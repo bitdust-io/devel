@@ -450,7 +450,7 @@ def main():
             lg.out(2, 'bpmain.main redirecting started')
 
     try:
-        os.remove(os.path.expanduser('~'), '.bitpie', 'logs', 'exception.log')
+        os.remove(os.path.join(os.path.expanduser('~'), '.bitpie', 'logs', 'exception.log'))
     except:
         pass
 

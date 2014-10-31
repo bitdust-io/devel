@@ -40,12 +40,10 @@ class NetworkTransport(automat.Automat):
     def __init__(self, proto, interface, state_changed_callback=None):
         self.proto = proto
         self.interface = interface
-        self.state_changed_callback = state_changed_callback
+        self.state_changed_callback = None
         automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8)
         
     def call(self, method_name, *args):
-#        if self.state != 'LISTENING':
-#            return fail(Exception('%s can not accept calls right now' % self))
         method = getattr(self.interface, method_name, None)
         if method is None:
             lg.out(2, 'network_transport.call ERROR method %s not found in protos' % (method_name, self.proto))
@@ -143,7 +141,9 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        self.interface.init(arg)
+        listener, state_changed_callback = arg
+        self.state_changed_callback = state_changed_callback
+        self.interface.init(listener)
 
     def doStop(self, arg):
         """
@@ -189,7 +189,7 @@ class NetworkTransport(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         gateway.transports().pop(self.proto)
-        automat.objects().pop(self.index)
+        self.destroy()
         self.interface = None
 
 

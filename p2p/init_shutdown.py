@@ -238,32 +238,33 @@ def shutdown(x=None):
     dl = []
 
     from services import driver
+    # dl.append(driver.stop())
     driver.shutdown()
 
-    import io_throttle
-    io_throttle.shutdown()
+    # import io_throttle
+    # io_throttle.shutdown()
 
-    import backup_rebuilder 
-    backup_rebuilder.SetStoppedFlag()
+    # import backup_rebuilder 
+    # backup_rebuilder.SetStoppedFlag()
     
-    import data_sender
-    data_sender.SetShutdownFlag()
-    data_sender.A('restart')
+    # import data_sender
+    # data_sender.SetShutdownFlag()
+    # data_sender.A('restart')
 
-    import lib.stun
-    dl.append(lib.stun.stopUDPListener())
+    # import lib.stun
+    # dl.append(lib.stun.stopUDPListener())
     
-    from raid import eccmap
-    eccmap.shutdown()
+    # from raid import eccmap
+    # eccmap.shutdown()
 
-    import backup_matrix
-    backup_matrix.shutdown()
+    # import backup_matrix
+    # backup_matrix.shutdown()
 
-    import ratings
-    ratings.shutdown()
+    # import ratings
+    # ratings.shutdown()
 
-    import contact_status
-    contact_status.shutdown()
+    # import contact_status
+    # contact_status.shutdown()
 
     import run_upnpc
     run_upnpc.shutdown()
@@ -274,19 +275,19 @@ def shutdown(x=None):
     import webcontrol
     dl.append(webcontrol.shutdown())
 
-    from userid import propagate
-    propagate.shutdown()
+    # from userid import propagate
+    # propagate.shutdown()
 
     from transport import bandwidth
     from transport import callback
     callback.remove_inbox_callback(bandwidth.INfile)
     callback.remove_finish_file_sending_callback(bandwidth.OUTfile)
     
-    from transport import gateway
-    gateway.shutdown()
+    # from transport import gateway
+    # gateway.shutdown()
     
-    from dht import dht_service
-    dht_service.shutdown()
+    # from dht import dht_service
+    # dht_service.shutdown()
 
     from logs import weblog
     weblog.shutdown()

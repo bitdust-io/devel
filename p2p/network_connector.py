@@ -27,12 +27,16 @@ If BitPie.NET get disconnected it will ping "http://google.com" to know what is 
 
 
 EVENTS:
+    * :red:`all-network-transports-disabled`
+    * :red:`all-network-transports-ready`
     * :red:`connection-done`
+    * :red:`gateway-is-not-started`
     * :red:`got-network-info`
     * :red:`init`
     * :red:`internet-failed`
     * :red:`internet-success`
     * :red:`network-down`
+    * :red:`network-transport-state-changed`
     * :red:`network-up`
     * :red:`reconnect`
     * :red:`timer-1hour`
@@ -90,6 +94,18 @@ def A(event=None, arg=None):
     return _NetworkConnector
 
 
+def Destroy():
+    """
+    Destroy network_connector() automat and remove its instance from memory.
+    """
+    global _NetworkConnector
+    if _NetworkConnector is None:
+        return
+    _NetworkConnector.destroy()
+    del _NetworkConnector
+    _NetworkConnector = None
+
+
 class NetworkConnector(Automat):
     """
     Class to monitor Internet connection and reconnect when needed.  
@@ -120,16 +136,16 @@ class NetworkConnector(Automat):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init' :
-                self.state = 'UP'
-                self.doSetUp(arg)
+                self.state = 'START_UP'
                 self.Disconnects=0
                 self.Reset=False
         #---UPNP---
         elif self.state == 'UPNP':
-            if event == 'upnp-done' :
-                self.state = 'CONNECTED'
-            elif event == 'reconnect' :
+            if event == 'reconnect' :
                 self.Reset=True
+            elif event == 'upnp-done' :
+                self.state = 'TRANSPORTS?'
+                self.doStartNetworkTransports(arg)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'reconnect' or ( event == 'timer-5sec' and ( self.Reset or not self.isConnectionAlive(arg) ) ) :
@@ -170,12 +186,26 @@ class NetworkConnector(Automat):
                 self.state = 'UPNP'
                 self.doUPNP(arg)
             elif event == 'network-up' and not self.isNeedUPNP(arg) :
-                self.state = 'CONNECTED'
+                self.state = 'TRANSPORTS?'
+                self.doStartNetworkTransports(arg)
         #---DOWN---
         elif self.state == 'DOWN':
             if event == 'network-down' :
                 self.state = 'NETWORK?'
                 self.doCheckNetworkInterfaces(arg)
+        #---TRANSPORTS?---
+        elif self.state == 'TRANSPORTS?':
+            if event == 'reconnect' :
+                self.Reset=True
+            elif event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or ( event == 'network-transport-state-changed' and self.isAllTransportsFailed(arg) ) :
+                self.state = 'DISCONNECTED'
+            elif event == 'all-network-transports-ready' or ( event == 'network-transport-state-changed' and self.isAllTransportsReady(arg) ) :
+                self.state = 'CONNECTED'
+        #---START_UP---
+        elif self.state == 'START_UP':
+            if event == 'reconnect' :
+                self.state = 'UP'
+                self.doSetUp(arg)
         return None
 
     def isNeedUPNP(self, arg):
@@ -209,6 +239,32 @@ class NetworkConnector(Automat):
     def isTimePassed(self, arg):
         return time.time() - self.last_reconnect_time < 15
 
+    def isAllTransportsFailed(self, arg):
+        """
+        Condition method.
+        """
+        if not driver.is_started('gateway'):
+            return True
+        from transport import gateway
+        transports = gateway.transports().values()
+        for t in transports:
+            if t.state != 'OFFLINE':
+                return False
+        return True
+
+    def isAllTransportsReady(self, arg):
+        """
+        Condition method.
+        """
+        if not driver.is_started('gateway'):
+            return False
+        from transport import gateway
+        transports = gateway.transports().values()
+        for t in transports:
+            if t.state != 'OFFLINE' and t.state != 'LISTENING':
+                return False
+        return True
+
     def doSetUp(self, arg):
         lg.out(6, 'network_connector.doSetUp')
         if driver.is_started('identity_server'): 
@@ -226,9 +282,9 @@ class NetworkConnector(Automat):
         if driver.is_started('private_messages'):
             from userid import nickname_holder
             nickname_holder.A('set', None)
-        if driver.is_started('gateway'):
-            from transport import gateway
-            gateway.start()
+        # if driver.is_started('gateway'):
+        #     from transport import gateway
+        #     gateway.start()
         self.automat('network-up')
 
     def doSetDown(self, arg):
@@ -283,6 +339,22 @@ class NetworkConnector(Automat):
 
     def doRememberTime(self, arg):
         self.last_reconnect_time = time.time()
+
+    def doStartNetworkTransports(self, arg):
+        """
+        Action method.
+        """
+        if not driver.is_started('gateway'):
+            self.automat('gateway-is-not-started')
+            return
+        from transport import gateway
+        if len(gateway.start()) > 0:
+            return
+        transports = gateway.transports().values()
+        if len(transports) == 0: 
+            self.automat('all-network-transports-disabled')
+            return
+        self.automat('all-network-transports-ready')
 
 #------------------------------------------------------------------------------ 
 

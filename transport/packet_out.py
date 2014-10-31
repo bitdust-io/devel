@@ -517,7 +517,7 @@ class PacketOut(automat.Automat):
         self.remote_identity = None
         self.callbacks.clear()
         queue().remove(self)
-        automat.objects().pop(self.index)
+        self.destroy()
 
 
     def _remote_identity_cached(self, xmlsrc):

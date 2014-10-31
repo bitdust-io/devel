@@ -96,7 +96,20 @@ def A(event=None, arg=None):
     if event is not None:
         _BackupDBKeeper.automat(event, arg)
     return _BackupDBKeeper
-    
+
+
+def Destroy():
+    """
+    Destroy backup_db_keeper() automat and remove its instance from memory.
+    """
+    global _BackupDBKeeper
+    if _BackupDBKeeper is None:
+        return
+    _BackupDBKeeper.destroy()
+    del _BackupDBKeeper
+    _BackupDBKeeper = None
+
+
 #------------------------------------------------------------------------------ 
 
 class BackupDBKeeper(automat.Automat):

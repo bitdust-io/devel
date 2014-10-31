@@ -185,7 +185,7 @@ class IdServer(automat.Automat):
         """
         Action method.
         """
-        automat.objects().pop(self.index)
+        self.destroy()
         global _IdServer
         _IdServer = None
         if arg and len(arg) > 0 and isinstance(arg[-1], Deferred):

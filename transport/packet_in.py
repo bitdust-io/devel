@@ -263,7 +263,7 @@ class PacketIn(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         items().pop(self.transfer_id)
-        automat.objects().pop(self.index)
+        self.destroy()
 
     def _remote_identity_cached(self, xmlsrc, arg):
         sender_identity = contacts.getContact(self.sender_idurl)

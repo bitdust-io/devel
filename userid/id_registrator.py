@@ -392,7 +392,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        automat.objects().pop(self.index)
+        self.destroy()
         global _IdRegistrator
         _IdRegistrator = None
     

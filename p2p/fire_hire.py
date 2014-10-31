@@ -91,7 +91,6 @@ except:
 
 from logs import lg
 
-from lib import bpio
 from lib import misc
 from lib import settings
 from lib import contacts
@@ -142,6 +141,19 @@ def A(event=None, arg=None):
     if event is not None:
         _FireHire.automat(event, arg)
     return _FireHire
+
+
+def Destroy():
+    """
+    Destroy the state machine and remove the instance from memory. 
+    """
+    global _FireHire
+    if _FireHire is None:
+        return
+    _FireHire.destroy()
+    del _FireHire
+    _FireHire = None
+    
 
 class FireHire(automat.Automat):
     """

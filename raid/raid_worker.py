@@ -276,7 +276,7 @@ class RaidWorker(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        automat.objects().pop(self.index)
+        self.destroy()
         global _RaidWorker
         del _RaidWorker
         _RaidWorker = None

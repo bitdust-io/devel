@@ -69,6 +69,8 @@ from lib import commands
 from lib import nameurl
 from lib import tmpfile
 
+from services import driver
+
 from crypt import signed
 
 from userid import identitycache
@@ -103,6 +105,11 @@ def transports():
     return _TransportsDict
 
 
+def listener():
+    global _LocalListener
+    return _LocalListener
+
+
 def is_installed(proto):
     """
     Return True if given transport is installed.
@@ -122,67 +129,78 @@ def last_inbox_time():
     
 #------------------------------------------------------------------------------ 
 
-def init(transportslist=[]):
+def init():
     """
-    Initialize the transports gateway - this will start all installed transports.
-    Return a list if started transports.
     """
     global _LocalListener
-    global _XMLRPCListener
-    global _XMLRPCPort
-    global _XMLRPCURL
     global _DoingShutdown
-    global _TransportsDict
-    global _AvailableTransports
     lg.out(4, 'gateway.init')
     if _DoingShutdown:
-        return []
-    result = []
+        return
     _LocalListener = TransportGateLocalProxy()
-    lg.out(6, 'gateway.init transports: %s' % str(transportslist))
-    for proto in transportslist:
-        iface = None
-        if proto == 'tcp':
-            try:
-                from tcp import tcp_interface
-                _AvailableTransports['tcp'] = True
-            except:
-                lg.exc()
-                continue
-            iface = tcp_interface.GateInterface()
-        elif proto == 'udp':
-            try:
-                from udp import udp_interface
-                _AvailableTransports['udp'] = True
-            except:
-                lg.exc()
-                continue
-            iface = udp_interface.GateInterface()
-        if iface is None:
-            raise Exception('transport not supported: %s'  % proto)
-        _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface, on_transport_state_changed)
-        transport(proto).automat('init', _LocalListener)
-        result.append(proto)
-        lg.out(6, 'gateway.init initialized transport [%s]' % proto)
-#    _XMLRPCListener = reactor.listenTCP(0, server.Site(TransportGateXMLRPCServer()))
-#    _XMLRPCPort = _XMLRPCListener.getHost().port
-#    _XMLRPCURL = "http://localhost:%d" % int(_XMLRPCPort)
-#    if not transportslist:
-#        transportslist = _AvailableTransports.keys()
-#    lg.out(6, 'gateway.init  XML-RPC: %s, transports: %s' % (_XMLRPCURL, transportslist))
+
+
+#def init1(transportslist=[]):
+#    """
+#    Initialize the transports gateway - this will start all installed transports.
+#    Return a list if started transports.
+#    """
+#    global _LocalListener
+#    global _XMLRPCListener
+#    global _XMLRPCPort
+#    global _XMLRPCURL
+#    global _DoingShutdown
+#    global _TransportsDict
+#    global _AvailableTransports
+#    lg.out(4, 'gateway.init')
+#    if _DoingShutdown:
+#        return []
+#    result = []
+#    _LocalListener = TransportGateLocalProxy()
+#    lg.out(6, 'gateway.init transports: %s' % str(transportslist))
 #    for proto in transportslist:
 #        iface = None
 #        if proto == 'tcp':
+#            try:
+#                from tcp import tcp_interface
+#                _AvailableTransports['tcp'] = True
+#            except:
+#                lg.exc()
+#                continue
 #            iface = tcp_interface.GateInterface()
 #        elif proto == 'udp':
+#            try:
+#                from udp import udp_interface
+#                _AvailableTransports['udp'] = True
+#            except:
+#                lg.exc()
+#                continue
 #            iface = udp_interface.GateInterface()
 #        if iface is None:
 #            raise Exception('transport not supported: %s'  % proto)
-#        _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
-#        transport(proto).automat('init', _XMLRPCURL)
+#        _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface, on_transport_state_changed)
+#        transport(proto).automat('init', _LocalListener)
 #        result.append(proto)
-#        lg.out(6, 'gateway.init want to start transport [%s]' % proto)
-    return result
+#        lg.out(6, 'gateway.init initialized transport [%s]' % proto)
+##    _XMLRPCListener = reactor.listenTCP(0, server.Site(TransportGateXMLRPCServer()))
+##    _XMLRPCPort = _XMLRPCListener.getHost().port
+##    _XMLRPCURL = "http://localhost:%d" % int(_XMLRPCPort)
+##    if not transportslist:
+##        transportslist = _AvailableTransports.keys()
+##    lg.out(6, 'gateway.init  XML-RPC: %s, transports: %s' % (_XMLRPCURL, transportslist))
+##    for proto in transportslist:
+##        iface = None
+##        if proto == 'tcp':
+##            iface = tcp_interface.GateInterface()
+##        elif proto == 'udp':
+##            iface = udp_interface.GateInterface()
+##        if iface is None:
+##            raise Exception('transport not supported: %s'  % proto)
+##        _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
+##        transport(proto).automat('init', _XMLRPCURL)
+##        result.append(proto)
+##        lg.out(6, 'gateway.init want to start transport [%s]' % proto)
+#    return result
 
 
 def shutdown():
@@ -198,13 +216,13 @@ def shutdown():
     if _DoingShutdown:
         return
     _DoingShutdown = True
-    for transp in transports().values():
-        transp.automat('shutdown')
-    if _XMLRPCListener:
-        del _XMLRPCListener
-        _XMLRPCListener = None
-        _XMLRPCPort = None
-        _XMLRPCURL = None
+    # for transp in transports().values():
+    #     transp.automat('shutdown')
+#    if _XMLRPCListener:
+#        del _XMLRPCListener
+#        _XMLRPCListener = None
+#        _XMLRPCPort = None
+#        _XMLRPCURL = None
     if _LocalListener:
         _LocalListener = None
 
@@ -221,7 +239,7 @@ def start():
                 transp.automat('start')
                 result.append(proto)
             else:
-                lg.out(4, '    %s is ready')
+                lg.out(4, '    %r is ready' % transp)
     reactor.callLater(5, packets_timeout_loop)
     return result
 
@@ -241,6 +259,35 @@ def stop():
             else:
                 lg.out(4, '    %s already stopped' % proto)
     return result
+
+#------------------------------------------------------------------------------ 
+
+def attach(transport_instance):
+    """
+    """
+    global _TransportsDict
+    global _AvailableTransports
+    _AvailableTransports[transport_instance.proto] = True
+    # transport_instance.transport.state_changed_callback = on_transport_state_changed
+    _TransportsDict[transport_instance.proto] = transport_instance.transport
+    lg.out(6, 'gateway.attach : %r' % transport_instance)
+
+
+def detach(transport_instance):
+    """
+    """
+    global _TransportsDict
+    global _AvailableTransports
+    if transport_instance.proto not in _AvailableTransports.keys():
+        lg.warn('transport [%s] not available' % transport_instance.proto)
+        return
+    if transport_instance.proto not in _TransportsDict.keys():
+        lg.warn('transport [%s] not attached' % transport_instance.proto)
+        return
+    _AvailableTransports.pop(transport_instance.proto)
+    # transport_instance.transport.state_changed_callback = None
+    _TransportsDict.pop(transport_instance.proto)
+    lg.out(6, 'gateway.detach : %r' % transport_instance)
 
 #------------------------------------------------------------------------------ 
 

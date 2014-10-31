@@ -20,20 +20,58 @@ def create_service():
 class UDPTransportService(LocalService):
     
     service_name = 'udp_transport'
+    proto = 'udp'
     
     def dependent_on(self):
         return ['udp_datagrams',
                 'stun_client',
+                'gateway',
+                'network',
                 ]
     
     def start(self):
-        return True
+        from transport.udp import udp_interface
+        from transport import network_transport
+        from transport import gateway
+        from twisted.internet import reactor
+        from twisted.internet.defer import Deferred
+        self.starting_deferred = Deferred()
+        self.interface = udp_interface.GateInterface()
+        self.transport = network_transport.NetworkTransport(
+            'udp', self.interface)
+        gateway.attach(self)
+        self.transport.automat('init', 
+            (gateway.listener(), self._on_transport_state_changed))
+        reactor.callLater(0, self.transport.automat, 'start')
+        return self.starting_deferred
     
     def stop(self):
+        from transport import gateway
+        self.transport.automat('stop')
+        gateway.detach(self)
         return True
     
-    def is_enabled(self):
+    def enabled(self):
         from lib import settings
         return settings.enableUDP()
 
+    def installed(self):
+        try:
+            from transport.udp import udp_interface
+        except:
+            return False
+        return True
+
+    def _on_transport_state_changed(self, transport, oldstate, newstate):
+        # from logs import lg
+        # lg.out(6, 'udp_transport._on_transport_state_changed in %r : %s->%s' % (
+        #     transport, oldstate, newstate))
+        if self.starting_deferred:
+            if newstate in ['LISTENING', 'OFFLINE',]:
+                self.starting_deferred.callback(newstate)
+                self.starting_deferred = None
+        from p2p import network_connector
+        network_connector.A('network-transport-state-changed', self.transport)
+        
+        
     

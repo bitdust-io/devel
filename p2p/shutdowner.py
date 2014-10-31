@@ -143,17 +143,26 @@ class Shutdowner(automat.Automat):
         """
         Action method.
         """
-        import fire_hire
-        fire_hire._FireHire = None
-        import backup_monitor
-        backup_monitor._BackupMonitor = None
-        import network_connector
-        network_connector._NetworkConnector = None
+        # import fire_hire
+        # fire_hire._FireHire = None
+        # import backup_monitor
+        # backup_monitor._BackupMonitor = None
+        # import network_connector
+        # network_connector._NetworkConnector = None
+        # global _Shutdowner
+        # _Shutdowner = None
+        # automat.objects().clear()
         global _Shutdowner
+        del _Shutdowner
         _Shutdowner = None
+        self.destroy()
+        lg.out(2, 'shutdowner.doKillAutomats %d machines left in memory' % len(automat.objects()))
+        print automat.objects().values() 
         automat.objects().clear()
 
     def doShutdown(self, arg):
+        lg.out(2, 'shutdowner.doShutdown %d machines currently' % len(automat.objects()))
+        print automat.objects().values() 
         param = arg
         if self.shutdown_param is not None:
             param = self.shutdown_param

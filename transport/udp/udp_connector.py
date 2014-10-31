@@ -149,7 +149,7 @@ class DHTUDPConnector(automat.Automat):
         """
         self.node = None
         connectors().pop(self.id)
-        automat.objects().pop(self.index)
+        self.destroy()
 
     def _got_peer_incomings(self, value):
         # lg.out(18, 'udp_connector._got_peer_incomings:')

@@ -15,15 +15,21 @@
 from services.local_service import LocalService
 
 def create_service():
-    return IdentityServerService()
+    return P2PHookupsService()
     
-class IdentityServerService(LocalService):
+class P2PHookupsService(LocalService):
     
     service_name = 'p2p_hookups'
     
     def dependent_on(self):
-        return ['gateway',
-                ]
+        from lib import settings
+        depends = ['gateway',
+                   'identity_propagate']
+        if settings.enableTCP():
+            depends.append('tcp_transport')
+        if settings.enableUDP():
+            depends.append('udp_transport')
+        return depends
     
     def start(self):
         from p2p import p2p_connector
@@ -31,6 +37,8 @@ class IdentityServerService(LocalService):
         return True
     
     def stop(self):
+        from p2p import p2p_connector
+        p2p_connector.Destroy()
         return True
     
     

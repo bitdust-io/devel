@@ -22,9 +22,11 @@ class CustomerService(LocalService):
     service_name = 'customer'
     
     def dependent_on(self):
-        return []
+        return ['p2p_hookups',
+                ]
     
     def start(self):
+        
         return True
     
     def stop(self):
