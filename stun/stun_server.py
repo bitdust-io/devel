@@ -60,6 +60,8 @@ class StunServer(automat.Automat):
     """
     This class implements all the functionality of the ``stun_server()`` state machine.
     """
+    
+    fast = True
 
     def init(self):
         self.listen_port = None

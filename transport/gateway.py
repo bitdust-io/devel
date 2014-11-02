@@ -249,6 +249,8 @@ def stop():
     """
     lg.out(4, 'gateway.stop')
     stop_packets_timeout_loop()
+    shutdown_all_inbox_packets()
+    shutdown_all_outbox_packets()
     result = []
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto): 
@@ -466,6 +468,20 @@ def current_bytes_received():
 
 #------------------------------------------------------------------------------ 
 
+def shutdown_all_outbox_packets():
+    """
+    """
+    lg.out(12, 'gateway.shutdown_all_outbox_packets, %d live objects at the moment' % len(packet_out.queue()))
+    for pkt_out in list(packet_out.queue()):
+        pkt_out.event('cancel', 'shutdown')
+
+def shutdown_all_inbox_packets():
+    """
+    """
+    lg.out(12, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(packet_in.items().values()))
+    for pkt_in in list(packet_in.items().values()):
+        pkt_in.event('cancel', 'shutdown')
+
 def packets_timeout_loop():
     global _PacketsTimeOutTask
     # lg.out(18, 'gateway.packets_timeout_loop')
@@ -642,31 +658,31 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
 
 #------------------------------------------------------------------------------ 
 
-class InputFile():
-    """
-    Keeps info about single incoming file transfer running at the moment.
-    """
-    def __init__(self, filename, transfer_id, proto, host, idurl, size=0):
-        self.filename = filename
-        self.transfer_id = transfer_id
-        self.proto = proto
-        self.host = host
-        self.remote_idurl = idurl
-        self.size = size
-        self.started = time.time()
+#class InputFile():
+#    """
+#    Keeps info about single incoming file transfer running at the moment.
+#    """
+#    def __init__(self, filename, transfer_id, proto, host, idurl, size=0):
+#        self.filename = filename
+#        self.transfer_id = transfer_id
+#        self.proto = proto
+#        self.host = host
+#        self.remote_idurl = idurl
+#        self.size = size
+#        self.started = time.time()
         
 #------------------------------------------------------------------------------ 
 
-class OutputFile():
-    def __init__(self, filename, transfer_id, proto, host, remote_idurl, size=0, description=''):
-        self.filename = filename
-        self.transfer_id = transfer_id
-        self.proto = proto
-        self.host = host
-        self.remote_idurl = remote_idurl
-        self.size = size
-        self.description = description
-        self.started = time.time()
+#class OutputFile():
+#    def __init__(self, filename, transfer_id, proto, host, remote_idurl, size=0, description=''):
+#        self.filename = filename
+#        self.transfer_id = transfer_id
+#        self.proto = proto
+#        self.host = host
+#        self.remote_idurl = remote_idurl
+#        self.size = size
+#        self.description = description
+#        self.started = time.time()
         
 #------------------------------------------------------------------------------ 
 

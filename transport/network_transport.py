@@ -28,14 +28,14 @@ from lib import misc
 from lib import settings
 from lib import nameurl
 
-import gateway
-
 #------------------------------------------------------------------------------ 
 
 class NetworkTransport(automat.Automat):
     """
     This class implements all the functionality of the ``network_transport()`` state machine.
     """
+    
+    fast = True
 
     def __init__(self, proto, interface, state_changed_callback=None):
         self.proto = proto
@@ -57,7 +57,7 @@ class NetworkTransport(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were changed.
         """
         if self.state_changed_callback:
             self.state_changed_callback(self, oldstate, newstate)
@@ -149,6 +149,7 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
+        lg.out(12, 'network_transport.doStop disconnecting %r' % self.interface)
         self.interface.disconnect()
 
     def doStart(self, arg):
@@ -188,7 +189,8 @@ class NetworkTransport(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        gateway.transports().pop(self.proto)
+        # gateway.transports().pop(self.proto)
+        self.interface.shutdown()
         self.destroy()
         self.interface = None
 

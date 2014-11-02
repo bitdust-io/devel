@@ -66,7 +66,7 @@ class LocalService(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        Method to to catch the moment when some event was fired but automat's state was not changed.
+        This method intended to catch the moment when some event was fired but automat's state was not changed.
         """
 
     def A(self, event, arg):
@@ -209,7 +209,7 @@ class LocalService(automat.Automat):
         if len(depends_results) > 0: 
             self.automat('service-depend-off', depends_results)
             return
-        lg.out(2, 'starting service [%s]' % self.service_name)
+        lg.out(2, '[%s] STARTING' % self.service_name)
         try:
             result = self.start()
         except:
@@ -229,18 +229,17 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
-        lg.out(2, 'stopping service [%s]' % self.service_name)
+        lg.out(2, '[%s] STOPPING' % self.service_name)
         try:
             result = self.stop()
         except:
             lg.exc()
-            self.automat('service-stopped', 'exception when stopping')
+            self.automat('service-stopped', 'exception during stopping [%s]' % self.service_name)
             return
         if isinstance(result, Deferred):
-            result.addCallback(lambda x: self.automat('service-stopped'))
-            result.addErrback(lambda x: self.automat('service-stopped', x))
-            return
-        self.automat('service-stopped', result)
+            result.addBoth(lambda x: self.automat('service-stopped', x))
+        else:
+            self.automat('service-stopped', result)
 
     def doSetCallback(self, arg):
         """
@@ -300,8 +299,6 @@ class LocalService(automat.Automat):
         """
         self.result_deferred = None  
         self.destroy()
-        import sys
-        print self.index, self.service_name, sys.getrefcount(self)
             
     #------------------------------------------------------------------------------ 
 

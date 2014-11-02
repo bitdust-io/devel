@@ -28,11 +28,9 @@ EVENTS:
 
 import os
 import time
-import hashlib
 
 from logs import lg
 
-from lib import bpio
 from lib import automat
 from lib import misc
 from lib import commands
@@ -40,7 +38,6 @@ from lib import contacts
 from lib import tmpfile
 from lib import nameurl
 from lib import settings
-from lib import net_misc
 
 from userid import identitycache
 
@@ -153,18 +150,25 @@ class PacketOut(automat.Automat):
         'MSG_1': 'file in queue was cancelled',
         'MSG_2': 'sending file was cancelled',
         'MSG_3': 'response waiting were cancelled',
+        'MSG_4': 'outgoing packet was cancelled',
+        'MSG_5': 'pushing outgoing packet was cancelled',
         }
     
     def __init__(self, outpacket, wide, callbacks={}):
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = callbacks
+        self.caching_deferred = None
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.label = 'out_%d_%s' % (get_packets_counter(), self.description)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 12)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 18)
         increment_packets_counter()
 
     def init(self):
+        """
+        Method to initialize additional variables and flags at creation of the state machine.
+        """
+        self.log_events = True
         self.error_message = None 
         self.time = time.time()
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
@@ -179,12 +183,6 @@ class PacketOut(automat.Automat):
                 self.remote_idurl = None
                 lg.warn('sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contacts.getContact(self.remote_idurl)
-        # self.hash = '%s%s%s%s' % (str(self.time), self.outpacket.Command, 
-        #                           self.outpacket.PacketID, str(self.remote_idurl))
-        # h = hashlib.md5()
-        # h.update(self.hash)
-        # self.md5 = h.hexdigest()
-        # self.md5 = self.description
         self.timeout = None
         self.packetdata = None
         self.filename = None
@@ -238,6 +236,7 @@ class PacketOut(automat.Automat):
             if event == 'run' and self.isRemoteIdentityKnown(arg) :
                 self.state = 'ITEMS?'
                 self.doInit(arg)
+                self.Cancelled=False
                 self.doReportStarted(arg)
                 self.doSerializeAndWrite(arg)
                 self.doPushItems(arg)
@@ -249,6 +248,7 @@ class PacketOut(automat.Automat):
         elif self.state == 'CACHING':
             if event == 'remote-identity-on-hand' :
                 self.state = 'ITEMS?'
+                self.Cancelled=False
                 self.doReportStarted(arg)
                 self.doSerializeAndWrite(arg)
                 self.doPushItems(arg)
@@ -256,16 +256,31 @@ class PacketOut(automat.Automat):
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
+            elif event == 'cancel' :
+                self.state = 'CANCEL'
+                self.doErrMsg(event,self.msg('MSG_4', arg))
+                self.doReportCancelled(arg)
+                self.doDestroyMe(arg)
         #---FAILED---
         elif self.state == 'FAILED':
             pass
         #---ITEMS?---
         elif self.state == 'ITEMS?':
-            if event == 'items-sent' :
-                self.state = 'IN_QUEUE'
-            elif event == 'nothing-to-send' or event == 'write-error' :
+            if event == 'nothing-to-send' or event == 'write-error' :
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
+                self.doDestroyMe(arg)
+            elif event == 'items-sent' and not self.Cancelled :
+                self.state = 'IN_QUEUE'
+            elif event == 'cancel' :
+                self.Cancelled=True
+            elif event == 'items-sent' and self.Cancelled :
+                self.state = 'CANCEL'
+                self.doCancelItems(arg)
+                self.doErrMsg(event,self.msg('MSG_5', arg))
+                self.doReportCancelItems(arg)
+                self.doPopItems(arg)
+                self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
         #---IN_QUEUE---
         elif self.state == 'IN_QUEUE':
@@ -297,16 +312,16 @@ class PacketOut(automat.Automat):
             pass
         #---RESPONSE?---
         elif self.state == 'RESPONSE?':
-            if event == 'inbox-packet' and self.isResponse(arg) :
-                self.state = 'SENT'
-                self.doSaveResponse(arg)
-                self.doReportDoneWithAck(arg)
-                self.doDestroyMe(arg)
-            elif event == 'cancel' :
+            if event == 'cancel' :
                 self.state = 'CANCEL'
                 self.doErrMsg(event,self.msg('MSG_3', arg))
                 self.doReportCancelItems(arg)
                 self.doReportCancelled(arg)
+                self.doDestroyMe(arg)
+            elif event == 'inbox-packet' and self.isResponse(arg) :
+                self.state = 'SENT'
+                self.doSaveResponse(arg)
+                self.doReportDoneWithAck(arg)
                 self.doDestroyMe(arg)
         return None
 
@@ -344,9 +359,9 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        d = identitycache.immediatelyCaching(self.remote_idurl)
-        d.addCallback(self._remote_identity_cached)
-        d.addErrback(lambda err: self.automat('failed'))
+        self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
+        self.caching_deferred.addCallback(self._remote_identity_cached)
+        self.caching_deferred.addErrback(lambda err: self.automat('failed'))
 
     def doSerializeAndWrite(self, arg):
         """
@@ -433,9 +448,11 @@ class PacketOut(automat.Automat):
         Action method.
         """
         for i in self.items:
-            if i.transfer_id:
-                gateway.transport(i.proto).call('cancel_file_sending', i.transfer_id)
-            gateway.transport(i.proto).call('cancel_outbox_file', i.host, self.filename)
+            t = gateway.transports().get(i.proto, None)
+            if t:
+                if i.transfer_id:
+                    t.call('cancel_file_sending', i.transfer_id)
+                t.call('cancel_outbox_file', i.host, self.filename)
                 
     def doReportStarted(self, arg):
         """
@@ -513,14 +530,17 @@ class PacketOut(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
+        if self.caching_deferred:
+            self.caching_deferred.cancel()
+            self.caching_deferred = None
         self.outpacket = None
         self.remote_identity = None
         self.callbacks.clear()
         queue().remove(self)
         self.destroy()
 
-
     def _remote_identity_cached(self, xmlsrc):
+        self.caching_deferred = None
         self.remote_identity = contacts.getContact(self.remote_idurl)
         if self.remote_identity is None:
             self.automat('failed')

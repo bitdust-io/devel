@@ -62,6 +62,18 @@ def A(event=None, arg=None):
     return _UDPNode
 
 
+def Destroy():
+    """
+    Destroy udp_node() automat and remove its instance from memory.
+    """
+    global _UDPNode
+    if _UDPNode is None:
+        return
+    _UDPNode.destroy()
+    del _UDPNode
+    _UDPNode = None
+
+
 class UDPNode(automat.Automat):
     """
     This class implements all the functionality of the ``udp_node()`` state machine.
@@ -77,6 +89,7 @@ class UDPNode(automat.Automat):
         """
         Method to initialize additional variables and flags at creation of the state machine.
         """
+        self.log_events = True
         self.listen_port = None
         self.my_id = None
         self.my_address = None
@@ -247,7 +260,7 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
-        stun_client.A('start', (self.listen_port, self._stun_finished))
+        stun_client.A('start', self._stun_finished)
 
     def doStartNewConnector(self, arg):
         """
@@ -307,9 +320,18 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
+        try:
+            typ, new_ip, new_port = arg
+            new_addr = (new_ip, new_port)
+        except:
+            lg.exc()
+            return
+        lg.out(4, 'udp_node.doUpdateMyAddress typ=[%s]' % typ)
         if self.my_address:
-            lg.out(4, 'udp_node.doUpdateMyAddress old=%s new=%s' % (str(self.my_address), str(arg)))
-        self.my_address = arg
+            lg.out(4, '    old=%s new=%s' % (str(self.my_address), str(new_addr)))
+        else:
+            lg.out(4, '    new=%s' % str(new_addr))
+        self.my_address = new_addr
         # bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
         #TODO call top level code to notify about my external IP changes
 
@@ -341,10 +363,13 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
+        lg.out(12, 'udp_node.doDisconnect going to close %d sessions and %d connectors' % (
+            len(udp_session.sessions().values()), len(udp_connector.connectors().values())))
         udp_session.stop_process_sessions()
         for s in udp_session.sessions().values():
-            lg.out(18, 'udp_node.doShutdown  send "shutdown" to %s' % s)
             s.automat('shutdown')
+        for c in udp_connector.connectors().values():
+            c.automat('abort')
         # udp.remove_datagram_receiver_callback(self._datagram_received)
         self.automat('disconnected')
 
@@ -362,7 +387,7 @@ class UDPNode(automat.Automat):
         if not self.notified:
             udp_interface.interface_receiving_started(self.my_id)
             self.notified = True
-            lg.out(4, 'udp_node.doNotifyConnected  my host is %s' % self.my_id)
+            lg.out(4, 'udp_node.doNotifyConnected my host is %s' % self.my_id)
         
     def doNotifyFailed(self, arg):
         """
@@ -381,12 +406,14 @@ class UDPNode(automat.Automat):
         self.automat('datagram-received', (datagram, address))
         return False
         
-    def _stun_finished(self, result, address=None):
-        self.automat(result, address)
+    def _stun_finished(self, result, typ, ip, details):
+        if result == 'stun-success' and typ == 'symmetric':
+            result = 'stun-failed'
+        self.automat(result, (typ, ip, details))
         
     def _got_my_address(self, value):
         if type(value) != dict:
-            lg.warn('  can not read my address')
+            lg.warn('can not read my address')
             self.automat('dht-write-failed')
             return
         hkey = dht_service.key_to_hash(self.my_id+':address')

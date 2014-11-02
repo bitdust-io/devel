@@ -95,10 +95,24 @@ def A(event=None, arg=None, use_reactor=True):
     return _Initializer
 
 
+def Destroy():
+    """
+    Destroy initializer() automat and remove its instance from memory.
+    """
+    global _Initializer
+    if _Initializer is None:
+        return
+    _Initializer.destroy()
+    del _Initializer
+    _Initializer = None
+    
+    
 class Initializer(automat.Automat):
     """
     A class to execute start up operations to launch BitPie.NET software. 
     """
+    
+    fast = True
     
     def init(self):
         self.flagCmdLine = False
@@ -112,20 +126,20 @@ class Initializer(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'run' :
                 self.state = 'LOCAL'
+                shutdowner.A('init')
                 self.doInitLocal(arg)
                 self.flagCmdLine=False
-                shutdowner.A('init')
             elif event == 'run-cmd-line-register' :
                 self.state = 'INSTALL'
+                shutdowner.A('init')
                 self.flagCmdLine=True
                 installer.A('register-cmd-line', arg)
-                shutdowner.A('init')
                 shutdowner.A('ready')
             elif event == 'run-cmd-line-recover' :
                 self.state = 'INSTALL'
+                shutdowner.A('init')
                 self.flagCmdLine=True
                 installer.A('recover-cmd-line', arg)
-                shutdowner.A('init')
                 shutdowner.A('ready')
         #---LOCAL---
         elif self.state == 'LOCAL':
@@ -236,10 +250,10 @@ class Initializer(automat.Automat):
         """
         lg.out(2, 'initializer.doInitServices')
         driver.init()
-        driver.start()
+        d = driver.start()
         from twisted.internet import reactor
         # reactor.addSystemEventTrigger('before', 'shutdown', driver.stop)
-        self.automat('init-services-done')
+        d.addBoth(lambda x: self.automat('init-services-done'))
 
     def doInitContacts(self, arg):
         lg.out(2, 'initializer.doInitContacts')

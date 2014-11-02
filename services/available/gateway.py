@@ -26,7 +26,6 @@ class GatewayService(LocalService):
                 ]
     
     def start(self):
-        # from lib import settings
         from transport import gateway
 #        transports_list = []
 #        if settings.enableTCP():
@@ -39,9 +38,9 @@ class GatewayService(LocalService):
     
     def stop(self):
         from transport import gateway
-        gateway.stop()
+        d = gateway.stop()
         gateway.shutdown()
-        return True
+        return d
     
     
 

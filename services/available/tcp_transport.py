@@ -46,10 +46,11 @@ class TCPTransportService(LocalService):
     
     def stop(self):
         from transport import gateway
-        self.transport.automat('stop')
         gateway.detach(self)
-        del self.transport
+        t = self.transport
         self.transport = None
+        self.interface = None
+        t.automat('shutdown')
         return True
     
     def enabled(self):

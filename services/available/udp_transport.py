@@ -47,8 +47,11 @@ class UDPTransportService(LocalService):
     
     def stop(self):
         from transport import gateway
-        self.transport.automat('stop')
         gateway.detach(self)
+        t = self.transport
+        self.transport = None
+        self.interface = None
+        t.automat('shutdown')
         return True
     
     def enabled(self):
@@ -70,8 +73,9 @@ class UDPTransportService(LocalService):
             if newstate in ['LISTENING', 'OFFLINE',]:
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
-        from p2p import network_connector
-        network_connector.A('network-transport-state-changed', self.transport)
+        if self.transport:
+            from p2p import network_connector
+            network_connector.A('network-transport-state-changed', self.transport)
         
         
     

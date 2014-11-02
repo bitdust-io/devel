@@ -50,6 +50,18 @@ def A(event=None, arg=None):
         _NicknameHolder.automat(event, arg)
     return _NicknameHolder
 
+
+def Destroy():
+    """
+    Destroy nickname_holder() automat and remove its instance from memory.
+    """
+    global _NicknameHolder
+    if _NicknameHolder is None:
+        return
+    _NicknameHolder.destroy()
+    del _NicknameHolder
+    _NicknameHolder = None
+    
 #------------------------------------------------------------------------------ 
 
 class NicknameHolder(automat.Automat):

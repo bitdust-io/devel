@@ -244,12 +244,12 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
           
-    def __init__(self, name, state, debug_level=18):
+    def __init__(self, name, state, debug_level=18, log_events=False):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
         self.debug_level = debug_level
-        self.log_events = False
+        self.log_events = log_events
         self._timers = {}
         self.init()
         self.startTimers()
@@ -280,9 +280,9 @@ class Automat(object):
 
     def __repr__(self):
         """
-        Will print something like: "network_connector[CONNECTED]"
+        Will print something like: "network_connector(CONNECTED)"
         """
-        return '%s[%s]' % (self.id, self.state)
+        return '%s(%s)' % (self.id, self.state)
 
     def init(self):
         """
@@ -295,11 +295,9 @@ class Automat(object):
         and delete that instance. Be sure to not have any existing references on 
         that instance so destructor will be called immediately.
         """
-        self.log(self.debug_level, 'destroying %r' % self)
-        # import sys
-        # print sys.getrefcount(self)
+        self.log(self.debug_level, 'destroying %r, refs=%d' % (self, sys.getrefcount(self)))
         self.stopTimers()
-        self.state = 'NOT_EXIST'
+        # self.state = 'NOT_EXIST'
         objects().pop(self.index)
         # print sys.getrefcount(self)
                     
@@ -359,8 +357,11 @@ class Automat(object):
         You can call event directly to execute ``self.A()`` immediately. 
         """
         global _StateChangedCallback
-        if _LogEvents or self.log_events:
+        if _LogEvents:
             self.log(self.debug_level * 4, '%s fired with event "%s", refs=%d' % (
+                self, event, sys.getrefcount(self)))
+        elif self.log_events:
+            self.log(self.debug_level, '%s fired with event "%s", refs=%d' % (
                 self, event, sys.getrefcount(self)))
         old_state = self.state
         if self.post:
@@ -378,7 +379,7 @@ class Automat(object):
                 return
             new_state = self.state
         if old_state != new_state:
-            self.log(self.debug_level, '%s(%s): [%s]->[%s]' % (self.id, event, old_state, new_state))
+            self.log(self.debug_level, '%s(%s): (%s)->(%s)' % (self.id, event, old_state, new_state))
             self.stopTimers()
             self.state_changed(old_state, new_state, event, arg)
             self.startTimers()

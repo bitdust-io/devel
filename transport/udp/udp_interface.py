@@ -83,11 +83,11 @@ class GateInterface():
         """
         global _GateProxy
         lg.out(4, 'udp_interface.shutdown')
-        ret = self.disconnect()
+        udp_node.Destroy()
         if _GateProxy:
             # del _GateProxy
             _GateProxy = None
-        return ret
+        return succeed(True)
 
     def receive(self, options):
         """
@@ -99,8 +99,8 @@ class GateInterface():
     def disconnect(self):
         """
         """
+        lg.out(4, 'udp_interface.disconnect')
         udp_node.A('go-offline')
-        # lg.out(8, 'udp_interface.disconnect')
         return succeed(True)
 
     def send_file(self, filename, host, description='', single=False):

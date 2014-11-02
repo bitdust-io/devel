@@ -279,9 +279,9 @@ class NetworkConnector(Automat):
             from stun import stun_server
             udp_port = int(settings.getUDPPort())
             stun_server.A('start', udp_port)
-        if driver.is_started('private_messages'):
-            from userid import nickname_holder
-            nickname_holder.A('set', None)
+#        if driver.is_started('private_messages'):
+#            from userid import nickname_holder
+#            nickname_holder.A('set', None)
         # if driver.is_started('gateway'):
         #     from transport import gateway
         #     gateway.start()

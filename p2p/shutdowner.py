@@ -69,6 +69,11 @@ def A(event=None, arg=None):
 
 
 class Shutdowner(automat.Automat):
+    """
+    This is a state machine to manage a process of correctly finishing the BitPie.NET software. 
+    """
+    
+    fast = True
     
     def init(self):
         self.flagApp = False
@@ -95,7 +100,7 @@ class Shutdowner(automat.Automat):
                 self.flagReactor=True
             elif event == 'ready' and self.flagReactor :
                 self.state = 'FINISHED'
-                self.doKillAutomats(arg)
+                self.doDestroyMe(arg)
             elif event == 'ready' and not self.flagReactor and self.flagApp :
                 self.state = 'STOPPING'
                 self.doShutdown(arg)
@@ -108,7 +113,7 @@ class Shutdowner(automat.Automat):
                 self.doShutdown(arg)
             elif event == 'reactor-stopped' :
                 self.state = 'FINISHED'
-                self.doKillAutomats(arg)
+                self.doDestroyMe(arg)
             elif event == 'block' :
                 self.state = 'BLOCKED'
         #---BLOCKED---
@@ -125,7 +130,7 @@ class Shutdowner(automat.Automat):
                 self.doShutdown(arg)
             elif event == 'unblock' and self.flagReactor :
                 self.state = 'FINISHED'
-                self.doKillAutomats(arg)
+                self.doDestroyMe(arg)
         #---FINISHED---
         elif self.state == 'FINISHED':
             pass
@@ -133,36 +138,15 @@ class Shutdowner(automat.Automat):
         elif self.state == 'STOPPING':
             if event == 'reactor-stopped' :
                 self.state = 'FINISHED'
-                self.doKillAutomats(arg)
+                self.doDestroyMe(arg)
+        return None
 
     def doSaveParam(self, arg):
         self.shutdown_param = arg
         lg.out(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
 
-    def doKillAutomats(self, arg):
-        """
-        Action method.
-        """
-        # import fire_hire
-        # fire_hire._FireHire = None
-        # import backup_monitor
-        # backup_monitor._BackupMonitor = None
-        # import network_connector
-        # network_connector._NetworkConnector = None
-        # global _Shutdowner
-        # _Shutdowner = None
-        # automat.objects().clear()
-        global _Shutdowner
-        del _Shutdowner
-        _Shutdowner = None
-        self.destroy()
-        lg.out(2, 'shutdowner.doKillAutomats %d machines left in memory' % len(automat.objects()))
-        print automat.objects().values() 
-        automat.objects().clear()
-
     def doShutdown(self, arg):
         lg.out(2, 'shutdowner.doShutdown %d machines currently' % len(automat.objects()))
-        print automat.objects().values() 
         param = arg
         if self.shutdown_param is not None:
             param = self.shutdown_param
@@ -179,8 +163,13 @@ class Shutdowner(automat.Automat):
         elif param == 'restartnshow':
             init_shutdown.shutdown_restart('show')
 
-
-
-
-
+    def doDestroyMe(self, arg):
+        """
+        Action method.
+        """
+        global _Shutdowner
+        del _Shutdowner
+        _Shutdowner = None
+        self.destroy()
+        lg.out(2, 'shutdowner.doDestroyMe %d machines left in memory' % len(automat.objects()))
 

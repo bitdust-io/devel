@@ -67,7 +67,7 @@ def is_exist(name):
 
 #------------------------------------------------------------------------------ 
 
-def init(callback=None):
+def init():
     """
     """
     lg.out(2, 'driver.init')
@@ -93,25 +93,20 @@ def init(callback=None):
         if services()[name].enabled():
             enabled_services().add(name)
     build_order()
-    if callback:
-        callback()
 
 
-def shutdown(callback=None):
+def shutdown():
     """
     """
     lg.out(2, 'driver.shutdown')
     while len(services()):
         name, svc = services().popitem()
-        print sys.getrefcount(svc) 
-        lg.out(2, '    closing %r' % svc)
+        # print sys.getrefcount(svc) 
+        lg.out(2, '[%s] CLOSING' % name)
         svc.automat('shutdown')
         del svc
         svc = None
         enabled_services().discard(name)
-    # services().clear()
-    if callback:
-        callback()
 
 
 def build_order():
@@ -209,7 +204,7 @@ def on_service_callback(result, service_name):
     if not svc:
         raise ServiceNotFound(service_name)
     if result == 'started':
-        lg.out(4, 'service [%s] STARTED' % service_name)
+        lg.out(2, '[%s] STARTED' % service_name)
         relative_services = []
         for other_name in services().keys():
             if other_name == service_name:
@@ -232,19 +227,21 @@ def on_service_callback(result, service_name):
                     continue
                 relative_service.automat('start')
     elif result == 'stopped':
-        lg.out(4, 'service [%s] STOPPED' % service_name)
+        lg.out(2, '[%s] STOPPED' % service_name)
     return result
 
 def on_started_all_services(results):
     lg.out(2, 'driver.on_started_all_services')
     global _StartingDeferred
     _StartingDeferred = None
+    return results
     
 def on_stopped_all_services(results):
     lg.out(2, 'driver.on_stopped_all_services')
     print results
     global _StopingDeferred
     _StopingDeferred = None
+    return results
 
 #------------------------------------------------------------------------------ 
 

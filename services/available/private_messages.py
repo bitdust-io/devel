@@ -27,9 +27,13 @@ class PrivateMessagesService(LocalService):
                 ]
     
     def start(self):
+        from userid import nickname_holder
+        nickname_holder.A('set', None)
         return True
     
     def stop(self):
+        from userid import nickname_holder
+        nickname_holder.Destroy()
         return True
     
     

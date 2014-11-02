@@ -139,7 +139,7 @@ def run(UI='', options=None, args=None, overDict=None):
     lg.out(4, 'bpmain.run import automats')
 
     #---START!---
-    import lib.automat as automat
+    from lib import automat
     automat.LifeBegins(lg.when_life_begins())
     # automat.OpenLogFile(settings.AutomatsLog())
     
@@ -148,14 +148,19 @@ def run(UI='', options=None, args=None, overDict=None):
 
     lg.out(4, 'bpmain.run send event "run" to initializer()')
     
-    #reactor.callLater(0, initializer.A, 'run', UI)
-    initializer.A('run', UI)
+    reactor.callWhenRunning(initializer.A, 'run', UI)
 
     lg.out(2, 'bpmain.run calling reactor.run()')
     reactor.run()
-
     lg.out(2, 'bpmain.run reactor stopped')
+    
     shutdowner.A('reactor-stopped')
+
+    automat.objects().clear()
+    if len(automat.objects()) > 0:
+        lg.warn('%d automats stay uncleared')
+        for a in automat.objects().values():
+            lg.out(2, '    %r' % a)
 
     lg.out(2, 'bpmain.run finished, EXIT')
 

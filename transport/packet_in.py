@@ -95,7 +95,7 @@ class PacketIn(automat.Automat):
         self.status = None
         self.error_message = None
         self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 12)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 18)
         increment_packets_counter()
         
     def is_timed_out(self):
@@ -107,6 +107,7 @@ class PacketIn(automat.Automat):
         """
         Method to initialize additional variables and flags at creation of the state machine.
         """
+        self.log_events = False
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -198,7 +199,9 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        gateway.transport(self.proto).call('cancel_file_receiving', self.transfer_id)
+        t = gateway.transports().get(self.proto, None)
+        if t: 
+            t.call('cancel_file_receiving', self.transfer_id)
 
     def doCacheRemoteIdentity(self, arg):
         """
