@@ -40,6 +40,7 @@ from logs import webtraffic
 from lib import bpio
 from lib import misc
 from lib import net_misc
+from lib import config
 from lib import settings
 from lib import userconfig
 from lib import diskspace
@@ -50,7 +51,11 @@ from lib import contacts
 from lib import nameurl
 from lib import schedule
 from lib import automat
+from lib import automats
 from lib import packetid
+from lib import config
+
+from services import driver
 
 from transport import stats
 from transport import callback
@@ -193,9 +198,9 @@ _SettingsItems = {
     '0|backups'             :('/'+_PAGE_BACKUP_SETTINGS,    'icons/backup-options.png'),
     '1|security'            :('/'+_PAGE_SECURITY,           'icons/private-key.png'),
     '2|network'             :('/'+_PAGE_NETWORK_SETTINGS,   'icons/network-settings.png'),
-    '3|emergency'           :('/'+_PAGE_EMERGENCY,          'icons/emergency01.png'),
-    '4|updates'             :('/'+_PAGE_SOFTWARE_UPDATE,    'icons/software-update.png'),
-    '5|development'         :('/'+_PAGE_DEVELOPMENT,        'icons/python.png'),
+    # '3|emergency'           :('/'+_PAGE_EMERGENCY,          'icons/emergency01.png'),
+    '3|updates'             :('/'+_PAGE_SOFTWARE_UPDATE,    'icons/software-update.png'),
+    '4|development'         :('/'+_PAGE_DEVELOPMENT,        'icons/python.png'),
     #'5|shutdown'            :('/?action=exit',              'icons/exit.png'),
     }
 
@@ -252,7 +257,7 @@ def init(port = 6001):
 
     events.init(SendCommandToGUI)
     
-    # links
+    #---callbacks---
     # transport_control.SetContactAliveStateNotifierFunc(OnAliveStateChanged)
     # p2p_service.SetTrafficInFunc(OnTrafficIn)
     # p2p_service.SetTrafficOutFunc(OnTrafficOut)
@@ -261,6 +266,8 @@ def init(port = 6001):
     callback.add_inbox_callback(OnTrafficIn)
     callback.add_finish_file_sending_callback(OnTrafficOut)
     # callback.add_queue_item_status_callback(OnPacketOut)
+    automats.SetGlobalStateNotifyFunc(OnGlobalStateChanged)
+    automat.SetStateChangedCallback(OnSingleStateChanged)
 
     def version():
         global version_number
@@ -671,7 +678,10 @@ def ReadOnly():
     return False
 
 def GetGlobalState():
-    return 'unknown'
+    try:
+        return automats.get_global_state()
+    except:
+        return 'unknown'
 
 def check_install():
     return misc.isLocalIdentityReady() and key.isMyKeyReady()
@@ -1144,7 +1154,8 @@ class ConfirmPage(Page):
         urlyes = misc.unpack_url_param(urlyes)
         urlno = misc.unpack_url_param(urlno)
         text = misc.unpack_url_param(text)
-        text = re.sub('\%\(option\:(.+?)\)s', lambda m: settings.uconfig(m.group(1)), text)
+        text = re.sub('\%\(option\:(.+?)\)s', 
+                  lambda m: config.conf().getData(m.group(1)), text)
         args = arg(request, 'args')
         if args:
             args = base64.urlsafe_b64decode(args)
@@ -7281,11 +7292,11 @@ class EmergencyPage(Page):
         src += 'if your backups are not working, or if your machine appears to not be working.</p>\n'
         src += '<br><br><b>What email address should we contact you at? Email contact is free.</b>\n'
         src += '<br><br><input type="text" name="email" size="25" value="%s" />\n' % arg(request, 'email')
-        src += '<br><br><b>%s</b>\n' % settings.uconfig().get('emergency.emergency-phone', 'info')
+        src += '<br><br><b>%s</b>\n' % '' # config.conf().getData('emergency.emergency-phone', 'info')
         src += '<br><br><input type="text" name="phone" size="25" value="%s" />\n' % arg(request, 'phone')
-        src += '<br><br><b>%s</b>\n' % settings.uconfig().get('emergency.emergency-fax', 'info')
+        src += '<br><br><b>%s</b>\n' % '' # config.conf().getData('emergency.emergency-fax', 'info')
         src += '<br><br><input type="text" name="fax" size="25" value="%s" />\n' % arg(request, 'fax')
-        src += '<br><br><b>%s</b>\n' % settings.uconfig().get('emergency.emergency-text', 'info')
+        src += '<br><br><b>%s</b>\n' % '' # config.conf().getData('emergency.emergency-text', 'info')
         src += '<br><br><textarea name="text" rows="5" cols="40">%s</textarea><br>\n' % arg(request, 'text')
         # if message != '':
         #     src += '<br><br><font color="%s">%s</font>\n' % (messageColor, message)
@@ -7668,10 +7679,10 @@ def InitSettingsTreePages():
     _SettingsTreeNodesDict = {
     'settings':                 SettingsTreeNode,
 
-    'storage':         SettingsTreeNode,
-    'suppliers':        SettingsTreeComboboxNode,
-    'donated':         SettingsTreeDiskSpaceNode,
-    'needed':         SettingsTreeDiskSpaceNode,
+    'storage':                  SettingsTreeNode,
+    'suppliers':                SettingsTreeComboboxNode,
+    'donated':                  SettingsTreeDiskSpaceNode,
+    'needed':                   SettingsTreeDiskSpaceNode,
     
     'backup-block-size':        SettingsTreeNumericNonZeroPositiveNode,
     'backup-max-block-size':    SettingsTreeNumericNonZeroPositiveNode,
@@ -7790,7 +7801,7 @@ class SettingsTreeNode(Page):
                 lg.out(14, 'webcontrol.SettingsTreeNode.renderPage leafs=%s' % (self.leafs))
                 for i in range(0, len(self.leafs)):
                     fullname = '.'.join(self.leafs[0:i+1])
-                    label = settings.uconfig().get(fullname, 'label')
+                    label = fullname # config.conf().getData(fullname)
                     if label is None:
                         label = self.leafs[i]
                     header += ' > ' + label
@@ -7807,17 +7818,19 @@ class SettingsTreeNode(Page):
         return html(request, body=src, back=back, title=header)
 
     def requestModify(self, path, value):
-        if p2p_connector.A().state in ['TRANSPORTS', 'NETWORK?']:
-            self.modifyList.append((path, value))
-            if self.modifyTask is None:
-                self.modifyTask = reactor.callLater(1, self.modifyWorker)
-                lg.out(4, 'webcontrol.SettingsTreeNode.requestModify (%s) task for %s' % (self.path, path))
-        else:
-            oldvalue = settings.uconfig(path)
-            settings.uconfig().set(path, value)
-            settings.uconfig().update()
-            self.update()
-            self.modified(oldvalue)
+#        if p2p_connector.A().state in ['TRANSPORTS', 'NETWORK?']:
+#            self.modifyList.append((path, value))
+#            if self.modifyTask is None:
+#                self.modifyTask = reactor.callLater(1, self.modifyWorker)
+#                lg.out(4, 'webcontrol.SettingsTreeNode.requestModify (%s) task for %s' % (self.path, path))
+#        else:
+        # oldvalue = settings.uconfig(path)
+        # config.conf().setData(path, value)
+        # 
+        oldvalue = config.conf().getData(path)
+        config.conf().setData(path, value)
+        self.update()
+        self.modified(oldvalue)
             
     def modifyWorker(self):
         #out(4, 'webcontrol.SettingsTreeNode.modifyWorker(%s)' % self.path)
@@ -7826,25 +7839,41 @@ class SettingsTreeNode(Page):
         if p2p_connector.A().state in ['TRANSPORTS', 'NETWORK?']:
             self.modifyTask = reactor.callLater(1, self.modifyWorker)
             return
-        oldvalue = settings.uconfig(self.path)
+        oldvalue = config.conf().getData(self.path)
         for path, value in self.modifyList:
-            settings.uconfig().set(path, value)
-        settings.uconfig().update()
+            config.conf().setData(path, value)
+        
         self.update()
         self.modified(oldvalue)
         self.modifyList = []
         self.modifyTask = None
 
     def update(self):
-        self.exist = settings.uconfig().has(self.path)
-        self.value = settings.uconfig().data.get(self.path, '')
-        self.label = settings.uconfig().labels.get(self.path, '')
-        self.info = settings.uconfig().infos.get(self.path, '')
-        self.leafs = self.path.split('.')
-        self.has_childs = len(settings.uconfig().get_childs(self.path)) > 0
+        self.exist = config.conf().has(self.path)
+        self.value = config.conf().getData(self.path)
+        self.label = self.path # settings.uconfig().labels.get(self.path, '')
+        self.info = '' # settings.uconfig().infos.get(self.path, '')
+        self.leafs = self.path.split('/')
+        self.has_childs = len(config.conf().listEntries(self.path)) > 0
 
     def modified(self, old_value=None):
         lg.out(8, 'webcontrol.SettingsTreeNode.modified %s %s' % (self.path, self.value))
+
+        if self.path.count('service/'):
+            svc_name = self.path.replace('service/', 'service_').replace('/enabled', '').replace('-', '_')
+            svc = driver.services().get(svc_name, None) 
+            if svc:
+                # if settings.uconfig(self.path).lower() == 'true':
+                v = config.conf().getBool(self.path)
+                if v is None:
+                    lg.warn('%s is None' % self.path)
+                else:
+                    if v:
+                        svc.automat('start')
+                    else:
+                        svc.automat('stop')
+            else:
+                lg.warn('%s not found: %s' % (svc_name, self.path))
 
         if self.path in (
                 'transport.transport-tcp.transport-tcp-port',
@@ -7914,9 +7943,10 @@ class SettingsTreeNode(Page):
             return ''
         src = '<br>'
         back = arg(request, 'back')
-        childs = settings.uconfig().get_childs(self.path).keys()
+        # childs = settings.uconfig().get_childs(self.path).keys()
+        childs = config.conf().listEntries(self.path)
         lg.out(12, 'webcontrol.SettingsTreeNode.body childs='+str(childs))
-        for path in userconfig.all_options():
+        for path in config.conf().listAllEntries():
             if path.strip() == '':
                 continue
             if path not in childs:
@@ -7927,7 +7957,7 @@ class SettingsTreeNode(Page):
             if typ is None:
                 continue
             if len(leafs) == len(self.leafs)+1:
-                label = settings.uconfig().labels.get(path, '')
+                label = path # settings.uconfig().labels.get(path, '')
                 args = ''
                 if back:
                     args += '?back=' + back
@@ -8258,10 +8288,10 @@ class SettingsPage(Page):
                 continue
 #            if path not in settings.uconfig().public_options:
 #                continue
-            value = settings.uconfig().data.get(path, '')
-            label = settings.uconfig().labels.get(path, '')
-            info = settings.uconfig().infos.get(path, '')
-            leafs = path.split('.')
+            value = config.conf().getData(path)
+            label = path # settings.uconfig().labels.get(path, '')
+            info = '' # settings.uconfig().infos.get(path, '')
+            leafs = path.split('/')
             name = leafs[-1]
             typ = _SettingsTreeNodesDict.get(name, None)
 
@@ -8296,9 +8326,9 @@ class SettingsListPage(Page):
                 continue
             if path not in userconfig.public_options():
                 continue
-            value = settings.uconfig().data.get(path, '').replace('\n', ' ')
-            label = settings.uconfig().labels.get(path, '')
-            info = settings.uconfig().infos.get(path, '')
+            value = config.conf().getData(path).replace('\n', ' ')
+            label = path # settings.uconfig().labels.get(path, '')
+            info = '' # settings.uconfig().infos.get(path, '')
             src += '<tr>\n'
             src += '<td><a href="%s">%s</a></td>\n' % (_PAGE_SETTINGS+'/'+path, path)
             src += '<td>%s</td>\n' % label

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#backup_monitor.py
+#service_tcp_connections.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,24 +8,21 @@
 #
 
 """
-.. module:: backup_monitor
+.. module:: service_tcp_connections
 
 """
 
 from services.local_service import LocalService
 
 def create_service():
-    return BackupMonitorService()
+    return TCPConnectionsService()
     
-class BackupMonitorService(LocalService):
+class TCPConnectionsService(LocalService):
     
-    service_name = 'backup_monitor'
+    service_name = 'service_tcp_connections'
     
     def dependent_on(self):
-        return ['list_files',
-                'fire_hire',
-                'rebuilding',
-                ]
+        return []
     
     def start(self):
         return True

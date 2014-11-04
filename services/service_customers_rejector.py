@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#customers_rejector.py
+#service_customers_rejector.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: customers_rejector
+.. module:: service_customers_rejector
 
 """
 
@@ -19,15 +19,20 @@ def create_service():
     
 class CustomersRejectorService(LocalService):
     
-    service_name = 'customers_rejector'
+    service_name = 'service_customers_rejector'
     
     def dependent_on(self):
-        return ['gateway',]
+        return ['service_customer',
+                ]
     
     def start(self):
+        from p2p import customers_rejector
+        customers_rejector.A('restart')
         return True
     
     def stop(self):
+        from p2p import customers_rejector
+        customers_rejector.Destroy()
         return True
     
     

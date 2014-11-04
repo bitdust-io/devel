@@ -1035,8 +1035,11 @@ def main():
         if len(args) >= 2 and args[1].lower() == 'schedule':
             print_text(help.schedule_format())
         elif len(args) >= 2 and args[1].lower() == 'settings':
-            from lib import settings
-            settings.uconfig().print_all()
+            # from lib import settings
+            # settings.uconfig().print_all()
+            from lib import config
+            for k in config.conf().listAllEntries():
+                print k, config.conf().getData(k)
         else:
             print_text(help.help())
             print_text(pars.format_option_help())

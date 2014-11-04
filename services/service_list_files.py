@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#list_files.py
+#service_list_files.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: list_files
+.. module:: service_list_files
 
 """
 
@@ -19,16 +19,20 @@ def create_service():
     
 class ListFilesService(LocalService):
     
-    service_name = 'list_files'
+    service_name = 'service_list_files'
     
     def dependent_on(self):
-        return ['customer',
+        return ['service_customer',
                 ]
     
     def start(self):
+        from p2p import list_files_orator
+        list_files_orator.A('init')
         return True
     
     def stop(self):
+        from p2p import list_files_orator
+        list_files_orator.Destroy()
         return True
     
     

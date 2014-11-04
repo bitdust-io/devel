@@ -90,6 +90,8 @@ def init():
     lg.out(4,"message.init")
 ##    guimessage.UpdateCorrespondents()
 
+#------------------------------------------------------------------------------ 
+
 def ConnectCorrespondent(idurl):
     pass
 

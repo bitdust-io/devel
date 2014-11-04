@@ -127,7 +127,7 @@ class NetworkConnector(Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('NETWORK ' + newstate)
-        if driver.is_started('p2p_hookups'):
+        if driver.is_started('service_p2p_hookups'):
             import p2p_connector
             p2p_connector.A('network_connector.state', newstate)
             tray_icon.state_changed(self.state, p2p_connector.A().state)
@@ -212,12 +212,12 @@ class NetworkConnector(Automat):
         return settings.enableUPNP() and time.time() - self.last_upnp_time < 60*60
 
     def isConnectionAlive(self, arg):
-        if driver.is_started('udp_datagrams'):
+        if driver.is_started('service_udp_datagrams'):
             from lib import udp
             if time.time() - udp.get_last_datagram_time() < 60:
                 if settings.enableUDP() and settings.enableUDPreceiving():
                     return True
-        if driver.is_started('gateway'):
+        if driver.is_started('service_gateway'):
             from transport import gateway
             if time.time() - gateway.last_inbox_time() < 60:
                 return True
@@ -243,7 +243,7 @@ class NetworkConnector(Automat):
         """
         Condition method.
         """
-        if not driver.is_started('gateway'):
+        if not driver.is_started('service_gateway'):
             return True
         from transport import gateway
         transports = gateway.transports().values()
@@ -256,7 +256,7 @@ class NetworkConnector(Automat):
         """
         Condition method.
         """
-        if not driver.is_started('gateway'):
+        if not driver.is_started('service_gateway'):
             return False
         from transport import gateway
         transports = gateway.transports().values()
@@ -267,22 +267,22 @@ class NetworkConnector(Automat):
 
     def doSetUp(self, arg):
         lg.out(6, 'network_connector.doSetUp')
-        if driver.is_started('identity_server'): 
-            if settings.enableIdServer():       
-                from userid import id_server
-                id_server.A('start', (settings.getIdServerWebPort(), 
-                                      settings.getIdServerTCPPort()))
-        if driver.is_started('distributed_hash_table'):
+        # if driver.is_started('service_identity_server'): 
+        #     if settings.enableIdServer():       
+        #         from userid import id_server
+        #         id_server.A('start', (settings.getIdServerWebPort(), 
+        #                               settings.getIdServerTCPPort()))
+        if driver.is_started('service_service_entangled_dht'):
             from dht import dht_service
             dht_service.reconnect()
-        if driver.is_started('stun_server'):
+        if driver.is_started('service_stun_server'):
             from stun import stun_server
             udp_port = int(settings.getUDPPort())
             stun_server.A('start', udp_port)
-#        if driver.is_started('private_messages'):
+#        if driver.is_started('service_private_messages'):
 #            from userid import nickname_holder
 #            nickname_holder.A('set', None)
-        # if driver.is_started('gateway'):
+        # if driver.is_started('service_gateway'):
         #     from transport import gateway
         #     gateway.start()
         self.automat('network-up')
@@ -291,17 +291,17 @@ class NetworkConnector(Automat):
         """
         """
         lg.out(6, 'network_connector.doSetDown')
-        if driver.is_started('distributed_hash_table'):
+        if driver.is_started('service_service_entangled_dht'):
             from dht import dht_service
             dht_service.disconnect()
-        if driver.is_started('stun_server'):
+        if driver.is_started('service_stun_server'):
             from stun import stun_server
             stun_server.A('stop')
-        if driver.is_started('identity_server'): 
-            if settings.enableIdServer():
-                from userid import id_server
-                id_server.A('stop')
-        if driver.is_started('gateway'):
+        # if driver.is_started('service_identity_server'): 
+        #     if settings.enableIdServer():
+        #         from userid import id_server
+        #         id_server.A('stop')
+        if driver.is_started('service_gateway'):
             from transport import gateway
             gateway.stop()
         self.automat('network-down')
@@ -344,7 +344,7 @@ class NetworkConnector(Automat):
         """
         Action method.
         """
-        if not driver.is_started('gateway'):
+        if not driver.is_started('service_gateway'):
             self.automat('gateway-is-not-started')
             return
         from transport import gateway

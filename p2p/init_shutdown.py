@@ -146,85 +146,9 @@ def init_connection():
     """
     Initialize other modules related to network communications.
     """
-    
-    global UImode
-    lg.out(2, "init_shutdown.init_connection")
-
-    import webcontrol
-    import interface.xmlrpc_server 
-    interface.xmlrpc_server.init()
-
-    from dht import dht_service
-    from lib import settings
-    dht_service.init(int(settings.getDHTPort()), settings.DHTDBFile())
-
-    from transport import bandwidth
-    from transport import callback
-    callback.add_inbox_callback(bandwidth.INfile)
-    callback.add_finish_file_sending_callback(bandwidth.OUTfile)
-    
-    import contact_status
-    contact_status.init()
-
-    import p2p_service
-    p2p_service.init()
-
-    import message
-    message.init()
-    message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
-
-    from userid import propagate
-    propagate.init()
-
-    try:
-        from tray_icon import USE_TRAY_ICON
-    except:
-        USE_TRAY_ICON = False
-        lg.exc()
-
-    if USE_TRAY_ICON:
-        import tray_icon
-        tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
-        
-    #init the mechanism for sending and requesting files for repairing backups
-    import io_throttle
-    io_throttle.init()
-
-    import backup_fs
-    backup_fs.init()
-
-    import backup_control
-    backup_control.init()
-
-    import backup_matrix
-    backup_matrix.init()
-    backup_matrix.SetBackupStatusNotifyCallback(webcontrol.OnBackupStats)
-    backup_matrix.SetLocalFilesNotifyCallback(webcontrol.OnReadLocalFiles)
-    
-    import restore_monitor
-    restore_monitor.init()
-    restore_monitor.OnRestorePacketFunc = webcontrol.OnRestoreProcess
-    restore_monitor.OnRestoreBlockFunc = webcontrol.OnRestoreSingleBlock
-    restore_monitor.OnRestoreDoneFunc = webcontrol.OnRestoreDone
 
 
-def init_modules():
-    """
-    Finish initialization part, run delayed methods.
-    """
-    
-    lg.out(2,"init_shutdown.init_modules")
 
-    import local_tester
-    reactor.callLater(0, local_tester.init)
-    
-    import software_update
-    import webcontrol
-    software_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
-    reactor.callLater(0, software_update.init)
-
-    import webcontrol
-    reactor.callLater(0, webcontrol.OnInitFinalDone)
 
 
 def shutdown(x=None):

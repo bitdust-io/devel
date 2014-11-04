@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#private_messages.py
+#service_private_messages.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: private_messages
+.. module:: service_private_messages
 
 """
 
@@ -19,14 +19,18 @@ def create_service():
     
 class PrivateMessagesService(LocalService):
     
-    service_name = 'private_messages'
+    service_name = 'service_private_messages'
     
     def dependent_on(self):
-        return ['gateway',
-                'distributed_hash_table',
+        return ['service_gateway',
+                'service_entangled_dht',
                 ]
     
     def start(self):
+        from p2p import message
+        from p2p import webcontrol
+        message.init()
+        message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
         from userid import nickname_holder
         nickname_holder.A('set', None)
         return True

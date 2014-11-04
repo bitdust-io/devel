@@ -45,6 +45,123 @@ from xml.dom.minidom import getDOMImplementation
 #-------------------------------------------------------------------------------
 
 _DefaultXMLConfig = ur"""<settings>
+ <services>
+  <backup-db>
+   <enabled>
+    True
+   </enabled>
+  </backup-db>
+  <backups>
+   <enabled>
+    True
+   </enabled>
+  </backups>
+  <customer>
+   <enabled>
+    True
+   </enabled>
+  </customer>
+  <customers-rejector>
+   <enabled>
+    True
+   </enabled>
+  </customers-rejector>
+  <data-sender>
+   <enabled>
+    True
+   </enabled>
+  </data-sender>
+  <entangled-dht>
+   <enabled>
+    True
+   </enabled>
+  </entangled-dht>
+  <fire-hire>
+   <enabled>
+    True
+   </enabled>
+  </fire-hire>
+  <gateway>
+   <enabled>
+    True
+   </enabled>
+  </gateway>
+  <identity-propagate>
+   <enabled>
+    True
+   </enabled>
+  </identity-propagate>
+  <identity-server>
+   <enabled>
+    True
+   </enabled>
+  </identity-server>
+  <list-files>
+   <enabled>
+    True
+   </enabled>
+  </list-files>
+  <network>
+   <enabled>
+    True
+   </enabled>
+  </network>
+  <p2p-hookups>
+   <enabled>
+    True
+   </enabled>
+  </p2p-hookups>
+  <private-messages>
+   <enabled>
+    True
+   </enabled>
+  </private-messages>
+  <rebuilding>
+   <enabled>
+    True
+   </enabled>
+  </rebuilding>
+  <restores>
+   <enabled>
+    True
+   </enabled>
+  </restores>
+  <stun-client>
+   <enabled>
+    True
+   </enabled>
+  </stun-client>
+  <stun-server>
+   <enabled>
+    True
+   </enabled>
+  </stun-server>
+  <supplier>
+   <enabled>
+    True
+   </enabled>
+  </supplier>
+  <tcp-connections>
+   <enabled>
+    True
+   </enabled>
+  </tcp-connections>
+  <tcp-transport>
+   <enabled>
+    True
+   </enabled>
+  </tcp-transport>
+  <udp-datagrams>
+   <enabled>
+    True
+   </enabled>
+  </udp-datagrams>
+  <udp-transport>
+   <enabled>
+    True
+   </enabled>
+  </udp-transport>
+ </services>
  <general>
   <general-backups>
    2
@@ -904,11 +1021,15 @@ def main():
     """
     Read settings from 'userconfig' file and print in HTML form.
     """
-    import settings
+    import os.path as _p
+    import sys
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
+    from lib import settings
     uc = UserConfig(settings.UserConfigFilename())
     uc.update()
-    print uc.print_all_html()
-    print "',\n'".join(uc.default_order)
+    # print uc.print_all_html()
+    # print "',\n'".join(uc.default_order)
+
 
 
 if __name__ == "__main__":

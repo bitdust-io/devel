@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#udp_datagrams.py
+#service_udp_datagrams.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: udp_datagrams
+.. module:: service_udp_datagrams
 
 """
 
@@ -19,7 +19,7 @@ def create_service():
     
 class UDPDatagramsService(LocalService):
     
-    service_name = 'udp_datagrams'
+    service_name = 'service_udp_datagrams'
     
     def dependent_on(self):
         return []

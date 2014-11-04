@@ -19,7 +19,14 @@ need to move out userconfig stuff from that file
 
 import os
 
+if __name__ == '__main__':
+    import sys
+    import os.path as _p
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
+    
 from logs import lg
+
+from lib import config
 
 import userconfig
 import bpio
@@ -72,6 +79,10 @@ def _init(base_dir=None):
     lg.out(2, 'settings._init data location: ' + BaseDir())
     _checkMetaDataDirectory()
     uconfig()
+    if not os.path.isdir(ConfigDir()):
+        bpio._dir_make(ConfigDir())
+        convert_configs()
+    config.init(ConfigDir())
     _checkStaticDirectories()
     _checkSettings()
     _checkCustomDirectories()
@@ -92,7 +103,7 @@ def uconfig(key=None):
         <userconfig.UserConfig instance at 0x00BB6C10>
             
     Or you can pass a setting name to request it. 
-        >>> settings.uconfig("logs.debug-level")
+        >>> settings.config.conf().getData("logs/debug-level")
         '14'
     """
     global _UserConfig
@@ -132,7 +143,98 @@ def override_dict(d):
     """
     for key, value in d.items():
         override(key, value)
-        
+
+def convert_key(key):
+    # try:
+        key = key.replace('.', '/')
+        key = key.replace('-enable', '-enabled')
+        p = key.split('/')
+        if len(p) == 1:
+            return key
+        if len(p) >= 3 and p[2].startswith(p[1]+'-'):
+            p[2] = p[2].replace(p[1]+'-','')
+        if len(p) >= 2 and p[1].startswith(p[0]+'-'):
+            p[1] = p[1].replace(p[0]+'-','')
+        if p[0] == 'folder':
+            p[0] = 'paths'
+        elif p[0] == 'backup':
+            p[0] = 'services/backups'
+            if p[1] == 'private-key-size':
+                p[0] = 'personal'
+        elif p[0] == 'general':
+            p[0] = 'services/backups'
+            if p[1] == 'backups':
+                p[1] = 'max-copies'
+            elif p[1] == 'local-backups-enabled':
+                p[1] = 'keep-local-copies-enabled'
+        elif p[0] == 'id-server':
+            p[0] = 'services/id-server'
+        elif p[0] == 'network':
+            p[0] = 'services/network'    
+            if p[1] == 'dht-port':
+                p[0] = 'services/entangled-dht'
+                p[1] = 'udp-port'
+        elif p[0] == 'storage':
+            if p[1] == 'donated':
+                p[0] = 'services/supplier'
+                p[1] = 'donated-space'
+            elif p[1] == 'needed':
+                p[0] = 'services/customer'
+                p[1] = 'needed-space'
+            elif p[1] == 'suppliers':
+                p[0] = 'services/customer'
+                p[1] = 'suppliers-number'
+        elif p[0] == 'transport':
+            if p[1] == 'tcp':
+                p[0] = 'services'
+                p[1] = 'tcp-transport'
+                if len(p) > 2:
+                    if p[2] == 'port':
+                        p[1] = 'tcp-connections'
+                        p[2] = 'tcp-port'
+            elif p[1] == 'udp':
+                p[0] = 'services'
+                p[1] = 'udp-transport'
+                if len(p) > 2:
+                    if p[2] == 'port':
+                        p[1] = 'udp-datagrams'
+                        p[2] = 'udp-port'
+        key = '/'.join(p)
+        return key
+    # except:
+    #     lg.exc()
+    #     return None
+
+def convert_configs():
+    lg.out(2, 'settings.convert_configs')
+    try:
+        from lib import config
+        config.init(ConfigDir())
+        for k, value in uconfig().data.items():
+            key = convert_key(k)
+            value = value.replace('True', 'true').replace('False', 'false')
+            lg.out(2, '    %s -> %s : [%s]' % (k, key, value.replace('\n', '\\n')))
+            if len(uconfig().get_childs(k)) > 0:
+                continue
+            # if value.strip() == '':
+            #     continue
+            config.conf().setData(key, value)
+    except:
+        lg.exc()
+    return
+
+def patch_settings_py():
+    src = open('lib/settings.py').read()
+    from lib import config
+    config.init(ConfigDir())
+    for k, value in uconfig().data.items():
+        key = convert_key(k)
+        src = src.replace(k, key)
+    src = src.replace('uconfig(\'', 'config.conf().getData(\'')
+    src = src.replace('config.conf().setData(\'', 'config.conf().setData(\'')
+    src = src.replace('uconfig().update()\n', '')
+    open('lib/settings_.py', 'w').write(src)
+    
 #------------------------------------------------------------------------------ 
 #--- CONSTANTS ----------------------------------------------------------------
 #------------------------------------------------------------------------------ 
@@ -569,6 +671,11 @@ def MetaDataDir():
     Return current location of the "metadata" folder - most important config files is here.
     """
     return os.path.join(BaseDir(), "metadata")
+
+def ConfigDir():
+    """
+    """
+    return os.path.join(BaseDir(), 'config') 
 
 def TempDir():
     """
@@ -1108,7 +1215,7 @@ def getCustomersFilesDir():
     """
     Alias to get a user donated location from settings. 
     """
-    return uconfig('folder.folder-customers').strip()
+    return config.conf().getData('paths/customers').strip()
 
 def getCustomerFilesDir(idurl):
     """
@@ -1120,25 +1227,25 @@ def getLocalBackupsDir():
     """
     Alias to get local backups folder from settings, see ``BackupsDBDir()``.
     """
-    return uconfig('folder.folder-backups').strip()
+    return config.conf().getData('paths/backups').strip()
 
 def getRestoreDir():
     """
     Alias for restore location, see ``RestoreDir()``.
     """
-    return uconfig('folder.folder-restore').strip()
+    return config.conf().getData('paths/restore').strip()
 
 def getMessagesDir():
     """
     Alias to get from user config a folder location where messages is stored. 
     """
-    return uconfig('folder.folder-messages').strip()
+    return config.conf().getData('paths/messages').strip()
 
 def getReceiptsDir():
     """
     Alias to get from user config a folder location where receipts is stored.
     """
-    return uconfig('folder.folder-receipts').strip()
+    return config.conf().getData('paths/receipts').strip()
 
 def getTempDir():
     """
@@ -1155,48 +1262,46 @@ def enableProxy(enable=None):
     Enable/disable using of proxy server.
     """
     if enable is None:
-        return uconfig('network.network-proxy.network-proxy-enable').lower() == 'true'
-    uconfig().set('network.network-proxy.network-proxy-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('services/network/proxy/enabled').lower() == 'true'
+    config.conf().setData('services/network/proxy/enabled', str(enable))
+    
 def getProxyHost():
     """
     Return proxy server host from settings. 
     """
-    return uconfig('network.network-proxy.network-proxy-host').strip()
+    return config.conf().getData('services/network/proxy/host').strip()
 
 def getProxyPort():
     """
     Return proxy server port number from settings. 
     """
-    return uconfig('network.network-proxy.network-proxy-port').strip()
+    return config.conf().getData('services/network/proxy/port').strip()
 
 def setProxySettings(d):
     """
     Set proxy settings via dictionary, see ``lib.net_misc.detect_proxy_settings`` for more details.
     """
     if d.has_key('host'):
-        uconfig().set('network.network-proxy.network-proxy-host', str(d.get('host','')))
+        config.conf().setData('services/network/proxy/host', str(d.get('host','')))
     if d.has_key('port'):
-        uconfig().set('network.network-proxy.network-proxy-port', str(d.get('port','')))
+        config.conf().setData('services/network/proxy/port', str(d.get('port','')))
     if d.has_key('username'):
-        uconfig().set('network.network-proxy.network-proxy-username', str(d.get('username','')))
+        config.conf().setData('services/network/proxy.network-proxy-username', str(d.get('username','')))
     if d.has_key('password'):
-        uconfig().set('network.network-proxy.network-proxy-password', str(d.get('password','')))
+        config.conf().setData('services/network/proxy/password', str(d.get('password','')))
     if d.has_key('ssl'):
-        uconfig().set('network.network-proxy.network-proxy-ssl', str(d.get('ssl','False')))
-    uconfig().update()
-
+        config.conf().setData('services/network/proxy/ssl', str(d.get('ssl','False')))
+    
 def getProxySettingsDict():
     """
     Return a proxy settings from user config in dictionary.
     """
     return {
-         'host':        uconfig('network.network-proxy.network-proxy-host').strip(),
-         'port':        uconfig('network.network-proxy.network-proxy-port').strip(),
-         'username':    uconfig('network.network-proxy.network-proxy-username').strip(),
-         'password':    uconfig('network.network-proxy.network-proxy-password').strip(),
-         'ssl':         uconfig('network.network-proxy.network-proxy-ssl').strip(), }
+         'host':        config.conf().getData('services/network/proxy/host').strip(),
+         'port':        config.conf().getData('services/network/proxy/port').strip(),
+         'username':    config.conf().getData('services/network/proxy.network-proxy-username').strip(),
+         'password':    config.conf().getData('services/network/proxy/password').strip(),
+         'ssl':         config.conf().getData('services/network/proxy/ssl').strip(), }
 
 def update_proxy_settings():
     """
@@ -1229,7 +1334,7 @@ def getBandOutLimit():
     This is a current outgoing bandwidth limit in bytes per second.
     """
     try:
-        return int(uconfig('network.network-send-limit'))
+        return int(config.conf().getData('services/network/send-limit'))
     except:
         return 0
 
@@ -1238,7 +1343,7 @@ def getBandInLimit():
     This is a current incoming bandwidth limit in bytes per second.
     """
     try:
-        return int(uconfig('network.network-receive-limit'))
+        return int(config.conf().getData('services/network/receive-limit'))
     except:
         return 0
 
@@ -1246,43 +1351,39 @@ def enableIdServer(enable=None):
     """
     """
     if enable is None:
-        return uconfig('id-server.id-server-enable').lower() == 'true'
-    uconfig().set('id-server.id-server-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('services/id-server/enabled').lower() == 'true'
+    config.conf().setData('services/id-server/enabled', str(enable))
+    
 def getIdServerHost():
     """
     """
-    return uconfig("id-server.id-server-host").strip()
+    return config.conf().getData("services/id-server/host").strip()
 
 def setIdServerHost(hostname_or_ip):
     """
     """
-    uconfig().set("id-server.id-server-host", hostname_or_ip)
-    uconfig().update()
-
+    config.conf().setData("services/id-server/host", hostname_or_ip)
+    
 def getIdServerWebPort():
     """
     """
-    return int(uconfig("id-server.id-server-web-port").strip())
+    return int(config.conf().getData("services/id-server/web-port").strip())
 
 def setIdServerWebPort(web_port):
     """
     """
-    uconfig().set("id-server.id-server-web-port", str(web_port))
-    uconfig().update()
-
+    config.conf().setData("services/id-server/web-port", str(web_port))
+    
 def getIdServerTCPPort():
     """
     """
-    return int(uconfig("id-server.id-server-tcp-port").strip())
+    return int(config.conf().getData("services/id-server/tcp-port").strip())
 
 def setIdServerTCPPort(tcp_port):
     """
     """
-    uconfig().set("id-server.id-server-tcp-port", str(tcp_port))
-    uconfig().update()
-
+    config.conf().setData("services/id-server/tcp-port", str(tcp_port))
+    
 def getTransportPort(proto):
     """
     Get a port number for some tranports from user config.  
@@ -1299,106 +1400,97 @@ def enableTCP(enable=None):
     Note : transport_tcp is always available for identites to id server.
     """
     if enable is None:
-        return uconfig('transport.transport-tcp.transport-tcp-enable').lower() == 'true'
-    uconfig().set('transport.transport-tcp.transport-tcp-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('services/tcp-transport/enabled').lower() == 'true'
+    config.conf().setData('services/tcp-transport/enabled', str(enable))
+    
 def enableTCPsending(enable=None):
     """
     Switch on/off sending over transport_tcp in the settings or get current state.
     """
     if enable is None:
-        return uconfig('transport.transport-tcp.transport-tcp-sending-enable').lower() == 'true'
-    uconfig().set('transport.transport-tcp.transport-tcp-sending-enable', str(enable))
-    uconfig().update()
-    
+        return config.conf().getData('services/tcp-transport/sending-enabled').lower() == 'true'
+    config.conf().setData('services/tcp-transport/sending-enabled', str(enable))
+        
 def enableTCPreceiving(enable=None):
     """
     Switch on/off receiving over transport_tcp in the settings or get current state.
     """
     if enable is None:
-        return uconfig('transport.transport-tcp.transport-tcp-receiving-enable').lower() == 'true'
-    uconfig().set('transport.transport-tcp.transport-tcp-receiving-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('services/tcp-transport/receiving-enabled').lower() == 'true'
+    config.conf().setData('services/tcp-transport/receiving-enabled', str(enable))
+    
 def getTCPPort():
     """
     Get a port number for tranport_tcp from user config.  
     """
-    return (uconfig("transport.transport-tcp.transport-tcp-port"))
+    return (config.conf().getData("services/tcp-connections/tcp-port"))
 
 def setTCPPort(port):
     """
     Set a port number for tranport_tcp in the user config.  
     """
-    uconfig().set("transport.transport-tcp.transport-tcp-port", str(port))
-    uconfig().update()
-
+    config.conf().setData("services/tcp-connections/tcp-port", str(port))
+    
 def enableUDP(enable=None):
     """
     Switch on/off transport_udp in the settings or get current state.
     """
     if enable is None:
-        return uconfig('transport.transport-udp.transport-udp-enable').lower() == 'true'
-    uconfig().set('transport.transport-udp.transport-udp-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('services/udp-transport/enabled').lower() == 'true'
+    config.conf().setData('services/udp-transport/enabled', str(enable))
+    
 def enableUDPsending(enable=None):
     """
     Switch on/off sending over udp in the settings or get current state.
     """
     if enable is None:
-        return uconfig('transport.transport-udp.transport-udp-sending-enable').lower() == 'true'
-    uconfig().set('transport.transport-udp.transport-udp-sending-enable', str(enable))
-    uconfig().update()
-    
+        return config.conf().getData('services/udp-transport/sending-enabled').lower() == 'true'
+    config.conf().setData('services/udp-transport/sending-enabled', str(enable))
+        
 def enableUDPreceiving(enable=None):
     """
     Switch on/off receiving over udp in the settings or get current state.
     """
     if enable is None:
-        return uconfig('transport.transport-udp.transport-udp-receiving-enable').lower() == 'true'
-    uconfig().set('transport.transport-udp.transport-udp-receiving-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('services/udp-transport/receiving-enabled').lower() == 'true'
+    config.conf().setData('services/udp-transport/receiving-enabled', str(enable))
+    
 def getUDPPort():
     """
     Get a port number for tranport_udp from user config.  
     """
-    return int(uconfig("transport.transport-udp.transport-udp-port"))
+    return int(config.conf().getData("services/udp-datagrams/udp-port"))
 
 def setUDPPort(port):
     """
     Set a port number for tranport_udp in the user config.  
     """
-    uconfig().set("transport.transport-udp.transport-udp-port", str(port))
-    uconfig().update()
-
+    config.conf().setData("services/udp-datagrams/udp-port", str(port))
+    
 def getDHTPort():
     """
     Get a UDP port number for entangled "DHT" network.  
     """
-    return uconfig("network.network-dht-port")
+    return config.conf().getData("services/entangled-dht/udp-port")
 
 def setDHTPort(port):
     """
     Set a UDP port number for entangled "DHT" network.  
     """
-    uconfig().set("network.network-dht-port", str(port))
-    uconfig().update()
-    
+    config.conf().setData("services/entangled-dht/udp-port", str(port))
+        
 def enableTransport(proto, enable=None):
     """
     Return a current state of given transport or set set a new state.
     """
-    key = 'transport.transport-%s.transport-%s-enable' % (proto, proto)
-    if uconfig(key) is None:
+    # key = 'transport.transport-%s.transport-%s-enable' % (proto, proto)
+    key = 'services/%s-transport/enabled' % proto
+    if config.conf().getData(key) is None:
         return False
     if enable is None:
-        return uconfig(key).lower() == 'true'
-    uconfig().set(key, str(enable))
-    uconfig().update()
-
+        return config.conf().getData(key).lower() == 'true'
+    config.conf().setData(key, str(enable))
+    
 def transportIsEnabled(proto):
     """
     Alias for ``enableTransport()``.
@@ -1415,25 +1507,26 @@ def transportReceivingIsEnabled(proto):
     """
     Return True if receiving over given transport is switched on. 
     """
-    key = 'transport.transport-%s.transport-%s-receiving-enable' % (proto, proto)
-    if uconfig(key) is None:
+    # key = 'transport.transport-%s.transport-%s-receiving-enable' % (proto, proto)
+    key = 'services/%s-transport/enabled' % proto
+    if config.conf().getData(key) is None:
         return False
-    return uconfig(key).lower() == 'true'
+    return config.conf().getData(key).lower() == 'true'
 
 def transportSendingIsEnabled(proto):
     """
     Return True if sending over given transport is switched on. 
     """
     key = 'transport.transport-%s.transport-%s-sending-enable' % (proto, proto)
-    if uconfig(key) is None:
+    if config.conf().getData(key) is None:
         return False
-    return uconfig(key).lower() == 'true'
+    return config.conf().getData(key).lower() == 'true'
 
 def getDebugLevelStr(): 
     """
     This is just for checking if it is set, the int() would throw an error.
     """
-    return uconfig("logs.debug-level")
+    return config.conf().getData("logs/debug-level")
 
 def getDebugLevel():
     """
@@ -1449,35 +1542,32 @@ def setDebugLevel(level):
     """
     Set debug level.
     """
-    uconfig().set("logs.debug-level", str(level))
-    uconfig().update()
-
+    config.conf().setData("logs/debug-level", str(level))
+    
 def enableWebStream(enable=None):
     """
     Get current state or enable/disable using of HTTP server to print logs,
     need to restart BitPie.NET to take place changes.
     """
     if enable is None:
-        return uconfig('logs.stream-enable').lower() == 'true'
-    uconfig().set('logs.stream-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('logs/stream-enabled').lower() == 'true'
+    config.conf().setData('logs/stream-enabled', str(enable))
+    
 def enableWebTraffic(enable=None):
     """
     Get current state or enable/disable using of HTTP server to print packets traffic, 
     need to restart BitPie.NET to take place changes.
     """
     if enable is None:
-        return uconfig('logs.traffic-enable').lower() == 'true'
-    uconfig().set('logs.traffic-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('logs/traffic-enabled').lower() == 'true'
+    config.conf().setData('logs/traffic-enabled', str(enable))
+    
 def getWebStreamPort():
     """
     Get port number of HTTP server to print logs.
     """
     try:
-        return int(uconfig('logs.stream-port'))
+        return int(config.conf().getData('logs/stream-port'))
     except:
         return DefaultWebLogPort()
 
@@ -1486,7 +1576,7 @@ def getWebTrafficPort():
     Get port number of HTTP server to print packets traffic.
     """
     try:
-        return int(uconfig('logs.traffic-port'))
+        return int(config.conf().getData('logs/traffic-port'))
     except:
         return DefaultWebTrafficPort()
     
@@ -1495,10 +1585,9 @@ def enableMemoryProfile(enable=None):
     Get current state or enable/disable using of HTTP server to momory profiling.
     """
     if enable is None:
-        return uconfig('logs.memprofile-enable').lower() == 'true'
-    uconfig().set('logs.memprofile-enable', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('logs/memprofile-enabled').lower() == 'true'
+    config.conf().setData('logs/memprofile-enabled', str(enable))
+    
 def getECCSuppliersNumbers():
     """
     List of available suppliers numbers.
@@ -1511,7 +1600,7 @@ def getSuppliersNumberDesired():
     Get suppliers number from user settings.
     """
     try:
-        return int(uconfig('storage.suppliers'))
+        return int(config.conf().getData('services/customer/suppliers-number'))
     except:
         return -1
 
@@ -1519,7 +1608,7 @@ def getNeededString():
     """
     Get needed space in megabytes from user settings.
     """
-    return uconfig('storage.needed')
+    return config.conf().getData('services/customer/needed-space')
 
 def getNeededBytes():
     return diskspace.GetBytesFromString(getNeededString())
@@ -1528,7 +1617,7 @@ def getDonatedString():
     """
     Get donated space in megabytes from user settings.
     """
-    return uconfig('storage.donated')
+    return config.conf().getData('services/supplier/donated-space')
 
 def getDonatedBytes():
     return diskspace.GetBytesFromString(getDonatedString())
@@ -1538,25 +1627,25 @@ def getEmergencyEmail():
     Get a user email address from settings. 
     User can set that to be able to receive email notification in case of some troubles with his backups.
     """
-    return uconfig('emergency.emergency-email')
+    return config.conf().getData('emergency/email')
 
 def getEmergencyPhone():
     """
     Get a user phone number from settings. 
     """
-    return uconfig('emergency.emergency-phone')
+    return config.conf().getData('emergency/phone')
 
 def getEmergencyFax():
     """
     Get a user fax number from settings. 
     """
-    return uconfig('emergency.emergency-fax')
+    return config.conf().getData('emergency/fax')
 
 def getEmergencyOther():
     """
     Get a other address info from settings. 
     """
-    return uconfig('emergency.emergency-text')
+    return config.conf().getData('emergency/text')
 
 def getEmergency(method):
     """
@@ -1564,19 +1653,19 @@ def getEmergency(method):
     """
     if method not in getEmergencyMethods():
         return ''
-    return uconfig('emergency.emergency-' + method)
+    return config.conf().getData('emergency.emergency-' + method)
 
 def getEmergencyFirstMethod():
     """
     Get a first method to use when need to contact with user. 
     """
-    return uconfig('emergency.emergency-first')
+    return config.conf().getData('emergency/first')
 
 def getEmergencySecondMethod():
     """
     Get a second method to use when need to contact with user. 
     """
-    return uconfig('emergency.emergency-second')
+    return config.conf().getData('emergency/second')
 
 def getEmergencyMethods():
     """
@@ -1591,24 +1680,22 @@ def getEmergencyMethods():
 def getNickName():
     """
     """
-    return uconfig('personal.personal-nickname').strip()
+    return config.conf().getData('personal/nickname').strip()
 
 def setNickName(nickname):
     """
     """
-    uconfig().set('personal.personal-nickname', nickname.strip())
-    uconfig().update()
-
+    config.conf().setData('personal/nickname', nickname.strip())
+    
 def getUpdatesMode():
     """
     User can set different modes to update the BitPie.NET software.
     """
-    return uconfig('updates.updates-mode')
+    return config.conf().getData('updates/mode')
 
 def setUpdatesMode(mode):
-    uconfig().set('updates.updates-mode', mode)
-    uconfig().update()
-
+    config.conf().setData('updates/mode', mode)
+    
 def getUpdatesModeValues():
     """
     List of available update modes.
@@ -1623,22 +1710,21 @@ def getUpdatesSheduleData():
     """
     Return update schedule from settings.
     """
-    return uconfig('updates.updates-shedule')
+    return config.conf().getData('updates/shedule')
 
 def setUpdatesSheduleData(raw_shedule):
     """
     Set update schedule in the settings. 
     """
-    uconfig().set('updates.updates-shedule', raw_shedule)
-    uconfig().update()
-
+    config.conf().setData('updates/shedule', raw_shedule)
+    
 def getGeneralBackupsToKeep():
     """
     Return a number of copies to keep for every backed up data.
     The oldest copies (over that amount) will be removed from data base and remote suppliers. 
     """
     try:
-        return int(uconfig('general.general-backups'))
+        return int(config.conf().getData('services/backups/max-copies'))
     except:
         return 2
 
@@ -1646,25 +1732,25 @@ def getGeneralLocalBackups():
     """
     Return True if user wish to keep local backups.
     """
-    return uconfig('general.general-local-backups-enable').lower() == 'true'
+    return config.conf().getData('services/backups/keep-local-copies-enabled').lower() == 'true'
 
 def getGeneralWaitSuppliers():
     """
     Return True if user want to be sure that suppliers are reliable enough before removing the local backups. 
     """
-    return uconfig('general.general-wait-suppliers-enable').lower() == 'true'
+    return config.conf().getData('services/backups/wait-suppliers-enabled').lower() == 'true'
 
 #def getGeneralAutorun():
 #    """
 #    Return True if user want to start BitPie.NET at system start up.
 #    """
-#    return uconfig('general.general-autorun').lower() == 'true'
+#    return config.conf().getData('general.general-autorun').lower() == 'true'
 
 #def getGeneralDisplayMode():
 #    """
 #    Get current GUI display mode from settings. 
 #    """
-#    return uconfig('general.general-display-mode')
+#    return config.conf().getData('general.general-display-mode')
 
 #def getGeneralDisplayModeValues():
 #    """
@@ -1673,19 +1759,19 @@ def getGeneralWaitSuppliers():
 #    return ('iconify window', 'normal window', 'maximized window',)
 
 ##def getGeneralShowProgress():
-##    return uconfig('general.general-show-progress').lower() == 'true'
+##    return config.conf().getData('general.general-show-progress').lower() == 'true'
 
 def getGeneralDesktopShortcut():
     """
     Not used.
     """
-    return uconfig('general.general-desktop-shortcut').lower() == 'true'
+    return config.conf().getData('general.general-desktop-shortcut').lower() == 'true'
 
 def getGeneralStartMenuShortcut():
     """
     Not used.
     """
-    return uconfig('general.general-start-menu-shortcut').lower() == 'true'
+    return config.conf().getData('general.general-start-menu-shortcut').lower() == 'true'
 
 def getBackupBlockSize():
     """
@@ -1694,7 +1780,7 @@ def getBackupBlockSize():
     global _BackupBlockSize
     if _BackupBlockSize is None:
         try:
-            _BackupBlockSize = int(uconfig('backup.backup-block-size'))
+            _BackupBlockSize = int(config.conf().getData('services/backups/block-size'))
         except:
             _BackupBlockSize = DefaultBackupBlockSize()
     return _BackupBlockSize
@@ -1706,7 +1792,7 @@ def getBackupMaxBlockSize():
     global _BackupMaxBlockSize
     if _BackupMaxBlockSize is None:
         try:
-            _BackupMaxBlockSize = int(uconfig('backup.backup-max-block-size'))
+            _BackupMaxBlockSize = int(config.conf().getData('services/backups/max-block-size'))
         except:
             _BackupMaxBlockSize = DefaultBackupMaxBlockSize()
     return _BackupMaxBlockSize
@@ -1730,7 +1816,7 @@ def getPrivateKeySize():
     Return Private Key size from settings, but typically Private Key is generated only once during install stage.
     """
     try:
-        return int(uconfig('backup.private-key-size'))
+        return int(config.conf().getData('personal/private-key-size'))
     except:
         return DefaultPrivateKeySize()
     
@@ -1738,33 +1824,30 @@ def setPrivateKeySize(pksize):
     """
     Set Private Key size in the settings.
     """
-    uconfig().set('backup.private-key-size', str(pksize))
-    uconfig().update()
-     
+    config.conf().setData('personal/private-key-size', str(pksize))
+         
 def enableUPNP(enable=None):
     """
     Return True if user want to try to config his router to config port forwarding automatically.
     If ``enable`` is not None - rewrite current value in the settings.
     """
     if enable is None:
-        return uconfig('other.upnp-enabled').lower() == 'true'
-    uconfig().set('other.upnp-enabled', str(enable))
-    uconfig().update()
-
+        return config.conf().getData('other/upnp-enabledd').lower() == 'true'
+    config.conf().setData('other/upnp-enabledd', str(enable))
+    
 def getUPNPatStartup():
     """
     User have an option to check UPNP port forwarding every time BitPie.NET software starts up.
     But this slow down the start up process.
     """
-    return uconfig('other.upnp-at-startup').lower() == 'true'
+    return config.conf().getData('other/upnp-at-startup').lower() == 'true'
 
 def setUPNPatStartup(enable):
     """
     Enable or disable checking UPNP devices at start up.
     """
-    uconfig().set('other.upnp-at-startup', str(enable))
-    uconfig().update()
-
+    config.conf().setData('other/upnp-at-startup', str(enable))
+    
 #------------------------------------------------------------------------------ 
 #--- INITIALIZE BASE DIR ------------------------------------------------------
 #------------------------------------------------------------------------------ 
@@ -1898,51 +1981,50 @@ def _checkSettings():
     Validate some most important user settings.
     """
     if getSuppliersNumberDesired() < 0:
-        uconfig().set("storage.suppliers", str(DefaultDesiredSuppliers()))
+        config.conf().setData("services/customer/suppliers-number", str(DefaultDesiredSuppliers()))
 
     if getDonatedString() == '':
-        uconfig().set("storage.donated", '%d bytes' % DefaultDonatedBytes())
+        config.conf().setData("services/supplier/donated-space", '%d bytes' % DefaultDonatedBytes())
     donatedV, donatedS = diskspace.SplitString(getDonatedString())
     if not donatedS:
-        uconfig().set("storage.donated", str(getDonatedString())+' bytes')
+        config.conf().setData("services/supplier/donated-space", str(getDonatedString())+' bytes')
 
     if getNeededString() == '':
-        uconfig().set("storage.needed", '%d bytes' % DefaultNeededBytes())
+        config.conf().setData("services/customer/needed-space", '%d bytes' % DefaultNeededBytes())
     neededV, neededS = diskspace.SplitString(getNeededString())
     if not neededS:
-        uconfig().set("storage.needed", str(getNeededString())+' bytes')
+        config.conf().setData("services/customer/needed-space", str(getNeededString())+' bytes')
 
     if getDebugLevelStr() == "":
-        uconfig().set("logs.debug-level", str(defaultDebugLevel()))
+        config.conf().setData("logs/debug-level", str(defaultDebugLevel()))
 
     if getTCPPort() == "":
-        uconfig().set("transport.transport-tcp.transport-tcp-port", str(DefaultTCPPort()))
+        config.conf().setData("services/tcp-connections/tcp-port", str(DefaultTCPPort()))
 
     if getUDPPort() == "":
-        uconfig().set("transport.transport-udp.transport-udp-port", str(DefaultUDPPort()))
+        config.conf().setData("services/udp-transport.transport-udp-port", str(DefaultUDPPort()))
 
     if getDHTPort() == "":
-        uconfig().set("network.network-dht-port", str(DefaultDHTPort()))
+        config.conf().setData("services/entangled-dht/udp-port", str(DefaultDHTPort()))
 
     if getUpdatesMode().strip() not in getUpdatesModeValues():
-        uconfig().set('updates.updates-mode', getUpdatesModeValues()[0])
+        config.conf().setData('updates/mode', getUpdatesModeValues()[0])
 
 #    if getGeneralDisplayMode().strip() not in getGeneralDisplayModeValues():
-#        uconfig().set('general.general-display-mode', getGeneralDisplayModeValues()[0])
+#        config.conf().setData('general.general-display-mode', getGeneralDisplayModeValues()[0])
 
     if getEmergencyFirstMethod() not in getEmergencyMethods():
-        uconfig().set('emergency.emergency-first', getEmergencyMethods()[0])
+        config.conf().setData('emergency/first', getEmergencyMethods()[0])
 
     if getEmergencySecondMethod() not in getEmergencyMethods():
-        uconfig().set('emergency.emergency-second', getEmergencyMethods()[1])
+        config.conf().setData('emergency/second', getEmergencyMethods()[1])
 
     if getEmergencyFirstMethod() == getEmergencySecondMethod():
         methods = list(getEmergencyMethods())
         methods.remove(getEmergencyFirstMethod())
-        uconfig().set('emergency.emergency-second', methods[0])
+        config.conf().setData('emergency/second', methods[0])
 
-    uconfig().update()
-
+    
 
 def _checkStaticDirectories():
     """
@@ -1988,36 +2070,37 @@ def _checkCustomDirectories():
     Check existance of user configurable folders.
     """
     if getCustomersFilesDir() == '':
-        uconfig().set('folder.folder-customers', os.path.join(BaseDir(), "customers"))
+        config.conf().setData('paths/customers', os.path.join(BaseDir(), "customers"))
     if not os.path.exists(getCustomersFilesDir()):
         lg.out(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
         os.makedirs(getCustomersFilesDir())
 
     if getLocalBackupsDir() == '':
-        uconfig().set('folder.folder-backups', BackupsDBDir())
+        config.conf().setData('paths/backups', BackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
         lg.out(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
 
     if getMessagesDir() == '':
-        uconfig().set('folder.folder-messages', MessagesDir())
+        config.conf().setData('paths/messages', MessagesDir())
     if not os.path.exists(getMessagesDir()):
         lg.out(6, 'settings.init want to create folder: ' + getMessagesDir())
         os.makedirs(getMessagesDir())
 
     if getReceiptsDir() == '':
-        uconfig().set('folder.folder-receipts', ReceiptsDir())
+        config.conf().setData('paths/receipts', ReceiptsDir())
     if not os.path.exists(getReceiptsDir()):
         lg.out(6, 'settings.init want to create folder: ' + getReceiptsDir())
         os.makedirs(getReceiptsDir())
 
     if getRestoreDir() == '':
-        uconfig().set('folder.folder-restore', RestoreDir())
+        config.conf().setData('paths/restore', RestoreDir())
 
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     init()
+    patch_settings_py()
 
 
 

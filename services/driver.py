@@ -71,18 +71,17 @@ def init():
     """
     """
     lg.out(2, 'driver.init')
-    available_services_dir = os.path.join(bpio.getExecutableDir(), 'services', 'available')
+    available_services_dir = os.path.join(bpio.getExecutableDir(), 'services')
     for filename in os.listdir(available_services_dir):
         if not filename.endswith('.py'):
             continue
-        if filename == '__init__.py':
+        if not filename.startswith('service_'):
             continue
-        # filepath = os.path.join(available_services_dir, filename)
         name = filename[:-3]
         if name in disabled_services():
             continue
         try:
-            py_mod = importlib.import_module('services.available.'+name)
+            py_mod = importlib.import_module('services.'+name)
         except:
             lg.exc()
             continue
@@ -199,7 +198,7 @@ def stop():
 def on_service_callback(result, service_name):
     """
     """
-    lg.out(10, 'driver.on_service_callback %s : [%s]' % (service_name, result))
+    lg.out(14, 'driver.on_service_callback %s : [%s]' % (service_name, result))
     svc = services().get(service_name, None)
     if not svc:
         raise ServiceNotFound(service_name)
@@ -257,9 +256,12 @@ class ServiceNotFound(Exception):
 #------------------------------------------------------------------------------ 
 
 def main():
+    from lib import settings
+    from lib import config
     lg.set_debug_level(20)
+    settings.init()
+    config.init(settings.ConfigDir())
     init()
-    print '\n'.join(boot_up_order())
     shutdown()
 
 

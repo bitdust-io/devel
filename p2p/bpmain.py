@@ -107,15 +107,15 @@ def run(UI='', options=None, args=None, overDict=None):
             lg.stdout_start_redirecting()
             
     #---memdebug---
-    if settings.uconfig('logs.memdebug-enable') == 'True':
-        try:
-            from logs import memdebug
-            memdebug_port = int(settings.uconfig('logs.memdebug-port'))
-            memdebug.start(memdebug_port)
-            reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)
-            lg.out(2, 'bpmain.run memdebug web server started on port %d' % memdebug_port)
-        except:
-            lg.exc()  
+#    if settings.uconfig('logs.memdebug-enable') == 'True':
+#        try:
+#            from logs import memdebug
+#            memdebug_port = int(settings.uconfig('logs.memdebug-port'))
+#            memdebug.start(memdebug_port)
+#            reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)
+#            lg.out(2, 'bpmain.run memdebug web server started on port %d' % memdebug_port)
+#        except:
+#            lg.exc()  
             
     #---process ID---
     try:

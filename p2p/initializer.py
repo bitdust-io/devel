@@ -35,9 +35,7 @@ The ``initializer()`` machine is doing several operations:
     
     
 EVENTS:
-    * :red:`connected`
-    * :red:`disconnected`
-    * :red:`init-contacts-done`
+    * :red:`init-interfaces-done`
     * :red:`init-local-done`
     * :red:`init-modules-done`
     * :red:`init-services-done`
@@ -48,7 +46,6 @@ EVENTS:
     * :red:`shutdowner.state`
 """
 
-import os
 import sys
 
 try:
@@ -56,8 +53,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in initializer.py')
 
-from twisted.internet.defer import Deferred, maybeDeferred
-from twisted.internet.task import LoopingCall
+from twisted.internet import defer
 
 from logs import lg
 
@@ -69,10 +65,7 @@ from services import driver
 
 import installer
 import shutdowner
-# import p2p_connector
-
-# import init_shutdown
-import webcontrol
+# import webcontrol
 
 #------------------------------------------------------------------------------ 
 
@@ -116,6 +109,7 @@ class Initializer(automat.Automat):
     
     def init(self):
         self.flagCmdLine = False
+        self.flagGUI = False
         self.is_installed = None
     
     def state_changed(self, oldstate, newstate, event, arg):
@@ -158,25 +152,6 @@ class Initializer(automat.Automat):
                 self.state = 'SERVICES'
                 self.doShowGUI(arg)
                 self.doInitServices(arg)
-        #---CONTACTS---
-        elif self.state == 'CONTACTS':
-            if event == 'init-contacts-done' :
-                self.state = 'CONNECTION'
-                self.doInitConnection(arg)
-                self.doUpdate(arg)
-                shutdowner.A('ready')
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
-                self.state = 'EXIT'
-                self.doDestroyMe(arg)
-        #---CONNECTION---
-        elif self.state == 'CONNECTION':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
-                self.state = 'EXIT'
-                self.doDestroyMe(arg)
-            elif event == 'connected' or event == 'disconnected' :
-                self.state = 'MODULES'
-                self.doInitModules(arg)
-                self.doUpdate(arg)
         #---MODULES---
         elif self.state == 'MODULES':
             if event == 'init-modules-done' :
@@ -212,12 +187,22 @@ class Initializer(automat.Automat):
             pass
         #---SERVICES---
         elif self.state == 'SERVICES':
-            if event == 'init-services-done' :
-                self.state = 'CONTACTS'
-                self.doInitContacts(arg)
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
+            if ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
+            elif event == 'init-services-done' :
+                self.state = 'INTERFACES'
+                self.doInitInterfaces(arg)
+        #---INTERFACES---
+        elif self.state == 'INTERFACES':
+            if ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
+                self.state = 'EXIT'
+                self.doDestroyMe(arg)
+            elif event == 'init-interfaces-done' :
+                self.state = 'MODULES'
+                self.doInitModules(arg)
+                self.doUpdate(arg)
+                shutdowner.A('ready')
         return None
 
     def isInstalled(self, arg):
@@ -234,15 +219,16 @@ class Initializer(automat.Automat):
         return False
 
     def doUpdate(self, arg):
+        from p2p import webcontrol
         reactor.callLater(0, webcontrol.OnUpdateStartingPage)
 
     def doInitLocal(self, arg):
         """
         """
         lg.out(2, 'initializer.doInitLocal')
-        import init_shutdown
-        maybeDeferred(init_shutdown.init_local, arg).addCallback(
-            lambda x: self.automat('init-local-done'))
+        self.flagGUI = arg
+        self._init_local()
+        reactor.callLater(0, self.automat, 'init-local-done')
 
     def doInitServices(self, arg):
         """
@@ -251,35 +237,31 @@ class Initializer(automat.Automat):
         lg.out(2, 'initializer.doInitServices')
         driver.init()
         d = driver.start()
-        from twisted.internet import reactor
-        # reactor.addSystemEventTrigger('before', 'shutdown', driver.stop)
         d.addBoth(lambda x: self.automat('init-services-done'))
 
-    def doInitContacts(self, arg):
-        lg.out(2, 'initializer.doInitContacts')
-        self.automat('init-contacts-done')
-        # import init_shutdown
-        # init_shutdown.init_contacts(
-            # lambda x: self.automat('init-contacts-done'),
-            # lambda x: reactor.callLater(2, self.automat, 'init-contacts-done'),
-            # lambda x: self.automat('init-contacts-done'), )
-
-    def doInitConnection(self, arg):
+    def doInitInterfaces(self, arg):
         lg.out(2, 'initializer.doInitConnection')
-        # init_shutdown.init_connection()
-        # TODO
-        self.automat('connected')
+        from interface import xmlrpc_server 
+        xmlrpc_server.init()
+        reactor.callLater(0, self.automat, 'init-interfaces-done')
 
     def doInitModules(self, arg):
-        self.automat('init-modules-done')
-        # maybeDeferred(init_shutdown.init_modules).addCallback(
-            # lambda x: self.automat('init-modules-done'))
+        self._init_modules()
+        reactor.callLater(0, self.automat, 'init-modules-done')
 
     def doShowGUI(self, arg):
-        import init_shutdown
+        from p2p import webcontrol
         d = webcontrol.init()
-        if init_shutdown.UImode == 'show' or not self.is_installed: 
+        if self.flagGUI or not self.is_installed: 
             d.addCallback(webcontrol.show)
+        try:
+            from tray_icon import USE_TRAY_ICON
+        except:
+            USE_TRAY_ICON = False
+            lg.exc()
+        if USE_TRAY_ICON:
+            from p2p import tray_icon
+            tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
         webcontrol.ready()
         # sys.path.append(os.path.abspath('dj'))
         # import local_site
@@ -297,5 +279,66 @@ class Initializer(automat.Automat):
         del _Initializer
         _Initializer = None
         self.destroy()
+        
+    def _init_local(self):
+        from lib import settings
+        from lib import misc
+        from lib import commands 
+        from lib import tmpfile
+        from lib import net_misc
+        from p2p import run_upnpc
+        from raid import eccmap
+        misc.init()
+        commands.init()
+        if settings.enableWebStream():
+            from logs import weblog
+            weblog.init(settings.getWebStreamPort())
+        if settings.enableWebTraffic():
+            from logs import webtraffic
+            webtraffic.init(port=settings.getWebTrafficPort())
+        tmpfile.init(settings.getTempDir())
+        net_misc.init()
+        settings.update_proxy_settings()
+        run_upnpc.init()
+        eccmap.init()
+        if sys.argv.count('--twisted'):
+            from twisted.python import log as twisted_log
+            twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)
+            # import twisted.python.failure as twisted_failure
+            # twisted_failure.startDebugMode()
+            # twisted_log.defaultObserver.stop()
+        if settings.getDebugLevel() > 10:
+            defer.setDebugging(True)
+#        if settings.enableMemoryProfile():
+#            try:
+#                from guppy import hpy
+#                hp = hpy()
+#                hp.setrelheap()
+#                lg.out(2, 'hp.heap():\n'+str(hp.heap()))
+#                lg.out(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
+#                lg.out(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
+#            except:
+#                lg.out(2, "guppy package is not installed")            
+    
+    def _init_modules(self):
+        """
+        Finish initialization part, run delayed methods.
+        """
+        lg.out(2,"initializer._init_modules")
+        from p2p import local_tester
+        from p2p import software_update
+        from p2p import webcontrol
+        reactor.callLater(0, local_tester.init)
+        software_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
+        reactor.callLater(0, software_update.init)
+        reactor.callLater(0, webcontrol.OnInitFinalDone)
+    
+#------------------------------------------------------------------------------ 
 
-
+class MyTwistedOutputLog:
+    softspace = 0
+    def read(self): pass
+    def write(self, s):
+        lg.out(0, s.strip())
+    def flush(self): pass
+    def close(self): pass

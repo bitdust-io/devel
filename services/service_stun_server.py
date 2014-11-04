@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#stun_server.py
+#service_stun_server.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: stun_server
+.. module:: service_stun_server
 
 """
 
@@ -19,10 +19,11 @@ def create_service():
     
 class StunServerService(LocalService):
     
-    service_name = 'stun_server'
+    service_name = 'service_stun_server'
     
     def dependent_on(self):
-        return ['udp_datagrams',
+        return ['service_udp_datagrams',
+                'service_entangled_dht',
                 ]
     
     def start(self):

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#udp_transport.py
+#service_tcp_transport.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,37 +8,36 @@
 #
 
 """
-.. module:: udp_transport
+.. module:: service_tcp_transport
 
 """
 
 from services.local_service import LocalService
 
 def create_service():
-    return UDPTransportService()
+    return TCPTransportService()
     
-class UDPTransportService(LocalService):
+class TCPTransportService(LocalService):
     
-    service_name = 'udp_transport'
-    proto = 'udp'
+    service_name = 'service_tcp_transport'
+    proto = 'tcp'
     
     def dependent_on(self):
-        return ['udp_datagrams',
-                'stun_client',
-                'gateway',
-                'network',
+        return ['service_tcp_connections',
+                'service_gateway',
+                'service_network',
                 ]
     
     def start(self):
-        from transport.udp import udp_interface
+        from transport.tcp import tcp_interface
         from transport import network_transport
         from transport import gateway
         from twisted.internet import reactor
         from twisted.internet.defer import Deferred
         self.starting_deferred = Deferred()
-        self.interface = udp_interface.GateInterface()
+        self.interface = tcp_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
-            'udp', self.interface)
+            'tcp', self.interface)
         gateway.attach(self)
         self.transport.automat('init', 
             (gateway.listener(), self._on_transport_state_changed))
@@ -56,26 +55,22 @@ class UDPTransportService(LocalService):
     
     def enabled(self):
         from lib import settings
-        return settings.enableUDP()
-
+        return settings.enableTCP()
+    
     def installed(self):
         try:
-            from transport.udp import udp_interface
+            from transport.tcp import tcp_interface
         except:
             return False
         return True
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
-        # from logs import lg
-        # lg.out(6, 'udp_transport._on_transport_state_changed in %r : %s->%s' % (
-        #     transport, oldstate, newstate))
-        if self.starting_deferred:
-            if newstate in ['LISTENING', 'OFFLINE',]:
-                self.starting_deferred.callback(newstate)
-                self.starting_deferred = None
-        if self.transport:
-            from p2p import network_connector
-            network_connector.A('network-transport-state-changed', self.transport)
-        
-        
+        from logs import lg
+        lg.out(6, 'tcp_transport._on_transport_state_changed in %r : %s->%s' % (
+            transport, oldstate, newstate))
+        if newstate in ['LISTENING', 'OFFLINE',]:
+            self.starting_deferred.callback(newstate)
+            self.starting_deferred = None
+        from p2p import network_connector
+        network_connector.A('network-transport-state-changed', self.transport)
     

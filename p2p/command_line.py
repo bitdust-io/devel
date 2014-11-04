@@ -42,7 +42,7 @@ from logs import lg
 from lib import bpio
 from lib import misc
 from lib import settings
-from lib import userconfig
+from lib import config
 from lib import nameurl
 from lib import contacts
 from lib import packetid
@@ -83,7 +83,7 @@ def run(opts, args, overDict, pars):
         if len(args) >= 2 and args[1].lower() == 'schedule':
             print help.schedule_format()
         elif len(args) >= 2 and args[1].lower() == 'settings':
-            print settings.uconfig().print_all()
+            print config.conf().print_all()
         else:
             print help.help()
             print pars.format_option_help()
@@ -532,8 +532,8 @@ def cmd_register(opts, args, overDict):
         return 2
     if len(args) >= 3:
         from lib import settings
-        settings.uconfig().set('backup.private-key-size', str(args[2]))
-        settings.uconfig().update()
+        config.conf().setData('backup.private-key-size', str(args[2]))
+        
     import lib.automat  as automat
     import initializer
     import shutdowner
@@ -703,9 +703,9 @@ def cmd_set_directly(opts, args, overDict):
                 continue
             if path not in userconfig.public_options():
                 continue
-            value = settings.uconfig().data.get(path, '').replace('\n', ' ')
-            label = settings.uconfig().labels.get(path, '')
-            info = settings.uconfig().infos.get(path, '')
+            value = config.conf().data.get(path, '').replace('\n', ' ')
+            label = config.conf().labels.get(path, '')
+            info = config.conf().infos.get(path, '')
             print '  %s    %s' % (path.ljust(50), value.ljust(20))
         return 0
     name = args[1].lower()
@@ -714,21 +714,21 @@ def cmd_set_directly(opts, args, overDict):
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
     if path != '':
-        if not settings.uconfig().has(path):
+        if not config.conf().has(path):
             print '  key "%s" not found' % path
         else:
-            old_is = settings.uconfig().get(path)
+            old_is = config.conf().getData(path)
             if len(args) > 2:
                 value = ' '.join(args[2:])
-                settings.uconfig().set(path, unicode(value))
-                settings.uconfig().update()
-            info = str(settings.uconfig().get(path, 'info')).replace('None', '').replace('<br>', '\n')
+                config.conf().setData(path, unicode(value))
+                
+            info = str(config.conf().getData(path, 'info')).replace('None', '').replace('<br>', '\n')
             info = re.sub(r'<[^>]+>', '', info)
-            label = str(settings.uconfig().get(path, 'label')).replace('None', '')
+            label = str(config.conf().getData(path, 'label')).replace('None', '')
             print '  XML path: %s' % path
             print '  label:    %s' % label
             print '  info:     %s' % info
-            print '  value:    %s' % settings.uconfig().get(path)
+            print '  value:    %s' % config.conf().getData(path)
             if len(args) > 2:
                 print '  modified: [%s]->[%s]' % (old_is, value)
         return 0

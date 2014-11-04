@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#customer.py
+#service_customer.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: customer
+.. module:: service_customer
 
 """
 
@@ -19,14 +19,13 @@ def create_service():
     
 class CustomerService(LocalService):
     
-    service_name = 'customer'
+    service_name = 'service_customer'
     
     def dependent_on(self):
-        return ['p2p_hookups',
+        return ['service_p2p_hookups',
                 ]
     
     def start(self):
-        
         return True
     
     def stop(self):

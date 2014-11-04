@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#backup_db.py
+#service_backup_db.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: backup_db
+.. module:: service_backup_db
 
 """
 
@@ -19,10 +19,10 @@ def create_service():
     
 class BackupDBService(LocalService):
     
-    service_name = 'backup_db'
+    service_name = 'service_backup_db'
     
     def dependent_on(self):
-        return ['gateway',
+        return ['service_list_files',
                 ]
     
     def start(self):

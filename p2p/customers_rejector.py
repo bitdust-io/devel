@@ -51,6 +51,18 @@ def A(event=None, arg=None):
     return _CustomersRejector
 
 
+def Destroy():
+    """
+    Destroy customers_rejector() automat and remove its instance from memory.
+    """
+    global _CustomersRejector
+    if _CustomersRejector is None:
+        return
+    _CustomersRejector.destroy()
+    del _CustomersRejector
+    _CustomersRejector = None
+    
+    
 class CustomersRejector(automat.Automat):
     """
     This class implements all the functionality of the ``customers_rejector()`` state machine.

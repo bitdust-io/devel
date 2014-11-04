@@ -100,6 +100,18 @@ def A(event=None, arg=None):
     return _BackupMonitor
 
 
+def Destroy():
+    """
+    Destroy backup_monitor() automat and remove its instance from memory.
+    """
+    global _BackupMonitor
+    if _BackupMonitor is None:
+        return
+    _BackupMonitor.destroy()
+    del _BackupMonitor
+    _BackupMonitor = None
+
+
 class BackupMonitor(automat.Automat):
     """
     A class to monitor backups and manage rebuilding process.

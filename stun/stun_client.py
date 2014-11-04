@@ -73,6 +73,7 @@ class StunClient(automat.Automat):
         return self.MESSAGES.get(msgid, '')
     
     def init(self):
+        # self.log_events = True
         self.listen_port = None
         self.callback = None
         self.minimum_needed_servers = 4

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#identity_propagate.py
+#service_identity_propagate.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: identity_propagate
+.. module:: service_identity_propagate
 
 """
 
@@ -19,12 +19,12 @@ def create_service():
     
 class IdentityPropagateService(LocalService):
     
-    service_name = 'identity_propagate'
+    service_name = 'service_identity_propagate'
     
     def dependent_on(self):
-        return ['network',
-                'gateway',
-                'tcp_connections',
+        return ['service_network',
+                'service_gateway',
+                'service_tcp_connections',
                 ]
     
     def start(self):

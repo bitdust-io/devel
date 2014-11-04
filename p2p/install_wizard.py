@@ -46,6 +46,7 @@ from logs import lg
 
 from lib import misc
 from lib import settings
+from lib import config
 from lib.automat import Automat
 
 import installer
@@ -188,43 +189,43 @@ class InstallWizard(Automat):
         localbackupsdir = arg.get('localbackupsdir', '')
         restoredir = arg.get('restoredir', '')
         if needed:
-            settings.uconfig().set('storage.needed', needed+' MB')
+            config.conf().setData('storage.needed', needed+' MB')
         if donated:
-            settings.uconfig().set('storage.donated', donated+' MB')
+            config.conf().setData('storage.donated', donated+' MB')
         if customersdir:
-            settings.uconfig().set('folder.folder-customers', customersdir)
+            config.conf().setData('folder.folder-customers', customersdir)
         if localbackupsdir:
-            settings.uconfig().set('folder.folder-backups', localbackupsdir)
+            config.conf().setData('folder.folder-backups', localbackupsdir)
         if restoredir:
-            settings.uconfig().set('folder.folder-restore', restoredir)
+            config.conf().setData('folder.folder-restore', restoredir)
         if self.role == 'MOST_SECURE':
-            settings.uconfig().set('general.general-local-backups-enable', 'False')
-        settings.uconfig().update()
+            config.conf().setData('general.general-local-backups-enable', 'False')
+        
 
     def doSaveContacts(self, arg):
-        settings.uconfig().set('emergency.emergency-email', arg.get('email', '').strip())
-        settings.uconfig().set('personal.personal-name', arg.get('name', ''))
-        settings.uconfig().set('personal.personal-surname', arg.get('surname', ''))
-        settings.uconfig().set('personal.personal-nickname', arg.get('nickname', ''))
+        config.conf().setData('emergency.emergency-email', arg.get('email', '').strip())
+        config.conf().setData('personal.personal-name', arg.get('name', ''))
+        config.conf().setData('personal.personal-surname', arg.get('surname', ''))
+        config.conf().setData('personal.personal-nickname', arg.get('nickname', ''))
         if self.role == 'BETA_TEST':
-            settings.uconfig().set('personal.personal-betatester', 'True')
+            config.conf().setData('personal.personal-betatester', 'True')
             if self.role_args and self.role_args.get('development', '').lower() == 'true':
-                settings.uconfig().set("logs.debug-level", '14')
-                settings.uconfig().set("logs.stream-enable", 'True')
+                config.conf().setData("logs.debug-level", '14')
+                config.conf().setData("logs.stream-enable", 'True')
                 lg.set_debug_level(14)
         repo, locationURL = misc.ReadRepoLocation()
         if repo == 'test':
-            settings.uconfig().set("logs.debug-level", '18')
+            config.conf().setData("logs.debug-level", '18')
         elif repo == 'devel':
-            settings.uconfig().set("logs.debug-level", '12')
-        settings.uconfig().update()
+            config.conf().setData("logs.debug-level", '12')
+        
 
 #    def doSaveUpdates(self, arg):
 #        """
 #        """
 #        shedule = bpupdate.blank_shedule(arg)
-#        settings.uconfig().set('updates.updates-shedule', bpupdate.shedule_to_string(shedule))
-#        settings.uconfig().update()
+#        config.conf().setData('updates.updates-shedule', bpupdate.shedule_to_string(shedule))
+#        
 
 
 

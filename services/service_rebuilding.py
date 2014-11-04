@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#supplier.py
+#service_rebuilding.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,21 +8,21 @@
 #
 
 """
-.. module:: supplier
+.. module:: service_rebuilding
 
 """
 
 from services.local_service import LocalService
 
 def create_service():
-    return SupplierService()
+    return RebuildingService()
     
-class SupplierService(LocalService):
+class RebuildingService(LocalService):
     
-    service_name = 'supplier'
+    service_name = 'service_rebuilding'
     
     def dependent_on(self):
-        return ['gateway',
+        return ['service_data_sender',
                 ]
     
     def start(self):

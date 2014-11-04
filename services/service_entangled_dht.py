@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#distributed_hash_table.py
+#service_entangled_dht.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,22 +8,23 @@
 #
 
 """
-.. module:: distributed_hash_table
+.. module:: service_entangled_dht
 
 """
 
 from services.local_service import LocalService
 
 def create_service():
-    return DistributedHashTableService()
+    return EntangledDHTService()
     
-class DistributedHashTableService(LocalService):
+class EntangledDHTService(LocalService):
     
-    service_name = 'distributed_hash_table'
+    service_name = 'service_entangled_dht'
     
     def dependent_on(self):
-        return ['udp_datagrams', 
-                'network', ]
+        return ['service_udp_datagrams', 
+                'service_network', 
+                ]
     
     def start(self):
         from dht import dht_service

@@ -1,4 +1,11 @@
-
+#!/usr/bin/python
+#local_service.py
+#
+# <<<COPYRIGHT>>>
+#
+#
+#
+#
 
 """
 .. module:: local_service
@@ -26,7 +33,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList
 
 from logs import lg
 
@@ -51,13 +58,8 @@ class LocalService(automat.Automat):
             raise RequireSubclass()
         if self.service_name in services().keys():
             raise ServiceAlreadyExist(self.service_name)
-        automat.Automat.__init__(self, self.service_name+'_service', 'OFF', 10)
-
-    def init(self):
-        """
-        Method to initialize additional variables and flags at creation of the state machine.
-        """
         self.result_deferred = None
+        automat.Automat.__init__(self, self.service_name, 'OFF', 10)
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -181,15 +183,6 @@ class LocalService(automat.Automat):
             pass
         return None
 
-    def doStopDependentServices(self, arg):
-        """
-        Action method.
-        """
-        for svc in services().values():
-            if self.service_name in svc.dependent_on():
-                # lg.out(6, '%r sends "stop" to %r' % (self, svc))
-                svc.automat('stop')
-
     def doStartService(self, arg):
         """
         Action method.
@@ -248,6 +241,19 @@ class LocalService(automat.Automat):
         if arg:
             self.result_deferred = arg
 
+    def doStopDependentServices(self, arg):
+        """
+        Action method.
+        """
+        dl = []
+        for svc in services().values():
+            if self.service_name in svc.dependent_on():
+                lg.out(6, '%r sends "stop" to %r' % (self, svc))
+                d = Deferred()
+                svc.automat('stop', d)
+                dl.append(d)
+        DeferredList(dl).addBoth(lambda x: self.automat('services-stopped'))
+        
     def doNotifyStarted(self, arg):
         """
         Action method.

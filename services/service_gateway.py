@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#gateway.py
+#service_gateway.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: gateway
+.. module:: service_gateway
 
 """
 
@@ -19,26 +19,27 @@ def create_service():
     
 class GatewayService(LocalService):
     
-    service_name = 'gateway'
+    service_name = 'service_gateway'
     
     def dependent_on(self):
-        return ['network',
+        return ['service_network',
                 ]
     
     def start(self):
         from transport import gateway
-#        transports_list = []
-#        if settings.enableTCP():
-#            transports_list.append('tcp')
-#        if settings.enableUDP():
-#            transports_list.append('udp')
+        from transport import callback
+        from transport import bandwidth
         gateway.init()
-        # gateway.start()
+        bandwidth.init()
+        callback.add_inbox_callback(bandwidth.INfile)
+        callback.add_finish_file_sending_callback(bandwidth.OUTfile)
         return True
     
     def stop(self):
+        from transport import bandwidth
         from transport import gateway
         d = gateway.stop()
+        bandwidth.shutdown()
         gateway.shutdown()
         return d
     

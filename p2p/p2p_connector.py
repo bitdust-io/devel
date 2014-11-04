@@ -80,7 +80,6 @@ from userid import propagate
 
 import ratings
 import tray_icon
-import initializer
 import network_connector
 
 #import backup_monitor
@@ -180,7 +179,7 @@ class P2PConnector(automat.Automat):
         elif self.state == 'CONTACTS':
             if event == 'my-id-propagated' :
                 self.state = 'INCOMMING?'
-                #fire_hire.A('restart')
+                self.doRestartFireHire(arg)
             elif ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) or event == 'reconnect' :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
@@ -193,8 +192,8 @@ class P2PConnector(automat.Automat):
             elif event == 'inbox-packet' and self.isUsingBestProto(arg) :
                 self.state = 'CONNECTED'
                 self.doInitRatings(arg)
-                #backup_monitor.A('restart')
-                #customers_rejector.A('restart')
+                self.doRestartBackupMonitor(arg)
+                self.doRestartCustomersRejector(arg)
             elif event == 'reconnect' or ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
@@ -270,6 +269,30 @@ class P2PConnector(automat.Automat):
 
     def doInitRatings(self, arg):
         ratings.init()
+
+    def doRestartBackupMonitor(self, arg):
+        """
+        Action method.
+        """
+        if driver.is_started('service_backup_monitor'):
+            from p2p import backup_monitor
+            backup_monitor.A('restart')
+
+    def doRestartCustomersRejector(self, arg):
+        """
+        Action method.
+        """
+        if driver.is_started('service_customers_rejector'):
+            from p2p import customers_rejector
+            customers_rejector.A('restart')
+
+    def doRestartFireHire(self, arg):
+        """
+        Action method.
+        """
+        if driver.is_started('service_fire_hire'):
+            from p2p import fire_hire
+            fire_hire.A('restart')
 
     def _check_to_use_best_proto(self):
         #out(4, 'p2p_connector._check_to_use_best_proto active_protos()=%s' % str(active_protos()))

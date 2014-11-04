@@ -75,6 +75,18 @@ def A(event=None, arg=None):
     return _ListFilesOrator
 
 
+def Destroy():
+    """
+    Destroy list_files_orator() automat and remove its instance from memory.
+    """
+    global _ListFilesOrator
+    if _ListFilesOrator is None:
+        return
+    _ListFilesOrator.destroy()
+    del _ListFilesOrator
+    _ListFilesOrator = None
+    
+    
 class ListFilesOrator(Automat):
     """
     A class to request list of my files from my suppliers and also scan the local files.
