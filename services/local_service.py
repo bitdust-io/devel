@@ -65,6 +65,11 @@ class LocalService(automat.Automat):
         """
         Method to catch the moment when automat's state were changed.
         """
+        try:
+            from p2p import webcontrol
+            webcontrol.OnServiceStateChanged(self.service_name)
+        except:
+            pass
 
     def state_not_changed(self, curstate, event, arg):
         """

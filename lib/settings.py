@@ -224,16 +224,16 @@ def convert_configs():
     return
 
 def patch_settings_py():
-    src = open('lib/settings.py').read()
+    src = open('p2p/webcontrol.py').read()
     from lib import config
     config.init(ConfigDir())
     for k, value in uconfig().data.items():
         key = convert_key(k)
-        src = src.replace(k, key)
-    src = src.replace('uconfig(\'', 'config.conf().getData(\'')
-    src = src.replace('config.conf().setData(\'', 'config.conf().setData(\'')
-    src = src.replace('uconfig().update()\n', '')
-    open('lib/settings_.py', 'w').write(src)
+        src = src.replace(k, key.replace('/', '.'))
+    # src = src.replace('uconfig(\'', 'config.conf().getData(\'')
+    # src = src.replace('config.conf().setData(\'', 'config.conf().setData(\'')
+    # src = src.replace('uconfig().update()\n', '')
+    open('p2p/webcontrol_.py', 'w').write(src)
     
 #------------------------------------------------------------------------------ 
 #--- CONSTANTS ----------------------------------------------------------------
@@ -1262,7 +1262,7 @@ def enableProxy(enable=None):
     Enable/disable using of proxy server.
     """
     if enable is None:
-        return config.conf().getData('services/network/proxy/enabled').lower() == 'true'
+        return config.conf().getBool('services/network/proxy/enabled')
     config.conf().setData('services/network/proxy/enabled', str(enable))
     
 def getProxyHost():
@@ -1299,7 +1299,7 @@ def getProxySettingsDict():
     return {
          'host':        config.conf().getData('services/network/proxy/host').strip(),
          'port':        config.conf().getData('services/network/proxy/port').strip(),
-         'username':    config.conf().getData('services/network/proxy.network-proxy-username').strip(),
+         'username':    config.conf().getData('services/network/proxy/username').strip(),
          'password':    config.conf().getData('services/network/proxy/password').strip(),
          'ssl':         config.conf().getData('services/network/proxy/ssl').strip(), }
 
@@ -1351,7 +1351,7 @@ def enableIdServer(enable=None):
     """
     """
     if enable is None:
-        return config.conf().getData('services/id-server/enabled').lower() == 'true'
+        return config.conf().getBool('services/id-server/enabled')
     config.conf().setData('services/id-server/enabled', str(enable))
     
 def getIdServerHost():
@@ -1400,7 +1400,7 @@ def enableTCP(enable=None):
     Note : transport_tcp is always available for identites to id server.
     """
     if enable is None:
-        return config.conf().getData('services/tcp-transport/enabled').lower() == 'true'
+        return config.conf().getBool('services/tcp-transport/enabled')
     config.conf().setData('services/tcp-transport/enabled', str(enable))
     
 def enableTCPsending(enable=None):
@@ -1408,7 +1408,7 @@ def enableTCPsending(enable=None):
     Switch on/off sending over transport_tcp in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getData('services/tcp-transport/sending-enabled').lower() == 'true'
+        return config.conf().getBool('services/tcp-transport/sending-enabled')
     config.conf().setData('services/tcp-transport/sending-enabled', str(enable))
         
 def enableTCPreceiving(enable=None):
@@ -1416,7 +1416,7 @@ def enableTCPreceiving(enable=None):
     Switch on/off receiving over transport_tcp in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getData('services/tcp-transport/receiving-enabled').lower() == 'true'
+        return config.conf().getBool('services/tcp-transport/receiving-enabled')
     config.conf().setData('services/tcp-transport/receiving-enabled', str(enable))
     
 def getTCPPort():
@@ -1436,7 +1436,7 @@ def enableUDP(enable=None):
     Switch on/off transport_udp in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getData('services/udp-transport/enabled').lower() == 'true'
+        return config.conf().getBool('services/udp-transport/enabled')
     config.conf().setData('services/udp-transport/enabled', str(enable))
     
 def enableUDPsending(enable=None):
@@ -1444,7 +1444,7 @@ def enableUDPsending(enable=None):
     Switch on/off sending over udp in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getData('services/udp-transport/sending-enabled').lower() == 'true'
+        return config.conf().getBool('services/udp-transport/sending-enabled')
     config.conf().setData('services/udp-transport/sending-enabled', str(enable))
         
 def enableUDPreceiving(enable=None):
@@ -1452,7 +1452,7 @@ def enableUDPreceiving(enable=None):
     Switch on/off receiving over udp in the settings or get current state.
     """
     if enable is None:
-        return config.conf().getData('services/udp-transport/receiving-enabled').lower() == 'true'
+        return config.conf().getBool('services/udp-transport/receiving-enabled')
     config.conf().setData('services/udp-transport/receiving-enabled', str(enable))
     
 def getUDPPort():
@@ -1488,7 +1488,7 @@ def enableTransport(proto, enable=None):
     if config.conf().getData(key) is None:
         return False
     if enable is None:
-        return config.conf().getData(key).lower() == 'true'
+        return config.conf().getBool(key)
     config.conf().setData(key, str(enable))
     
 def transportIsEnabled(proto):
@@ -1511,16 +1511,17 @@ def transportReceivingIsEnabled(proto):
     key = 'services/%s-transport/enabled' % proto
     if config.conf().getData(key) is None:
         return False
-    return config.conf().getData(key).lower() == 'true'
+    return config.conf().getBool(key)
 
 def transportSendingIsEnabled(proto):
     """
     Return True if sending over given transport is switched on. 
     """
-    key = 'transport.transport-%s.transport-%s-sending-enable' % (proto, proto)
+    # key = 'transport.transport-%s.transport-%s-sending-enable' % (proto, proto)
+    key = 'services/%s-transport/enabled' % proto
     if config.conf().getData(key) is None:
         return False
-    return config.conf().getData(key).lower() == 'true'
+    return config.conf().getBool(key)
 
 def getDebugLevelStr(): 
     """
@@ -1550,7 +1551,7 @@ def enableWebStream(enable=None):
     need to restart BitPie.NET to take place changes.
     """
     if enable is None:
-        return config.conf().getData('logs/stream-enabled').lower() == 'true'
+        return config.conf().getBool('logs/stream-enabled')
     config.conf().setData('logs/stream-enabled', str(enable))
     
 def enableWebTraffic(enable=None):
@@ -1559,7 +1560,7 @@ def enableWebTraffic(enable=None):
     need to restart BitPie.NET to take place changes.
     """
     if enable is None:
-        return config.conf().getData('logs/traffic-enabled').lower() == 'true'
+        return config.conf().getBool('logs/traffic-enabled')
     config.conf().setData('logs/traffic-enabled', str(enable))
     
 def getWebStreamPort():
@@ -1585,7 +1586,7 @@ def enableMemoryProfile(enable=None):
     Get current state or enable/disable using of HTTP server to momory profiling.
     """
     if enable is None:
-        return config.conf().getData('logs/memprofile-enabled').lower() == 'true'
+        return config.conf().getBool('logs/memprofile-enabled')
     config.conf().setData('logs/memprofile-enabled', str(enable))
     
 def getECCSuppliersNumbers():
@@ -1653,7 +1654,7 @@ def getEmergency(method):
     """
     if method not in getEmergencyMethods():
         return ''
-    return config.conf().getData('emergency.emergency-' + method)
+    return config.conf().getData('emergency/' + method)
 
 def getEmergencyFirstMethod():
     """
@@ -1732,19 +1733,19 @@ def getGeneralLocalBackups():
     """
     Return True if user wish to keep local backups.
     """
-    return config.conf().getData('services/backups/keep-local-copies-enabled').lower() == 'true'
+    return config.conf().getBool('services/backups/keep-local-copies-enabled')
 
 def getGeneralWaitSuppliers():
     """
     Return True if user want to be sure that suppliers are reliable enough before removing the local backups. 
     """
-    return config.conf().getData('services/backups/wait-suppliers-enabled').lower() == 'true'
+    return config.conf().getBool('services/backups/wait-suppliers-enabled')
 
 #def getGeneralAutorun():
 #    """
 #    Return True if user want to start BitPie.NET at system start up.
 #    """
-#    return config.conf().getData('general.general-autorun').lower() == 'true'
+#    return config.conf().getBool('general.general-autorun')
 
 #def getGeneralDisplayMode():
 #    """
@@ -1759,19 +1760,19 @@ def getGeneralWaitSuppliers():
 #    return ('iconify window', 'normal window', 'maximized window',)
 
 ##def getGeneralShowProgress():
-##    return config.conf().getData('general.general-show-progress').lower() == 'true'
+##    return config.conf().getBool('general.general-show-progress')
 
 def getGeneralDesktopShortcut():
     """
     Not used.
     """
-    return config.conf().getData('general.general-desktop-shortcut').lower() == 'true'
+    return config.conf().getBool('general.general-desktop-shortcut')
 
 def getGeneralStartMenuShortcut():
     """
     Not used.
     """
-    return config.conf().getData('general.general-start-menu-shortcut').lower() == 'true'
+    return config.conf().getBool('general.general-start-menu-shortcut')
 
 def getBackupBlockSize():
     """
@@ -1832,15 +1833,15 @@ def enableUPNP(enable=None):
     If ``enable`` is not None - rewrite current value in the settings.
     """
     if enable is None:
-        return config.conf().getData('other/upnp-enabledd').lower() == 'true'
-    config.conf().setData('other/upnp-enabledd', str(enable))
+        return config.conf().getBool('other/upnp-enabled')
+    config.conf().setData('other/upnp-enabled', str(enable))
     
 def getUPNPatStartup():
     """
     User have an option to check UPNP port forwarding every time BitPie.NET software starts up.
     But this slow down the start up process.
     """
-    return config.conf().getData('other/upnp-at-startup').lower() == 'true'
+    return config.conf().getBool('other/upnp-at-startup')
 
 def setUPNPatStartup(enable):
     """
@@ -2002,7 +2003,7 @@ def _checkSettings():
         config.conf().setData("services/tcp-connections/tcp-port", str(DefaultTCPPort()))
 
     if getUDPPort() == "":
-        config.conf().setData("services/udp-transport.transport-udp-port", str(DefaultUDPPort()))
+        config.conf().setData("services/udp-datagrams/udp-port", str(DefaultUDPPort()))
 
     if getDHTPort() == "":
         config.conf().setData("services/entangled-dht/udp-port", str(DefaultDHTPort()))

@@ -495,15 +495,15 @@ class MyHtmlWindow(wx.html.HtmlWindow):
         self.busyInfo = None
         self.is_child = is_child_window
         self.Bind(forms.form.EVT_FORM_SUBMIT, self.OnFormSubmit)
-        if "gtk2" in wx.PlatformInfo:
-            self.SetStandardFonts()
+        # if "gtk2" in wx.PlatformInfo:
+        #     self.SetStandardFonts()
 #            _FONT_SIZES = [7, 8, 10, 12, 16, 22, 30]
 #            _FONT_SIZES = [7, 9, 12, 14, 18, 28, 38]
 #            self.SetFonts("arial", "courier new", _FONT_SIZES)
-#        if "wxMSW" in wx.PlatformInfo:
+        if "wxMSW" in wx.PlatformInfo:
 #            # Original font sizes are [7, 8, 10, 12, 16, 22, 30]
-#            _FONT_SIZES = [5, 6,  8, 10, 14, 20, 24]
-#            self.SetFonts("Microsoft Sans Serif", "Courier New", _FONT_SIZES)
+            _FONT_SIZES = [5, 6,  8, 10, 14, 20, 24]
+            self.SetFonts("Microsoft Sans Serif", "Courier New", _FONT_SIZES)
         self.SetBorders(5)
         self.SetDoubleBuffered(True)
         self.clickedTime = None

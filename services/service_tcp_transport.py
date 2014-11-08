@@ -25,7 +25,6 @@ class TCPTransportService(LocalService):
     def dependent_on(self):
         return ['service_tcp_connections',
                 'service_gateway',
-                'service_network',
                 ]
     
     def start(self):

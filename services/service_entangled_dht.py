@@ -23,7 +23,6 @@ class EntangledDHTService(LocalService):
     
     def dependent_on(self):
         return ['service_udp_datagrams', 
-                'service_network', 
                 ]
     
     def start(self):

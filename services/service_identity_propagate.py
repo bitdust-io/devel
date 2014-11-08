@@ -22,8 +22,7 @@ class IdentityPropagateService(LocalService):
     service_name = 'service_identity_propagate'
     
     def dependent_on(self):
-        return ['service_network',
-                'service_gateway',
+        return ['service_gateway',
                 'service_tcp_connections',
                 ]
     

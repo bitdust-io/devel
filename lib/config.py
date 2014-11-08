@@ -73,7 +73,7 @@ class BaseConfig( object ) :
         entries = self._get( entryPath )
         t = type(entries)
         if t is types.StringType :
-            lg.warn( 'argument to listEntries is a file: %s' % entryPath )
+            # lg.warn( 'argument to listEntries is a file: %s' % entryPath )
             return []
         if entries is None :
             return []
@@ -234,7 +234,7 @@ class BaseConfig( object ) :
                 data = f.read()
                 f.close()
             except (OSError,IOError) :
-                lg.exc( 'error reading file: %s' % fpath )
+                lg.exc( 'error reading from file: %s' % fpath )
             return data
         return None
 
@@ -252,27 +252,31 @@ class BaseConfig( object ) :
             f.close()
             return True
         except (OSError,IOError) :
-            lg.exc( 'error writing file: %s' % fpath )
-            return False
+            lg.exc( 'error writing to file: %s' % fpath )
+        return False
 
+#------------------------------------------------------------------------------ 
     
 class NotifiableConfig(BaseConfig):
     def __init__(self, configDir):
         BaseConfig.__init__(self, configDir)
-        self.callbacks = []
+        self.callbacks = {}
     
-    def addCallback(self, cb):
-        self.callbacks.append(cb)
+    def addCallback(self, mask, cb):
+        self.callbacks[mask] = cb
         
-    def removeCallback(self, cb):
-        self.callbacks.remove(cb)
+    def removeCallback(self, mask):
+        del self.callbacks[mask]
         
     def _set( self, entryPath, data ) :
+        olddata = self._get(entryPath)
         result = BaseConfig._set(self, entryPath, data)
-        for cb in self.callbacks:
-            cb(entryPath, data, result)
+        for mask, cb in self.callbacks.items():
+            if entryPath.startswith(mask):
+                cb(entryPath, data, olddata, result)
         return result
 
+#------------------------------------------------------------------------------ 
 
 def main():
     """
@@ -281,7 +285,7 @@ def main():
     from lib import settings
     settings.init()
     init(settings.ConfigDir())
-    print conf().listAllEntries()
+    print '\n'.join(map(lambda x: "    '%s':\t\t\tSettingsTreeNode," % x, sorted(conf().listAllEntries())))
 
 
 if __name__ == "__main__":

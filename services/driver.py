@@ -26,8 +26,8 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from lib import automat
 from lib import bpio
+from lib import config
 
 #------------------------------------------------------------------------------ 
 
@@ -88,16 +88,18 @@ def init():
         try:
             services()[name] = py_mod.create_service()
         except:
-            lg.exc()
+            lg.exc() 
         if services()[name].enabled():
             enabled_services().add(name)
     build_order()
+    config.conf().addCallback('services/', on_service_enabled_disabled)
 
 
 def shutdown():
     """
     """
     lg.out(2, 'driver.shutdown')
+    config.conf().removeCallback('services/')
     while len(services()):
         name, svc = services().popitem()
         # print sys.getrefcount(svc) 
@@ -241,6 +243,22 @@ def on_stopped_all_services(results):
     global _StopingDeferred
     _StopingDeferred = None
     return results
+
+def on_service_enabled_disabled(path, newvalue, oldvalue, result):
+    print 'on_service_enabled_disabled', path, newvalue, oldvalue, result
+    if not result:
+        return
+    if not path.endswith('/enabled'):
+        return
+    svc_name = path.replace('services/', 'service_').replace('/enabled', '').replace('-', '_')
+    svc = services().get(svc_name, None) 
+    if svc:
+        if newvalue == 'true':
+            svc.automat('start')
+        else:
+            svc.automat('stop')
+    else:
+        lg.warn('%s not found: %s' % (svc_name, path))    
 
 #------------------------------------------------------------------------------ 
 

@@ -24,7 +24,6 @@ class StunClientService(LocalService):
     def dependent_on(self):
         return ['service_entangled_dht',
                 'service_udp_datagrams',
-                'service_network',
                 ]
     
     def start(self):

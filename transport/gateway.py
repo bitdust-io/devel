@@ -377,6 +377,7 @@ def outbox(outpacket, wide=False, callbacks={}):
         nameurl.GetName(outpacket.RemoteID),))
     return packet_out.create(outpacket, wide, callbacks)
 
+#------------------------------------------------------------------------------ 
 
 def send_work_item(proto, host, filename, description):
     """

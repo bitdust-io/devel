@@ -26,7 +26,6 @@ class UDPTransportService(LocalService):
         return ['service_udp_datagrams',
                 'service_stun_client',
                 'service_gateway',
-                'service_network',
                 ]
     
     def start(self):

@@ -62,7 +62,6 @@ except:
 
 from logs import lg
 
-from lib import bpio
 from lib import misc
 from lib import settings
 from lib import contacts

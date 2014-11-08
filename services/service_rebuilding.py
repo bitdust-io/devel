@@ -26,9 +26,13 @@ class RebuildingService(LocalService):
                 ]
     
     def start(self):
+        from p2p import backup_rebuilder
+        backup_rebuilder.A('init')
         return True
     
     def stop(self):
+        from p2p import backup_rebuilder
+        backup_rebuilder.Destroy()
         return True
     
     

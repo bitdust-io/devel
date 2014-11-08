@@ -357,20 +357,20 @@ class P2PConnector(automat.Automat):
         misc.setLocalIdentity(lid)
         misc.saveLocalIdentity() 
     
-    def _is_id_changed(self, changes):
-        s = set(changes)
-        if s.intersection([
-            'transport.transport-tcp.transport-tcp-enable',
-            'transport.transport-tcp.transport-tcp-receiving-enable',
-            'transport.transport-udp.transport-udp-enable',
-            'transport.transport-udp.transport-udp-receiving-enable',
-            ]):
-            return True
-        if 'transport.transport-tcp.transport-tcp-port' in s and settings.enableTCP():
-            return True
-        # if 'transport.transport-udp.transport-udp-port' in s and settings.enableUDP():
-        #     return True
-        return False
+#    def _is_id_changed(self, changes):
+#        s = set(changes)
+#        if s.intersection([
+#            'transport.transport-tcp.transport-tcp-enable',
+#            'transport.transport-tcp.transport-tcp-receiving-enable',
+#            'transport.transport-udp.transport-udp-enable',
+#            'transport.transport-udp.transport-udp-receiving-enable',
+#            ]):
+#            return True
+#        if 'transport.transport-tcp.transport-tcp-port' in s and settings.enableTCP():
+#            return True
+#        # if 'transport.transport-udp.transport-udp-port' in s and settings.enableUDP():
+#        #     return True
+#        return False
     
     def _update_my_identity(self):
         """

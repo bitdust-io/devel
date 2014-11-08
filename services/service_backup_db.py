@@ -23,6 +23,7 @@ class BackupDBService(LocalService):
     
     def dependent_on(self):
         return ['service_list_files',
+                'service_data_sender', 
                 ]
     
     def start(self):

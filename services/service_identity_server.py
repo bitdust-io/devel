@@ -27,7 +27,6 @@ class IdentityServerService(LocalService):
     
     def dependent_on(self):
         return ['service_tcp_connections',
-                'service_network',
                 ]
         
     def enabled(self):
