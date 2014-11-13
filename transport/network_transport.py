@@ -28,6 +28,8 @@ from lib import misc
 from lib import settings
 from lib import nameurl
 
+import gateway 
+
 #------------------------------------------------------------------------------ 
 
 class NetworkTransport(automat.Automat):
@@ -41,7 +43,7 @@ class NetworkTransport(automat.Automat):
         self.proto = proto
         self.interface = interface
         self.state_changed_callback = None
-        automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8)
+        automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8, True)
         
     def call(self, method_name, *args):
         method = getattr(self.interface, method_name, None)
@@ -141,6 +143,7 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
+        gateway.attach(self)
         listener, state_changed_callback = arg
         self.state_changed_callback = state_changed_callback
         self.interface.init(listener)
@@ -193,5 +196,6 @@ class NetworkTransport(automat.Automat):
         self.interface.shutdown()
         self.destroy()
         self.interface = None
+        gateway.detach(self)
 
 

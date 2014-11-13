@@ -20,6 +20,7 @@ def create_service():
 class BackupDBService(LocalService):
     
     service_name = 'service_backup_db'
+    config_path = 'services/backup-db/enabled'
     
     def dependent_on(self):
         return ['service_list_files',

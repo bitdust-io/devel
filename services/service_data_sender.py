@@ -20,6 +20,7 @@ def create_service():
 class DataSenderService(LocalService):
     
     service_name = 'service_data_sender'
+    config_path = 'services/data-sender/enabled'
     
     def dependent_on(self):
         return ['service_customer',

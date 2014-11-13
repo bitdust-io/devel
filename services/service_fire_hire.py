@@ -20,6 +20,7 @@ def create_service():
 class FireHireService(LocalService):
     
     service_name = 'service_fire_hire'
+    config_path = 'services/fire-hire/enabled'
     
     def dependent_on(self):
         return ['service_customer',

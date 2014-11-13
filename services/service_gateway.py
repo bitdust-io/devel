@@ -20,6 +20,7 @@ def create_service():
 class GatewayService(LocalService):
     
     service_name = 'service_gateway'
+    config_path = 'services/gateway/enabled'
     
     def dependent_on(self):
         return ['service_network',

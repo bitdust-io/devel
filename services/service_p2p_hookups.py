@@ -20,6 +20,7 @@ def create_service():
 class P2PHookupsService(LocalService):
     
     service_name = 'service_p2p_hookups'
+    config_path = 'services/p2p-hookups/enabled'
     
     def dependent_on(self):
         from lib import settings

@@ -20,6 +20,7 @@ def create_service():
 class UDPTransportService(LocalService):
     
     service_name = 'service_udp_transport'
+    config_path = 'services/udp-transport/enabled'
     proto = 'udp'
     
     def dependent_on(self):
@@ -38,24 +39,21 @@ class UDPTransportService(LocalService):
         self.interface = udp_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
             'udp', self.interface)
-        gateway.attach(self)
         self.transport.automat('init', 
             (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')
         return self.starting_deferred
     
     def stop(self):
-        from transport import gateway
-        gateway.detach(self)
         t = self.transport
         self.transport = None
         self.interface = None
         t.automat('shutdown')
         return True
     
-    def enabled(self):
-        from lib import settings
-        return settings.enableUDP()
+#    def enabled(self):
+#        from lib import settings
+#        return settings.enableUDP()
 
     def installed(self):
         try:

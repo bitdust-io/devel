@@ -20,6 +20,7 @@ def create_service():
 class StunClientService(LocalService):
     
     service_name = 'service_stun_client'
+    config_path = 'services/stun-client/enabled'
     
     def dependent_on(self):
         return ['service_entangled_dht',

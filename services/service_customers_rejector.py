@@ -20,6 +20,7 @@ def create_service():
 class CustomersRejectorService(LocalService):
     
     service_name = 'service_customers_rejector'
+    config_path = 'services/customers-rejector/enabled'
     
     def dependent_on(self):
         return ['service_supplier',

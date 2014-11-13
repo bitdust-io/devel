@@ -20,6 +20,7 @@ def create_service():
 class RestoreMonitorService(LocalService):
     
     service_name = 'service_restores'
+    config_path = 'services/restores/enabled'
     
     def dependent_on(self):
         return ['service_backups',

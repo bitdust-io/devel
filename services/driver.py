@@ -91,6 +91,7 @@ def init():
             lg.exc() 
         if services()[name].enabled():
             enabled_services().add(name)
+    # print '\n'.join(enabled_services())
     build_order()
     config.conf().addCallback('services/', on_service_enabled_disabled)
 
@@ -229,6 +230,11 @@ def on_service_callback(result, service_name):
                 relative_service.automat('start')
     elif result == 'stopped':
         lg.out(2, '[%s] STOPPED' % service_name)
+        for depend_name in svc.dependent_on():
+            depend_service = services().get(depend_name, None)
+            if not depend_service:
+                raise ServiceNotFound(depend_name)
+            depend_service.automat('depend-service-stopped')
     return result
 
 def on_started_all_services(results):
@@ -275,11 +281,10 @@ class ServiceNotFound(Exception):
 
 def main():
     from lib import settings
-    from lib import config
     lg.set_debug_level(20)
     settings.init()
-    config.init(settings.ConfigDir())
     init()
+    # print '\n'.join(_BootUpOrder)
     shutdown()
 
 

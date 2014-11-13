@@ -20,6 +20,7 @@ def create_service():
 class StunServerService(LocalService):
     
     service_name = 'service_stun_server'
+    config_path = 'services/stun-server/enabled'
     
     def dependent_on(self):
         return ['service_udp_datagrams',

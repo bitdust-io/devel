@@ -271,7 +271,7 @@ def attach(transport_instance):
     global _AvailableTransports
     _AvailableTransports[transport_instance.proto] = True
     # transport_instance.transport.state_changed_callback = on_transport_state_changed
-    _TransportsDict[transport_instance.proto] = transport_instance.transport
+    _TransportsDict[transport_instance.proto] = transport_instance
     lg.out(6, 'gateway.attach : %r' % transport_instance)
 
 
@@ -553,7 +553,8 @@ def on_disconnected(proto, result=None):
     """
     """
     lg.out(6, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
-    transport(proto).automat('stopped')
+    if transports().has_key(proto):
+        transport(proto).automat('stopped')
     return True
 
 def on_start_connecting(host):

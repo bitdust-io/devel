@@ -20,6 +20,7 @@ def create_service():
 class SupplierService(LocalService):
     
     service_name = 'service_supplier'
+    config_path = 'services/supplier/enabled'
     
     def dependent_on(self):
         return ['service_gateway',

@@ -20,12 +20,12 @@ BitPie.NET local_service() Automat
     </a>
 
 EVENTS:
+    * :red:`depend-service-stopped`
     * :red:`service-depend-off`
     * :red:`service-failed`
     * :red:`service-not-installed`
     * :red:`service-started`
     * :red:`service-stopped`
-    * :red:`services-stopped`
     * :red:`shutdown`
     * :red:`start`
     * :red:`stop`
@@ -52,6 +52,7 @@ class LocalService(automat.Automat):
     """
     
     service_name = ''
+    config_path = ''
 
     def __init__(self):
         if self.service_name == '':
@@ -59,7 +60,7 @@ class LocalService(automat.Automat):
         if self.service_name in services().keys():
             raise ServiceAlreadyExist(self.service_name)
         self.result_deferred = None
-        automat.Automat.__init__(self, self.service_name, 'OFF', 10)
+        automat.Automat.__init__(self, self.service_name, 'OFF', 10, True)
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -120,17 +121,17 @@ class LocalService(automat.Automat):
                 self.NeedStart=True
             elif event == 'stop' :
                 self.doSetCallback(arg)
-            elif event == 'services-stopped' and self.NeedStart :
+            elif event == 'shutdown' :
+                self.state = 'CLOSED'
+                self.doStopService(arg)
+                self.doDestroyMe(arg)
+            elif event == 'depend-service-stopped' and self.isAllDependsStopped(arg) and self.NeedStart :
                 self.state = 'STARTING'
                 self.NeedStart=False
                 self.doStopService(arg)
                 self.doNotifyStopped(arg)
                 self.doStartService(arg)
-            elif event == 'shutdown' :
-                self.state = 'CLOSED'
-                self.doStopService(arg)
-                self.doDestroyMe(arg)
-            elif event == 'services-stopped' and not self.NeedStart :
+            elif event == 'depend-service-stopped' and self.isAllDependsStopped(arg) and not self.NeedStart :
                 self.state = 'STOPPING'
                 self.doStopService(arg)
         #---STARTING---
@@ -188,6 +189,28 @@ class LocalService(automat.Automat):
             pass
         return None
 
+    def isAllDependsStopped(self, arg):
+        """
+        Condition method.
+        """
+        for svc in services().values():
+            if self.service_name in svc.dependent_on():
+                if  svc.state != 'OFF' and \
+                    svc.state != 'DEPENDS_OFF' and \
+                    svc.state != 'NOT_INSTALLED':
+                    return False
+        return True
+#        for depend_name in self.dependent_on():
+#            depend_svc = services().get(depend_name, None)
+#            if depend_svc is None:
+#                lg.warn('%s not exist' % depend_name)
+#                continue
+#            if  depend_svc.state != 'OFF' and \
+#                depend_svc.state != 'DEPENDS_OFF' and \
+#                depend_svc.state != 'NOT_INSTALLED':
+#                return False
+#        return True
+
     def doStartService(self, arg):
         """
         Action method.
@@ -244,20 +267,28 @@ class LocalService(automat.Automat):
         Action method.
         """
         if arg:
-            self.result_deferred = arg
+            if self.result_deferred:
+                self.result_deferred.addCallback(arg.callback)
+            else:
+                self.result_deferred = arg
 
     def doStopDependentServices(self, arg):
         """
         Action method.
         """
-        dl = []
+        # dl = []
+        count = 0
         for svc in services().values():
             if self.service_name in svc.dependent_on():
                 lg.out(6, '%r sends "stop" to %r' % (self, svc))
-                d = Deferred()
-                svc.automat('stop', d)
-                dl.append(d)
-        DeferredList(dl).addBoth(lambda x: self.automat('services-stopped'))
+                # d = Deferred()
+                svc.automat('stop') # , d)
+                count += 1
+                # dl.append(d)
+        # DeferredList(dl).addBoth(lambda x: self.automat('services-stopped'))
+        # self.automat('services-stopped')
+        if count == 0:
+            self.automat('depend-service-stopped')
         
     def doNotifyStarted(self, arg):
         """
@@ -320,7 +351,8 @@ class LocalService(automat.Automat):
         return True
     
     def enabled(self):
-        return True
+        from lib import config
+        return config.conf().getBool(self.config_path)
 
     def start(self):
         raise RequireSubclass()

@@ -276,7 +276,8 @@ class StunClient(automat.Automat):
         for d in self.deferreds.values():
             d.cancel()
         self.deferreds.clear()
-        udp.proto(self.listen_port).remove_callback(self._datagram_received)
+        if udp.proto(self.listen_port):
+            udp.proto(self.listen_port).remove_callback(self._datagram_received)
         self.destroy()
 
     def _datagram_received(self, datagram, address):

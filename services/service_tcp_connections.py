@@ -20,9 +20,11 @@ def create_service():
 class TCPConnectionsService(LocalService):
     
     service_name = 'service_tcp_connections'
+    config_path = 'services/tcp-connections/enabled'
     
     def dependent_on(self):
-        return []
+        return ['service_network',
+                ]
     
     def start(self):
         return True

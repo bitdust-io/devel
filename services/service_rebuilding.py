@@ -20,6 +20,7 @@ def create_service():
 class RebuildingService(LocalService):
     
     service_name = 'service_rebuilding'
+    config_path = 'services/rebuilding/enabled'
     
     def dependent_on(self):
         return ['service_data_sender',

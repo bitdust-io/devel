@@ -20,6 +20,7 @@ def create_service():
 class BackupMonitorService(LocalService):
     
     service_name = 'service_backups'
+    config_path = 'services/backups/enabled'
     
     def dependent_on(self):
         return ['service_list_files',

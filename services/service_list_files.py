@@ -20,6 +20,7 @@ def create_service():
 class ListFilesService(LocalService):
     
     service_name = 'service_list_files'
+    config_path = 'services/list-files/enabled'
     
     def dependent_on(self):
         return ['service_customer',

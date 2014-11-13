@@ -20,6 +20,7 @@ def create_service():
 class PrivateMessagesService(LocalService):
     
     service_name = 'service_private_messages'
+    config_path = 'services/private-messages/enabled'
     
     def dependent_on(self):
         return ['service_gateway',

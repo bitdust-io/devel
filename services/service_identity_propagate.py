@@ -20,6 +20,7 @@ def create_service():
 class IdentityPropagateService(LocalService):
     
     service_name = 'service_identity_propagate'
+    config_path = 'services/identity-propagate/enabled'
     
     def dependent_on(self):
         return ['service_gateway',

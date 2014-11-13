@@ -5083,7 +5083,7 @@ class ServicesSettingsPage(Page):
     def renderPage(self, request):
         src = '<h1>p2p services</h1>\n'
         list_services = config.conf().listEntries('services')
-        w, h = misc.calculate_best_dimension(len(list_services), maxsize=6)
+        w, h = misc.calculate_best_dimension(len(list_services), maxsize=4)
         padding = 64/w
         src += '<table width="90%%" cellpadding=%d cellspacing=2>\n' % padding
         for y in range(h):
@@ -5096,15 +5096,16 @@ class ServicesSettingsPage(Page):
                     continue
                 path = list_services[n]
                 name = path.split('/')[-1]
-                # value = 'enabled' if config.conf().getBool(path+'/enabled') else 'disabled'
+                value = 'enabled' if config.conf().getBool(path+'/enabled') else 'disabled'
                 svc = driver.services().get('service_'+(name.replace('-', '_')), None)
                 state = 'NOT_STARTED' if svc is None else svc.state
                 link = ('/'+_PAGE_SETTINGS+'/'+(path.replace('/', '.')))
                 src += '<font size=+1><a href="%s?back=%s"><b>%s</b></a></font><br>\n' % (
                     link, request.path, name)
                 src += 'state: %s<br>\n' % state
+                src += '<font color=gray>%s</font>\n' % value
                 src += '</td>\n'
-                src += html_comment('  [%s] %s' % (name, state))
+                src += html_comment('  [%s] %s %s' % (name, state, value))
             src += '</tr>\n'
         src += '</table>\n'
         src += '<br><br>\n'
@@ -8075,10 +8076,16 @@ class SettingsTreeNode(Page):
             #     continue
             leafs = path.split('/')
             name = leafs[-1]
-            value = config.conf().getData(path, '')
-            typ = _SettingsTreeNodesDict.get(path, None)
-            if typ is None:
-                continue
+            lowchilds = config.conf().listEntries(path)
+            if len(lowchilds) > 0:
+                value = '[more]'
+            else:
+                value = config.conf().getData(path, '?')
+            if value.strip() == '':
+                value = '[empty]'
+            # typ = _SettingsTreeNodesDict.get(path, None)
+            # if typ is None:
+            #     continue
             if len(leafs) == len(self.leafs)+1:
                 args = ''
                 # if back:

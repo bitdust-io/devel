@@ -119,6 +119,7 @@ class NetworkConnector(Automat):
     fast = False
     
     def init(self):
+        self.log_events = True
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'
@@ -212,11 +213,14 @@ class NetworkConnector(Automat):
         return settings.enableUPNP() and time.time() - self.last_upnp_time < 60*60
 
     def isConnectionAlive(self, arg):
+        # miss = 0
         if driver.is_started('service_udp_datagrams'):
             from lib import udp
             if time.time() - udp.get_last_datagram_time() < 60:
                 if settings.enableUDP() and settings.enableUDPreceiving():
                     return True
+        # else:
+        #     miss += 1
         if driver.is_started('service_gateway'):
             from transport import gateway
             if time.time() - gateway.last_inbox_time() < 60:
@@ -226,6 +230,10 @@ class NetworkConnector(Automat):
                 return True
             if 'STARTING' in transport_states:
                 return True
+        # else:
+        #     miss += 1
+        # if miss >= 2:
+        #     return True 
         return False
 
     def isNetworkActive(self, arg):
@@ -348,12 +356,13 @@ class NetworkConnector(Automat):
             self.automat('gateway-is-not-started')
             return
         from transport import gateway
+        # transports = gateway.transports().values()
         if len(gateway.start()) > 0:
             return
-        transports = gateway.transports().values()
-        if len(transports) == 0: 
-            self.automat('all-network-transports-disabled')
-            return
+        # transports = gateway.transports().values()
+        # if len(transports) == 0: 
+        #     self.automat('all-network-transports-disabled')
+        #     return
         self.automat('all-network-transports-ready')
 
 #------------------------------------------------------------------------------ 
