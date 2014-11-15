@@ -45,7 +45,7 @@ def A(event=None, arg=None):
     global _StunClient
     if _StunClient is None:
         # set automat name and starting state here
-        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8)
+        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8, True)
     if event is not None:
         _StunClient.automat(event, arg)
     return _StunClient
@@ -108,6 +108,7 @@ class StunClient(automat.Automat):
                 self.doRecordResult(arg)
             elif ( event == 'timer-10sec' and self.isSomeServersResponded(arg) ) or ( event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg) ) :
                 self.state = 'KNOW_MY_IP'
+                self.doRecordResult(arg)
                 self.doReportSuccess(arg)
                 self.doClearResults(arg)
             elif event == 'port-number-received' :
@@ -180,7 +181,7 @@ class StunClient(automat.Automat):
         """
         Condition method.
         """
-        return len(self.stun_results) >= 2
+        return len(self.stun_results) <= 3
 
     def doInit(self, arg):
         """
@@ -231,7 +232,6 @@ class StunClient(automat.Automat):
         """
         lg.out(12, 'stun_client.doStun to %d nodes: %r' % (
             len(self.stun_servers), self.stun_servers))
-        # for address in self.stun_servers + [('37.18.255.33', 14442)]:
         for address in self.stun_servers:
             if address is None:
                 continue
@@ -279,7 +279,8 @@ class StunClient(automat.Automat):
             result = ('stun-success', 'non-symmetric', my_ip, min_port)
         else:
             result = ('stun-success', 'symmetric', my_ip, self.stun_results)
-        lg.out(4, 'stun_client.doReportSuccess: %s' % str(result))
+        lg.out(4, 'stun_client.doReportSuccess based on %d nodes: %s' % (
+            len(self.stun_results), str(result)))
         for cb in self.callbacks:
             cb(result[0], result[1], result[2], result[3])
         self.callbacks = []
@@ -361,13 +362,10 @@ def main():
     dht_service.init(int(settings.getDHTPort()))
     dht_service.connect()
     udp.listen(int(settings.getUDPPort()))
-    def _cb2(result, typ, ip, details):
-        print 2, result, typ, ip, details
-        A('shutdown')
     def _cb(result, typ, ip, details):
-        print 1, result, typ, ip, details
-        reactor.callLater(1, A, 'start', _cb2)
-        reactor.callLater(1.1, A, 'shutdown')
+        print result, typ, ip, details
+        A('shutdown')
+        reactor.stop()
     A('init', (int(settings.getUDPPort())))
     A('start', _cb)
     reactor.run()

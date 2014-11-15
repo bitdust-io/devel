@@ -58,7 +58,8 @@ def init(udp_port, db_file_path=None):
         if _Debug:
             lg.out(', already created a DHTNode')
         return
-    lg.out(4, 'dht_service.init UDP port is %d' % udp_port)
+    if _Debug:
+        lg.out(4, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         # db_file_path = './dht%s' % str(udp_port)
         db_file_path = settings.DHTDBFile()
