@@ -8,12 +8,11 @@ BitPie.NET ``stun_client()`` Automat
 
 
 EVENTS:
-    * :red:`all-port-numbers-received`
-    * :red:`all-responded`
     * :red:`datagram-received`
     * :red:`dht-nodes-not-found`
     * :red:`found-some-nodes`
     * :red:`init`
+    * :red:`port-number-received`
     * :red:`shutdown`
     * :red:`start`
     * :red:`timer-10sec`
@@ -60,7 +59,7 @@ class StunClient(automat.Automat):
 
     timers = {
         'timer-2sec': (2.0, ['REQUEST']),
-        'timer-10sec': (10.0, ['PORTS_NUM?','REQUEST']),
+        'timer-10sec': (10.0, ['PORT_NUM?','REQUEST']),
         }
 
     MESSAGES = {
@@ -97,20 +96,22 @@ class StunClient(automat.Automat):
             if event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'datagram-received' and self.isMyIPPort(arg) :
-                self.doRecordResult(arg)
             elif event == 'timer-2sec' :
                 self.doStun(arg)
-            elif event == 'all-responded' or ( event == 'timer-10sec' and self.isSomeServersResponded(arg) ) :
-                self.state = 'KNOW_MY_IP'
-                self.doReportSuccess(arg)
-                self.doClearResults(arg)
             elif event == 'timer-10sec' and not self.isSomeServersResponded(arg) :
                 self.state = 'STOPPED'
                 self.doReportFailed(self.msg('MSG_03', arg))
                 self.doClearResults(arg)
             elif event == 'start' :
                 self.doAddCallback(arg)
+            elif event == 'datagram-received' and self.isMyIPPort(arg) and self.isNeedMoreResults(arg) :
+                self.doRecordResult(arg)
+            elif ( event == 'timer-10sec' and self.isSomeServersResponded(arg) ) or ( event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg) ) :
+                self.state = 'KNOW_MY_IP'
+                self.doReportSuccess(arg)
+                self.doClearResults(arg)
+            elif event == 'port-number-received' :
+                self.doAddStunServer(arg)
         #---KNOW_MY_IP---
         elif self.state == 'KNOW_MY_IP':
             if event == 'shutdown' :
@@ -127,34 +128,35 @@ class StunClient(automat.Automat):
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        #---PORTS_NUM?---
-        elif self.state == 'PORTS_NUM?':
-            if event == 'shutdown' :
-                self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'timer-10sec' and not self.isSomePortNumberReceived(arg) :
-                self.state = 'STOPPED'
-                self.doReportFailed(self.msg('MSG_02', arg))
-                self.doClearResults(arg)
-            elif event == 'all-port-numbers-received' or ( event == 'timer-10sec' and self.isSomePortNumberReceived(arg) ) :
-                self.state = 'REQUEST'
-                self.doStun(arg)
-            elif event == 'start' :
-                self.doAddCallback(arg)
         #---RANDOM_NODES---
         elif self.state == 'RANDOM_NODES':
             if event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'found-some-nodes' :
-                self.state = 'PORTS_NUM?'
-                self.doRememberStunNodes(arg)
-                self.doRequestStunPortNumbers(arg)
             elif event == 'dht-nodes-not-found' :
                 self.state = 'STOPPED'
                 self.doReportFailed(self.msg('MSG_01', arg))
             elif event == 'start' :
                 self.doAddCallback(arg)
+            elif event == 'found-some-nodes' :
+                self.state = 'PORT_NUM?'
+                self.doRememberStunNodes(arg)
+                self.doRequestStunPortNumbers(arg)
+        #---PORT_NUM?---
+        elif self.state == 'PORT_NUM?':
+            if event == 'start' :
+                self.doAddCallback(arg)
+            elif event == 'timer-10sec' :
+                self.state = 'STOPPED'
+                self.doReportFailed(self.msg('MSG_02', arg))
+                self.doClearResults(arg)
+            elif event == 'port-number-received' :
+                self.state = 'REQUEST'
+                self.doAddStunServer(arg)
+                self.doStun(arg)
+            elif event == 'shutdown' :
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
         return None
 
     def isMyIPPort(self, arg):
@@ -174,11 +176,11 @@ class StunClient(automat.Automat):
         """
         return len(self.stun_results) > 0
 
-    def isSomePortNumberReceived(self, arg):
+    def isNeedMoreResults(self, arg):
         """
         Condition method.
         """
-        return len(self.stun_servers) > 0
+        return len(self.stun_results) >= 2
 
     def doInit(self, arg):
         """
@@ -216,6 +218,12 @@ class StunClient(automat.Automat):
             d = node.request('stun_port')
             d.addBoth(self._stun_port_received, node)
             self.deferreds[node] = d
+
+    def doAddStunServer(self, arg):
+        """
+        Action method.
+        """
+        self.stun_servers.append(arg)
        
     def doStun(self, arg):
         """
@@ -223,6 +231,7 @@ class StunClient(automat.Automat):
         """
         lg.out(12, 'stun_client.doStun to %d nodes: %r' % (
             len(self.stun_servers), self.stun_servers))
+        # for address in self.stun_servers + [('37.18.255.33', 14442)]:
         for address in self.stun_servers:
             if address is None:
                 continue
@@ -234,6 +243,8 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
+        if arg is None:
+            return
         try:
             datagram, address = arg
             command, payload = datagram
@@ -242,8 +253,8 @@ class StunClient(automat.Automat):
         except:
             lg.exc()
         self.stun_results[address] = (ip, port)
-        if len(self.stun_results) >= len(self.stun_servers):
-            self.automat('all-responded')        
+        # if len(self.stun_results) >= len(self.stun_servers):
+        #     self.automat('all-responded')        
 
     def doClearResults(self, arg):
         """
@@ -317,20 +328,31 @@ class StunClient(automat.Automat):
         
     def _stun_port_received(self, result, node):
         self.deferreds.pop(node)
-        if isinstance(result, dict):
-            try:
-                port = int(result['stun_port'])
-                address = node.address
-                self.stun_servers.append((address, port))
-            except:
-                lg.exc()
-                self.stun_servers.append(None)
-        else:
-            self.stun_servers.append(None)
-        if len(self.stun_servers) == len(self.stun_nodes):
-            self.automat('all-port-numbers-received')
+        if not isinstance(result, dict):
+            return
+        try:
+            port = int(result['stun_port'])
+            address = node.address
+        except:
+            lg.exc()
+            return
+        self.automat('port-number-received', (address, port))
+#        self.deferreds.pop(node)
+#        if isinstance(result, dict):
+#            try:
+#                port = int(result['stun_port'])
+#                address = node.address
+#                self.stun_servers.append((address, port))
+#            except:
+#                lg.exc()
+#                self.stun_servers.append(None)
+#        else:
+#            self.stun_servers.append(None)
+#        if len(self.stun_servers) == len(self.stun_nodes):
+#            self.automat('all-port-numbers-received')
             
 #------------------------------------------------------------------------------ 
+
 
 def main():
     from twisted.internet import reactor

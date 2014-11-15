@@ -145,6 +145,7 @@ def main():
     bpio.init()
     settings.init()
     dht_service.init(settings.getDHTPort())
+    dht_service.connect()
     udp.listen(settings.getUDPPort())
     A('start', settings.getUDPPort())
     reactor.run()

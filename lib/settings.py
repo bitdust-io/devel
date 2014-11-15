@@ -78,8 +78,8 @@ def _init(base_dir=None):
     _initBaseDir(base_dir)
     lg.out(2, 'settings._init data location: ' + BaseDir())
     _checkMetaDataDirectory()
-    uconfig()
     if not os.path.isdir(ConfigDir()):
+        uconfig()
         bpio._dir_make(ConfigDir())
         convert_configs()
     config.init(ConfigDir())
