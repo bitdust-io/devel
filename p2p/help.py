@@ -235,9 +235,9 @@ def settings_help():
 examples:
   set donated 4GB                          set donated space
   set needed                               print your needed space size
-  set general.general-backups 4            set number of backup copies for every folder
-  set suppliers                            print number of your suppliers
-  set logs.stream-enable False             turn off web server for program logs
+  set services/backups/max-copies 4        set number of backup copies for every folder
+  set services/customer/suppliers-number   print number of your suppliers
+  set logs/stream-enabled False            turn off web server for program logs
   set list                                 list all available options
 
 '''

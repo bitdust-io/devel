@@ -40,6 +40,8 @@ class BackupMonitorService(LocalService):
         backup_matrix.SetBackupStatusNotifyCallback(webcontrol.OnBackupStats)
         backup_matrix.SetLocalFilesNotifyCallback(webcontrol.OnReadLocalFiles)
         backup_monitor.A('init')
+        from twisted.internet import reactor
+        reactor.callLater(1, backup_monitor.A, 'restart')
         return True
     
     def stop(self):

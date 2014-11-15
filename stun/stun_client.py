@@ -75,7 +75,7 @@ class StunClient(automat.Automat):
     def init(self):
         # self.log_events = True
         self.listen_port = None
-        self.callback = None
+        self.callbacks = []
         self.minimum_needed_servers = 4
         self.stun_nodes = []
         self.stun_servers = []
@@ -90,6 +90,7 @@ class StunClient(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'start' :
                 self.state = 'RANDOM_NODES'
+                self.doAddCallback(arg)
                 self.doDHTFindRandomNodes(arg)
         #---REQUEST---
         elif self.state == 'REQUEST':
@@ -108,6 +109,8 @@ class StunClient(automat.Automat):
                 self.state = 'STOPPED'
                 self.doReportFailed(self.msg('MSG_03', arg))
                 self.doClearResults(arg)
+            elif event == 'start' :
+                self.doAddCallback(arg)
         #---KNOW_MY_IP---
         elif self.state == 'KNOW_MY_IP':
             if event == 'shutdown' :
@@ -136,6 +139,8 @@ class StunClient(automat.Automat):
             elif event == 'all-port-numbers-received' or ( event == 'timer-10sec' and self.isSomePortNumberReceived(arg) ) :
                 self.state = 'REQUEST'
                 self.doStun(arg)
+            elif event == 'start' :
+                self.doAddCallback(arg)
         #---RANDOM_NODES---
         elif self.state == 'RANDOM_NODES':
             if event == 'shutdown' :
@@ -148,6 +153,8 @@ class StunClient(automat.Automat):
             elif event == 'dht-nodes-not-found' :
                 self.state = 'STOPPED'
                 self.doReportFailed(self.msg('MSG_01', arg))
+            elif event == 'start' :
+                self.doAddCallback(arg)
         return None
 
     def isMyIPPort(self, arg):
@@ -181,12 +188,17 @@ class StunClient(automat.Automat):
         lg.out(12, 'stun_client.doInit on port %d' % self.listen_port)
         udp.proto(self.listen_port).add_callback(self._datagram_received)
 
-    def doDHTFindRandomNodes(self, arg):
+    def doAddCallback(self, arg):
         """
         Action method.
         """
         if arg:
-            self.callback = arg
+            self.callbacks.append(arg)
+
+    def doDHTFindRandomNodes(self, arg):
+        """
+        Action method.
+        """
         self._find_random_nodes(3, [])
 
     def doRememberStunNodes(self, arg):
@@ -209,7 +221,8 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        lg.out(12, 'stun_client.doStun to %d nodes' % len(self.stun_servers))
+        lg.out(12, 'stun_client.doStun to %d nodes: %r' % (
+            len(self.stun_servers), self.stun_servers))
         for address in self.stun_servers:
             if address is None:
                 continue
@@ -256,16 +269,18 @@ class StunClient(automat.Automat):
         else:
             result = ('stun-success', 'symmetric', my_ip, self.stun_results)
         lg.out(4, 'stun_client.doReportSuccess: %s' % str(result))
-        if self.callback:
-            self.callback(result[0], result[1], result[2], result[3])
+        for cb in self.callbacks:
+            cb(result[0], result[1], result[2], result[3])
+        self.callbacks = []
 
     def doReportFailed(self, arg):
         """
         Action method.
         """
         lg.out(4, 'stun_client.doReportFailed : %s' % arg)
-        if self.callback:
-            self.callback('stun-failed', None, None, [])
+        for cb in self.callbacks:
+            cb('stun-failed', None, None, [])
+        self.callbacks = []
 
     def doDestroyMe(self, arg):
         """

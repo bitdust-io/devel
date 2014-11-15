@@ -27,11 +27,18 @@ class TCPConnectionsService(LocalService):
                 ]
     
     def start(self):
+        from lib.config import conf
+        conf().addCallback('services/tcp-connections/tcp-port', self.on_tcp_port_modified)
         return True
     
     def stop(self):
+        from lib.config import conf
+        conf().removeCallback('services/tcp-connections/tcp-port')
         return True
     
-    
+    def on_tcp_port_modified(self, path, value, oldvalue, result):
+        from p2p import network_connector
+        network_connector.A('reconnect')
+        
 
     

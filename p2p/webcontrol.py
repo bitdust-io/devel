@@ -2809,53 +2809,79 @@ class MainPage(Page):
 
         #---delete---
         elif action == 'delete':
-            for pathID in self.selected_items:
-                backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
-                backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
-                backup_fs.DeleteByID(pathID)
-                for subPathID in list(self.expanded_dirs):
-                    if subPathID.startswith(pathID+'/'):
-                        self.expanded_dirs.discard(subPathID)
-                self.expanded_dirs.discard(pathID)
-                self.expanded_items.discard(pathID)
-            self.selected_backups.clear()
-            self.selected_items.clear()
-            backup_fs.Scan()
-            backup_fs.Calculate()
-            backup_control.Save()
-            backup_monitor.Restart()
-            self.listExpandedDirs = None
-            self.listExpandedVersions = None
-            
-        #---deletebackups---
-        elif action == 'deletebackups':
-            modified = False
-            if len(self.selected_backups) > 0:
-                for backupID in self.selected_backups:
-                    backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
-                    modified = True
-                self.selected_backups.clear()
-            if len(self.selected_items) > 0:
+            if driver.is_started('service_backups'):
                 for pathID in self.selected_items:
                     backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+                    backup_fs.DeleteByID(pathID)
+                    for subPathID in list(self.expanded_dirs):
+                        if subPathID.startswith(pathID+'/'):
+                            self.expanded_dirs.discard(subPathID)
+                    self.expanded_dirs.discard(pathID)
                     self.expanded_items.discard(pathID)
-                    modified = True
+                self.selected_backups.clear()
                 self.selected_items.clear()
-            if modified:
                 backup_fs.Scan()
                 backup_fs.Calculate()
                 backup_control.Save()
-                backup_monitor.Restart()
-            self.listExpandedDirs = None
-            self.listExpandedVersions = None
+                backup_monitor.A('restart')
+                self.listExpandedDirs = None
+                self.listExpandedVersions = None
+            
+        #---deletebackups---
+        elif action == 'deletebackups':
+            if driver.is_started('service_backups'):
+                modified = False
+                if len(self.selected_backups) > 0:
+                    for backupID in self.selected_backups:
+                        backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
+                        modified = True
+                    self.selected_backups.clear()
+                if len(self.selected_items) > 0:
+                    for pathID in self.selected_items:
+                        backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                        self.expanded_items.discard(pathID)
+                        modified = True
+                    self.selected_items.clear()
+                if modified:
+                    backup_fs.Scan()
+                    backup_fs.Calculate()
+                    backup_control.Save()
+                    backup_monitor.A('restart')
+                self.listExpandedDirs = None
+                self.listExpandedVersions = None
         
         #---deleteid---
         elif action == 'deleteid':
-            pathID = arg(request, 'pathid').replace('_','/')
-            if packetid.Valid(pathID):
-                if packetid.IsCanonicalVersion(pathID.split('/')[-1]):
-                    backup_control.DeleteBackup(pathID, saveDB=False, calculate=False)
-                else:
+            if driver.is_started('service_backups'):
+                pathID = arg(request, 'pathid').replace('_','/')
+                if packetid.Valid(pathID):
+                    if packetid.IsCanonicalVersion(pathID.split('/')[-1]):
+                        backup_control.DeleteBackup(pathID, saveDB=False, calculate=False)
+                    else:
+                        backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+                        backup_fs.DeleteByID(pathID)
+                        for subPathID in list(self.expanded_dirs):
+                            if subPathID.startswith(pathID+'/'):
+                                self.expanded_dirs.discard(subPathID)
+                        self.expanded_dirs.discard(pathID)
+                        self.expanded_items.discard(pathID)
+                        self.selected_backups.clear()
+                        self.selected_items.clear()
+                    backup_fs.Scan()
+                    backup_fs.Calculate()
+                    backup_control.Save()
+                    backup_monitor.A('restart')
+                    self.listExpandedDirs = None
+                    self.listExpandedVersions = None
+
+        #---deletepath---
+        elif action == 'deletepath':
+            if driver.is_started('service_backups'):
+                localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
+                pathID = backup_fs.ToID(localPath)
+                if pathID and packetid.Valid(pathID):
                     backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
                     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
                     backup_fs.DeleteByID(pathID)
@@ -2866,40 +2892,19 @@ class MainPage(Page):
                     self.expanded_items.discard(pathID)
                     self.selected_backups.clear()
                     self.selected_items.clear()
-                backup_fs.Scan()
-                backup_fs.Calculate()
-                backup_control.Save()
-                backup_monitor.Restart()
-                self.listExpandedDirs = None
-                self.listExpandedVersions = None
-
-        #---deletepath---
-        elif action == 'deletepath':
-            localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
-            pathID = backup_fs.ToID(localPath)
-            if pathID and packetid.Valid(pathID):
-                backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
-                backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
-                backup_fs.DeleteByID(pathID)
-                for subPathID in list(self.expanded_dirs):
-                    if subPathID.startswith(pathID+'/'):
-                        self.expanded_dirs.discard(subPathID)
-                self.expanded_dirs.discard(pathID)
-                self.expanded_items.discard(pathID)
-                self.selected_backups.clear()
-                self.selected_items.clear()
-                backup_fs.Scan()
-                backup_fs.Calculate()
-                backup_control.Save()
-                backup_monitor.Restart()
-                self.listExpandedDirs = None
-                self.listExpandedVersions = None
+                    backup_fs.Scan()
+                    backup_fs.Calculate()
+                    backup_control.Save()
+                    backup_monitor.A('restart')
+                    self.listExpandedDirs = None
+                    self.listExpandedVersions = None
         
         #---update---
         elif action == 'update':
-            backup_monitor.Restart()
-            self.listExpandedDirs = None
-            self.listExpandedVersions = None
+            if driver.is_started('service_backups'):
+                backup_monitor.A('restart')
+                self.listExpandedDirs = None
+                self.listExpandedVersions = None
         
         #---restore---
         elif action == 'restore':
@@ -3531,12 +3536,13 @@ class BackupPage(Page, BackupIDSplit):
         action = arg(request, 'action')
         #---delete---
         if action == 'delete':
-            backup_control.DeleteBackup(self.backupID, saveDB=False)
-            backup_control.Save()
-            backup_monitor.Restart()
-            request.redirect('/'+_PAGE_MAIN)
-            request.finish()
-            return NOT_DONE_YET
+            if driver.is_started('service_backups'):
+                backup_control.DeleteBackup(self.backupID, saveDB=False)
+                backup_control.Save()
+                backup_monitor.A('restart')
+                request.redirect('/'+_PAGE_MAIN)
+                request.finish()
+                return NOT_DONE_YET
         #---delete.local---
         elif action == 'delete.local':
             num, sz = backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), self.backupID)
@@ -4192,17 +4198,19 @@ class SuppliersPage(Page):
         
         #---action replace---
         elif action == 'replace':
-            idurl = arg(request, 'idurl')
-            if idurl != '':
-                if not idurl.startswith('http://'):
-                    try:
-                        idurl = contacts.getSupplierID(int(idurl))
-                    except:
-                        idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
-                if contacts.IsSupplier(idurl):
-                    fire_hire.AddSupplierToFire(idurl)
-                    backup_monitor.Restart()
-                    # fire_hire.A('fire-him-now', [idurl,])
+            if driver.is_started('service_fire_hire'):
+                idurl = arg(request, 'idurl')
+                if idurl != '':
+                    if not idurl.startswith('http://'):
+                        try:
+                            idurl = contacts.getSupplierID(int(idurl))
+                        except:
+                            idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                    if contacts.IsSupplier(idurl):
+                        fire_hire.AddSupplierToFire(idurl)
+                        fire_hire.A('restart')
+                        # backup_monitor.A('restart')
+                        # fire_hire.A('fire-him-now', [idurl,])
         
         #---action change---
         elif action == 'change':
@@ -7711,10 +7719,10 @@ class TrafficPage(Page):
 def InitSettingsTreePages():
     global _SettingsTreeNodesDict
     lg.out(4, 'webcontrol.init.options')
-    SettingsTreeAddComboboxList('suppliers', settings.getECCSuppliersNumbers())
-    SettingsTreeAddComboboxList('updates-mode', settings.getUpdatesModeValues())
-    SettingsTreeAddComboboxList('emergency-first', settings.getEmergencyMethods())
-    SettingsTreeAddComboboxList('emergency-second', settings.getEmergencyMethods())
+    SettingsTreeAddComboboxList('services/customer/suppliers-number', settings.getECCSuppliersNumbers())
+    SettingsTreeAddComboboxList('updates/mode', settings.getUpdatesModeValues())
+    SettingsTreeAddComboboxList('emergency/first', settings.getEmergencyMethods())
+    SettingsTreeAddComboboxList('emergency/second', settings.getEmergencyMethods())
 
     _SettingsTreeNodesDict = {
     'emergency/email':                              SettingsTreeUStringNode,
@@ -7795,80 +7803,6 @@ def InitSettingsTreePages():
     'services/udp-transport/sending-enabled':       SettingsTreeYesNoNode,
     'updates/mode':                                 SettingsTreeComboboxNode,
     'updates/shedule':                              SettingsTreeTextNode,
-
-#    'storage':                  SettingsTreeNode,
-#    'suppliers':                SettingsTreeComboboxNode,
-#    'donated':                  SettingsTreeDiskSpaceNode,
-#    'needed':                   SettingsTreeDiskSpaceNode,
-#    
-#    'backup-block-size':        SettingsTreeNumericNonZeroPositiveNode,
-#    'backup-max-block-size':    SettingsTreeNumericNonZeroPositiveNode,
-#
-#    'folder':                   SettingsTreeNode,
-#    'folder-customers':         SettingsTreeDirPathNode,
-#    'folder-backups':           SettingsTreeDirPathNode,
-#    'folder-restore':           SettingsTreeDirPathNode,
-#
-#    'network':                  SettingsTreeNode,
-#    'network-send-limit':       SettingsTreeNumericPositiveNode,
-#    'network-receive-limit':    SettingsTreeNumericPositiveNode,
-#
-#    'other':                    SettingsTreeNode,
-#    'upnp-enabled':             SettingsTreeYesNoNode,
-#    'upnp-at-startup':          SettingsTreeYesNoNode,
-#    'bitcoin':                  SettingsTreeNode,
-#    'bitcoin-host':             SettingsTreeUStringNode,
-#    'bitcoin-port':             SettingsTreeNumericPositiveNode,
-#    'bitcoin-username':         SettingsTreeUStringNode,
-#    'bitcoin-password':         SettingsTreePasswordNode,
-#    'bitcoin-server-is-local':  SettingsTreeYesNoNode,
-#    'bitcoin-config-filename':  SettingsTreeFilePathNode,
-#
-#    'emergency':                SettingsTreeNode,
-#    'emergency-first':          SettingsTreeComboboxNode,
-#    'emergency-second':         SettingsTreeComboboxNode,
-#    'emergency-email':          SettingsTreeUStringNode,
-#    'emergency-phone':          SettingsTreeUStringNode,
-#    'emergency-fax':            SettingsTreeUStringNode,
-#    'emergency-text':           SettingsTreeTextNode,
-#    
-#    'id-server-enable':         SettingsTreeYesNoNode,
-#    'id-server-host':           SettingsTreeTextNode,
-#    'id-server-web-port':       SettingsTreeNumericNonZeroPositiveNode,
-#    'id-server-tcp-port':       SettingsTreeNumericNonZeroPositiveNode,
-#
-#    # 'updates':                  SettingsTreeNode,
-#    # 'updates-mode':             SettingsTreeComboboxNode,
-#
-#    'general':                          SettingsTreeNode,
-#    'general-desktop-shortcut':         SettingsTreeYesNoNode,
-#    'general-start-menu-shortcut':      SettingsTreeYesNoNode,
-#    'general-backups':                  SettingsTreeNumericPositiveNode,
-#    'general-local-backups-enable':     SettingsTreeYesNoNode,
-#    'general-wait-suppliers-enable':    SettingsTreeYesNoNode,
-#
-#    'logs':                     SettingsTreeNode,
-#    'debug-level':              SettingsTreeNumericNonZeroPositiveNode,
-#    'stream-enable':            SettingsTreeYesNoNode,
-#    'stream-port':              SettingsTreeNumericPositiveNode,
-#    'traffic-enable':           SettingsTreeYesNoNode,
-#    'traffic-port':             SettingsTreeNumericPositiveNode,
-#    'memdebug-enable':          SettingsTreeYesNoNode,
-#    'memdebug-port':            SettingsTreeNumericPositiveNode,
-#    'memprofile-enable':        SettingsTreeYesNoNode,
-#
-#    'transport':                SettingsTreeNode,
-#    'transport-tcp':            SettingsTreeNode,
-#    'transport-tcp-enable':     SettingsTreeYesNoNode,
-#    'transport-tcp-port':       SettingsTreeNumericNonZeroPositiveNode,
-#    'transport-tcp-sending-enable':   SettingsTreeYesNoNode,
-#    'transport-tcp-receiving-enable': SettingsTreeYesNoNode,
-#    'transport-udp':            SettingsTreeNode,
-#    'transport-udp-port':       SettingsTreeNumericPositiveNode,
-#    'transport-udp-enable':     SettingsTreeYesNoNode,
-#    'transport-udp-sending-enable':   SettingsTreeYesNoNode,
-#    'transport-udp-receiving-enable': SettingsTreeYesNoNode,
-#    'network-dht-port':         SettingsTreeNumericPositiveNode,
     }
 
 class SettingsTreeNode(Page):
@@ -7973,90 +7907,89 @@ class SettingsTreeNode(Page):
             self.value = None
         else:
             self.value = config.conf().getData(self.path)
-        self.label = self.path # settings.uconfig().labels.get(self.path, '')
-        self.info = '' # settings.uconfig().infos.get(self.path, '')
+        self.label = config.conf().getLabel(self.path) # settings.uconfig().labels.get(self.path, '')
+        self.info = config.conf().getInfo(self.path) # settings.uconfig().infos.get(self.path, '')
         self.leafs = self.path.split('/')
 
     def modified(self, old_value=None):
-        return
         lg.out(8, 'webcontrol.SettingsTreeNode.modified %s %s' % (self.path, self.value))
 
-        if self.path.count('services/'):
-            svc_name = self.path.replace('services/', 'service_').replace('/enabled', '').replace('-', '_')
-            svc = driver.services().get(svc_name, None) 
-            if svc:
-                # if settings.uconfig(self.path).lower() == 'true':
-                v = config.conf().getBool(self.path)
-                if v is None:
-                    lg.warn('%s is None' % self.path)
-                else:
-                    if v:
-                        svc.automat('start')
-                    else:
-                        svc.automat('stop')
-            else:
-                lg.warn('%s not found: %s' % (svc_name, self.path))
-
-        if self.path in (
-                'services.tcp-connections.tcp-port',
-                'services.tcp-transport.enabled',
-                'services.tcp-transport.receiving-enabled',
-                'services.udp-datagrams.udp-port',
-                'services.udp-transport.enabled',
-                'services.udp-transport.receiving-enabled',
-                'services.entangled-dht.udp-port',
-                ):
-            network_connector.A('reconnect')
-            p2p_connector.A('reconnect')
-
-        if self.path in ('services.network.receive-limit',):
-            from transport.udp import udp_stream 
-            udp_stream.set_global_limit_receive_bytes_per_sec(int(self.value))
-
-        if self.path in ('services.network.send-limit',):
-            from transport.udp import udp_stream 
-            udp_stream.set_global_limit_send_bytes_per_sec(int(self.value))
-
-        if self.path in (
-                'services.customer.suppliers-number',
-                'services.customer.needed-space',
-                # 'services.supplier.donated-space',
-                ):
-            fire_hire.ClearLastFireTime()
-            backup_monitor.A('restart')
-
-        if self.path in (
-                'services.supplier.donated-space',
-                ):
-            customers_rejector.A('restart')
-
-        if self.path == 'logs.stream-enabled':
-            if settings.enableWebStream():
-                misc.StartWebStream()
-            else:
-                misc.StopWebStream()
-
-        if self.path == 'logs.stream-port':
-            misc.StopWebStream()
-            if settings.enableWebStream():
-                reactor.callLater(0, misc.StartWebStream)
-
-        if self.path == 'logs.traffic-port':
-            misc.StopWebTraffic()
-            if settings.enableWebTraffic():
-                reactor.callLater(0, misc.StartWebTraffic)
-
-        if self.path == 'logs.debug-level':
-            try:
-                lg.set_debug_level(int(self.value))
-            except:
-                lg.out(1, 'webcontrol.SettingsTreeNode.modified ERROR wrong value!')
-
-        if self.path == 'services.backups.block-size':
-            settings.setBackupBlockSize(self.value)
-
-        if self.path == 'services.backups.max-block-size':
-            settings.setBackupMaxBlockSize(self.value)
+#        if self.path.count('services/'):
+#            svc_name = self.path.replace('services/', 'service_').replace('/enabled', '').replace('-', '_')
+#            svc = driver.services().get(svc_name, None) 
+#            if svc:
+#                # if settings.uconfig(self.path).lower() == 'true':
+#                v = config.conf().getBool(self.path)
+#                if v is None:
+#                    lg.warn('%s is None' % self.path)
+#                else:
+#                    if v:
+#                        svc.automat('start')
+#                    else:
+#                        svc.automat('stop')
+#            else:
+#                lg.warn('%s not found: %s' % (svc_name, self.path))
+#
+#        if self.path in (
+#                'services.tcp-connections.tcp-port',
+#                'services.tcp-transport.enabled',
+#                'services.tcp-transport.receiving-enabled',
+#                'services.udp-datagrams.udp-port',
+#                'services.udp-transport.enabled',
+#                'services.udp-transport.receiving-enabled',
+#                'services.entangled-dht.udp-port',
+#                ):
+#            network_connector.A('reconnect')
+#            p2p_connector.A('reconnect')
+#
+#        if self.path in ('services.network.receive-limit',):
+#            from transport.udp import udp_stream 
+#            udp_stream.set_global_limit_receive_bytes_per_sec(int(self.value))
+#
+#        if self.path in ('services.network.send-limit',):
+#            from transport.udp import udp_stream 
+#            udp_stream.set_global_limit_send_bytes_per_sec(int(self.value))
+#
+#        if self.path in (
+#                'services.customer.suppliers-number',
+#                'services.customer.needed-space',
+#                # 'services.supplier.donated-space',
+#                ):
+#            fire_hire.ClearLastFireTime()
+#            backup_monitor.A('restart')
+#
+#        if self.path in (
+#                'services.supplier.donated-space',
+#                ):
+#            customers_rejector.A('restart')
+#
+#        if self.path == 'logs.stream-enabled':
+#            if settings.enableWebStream():
+#                misc.StartWebStream()
+#            else:
+#                misc.StopWebStream()
+#
+#        if self.path == 'logs.stream-port':
+#            misc.StopWebStream()
+#            if settings.enableWebStream():
+#                reactor.callLater(0, misc.StartWebStream)
+#
+#        if self.path == 'logs.traffic-port':
+#            misc.StopWebTraffic()
+#            if settings.enableWebTraffic():
+#                reactor.callLater(0, misc.StartWebTraffic)
+#
+#        if self.path == 'logs.debug-level':
+#            try:
+#                lg.set_debug_level(int(self.value))
+#            except:
+#                lg.out(1, 'webcontrol.SettingsTreeNode.modified ERROR wrong value!')
+#
+#        if self.path == 'services.backups.block-size':
+#            settings.setBackupBlockSize(self.value)
+#
+#        if self.path == 'services.backups.max-block-size':
+#            settings.setBackupMaxBlockSize(self.value)
             
     def body(self, request):
         global SettingsTreeNodesDict
@@ -8145,11 +8078,12 @@ def SettingsTreeAddComboboxList(name, l):
 class SettingsTreeComboboxNode(SettingsTreeNode):
     def listitems(self):
         global _SettingsTreeComboboxNodeLists
-        combo_list = _SettingsTreeComboboxNodeLists.get(self.leafs[-1], list())
+        combo_list = _SettingsTreeComboboxNodeLists.get(self.path, list())
         return map(str, combo_list)
     def body(self, request):
         back = arg(request, 'back', '/'+_PAGE_CONFIG)
         items = self.listitems()
+        print items
         message = ('', 'info')
         choice = arg(request, 'choice', None)
         if choice is not None and not ReadOnly():

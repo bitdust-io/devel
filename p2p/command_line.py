@@ -659,53 +659,49 @@ def cmd_reconnect(opts, args, overDict):
 def option_name_to_path(name, default=''):
     path = default
     if name in [ 'donated', 'shared', 'given', ]:
-        path = 'storage.donated'
+        path = 'services/supplier/donated-space'
     elif name in [ 'needed', ]:
-        path = 'storage.needed'
+        path = 'services/customer/needed-space'
     elif name in [ 'suppliers', ]:
-        path = 'storage.suppliers'
+        path = 'services/customer/suppliers-number'
     elif name in [ 'debug' ]:
-        path = 'logs.debug-level'
+        path = 'logs/debug-level'
     elif name in [ 'block-size', ]:
-        path = 'backup.backup-block-size'
-    elif name in [ 'block-size-max', ]:
-        path = 'backup.backup-max-block-size'
-    elif name in [ 'max-backups', ]:
-        path = 'general.general-backups'
-    elif name in [ 'local-backups', ]:
-        path = 'general.general-local-backups-enable'
+        path = 'services/backups/block-size'
+    elif name in [ 'block-size-max', 'max-block-size', ]:
+        path = 'services/backups/max-block-size'
+    elif name in [ 'max-backups', 'max-copies', 'copies' ]:
+        path = 'services/backups/max-copies'
+    elif name in [ 'local-backups', 'local-data', 'keep-local-data', ]:
+        path = 'services/backups/keep-local-copies-enabled'
     elif name in [ 'tcp' ]:
-        path = 'transport.transport-tcp.transport-tcp-enable'
+        path = 'services/tcp-transport/enabled'
     elif name in [ 'tcp-port' ]:
-        path = 'transport.transport-tcp.transport-tcp-port'
+        path = 'services/tcp-connections/tcp-port'
     elif name in [ 'udp' ]:
-        path = 'transport.transport-udp.transport-udp-enable'
+        path = 'services/udp-transport/enabled'
     elif name in [ 'udp-port' ]:
-        path = 'transport.transport-udp.transport-udp-port'
+        path = 'services/udp-datagrams/udp-port'
     elif name in [ 'dht-port' ]:
-        path = 'network.network-dht-port'
+        path = 'services/entangled-dht/udp-port'
     elif name in [ 'limit-send' ]:
-        path = 'network.network-send-limit'
+        path = 'services/network/send-limit'
     elif name in [ 'limit-receive' ]:
-        path = 'network.network-receive-limit'
+        path = 'services/network/receive-limit'
     elif name in [ 'weblog' ]:
-        path = 'logs.stream-enable'
+        path = 'logs/stream-enable'
     elif name in [ 'weblog-port' ]:
-        path = 'logs.stream-port'
+        path = 'logs/stream-port'
     return path
 
 
 def cmd_set_directly(opts, args, overDict):
     def print_all_settings():
-        from lib import userconfig
-        for path in userconfig.all_options():
-            if path.strip() == '':
-                continue
-            if path not in userconfig.public_options():
-                continue
-            value = config.conf().data.get(path, '').replace('\n', ' ')
-            label = config.conf().labels.get(path, '')
-            info = config.conf().infos.get(path, '')
+        from lib import config
+        for path in config.conf().listAllEntries():
+            value = config.conf().getData(path, '').replace('\n', ' ')
+            # label = config.conf().labels.get(path, '')
+            # info = config.conf().infos.get(path, '')
             print '  %s    %s' % (path.ljust(50), value.ljust(20))
         return 0
     name = args[1].lower()
@@ -721,14 +717,17 @@ def cmd_set_directly(opts, args, overDict):
             if len(args) > 2:
                 value = ' '.join(args[2:])
                 config.conf().setData(path, unicode(value))
-                
-            info = str(config.conf().getData(path, 'info')).replace('None', '').replace('<br>', '\n')
+            else:
+                value = config.conf().getData(path)
+            info = str(config.conf().getInfo(path))
             info = re.sub(r'<[^>]+>', '', info)
-            label = str(config.conf().getData(path, 'label')).replace('None', '')
-            print '  XML path: %s' % path
+            label = str(config.conf().getLabel(path))
+            typ = config.conf().getTypeLabel(path)
+            print '  path: %s' % path
             print '  label:    %s' % label
             print '  info:     %s' % info
-            print '  value:    %s' % config.conf().getData(path)
+            print '  type:     %s' % typ
+            print '  value:    %s' % value
             if len(args) > 2:
                 print '  modified: [%s]->[%s]' % (old_is, value)
         return 0
@@ -742,7 +741,7 @@ def cmd_set_request(opts, args, overDict):
     if len(args) == 2:
         return print_single_setting_and_stop(path)
     action = 'action='
-    leafs = path.split('.')
+    leafs = path.split('/')
     name = leafs[-1]
     webcontrol.InitSettingsTreePages()
     cls = webcontrol._SettingsTreeNodesDict.get(name, None)
@@ -765,7 +764,7 @@ def cmd_set_request(opts, args, overDict):
     elif cls in [ webcontrol.SettingsTreeYesNoNode, ]:
         trueORfalse = 'True' if input.lower().strip() == 'true' else 'False'
         action = 'choice=%s' % trueORfalse
-    url = webcontrol._PAGE_SETTINGS + '/' + path + '?' + action
+    url = webcontrol._PAGE_SETTINGS + '/' + path.replace('/', '.') + '?' + action
     run_url_command(url).addCallback(lambda src: print_single_setting_and_stop(path, False)) #.addCallback(print_and_stop)
     reactor.run()
     return 0

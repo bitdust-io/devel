@@ -93,7 +93,7 @@ def A(event=None, arg=None):
     """
     global _BackupMonitor
     if _BackupMonitor is None:
-        _BackupMonitor = BackupMonitor('backup_monitor', 'READY', 4)
+        _BackupMonitor = BackupMonitor('backup_monitor', 'READY', 4, True)
     if event is not None:
         _BackupMonitor.automat(event, arg)
     return _BackupMonitor
@@ -128,7 +128,7 @@ class BackupMonitor(automat.Automat):
         This method is called every time when my state is changed. 
         """
         automats.set_global_state('MONITOR ' + newstate)
-        if newstate == 'RESTART':
+        if newstate == 'READY':
             self.automat('instant')
 
     def A(self, event, arg):
@@ -137,7 +137,6 @@ class BackupMonitor(automat.Automat):
             if event == 'init' :
                 self.RestartAgain=False
                 self.doSuppliersInit(arg)
-                backup_rebuilder.A('init')
             elif event == 'restart' or ( event == 'instant' and self.RestartAgain ) :
                 self.state = 'FIRE_HIRE'
                 self.RestartAgain=False
@@ -156,6 +155,9 @@ class BackupMonitor(automat.Automat):
                 self.doPrepareListBackups(arg)
             elif event == 'restart' :
                 self.RestartAgain=True
+            elif event == 'suppliers-changed' :
+                self.state = 'READY'
+                self.RestartAgain=True
         #---LIST_BACKUPS---
         elif self.state == 'LIST_BACKUPS':
             if event == 'list-backups-done' :
@@ -166,15 +168,19 @@ class BackupMonitor(automat.Automat):
                 fire_hire.A('restart')
             elif event == 'restart' :
                 self.RestartAgain=True
+            elif event == 'suppliers-changed' :
+                self.state = 'READY'
+                self.RestartAgain=True
         #---REBUILDING---
         elif self.state == 'REBUILDING':
-            if event == 'restart' :
+            if ( event == 'backup_rebuilder.state' and arg in [ 'DONE' , 'STOPPED' ] ) :
+                self.state = 'READY'
+                self.doCleanUpBackups(arg)
+                data_sender.A('restart')
+            elif event == 'restart' or event == 'suppliers-changed' :
                 self.state = 'FIRE_HIRE'
                 backup_rebuilder.SetStoppedFlag()
                 fire_hire.A('restart')
-            elif ( event == 'backup_rebuilder.state' and arg in [ 'DONE' , 'STOPPED' ] ) :
-                self.state = 'READY'
-                self.doCleanUpBackups(arg)
         #---FIRE_HIRE---
         elif self.state == 'FIRE_HIRE':
             if event == 'suppliers-changed' and self.isSuppliersNumberChanged(arg) :
@@ -330,29 +336,8 @@ class BackupMonitor(automat.Automat):
         Action method.
         """
         if '' in contacts.getSupplierIDs():
-            lg.out(6, 'backup_monitor.doOverallCheckUp found empty supplier')
-            Restart()
+            lg.out(6, 'backup_monitor.doOverallCheckUp found empty supplier, restart now')
+            self.automat('restart')
             return
         # TODO 
         
-#------------------------------------------------------------------------------ 
-
-
-def Restart():
-    """
-    Just sends a "restart" event to the state machine.
-    """
-    lg.out(4, 'backup_monitor.Restart')
-    A('restart')
-
-
-def shutdown():
-    """
-    Called from high level modules to finish all things correctly.
-    """
-    lg.out(4, 'backup_monitor.shutdown')
-    A().destroy()
-
-        
-
-

@@ -1600,10 +1600,7 @@ def getSuppliersNumberDesired():
     """
     Get suppliers number from user settings.
     """
-    try:
-        return int(config.conf().getData('services/customer/suppliers-number'))
-    except:
-        return -1
+    return config.conf().getInt('services/customer/suppliers-number', -1)
 
 def getNeededString():
     """
@@ -1612,6 +1609,8 @@ def getNeededString():
     return config.conf().getData('services/customer/needed-space')
 
 def getNeededBytes():
+    """
+    """
     return diskspace.GetBytesFromString(getNeededString())
 
 def getDonatedString():
@@ -1621,6 +1620,8 @@ def getDonatedString():
     return config.conf().getData('services/supplier/donated-space')
 
 def getDonatedBytes():
+    """
+    """
     return diskspace.GetBytesFromString(getDonatedString())
 
 def getEmergencyEmail():
@@ -1778,54 +1779,55 @@ def getBackupBlockSize():
     """
     Get backup block size from settings.
     """
-    global _BackupBlockSize
-    if _BackupBlockSize is None:
-        try:
-            _BackupBlockSize = int(config.conf().getData('services/backups/block-size'))
-        except:
-            _BackupBlockSize = DefaultBackupBlockSize()
-    return _BackupBlockSize
+#    global _BackupBlockSize
+#    if _BackupBlockSize is None:
+#        try:
+#            _BackupBlockSize = int(config.conf().getData('services/backups/block-size'))
+#        except:
+#            _BackupBlockSize = DefaultBackupBlockSize()
+#    return _BackupBlockSize
+    return config.conf().getInt('services/backups/block-size', DefaultBackupBlockSize())
 
 def getBackupMaxBlockSize():
     """
     Get the maximum backup block size from settings.
     """
-    global _BackupMaxBlockSize
-    if _BackupMaxBlockSize is None:
-        try:
-            _BackupMaxBlockSize = int(config.conf().getData('services/backups/max-block-size'))
-        except:
-            _BackupMaxBlockSize = DefaultBackupMaxBlockSize()
-    return _BackupMaxBlockSize
+#    global _BackupMaxBlockSize
+#    if _BackupMaxBlockSize is None:
+#        try:
+#            _BackupMaxBlockSize = int(config.conf().getData('services/backups/max-block-size'))
+#        except:
+#            _BackupMaxBlockSize = DefaultBackupMaxBlockSize()
+#    return _BackupMaxBlockSize
+    return config.conf().getInt('services/backups/max-block-size', DefaultBackupMaxBlockSize())
 
 def setBackupBlockSize(block_size):
     """
     Set current backup block size in the memory to have fast access.
     """
-    global _BackupBlockSize
-    _BackupBlockSize = int(block_size)
+    # global _BackupBlockSize
+    # _BackupBlockSize = int(block_size)
+    return config.conf().setInt('services/backups/block-size', block_size)
 
 def setBackupMaxBlockSize(block_size):
     """
     Set current maximum backup block size in the memory to have fast access.
     """
-    global _BackupMaxBlockSize
-    _BackupMaxBlockSize = int(block_size)
+    # global _BackupMaxBlockSize
+    # _BackupMaxBlockSize = int(block_size)
+    return config.conf().setInt('services/backups/max-block-size', block_size)
      
 def getPrivateKeySize():
     """
     Return Private Key size from settings, but typically Private Key is generated only once during install stage.
     """
-    try:
-        return int(config.conf().getData('personal/private-key-size'))
-    except:
-        return DefaultPrivateKeySize()
+    return config.conf().getInt('personal/private-key-size', DefaultPrivateKeySize())
     
 def setPrivateKeySize(pksize):
     """
     Set Private Key size in the settings.
     """
-    config.conf().setData('personal/private-key-size', str(pksize))
+    config.conf().setInt('personal/private-key-size', pksize)
          
 def enableUPNP(enable=None):
     """

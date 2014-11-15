@@ -79,6 +79,7 @@ _RaidWorker = None
 #------------------------------------------------------------------------------ 
 
 def add_task(cmd, params, callback):
+    lg.out(10, 'raid_worker.add_task [%s] %r' % (cmd, params))
     A('new-task', (cmd, params, callback))
      
 #------------------------------------------------------------------------------ 
@@ -92,7 +93,7 @@ def A(event=None, arg=None):
         if event is None or event != 'init':
             return None
         # set automat name and starting state here
-        _RaidWorker = RaidWorker('raid_worker', 'AT_STARTUP', 6)
+        _RaidWorker = RaidWorker('raid_worker', 'AT_STARTUP', 6, True)
     if event is not None:
         _RaidWorker.automat(event, arg)
     return _RaidWorker

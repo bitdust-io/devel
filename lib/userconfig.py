@@ -1029,6 +1029,13 @@ def main():
     uc.update()
     # print uc.print_all_html()
     # print "',\n'".join(uc.default_order)
+    for key in sorted(_InfosDict.keys()):
+        k = settings.convert_key(key)
+        k = 'services/' + k.replace('-', '/')
+        s = '{%s} ' % k
+        s += '%s\n' % _LabelsDict[key]
+        s += '    %s\n' % _InfosDict[key].replace('\n', '    \n')
+        sys.stdout.write(s)
 
 
 

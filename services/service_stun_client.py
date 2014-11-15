@@ -30,6 +30,7 @@ class StunClientService(LocalService):
     def start(self):
         from stun import stun_client
         from lib import settings
+        from twisted.internet.defer import Deferred
         try:
             port_num = int(settings.getUDPPort())
         except:
@@ -37,13 +38,16 @@ class StunClientService(LocalService):
             lg.exc()
             port_num = settings.DefaultUDPPort()
         stun_client.A('init', port_num)
-        return True
+        d = Deferred()
+        stun_client.A('start', 
+            lambda result, typ, ip, details: 
+                d.callback(ip) if result == 'stun-success' else d.errback(details))
+        return d
     
     def stop(self):
         from stun import stun_client
         stun_client.A('shutdown')
         return True
-    
     
 
     

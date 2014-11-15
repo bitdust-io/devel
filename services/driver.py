@@ -245,13 +245,11 @@ def on_started_all_services(results):
     
 def on_stopped_all_services(results):
     lg.out(2, 'driver.on_stopped_all_services')
-    print results
     global _StopingDeferred
     _StopingDeferred = None
     return results
 
 def on_service_enabled_disabled(path, newvalue, oldvalue, result):
-    print 'on_service_enabled_disabled', path, newvalue, oldvalue, result
     if not result:
         return
     if not path.endswith('/enabled'):

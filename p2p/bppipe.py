@@ -34,12 +34,7 @@ import os
 import sys
 import platform
 import tarfile
-
-try:
-    import msvcrt
-    msvcrt.setmode(1, os.O_BINARY)
-except:
-    pass
+import traceback
 
 #------------------------------------------------------------------------------ 
 
@@ -52,13 +47,22 @@ def logfilepath():
         return 'bppipe.log'
     return os.path.join(logspath, 'bppipe.log')
 
-def printlog(txt):
+def printlog(txt, mode='a'):
     """
     Write a line to the log file.
     """
-    LogFile = open(logfilepath(), 'a')
-    LogFile.write(txt)
-    LogFile.close()
+    try:
+        LogFile = open(logfilepath(), mode)
+        LogFile.write(txt)
+        LogFile.close()
+    except:
+        pass
+    
+def printexc():
+    """
+    Write exception info to the log file.
+    """
+    printlog('\n'+traceback.format_exc()+'\n')
 
 #------------------------------------------------------------------------------ 
 
@@ -99,6 +103,10 @@ def _WindowsExcludeFunction(filename):
     """
     if (filename.lower().find("local settings\\temp") != -1) or (filename.lower().find(".bitpie") != -1) :
         return True
+    if sys.version_info[:2] == (2, 7):
+        if not os.access(filename, os.R_OK):
+            return True
+    # printlog(filename+'\n') 
     return False # don't exclude the file
 
 _ExcludeFunction = _LinuxExcludeFunction
@@ -111,6 +119,7 @@ def writetar(sourcepath, subdirs=True, compression='none', encoding=None):
     """
     Create a tar archive from given ``sourcepath`` location.
     """
+    # printlog(os.path.abspath(sourcepath))
     mode = 'w|'
     if compression != 'none':
         mode += compression
@@ -131,11 +140,13 @@ def writetar(sourcepath, subdirs=True, compression='none', encoding=None):
             if _ExcludeFunction(os.path.join(basedir,tarinfo.name)):
                 return None
             return tarinfo
+        # printlog(sourcepath+'\n')
         tar.add(sourcepath, unicode(filename), subdirs, filter=lambda tarinfo: _filter(tarinfo, basedir)) 
         if not subdirs and os.path.isdir(sourcepath):
             # the True is for recursive, if we wanted to just do the immediate directory set to False
             for subfile in os.listdir(sourcepath):
                 subpath = os.path.join(sourcepath, subfile)
+                # printlog(subpath+'\n')
                 if not os.path.isdir(subpath): 
                     tar.add(subpath, unicode(os.path.join(filename, subfile)), subdirs, filter=_filter) 
     # otherwise no exclude function
@@ -145,7 +156,7 @@ def writetar(sourcepath, subdirs=True, compression='none', encoding=None):
             for subfile in os.listdir(sourcepath):
                 subpath = os.path.join(sourcepath, subfile)
                 if not os.path.isdir(subpath): 
-                    tar.add(subpath, unicode(os.path.join(filename, subfile)), subdirs) 
+                    tar.add(subpath, unicode(os.path.join(filename, subfile)), subdirs)
     tar.close()
 
 #------------------------------------------------------------------------------ 
@@ -167,6 +178,12 @@ def main():
     Use command line arguments to get the command from ``bpmain``. 
     """
     try:
+        import msvcrt
+        msvcrt.setmode(1, os.O_BINARY)
+    except:
+        pass
+
+    try:
         import sys
         reload(sys)
         if hasattr(sys, "setdefaultencoding"):
@@ -177,12 +194,11 @@ def main():
     except:
         pass
 
-#    if len(sys.argv) < 4:
-#        printlog('sys.argv: %s\n' % str(sys.argv))
-#        printlog('bppipe ["subdirs"/"nosubdirs"/"extract"] ["none"/"bz2"/"gz"] [folder path]\n')
-#        return 2
+    # printlog('sys.argv: %s\n' % str(sys.argv), 'w')
 
-    # printlog(str(sys.argv) + '\n')
+    if len(sys.argv) < 4:
+        printlog('bppipe ["subdirs"/"nosubdirs"/"extract"] ["none"/"bz2"/"gz"] [folder path]\n')
+        return 2
 
     try:
         cmd = sys.argv[1].strip().lower()
@@ -191,8 +207,7 @@ def main():
         else:
             writetar(sys.argv[3], cmd == 'subdirs', sys.argv[2], encoding=locale.getpreferredencoding())
     except:
-        import traceback
-        printlog('\n'+traceback.format_exc()+'\n')
+        printexc()
         return 1
     
     return 0

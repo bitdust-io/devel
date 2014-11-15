@@ -18,6 +18,8 @@ if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
+from logs import lg
+
 from lib import bpio
 from lib import settings
 from lib import automat
@@ -125,8 +127,10 @@ class StunServer(automat.Automat):
             command, payload = datagram
         except:
             return False
-        youipport = '%s:%d' % (address[0], address[1])
-        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youipport, address)
+        youripport = '%s:%d' % (address[0], address[1])
+        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
+        lg.out(4, 'stun_server.doSendYourIPPort [%s] to %s' % (
+            youripport, address))
 
     def _datagramReceived(self, datagram, address):
         """

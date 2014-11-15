@@ -170,23 +170,31 @@ def Verify(ConIdentity, hashcode, signature):
     Result = VerifySignature(key, hashcode, signature)
     return Result
 
+def HashMD5(inp):
+    """
+    Use MD5 method to calculate the hash of ``inp`` string. 
+    However it seems it is not so safe anymore:
+    http://natmchugh.blogspot.co.uk/2014/10/how-i-created-two-images-with-same-md5.html
+    """
+    return hashlib.md5(inp).digest()
+
 def HashSHA(inp):
     """
     Use SHA1 method to calculate the hash of ``inp`` string. 
     """
     return hashlib.sha1(inp).digest()
 
-def HashMD5(inp):
+def HashSHA512(inp):
     """
-    Use MD5 method to calculate the hash of ``inp`` string. 
     """
-    return hashlib.md5(inp).digest()
-
+    return hashlib.sha512(inp).digest()
+    
 def Hash(inp):
     """
     Core function to calculate hash of ``inp`` string, right now it uses MD5 method.
     """
     return HashMD5(inp)
+    # return HashSHA512(inp)
 
 def EncryptStringPK(publickeystring, inp):
     """

@@ -27,13 +27,17 @@ class RebuildingService(LocalService):
                 ]
     
     def start(self):
+        from raid import raid_worker
         from p2p import backup_rebuilder
+        raid_worker.A('init')
         backup_rebuilder.A('init')
         return True
     
     def stop(self):
+        from raid import raid_worker
         from p2p import backup_rebuilder
         backup_rebuilder.Destroy()
+        raid_worker.A('shutdown')
         return True
     
     

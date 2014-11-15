@@ -14,6 +14,7 @@
 import os
 import sys
 import types
+import re
 
 if __name__ == "__main__":
     import os.path as _p
@@ -32,7 +33,7 @@ def init(configDir):
     """
     global _Config
     if _Config is None: 
-        _Config = NotifiableConfig(configDir)
+        _Config = DetailedConfig(configDir)
         lg.out(2, 'config.init     at %s' % configDir)
     else:
         lg.warn('already called, was set up in %s' % _Config.getConfigDir())
@@ -263,20 +264,222 @@ class NotifiableConfig(BaseConfig):
         self.callbacks = {}
     
     def addCallback(self, mask, cb):
+        """
+        You can add a callback to catch a moment when some particular option were modified.
+        Mask is a string which is used to compared in this way:
+            
+            entryPath.startswith(mask)
+            
+        The callback will be fired with such arguments:
+        
+            cb(entryPath, newValue, oldValue, result)
+            
+        """
         self.callbacks[mask] = cb
         
     def removeCallback(self, mask):
-        del self.callbacks[mask]
+        """
+        Remove existing callback.
+        """
+        self.callbacks.pop(mask, None)
         
-    def _set( self, entryPath, data ) :
-        olddata = self._get(entryPath)
-        result = BaseConfig._set(self, entryPath, data)
+    def _set( self, entryPath, newValue ) :
+        oldValue = self._get(entryPath)
+        result = BaseConfig._set(self, entryPath, newValue)
         for mask, cb in self.callbacks.items():
             if entryPath.startswith(mask):
-                cb(entryPath, data, olddata, result)
+                cb(entryPath, newValue, oldValue, result)
         return result
 
 #------------------------------------------------------------------------------ 
+
+TYPE_UNDEFINED = 0
+TYPE_BOOLEAN = 1
+TYPE_STRING = 2
+TYPE_TEXT = 3
+TYPE_INTEGER = 4
+TYPE_POSITIVE_INTEGER = 5
+TYPE_NON_ZERO_POSITIVE_INTEGER = 6
+TYPE_FOLDER_PATH = 7
+TYPE_FILE_PATH = 8
+TYPE_COMBO_BOX = 9
+TYPE_PASSWORD = 10
+TYPE_DISK_SPACE = 11
+
+TYPES_LABELS = {
+    TYPE_UNDEFINED :                'undefined',
+    TYPE_BOOLEAN :                  'boolean',
+    TYPE_STRING :                   'string',
+    TYPE_TEXT :                     'text',
+    TYPE_INTEGER :                  'integer',
+    TYPE_POSITIVE_INTEGER :         'positive integer',
+    TYPE_NON_ZERO_POSITIVE_INTEGER: 'non zero positive integer',
+    TYPE_FOLDER_PATH :              'folder path',
+    TYPE_FILE_PATH :                'file path',
+    TYPE_COMBO_BOX :                'combo box',
+    TYPE_PASSWORD :                 'password',
+    TYPE_DISK_SPACE :               'disk space',
+   }
+
+class FixedTypesConfig(NotifiableConfig):
+    _types = {
+        'emergency/email':                              TYPE_STRING,
+        'emergency/fax':                                TYPE_STRING,
+        'emergency/first':                              TYPE_COMBO_BOX,
+        'emergency/phone':                              TYPE_STRING,
+        'emergency/second':                             TYPE_COMBO_BOX,
+        'emergency/text':                               TYPE_STRING,
+        'logs/debug-level':                             TYPE_POSITIVE_INTEGER,
+        'logs/memdebug-enabled':                        TYPE_BOOLEAN,
+        'logs/memdebug-port':                           TYPE_POSITIVE_INTEGER,
+        'logs/memprofile-enabled':                      TYPE_BOOLEAN,
+        'logs/stream-enabled':                          TYPE_BOOLEAN,
+        'logs/stream-port':                             TYPE_POSITIVE_INTEGER,
+        'logs/traffic-enabled':                         TYPE_BOOLEAN,
+        'logs/traffic-port':                            TYPE_POSITIVE_INTEGER,
+        'other/upnp-at-startup':                        TYPE_BOOLEAN,
+        'other/upnp-enabled':                           TYPE_BOOLEAN,
+        'paths/backups':                                TYPE_FOLDER_PATH,
+        'paths/customers':                              TYPE_FOLDER_PATH,
+        'paths/messages':                               TYPE_FOLDER_PATH,
+        'paths/receipts':                               TYPE_FOLDER_PATH,
+        'paths/restore':                                TYPE_FOLDER_PATH,
+        'personal/betatester':                          TYPE_BOOLEAN,
+        'personal/name':                                TYPE_STRING,
+        'personal/nickname':                            TYPE_STRING,
+        'personal/private-key-size':                    TYPE_STRING,
+        'personal/surname':                             TYPE_STRING,
+        'services/backup-db/enabled':                   TYPE_BOOLEAN,
+        'services/backups/block-size':                  TYPE_POSITIVE_INTEGER,
+        'services/backups/enabled':                     TYPE_BOOLEAN,
+        'services/backups/keep-local-copies-enabled':   TYPE_BOOLEAN,
+        'services/backups/max-block-size':              TYPE_POSITIVE_INTEGER,
+        'services/backups/max-copies':                  TYPE_POSITIVE_INTEGER,
+        'services/backups/wait-suppliers-enabled':      TYPE_BOOLEAN,
+        'services/customer/enabled':                    TYPE_BOOLEAN,
+        'services/customer/needed-space':               TYPE_DISK_SPACE,
+        'services/customer/suppliers-number':           TYPE_COMBO_BOX,
+        'services/customers-rejector/enabled':          TYPE_BOOLEAN,
+        'services/data-sender/enabled':                 TYPE_BOOLEAN,
+        'services/entangled-dht/enabled':               TYPE_BOOLEAN,
+        'services/entangled-dht/udp-port':              TYPE_POSITIVE_INTEGER,
+        'services/fire-hire/enabled':                   TYPE_BOOLEAN,
+        'services/gateway/enabled':                     TYPE_BOOLEAN,
+        'services/id-server/enabled':                   TYPE_BOOLEAN,
+        'services/id-server/host':                      TYPE_STRING,
+        'services/id-server/tcp-port':                  TYPE_POSITIVE_INTEGER,
+        'services/id-server/web-port':                  TYPE_POSITIVE_INTEGER,
+        'services/identity-propagate/enabled':          TYPE_BOOLEAN,
+        'services/identity-server/enabled':             TYPE_BOOLEAN,
+        'services/list-files/enabled':                  TYPE_BOOLEAN,
+        'services/network/enabled':                     TYPE_BOOLEAN,
+        'services/network/proxy/enabled':               TYPE_BOOLEAN,
+        'services/network/proxy/host':                  TYPE_STRING,
+        'services/network/proxy/password':              TYPE_PASSWORD,
+        'services/network/proxy/port':                  TYPE_POSITIVE_INTEGER,
+        'services/network/proxy/ssl':                   TYPE_BOOLEAN,
+        'services/network/proxy/username':              TYPE_STRING,
+        'services/network/receive-limit':               TYPE_POSITIVE_INTEGER,
+        'services/network/send-limit':                  TYPE_POSITIVE_INTEGER,
+        'services/p2p-hookups/enabled':                 TYPE_BOOLEAN,
+        'services/private-messages/enabled':            TYPE_BOOLEAN,
+        'services/rebuilding/enabled':                  TYPE_BOOLEAN,
+        'services/restores/enabled':                    TYPE_BOOLEAN,
+        'services/stun-client/enabled':                 TYPE_BOOLEAN,
+        'services/stun-server/enabled':                 TYPE_BOOLEAN,
+        'services/supplier/donated-space':              TYPE_DISK_SPACE,
+        'services/supplier/enabled':                    TYPE_BOOLEAN,
+        'services/tcp-connections/enabled':             TYPE_BOOLEAN,
+        'services/tcp-connections/tcp-port':            TYPE_POSITIVE_INTEGER,
+        'services/tcp-transport/enabled':               TYPE_BOOLEAN,
+        'services/tcp-transport/receiving-enabled':     TYPE_BOOLEAN,
+        'services/tcp-transport/sending-enabled':       TYPE_BOOLEAN,
+        'services/udp-datagrams/enabled':               TYPE_BOOLEAN,
+        'services/udp-datagrams/udp-port':              TYPE_POSITIVE_INTEGER,
+        'services/udp-transport/enabled':               TYPE_BOOLEAN,
+        'services/udp-transport/receiving-enabled':     TYPE_BOOLEAN,
+        'services/udp-transport/sending-enabled':       TYPE_BOOLEAN,
+        'updates/mode':                                 TYPE_COMBO_BOX,
+        'updates/shedule':                              TYPE_TEXT,
+    }
+    
+    def getType(self, entry):
+        return self._types.get(entry, TYPE_UNDEFINED)
+    
+    def getTypeLabel(self, entry):
+        return TYPES_LABELS.get(self.getType(entry))
+    
+#------------------------------------------------------------------------------ 
+
+class CachedConfig(FixedTypesConfig):
+    _cache = {}
+    
+    def _set(self, entryPath, data):
+        if self._cache.has_key(entryPath):
+            if self._cache[entryPath] == data:
+                return True
+        self._cache[entryPath] = data
+        result = FixedTypesConfig._set(self, entryPath, data)
+        return result
+    
+    def _get(self, entryPath):
+        if self._cache.has_key(entryPath):
+            return self._cache[entryPath]
+        result = FixedTypesConfig._get(self, entryPath)
+        self._cache[entryPath] = result
+        return result
+    
+    def reloadCache(self):
+        """
+        Reload whole cache from local files.
+        """
+        #TODO
+        
+    def storeCache(self):
+        """
+        Write all cached entries into local files.
+        """
+        #TODO
+
+#------------------------------------------------------------------------------ 
+
+class DetailedConfig(CachedConfig):
+    _labels = {}
+    _infos = {}
+    
+    def __init__(self, configDir):
+        CachedConfig.__init__(self, configDir)
+        try:
+            import config_details
+            self._load_details(config_details.raw())
+        except:
+            pass
+    
+    def _loadDetails(self, src):
+        """
+        """
+        current_option = ''
+        for line in src.splitlines():
+            if not line.strip():
+                continue
+            r = re.match('^{(.+?)}(.+?)$', line)
+            if r:
+                current_option = r.group(1).strip()
+                self._labels[current_option] = r.group(2).strip()
+            else:
+                if current_option:
+                    if not self._infos.has_key(current_option):
+                        self._infos[current_option] = ''
+                    self._infos[current_option] += line.strip() + '\n'
+                    
+    def getLabel(self, entryPath):
+        return self._labels.get(entryPath, '')
+    
+    def getInfo(self, entryPath):
+        return self._infos.get(entryPath, '')
+
+#------------------------------------------------------------------------------ 
+
 
 def main():
     """
@@ -285,7 +488,22 @@ def main():
     from lib import settings
     settings.init()
     init(settings.ConfigDir())
-    print '\n'.join(map(lambda x: "    '%s':\t\t\tSettingsTreeNode," % x, sorted(conf().listAllEntries())))
+#    last = ''
+#    for entry in sorted(conf()._types.keys()):
+#        parent, key = entry.rsplit('/', 1)
+#        while parent.count('/'):
+#            p, parent = parent.rsplit('/', 1)
+#            if p != 'services':
+#                print p
+#            parent = '  ' + parent 
+#        if parent != last:
+#            print parent
+#            last = parent
+#        print ' ' * (last.count(' ') + 1) * 2, key, '\t\t\t\t', conf().get_type_label(entry).upper()
+    # print '\n'.join(map(lambda x: "    '%s':\t\t\tNode," % x, sorted(conf().listAllEntries())))
+    s = conf().getData('details')
+    conf().loadDetails(s)
+    
 
 
 if __name__ == "__main__":

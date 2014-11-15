@@ -72,6 +72,10 @@ except:
 
 from twisted.internet.defer import maybeDeferred
 
+if __name__ == "__main__":
+    import os.path as _p
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
+
 from logs import lg
 
 from lib import misc
@@ -96,7 +100,7 @@ class backup(automat.Automat):
     """
     A class to run the backup process, data is read from pipe. 
     """
-    
+
     timers = {
         'timer-01sec': (0.1, ['RAID']),
         'timer-001sec': (0.01, ['READ']),
@@ -121,7 +125,7 @@ class backup(automat.Automat):
         self.blocksSent = 0
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
-        automat.Automat.__init__(self, 'backup', 'AT_STARTUP', 14)
+        automat.Automat.__init__(self, 'backup', 'AT_STARTUP', 14, True)
         # lg.out(6, 'backup.__init__ %s %s %d' % (self.backupID, self.eccmap, self.blockSize,))
 
     def abort(self):
@@ -263,7 +267,7 @@ class backup(automat.Automat):
             self.stateReading = False
             if data == '':
                 self.stateEOF = True
-            self.automat('read-success')
+            reactor.callLater(0, self.automat, 'read-success')
             #out(12, 'backup.readDone %d bytes' % len(data))
         self.stateReading = True
         maybeDeferred(readChunk).addCallback(readDone)
@@ -368,4 +372,27 @@ class backup(automat.Automat):
         lg.out(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
             blockNumber, result, str(self.stateEOF), str(time.time()-dt)))
         self.automat('block-raid-done', (blockNumber, result))
-        
+
+#------------------------------------------------------------------------------ 
+
+def main():
+    lg.set_debug_level(24)
+    sourcePath = sys.argv[1]
+    compress_mode = 'none' # 'gz' 
+    backupID = 'F1234'
+    import backup_fs
+    import backup_tar
+    from raid import raid_worker
+    raid_worker.A('init')
+    if backup_fs.pathIsDir(sourcePath):
+        backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
+    else:    
+        backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)
+    backupPipe.make_nonblocking()
+    job = backup(backupID, backupPipe, lambda bid, result: reactor.stop())
+    reactor.callLater(1, job.automat, 'start')
+    reactor.run()
+    
+if __name__ == "__main__":
+    main()
+

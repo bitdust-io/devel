@@ -119,7 +119,6 @@ class NetworkConnector(Automat):
     fast = False
     
     def init(self):
-        self.log_events = True
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'
