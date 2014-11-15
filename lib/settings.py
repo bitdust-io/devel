@@ -1423,7 +1423,7 @@ def getTCPPort():
     """
     Get a port number for tranport_tcp from user config.  
     """
-    return (config.conf().getData("services/tcp-connections/tcp-port"))
+    return config.conf().getInt("services/tcp-connections/tcp-port", DefaultTCPPort())
 
 def setTCPPort(port):
     """
@@ -1459,7 +1459,7 @@ def getUDPPort():
     """
     Get a port number for tranport_udp from user config.  
     """
-    return int(config.conf().getData("services/udp-datagrams/udp-port"))
+    return config.conf().getInt("services/udp-datagrams/udp-port", DefaultUDPPort())
 
 def setUDPPort(port):
     """
@@ -1471,7 +1471,7 @@ def getDHTPort():
     """
     Get a UDP port number for entangled "DHT" network.  
     """
-    return config.conf().getData("services/entangled-dht/udp-port")
+    return config.conf().getInt("services/entangled-dht/udp-port", DefaultDHTPort())
 
 def setDHTPort(port):
     """

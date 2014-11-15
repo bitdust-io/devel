@@ -141,10 +141,12 @@ class StunServer(automat.Automat):
 
 def main():
     from twisted.internet import reactor
+    lg.set_debug_level(24)
     bpio.init()
-    dht_service.init(4000)
-    udp.listen(8882)
-    A('start', 8882)
+    settings.init()
+    dht_service.init(settings.getDHTPort())
+    udp.listen(settings.getUDPPort())
+    A('start', settings.getUDPPort())
     reactor.run()
 
 if __name__ == '__main__':
