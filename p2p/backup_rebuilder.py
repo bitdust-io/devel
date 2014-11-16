@@ -126,7 +126,6 @@ class BackupRebuilder(automat.Automat):
         self.workingBlocksQueue = []            # list of missing blocks we work on for current backup
         self.missingPackets = 0 
         self.missingSuppliers = set()
-        self.log_events = True
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
