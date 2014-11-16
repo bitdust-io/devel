@@ -45,12 +45,9 @@ from lib import settings
 from lib import stun
 from lib import nameurl
 from lib import net_misc
-from lib import tmpfile
+#from lib import tmpfile
 
 from crypt import key
-
-from transport import gate
-from transport import callback
 
 import identity
 import known_servers
@@ -348,7 +345,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        self.create_new_identity()
+        self._create_new_identity()
 
     def doSendMyIdentity(self, arg):
         """
@@ -362,7 +359,7 @@ class IdRegistrator(automat.Automat):
         def _eb(x):
             misc.setLocalIdentity(mycurrentidentity)
             self.automat('my-id-failed')
-        dl = self.send_new_identity()
+        dl = self._send_new_identity()
         dl.addCallback(_cb)
         dl.addErrback(_eb)
 
@@ -403,31 +400,16 @@ class IdRegistrator(automat.Automat):
         from p2p import installer
         installer.A().event('print', arg)
 
-    def create_new_identity(self):
+    def _create_new_identity(self):
         """
         Generate new Private key and new identity file.
         Reads some extra info from config files.
         """
         key.InitMyKey()
-#        misc.loadLocalIdentity()
-#        if misc.isLocalIdentityReady():
-#            try:
-#                lid = misc.getLocalIdentity()
-#                lid.sign()
-#                valid = lid.Valid()
-#            except:
-#                valid = False
-#                lg.exc()
-#            if valid:
-#                self.new_identity = lid
-#                lg.out(2, 'id_registrator.create_new_identity   found existing local identity!!!!!!!!!!')
-#                return
-#            lg.warn('existing local identity is not VALID')
-    
         login = bpio.ReadTextFile(settings.UserNameFilename())
         externalIP = bpio.ReadTextFile(settings.ExternalIPFilename())
         localIP = bpio.ReadTextFile(settings.LocalIPFilename())
-        lg.out(4, 'id_registrator.create_new_identity %s %s ' % (login, externalIP))
+        lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
         ident = identity.identity()
         ident.default()
         ident.sources = []
@@ -455,13 +437,21 @@ class IdRegistrator(automat.Automat):
         bpio.WriteFile(settings.LocalIdentityFilename()+'.new', ident.serialize())
         self.new_identity = ident
         
-    def send_new_identity(self):
+    def _send_new_identity(self):
         """
         Send created identity to the identity server to register it. 
+        TODO: need to close transport and gateway after that
         """
-        lg.out(4, 'id_registrator.send_new_identity ')
-        gate.init()
-        gate.start()
+        lg.out(4, 'id_registrator._send_new_identity ')
+        from transport import gateway
+        from transport import network_transport 
+        from transport.tcp import tcp_interface
+        gateway.init()
+        interface = tcp_interface.GateInterface()
+        transport = network_transport.NetworkTransport('tcp', interface)
+        transport.automat('init', gateway.listener())
+        transport.automat('start')
+        gateway.start()
         sendfilename = settings.LocalIdentityFilename()+'.new'
         dlist = []
         for idurl in self.new_identity.sources:
@@ -470,7 +460,7 @@ class IdRegistrator(automat.Automat):
             webport, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             srvhost = '%s:%d' % (host, tcpport)
-            dlist.append(gate.send_file_single(
+            dlist.append(gateway.send_file_single(
                 'tcp', srvhost, sendfilename, 'Identity'))
         assert len(self.free_idurls) == 0
         return DeferredList(dlist)

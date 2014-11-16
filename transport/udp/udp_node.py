@@ -59,7 +59,7 @@ def A(event=None, arg=None):
     global _UDPNode
     if _UDPNode is None:
         # set automat name and starting state here
-        _UDPNode = UDPNode('udp_node', 'AT_STARTUP', 6)
+        _UDPNode = UDPNode('udp_node', 'AT_STARTUP', 24)
     if event is not None:
         _UDPNode.automat(event, arg)
     return _UDPNode

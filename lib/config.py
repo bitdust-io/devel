@@ -81,6 +81,13 @@ class BaseConfig( object ) :
         assert t is types.ListType
         return entries
     
+    def hasChilds(self, entryPath):
+        elemList = self._parseEntryPath( entryPath )
+        fpath = os.path.join( self.configDir, *elemList )
+        if os.path.isdir(fpath) :
+            return True
+        return False
+    
     def listAllEntries(self):
         try:
             from lib import bpio

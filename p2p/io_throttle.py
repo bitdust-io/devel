@@ -46,7 +46,7 @@ from lib import nameurl
 
 from crypt import signed
 
-from transport import gate
+from transport import gateway
 from transport import callback
 
 import contact_status
@@ -371,7 +371,7 @@ class SupplierQueue:
             # outbox will not resend, because no ACK, just data, 
             # need to handle resends on own
             # transport_control.outboxNoAck(newpacket)
-            gate.outbox(newpacket, callbacks={
+            gateway.outbox(newpacket, callbacks={
                 commands.Ack(): self.FileSendAck,
                 commands.Fail(): self.FileSendAck}) 
             # transport_control.RegisterInterest(
@@ -540,7 +540,7 @@ class SupplierQueue:
                         "", 
                         fileRequest.remoteID)
                     # transport_control.outboxNoAck(newpacket)
-                    gate.outbox(newpacket, callbacks={
+                    gateway.outbox(newpacket, callbacks={
                         commands.Data(): self.DataReceived,
                         commands.Fail(): self.DataReceived})  
                     fileRequest.requestTime = time.time()

@@ -1314,11 +1314,11 @@ class InstallPage(Page):
         src += '<form action="%s" method="post">\n' % request.path
         src += '<table align=center cellspacing=10>\n'
         src += '<tr><td align=left>\n'
-        src += '<input fontsize="+5" id="radio1" type="radio" name="action" value="register a new account" checked />\n'
+        src += '<input fontsize="+5" id="radio1" type="radio" name="action" value="register a new identity" checked />\n'
         src += '</td></tr>\n'
         src += '<tr><td align=left>\n'
-        src += '<input fontsize="+5" id="radio2" type="radio" name="action" value="recover my account and backups" />\n'
-        src += '<font color=gray>this feature temporarily disabled</font>\n'
+        src += '<input fontsize="+5" id="radio2" type="radio" name="action" value="recover my identity and personal data" />\n'
+        src += '<br><font color=gray>this feature temporarily disabled</font>\n'
         src += '</td></tr>\n'
         src += '<tr><td align=center>\n'
         src += '<br><br><input type="submit" name="submit" value=" next "/>\n'
@@ -1329,10 +1329,10 @@ class InstallPage(Page):
         action = arg(request, 'action', None)
         result = html(request, body=src, title='install', home='', back='')
         if action is not None:
-            if action not in ['register a new account', 'recover my account and backups']:
-                action = 'register a new account'
-            action = action.replace('register a new account', 'register-selected')
-            action = action.replace('recover my account and backups', 'recover-selected')
+            if action != 'register a new identity' and action != 'recover my identity and personal data':
+                action = 'register a new identity'
+            action = action.replace('register a new identity', 'register-selected')
+            action = action.replace('recover my identity and personal data', 'recover-selected')
             if action != 'recover-selected': # TODO
                 installer.A(action)
         return result
@@ -7904,7 +7904,10 @@ class SettingsTreeNode(Page):
 
     def update(self):
         self.exist = config.conf().has(self.path)
-        self.has_childs = len(config.conf().listEntries(self.path)) > 0
+        try:
+            self.has_childs = config.conf().hasChilds()
+        except:
+            self.has_childs = False
         if self.has_childs:
             self.value = None
         else:

@@ -25,6 +25,7 @@ import hashlib
 
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import DES3
+from Crypto.Cipher import AES  
 
 import warnings
 warnings.filterwarnings('ignore',category=DeprecationWarning)
@@ -193,8 +194,8 @@ def Hash(inp):
     """
     Core function to calculate hash of ``inp`` string, right now it uses MD5 method.
     """
-    return HashMD5(inp)
-    # return HashSHA512(inp)
+    # return HashMD5(inp)
+    return HashSHA512(inp)
 
 def EncryptStringPK(publickeystring, inp):
     """
@@ -270,7 +271,8 @@ def EncryptWithSessionKey(rand24, inp):
     :param rand24: randomly generated session key 
     :param inp: input string to encrypt 
     """
-    SessionKey = DES3.new(rand24)
+    # SessionKey = DES3.new(rand24)
+    SessionKey = AES.new(rand24)
     data = RoundupString(inp, 24)
     ret = SessionKey.encrypt(data)
     del data
@@ -280,7 +282,8 @@ def DecryptWithSessionKey(rand24, inp):
     """
     Decrypt string with given session key.
     """
-    SessionKey = DES3.new(rand24)
+    # SessionKey = DES3.new(rand24)
+    SessionKey = AES.new(rand24)
     return SessionKey.decrypt(inp)
 
 #------------------------------------------------------------------------------ 

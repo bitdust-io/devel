@@ -144,7 +144,10 @@ class NetworkTransport(automat.Automat):
         Action method.
         """
         gateway.attach(self)
-        listener, state_changed_callback = arg
+        try:
+            listener, state_changed_callback = arg
+        except:
+            listener, state_changed_callback = arg, None
         self.state_changed_callback = state_changed_callback
         self.interface.init(listener)
 

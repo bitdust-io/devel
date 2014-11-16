@@ -38,30 +38,19 @@ import os
 import sys
 import time
 
-try:
-    from twisted.internet import reactor
-except:
-    sys.exit('Error initializing twisted.internet.reactor in data_sender.py')
-
 from logs import lg
 
-from lib import bpio
 from lib import misc
 from lib import packetid
 from lib import contacts
 from lib import settings
-from lib import diskspace
-from lib import nameurl
 from lib import automat
 from lib import automats
-
-from transport import gate
 
 import io_throttle
 import backup_matrix
 import fire_hire
 import contact_status
-import backup_monitor
 
 #------------------------------------------------------------------------------ 
 
