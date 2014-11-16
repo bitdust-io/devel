@@ -4169,7 +4169,7 @@ class SuppliersPage(Page):
         #---action cacheids---    
         elif action == 'cacheids':
             for suplier_idurl in contacts.getSupplierIDs():
-                identitycache.immediatelyCaching(suplier_idurl).addCallback(
+                identitycache.immediatelyCaching(suplier_idurl).addBoth(
                     lambda src: OnAliveStateChanged(suplier_idurl))
             
         #---action request---

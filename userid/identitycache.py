@@ -209,11 +209,13 @@ def immediatelyCaching(url):
         else:
             res.errback(Exception(src))
             lg.out(14, '    [cache error] %s' % url)
+        return src
     def _getPageFail(x, url, res):
         global _CachingTasks
         _CachingTasks.pop(url)
         res.errback(x)
         lg.out(14, '    [cache failed] %s' % url)
+        return None
     result = Deferred()
     d = net_misc.getPageTwisted(url)
     d.addCallback(_getPageSuccess, url, result)
