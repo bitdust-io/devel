@@ -58,11 +58,8 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in message.py')
 
-from twisted.internet.defer import Deferred
-
 from logs import lg
 
-from lib import bpio
 from lib import misc
 from lib import contacts
 from lib import commands

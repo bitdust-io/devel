@@ -20,6 +20,7 @@ We never want to bother storing bad data, and need localtester to do local scrub
 """
 
 import os
+import sys
 import random
 import hashlib
 
@@ -30,6 +31,10 @@ from Crypto.Cipher import AES
 import warnings
 warnings.filterwarnings('ignore',category=DeprecationWarning)
 from twisted.conch.ssh import keys
+
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 from logs import lg
 
@@ -243,14 +248,14 @@ def SessionKeyType():
     """
     Which crypto is used for session key.
     """
-    return "DES3"
+    return "AES"
 
 def NewSessionKey():
     """
     Return really random string for making equivalent DES3 objects when needed.
     """
     # to work around bug in rsa.encrypt - do not want leading 0.          
-    return chr(random.randint(1, 255)) + os.urandom(23)   
+    return chr(random.randint(1, 255)) + os.urandom(31)   
 
 def RoundupString(data, stepsize):
     """
@@ -264,7 +269,7 @@ def RoundupString(data, stepsize):
         addon = ' ' * increase
     return data + addon
 
-def EncryptWithSessionKey(rand24, inp):
+def EncryptWithSessionKey(rand32, inp):
     """
     Encrypt input string with Session Key.
     
@@ -272,18 +277,18 @@ def EncryptWithSessionKey(rand24, inp):
     :param inp: input string to encrypt 
     """
     # SessionKey = DES3.new(rand24)
-    SessionKey = AES.new(rand24)
-    data = RoundupString(inp, 24)
+    SessionKey = AES.new(rand32)
+    data = RoundupString(inp, 32)
     ret = SessionKey.encrypt(data)
     del data
     return ret
 
-def DecryptWithSessionKey(rand24, inp):
+def DecryptWithSessionKey(rand32, inp):
     """
     Decrypt string with given session key.
     """
     # SessionKey = DES3.new(rand24)
-    SessionKey = AES.new(rand24)
+    SessionKey = AES.new(rand32)
     return SessionKey.decrypt(inp)
 
 #------------------------------------------------------------------------------ 
