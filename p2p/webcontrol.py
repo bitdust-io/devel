@@ -2394,7 +2394,7 @@ class MainPage(Page):
             for type, pathID, localPath, sizeInBytes, versions in self.listExpandedDirs:
                 # if localPath in [settings.BackupIndexFileName(),]:
                 #    continue
-                isExist = backup_fs.pathExist(localPath)
+                isExist = bpio.pathExist(localPath)
                 x, x, name = localPath.rpartition('/')
                 if len(name) == 2 and name[1] == ':':
                     name = name.capitalize()
@@ -2768,10 +2768,10 @@ class MainPage(Page):
         #---startpath---
         elif action == 'startpath':
             localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
-            if backup_fs.pathExist(localPath):
+            if bpio.pathExist(localPath):
                 pathID = backup_fs.ToID(localPath)
                 if pathID is None:
-                    if backup_fs.pathIsDir(localPath):
+                    if bpio.pathIsDir(localPath):
                         pathID, iter, iterID = backup_fs.AddDir(localPath, True)
                         self.htmlComment += html_comment('new folder was added:')
                     else:
@@ -2793,7 +2793,7 @@ class MainPage(Page):
             if pathID:
                 localPath = backup_fs.ToPath(pathID)
                 if localPath is not None:
-                    if backup_fs.pathExist(localPath):
+                    if bpio.pathExist(localPath):
                         backup_control.StartSingle(pathID)
                         backup_fs.Calculate()
                         backup_control.Save()

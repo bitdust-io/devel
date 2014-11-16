@@ -93,7 +93,6 @@ class UDPNode(automat.Automat):
         """
         Method to initialize additional variables and flags at creation of the state machine.
         """
-        self.log_events = True
         self.listen_port = None
         self.my_id = None
         self.my_address = None

@@ -380,11 +380,10 @@ def main():
     sourcePath = sys.argv[1]
     compress_mode = 'none' # 'gz' 
     backupID = 'F1234'
-    import backup_fs
     import backup_tar
-    from raid import raid_worker
+    from lib import bpio
     raid_worker.A('init')
-    if backup_fs.pathIsDir(sourcePath):
+    if bpio.pathIsDir(sourcePath):
         backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
     else:    
         backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)

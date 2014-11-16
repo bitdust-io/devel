@@ -352,19 +352,6 @@ class StunClient(automat.Automat):
             lg.exc()
             return
         self.automat('port-number-received', (address, port))
-#        self.deferreds.pop(node)
-#        if isinstance(result, dict):
-#            try:
-#                port = int(result['stun_port'])
-#                address = node.address
-#                self.stun_servers.append((address, port))
-#            except:
-#                lg.exc()
-#                self.stun_servers.append(None)
-#        else:
-#            self.stun_servers.append(None)
-#        if len(self.stun_servers) == len(self.stun_nodes):
-#            self.automat('all-port-numbers-received')
             
 #------------------------------------------------------------------------------ 
 
