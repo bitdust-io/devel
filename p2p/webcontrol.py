@@ -7774,7 +7774,6 @@ def InitSettingsTreePages():
     'services/id-server/tcp-port':                  SettingsTreeNumericPositiveNode,
     'services/id-server/web-port':                  SettingsTreeNumericPositiveNode,
     'services/identity-propagate/enabled':          SettingsTreeYesNoNode,
-    'services/identity-server/enabled':             SettingsTreeYesNoNode,
     'services/list-files/enabled':                  SettingsTreeYesNoNode,
     'services/network/enabled':                     SettingsTreeYesNoNode,
     'services/network/proxy/enabled':               SettingsTreeYesNoNode,

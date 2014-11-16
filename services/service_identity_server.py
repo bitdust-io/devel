@@ -20,7 +20,7 @@ def create_service():
 class IdentityServerService(LocalService):
     
     service_name = 'service_identity_server'
-    config_path = 'services/identity-server/enabled'
+    config_path = 'services/id-server/enabled'
     
     def init(self):
         # self.debug_level = 2
