@@ -14,11 +14,11 @@ EVENTS:
 import os
 import sys
 
-try:
-    from lib import bpio
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+from logs import lg
 
 from lib import bpio
 from lib import settings
@@ -40,16 +40,30 @@ def A(event=None, arg=None):
     global _StunServer
     if _StunServer is None:
         # set automat name and starting state here
-        _StunServer = StunServer('stun_server', 'AT_STARTUP')
+        _StunServer = StunServer('stun_server', 'AT_STARTUP', 6)
     if event is not None:
         _StunServer.automat(event, arg)
     return _StunServer
+
+
+def Destroy():
+    """
+    Destroy stun_server() automat and remove its instance from memory.
+    """
+    global _StunServer
+    if _StunServer is None:
+        return
+    _StunServer.destroy()
+    del _StunServer
+    _StunServer = None
 
 
 class StunServer(automat.Automat):
     """
     This class implements all the functionality of the ``stun_server()`` state machine.
     """
+    
+    fast = True
 
     def init(self):
         self.listen_port = None
@@ -102,7 +116,7 @@ class StunServer(automat.Automat):
         """
         Action method.
         """
-        # udp.remove_datagram_receiver_callback(self._datagramReceived)
+        udp.proto(self.listen_port).remove_callback(self._datagramReceived)
 
     def doSendYourIPPort(self, arg):
         """
@@ -113,8 +127,10 @@ class StunServer(automat.Automat):
             command, payload = datagram
         except:
             return False
-        youipport = '%s:%d' % (address[0], address[1])
-        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youipport, address)
+        youripport = '%s:%d' % (address[0], address[1])
+        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
+        lg.out(4, 'stun_server.doSendYourIPPort [%s] to %s' % (
+            youripport, address))
 
     def _datagramReceived(self, datagram, address):
         """
@@ -125,10 +141,13 @@ class StunServer(automat.Automat):
 
 def main():
     from twisted.internet import reactor
+    lg.set_debug_level(24)
     bpio.init()
-    dht_service.init(4000)
-    udp.listen(8882)
-    A('start', 8882)
+    settings.init()
+    dht_service.init(settings.getDHTPort())
+    dht_service.connect()
+    udp.listen(settings.getUDPPort())
+    A('start', settings.getUDPPort())
     reactor.run()
 
 if __name__ == '__main__':

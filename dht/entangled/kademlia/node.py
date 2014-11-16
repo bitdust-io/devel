@@ -225,13 +225,15 @@ class Node(object):
         """
         # Prepare a callback for this operation
         outerDf = defer.Deferred()
+        def storeFailed(x):
+            pass
         def checkResult(result):
             if type(result) == dict:
                 # We have found the value; now see who was the closest contact without it...
                 if 'closestNodeNoValue' in result:
                     # ...and store the key/value pair
                     contact = result['closestNodeNoValue']
-                    contact.store(key, result[key])
+                    contact.store(key, result[key]).addErrback(storeFailed)
                 outerDf.callback(result)
             else:
                 # The value wasn't found, but a list of contacts was returned
@@ -244,7 +246,7 @@ class Node(object):
                     # Send this value to the closest node without it
                     if len(result) > 0:
                         contact = result[0]
-                        contact.store(key, value)
+                        contact.store(key, value).addErrback(storeFailed)
                     outerDf.callback({key: value})
                 else:
                     # Ok, value does not exist in DHT at all

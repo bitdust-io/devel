@@ -370,7 +370,7 @@ class restore(automat.Automat):
         events.info('restore', '%s restored successfully' % self.BackupID)
     
     def doDestroyMe(self, arg):
-        automat.objects().pop(self.index)
+        self.destroy()
         collected = gc.collect()
         # lg.out(6, 'restore.doDestroyMe collected %d objects' % collected)
 

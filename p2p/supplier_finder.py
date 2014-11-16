@@ -88,7 +88,7 @@ class SupplierFinder(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were changed.
         """
 
     def A(self, event, arg):
@@ -249,7 +249,7 @@ class SupplierFinder(automat.Automat):
             if sc:
                 sc.remove_callback('supplier_finder')
             self.target_idurl = None
-        automat.objects().pop(self.index)
+        self.destroy()
         lg.out(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):

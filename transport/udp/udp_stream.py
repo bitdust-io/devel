@@ -723,7 +723,7 @@ class UDPStream(automat.Automat):
         self.producer.on_close_stream(self.stream_id)
         self.producer = None
         streams().pop(self.stream_id)
-        automat.objects().pop(self.index)
+        self.destroy()
         reactor.callLater(0, balance_streams_limits)
         # lg.out(18, 'doDestroyMe %s' % (str(self.stream_id)))
 

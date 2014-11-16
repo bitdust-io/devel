@@ -72,20 +72,22 @@ from dht import dht_service
 
 from transport import callback
 
-from raid import raid_worker
+from services import driver
+
+# from raid import raid_worker
 
 from userid import propagate
 
 import ratings
 import tray_icon
-import initializer
 import network_connector
-import backup_monitor
-import backup_db_keeper
-import list_files_orator
-import fire_hire
-import data_sender
-import customers_rejector
+
+#import backup_monitor
+#import backup_db_keeper
+#import list_files_orator
+#import fire_hire
+#import data_sender
+#import customers_rejector
 
 #------------------------------------------------------------------------------ 
 
@@ -124,10 +126,23 @@ def A(event=None, arg=None):
     """    
     global _P2PConnector
     if _P2PConnector is None:
-        _P2PConnector = P2PConnector('p2p_connector', 'AT_STARTUP', 6)
+        _P2PConnector = P2PConnector('p2p_connector', 'AT_STARTUP', 6, True)
     if event is not None:
         _P2PConnector.automat(event, arg)
     return _P2PConnector
+
+
+def Destroy():
+    """
+    Destroy p2p_connector() automat and remove its instance from memory.
+    """
+    global _P2PConnector
+    if _P2PConnector is None:
+        return
+    _P2PConnector.destroy()
+    del _P2PConnector
+    _P2PConnector = None
+
 
 class P2PConnector(automat.Automat):
     """
@@ -138,13 +153,13 @@ class P2PConnector(automat.Automat):
         }
     
     def init(self):
+        self.log_events = True
         self.identity_changed = False
         self.version_number = ''
 
     def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('P2P ' + newstate)
-        initializer.A('p2p_connector.state', newstate)
-        tray_icon.state_changed(network_connector.A().state, self.state)
+        # tray_icon.state_changed(network_connector.A().state, self.state)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -152,13 +167,7 @@ class P2PConnector(automat.Automat):
             if event == 'init' :
                 self.state = 'NETWORK?'
                 self.doInit(arg)
-                network_connector.A('init')
-                backup_monitor.A('init')
-                backup_db_keeper.A('init')
-                list_files_orator.A('init')
-                fire_hire.A('init')
-                data_sender.A('init')
-                raid_worker.A('init')
+                network_connector.A('reconnect')
         #---NETWORK?---
         elif self.state == 'NETWORK?':
             if ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :
@@ -170,7 +179,7 @@ class P2PConnector(automat.Automat):
         elif self.state == 'CONTACTS':
             if event == 'my-id-propagated' :
                 self.state = 'INCOMMING?'
-                fire_hire.A('restart')
+                self.doRestartFireHire(arg)
             elif ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) or event == 'reconnect' :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
@@ -183,8 +192,8 @@ class P2PConnector(automat.Automat):
             elif event == 'inbox-packet' and self.isUsingBestProto(arg) :
                 self.state = 'CONNECTED'
                 self.doInitRatings(arg)
-                backup_monitor.A('restart')
-                customers_rejector.A('restart')
+                self.doRestartBackupMonitor(arg)
+                self.doRestartCustomersRejector(arg)
             elif event == 'reconnect' or ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
@@ -219,6 +228,7 @@ class P2PConnector(automat.Automat):
             elif event == 'my-id-updated' and self.isMyIdentityChanged(arg) :
                 self.state = 'NETWORK?'
                 network_connector.A('reconnect')
+        return None
 
     def isUsingBestProto(self, arg):
         """
@@ -259,6 +269,30 @@ class P2PConnector(automat.Automat):
 
     def doInitRatings(self, arg):
         ratings.init()
+
+    def doRestartBackupMonitor(self, arg):
+        """
+        Action method.
+        """
+        if driver.is_started('service_backup_monitor'):
+            from p2p import backup_monitor
+            backup_monitor.A('restart')
+
+    def doRestartCustomersRejector(self, arg):
+        """
+        Action method.
+        """
+        if driver.is_started('service_customers_rejector'):
+            from p2p import customers_rejector
+            customers_rejector.A('restart')
+
+    def doRestartFireHire(self, arg):
+        """
+        Action method.
+        """
+        if driver.is_started('service_fire_hire'):
+            from p2p import fire_hire
+            fire_hire.A('restart')
 
     def _check_to_use_best_proto(self):
         #out(4, 'p2p_connector._check_to_use_best_proto active_protos()=%s' % str(active_protos()))
@@ -323,20 +357,20 @@ class P2PConnector(automat.Automat):
         misc.setLocalIdentity(lid)
         misc.saveLocalIdentity() 
     
-    def _is_id_changed(self, changes):
-        s = set(changes)
-        if s.intersection([
-            'transport.transport-tcp.transport-tcp-enable',
-            'transport.transport-tcp.transport-tcp-receiving-enable',
-            'transport.transport-udp.transport-udp-enable',
-            'transport.transport-udp.transport-udp-receiving-enable',
-            ]):
-            return True
-        if 'transport.transport-tcp.transport-tcp-port' in s and settings.enableTCP():
-            return True
-        # if 'transport.transport-udp.transport-udp-port' in s and settings.enableUDP():
-        #     return True
-        return False
+#    def _is_id_changed(self, changes):
+#        s = set(changes)
+#        if s.intersection([
+#            'transport.transport-tcp.transport-tcp-enable',
+#            'transport.transport-tcp.transport-tcp-receiving-enable',
+#            'transport.transport-udp.transport-udp-enable',
+#            'transport.transport-udp.transport-udp-receiving-enable',
+#            ]):
+#            return True
+#        if 'transport.transport-tcp.transport-tcp-port' in s and settings.enableTCP():
+#            return True
+#        # if 'transport.transport-udp.transport-udp-port' in s and settings.enableUDP():
+#        #     return True
+#        return False
     
     def _update_my_identity(self):
         """
@@ -351,7 +385,7 @@ class P2PConnector(automat.Automat):
         lid.clearContacts()
         #prepare contacts data
         cdict = {}
-        cdict['tcp'] = 'tcp://'+nowip+':'+settings.getTCPPort()
+        cdict['tcp'] = 'tcp://'+nowip+':'+str(settings.getTCPPort())
         cdict['udp'] = 'udp://%s@%s' % (lid.getIDName().lower(), lid.getIDHost())
         #making full order list
         for proto in cdict.keys():

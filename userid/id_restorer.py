@@ -257,7 +257,7 @@ class IdRestorer(automat.Automat):
         """
         Action method.
         """
-        automat.objects().pop(self.index)
+        self.destroy()
         global _IdRestorer
         _IdRestorer = None
         

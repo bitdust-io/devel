@@ -94,6 +94,18 @@ def A(event=None, arg=None):
     return _BackupRebuilder
 
 
+def Destroy():
+    """
+    Destroy backup_rebuilder() automat and remove its instance from memory.
+    """
+    global _BackupRebuilder
+    if _BackupRebuilder is None:
+        return
+    _BackupRebuilder.destroy()
+    del _BackupRebuilder
+    _BackupRebuilder = None
+    
+
 class BackupRebuilder(automat.Automat):
     """
     A class to prepare and run rebuilding operations. 

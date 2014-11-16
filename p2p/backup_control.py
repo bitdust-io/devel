@@ -569,7 +569,7 @@ def OnJobDone(backupID, result):
         # if we have a lot tasks started this will produce a lot unneeded actions
         # will be smarter to restart it once we finish all tasks
         # because user will probable leave BitPie.NET working after starting a long running operation
-        backup_monitor.Restart() 
+        backup_monitor.A('restart') 
     RunTasks()
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, version, result)
     
@@ -637,7 +637,7 @@ def StartSingle(pathID):
     """
     PutTask(pathID)
     reactor.callLater(0, RunTasks)
-    reactor.callLater(0, backup_monitor.Restart)
+    reactor.callLater(0, backup_monitor.A, 'restart')
 
 def StartRecursive(pathID):
     """
@@ -652,7 +652,7 @@ def StartRecursive(pathID):
                 startedtasks.add(path_id)
     backup_fs.TraverseByID(visitor)
     reactor.callLater(0, RunTasks)
-    reactor.callLater(0, backup_monitor.Restart)
+    reactor.callLater(0, backup_monitor.A, 'restart')
     lg.out(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
     return startedtasks
 

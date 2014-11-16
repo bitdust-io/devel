@@ -146,89 +146,10 @@ def init_connection():
     """
     Initialize other modules related to network communications.
     """
-    
-    global UImode
-    lg.out(2, "init_shutdown.init_connection")
 
-    import webcontrol
-    import interface.xmlrpc_server 
-    interface.xmlrpc_server.init()
-
-    from dht import dht_service
-    from lib import settings
-    dht_service.init(int(settings.getDHTPort()), settings.DHTDBFile())
-
-    # from transport import gate
-    # gate.init()
-    
-    from transport import bandwidth
-    from transport import callback
-    callback.add_inbox_callback(bandwidth.INfile)
-    callback.add_finish_file_sending_callback(bandwidth.OUTfile)
-    
-    import contact_status
-    contact_status.init()
-
-    import p2p_service
-    p2p_service.init()
-
-    import message
-    message.init()
-    message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
     message.OnOutgoingMessageFunc = webcontrol.OnOutgoingMessage
 
-    from userid import propagate
-    propagate.init()
 
-    try:
-        from tray_icon import USE_TRAY_ICON
-    except:
-        USE_TRAY_ICON = False
-        lg.exc()
-
-    if USE_TRAY_ICON:
-        import tray_icon
-        tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
-        
-    #init the mechanism for sending and requesting files for repairing backups
-    import io_throttle
-    io_throttle.init()
-
-    import backup_fs
-    backup_fs.init()
-
-    import backup_control
-    backup_control.init()
-
-    import backup_matrix
-    backup_matrix.init()
-    backup_matrix.SetBackupStatusNotifyCallback(webcontrol.OnBackupStats)
-    backup_matrix.SetLocalFilesNotifyCallback(webcontrol.OnReadLocalFiles)
-    
-    import restore_monitor
-    restore_monitor.init()
-    restore_monitor.OnRestorePacketFunc = webcontrol.OnRestoreProcess
-    restore_monitor.OnRestoreBlockFunc = webcontrol.OnRestoreSingleBlock
-    restore_monitor.OnRestoreDoneFunc = webcontrol.OnRestoreDone
-
-
-def init_modules():
-    """
-    Finish initialization part, run delayed methods.
-    """
-    
-    lg.out(2,"init_shutdown.init_modules")
-
-    import local_tester
-    reactor.callLater(0, local_tester.init)
-    
-    import software_update
-    import webcontrol
-    software_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
-    reactor.callLater(0, software_update.init)
-
-    import webcontrol
-    reactor.callLater(0, webcontrol.OnInitFinalDone)
 
 
 def shutdown(x=None):
@@ -241,33 +162,34 @@ def shutdown(x=None):
     lg.out(2, "init_shutdown.shutdown " + str(x))
     dl = []
 
-    from services import local_service
-    local_service.shutdown_all()
+    from services import driver
+    # dl.append(driver.stop())
+    driver.shutdown()
 
-    import io_throttle
-    io_throttle.shutdown()
+    # import io_throttle
+    # io_throttle.shutdown()
 
-    import backup_rebuilder 
-    backup_rebuilder.SetStoppedFlag()
+    # import backup_rebuilder 
+    # backup_rebuilder.SetStoppedFlag()
     
-    import data_sender
-    data_sender.SetShutdownFlag()
-    data_sender.A('restart')
+    # import data_sender
+    # data_sender.SetShutdownFlag()
+    # data_sender.A('restart')
 
-    import lib.stun
-    dl.append(lib.stun.stopUDPListener())
+    # import lib.stun
+    # dl.append(lib.stun.stopUDPListener())
     
-    from raid import eccmap
-    eccmap.shutdown()
+    # from raid import eccmap
+    # eccmap.shutdown()
 
-    import backup_matrix
-    backup_matrix.shutdown()
+    # import backup_matrix
+    # backup_matrix.shutdown()
 
-    import ratings
-    ratings.shutdown()
+    # import ratings
+    # ratings.shutdown()
 
-    import contact_status
-    contact_status.shutdown()
+    # import contact_status
+    # contact_status.shutdown()
 
     import run_upnpc
     run_upnpc.shutdown()
@@ -278,19 +200,19 @@ def shutdown(x=None):
     import webcontrol
     dl.append(webcontrol.shutdown())
 
-    from userid import propagate
-    propagate.shutdown()
+    # from userid import propagate
+    # propagate.shutdown()
 
     from transport import bandwidth
     from transport import callback
     callback.remove_inbox_callback(bandwidth.INfile)
     callback.remove_finish_file_sending_callback(bandwidth.OUTfile)
     
-    from transport import gate
-    gate.shutdown()
+    # from transport import gateway
+    # gateway.shutdown()
     
-    from dht import dht_service
-    dht_service.shutdown()
+    # from dht import dht_service
+    # dht_service.shutdown()
 
     from logs import weblog
     weblog.shutdown()

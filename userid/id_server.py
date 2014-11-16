@@ -7,6 +7,7 @@ BitPie.NET id_server() Automat
 
 EVENTS:
     * :red:`incoming-identity-file`
+    * :red:`init`
     * :red:`server-down`
     * :red:`shutdown`
     * :red:`start`
@@ -82,10 +83,9 @@ class IdServer(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'start' :
-                self.state = 'LISTEN'
-                self.doSaveParams(arg)
-                self.doSetUp(arg)
+            if event == 'init' :
+                self.state = 'STOPPED'
+                self.doInit(arg)
         #---LISTEN---
         elif self.state == 'LISTEN':
             if event == 'shutdown' :
@@ -120,7 +120,16 @@ class IdServer(automat.Automat):
                 self.Restart=True
             elif event == 'server-down' and not self.Restart :
                 self.state = 'STOPPED'
+            elif event == 'shutdown' :
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+        return None
 
+    def doInit(self, arg):
+        """
+        Action method.
+        """
+        
     def doSaveParams(self, arg):
         """
         Action method.
@@ -179,22 +188,22 @@ class IdServer(automat.Automat):
         """
         Action method.
         """
-        self.save_identity(arg)
+        self._save_identity(arg)
         
     def doDestroyMe(self, arg):
         """
         Action method.
         """
-        automat.objects().pop(self.index)
+        self.destroy()
         global _IdServer
         _IdServer = None
         if arg and len(arg) > 0 and isinstance(arg[-1], Deferred):
             arg[-1].callback(True)       
     
-    def save_identity(self, inputfilename):
+    def _save_identity(self, inputfilename):
         """
         """
-        lg.out(6,"id_server.save_identity " + inputfilename)
+        lg.out(6,"id_server._save_identity " + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
             lg.warn("input file too big - ignoring ")
             tmpfile.erase('idsrv', inputfilename, 'input file too big')
@@ -221,7 +230,7 @@ class IdServer(automat.Automat):
         for idurl in newidentity.sources:
             protocol, host, port, filename = nameurl.UrlParse(idurl)
             if host == self.hostname:
-                lg.out(4,"id_server.save_identity found match for us")
+                lg.out(4,"id_server._save_identity found match for us")
                 matchid = idurl
                 break
         if matchid == "":
@@ -248,7 +257,7 @@ class IdServer(automat.Automat):
         oldxml = ''
         # need to make sure id was not already used by different key - which would mean someone trying to steal identity
         if os.path.exists(localfilename):
-            lg.out(6,"id_server.save_identity was already an identity with this name " + localfilename)
+            lg.out(6,"id_server._save_identity was already an identity with this name " + localfilename)
             oldxml = bpio.ReadTextFile(localfilename)
             oldidentity = identity.identity(xmlsrc=oldxml)
             if oldidentity.publickey != newidentity.publickey:
@@ -256,10 +265,11 @@ class IdServer(automat.Automat):
                 return
         if newxml != oldxml:
             if not os.path.exists(localfilename):
-                lg.out(6,"id_server.save_identity will save NEW Identity: " + filename)
+                lg.out(6,"id_server._save_identity will save NEW Identity: " + filename)
             bpio.WriteFile(localfilename, newxml)
 
 #------------------------------------------------------------------------------ 
+
 
 class IdServerProtocol(basic.Int32StringReceiver):
     def __init__ (self):

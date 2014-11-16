@@ -126,7 +126,7 @@ class IdRegistrator(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were changed.
         """
         from p2p import installer
         installer.A('id_registrator.state', newstate)
@@ -392,7 +392,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        automat.objects().pop(self.index)
+        self.destroy()
         global _IdRegistrator
         _IdRegistrator = None
     
@@ -434,7 +434,7 @@ class IdRegistrator(automat.Automat):
         ident.sources.extend(self.free_idurls)
         cdict = {}
         if settings.enableTCP():
-            cdict['tcp'] = 'tcp://'+externalIP+':'+settings.getTCPPort()
+            cdict['tcp'] = 'tcp://'+externalIP+':'+str(settings.getTCPPort())
         if settings.enableUDP():
             try:
                 protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])

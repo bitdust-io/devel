@@ -25,7 +25,10 @@ see ``p2p.bppipe`` module.
 
 import os
 import sys
-# import subprocess
+
+if __name__ == "__main__":
+    import os.path as _p
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
 from logs import lg
 
@@ -62,7 +65,7 @@ def backuptar(directorypath, recursive_subfolders=True, compress=None):
         lg.out(1, 'backup_tar.backuptar ERROR %s not found' % commandpath)
         return None
     # lg.out(14, "backup_tar.backuptar going to execute %s" % str(cmdargs))
-    # p = run(cmdargs)
+    # p = child_process.run('bppipe', cmdargs[2:])
     p = child_process.pipe(cmdargs)
     return p
 
@@ -125,10 +128,33 @@ def extracttar(tarfile, outdir):
 
 #------------------------------------------------------------------------------ 
 
-if __name__ == "__main__":
+def main():
     lg.set_debug_level(20)
-    p = backuptar(sys.argv[1])
-    p.make_nonblocking()
-    print p
-    print p.wait()
-    
+    fout = open('out.tar', 'wb')
+    def _read(p):
+        from lib import nonblocking
+        # print 'read', p.state()
+        if p.state() == nonblocking.PIPE_CLOSED:
+            print 'closed'
+            fout.close()
+            reactor.stop()
+            return
+        if p.state() == nonblocking.PIPE_READY2READ:
+            v = p.recv(100)
+            fout.write(v)
+            if v == '':
+                print 'eof'
+                fout.close()
+                reactor.stop()
+                return
+        reactor.callLater(0, _read, p)
+    def _go():
+        p = backuptar(sys.argv[1])
+        p.make_nonblocking()
+        _read(p)
+    from twisted.internet import reactor
+    reactor.callLater(0, _go)
+    reactor.run()
+
+if __name__ == "__main__":
+    main()

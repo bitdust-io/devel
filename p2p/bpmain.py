@@ -107,15 +107,15 @@ def run(UI='', options=None, args=None, overDict=None):
             lg.stdout_start_redirecting()
             
     #---memdebug---
-    if settings.uconfig('logs.memdebug-enable') == 'True':
-        try:
-            from logs import memdebug
-            memdebug_port = int(settings.uconfig('logs.memdebug-port'))
-            memdebug.start(memdebug_port)
-            reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)
-            lg.out(2, 'bpmain.run memdebug web server started on port %d' % memdebug_port)
-        except:
-            lg.exc()  
+#    if settings.uconfig('logs.memdebug-enable') == 'True':
+#        try:
+#            from logs import memdebug
+#            memdebug_port = int(settings.uconfig('logs.memdebug-port'))
+#            memdebug.start(memdebug_port)
+#            reactor.addSystemEventTrigger('before', 'shutdown', memdebug.stop)
+#            lg.out(2, 'bpmain.run memdebug web server started on port %d' % memdebug_port)
+#        except:
+#            lg.exc()  
             
     #---process ID---
     try:
@@ -139,7 +139,7 @@ def run(UI='', options=None, args=None, overDict=None):
     lg.out(4, 'bpmain.run import automats')
 
     #---START!---
-    import lib.automat as automat
+    from lib import automat
     automat.LifeBegins(lg.when_life_begins())
     # automat.OpenLogFile(settings.AutomatsLog())
     
@@ -148,14 +148,19 @@ def run(UI='', options=None, args=None, overDict=None):
 
     lg.out(4, 'bpmain.run send event "run" to initializer()')
     
-    #reactor.callLater(0, initializer.A, 'run', UI)
-    initializer.A('run', UI)
+    reactor.callWhenRunning(initializer.A, 'run', UI)
 
     lg.out(2, 'bpmain.run calling reactor.run()')
     reactor.run()
-
     lg.out(2, 'bpmain.run reactor stopped')
+    
     shutdowner.A('reactor-stopped')
+
+    automat.objects().clear()
+    if len(automat.objects()) > 0:
+        lg.warn('%d automats stay uncleared')
+        for a in automat.objects().values():
+            lg.out(2, '    %r' % a)
 
     lg.out(2, 'bpmain.run finished, EXIT')
 
@@ -450,7 +455,7 @@ def main():
             lg.out(2, 'bpmain.main redirecting started')
 
     try:
-        os.remove(os.path.expanduser('~'), '.bitpie', 'logs', 'exception.log')
+        os.remove(os.path.join(os.path.expanduser('~'), '.bitpie', 'logs', 'exception.log'))
     except:
         pass
 

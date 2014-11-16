@@ -71,6 +71,7 @@ def throttle():
 def init():
     """
     Init ``throttle()`` object and link with transports.
+    This is the mechanism for sending and requesting files to drive backups.
     """
     lg.out(4,"io_throttle.init")
     throttle()

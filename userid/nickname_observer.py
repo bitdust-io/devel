@@ -217,7 +217,7 @@ class NicknameObserver(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        automat.objects().pop(self.index)
+        self.destroy()
 
     def _dht_read_result(self, value, key):
         self.dht_read_defer = None
@@ -247,7 +247,7 @@ def main():
     lg.set_debug_level(24)
     settings.init()
     misc.init()
-    dht_service.init(int(settings.getDHTPort()))
+    dht_service.init(settings.getDHTPort())
     def _result(result, nickname):
         print result, nickname
         if result == 'finished':

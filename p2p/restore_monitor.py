@@ -36,6 +36,10 @@ OnRestoreBlockFunc = None
 
 def init():
     lg.out(4, 'restore_monitor.init')
+    
+    
+def shutdown():
+    lg.out(4, 'restore_monitor.shutdown')
 
 
 def block_restored_callback(backupID, block):
@@ -48,7 +52,6 @@ def packet_in_callback(backupID, newpacket):
     # lg.out(8, 'restore_monitor.packet_in_callback ' + backupID)
     global _WorkingRestoreProgress
     global OnRestorePacketFunc
-    
     SupplierNumber = newpacket.SupplierNumber()
     
     #want to count the data we restoring

@@ -2,6 +2,7 @@
 *.pyo
 *.pyd
 *.~vsd
+*.orig
 web/*.db
 docs/
 release/datahaven/
@@ -27,4 +28,5 @@ release/ubuntu_devel/build.log
 release/ubuntu_devel/workspace/
 release/ubuntu_stable/build.log
 release/ubuntu_stable/workspace/
+wiki/src/
 

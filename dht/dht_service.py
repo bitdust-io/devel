@@ -21,7 +21,7 @@ import optparse
 
 from twisted.internet import reactor
 from twisted.internet import task
-from twisted.internet.defer import Deferred, fail
+from twisted.internet.defer import Deferred
 
 from entangled.dtuple import DistributedTupleSpacePeer
 from entangled.kademlia.datastore import SQLiteDataStore
@@ -56,17 +56,16 @@ def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
         if _Debug:
-            lg.out('dht_service.init SKIP, already created a DHTNode')
+            lg.out(', already created a DHTNode')
         return
+    if _Debug:
+        lg.out(4, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         # db_file_path = './dht%s' % str(udp_port)
         db_file_path = settings.DHTDBFile()
-    dbPath = bpio.portablePath(db_file_path)
-    lg.out(4, 'dht_service.init UDP port is %d, DB file path: %s' % (udp_port, dbPath))
-    dataStore = SQLiteDataStore(dbFile=dbPath)
+    dataStore = SQLiteDataStore(dbFile=db_file_path)
     # _MyNode = DistributedTupleSpacePeer(udp_port, dataStore)
     _MyNode = DHTNode(udp_port, dataStore)
-    _MyNode.listenUDP()
     
 
 def shutdown():
@@ -76,7 +75,8 @@ def shutdown():
         _MyNode._dataStore._db.close()
         del _MyNode
         _MyNode = None
-        lg.out(4, 'dht_service.shutdown')
+        if _Debug:
+            lg.out(4, 'dht_service.shutdown')
     else:
         lg.warn('DHTNode not exist')
 
@@ -87,6 +87,8 @@ def node():
 
 
 def connect():
+    if not node().listener:
+        node().listenUDP()
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
@@ -136,36 +138,29 @@ def okay(result, method, key, arg=None):
 def error(err, method, key):
     if _Debug:
         lg.out(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
-    return err  
+    return None  
 
 
 def get_value(key):
     if _Debug:
         lg.out(18, 'dht_service.get_value key=[%s]' % key)
-    if not node():
-        return fail(Exception('DHT service is off'))
     d = node().iterativeFindValue(key_to_hash(key))
     d.addCallback(okay, 'get_value', key)
     d.addErrback(error, 'get_value', key)
     return d
         
 
-def set_value(key, value, age=0):
+def set_value(key, value):
     if _Debug:
         lg.out(18, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
-    if not node():
-        return fail(Exception('DHT service is off'))
-    d = node().iterativeStore(key_to_hash(key), value, age=age)
+    d = node().iterativeStore(key_to_hash(key), value)
     d.addCallback(okay, 'set_value', key, value)
     d.addErrback(error, 'set_value', key)
     return d
 
-
 def delete_key(key):
     if _Debug:
         lg.out(16, 'dht_service.delete_key [%s]' % key)
-    if not node():
-        return fail(Exception('DHT service is off'))
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(okay, 'delete_value', key)
     d.addErrback(error, 'delete_key', key)
@@ -176,8 +171,6 @@ def find_node(node_id):
     node_id64 = base64.b64encode(node_id)
     if _Debug:
         lg.out(16, 'dht_service.find_node   node_id=[%s]' % node_id64)
-    if not node():
-        return fail(Exception('DHT service is off'))
     d = node().iterativeFindNode(node_id)
     d.addCallback(okay, 'find_node', node_id64)
     d.addErrback(error, 'find_node', node_id64)
@@ -189,8 +182,6 @@ def random_key():
 
 
 def set_node_data(key, value):
-    if not node():
-        return
     if _Debug:
         lg.out(18, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
     node().data[key] = value    
@@ -205,9 +196,8 @@ class DHTNode(DistributedTupleSpacePeer):
     if _Debug:
         @rpcmethod
         def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
-            if _Debug:
-                lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-                    base64.b32encode(key), str(value)[:10]))
+            lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+                base64.b32encode(key), str(value)[:10]))
             return DistributedTupleSpacePeer.store(self, key, value, 
                 originalPublisherID=originalPublisherID, age=age, **kwargs)
 
@@ -225,6 +215,11 @@ class DHTNode(DistributedTupleSpacePeer):
         need to restart _scheduleNextNodeRefresh
         """
         d = Deferred()
+        if not self.listener:
+            d.errback('Listener not started yet')
+            return d
+        if self.refresher and self.refresher.active():
+            self.refresher.reset(0)
         d.callback(1)
         return d
 
@@ -234,8 +229,6 @@ def parseCommandLine():
     oparser = optparse.OptionParser()
     oparser.add_option("-p", "--udpport", dest="udpport", type="int", help="specify UDP port for DHT network")
     oparser.set_default('udpport', settings.DefaultDHTPort())
-    oparser.add_option("-d", "--dhtdb", dest="dhtdb", help="specify DHT database file location")
-    oparser.set_default('dhtdb', settings.DHTDBFile())
     (options, args) = oparser.parse_args()
     return options, args
 
@@ -244,25 +237,16 @@ def main():
     settings.init()
     lg.set_debug_level(18)
     (options, args) = parseCommandLine()
-    init(options.udpport, options.dhtdb)
+    init(options.udpport)
     connect()
     if len(args) == 0:
         pass
     elif len(args) > 0:
         def _r(x):
-            print x
             reactor.stop()
         cmd = args[0] 
         if cmd == 'get':
-            if len(args) > 2:
-                from twisted.internet.task import LoopingCall
-                def _k(x):
-                    print x
-                def _s():
-                    get_value(args[1]).addBoth(_k)
-                LoopingCall(_s).start(int(args[2]))
-            else:
-                get_value(args[1]).addBoth(_r)
+            get_value(args[1]).addBoth(_r)
         elif cmd == 'set':
             set_value(args[1], args[2]).addBoth(_r)
         elif cmd == 'find':

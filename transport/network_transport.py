@@ -28,7 +28,7 @@ from lib import misc
 from lib import settings
 from lib import nameurl
 
-import gate
+import gateway 
 
 #------------------------------------------------------------------------------ 
 
@@ -36,16 +36,16 @@ class NetworkTransport(automat.Automat):
     """
     This class implements all the functionality of the ``network_transport()`` state machine.
     """
+    
+    fast = True
 
-    def __init__(self, proto, interface, nw_connector=None):
+    def __init__(self, proto, interface, state_changed_callback=None):
         self.proto = proto
         self.interface = interface
-        self.nw_connector = nw_connector
-        automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8)
+        self.state_changed_callback = None
+        automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8, True)
         
     def call(self, method_name, *args):
-#        if self.state != 'LISTENING':
-#            return fail(Exception('%s can not accept calls right now' % self))
         method = getattr(self.interface, method_name, None)
         if method is None:
             lg.out(2, 'network_transport.call ERROR method %s not found in protos' % (method_name, self.proto))
@@ -59,11 +59,10 @@ class NetworkTransport(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were changed.
         """
-        if self.nw_connector:
-        # from p2p import network_connector
-            self.nw_connector.on_network_transport_state_changed(self.proto, oldstate, newstate)
+        if self.state_changed_callback:
+            self.state_changed_callback(self, oldstate, newstate)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -144,12 +143,16 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        self.interface.init(arg)
+        gateway.attach(self)
+        listener, state_changed_callback = arg
+        self.state_changed_callback = state_changed_callback
+        self.interface.init(listener)
 
     def doStop(self, arg):
         """
         Action method.
         """
+        lg.out(12, 'network_transport.doStop disconnecting %r' % self.interface)
         self.interface.disconnect()
 
     def doStart(self, arg):
@@ -169,13 +172,13 @@ class NetworkTransport(automat.Automat):
             if not id_contact:
                 default_host = bpio.ReadTextFile(settings.ExternalIPFilename())+':'+str(settings.getTCPPort())
             options['host'] = id_contact or default_host
-            options['tcp_port'] = int(settings.getTCPPort())
+            options['tcp_port'] = settings.getTCPPort()
         elif self.proto == 'udp':
             if not id_contact:
                 default_host = nameurl.GetName(misc.getLocalID())+'@'+platform.node()
             options['host'] = id_contact or default_host
-            options['dht_port'] = int(settings.getDHTPort())
-            options['udp_port'] = int(settings.getUDPPort())
+            options['dht_port'] = settings.getDHTPort()
+            options['udp_port'] = settings.getUDPPort()
         self.interface.receive(options) 
 
     def doCreateProxy(self, arg):
@@ -185,20 +188,14 @@ class NetworkTransport(automat.Automat):
         if arg:
             self.interface.create_proxy(arg)
 
-#    def doNotifyNWConnector(self, arg):
-#        """
-#        Action method.
-#        """
-#        # from p2p import network_connector
-#        # network_connector.NetworkTransportInitialized(self.proto)
-
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
         """
-        gate.transports().pop(self.proto)
-        automat.objects().pop(self.index)
+        # gateway.transports().pop(self.proto)
+        self.interface.shutdown()
+        self.destroy()
         self.interface = None
-        # self.proto = None
+        gateway.detach(self)
 
 

@@ -101,7 +101,7 @@ def shutdown():
     global _ShutdownFlag
     global _ContactsStatusDict
     for A in _ContactsStatusDict.values():
-        automat.clear_object(A.index)
+        A.destroy()
     _ContactsStatusDict.clear()
     _ShutdownFlag = True
     

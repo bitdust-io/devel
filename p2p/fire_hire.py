@@ -91,7 +91,6 @@ except:
 
 from logs import lg
 
-from lib import bpio
 from lib import misc
 from lib import settings
 from lib import contacts
@@ -143,6 +142,19 @@ def A(event=None, arg=None):
         _FireHire.automat(event, arg)
     return _FireHire
 
+
+def Destroy():
+    """
+    Destroy the state machine and remove the instance from memory. 
+    """
+    global _FireHire
+    if _FireHire is None:
+        return
+    _FireHire.destroy()
+    del _FireHire
+    _FireHire = None
+    
+
 class FireHire(automat.Automat):
     """
     This class implements all the functionality of the ``fire_hire()`` state machine.
@@ -167,7 +179,7 @@ class FireHire(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were changed.
         """
         automats.set_global_state('FIREHIRE ' + newstate)
         if newstate == 'READY':

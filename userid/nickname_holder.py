@@ -51,6 +51,18 @@ def A(event=None, arg=None):
         _NicknameHolder.automat(event, arg)
     return _NicknameHolder
 
+
+def Destroy():
+    """
+    Destroy nickname_holder() automat and remove its instance from memory.
+    """
+    global _NicknameHolder
+    if _NicknameHolder is None:
+        return
+    _NicknameHolder.destroy()
+    del _NicknameHolder
+    _NicknameHolder = None
+    
 #------------------------------------------------------------------------------ 
 
 class NicknameHolder(automat.Automat):
@@ -195,7 +207,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameOwn : %s' % self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameOwn : %s' % self.key)
         if self.result_callback:
             self.result_callback('my own', self.key)
 
@@ -203,7 +215,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
         if self.result_callback:
             self.result_callback('registered', self.key)
 
@@ -211,7 +223,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameExist : %s' % self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameExist : %s' % self.key)
         if self.result_callback:
             self.result_callback('exist', self.key)
 
@@ -219,7 +231,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s' % self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameFailed : %s' % self.key)
         if self.result_callback:
             self.result_callback('failed', self.key)
 
@@ -255,7 +267,7 @@ def main():
     lg.set_debug_level(24)
     settings.init()
     misc.init()
-    dht_service.init(int(settings.getDHTPort()))
+    dht_service.init(settings.getDHTPort())
     reactor.callWhenRunning(A, 'init', sys.argv[1])
     reactor.run()
 

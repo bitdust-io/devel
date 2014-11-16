@@ -19,7 +19,6 @@ import math
 import cStringIO
 import base64
 import re
-import tempfile
 
 try:
     from twisted.internet import reactor 
@@ -41,6 +40,7 @@ from logs import webtraffic
 from lib import bpio
 from lib import misc
 from lib import net_misc
+from lib import config
 from lib import settings
 from lib import userconfig
 from lib import diskspace
@@ -51,7 +51,10 @@ from lib import contacts
 from lib import nameurl
 from lib import schedule
 from lib import automat
+from lib import automats
 from lib import packetid
+
+from services import driver
 
 from transport import stats
 from transport import callback
@@ -73,7 +76,6 @@ import p2p_connector
 import fire_hire
 import contact_status
 import customers_rejector
-import supplier_finder
 
 import p2p_service
 import backup_fs
@@ -103,7 +105,6 @@ global_checksum = ''
 local_checksum = ''
 version_number = ''
 root_page_src = ''
-header_src = ''
 centered_page_src = ''
 url_history = [] # ['/main']
 pagename_history = [] # ['main']
@@ -168,6 +169,7 @@ _PAGE_SHEDULE = 'shedule'
 _PAGE_BACKUP_SHEDULE = 'backup_schedule'
 _PAGE_SOFTWARE_UPDATE_SHEDULE = 'softwareupdateshedule'
 _PAGE_DEV_REPORT = 'devreport'
+_PAGE_SERVICES_SETTINGS = 'services'
 _PAGE_BACKUP_SETTINGS = 'backupsettings'
 _PAGE_SECURITY = 'security'
 _PAGE_NETWORK_SETTINGS = 'network'
@@ -193,12 +195,13 @@ _MenuItems = {
     }
 
 _SettingsItems = {
-    '0|backups'             :('/'+_PAGE_BACKUP_SETTINGS,    'icons/backup-options.png'),
-    '1|security'            :('/'+_PAGE_SECURITY,           'icons/private-key.png'),
-    '2|network'             :('/'+_PAGE_NETWORK_SETTINGS,   'icons/network-settings.png'),
-    '3|emergency'           :('/'+_PAGE_EMERGENCY,          'icons/emergency01.png'),
-    '4|updates'             :('/'+_PAGE_SOFTWARE_UPDATE,    'icons/software-update.png'),
-    '5|development'         :('/'+_PAGE_DEVELOPMENT,        'icons/python.png'),
+    '0|p2p services'        :('/'+_PAGE_SERVICES_SETTINGS,  'icons/services-settings.png'),
+    '1|backups'             :('/'+_PAGE_BACKUP_SETTINGS,    'icons/backup-options.png'),
+    '2|security'            :('/'+_PAGE_SECURITY,           'icons/private-key.png'),
+    '4|network'             :('/'+_PAGE_NETWORK_SETTINGS,   'icons/network-settings.png'),
+    # '3|emergency'           :('/'+_PAGE_EMERGENCY,          'icons/emergency01.png'),
+    '5|updates'             :('/'+_PAGE_SOFTWARE_UPDATE,    'icons/software-update.png'),
+    '6|development'         :('/'+_PAGE_DEVELOPMENT,        'icons/python.png'),
     #'5|shutdown'            :('/?action=exit',              'icons/exit.png'),
     }
 
@@ -255,7 +258,7 @@ def init(port = 6001):
 
     events.init(SendCommandToGUI)
     
-    # links
+    #---callbacks---
     # transport_control.SetContactAliveStateNotifierFunc(OnAliveStateChanged)
     # p2p_service.SetTrafficInFunc(OnTrafficIn)
     # p2p_service.SetTrafficOutFunc(OnTrafficOut)
@@ -264,6 +267,8 @@ def init(port = 6001):
     callback.add_inbox_callback(OnTrafficIn)
     callback.add_finish_file_sending_callback(OnTrafficOut)
     # callback.add_queue_item_status_callback(OnPacketOut)
+    automats.SetGlobalStateNotifyFunc(OnGlobalStateChanged)
+    automat.SetStateChangedCallback(OnSingleStateChanged)
 
     def version():
         global version_number
@@ -276,8 +281,8 @@ def init(port = 6001):
     def html():
         global root_page_src
         global centered_page_src
-        global header_src
         lg.out(6, 'webcontrol.init.html')
+
         root_page_src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
@@ -293,6 +298,7 @@ def init(port = 6001):
 %(align2)s
 </body>
 </html>'''
+
         centered_page_src = '''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
@@ -306,13 +312,6 @@ def init(port = 6001):
 </center>
 </body>
 </html>'''  
-        header_src = '''<table width="100%%" align=center cellspacing=0 cellpadding=0><tr>
-<td align=left width=50 nowrap>%(left)s</td>
-<td>&nbsp;</td>
-<td align=center width=50 nowrap>%(center)s</td>
-<td>&nbsp;</td>
-<td align=right width=50 nowrap>%(right)s</td>
-</tr></table>\n'''
 
     def options():
         InitSettingsTreePages()
@@ -331,6 +330,7 @@ def init(port = 6001):
         root.putChild(_PAGE_CUSTOMERS, CustomersPage())
         root.putChild(_PAGE_STORAGE, StoragePage())
         root.putChild(_PAGE_CONFIG, ConfigPage())
+        root.putChild(_PAGE_SERVICES_SETTINGS, ServicesSettingsPage())
         root.putChild(_PAGE_BACKUP_SETTINGS, BackupSettingsPage())
         root.putChild(_PAGE_SOFTWARE_UPDATE, SoftwareUpdatePage())
         root.putChild(_PAGE_SETTINGS, SettingsPage())
@@ -518,9 +518,9 @@ def iconurl(request, icon_path):
     # path = 'icons/' + icon_name
     # if icon_name == _PAGE_BACKUP_IMAGE:
     #     path = _PAGE_BACKUP_IMAGE
-    #if icon_path.startswith('icons/'):
-    #      return 'memory:'+icon_path[6:]
-    # else:
+    if icon_path.startswith('icons/'):
+        return 'memory:'+icon_path[6:]
+    else:
         return 'http://%s:%s/%s' % (request.getHost().host, str(request.getHost().port), icon_path)
 
 def confirmurl(request, yes=None, no=None, text='', back='', args=None):
@@ -553,7 +553,6 @@ def html_from_args(request, **kwargs):
 
 def html_from_dict(request, d):
     global root_page_src
-    global header_src
     global version_number
     global global_checksum
     global local_checksum
@@ -624,9 +623,13 @@ def html_from_dict(request, d):
         d['align1'] = '<center>'
         d['align2'] = '</center>'
     if not d.has_key('header'):
-        d['header'] = header_src % {'left': d['back'], 
-                                     'center': d['home'], 
-                                     'right': d['next']}
+        d['header'] = '''<table width="100%%" align=center cellspacing=0 cellpadding=0><tr>
+<td align=left width=50 nowrap>%s</td>
+<td>&nbsp;</td>
+<td align=center width=50 nowrap>%s</td>
+<td>&nbsp;</td>
+<td align=right width=50 nowrap>%s</td>
+</tr></table>\n''' % (d['back'], d['home'], d['next'])
     return str(root_page_src % d)
 
 def html_centered_src(d, request):
@@ -677,7 +680,10 @@ def ReadOnly():
     return False
 
 def GetGlobalState():
-    return 'unknown'
+    try:
+        return automats.get_global_state()
+    except:
+        return 'unknown'
 
 def check_install():
     return misc.isLocalIdentityReady() and key.isMyKeyReady()
@@ -706,7 +712,6 @@ def OnGlobalVersionReceived(txt):
     SendCommandToGUI('version: ' + str(global_checksum) + ' ' + str(local_checksum))
 
 def OnAliveStateChanged(idurl):
-    upd = False
     if contacts.IsSupplier(idurl):
         if currentVisiblePageName() in [_PAGE_SUPPLIERS, 
                                         _PAGE_SUPPLIER, 
@@ -715,21 +720,21 @@ def OnAliveStateChanged(idurl):
                                         _PAGE_BACKUP,
                                         _PAGE_BACKUP_DIAGRAM,
                                         _PAGE_BACKUP_LOCAL_FILES,
-                                        _PAGE_BACKUP_REMOTE_FILES,
-                                        _PAGE_CORRESPONDENTS,]:
-            upd = True
+                                        _PAGE_BACKUP_REMOTE_FILES,]:
+            SendCommandToGUI('update')
     if contacts.IsCustomer(idurl):
         if currentVisiblePageName() in [_PAGE_CUSTOMERS, _PAGE_CUSTOMER]:
-            upd = True
+            SendCommandToGUI('update')
     if contacts.IsCorrespondent(idurl):
         if currentVisiblePageName() == _PAGE_CORRESPONDENTS:
-            upd = True
-    if upd:
-        SendCommandToGUI('update')
-
+            SendCommandToGUI('update')
 
 def OnInitFinalDone():
     if currentVisiblePageName() in [_PAGE_MAIN,]:
+        SendCommandToGUI('update')
+
+def OnServiceStateChanged(service_name):
+    if currentVisiblePageName() in [_PAGE_SERVICES_SETTINGS,]:
         SendCommandToGUI('update')
 
 def OnBackupStats(backupID):
@@ -798,14 +803,13 @@ def OnListCustomers():
     if currentVisiblePageName() == _PAGE_CUSTOMERS:
         SendCommandToGUI('update')
         
+#def OnMarketList():
+#    if currentVisiblePageName() == _PAGE_MONEY_MARKET_LIST:
+#        SendCommandToGUI('update')
+        
 # msg is (sender, to, subject, dt, body)
 def OnIncomingMessage(packet, msg):
     lg.out(6, 'webcontrol.OnIncomingMessage %r' % str(msg))
-    if currentVisiblePageName() in [ _PAGE_MESSAGES, _PAGE_CONVERSATION ]:
-        SendCommandToGUI('update')
-
-def OnOutgoingMessage(packet, msg, remote_identity, packetID):
-    lg.out(6, 'webcontrol.OnOutgoingMessage %r' % str(msg))
     if currentVisiblePageName() in [ _PAGE_MESSAGES, _PAGE_CONVERSATION ]:
         SendCommandToGUI('update')
 
@@ -1156,7 +1160,8 @@ class ConfirmPage(Page):
         urlyes = misc.unpack_url_param(urlyes)
         urlno = misc.unpack_url_param(urlno)
         text = misc.unpack_url_param(text)
-        text = re.sub('\%\(option\:(.+?)\)s', lambda m: settings.uconfig(m.group(1)), text)
+        text = re.sub('\%\(option\:(.+?)\)s', 
+                  lambda m: config.conf().getData(m.group(1)), text)
         args = arg(request, 'args')
         if args:
             args = base64.urlsafe_b64decode(args)
@@ -1313,6 +1318,7 @@ class InstallPage(Page):
         src += '</td></tr>\n'
         src += '<tr><td align=left>\n'
         src += '<input fontsize="+5" id="radio2" type="radio" name="action" value="recover my account and backups" />\n'
+        src += '<font color=gray>this feature temporarily disabled</font>\n'
         src += '</td></tr>\n'
         src += '<tr><td align=center>\n'
         src += '<br><br><input type="submit" name="submit" value=" next "/>\n'
@@ -1327,7 +1333,8 @@ class InstallPage(Page):
                 action = 'register a new account'
             action = action.replace('register a new account', 'register-selected')
             action = action.replace('recover my account and backups', 'recover-selected')
-            installer.A(action)
+            if action != 'recover-selected': # TODO
+                installer.A(action)
         return result
 
     def renderRegisterNewUserPage(self, request):
@@ -1864,13 +1871,13 @@ class InstallPage(Page):
             message += '\n<br>' + html_message('you must donate at least %f MB' % (
                 round(settings.MinimumDonatedBytes()/(1024.0*1024.0), 2)), 'notify')
             ok = False
-        if not bpio.pathIsDir(self.customersdir):
+        if not os.path.isdir(self.customersdir):
             message += '\n<br>' + html_message('directory %s not exist' % self.customersdir, 'error')
             ok = False
         if not os.access(self.customersdir, os.W_OK):
             message += '\n<br>' + html_message('folder %s does not have write permissions' % self.customersdir, 'error')
             ok = False
-        if not bpio.pathIsDir(self.localbackupsdir):
+        if not os.path.isdir(self.localbackupsdir):
             message += '\n<br>' + html_message('directory %s not exist' % self.localbackupsdir, 'error')
             ok = False
         if not os.access(self.localbackupsdir, os.W_OK):
@@ -2345,8 +2352,8 @@ class MainPage(Page):
             # src += '<a href="%s?action=restoretodir">' % request.path
             msg = 'Restore selected items from remote machines?<br><br>\n'
             msg += 'Your restored files will be placed into this location:<br>\n'
-            msg += '<b>%(option:folder.folder-restore)s</b><br>'
-            msg += '<a href="%s?back=%s">[change]</a><br>\n' % ('/'+_PAGE_SETTINGS+'/'+'folder.folder-restore', '/'+_PAGE_CONFIRM)
+            msg += '<b>%(option:paths.restore)s</b><br>'
+            msg += '<a href="%s?back=%s">[change]</a><br>\n' % ('/'+_PAGE_SETTINGS+'/'+'paths.restore', '/'+_PAGE_CONFIRM)
             src += '<a href="%s">' % confirmurl(request, text=msg, back=back, 
                 yes='%s?action=restoretodir' % request.path)
             src += '<img src="%s">' % iconurl(request, 'icons/restoretodir.png')
@@ -2387,7 +2394,7 @@ class MainPage(Page):
             for type, pathID, localPath, sizeInBytes, versions in self.listExpandedDirs:
                 # if localPath in [settings.BackupIndexFileName(),]:
                 #    continue
-                isExist = bpio.pathExist(localPath)
+                isExist = backup_fs.pathExist(localPath)
                 x, x, name = localPath.rpartition('/')
                 if len(name) == 2 and name[1] == ':':
                     name = name.capitalize()
@@ -2761,10 +2768,10 @@ class MainPage(Page):
         #---startpath---
         elif action == 'startpath':
             localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
-            if bpio.pathExist(localPath):
+            if backup_fs.pathExist(localPath):
                 pathID = backup_fs.ToID(localPath)
                 if pathID is None:
-                    if bpio.pathIsDir(localPath):
+                    if backup_fs.pathIsDir(localPath):
                         pathID, iter, iterID = backup_fs.AddDir(localPath, True)
                         self.htmlComment += html_comment('new folder was added:')
                     else:
@@ -2786,7 +2793,7 @@ class MainPage(Page):
             if pathID:
                 localPath = backup_fs.ToPath(pathID)
                 if localPath is not None:
-                    if bpio.pathExist(localPath):
+                    if backup_fs.pathExist(localPath):
                         backup_control.StartSingle(pathID)
                         backup_fs.Calculate()
                         backup_control.Save()
@@ -2804,53 +2811,79 @@ class MainPage(Page):
 
         #---delete---
         elif action == 'delete':
-            for pathID in self.selected_items:
-                backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
-                backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
-                backup_fs.DeleteByID(pathID)
-                for subPathID in list(self.expanded_dirs):
-                    if subPathID.startswith(pathID+'/'):
-                        self.expanded_dirs.discard(subPathID)
-                self.expanded_dirs.discard(pathID)
-                self.expanded_items.discard(pathID)
-            self.selected_backups.clear()
-            self.selected_items.clear()
-            backup_fs.Scan()
-            backup_fs.Calculate()
-            backup_control.Save()
-            backup_monitor.Restart()
-            self.listExpandedDirs = None
-            self.listExpandedVersions = None
-            
-        #---deletebackups---
-        elif action == 'deletebackups':
-            modified = False
-            if len(self.selected_backups) > 0:
-                for backupID in self.selected_backups:
-                    backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
-                    modified = True
-                self.selected_backups.clear()
-            if len(self.selected_items) > 0:
+            if driver.is_started('service_backups'):
                 for pathID in self.selected_items:
                     backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+                    backup_fs.DeleteByID(pathID)
+                    for subPathID in list(self.expanded_dirs):
+                        if subPathID.startswith(pathID+'/'):
+                            self.expanded_dirs.discard(subPathID)
+                    self.expanded_dirs.discard(pathID)
                     self.expanded_items.discard(pathID)
-                    modified = True
+                self.selected_backups.clear()
                 self.selected_items.clear()
-            if modified:
                 backup_fs.Scan()
                 backup_fs.Calculate()
                 backup_control.Save()
-                backup_monitor.Restart()
-            self.listExpandedDirs = None
-            self.listExpandedVersions = None
+                backup_monitor.A('restart')
+                self.listExpandedDirs = None
+                self.listExpandedVersions = None
+            
+        #---deletebackups---
+        elif action == 'deletebackups':
+            if driver.is_started('service_backups'):
+                modified = False
+                if len(self.selected_backups) > 0:
+                    for backupID in self.selected_backups:
+                        backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
+                        modified = True
+                    self.selected_backups.clear()
+                if len(self.selected_items) > 0:
+                    for pathID in self.selected_items:
+                        backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                        self.expanded_items.discard(pathID)
+                        modified = True
+                    self.selected_items.clear()
+                if modified:
+                    backup_fs.Scan()
+                    backup_fs.Calculate()
+                    backup_control.Save()
+                    backup_monitor.A('restart')
+                self.listExpandedDirs = None
+                self.listExpandedVersions = None
         
         #---deleteid---
         elif action == 'deleteid':
-            pathID = arg(request, 'pathid').replace('_','/')
-            if packetid.Valid(pathID):
-                if packetid.IsCanonicalVersion(pathID.split('/')[-1]):
-                    backup_control.DeleteBackup(pathID, saveDB=False, calculate=False)
-                else:
+            if driver.is_started('service_backups'):
+                pathID = arg(request, 'pathid').replace('_','/')
+                if packetid.Valid(pathID):
+                    if packetid.IsCanonicalVersion(pathID.split('/')[-1]):
+                        backup_control.DeleteBackup(pathID, saveDB=False, calculate=False)
+                    else:
+                        backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+                        backup_fs.DeleteByID(pathID)
+                        for subPathID in list(self.expanded_dirs):
+                            if subPathID.startswith(pathID+'/'):
+                                self.expanded_dirs.discard(subPathID)
+                        self.expanded_dirs.discard(pathID)
+                        self.expanded_items.discard(pathID)
+                        self.selected_backups.clear()
+                        self.selected_items.clear()
+                    backup_fs.Scan()
+                    backup_fs.Calculate()
+                    backup_control.Save()
+                    backup_monitor.A('restart')
+                    self.listExpandedDirs = None
+                    self.listExpandedVersions = None
+
+        #---deletepath---
+        elif action == 'deletepath':
+            if driver.is_started('service_backups'):
+                localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
+                pathID = backup_fs.ToID(localPath)
+                if pathID and packetid.Valid(pathID):
                     backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
                     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
                     backup_fs.DeleteByID(pathID)
@@ -2861,40 +2894,19 @@ class MainPage(Page):
                     self.expanded_items.discard(pathID)
                     self.selected_backups.clear()
                     self.selected_items.clear()
-                backup_fs.Scan()
-                backup_fs.Calculate()
-                backup_control.Save()
-                backup_monitor.Restart()
-                self.listExpandedDirs = None
-                self.listExpandedVersions = None
-
-        #---deletepath---
-        elif action == 'deletepath':
-            localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
-            pathID = backup_fs.ToID(localPath)
-            if pathID and packetid.Valid(pathID):
-                backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
-                backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
-                backup_fs.DeleteByID(pathID)
-                for subPathID in list(self.expanded_dirs):
-                    if subPathID.startswith(pathID+'/'):
-                        self.expanded_dirs.discard(subPathID)
-                self.expanded_dirs.discard(pathID)
-                self.expanded_items.discard(pathID)
-                self.selected_backups.clear()
-                self.selected_items.clear()
-                backup_fs.Scan()
-                backup_fs.Calculate()
-                backup_control.Save()
-                backup_monitor.Restart()
-                self.listExpandedDirs = None
-                self.listExpandedVersions = None
+                    backup_fs.Scan()
+                    backup_fs.Calculate()
+                    backup_control.Save()
+                    backup_monitor.A('restart')
+                    self.listExpandedDirs = None
+                    self.listExpandedVersions = None
         
         #---update---
         elif action == 'update':
-            backup_monitor.Restart()
-            self.listExpandedDirs = None
-            self.listExpandedVersions = None
+            if driver.is_started('service_backups'):
+                backup_monitor.A('restart')
+                self.listExpandedDirs = None
+                self.listExpandedVersions = None
         
         #---restore---
         elif action == 'restore':
@@ -2907,13 +2919,8 @@ class MainPage(Page):
                 localPath = backup_fs.ToPath(pathID)
                 if not localPath:
                     continue
-                localDir = os.path.dirname(localPath)
-                if not os.access(localDir, os.W_OK):
-                    try:
-                        localDir = tempfile.mkdtemp(dir=localPath)
-                    except:
-                        localDir = tempfile.mkdtemp(prefix=os.path.basename(localPath))
-                restore_monitor.Start(backupID, localDir, self._itemRestored) 
+                restoreDir = os.path.dirname(localPath)
+                restore_monitor.Start(backupID, restoreDir, self._itemRestored) 
             self.selected_backups.clear()
             
         #---restoretodir---
@@ -2938,11 +2945,6 @@ class MainPage(Page):
                 localPath = localPath.lstrip('/')
                 # get the base folder - tar extract will take care of creating all directoriy tree 
                 localDir = os.path.dirname(localPath)
-                if not os.access(localDir, os.W_OK):
-                    try:
-                        localDir = tempfile.mkdtemp(dir=localPath)
-                    except:
-                        localDir = tempfile.mkdtemp(prefix=os.path.basename(localPath))
                 # make a restore dir, keep the folders tree, this will be a relative path
                 restoreDir = os.path.join(settings.getRestoreDir(), localDir)
                 restore_monitor.Start(backupID, restoreDir)
@@ -2962,11 +2964,6 @@ class MainPage(Page):
                                 # TODO - also may need to check other options like network drive (//) or so 
                                 localPath = localPath[3:]
                             localDir = os.path.dirname(localPath.lstrip('/'))
-                            if not os.access(localDir, os.W_OK):
-                                try:
-                                    localDir = tempfile.mkdtemp(dir=localPath)
-                                except:
-                                    localDir = tempfile.mkdtemp(prefix=os.path.basename(localPath))
                             restoreDir = os.path.join(dest, localDir)
                             restore_monitor.Start(backupID, restoreDir)
                         else:
@@ -3081,14 +3078,14 @@ class MainPage(Page):
 
         src = self._body(request)
         
-        src += '<br><br>\n<table><tr><td>\n<div align=left>\n'
+        src += '<br><br><table><tr><td><div align=left>\n'
         availibleSpace = diskspace.MakeStringFromString(settings.getNeededString())
         backupsSizeTotal = backup_fs.sizebackups()
         backupsSizeSupplier = -1 if contacts.numSuppliers() == 0 else backupsSizeTotal/contacts.numSuppliers()
         usedSpaceTotal = diskspace.MakeStringFromBytes(backupsSizeTotal)
         usedSpaceSupplier = '-' if backupsSizeSupplier<0 else diskspace.MakeStringFromBytes(backupsSizeSupplier)
         src += 'availible space:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'storage.needed?back='+request.path, availibleSpace,)
+            '/'+_PAGE_SETTINGS+'/'+'services.customer.needed-space?back='+request.path, availibleSpace,)
         src += 'total space used:&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % ('/'+_PAGE_STORAGE, usedSpaceTotal) 
         src += 'used per supplier:&nbsp;%s\n' % (usedSpaceSupplier) 
         src += '</div></td></tr></table>\n'
@@ -3386,9 +3383,13 @@ class BackupPage(Page, BackupIDSplit):
                     src += '&nbsp;\n'
                     continue
                 if idurl:
-                    icon = contact_status.getStatusIcon(idurl)
+                    icon = 'icons/offline-user01.png'
                 else:
                     icon = 'icons/unknown-user01.png'
+                state = 'offline'
+                if contact_status.isOnline(idurl):
+                    icon = 'icons/online-user01.png'
+                    state = 'online '
                 if w >= 5 and len(name) > 10:
                     name = name[0:9] + '<br>' + name[9:]
                 src += '<a href="%s">' % link
@@ -3488,8 +3489,8 @@ class BackupPage(Page, BackupIDSplit):
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
         msg = 'Restore this %s from remote machines and put into this location:<br>\n' % folder_or_file 
-        msg += '<b>%(option:folder.folder-restore)s</b> ?<br>'
-        msg += '<a href="%s?back=%s">[change]</a><br>\n' % ('/'+_PAGE_SETTINGS+'/'+'folder.folder-restore', '/'+_PAGE_CONFIRM)
+        msg += '<b>%(option:paths.restore)s</b> ?<br>'
+        msg += '<a href="%s?back=%s">[change]</a><br>\n' % ('/'+_PAGE_SETTINGS+'/'+'paths.restore', '/'+_PAGE_CONFIRM)
         src += '<a href="%s">' % confirmurl(request, text=msg, back=back, 
             yes='%s?action=restoretodir' % request.path)
         src += '<img src="%s">' % iconurl(request, 'icons/restore-to-dir48.png') 
@@ -3537,12 +3538,13 @@ class BackupPage(Page, BackupIDSplit):
         action = arg(request, 'action')
         #---delete---
         if action == 'delete':
-            backup_control.DeleteBackup(self.backupID, saveDB=False)
-            backup_control.Save()
-            backup_monitor.Restart()
-            request.redirect('/'+_PAGE_MAIN)
-            request.finish()
-            return NOT_DONE_YET
+            if driver.is_started('service_backups'):
+                backup_control.DeleteBackup(self.backupID, saveDB=False)
+                backup_control.Save()
+                backup_monitor.A('restart')
+                request.redirect('/'+_PAGE_MAIN)
+                request.finish()
+                return NOT_DONE_YET
         #---delete.local---
         elif action == 'delete.local':
             num, sz = backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), self.backupID)
@@ -3650,11 +3652,13 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
                     src += '&nbsp;\n'
                     continue
                 if idurl:
-                    icon = contact_status.getStatusIcon(idurl)
-                    state = contact_status.getStatusLabel(idurl)
+                    icon = 'icons/offline-user01.png'
                 else:
                     icon = 'icons/unknown-user01.png'
-                    state = 'offline'
+                state = 'offline'
+                if contact_status.isOnline(idurl):
+                    icon = 'icons/online-user01.png'
+                    state = 'online '
                 if w >= 5 and len(name) > 10:
                     name = name[0:9] + '<br>' + name[9:]
                 src += '<a href="%s">' % link
@@ -3740,11 +3744,13 @@ class BackupRemoteFilesPage(Page, BackupIDSplit):
                     src += '&nbsp;\n'
                     continue
                 if idurl:
-                    icon = contact_status.getStatusIcon(idurl)
-                    state = contact_status.getStatusLabel(idurl)
+                    icon = 'icons/offline-user01.png'
                 else:
                     icon = 'icons/unknown-user01.png'
-                    state = 'offline'
+                state = 'offline'
+                if contact_status.isOnline(idurl):
+                    icon = 'icons/online-user01.png'
+                    state = 'online '
                 if w >= 5 and len(name) > 10:
                     name = name[0:9] + '<br>' + name[9:]
                 src += '<a href="%s">' % link
@@ -3989,9 +3995,6 @@ class SupplierPage(Page):
             return NOT_DONE_YET
         elif action == 'ping':
             propagate.single(self.idurl)
-            request.redirect(request.path)
-            request.finish()
-            return NOT_DONE_YET
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         bytesUsed = backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
         suppliers_count = contacts.numSuppliers()
@@ -4012,8 +4015,11 @@ class SupplierPage(Page):
         src += '<tr><td>gives you</td><td>%s on his HDD</td></tr>\n' % diskspace.MakeStringFromBytes(bytesNeededPerSupplier)
         src += '<tr><td>your files takes</td><td>%s at the moment</td></tr>\n' % diskspace.MakeStringFromBytes(bytesUsedPerSupplier)
         src += '<tr><td>currenly taken</td><td>%3.2f%% space given to you</td></tr>\n' % percUsed
-        src += '<tr><td>current status is</td><td>\n'
-        src += '<font>%s</font>\n' % contact_status.getStatusLabel(self.idurl)
+        src += '<tr><td>current status is</td><td>'
+        if contact_status.isOnline(self.idurl):
+            src += '<font color="green">online</font>\n'
+        else:
+            src += '<font color="red">offline</font>\n'
         src += '</td></tr>\n'
         src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % ( ratings.month_percent(self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
         src += '</table>\n'
@@ -4194,16 +4200,19 @@ class SuppliersPage(Page):
         
         #---action replace---
         elif action == 'replace':
-            idurl = arg(request, 'idurl')
-            if idurl != '':
-                if not idurl.startswith('http://'):
-                    try:
-                        idurl = contacts.getSupplierID(int(idurl))
-                    except:
-                        idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
-                if contacts.IsSupplier(idurl):
-                    fire_hire.AddSupplierToFire(idurl)
-                    backup_monitor.Restart()
+            if driver.is_started('service_fire_hire'):
+                idurl = arg(request, 'idurl')
+                if idurl != '':
+                    if not idurl.startswith('http://'):
+                        try:
+                            idurl = contacts.getSupplierID(int(idurl))
+                        except:
+                            idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                    if contacts.IsSupplier(idurl):
+                        fire_hire.AddSupplierToFire(idurl)
+                        fire_hire.A('restart')
+                        # backup_monitor.A('restart')
+                        # fire_hire.A('fire-him-now', [idurl,])
         
         #---action change---
         elif action == 'change':
@@ -4214,13 +4223,12 @@ class SuppliersPage(Page):
                     try:
                         idurl = contacts.getSupplierID(int(idurl))
                     except:
-                        idurl = ''
+                        idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
                 if not newidurl.startswith('http://'):
-                    newidurl = ''
-                if contacts.IsSupplier(idurl) and newidurl != '':
-                    fire_hire.AddSupplierToFire(idurl)
-                    supplier_finder.AddSupplierToHire(newidurl)
-                    backup_monitor.Restart()
+                    newidurl = 'http://'+settings.IdentityServerName()+'/'+newidurl+'.xml'
+                if contacts.IsSupplier(idurl):
+                    # fire_hire.A('fire-him-now', (idurl, newidurl))
+                    fire_hire.A('fire-him-now', [idurl,])
 
         #---draw page---
         src = ''
@@ -4261,11 +4269,14 @@ class SuppliersPage(Page):
                     
         #---icon---
                     if idurl:
-                        icon = contact_status.getStatusIcon(idurl)
-                        state = contact_status.getStatusLabel(idurl)
+                        icon = 'icons/offline-user01.png'
                     else:
                         icon = 'icons/unknown-user01.png'
-                        state = 'offline'
+                    state = 'offline'
+                    if contact_status.isOnline(idurl):
+                        icon = 'icons/online-user01.png'
+                        state = 'online '
+
 #                    if w >= 5 and len(name) > 20:
 #                        name = name[0:19] + '<br>' + name[19:]
                     src += '<a href="%s">' % link
@@ -4443,7 +4454,7 @@ class CustomerPage(Page):
         bytesGiven = int(spaceDict.get(self.idurl, 0))
         dataDir = settings.getCustomersFilesDir()
         customerDir = os.path.join(dataDir, nameurl.UrlFilename(self.idurl))
-        if bpio.pathIsDir(customerDir):
+        if os.path.isdir(customerDir):
             bytesUsed = bpio.getDirectorySize(customerDir)
         else:
             bytesUsed = 0
@@ -4461,7 +4472,10 @@ class CustomerPage(Page):
         src += '<tr><td>he use</td><td>%s at the moment</td></tr>\n' % diskspace.MakeStringFromBytes(bytesUsed)
         src += '<tr><td>currently used</td><td>%3.2f%% of his taken space</td></tr>\n' % percUsed
         src += '<tr><td>current status is</td><td>'
-        src += '<font>%s</font>\n' % contact_status.getStatusLabel(self.idurl)
+        if contact_status.isOnline(self.idurl):
+            src += '<font color="green">online</font>\n'
+        else:
+            src += '<font color="red">offline</font>\n'
         src += '</td></tr>\n'
         src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % ( ratings.month_percent(self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
         src += '</table>\n'
@@ -4492,7 +4506,7 @@ class CustomerFilesPage(Page):
         src = '<h1>%s</h1>\n' % title
         list_files = []
         customer_dir = settings.getCustomerFilesDir(self.idurl)
-        if bpio.pathIsDir(customer_dir):
+        if os.path.isdir(customer_dir):
             for filename in os.listdir(customer_dir):
                 list_files.append(filename)
         if len(list_files) > 0:
@@ -4580,8 +4594,12 @@ class CustomersPage(Page):
                         continue
 
         #---icon---
-                    icon = contact_status.getStatusIcon(idurl)
-                    state = contact_status.getStatusLabel(idurl)
+                    icon = 'icons/offline-user01.png'
+                    state = 'offline'
+                    if contact_status.isOnline(idurl):
+                        icon = 'icons/online-user01.png'
+                        state = 'online '
+
                     # if w >= 5 and len(name) > 10:
                     #     name = name[0:9] + '<br>' + name[9:]
                     src += '<a href="%s">' % link
@@ -5070,6 +5088,41 @@ class ConfigPage(Page):
         return html(request, body=str(src), title='settings', back='/'+_PAGE_MENU, )
 
 
+class ServicesSettingsPage(Page):
+    pagename = _PAGE_SERVICES_SETTINGS
+    def renderPage(self, request):
+        src = '<h1>p2p services</h1>\n'
+        list_services = config.conf().listEntries('services')
+        w, h = misc.calculate_best_dimension(len(list_services), maxsize=4)
+        padding = 64/w
+        src += '<table width="90%%" cellpadding=%d cellspacing=2>\n' % padding
+        for y in range(h):
+            src += '<tr valign=top>\n'
+            for x in range(w):
+                n = y * w + x
+                src += '<td align=center valign=top nowrap>\n'
+                if n >= len(list_services):
+                    src += '&nbsp;\n'
+                    continue
+                path = list_services[n]
+                name = path.split('/')[-1]
+                value = 'enabled' if config.conf().getBool(path+'/enabled') else 'disabled'
+                svc = driver.services().get('service_'+(name.replace('-', '_')), None)
+                state = 'NOT_STARTED' if svc is None else svc.state
+                link = ('/'+_PAGE_SETTINGS+'/'+(path.replace('/', '.')))
+                src += '<font size=+1><a href="%s?back=%s"><b>%s</b></a></font><br>\n' % (
+                    link, request.path, name)
+                src += 'state: %s<br>\n' % state
+                src += '<font color=gray>%s</font>\n' % value
+                src += '</td>\n'
+                src += html_comment('  [%s] %s %s' % (name, state, value))
+            src += '</tr>\n'
+        src += '</table>\n'
+        src += '<br><br>\n'
+        back = arg(request, 'back', '/'+_PAGE_CONFIG)
+        return html(request, body=src, title='p2p services', back=back)
+    
+
 class BackupSettingsPage(Page):
     pagename = _PAGE_BACKUP_SETTINGS
     def renderPage(self, request):
@@ -5079,65 +5132,64 @@ class BackupSettingsPage(Page):
 
         src = '<h1>backup settings</h1>\n'
         src += '<br><h3>needed space: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'storage.needed',
+            '/'+_PAGE_SETTINGS+'/'+'services.customer.needed-space',
             request.path,
             neededStr)
 #        src += '<p>This will cost %s$ per day.</p>\n' % 'XX.XX'
 
         src += '<br><h3>donated space: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'storage.donated',
+            '/'+_PAGE_SETTINGS+'/'+'services.supplier.donated-space',
             request.path,
             donatedStr)
 #        src += '<p>This will earn up to %s$ per day, depending on space used.</p>\n' % 'XX.XX'
 
         numSuppliers = settings.getSuppliersNumberDesired()
         src += '<br><h3>number of suppliers: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'storage.suppliers',
+            '/'+_PAGE_SETTINGS+'/'+'services.customer.suppliers-number',
             request.path, str(numSuppliers))
 
         blockSize = settings.getBackupBlockSize()
         src += '<br><h3>preferred block size: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'backup.backup-block-size',
+            '/'+_PAGE_SETTINGS+'/'+'services.backups.block-size',
             request.path, str(blockSize))
 
         blockSizeMax = settings.getBackupMaxBlockSize()
         src += '<br><h3>maximum block size: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'backup.backup-max-block-size',
+            '/'+_PAGE_SETTINGS+'/'+'services.backups.max-block-size',
             request.path, str(blockSizeMax))
 
         backupCount = settings.getGeneralBackupsToKeep()
         if backupCount == '0':
             backupCount = 'unlimited'
         src += '<br><h3>backup copies: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'general.general-backups',
+            '/'+_PAGE_SETTINGS+'/'+'services.backups.max-copies',
             request.path, backupCount)
         
         keepLocalFiles = settings.getGeneralLocalBackups()
         src += '<br><h3>local backups: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'general.general-local-backups-enable', request.path,
+            '/'+_PAGE_SETTINGS+'/'+'services.backups.keep-local-copies-enabled', request.path,
             'yes' if keepLocalFiles else 'no')
         if not keepLocalFiles:
             src += '<br><h3>remove the local data, but wait 24 hours,<br>to check suppliers: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'general.general-wait-suppliers-enable', request.path,
+                '/'+_PAGE_SETTINGS+'/'+'services.backups.wait-suppliers-enabled', request.path,
                 'yes' if settings.getGeneralWaitSuppliers() else 'no')
 
         src += '<br><h3>directory for donated space:</h3>\n'
         src += '<a href="%s?back=%s">%s</a></p>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'folder.folder-customers',
+            '/'+_PAGE_SETTINGS+'/'+'paths.customers',
             request.path, settings.getCustomersFilesDir())
 
         src += '<br><br><h3>directory for local backups:</h3>\n'
         src += '<a href="%s?back=%s">%s</a></p>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'folder.folder-backups',
+            '/'+_PAGE_SETTINGS+'/'+'paths.backups',
             request.path, settings.getLocalBackupsDir())
         
         src += '<br><br><h3>directory for restored files:</h3>\n'
         src += '<a href="%s?back=%s">%s</a></p>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'folder.folder-restore',
+            '/'+_PAGE_SETTINGS+'/'+'paths.restore',
             request.path, settings.getRestoreDir())
 
         src += '<br><br>\n'
-
         back = arg(request, 'back', '/'+_PAGE_BACKUP_SETTINGS)
         return html(request, body=src, title='backup settings', back=back)
 
@@ -5308,50 +5360,50 @@ class NetworkSettingsPage(Page):
         src += '<table width=1 cellspacing=30><tr>\n'
         src += '<td width=50% valign=top nowrap><h3>TCP transport</h3>\n'
         src += '<p>enable: <a href="%s?back=%s">%s</a></p>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'transport.transport-tcp.transport-tcp-enable', request.path,
+            '/'+_PAGE_SETTINGS+'/'+'services.tcp-transport.enabled', request.path,
             'yes' if settings.enableTCP() else 'no')
         if settings.enableTCP():
             src += '<p>use for sending: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-tcp.transport-tcp-sending-enable', request.path,
+                '/'+_PAGE_SETTINGS+'/'+'services.tcp-transport.sending-enabled', request.path,
                 'yes' if settings.enableTCPsending() else 'no')
             src += '<br><p>use for receiving: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-tcp.transport-tcp-receiving-enable', request.path,
+                '/'+_PAGE_SETTINGS+'/'+'services.tcp-transport.receiving-enabled', request.path,
                 'yes' if settings.enableTCPreceiving() else 'no')
             src += '<br><p>listen on port: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-tcp.transport-tcp-port', request.path,
-                settings.getTCPPort())
+                '/'+_PAGE_SETTINGS+'/'+'services.tcp-connections.tcp-port', request.path,
+                str(settings.getTCPPort()))
             src += '<br><p>enable UPnP: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'other.upnp-enabled', request.path,
+                '/'+_PAGE_SETTINGS+'/'+'other.upnp-enabledd', request.path,
                 'yes' if settings.enableUPNP() else 'no')
         src += '</td>\n'
         src += '<td width=50% valign=top nowrap><h3>UDP transport</h3>\n'
         src += '<p>enable transport: <a href="%s?back=%s">%s</a></p>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-enable', request.path,
+            '/'+_PAGE_SETTINGS+'/'+'services.udp-transport.enabled', request.path,
             'yes' if settings.enableUDP() else 'no')
         if settings.enableUDP():
             src += '<p>use for sending: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-sending-enable', request.path,
+                '/'+_PAGE_SETTINGS+'/'+'services.udp-transport.sending-enabled', request.path,
                 'yes' if settings.enableUDPsending() else 'no')
             src += '<br><p>use for receiving: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-receiving-enable', request.path,
+                '/'+_PAGE_SETTINGS+'/'+'services.udp-transport.receiving-enabled', request.path,
                 'yes' if settings.enableUDPreceiving() else 'no')
             src += '<p>UDP port for data transport: <a href="%s?back=%s">%s</a></h3>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'transport.transport-udp.transport-udp-port', request.path,
-                settings.getUDPPort())
+                '/'+_PAGE_SETTINGS+'/'+'services.udp-datagrams.udp-port', request.path,
+                str(settings.getUDPPort()))
         src += '</td>\n'
         src += '</tr>\n'
         src += '<tr>\n'
         src += '<td width=50% valign=top nowrap><h3>Distributed Hash Table</h3>\n'
         src += '<p>UDP port for DHT network: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'network.network-dht-port', request.path,
-            settings.getDHTPort())
+            '/'+_PAGE_SETTINGS+'/'+'services.entangled-dht.udp-port', request.path,
+            str(settings.getDHTPort()))
         src += '</td>\n'
         src += '<td width=50% valign=top nowrap><h3>Bandwidth</h3>\n'
         src += '<p>outgoing bandwidth limit: <a href="%s?back=%s">%s</a> (bytes/sec.)</p>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'network.network-send-limit', request.path,
+            '/'+_PAGE_SETTINGS+'/'+'services.network.send-limit', request.path,
             str(settings.getBandOutLimit()))
         src += '<p>incoming bandwidth limit: <a href="%s?back=%s">%s</a> (bytes/sec.)</p>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'network.network-receive-limit', request.path,
+            '/'+_PAGE_SETTINGS+'/'+'services.network.receive-limit', request.path,
             str(settings.getBandInLimit()))
         src += '</td>\n'
         src += '</tr>\n'
@@ -5520,7 +5572,7 @@ class DevelopmentPage(Page):
             '/'+_PAGE_SETTINGS+'/'+'logs.debug-level', request.path,
             settings.getDebugLevelStr())
         src += '<br><h3>use http server for logs: <a href="%s?back=%s">%s</a></h3>\n' % (
-            '/'+_PAGE_SETTINGS+'/'+'logs.stream-enable', request.path,
+            '/'+_PAGE_SETTINGS+'/'+'logs.stream-enabled', request.path,
             'yes' if settings.enableWebStream() else 'no')
         src += '<br><h3>http server port number: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'logs.stream-port', request.path,
@@ -6705,9 +6757,12 @@ class CorrespondentsPage(Page):
                 continue
             status = contact_status.isKnown(idurl)
             if not status:
-                status = 'unknown'
+                status = ''
             else:
-                status = contact_status.getStatusLabel(idurl)
+                if contact_status.isOnline(idurl):
+                    status = 'online'
+                else:
+                    status = 'offline'
             src += '&nbsp;&nbsp;&nbsp; <font color=gray>%s</font> %s' % (
                 idurl, status)
             src += '</td><td>\n'
@@ -6747,16 +6802,19 @@ class CorrespondentsPage(Page):
                         src += '&nbsp;\n'
                         continue
                     idurl = idurls[n]
-                    name = contacts.getCorrespondentsDict().get(idurl, nameurl.GetName(idurl))
-                    icon = contact_status.getStatusIcon(idurl)
+                    name = nameurl.GetName(idurl)
+                    if not name:
+                        src += '&nbsp;\n'
+                        continue
+                    icon = 'icons/offline-user01.png'
+                    if contact_status.isOnline(idurl):
+                        icon = 'icons/online-user01.png'
                     if w >= 5 and len(name) > 10:
                         name = name[0:9] + '<br>' + name[9:]
                     src += '<img src="%s" width=%d height=%d>' % (
                         iconurl(request, icon), imgW, imgH,)
                     src += '<br>\n'
-                    src += '%s<br>\n' % name
-                    src += '&nbsp;<a href="%s?action=ping&pingidurl=%s&back=%s">[ping]</a>\n' % (
-                        request.path, nameurl.Quote(idurl), arg(request, 'back', '/'+_PAGE_MENU))
+                    src += '%s' % name
                     src += '&nbsp;[<a href="%s?action=remove&idurl=%s&back=%s">x</a>]\n' % (
                         request.path, nameurl.Quote(idurl), arg(request, 'back', '/'+_PAGE_MENU))
                     src += '</td>\n'
@@ -6773,16 +6831,14 @@ class CorrespondentsPage(Page):
         nickname = arg(request, 'nickname', self.last_nickname or '')
         msg = ''
         typ = 'info'
-        #---check---
         if action == 'check':
             self.last_nickname = nickname
-            if not misc.ValidNickName(nickname):
+            if not misc.ValidUserName(nickname):
                 msg = 'incorrect nickname'
                 typ = 'error'
             else:
                 self.results = []
                 from userid import nickname_observer
-                nickname_observer.stop_all()
                 nickname_observer.observe_many(nickname, 
                     results_callback=self._nickname_observer_result)
                 msg = 'checking <b>%s</b> ...' % nickname
@@ -6803,9 +6859,6 @@ class CorrespondentsPage(Page):
                 typ = 'error'
         elif action == 'ping':
             propagate.PingContact(arg(request, 'pingidurl'), self._ack_handler)
-            request.redirect(request.path)
-            request.finish()
-            return NOT_DONE_YET
         elif action == 'add':
             self.results = []
             self.last_nickname = None
@@ -6844,7 +6897,6 @@ class SetNickNamePage(Page):
             self.results = []
             self.last_nickname = nickname
             from userid import nickname_observer
-            nickname_observer.stop_all()
             nickname_observer.find_one(nickname, 
                 results_callback=self._nickname_observer_result)
             msg = 'checking <b>%s</b> ...' % nickname
@@ -6854,7 +6906,7 @@ class SetNickNamePage(Page):
             self.last_nickname = nickname
             settings.setNickName(nickname)
             nickname_holder.A('set', (nickname, self._nickname_holder_result))
-            msg = 'writing your nickname ...'
+            msg = 'your nickname is <b>%s</b> now' % nickname
             typ = 'info'
         else:
             msg = ''
@@ -6891,9 +6943,12 @@ class SetNickNamePage(Page):
                 continue
             status = contact_status.isKnown(idurl)
             if not status:
-                status = 'unknown'
+                status = ''
             else:
-                status = contact_status.getStatusLabel(idurl)
+                if contact_status.isOnline(idurl):
+                    status = 'online'
+                else:
+                    status = 'offline'
             src += '&nbsp;&nbsp;&nbsp; <font color=gray>%s</font> %s' % (
                 idurl, status)
             src += '</tr>\n'
@@ -7191,41 +7246,35 @@ class DevReportPage(Page):
 
     def progress_callback(self, x, y):
         global _DevReportProcess
-        # if x == y and y > 0:
-        #     _DevReportProcess = ''
-        # else:
-        _DevReportProcess = '%d/%d' % (x,y)
-        # SendCommandToGUI('update')
+        if x == y:
+            _DevReportProcess = ''
+        else:
+            _DevReportProcess = '%d/%d' % (x,y)
         
     def renderPage(self, request):
         # global local_version
         global _DevReportProcess
-        subject = arg(request, 'subject', 'BitPie.NET developer report')
-        body = arg(request, 'body', 'sent from %s at %s' % (misc.getLocalID(), time.asctime()))
+
+        subject = arg(request, 'subject')
+        body = arg(request, 'body')
         action = arg(request, 'action').lower().strip()
         includelogs = arg(request, 'includelogs', 'True')
+
         src = ''
         if action == 'send' and _DevReportProcess == '':
             misc.SendDevReport(subject, body, includelogs=='True', 
                 progress=self.progress_callback)
             _DevReportProcess = '0/0'
+            # src += '<br><br><br><h3>Thank you for your help!</h3>'
+            # return html(request, body=src, back=_PAGE_CONFIG, reload='5')
+            
         if _DevReportProcess:
-            try:
-                x, y = _DevReportProcess.split('/')
-            except:
-                x = y = '0'
             src += '<br><br><br><h3>Thank you for your help !!!</h3>'
             src += '<br><br><h3>progress</h3>\n'
-            if x == '0' and y == '0':
+            if _DevReportProcess == '0/0':
                 src += 'compressing ... '
-            elif x != y and y != '0':
-                src += 'sending: %s bytes' + _DevReportProcess
             else:
-                _DevReportProcess = ''
-                src += '<br><br><br>Your message was sent to Veselin Penev.\n'
-                src += '<h3>Thank you for your help!</h3>\n'
-                return html(request, body=src, back=_PAGE_CONFIG, reload='5')
-            reactor.callLater(0.2, SendCommandToGUI, 'update')
+                src += 'sending: ' + _DevReportProcess
             return html(request, body=src, back='/'+_PAGE_CONFIG, reload='0.2')
         
         src += '<h3>send Message</h3>\n'
@@ -7241,7 +7290,7 @@ class DevReportPage(Page):
         src += '<tr><td align=right><b>Subject:</b></td>\n'
         src += '<td colspan=2><input type="text" name="subject" value="%s" size="51" /></td></tr>\n' % subject
         src += '</table>\n'
-        src += '<textarea name="body" rows="10" cols="80">%s</textarea><br><br>\n' % body
+        src += '<textarea name="body" rows="10" cols="40">%s</textarea><br><br>\n' % body
         src += '<input type="submit" name="action" value=" Send " /><br>\n'
         src += '</form>'
         return html(request, body=src, back='/'+_PAGE_CONFIG)
@@ -7254,7 +7303,7 @@ class MemoryPage(Page):
         src = '<h1>memory usage</h1>\n'
         if not settings.enableMemoryProfile():
             src = '<p>You need to switch on <a href="%s">memory profiler</a> in the settings and restart BitPie.NET.</p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'logs.memprofile-enable')
+                '/'+_PAGE_SETTINGS+'/'+'logs.memprofile-enabled')
             src += html_comment('You need to switch on memory profiler in the settings.')
             return html(request, back=arg(request, 'back', '/'+_PAGE_CONFIG), body=src)
         try:
@@ -7293,11 +7342,11 @@ class EmergencyPage(Page):
         src += 'if your backups are not working, or if your machine appears to not be working.</p>\n'
         src += '<br><br><b>What email address should we contact you at? Email contact is free.</b>\n'
         src += '<br><br><input type="text" name="email" size="25" value="%s" />\n' % arg(request, 'email')
-        src += '<br><br><b>%s</b>\n' % settings.uconfig().get('emergency.emergency-phone', 'info')
+        src += '<br><br><b>%s</b>\n' % '' # config.conf().getData('emergency.phone', 'info')
         src += '<br><br><input type="text" name="phone" size="25" value="%s" />\n' % arg(request, 'phone')
-        src += '<br><br><b>%s</b>\n' % settings.uconfig().get('emergency.emergency-fax', 'info')
+        src += '<br><br><b>%s</b>\n' % '' # config.conf().getData('emergency.fax', 'info')
         src += '<br><br><input type="text" name="fax" size="25" value="%s" />\n' % arg(request, 'fax')
-        src += '<br><br><b>%s</b>\n' % settings.uconfig().get('emergency.emergency-text', 'info')
+        src += '<br><br><b>%s</b>\n' % '' # config.conf().getData('emergency.text', 'info')
         src += '<br><br><textarea name="text" rows="5" cols="40">%s</textarea><br>\n' % arg(request, 'text')
         # if message != '':
         #     src += '<br><br><font color="%s">%s</font>\n' % (messageColor, message)
@@ -7672,87 +7721,90 @@ class TrafficPage(Page):
 def InitSettingsTreePages():
     global _SettingsTreeNodesDict
     lg.out(4, 'webcontrol.init.options')
-    SettingsTreeAddComboboxList('suppliers', settings.getECCSuppliersNumbers())
-    SettingsTreeAddComboboxList('updates-mode', settings.getUpdatesModeValues())
-    SettingsTreeAddComboboxList('emergency-first', settings.getEmergencyMethods())
-    SettingsTreeAddComboboxList('emergency-second', settings.getEmergencyMethods())
+    SettingsTreeAddComboboxList('services/customer/suppliers-number', settings.getECCSuppliersNumbers())
+    SettingsTreeAddComboboxList('updates/mode', settings.getUpdatesModeValues())
+    SettingsTreeAddComboboxList('emergency/first', settings.getEmergencyMethods())
+    SettingsTreeAddComboboxList('emergency/second', settings.getEmergencyMethods())
 
     _SettingsTreeNodesDict = {
-    'settings':                 SettingsTreeNode,
-
-    'storage':         SettingsTreeNode,
-    'suppliers':        SettingsTreeComboboxNode,
-    'donated':         SettingsTreeDiskSpaceNode,
-    'needed':         SettingsTreeDiskSpaceNode,
-    
-    'backup-block-size':        SettingsTreeNumericNonZeroPositiveNode,
-    'backup-max-block-size':    SettingsTreeNumericNonZeroPositiveNode,
-
-    'folder':                   SettingsTreeNode,
-    'folder-customers':         SettingsTreeDirPathNode,
-    'folder-backups':           SettingsTreeDirPathNode,
-    'folder-restore':           SettingsTreeDirPathNode,
-
-    'network':                  SettingsTreeNode,
-    'network-send-limit':       SettingsTreeNumericPositiveNode,
-    'network-receive-limit':    SettingsTreeNumericPositiveNode,
-
-    'other':                    SettingsTreeNode,
-    'upnp-enabled':             SettingsTreeYesNoNode,
-    'upnp-at-startup':          SettingsTreeYesNoNode,
-    'bitcoin':                  SettingsTreeNode,
-    'bitcoin-host':             SettingsTreeUStringNode,
-    'bitcoin-port':             SettingsTreeNumericPositiveNode,
-    'bitcoin-username':         SettingsTreeUStringNode,
-    'bitcoin-password':         SettingsTreePasswordNode,
-    'bitcoin-server-is-local':  SettingsTreeYesNoNode,
-    'bitcoin-config-filename':  SettingsTreeFilePathNode,
-
-    'emergency':                SettingsTreeNode,
-    'emergency-first':          SettingsTreeComboboxNode,
-    'emergency-second':         SettingsTreeComboboxNode,
-    'emergency-email':          SettingsTreeUStringNode,
-    'emergency-phone':          SettingsTreeUStringNode,
-    'emergency-fax':            SettingsTreeUStringNode,
-    'emergency-text':           SettingsTreeTextNode,
-    
-    'id-server-enable':         SettingsTreeYesNoNode,
-    'id-server-host':           SettingsTreeTextNode,
-    'id-server-web-port':       SettingsTreeNumericNonZeroPositiveNode,
-    'id-server-tcp-port':       SettingsTreeNumericNonZeroPositiveNode,
-
-    # 'updates':                  SettingsTreeNode,
-    # 'updates-mode':             SettingsTreeComboboxNode,
-
-    'general':                          SettingsTreeNode,
-    'general-desktop-shortcut':         SettingsTreeYesNoNode,
-    'general-start-menu-shortcut':      SettingsTreeYesNoNode,
-    'general-backups':                  SettingsTreeNumericPositiveNode,
-    'general-local-backups-enable':     SettingsTreeYesNoNode,
-    'general-wait-suppliers-enable':    SettingsTreeYesNoNode,
-
-    'logs':                     SettingsTreeNode,
-    'debug-level':              SettingsTreeNumericNonZeroPositiveNode,
-    'stream-enable':            SettingsTreeYesNoNode,
-    'stream-port':              SettingsTreeNumericPositiveNode,
-    'traffic-enable':           SettingsTreeYesNoNode,
-    'traffic-port':             SettingsTreeNumericPositiveNode,
-    'memdebug-enable':          SettingsTreeYesNoNode,
-    'memdebug-port':            SettingsTreeNumericPositiveNode,
-    'memprofile-enable':        SettingsTreeYesNoNode,
-
-    'transport':                SettingsTreeNode,
-    'transport-tcp':            SettingsTreeNode,
-    'transport-tcp-enable':     SettingsTreeYesNoNode,
-    'transport-tcp-port':       SettingsTreeNumericNonZeroPositiveNode,
-    'transport-tcp-sending-enable':   SettingsTreeYesNoNode,
-    'transport-tcp-receiving-enable': SettingsTreeYesNoNode,
-    'transport-udp':            SettingsTreeNode,
-    'transport-udp-port':       SettingsTreeNumericPositiveNode,
-    'transport-udp-enable':     SettingsTreeYesNoNode,
-    'transport-udp-sending-enable':   SettingsTreeYesNoNode,
-    'transport-udp-receiving-enable': SettingsTreeYesNoNode,
-    'network-dht-port':         SettingsTreeNumericPositiveNode,
+    'emergency/email':                              SettingsTreeUStringNode,
+    'emergency/fax':                                SettingsTreeUStringNode,
+    'emergency/first':                              SettingsTreeComboboxNode,
+    'emergency/phone':                              SettingsTreeUStringNode,
+    'emergency/second':                             SettingsTreeComboboxNode,
+    'emergency/text':                               SettingsTreeUStringNode,
+    'logs/debug-level':                             SettingsTreeNumericPositiveNode,
+    'logs/memdebug-enabled':                        SettingsTreeYesNoNode,
+    'logs/memdebug-port':                           SettingsTreeNumericPositiveNode,
+    'logs/memprofile-enabled':                      SettingsTreeYesNoNode,
+    'logs/stream-enabled':                          SettingsTreeYesNoNode,
+    'logs/stream-port':                             SettingsTreeNumericPositiveNode,
+    'logs/traffic-enabled':                         SettingsTreeYesNoNode,
+    'logs/traffic-port':                            SettingsTreeNumericPositiveNode,
+    'other/upnp-at-startup':                        SettingsTreeYesNoNode,
+    'other/upnp-enabled':                           SettingsTreeYesNoNode,
+    'paths/backups':                                SettingsTreeDirPathNode,
+    'paths/customers':                              SettingsTreeDirPathNode,
+    'paths/messages':                               SettingsTreeDirPathNode,
+    'paths/receipts':                               SettingsTreeDirPathNode,
+    'paths/restore':                                SettingsTreeDirPathNode,
+    'personal/betatester':                          SettingsTreeYesNoNode,
+    'personal/name':                                SettingsTreeUStringNode,
+    'personal/nickname':                            SettingsTreeUStringNode,
+    'personal/private-key-size':                    SettingsTreeUStringNode,
+    'personal/surname':                             SettingsTreeUStringNode,
+    'services/backup-db/enabled':                   SettingsTreeYesNoNode,
+    'services/backups/block-size':                  SettingsTreeNumericPositiveNode,
+    'services/backups/enabled':                     SettingsTreeYesNoNode,
+    'services/backups/keep-local-copies-enabled':   SettingsTreeYesNoNode,
+    'services/backups/max-block-size':              SettingsTreeNumericPositiveNode,
+    'services/backups/max-copies':                  SettingsTreeNumericPositiveNode,
+    'services/backups/wait-suppliers-enabled':      SettingsTreeYesNoNode,
+    'services/customer/enabled':                    SettingsTreeYesNoNode,
+    'services/customer/needed-space':               SettingsTreeDiskSpaceNode,
+    'services/customer/suppliers-number':           SettingsTreeComboboxNode,
+    'services/customers-rejector/enabled':          SettingsTreeYesNoNode,
+    'services/data-sender/enabled':                 SettingsTreeYesNoNode,
+    'services/entangled-dht/enabled':               SettingsTreeYesNoNode,
+    'services/entangled-dht/udp-port':              SettingsTreeNumericPositiveNode,
+    'services/fire-hire/enabled':                   SettingsTreeYesNoNode,
+    'services/gateway/enabled':                     SettingsTreeYesNoNode,
+    'services/id-server/enabled':                   SettingsTreeYesNoNode,
+    'services/id-server/host':                      SettingsTreeUStringNode,
+    'services/id-server/tcp-port':                  SettingsTreeNumericPositiveNode,
+    'services/id-server/web-port':                  SettingsTreeNumericPositiveNode,
+    'services/identity-propagate/enabled':          SettingsTreeYesNoNode,
+    'services/identity-server/enabled':             SettingsTreeYesNoNode,
+    'services/list-files/enabled':                  SettingsTreeYesNoNode,
+    'services/network/enabled':                     SettingsTreeYesNoNode,
+    'services/network/proxy/enabled':               SettingsTreeYesNoNode,
+    'services/network/proxy/host':                  SettingsTreeUStringNode,
+    'services/network/proxy/password':              SettingsTreePasswordNode,
+    'services/network/proxy/port':                  SettingsTreeNumericPositiveNode,
+    'services/network/proxy/ssl':                   SettingsTreeYesNoNode,
+    'services/network/proxy/username':              SettingsTreeUStringNode,
+    'services/network/receive-limit':               SettingsTreeNumericPositiveNode,
+    'services/network/send-limit':                  SettingsTreeNumericPositiveNode,
+    'services/p2p-hookups/enabled':                 SettingsTreeYesNoNode,
+    'services/private-messages/enabled':            SettingsTreeYesNoNode,
+    'services/rebuilding/enabled':                  SettingsTreeYesNoNode,
+    'services/restores/enabled':                    SettingsTreeYesNoNode,
+    'services/stun-client/enabled':                 SettingsTreeYesNoNode,
+    'services/stun-server/enabled':                 SettingsTreeYesNoNode,
+    'services/supplier/donated-space':              SettingsTreeDiskSpaceNode,
+    'services/supplier/enabled':                    SettingsTreeYesNoNode,
+    'services/tcp-connections/enabled':             SettingsTreeYesNoNode,
+    'services/tcp-connections/tcp-port':            SettingsTreeNumericPositiveNode,
+    'services/tcp-transport/enabled':               SettingsTreeYesNoNode,
+    'services/tcp-transport/receiving-enabled':     SettingsTreeYesNoNode,
+    'services/tcp-transport/sending-enabled':       SettingsTreeYesNoNode,
+    'services/udp-datagrams/enabled':               SettingsTreeYesNoNode,
+    'services/udp-datagrams/udp-port':              SettingsTreeNumericPositiveNode,
+    'services/udp-transport/enabled':               SettingsTreeYesNoNode,
+    'services/udp-transport/receiving-enabled':     SettingsTreeYesNoNode,
+    'services/udp-transport/sending-enabled':       SettingsTreeYesNoNode,
+    'updates/mode':                                 SettingsTreeComboboxNode,
+    'updates/shedule':                              SettingsTreeTextNode,
     }
 
 class SettingsTreeNode(Page):
@@ -7760,11 +7812,11 @@ class SettingsTreeNode(Page):
     # isLeaf = True
     def __init__(self, path):
         Page.__init__(self)
-        self.path = path
+        self.path = path.replace('.', '/')
         self.modifyList = []
         self.modifyTask = None
         self.update()
-
+ 
     def renderPage(self, request):
         lg.out(6, 'webcontrol.SettingsTreeNode.renderPage [%s] args=%s' % (self.path, str(request.args)))
         src = ''
@@ -7781,7 +7833,7 @@ class SettingsTreeNode(Page):
             #out(6, 'webcontrol.SettingsTreeNode.renderPage after %s: %s' % (self.path, self.value))
             src += html_comment('  path:     %s' % self.path)
             src += html_comment('  label:    %s' % self.label)
-            src += html_comment('  info:     %s' % self.info)
+            # src += html_comment('  info:     %s' % self.info)
             src += html_comment('  value:    %s' % self.value)
             if old_value != self.value:
                 src += html_comment('  modified: [%s]->[%s]' % (old_value, self.value))
@@ -7802,7 +7854,7 @@ class SettingsTreeNode(Page):
                 lg.out(14, 'webcontrol.SettingsTreeNode.renderPage leafs=%s' % (self.leafs))
                 for i in range(0, len(self.leafs)):
                     fullname = '.'.join(self.leafs[0:i+1])
-                    label = settings.uconfig().get(fullname, 'label')
+                    label = fullname # config.conf().getData(fullname)
                     if label is None:
                         label = self.leafs[i]
                     header += ' > ' + label
@@ -7819,131 +7871,165 @@ class SettingsTreeNode(Page):
         return html(request, body=src, back=back, title=header)
 
     def requestModify(self, path, value):
-        if p2p_connector.A().state in ['TRANSPORTS', 'NETWORK?']:
-            self.modifyList.append((path, value))
-            if self.modifyTask is None:
-                self.modifyTask = reactor.callLater(1, self.modifyWorker)
-                lg.out(4, 'webcontrol.SettingsTreeNode.requestModify (%s) task for %s' % (self.path, path))
-        else:
-            oldvalue = settings.uconfig(path)
-            settings.uconfig().set(path, value)
-            settings.uconfig().update()
-            self.update()
-            self.modified(oldvalue)
-            
-    def modifyWorker(self):
-        #out(4, 'webcontrol.SettingsTreeNode.modifyWorker(%s)' % self.path)
-        if len(self.modifyList) == 0:
-            return
-        if p2p_connector.A().state in ['TRANSPORTS', 'NETWORK?']:
-            self.modifyTask = reactor.callLater(1, self.modifyWorker)
-            return
-        oldvalue = settings.uconfig(self.path)
-        for path, value in self.modifyList:
-            settings.uconfig().set(path, value)
-        settings.uconfig().update()
+#        if p2p_connector.A().state in ['TRANSPORTS', 'NETWORK?']:
+#            self.modifyList.append((path, value))
+#            if self.modifyTask is None:
+#                self.modifyTask = reactor.callLater(1, self.modifyWorker)
+#                lg.out(4, 'webcontrol.SettingsTreeNode.requestModify (%s) task for %s' % (self.path, path))
+#        else:
+        # oldvalue = settings.uconfig(path)
+        # config.conf().setData(path, value)
+        # 
+        # print 'requestModify', path, value
+        oldvalue = config.conf().getData(path)
+        config.conf().setData(path, value)
         self.update()
-        self.modified(oldvalue)
-        self.modifyList = []
-        self.modifyTask = None
+        # self.modified(oldvalue)
+            
+#    def modifyWorker(self):
+#        #out(4, 'webcontrol.SettingsTreeNode.modifyWorker(%s)' % self.path)
+#        if len(self.modifyList) == 0:
+#            return
+#        if p2p_connector.A().state in ['TRANSPORTS', 'NETWORK?']:
+#            self.modifyTask = reactor.callLater(1, self.modifyWorker)
+#            return
+#        oldvalue = config.conf().getData(self.path)
+#        for path, value in self.modifyList:
+#            config.conf().setData(path, value)
+#        
+#        self.update()
+#        self.modified(oldvalue)
+#        self.modifyList = []
+#        self.modifyTask = None
 
     def update(self):
-        self.exist = settings.uconfig().has(self.path)
-        self.value = settings.uconfig().data.get(self.path, '')
-        self.label = settings.uconfig().labels.get(self.path, '')
-        self.info = settings.uconfig().infos.get(self.path, '')
-        self.leafs = self.path.split('.')
-        self.has_childs = len(settings.uconfig().get_childs(self.path)) > 0
+        self.exist = config.conf().has(self.path)
+        self.has_childs = len(config.conf().listEntries(self.path)) > 0
+        if self.has_childs:
+            self.value = None
+        else:
+            self.value = config.conf().getData(self.path)
+        self.label = config.conf().getLabel(self.path) # settings.uconfig().labels.get(self.path, '')
+        self.info = config.conf().getInfo(self.path) # settings.uconfig().infos.get(self.path, '')
+        self.leafs = self.path.split('/')
 
     def modified(self, old_value=None):
         lg.out(8, 'webcontrol.SettingsTreeNode.modified %s %s' % (self.path, self.value))
 
-        if self.path in (
-                'transport.transport-tcp.transport-tcp-port',
-                'transport.transport-tcp.transport-tcp-enable',
-                'transport.transport-tcp.transport-tcp-receiving-enable',
-                'transport.transport-udp.transport-udp-port',
-                'transport.transport-udp.transport-udp-enable',
-                'transport.transport-udp.transport-udp-receiving-enable',
-                'network.network-dht-port',
-                ):
-            network_connector.A('reconnect')
-            p2p_connector.A('reconnect')
-
-        if self.path in ('network.network-receive-limit',):
-            from transport.udp import udp_stream 
-            udp_stream.set_global_limit_receive_bytes_per_sec(int(self.value))
-
-        if self.path in ('network.network-send-limit',):
-            from transport.udp import udp_stream 
-            udp_stream.set_global_limit_send_bytes_per_sec(int(self.value))
-
-        if self.path in (
-                'storage.suppliers',
-                'storage.needed',
-                # 'storage.donated',
-                ):
-            fire_hire.ClearLastFireTime()
-            backup_monitor.A('restart')
-
-        if self.path in (
-                'storage.donated',
-                ):
-            customers_rejector.A('restart')
-
-        if self.path == 'logs.stream-enable':
-            if settings.enableWebStream():
-                misc.StartWebStream()
-            else:
-                misc.StopWebStream()
-
-        if self.path == 'logs.stream-port':
-            misc.StopWebStream()
-            if settings.enableWebStream():
-                reactor.callLater(0, misc.StartWebStream)
-
-        if self.path == 'logs.traffic-port':
-            misc.StopWebTraffic()
-            if settings.enableWebTraffic():
-                reactor.callLater(0, misc.StartWebTraffic)
-
-        if self.path == 'logs.debug-level':
-            try:
-                lg.set_debug_level(int(self.value))
-            except:
-                lg.out(1, 'webcontrol.SettingsTreeNode.modified ERROR wrong value!')
-
-        if self.path == 'backup.backup-block-size':
-            settings.setBackupBlockSize(self.value)
-
-        if self.path == 'backup.backup-max-block-size':
-            settings.setBackupMaxBlockSize(self.value)
+#        if self.path.count('services/'):
+#            svc_name = self.path.replace('services/', 'service_').replace('/enabled', '').replace('-', '_')
+#            svc = driver.services().get(svc_name, None) 
+#            if svc:
+#                # if settings.uconfig(self.path).lower() == 'true':
+#                v = config.conf().getBool(self.path)
+#                if v is None:
+#                    lg.warn('%s is None' % self.path)
+#                else:
+#                    if v:
+#                        svc.automat('start')
+#                    else:
+#                        svc.automat('stop')
+#            else:
+#                lg.warn('%s not found: %s' % (svc_name, self.path))
+#
+#        if self.path in (
+#                'services.tcp-connections.tcp-port',
+#                'services.tcp-transport.enabled',
+#                'services.tcp-transport.receiving-enabled',
+#                'services.udp-datagrams.udp-port',
+#                'services.udp-transport.enabled',
+#                'services.udp-transport.receiving-enabled',
+#                'services.entangled-dht.udp-port',
+#                ):
+#            network_connector.A('reconnect')
+#            p2p_connector.A('reconnect')
+#
+#        if self.path in ('services.network.receive-limit',):
+#            from transport.udp import udp_stream 
+#            udp_stream.set_global_limit_receive_bytes_per_sec(int(self.value))
+#
+#        if self.path in ('services.network.send-limit',):
+#            from transport.udp import udp_stream 
+#            udp_stream.set_global_limit_send_bytes_per_sec(int(self.value))
+#
+#        if self.path in (
+#                'services.customer.suppliers-number',
+#                'services.customer.needed-space',
+#                # 'services.supplier.donated-space',
+#                ):
+#            fire_hire.ClearLastFireTime()
+#            backup_monitor.A('restart')
+#
+#        if self.path in (
+#                'services.supplier.donated-space',
+#                ):
+#            customers_rejector.A('restart')
+#
+#        if self.path == 'logs.stream-enabled':
+#            if settings.enableWebStream():
+#                misc.StartWebStream()
+#            else:
+#                misc.StopWebStream()
+#
+#        if self.path == 'logs.stream-port':
+#            misc.StopWebStream()
+#            if settings.enableWebStream():
+#                reactor.callLater(0, misc.StartWebStream)
+#
+#        if self.path == 'logs.traffic-port':
+#            misc.StopWebTraffic()
+#            if settings.enableWebTraffic():
+#                reactor.callLater(0, misc.StartWebTraffic)
+#
+#        if self.path == 'logs.debug-level':
+#            try:
+#                lg.set_debug_level(int(self.value))
+#            except:
+#                lg.out(1, 'webcontrol.SettingsTreeNode.modified ERROR wrong value!')
+#
+#        if self.path == 'services.backups.block-size':
+#            settings.setBackupBlockSize(self.value)
+#
+#        if self.path == 'services.backups.max-block-size':
+#            settings.setBackupMaxBlockSize(self.value)
             
     def body(self, request):
         global SettingsTreeNodesDict
         lg.out(12, 'webcontrol.SettingsTreeNode.body path='+self.path)
+        # src = '<h3>%s</h3>\n' % self.path
+        src = ''
         if not self.has_childs:
-            return ''
-        src = '<br>'
-        back = arg(request, 'back')
-        childs = settings.uconfig().get_childs(self.path).keys()
-        lg.out(12, 'webcontrol.SettingsTreeNode.body childs='+str(childs))
-        for path in userconfig.all_options():
-            if path.strip() == '':
-                continue
-            if path not in childs:
-                continue
-            leafs = path.split('.')
+            src += '<p>no childs</p>\n'
+            return src
+        # back = arg(request, 'back')
+        childs = config.conf().listEntries(self.path)
+        lg.out(12, '    childs=%s' % str(childs))
+        for path in childs: # config.conf().listAllEntries():
+            # if path.strip() == '':
+            #     continue
+            # if path not in childs:
+            #     continue
+            leafs = path.split('/')
             name = leafs[-1]
-            typ = _SettingsTreeNodesDict.get(name, None)
-            if typ is None:
-                continue
+            lowchilds = config.conf().listEntries(path)
+            if len(lowchilds) > 0:
+                value = '[more]'
+            else:
+                value = config.conf().getData(path, '?')
+            if value.strip() == '':
+                value = '[empty]'
+            # typ = _SettingsTreeNodesDict.get(path, None)
+            # if typ is None:
+            #     continue
             if len(leafs) == len(self.leafs)+1:
-                label = settings.uconfig().labels.get(path, '')
                 args = ''
-                if back:
-                    args += '?back=' + back
-                src += '<br><a href="%s%s">%s</a>\n' % ('/' + _PAGE_SETTINGS + '/' + path, args , label)
+                # if back:
+                #     args += '?back=' + back
+                # else:
+                args += '?back=' + request.path
+                src += '<br>%s: <a href="%s%s"><b>%s</b></a>\n' % (
+                    name, '/' + _PAGE_SETTINGS + '/' + (path.replace('/', '.')), 
+                    args, value)
         return src
 
 class SettingsTreeYesNoNode(SettingsTreeNode):
@@ -7955,20 +8041,17 @@ class SettingsTreeYesNoNode(SettingsTreeNode):
             if choice.lower() != self.value.lower():
                 self.requestModify(self.path, choice)
             return 'redirect ' + back
-
         yes = no = ''
         if self.value.lower() == 'true':
             yes = 'checked'
         else:
             no = 'checked'
-
         if back:
             back = '&back=' + back
-
         src = ''
         src += '<br><font size=+2>\n'
         if not ReadOnly():
-            src += '<a href="%s?choice=True%s">' % (request.path, back)
+            src += '<a href="%s?choice=true%s">' % (request.path, back)
         if yes:
             src += '<b>[Yes]</b>'
         else:
@@ -7977,7 +8060,7 @@ class SettingsTreeYesNoNode(SettingsTreeNode):
             src += '</a>'
         src += '\n&nbsp;&nbsp;&nbsp;\n'
         if not ReadOnly():
-            src += '<a href="%s?choice=False%s">' % (request.path, back)
+            src += '<a href="%s?choice=false%s">' % (request.path, back)
         if no:
             src += '<b>[No]</b>'
         else:
@@ -7997,11 +8080,12 @@ def SettingsTreeAddComboboxList(name, l):
 class SettingsTreeComboboxNode(SettingsTreeNode):
     def listitems(self):
         global _SettingsTreeComboboxNodeLists
-        combo_list = _SettingsTreeComboboxNodeLists.get(self.leafs[-1], list())
+        combo_list = _SettingsTreeComboboxNodeLists.get(self.path, list())
         return map(str, combo_list)
     def body(self, request):
         back = arg(request, 'back', '/'+_PAGE_CONFIG)
         items = self.listitems()
+        print items
         message = ('', 'info')
         choice = arg(request, 'choice', None)
         if choice is not None and not ReadOnly():
@@ -8265,22 +8349,21 @@ class SettingsPage(Page):
         global _SettingsTreeNodesDict
         lg.out(6, 'webcontrol.SettingsPage.renderPage args=%s' % str(request.args))
         src = ''
-        for path in userconfig.all_options():
-            if path.strip() == '':
-                continue
+        for path in config.conf().listAllEntries():
+#             if path.strip() == '':
+#                 continue
 #            if path not in settings.uconfig().public_options:
 #                continue
-            value = settings.uconfig().data.get(path, '')
-            label = settings.uconfig().labels.get(path, '')
-            info = settings.uconfig().infos.get(path, '')
-            leafs = path.split('.')
+            value = config.conf().getData(path)
+            label = path # settings.uconfig().labels.get(path, '')
+            info = '' # settings.uconfig().infos.get(path, '')
+            leafs = path.split('/')
             name = leafs[-1]
-            typ = _SettingsTreeNodesDict.get(name, None)
+            typ = _SettingsTreeNodesDict.get(path, None)
 
             if len(leafs) == 1 and typ is not None:
                 src += '<h3><a href="%s">%s</a></h3>\n' % (
-                    _PAGE_SETTINGS+'/'+path,
-                    label.capitalize())
+                    _PAGE_SETTINGS+'/'+path, label.capitalize())
                 
         return html(request, body=src, back='/'+_PAGE_CONFIG, title='settings')
 
@@ -8288,13 +8371,14 @@ class SettingsPage(Page):
         global _SettingsTreeNodesDict
         if path == '':
             return self
-        leafs = path.split('.')
-        name = leafs[-1]
-        cls = _SettingsTreeNodesDict.get(name, SettingsTreeNode)
+        path = path.replace('.', '/')
+        # leafs = path.split('/')
+        # name = leafs[-1]
+        cls = _SettingsTreeNodesDict.get(path, SettingsTreeNode)
+        # print 'getChild', path, cls
         #TODO
         if isinstance(cls, str):
             return SettingsTreeNode(path)
-
         return cls(path)
 
 
@@ -8308,9 +8392,9 @@ class SettingsListPage(Page):
                 continue
             if path not in userconfig.public_options():
                 continue
-            value = settings.uconfig().data.get(path, '').replace('\n', ' ')
-            label = settings.uconfig().labels.get(path, '')
-            info = settings.uconfig().infos.get(path, '')
+            value = config.conf().getData(path).replace('\n', ' ')
+            label = path # settings.uconfig().labels.get(path, '')
+            info = '' # settings.uconfig().infos.get(path, '')
             src += '<tr>\n'
             src += '<td><a href="%s">%s</a></td>\n' % (_PAGE_SETTINGS+'/'+path, path)
             src += '<td>%s</td>\n' % label

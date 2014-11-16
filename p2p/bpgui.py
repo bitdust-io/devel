@@ -502,8 +502,8 @@ class MyHtmlWindow(wx.html.HtmlWindow):
 #            self.SetFonts("arial", "courier new", _FONT_SIZES)
 #        if "wxMSW" in wx.PlatformInfo:
 #            # Original font sizes are [7, 8, 10, 12, 16, 22, 30]
-#            _FONT_SIZES = [5, 6,  8, 10, 14, 20, 24]
-#            self.SetFonts("Microsoft Sans Serif", "Courier New", _FONT_SIZES)
+#             _FONT_SIZES = [5, 6,  8, 10, 14, 20, 24]
+#             self.SetFonts("Microsoft Sans Serif", "Courier New", _FONT_SIZES)
         self.SetBorders(5)
         self.SetDoubleBuffered(True)
         self.clickedTime = None
@@ -1274,10 +1274,10 @@ class MyFrame(wx.Frame):
             if os.path.isfile(sharedPath('mykeyfile', 'metadata')) and os.path.isfile(sharedPath('localidentity', 'metadata')):
                 self.toolbar = self.CreateToolBar(wx.TB_RIGHT)
                 self.toolbar.SetToolBitmapSize((31,31))
-                self.Bind(wx.EVT_MENU, self.OnLogs, self.toolbar.AddSimpleTool(1, openWxImage('icons/log32.png'), 'Logs', ''))
-                self.Bind(wx.EVT_MENU, self.OnTraffic, self.toolbar.AddSimpleTool(2, openWxImage('icons/history32.png'), 'Packet History', ''))
-                self.Bind(wx.EVT_MENU, self.OnQueues, self.toolbar.AddSimpleTool(3, openWxImage('icons/traffic32.png'), 'Traffic', ''))
-                self.Bind(wx.EVT_MENU, self.OnCounters, self.toolbar.AddSimpleTool(4, openWxImage('icons/counter32.png'), 'Counters', ''))
+                # self.Bind(wx.EVT_MENU, self.OnLogs, self.toolbar.AddSimpleTool(1, openWxImage('icons/log32.png'), 'Logs', ''))
+                self.Bind(wx.EVT_MENU, self.OnTraffic, self.toolbar.AddSimpleTool(2, openWxImage('icons/traffic32.png'), 'Packet History', ''))
+                # self.Bind(wx.EVT_MENU, self.OnQueues, self.toolbar.AddSimpleTool(3, openWxImage('icons/traffic32.png'), 'Traffic', ''))
+                # self.Bind(wx.EVT_MENU, self.OnCounters, self.toolbar.AddSimpleTool(4, openWxImage('icons/counter32.png'), 'Counters', ''))
                 self.Bind(wx.EVT_MENU, self.OnEvents, self.toolbar.AddSimpleTool(5, openWxImage('icons/event32.png'), 'Events', ''))
                 self.Bind(wx.EVT_MENU, self.OnStates, self.toolbar.AddSimpleTool(6, openWxImage('icons/states32-1.png'), 'Automats', ''))
                 self.toolbar.AddSeparator()

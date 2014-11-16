@@ -52,6 +52,7 @@ from userid import known_servers
 from transport import gate
 from transport import stats
 from transport import packet_out
+from transport.tcp import tcp_node
 
 from dht import dht_service
 
@@ -210,7 +211,8 @@ def SendServers():
         webport, tcpport = known_servers.by_host().get(host, 
             (settings.IdentityWebPort(), settings.IdentityServerPort()))
         srvhost = '%s:%d'%(host, int(tcpport))
-        dlist.append(gate.send_file_single('tcp', srvhost, sendfilename, 'Identity'))
+        dlist.append(tcp_node.send(sendfilename, (host, int(tcpport)), 'Identity', True)) 
+        # dlist.append(gateway.send_file_single('tcp', srvhost, sendfilename, 'Identity'))
     dl = DeferredList(dlist, consumeErrors=True)
     return dl
 

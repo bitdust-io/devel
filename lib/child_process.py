@@ -136,7 +136,7 @@ def pipe(cmdargs):
             import win32process
             p = nonblocking.Popen(
                 cmdargs,
-                shell=False,
+                shell=True,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
