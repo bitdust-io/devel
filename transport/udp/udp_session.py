@@ -34,6 +34,11 @@ import udp_interface
 
 #------------------------------------------------------------------------------ 
 
+_Debug = False
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------ 
+
 MIN_PROCESS_SESSIONS_DELAY = 0.001
 MAX_PROCESS_SESSIONS_DELAY = 1.0
   
@@ -76,7 +81,8 @@ def pending_outbox_files():
 def create(node, peer_address, peer_id=None):
     """
     """
-    lg.out(14, 'udp_session.create peer_address=%s' % str(peer_address))
+    if _Debug:
+        lg.out(_DebugLevel, 'udp_session.create peer_address=%s' % str(peer_address))
     s = UDPSession(node, peer_address, peer_id)
     sessions()[s.id] = s
     try:
@@ -94,8 +100,9 @@ def create(node, peer_address, peer_id=None):
 def get(peer_address):
     """
     """
-    # lg.out(18, 'udp_session.get %s %s' % (str(peer_address), 
-    #     str(map(lambda s:s.peer_address, sessions().values()))))
+    if _Debug:
+        lg.out(_DebugLevel, 'udp_session.get %s %s' % (str(peer_address), 
+            str(map(lambda s:s.peer_address, sessions().values()))))
     for s in sessions_by_peer_address().get(peer_address, []):
         return s
     # for id, s in sessions().items():
@@ -129,8 +136,9 @@ def add_pending_outbox_file(filename, host, description='', result_defer=None, s
     """
     """
     pending_outbox_files().append((filename, host, description, result_defer, single, time.time()))
-    lg.out(18, 'udp_session.add_pending_outbox_file %s for %s : %s' % (
-        os.path.basename(filename), host, description) )
+    if _Debug:
+        lg.out(_DebugLevel, 'udp_session.add_pending_outbox_file %s for %s : %s' % (
+            os.path.basename(filename), host, description) )
 
 
 def remove_pending_outbox_file(host, filename):
@@ -139,12 +147,31 @@ def remove_pending_outbox_file(host, filename):
     while i < len(pending_outbox_files()):
         fn, hst, description, result_defer, single, tm = pending_outbox_files()[i] 
         if fn == filename and host == hst:
-            lg.out(14, 'udp_interface.cancel_outbox_file removed pending %s for %s' % (os.path.basename(fn), hst))
+            if _Debug:
+                lg.out(_DebugLevel, 'udp_interface.cancel_outbox_file removed pending %s for %s' % (
+                    os.path.basename(fn), hst))
             pending_outbox_files().pop(i)
             ok = True
         else:
             i += 1
     return ok
+
+
+def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
+    """
+    """
+    global _PendingOutboxFiles
+    i = 0
+    while i < len(_PendingOutboxFiles):
+        filename, host, description, result_defer, single, tm = _PendingOutboxFiles[i]
+        if host == remote_host:
+            udp_interface.interface_cancelled_file_sending(
+                remote_host, filename, 0, description, error_message)
+            if result_defer:
+                result_defer.callback(((filename, description), 'failed', error_message))
+            _PendingOutboxFiles.pop(i)
+        else:
+            i += 1
 
 
 def process_sessions():
@@ -438,7 +465,7 @@ class UDPSession(automat.Automat):
             if new_peer_id != self.peer_id:
                 lg.warn('session: %s,  peer_id from GREETING is different: %s' % (self, new_peer_id))
         else:
-            lg.out(14, 'udp_session.doAcceptGreeting detected peer id : %s for session %s' % (new_peer_id, self.peer_address))
+            lg.out(_DebugLevel, 'udp_session.doAcceptGreeting detected peer id : %s for session %s' % (new_peer_id, self.peer_address))
             self.peer_id = new_peer_id
             first_greeting = True
             try:
@@ -449,7 +476,9 @@ class UDPSession(automat.Automat):
             if new_peer_idurl != self.peer_idurl:
                 lg.warn('session: %s,  peer_idurl from GREETING is different: %s' % (self, new_peer_idurl))
         else:
-            lg.out(14, 'udp_session.doAcceptGreeting detected peer idurl : %s for session %s' % (new_peer_idurl, self.peer_address))
+            if _Debug:
+                lg.out(_DebugLevel, 'udp_session.doAcceptGreeting detected peer idurl : %s for session %s' % (
+                    new_peer_idurl, self.peer_address))
             self.peer_idurl = new_peer_idurl
             first_greeting = True
         if first_greeting:
@@ -540,27 +569,8 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        global _PendingOutboxFiles
-        i = 0
-        # outgoings = 0
-        # print 'doClosePendingFiles', self.peer_id, len(_PendingOutboxFiles)
-        while i < len(_PendingOutboxFiles):
-            filename, host, description, result_defer, single, tm = _PendingOutboxFiles[i]
-            # print filename, host, description, 
-            if host == self.peer_id:
-                # print 'pop'
-                # outgoings += 1
-                udp_interface.interface_cancelled_file_sending(
-                    self.peer_id, filename, 0, description, self.error_message)
-                if result_defer:
-                    result_defer.callback(((filename, description), 'failed', self.error_message))
-                _PendingOutboxFiles.pop(i)
-            else:
-                i += 1
-                # print 'skip'
-        # print len(_PendingOutboxFiles)
-        # if outgoings > 0:
-        #     reactor.callLater(0, process_sessions)
+        report_and_remove_pending_outbox_files_to_host(
+            self.peer_id, self.error_message)
         self.file_queue.report_failed_inbox_files(self.error_message)
         self.file_queue.report_failed_outbox_files(self.error_message)
         self.file_queue.report_failed_outbox_queue(self.error_message)
@@ -599,7 +609,7 @@ class UDPSession(automat.Automat):
         for rtt_id in to_remove:
             # print 'doFinishAllRTTs closed', rtt_id
             del self.rtts[rtt_id]
-        lg.out(18, 'udp_session.doFinishAllRTTs: %r' % good_rtts)# print self.rtts.keys()
+            lg.out(_DebugLevel, 'udp_session.doFinishAllRTTs: %r' % good_rtts)# print self.rtts.keys()
         
     def doErrMsg(self, event, arg):
         """
@@ -614,7 +624,8 @@ class UDPSession(automat.Automat):
         """
         Action method.
         """
-        lg.out(18, 'udp_session.doDestroyMe %s' % self)
+        if _Debug:
+            lg.out(_DebugLevel, 'udp_session.doDestroyMe %s' % self)
         self.file_queue.close()
         self.file_queue = None
         self.node = None
@@ -646,7 +657,7 @@ class UDPSession(automat.Automat):
             i += 1
         new_rtt_id = name+str(i)
         self.rtts[new_rtt_id] = [time.time(), -1]
-        # lg.out(18, 'udp_session._rtt_start added new RTT %s' % new_rtt_id)
+        #     lg.out(_DebugLevel, 'udp_session._rtt_start added new RTT %s' % new_rtt_id)
         if len(self.rtts) > 10:
             oldest_rtt_moment = time.time()
             oldest_rtt_id = None
@@ -658,11 +669,11 @@ class UDPSession(automat.Automat):
             if oldest_rtt_id:
                 rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
                 del self.rtts[oldest_rtt_id]
-                # lg.out(18, 'udp_session._rtt_start removed oldest RTT %s  %r' % (
+                #     lg.out(_DebugLevel, 'udp_session._rtt_start removed oldest RTT %s  %r' % (
                 #     oldest_rtt_id, rtt))
         while len(self.rtts) > 10:
             i = self.rtts.popitem()
-            # lg.out(18, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
+            #     lg.out(_DebugLevel, 'udp_session._rtt_finish removed one extra item : %r' % str(i))
         # print 'rtt start', new_rtt_id, self.peer_id
         return new_rtt_id
         
@@ -675,15 +686,16 @@ class UDPSession(automat.Automat):
 #                if self.rtts[rtt_id][1] == -1:
 #                    rtt = self.rtts[rtt_id][1] - self.rtts[rtt_id][0]
 #                    del self.rtts[rtt_id]
-#                    lg.out(18, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
+#                        lg.out(_DebugLevel, 'udp_session._rtt_finish removed not finished RTT %s:%r' % (
 #                        rtt_id, rtt))
 #                    return
 #            lg.warn('rtt %s not found in %s' % (rtt_id_in, self))
 #            return
         self.rtts[rtt_id_in][1] = time.time()
         rtt = self.rtts[rtt_id_in][1] - self.rtts[rtt_id_in][0]
-        # lg.out(18, 'udp_session._rtt_finish registered RTT %s  %r' % (
-            # rtt_id_in, rtt))
+        if _Debug:
+            lg.out(_DebugLevel, 'udp_session._rtt_finish registered RTT %s  %r' % (
+                rtt_id_in, rtt))
         
         
         
