@@ -59,7 +59,7 @@ def A(event=None, arg=None):
     global _IdServer
     if _IdServer is None:
         # set automat name and starting state here
-        _IdServer = IdServer('id_server', 'AT_STARTUP', 2)
+        _IdServer = IdServer('id_server', 'AT_STARTUP', 2, True)
     if event is None:
         return _IdServer
     _IdServer.automat(event, arg)
@@ -76,8 +76,8 @@ class IdServer(automat.Automat):
         """
         self.web_listener = None
         self.tcp_listener = None  
-        self.web_port = 8084
-        self.tcp_port = 6661
+        self.web_port = settings.IdentityWebPort()
+        self.tcp_port = settings.IdentityServerPort()
         self.hostname = ''
 
     def A(self, event, arg):
@@ -102,7 +102,6 @@ class IdServer(automat.Automat):
         elif self.state == 'STOPPED':
             if event == 'start' :
                 self.state = 'LISTEN'
-                self.doSaveParams(arg)
                 self.doSetUp(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
@@ -116,7 +115,6 @@ class IdServer(automat.Automat):
                 self.state = 'LISTEN'
                 self.doSetUp(arg)
             elif event == 'start' :
-                self.doSaveParams(arg)
                 self.Restart=True
             elif event == 'server-down' and not self.Restart :
                 self.state = 'STOPPED'
@@ -129,13 +127,8 @@ class IdServer(automat.Automat):
         """
         Action method.
         """
-        
-    def doSaveParams(self, arg):
-        """
-        Action method.
-        """
         self.web_port, self.tcp_port = arg
-
+                
     def doSetUp(self, arg):
         """
         Action method.
@@ -415,9 +408,10 @@ def main():
     settings.init()
     lg.set_debug_level(20)
     reactor.addSystemEventTrigger('before', 'shutdown', 
-                                  A().communicate, 'shutdown')
-    reactor.callWhenRunning(A, 'start', (
-        (settings.getIdServerWebPort(), settings.getIdServerTCPPort())))
+                                  A().automat, 'shutdown')
+    reactor.callWhenRunning(A, 'init', 
+        (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
+    reactor.callLater(0, A, 'start')
     reactor.run()
     lg.out(2, 'reactor stopped, EXIT')
 

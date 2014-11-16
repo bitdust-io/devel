@@ -1343,19 +1343,13 @@ def getBandOutLimit():
     """
     This is a current outgoing bandwidth limit in bytes per second.
     """
-    try:
-        return int(config.conf().getData('services/network/send-limit'))
-    except:
-        return 0
+    return config.conf().getInt('services/network/send-limit', DefaultBandwidthOutLimit())
 
 def getBandInLimit():
     """
     This is a current incoming bandwidth limit in bytes per second.
     """
-    try:
-        return int(config.conf().getData('services/network/receive-limit'))
-    except:
-        return 0
+    return config.conf().getInt('services/network/receive-limit', DefaultBandwidthInLimit())
 
 def enableIdServer(enable=None):
     """
@@ -1372,27 +1366,27 @@ def getIdServerHost():
 def setIdServerHost(hostname_or_ip):
     """
     """
-    config.conf().setData("services/id-server/host", hostname_or_ip)
+    return config.conf().setData("services/id-server/host", hostname_or_ip)
     
 def getIdServerWebPort():
     """
     """
-    return int(config.conf().getData("services/id-server/web-port").strip())
+    return config.conf().getInt("services/id-server/web-port", IdentityWebPort())
 
 def setIdServerWebPort(web_port):
     """
     """
-    config.conf().setData("services/id-server/web-port", str(web_port))
+    return config.conf().setInt("services/id-server/web-port", web_port)
     
 def getIdServerTCPPort():
     """
     """
-    return int(config.conf().getData("services/id-server/tcp-port").strip())
+    return config.conf().getInt("services/id-server/tcp-port", IdentityServerPort())
 
 def setIdServerTCPPort(tcp_port):
     """
     """
-    config.conf().setData("services/id-server/tcp-port", str(tcp_port))
+    return config.conf().setInt("services/id-server/tcp-port", tcp_port)
     
 def getTransportPort(proto):
     """
