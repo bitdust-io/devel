@@ -30,7 +30,7 @@ class UDPDatagramsService(LocalService):
         from lib import udp
         from lib import settings
         from lib.config import conf
-        udp_port = int(settings.getUDPPort())
+        udp_port = settings.getUDPPort()
         if not udp.proto(udp_port):
             udp.listen(udp_port)
         conf().addCallback('services/udp-datagrams/udp-port', self.on_udp_port_modified)
@@ -40,7 +40,7 @@ class UDPDatagramsService(LocalService):
         from lib import udp
         from lib import settings
         from lib.config import conf
-        udp_port = int(settings.getUDPPort())
+        udp_port = settings.getUDPPort()
         if udp.proto(udp_port):
             udp.close(udp_port)
         conf().removeCallback('services/udp-datagrams/udp-port')

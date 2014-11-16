@@ -1318,6 +1318,7 @@ class InstallPage(Page):
         src += '</td></tr>\n'
         src += '<tr><td align=left>\n'
         src += '<input fontsize="+5" id="radio2" type="radio" name="action" value="recover my account and backups" />\n'
+        src += '<font color=gray>this feature temporarily disabled</font>\n'
         src += '</td></tr>\n'
         src += '<tr><td align=center>\n'
         src += '<br><br><input type="submit" name="submit" value=" next "/>\n'
@@ -1332,7 +1333,8 @@ class InstallPage(Page):
                 action = 'register a new account'
             action = action.replace('register a new account', 'register-selected')
             action = action.replace('recover my account and backups', 'recover-selected')
-            installer.A(action)
+            if action != 'recover-selected': # TODO
+                installer.A(action)
         return result
 
     def renderRegisterNewUserPage(self, request):
@@ -5369,7 +5371,7 @@ class NetworkSettingsPage(Page):
                 'yes' if settings.enableTCPreceiving() else 'no')
             src += '<br><p>listen on port: <a href="%s?back=%s">%s</a></p>\n' % (
                 '/'+_PAGE_SETTINGS+'/'+'services.tcp-connections.tcp-port', request.path,
-                settings.getTCPPort())
+                str(settings.getTCPPort()))
             src += '<br><p>enable UPnP: <a href="%s?back=%s">%s</a></p>\n' % (
                 '/'+_PAGE_SETTINGS+'/'+'other.upnp-enabledd', request.path,
                 'yes' if settings.enableUPNP() else 'no')
@@ -5387,14 +5389,14 @@ class NetworkSettingsPage(Page):
                 'yes' if settings.enableUDPreceiving() else 'no')
             src += '<p>UDP port for data transport: <a href="%s?back=%s">%s</a></h3>\n' % (
                 '/'+_PAGE_SETTINGS+'/'+'services.udp-datagrams.udp-port', request.path,
-                settings.getUDPPort())
+                str(settings.getUDPPort()))
         src += '</td>\n'
         src += '</tr>\n'
         src += '<tr>\n'
         src += '<td width=50% valign=top nowrap><h3>Distributed Hash Table</h3>\n'
         src += '<p>UDP port for DHT network: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'services.entangled-dht.udp-port', request.path,
-            settings.getDHTPort())
+            str(settings.getDHTPort()))
         src += '</td>\n'
         src += '<td width=50% valign=top nowrap><h3>Bandwidth</h3>\n'
         src += '<p>outgoing bandwidth limit: <a href="%s?back=%s">%s</a> (bytes/sec.)</p>\n' % (

@@ -251,6 +251,7 @@ class Automat(object):
         self.debug_level = debug_level
         self.log_events = log_events
         self._timers = {}
+        self._state_callbacks = {}
         self.init()
         self.startTimers()
         self.log(self.debug_level,  'CREATED AUTOMAT %s with index %d' % (str(self), self.index))
@@ -284,6 +285,14 @@ class Automat(object):
         """
         return '%s(%s)' % (self.id, self.state)
 
+    def A(self, event, arg):
+        """
+        Must define this method in subclass. 
+        This is the core method of the SWITCH-technology.
+        I am using ``visio2python`` (created by me) to generate Python code from MS Visio drawing.
+        """
+        raise NotImplementedError
+
     def init(self):
         """
         Define this method in subclass to execute some code when creating an object.
@@ -296,48 +305,42 @@ class Automat(object):
         that instance so destructor will be called immediately.
         """
         self.log(self.debug_level, 'destroying %r, refs=%d' % (self, sys.getrefcount(self)))
+        self._state_callbacks.clear()
         self.stopTimers()
         # self.state = 'NOT_EXIST'
         objects().pop(self.index)
         # print sys.getrefcount(self)
                     
 
-    def state_changed(self, oldstate, newstate, event, arg):
+    def state_changed(self, oldstate, newstate, event_string, arg):
         """
         Redefine this method in subclass to be able to catch the moment 
         immediately after automat's state were changed.
         """        
 
-    def state_not_changed(self, curstate, event, arg):
+    def state_not_changed(self, curstate, event_string, arg):
         """
         Redefine this method in subclass if you want to do some actions
         immediately after processing the event, which did not change the automat's state.
         """        
 
-    def A(self, event, arg):
-        """
-        Must define this method in subclass. 
-        This is the core method of the SWITCH-technology.
-        I am using ``visio2python`` (created by me) to generate Python code from MS Visio drawing.
-        """
-        raise NotImplementedError
-
-    def communicate(self, event, arg=None):
+    def communicate(self, event_string, arg=None):
         """
         Use ``arg`` to pass extra data the conditions and actions methods.
         This method creates a Deferred object, pass it as a parameter with ``event`` 
         into the state machine and return that defer to outside - to catch result.
-        In the action method you must call ``callback`` or ``errback`` to pass result. 
+        In the action method you must call ``callback`` or ``errback`` to pass result.
+        See ``addStateChangedCallback()`` for more advanced interaction. 
         """
         d = Deferred()
         args = arg
         if not args:
             args = ()
         args = tuple(list(args)+[d,])
-        self.automat(event, args) 
+        self.automat(event_string, args) 
         return d
 
-    def automat(self, event, arg=None):
+    def automat(self, event_string, arg=None):
         """
         Call it like this::
         
@@ -348,54 +351,58 @@ class Automat(object):
         If ``self.fast=False`` - the ``self.A()`` method will be executed in delayed call.
         """ 
         if self.fast:
-            self.event(event, arg)
+            self.event(event_string, arg)
         else:
-            reactor.callLater(0, self.event, event, arg) #@UndefinedVariable 
+            reactor.callLater(0, self.event, event_string, arg) #@UndefinedVariable 
 
-    def event(self, event, arg=None):
+    def event(self, event_string, arg=None):
         """
-        You can call event directly to execute ``self.A()`` immediately. 
+        You can call ``event()`` directly to execute ``self.A()`` immediately,
+        but preferred way is too call ``automat()`` method.
+        Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).   
         """
         global _StateChangedCallback
         if _LogEvents:
             self.log(self.debug_level * 4, '%s fired with event "%s", refs=%d' % (
-                self, event, sys.getrefcount(self)))
+                self, event_string, sys.getrefcount(self)))
         elif self.log_events:
             self.log(self.debug_level, '%s fired with event "%s", refs=%d' % (
-                self, event, sys.getrefcount(self)))
+                self, event_string, sys.getrefcount(self)))
         old_state = self.state
         if self.post:
             try:
-                new_state = self.A(event, arg)
+                new_state = self.A(event_string, arg)
             except:
                 self.log(self.debug_level, traceback.format_exc())
                 return
             self.state = new_state
         else:
             try:
-                self.A(event, arg)
+                self.A(event_string, arg)
             except:
                 self.log(self.debug_level, traceback.format_exc())
                 return
             new_state = self.state
         if old_state != new_state:
-            self.log(self.debug_level, '%s(%s): (%s)->(%s)' % (self.id, event, old_state, new_state))
+            self.log(self.debug_level, '%s(%s): (%s)->(%s)' % (
+                self.id, event_string, old_state, new_state))
             self.stopTimers()
-            self.state_changed(old_state, new_state, event, arg)
+            self.state_changed(old_state, new_state, event_string, arg)
             self.startTimers()
             if _StateChangedCallback is not None:
                 _StateChangedCallback(self.index, self.id, self.name, new_state)
         else:
-            self.state_not_changed(self.state, event, arg)
+            self.state_not_changed(self.state, event_string, arg)
+        self.executeStateChangedCallbacks(old_state, new_state, event_string, arg)
 
-    def timer_event(self, name, interval):
+    def timerEvent(self, name, interval):
         """
         This method fires the timer events.
         """
         if self.timers.has_key(name) and self.state in self.timers[name][1]:
             self.automat(name)
         else:
-            self.log(self.debug_level, '%s.timer_event ERROR timer %s not found in self.timers' % (str(self), name))
+            self.log(self.debug_level, '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
 
     def stopTimers(self):
         """
@@ -413,7 +420,7 @@ class Automat(object):
         for name, (interval, states) in self.timers.items():
             if len(states) > 0 and self.state not in states:
                 continue
-            self._timers[name] = LoopingCall(self.timer_event, name, interval)
+            self._timers[name] = LoopingCall(self.timerEvent, name, interval)
             self._timers[name].start(interval, self.instant_timers)
             # self.log(self.debug_level * 4, '%s.startTimers timer %s started' % (self, name))
 
@@ -465,4 +472,70 @@ class Automat(object):
                 lg.out(level, text)
             except:
                 pass
+            
+    def addStateChangedCallback(self, cb, oldstate=None, newstate=None):
+        """
+        You can add a callback function to be executed when state machine 
+        reaches particular condition, it will be called with such arguments:
+        
+            cb(oldstate, newstate, event_string, args)
+        
+        For example, methodA will be called when machineA become "ONLINE":
+            
+            machineA.addStateChangedCallback(methodA, None, "ONLINE")
+            
+        If you set "None" to both arguments, 
+        the callback will be executed every time when the state gets changed:
+        
+            machineB.addStateChangedCallback(methodB)
+            
+        """
+        key = (oldstate, newstate)
+        if not self._state_callbacks.has_key(key):
+            self._state_callbacks[key] = []
+        if cb not in self._state_callbacks[key]:
+            self._state_callbacks[key].append(cb)
+    
+    def removeStateChangedCallback(self, cb):
+        """
+        Remove given callback from the state machine.
+        """
+        for key, cb_list in self._state_callbacks.items():
+            for cb_ in cb_list:
+                if cb == cb_:
+                    self._state_callbacks[key].remove(cb)
+                    if len(self._state_callbacks[key]) == 0:
+                        self._state_callbacks.pop(key)
+                    break
+    
+    def removeStateChangedCallbackByState(self, oldstate=None, newstate=None):
+        """
+        Removes all callback methods with given condition.
+        This is useful if you use ``lambda x: do_somethig()`` 
+        to catch the moment when state gets changed.
+        """
+        for key in self._state_callbacks.keys():
+            if key == (oldstate, newstate):
+                self._state_callbacks.pop(key)
+                break
+
+    def executeStateChangedCallbacks(self, oldstate, newstate, event_string, args):
+        """
+        Compare conditions and execute state changed callback methods.
+        """
+        for key, cb_list in self._state_callbacks.items():
+            old, new = key
+            catched = False
+            if old is None and new is None:
+                catched = True
+            elif old is None and new == newstate:
+                catched = True
+            elif new is None and old == oldstate:
+                catched = True
+            elif old == oldstate and new == newstate:
+                catched = True
+            if catched:
+                for cb in cb_list:
+                    cb(oldstate, newstate, event_string, args)
+
 

@@ -22,6 +22,9 @@ class StunClientService(LocalService):
     service_name = 'service_stun_client'
     config_path = 'services/stun-client/enabled'
     
+    def init(self):
+        self._my_address = None
+    
     def dependent_on(self):
         return ['service_entangled_dht',
                 'service_udp_datagrams',
@@ -31,17 +34,11 @@ class StunClientService(LocalService):
         from stun import stun_client
         from lib import settings
         from twisted.internet.defer import Deferred
-        try:
-            port_num = int(settings.getUDPPort())
-        except:
-            from logs import lg
-            lg.exc()
-            port_num = settings.DefaultUDPPort()
-        stun_client.A('init', port_num)
+        stun_client.A('init', settings.getUDPPort())
         d = Deferred()
         stun_client.A('start', 
             lambda result, typ, ip, details: 
-                d.callback(ip) if result == 'stun-success' else d.errback(details))
+                self.on_stun_client_finished(result, typ, ip, details, d))
         return d
     
     def stop(self):
@@ -49,5 +46,10 @@ class StunClientService(LocalService):
         stun_client.A('shutdown')
         return True
     
+    def on_stun_client_finished(self, result, typ, ip, details, result_defer):
+        from stun import stun_client
+        # if result == 'stun-success':
+        result_defer.callback(stun_client.A().getMyExternalAddress()) 
+        # else:
+        #     result_defer.callback()
 
-    

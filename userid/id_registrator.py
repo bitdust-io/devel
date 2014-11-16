@@ -434,7 +434,7 @@ class IdRegistrator(automat.Automat):
         ident.sources.extend(self.free_idurls)
         cdict = {}
         if settings.enableTCP():
-            cdict['tcp'] = 'tcp://'+externalIP+':'+settings.getTCPPort()
+            cdict['tcp'] = 'tcp://'+externalIP+':'+str(settings.getTCPPort())
         if settings.enableUDP():
             try:
                 protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])

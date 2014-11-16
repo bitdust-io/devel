@@ -26,6 +26,7 @@ if __name__ == '__main__':
 
 from logs import lg
 
+from lib import bpio
 from lib import automat
 from lib import udp
 from lib import settings
@@ -45,7 +46,7 @@ def A(event=None, arg=None):
     global _StunClient
     if _StunClient is None:
         # set automat name and starting state here
-        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8, True)
+        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8)
     if event is not None:
         _StunClient.automat(event, arg)
     return _StunClient
@@ -79,8 +80,15 @@ class StunClient(automat.Automat):
         self.stun_nodes = []
         self.stun_servers = []
         self.stun_results = {}
+        self.my_address = None
         self.deferreds = {}
-        
+
+    def getMyExternalAddress(self):
+        return self.my_address
+    
+    def dropMyExternalAddress(self):
+        self.my_address = None
+
     def A(self, event, arg):
         #---STOPPED---
         if self.state == 'STOPPED':
@@ -230,8 +238,8 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        lg.out(12, 'stun_client.doStun to %d nodes: %r' % (
-            len(self.stun_servers), self.stun_servers))
+        lg.out(12, 'stun_client.doStun to %d nodes' % (
+            len(self.stun_servers))) # , self.stun_servers))
         for address in self.stun_servers:
             if address is None:
                 continue
@@ -272,15 +280,20 @@ class StunClient(automat.Automat):
             min_port = min(map(lambda addr: addr[1], self.stun_results.values()))
             max_port = max(map(lambda addr: addr[1], self.stun_results.values()))
             my_ip = self.stun_results.values()[0][0]
+            if min_port == max_port:
+                result = ('stun-success', 'non-symmetric', my_ip, min_port)
+            else:
+                result = ('stun-success', 'symmetric', my_ip, self.stun_results)
+            self.my_address = (my_ip, min_port)
         except:
             lg.exc()
             result = ('stun-failed', None, None, [])
-        if min_port == max_port:
-            result = ('stun-success', 'non-symmetric', my_ip, min_port)
-        else:
-            result = ('stun-success', 'symmetric', my_ip, self.stun_results)
+            self.my_address = None
+        if self.my_address:
+            bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
+            bpio.WriteFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
         lg.out(4, 'stun_client.doReportSuccess based on %d nodes: %s' % (
-            len(self.stun_results), str(result)))
+            len(self.stun_results), str(self.my_address)))
         for cb in self.callbacks:
             cb(result[0], result[1], result[2], result[3])
         self.callbacks = []
@@ -289,6 +302,7 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
+        self.my_address = None
         lg.out(4, 'stun_client.doReportFailed : %s' % arg)
         for cb in self.callbacks:
             cb('stun-failed', None, None, [])
@@ -359,14 +373,14 @@ def main():
     from twisted.internet import reactor
     lg.set_debug_level(30)
     settings.init()
-    dht_service.init(int(settings.getDHTPort()))
+    dht_service.init(settings.getDHTPort())
     dht_service.connect()
-    udp.listen(int(settings.getUDPPort()))
+    udp.listen(settings.getUDPPort())
     def _cb(result, typ, ip, details):
         print result, typ, ip, details
         A('shutdown')
         reactor.stop()
-    A('init', (int(settings.getUDPPort())))
+    A('init', (settings.getUDPPort()))
     A('start', _cb)
     reactor.run()
 

@@ -1481,7 +1481,7 @@ def setDHTPort(port):
         
 def enableTransport(proto, enable=None):
     """
-    Return a current state of given transport or set set a new state.
+    Return a current state of given network transport or set a new state.
     """
     # key = 'transport.transport-%s.transport-%s-enable' % (proto, proto)
     key = 'services/%s-transport/enabled' % proto
@@ -1702,9 +1702,8 @@ def getUpdatesModeValues():
     """
     List of available update modes.
     """
-    return  (
+    return (
         'install automatically',
-#        'ask before install',
         'only notify',
         'turn off updates', )
 
@@ -1984,48 +1983,48 @@ def _checkSettings():
     Validate some most important user settings.
     """
     if getSuppliersNumberDesired() < 0:
-        config.conf().setData("services/customer/suppliers-number", str(DefaultDesiredSuppliers()))
+        config.conf().setInt("services/customer/suppliers-number", DefaultDesiredSuppliers())
 
-    if getDonatedString() == '':
+    if getDonatedString() is None:
         config.conf().setData("services/supplier/donated-space", '%d bytes' % DefaultDonatedBytes())
     donatedV, donatedS = diskspace.SplitString(getDonatedString())
     if not donatedS:
         config.conf().setData("services/supplier/donated-space", str(getDonatedString())+' bytes')
 
-    if getNeededString() == '':
+    if getNeededString() is None:
         config.conf().setData("services/customer/needed-space", '%d bytes' % DefaultNeededBytes())
     neededV, neededS = diskspace.SplitString(getNeededString())
     if not neededS:
         config.conf().setData("services/customer/needed-space", str(getNeededString())+' bytes')
 
-    if getDebugLevelStr() == "":
+    if getDebugLevelStr() is None:
         config.conf().setData("logs/debug-level", str(defaultDebugLevel()))
 
-    if getTCPPort() == "":
-        config.conf().setData("services/tcp-connections/tcp-port", str(DefaultTCPPort()))
+    if config.conf().getData('services/tcp-connections/tcp-port') is None:
+        config.conf().setInt("services/tcp-connections/tcp-port", DefaultTCPPort())
 
-    if getUDPPort() == "":
-        config.conf().setData("services/udp-datagrams/udp-port", str(DefaultUDPPort()))
+    if config.conf().getData('services/udp-datagrams/udp-port') is None:
+        config.conf().setInt("services/udp-datagrams/udp-port", DefaultUDPPort())
 
-    if getDHTPort() == "":
-        config.conf().setData("services/entangled-dht/udp-port", str(DefaultDHTPort()))
+    if config.conf().getData('services/entangled-dht/udp-port') is None:
+        config.conf().setInt("services/entangled-dht/udp-port", DefaultDHTPort())
 
-    if getUpdatesMode().strip() not in getUpdatesModeValues():
+    if getUpdatesMode() is None or getUpdatesMode().strip() not in getUpdatesModeValues():
         config.conf().setData('updates/mode', getUpdatesModeValues()[0])
 
 #    if getGeneralDisplayMode().strip() not in getGeneralDisplayModeValues():
 #        config.conf().setData('general.general-display-mode', getGeneralDisplayModeValues()[0])
 
-    if getEmergencyFirstMethod() not in getEmergencyMethods():
-        config.conf().setData('emergency/first', getEmergencyMethods()[0])
+#    if getEmergencyFirstMethod() not in getEmergencyMethods():
+#        config.conf().setData('emergency/first', getEmergencyMethods()[0])
 
-    if getEmergencySecondMethod() not in getEmergencyMethods():
-        config.conf().setData('emergency/second', getEmergencyMethods()[1])
+#    if getEmergencySecondMethod() not in getEmergencyMethods():
+#        config.conf().setData('emergency/second', getEmergencyMethods()[1])
 
-    if getEmergencyFirstMethod() == getEmergencySecondMethod():
-        methods = list(getEmergencyMethods())
-        methods.remove(getEmergencyFirstMethod())
-        config.conf().setData('emergency/second', methods[0])
+#    if getEmergencyFirstMethod() == getEmergencySecondMethod():
+#        methods = list(getEmergencyMethods())
+#        methods.remove(getEmergencyFirstMethod())
+#        config.conf().setData('emergency/second', methods[0])
 
     
 

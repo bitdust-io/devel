@@ -29,7 +29,7 @@ class EntangledDHTService(LocalService):
     def start(self):
         from dht import dht_service
         from lib import settings
-        dht_service.init(int(settings.getDHTPort()), settings.DHTDBFile())
+        dht_service.init(settings.getDHTPort(), settings.DHTDBFile())
         dht_service.connect()
         return True
     

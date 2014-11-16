@@ -238,7 +238,7 @@ def main():
     lg.set_debug_level(24)
     settings.init()
     misc.init()
-    dht_service.init(int(settings.getDHTPort()))
+    dht_service.init(settings.getDHTPort())
     def _result(result, nickname):
         print result, nickname
         if result == 'finished':

@@ -126,7 +126,7 @@ def A(event=None, arg=None):
     """    
     global _P2PConnector
     if _P2PConnector is None:
-        _P2PConnector = P2PConnector('p2p_connector', 'AT_STARTUP', 6)
+        _P2PConnector = P2PConnector('p2p_connector', 'AT_STARTUP', 6, True)
     if event is not None:
         _P2PConnector.automat(event, arg)
     return _P2PConnector
@@ -159,7 +159,7 @@ class P2PConnector(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('P2P ' + newstate)
-        tray_icon.state_changed(network_connector.A().state, self.state)
+        # tray_icon.state_changed(network_connector.A().state, self.state)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -385,7 +385,7 @@ class P2PConnector(automat.Automat):
         lid.clearContacts()
         #prepare contacts data
         cdict = {}
-        cdict['tcp'] = 'tcp://'+nowip+':'+settings.getTCPPort()
+        cdict['tcp'] = 'tcp://'+nowip+':'+str(settings.getTCPPort())
         cdict['udp'] = 'udp://%s@%s' % (lid.getIDName().lower(), lid.getIDHost())
         #making full order list
         for proto in cdict.keys():

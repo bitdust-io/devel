@@ -127,10 +127,10 @@ class NetworkConnector(Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         automats.set_global_state('NETWORK ' + newstate)
-        if driver.is_started('service_p2p_hookups'):
-            import p2p_connector
-            p2p_connector.A('network_connector.state', newstate)
-            tray_icon.state_changed(self.state, p2p_connector.A().state)
+        # if driver.is_started('service_p2p_hookups'):
+        #     import p2p_connector
+        #     p2p_connector.A('network_connector.state', newstate)
+        #     tray_icon.state_changed(self.state, p2p_connector.A().state)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -286,9 +286,13 @@ class NetworkConnector(Automat):
             from stun import stun_server
             udp_port = int(settings.getUDPPort())
             stun_server.A('start', udp_port)
-#        if driver.is_started('service_private_messages'):
-#            from userid import nickname_holder
-#            nickname_holder.A('set', None)
+        if driver.is_started('service_stun_client'):
+            from stun import stun_client
+            stun_client.A().dropMyExternalAddress()
+            stun_client.A('start')    
+        if driver.is_started('service_private_messages'):
+            from userid import nickname_holder
+            nickname_holder.A('set', None)
         # if driver.is_started('service_gateway'):
         #     from transport import gateway
         #     gateway.start()
@@ -311,6 +315,9 @@ class NetworkConnector(Automat):
         if driver.is_started('service_gateway'):
             from transport import gateway
             gateway.stop()
+        # if driver.is_started('service_stun_client'):
+        #     from stun import stun_client
+        #     stun_client.A().drop...
         self.automat('network-down')
 
     def doUPNP(self, arg):

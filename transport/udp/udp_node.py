@@ -21,22 +21,19 @@ EVENTS:
         
 """
 
-import time
-import struct
-
 from twisted.internet import reactor
 
 from logs import lg
 
-from lib import bpio
 from lib import automat
 from lib import udp
 from lib import settings
-from lib import misc
 
 from stun import stun_client
 
 from dht import dht_service
+
+from services import driver
 
 import udp_connector
 import udp_session
@@ -56,7 +53,7 @@ def A(event=None, arg=None):
     global _UDPNode
     if _UDPNode is None:
         # set automat name and starting state here
-        _UDPNode = UDPNode('udp_node', 'AT_STARTUP', 26)
+        _UDPNode = UDPNode('udp_node', 'AT_STARTUP', 6)
     if event is not None:
         _UDPNode.automat(event, arg)
     return _UDPNode
@@ -93,6 +90,8 @@ class UDPNode(automat.Automat):
         self.listen_port = None
         self.my_id = None
         self.my_address = None
+        if driver.is_started('service_stun_client'):
+            self.my_address = stun_client.A().getMyExternalAddress()
         self.my_current_incomings = []
         self.notified = False
         
@@ -114,11 +113,16 @@ class UDPNode(automat.Automat):
                 self.doDHTWtiteMyAddress(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'go-online' :
+            if event == 'go-online' and not self.isKnowMyAddress(arg) :
                 self.state = 'STUN'
                 self.GoOn=False
                 self.doInit(arg)
                 self.doStartStunClient(arg)
+            elif event == 'go-online' and self.isKnowMyAddress(arg) :
+                self.state = 'WRITE_MY_IP'
+                self.GoOn=False
+                self.doInit(arg)
+                self.doDHTWtiteMyAddress(arg)
         #---STUN---
         elif self.state == 'STUN':
             if event == 'stun-success' :
@@ -198,7 +202,7 @@ class UDPNode(automat.Automat):
         except:
             lg.exc()
             return False
-        if address == stun_client.A().peer_address:
+        if address in stun_client.A().stun_servers:
             return True
         s = udp_session.get(address)
         return s is not None
@@ -370,7 +374,6 @@ class UDPNode(automat.Automat):
             s.automat('shutdown')
         for c in udp_connector.connectors().values():
             c.automat('abort')
-        # udp.remove_datagram_receiver_callback(self._datagram_received)
         self.automat('disconnected')
 
     def doNotifyDisconnected(self, arg):

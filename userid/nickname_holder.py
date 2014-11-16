@@ -206,7 +206,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameOwn : %s' % self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameOwn : %s' % self.key)
         if self.result_callback:
             self.result_callback('my own', self.key)
 
@@ -214,7 +214,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
         if self.result_callback:
             self.result_callback('registered', self.key)
 
@@ -222,7 +222,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameExist : %s' % self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameExist : %s' % self.key)
         if self.result_callback:
             self.result_callback('exist', self.key)
 
@@ -230,7 +230,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(8, 'nickname_holder.doReportNicknameFailed : %s' % self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameFailed : %s' % self.key)
         if self.result_callback:
             self.result_callback('failed', self.key)
 
@@ -265,7 +265,7 @@ def main():
     lg.set_debug_level(24)
     settings.init()
     misc.init()
-    dht_service.init(int(settings.getDHTPort()))
+    dht_service.init(settings.getDHTPort())
     reactor.callWhenRunning(A, 'init', sys.argv[1])
     reactor.run()
 

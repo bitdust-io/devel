@@ -693,7 +693,7 @@ def makeDefaultIdentity(name='', ip=''):
     ident.certificates=[]
     cdict = {}
     if settings.enableTCP() and settings.enableTCPreceiving():
-        cdict['tcp'] = 'tcp://'+ip+':'+settings.getTCPPort()
+        cdict['tcp'] = 'tcp://'+ip+':'+str(settings.getTCPPort())
     if settings.enableUDP():
         cdict['udp'] = 'udp://%s@%s' % (name.lower(), servername)
 

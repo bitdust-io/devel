@@ -40,7 +40,7 @@ def main():
     # options['dht_port'] = int(settings.getDHTPort())
     # options['udp_port'] = int(settings.getUDPPort())
     udp.listen(int(settings.getUDPPort())) 
-    dht_service.init(int(settings.getDHTPort()))
+    dht_service.init(settings.getDHTPort())
     # dht_service.connect()
     # udp_node.A('go-online', options)
     reactor.addSystemEventTrigger('before', 'shutdown',gateway.shutdown)

@@ -172,13 +172,13 @@ class NetworkTransport(automat.Automat):
             if not id_contact:
                 default_host = bpio.ReadTextFile(settings.ExternalIPFilename())+':'+str(settings.getTCPPort())
             options['host'] = id_contact or default_host
-            options['tcp_port'] = int(settings.getTCPPort())
+            options['tcp_port'] = settings.getTCPPort()
         elif self.proto == 'udp':
             if not id_contact:
                 default_host = nameurl.GetName(misc.getLocalID())+'@'+platform.node()
             options['host'] = id_contact or default_host
-            options['dht_port'] = int(settings.getDHTPort())
-            options['udp_port'] = int(settings.getUDPPort())
+            options['dht_port'] = settings.getDHTPort()
+            options['udp_port'] = settings.getUDPPort()
         self.interface.receive(options) 
 
     def doCreateProxy(self, arg):
