@@ -33,7 +33,8 @@ class UDPDatagramsService(LocalService):
         udp_port = settings.getUDPPort()
         if not udp.proto(udp_port):
             udp.listen(udp_port)
-        conf().addCallback('services/udp-datagrams/udp-port', self.on_udp_port_modified)
+        conf().addCallback('services/udp-datagrams/udp-port', 
+            self._on_udp_port_modified)
         return True
     
     def stop(self):
@@ -46,7 +47,7 @@ class UDPDatagramsService(LocalService):
         conf().removeCallback('services/udp-datagrams/udp-port')
         return True
     
-    def on_udp_port_modified(self, path, value, oldvalue, result):
+    def _on_udp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
         network_connector.A('reconnect')
 

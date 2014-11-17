@@ -30,11 +30,12 @@ class UDPTransportService(LocalService):
                 ]
     
     def start(self):
+        from twisted.internet import reactor
+        from twisted.internet.defer import Deferred
         from transport.udp import udp_interface
         from transport import network_transport
         from transport import gateway
-        from twisted.internet import reactor
-        from twisted.internet.defer import Deferred
+        from lib.config import conf
         self.starting_deferred = Deferred()
         self.interface = udp_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
@@ -42,19 +43,22 @@ class UDPTransportService(LocalService):
         self.transport.automat('init', 
             (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')
+        conf().addCallback('services/udp-transport/enabled', 
+                           self._on_enabled_disabled)
+        conf().addCallback('services/udp-transport/receiving-enabled', 
+                           self._on_receiving_enabled_disabled)
         return self.starting_deferred
     
     def stop(self):
+        from lib.config import conf
+        conf().removeCallback('services/udp-transport/enabled') 
+        conf().removeCallback('services/udp-transport/receiving-enabled') 
         t = self.transport
         self.transport = None
         self.interface = None
         t.automat('shutdown')
         return True
     
-#    def enabled(self):
-#        from lib import settings
-#        return settings.enableUDP()
-
     def installed(self):
         try:
             from transport.udp import udp_interface
@@ -71,5 +75,12 @@ class UDPTransportService(LocalService):
             from p2p import network_connector
             network_connector.A('network-transport-state-changed', self.transport)
         
+    def _on_enabled_disabled(self, path, value, oldvalue, result):
+        from p2p import network_connector
+        network_connector.A('reconnect')
+        
+    def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
+        from p2p import network_connector
+        network_connector.A('reconnect')
         
     

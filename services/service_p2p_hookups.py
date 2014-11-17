@@ -42,9 +42,9 @@ class P2PHookupsService(LocalService):
         contact_status.init()
         self._starting_defer = Deferred()
         p2p_connector.A().addStateChangedCallback(
-            self.on_p2p_connector_switched)
+            self._on_p2p_connector_switched)
         network_connector.A().addStateChangedCallback(
-            self.on_network_connector_switched)
+            self._on_network_connector_switched)
         p2p_connector.A('init')
         return self._starting_defer
     
@@ -53,14 +53,14 @@ class P2PHookupsService(LocalService):
         from p2p import p2p_connector
         from p2p import network_connector
         network_connector.A().removeStateChangedCallback(
-            self.on_network_connector_switched)
+            self._on_network_connector_switched)
         p2p_connector.A().removeStateChangedCallback(
-            self.on_p2p_connector_switched)
+            self._on_p2p_connector_switched)
         contact_status.shutdown()
         p2p_connector.Destroy()
         return True
     
-    def on_p2p_connector_switched(self, oldstate, newstate, evt, args ):
+    def _on_p2p_connector_switched(self, oldstate, newstate, evt, args ):
         if self._starting_defer is not None:
             if newstate == 'INCOMMING?':
                 self._starting_defer.callback(newstate)
@@ -69,7 +69,7 @@ class P2PHookupsService(LocalService):
         from p2p import tray_icon
         tray_icon.state_changed(network_connector.A().state, newstate)
         
-    def on_network_connector_switched(self, oldstate, newstate, evt, args): 
+    def _on_network_connector_switched(self, oldstate, newstate, evt, args): 
         from p2p import p2p_connector
         from p2p import tray_icon 
         if oldstate != newstate:

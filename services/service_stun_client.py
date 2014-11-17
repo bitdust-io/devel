@@ -38,7 +38,7 @@ class StunClientService(LocalService):
         d = Deferred()
         stun_client.A('start', 
             lambda result, typ, ip, details: 
-                self.on_stun_client_finished(result, typ, ip, details, d))
+                self._on_stun_client_finished(result, typ, ip, details, d))
         return d
     
     def stop(self):
@@ -46,10 +46,7 @@ class StunClientService(LocalService):
         stun_client.A('shutdown')
         return True
     
-    def on_stun_client_finished(self, result, typ, ip, details, result_defer):
+    def _on_stun_client_finished(self, result, typ, ip, details, result_defer):
         from stun import stun_client
-        # if result == 'stun-success':
         result_defer.callback(stun_client.A().getMyExternalAddress()) 
-        # else:
-        #     result_defer.callback()
 
