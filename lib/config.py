@@ -92,8 +92,10 @@ class BaseConfig( object ) :
         try:
             from lib import bpio
             l = []
-            for path in bpio.list_dir_recursive(self.getConfigDir()):
-                l.append(bpio.portablePath(path.replace(self.getConfigDir(), '')).strip('/'))
+            abspth = bpio.portablePath(os.path.abspath(self.getConfigDir()))
+            for subpath in bpio.list_dir_recursive(abspth):
+                path = bpio.portablePath(subpath)
+                l.append(path.replace(abspth, '').strip('/'))
             return l
         except:
             lg.exc()

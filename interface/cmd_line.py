@@ -597,39 +597,39 @@ def cmd_friend(opts, args, overDict):
 def option_name_to_path(name, default=''):
     path = default
     if name in [ 'donated', 'shared', 'given', ]:
-        path = 'storage.donated'
+        path = 'services/supplier/donated-space'
     elif name in [ 'needed', ]:
-        path = 'storage.needed'
+        path = 'services/customer/needed-space'
     elif name in [ 'suppliers', ]:
-        path = 'storage.suppliers'
+        path = 'services/customer/suppliers-number'
     elif name in [ 'debug' ]:
-        path = 'logs.debug-level'
+        path = 'logs/debug-level'
     elif name in [ 'block-size', ]:
-        path = 'backup.backup-block-size'
-    elif name in [ 'block-size-max', ]:
-        path = 'backup.backup-max-block-size'
-    elif name in [ 'max-backups', ]:
-        path = 'general.general-backups'
-    elif name in [ 'local-backups', ]:
-        path = 'general.general-local-backups-enable'
+        path = 'services/backups/block-size'
+    elif name in [ 'block-size-max', 'max-block-size', ]:
+        path = 'services/backups/max-block-size'
+    elif name in [ 'max-backups', 'max-copies', 'copies' ]:
+        path = 'services/backups/max-copies'
+    elif name in [ 'local-backups', 'local-data', 'keep-local-data', ]:
+        path = 'services/backups/keep-local-copies-enabled'
     elif name in [ 'tcp' ]:
-        path = 'transport.transport-tcp.transport-tcp-enable'
+        path = 'services/tcp-transport/enabled'
     elif name in [ 'tcp-port' ]:
-        path = 'transport.transport-tcp.transport-tcp-port'
+        path = 'services/tcp-connections/tcp-port'
     elif name in [ 'udp' ]:
-        path = 'transport.transport-udp.transport-udp-enable'
+        path = 'services/udp-transport/enabled'
     elif name in [ 'udp-port' ]:
-        path = 'transport.transport-udp.transport-udp-port'
+        path = 'services/udp-datagrams/udp-port'
     elif name in [ 'dht-port' ]:
-        path = 'network.network-dht-port'
+        path = 'services/entangled-dht/udp-port'
     elif name in [ 'limit-send' ]:
-        path = 'network.network-send-limit'
+        path = 'services/network/send-limit'
     elif name in [ 'limit-receive' ]:
-        path = 'network.network-receive-limit'
+        path = 'services/network/receive-limit'
     elif name in [ 'weblog' ]:
-        path = 'logs.stream-enable'
+        path = 'logs/stream-enable'
     elif name in [ 'weblog-port' ]:
-        path = 'logs.stream-port'
+        path = 'logs/stream-port'
     return path
 
 
@@ -1112,6 +1112,7 @@ def main():
 
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:
+        from lib import settings
         ver = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         chksum = bpio.ReadTextFile(settings.CheckSumFile()).strip()
         repo, location = misc.ReadRepoLocation()

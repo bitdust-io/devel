@@ -182,7 +182,7 @@ def run(opts, args, overDict, pars):
         return cmd_reconnect(opts, args, overDict)
         
     #---set---
-    elif cmd == 'set':
+    elif cmd in [ 'set', 'setting', 'settings', 'conf', 'config', 'configs', 'option', 'options', ]:
         if len(args) == 1 or args[1].lower() in [ 'help', '?' ]:
             import help
             print help.settings_help()
@@ -698,6 +698,7 @@ def option_name_to_path(name, default=''):
 def cmd_set_directly(opts, args, overDict):
     def print_all_settings():
         from lib import config
+        print config.conf().configDir
         for path in config.conf().listAllEntries():
             value = config.conf().getData(path, '').replace('\n', ' ')
             # label = config.conf().labels.get(path, '')
@@ -705,7 +706,7 @@ def cmd_set_directly(opts, args, overDict):
             print '  %s    %s' % (path.ljust(50), value.ljust(20))
         return 0
     name = args[1].lower()
-    if name in [ 'list' ]:
+    if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
         return print_all_settings() 
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
