@@ -125,7 +125,7 @@ class backup(automat.Automat):
         self.blocksSent = 0
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
-        automat.Automat.__init__(self, 'backup', 'AT_STARTUP', 14, True)
+        automat.Automat.__init__(self, 'backup_%s' % self.backupID, 'AT_STARTUP', 14, True)
         # lg.out(6, 'backup.__init__ %s %s %d' % (self.backupID, self.eccmap, self.blockSize,))
 
     def abort(self):

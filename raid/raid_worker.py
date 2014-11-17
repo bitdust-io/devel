@@ -206,6 +206,11 @@ class RaidWorker(automat.Automat):
         """
         os.environ['PYTHONUNBUFFERED'] = '1'
         self.processor = pp.Server(secret='bitpie')
+        # do not use all cpus at once 
+        # need to keep at least one for all other operations
+        ncpus = self.processor.get_ncpus()
+        if ncpus > 1:
+            self.processor.set_ncpus(ncpus-1)
         self.automat('process-started')
 
     def doKillProcess(self, arg):

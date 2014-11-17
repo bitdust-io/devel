@@ -328,7 +328,7 @@ def inbox(info):
         newpacket = signed.Unserialize(data)
     except:
         lg.out(1, "gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
-        lg.exc()
+        # lg.exc()
         return None
     if newpacket is None:
         lg.warn("newpacket from %s://%s is None" % (info.proto, info.host))
