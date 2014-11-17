@@ -49,7 +49,10 @@ def run(UI='', options=None, args=None, overDict=None):
         settings.override_dict(overDict)
     settings.init()
     if not options or options.debug is None:
-        lg.set_debug_level(settings.getDebugLevel())    
+        lg.set_debug_level(settings.getDebugLevel())
+    from lib import config
+    config.conf().addCallback('logs/debug-level', 
+        lambda p, value, o, r: lg.set_debug_level(value))     
     
     #---USE_TRAY_ICON---
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
@@ -161,6 +164,8 @@ def run(UI='', options=None, args=None, overDict=None):
         lg.warn('%d automats stay uncleared')
         for a in automat.objects().values():
             lg.out(2, '    %r' % a)
+
+    config.conf().removeCallback('logs/debug-level')
 
     lg.out(2, 'bpmain.run finished, EXIT')
 

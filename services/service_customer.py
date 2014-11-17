@@ -32,6 +32,5 @@ class CustomerService(LocalService):
     def stop(self):
         return True
     
-    
 
     

@@ -115,13 +115,13 @@ def GetLastFireTime():
     This method returns a time moment when last time some supplier was replaced. 
     """
     global _LastFireTime
-    return _LastFireTime # A().lastFireTime
+    return _LastFireTime 
 
 
 def ClearLastFireTime():
     """
     """
-    _LastFireTime = 0 # A().lastFireTime = 0
+    _LastFireTime = 0 
     
 def AddSupplierToFire(idurl):
     """
