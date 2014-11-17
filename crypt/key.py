@@ -17,6 +17,11 @@ Expect to make keys, signatures, and hashes all base64 strings soon.
 Our local key is always on hand.
 Main thing is to be able to use public keys in contacts to verify packets.
 We never want to bother storing bad data, and need localtester to do local scrub.
+
+TODO:
+http://code.activestate.com/recipes/576980-authenticated-encryption-with-pycrypto/
+    * need to add salt in IV
+    * use something more advanced than os.urandom
 """
 
 import os
