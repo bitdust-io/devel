@@ -233,7 +233,7 @@ def EncryptBinaryPK(publickey, inp):
     # Only think we encrypt is produced by NewSessionKey() which takes care not to have leading zero.
     # See   bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
     # So we add a 1 in front.
-    atuple = publickey.keyObject.encrypt("1"+inp,"")
+    atuple = publickey.keyObject.encrypt(inp, "")
     return atuple[0]                     
 
 def DecryptLocalPK(inp):
@@ -246,7 +246,7 @@ def DecryptLocalPK(inp):
     atuple = (inp,)
     padresult = _MyRsaKey.decrypt(atuple)
     # remove the "1" added in EncryptBinaryPK
-    result = padresult[1:]                   
+    result = padresult # [1:]                   
     return result
 
 def SessionKeyType():

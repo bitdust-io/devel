@@ -367,7 +367,12 @@ class BackupRebuilder(automat.Automat):
         def _rebuild_finished(result):
             self.blockIndex -= 1
             if result:
-                newData, localData, localParity, reconstructedData, reconstructedParity = result 
+                try:
+                    newData, localData, localParity, reconstructedData, reconstructedParity = result
+                except:
+                    lg.exc()
+                    self.automat('rebuilding-finished', False)
+                    return
                 lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(newData)))
                 if newData:
                     for supplierNum in xrange(contacts.numSuppliers()):
@@ -379,6 +384,8 @@ class BackupRebuilder(automat.Automat):
                     data_sender.A('new-data')
             else:
                 lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, result))
+                self.automat('rebuilding-finished', False)
+                return
             reactor.callLater(0, _prepare_one_block)
         def _finish_all_blocks():
             for blockNum in self.blocksSucceed:
@@ -465,7 +472,7 @@ class BackupRebuilder(automat.Automat):
         if not newpacket.Valid():
             # TODO 
             # if we didn't get a valid packet ... re-request it or delete it?
-            lg.warn("" + packetID + " is not a valid packet")
+            lg.warn("%s is not a valid packet: %r" % (packetID, newpacket))
             return
         if os.path.exists(filename):
             lg.warn("rewriting existed file" + filename)

@@ -369,9 +369,15 @@ class backup(automat.Automat):
 
     def _raidmakeCallback(self, params, result, dt):
         filename, eccmapname, backupID, blockNumber, targetDir = params
-        lg.out(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
-            blockNumber, result, str(self.stateEOF), str(time.time()-dt)))
-        self.automat('block-raid-done', (blockNumber, result))
+        if result is None:
+            lg.out(12, 'backup._raidmakeCallback ERROR - result is None :  %r eof=%s dt=%s' % (
+                blockNumber, str(self.stateEOF), str(time.time()-dt)))
+            events.info('backup', '%s ERROR' % self.backupID)
+            self.abort()
+        else:
+            lg.out(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
+                blockNumber, result, str(self.stateEOF), str(time.time()-dt)))
+            self.automat('block-raid-done', (blockNumber, result))
 
 #------------------------------------------------------------------------------ 
 

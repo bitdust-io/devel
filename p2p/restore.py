@@ -55,6 +55,7 @@ EVENTS:
     * :red:`init`
     * :red:`packet-came-in`
     * :red:`raid-done`
+    * :red:`raid-failed`
     * :red:`request-done`
     * :red:`timer-01sec`
     * :red:`timer-1sec`
@@ -169,6 +170,13 @@ class restore(automat.Automat):
             if event == 'raid-done' :
                 self.state = 'BLOCK'
                 self.doRestoreBlock(arg)
+            elif event == 'raid-failed' :
+                self.state = 'FAILED'
+                self.doDeleteAllRequests(arg)
+                self.doRemoveTempFile(arg)
+                self.doCloseFile(arg)
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
         #---BLOCK---
         elif self.state == 'BLOCK':
             if event == 'block-restored' and self.isBlockValid(arg) and not self.isLastBlock(arg) :
@@ -200,6 +208,7 @@ class restore(automat.Automat):
         #---DONE---
         elif self.state == 'DONE':
             pass
+        return None
 
     def isAborted(self, arg):
         return self.AbortState
@@ -375,7 +384,10 @@ class restore(automat.Automat):
         # lg.out(6, 'restore.doDestroyMe collected %d objects' % collected)
 
     def _blockRestoreResult(self, restored_blocks, filename):
-        self.automat('raid-done', filename)
+        if restored_blocks is None:
+            self.automat('raid-failed', (None, filename))
+        else:
+            self.automat('raid-done', filename)
 
     def PacketCameIn(self, NewPacket, state):
         if state == 'received':

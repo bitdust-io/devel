@@ -110,7 +110,7 @@ def inbox(newpacket, info, status, error_message):
 
     # check that signed by a contact of ours
     if not newpacket.Valid():              
-        lg.out(1, 'p2p_service.inbox ERROR new packet is not Valid')
+        lg.out(1, 'p2p_service.inbox ERROR new packet is not Valid: %r' % newpacket)
         return False
   
     if newpacket.CreatorID != misc.getLocalID() and newpacket.RemoteID != misc.getLocalID():
