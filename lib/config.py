@@ -62,7 +62,7 @@ class BaseConfig( object ) :
     def getConfigDir( self ) :
         return self.configDir
     
-    def has(self, entryPath):
+    def exist(self, entryPath):
         return self._get( entryPath ) is not None
     
     def remove( self, entryPath ) :
@@ -267,7 +267,104 @@ class BaseConfig( object ) :
 
 #------------------------------------------------------------------------------ 
     
-class NotifiableConfig(BaseConfig):
+class DefaultsConfig(BaseConfig):
+    _default = {
+        'emergency/email':                              '',
+        'emergency/fax':                                '',
+        'emergency/first':                              '',
+        'emergency/phone':                              '',
+        'emergency/second':                             '',
+        'emergency/text':                               '',
+        'logs/debug-level':                             '',
+        'logs/memdebug-enabled':                        '',
+        'logs/memdebug-port':                           '',
+        'logs/memprofile-enabled':                      '',
+        'logs/stream-enabled':                          '',
+        'logs/stream-port':                             '',
+        'logs/traffic-enabled':                         '',
+        'logs/traffic-port':                            '',
+        'other/upnp-at-startup':                        '',
+        'other/upnp-enabled':                           '',
+        'paths/backups':                                '',
+        'paths/customers':                              '',
+        'paths/messages':                               '',
+        'paths/receipts':                               '',
+        'paths/restore':                                '',
+        'personal/betatester':                          '',
+        'personal/name':                                '',
+        'personal/nickname':                            '',
+        'personal/private-key-size':                    '',
+        'personal/surname':                             '',
+        'updates/mode':                                 '',
+        'updates/shedule':                              '',        
+        'services/backup-db/enabled':                   '',
+        'services/backups/block-size':                  '',
+        'services/backups/enabled':                     '',
+        'services/backups/keep-local-copies-enabled':   '',
+        'services/backups/max-block-size':              '',
+        'services/backups/max-copies':                  '',
+        'services/backups/wait-suppliers-enabled':      '',
+        'services/customer/enabled':                    '',
+        'services/customer/needed-space':               '',
+        'services/customer/suppliers-number':           '',
+        'services/customers-rejector/enabled':          '',
+        'services/data-sender/enabled':                 '',
+        'services/entangled-dht/enabled':               '',
+        'services/entangled-dht/udp-port':              '',
+        'services/fire-hire/enabled':                   '',
+        'services/gateway/enabled':                     '',
+        'services/id-server/enabled':                   '',
+        'services/id-server/host':                      '',
+        'services/id-server/tcp-port':                  '',
+        'services/id-server/web-port':                  '',
+        'services/identity-propagate/enabled':                '',
+        'services/list-files/enabled':                  '',
+        'services/network/enabled':                     '',
+        'services/network/proxy/enabled':               '',
+        'services/network/proxy/host':                  '',
+        'services/network/proxy/password':              '',
+        'services/network/proxy/port':                  '',
+        'services/network/proxy/ssl':                   '',
+        'services/network/proxy/username':              '',
+        'services/network/receive-limit':               '',
+        'services/network/send-limit':                  '',
+        'services/p2p-hookups/enabled':                 '',
+        'services/private-messages/enabled':            '',
+        'services/rebuilding/enabled':                  '',
+        'services/restores/enabled':                    '',
+        'services/stun-client/enabled':                 '',
+        'services/stun-server/enabled':                 '',
+        'services/supplier/donated-space':              '',
+        'services/supplier/enabled':                    '',
+        'services/tcp-connections/enabled':             '',
+        'services/tcp-connections/tcp-port':            '',
+        'services/tcp-transport/enabled':               '',
+        'services/tcp-transport/receiving-enabled':     '',
+        'services/tcp-transport/sending-enabled':       '',
+        'services/udp-datagrams/enabled':               '',
+        'services/udp-datagrams/udp-port':              '',
+        'services/udp-transport/enabled':               '',
+        'services/udp-transport/receiving-enabled':     '',
+        'services/udp-transport/sending-enabled':       '',
+        }
+    
+    def setDefaultValue(self, entryPath, value):
+        self._default[entryPath] = str(value)
+        
+    def getDefaultValue(self, entryPath):
+        return self._default.get(entryPath, None)
+    
+    def getData(self, entryPath, default=None):
+        if default is not None:
+            return BaseConfig.getData(self, entryPath, default)
+        result = BaseConfig.getData(self, entryPath)
+        if result is not None:
+            return result
+        return self.getDefaultValue(entryPath)
+        
+#------------------------------------------------------------------------------ 
+
+class NotifiableConfig(DefaultsConfig):
     def __init__(self, configDir):
         BaseConfig.__init__(self, configDir)
         self.callbacks = {}
@@ -378,7 +475,7 @@ class FixedTypesConfig(NotifiableConfig):
         'services/id-server/host':                      TYPE_STRING,
         'services/id-server/tcp-port':                  TYPE_POSITIVE_INTEGER,
         'services/id-server/web-port':                  TYPE_POSITIVE_INTEGER,
-        'services/id-propagate/enabled':                TYPE_BOOLEAN,
+        'services/identity-propagate/enabled':          TYPE_BOOLEAN,
         'services/id-server/enabled':                   TYPE_BOOLEAN,
         'services/list-files/enabled':                  TYPE_BOOLEAN,
         'services/network/enabled':                     TYPE_BOOLEAN,

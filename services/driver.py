@@ -18,7 +18,7 @@ import sys
 import importlib
 
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, DeferredList 
+from twisted.internet.defer import Deferred, DeferredList, succeed 
 
 if __name__ == '__main__':
     import os.path as _p
@@ -171,6 +171,8 @@ def start():
         d = Deferred()
         dl.append(d)
         svc.automat('start', d)
+    if len(dl) == 0:
+        return succeed(1)
     _StartingDeferred = DeferredList(dl)
     _StartingDeferred.addCallback(on_started_all_services)
     return _StartingDeferred

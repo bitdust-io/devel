@@ -189,35 +189,35 @@ class InstallWizard(Automat):
         localbackupsdir = arg.get('localbackupsdir', '')
         restoredir = arg.get('restoredir', '')
         if needed:
-            config.conf().setData('storage.needed', needed+' MB')
+            config.conf().setData('services/customer/needed-space', needed+' MB')
         if donated:
-            config.conf().setData('storage.donated', donated+' MB')
+            config.conf().setData('services/supplier/donated-space', donated+' MB')
         if customersdir:
-            config.conf().setData('folder.folder-customers', customersdir)
+            config.conf().setData('paths/customers', customersdir)
         if localbackupsdir:
-            config.conf().setData('folder.folder-backups', localbackupsdir)
+            config.conf().setData('paths/backups', localbackupsdir)
         if restoredir:
-            config.conf().setData('folder.folder-restore', restoredir)
+            config.conf().setData('paths/restore', restoredir)
         if self.role == 'MOST_SECURE':
-            config.conf().setData('general.general-local-backups-enable', 'False')
+            config.conf().setBool('services/backups/keep-local-copies-enabled', False)
         
 
     def doSaveContacts(self, arg):
-        config.conf().setData('emergency.emergency-email', arg.get('email', '').strip())
-        config.conf().setData('personal.personal-name', arg.get('name', ''))
-        config.conf().setData('personal.personal-surname', arg.get('surname', ''))
-        config.conf().setData('personal.personal-nickname', arg.get('nickname', ''))
+        config.conf().setData('emergency/emergency-email', arg.get('email', '').strip())
+        config.conf().setData('personal/name', arg.get('name', ''))
+        config.conf().setData('personal/surname', arg.get('surname', ''))
+        config.conf().setData('personal/nickname', arg.get('nickname', ''))
         if self.role == 'BETA_TEST':
-            config.conf().setData('personal.personal-betatester', 'True')
+            config.conf().setBool('personal/betatester', True)
             if self.role_args and self.role_args.get('development', '').lower() == 'true':
-                config.conf().setData("logs.debug-level", '14')
-                config.conf().setData("logs.stream-enable", 'True')
+                config.conf().setInt("logs/debug-level", 14)
+                config.conf().setBool("logs/stream-enable", True)
                 lg.set_debug_level(14)
         repo, locationURL = misc.ReadRepoLocation()
         if repo == 'test':
-            config.conf().setData("logs.debug-level", '18')
+            config.conf().setInt("logs/debug-level", 18)
         elif repo == 'devel':
-            config.conf().setData("logs.debug-level", '12')
+            config.conf().setInt("logs/debug-level", 12)
         
 
 #    def doSaveUpdates(self, arg):

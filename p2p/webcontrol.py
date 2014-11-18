@@ -7890,7 +7890,7 @@ class SettingsTreeNode(Page):
 #        self.modifyTask = None
 
     def update(self):
-        self.exist = config.conf().has(self.path)
+        self.exist = config.conf().exist(self.path)
         try:
             self.has_childs = config.conf().hasChilds()
         except:

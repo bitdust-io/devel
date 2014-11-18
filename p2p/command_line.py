@@ -711,7 +711,7 @@ def cmd_set_directly(opts, args, overDict):
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
     if path != '':
-        if not config.conf().has(path):
+        if not config.conf().exist(path):
             print '  key "%s" not found' % path
         else:
             old_is = config.conf().getData(path)

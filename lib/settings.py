@@ -236,6 +236,17 @@ def patch_settings_py():
     # src = src.replace('config.conf().setData(\'', 'config.conf().setData(\'')
     # src = src.replace('uconfig().update()\n', '')
     open('p2p/webcontrol_.py', 'w').write(src)
+
+def make_default_values():
+    from lib import config
+    config.init(ConfigDir())
+    for k in sorted(uconfig().data.keys()):
+        key = convert_key(k)
+        default = config.conf().getDefaultValue(key)
+        if default is not None:
+            default = uconfig().get(k)
+            default = default.replace('True', 'true')
+            print "config.conf().setDefaultValue('%s', '%s')" % (key, default)
     
 #------------------------------------------------------------------------------ 
 #--- CONSTANTS ----------------------------------------------------------------
@@ -1174,7 +1185,7 @@ def IdentityWebPort():
     """
     Our public identity servers use standard web port number to publish identity files.
     """
-    return 80
+    return 8084
 
 def DefaultTCPPort():
     """
@@ -1220,7 +1231,7 @@ def getCustomersFilesDir():
     """
     Alias to get a user donated location from settings. 
     """
-    return config.conf().getData('paths/customers').strip()
+    return config.conf().getData('paths/customers', '').strip()
 
 def getCustomerFilesDir(idurl):
     """
@@ -1232,25 +1243,25 @@ def getLocalBackupsDir():
     """
     Alias to get local backups folder from settings, see ``BackupsDBDir()``.
     """
-    return config.conf().getData('paths/backups').strip()
+    return config.conf().getData('paths/backups', '').strip()
 
 def getRestoreDir():
     """
     Alias for restore location, see ``RestoreDir()``.
     """
-    return config.conf().getData('paths/restore').strip()
+    return config.conf().getData('paths/restore', '').strip()
 
 def getMessagesDir():
     """
     Alias to get from user config a folder location where messages is stored. 
     """
-    return config.conf().getData('paths/messages').strip()
+    return config.conf().getData('paths/messages', '').strip()
 
 def getReceiptsDir():
     """
     Alias to get from user config a folder location where receipts is stored.
     """
-    return config.conf().getData('paths/receipts').strip()
+    return config.conf().getData('paths/receipts', '').strip()
 
 def getTempDir():
     """
@@ -1274,13 +1285,13 @@ def getProxyHost():
     """
     Return proxy server host from settings. 
     """
-    return config.conf().getData('services/network/proxy/host').strip()
+    return config.conf().getData('services/network/proxy/host', '').strip()
 
 def getProxyPort():
     """
     Return proxy server port number from settings. 
     """
-    return config.conf().getData('services/network/proxy/port').strip()
+    return config.conf().getData('services/network/proxy/port', '').strip()
 
 def setProxySettings(d):
     """
@@ -1302,11 +1313,11 @@ def getProxySettingsDict():
     Return a proxy settings from user config in dictionary.
     """
     return {
-         'host':        config.conf().getData('services/network/proxy/host').strip(),
-         'port':        config.conf().getData('services/network/proxy/port').strip(),
-         'username':    config.conf().getData('services/network/proxy/username').strip(),
-         'password':    config.conf().getData('services/network/proxy/password').strip(),
-         'ssl':         config.conf().getData('services/network/proxy/ssl').strip(), }
+         'host':        config.conf().getData('services/network/proxy/host', '').strip(),
+         'port':        config.conf().getData('services/network/proxy/port', '').strip(),
+         'username':    config.conf().getData('services/network/proxy/username', '').strip(),
+         'password':    config.conf().getData('services/network/proxy/password', '').strip(),
+         'ssl':         config.conf().getData('services/network/proxy/ssl', '').strip(), }
 
 def update_proxy_settings():
     """
@@ -1356,7 +1367,7 @@ def enableIdServer(enable=None):
 def getIdServerHost():
     """
     """
-    return config.conf().getData("services/id-server/host").strip()
+    return config.conf().getData("services/id-server/host", '').strip()
 
 def setIdServerHost(hostname_or_ip):
     """
@@ -1526,17 +1537,13 @@ def getDebugLevelStr():
     """
     This is just for checking if it is set, the int() would throw an error.
     """
-    return config.conf().getData("logs/debug-level")
+    return config.conf().getData("logs/debug-level", '')
 
 def getDebugLevel():
     """
     Return current debug level.
     """
-    try:
-        res = int(getDebugLevelStr())
-    except:
-        res = bpio.DebugLevel
-    return res
+    return config.conf().getInt('logs/debug-level', lg._DebugLevel)
 
 def setDebugLevel(level):
     """
@@ -1566,19 +1573,13 @@ def getWebStreamPort():
     """
     Get port number of HTTP server to print logs.
     """
-    try:
-        return int(config.conf().getData('logs/stream-port'))
-    except:
-        return DefaultWebLogPort()
+    return config.conf().getInt('logs/stream-port', DefaultWebLogPort())
 
 def getWebTrafficPort():
     """
     Get port number of HTTP server to print packets traffic.
     """
-    try:
-        return int(config.conf().getData('logs/traffic-port'))
-    except:
-        return DefaultWebTrafficPort()
+    return config.conf().getInt('logs/traffic-port', DefaultWebTrafficPort())
     
 def enableMemoryProfile(enable=None):
     """
@@ -1605,7 +1606,7 @@ def getNeededString():
     """
     Get needed space in megabytes from user settings.
     """
-    return config.conf().getData('services/customer/needed-space')
+    return config.conf().getData('services/customer/needed-space', '')
 
 def getNeededBytes():
     """
@@ -1616,7 +1617,7 @@ def getDonatedString():
     """
     Get donated space in megabytes from user settings.
     """
-    return config.conf().getData('services/supplier/donated-space')
+    return config.conf().getData('services/supplier/donated-space', '')
 
 def getDonatedBytes():
     """
@@ -1628,25 +1629,25 @@ def getEmergencyEmail():
     Get a user email address from settings. 
     User can set that to be able to receive email notification in case of some troubles with his backups.
     """
-    return config.conf().getData('emergency/email')
+    return config.conf().getData('emergency/email', '')
 
 def getEmergencyPhone():
     """
     Get a user phone number from settings. 
     """
-    return config.conf().getData('emergency/phone')
+    return config.conf().getData('emergency/phone', '')
 
 def getEmergencyFax():
     """
     Get a user fax number from settings. 
     """
-    return config.conf().getData('emergency/fax')
+    return config.conf().getData('emergency/fax', '')
 
 def getEmergencyOther():
     """
     Get a other address info from settings. 
     """
-    return config.conf().getData('emergency/text')
+    return config.conf().getData('emergency/text', '')
 
 def getEmergency(method):
     """
@@ -1654,19 +1655,19 @@ def getEmergency(method):
     """
     if method not in getEmergencyMethods():
         return ''
-    return config.conf().getData('emergency/' + method)
+    return config.conf().getData('emergency/' + method, '')
 
 def getEmergencyFirstMethod():
     """
     Get a first method to use when need to contact with user. 
     """
-    return config.conf().getData('emergency/first')
+    return config.conf().getData('emergency/first', '')
 
 def getEmergencySecondMethod():
     """
     Get a second method to use when need to contact with user. 
     """
-    return config.conf().getData('emergency/second')
+    return config.conf().getData('emergency/second', '')
 
 def getEmergencyMethods():
     """
@@ -1681,7 +1682,7 @@ def getEmergencyMethods():
 def getNickName():
     """
     """
-    return config.conf().getData('personal/nickname').strip()
+    return config.conf().getData('personal/nickname', '').strip()
 
 def setNickName(nickname):
     """
@@ -1692,7 +1693,7 @@ def getUpdatesMode():
     """
     User can set different modes to update the BitPie.NET software.
     """
-    return config.conf().getData('updates/mode')
+    return config.conf().getData('updates/mode', '')
 
 def setUpdatesMode(mode):
     config.conf().setData('updates/mode', mode)
@@ -1710,7 +1711,7 @@ def getUpdatesSheduleData():
     """
     Return update schedule from settings.
     """
-    return config.conf().getData('updates/shedule')
+    return config.conf().getData('updates/shedule', '')
 
 def setUpdatesSheduleData(raw_shedule):
     """
@@ -1723,10 +1724,7 @@ def getGeneralBackupsToKeep():
     Return a number of copies to keep for every backed up data.
     The oldest copies (over that amount) will be removed from data base and remote suppliers. 
     """
-    try:
-        return int(config.conf().getData('services/backups/max-copies'))
-    except:
-        return 2
+    return config.conf().getInt('services/backups/max-copies', 2)
 
 def getGeneralLocalBackups():
     """
@@ -1981,50 +1979,117 @@ def _checkSettings():
     """
     Validate some most important user settings.
     """
-    if getSuppliersNumberDesired() < 0:
-        config.conf().setInt("services/customer/suppliers-number", DefaultDesiredSuppliers())
+    config.conf().setDefaultValue('logs/debug-level', defaultDebugLevel())
+    config.conf().setDefaultValue('logs/memdebug-enabled', 'false')
+    config.conf().setDefaultValue('logs/memdebug-port', '9996')
+    config.conf().setDefaultValue('logs/memprofile-enabled', 'false')
+    config.conf().setDefaultValue('logs/stream-enabled', 'false')
+    config.conf().setDefaultValue('logs/stream-port', '9999')
+    config.conf().setDefaultValue('logs/traffic-enabled', 'false')
+    config.conf().setDefaultValue('logs/traffic-port', '9997')
+    config.conf().setDefaultValue('emergency/email', '')
+    config.conf().setDefaultValue('emergency/fax', '')
+    config.conf().setDefaultValue('emergency/first', 'email')
+    config.conf().setDefaultValue('emergency/phone', '')
+    config.conf().setDefaultValue('emergency/second', 'phone')
+    config.conf().setDefaultValue('emergency/text', '')
+    config.conf().setDefaultValue('paths/backups', '')
+    config.conf().setDefaultValue('paths/customers', '')
+    config.conf().setDefaultValue('paths/messages', '')
+    config.conf().setDefaultValue('paths/receipts', '')
+    config.conf().setDefaultValue('paths/restore', '')
+    config.conf().setDefaultValue('personal/private-key-size', '4096')
+    config.conf().setDefaultValue('personal/betatester', 'false')
+    config.conf().setDefaultValue('personal/name', '')
+    config.conf().setDefaultValue('personal/nickname', '')
+    config.conf().setDefaultValue('personal/surname', '')
+    config.conf().setDefaultValue('updates/mode', getUpdatesModeValues()[0])
+    config.conf().setDefaultValue('services/backups/block-size', '262144')
+    config.conf().setDefaultValue('services/backups/max-block-size', '10485760')
+    config.conf().setDefaultValue('services/backups/max-copies', '2')
+    config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'true')
+    config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
+    config.conf().setDefaultValue('services/id-server/enabled', 'false')
+    config.conf().setDefaultValue('services/id-server/host', '')
+    config.conf().setDefaultValue('services/id-server/tcp-port', IdentityServerPort())
+    config.conf().setDefaultValue('services/id-server/web-port', IdentityWebPort())
+    config.conf().setDefaultValue('services/id-server/enabled', 'false')
+    config.conf().setDefaultValue('services/identity-propagate/enabled', 'true')
+    config.conf().setDefaultValue('services/network/enabled', 'true')
+    config.conf().setDefaultValue('services/network/proxy/enabled', 'false')
+    config.conf().setDefaultValue('services/network/proxy/host', '')
+    config.conf().setDefaultValue('services/network/proxy/password', '')
+    config.conf().setDefaultValue('services/network/proxy/port', '')
+    config.conf().setDefaultValue('services/network/proxy/ssl', 'false')
+    config.conf().setDefaultValue('services/network/proxy/username', '')
+    config.conf().setDefaultValue('services/network/receive-limit', '12500000')
+    config.conf().setDefaultValue('services/network/send-limit', '12500000')
+    config.conf().setDefaultValue('services/backup-db/enabled', 'true')
+    config.conf().setDefaultValue('services/backups/enabled', 'true')
+    config.conf().setDefaultValue('services/customer/enabled', 'true')
+    config.conf().setDefaultValue('services/customer/needed-space', '%d bytes' % DefaultNeededBytes())
+    config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
+    config.conf().setDefaultValue('services/customers-rejector/enabled', 'true')
+    config.conf().setDefaultValue('services/data-sender/enabled', 'true')
+    config.conf().setDefaultValue('services/entangled-dht/enabled', 'true')
+    config.conf().setDefaultValue('services/entangled-dht/udp-port', DefaultDHTPort())
+    config.conf().setDefaultValue('services/fire-hire/enabled', 'true')
+    config.conf().setDefaultValue('services/gateway/enabled', 'true')
+    config.conf().setDefaultValue('services/list-files/enabled', 'true')
+    config.conf().setDefaultValue('services/p2p-hookups/enabled', 'true')
+    config.conf().setDefaultValue('services/private-messages/enabled', 'true')
+    config.conf().setDefaultValue('services/rebuilding/enabled', 'true')
+    config.conf().setDefaultValue('services/restores/enabled', 'true')
+    config.conf().setDefaultValue('services/stun-client/enabled', 'true')
+    config.conf().setDefaultValue('services/stun-server/enabled', 'true')
+    config.conf().setDefaultValue('services/supplier/enabled', 'true')
+    config.conf().setDefaultValue('services/supplier/donated-space', '%d bytes' % DefaultDonatedBytes())
+    config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
+    config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())
+    config.conf().setDefaultValue('services/tcp-transport/enabled', 'true')
+    config.conf().setDefaultValue('services/tcp-transport/receiving-enabled', 'true')
+    config.conf().setDefaultValue('services/tcp-transport/sending-enabled', 'true')
+    config.conf().setDefaultValue('services/udp-datagrams/enabled', 'true')
+    config.conf().setDefaultValue('services/udp-datagrams/udp-port', DefaultUDPPort())
+    config.conf().setDefaultValue('services/udp-transport/enabled', 'true')
+    config.conf().setDefaultValue('services/udp-transport/receiving-enabled', 'true')
+    config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
+    for key in config.conf()._default.keys():
+        if not config.conf().exist(key):
+            config.conf().setData(key, config.conf().getDefaultValue(key))
 
-    if getDonatedString() is None:
-        config.conf().setData("services/supplier/donated-space", '%d bytes' % DefaultDonatedBytes())
-    donatedV, donatedS = diskspace.SplitString(getDonatedString())
-    if not donatedS:
-        config.conf().setData("services/supplier/donated-space", str(getDonatedString())+' bytes')
-
-    if getNeededString() is None:
-        config.conf().setData("services/customer/needed-space", '%d bytes' % DefaultNeededBytes())
-    neededV, neededS = diskspace.SplitString(getNeededString())
-    if not neededS:
-        config.conf().setData("services/customer/needed-space", str(getNeededString())+' bytes')
-
-    if getDebugLevelStr() is None:
-        config.conf().setData("logs/debug-level", str(defaultDebugLevel()))
-
-    if config.conf().getData('services/tcp-connections/tcp-port') is None:
-        config.conf().setInt("services/tcp-connections/tcp-port", DefaultTCPPort())
-
-    if config.conf().getData('services/udp-datagrams/udp-port') is None:
-        config.conf().setInt("services/udp-datagrams/udp-port", DefaultUDPPort())
-
-    if config.conf().getData('services/entangled-dht/udp-port') is None:
-        config.conf().setInt("services/entangled-dht/udp-port", DefaultDHTPort())
-
-    if getUpdatesMode() is None or getUpdatesMode().strip() not in getUpdatesModeValues():
-        config.conf().setData('updates/mode', getUpdatesModeValues()[0])
-
+#    if getSuppliersNumberDesired() < 0:
+#        config.conf().setInt("services/customer/suppliers-number", DefaultDesiredSuppliers())
+#    if not getDonatedString():
+#        config.conf().setData("services/supplier/donated-space", '%d bytes' % DefaultDonatedBytes())
+#    donatedV, donatedS = diskspace.SplitString(getDonatedString())
+#    if not donatedS:
+#        config.conf().setData("services/supplier/donated-space", str(getDonatedString())+' bytes')
+#    if not getNeededString():
+#        config.conf().setData("services/customer/needed-space", '%d bytes' % DefaultNeededBytes())
+#    neededV, neededS = diskspace.SplitString(getNeededString())
+#    if not neededS:
+#        config.conf().setData("services/customer/needed-space", str(getNeededString())+' bytes')
+#    if not getDebugLevelStr():
+#        config.conf().setData("logs/debug-level", str(defaultDebugLevel()))
+#    if config.conf().getData('services/tcp-connections/tcp-port') is None:
+#        config.conf().setInt("services/tcp-connections/tcp-port", DefaultTCPPort())
+#    if config.conf().getData('services/udp-datagrams/udp-port') is None:
+#        config.conf().setInt("services/udp-datagrams/udp-port", DefaultUDPPort())
+#    if config.conf().getData('services/entangled-dht/udp-port') is None:
+#        config.conf().setInt("services/entangled-dht/udp-port", DefaultDHTPort())
+#    if getUpdatesMode() is None or getUpdatesMode().strip() not in getUpdatesModeValues():
+#        config.conf().setData('updates/mode', getUpdatesModeValues()[0])
 #    if getGeneralDisplayMode().strip() not in getGeneralDisplayModeValues():
 #        config.conf().setData('general.general-display-mode', getGeneralDisplayModeValues()[0])
-
 #    if getEmergencyFirstMethod() not in getEmergencyMethods():
 #        config.conf().setData('emergency/first', getEmergencyMethods()[0])
-
 #    if getEmergencySecondMethod() not in getEmergencyMethods():
 #        config.conf().setData('emergency/second', getEmergencyMethods()[1])
-
 #    if getEmergencyFirstMethod() == getEmergencySecondMethod():
 #        methods = list(getEmergencyMethods())
 #        methods.remove(getEmergencyFirstMethod())
 #        config.conf().setData('emergency/second', methods[0])
-
     
 
 def _checkStaticDirectories():
@@ -2101,7 +2166,8 @@ def _checkCustomDirectories():
 
 if __name__ == '__main__':
     init()
-    patch_settings_py()
+    # patch_settings_py()
+    make_default_values()
 
 
 
