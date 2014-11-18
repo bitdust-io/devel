@@ -199,7 +199,7 @@ def isExistOUT():
 
 def files2send():
     """
-    Return a list of file names to be read and send to Central server.
+    Return a list of file names to be read and send later.
     Sent files are market with ".sent" extension and skipped here.  
     """
     lg.out(6, 'bandwidth.files2send')

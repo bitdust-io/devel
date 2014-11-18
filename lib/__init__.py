@@ -6,6 +6,7 @@
 """
 .. module:: lib
 
-Contains various functions related to the Client side code, a Central server, Identity server and other stuff.
+Contains various functions related to the Client side code, 
+Identity server and other stuff.
 """
 

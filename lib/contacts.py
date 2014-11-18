@@ -202,7 +202,7 @@ def getCustomerNames():
 
 def setSupplierIDs(idslist):
     """
-    Set suppliers ID's list, called when ListContacts packet received from Central server.
+    Set suppliers ID's list, called from fire_hire() machine basically.
     """
     global _SuppliersChangedCallback
     global _ContactsChangedCallback
@@ -216,7 +216,7 @@ def setSupplierIDs(idslist):
 
 def setCustomerIDs(idslist):
     """
-    Set customers ID's list, called when ListContacts packet received from Central server.
+    Set customers ID's list.
     """
     global _CustomersChangedCallback
     global _ContactsChangedCallback

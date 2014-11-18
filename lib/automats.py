@@ -48,18 +48,10 @@ _StatesDict = {
     'network google?':           'is www.google.com available?',
     'p2p at startup':            'initial peer-to-peer state',
     'p2p transports':            'starting network transports',
-    'p2p centralservice':        'connecting to central server',
     'p2p propagate':             'propagate my identity',
     'p2p incomming?':            'waiting response from others',
     'p2p connected':             'ready',
     'p2p disconnected':          'starting disconnected',
-    'central at startup':        'starting central server connection',
-    'central identity':          'sending my identity to central server',
-    'central settings':          'sending my settings to central server',
-    'central request settings':  'asking my settings from central server',
-    'central suppliers':         'requesting suppliers from central server',
-    'central connected':         'connected to central server',
-    'central disconnected':      'disconnected from central server',
     }
 
 _GlobalState = 'AT_STARTUP'
@@ -70,8 +62,8 @@ _GlobalStateNotifyFunc = None
 def set_global_state(st):
     """
     This method is called from State Machines when ``state`` is changed:
-        automats.set_global_state('CENTRAL ' + newstate)
-    So ``st`` is a string like: 'CENTRAL CONNECTED'.
+        automats.set_global_state('P2P ' + newstate)
+    So ``st`` is a string like: 'P2P CONNECTED'.
     ``_GlobalStateNotifyFunc`` can be used to keep track of changing program states.
     """
     global _GlobalState

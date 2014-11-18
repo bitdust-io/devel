@@ -37,7 +37,7 @@ P2PCommandAcks={}
 
 def init():
     """
-    Initialize a list of valid p2p and central commands.
+    Initialize a list of valid p2p commands.
     """
     global P2PCommandAcks
     P2PCommandAcks[Ack()] = None                         # No Ack for Ack
@@ -124,14 +124,14 @@ def Files():
 
 def ListContacts():
     """
-    Response with a list of my contacts from Central server, 
+    Response with a list of my contacts, 
     may be suppliers, customers or correspondents. 
     """
     return "ListContacts"
 
 def Contacts():
     """
-    Request a list of my contacts from Central server
+    Request a list of my contacts
     """
     return "Contacts"
 
@@ -200,13 +200,13 @@ def Correspondent():
 
 def Register():
     """
-    Not used right now, probably to register a new identity on Central server.
+    Not used right now, probably to register a new identity.
     """
     return "Register"
 
 def RequestSuppliers():
     """
-    Request a list of my suppliers from Central server.
+    Request a list of my suppliers.
     """
     return "RequestSuppliers"
 
@@ -218,7 +218,7 @@ def Suppliers():
 
 def RequestCustomers():
     """
-    Request a list of my customers from Central server.
+    Request a list of my customers.
     """
     return "RequestCustomers"
 
@@ -230,20 +230,20 @@ def Customers():
 
 def FireContact():
     """
-    Request to replace on of my suppliers from Central server, 
+    Request to replace on of my suppliers, 
     it will respond with ListContacts.
     """
     return "FireContact"
 
 def Settings():
     """
-    Used to save my local settings on Central server.
+    Used to save my local settings.
     """
     return 'Settings'
 
 def BandwidthReport():
     """
-    Used to daily reports of users bandwidh stats to the Central server.
+    Used to daily reports of users bandwidh stats.
     """
     return 'BandwidthReport'
 
@@ -255,13 +255,13 @@ def RequestSpace():
 
 def RequestSettings():
     """
-    Request my settings from Central server.
+    Request my settings.
     """
     return 'RequestSettings'
 
 def RequestReceipt():
     """
-    Request a billing reports from Central server.
+    Request a billing reports.
     """
     return "RequestReceipt"
 

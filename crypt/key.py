@@ -253,14 +253,15 @@ def SessionKeyType():
     """
     Which crypto is used for session key.
     """
-    return "AES"
+    # return "AES"
+    return 'DES3'
 
 def NewSessionKey():
     """
     Return really random string for making equivalent DES3 objects when needed.
     """
     # to work around bug in rsa.encrypt - do not want leading 0.          
-    return chr(random.randint(1, 255)) + os.urandom(31)   
+    return chr(random.randint(1, 255)) + os.urandom(23)   
 
 def RoundupString(data, stepsize):
     """
@@ -274,26 +275,26 @@ def RoundupString(data, stepsize):
         addon = ' ' * increase
     return data + addon
 
-def EncryptWithSessionKey(rand32, inp):
+def EncryptWithSessionKey(rand24, inp):
     """
     Encrypt input string with Session Key.
     
     :param rand24: randomly generated session key 
     :param inp: input string to encrypt 
     """
-    # SessionKey = DES3.new(rand24)
-    SessionKey = AES.new(rand32)
-    data = RoundupString(inp, 32)
+    SessionKey = DES3.new(rand24)
+    # SessionKey = AES.new(rand32)
+    data = RoundupString(inp, 24)
     ret = SessionKey.encrypt(data)
     del data
     return ret
 
-def DecryptWithSessionKey(rand32, inp):
+def DecryptWithSessionKey(rand24, inp):
     """
     Decrypt string with given session key.
     """
-    # SessionKey = DES3.new(rand24)
-    SessionKey = AES.new(rand32)
+    SessionKey = DES3.new(rand24)
+    # SessionKey = AES.new(rand32)
     return SessionKey.decrypt(inp)
 
 #------------------------------------------------------------------------------ 

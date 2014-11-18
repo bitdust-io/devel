@@ -87,7 +87,7 @@ class IdRestorer(automat.Automat):
     """
     
     MESSAGES = {
-        'MSG_01':   ['download central server identity'], 
+        'MSG_01':   [''], 
         'MSG_02':   ['network connection failed', 'red'],
         'MSG_03':   ['download user identity'],
         'MSG_04':   ['user identity not exist', 'red'],

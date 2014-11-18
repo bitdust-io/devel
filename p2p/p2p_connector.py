@@ -29,9 +29,6 @@ User Identity file that contains a public user address get updated.
 The new version of the file is sent to the Identity server 
 in order for that to all the other users can find out the contact with user.
 
-Next, control is passed to the state machine ``central_connector()``, 
-which will make the connection to the Central server.
-
 Then, as soon as user receive the first packet from any of the remote users, 
 the ``p2p_connector()`` goes into state "CONNECTED".
 

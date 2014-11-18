@@ -14,8 +14,6 @@ A low level methods to store list of contacts locally.:
     - suppliers
     - customers
     - correspondents
-Suppliers and customers comes from Central server,
-list of correspondents are managed by user and also can be stored on Central server (not done yet). 
 """
 
 import bpio

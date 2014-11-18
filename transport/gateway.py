@@ -17,7 +17,7 @@ Here is place to put `outgoing` files to send to other users in the network.
 Also this code receives a `incoming` files from other nodes.
 
 Keeps a list of available `transports` - we use a plug-in system so you can
-use external p2p (or centralized) networks to transfer files in different ways.
+use external p2p, mech, or centralized networks to transfer files in different ways.
 
 To identify user need to place his ID inside given external network to his public identity file.
 So BitPie.NET users can use different ways to communicate and transfer data.

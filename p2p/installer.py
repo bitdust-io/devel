@@ -103,7 +103,6 @@ class Installer(automat.Automat):
         'idurl_not_exist':            ('Identity URL address not exist or not reachable at this moment', 'blue'),
         'signing_error':              ('unable to sign the local Identity file', 'red'),
         'signature_not_match':        ('remote Identity and Private Key did not match', 'red'),
-        'central_failed':             ('unable to connect to the Central server, try again later', 'blue'),
         'success':                    ('account restored!', 'green'), }
 
     def getOutput(self, state=None):

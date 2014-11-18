@@ -158,22 +158,6 @@ def set_icon(name):
         _IconObject.SetIcon(name)
       
       
-def state_changed_old(network, p2p, central):
-    if network == 'DISCONNECTED':
-        set_icon('gray')
-        return
-    if [ network, p2p, central ].count('CONNECTED') == 3:
-        set_icon('green')
-        return
-    if [ network, p2p ].count('CONNECTED') == 2:
-        set_icon('yellow')
-        return
-    if network == 'CONECTED' and p2p == 'DISCONNECTED':
-        set_icon('red')
-        return
-    set_icon('gray')
-
-
 def state_changed(network, p2p):
     if network == 'DISCONNECTED':
         set_icon('gray')

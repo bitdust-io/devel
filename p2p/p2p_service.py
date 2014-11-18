@@ -482,10 +482,8 @@ def Data(request):
         return
     # 2. this Data is not belong to us
     if not contacts.IsCustomer(request.OwnerID):  # SECURITY
-        # may be we did not get the ListCustomers packet from the Central yet?
         lg.warn("%s not a customer, packetID=%s" % (request.OwnerID, request.PacketID))
         SendFail(request, 'not a customer')
-        # central_service.SendRequestCustomers()
         return
     filename = makeFilename(request.OwnerID, request.PacketID)
     if filename == "":

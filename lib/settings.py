@@ -376,7 +376,8 @@ def DefaultBandwidthReportTimeOut():
 
 def DefaultNeedSuppliersPacketTimeOut():
     """
-    If we need suppliers we will request it every 60 sec. from Central server. 
+    If we need suppliers we will request it every 60 sec.
+    Not used right now. 
     """
     return 60                     
 
@@ -470,13 +471,6 @@ def MinimumBandwidthOutLimitKBSec():
     Not used.
     """
     return 10
-
-def CentralKillNotAliveUserAfter():
-    """
-    Central server will remove 'dead' users from the network.
-    This is a number of days which user can stay off line before he will be killed. 
-    """
-    return 60 
 
 def FireHireMinimumDelay():
     """
@@ -745,7 +739,6 @@ def SuppliersDir():
 def BandwidthInDir():
     """
     Daily stats for incoming bandwidth is placed in that location.
-    Those files is sent to Central server to report own stats.  
     """
     return os.path.join(BaseDir(),"bandin")
 
