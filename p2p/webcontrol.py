@@ -3098,13 +3098,6 @@ class MainPage(Page):
 
 #------------------------------------------------------------------------------ 
 
-class CentralPage(Page):
-    pagename = _PAGE_CENTRAL
-    def renderPage(self, request):
-        src = ''
-        return src
-    
-    
 class AutomatsPage(Page):
     pagename = _PAGE_AUTOMATS
     def renderPage(self, request):
