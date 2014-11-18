@@ -253,8 +253,8 @@ def SessionKeyType():
     """
     Which crypto is used for session key.
     """
-    return "AES"
-    # return 'DES3'
+    # return "AES"
+    return 'DES3'
 
 def NewSessionKey():
     """
