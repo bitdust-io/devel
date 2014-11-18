@@ -385,16 +385,37 @@ def main():
     lg.set_debug_level(24)
     sourcePath = sys.argv[1]
     compress_mode = 'none' # 'gz' 
-    backupID = 'F1234'
+    backupID = sys.argv[2]
     import backup_tar
     from lib import bpio
     raid_worker.A('init')
+    from p2p import backup_fs
+    backupPath = backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
     if bpio.pathIsDir(sourcePath):
         backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
     else:    
         backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)
     backupPipe.make_nonblocking()
-    job = backup(backupID, backupPipe, lambda bid, result: reactor.stop())
+    def _bk_done(bid, result):
+        from crypt import signed
+        try:
+            os.mkdir(os.path.join(settings.getLocalBackupsDir(), bid+'.out'))
+        except:
+            pass
+        for filename in os.listdir(os.path.join(settings.getLocalBackupsDir(), bid)):
+            filepath = os.path.join(settings.getLocalBackupsDir(), bid, filename)
+            payld = str(bpio.ReadBinaryFile(filepath))
+            newpacket = signed.Packet(
+                'Data', 
+                misc.getLocalID(), 
+                misc.getLocalID(), 
+                filename, 
+                payld, 
+                'http://megafaq.ru/cvps1010.xml')
+            newfilepath = os.path.join(settings.getLocalBackupsDir(), bid+'.out', filename)
+            bpio.AtomicWriteFile(newfilepath, newpacket.Serialize())
+        reactor.stop()
+    job = backup(backupID, backupPipe, _bk_done)
     reactor.callLater(1, job.automat, 'start')
     reactor.run()
     

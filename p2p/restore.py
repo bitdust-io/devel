@@ -74,6 +74,10 @@ except:
 
 from twisted.internet.defer import Deferred
 
+if __name__ == "__main__":
+    import os.path as _p
+    sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
+
 from logs import lg
 
 from lib import misc
@@ -124,7 +128,6 @@ class restore(automat.Automat):
         self.blockRestoredCallback = None
         
         automat.Automat.__init__(self, 'restore', 'AT_STARTUP', 4)
-        self.automat('init')
         events.info('restore', '%s start restoring' % self.BackupID)
         # lg.out(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 
@@ -410,3 +413,18 @@ class restore(automat.Automat):
         lg.out(4, "restore.Abort " + self.BackupID)
         self.AbortState = True
 
+
+#------------------------------------------------------------------------------ 
+
+def main():
+    lg.set_debug_level(24)
+    backupID = sys.argv[1]
+    raid_worker.A('init')
+    outfd, outfilename = tmpfile.make('restore', '.tar.gz', backupID.replace('/','_')+'_')
+    r = restore(backupID, outfd)
+    r.MyDeferred.addBoth(lambda x: reactor.stop())
+    reactor.callLater(1, r.automat, 'init')
+    reactor.run()
+    
+if __name__ == "__main__":
+    main()

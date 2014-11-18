@@ -204,8 +204,8 @@ def Hash(inp):
     """
     Core function to calculate hash of ``inp`` string, right now it uses MD5 method.
     """
-    return HashMD5(inp)
-    # return HashSHA512(inp)
+    # return HashMD5(inp)
+    return HashSHA(inp)
 
 def EncryptStringPK(publickeystring, inp):
     """

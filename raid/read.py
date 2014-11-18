@@ -156,7 +156,7 @@ def RebuildOne_orig(inlist, listlen, outfilename):
 #    are, and if we have all we win, if not we fail.
 
 def raidread(OutputFileName, eccmapname, backupId, blockNumber, data_parity_dir):
-    try:
+    # try:
         # INTSIZE = settings.IntSize()
         # myeccmap = eccmap.eccmap(eccmapname)
         myeccmap = raid.eccmap.eccmap(eccmapname)
@@ -194,8 +194,8 @@ def raidread(OutputFileName, eccmapname, backupId, blockNumber, data_parity_dir)
                 output.write(moredata)
         output.close()
         return GoodDSegs
-    except:
-        return None
+    # except:
+    #     return None
 
 
 def main():

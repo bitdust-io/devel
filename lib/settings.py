@@ -452,13 +452,13 @@ def DefaultBackupBlockSize():
     We split a backed up data into blocks of equal size and 
     perform RAID operation on every block - one by one.  
     """
-    return 256 * 1024
+    return 16 * 1024 * 1024 # 16 MB
 
 def DefaultBackupMaxBlockSize():
     """
     The maximum default block size, user can set this in the settings.
     """
-    return 10 * 1024 * 1024
+    return 128 * 1024 * 1024 # 128 MB is fine
 
 def MinimumBandwidthInLimitKBSec():
     """

@@ -328,7 +328,7 @@ def inbox(info):
         newpacket = signed.Unserialize(data)
     except:
         lg.out(1, "gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
-        # lg.exc()
+        lg.exc()
         return None
     if newpacket is None:
         lg.warn("newpacket from %s://%s is None" % (info.proto, info.host))
@@ -354,7 +354,7 @@ def inbox(info):
         os.close(fd)
         return None
     _LastInboxPacketTime = time.time()
-    lg.out(16, "gateway.inbox [%s] from %s|%s by %s://%s" % (
+    lg.out(16, "gateway.inbox [%s] signed by %s|%s from %s://%s" % (
         newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
         nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
     return newpacket
@@ -370,7 +370,7 @@ def outbox(outpacket, wide=False, callbacks={}):
                       to all contacts of Remote Identity
         :param callbacks: provide a callback methods to get response
     """
-    lg.out(16, "gateway.outbox [%s] owner:%s creator:%s remote:%s" % (
+    lg.out(16, "gateway.outbox [%s] signed by %s|%s to %s" % (
         outpacket.Command, 
         nameurl.GetName(outpacket.OwnerID),
         nameurl.GetName(outpacket.CreatorID),

@@ -375,14 +375,14 @@ class Automat(object):
                 new_state = self.A(event_string, arg)
             except:
                 self.log(self.debug_level, traceback.format_exc())
-                return
+                # return
             self.state = new_state
         else:
             try:
                 self.A(event_string, arg)
             except:
                 self.log(self.debug_level, traceback.format_exc())
-                return
+                # return
             new_state = self.state
         if old_state != new_state:
             self.log(self.debug_level, '%s(%s): (%s)->(%s)' % (

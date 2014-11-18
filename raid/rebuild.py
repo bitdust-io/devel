@@ -8,8 +8,7 @@ import lib.settings
 import raid.read
 
 def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix):
-
-    try:
+    # try:
             
         def _build_raid_file_name(supplierNumber, dataOrParity):
             return os.path.join(
@@ -109,6 +108,6 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
         # lg.out(14, 'block_rebuilder.AttemptRebuild END')
         return (newData, localData, localParity, reconstructedData, reconstructedParity)
     
-    except:
-        return None
+    # except:
+    #     return None
 

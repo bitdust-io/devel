@@ -144,6 +144,7 @@ def Start(backupID, outputLocation, callback=None):
     r.SetPacketInCallback(packet_in_callback)
     _WorkingBackupIDs[backupID] = r
     _WorkingRestoreProgress[backupID] = {}
+    r.automat('init')
     return r
 
 

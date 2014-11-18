@@ -132,7 +132,7 @@ def WriteFile(filename, data):
 
 
 def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
-    try:
+    # try:
         myeccmap = raid.eccmap.eccmap(eccmapname)
         INTSIZE = 4 # settings.IntSize()
         # any padding at end and block.Length fixes
@@ -222,10 +222,12 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
         del dfds
         del pfds
         del Parities
-    except:
-        return None
+        return dataNum, parityNum
+    
+    # except:
+    #     return None
 
-    return dataNum, parityNum 
+         
 
 
 def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
