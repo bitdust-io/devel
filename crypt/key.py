@@ -253,8 +253,8 @@ def SessionKeyType():
     """
     Which crypto is used for session key.
     """
-    # return "AES"
-    return 'DES3'
+    return "AES"
+    # return 'DES3'
 
 def NewSessionKey():
     """
@@ -282,8 +282,8 @@ def EncryptWithSessionKey(rand24, inp):
     :param rand24: randomly generated session key 
     :param inp: input string to encrypt 
     """
-    SessionKey = DES3.new(rand24)
-    # SessionKey = AES.new(rand32)
+    # SessionKey = DES3.new(rand24)
+    SessionKey = AES.new(rand24)
     data = RoundupString(inp, 24)
     ret = SessionKey.encrypt(data)
     del data
@@ -293,8 +293,8 @@ def DecryptWithSessionKey(rand24, inp):
     """
     Decrypt string with given session key.
     """
-    SessionKey = DES3.new(rand24)
-    # SessionKey = AES.new(rand32)
+    # SessionKey = DES3.new(rand24)
+    SessionKey = AES.new(rand24)
     return SessionKey.decrypt(inp)
 
 #------------------------------------------------------------------------------ 
