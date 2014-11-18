@@ -1690,7 +1690,7 @@ class InstallPage(Page):
         src += '<table width=80%><tr><td>\n'
         src += '<p align=justify>You gain <a href="http://bitpie.net/glossary.html#money" target="_blank">credits</a> '
         src += 'for providing space to your <a href="http://bitpie.net/glossary.html#customer" target="_blank">customers</a>. \n'
-        src += 'It needs time to get customers from Central server and fill your donated space, '
+        src += 'It needs time to get customers fill your donated space, '
         src += 'keep software working and stay online as much as possible to have higher '
         src += '<a href="http://bitpie.net/glossary.html#rating" target="_blank">rating</a> and count as '
         src += 'reliable <a href="http://bitpie.net/glossary.html#supplier" target="_blank">supplier</a>.\n'
@@ -1724,7 +1724,7 @@ class InstallPage(Page):
         src += '<p align=justify>If other users takes from you twice more space than you need for your data - <b>it is FREE</b>!\n'
         src += 'This is because the <a href="http://bitpie.net/glossary.html#redundancy_in_backup" target=_blank>redundancy ratio</a> is 1:2, '
         src += 'so every your backup takes twice more space on suppliers machines.</p>\n'
-        src += '<p align=justify>After registration the Central server starts counting your <a href="http://bitpie.net/glossary.html#rating" target="_blank">rating</a>, '
+        src += '<p align=justify>After registration the software starts counting your <a href="http://bitpie.net/glossary.html#rating" target="_blank">rating</a>, '
         src += 'more online hours - higher rating in the network.\n'
         src += 'The rating is used to decide who will be a more reliable supplier - new users probably wants you as supplier if you are mostly online.\n'
         src += 'So you get your customers early or later and fill most of your donated space.</p>\n'
@@ -3057,15 +3057,15 @@ class MainPage(Page):
             src += '<h1>my files</h1>\n'
             src += '<table width="80%"><tr><td align=left>\n'
             src += '<p>List of your suppliers is empty.\n '
-            src += 'This may be due to the fact that the connection to the Central server is not established yet\n'
-            src += 'or the Central server can not find the number of users that meet your requirements.</p>\n'
-            src += '<p>Wait a bit or check your backups options in the settings.\n '
+            src += '<p>This may be due to the fact that the connection to other nodes is in process.</p>\n'
+            src += '<p>Wait a bit or check your backup options in the settings. \n'
             src += 'If you request too much needed space, you may not find the right number of suppliers.</p><br>\n'
             src += '</td></tr></table>\n'
             src += html_comment(
                 'List of your suppliers is empty.\n'+
-                'This may be due to the fact that the connection to the Central server is not established yet\n'+
-                'or the Central server can not find the number of users that meet your requirements.')
+                'This may be due to the fact that the connection with other users \n'+
+                'is not yet established or BitPie.NET can not find the number \n'+
+                'of users that meet your requirements.')
             return html(request, body=str(src), title='my files', back='', reload=reload )
         
         ret = self._action(request)
@@ -4375,10 +4375,9 @@ class SuppliersPage(Page):
         else:
             src += '<table width="80%"><tr><td>\n'
             src += '<p>List of your suppliers is empty.</p>\n'
-            src += '<p>This may be due to the fact that the connection to the Central server is not established yet\n'
-            src += 'or the Central server can not find the number of users that meet your requirements.</p>\n'
-            src += '<p>Wait a bit or check your backups options in the settings.</p>\n'
-            src += '<p>If you request too much needed space, you may not find the right number of suppliers.</p><br>\n'
+            src += '<p>This may be due to the fact that the connection to other nodes is in process.</p>\n'
+            src += '<p>Wait a bit or check your backup options in the settings. \n'
+            src += 'If you request too much needed space, you may not find the right number of suppliers.</p><br>\n'
             src += '</td></tr></table>\n'
             src += html_comment(
                 'List of your suppliers is empty.\n'+
@@ -4677,7 +4676,7 @@ class CustomersPage(Page):
         #---links---
         if contacts.numCustomers() > 0:
             src += '<p><a href="?action=call&back=%s">Call all customers to find out who is alive</a></p><br>\n' % back
-        src += '<p><a href="?action=request&back=%s">Request list of my customers from Central server</a></p>\n' % (back)
+        src += '<p><a href="?action=request&back=%s">Request list of my customers</a></p>\n' % (back)
         src += '<p><a href="%s?back=%s">Switch to Suppliers</a></p>\n' % ('/'+_PAGE_SUPPLIERS, back)
         if self.show_ratings:
             src += '<p><a href="%s?ratings=0&back=%s">Hide monthly ratings</a></p>\n' % (request.path, back)
