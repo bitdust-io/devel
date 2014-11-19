@@ -3071,8 +3071,8 @@ class MainPage(Page):
             src = ''
             if not config.conf().getBool('services/restores/enabled'):
                 src += '<h1>my files</h1>\n'
-                src += '<table width="50%"><tr><td align=left>\n'
-                src += '<p>The BitPie.NET software is not ready to manage your remote files.<br>\n'
+                src += '<table width="70%"><tr><td align=left>\n'
+                src += '<p>The BitPie.NET software is not ready to manage your remote files.<br><br>\n'
                 src += 'Network service <a href="%s"><b>restores<b></a> is disabled,\n' % ('/'+_PAGE_SERVICES_SETTINGS)
                 src += 'please check your software configs.</p>\n'
                 src += '</td></tr></table>\n'
@@ -3081,14 +3081,14 @@ class MainPage(Page):
                     'Network service "restores" is disabled,\n'+
                     'please check your software configs.\n')
                 return html(request, body=str(src), title='my files', back='', reload=reload )
-            src += '<h1>connecting ...</h1>\n'
-            src += '<table width="50%"><tr><td align=left>\n'
-            src += '<p>The software is not yet ready to manage your remote files.\n'
+            src += '<h1>connecting...</h1>\n'
+            src += '<table width="70%"><tr><td align=left>\n'
+            src += '<p>The software is in process of configuring your distributed data storage.<br><br>\n'
             src += 'Please wait a bit while establishing connection with other nodes\n'
             src += 'or check your network settings and Internet connection status.</p>\n'
             src += '</td></tr></table>\n'
             src += html_comment('Connecting ...'+
-                'The software is not yet ready to manage your remote files.\n'+
+                'The software is in process of configuring your distributed data storage.\n'+
                 'Please wait a bit while establishing connection with other nodes\n'+
                 'or check your network settings and Internet connection status.\n')
             return html(request, body=str(src), title='my files', back='', reload=reload )

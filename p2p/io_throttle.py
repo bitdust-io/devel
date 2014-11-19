@@ -83,6 +83,7 @@ def shutdown():
     """
     lg.out(4,"io_throttle.shutdown")
     throttle().DeleteBackupRequests('')
+    throttle().DeleteBackupSendings('')
     throttle().DeleteSuppliers(throttle().supplierQueues.keys())
 
 def SetPacketReportCallbackFunc(func):
@@ -115,9 +116,16 @@ def QueueRequestFile(callOnReceived, creatorID, packetID, ownerID, remoteID):
     """
     return throttle().QueueRequestFile(callOnReceived, creatorID, packetID, ownerID, remoteID)
 
+def DeleteBackupSendings(backupName):
+    """
+    Checks all send queues and search for packets with ``backupName`` in the packetID field.
+    For example, this is used to remove old transfers if rebuilding process is restarted.  
+    """
+    return throttle().DeleteBackupSendings(backupName)
+
 def DeleteBackupRequests(backupName):
     """
-    Checks all send and request queues and search for packets with ``backupName`` in the packetID field.
+    Checks all request queues and search for packets with ``backupName`` in the packetID field.
     For example, this is used to remove old requests if the restore process is aborted.  
     """
     return throttle().DeleteBackupRequests(backupName)
@@ -151,6 +159,9 @@ def HasPacketInRequestQueue(supplierIDURL, packetID):
 
 def HasBackupIDInSendQueue(supplierIDURL, backupID):
     return throttle().HasBackupIDInSendQueue(supplierIDURL, backupID)
+
+def HasBackupIDInRequestQueue(supplierIDURL, backupID):
+    return throttle().HasBackupIDInRequestQueue(supplierIDURL, backupID)
 
 def IsBackupSending(backupID):
     return throttle().IsBackupSending(backupID)
@@ -227,7 +238,7 @@ class SupplierQueue:
         # but will hold onto the next ones to be sent
         # self.fileSendQueueMaxLength = 32
         # active files 
-        self.fileSendMaxLength = 1  
+        self.fileSendMaxLength = 4  
         # an array of packetId, preserving first in first out, 
         # of which the first maxLength are the "active" sends      
         self.fileSendQueue = []
@@ -615,7 +626,7 @@ class SupplierQueue:
         self.DoRequest()
 
 
-    def DeleteBackupRequests(self, backupName):
+    def DeleteBackupSendings(self, backupName):
         if self.shutdown: 
             # if we're closing down this queue 
             # (supplier replaced, don't any anything new)
@@ -625,10 +636,20 @@ class SupplierQueue:
             if packetID.count(backupName):
                 self.FileSendFailed(self.fileSendDict[packetID].remoteID, packetID, 'delete request')
                 packetsToRemove.add(packetID)
-                lg.out(12, 'io_throttle.DeleteBackupRequests %s from send queue' % packetID)
+                lg.out(12, 'io_throttle.DeleteBackupSendings %s from send queue' % packetID)
         for packetID in packetsToRemove:
             self.fileSendQueue.remove(packetID)
             del self.fileSendDict[packetID]
+        if len(self.fileSendQueue) > 0:
+            reactor.callLater(0, self.DoSend)
+            #self.DoSend()
+
+
+    def DeleteBackupRequests(self, backupName):
+        if self.shutdown: 
+            # if we're closing down this queue 
+            # (supplier replaced, don't any anything new)
+            return
         packetsToRemove = set()
         for packetID in self.fileRequestQueue:
             if packetID.count(backupName):
@@ -639,9 +660,6 @@ class SupplierQueue:
             del self.fileRequestDict[packetID]
         if len(self.fileRequestQueue) > 0:
             reactor.callLater(0, self.DoRequest)
-        if len(self.fileSendQueue) > 0:
-            reactor.callLater(0, self.DoSend)
-            #self.DoSend()
 
 
     def OutboxStatus(self, pkt_out, status, error):
@@ -698,9 +716,14 @@ class IOThrottle:
                     del self.supplierQueues[supplierIDURL]
 
 
+    def DeleteBackupSendings(self, backupName):
+        # lg.out(10, 'io_throttle.DeleteBackupSendings for %s' % backupName)
+        for supplierIdentity in self.supplierQueues.keys():
+            self.supplierQueues[supplierIdentity].DeleteBackupSendings(backupName)
+
+
     def DeleteBackupRequests(self, backupName):
-        #if settings.getDoBackupMonitor() == "Y":
-        lg.out(10, 'io_throttle.DeleteBackupRequests for %s' % backupName)
+        # lg.out(10, 'io_throttle.DeleteBackupRequests for %s' % backupName)
         for supplierIdentity in self.supplierQueues.keys():
             self.supplierQueues[supplierIdentity].DeleteBackupRequests(backupName)
 
@@ -788,11 +811,25 @@ class IOThrottle:
     
     def HasBackupIDInSendQueue(self, supplierIDURL, backupID):
         """
-        Same to ``HasPacketInSendQueue()``, but looks for packets for the whole backup, not just a single packet .
+        Same to ``HasPacketInSendQueue()``, but looks for packets for the whole backup, 
+        not just a single packet .
         """
         if not self.supplierQueues.has_key(supplierIDURL):
             return False
         for packetID in self.supplierQueues[supplierIDURL].fileSendDict.keys():
+            if packetID.startswith(backupID):
+                return True
+        return False
+    
+    
+    def HasBackupIDInRequestQueue(self, supplierIDURL, backupID):
+        """
+        Same to ``HasPacketInRequestQueue()``, but looks for packets for the whole backup, 
+        not just a single packet .
+        """
+        if not self.supplierQueues.has_key(supplierIDURL):
+            return False
+        for packetID in self.supplierQueues[supplierIDURL].fileRequestDict.keys():
             if packetID.startswith(backupID):
                 return True
         return False
@@ -807,6 +844,16 @@ class IOThrottle:
                 return True 
         return False
         
+        
+    def IsBackupRequesting(self, backupID):
+        """
+        Return True if some packets for given backup is found in the request queues.  
+        """
+        for supplierIDURL in self.supplierQueues.keys():
+            if self.HasBackupIDInRequestQueue(supplierIDURL, backupID):
+                return True 
+        return False
+
     
     def OkToSend(self, supplierIDURL):
         """

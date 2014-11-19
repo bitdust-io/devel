@@ -474,7 +474,7 @@ def Data(request):
     # 1. this is our Data! 
     if request.OwnerID == misc.getLocalID():
         lg.out(8, "p2p_service.Data %r for us from %s" % (
-            request, nameurl.GetName(request.CreatorID)))
+            request, nameurl.GetName(request.RemoteID)))
         if request.PacketID in [ settings.BackupIndexFileName(), ]:
             backup_control.IncomingSupplierBackupIndex(request)
 #        elif request.PacketID in [ settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName(), ]:

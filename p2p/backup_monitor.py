@@ -93,7 +93,7 @@ def A(event=None, arg=None):
     """
     global _BackupMonitor
     if _BackupMonitor is None:
-        _BackupMonitor = BackupMonitor('backup_monitor', 'READY', 4, True)
+        _BackupMonitor = BackupMonitor('backup_monitor', 'AT_STARTUP', 4, True)
     if event is not None:
         _BackupMonitor.automat(event, arg)
     return _BackupMonitor
@@ -134,10 +134,7 @@ class BackupMonitor(automat.Automat):
     def A(self, event, arg):
         #---READY---
         if self.state == 'READY':
-            if event == 'init' :
-                self.RestartAgain=False
-                self.doSuppliersInit(arg)
-            elif event == 'timer-5sec' :
+            if event == 'timer-5sec' :
                 self.doOverallCheckUp(arg)
             elif event == 'restart' or event == 'suppliers-changed' or ( event == 'instant' and self.RestartAgain ) :
                 self.state = 'FIRE_HIRE'
@@ -198,6 +195,12 @@ class BackupMonitor(automat.Automat):
                 list_files_orator.A('need-files')
             elif event == 'restart' :
                 self.RestartAgain=True
+        #---AT_STARTUP---
+        elif self.state == 'AT_STARTUP':
+            if event == 'init' :
+                self.state = 'READY'
+                self.RestartAgain=False
+                self.doSuppliersInit(arg)
         return None
 
     def isSuppliersNumberChanged(self, arg):

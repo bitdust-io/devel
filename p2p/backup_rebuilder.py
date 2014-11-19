@@ -34,6 +34,7 @@ EVENTS:
     * :red:`backup-ready`
     * :red:`inbox-data-packet`
     * :red:`init`
+    * :red:`instant`
     * :red:`rebuilding-finished`
     * :red:`requests-sent`
     * :red:`start`
@@ -113,7 +114,7 @@ class BackupRebuilder(automat.Automat):
 
     timers = {
         'timer-1min': (60, ['REQUEST']),
-        'timer-1sec': (1.0, ['REQUEST','NEXT_BACKUP']),
+        'timer-1sec': (1.0, ['REQUEST']),
         'timer-10sec': (10.0, ['REQUEST']),
         }
     
@@ -133,7 +134,10 @@ class BackupRebuilder(automat.Automat):
         Need to notify backup_monitor() machine about my new state. 
         """
         # automats.set_global_state('REBUILD ' + newstate)
-        backup_monitor.A('backup_rebuilder.state', newstate)
+        if newstate == 'NEXT_BACKUP':
+            self.automat('instant')
+        elif newstate == 'DONE' or newstate == 'STOPPED':
+            backup_monitor.A('backup_rebuilder.state', newstate)
         
     def A(self, event, arg):
         #---REQUEST---
@@ -154,12 +158,12 @@ class BackupRebuilder(automat.Automat):
                 self.doClearStoppedFlag(arg)
         #---NEXT_BACKUP---
         elif self.state == 'NEXT_BACKUP':
-            if event == 'timer-1sec' and not self.isStopped(arg) and self.isMoreBackups(arg) :
+            if event == 'instant' and not self.isStopped(arg) and self.isMoreBackups(arg) :
                 self.state = 'PREPARE'
                 self.doPrepareNextBackup(arg)
-            elif event == 'timer-1sec' and not self.isMoreBackups(arg) and not self.isStopped(arg) :
+            elif event == 'instant' and not self.isMoreBackups(arg) and not self.isStopped(arg) :
                 self.state = 'DONE'
-            elif event == 'timer-1sec' and self.isStopped(arg) :
+            elif event == 'instant' and self.isStopped(arg) :
                 self.state = 'STOPPED'
         #---DONE---
         elif self.state == 'DONE':
@@ -187,6 +191,7 @@ class BackupRebuilder(automat.Automat):
             elif event == 'rebuilding-finished' and not self.isStopped(arg) and not self.isMoreBlocks(arg) :
                 self.state = 'PREPARE'
                 self.doPrepareNextBackup(arg)
+        return None
 
     def isMoreBackups(self, arg):
         global _BackupIDsQueue
@@ -219,7 +224,7 @@ class BackupRebuilder(automat.Automat):
         # supplierSet = backup_matrix.suppliers_set()
         for supplierNum in range(contacts.numSuppliers()):
             supplierID = contacts.getSupplierID(supplierNum)
-            if io_throttle.HasBackupIDInSendQueue(supplierID, self.currentBackupID):
+            if io_throttle.HasBackupIDInRequestQueue(supplierID, self.currentBackupID):
                 return False
         return True
 
