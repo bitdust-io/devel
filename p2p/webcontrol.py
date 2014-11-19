@@ -7842,7 +7842,8 @@ class SettingsTreeNode(Page):
             #out(6, 'webcontrol.SettingsTreeNode.renderPage after %s: %s' % (self.path, self.value))
             src += html_comment('  path:     %s' % self.path)
             src += html_comment('  label:    %s' % self.label)
-            # src += html_comment('  info:     %s' % self.info)
+            src += html_comment('  info:     %s' % self.info)
+            src += html_comment('  type:     %s' % self.typ)
             src += html_comment('  value:    %s' % self.value)
             if old_value != self.value:
                 src += html_comment('  modified: [%s]->[%s]' % (old_value, self.value))
@@ -7923,6 +7924,7 @@ class SettingsTreeNode(Page):
             self.value = config.conf().getData(self.path)
         self.label = config.conf().getLabel(self.path) # settings.uconfig().labels.get(self.path, '')
         self.info = config.conf().getInfo(self.path) # settings.uconfig().infos.get(self.path, '')
+        self.typ = config.conf().getTypeLabel(self.path)
         self.leafs = self.path.split('/')
 
     def modified(self, old_value=None):
@@ -8372,7 +8374,6 @@ class SettingsPage(Page):
             leafs = path.split('/')
             name = leafs[-1]
             typ = _SettingsTreeNodesDict.get(path, None)
-
             if len(leafs) == 1 and typ is not None:
                 src += '<h3><a href="%s">%s</a></h3>\n' % (
                     _PAGE_SETTINGS+'/'+path, label.capitalize())

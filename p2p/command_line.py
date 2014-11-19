@@ -277,7 +277,7 @@ def print_single_setting_and_stop(path, run_reactor=True):
     A method used to print single user option in the command line.
     """
     if path != '':
-        url = webcontrol._PAGE_SETTINGS + '/' + path
+        url = webcontrol._PAGE_SETTINGS + '/' + path.replace('/', '.')
         run_url_command(url).addCallback(print_and_stop)
         if run_reactor:
             reactor.run()
@@ -746,7 +746,7 @@ def cmd_set_request(opts, args, overDict):
     name = leafs[-1]
     webcontrol.InitSettingsTreePages()
     cls = webcontrol._SettingsTreeNodesDict.get(name, None)
-    input = ' '.join(args[2:])
+    inpt = ' '.join(args[2:])
     if cls is None:
         return 2
     if cls in [ webcontrol.SettingsTreeTextNode,
@@ -754,16 +754,16 @@ def cmd_set_request(opts, args, overDict):
                 webcontrol.SettingsTreePasswordNode,
                 webcontrol.SettingsTreeNumericNonZeroPositiveNode,
                 webcontrol.SettingsTreeNumericPositiveNode,] :
-        action = 'text=' + misc.pack_url_param(input)
+        action = 'text=' + misc.pack_url_param(inpt)
     elif cls in [ webcontrol.SettingsTreeDiskSpaceNode, ]:
-        number = misc.DigitsOnly(input, '.')
-        suffix = input.lstrip('0123456789.-').strip()
+        number = misc.DigitsOnly(inpt, '.')
+        suffix = inpt.lstrip('0123456789.-').strip()
         action = 'number=%s&suffix=%s' % (number, suffix)
     elif cls in [ webcontrol.SettingsTreeComboboxNode, ]:
-        number = misc.DigitsOnly(input)
+        number = misc.DigitsOnly(inpt)
         action = 'choice=%s' % number
     elif cls in [ webcontrol.SettingsTreeYesNoNode, ]:
-        trueORfalse = 'True' if input.lower().strip() == 'true' else 'False'
+        trueORfalse = 'True' if inpt.lower().strip() == 'true' else 'False'
         action = 'choice=%s' % trueORfalse
     url = webcontrol._PAGE_SETTINGS + '/' + path.replace('/', '.') + '?' + action
     run_url_command(url).addCallback(lambda src: print_single_setting_and_stop(path, False)) #.addCallback(print_and_stop)

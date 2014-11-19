@@ -218,7 +218,7 @@ def Unserialize(data):
         return None
     newobject = misc.StringToObject(data)
     if newobject is None:
-        # lg.warn("result is None")
+        lg.warn("result is None")
         return None
     if type(newobject) != types.InstanceType:
         lg.warn("not an instance: " + str(newobject))
