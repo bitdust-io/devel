@@ -451,6 +451,7 @@ def ListFiles(request):
         gateway.outbox(result)
         return result
     plaintext = TreeSummary(ownerdir)
+    lg.out(14, '\n%s' % (plaintext))
     src = PackListFiles(plaintext, Payload)
     result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
     gateway.outbox(result)
