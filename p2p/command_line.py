@@ -745,7 +745,7 @@ def cmd_set_request(opts, args, overDict):
     leafs = path.split('/')
     name = leafs[-1]
     webcontrol.InitSettingsTreePages()
-    cls = webcontrol._SettingsTreeNodesDict.get(name, None)
+    cls = webcontrol._SettingsTreeNodesDict.get(path, None)
     inpt = ' '.join(args[2:])
     if cls is None:
         return 2
