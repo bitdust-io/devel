@@ -847,7 +847,7 @@ def getNetworkInterfaces():
             ctypes.windll.kernel32.GetSystemDirectoryA(buffer, 300)
             dirs.insert(0, buffer.value.decode('mbcs'))
         except:
-            return []
+            pass
         for dir in dirs:
             try:
                 pipe = os.popen(os.path.join(dir, 'ipconfig') + ' /all')
@@ -861,47 +861,44 @@ def getNetworkInterfaces():
             del ips_unicode
             return ips
 
-    elif plat == 'Linux':
-        import re
-        ips = []
-        try:
-            output = subprocess.Popen(['ifconfig',], stdout=subprocess.PIPE).communicate()[0]
-        except:
-            return []
-        for interface in output.split('\n\n'):
-            if interface.strip():
-                ipaddr = re.search(r'inet addr:(\S+)', interface)
-                if ipaddr:
-                    ips.append(ipaddr.group(1))
-        return ips
-        
 #    elif plat == 'Linux':
+#        import re
+#        ips = []
 #        try:
-#            pipe = os.popen("/bin/ip -f inet a")
-#        except IOError:
-#            return []
-#        print 'getNetworkInterfaces', pipe
-#        try:
-#            rawtxt = unicode(pipe.read())
-#            lines = rawtxt.splitlines()
+#            output = subprocess.Popen(['ifconfig',], stdout=subprocess.PIPE).communicate()[0]
 #        except:
 #            return []
-#        print 'getNetworkInterfaces:\n', rawtext
-#        ips = set()
-#        # ifaces = {}
-#        for line in lines:
-#            check = line.strip('\n').strip().split(' ')
-#            if check[0] == "inet":
-#                if check[2] == "brd":
-#                    check.pop(2)
-#                    check.pop(2)
-#                # if not ifaces.has_key(check[4]):
-#                #     ifaces[check[4]] = []
-#                ipaddress = check[1].split("/")[0]
-#                # ifaces[check[4]].append(ipaddress)
-#                ips.add(ipaddress)
-#        print 'getNetworkInterfaces', ips
-#        return list(ips)
+#        for interface in output.split('\n\n'):
+#            if interface.strip():
+#                ipaddr = re.search(r'inet addr:(\S+)', interface)
+#                if ipaddr:
+#                    ips.append(ipaddr.group(1))
+#        return ips
+        
+    elif plat == 'Linux':
+        try:
+            pipe = os.popen("/bin/ip -f inet a")
+        except IOError:
+            return []
+        try:
+            rawtxt = unicode(pipe.read())
+            lines = rawtxt.splitlines()
+        except:
+            return []
+        ips = set()
+        # ifaces = {}
+        for line in lines:
+            check = line.strip('\n').strip().split(' ')
+            if check[0] == "inet":
+                if check[2] == "brd":
+                    check.pop(2)
+                    check.pop(2)
+                # if not ifaces.has_key(check[4]):
+                #     ifaces[check[4]] = []
+                ipaddress = check[1].split("/")[0]
+                # ifaces[check[4]].append(ipaddress)
+                ips.add(ipaddress)
+        return list(ips)
     
     else:
         return []
