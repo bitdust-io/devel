@@ -860,6 +860,20 @@ def getNetworkInterfaces():
                 ips.append(str(ip))
             del ips_unicode
             return ips
+
+    elif plat == 'Linux':
+        import re
+        ips = []
+        try:
+            output = subprocess.Popen(['ifconfig',], stdout=subprocess.PIPE).communicate()[0]
+        except:
+            return []
+        for interface in output.split('\n\n'):
+            if interface.strip():
+                ipaddr = re.search(r'inet addr:(\S+)', interface)
+                if ipaddr:
+                    ips.append(ipaddr.group(1))
+        return ips
         
 #    elif plat == 'Linux':
 #        try:
@@ -888,21 +902,6 @@ def getNetworkInterfaces():
 #                ips.add(ipaddress)
 #        print 'getNetworkInterfaces', ips
 #        return list(ips)
-    
-    elif plat == 'Linux':
-        import re
-        ips = []
-        try:
-            output = subprocess.Popen(['ifconfig',], stdout=subprocess.PIPE).communicate()[0]
-        except:
-            return []
-        # print 'getNetworkInterfaces:\n', output
-        for interface in output.split('\n\n'):
-            if interface.strip():
-                ipaddr = re.search(r'inet addr:(\S+)', interface)
-                if ipaddr:
-                    ips.append(ipaddr.group(1))
-        return ips
     
     else:
         return []

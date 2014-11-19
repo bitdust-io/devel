@@ -144,7 +144,7 @@ Commands:
   suppliers call        send a request packets to check out suppliers status
 
   supplier replace <username, number or idurl>
-                        replace a single supplier with new one, given by central server
+                        replace a single supplier with new one
 
   supplier change <username, number or idurl> <username or idurl>
                         ask to change one supplier to another, by your choice

@@ -498,7 +498,7 @@ def OnJobDone(backupID, result):
     jobs().pop(backupID)
     pathID, version = packetid.SplitBackupID(backupID)
     if result == 'done':
-        maxBackupsNum = settings.getGeneralBackupsToKeep()
+        maxBackupsNum = settings.getBackupsMaxCopies()
         if maxBackupsNum:
             item = backup_fs.GetByID(pathID)
             if item: 

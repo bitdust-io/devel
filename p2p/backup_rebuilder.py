@@ -88,7 +88,7 @@ def A(event=None, arg=None):
     """
     global _BackupRebuilder
     if _BackupRebuilder is None:
-        _BackupRebuilder = BackupRebuilder('backup_rebuilder', 'STOPPED', 4)
+        _BackupRebuilder = BackupRebuilder('backup_rebuilder', 'STOPPED', 4, True)
     if event is not None:
         _BackupRebuilder.automat(event, arg)
     return _BackupRebuilder

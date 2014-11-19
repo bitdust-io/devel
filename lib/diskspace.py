@@ -193,7 +193,6 @@ def MakeStringFromBytes(value):
         v = float(value)
     except:
         return value
-
     if v > _Suffixes['GB']:
         res = round(v / _Suffixes['GB'], 2)
         sz = 'GB'

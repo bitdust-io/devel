@@ -39,7 +39,7 @@ def run(UI='', options=None, args=None, overDict=None):
     """
     
     from logs import lg
-    lg.out(6, 'bpmain.run sys.path=%s' % str(sys.path))
+    lg.out(6, 'bpmain.run UI="%s"' % UI)
     
     from lib import bpio
     
@@ -250,19 +250,17 @@ def override_options(opts, args):
     """
     overDict = {}
     if opts.tcp_port:
-        overDict['transport.transport-tcp.transport-tcp-port'] = str(opts.tcp_port)
+        overDict['services/tcp-connections/tcp-port'] = str(opts.tcp_port)
     if opts.no_upnp:
-        overDict['other.upnp-enabled'] = 'False'
-    if opts.tempdir:
-        overDict['folder.folder-temp'] = opts.tempdir
+        overDict['services/tcp-connections/upnp-enabled'] = 'false'
     if opts.debug or str(opts.debug) == '0':
-        overDict['logs.debug-level'] = str(opts.debug)
+        overDict['logs/debug-level'] = str(opts.debug)
     if opts.memdebug:
-        overDict['logs.memdebug-enable'] = str(opts.memdebug)
+        overDict['logs/memdebug-enable'] = str(opts.memdebug)
         if opts.memdebug_port:
-            overDict['logs.memdebug-port'] = str(opts.memdebug_port)
+            overDict['logs/memdebug-port'] = str(opts.memdebug_port)
         else:
-            overDict['logs.memdebug-port'] = '9996'
+            overDict['logs/memdebug-port'] = '9996'
     return overDict
 
 #------------------------------------------------------------------------------ 
@@ -426,10 +424,8 @@ def main():
             print '\n'.join(sys.path)
             return 1
 
-    # from logs import lg
-    from lib import bpio
-
     # init IO module, update locale
+    from lib import bpio
     bpio.init()
     
     # sys.excepthook = lg.exception_hook
@@ -438,12 +434,27 @@ def main():
         from twisted.internet.defer import setDebugging
         setDebugging(True)
 
-    # ask to count time for each log line from that moment, not absolute time 
-    lg.life_begins()
-    
     pars = parser()
     (opts, args) = pars.parse_args()
 
+    cmd = ''
+    if len(args) > 0:
+        cmd = args[0].lower()
+
+    # ask to count time for each log line from that moment, not absolute time 
+    lg.life_begins()
+    # try to read debug level value at the early stage - no problem if fail here
+    try:
+        if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':
+            lg.set_debug_level(int(
+                bpio._read_data(
+                    os.path.abspath(
+                        os.path.join(
+                            os.path.expanduser('~'),
+                                '.bitpie', 'config', 'logs', 'debug-level')))))
+    except:
+        pass
+    
     if opts.no_logs:
         lg.disable_logs()
 
@@ -477,10 +488,6 @@ def main():
 
     overDict = override_options(opts, args)
 
-    cmd = ''
-    if len(args) > 0:
-        cmd = args[0].lower()
-        
     lg.out(2, 'bpmain.main args=%s' % str(args))
 
     #---start---

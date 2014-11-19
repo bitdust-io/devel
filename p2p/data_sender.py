@@ -200,7 +200,7 @@ class DataSender(automat.Automat):
     def doRemoveUnusedFiles(self, arg):
         # we want to remove files for this block 
         # because we only need them during rebuilding
-        if settings.getGeneralLocalBackups() is True:
+        if settings.getBackupsKeepLocalCopies() is True:
             # if user set this in settings - he want to keep the local files
             return
         # ... user do not want to keep local backups

@@ -244,10 +244,13 @@ class IdRestorer(automat.Automat):
         reactor.callLater(0.5, self.automat, 'restore-success')
         
     def doRestoreSave(self, arg):
-        settings.uconfig().set('storage.suppliers', '0')
-        settings.uconfig().set('storage.needed', '0Mb')
-        settings.uconfig().set('storage.donated', '0Mb')
-        settings.uconfig().update()
+        """
+        TODO: use lib.config here
+        """
+        # settings.uconfig().set('storage.suppliers', '0')
+        # settings.uconfig().set('storage.needed', '0Mb')
+        # settings.uconfig().set('storage.donated', '0Mb')
+        # settings.uconfig().update()
 
     def doPrint(self, arg):
         import p2p.installer as installer

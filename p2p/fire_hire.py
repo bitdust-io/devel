@@ -17,35 +17,33 @@
     <img src="http://bitpie.net/automats/fire_hire/fire_hire.png" style="max-width:100%;">
     </a>
     
-We contact BitPie.NET for list of nodes we have hired
-and we can also replace any node (fire & hire someone else at once)
-by contacting BitPie.NET and asking for replacement.
-
 If at some point we are not getting good answers from a node
 for too long we need to replace him and reconstruct the data
-he was holding. This is fire_hire and then scrubbing.
+he was holding. This is fire & hire and then rebuilding and scrubbing.
 
 Probably if we try to contact someone for 48 hours and can not,
 we want to give up on them.
 
-User can use GUI to fire_hire at any time.
+User can use GUI to fire & hire at any time.
 
 Automatically fire if right after we ask a supplier for a BigPacket,
 he turns around and asks us for it (like he does not have it).
 
 Our regular code would not do this, but an evil modified version might
 try to get away with not holding any data by just getting it from us
-anytime we asked for it. So we can not allow this cheat to work.
+any time we asked for it. So we can not allow this cheat to work.
 
-We ask for lists of files they have for us and keep these in settings.SuppliersDir()/supplieridurl
+We ask for lists of files they have for us and keep these in 
+``settings.SuppliersDir()/[supplier idurl]``
 These should be updated at least every night.
-If a supplier has not given us a list for several days he is a candidate for firing.
+If a supplier has not given us a list for several days 
+he is a candidate for firing.
 
-Transport_control should keep statistics on how fast different nodes are.
-We could fire a slow node.
+Gateway code keeps statistics on how fast different nodes are.
+We could fire a slowest node periodically.
 
-Restore can keep track of who did not answer in time to be part of raidread, and they can
-be a candidate for firing.
+Restore can keep track of who did not answer in time to be part of raidread, 
+and they can be a candidate for firing.
 
 The fire packet needs to use IDURL so that if there is a retransmission of the "fire" request
 we just send new "list suppliers" again.
@@ -53,8 +51,8 @@ we just send new "list suppliers" again.
 Task list
 1) fire inactive suppliers (default is 48 hours)
 2) fire suppliers with low rating (less than 25% by default)
-3) test if supplier is "evil modifed"
-4) test ListFiles peridoically
+3) test if supplier is "evil modified"
+4) test ListFiles periodically
 5) fire slow nodes
 
 The ``fire_hire()`` automat is our "human resources department".

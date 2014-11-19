@@ -93,7 +93,7 @@ def A(event=None, arg=None):
     """
     global _BackupMonitor
     if _BackupMonitor is None:
-        _BackupMonitor = BackupMonitor('backup_monitor', 'READY', 4, False)
+        _BackupMonitor = BackupMonitor('backup_monitor', 'READY', 4, True)
     if event is not None:
         _BackupMonitor.automat(event, arg)
     return _BackupMonitor
@@ -137,13 +137,13 @@ class BackupMonitor(automat.Automat):
             if event == 'init' :
                 self.RestartAgain=False
                 self.doSuppliersInit(arg)
-            elif event == 'restart' or ( event == 'instant' and self.RestartAgain ) :
+            elif event == 'timer-5sec' :
+                self.doOverallCheckUp(arg)
+            elif event == 'restart' or event == 'suppliers-changed' or ( event == 'instant' and self.RestartAgain ) :
                 self.state = 'FIRE_HIRE'
                 self.RestartAgain=False
                 self.doRememberSuppliers(arg)
                 fire_hire.A('restart')
-            elif event == 'timer-5sec' :
-                self.doOverallCheckUp(arg)
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
             if ( event == 'list_files_orator.state' and arg == 'NO_FILES' ) :
@@ -284,7 +284,7 @@ class BackupMonitor(automat.Automat):
         # here we check all backups we have and remove the old one
         # user can set how many versions of that file or folder to keep 
         # other versions (older) will be removed here  
-        versionsToKeep = settings.getGeneralBackupsToKeep()
+        versionsToKeep = settings.getBackupsMaxCopies()
         bytesUsed = backup_fs.sizebackups()/contacts.numSuppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0) 
         lg.out(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))

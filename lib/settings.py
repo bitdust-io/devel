@@ -74,9 +74,9 @@ def _init(base_dir=None):
         - Validate most important user settings
         - Check custom folders 
     """
-    lg.out(4, 'settings._init')
+    lg.out(2, 'settings.init')
     _initBaseDir(base_dir)
-    lg.out(2, 'settings._init data location: ' + BaseDir())
+    lg.out(2, 'settings.init data location: ' + BaseDir())
     _checkMetaDataDirectory()
     # if not os.path.isdir(ConfigDir()):
     #     uconfig()
@@ -85,15 +85,16 @@ def _init(base_dir=None):
     if not os.path.isdir(ConfigDir()):
         bpio._dir_make(ConfigDir())
     config.init(ConfigDir())
+    _setUpDefaultSettings()
+    _createNotExisingSettings()
     _checkStaticDirectories()
-    _checkSettings()
     _checkCustomDirectories()
 
 #------------------------------------------------------------------------------ 
 #---USER CONFIG----------------------------------------------------------------
 #------------------------------------------------------------------------------ 
 
-def uconfig(key=None):
+def uconfig_(key=None):
     """
     An access function to user configuration.
     Load settings from local file or create a default set.
@@ -207,46 +208,46 @@ def convert_key(key):
     #     lg.exc()
     #     return None
 
-def convert_configs():
-    lg.out(2, 'settings.convert_configs')
-    try:
-        from lib import config
-        config.init(ConfigDir())
-        for k, value in uconfig().data.items():
-            key = convert_key(k)
-            value = value.replace('True', 'true').replace('False', 'false')
-            lg.out(2, '    %s -> %s : [%s]' % (k, key, value.replace('\n', '\\n')))
-            if len(uconfig().get_childs(k)) > 0:
-                continue
-            # if value.strip() == '':
-            #     continue
-            config.conf().setData(key, value)
-    except:
-        lg.exc()
-    return
+#def convert_configs():
+#    lg.out(2, 'settings.convert_configs')
+#    try:
+#        from lib import config
+#        config.init(ConfigDir())
+#        for k, value in uconfig().data.items():
+#            key = convert_key(k)
+#            value = value.replace('True', 'true').replace('False', 'false')
+#            lg.out(2, '    %s -> %s : [%s]' % (k, key, value.replace('\n', '\\n')))
+#            if len(uconfig().get_childs(k)) > 0:
+#                continue
+#            # if value.strip() == '':
+#            #     continue
+#            config.conf().setData(key, value)
+#    except:
+#        lg.exc()
+#    return
 
-def patch_settings_py():
-    src = open('p2p/webcontrol.py').read()
-    from lib import config
-    config.init(ConfigDir())
-    for k, value in uconfig().data.items():
-        key = convert_key(k)
-        src = src.replace(k, key.replace('/', '.'))
-    # src = src.replace('uconfig(\'', 'config.conf().getData(\'')
-    # src = src.replace('config.conf().setData(\'', 'config.conf().setData(\'')
-    # src = src.replace('uconfig().update()\n', '')
-    open('p2p/webcontrol_.py', 'w').write(src)
+#def patch_settings_py():
+#    src = open('p2p/webcontrol.py').read()
+#    from lib import config
+#    config.init(ConfigDir())
+#    for k, value in uconfig().data.items():
+#        key = convert_key(k)
+#        src = src.replace(k, key.replace('/', '.'))
+#    # src = src.replace('uconfig(\'', 'config.conf().getData(\'')
+#    # src = src.replace('config.conf().setData(\'', 'config.conf().setData(\'')
+#    # src = src.replace('uconfig().update()\n', '')
+#    open('p2p/webcontrol_.py', 'w').write(src)
 
-def make_default_values():
-    from lib import config
-    config.init(ConfigDir())
-    for k in sorted(uconfig().data.keys()):
-        key = convert_key(k)
-        default = config.conf().getDefaultValue(key)
-        if default is not None:
-            default = uconfig().get(k)
-            default = default.replace('True', 'true')
-            print "config.conf().setDefaultValue('%s', '%s')" % (key, default)
+#def make_default_values():
+#    from lib import config
+#    config.init(ConfigDir())
+#    for k in sorted(uconfig().data.keys()):
+#        key = convert_key(k)
+#        default = config.conf().getDefaultValue(key)
+#        if default is not None:
+#            default = uconfig().get(k)
+#            default = default.replace('True', 'true')
+#            print "config.conf().setDefaultValue('%s', '%s')" % (key, default)
     
 #------------------------------------------------------------------------------ 
 #--- CONSTANTS ----------------------------------------------------------------
@@ -261,7 +262,7 @@ def DefaultPrivateKeySize():
     User can choose size of his Private Key during install.
     Can be 1024, 2048 or 4096.
     """
-    return 4096
+    return 2048
 
 def BasePricePerGBmonth():
     """
@@ -442,7 +443,7 @@ def DefaultDonatedBytes():
     """
     Default donated space value - user can set this at any moment in the settings.
     """
-    return 8 * 1024 * 1014 * 1024 # 8 GB
+    return 8 * 1024 * 1024 * 1024 # 8 GB
 
 def DefaultNeededBytes():
     """
@@ -660,7 +661,7 @@ def BaseDirPathFileName():
     """
     return os.path.join(bpio.getExecutableDir(), 'basedir.txt')
 
-def RestoreDir():
+def DefaultRestoreDir():
     """
     Default location to place restored files and folders.
     """
@@ -702,7 +703,7 @@ def IdentityServerDir():
     """
     return os.path.join(BaseDir(), 'identityserver')
 
-def BackupsDBDir():
+def DefaultBackupsDBDir():
     """
     When you run the backup the following actions occur: 
     
@@ -719,13 +720,20 @@ def BackupsDBDir():
     """
     return os.path.join(BaseDir(), 'backups')
 
-def MessagesDir():
+def DefaultCustomersDir():
+    """
+    Here will be placed files uploaded by other users.
+    Your customers will user your HDD to keep their personal data.
+    """
+    return os.path.join(BaseDir(), "customers")
+
+def DefaultMessagesDir():
     """
     A default folder to store sent/received messages.
     """
     return os.path.join(BaseDir(), 'messages')
 
-def ReceiptsDir():
+def DefaultReceiptsDir():
     """
     A default folder to store receipts.
     """
@@ -1127,24 +1135,6 @@ def FontImageFile():
     return os.path.join(FontsFolderPath(), 'Arial_Narrow.ttf')
 
 #------------------------------------------------------------------------------ 
-#--- MERCHANT ID AND LINK -----------------------------------------------------
-#------------------------------------------------------------------------------ 
-
-def MerchantID():
-    """
-    Our merchant ID to accept payments from credit cards. 
-    """
-    # return 'AXA_DH_TESTKEY1'
-    return 'AXA_DH_02666084001'
-
-def MerchantURL():
-    """
-    A URL of the 4CS Bank page to do payments.
-    """
-    # return 'https://merchants.4csonline.com/DevTranSvcs/tp.aspx'
-    return 'https://merchants.4csonline.com/TranSvcs/tp.aspx'
-
-#------------------------------------------------------------------------------ 
 #---PORT NUMBERS---------------------------------------------------------------
 #------------------------------------------------------------------------------ 
 
@@ -1157,12 +1147,6 @@ def DefaultJsonRPCPort():
     """
     """
     return 8083
-
-def DefaultSSHPort():
-    """
-    A default port for ``lib.transport_ssh``.
-    """
-    return 5022
 
 def IdentityServerPort():
     """
@@ -1205,12 +1189,6 @@ def DefaultDHTPort():
     """
     return 14441
 
-def DefaultHTTPPort():
-    """
-    A default port number for transport_http, not used.
-    """
-    return 9786
-
 def DefaultWebLogPort():
     """
     A port number for HTTP server to print program logs. 
@@ -1231,7 +1209,7 @@ def getCustomersFilesDir():
     """
     Alias to get a user donated location from settings. 
     """
-    return config.conf().getData('paths/customers', '').strip()
+    return config.conf().getData('paths/customers').strip()
 
 def getCustomerFilesDir(idurl):
     """
@@ -1241,27 +1219,27 @@ def getCustomerFilesDir(idurl):
 
 def getLocalBackupsDir():
     """
-    Alias to get local backups folder from settings, see ``BackupsDBDir()``.
+    Alias to get local backups folder from settings, see ``DefaultBackupsDBDir()``.
     """
-    return config.conf().getData('paths/backups', '').strip()
+    return config.conf().getData('paths/backups').strip()
 
 def getRestoreDir():
     """
-    Alias for restore location, see ``RestoreDir()``.
+    Alias for restore location, see ``DefaultRestoreDir()``.
     """
-    return config.conf().getData('paths/restore', '').strip()
+    return config.conf().getData('paths/restore').strip()
 
 def getMessagesDir():
     """
     Alias to get from user config a folder location where messages is stored. 
     """
-    return config.conf().getData('paths/messages', '').strip()
+    return config.conf().getData('paths/messages').strip()
 
 def getReceiptsDir():
     """
     Alias to get from user config a folder location where receipts is stored.
     """
-    return config.conf().getData('paths/receipts', '').strip()
+    return config.conf().getData('paths/receipts').strip()
 
 def getTempDir():
     """
@@ -1285,13 +1263,13 @@ def getProxyHost():
     """
     Return proxy server host from settings. 
     """
-    return config.conf().getData('services/network/proxy/host', '').strip()
+    return config.conf().getData('services/network/proxy/host').strip()
 
 def getProxyPort():
     """
     Return proxy server port number from settings. 
     """
-    return config.conf().getData('services/network/proxy/port', '').strip()
+    return config.conf().getData('services/network/proxy/port').strip()
 
 def setProxySettings(d):
     """
@@ -1313,11 +1291,11 @@ def getProxySettingsDict():
     Return a proxy settings from user config in dictionary.
     """
     return {
-         'host':        config.conf().getData('services/network/proxy/host', '').strip(),
-         'port':        config.conf().getData('services/network/proxy/port', '').strip(),
-         'username':    config.conf().getData('services/network/proxy/username', '').strip(),
-         'password':    config.conf().getData('services/network/proxy/password', '').strip(),
-         'ssl':         config.conf().getData('services/network/proxy/ssl', '').strip(), }
+         'host':        config.conf().getData('services/network/proxy/host').strip(),
+         'port':        config.conf().getData('services/network/proxy/port').strip(),
+         'username':    config.conf().getData('services/network/proxy/username').strip(),
+         'password':    config.conf().getData('services/network/proxy/password').strip(),
+         'ssl':         config.conf().getData('services/network/proxy/ssl').strip(), }
 
 def update_proxy_settings():
     """
@@ -1367,7 +1345,7 @@ def enableIdServer(enable=None):
 def getIdServerHost():
     """
     """
-    return config.conf().getData("services/id-server/host", '').strip()
+    return config.conf().getData("services/id-server/host").strip()
 
 def setIdServerHost(hostname_or_ip):
     """
@@ -1537,7 +1515,7 @@ def getDebugLevelStr():
     """
     This is just for checking if it is set, the int() would throw an error.
     """
-    return config.conf().getData("logs/debug-level", '')
+    return config.conf().getData("logs/debug-level")
 
 def getDebugLevel():
     """
@@ -1579,7 +1557,7 @@ def getWebTrafficPort():
     """
     Get port number of HTTP server to print packets traffic.
     """
-    return config.conf().getInt('logs/traffic-port', DefaultWebTrafficPort())
+    return config.conf().getInt('logs/traffic-port')
     
 def enableMemoryProfile(enable=None):
     """
@@ -1606,7 +1584,7 @@ def getNeededString():
     """
     Get needed space in megabytes from user settings.
     """
-    return config.conf().getData('services/customer/needed-space', '')
+    return config.conf().getData('services/customer/needed-space')
 
 def getNeededBytes():
     """
@@ -1617,7 +1595,7 @@ def getDonatedString():
     """
     Get donated space in megabytes from user settings.
     """
-    return config.conf().getData('services/supplier/donated-space', '')
+    return config.conf().getData('services/supplier/donated-space')
 
 def getDonatedBytes():
     """
@@ -1629,25 +1607,25 @@ def getEmergencyEmail():
     Get a user email address from settings. 
     User can set that to be able to receive email notification in case of some troubles with his backups.
     """
-    return config.conf().getData('emergency/email', '')
+    return config.conf().getData('emergency/email')
 
 def getEmergencyPhone():
     """
     Get a user phone number from settings. 
     """
-    return config.conf().getData('emergency/phone', '')
+    return config.conf().getData('emergency/phone')
 
 def getEmergencyFax():
     """
     Get a user fax number from settings. 
     """
-    return config.conf().getData('emergency/fax', '')
+    return config.conf().getData('emergency/fax')
 
 def getEmergencyOther():
     """
     Get a other address info from settings. 
     """
-    return config.conf().getData('emergency/text', '')
+    return config.conf().getData('emergency/text')
 
 def getEmergency(method):
     """
@@ -1655,19 +1633,19 @@ def getEmergency(method):
     """
     if method not in getEmergencyMethods():
         return ''
-    return config.conf().getData('emergency/' + method, '')
+    return config.conf().getData('emergency/' + method)
 
 def getEmergencyFirstMethod():
     """
     Get a first method to use when need to contact with user. 
     """
-    return config.conf().getData('emergency/first', '')
+    return config.conf().getData('emergency/first')
 
 def getEmergencySecondMethod():
     """
     Get a second method to use when need to contact with user. 
     """
-    return config.conf().getData('emergency/second', '')
+    return config.conf().getData('emergency/second')
 
 def getEmergencyMethods():
     """
@@ -1682,7 +1660,7 @@ def getEmergencyMethods():
 def getNickName():
     """
     """
-    return config.conf().getData('personal/nickname', '').strip()
+    return config.conf().getData('personal/nickname')
 
 def setNickName(nickname):
     """
@@ -1693,7 +1671,7 @@ def getUpdatesMode():
     """
     User can set different modes to update the BitPie.NET software.
     """
-    return config.conf().getData('updates/mode', '')
+    return config.conf().getData('updates/mode')
 
 def setUpdatesMode(mode):
     config.conf().setData('updates/mode', mode)
@@ -1711,7 +1689,7 @@ def getUpdatesSheduleData():
     """
     Return update schedule from settings.
     """
-    return config.conf().getData('updates/shedule', '')
+    return config.conf().getData('updates/shedule')
 
 def setUpdatesSheduleData(raw_shedule):
     """
@@ -1719,14 +1697,14 @@ def setUpdatesSheduleData(raw_shedule):
     """
     config.conf().setData('updates/shedule', raw_shedule)
     
-def getGeneralBackupsToKeep():
+def getBackupsMaxCopies():
     """
     Return a number of copies to keep for every backed up data.
     The oldest copies (over that amount) will be removed from data base and remote suppliers. 
     """
     return config.conf().getInt('services/backups/max-copies', 2)
 
-def getGeneralLocalBackups():
+def getBackupsKeepLocalCopies():
     """
     Return True if user wish to keep local backups.
     """
@@ -1738,86 +1716,45 @@ def getGeneralWaitSuppliers():
     """
     return config.conf().getBool('services/backups/wait-suppliers-enabled')
 
-#def getGeneralAutorun():
-#    """
-#    Return True if user want to start BitPie.NET at system start up.
-#    """
-#    return config.conf().getBool('general.general-autorun')
-
-#def getGeneralDisplayMode():
-#    """
-#    Get current GUI display mode from settings. 
-#    """
-#    return config.conf().getData('general.general-display-mode')
-
-#def getGeneralDisplayModeValues():
-#    """
-#    List available display modes.
-#    """
-#    return ('iconify window', 'normal window', 'maximized window',)
-
-##def getGeneralShowProgress():
-##    return config.conf().getBool('general.general-show-progress')
-
-def getGeneralDesktopShortcut():
+def getBackupBlockSizeStr():
     """
-    Not used.
     """
-    return config.conf().getBool('general.general-desktop-shortcut')
-
-def getGeneralStartMenuShortcut():
-    """
-    Not used.
-    """
-    return config.conf().getBool('general.general-start-menu-shortcut')
+    return config.conf().getData('services/backups/block-size')
 
 def getBackupBlockSize():
     """
     Get backup block size from settings.
     """
-#    global _BackupBlockSize
-#    if _BackupBlockSize is None:
-#        try:
-#            _BackupBlockSize = int(config.conf().getData('services/backups/block-size'))
-#        except:
-#            _BackupBlockSize = DefaultBackupBlockSize()
-#    return _BackupBlockSize
-    return config.conf().getInt('services/backups/block-size', DefaultBackupBlockSize())
+    return diskspace.GetBytesFromString(getBackupBlockSizeStr())
+
+def getBackupMaxBlockSizeStr():
+    """
+    """
+    return config.conf().getData('services/backups/max-block-size')
 
 def getBackupMaxBlockSize():
     """
     Get the maximum backup block size from settings.
     """
-#    global _BackupMaxBlockSize
-#    if _BackupMaxBlockSize is None:
-#        try:
-#            _BackupMaxBlockSize = int(config.conf().getData('services/backups/max-block-size'))
-#        except:
-#            _BackupMaxBlockSize = DefaultBackupMaxBlockSize()
-#    return _BackupMaxBlockSize
-    return config.conf().getInt('services/backups/max-block-size', DefaultBackupMaxBlockSize())
+    return diskspace.GetBytesFromString(getBackupMaxBlockSizeStr())
 
 def setBackupBlockSize(block_size):
     """
     Set current backup block size in the memory to have fast access.
     """
-    # global _BackupBlockSize
-    # _BackupBlockSize = int(block_size)
-    return config.conf().setInt('services/backups/block-size', block_size)
+    return config.conf().setData('services/backups/block-size', diskspace.MakeStringFromBytes(block_size))
 
 def setBackupMaxBlockSize(block_size):
     """
     Set current maximum backup block size in the memory to have fast access.
     """
-    # global _BackupMaxBlockSize
-    # _BackupMaxBlockSize = int(block_size)
-    return config.conf().setInt('services/backups/max-block-size', block_size)
+    return config.conf().setData('services/backups/max-block-size', diskspace.MakeStringFromBytes(block_size))
      
 def getPrivateKeySize():
     """
     Return Private Key size from settings, but typically Private Key is generated only once during install stage.
     """
-    return config.conf().getInt('personal/private-key-size', DefaultPrivateKeySize())
+    return config.conf().getInt('personal/private-key-size')
     
 def setPrivateKeySize(pksize):
     """
@@ -1831,21 +1768,8 @@ def enableUPNP(enable=None):
     If ``enable`` is not None - rewrite current value in the settings.
     """
     if enable is None:
-        return config.conf().getBool('other/upnp-enabled')
-    config.conf().setData('other/upnp-enabled', str(enable))
-    
-def getUPNPatStartup():
-    """
-    User have an option to check UPNP port forwarding every time BitPie.NET software starts up.
-    But this slow down the start up process.
-    """
-    return config.conf().getBool('other/upnp-at-startup')
-
-def setUPNPatStartup(enable):
-    """
-    Enable or disable checking UPNP devices at start up.
-    """
-    config.conf().setData('other/upnp-at-startup', str(enable))
+        return config.conf().getBool('services/tcp-connections/upnp-enabled')
+    config.conf().setData('services/tcp-connections/upnp-enabled', str(enable))
     
 #------------------------------------------------------------------------------ 
 #--- INITIALIZE BASE DIR ------------------------------------------------------
@@ -1975,18 +1899,19 @@ def _checkMetaDataDirectory():
         lg.out(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
         bpio._dirs_make(MetaDataDir())
 
-def _checkSettings():
+def _setUpDefaultSettings():
     """
-    Validate some most important user settings.
+    Configure default values for all settings.
+    Every option must have a default value! 
     """
     config.conf().setDefaultValue('logs/debug-level', defaultDebugLevel())
     config.conf().setDefaultValue('logs/memdebug-enabled', 'false')
     config.conf().setDefaultValue('logs/memdebug-port', '9996')
     config.conf().setDefaultValue('logs/memprofile-enabled', 'false')
     config.conf().setDefaultValue('logs/stream-enabled', 'false')
-    config.conf().setDefaultValue('logs/stream-port', '9999')
+    config.conf().setDefaultValue('logs/stream-port', DefaultWebLogPort())
     config.conf().setDefaultValue('logs/traffic-enabled', 'false')
-    config.conf().setDefaultValue('logs/traffic-port', '9997')
+    config.conf().setDefaultValue('logs/traffic-port', DefaultWebTrafficPort())
     config.conf().setDefaultValue('emergency/email', '')
     config.conf().setDefaultValue('emergency/fax', '')
     config.conf().setDefaultValue('emergency/first', 'email')
@@ -1998,14 +1923,16 @@ def _checkSettings():
     config.conf().setDefaultValue('paths/messages', '')
     config.conf().setDefaultValue('paths/receipts', '')
     config.conf().setDefaultValue('paths/restore', '')
-    config.conf().setDefaultValue('personal/private-key-size', '4096')
+    config.conf().setDefaultValue('personal/private-key-size', DefaultPrivateKeySize())
     config.conf().setDefaultValue('personal/betatester', 'false')
     config.conf().setDefaultValue('personal/name', '')
     config.conf().setDefaultValue('personal/nickname', '')
     config.conf().setDefaultValue('personal/surname', '')
     config.conf().setDefaultValue('updates/mode', getUpdatesModeValues()[0])
-    config.conf().setDefaultValue('services/backups/block-size', '262144')
-    config.conf().setDefaultValue('services/backups/max-block-size', '10485760')
+    config.conf().setDefaultValue('services/backups/block-size', 
+                                  diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
+    config.conf().setDefaultValue('services/backups/max-block-size', 
+                                  diskspace.MakeStringFromBytes(DefaultBackupMaxBlockSize()))
     config.conf().setDefaultValue('services/backups/max-copies', '2')
     config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'true')
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
@@ -2022,12 +1949,13 @@ def _checkSettings():
     config.conf().setDefaultValue('services/network/proxy/port', '')
     config.conf().setDefaultValue('services/network/proxy/ssl', 'false')
     config.conf().setDefaultValue('services/network/proxy/username', '')
-    config.conf().setDefaultValue('services/network/receive-limit', '12500000')
-    config.conf().setDefaultValue('services/network/send-limit', '12500000')
+    config.conf().setDefaultValue('services/network/receive-limit', DefaultBandwidthInLimit())
+    config.conf().setDefaultValue('services/network/send-limit', DefaultBandwidthOutLimit())
     config.conf().setDefaultValue('services/backup-db/enabled', 'true')
     config.conf().setDefaultValue('services/backups/enabled', 'true')
     config.conf().setDefaultValue('services/customer/enabled', 'true')
-    config.conf().setDefaultValue('services/customer/needed-space', '%d bytes' % DefaultNeededBytes())
+    config.conf().setDefaultValue('services/customer/needed-space', 
+                                  diskspace.MakeStringFromBytes(DefaultNeededBytes()))
     config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
     config.conf().setDefaultValue('services/customers-rejector/enabled', 'true')
     config.conf().setDefaultValue('services/data-sender/enabled', 'true')
@@ -2043,7 +1971,8 @@ def _checkSettings():
     config.conf().setDefaultValue('services/stun-client/enabled', 'true')
     config.conf().setDefaultValue('services/stun-server/enabled', 'true')
     config.conf().setDefaultValue('services/supplier/enabled', 'true')
-    config.conf().setDefaultValue('services/supplier/donated-space', '%d bytes' % DefaultDonatedBytes())
+    config.conf().setDefaultValue('services/supplier/donated-space', 
+                                  diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
     config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())
     config.conf().setDefaultValue('services/tcp-transport/enabled', 'true')
@@ -2054,79 +1983,40 @@ def _checkSettings():
     config.conf().setDefaultValue('services/udp-transport/enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
+
+def _createNotExisingSettings():
+    """
+    Validate user settings and create them from default values.
+    """
     for key in config.conf()._default.keys():
         if not config.conf().exist(key):
-            config.conf().setData(key, config.conf().getDefaultValue(key))
-
-#    if getSuppliersNumberDesired() < 0:
-#        config.conf().setInt("services/customer/suppliers-number", DefaultDesiredSuppliers())
-#    if not getDonatedString():
-#        config.conf().setData("services/supplier/donated-space", '%d bytes' % DefaultDonatedBytes())
-#    donatedV, donatedS = diskspace.SplitString(getDonatedString())
-#    if not donatedS:
-#        config.conf().setData("services/supplier/donated-space", str(getDonatedString())+' bytes')
-#    if not getNeededString():
-#        config.conf().setData("services/customer/needed-space", '%d bytes' % DefaultNeededBytes())
-#    neededV, neededS = diskspace.SplitString(getNeededString())
-#    if not neededS:
-#        config.conf().setData("services/customer/needed-space", str(getNeededString())+' bytes')
-#    if not getDebugLevelStr():
-#        config.conf().setData("logs/debug-level", str(defaultDebugLevel()))
-#    if config.conf().getData('services/tcp-connections/tcp-port') is None:
-#        config.conf().setInt("services/tcp-connections/tcp-port", DefaultTCPPort())
-#    if config.conf().getData('services/udp-datagrams/udp-port') is None:
-#        config.conf().setInt("services/udp-datagrams/udp-port", DefaultUDPPort())
-#    if config.conf().getData('services/entangled-dht/udp-port') is None:
-#        config.conf().setInt("services/entangled-dht/udp-port", DefaultDHTPort())
-#    if getUpdatesMode() is None or getUpdatesMode().strip() not in getUpdatesModeValues():
-#        config.conf().setData('updates/mode', getUpdatesModeValues()[0])
-#    if getGeneralDisplayMode().strip() not in getGeneralDisplayModeValues():
-#        config.conf().setData('general.general-display-mode', getGeneralDisplayModeValues()[0])
-#    if getEmergencyFirstMethod() not in getEmergencyMethods():
-#        config.conf().setData('emergency/first', getEmergencyMethods()[0])
-#    if getEmergencySecondMethod() not in getEmergencyMethods():
-#        config.conf().setData('emergency/second', getEmergencyMethods()[1])
-#    if getEmergencyFirstMethod() == getEmergencySecondMethod():
-#        methods = list(getEmergencyMethods())
-#        methods.remove(getEmergencyFirstMethod())
-#        config.conf().setData('emergency/second', methods[0])
-    
+            value = config.conf().getDefaultValue(key)
+            config.conf().setData(key, value)
+            lg.out(2, '    created option %s with default value : [%s]' % (key, value))
+            # print '    created option %s with default value : [%s]' % (key, value)
 
 def _checkStaticDirectories():
     """
     Check existance of static data folders.
     """
-#    # check that the base directory exists
-#    if not os.path.isdir(BaseDir()):
-#        lg.out(8, 'settings.init want to create folder: ' + BaseDir())
-#        bpio._dirs_make(BaseDir())
-#        if bpio.Windows(): # ??? !!!
-#            _initBaseDir()  # ??? !!!
-
     if not os.path.exists(TempDir()):
         lg.out(6, 'settings.init want to create folder: ' + TempDir())
         os.makedirs(TempDir())
-
     if not os.path.exists(BandwidthInDir()):
         lg.out(6, 'settings.init want to create folder: ' + BandwidthInDir())
         os.makedirs(BandwidthInDir())
-
     if not os.path.exists(BandwidthOutDir()):
         lg.out(6, 'settings.init want to create folder: ' + BandwidthOutDir())
         os.makedirs(BandwidthOutDir())
-
     if not os.path.exists(LogsDir()):
         lg.out(6, 'settings.init want to create folder: ' + LogsDir())
         os.makedirs(LogsDir())
-
     if not os.path.exists(IdentityCacheDir()):
         lg.out(6, 'settings.init want to create folder: ' + IdentityCacheDir())
         os.makedirs(IdentityCacheDir())
-
     if not os.path.exists(SuppliersDir()):
         lg.out(6, 'settings.init want to create folder: ' + SuppliersDir())
         os.makedirs(SuppliersDir())
-
     if not os.path.exists(RatingsDir()):
         lg.out(6, 'settings.init want to create folder: ' + RatingsDir())
         os.makedirs(RatingsDir())
@@ -2136,38 +2026,34 @@ def _checkCustomDirectories():
     Check existance of user configurable folders.
     """
     if getCustomersFilesDir() == '':
-        config.conf().setData('paths/customers', os.path.join(BaseDir(), "customers"))
+        config.conf().setData('paths/customers', DefaultCustomersDir())
     if not os.path.exists(getCustomersFilesDir()):
         lg.out(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
         os.makedirs(getCustomersFilesDir())
-
     if getLocalBackupsDir() == '':
-        config.conf().setData('paths/backups', BackupsDBDir())
+        config.conf().setData('paths/backups', DefaultBackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
         lg.out(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
-
     if getMessagesDir() == '':
-        config.conf().setData('paths/messages', MessagesDir())
+        config.conf().setData('paths/messages', DefaultMessagesDir())
     if not os.path.exists(getMessagesDir()):
         lg.out(6, 'settings.init want to create folder: ' + getMessagesDir())
         os.makedirs(getMessagesDir())
-
     if getReceiptsDir() == '':
-        config.conf().setData('paths/receipts', ReceiptsDir())
+        config.conf().setData('paths/receipts', DefaultReceiptsDir())
     if not os.path.exists(getReceiptsDir()):
         lg.out(6, 'settings.init want to create folder: ' + getReceiptsDir())
         os.makedirs(getReceiptsDir())
-
     if getRestoreDir() == '':
-        config.conf().setData('paths/restore', RestoreDir())
+        config.conf().setData('paths/restore', DefaultRestoreDir())
 
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     init()
     # patch_settings_py()
-    make_default_values()
+    # make_default_values()
 
 
 

@@ -13,6 +13,8 @@ BitPie.NET nickname_holder() Automat
     </a>
 
 EVENTS:
+    * :red:`dht-erase-failed`
+    * :red:`dht-erase-success`
     * :red:`dht-read-failed`
     * :red:`dht-read-success`
     * :red:`dht-write-failed`
@@ -88,17 +90,21 @@ class NicknameHolder(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'set' :
                 self.state = 'DHT_READ'
+                self.Attempts=0
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
         #---READY---
         elif self.state == 'READY':
-            if event == 'set' or event == 'timer-5min' :
+            if event == 'timer-5min' :
                 self.state = 'DHT_READ'
-                self.doDHTEraseKey(arg)
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
+            elif event == 'set' :
+                self.state = 'DHT_ERASE'
+                self.doDHTEraseKey(arg)
+                self.doSetNickname(arg)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
             if event == 'dht-read-success' and self.isMyOwnKey(arg) :
@@ -106,7 +112,6 @@ class NicknameHolder(automat.Automat):
                 self.doReportNicknameOwn(arg)
             elif event == 'dht-read-failed' :
                 self.state = 'DHT_WRITE'
-                self.Attempts=0
                 self.doDHTWriteKey(arg)
             elif event == 'dht-read-success' and not self.isMyOwnKey(arg) :
                 self.doReportNicknameExist(arg)
@@ -136,6 +141,17 @@ class NicknameHolder(automat.Automat):
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
+        #---DHT_ERASE---
+        elif self.state == 'DHT_ERASE':
+            if event == 'dht-erase-success' or event == 'dht-erase-failed' :
+                self.state = 'DHT_READ'
+                self.doMakeKey(arg)
+                self.doDHTReadKey(arg)
+            elif event == 'set' :
+                self.state = 'DHT_READ'
+                self.doSetNickname(arg)
+                self.doMakeKey(arg)
+                self.doDHTReadKey(arg)
         return None
 
     def isMyOwnKey(self, arg):
@@ -153,8 +169,8 @@ class NicknameHolder(automat.Automat):
         else:
             a, c = arg
         self.nickname = a or \
-                        settings.uconfig().get('personal.personal-nickname').strip() or \
-                        misc.getLocalIdentity().getIDName()
+            settings.getNickName() or \
+            misc.getLocalIdentity().getIDName()
         self.result_callback = c
 
     def doMakeKey(self, arg):

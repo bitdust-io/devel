@@ -64,9 +64,6 @@ def raw():
 {services/updates/shedule} software updates schedule
     You can set up a schedule to perform periodical checking for latest version.
     
-{other/upnp-enabledd} UPnP enable
-    Enable this if you want to perform checking of UPnP devices to configure port forwarding automatically.
-    
 {services} network services
     Network services settings.
     
@@ -142,7 +139,9 @@ def raw():
 
 {services/tcp-connections/tcp-port} tcp port number
     Enter the TCP port number, it will be used to connect with your machine by other users.
-        
+{services/tcp-connections/upnp-enabled} UPnP enable
+    Enable this if you want to perform checking of UPnP devices to configure port forwarding automatically.
+       
 {services/tcp-transport} tcp-transport service
     You can use different protocols to transfer packets across the network, they are called "transports". 
     Here you can customize your "TCP-transport" service, it is based on standard TCP protocol.
@@ -162,7 +161,7 @@ def raw():
     It sends and receives UDP datagrams to transfer data from one peer to another in the network. 
     UDP-transport performs own bandwidth management and load balancing.
 {services/udp-transport/enabled} enable udp-transport service
-    Enable "TCP-transport" service.
+    Enable "UDP-transport" service.
 {services/udp-transport/receiving-enabled} enable udp receiving
     Disable this if you do not want to use UDP-transport for receiving packets from other users.
 {services/udp-transport/sending-enabled} enable udp sending

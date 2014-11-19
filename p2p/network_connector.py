@@ -116,8 +116,6 @@ class NetworkConnector(Automat):
         'timer-5sec': (5.0, ['DISCONNECTED','CONNECTED']),
         }
 
-    fast = False
-    
     def init(self):
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
@@ -139,6 +137,7 @@ class NetworkConnector(Automat):
                 self.state = 'START_UP'
                 self.Disconnects=0
                 self.Reset=False
+                self.doCheckNetworkInterfaces(arg)
         #---UPNP---
         elif self.state == 'UPNP':
             if event == 'reconnect' :
@@ -203,7 +202,10 @@ class NetworkConnector(Automat):
                 self.state = 'CONNECTED'
         #---START_UP---
         elif self.state == 'START_UP':
-            if event == 'reconnect' :
+            if event == 'got-network-info' and not self.isNetworkActive(arg) :
+                self.state = 'DISCONNECTED'
+                self.Disconnects=3
+            elif event == 'reconnect' :
                 self.state = 'UP'
                 self.doSetUp(arg)
         return None
@@ -334,7 +336,7 @@ class NetworkConnector(Automat):
             lambda x: self.automat('internet-failed', 'disconnected'))
             
     def doCheckNetworkInterfaces(self, arg):
-        lg.out(4, 'network_connector.doCheckNetworkInterfaces')
+        # lg.out(4, 'network_connector.doCheckNetworkInterfaces')
         # TODO
         # self.automat('got-network-info', [])
         start_time = time.time()
@@ -342,13 +344,13 @@ class NetworkConnector(Automat):
             def _call():
                 return net_misc.getNetworkInterfaces()
             def _done(result, start_time):
-                lg.out(4, 'network_connector.doCheckNetworkInterfaces._done: %s in %d seconds' % (str(result), time.time()- start_time))
+                lg.out(4, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(result), time.time()-start_time))
                 self.automat('got-network-info', result)
             d = threads.deferToThread(_call)
             d.addBoth(_done, start_time)
         else:
             ips = net_misc.getNetworkInterfaces()
-            lg.out(4, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time()- start_time))
+            lg.out(4, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time()-start_time))
             self.automat('got-network-info', ips)
 
     def doRememberTime(self, arg):
@@ -433,6 +435,7 @@ def UpdateUPNP():
 
     _update_next_proto()
 
+#------------------------------------------------------------------------------ 
 
 def ConnectionDoneCallback(param, proto, info):
     global _CounterSuccessConnections 
@@ -447,23 +450,5 @@ def ConnectionFailedCallback(param, proto, info):
     if proto is not 'udp':
         _CounterFailedConnections += 1
     A('connection-failed')
-
-
-def NetworkAddressChangedCallback(newaddress):
-    """
-    Called when user's IP were changed to start reconnect process.
-    """
-    A('reconnect')
-
-
-#def NetworkTransportInitialized(proto):
-#    """
-#    """
-#    global _TransportsInitialization
-#    _TransportsInitialization.remove(proto)
-#    if len(_TransportsInitialization) == 0:
-#        A('all-transports-ready')
-
-
 
 

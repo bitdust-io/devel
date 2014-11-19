@@ -73,10 +73,10 @@ class StunClient(automat.Automat):
         return self.MESSAGES.get(msgid, '')
     
     def init(self):
-        # self.log_events = True
         self.listen_port = None
         self.callbacks = []
-        self.minimum_needed_servers = 4
+        self.find_nodes_attempts = 1
+        self.minimum_needed_servers = 2
         self.stun_nodes = []
         self.stun_servers = []
         self.stun_results = {}
@@ -210,7 +210,7 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
-        self._find_random_nodes(3, [])
+        self._find_random_nodes(self.find_nodes_attempts, [])
 
     def doRememberStunNodes(self, arg):
         """
@@ -328,7 +328,7 @@ class StunClient(automat.Automat):
     def _find_random_nodes(self, tries, result_list, prev_key=None):
         if prev_key and self.deferreds.has_key(prev_key):
             self.deferreds.pop(prev_key)
-        lg.out(12, 'stun_client._find_random_nodes tries=%d result_list=%d' % (tries, len(result_list)))
+        lg.out(2, 'stun_client._find_random_nodes tries=%d result_list=%d' % (tries, len(result_list)))
         if tries <= 0 or len(result_list) >= self.minimum_needed_servers:
             if len(result_list) > 0:
                 self.automat('found-some-nodes', result_list)

@@ -1647,26 +1647,25 @@ class InstallPage(Page):
         src += '<form action="%s" method="post">\n' % request.path
         src += '<h1>beta testing</h1>\n'
         src += '<table width=80%><tr><td>\n'
-        src += '<p align=justify>We offer a <b><a href="http://gold.ai" target=_blank>1 oz silver coin</a></b> or \n'
-        src += '<b>$50 US</b> for beta test users who use the software for <b>365 days</b>.\n'
-        src += 'You must donate at least <b>5 Gigabytes</b> to count as active user. </p>\n'
-        src += '<p align=justify>Every hour, the program sends a short control packet on the Central \n'
-        src += 'server so we know who is online, watch \n'
-        src += '<a href="http://id.bitpie.net/statistics/" target=_blank>statistics page</a> \n'
-        src += 'to check your online days.\n'
-        src += 'To get 50$ US or 1 oz silver coin you have to collect <b>365</b> points '
-        src += 'in the column <i>effective days active</i>.</p>\n'
-        src += '<p align=justify>Users who report bugs, spread BitPie.NET around the world \n'
-        src += 'and actively assist in the development may be further rewarded. \n'
-        src += '<br>This offer is currently limited to the <b>first 75 people</b> '
-        src += 'to sign up in the beta testing.</p>\n'
+#        src += '<p align=justify>We offer a <b><a href="http://gold.ai" target=_blank>1 oz silver coin</a></b> or \n'
+#        src += '<b>$50 US</b> for beta test users who use the software for <b>365 days</b>.\n'
+#        src += 'You must donate at least <b>5 Gigabytes</b> to count as active user. </p>\n'
+#        src += '<p align=justify>Every hour, the program sends a short control packet on the Central \n'
+#        src += 'server so we know who is online, watch \n'
+#        src += '<a href="http://id.bitpie.net/statistics/" target=_blank>statistics page</a> \n'
+#        src += 'to check your online days.\n'
+#        src += 'To get 50$ US or 1 oz silver coin you have to collect <b>365</b> points '
+#        src += 'in the column <i>effective days active</i>.</p>\n'
+#        src += '<p align=justify>Users who report bugs, spread BitPie.NET around the world \n'
+#        src += 'and actively assist in the development may be further rewarded. \n'
+#        src += '<br>This offer is currently limited to the <b>first 75 people</b> '
+#        src += 'to sign up in the beta testing.</p>\n'
         src += '<br><br><table cellpadding=0 cellspacing=0 align=center>\n'
         src += '<tr><td valign=middle width=30>\n'
         src += '<input type="checkbox" name="development" value="True" %s />\n' % (('checked' if self.development == 'True' else ''))
         src += '</td><td valign=top align=left>\n'
         src += '<font size="+0"><b>enable development tools:</b> This will set higher debug level \n'
-        src += 'to produce more logs, enable HTTP server to watch the logs and '
-        src += 'start the memory profiler.</font>\n'
+        src += 'to produce more logs, enable HTTP server to watch the logs.</font>\n'
         src += '</td>\n'
         src += '</tr></table>\n'
         src += '</td></tr></table>\n'
@@ -3058,7 +3057,7 @@ class MainPage(Page):
             src += '<table width="80%"><tr><td align=left>\n'
             src += '<p>List of your suppliers is empty.\n '
             src += '<p>This may be due to the fact that the connection to other nodes is in process.</p>\n'
-            src += '<p>Wait a bit or check your backup options in the settings. \n'
+            src += '<p>Wait a bit or check your backup options in the settings.\n'
             src += 'If you request too much needed space, you may not find the right number of suppliers.</p><br>\n'
             src += '</td></tr></table>\n'
             src += html_comment(
@@ -3066,6 +3065,32 @@ class MainPage(Page):
                 'This may be due to the fact that the connection with other users \n'+
                 'is not yet established or BitPie.NET can not find the number \n'+
                 'of users that meet your requirements.')
+            return html(request, body=str(src), title='my files', back='', reload=reload )
+        
+        if not driver.is_started('service_restores'):     
+            src = ''
+            if not config.conf().getBool('services/restores/enabled'):
+                src += '<h1>my files</h1>\n'
+                src += '<table width="50%"><tr><td align=left>\n'
+                src += '<p>The BitPie.NET software is not ready to manage your remote files.<br>\n'
+                src += 'Network service <a href="%s"><b>restores<b></a> is disabled,\n' % ('/'+_PAGE_SERVICES_SETTINGS)
+                src += 'please check your software configs.</p>\n'
+                src += '</td></tr></table>\n'
+                src += html_comment(
+                    'The BitPie.NET software is not ready to manage your remote files.\n'+
+                    'Network service "restores" is disabled,\n'+
+                    'please check your software configs.\n')
+                return html(request, body=str(src), title='my files', back='', reload=reload )
+            src += '<h1>connecting ...</h1>\n'
+            src += '<table width="50%"><tr><td align=left>\n'
+            src += '<p>The software is not yet ready to manage your remote files.\n'
+            src += 'Please wait a bit while establishing connection with other nodes\n'
+            src += 'or check your network settings and Internet connection status.</p>\n'
+            src += '</td></tr></table>\n'
+            src += html_comment('Connecting ...'+
+                'The software is not yet ready to manage your remote files.\n'+
+                'Please wait a bit while establishing connection with other nodes\n'+
+                'or check your network settings and Internet connection status.\n')
             return html(request, body=str(src), title='my files', back='', reload=reload )
         
         ret = self._action(request)
@@ -5117,43 +5142,41 @@ class BackupSettingsPage(Page):
         # lg.out(14, 'webcontrol.BackupSettingsPage.renderPage')
         donatedStr = settings.getDonatedString()
         neededStr = settings.getNeededString()
+        blockSizeStr = settings.getBackupBlockSizeStr()
+        blockSizeMaxStr = settings.getBackupMaxBlockSizeStr()
+        numSuppliers = settings.getSuppliersNumberDesired()
+        backupCount = settings.getBackupsMaxCopies()
+        if backupCount == '0':
+            backupCount = 'unlimited'
+        keepLocalFiles = settings.getBackupsKeepLocalCopies()
 
         src = '<h1>backup settings</h1>\n'
         src += '<br><h3>needed space: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'services.customer.needed-space',
             request.path,
             neededStr)
-#        src += '<p>This will cost %s$ per day.</p>\n' % 'XX.XX'
 
         src += '<br><h3>donated space: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'services.supplier.donated-space',
             request.path,
             donatedStr)
-#        src += '<p>This will earn up to %s$ per day, depending on space used.</p>\n' % 'XX.XX'
 
-        numSuppliers = settings.getSuppliersNumberDesired()
         src += '<br><h3>number of suppliers: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'services.customer.suppliers-number',
             request.path, str(numSuppliers))
 
-        blockSize = settings.getBackupBlockSize()
         src += '<br><h3>preferred block size: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'services.backups.block-size',
-            request.path, str(blockSize))
+            request.path, str(blockSizeStr))
 
-        blockSizeMax = settings.getBackupMaxBlockSize()
         src += '<br><h3>maximum block size: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'services.backups.max-block-size',
-            request.path, str(blockSizeMax))
+            request.path, str(blockSizeMaxStr))
 
-        backupCount = settings.getGeneralBackupsToKeep()
-        if backupCount == '0':
-            backupCount = 'unlimited'
         src += '<br><h3>backup copies: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'services.backups.max-copies',
             request.path, backupCount)
         
-        keepLocalFiles = settings.getGeneralLocalBackups()
         src += '<br><h3>local backups: <a href="%s?back=%s">%s</a></h3>\n' % (
             '/'+_PAGE_SETTINGS+'/'+'services.backups.keep-local-copies-enabled', request.path,
             'yes' if keepLocalFiles else 'no')
@@ -5361,7 +5384,7 @@ class NetworkSettingsPage(Page):
                 '/'+_PAGE_SETTINGS+'/'+'services.tcp-connections.tcp-port', request.path,
                 str(settings.getTCPPort()))
             src += '<br><p>enable UPnP: <a href="%s?back=%s">%s</a></p>\n' % (
-                '/'+_PAGE_SETTINGS+'/'+'other.upnp-enabledd', request.path,
+                '/'+_PAGE_SETTINGS+'/'+'services.tcp-connections.upnp-enabled', request.path,
                 'yes' if settings.enableUPNP() else 'no')
         src += '</td>\n'
         src += '<td width=50% valign=top nowrap><h3>UDP transport</h3>\n'
@@ -7729,8 +7752,6 @@ def InitSettingsTreePages():
     'logs/stream-port':                             SettingsTreeNumericPositiveNode,
     'logs/traffic-enabled':                         SettingsTreeYesNoNode,
     'logs/traffic-port':                            SettingsTreeNumericPositiveNode,
-    'other/upnp-at-startup':                        SettingsTreeYesNoNode,
-    'other/upnp-enabled':                           SettingsTreeYesNoNode,
     'paths/backups':                                SettingsTreeDirPathNode,
     'paths/customers':                              SettingsTreeDirPathNode,
     'paths/messages':                               SettingsTreeDirPathNode,
@@ -7742,10 +7763,10 @@ def InitSettingsTreePages():
     'personal/private-key-size':                    SettingsTreeUStringNode,
     'personal/surname':                             SettingsTreeUStringNode,
     'services/backup-db/enabled':                   SettingsTreeYesNoNode,
-    'services/backups/block-size':                  SettingsTreeNumericPositiveNode,
+    'services/backups/block-size':                  SettingsTreeDiskSpaceNode,
     'services/backups/enabled':                     SettingsTreeYesNoNode,
     'services/backups/keep-local-copies-enabled':   SettingsTreeYesNoNode,
-    'services/backups/max-block-size':              SettingsTreeNumericPositiveNode,
+    'services/backups/max-block-size':              SettingsTreeDiskSpaceNode,
     'services/backups/max-copies':                  SettingsTreeNumericPositiveNode,
     'services/backups/wait-suppliers-enabled':      SettingsTreeYesNoNode,
     'services/customer/enabled':                    SettingsTreeYesNoNode,
@@ -7782,6 +7803,7 @@ def InitSettingsTreePages():
     'services/supplier/enabled':                    SettingsTreeYesNoNode,
     'services/tcp-connections/enabled':             SettingsTreeYesNoNode,
     'services/tcp-connections/tcp-port':            SettingsTreeNumericPositiveNode,
+    'services/tcp-connections/upnp-enabled':        SettingsTreeYesNoNode,
     'services/tcp-transport/enabled':               SettingsTreeYesNoNode,
     'services/tcp-transport/receiving-enabled':     SettingsTreeYesNoNode,
     'services/tcp-transport/sending-enabled':       SettingsTreeYesNoNode,

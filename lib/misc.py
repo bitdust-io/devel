@@ -149,7 +149,7 @@ def loadLocalIdentity():
     global _LocalIDURL
     global _LocalName
     xmlid = ''
-    filename = settings.LocalIdentityFilename()
+    filename = bpio.portablePath(settings.LocalIdentityFilename())
     if os.path.exists(filename):
         xmlid = bpio.ReadTextFile(filename)
         lg.out(6, 'misc.loadLocalIdentity %d bytes read from\n        %s' % (len(xmlid), filename))
@@ -178,7 +178,7 @@ def saveLocalIdentity():
     lg.out(6, "misc.saveLocalIdentity")
     _LocalIdentity.sign()
     xmlid = _LocalIdentity.serialize()
-    filename = settings.LocalIdentityFilename()
+    filename = bpio.portablePath(settings.LocalIdentityFilename())
     bpio.WriteFile(filename, xmlid)
 
 #------------------------------------------------------------------------------ 
