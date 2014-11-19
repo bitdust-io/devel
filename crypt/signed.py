@@ -150,13 +150,13 @@ class Packet:
             8) etc.
         """
         if not self.Ready():
-            lg.warn("packet is not ready yet " + str(self))
+            lg.out(4, "signed.Valid packet is not ready yet " + str(self))
             return False
         if not commands.IsCommand(self.Command):
-            lg.out(1, "signed.Valid bad Command " + str(self.Command))
+            lg.warn("signed.Valid bad Command " + str(self.Command))
             return False
         if not self.SignatureChecksOut():
-            lg.out(1, "signed.Valid failed Signature")
+            lg.warn("signed.Valid Signature IS NOT VALID!!!")
             return False
         return True
 
@@ -218,7 +218,7 @@ def Unserialize(data):
         return None
     newobject = misc.StringToObject(data)
     if newobject is None:
-        # lg.warn("result is None")
+        lg.warn("result is None")
         return None
     if type(newobject) != types.InstanceType:
         lg.warn("not an instance: " + str(newobject))
