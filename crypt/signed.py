@@ -150,13 +150,13 @@ class Packet:
             8) etc.
         """
         if not self.Ready():
-            lg.warn("packet is not ready yet " + str(self))
+            lg.out(4, "signed.Valid packet is not ready yet " + str(self))
             return False
         if not commands.IsCommand(self.Command):
-            lg.out(1, "signed.Valid bad Command " + str(self.Command))
+            lg.warn("signed.Valid bad Command " + str(self.Command))
             return False
         if not self.SignatureChecksOut():
-            lg.out(1, "signed.Valid failed Signature")
+            lg.warn("signed.Valid Signature IS NOT VALID!!!")
             return False
         return True
 
