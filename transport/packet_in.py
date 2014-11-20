@@ -193,7 +193,7 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        tmpfile.throw_out(self.filename, 'received')
+        # tmpfile.throw_out(self.filename, 'received')
 
     def doCancelItem(self, arg):
         """

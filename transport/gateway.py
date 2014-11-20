@@ -342,8 +342,6 @@ def inbox(info):
         Payload = newpacket.Payload
         RemoteID = newpacket.RemoteID
         Signature = newpacket.Signature
-        if OwnerID == misc.getLocalID() and Command == commands.Data():
-            OwnerID = RemoteID
         packet_sz = len(data)
     except:
         lg.out(1, "gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))

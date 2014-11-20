@@ -104,7 +104,10 @@ class StunServer(automat.Automat):
         """
         # udp.add_datagram_receiver_callback(self._datagramReceived)
         self.listen_port = arg
-        udp.proto(self.listen_port).add_callback(self._datagramReceived)
+        if udp.proto(self.listen_port):
+            udp.proto(self.listen_port).add_callback(self._datagramReceived)
+        else:
+            lg.warn('udp port %s is not opened' % self.listen_port)
         externalPort = bpio._read_data(settings.ExternalUDPPortFilename())
         try:
             externalPort = int(externalPort)
@@ -116,7 +119,10 @@ class StunServer(automat.Automat):
         """
         Action method.
         """
-        udp.proto(self.listen_port).remove_callback(self._datagramReceived)
+        if udp.proto(self.listen_port):
+            udp.proto(self.listen_port).remove_callback(self._datagramReceived)
+        else:
+            lg.warn('udp port %s is not opened' % self.listen_port)
 
     def doSendYourIPPort(self, arg):
         """

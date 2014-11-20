@@ -392,7 +392,7 @@ def ReadBinaryFile(filename):
     if not os.access(filename, os.R_OK):
         return ''
     try:
-        file = open(filename,"rb")
+        file = open(filename, "rb")
         data = file.read()
         file.close()
         return data

@@ -627,15 +627,29 @@ def AsciiToBinary(input):
     """
     return base64.decodestring(input)
 
-def ObjectToString(obj):
+def ObjectToString_old(obj):
     """
     """
     return cPickle.dumps(obj, protocol=cPickle.HIGHEST_PROTOCOL)
 
-def StringToObject(inp):
+def StringToObject_old(inp):
     """
     """
     return cPickle.loads(inp)
+
+def ObjectToString(obj):
+    """
+    """
+    import serialization
+    return serialization.ObjectToString(obj)
+    
+    
+def StringToObject(inp):
+    """
+    """
+    import serialization
+    return serialization.StringToObject(inp)
+
 
 def ObjectToAscii(input):
     """

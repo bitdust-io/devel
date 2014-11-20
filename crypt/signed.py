@@ -189,7 +189,9 @@ class Packet:
         Create a string from packet object using ``lib.misc.ObjectToString``.
         This is useful when need to save the packet on disk.
         """
-        return misc.ObjectToString(self)
+        src = misc.ObjectToString(self)
+        lg.out(10, 'signed.Serialize %d bytes, type is %s' % (len(src), str(type(src))))
+        return src
 
     def __len__(self):
         """
@@ -216,6 +218,7 @@ def Unserialize(data):
     """
     if data is None:
         return None
+    lg.out(10, 'signed.Unserialize %d bytes, type is %s' % (len(data), str(type(data))))
     newobject = misc.StringToObject(data)
     if newobject is None:
         lg.warn("result is None")

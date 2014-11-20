@@ -56,7 +56,7 @@ class StunClient(automat.Automat):
     """
     This class implements all the functionality of the ``stun_client()`` state machine.
     """
-    fast = True
+    # fast = True
 
     timers = {
         'timer-2sec': (2.0, ['REQUEST']),
@@ -197,7 +197,10 @@ class StunClient(automat.Automat):
         """
         self.listen_port = arg
         lg.out(12, 'stun_client.doInit on port %d' % self.listen_port)
-        udp.proto(self.listen_port).add_callback(self._datagram_received)
+        if udp.proto(self.listen_port):
+            udp.proto(self.listen_port).add_callback(self._datagram_received)
+        else:
+            lg.warn('udp port %s is not opened' % self.listen_port)
 
     def doAddCallback(self, arg):
         """
