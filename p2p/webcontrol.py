@@ -3596,6 +3596,7 @@ class BackupPage(Page, BackupIDSplit):
                             restorePath = restorePath[3:]
                         restoreDir = os.path.dirname(restorePath)
                         restore_monitor.Start(self.backupID, os.path.join(settings.getRestoreDir(), restoreDir))
+        #---requestrandomblock---
         #---explore---
         elif action == 'explore':
             if self.isExist:
