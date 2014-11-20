@@ -3547,7 +3547,7 @@ class BackupPage(Page, BackupIDSplit):
         src += '</tr>\n'
         src += '</table>\n'
         src += '<a href="%s?action=requestrandomblock">' % request.path
-        src += '<img src="%s">' % iconurl(request, 'icons/explore48-gray.png') 
+        src += '<img src="%s">' % iconurl(request, 'icons/explore48.png') 
         src += '</a>\n'
         return html(request, body=src, back=back)
 
@@ -3602,13 +3602,21 @@ class BackupPage(Page, BackupIDSplit):
 
         #---requestrandomblock---
         elif action == 'requestrandomblock':
-            if driver.is_started('data_sender'):
-                io_throttle.QueueRequestFile(
-                     lambda packet, state: lg.out(4, 'RECEIVED: %r with state %s' % (packet, state)),
-                     misc.getLocalID(),
-                     packetid.MakePacketID(self.backupID, 0, 0, 'Data'), 
-                     misc.getLocalID(),     
-                     contacts.getSupplierIDs()[0])
+            randBlockNum = random.randint(0, backup_matrix.GetKnownMaxBlockNum(self.backupID))
+            randSupplierNum = random.randint(0, contacts.numSuppliers()-1)
+            packetID = packetid.MakePacketID(self.backupID, randBlockNum, randSupplierNum, 'Data')
+            lg.out(4, 'REQUEST: %s' % packetID)
+            if driver.is_started('service_data_sender'):
+                try:
+                    io_throttle.QueueRequestFile(
+                        lambda packet, state: 
+                            lg.out(4, 'RECEIVED: %r with state %s' % (packet, state)),
+                        misc.getLocalID(),
+                        packetID, 
+                        misc.getLocalID(),     
+                        contacts.getSupplierIDs()[0])
+                except:
+                    lg.exc()
                                              
         #---explore---
         elif action == 'explore':

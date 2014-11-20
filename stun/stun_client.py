@@ -46,7 +46,7 @@ def A(event=None, arg=None):
     global _StunClient
     if _StunClient is None:
         # set automat name and starting state here
-        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8)
+        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8, True)
     if event is not None:
         _StunClient.automat(event, arg)
     return _StunClient

@@ -48,21 +48,6 @@ elif SERIALIZATION_METHOD == 'cPickle':
         return cPickle.loads(inp)
     
     
-elif SERIALIZATION_METHOD == 'jsonpickle':
-    import json
-    import jsonpickle
-    
-    def ObjectToString(obj):
-        """
-        """
-        return json.dumps(jsonpickle.encode(obj), ensure_ascii=False)
-    
-    def StringToObject(inp):
-        """
-        """
-        return jsonpickle.decode(json.loads(inp))
-    
-
 elif SERIALIZATION_METHOD == 'msgpack':
     import msgpack
     
@@ -77,5 +62,17 @@ elif SERIALIZATION_METHOD == 'msgpack':
         return msgpack.loads(inp, use_list=False)
 
 
-    
+#elif SERIALIZATION_METHOD == 'jsonpickle':
+#    import json
+#    import jsonpickle
+#    
+#    def ObjectToString(obj):
+#        """
+#        """
+#        return json.dumps(jsonpickle.encode(obj), ensure_ascii=False)
+#    
+#    def StringToObject(inp):
+#        """
+#        """
+#        return jsonpickle.decode(json.loads(inp))    
     
