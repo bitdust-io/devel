@@ -3546,6 +3546,9 @@ class BackupPage(Page, BackupIDSplit):
         src += '</td>\n'
         src += '</tr>\n'
         src += '</table>\n'
+        src += '<a href="%s?action=requestrandomblock">' % request.path
+        src += '<img src="%s">' % iconurl(request, 'icons/explore48-gray.png') 
+        src += '</a>\n'
         return html(request, body=src, back=back)
 
     def _action(self, request): 
@@ -3596,7 +3599,17 @@ class BackupPage(Page, BackupIDSplit):
                             restorePath = restorePath[3:]
                         restoreDir = os.path.dirname(restorePath)
                         restore_monitor.Start(self.backupID, os.path.join(settings.getRestoreDir(), restoreDir))
+
         #---requestrandomblock---
+        elif action == 'requestrandomblock':
+            if driver.is_started('data_sender'):
+                io_throttle.QueueRequestFile(
+                     lambda packet, state: lg.out(4, 'RECEIVED: %r with state %s' % (packet, state)),
+                     misc.getLocalID(),
+                     packetid.MakePacketID(self.backupID, 0, 0, 'Data'), 
+                     misc.getLocalID(),     
+                     contacts.getSupplierIDs()[0])
+                                             
         #---explore---
         elif action == 'explore':
             if self.isExist:
