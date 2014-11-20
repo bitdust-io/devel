@@ -471,7 +471,7 @@ class FireHire(automat.Automat):
                 sc.set_callback('fire_hire', self._supplier_connector_state_changed)
                 sc.automat('disconnect')
             else:
-                raise Exception('supplier_connector must exist')        
+                lg.warn('supplier_connector must exist, but not found %s' % supplier_idurl)        
 
     def doCloseConnector(self, arg):
         """
@@ -479,6 +479,8 @@ class FireHire(automat.Automat):
         """
         supplier_idurl, supplier_state = arg
         sc = supplier_connector.by_idurl(supplier_idurl)
+        if supplier_idurl in self.dismiss_list:
+            self.dismiss_list.remove(supplier_idurl)
         if sc:
             sc.automat('shutdown')
         else:
@@ -490,6 +492,8 @@ class FireHire(automat.Automat):
         """
         for supplier_idurl in self.dismiss_list:
             sc = supplier_connector.by_idurl(supplier_idurl)
+            if supplier_idurl in self.dismiss_list:
+                self.dismiss_list.remove(supplier_idurl)
             if sc:
                 sc.automat('shutdown')
         
