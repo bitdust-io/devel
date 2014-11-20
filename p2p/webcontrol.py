@@ -1160,7 +1160,7 @@ class ConfirmPage(Page):
         urlno = misc.unpack_url_param(urlno)
         text = misc.unpack_url_param(text)
         text = re.sub('\%\(option\:(.+?)\)s', 
-                  lambda m: config.conf().getData(m.group(1)), text)
+            lambda m: config.conf().getData(m.group(1).replace('.', '/')), text)
         args = arg(request, 'args')
         if args:
             args = base64.urlsafe_b64decode(args)

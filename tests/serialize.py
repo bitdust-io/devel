@@ -12,11 +12,16 @@ bpio.init()
 lg.set_debug_level(18)
 settings.init()
 key.InitMyKey()
-print 'reading'
-data1 = bpio.ReadBinaryFile(sys.argv[1])
-print '%d bytes long, hash: %s' % (len(data1), misc.BinaryToAscii(key.Hash(data1)).strip()) 
-p1 = signed.Packet(
-    'Data', misc.getLocalID(), misc.getLocalID(), 'SomeID', data1, 'RemoteID:abc')
+if len(sys.argv) > 1:
+    print 'reading'
+    data1 = bpio.ReadBinaryFile(sys.argv[1])
+    print '%d bytes long, hash: %s' % (len(data1), misc.BinaryToAscii(key.Hash(data1)).strip()) 
+    p1 = signed.Packet(
+        'Data', misc.getLocalID(), misc.getLocalID(), 'SomeID', data1, 'RemoteID:abc')
+else:
+    print 'unserialize from "input"'
+    p1 = signed.Unserialize(bpio.ReadBinaryFile('input'))
+    data1 = p1.Payload
 print 'serialize', p1
 print '  Command:', p1.Command, type(p1.Command)
 print '  OwnerID:', p1.OwnerID, type(p1.OwnerID)
