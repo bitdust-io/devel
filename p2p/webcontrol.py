@@ -3614,7 +3614,7 @@ class BackupPage(Page, BackupIDSplit):
                         misc.getLocalID(),
                         packetID, 
                         misc.getLocalID(),     
-                        contacts.getSupplierIDs()[0])
+                        contacts.getSupplierIDs()[randSupplierNum])
                 except:
                     lg.exc()
                                              
