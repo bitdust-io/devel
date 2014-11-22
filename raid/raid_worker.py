@@ -131,13 +131,13 @@ class RaidWorker(automat.Automat):
                 self.state = 'CLOSED'
                 self.doKillProcess(arg)
                 self.doDestroyMe(arg)
-            elif event == 'process-started' and self.isSomeTasks(arg) :
-                self.state = 'WORK'
-                self.doStartTask(arg)
             elif event == 'new-task' :
                 self.doAddTask(arg)
                 self.doStartProcess(arg)
-            elif event == 'process-started' and not self.isSomeTasks(arg) :
+            elif event == 'process-started' and self.isMoreTasks(arg) :
+                self.state = 'WORK'
+                self.doStartTask(arg)
+            elif event == 'process-started' and not self.isMoreTasks(arg) :
                 self.state = 'READY'
         #---READY---
         elif self.state == 'READY':
@@ -164,36 +164,41 @@ class RaidWorker(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'task-done' and self.isMoreTasks(arg) :
                 self.doReportTaskDone(arg)
+                self.doPopTask(arg)
                 self.doStartTask(arg)
             elif event == 'task-started' and self.isMoreTasks(arg) :
                 self.doStartTask(arg)
-            elif event == 'task-done' and not self.isSomeActive(arg) and not self.isMoreTasks(arg) :
+            elif event == 'task-done' and not self.isMoreActive(arg) and not self.isMoreTasks(arg) :
                 self.state = 'READY'
                 self.doReportTaskDone(arg)
-            elif event == 'task-done' and self.isSomeActive(arg) and not self.isMoreTasks(arg) :
+                self.doPopTask(arg)
+            elif event == 'task-done' and self.isMoreActive(arg) and not self.isMoreTasks(arg) :
                 self.doReportTaskDone(arg)
+                self.doPopTask(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-
-    def isSomeTasks(self, arg):
-        """
-        Condition method.
-        """
-        return len(self.tasks) > 0
+        return None
 
     def isMoreTasks(self, arg):
         """
         Condition method.
         """
-        return len(self.tasks) >= 1
+        return len(self.tasks) > 0
 
-    def isSomeActive(self, arg):
+    def isMoreActive(self, arg):
         """
         Condition method.
         """
-        return len(self.activetasks) > 0
-        
+        return len(self.activetasks) > 1
+
+    def doPopTask(self, arg):
+        """
+        Action method.
+        """
+        task_id, cmd, params, result = arg
+        self.activetasks.pop(task_id)
+                
     def doInit(self, arg):
         """
         Action method.
@@ -289,7 +294,6 @@ class RaidWorker(automat.Automat):
         _RaidWorker = None
 
     def _job_done(self, task_id, cmd, params, result):
-        self.activetasks.pop(task_id)
         lg.out(12, 'raid_worker._job_done %r : %r active:%r' % (
             task_id, result, self.activetasks.keys()))
         self.automat('task-done', (task_id, cmd, params, result))
@@ -301,6 +305,8 @@ class RaidWorker(automat.Automat):
         
 
 #------------------------------------------------------------------------------ 
+
+        
 
 def main():
     def _cb(cmd, taskdata, result):

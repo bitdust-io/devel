@@ -758,7 +758,7 @@ def cmd_set_request(opts, args, overDict):
     elif cls in [ webcontrol.SettingsTreeDiskSpaceNode, ]:
         number = misc.DigitsOnly(inpt, '.')
         suffix = inpt.lstrip('0123456789.-').strip()
-        action = 'number=%s&suffix=%s' % (number, suffix)
+        action = 'number=%s&suffix=%s' % (number, suffix.upper())
     elif cls in [ webcontrol.SettingsTreeComboboxNode, ]:
         number = misc.DigitsOnly(inpt)
         action = 'choice=%s' % number

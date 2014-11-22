@@ -1,3 +1,4 @@
+@echo off
 SET curpath=%cd%
 git pull
 cd %1
