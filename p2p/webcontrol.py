@@ -42,7 +42,7 @@ from lib import misc
 from lib import net_misc
 from lib import config
 from lib import settings
-from lib import userconfig
+# from lib import userconfig
 from lib import diskspace
 from lib import dirsize
 from lib import diskusage
@@ -8422,12 +8422,14 @@ class SettingsListPage(Page):
     def renderPage(self, request):
         src = ''
         src += '<table>\n'
-        for path in userconfig.all_options():
-            if path.strip() == '':
-                continue
-            if path not in userconfig.public_options():
-                continue
-            value = config.conf().getData(path).replace('\n', ' ')
+        for path in config.conf().listAllEntries():
+            # if path.strip() == '':
+            #     continue
+            # if path not in userconfig.public_options():
+            #     continue
+            value = config.conf().getData(path)
+            if value: 
+                value = value.replace('\n', ' ')
             label = path # settings.uconfig().labels.get(path, '')
             info = '' # settings.uconfig().infos.get(path, '')
             src += '<tr>\n'
