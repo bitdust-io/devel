@@ -101,6 +101,17 @@ class backup(automat.Automat):
     A class to run the backup process, data is read from pipe. 
     """
 
+    def abort(self):
+        """
+        This method should stop this backup by killing the pipe process.
+        """
+        lg.out(4, 'backup.abort id='+str(self.backupID))
+        self.ask4abort = True
+        try:
+            self.pipe.kill()
+        except:
+            pass
+        
     timers = {
         'timer-01sec': (0.1, ['RAID']),
         'timer-001sec': (0.01, ['READ']),
@@ -127,17 +138,6 @@ class backup(automat.Automat):
         self.blockResultCallback = blockResultCallback
         automat.Automat.__init__(self, 'backup_%s' % self.backupID, 'AT_STARTUP', 14)
         # lg.out(6, 'backup.__init__ %s %s %d' % (self.backupID, self.eccmap, self.blockSize,))
-
-    def abort(self):
-        """
-        This method should stop this backup by killing the pipe process.
-        """
-        lg.out(4, 'backup.abort id='+str(self.backupID))
-        self.ask4abort = True
-        try:
-            self.pipe.kill()
-        except:
-            pass
         
     #------------------------------------------------------------------------------ 
         

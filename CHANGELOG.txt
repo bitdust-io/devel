@@ -25,3 +25,13 @@
     * fixed messages - p2p chat is working now! 
     * did small fixes in: GUI, DHT code, API
     * changed UDP PING timeout agin, from 1 minute to 30 seconds
+    
+  2014-11-23 Veselin Penev <veselin@bitpie.net>
+  
+    * KEY FEATURE: software core is transformed into a system of interrelated services
+    * made upgrade on stun client - multiple stun requests at same time to increase performace
+    * changed user settings engine, now it is splited on single files in sub folder: .bitpie/config/
+    * many fixes in GUI and command line interface
+    * hash method was changed from MD5 to SHA1 
+    * added a small feature - can request a single random packet for given backup from GUI
+        

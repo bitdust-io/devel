@@ -102,6 +102,18 @@ import contact_status
 #------------------------------------------------------------------------------ 
 
 class restore(automat.Automat):
+
+    def set_packet_in_callback(self, cb):
+        self.packetInCallback = cb
+
+    def set_block_restored_callback(self, cb):
+        self.blockRestoredCallback = cb
+
+    def abort(self): 
+        # for when user clicks the Abort restore button on the gui
+        lg.out(4, "restore.Abort " + self.BackupID)
+        self.AbortState = True
+
     timers = {
         'timer-1sec': (1.0, ['REQUEST']),
         'timer-01sec': (0.1, ['RUN']),
@@ -291,7 +303,7 @@ class restore(automat.Automat):
                 packetsToRequest.append((SupplierID, packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Parity')))
         for SupplierID, packetID in packetsToRequest:
             io_throttle.QueueRequestFile(
-                self.PacketCameIn, 
+                self._packet_came_in, 
                 self.CreatorID, 
                 packetID, 
                 self.CreatorID, 
@@ -310,7 +322,7 @@ class restore(automat.Automat):
             lambda cmd, params, result: self._blockRestoreResult(result, filename))
          
     def doReadPacketsQueue(self, arg):
-        reactor.callLater(0, self.ProcessInboxQueue)
+        reactor.callLater(0, self._process_inbox_queue)
     
     def doPausePacketsQueue(self, arg):
         if self.InboxQueueWorker is not None:
@@ -404,9 +416,23 @@ class restore(automat.Automat):
         events.info('restore', '%s restored successfully' % self.BackupID)
     
     def doDestroyMe(self, arg):
+        if self.InboxQueueWorker is not None:
+            if self.InboxQueueWorker.active():
+                self.InboxQueueWorker.cancel()
+            self.InboxQueueWorker = None
+        self.OnHandData = None
+        self.OnHandParity = None
+        self.EccMap = None
+        self.LastAction = None
+        self.InboxPacketsQueue = None
+        self.RequestFails = None
+        self.MyDeferred = None
+        self.File = None
         self.destroy()
         collected = gc.collect()
         # lg.out(6, 'restore.doDestroyMe collected %d objects' % collected)
+
+    #------------------------------------------------------------------------------ 
 
     def _blockRestoreResult(self, restored_blocks, filename):
         if restored_blocks is None:
@@ -414,31 +440,19 @@ class restore(automat.Automat):
         else:
             self.automat('raid-done', filename)
 
-    def PacketCameIn(self, NewPacket, state):
+    def _packet_came_in(self, NewPacket, state):
         if state == 'received':
             self.InboxPacketsQueue.append(NewPacket)
         elif state == 'failed':
             self.RequestFails.append(NewPacket)
             self.automat('request-failed', NewPacket)
 
-    def ProcessInboxQueue(self):
+    def _process_inbox_queue(self):
         if len(self.InboxPacketsQueue) > 0:
             NewPacket = self.InboxPacketsQueue.pop(0)
             self.automat('packet-came-in', NewPacket)
-        self.InboxQueueWorker = reactor.callLater(self.InboxQueueDelay, self.ProcessInboxQueue)
+        self.InboxQueueWorker = reactor.callLater(self.InboxQueueDelay, self._process_inbox_queue)
     
-    def SetPacketInCallback(self, cb):
-        self.packetInCallback = cb
-
-    def SetBlockRestoredCallback(self, cb):
-        self.blockRestoredCallback = cb
-
-    def Abort(self): 
-        # for when user clicks the Abort restore button on the gui
-        lg.out(4, "restore.Abort " + self.BackupID)
-        self.AbortState = True
-
-
 #------------------------------------------------------------------------------ 
 
 def main():

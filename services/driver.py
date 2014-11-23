@@ -72,26 +72,36 @@ def init():
     """
     lg.out(2, 'driver.init')
     available_services_dir = os.path.join(bpio.getExecutableDir(), 'services')
+    loaded = set()
     for filename in os.listdir(available_services_dir):
-        if not filename.endswith('.py'):
+        if not filename.endswith('.py') and not filename.endswith('.pyo') and not filename.endswith('.pyc'):
             continue
         if not filename.startswith('service_'):
             continue
-        name = filename[:-3]
+        name = str(filename[:filename.rfind('.')])
+        if name in loaded:
+            continue
         if name in disabled_services():
+            lg.out(4, '%s is hard disabled' % name)
             continue
         try:
             py_mod = importlib.import_module('services.'+name)
         except:
+            lg.out(4, '%s exception during module import' % name)
             lg.exc()
             continue
         try:
             services()[name] = py_mod.create_service()
         except:
-            lg.exc() 
-        if services()[name].enabled():
-            enabled_services().add(name)
-    # print '\n'.join(enabled_services())
+            lg.out(4, '%s exception while creating service instance' % name)
+            lg.exc()
+            continue 
+        loaded.add(name)
+        if not services()[name].enabled():
+            lg.out(4, '%s is switched off' % name)
+            continue
+        enabled_services().add(name)
+        lg.out(4, '%s initialized' % name)
     build_order()
     config.conf().addCallback('services/', on_service_enabled_disabled)
 

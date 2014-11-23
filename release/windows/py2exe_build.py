@@ -38,9 +38,11 @@ includes = [
     'encodings.*',
     'twisted.web.resource',
     'optparse',
+    'services.*',
     ]
 
 excludes =[
+    '__pypy__.builders',
     'ICCProfile',
     '_imaging_gif', 
     '_imagingagg',           

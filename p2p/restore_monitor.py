@@ -141,8 +141,8 @@ def Start(backupID, outputLocation, callback=None):
     r = restore.restore(backupID, outfd)
     r.MyDeferred.addCallback(restore_done, outfilename, outputLocation, callback)
     r.MyDeferred.addErrback(restore_failed, outfilename, callback)
-    r.SetBlockRestoredCallback(block_restored_callback)
-    r.SetPacketInCallback(packet_in_callback)
+    r.set_block_restored_callback(block_restored_callback)
+    r.set_packet_in_callback(packet_in_callback)
     _WorkingBackupIDs[backupID] = r
     _WorkingRestoreProgress[backupID] = {}
     r.automat('init')
@@ -156,7 +156,7 @@ def Abort(backupID):
     if not backupID in _WorkingBackupIDs.keys():
         return False
     r = _WorkingBackupIDs[backupID]
-    r.Abort()
+    r.abort()
     return True
 
 
