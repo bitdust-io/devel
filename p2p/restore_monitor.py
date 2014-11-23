@@ -66,7 +66,7 @@ def packet_in_callback(backupID, newpacket):
 
 
 def extract_done(retcode, backupID, tarfilename, callback):
-    lg.out(8, 'restore_monitor.extract_done %s result: %s' % (backupID, str(retcode)))
+    lg.out(4, 'restore_monitor.extract_done %s result: %s' % (backupID, str(retcode)))
     global OnRestoreDoneFunc
     
     _WorkingBackupIDs.pop(backupID, None)
@@ -82,7 +82,8 @@ def extract_done(retcode, backupID, tarfilename, callback):
 
 
 def restore_done(x, tarfilename, outputlocation, callback):
-    lg.out(8, 'restore_monitor.restore_done ' + str(x))
+    lg.out(4, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    lg.out(4, 'restore_monitor.restore_done ' + str(x))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
@@ -110,7 +111,7 @@ def restore_done(x, tarfilename, outputlocation, callback):
 
 
 def restore_failed(x, tarfilename, callback):
-    lg.out(8, 'restore_monitor.restore_failed ' + str(x))
+    lg.out(4, 'restore_monitor.restore_failed ' + str(x))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc

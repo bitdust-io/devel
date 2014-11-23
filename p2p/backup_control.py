@@ -496,6 +496,7 @@ def OnJobDone(backupID, result):
     A callback method fired when backup is finished.
     Here we need to save the index data base. 
     """
+    lg.out(4, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     lg.out(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
     pathID, version = packetid.SplitBackupID(backupID)

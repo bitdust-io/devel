@@ -8422,7 +8422,7 @@ class SettingsListPage(Page):
     def renderPage(self, request):
         src = ''
         src += '<table>\n'
-        for path in config.conf().listAllEntries():
+        for path in sorted(config.conf().listAllEntries()):
             # if path.strip() == '':
             #     continue
             # if path not in userconfig.public_options():

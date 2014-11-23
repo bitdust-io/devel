@@ -53,10 +53,12 @@ The ID is something like ``F200801161206`` or ``I200801170401`` indicating full 
 EVENTS:
     * :red:`block-restored`
     * :red:`init`
+    * :red:`instant`
     * :red:`packet-came-in`
     * :red:`raid-done`
     * :red:`raid-failed`
     * :red:`request-done`
+    * :red:`request-failed`
     * :red:`timer-01sec`
     * :red:`timer-1sec`
     * :red:`timer-5sec`
@@ -121,6 +123,7 @@ class restore(automat.Automat):
         self.LastAction = time.time()
         self.InboxPacketsQueue = []
         self.InboxQueueWorker = None
+        self.RequestFails = []
         self.InboxQueueDelay = 1
         # For anyone who wants to know when we finish
         self.MyDeferred = Deferred()       
@@ -131,6 +134,10 @@ class restore(automat.Automat):
         events.info('restore', '%s start restoring' % self.BackupID)
         # lg.out(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 
+    def state_changed(self, oldstate, newstate, event_string, arg):
+        if newstate == 'RUN':
+            self.automat('instant')
+
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
@@ -138,18 +145,18 @@ class restore(automat.Automat):
                 self.state = 'RUN'
         #---RUN---
         elif self.state == 'RUN':
-            if event == 'timer-01sec' and not self.isAborted(arg) :
-                self.state = 'REQUEST'
-                self.doStartNewBlock(arg)
-                self.doReadPacketsQueue(arg)
-                self.doScanExistingPackets(arg)
-                self.doRequestPackets(arg)
-            elif event == 'timer-01sec' and self.isAborted(arg) :
+            if ( event == 'timer-01sec' or event == 'instant' ) and self.isAborted(arg) :
                 self.state = 'ABORTED'
                 self.doDeleteAllRequests(arg)
                 self.doCloseFile(arg)
                 self.doReportAborted(arg)
                 self.doDestroyMe(arg)
+            elif ( event == 'timer-01sec' or event == 'instant' ) and not self.isAborted(arg) :
+                self.state = 'REQUEST'
+                self.doStartNewBlock(arg)
+                self.doReadPacketsQueue(arg)
+                self.doScanExistingPackets(arg)
+                self.doRequestPackets(arg)
         #---REQUEST---
         elif self.state == 'REQUEST':
             if event == 'packet-came-in' and self.isPacketValid(arg) and self.isCurrentBlock(arg) :
@@ -168,6 +175,13 @@ class restore(automat.Automat):
             elif event == 'timer-5sec' and not self.isAborted(arg) and self.isTimePassed(arg) :
                 self.doScanExistingPackets(arg)
                 self.doRequestPackets(arg)
+            elif event == 'request-failed' and not self.isStillCorrectable(arg) :
+                self.state = 'FAILED'
+                self.doDeleteAllRequests(arg)
+                self.doRemoveTempFile(arg)
+                self.doCloseFile(arg)
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
         #---RAID---
         elif self.state == 'RAID':
             if event == 'raid-done' :
@@ -232,6 +246,9 @@ class restore(automat.Automat):
     def isBlockFixable(self, arg):
         return self.EccMap.Fixable(self.OnHandData, self.OnHandParity)
     
+    def isStillCorrectable(self, arg):
+        return len(self.RequestFails) <= eccmap.GetCorrectableErrors(self.EccMap.NumSuppliers())
+    
     def isBlockValid(self, arg):
         NewBlock = arg[0]
         if NewBlock is None:
@@ -248,6 +265,7 @@ class restore(automat.Automat):
         lg.out(6, "restore.doStartNewBlock " + str(self.BlockNumber))
         self.OnHandData = [False] * self.EccMap.datasegments
         self.OnHandParity = [False] * self.EccMap.paritysegments
+        self.RequestFails = []
 
     def doScanExistingPackets(self, arg):
         for SupplierNumber in range(self.EccMap.datasegments):
@@ -358,7 +376,11 @@ class restore(automat.Automat):
         io_throttle.DeleteBackupRequests(self.BackupID + "-" + str(self.BlockNumber))
 
     def doRemoveTempFile(self, arg):
-        tmpfile.throw_out(arg[1], 'block restored')
+        try:
+            filename = arg[1]
+        except:
+            return 
+        tmpfile.throw_out(filename, 'block restored')
 
     def doCloseFile(self, arg):
         os.close(self.File)
@@ -395,6 +417,9 @@ class restore(automat.Automat):
     def PacketCameIn(self, NewPacket, state):
         if state == 'received':
             self.InboxPacketsQueue.append(NewPacket)
+        elif state == 'failed':
+            self.RequestFails.append(NewPacket)
+            self.automat('request-failed', NewPacket)
 
     def ProcessInboxQueue(self):
         if len(self.InboxPacketsQueue) > 0:

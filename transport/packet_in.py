@@ -25,6 +25,8 @@ EVENTS:
 import os
 import time
 
+from twisted.internet import reactor
+
 from logs import lg
 
 from lib import automat
@@ -193,7 +195,7 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        # tmpfile.throw_out(self.filename, 'received')
+        reactor.callLater(1, tmpfile.throw_out, self.filename, 'received')
 
     def doCancelItem(self, arg):
         """
