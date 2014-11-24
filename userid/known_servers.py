@@ -15,5 +15,8 @@ def by_host():
     return {
         'megafaq.ru':   (80, 6661),
         'bitpie.net':   (8084, 6611),
+        'modnamama.ru': (80, 6661),
+        'p2p-id.ru':    (80, 6661),
+        'veselin-p2p.ru':   (80, 6661),
         # '37.18.255.32' : (80, 6661),
         }

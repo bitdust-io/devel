@@ -52,6 +52,8 @@ except:
     
 #------------------------------------------------------------------------------
 
+AppData = ''
+
 ShowLogs = False
 GUISettingsExists = False
 
@@ -177,7 +179,20 @@ NO_IMAGE = 'icons/delete01.png'
 #------------------------------------------------------------------------------
 
 def sharedPath(filename, subdir='logs'):
-    return os.path.join(os.path.expanduser('~'), '.bitpie', subdir, filename)
+    global AppData
+    if AppData == '':
+        curdir = os.path.dirname(os.path.abspath(sys.executable))
+        if os.path.isfile(os.path.join(curdir, 'appdata')):
+            try:
+                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read()) 
+            except:
+                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+            if not os.path.isdir(appdata):
+                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+        else: 
+            appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+        AppData = appdata
+    return os.path.join(AppData, subdir, filename)
 
 
 def WriteText(txt, filename='bpgui.log', mode='a', sharedLocation=True, subdir='logs'):
@@ -201,7 +216,8 @@ def WriteException(filename='view.log', mode='a', sharedLocation=True, subdir='l
     except KeyError:
         excArgs = "<no args>"
     excTb = traceback.format_tb(trbk, maxTBlevel)
-    WriteText('Exception: <'+unicode(exc, errors='replace')+'>   args: ' + excArgs, filename, mode, sharedLocation, subdir)
+    WriteText('Exception: <'+unicode(exc, errors='replace')+'>   args: ' + excArgs, 
+        filename, mode, sharedLocation, subdir)
     for s in excTb:
         WriteText(s, filename, mode, sharedLocation, subdir)
 
@@ -231,7 +247,6 @@ Current release is %s.<br>
 </html>''' % (vernum,)
 
 #------------------------------------------------------------------------------ 
-
 
 def _parse(url, defaultPort=None):
     """

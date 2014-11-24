@@ -25,16 +25,37 @@ import time
 
 #------------------------------------------------------------------------------ 
 
+AppData = ''
+
+#------------------------------------------------------------------------------ 
+
+def sharedPath(filename, subdir='logs'):
+    global AppData
+    if AppData == '':
+        curdir = os.path.dirname(os.path.abspath(sys.executable))
+        if os.path.isfile(os.path.join(curdir, 'appdata')):
+            try:
+                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read()) 
+            except:
+                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+            if not os.path.isdir(appdata):
+                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+        else: 
+            appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+        AppData = appdata
+    return os.path.join(AppData, subdir, filename)
+
 def logfilepath():
     """
     A file path to the file where ``bptester`` will write logs. 
     Need to make sure the ``bptester`` log is in a directory the user has permissions for,
     Such as the customer data directory.  Possibly move to temp directory?
     """
-    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
-    if not os.path.isdir(logspath):
-        return 'tester.log'
-    return os.path.join(logspath, 'tester.log')
+#    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
+#    if not os.path.isdir(logspath):
+#        return 'tester.log'
+#    return os.path.join(logspath, 'tester.log')
+    return sharedPath('bptester.log') 
 
 def printlog(txt):
     """

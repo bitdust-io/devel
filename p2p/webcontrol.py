@@ -4268,7 +4268,7 @@ class SuppliersPage(Page):
 
         #---draw page---
         src = ''
-        src += '<p>my username is <a href="%s" target=_blank>@:</a>%s</p>\n' % (misc.getLocalID(), misc.getIDName())
+        src += '<p>my ID is <a href="%s" target=_blank>@:</a>%s</p>\n' % (misc.getLocalID(), misc.getIDName())
         src += '<h1>my suppliers</h1>\n'
 
         if contacts.numSuppliers() > 0:

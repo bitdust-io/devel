@@ -28,9 +28,33 @@ import EasyDialogs
 
 #------------------------------------------------------------------------------
 
+AppData = ''
+
+#------------------------------------------------------------------------------ 
+
+def read_file(filename, mode='rb'):
+    try:
+        file = open(filename, mode)
+        data = file.read()
+        file.close()
+        if mode == 'r':
+            data = data.replace('\r\n','\n')
+        return data
+    except:
+        return ''
+
 def sharedPath(filename, subdir='logs'):
-    appdata = os.path.expanduser('~')
-    sharedDir = os.path.join(appdata, '.bitpie', subdir)
+    global AppData
+    if AppData == '':
+        curdir = os.path.dirname(os.path.abspath(sys.executable))
+        if os.path.isfile(os.path.join(curdir, 'appdata')):
+            appdata = os.path.abspath(read_file(os.path.join(curdir, 'appdata')).strip())
+            if not os.path.isdir(appdata):
+                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+        else: 
+            appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+        AppData = appdata
+    sharedDir = os.path.join(AppData, subdir)
     if filename is None:
         return os.path.abspath(sharedDir)
     return os.path.abspath(os.path.join(sharedDir, filename))
@@ -89,17 +113,6 @@ def logwrite(txt, mode='a'):
     fout = open(LogFilePath, mode)
     fout.write(time.strftime('%H:%M:%S  ')+txt)
     fout.close()
-
-def read_file(filename, mode='rb'):
-    try:
-        file = open(filename, mode)
-        data = file.read()
-        file.close()
-        if mode == 'r':
-            data = data.replace('\r\n','\n')
-        return data
-    except:
-        return ''
 
 def make_hash(data):
     return hashlib.md5(data).hexdigest()
@@ -246,7 +259,8 @@ def main():
         logwrite('file not found: %s\n' % CurrentVersionDigestsLocalPath)
     logwrite('current checksum is: %s\n' % cur_version)
 
-    #if local info is not exist, or it is empty - need to download it from the server
+    #if local info is not exist, or it is empty
+    #need to download it from the server
     if src.strip() == '':
         url = DefaultRepoURL + FilesDigestsFilename
         logwrite('want to download %s\n' % url)

@@ -16,11 +16,6 @@ xcopy build\*                                   bin  /E /R /H /Y /Q
 xcopy starter\*                                 bin\ /E /R /H /Y /Q
 
 
-REM @echo.
-REM @echo [ copy bpworker files ]
-REM xcopy worker\*                                 bin\ /E /R /H /Y /Q
-
-
 @echo.
 @echo [ fixing "unchanged" files ]
 if exist unchanged\NUL xcopy unchanged\*        bin\ /E /R /H /Y /Q
@@ -55,7 +50,6 @@ del bin\raid\rebuild.*
 xcopy ..\..\raid\read.py                        bin\raid\ /Y /Q
 xcopy ..\..\raid\make.py                        bin\raid\ /Y /Q
 xcopy ..\..\raid\rebuild.py                     bin\raid\ /Y /Q
-REM xcopy ..\..\parallelp\pp\ppworker.py            bin\parallelp\pp /Y /Q
 
 
 @echo.

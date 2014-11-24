@@ -38,14 +38,35 @@ import traceback
 
 #------------------------------------------------------------------------------ 
 
+AppData = ''
+
+#------------------------------------------------------------------------------ 
+
+def sharedPath(filename, subdir='logs'):
+    global AppData
+    if AppData == '':
+        curdir = os.path.dirname(os.path.abspath(sys.executable))
+        if os.path.isfile(os.path.join(curdir, 'appdata')):
+            try:
+                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read()) 
+            except:
+                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+            if not os.path.isdir(appdata):
+                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+        else: 
+            appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+        AppData = appdata
+    return os.path.join(AppData, subdir, filename)
+
 def logfilepath():
     """
     A method to detect where is placed the log file for ``bppipe`` child process.
     """
-    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
-    if not os.path.isdir(logspath):
-        return 'bppipe.log'
-    return os.path.join(logspath, 'bppipe.log')
+#    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
+#    if not os.path.isdir(logspath):
+#        return 'bppipe.log'
+#    return os.path.join(logspath, 'bppipe.log')
+    return sharedPath('bppipe.log')
 
 def printlog(txt, mode='a'):
     """

@@ -1,0 +1,7 @@
+@echo off
+cd bin
+start bitpie.exe
+@echo.
+@echo starting BitPie.NET 
+@echo.
+pause

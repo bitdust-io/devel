@@ -657,9 +657,9 @@ def BaseDirPathFileName():
     """
     You can configure BitPie.NET software to use another place for data folder.
     Say you want to store BitPie.NET files on another disk.
-    In the binary folder file "basedir.txt" can be created and it will keep the path to the data folder. 
+    In the binary folder file "appdata" can be created and it will keep the path to the data folder. 
     """
-    return os.path.join(bpio.getExecutableDir(), 'basedir.txt')
+    return os.path.join(bpio.getExecutableDir(), "appdata")
 
 def DefaultRestoreDir():
     """
@@ -1818,9 +1818,9 @@ def _initBaseDir(base_dir=None):
             bpio._dirs_make(_BaseDirPath)
         return
 
-    # if we have a file 'basedir.txt' in current folder - take the place from there
+    # if we have a file "appdata" in current folder - take the place from there
     if os.path.isfile(BaseDirPathFileName()):
-        path = bpio.ReadBinaryFile(BaseDirPathFileName())
+        path = os.path.abspath(bpio.ReadBinaryFile(BaseDirPathFileName()).strip())
         if os.path.isdir(path):
             _BaseDirPath = path
             if not os.path.exists(_BaseDirPath):
@@ -1929,6 +1929,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('personal/nickname', '')
     config.conf().setDefaultValue('personal/surname', '')
     config.conf().setDefaultValue('updates/mode', getUpdatesModeValues()[0])
+    config.conf().setDefaultValue('updates/shedule', '1\n12:00:00\n6\n')
     config.conf().setDefaultValue('services/backups/block-size', 
                                   diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
     config.conf().setDefaultValue('services/backups/max-block-size', 
