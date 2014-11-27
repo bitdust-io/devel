@@ -28,8 +28,8 @@ class EntangledDHTService(LocalService):
     
     def start(self):
         from dht import dht_service
-        from lib import settings
-        from lib.config import conf
+        from main import settings
+        from main.config import conf
         dht_service.init(settings.getDHTPort(), settings.DHTDBFile())
         dht_service.connect()
         conf().addCallback('services/entangled-dht/udp-port',
@@ -38,7 +38,7 @@ class EntangledDHTService(LocalService):
     
     def stop(self):
         from dht import dht_service
-        from lib.config import conf
+        from main.config import conf
         conf().removeCallback('services/entangled-dht/udp-port')
         dht_service.shutdown()
         return True

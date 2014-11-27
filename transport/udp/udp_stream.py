@@ -69,7 +69,7 @@ from twisted.internet import reactor
 from logs import lg
 
 from lib import udp
-from lib import automat
+from automats import automat
 
 #------------------------------------------------------------------------------ 
 

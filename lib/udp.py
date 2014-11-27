@@ -16,9 +16,11 @@ from twisted.internet import protocol
 from twisted.internet import task
 from twisted.internet.defer import DeferredList
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-import bpio
+from system import bpio
 
 #------------------------------------------------------------------------------ 
 

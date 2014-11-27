@@ -18,14 +18,14 @@ Here is a bunch of methods to interact with BitPie.NET software.
 def stop():
     from logs import lg
     lg.out(2, 'api.stop sending event "stop" to the shutdowner() machine')
-    from p2p import shutdowner
+    from main import shutdowner
     shutdowner.A('stop', 'exit')
     
 
 def restart():
     from logs import lg
-    from lib import bpio
-    from p2p import shutdowner
+    from system import bpio
+    from main import shutdowner
     appList = bpio.find_process(['bpgui.',])
     if len(appList) > 0:
         lg.out(2, 'api.restart found bpgui process, added param "show", sending event "stop" to the shutdowner() machine')
@@ -37,13 +37,13 @@ def restart():
 
 
 def show():
-    from p2p import webcontrol
+    from web import webcontrol
     webcontrol.show()
     
 #------------------------------------------------------------------------------ 
 
 def backups_list():
-    from p2p import backup_fs
+    from storage import backup_fs
     result = []
     for pathID, localPath, item in backup_fs.IterateIDs():
         result.append((pathID, localPath, item))
@@ -51,8 +51,8 @@ def backups_list():
 
 
 def backups_id_list():
-    from p2p import backup_fs
-    from lib import contacts
+    from storage import backup_fs
+    from userid import contacts
     from lib import diskspace
     result = []
     for backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
@@ -66,9 +66,9 @@ def backups_id_list():
 
 
 def backup_start_id(pathID):
-    from lib import bpio
-    from p2p import backup_fs
-    from p2p import backup_control
+    from system import bpio
+    from storage import backup_fs
+    from storage import backup_control
     localPath = backup_fs.ToPath(pathID)
     if localPath is not None:
         if bpio.pathExist(localPath):
@@ -81,9 +81,9 @@ def backup_start_id(pathID):
 
     
 def backup_start_path(path):
-    from lib import bpio
-    from p2p import backup_fs
-    from p2p import backup_control
+    from system import bpio
+    from storage import backup_fs
+    from storage import backup_control
     localPath = unicode(path)
     if not bpio.pathExist(localPath):
         return 'local path %s not found' % path
@@ -104,9 +104,9 @@ def backup_start_path(path):
 
         
 def backup_dir_add(dirpath):
-    from p2p import backup_fs
-    from p2p import backup_control
-    from lib import dirsize
+    from storage import backup_fs
+    from storage import backup_control
+    from system import dirsize
     newPathID, iter, iterID = backup_fs.AddDir(dirpath, True)
     dirsize.ask(dirpath, backup_control.FoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
@@ -115,8 +115,8 @@ def backup_dir_add(dirpath):
 
 
 def backup_file_add(filepath):    
-    from p2p import backup_fs
-    from p2p import backup_control
+    from storage import backup_fs
+    from storage import backup_control
     newPathID, iter, iterID = backup_fs.AddFile(filepath, True)
     backup_fs.Calculate()
     backup_control.Save()
@@ -124,8 +124,8 @@ def backup_file_add(filepath):
 
 
 def backup_tree_add(dirpath):
-    from p2p import backup_fs
-    from p2p import backup_control
+    from storage import backup_fs
+    from storage import backup_control
     from lib import packetid
     newPathID, iter, iterID, num = backup_fs.AddLocalPath(dirpath, True)
     backup_fs.Calculate()
@@ -138,16 +138,16 @@ def backup_tree_add(dirpath):
 #------------------------------------------------------------------------------ 
 
 def list_messages():
-    from p2p import message
+    from chat import message
     mlist = message.ListAllMessages()
     mlist.sort(key=lambda item: item[3])
     return mlist
     
     
 def send_message(recipient, subject, body):
-    from p2p import message
+    from chat import message
     if not recipient.startswith('http://'):
-        from lib import contacts
+        from userid import contacts
         for idurl, nickname in contacts.getCorrespondentsDict().items():
             if recipient == nickname:
                 recipient = idurl
@@ -171,7 +171,7 @@ def find_peer_by_nickname(nickname):
 
 
 def list_correspondents():
-    from lib import contacts
+    from userid import contacts
     return contacts.getCorrespondentsDict() 
     
     

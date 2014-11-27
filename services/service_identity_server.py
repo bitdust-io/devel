@@ -31,12 +31,12 @@ class IdentityServerService(LocalService):
                 ]
         
     def enabled(self):
-        from lib import settings
+        from main import settings
         return settings.enableIdServer()
     
     def start(self):
         from userid import id_server
-        from lib import settings
+        from main import settings
         id_server.A('init', (settings.getIdServerWebPort(), 
                              settings.getIdServerTCPPort()))
         id_server.A('start')

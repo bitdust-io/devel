@@ -25,7 +25,7 @@ def parser():
     Create an ``optparse.OptionParser`` object to read command line arguments.
     """
     from optparse import OptionParser, OptionGroup
-    from p2p.help import usage
+    from main.help import usage
     parser = OptionParser(usage=usage())
     group = OptionGroup(parser, "Log")
     group.add_option('-d', '--debug',
@@ -157,8 +157,8 @@ def call_xmlrpc_method(method, *args):
     Method to communicate with existing BitPie.NET process.
     Reads port number of the local RPC server and do the request.
     """
-    from lib import bpio
-    from lib import settings
+    from system import bpio
+    from main import settings
     try:
         local_port = int(bpio.ReadBinaryFile(settings.LocalXMLRPCPortFilename()))
     except:
@@ -181,7 +181,7 @@ def kill():
     Kill all running BitPie.NET processes (except current).
     """
     import time
-    from lib import bpio
+    from system import bpio
     total_count = 0
     found = False
     while True:
@@ -228,7 +228,7 @@ def wait_then_kill(x):
     import time
     from twisted.internet import reactor
     from logs import lg
-    from lib import bpio
+    from system import bpio
     total_count = 0
     while True:
         appList = bpio.find_process([
@@ -259,13 +259,13 @@ def wait_then_kill(x):
 #------------------------------------------------------------------------------ 
 
 def run_now(opts, args):
-    from lib import bpio
+    from system import bpio
     from logs import lg
     lg.life_begins()
     if opts.no_logs:
         lg.disable_logs()
     overDict = override_options(opts, args)
-    from p2p.bpmain import run
+    from main.bpmain import run
     ret = run('', opts, args, overDict)
     bpio.shutdown()
     return ret
@@ -293,7 +293,7 @@ def cmd_backups(opts, args, overDict):
         if not os.path.exists(localpath):
             print_text('path %s not exist\n' % args[2])
             return 1
-        from lib import bpio
+        from system import bpio
         if bpio.pathIsDir(localpath):
             m = 'backup_dir_add'
         else:
@@ -302,7 +302,7 @@ def cmd_backups(opts, args, overDict):
     
     elif args[1] == 'addtree' and len(args) >= 3:
         localpath = os.path.abspath(args[2])
-        from lib import bpio
+        from system import bpio
         if not bpio.pathIsDir(localpath):
             print_text('folder %s not exist\n' % args[2])
             return 1
@@ -334,7 +334,7 @@ def cmd_restore(opts, args, overDict):
 def cmd_schedule(opts, args, overDict):
     if len(args) < 2:
         return 2
-    from lib import bpio
+    from system import bpio
     if not bpio.pathIsDir(os.path.abspath(args[1])):
         print_text('folder %s not exist\n' % args[1])
         return 1
@@ -471,7 +471,7 @@ def cmd_friend(opts, args, overDict):
 #    if len(args) < 2:
 #        return 2
 #    if len(args) >= 3:
-#        from lib import settings
+#        from main import settings
 #        settings.uconfig().set('backup.private-key-size', str(args[2]))
 #        settings.uconfig().update()
 #    import lib.automat  as automat
@@ -874,14 +874,14 @@ def cmd_integrate():
 
 def main():
     try:
-        from lib import bpio
+        from system import bpio
     except:
         dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
         from distutils.sysconfig import get_python_lib
         sys.path.append(os.path.join(get_python_lib(), 'bitpie'))
         try:
-            from lib import bpio
+            from system import bpio
         except:
             print_text('ERROR! can not import working code.  Python Path:\n')
             print_text('\n'.join(sys.path))
@@ -897,7 +897,7 @@ def main():
     if len(args) > 0:
         cmd = args[0].lower()
 
-    from lib import bpio
+    from system import bpio
     bpio.init()
 
     #---start---
@@ -1027,13 +1027,13 @@ def main():
 
     #---help---
     elif cmd in ['help', 'h', 'hlp', '?']:
-        from p2p import help
+        from main import help
         if len(args) >= 2 and args[1].lower() == 'schedule':
             print_text(help.schedule_format())
         elif len(args) >= 2 and args[1].lower() == 'settings':
-            # from lib import settings
+            # from main import settings
             # settings.uconfig().print_all()
-            from lib import config
+            from main import config
             for k in config.conf().listAllEntries():
                 print k, config.conf().getData(k)
         else:
@@ -1112,7 +1112,7 @@ def main():
 
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:
-        from lib import settings
+        from main import settings
         ver = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         chksum = bpio.ReadTextFile(settings.CheckSumFile()).strip()
         repo, location = misc.ReadRepoLocation()

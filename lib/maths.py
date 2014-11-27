@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#maths.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -85,7 +86,7 @@ def shedule_next_daily(last_time, period_string, start_time_string):
         try:
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
-            import bpio
+            from logs import lg
             lg.exc()
             return None
     try:
@@ -93,7 +94,7 @@ def shedule_next_daily(last_time, period_string, start_time_string):
         period = int(period_string)
     except:
         print 'DEBUG: next_daily1'
-        import bpio
+        from logs import lg
         lg.exc()
         return None
     if period == 0:
@@ -145,14 +146,14 @@ def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
         try:
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
-            import bpio
+            from logs import lg
             lg.exc()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         period = int(period_string)
     except:
-        import bpio
+        from logs import lg
         lg.exc()
         return None
     if len(week_days) == 0 or period == 0:
@@ -212,14 +213,14 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
         try:
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
-            import bpio
+            from logs import lg
             lg.exc()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         day = int(day_string)
     except:
-        import bpio
+        from logs import lg
         lg.exc()
         return None
     if len(months) == 0 or day > 31 or day < 1:
@@ -285,14 +286,14 @@ def shedule_next_monthly(last_time, interval_months_string, start_time_string, d
         try:
             start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
-            import bpio
+            from logs import lg
             lg.exc()
             return None
     try:
         last_datetime = datetime.datetime.fromtimestamp(float(last_time))
         interval_months = int(interval_months_string)
     except:
-        import bpio
+        from logs import lg
         lg.exc()
         return None
 

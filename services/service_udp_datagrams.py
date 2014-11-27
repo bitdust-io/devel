@@ -28,8 +28,8 @@ class UDPDatagramsService(LocalService):
     
     def start(self):
         from lib import udp
-        from lib import settings
-        from lib.config import conf
+        from main import settings
+        from main.config import conf
         udp_port = settings.getUDPPort()
         if not udp.proto(udp_port):
             udp.listen(udp_port)
@@ -39,8 +39,8 @@ class UDPDatagramsService(LocalService):
     
     def stop(self):
         from lib import udp
-        from lib import settings
-        from lib.config import conf
+        from main import settings
+        from main.config import conf
         udp_port = settings.getUDPPort()
         if udp.proto(udp_port):
             udp.close(udp_port)

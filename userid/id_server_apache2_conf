@@ -1,0 +1,11 @@
+<VirtualHost *:80>
+ ServerName my-own-identity-server.com
+ ServerAlias www.my-own-identity-server.com
+ ProxyPreserveHost on
+ ProxyRequests Off
+ RewriteEngine on
+ ProxyPass / http://localhost:8084/
+ ProxyPassReverse / http://localhost:8084/
+ Redirect / http://localhost:8084/
+ RewriteRule ^/(.*) http://localhost:8084/$1 [P,L]
+</VirtualHost>

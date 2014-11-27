@@ -58,20 +58,24 @@ from twisted.internet.defer import Deferred, DeferredList
 from twisted.internet.task import LoopingCall
 from twisted.internet import threads
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib.automat import Automat
-from lib import automats
-from lib import bpio
+from automats import automat
+from automats import global_state
+
+from system import bpio
+from system import run_upnpc
+
 from lib import net_misc
-from lib import settings
 from lib import misc
 
 from services import driver
 
-import shutdowner
-import tray_icon
-import run_upnpc
+from main import settings
+from main import shutdowner
+from main import tray_icon
 
 #------------------------------------------------------------------------------ 
 
@@ -106,7 +110,7 @@ def Destroy():
     _NetworkConnector = None
 
 
-class NetworkConnector(Automat):
+class NetworkConnector(automat.Automat):
     """
     Class to monitor Internet connection and reconnect when needed.  
     """
@@ -124,7 +128,7 @@ class NetworkConnector(Automat):
         net_misc.SetConnectionFailedCallbackFunc(ConnectionFailedCallback)
 
     def state_changed(self, oldstate, newstate, event, arg):
-        automats.set_global_state('NETWORK ' + newstate)
+        global_state.set_global_state('NETWORK ' + newstate)
         # if driver.is_started('service_p2p_hookups'):
         #     import p2p_connector
         #     p2p_connector.A('network_connector.state', newstate)

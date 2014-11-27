@@ -45,19 +45,25 @@ except:
 from twisted.internet.defer import Deferred, DeferredList, maybeDeferred
 from twisted.internet.task import LoopingCall
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import automat
-from lib import automats
-from lib import bpio
+from automats import automat
+from automats import global_state
+
+from system import bpio
+
 from lib import misc
-from lib import settings
 from lib import net_misc
 
 from crypt import key
 
 from userid import identitycache
 from userid import identity
+from userid import my_id
+
+from main import settings
 
 #------------------------------------------------------------------------------ 
 
@@ -103,8 +109,8 @@ class IdRestorer(automat.Automat):
         return text, color
 
     def state_changed(self, oldstate, newstate, event, arg):
-        automats.set_global_state('ID_RESTORE ' + newstate)
-        import p2p.installer as installer
+        global_state.set_global_state('ID_RESTORE ' + newstate)
+        from main import installer
         installer.A('id_restorer.state', newstate)
 
     def A(self, event, arg):
@@ -228,10 +234,10 @@ class IdRestorer(automat.Automat):
             reactor.callLater(0.5, self.automat, 'restore-failed', ('signature did not match', 'red'))
             return
     
-        misc.setLocalIdentity(local_ident)
-        misc.saveLocalIdentity()
+        my_id.setLocalIdentity(local_ident)
+        my_id.saveLocalIdentity()
     
-        bpio.WriteFile(settings.UserNameFilename(), misc.getIDName())
+        bpio.WriteFile(settings.UserNameFilename(), my_id.getIDName())
     
         if os.path.isfile(settings.KeyFileName()+'.backup'):
             lg.out(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.KeyFileName())
@@ -253,7 +259,7 @@ class IdRestorer(automat.Automat):
         # settings.uconfig().update()
 
     def doPrint(self, arg):
-        import p2p.installer as installer
+        from main import installer
         installer.A().event('print', arg)
 
     def doDestroyMe(self, arg):

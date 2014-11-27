@@ -3,7 +3,7 @@
 import os
 
 import lib.packetid
-import lib.settings
+import main.settings
 
 import raid.read
 
@@ -12,7 +12,7 @@ def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localM
             
         def _build_raid_file_name(supplierNumber, dataOrParity):
             return os.path.join(
-                lib.settings.getLocalBackupsDir(),
+                main.settings.getLocalBackupsDir(),
                 lib.packetid.MakePacketID(backupID, blockNum, 
                                           supplierNumber, dataOrParity))
         

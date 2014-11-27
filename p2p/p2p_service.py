@@ -66,27 +66,31 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in p2p_service.py')
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import bpio
-from lib import contacts
-from lib import commands
+from system import bpio
+
+from userid import my_id
+from userid import contacts
+from userid import identity
+from userid import identitycache
+
+from p2p import commands
+
 from lib import misc
-from lib import settings
 from lib import packetid
 from lib import nameurl
 
 from crypt import signed
 
-from userid import identity
-from userid import identitycache
+from main import settings
 
 from transport import gateway
 from transport import callback 
 
-import message
-import local_tester
-import backup_control
+from chat import message
 
 #------------------------------------------------------------------------------
 
@@ -114,9 +118,9 @@ def inbox(newpacket, info, status, error_message):
             info.proto, info.host, newpacket))
         return False
   
-    if newpacket.CreatorID != misc.getLocalID() and newpacket.RemoteID != misc.getLocalID():
+    if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
         lg.out(1, "p2p_service.inbox  ERROR packet is NOT for us")
-        lg.out(1, "p2p_service.inbox  getLocalID=" + misc.getLocalID() )
+        lg.out(1, "p2p_service.inbox  getLocalID=" + my_id.getLocalID() )
         lg.out(1, "p2p_service.inbox  CreatorID=" + newpacket.CreatorID )
         lg.out(1, "p2p_service.inbox  RemoteID=" + newpacket.RemoteID )
         lg.out(1, "p2p_service.inbox  PacketID=" + newpacket.PacketID )
@@ -207,7 +211,7 @@ def makeFilename(customerID, packetID):
 #------------------------------------------------------------------------------
 
 def SendAck(packettoack, response=''):
-    result = signed.Packet(commands.Ack(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed.Packet(commands.Ack(), my_id.getLocalID(), my_id.getLocalID(), 
                                  packettoack.PacketID, response, packettoack.OwnerID)
     lg.out(8, "p2p_service.SendAck %s to %s" % (result.PacketID, result.RemoteID))
     gateway.outbox(result)
@@ -222,7 +226,7 @@ def Ack(newpacket):
      
     
 def SendFail(request, response=''):
-    result = signed.Packet(commands.Fail(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed.Packet(commands.Fail(), my_id.getLocalID(), my_id.getLocalID(), 
                                  request.PacketID, response, request.OwnerID) # request.CreatorID)
     lg.out(8, "p2p_service.SendFail %s to %s" % (result.PacketID, result.RemoteID))
     gateway.outbox(result)
@@ -230,7 +234,7 @@ def SendFail(request, response=''):
     
     
 def SendFailNoRequest(remoteID, packetID, response):
-    result = signed.Packet(commands.Fail(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed.Packet(commands.Fail(), my_id.getLocalID(), my_id.getLocalID(), 
         packetID, response, remoteID)
     lg.out(8, "p2p_service.SendFailNoRequest %s to %s" % (result.PacketID, result.RemoteID))
     gateway.outbox(result)
@@ -295,10 +299,10 @@ def RequestIdentity(request):
     Can also be used as a sort of "ping" test to make sure we are alive.
     """
     lg.out(6, "p2p_service.RequestIdentity starting")
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     RemoteID = request.OwnerID
     PacketID = request.PacketID
-    identitystr = misc.getLocalIdentity().serialize()
+    identitystr = my_id.getLocalIdentity().serialize()
     lg.out(8, "p2p_service.RequestIdentity returning ")
     result = signed.Packet(commands.Identity(), MyID, MyID, PacketID, identitystr, RemoteID)
     gateway.outbox(result, False)
@@ -307,9 +311,9 @@ def SendIdentity(remote_idurl, wide=False):
     """
     """
     lg.out(8, "p2p_service.SendIdentity to %s" % nameurl.GetName(remote_idurl))
-    result = signed.Packet(commands.Identity(), misc.getLocalID(), 
-                                 misc.getLocalID(), 'identity', # misc.getLocalID(),
-                                 misc.getLocalIdentity().serialize(), remote_idurl)
+    result = signed.Packet(commands.Identity(), my_id.getLocalID(), 
+                                 my_id.getLocalID(), 'identity', # my_id.getLocalID(),
+                                 my_id.getLocalIdentity().serialize(), remote_idurl)
     gateway.outbox(result, wide)
     return result       
     
@@ -355,6 +359,7 @@ def RequestService(request):
             new_customer = False
         else:
             new_customer = True
+        from storage import local_tester
         if free_bytes <= bytes_for_customer:
             contacts.setCustomerIDs(current_customers)
             contacts.saveCustomerIDs()
@@ -382,7 +387,7 @@ def RequestService(request):
     
 def SendRequestService(remote_idurl, service_info, response_callback=None):
     lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
-    result = signed.Packet(commands.RequestService(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed.Packet(commands.RequestService(), my_id.getLocalID(), my_id.getLocalID(), 
                                  packetid.UniqueID(), service_info, remote_idurl)
     gateway.outbox(result, callbacks={
         commands.Ack(): response_callback,
@@ -415,6 +420,7 @@ def CancelService(request):
         contacts.saveCustomerIDs()
         space_dict.pop(request.OwnerID)
         bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
+        from storage import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         return SendAck(request, 'accepted')
     lg.warn("got wrong payload in %s" % request)
@@ -422,7 +428,7 @@ def CancelService(request):
 
 def SendCancelService(remote_idurl, service_info, response_callback=None):
     lg.out(8, "p2p_service.SendCancelService [%s]" % service_info)
-    result = signed.Packet(commands.CancelService(), misc.getLocalID(), misc.getLocalID(), 
+    result = signed.Packet(commands.CancelService(), my_id.getLocalID(), my_id.getLocalID(), 
                                   packetid.UniqueID(), service_info, remote_idurl)
     gateway.outbox(result, callbacks={
         commands.Ack():  response_callback,
@@ -437,7 +443,7 @@ def ListFiles(request):
     and expect normal case is very few missing.
     This is to build the ``Files()`` we are holding for a customer.
     """
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     RemoteID = request.OwnerID
     PacketID = request.PacketID
     Payload = request.Payload
@@ -463,6 +469,7 @@ def Files(newpacket):
     A directory list came in from some supplier.
     """
     lg.out(8, "p2p_service.Files from [%s]" % nameurl.GetName(newpacket.OwnerID))
+    from storage import backup_control
     backup_control.IncomingSupplierListFiles(newpacket)
    
 #------------------------------------------------------------------------------ 
@@ -474,10 +481,11 @@ def Data(request):
         2) or save the customer file on our local HDD 
     """
     # 1. this is our Data! 
-    if request.OwnerID == misc.getLocalID():
+    if request.OwnerID == my_id.getLocalID():
         lg.out(8, "p2p_service.Data %r for us from %s" % (
             request, nameurl.GetName(request.RemoteID)))
         if request.PacketID in [ settings.BackupIndexFileName(), ]:
+            from storage import backup_control
             backup_control.IncomingSupplierBackupIndex(request)
 #        elif request.PacketID in [ settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName(), ]:
 #            return
@@ -526,6 +534,7 @@ def Data(request):
         SendFail(request, 'write error')
         return
     SendAck(request, str(len(request.Payload)))
+    from storage import local_tester
     reactor.callLater(0, local_tester.TestSpaceTime)
     del data
     lg.out(8, "p2p_service.Data saved from [%s/%s] to %s" % (
@@ -612,7 +621,7 @@ def DeleteFile(request):
 
 def SendDeleteFile(SupplierID, pathID):
     lg.out(8, "p2p_service.SendDeleteFile SupplierID=%s PathID=%s " % (SupplierID, pathID))
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     PacketID = pathID
     RemoteID = SupplierID
     result = signed.Packet(commands.DeleteFile(),  MyID, MyID, PacketID, "", RemoteID)
@@ -622,7 +631,7 @@ def SendDeleteFile(SupplierID, pathID):
     
 def SendDeleteListPaths(SupplierID, ListPathIDs):
     lg.out(8, "p2p_service.SendDeleteListPaths SupplierID=%s PathIDs number: %d" % (SupplierID, len(ListPathIDs)))
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
     Payload = '\n'.join(ListPathIDs)
@@ -668,7 +677,7 @@ def DeleteBackup(request):
 
 def SendDeleteBackup(SupplierID, BackupID):
     lg.out(8, "p2p_service.SendDeleteBackup SupplierID=%s  BackupID=%s " % (SupplierID, BackupID))
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     PacketID = BackupID
     RemoteID = SupplierID
     result = signed.Packet(commands.DeleteBackup(),  MyID, MyID, PacketID, "", RemoteID)
@@ -677,7 +686,7 @@ def SendDeleteBackup(SupplierID, BackupID):
 
 def SendDeleteListBackups(SupplierID, ListBackupIDs):
     lg.out(8, "p2p_service.SendDeleteListBackups SupplierID=%s BackupIDs number: %d" % (SupplierID, len(ListBackupIDs)))
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     RemoteID = SupplierID
     Payload = '\n'.join(ListBackupIDs)
@@ -689,7 +698,7 @@ def SendDeleteListBackups(SupplierID, ListBackupIDs):
 
 def Correspondent(request):
     lg.out(8, "p2p_service.Correspondent")
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     RemoteID = request.OwnerID
     PacketID = request.PacketID
     Msg = misc.decode64(request.Payload)
@@ -743,7 +752,7 @@ def RequestListFiles(supplierNumORidurl):
         lg.warn("RemoteID is empty supplierNumORidurl=%s" % str(supplierNumORidurl))
         return None
     lg.out(8, "p2p_service.RequestListFiles [%s]" % nameurl.GetName(RemoteID))
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     Payload = settings.ListFilesFormat()
     result = signed.Packet(commands.ListFiles(), MyID, MyID, PacketID, Payload, RemoteID)

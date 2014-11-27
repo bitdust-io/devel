@@ -28,8 +28,8 @@ class PrivateMessagesService(LocalService):
                 ]
     
     def start(self):
-        from p2p import message
-        from p2p import webcontrol
+        from chat import message
+        from web import webcontrol
         message.init()
         message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
         from userid import nickname_holder

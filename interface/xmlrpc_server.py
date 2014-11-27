@@ -15,6 +15,8 @@ from twisted.internet import reactor
 from twisted.web import server
 from twisted.web import xmlrpc
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 import api
@@ -23,7 +25,7 @@ import api
 
 def init():
     lg.out(4, 'xmlrpc_server.init')
-    from lib import settings
+    from main import settings
     port = settings.DefaultXMLRPCPort()
     reactor.listenTCP(port, server.Site(XMLRPCServer()))
 

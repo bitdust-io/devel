@@ -30,12 +30,12 @@ class BackupMonitorService(LocalService):
     
     def start(self):
         from twisted.internet import reactor
-        from p2p import backup_fs
-        from p2p import backup_monitor
-        from p2p import backup_control
-        from p2p import backup_matrix
-        from p2p import webcontrol
-        from lib.config import conf
+        from storage import backup_fs
+        from storage import backup_monitor
+        from storage import backup_control
+        from storage import backup_matrix
+        from web import webcontrol
+        from main.config import conf
         backup_fs.init()
         backup_control.init()
         backup_matrix.init()
@@ -50,10 +50,10 @@ class BackupMonitorService(LocalService):
         return True
     
     def stop(self):
-        from p2p import backup_fs
-        from p2p import backup_monitor
-        from p2p import backup_control
-        from lib.config import conf
+        from storage import backup_fs
+        from storage import backup_monitor
+        from storage import backup_control
+        from main.config import conf
         backup_monitor.Destroy()
         backup_fs.shutdown()
         backup_control.shutdown()
@@ -61,10 +61,10 @@ class BackupMonitorService(LocalService):
         return True
     
     def _on_keep_local_copies_modified(self, path, value, oldvalue, result):
-        from p2p import backup_monitor
+        from storage import backup_monitor
         backup_monitor.A('restart')
     
     def _on_wait_suppliers_modified(self, path, value, oldvalue, result):
-        from p2p import backup_monitor
+        from storage import backup_monitor
         backup_monitor.A('restart')
     

@@ -3,12 +3,12 @@ import sys
 
 
 try:
-    from lib import bpio
+    from system import bpio
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     try:
-        from lib import bpio
+        from system import bpio
     except:
         sys.exit()
 

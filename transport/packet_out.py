@@ -29,17 +29,24 @@ EVENTS:
 import os
 import time
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import automat
-from lib import misc
-from lib import commands
-from lib import contacts
-from lib import tmpfile
-from lib import nameurl
-from lib import settings
+from automats import automat
 
+from p2p import commands
+
+from lib import nameurl
+from lib import misc
+
+from system import tmpfile
+
+from userid import contacts
 from userid import identitycache
+from userid import my_id
+
+from main import settings
 
 import callback
 import gateway
@@ -106,7 +113,7 @@ def search_by_response_packet(newpacket):
 #        nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
     target_idurl = newpacket.CreatorID
-    if newpacket.OwnerID == misc.getLocalID():
+    if newpacket.OwnerID == my_id.getLocalID():
         target_idurl = newpacket.RemoteID
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:
@@ -173,7 +180,7 @@ class PacketOut(automat.Automat):
         self.time = time.time()
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.payloadsize = len(self.outpacket.Payload)
-        if self.outpacket.CreatorID == misc.getLocalID():
+        if self.outpacket.CreatorID == my_id.getLocalID():
             # our data will go to
             self.remote_idurl = self.outpacket.RemoteID.strip()
         else:

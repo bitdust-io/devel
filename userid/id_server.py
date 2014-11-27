@@ -37,11 +37,11 @@ except:
 
 from logs import lg
 
-from lib import bpio
-from lib import automat
+from system import bpio
+from automats import automat
 from lib import nameurl
-from lib import settings
-from lib import tmpfile
+from main import settings
+from system import tmpfile
 from lib import net_misc
 
 import identity

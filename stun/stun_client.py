@@ -26,10 +26,10 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from lib import bpio
-from lib import automat
+from system import bpio
+from automats import automat
 from lib import udp
-from lib import settings
+from main import settings
 
 from dht import dht_service
 
@@ -46,7 +46,7 @@ def A(event=None, arg=None):
     global _StunClient
     if _StunClient is None:
         # set automat name and starting state here
-        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8, True)
+        _StunClient = StunClient('stun_client', 'AT_STARTUP', 8)
     if event is not None:
         _StunClient.automat(event, arg)
     return _StunClient

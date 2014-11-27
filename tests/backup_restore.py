@@ -3,21 +3,27 @@ import sys
 
 from twisted.internet import reactor
 
+#------------------------------------------------------------------------------ 
+
 if __name__ == "__main__":
     import os.path as _p
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import misc
-from lib import settings
-from lib import bpio
-from lib import tmpfile
+from userid import my_id
 
-from p2p import backup_tar
-from p2p import backup_fs
-from p2p import backup
-from p2p import restore
+from main import settings
+
+from system import bpio
+from system import tmpfile
+
+from storage import backup_tar
+from storage import backup_fs
+from storage import backup
+from storage import restore
 
 from raid import raid_worker
 
@@ -34,8 +40,8 @@ def backup_done(bid, result):
         payld = str(bpio.ReadBinaryFile(filepath))
         outpacket = signed.Packet(
             'Data', 
-            misc.getLocalID(), 
-            misc.getLocalID(), 
+            my_id.getLocalID(), 
+            my_id.getLocalID(), 
             filename, 
             payld, 
             'http://megafaq.ru/cvps1010.xml')

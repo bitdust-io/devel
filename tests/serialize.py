@@ -2,11 +2,12 @@ import sys
 import os.path as _p
 sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 from logs import lg
-from lib import bpio
+from system import bpio
 from crypt import key
 from crypt import signed
-from lib import settings
+from main import settings
 from lib import misc
+from userid import my_id
 
 bpio.init()
 lg.set_debug_level(18)
@@ -17,7 +18,7 @@ if len(sys.argv) > 1:
     data1 = bpio.ReadBinaryFile(sys.argv[1])
     print '%d bytes long, hash: %s' % (len(data1), misc.BinaryToAscii(key.Hash(data1)).strip()) 
     p1 = signed.Packet(
-        'Data', misc.getLocalID(), misc.getLocalID(), 'SomeID', data1, 'RemoteID:abc')
+        'Data', my_id.getLocalID(), my_id.getLocalID(), 'SomeID', data1, 'RemoteID:abc')
 else:
     print 'unserialize from "input"'
     p1 = signed.Unserialize(bpio.ReadBinaryFile('input'))

@@ -35,7 +35,7 @@ class UDPTransportService(LocalService):
         from transport.udp import udp_interface
         from transport import network_transport
         from transport import gateway
-        from lib.config import conf
+        from main.config import conf
         self.starting_deferred = Deferred()
         self.interface = udp_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
@@ -54,7 +54,7 @@ class UDPTransportService(LocalService):
         return self.starting_deferred
     
     def stop(self):
-        from lib.config import conf
+        from main.config import conf
         conf().removeCallback('services/udp-transport/enabled') 
         conf().removeCallback('services/udp-transport/receiving-enabled')
         conf().removeCallback('services/network/receive-limit') 

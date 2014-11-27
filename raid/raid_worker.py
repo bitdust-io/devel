@@ -40,10 +40,13 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in raid_worker.py')
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import bpio
-from lib import automat
+from system import bpio
+
+from automats import automat
 
 import read
 import make
@@ -60,16 +63,19 @@ _MODULES = (
     'raid.make',
     'raid.rebuild', 
     'raid.eccmap',
-    'lib.settings', 
-    'lib.bpio',
+    'main.settings', 
+    'system.bpio',
     'lib.misc',
     'lib.packetid',
     )
 
 _VALID_TASKS = {
-    'make': (make.do_in_memory, (make.RoundupFile, make.ReadBinaryFile, make.WriteFile)),
-    'read': (read.raidread, (read.RebuildOne, read.ReadBinaryFile,)),
-    'rebuild': (rebuild.rebuild, ()),
+    'make': (make.do_in_memory, 
+                (make.RoundupFile, make.ReadBinaryFile, make.WriteFile)),
+    'read': (read.raidread, 
+                (read.RebuildOne, read.ReadBinaryFile,)),
+    'rebuild': (rebuild.rebuild, 
+                    ()),
 }
 
 #------------------------------------------------------------------------------ 

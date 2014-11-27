@@ -28,7 +28,7 @@ from twisted.internet.defer import Deferred, succeed
 
 from logs import lg
 
-from lib import bpio
+from system import bpio
 from lib import nameurl
 
 import udp_node

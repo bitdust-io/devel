@@ -29,9 +29,11 @@ import time
 
 from logs import lg
 
-from lib import automat
-from lib import settings
-from lib import misc
+from automats import automat
+
+from main import settings
+
+from userid import my_id
 
 from dht import dht_service
 
@@ -158,7 +160,7 @@ class NicknameHolder(automat.Automat):
         """
         Condition method.
         """
-        return arg == misc.getLocalID()
+        return arg == my_id.getLocalID()
 
     def doSetNickname(self, arg):
         """
@@ -170,7 +172,7 @@ class NicknameHolder(automat.Automat):
             a, c = arg
         self.nickname = a or \
             settings.getNickName() or \
-            misc.getLocalIdentity().getIDName()
+            my_id.getLocalIdentity().getIDName()
         self.result_callback = c
 
     def doMakeKey(self, arg):
@@ -209,7 +211,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        d = dht_service.set_value(self.key, misc.getLocalID(), age=int(time.time()))
+        d = dht_service.set_value(self.key, my_id.getLocalID(), age=int(time.time()))
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
@@ -282,7 +284,7 @@ def main():
     from twisted.internet import reactor
     lg.set_debug_level(24)
     settings.init()
-    misc.init()
+    my_id.init()
     dht_service.init(settings.getDHTPort())
     reactor.callWhenRunning(A, 'init', sys.argv[1])
     reactor.run()

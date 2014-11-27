@@ -27,7 +27,7 @@ from twisted.web import xmlrpc
 
 from logs import lg
 
-from lib import bpio
+from system import bpio
 
 import tcp_node
 

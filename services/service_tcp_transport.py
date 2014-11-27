@@ -34,7 +34,7 @@ class TCPTransportService(LocalService):
         from transport.tcp import tcp_interface
         from transport import network_transport
         from transport import gateway
-        from lib.config import conf
+        from main.config import conf
         self.starting_deferred = Deferred()
         self.interface = tcp_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
@@ -49,7 +49,7 @@ class TCPTransportService(LocalService):
         return self.starting_deferred
     
     def stop(self):
-        from lib.config import conf
+        from main.config import conf
         conf().removeCallback('services/tcp-transport/enabled') 
         conf().removeCallback('services/tcp-transport/receiving-enabled') 
         t = self.transport

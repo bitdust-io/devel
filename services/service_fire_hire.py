@@ -27,8 +27,8 @@ class FireHireService(LocalService):
                 ]
     
     def start(self):
-        from p2p import fire_hire
-        from lib.config import conf
+        from supplier import fire_hire
+        from main.config import conf
         fire_hire.A('init')
         conf().addCallback('services/customer/suppliers-number', 
             self._on_suppliers_number_modified)
@@ -37,20 +37,20 @@ class FireHireService(LocalService):
         return True
     
     def stop(self):
-        from p2p import fire_hire
-        from lib.config import conf
+        from supplier import fire_hire
+        from main.config import conf
         conf().removeCallback('services/customer/suppliers-number')
         conf().removeCallback('services/customer/needed-space') 
         fire_hire.Destroy()
         return True
     
     def _on_suppliers_number_modified(self, path, value, oldvalue, result):
-        from p2p import fire_hire
+        from supplier import fire_hire
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
         
     def _on_needed_space_modified(self, path, value, oldvalue, result):
-        from p2p import fire_hire
+        from supplier import fire_hire
         fire_hire.ClearLastFireTime()
         fire_hire.A('restart')
 

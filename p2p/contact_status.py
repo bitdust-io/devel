@@ -45,17 +45,19 @@ try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in contact_status.py')
-    
+
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import bpio
 from lib import nameurl
-from lib import contacts
-from lib import automat
-from lib import settings
-from lib import commands
 
-from userid import identitycache
+from userid import contacts
+
+from automats import automat
+
+from p2p import commands
+
 from transport import callback
 
 import ratings
@@ -321,8 +323,8 @@ class ContactStatus(automat.Automat):
         """
         """
         try:
-            import p2p.webcontrol
-            p2p.webcontrol.OnAliveStateChanged(self.idurl)
+            from web import webcontrol
+            webcontrol.OnAliveStateChanged(self.idurl)
         except:
             lg.exc()
         # if transport_control.GetContactAliveStateNotifierFunc() is not None:

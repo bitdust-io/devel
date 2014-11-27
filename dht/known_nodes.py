@@ -1,6 +1,18 @@
+#!/usr/bin/python
+#known_nodes.py
+#
+# <<<COPYRIGHT>>>
+#
+#
+#
+#
 
 """
+.. module:: known_nodes
+
 """
+
+#------------------------------------------------------------------------------ 
 
 def nodes(): 
     return [

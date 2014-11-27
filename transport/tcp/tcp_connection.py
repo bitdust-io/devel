@@ -30,8 +30,8 @@ from twisted.protocols import basic
 
 from logs import lg
 
-from lib import bpio
-from lib import automat
+from system import bpio
+from automats import automat
 
 import tcp_node
 import tcp_interface

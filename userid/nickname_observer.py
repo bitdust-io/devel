@@ -20,16 +20,17 @@ EVENTS:
     * :red:`stop`
 """
 
-import os
 import sys
 
-from twisted.internet.defer import Deferred
+#------------------------------------------------------------------------------ 
 
 from logs import lg
 
-from lib import automat
-from lib import settings
-from lib import misc
+from automats import automat
+
+from main import settings
+
+from userid import my_id
 
 from dht import dht_service
 
@@ -246,7 +247,7 @@ def main():
     from twisted.internet import reactor
     lg.set_debug_level(24)
     settings.init()
-    misc.init()
+    my_id.init()
     dht_service.init(settings.getDHTPort())
     def _result(result, nickname):
         print result, nickname

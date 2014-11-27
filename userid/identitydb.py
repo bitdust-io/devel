@@ -17,8 +17,8 @@ import os
 
 from logs import lg
 
-from lib import bpio
-from lib import settings
+from system import bpio
+from main import settings
 from lib import nameurl
 
 import identity

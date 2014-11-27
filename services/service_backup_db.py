@@ -28,12 +28,12 @@ class BackupDBService(LocalService):
                 ]
     
     def start(self):
-        from p2p import backup_db_keeper
+        from storage import backup_db_keeper
         backup_db_keeper.A('init')
         return True
     
     def stop(self):
-        from p2p import backup_db_keeper
+        from storage import backup_db_keeper
         backup_db_keeper.Destroy()
         return True
     

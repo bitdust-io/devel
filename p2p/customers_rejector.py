@@ -23,14 +23,14 @@ import os
 
 from logs import lg
 
-from lib import automat
-from lib import bpio
-from lib import settings
-from lib import contacts
+from automats import automat
+from system import bpio
+from main import settings
+from userid import contacts
 from lib import packetid
 
 import p2p_service
-import local_tester
+from storage import local_tester
 
 #------------------------------------------------------------------------------ 
 

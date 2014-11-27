@@ -1,3 +1,12 @@
+#!/usr/bin/python
+#network_transport.py
+#
+#
+# <<<COPYRIGHT>>>
+#
+#
+#
+#
 
 """
 .. module:: network_transport
@@ -20,13 +29,20 @@ import platform
 
 from twisted.internet.defer import fail
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import automat
-from lib import bpio
+from automats import automat
+
+from system import bpio
+
 from lib import misc
-from lib import settings
 from lib import nameurl
+
+from userid import my_id
+
+from main import settings
 
 import gateway 
 
@@ -162,10 +178,10 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        options = { 'idurl': misc.getLocalID(),}
+        options = { 'idurl': my_id.getLocalID(),}
         id_contact = ''
         default_host = ''
-        ident = misc.getLocalIdentity()
+        ident = my_id.getLocalIdentity()
         if ident:
             id_contact = ident.getContactsByProto().get(self.proto, '')
         if id_contact:
@@ -178,7 +194,7 @@ class NetworkTransport(automat.Automat):
             options['tcp_port'] = settings.getTCPPort()
         elif self.proto == 'udp':
             if not id_contact:
-                default_host = nameurl.GetName(misc.getLocalID())+'@'+platform.node()
+                default_host = nameurl.GetName(my_id.getLocalID())+'@'+platform.node()
             options['host'] = id_contact or default_host
             options['dht_port'] = settings.getDHTPort()
             options['udp_port'] = settings.getUDPPort()

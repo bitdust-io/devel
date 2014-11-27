@@ -1,0 +1,10 @@
+# <<<COPYRIGHT>>>
+#
+#
+#
+
+"""
+.. module:: supplier
+
+"""
+

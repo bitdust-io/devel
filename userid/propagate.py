@@ -33,21 +33,28 @@ except:
 
 from twisted.internet.defer import DeferredList, Deferred
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import bpio
+from system import bpio
+
 from lib import misc
 from lib import nameurl
-from lib import contacts
-from lib import commands
-from lib import settings
-from lib import tmpfile
+
+from userid import contacts
+from userid import identitycache
+from userid import known_servers
+from userid import my_id
+
+from p2p import commands
+
+from main import settings
+
+from system import tmpfile
 
 from crypt import signed
 from crypt import key
-
-from userid import identitycache
-from userid import known_servers
 
 from transport import gateway
 from transport import stats
@@ -157,7 +164,7 @@ def write_to_dht():
     """
     """
     lg.out(6, "propagate.write_to_dht")
-    LocalIdentity = misc.getLocalIdentity()
+    LocalIdentity = my_id.getLocalIdentity()
     return dht_service.set_value(LocalIdentity.getIDURL(), LocalIdentity.serialize())
 
 #------------------------------------------------------------------------------ 
@@ -200,7 +207,7 @@ def SendServers():
     """
     sendfile, sendfilename = tmpfile.make("propagate")
     os.close(sendfile)
-    LocalIdentity = misc.getLocalIdentity()
+    LocalIdentity = my_id.getLocalIdentity()
     bpio.WriteFile(sendfilename, LocalIdentity.serialize())
     dlist = []
     for idurl in LocalIdentity.sources:
@@ -255,7 +262,7 @@ def SlowSendSuppliers(delay=1):
         reactor.callLater(delay, _send, index+1, payload, delay)
 
     _SlowSendIsWorking = True
-    payload = misc.getLocalIdentity().serialize()
+    payload = my_id.getLocalIdentity().serialize()
     _send(0, payload, delay)
 
 
@@ -281,7 +288,7 @@ def SlowSendCustomers(delay=1):
         reactor.callLater(delay, _send, index+1, payload, delay)
 
     _SlowSendIsWorking = True
-    payload = misc.getLocalIdentity().serialize()
+    payload = my_id.getLocalIdentity().serialize()
     _send(0, payload, delay)
 
 
@@ -319,12 +326,12 @@ def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
         AckHandler = HandleAck
     thePayload = Payload
     if thePayload is None:
-        thePayload = misc.getLocalIdentity().serialize()
+        thePayload = my_id.getLocalIdentity().serialize()
     p = signed.Packet(
         commands.Identity(),
-        misc.getLocalID(), #MyID,
-        misc.getLocalID(), #MyID,
-        'identity', # misc.getLocalID(), #PacketID,
+        my_id.getLocalID(), #MyID,
+        my_id.getLocalID(), #MyID,
+        'identity', # my_id.getLocalID(), #PacketID,
         thePayload,
         idurl)
     # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
@@ -344,9 +351,9 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
     lg.out(8, "propagate.SendToIDs to %d users" % len(idlist))
     if AckHandler is None:
         AckHandler = HandleAck
-    MyID = misc.getLocalID()
+    MyID = my_id.getLocalID()
     PacketID = MyID
-    LocalIdentity = misc.getLocalIdentity()
+    LocalIdentity = my_id.getLocalIdentity()
     Payload = LocalIdentity.serialize()
     Hash = key.Hash(Payload)
     alreadysent = set()
@@ -380,9 +387,9 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
 #            continue    
         p = signed.Packet(
             commands.Identity(),
-            misc.getLocalID(), #MyID,
-            misc.getLocalID(), #MyID,
-            'identity', # misc.getLocalID(), #PacketID,
+            my_id.getLocalID(), #MyID,
+            my_id.getLocalID(), #MyID,
+            'identity', # my_id.getLocalID(), #PacketID,
             Payload,
             contact)
         lg.out(8, "        sending [Identity] to %s" % nameurl.GetName(contact))

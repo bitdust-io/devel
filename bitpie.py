@@ -13,8 +13,8 @@ def main():
         os.chdir(os.path.dirname(__file__))
     except:
         pass
-    import p2p.bpmain
-    ret = p2p.bpmain.main()
+    import main.bpmain
+    ret = main.bpmain.main()
     os._exit(ret)
 
 if __name__ == "__main__":

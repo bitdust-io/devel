@@ -27,13 +27,13 @@ class TCPConnectionsService(LocalService):
                 ]
     
     def start(self):
-        from lib.config import conf
+        from main.config import conf
         conf().addCallback('services/tcp-connections/tcp-port', 
                            self._on_tcp_port_modified)
         return True
     
     def stop(self):
-        from lib.config import conf
+        from main.config import conf
         conf().removeCallback('services/tcp-connections/tcp-port')
         return True
     

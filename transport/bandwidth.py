@@ -22,12 +22,19 @@ import time
 
 from twisted.internet import reactor
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg 
 
-from lib import bpio
-from lib import settings
+from userid import my_id
+
+from p2p import commands
+
+from system import bpio
+
 from lib import misc
-from lib import commands
+
+from main import settings
 
 #------------------------------------------------------------------------------ 
 
@@ -291,7 +298,7 @@ def INfile(newpacket, pkt_in, status, error_message):
     if status != 'finished':
         return
     packet_from = newpacket.OwnerID
-    if newpacket.OwnerID == misc.getLocalID() and newpacket.Command == commands.Data():
+    if newpacket.OwnerID == my_id.getLocalID() and newpacket.Command == commands.Data():
         packet_from = newpacket.RemoteID
     if pkt_in.size:
         IN(packet_from, pkt_in.size)

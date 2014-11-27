@@ -38,16 +38,14 @@ RAIDREAD:
     generate the read requests to get fetch the packets.
 """
 
-import os
-import sys
-
-from twisted.internet.defer import Deferred
+#------------------------------------------------------------------------------ 
 
 from logs import lg
 
 from lib import misc
-from lib import bpio
-from lib import contacts
+
+from userid import contacts
+from userid import my_id
 
 import key
 
@@ -143,7 +141,7 @@ class Block:
             lg.warn("block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
-        ConIdentity = contacts.getContact(misc.getLocalID())
+        ConIdentity = contacts.getContact(my_id.getLocalID())
         if ConIdentity is None:
             lg.warn("could not get Identity so returning False")
             return False

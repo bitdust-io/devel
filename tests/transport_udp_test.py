@@ -5,26 +5,27 @@ import sys
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 
+#------------------------------------------------------------------------------ 
+
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-from logs import lg
+#------------------------------------------------------------------------------ 
 
+from logs import lg
+from userid import my_id
 from lib import misc
-from lib import settings
+from main import settings
 from lib import nameurl
 from lib import udp
-from lib import bpio
-from lib import commands
-
+from system import bpio
+from p2p import commands
 from crypt import signed
-
 from dht import dht_service
-
 from transport.udp import udp_node
 from transport.udp import udp_session
-from transport import gate
+from transport import gateway
 
 #------------------------------------------------------------------------------ 
 
@@ -35,23 +36,23 @@ def main():
     key.InitMyKey()
     from userid import identitycache
     identitycache.init()
-    from lib import tmpfile
+    from system import tmpfile
     tmpfile.init()
-    # options = { 'idurl': misc.getLocalID(),}
-    # options['host'] = nameurl.GetName(misc.getLocalID())+'@'+'somehost.org'
+    # options = { 'idurl': my_id.getLocalID(),}
+    # options['host'] = nameurl.GetName(my_id.getLocalID())+'@'+'somehost.org'
     # options['dht_port'] = int(settings.getDHTPort())
     # options['udp_port'] = int(settings.getUDPPort())
     udp.listen(int(settings.getUDPPort())) 
     dht_service.init(settings.getDHTPort())
     # dht_service.connect()
     # udp_node.A('go-online', options)
-    reactor.addSystemEventTrigger('before', 'shutdown', gate.shutdown)
-    gate.init()
-    gate.start()
+    reactor.addSystemEventTrigger('before', 'shutdown', gateway.shutdown)
+    gateway.init()
+    gateway.start()
     # [filename] [peer idurl]
     if len(sys.argv) >= 3:
-        p = signed.Packet(commands.Data(), misc.getLocalID(), 
-                          misc.getLocalID(), misc.getLocalID(), 
+        p = signed.Packet(commands.Data(), my_id.getLocalID(), 
+                          my_id.getLocalID(), my_id.getLocalID(), 
                           bpio.ReadBinaryFile(sys.argv[1]), sys.argv[2])
         # bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
         def _try_reconnect():
@@ -73,7 +74,7 @@ def main():
         def _try_connect():
             if udp_node.A().state == 'LISTEN':
                 print 'connect'
-                gate.stop_packets_timeout_loop()
+                gateway.stop_packets_timeout_loop()
                 udp_session.add_pending_outbox_file(sys.argv[1]+'.signed', sys.argv[2], 'descr', Deferred(), False)
                 udp_node.A('connect', sys.argv[2])
                 reactor.callLater(5, _try_reconnect)
@@ -83,7 +84,7 @@ def main():
         def _send(c):
             from transport.udp import udp_stream
             print '_send', udp_stream.streams().keys()
-            gate.outbox(p)
+            gateway.outbox(p)
             # if c < 20:
             #     reactor.callLater(0.01, _send, c+1)
         reactor.callLater(10, _send, 0)

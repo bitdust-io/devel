@@ -28,16 +28,19 @@ from entangled.kademlia.datastore import SQLiteDataStore
 from entangled.kademlia.node import rpcmethod
 from entangled.kademlia.contact import Contact
 
-try:
-    from logs import lg
-except:
-    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+#------------------------------------------------------------------------------ 
+
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+#------------------------------------------------------------------------------ 
 
 from logs import lg
 
-from lib import bpio
-from lib import settings
+from system import bpio
+
+from main import settings
 
 import known_nodes
 

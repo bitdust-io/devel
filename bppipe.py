@@ -8,7 +8,7 @@
 #
 
 if __name__ == "__main__":
-    import p2p.bppipe
-    p2p.bppipe.main()
+    import main.bppipe
+    main.bppipe.main()
 
 

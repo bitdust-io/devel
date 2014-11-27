@@ -28,19 +28,24 @@ Packet Fields are all strings (no integers, objects, etc)
 import os
 import sys
 
-from twisted.internet import threads
-from twisted.internet.defer import Deferred
-
 import types
 import datetime
 
+from twisted.internet import threads
+from twisted.internet.defer import Deferred
+
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import bpio
-from lib import commands
+from system import bpio
+
+from p2p import commands
+
 from lib import misc
 from lib import packetid
-from lib import contacts
+
+from userid import contacts
 
 import key
 
@@ -256,7 +261,7 @@ def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 if __name__ == '__main__':
     bpio.init()
     lg.set_debug_level(18)
-    from lib import settings
+    from main import settings
     settings.init()
     key.InitMyKey()
     p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))

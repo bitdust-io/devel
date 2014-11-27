@@ -26,9 +26,9 @@ from twisted.internet import reactor
 
 from logs import lg
 
-from lib import automat
+from automats import automat
 from lib import udp
-from lib import settings
+from main import settings
 
 from stun import stun_client
 

@@ -158,14 +158,14 @@ def DefaultName():
     """
     This is a wrapper for ``settings.DefaultEccMapName``.
     """
-    from lib import settings
+    from main import settings
     return settings.DefaultEccMapName()
 
 def CurrentName():
     """
     Should return a ecc map name from current suppliers number - taken from user settings. 
     """
-    from lib import settings
+    from main import settings
     snum = settings.getSuppliersNumberDesired()
     if snum < 0:
         return DefaultName()
@@ -210,7 +210,7 @@ def GetEccMapSuppliersNumber(eccmapname):
     try:
         return int(__eccmap2suppliers[eccmapname])
     except:
-        from lib import settings
+        from main import settings
         return settings.DefaultDesiredSuppliers()
 
 def GetEccMapData(name):

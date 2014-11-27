@@ -26,7 +26,7 @@ from twisted.internet import reactor
 from logs import lg
 
 from lib import misc
-from lib import automat
+from automats import automat
 from lib import udp
 
 import udp_file_queue

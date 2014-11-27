@@ -16,7 +16,7 @@ See also `p2p.bptester <bitpie.p2p.bptester.html>`_ module.
 """
 
 if __name__ == "__main__":
-    import p2p.bpstarter
-    p2p.bpstarter.run()
+    import main.bpstarter
+    main.bpstarter.run()
 
 

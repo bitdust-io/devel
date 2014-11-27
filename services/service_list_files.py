@@ -27,12 +27,12 @@ class ListFilesService(LocalService):
                 ]
     
     def start(self):
-        from p2p import list_files_orator
+        from supplier import list_files_orator
         list_files_orator.A('init')
         return True
     
     def stop(self):
-        from p2p import list_files_orator
+        from supplier import list_files_orator
         list_files_orator.Destroy()
         return True
     

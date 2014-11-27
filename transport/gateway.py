@@ -47,36 +47,35 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 """
 
 import os
-import sys
 import time
 import optparse
 
 from twisted.web import xmlrpc
-from twisted.web import server
 from twisted.internet import reactor
-from twisted.internet import task
 from twisted.internet.defer import Deferred 
 from twisted.internet.defer import maybeDeferred 
 from twisted.internet.defer import fail
-from twisted.python import failure
+
+#------------------------------------------------------------------------------ 
 
 from logs import lg
 
-from lib import bpio
-from lib import misc
-from lib import settings
-from lib import commands
-from lib import nameurl
-from lib import tmpfile
+from p2p import commands
 
-from services import driver
+from lib import nameurl
+from lib import misc
+
+from system import bpio
+from system import tmpfile
+
+from main import settings
 
 from crypt import signed
 
+from userid import my_id
 from userid import identitycache
 
 import callback
-import network_transport
 import packet_in
 import packet_out
 
@@ -777,6 +776,7 @@ def main():
     bpio.init()
     settings.init()
     misc.init()
+    my_id.init()
     identitycache.init()
     from crypt import key
     key.InitMyKey()
@@ -803,8 +803,8 @@ def main():
     if len(args) > 0:
         globals()['num_out'] = 0
         def _s():
-            p = signed.Packet(commands.Data(), misc.getLocalID(), 
-                              misc.getLocalID(), misc.getLocalID(), 
+            p = signed.Packet(commands.Data(), my_id.getLocalID(), 
+                              my_id.getLocalID(), my_id.getLocalID(), 
                               bpio.ReadBinaryFile(args[1]), args[0])
             outbox(p, wide=True)
             lg.out(2, 'OUTBOX %d : %r' % (globals()['num_out'], p))

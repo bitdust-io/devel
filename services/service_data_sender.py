@@ -27,15 +27,15 @@ class DataSenderService(LocalService):
                 ]
     
     def start(self):
-        from p2p import io_throttle
-        from p2p import data_sender
+        from supplier import io_throttle
+        from supplier import data_sender
         io_throttle.init()
         data_sender.A('init')
         return True
     
     def stop(self):
-        from p2p import io_throttle
-        from p2p import data_sender
+        from supplier import io_throttle
+        from supplier import data_sender
         io_throttle.shutdown()
         data_sender.SetShutdownFlag()
         data_sender.Destroy()

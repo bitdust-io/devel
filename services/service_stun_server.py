@@ -29,7 +29,7 @@ class StunServerService(LocalService):
     
     def start(self):
         from stun import stun_server
-        from lib import settings
+        from main import settings
         udp_port = int(settings.getUDPPort())
         stun_server.A('start', udp_port) 
         return True

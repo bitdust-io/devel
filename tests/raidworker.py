@@ -29,7 +29,7 @@ def main():
         raid_worker.A('new-task',
             ('make', (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5]), 
                 _cb))
-    from lib import bpio 
+    from system import bpio 
     bpio.init()
     lg.set_debug_level(20)
     from raid import raid_worker

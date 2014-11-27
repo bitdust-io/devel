@@ -113,10 +113,14 @@ import time
 from xml.dom import minidom, Node
 from xml.dom.minidom import getDOMImplementation
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import settings
-from lib import bpio
+from main import settings
+
+from system import bpio
+
 from lib import nameurl
 
 from crypt import key
@@ -719,14 +723,14 @@ def test1():
     """
     Some tests.
     """
-    import lib.misc
-    myidentity=lib.misc.getLocalIdentity()
+    from userid import my_id
+    myidentity = my_id.getLocalIdentity()
     print 'getIP =', myidentity.getIP()
     if myidentity.Valid():
         print "myidentity is Valid!!!!"
     else:
         print "myidentity is not Valid"
-        lib.misc.saveLocalIdentity()            # sign and save
+        my_id.saveLocalIdentity()            # sign and save
         raise Exception("myidentity is not Valid")
     print "myidentity.contacts"
     print myidentity.contacts
@@ -758,32 +762,32 @@ def main():
     """
     This should print a current identity or create a new one.
     """
-    import lib.misc
-    lib.misc.loadLocalIdentity()
-    if lib.misc.isLocalIdentityReady():
-        lib.misc.getLocalIdentity().sign()
-        print lib.misc.getLocalIdentity().serialize()
-        print 'Valid is: ', lib.misc.getLocalIdentity().Valid()
+    from userid import my_id
+    my_id.loadLocalIdentity()
+    if my_id.isLocalIdentityReady():
+        my_id.getLocalIdentity().sign()
+        print my_id.getLocalIdentity().serialize()
+        print 'Valid is: ', my_id.getLocalIdentity().Valid()
     else:
-        lib.misc.setLocalIdentity(makeDefaultIdentity(sys.argv[1]))
-        lib.misc.saveLocalIdentity()
-        print lib.misc.getLocalIdentity().serialize()
-        print 'Valid is: ', lib.misc.getLocalIdentity().Valid()
-        lib.misc._LocalIdentity = None
-        lib.misc.loadLocalIdentity()
+        my_id.setLocalIdentity(makeDefaultIdentity(sys.argv[1]))
+        my_id.saveLocalIdentity()
+        print my_id.getLocalIdentity().serialize()
+        print 'Valid is: ', my_id.getLocalIdentity().Valid()
+        my_id._LocalIdentity = None
+        my_id.loadLocalIdentity()
         
 def update():
     """
     A good way to check all things - load and sign again.
     """
-    import lib.misc
+    from userid import my_id
     bpio.init()
     settings.init()
     src = bpio.ReadTextFile(settings.LocalIdentityFilename())
-    lib.misc.setLocalIdentity(identity(xmlsrc=src))
-    lib.misc.getLocalIdentity().sign()
-    lib.misc.saveLocalIdentity()
-    print lib.misc.getLocalIdentity().serialize()    
+    my_id.setLocalIdentity(identity(xmlsrc=src))
+    my_id.getLocalIdentity().sign()
+    my_id.saveLocalIdentity()
+    print my_id.getLocalIdentity().serialize()    
     
 #------------------------------------------------------------------------------ 
 

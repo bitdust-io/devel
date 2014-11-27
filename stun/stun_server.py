@@ -20,9 +20,9 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from lib import bpio
-from lib import settings
-from lib import automat
+from system import bpio
+from main import settings
+from automats import automat
 from lib import udp
 
 from dht import dht_service

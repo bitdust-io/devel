@@ -8,7 +8,7 @@
 #
 
 if __name__ == "__main__":
-    import p2p.bptester
-    p2p.bptester.main()
+    import main.bptester
+    main.bptester.main()
 
 

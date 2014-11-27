@@ -34,7 +34,7 @@ class StunClientService(LocalService):
         from twisted.internet import reactor
         from twisted.internet.defer import Deferred
         from stun import stun_client
-        from lib import settings
+        from main import settings
         stun_client.A('init', settings.getUDPPort())
         d = Deferred()
         reactor.callLater(0.5, stun_client.A, 'start', 

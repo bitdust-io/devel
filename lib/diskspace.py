@@ -21,6 +21,8 @@ Examples::
 You can translate values from Kb to Mb or create a good looking string from bytes number.         
 """
 
+#------------------------------------------------------------------------------ 
+
 _Suffixes = {
     '':                 1.0,
     'bytes':            1.0,
@@ -50,6 +52,7 @@ _MultiDict = {
         'Gb' : 1024.0 * 1024.0 * 1024.0,
     }
 
+#------------------------------------------------------------------------------ 
 
 class DiskSpace:
     """
@@ -126,12 +129,14 @@ def SuffixIsCorrect(suffix):
     global _Suffixes
     return suffix in _Suffixes.keys()
 
+
 def SuffixLabels():
     """
     Return the correct suffix labels.
     """
     global _SuffixLabels
     return _SuffixLabels
+
 
 def SameSuffix(suf1, suf2):
     """
@@ -147,6 +152,7 @@ def SameSuffix(suf1, suf2):
         return False
     return _Suffixes[suf1] == _Suffixes[suf2]
 
+
 def MakeString(value, suf):
     """
     Method to join value and unit measure.
@@ -156,6 +162,7 @@ def MakeString(value, suf):
     if round(float(value)) == float(value):
         return str(int(float(value))) + ' ' + suf
     return str(value) + ' ' + suf
+
 
 def SplitString(s):
     """
@@ -178,6 +185,7 @@ def SplitString(s):
         return (None, None)
 
     return (num, suf)
+
 
 def MakeStringFromBytes(value):
     """
@@ -207,7 +215,8 @@ def MakeStringFromBytes(value):
         sz = 'bytes'
     return MakeString(res, sz)
 
-def  GetBytesFromString(s, default=None):
+
+def GetBytesFromString(s, default=None):
     """
     Convert a string to a value in bytes, this is reverse method for MakeStringFromBytes.
         >>> from diskspace import *
@@ -218,6 +227,7 @@ def  GetBytesFromString(s, default=None):
     if num is None:
         return default
     return int(num * _Suffixes[suf])
+
 
 def MakeStringWithSuffix(s, suffix):
     """
@@ -237,6 +247,7 @@ def MakeStringWithSuffix(s, suffix):
         res = int(res)
     return MakeString(res, suffix)
 
+
 def GetMegaBytesFromString(s):
     """
     This is just a wrapper for ``GetBytesFromString``, but return value in Megabytes.
@@ -245,6 +256,7 @@ def GetMegaBytesFromString(s):
     if b is None:
         return None
     return round(b/(1024*1024), 2)
+
 
 def MakeStringFromString(s):
     """

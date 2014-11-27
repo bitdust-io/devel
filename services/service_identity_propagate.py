@@ -28,12 +28,12 @@ class IdentityPropagateService(LocalService):
                 ]
     
     def start(self):
-        from lib import misc
-        misc.loadLocalIdentity()
-        if misc._LocalIdentity is None:
+        from userid import my_id
+        my_id.loadLocalIdentity()
+        if my_id._LocalIdentity is None:
             raise Exception('Loading local identity failed - need to register first')
             return
-        from lib import contacts
+        from userid import contacts
         contacts.init()
         import userid.identitycache as identitycache
         identitycache.init()

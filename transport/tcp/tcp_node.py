@@ -41,7 +41,7 @@ from twisted.internet.error import CannotListenError
 
 from logs import lg
 
-from lib import bpio
+from system import bpio
 
 import tcp_interface
 import tcp_connection

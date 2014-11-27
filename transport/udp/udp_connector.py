@@ -20,7 +20,7 @@ import time
 
 from logs import lg
 
-from lib import automat
+from automats import automat
 
 from dht import dht_service
 

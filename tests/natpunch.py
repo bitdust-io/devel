@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from lib import bpio
+from system import bpio
 from lib import udp
 
 #------------------------------------------------------------------------------ 

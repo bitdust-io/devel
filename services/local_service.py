@@ -37,7 +37,7 @@ from twisted.internet.defer import Deferred, DeferredList
 
 from logs import lg
 
-from lib import automat
+from automats import automat
 
 from driver import services
 from driver import on_service_callback
@@ -67,7 +67,7 @@ class LocalService(automat.Automat):
         Method to catch the moment when automat's state were changed.
         """
         try:
-            from p2p import webcontrol
+            from web import webcontrol
             webcontrol.OnServiceStateChanged(self.service_name)
         except:
             pass
@@ -351,7 +351,7 @@ class LocalService(automat.Automat):
         return True
     
     def enabled(self):
-        from lib import config
+        from main import config
         return config.conf().getBool(self.config_path)
 
     def start(self):

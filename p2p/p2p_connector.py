@@ -45,25 +45,21 @@ EVENTS:
     * :red:`timer-20sec`
 """
 
-import os
 import sys
 
-try:
-    from twisted.internet import reactor
-except:
-    sys.exit('Error initializing twisted.internet.reactor in p2p_connector.py')
-
-from twisted.internet.defer import Deferred, DeferredList, maybeDeferred, succeed
-from twisted.internet.task import LoopingCall
+#------------------------------------------------------------------------------ 
 
 from logs import lg
 
-from lib import bpio
+from system import bpio
+
+from main import settings
+
 from lib import misc
-from lib import settings
 from lib import net_misc
-from lib import automat
-from lib import automats
+
+from automats import automat
+from automats import global_state
 
 from dht import dht_service
 
@@ -71,20 +67,11 @@ from transport import callback
 
 from services import driver
 
-# from raid import raid_worker
-
 from userid import propagate
+from userid import my_id
 
 import ratings
-import tray_icon
 import network_connector
-
-#import backup_monitor
-#import backup_db_keeper
-#import list_files_orator
-#import fire_hire
-#import data_sender
-#import customers_rejector
 
 #------------------------------------------------------------------------------ 
 
@@ -155,7 +142,7 @@ class P2PConnector(automat.Automat):
         self.version_number = ''
 
     def state_changed(self, oldstate, newstate, event, arg):
-        automats.set_global_state('P2P ' + newstate)
+        global_state.set_global_state('P2P ' + newstate)
         # tray_icon.state_changed(network_connector.A().state, self.state)
 
     def A(self, event, arg):
@@ -257,7 +244,7 @@ class P2PConnector(automat.Automat):
     def doPropagateMyIdentity(self, arg):
         propagate.update()
         propagate.write_to_dht()
-        dht_service.set_node_data('idurl', misc.getLocalID())
+        dht_service.set_node_data('idurl', my_id.getLocalID())
         d = propagate.start()
         d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 
@@ -272,7 +259,7 @@ class P2PConnector(automat.Automat):
         Action method.
         """
         if driver.is_started('service_backup_monitor'):
-            from p2p import backup_monitor
+            from storage import backup_monitor
             backup_monitor.A('restart')
 
     def doRestartCustomersRejector(self, arg):
@@ -288,7 +275,7 @@ class P2PConnector(automat.Automat):
         Action method.
         """
         if driver.is_started('service_fire_hire'):
-            from p2p import fire_hire
+            from supplier import fire_hire
             fire_hire.A('restart')
 
     def _check_to_use_best_proto(self):
@@ -296,7 +283,7 @@ class P2PConnector(automat.Automat):
         #if no incomming traffic - do nothing
         if len(active_protos()) == 0:
             return True
-        lid = misc.getLocalIdentity()
+        lid = my_id.getLocalIdentity()
         order = lid.getProtoOrder()
         #if no protocols in local identity - do nothing
         if len(order) == 0:
@@ -327,7 +314,7 @@ class P2PConnector(automat.Automat):
     def _pop_active_proto(self):
         if len(active_protos()) == 0:
             return
-        lid = misc.getLocalIdentity()
+        lid = my_id.getLocalIdentity()
         order = lid.getProtoOrder()
         first = order[0]
         wantedproto = ''
@@ -351,8 +338,8 @@ class P2PConnector(automat.Automat):
         # save local id
         # also need to propagate our identity
         # other users must know our new contacts
-        misc.setLocalIdentity(lid)
-        misc.saveLocalIdentity() 
+        my_id.setLocalIdentity(lid)
+        my_id.saveLocalIdentity() 
     
 #    def _is_id_changed(self, changes):
 #        s = set(changes)
@@ -375,7 +362,7 @@ class P2PConnector(automat.Automat):
         Just empty all of the contacts and create it again in the same order.
         """
         #getting local identity
-        lid = misc.getLocalIdentity()
+        lid = my_id.getLocalIdentity()
         oldcontats = lid.getContactsByProto()
         nowip = misc.readExternalIP()
         order = lid.getProtoOrder()
@@ -411,15 +398,15 @@ class P2PConnector(automat.Automat):
         #generate signature with changed content
         lid.sign()
         #remember the identity
-        misc.setLocalIdentity(lid)
+        my_id.setLocalIdentity(lid)
         #finally saving local identity
-        misc.saveLocalIdentity()
+        my_id.saveLocalIdentity()
         lg.out(4, 'p2p_connector.UpdateIdentity')
         lg.out(4, '    version: %s' % str(lid.version))
         lg.out(4, '    contacts: %s' % str(lid.contacts))
         #_UpnpResult.clear()
         changed = False
-        for proto, contact in misc.getLocalIdentity().getContactsByProto().items():
+        for proto, contact in my_id.getLocalIdentity().getContactsByProto().items():
             if proto not in oldcontats.keys():
                 changed = True
                 break

@@ -23,12 +23,12 @@ from twisted.internet import task
 
 from logs import lg
 
-from lib import bpio
+from system import bpio
 from lib import maths
 from lib import misc
 from lib import nameurl
-from lib import settings
-from lib import contacts
+from main import settings
+from userid import contacts
 
 import contact_status
 

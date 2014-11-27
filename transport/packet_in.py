@@ -29,12 +29,14 @@ from twisted.internet import reactor
 
 from logs import lg
 
-from lib import automat
-from lib import bpio
-from lib import tmpfile
-from lib import settings
-from lib import contacts
+from automats import automat
 
+from system import bpio
+from system import tmpfile
+
+from main import settings
+
+from userid import contacts 
 from userid import identitycache
 
 import gateway

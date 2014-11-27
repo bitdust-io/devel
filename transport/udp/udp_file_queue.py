@@ -15,10 +15,10 @@ from twisted.internet import reactor
 from logs import lg
 
 from lib import udp
-from lib import tmpfile
-from lib import settings
+from system import tmpfile
+from main import settings
 from lib import misc
-from lib import contacts
+from userid import contacts
 
 import udp_interface
 import udp_session

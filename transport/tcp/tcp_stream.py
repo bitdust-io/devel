@@ -15,8 +15,8 @@ from twisted.protocols import basic
 
 from logs import lg
 
-from lib import tmpfile
-from lib import settings
+from system import tmpfile
+from main import settings
 from lib import misc
 
 import tcp_node

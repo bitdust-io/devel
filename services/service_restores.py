@@ -27,8 +27,8 @@ class RestoreMonitorService(LocalService):
                 ]
     
     def start(self):
-        from p2p import restore_monitor
-        from p2p import webcontrol
+        from storage import restore_monitor
+        from web import webcontrol
         restore_monitor.init()
         restore_monitor.OnRestorePacketFunc = webcontrol.OnRestoreProcess
         restore_monitor.OnRestoreBlockFunc = webcontrol.OnRestoreSingleBlock
@@ -36,7 +36,7 @@ class RestoreMonitorService(LocalService):
         return True
     
     def stop(self):
-        from p2p import restore_monitor
+        from storage import restore_monitor
         restore_monitor.shutdown()
         return True
     

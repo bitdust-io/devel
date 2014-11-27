@@ -30,24 +30,33 @@ import time
 
 from twisted.internet.defer import Deferred, DeferredList
 
+#------------------------------------------------------------------------------ 
+
 try:
     from logs import lg
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import automat
-from lib import bpio
+from automats import automat
+
+from system import bpio
+
 from lib import misc
-from lib import settings
-from lib import stun
 from lib import nameurl
 from lib import net_misc
-#from lib import tmpfile
+
+from main import settings
+
+from stun import stun_rfc_3489
 
 from crypt import key
+
+from userid import my_id
 
 import identity
 import known_servers
@@ -125,7 +134,7 @@ class IdRegistrator(automat.Automat):
         """
         This method intended to catch the moment when automat's state were changed.
         """
-        from p2p import installer
+        from main import installer
         installer.A('id_registrator.state', newstate)
 
     def A(self, event, arg):
@@ -328,7 +337,7 @@ class IdRegistrator(automat.Automat):
             lg.out(4, '            external IP is %s' % ip)
             bpio.WriteFile(settings.ExternalIPFilename(), ip)
             self.automat('stun-success', ip)
-        stun.stunExternalIP(
+        stun_rfc_3489.stunExternalIP(
             close_listener=True,  # False, 
             internal_port=settings.getUDPPort(),).addCallbacks(
                 save, lambda x: self.automat('stun-failed'))
@@ -351,13 +360,13 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        mycurrentidentity = misc.getLocalIdentity()
-        misc.setLocalIdentity(self.new_identity)
+        mycurrentidentity = my_id.getLocalIdentity()
+        my_id.setLocalIdentity(self.new_identity)
         def _cb(x):
-            misc.setLocalIdentity(mycurrentidentity)
+            my_id.setLocalIdentity(mycurrentidentity)
             self.automat('my-id-sent')
         def _eb(x):
-            misc.setLocalIdentity(mycurrentidentity)
+            my_id.setLocalIdentity(mycurrentidentity)
             self.automat('my-id-failed')
         dl = self._send_new_identity()
         dl.addCallback(_cb)
@@ -382,8 +391,8 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        misc.setLocalIdentity(self.new_identity)
-        misc.saveLocalIdentity()
+        my_id.setLocalIdentity(self.new_identity)
+        my_id.saveLocalIdentity()
         
     def doDestroyMe(self, arg):
         """
@@ -397,7 +406,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        from p2p import installer
+        from main import installer
         installer.A().event('print', arg)
 
     def _create_new_identity(self):

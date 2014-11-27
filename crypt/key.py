@@ -37,14 +37,19 @@ import warnings
 warnings.filterwarnings('ignore',category=DeprecationWarning)
 from twisted.conch.ssh import keys
 
+#------------------------------------------------------------------------------ 
+
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from lib import bpio
-from lib import settings
+from system import bpio
+
+from main import settings
 
 #------------------------------------------------------------------------------ 
 
