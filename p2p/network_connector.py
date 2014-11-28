@@ -297,7 +297,7 @@ class NetworkConnector(automat.Automat):
             stun_client.A().dropMyExternalAddress()
             stun_client.A('start')    
         if driver.is_started('service_private_messages'):
-            from userid import nickname_holder
+            from chat import nickname_holder
             nickname_holder.A('set', None)
         # if driver.is_started('service_gateway'):
         #     from transport import gateway

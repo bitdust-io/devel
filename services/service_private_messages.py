@@ -32,12 +32,12 @@ class PrivateMessagesService(LocalService):
         from web import webcontrol
         message.init()
         message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
-        from userid import nickname_holder
+        from chat import nickname_holder
         nickname_holder.A('set', None)
         return True
     
     def stop(self):
-        from userid import nickname_holder
+        from chat import nickname_holder
         nickname_holder.Destroy()
         return True
     

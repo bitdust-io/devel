@@ -58,11 +58,12 @@ from transport import callback
 from transport import packet_out
 
 from userid import id_restorer
-from userid import nickname_holder
 from userid import my_id
 
 from contacts import identitycache
 from contacts import contactsdb
+
+from chat import nickname_holder
 
 from crypt import key
 
@@ -6921,7 +6922,7 @@ class CorrespondentsPage(Page):
                 typ = 'error'
             else:
                 self.results = []
-                from userid import nickname_observer
+                from chat import nickname_observer
                 nickname_observer.observe_many(nickname, 
                     results_callback=self._nickname_observer_result)
                 msg = 'checking <b>%s</b> ...' % nickname
@@ -6979,7 +6980,7 @@ class SetNickNamePage(Page):
         if submit == 'test':
             self.results = []
             self.last_nickname = nickname
-            from userid import nickname_observer
+            from chat import nickname_observer
             nickname_observer.find_one(nickname, 
                 results_callback=self._nickname_observer_result)
             msg = 'checking <b>%s</b> ...' % nickname

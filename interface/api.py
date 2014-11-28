@@ -160,7 +160,7 @@ def send_message(recipient, subject, body):
 
 def find_peer_by_nickname(nickname):
     from twisted.internet.defer import Deferred
-    from userid import nickname_observer
+    from chat import nickname_observer
     nickname_observer.stop_all()
     d = Deferred()
     nickname_observer.find_one(nickname, 
