@@ -44,7 +44,7 @@ from logs import lg
 
 from lib import misc
 
-from userid import contacts
+from contacts import contactsdb
 from userid import my_id
 
 import key
@@ -141,7 +141,7 @@ class Block:
             lg.warn("block is not ready yet " + str(self))
             return False
         hashsrc = self.GenerateHash()
-        ConIdentity = contacts.getContact(my_id.getLocalID())
+        ConIdentity = contactsdb.get_contact_identity(my_id.getLocalID())
         if ConIdentity is None:
             lg.warn("could not get Identity so returning False")
             return False

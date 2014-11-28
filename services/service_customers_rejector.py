@@ -27,7 +27,7 @@ class CustomersRejectorService(LocalService):
                 ]
     
     def start(self):
-        from p2p import customers_rejector
+        from supplier import customers_rejector
         from main.config import conf
         customers_rejector.A('restart')
         conf().addCallback('services/supplier/donated-space',
@@ -35,14 +35,14 @@ class CustomersRejectorService(LocalService):
         return True
     
     def stop(self):
-        from p2p import customers_rejector
+        from supplier import customers_rejector
         from main.config import conf
         conf().removeCallback('services/supplier/donated-space')
         customers_rejector.Destroy()
         return True
     
     def _on_donated_space_modified(self, path, value, oldvalue, result):
-        from p2p import customers_rejector
+        from supplier import customers_rejector
         customers_rejector.A('restart')
 
     

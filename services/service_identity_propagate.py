@@ -33,11 +33,11 @@ class IdentityPropagateService(LocalService):
         if my_id._LocalIdentity is None:
             raise Exception('Loading local identity failed - need to register first')
             return
-        from userid import contacts
-        contacts.init()
-        import userid.identitycache as identitycache
+        from contacts import contactsdb
+        contactsdb.init()
+        from contacts import identitycache
         identitycache.init()
-        from userid import propagate
+        from p2p import propagate
         propagate.init()
         return True
     

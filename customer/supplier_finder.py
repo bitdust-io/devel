@@ -29,8 +29,8 @@ from automats import automat
 from p2p import commands
 from p2p import p2p_service
 
-from userid import contacts
-from userid import identitycache
+from contacts import contactsdb
+from contacts import identitycache
 from userid import my_id
 
 from transport import callback
@@ -249,6 +249,8 @@ class SupplierFinder(automat.Automat):
         self.destroy()
         lg.out(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
+    #------------------------------------------------------------------------------ 
+
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         """
         """
@@ -276,7 +278,7 @@ class SupplierFinder(automat.Automat):
         if not idurl or idurl == 'None':
             self.automat('users-not-found')
             return response
-        if contacts.IsSupplier(idurl):
+        if contactsdb.is_supplier(idurl):
             lg.out(14, '    %s is supplier already' % idurl)
             self.automat('users-not-found')
             # self.automat('user-already-supplier')

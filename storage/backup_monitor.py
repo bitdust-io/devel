@@ -73,7 +73,7 @@ from lib import misc
 
 from main import settings
 
-from userid import contacts
+from contacts import contactsdb
 
 import backup_matrix
 import backup_fs
@@ -130,9 +130,9 @@ class BackupMonitor(automat.Automat):
             self.automat('instant')
 
     def A(self, event, arg):
-        from supplier import fire_hire
-        from supplier import data_sender
-        from supplier import list_files_orator 
+        from customer import fire_hire
+        from customer import data_sender
+        from customer import list_files_orator 
         import backup_rebuilder
         import backup_db_keeper
         #---READY---
@@ -203,31 +203,19 @@ class BackupMonitor(automat.Automat):
             if event == 'init' :
                 self.state = 'READY'
                 self.RestartAgain=False
-                self.doSuppliersInit(arg)
         return None
 
     def isSuppliersNumberChanged(self, arg):
         """
         Condition method.
         """
-        return contacts.numSuppliers() != len(self.current_suppliers)
-
-    def doSuppliersInit(self, arg):
-        """
-        Action method.
-        """
-        from supplier import supplier_connector
-        for supplier_idurl in contacts.getSupplierIDs():
-            if supplier_idurl:
-                sc = supplier_connector.by_idurl(supplier_idurl)
-                if sc is None:
-                    sc = supplier_connector.create(supplier_idurl)
+        return contactsdb.num_suppliers() != len(self.current_suppliers)
 
     def doRememberSuppliers(self, arg):
         """
         Action method.
         """
-        self.current_suppliers = list(contacts.getSupplierIDs())
+        self.current_suppliers = list(contactsdb.suppliers())
         
     def doDeleteAllBackups(self, arg):
         """
@@ -244,16 +232,16 @@ class BackupMonitor(automat.Automat):
         # also erase local info
         backup_matrix.ClearLocalInfo()
         # finally save the list of current suppliers and clear all stats 
-        # backup_matrix.suppliers_set().UpdateSuppliers(contacts.getSupplierIDs())
-        from supplier import io_throttle
+        # backup_matrix.suppliers_set().UpdateSuppliers(contactsdb.suppliers())
+        from customer import io_throttle
         io_throttle.DeleteAllSuppliers()
         
     def doUpdateSuppliers(self, arg):
         """
         Action method.
         """
-        from supplier import io_throttle
-        # supplierList = contacts.getSupplierIDs()
+        from customer import io_throttle
+        # supplierList = contactsdb.suppliers()
         # take a list of suppliers positions that was changed
         changedSupplierNums = backup_matrix.SuppliersChangedNumbers(self.current_suppliers)
         # notify io_throttle that we do not neeed already this suppliers
@@ -261,7 +249,7 @@ class BackupMonitor(automat.Automat):
             lg.out(2, "backup_monitor.doUpdateSuppliers supplier %d changed: [%s]->[%s]" % (
                 supplierNum, 
                 nameurl.GetName(self.current_suppliers[supplierNum]),
-                nameurl.GetName(contacts.getSupplierIDs()[supplierNum]),))
+                nameurl.GetName(contactsdb.suppliers()[supplierNum]),))
             suplier_idurl = self.current_suppliers[supplierNum] 
             io_throttle.DeleteSuppliers([suplier_idurl,])
             # erase (set to 0) remote info for this guys
@@ -295,7 +283,7 @@ class BackupMonitor(automat.Automat):
         # user can set how many versions of that file or folder to keep 
         # other versions (older) will be removed here  
         versionsToKeep = settings.getBackupsMaxCopies()
-        bytesUsed = backup_fs.sizebackups()/contacts.numSuppliers()
+        bytesUsed = backup_fs.sizebackups()/contactsdb.num_suppliers()
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0) 
         lg.out(6, 'backup_monitor.doCleanUpBackups backupsToKeep=%d used=%d needed=%d' % (versionsToKeep, bytesUsed, bytesNeeded))
         delete_count = 0
@@ -345,7 +333,7 @@ class BackupMonitor(automat.Automat):
         """
         Action method.
         """
-        if '' in contacts.getSupplierIDs():
+        if '' in contactsdb.suppliers():
             lg.out(6, 'backup_monitor.doOverallCheckUp found empty supplier, restart now')
             self.automat('restart')
             return

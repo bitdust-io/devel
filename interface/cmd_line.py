@@ -384,7 +384,7 @@ def cmd_friend(opts, args, overDict):
 #        idurl = args[2].strip()
 #        if not idurl.startswith('http://'):
 #            try:
-#                idurl = contacts.getSupplierID(int(idurl))
+#                idurl = contacts.supplier(int(idurl))
 #            except:
 #                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
 #        if not idurl:
@@ -401,7 +401,7 @@ def cmd_friend(opts, args, overDict):
 #        idurl = args[2].strip()
 #        if not idurl.startswith('http://'):
 #            try:
-#                idurl = contacts.getSupplierID(int(idurl))
+#                idurl = contacts.supplier(int(idurl))
 #            except:
 #                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
 #        if not idurl:
@@ -456,7 +456,7 @@ def cmd_friend(opts, args, overDict):
 #        idurl = args[2].strip()
 #        if not idurl.startswith('http://'):
 #            try:
-#                idurl = contacts.getCustomerID(int(idurl))
+#                idurl = contacts.customer(int(idurl))
 #            except:
 #                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
 #        name = nameurl.GetName(idurl)

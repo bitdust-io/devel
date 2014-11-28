@@ -18,9 +18,10 @@ So this is a local cache of user ID's.
 
 from twisted.internet.defer import Deferred
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
-from system import bpio
 from lib import net_misc
 
 import identitydb

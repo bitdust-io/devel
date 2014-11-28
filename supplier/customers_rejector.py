@@ -21,16 +21,21 @@ EVENTS:
 
 import os
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 from automats import automat
+
 from system import bpio
+
 from main import settings
-from userid import contacts
+
+from contacts import contactsdb
+
 from lib import packetid
 
-import p2p_service
-from storage import local_tester
+from p2p import p2p_service
 
 #------------------------------------------------------------------------------ 
 
@@ -109,7 +114,7 @@ class CustomersRejector(automat.Automat):
             - free_bytes = donated_bytes - spent_bytes : not yet allocated space
             - used_bytes : size of all files, which you store on your disk for your customers    
         """
-        current_customers = contacts.getCustomerIDs()
+        current_customers = contactsdb.customers()
         removed_customers = []
         spent_bytes = 0
         donated_bytes = settings.getDonatedBytes()
@@ -140,8 +145,8 @@ class CustomersRejector(automat.Automat):
             self.automat('space-enough')
             return
         used_space_ratio_dict = {}
-        for customer_pos in xrange(contacts.numCustomers()):
-            customer_idurl = contacts.getCustomerID(customer_pos)
+        for customer_pos in xrange(contactsdb.num_customers()):
+            customer_idurl = contactsdb.customer(customer_pos)
             try:
                 allocated_bytes = int(space_dict[customer_idurl])
             except:
@@ -202,8 +207,8 @@ class CustomersRejector(automat.Automat):
         Action method.
         """
         space_dict, spent_bytes, current_customers, removed_customers = arg
-        contacts.setCustomerIDs(current_customers)
-        contacts.saveCustomerIDs()
+        contactsdb.update_customers(current_customers)
+        contactsdb.save_customers()
         bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
         
     def doSendRejectService(self, arg):
@@ -218,6 +223,7 @@ class CustomersRejector(automat.Automat):
         """
         Action method.
         """
+        from storage import local_tester
         local_tester.TestSpaceTime()
 
 

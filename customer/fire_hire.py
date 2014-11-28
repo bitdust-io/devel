@@ -98,7 +98,9 @@ from lib import diskspace
 
 from main import settings
 
-from userid import contacts
+from contacts import contactsdb
+
+from services import driver
 
 import supplier_finder
 import supplier_connector
@@ -210,7 +212,7 @@ class FireHire(automat.Automat):
                 self.NeedRestart=True
             elif event == 'made-decision' and not self.isMoreNeeded(arg) and not self.isSomeoneToDismiss(arg) :
                 self.state = 'READY'
-                backup_monitor.A('fire-hire-finished')
+                self.doNotifyFinished(arg)
             elif event == 'made-decision' and self.isMoreNeeded(arg) :
                 self.state = 'HIRE_ONE'
                 self.doRememberSuppliers(arg)
@@ -226,14 +228,14 @@ class FireHire(automat.Automat):
             elif event == 'supplier-connected' and not self.isStillNeeded(arg) and not self.isSomeoneToDismiss(arg) :
                 self.state = 'READY'
                 self.doSubstituteSupplier(arg)
-                backup_monitor.A('suppliers-changed')
+                self.doNotifySuppliersChanged(arg)
             elif event == 'supplier-connected' and self.isStillNeeded(arg) :
                 self.doSubstituteSupplier(arg)
                 supplier_finder.A('start')
             elif event == 'search-failed' and not self.isSomeoneToDismiss(arg) :
                 self.state = 'READY'
                 self.doScheduleNextRestart(arg)
-                backup_monitor.A('suppliers-changed')
+                self.doNotifySuppliersChanged(arg)
             elif event == 'search-failed' and self.isSomeoneToDismiss(arg) :
                 self.state = 'FIRE_MANY'
                 self.doDisconnectSuppliers(arg)
@@ -245,7 +247,7 @@ class FireHire(automat.Automat):
                 self.state = 'READY'
                 self.doCloseConnectors(arg)
                 self.doClearDismissList(arg)
-                backup_monitor.A('suppliers-changed')
+                self.doNotifySuppliersChanged(arg)
             elif event == 'supplier-state-changed' and not self.isAllDismissed(arg) :
                 self.doCloseConnector(arg)
             elif event == 'restart' :
@@ -254,7 +256,7 @@ class FireHire(automat.Automat):
                 self.state = 'READY'
                 self.doCloseConnector(arg)
                 self.doClearDismissList(arg)
-                backup_monitor.A('suppliers-changed')
+                self.doNotifySuppliersChanged(arg)
         #---SUPPLIERS?---
         elif self.state == 'SUPPLIERS?':
             if event == 'restart' :
@@ -267,25 +269,26 @@ class FireHire(automat.Automat):
             if event == 'init' :
                 self.state = 'READY'
                 self.NeedRestart=False
+        return None
 
     def isMoreNeeded(self, arg):
         """
         Condition method.
         """
         # lg.out(10, 'fire_hire.isMoreNeeded current=%d dismiss=%d needed=%d' % (
-        #     contacts.numSuppliers(), len(self.dismiss_list), settings.getSuppliersNumberDesired()))
-        if '' in contacts.getSupplierIDs():
+        #     contactsdb.num_suppliers(), len(self.dismiss_list), settings.getSuppliersNumberDesired()))
+        if '' in contactsdb.suppliers():
             lg.out(4, 'fire_hire.isMoreNeeded found empty suppliers!!!')
             return True
         if isinstance(arg, list):
             dismissed = arg
         else:
             dismissed = self.dismiss_list
-        s = set(contacts.getSupplierIDs())
+        s = set(contactsdb.suppliers())
         s.difference_update(set(dismissed))
         result = len(s) < settings.getSuppliersNumberDesired() 
         lg.out(14, 'fire_hire.isMoreNeeded %d %d %d %d, result=%s' % (
-            contacts.numSuppliers(), len(dismissed), len(s), 
+            contactsdb.num_suppliers(), len(dismissed), len(s), 
             settings.getSuppliersNumberDesired(), result))
         return result
 
@@ -294,8 +297,8 @@ class FireHire(automat.Automat):
         Condition method.
         """
         lg.out(14, 'fire_hire.isAllReady %d %d' % (
-            len(self.connect_list), contacts.numSuppliers()))
-        return len(self.connect_list) == 0 # contacts.numSuppliers()
+            len(self.connect_list), contactsdb.num_suppliers()))
+        return len(self.connect_list) == 0 # contactsdb.num_suppliers()
                 
     def isAllDismissed(self, arg):
         """
@@ -317,7 +320,7 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        current_suppliers = contacts.getSupplierIDs()
+        current_suppliers = contactsdb.suppliers()
         desired_number = settings.getSuppliersNumberDesired()
         needed_suppliers = current_suppliers[:desired_number]
         if '' in needed_suppliers:
@@ -329,7 +332,7 @@ class FireHire(automat.Automat):
         s.difference_update(set(self.dismiss_list))
         result = len(s) < settings.getSuppliersNumberDesired() 
         lg.out(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
-            contacts.numSuppliers(), len(needed_suppliers), len(self.dismiss_list), 
+            contactsdb.num_suppliers(), len(needed_suppliers), len(self.dismiss_list), 
             len(s), settings.getSuppliersNumberDesired(), result))
         return result
 
@@ -347,7 +350,7 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
-        return contacts.numSuppliers() > 0 and contacts.getSupplierIDs().count('') < contacts.numSuppliers()
+        return contactsdb.num_suppliers() > 0 and contactsdb.suppliers().count('') < contactsdb.num_suppliers()
         
     def doSaveConfig(self, arg):
         """
@@ -361,7 +364,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         self.connect_list = []
-        for supplier_idurl in contacts.getSupplierIDs():
+        for supplier_idurl in contactsdb.suppliers():
             if supplier_idurl == '':
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -378,7 +381,7 @@ class FireHire(automat.Automat):
         global _SuppliersToFire
         result = set(_SuppliersToFire)
         _SuppliersToFire = []
-        for supplier_idurl in contacts.getSupplierIDs():
+        for supplier_idurl in contactsdb.suppliers():
             if not supplier_idurl:
                 continue
             sc = supplier_connector.by_idurl(supplier_idurl)
@@ -386,9 +389,9 @@ class FireHire(automat.Automat):
                 continue
             if sc.state == 'NO_SERVICE':
                 result.add(supplier_idurl)
-        if contacts.numSuppliers() > settings.getSuppliersNumberDesired():
-            for supplier_index in range(settings.getSuppliersNumberDesired(), contacts.numSuppliers()):
-                idurl = contacts.getSupplierID(supplier_index)
+        if contactsdb.num_suppliers() > settings.getSuppliersNumberDesired():
+            for supplier_index in range(settings.getSuppliersNumberDesired(), contactsdb.num_suppliers()):
+                idurl = contactsdb.supplier(supplier_index)
                 if idurl:
                     result.add(idurl)
         result = list(result)
@@ -406,7 +409,7 @@ class FireHire(automat.Automat):
         Action method.
         """
         new_idurl = arg
-        current_suppliers = list(contacts.getSupplierIDs())
+        current_suppliers = list(contactsdb.suppliers())
         if new_idurl in current_suppliers:
             raise  Exception('%s is already supplier' % new_idurl)
         position = -1
@@ -425,8 +428,8 @@ class FireHire(automat.Automat):
             current_suppliers.append(new_idurl)
         else:
             current_suppliers[position] = new_idurl
-        contacts.setSupplierIDs(current_suppliers)
-        contacts.saveSupplierIDs()
+        contactsdb.update_suppliers(current_suppliers)
+        contactsdb.save_suppliers()
         misc.writeSupplierData(new_idurl, 'connected', time.strftime('%d%m%y %H:%M:%S'))
         from web import webcontrol
         webcontrol.OnListSuppliers()
@@ -443,7 +446,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        current_suppliers = contacts.getSupplierIDs()
+        current_suppliers = contactsdb.suppliers()
         desired_suppliers = settings.getSuppliersNumberDesired()
         if len(current_suppliers) < desired_suppliers:
             lg.warn('must have more suppliers %d<%d' % (
@@ -457,8 +460,8 @@ class FireHire(automat.Automat):
             current_suppliers[pos] = ''
             misc.writeSupplierData(supplier_idurl, 'disconnected', time.strftime('%d%m%y %H:%M:%S'))
         current_suppliers = current_suppliers[:desired_suppliers]
-        contacts.setSupplierIDs(current_suppliers)
-        contacts.saveSupplierIDs()
+        contactsdb.update_suppliers(current_suppliers)
+        contactsdb.save_suppliers()
         from web import webcontrol
         webcontrol.OnListSuppliers()
         lg.out(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
@@ -518,6 +521,16 @@ class FireHire(automat.Automat):
         else:
             lg.out(10, 'fire_hire.doScheduleNextRestart already scheduled - %r sec. left' % (
                 time.time() - self.restart_task.getTime()))
+    
+    def doNotifySuppliersChanged(self, arg):
+        if driver.is_started('service_backups'):
+            from storage import backup_monitor
+            backup_monitor.A('suppliers-changed')
+    
+    def doNotifyFinished(self, arg):
+        if driver.is_started('service_backups'):
+            from storage import backup_monitor
+            backup_monitor.A('fire-hire-finished')
             
     def _scheduled_restart(self): 
         self.restart_task = None
@@ -551,7 +564,7 @@ class FireHire(automat.Automat):
 #    If we can not send him our data or retreive it back - how can we do a backups to him even if he is online?
 #    """
 #
-#    for supplier_idurl in contacts.getSupplierIDs():
+#    for supplier_idurl in contactsdb.suppliers():
 #    # for sc in supplier_connector.connectors().values():
 #        sc = supplier_connector.by_idurl(supplier_idurl)
 #        if sc and sc.state == 'NO_SERVICE':
@@ -559,8 +572,8 @@ class FireHire(automat.Automat):
 #            return 'found-one-lost-supplier', sc.idurl 
 #    unreliable_supplier = None
 #    most_fails = 0.0
-#    for supplierNum in range(contacts.numSuppliers()):
-#        idurl = contacts.getSupplierID(supplierNum)
+#    for supplierNum in range(contactsdb.num_suppliers()):
+#        idurl = contactsdb.supplier(supplierNum)
 #        if not idurl:
 #            continue 
 #        if not data_sender.statistic().has_key(idurl):
@@ -582,8 +595,8 @@ class FireHire(automat.Automat):
 
 #    # ask backup_monitor about current situation
 #    # check every offline supplier and see how many files he keep at the moment
-#    for supplierNum in range(contacts.numSuppliers()):
-#        idurl = contacts.getSupplierID(supplierNum)
+#    for supplierNum in range(contactsdb.num_suppliers()):
+#        idurl = contactsdb.supplier(supplierNum)
 #        if not idurl:
 #            continue
 #        if contact_status.isOnline(idurl):

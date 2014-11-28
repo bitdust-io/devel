@@ -67,9 +67,9 @@ from transport import callback
 
 from services import driver
 
-from userid import propagate
 from userid import my_id
 
+import propagate
 import ratings
 import network_connector
 
@@ -267,7 +267,7 @@ class P2PConnector(automat.Automat):
         Action method.
         """
         if driver.is_started('service_customers_rejector'):
-            from p2p import customers_rejector
+            from supplier import customers_rejector
             customers_rejector.A('restart')
 
     def doRestartFireHire(self, arg):
@@ -275,7 +275,7 @@ class P2PConnector(automat.Automat):
         Action method.
         """
         if driver.is_started('service_fire_hire'):
-            from supplier import fire_hire
+            from customer import fire_hire
             fire_hire.A('restart')
 
     def _check_to_use_best_proto(self):

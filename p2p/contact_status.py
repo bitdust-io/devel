@@ -52,7 +52,7 @@ from logs import lg
 
 from lib import nameurl
 
-from userid import contacts
+from contacts import contactsdb
 
 from automats import automat
 
@@ -193,7 +193,7 @@ def hasOfflineSuppliers():
     """
     Loops all suppliers and check their state, return True if at least one is OFFLINE.
     """
-    for idurl in contacts.getSupplierIDs():
+    for idurl in contactsdb.suppliers():
         if not idurl:
             return True
         if isOffline(idurl):

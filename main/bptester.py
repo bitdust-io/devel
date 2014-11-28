@@ -77,7 +77,7 @@ try:
     from system import bpio
     from lib import nameurl 
     from main import settings
-    from userid import contacts
+    from contacts import contactsdb
     from p2p import commands
     from crypt import signed  
 except:
@@ -223,7 +223,7 @@ def Validate():
     Check all packets to be valid.
     """
     printlog('Validate ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
-    contacts.init()
+    contactsdb.init()
     commands.init()
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):

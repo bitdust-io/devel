@@ -49,7 +49,7 @@ from lib import misc
 
 from lib import packetid
 
-from userid import contacts
+from contacts import contactsdb
 from userid import my_id
 
 from main import settings
@@ -146,13 +146,13 @@ class DataSender(automat.Automat):
             log.flush()
             log.close()
             return
-        if '' not in contacts.getSupplierIDs():
+        if '' not in contactsdb.suppliers():
             from storage import backup_matrix
             for backupID in misc.sorted_backup_ids(backup_matrix.local_files().keys(), True):
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
                 log.write('%s\n' % packetsBySupplier)
                 for supplierNum in packetsBySupplier.keys():
-                    supplier_idurl = contacts.getSupplierID(supplierNum)
+                    supplier_idurl = contactsdb.supplier(supplierNum)
                     if not supplier_idurl:
                         lg.warn('?supplierNum? %s for %s' % (supplierNum, backupID))
                         continue

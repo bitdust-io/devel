@@ -74,8 +74,8 @@ from lib import misc
 from crypt import signed
 from crypt import key
 
-from userid import identitycache
-from userid import contacts
+from contacts import identitycache
+from contacts import contactsdb
 from userid import my_id
 
 from transport import gateway
@@ -128,11 +128,12 @@ def Message(request):
     """
     global OnIncomingMessageFunc
     lg.out(6, "message.Message from " + str(request.OwnerID))
-    senderidentity = contacts.getCorrespondent(request.OwnerID)
+    senderidentity = contactsdb.get_correspondent_identity(request.OwnerID)
     if not senderidentity:
         lg.warn("had sender not in correspondents list " + request.OwnerID)
         # return
-        contacts.addCorrespondent(request.OwnerID, nameurl.GetName(request.OwnerID))
+        contactsdb.add_correspondent(request.OwnerID, nameurl.GetName(request.OwnerID))
+        contactsdb.save_correspondents()
     Amessage = misc.StringToObject(request.Payload)
     if Amessage is None:
         lg.warn("wrong Payload, can not extract message from request")

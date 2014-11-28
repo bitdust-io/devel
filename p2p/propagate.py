@@ -39,11 +39,11 @@ from logs import lg
 
 from system import bpio
 
-from lib import misc
 from lib import nameurl
 
-from userid import contacts
-from userid import identitycache
+from contacts import contactsdb
+from contacts import identitycache
+
 from userid import known_servers
 from userid import my_id
 
@@ -119,7 +119,7 @@ def start(AckHandler=None, wide=False):
     Call ``propagate()`` for all known contacts.
     """
     lg.out(6, 'propagate.start')
-    return propagate(contacts.getRemoteContacts(), AckHandler, wide)
+    return propagate(contactsdb.contacts_remote(), AckHandler, wide)
 
 
 def suppliers(AckHandler=None, wide=False):
@@ -127,7 +127,7 @@ def suppliers(AckHandler=None, wide=False):
     Call ``propagate()`` for all suppliers.
     """
     lg.out(6, 'propagate.suppliers')
-    return propagate(contacts.getSupplierIDs(), AckHandler, wide)
+    return propagate(contactsdb.suppliers(), AckHandler, wide)
 
 
 def customers(AckHandler=None, wide=False):
@@ -135,7 +135,7 @@ def customers(AckHandler=None, wide=False):
     Call ``propagate()`` for all known customers.
     """
     lg.out(6, 'propagate.customers')
-    return propagate(contacts.getCustomerIDs(), AckHandler, wide)
+    return propagate(contactsdb.customers(), AckHandler, wide)
 
 
 def allcontacts(AckHandler=None, wide=False):
@@ -143,7 +143,7 @@ def allcontacts(AckHandler=None, wide=False):
     Call ``propagate()`` for all contacts and correspondents, almost the same to ``start()``.
     """
     lg.out(6, 'propagate.allcontacts')
-    return propagate(contacts.getContactsAndCorrespondents(), AckHandler, wide)
+    return propagate(contactsdb.contacts_full(), AckHandler, wide)
 
 
 def single(idurl, AckHandler=None, wide=False):
@@ -188,14 +188,14 @@ def FetchSuppliers():
     """
     Fetch identity files of all supplier.
     """
-    return fetch(contacts.getSupplierIDs())
+    return fetch(contactsdb.suppliers())
 
 
 def FetchCustomers():
     """
     Fetch identity files of all customers.
     """
-    return fetch(contacts.getCustomerIDs())
+    return fetch(contactsdb.customers())
 
 #------------------------------------------------------------------------------ 
 
@@ -229,7 +229,7 @@ def SendSuppliers():
     Send my identity file to all my suppliers, calls to ``SendToIDs()`` method. 
     """
     lg.out(6, "propagate.SendSuppliers")
-    SendToIDs(contacts.getSupplierIDs(), HandleSuppliersAck)
+    SendToIDs(contactsdb.suppliers(), HandleSuppliersAck)
 
 
 def SendCustomers():
@@ -237,7 +237,7 @@ def SendCustomers():
     Calls ``SendToIDs()`` to send identity to all my customers.
     """
     lg.out(8, "propagate.SendCustomers")
-    SendToIDs(contacts.getCustomerIDs(), HandleCustomersAck)
+    SendToIDs(contactsdb.customers(), HandleCustomersAck)
 
 
 def SlowSendSuppliers(delay=1):
@@ -253,7 +253,7 @@ def SlowSendSuppliers(delay=1):
 
     def _send(index, payload, delay):
         global _SlowSendIsWorking
-        idurl = contacts.getSupplierID(index)
+        idurl = contactsdb.supplier(index)
         if not idurl:
             _SlowSendIsWorking = False
             return
@@ -279,7 +279,7 @@ def SlowSendCustomers(delay=1):
 
     def _send(index, payload, delay):
         global _SlowSendIsWorking
-        idurl = contacts.getCustomerID(index)
+        idurl = contactsdb.customer(index)
         if not idurl:
             _SlowSendIsWorking = False
             return
@@ -296,7 +296,6 @@ def HandleSuppliersAck(ackpacket, info):
     """
     Called when supplier is "Acked" to my after call to ``SendSuppliers()``. 
     """
-    # Num = contacts.numberForSupplier(ackpacket.OwnerID)
     lg.out(8, "propagate.HandleSupplierAck %s" % ackpacket.OwnerID)
 
 
@@ -304,7 +303,6 @@ def HandleCustomersAck(ackpacket, info):
     """
     Called when supplier is "Acked" to my after call to ``SendCustomers()``. 
     """
-    # Num = contacts.numberForCustomer(ackpacket.OwnerID)
     lg.out(8, "propagate.HandleCustomerAck %s" % ackpacket.OwnerID)
 
 

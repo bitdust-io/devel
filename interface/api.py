@@ -52,12 +52,12 @@ def backups_list():
 
 def backups_id_list():
     from storage import backup_fs
-    from userid import contacts
+    from contacts import contactsdb
     from lib import diskspace
     result = []
     for backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
-        if versionInfo[1] >= 0 and contacts.numSuppliers() > 0:
-            szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1]/contacts.numSuppliers()) 
+        if versionInfo[1] >= 0 and contactsdb.num_suppliers() > 0:
+            szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1]/contactsdb.num_suppliers()) 
         else:
             szver = '?'
         szver = diskspace.MakeStringFromBytes(versionInfo[1]) if versionInfo[1] >= 0 else '?'
@@ -147,8 +147,8 @@ def list_messages():
 def send_message(recipient, subject, body):
     from chat import message
     if not recipient.startswith('http://'):
-        from userid import contacts
-        for idurl, nickname in contacts.getCorrespondentsDict().items():
+        from contacts import contactsdb
+        for idurl, nickname in contactsdb.correspondents_dict().items():
             if recipient == nickname:
                 recipient = idurl
                 break 
@@ -171,7 +171,7 @@ def find_peer_by_nickname(nickname):
 
 
 def list_correspondents():
-    from userid import contacts
-    return contacts.getCorrespondentsDict() 
+    from contacts import contactsdb
+    return contactsdb.correspondents_dict() 
     
     

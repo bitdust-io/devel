@@ -48,7 +48,7 @@ from lib import nameurl
 from lib import packetid
 from lib import schedule
 
-from userid import contacts
+from contacts import contactsdb
 from userid import my_id
 
 from main import settings
@@ -444,11 +444,11 @@ def cmd_suppliers(opts, args, overDict):
         return 0
 
     elif args[1] in [ 'replace', 'rep', 'rp' ] and len(args) >= 3:
-        contacts.init()
+        contactsdb.init()
         idurl = args[2].strip()
         if not idurl.startswith('http://'):
             try:
-                idurl = contacts.getSupplierID(int(idurl))
+                idurl = contactsdb.supplier(int(idurl))
             except:
                 idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
         if not idurl:
@@ -461,11 +461,11 @@ def cmd_suppliers(opts, args, overDict):
         return 0
     
     elif args[1] in [ 'change', 'ch' ] and len(args) >= 4:
-        contacts.init()
+        contactsdb.init()
         idurl = args[2].strip()
         if not idurl.startswith('http://'):
             try:
-                idurl = contacts.getSupplierID(int(idurl))
+                idurl = contactsdb.supplier(int(idurl))
             except:
                 idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
         if not idurl:
@@ -517,11 +517,11 @@ def cmd_customers(opts, args, overDict):
         return 0
 
     elif args[1] in [ 'remove', 'rm', ] and len(args) >= 3:
-        contacts.init()
+        contactsdb.init()
         idurl = args[2].strip()
         if not idurl.startswith('http://'):
             try:
-                idurl = contacts.getCustomerID(int(idurl))
+                idurl = contactsdb.customer(int(idurl))
             except:
                 idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
         name = nameurl.GetName(idurl)

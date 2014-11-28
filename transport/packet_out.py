@@ -42,8 +42,8 @@ from lib import misc
 
 from system import tmpfile
 
-from userid import contacts
-from userid import identitycache
+from contacts import contactsdb
+from contacts import identitycache
 from userid import my_id
 
 from main import settings
@@ -189,7 +189,7 @@ class PacketOut(automat.Automat):
             else:
                 self.remote_idurl = None
                 lg.warn('sending a packet we did not make, and that is not Data packet')
-        self.remote_identity = contacts.getContact(self.remote_idurl)
+        self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         self.timeout = None
         self.packetdata = None
         self.filename = None
@@ -548,7 +548,7 @@ class PacketOut(automat.Automat):
 
     def _remote_identity_cached(self, xmlsrc):
         self.caching_deferred = None
-        self.remote_identity = contacts.getContact(self.remote_idurl)
+        self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         if self.remote_identity is None:
             self.automat('failed')
         else:

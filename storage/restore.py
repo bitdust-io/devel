@@ -94,7 +94,7 @@ from main import events
 
 from lib import packetid
 
-from userid import contacts
+from contacts import contactsdb
 from userid import my_id
 
 from automats import automat
@@ -295,16 +295,16 @@ class restore(automat.Automat):
             self.OnHandParity[SupplierNumber] = os.path.exists(os.path.join(settings.getLocalBackupsDir(), PacketID))
         
     def doRequestPackets(self, arg):
-        from supplier import io_throttle
+        from customer import io_throttle
         packetsToRequest = []
         for SupplierNumber in range(self.EccMap.datasegments):
-            SupplierID = contacts.getSupplierID(SupplierNumber) 
+            SupplierID = contactsdb.supplier(SupplierNumber) 
             if not SupplierID:
                 continue
             if not self.OnHandData[SupplierNumber] and contact_status.isOnline(SupplierID):
                 packetsToRequest.append((SupplierID, packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Data')))
         for SupplierNumber in range(self.EccMap.paritysegments):
-            SupplierID = contacts.getSupplierID(SupplierNumber) 
+            SupplierID = contactsdb.supplier(SupplierNumber) 
             if not SupplierID:
                 continue
             if not self.OnHandParity[SupplierNumber] and contact_status.isOnline(SupplierID):
@@ -390,11 +390,11 @@ class restore(automat.Automat):
             self.blockRestoredCallback(self.BackupID, NewBlock)
     
     def doDeleteAllRequests(self, arg):
-        from supplier import io_throttle
+        from customer import io_throttle
         io_throttle.DeleteBackupRequests(self.BackupID)
                                          
     def doDeleteBlockRequests(self, arg):
-        from supplier import io_throttle
+        from customer import io_throttle
         io_throttle.DeleteBackupRequests(self.BackupID + "-" + str(self.BlockNumber))
 
     def doRemoveTempFile(self, arg):

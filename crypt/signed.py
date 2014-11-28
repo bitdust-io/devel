@@ -45,7 +45,7 @@ from p2p import commands
 from lib import misc
 from lib import packetid
 
-from userid import contacts
+from contacts import contactsdb
 
 import key
 
@@ -127,7 +127,7 @@ class Packet:
             - hash of that packet - just call ``GenerateHash()`` to make it,
             - the signature itself.
         """
-        ConIdentity = contacts.getContact(self.CreatorID)
+        ConIdentity = contactsdb.get_contact_identity(self.CreatorID)
         if ConIdentity is None:
             lg.out(1, "signed.SignatureChecksOut ERROR could not get Identity for " + self.CreatorID + " so returning False")
             return False

@@ -18,7 +18,7 @@ from lib import udp
 from system import tmpfile
 from main import settings
 from lib import misc
-from userid import contacts
+from contacts import contactsdb
 
 import udp_interface
 import udp_session
@@ -50,7 +50,7 @@ class FileQueue:
         _StreamCounter += 1
         # if _StreamCounter >= 10000:
         #     _StreamCounter = 1
-        n = max(contacts.numberForContact(self.session.peer_idurl), 0) % 89
+        n = max(contactsdb.contact_position(self.session.peer_idurl), 0) % 89
         return (n + 10) * 1000000 + random.randint(10, 99) * 10000 + _StreamCounter % 10000
 
     def report_failed_outbox_queue(self, error_message):

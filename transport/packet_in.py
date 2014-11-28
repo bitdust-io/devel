@@ -36,8 +36,8 @@ from system import tmpfile
 
 from main import settings
 
-from userid import contacts 
-from userid import identitycache
+from contacts import contactsdb 
+from contacts import identitycache
 
 import gateway
 import stats
@@ -273,7 +273,7 @@ class PacketIn(automat.Automat):
         self.destroy()
 
     def _remote_identity_cached(self, xmlsrc, arg):
-        sender_identity = contacts.getContact(self.sender_idurl)
+        sender_identity = contactsdb.get_contact_identity(self.sender_idurl)
         if sender_identity is None:
             self.automat('failed')
         else:

@@ -46,7 +46,7 @@ from twisted.internet.task import LoopingCall
 from logs import lg
 
 from automats import automat
-from userid import contacts
+from contacts import contactsdb
 
 from p2p import p2p_service
 from p2p import contact_status
@@ -145,7 +145,7 @@ class ListFilesOrator(automat.Automat):
         global _RequestedListFilesPacketIDs
         _RequestedListFilesCounter = 0
         _RequestedListFilesPacketIDs.clear()
-        for idurl in contacts.getSupplierIDs():
+        for idurl in contactsdb.suppliers():
             if idurl:
                 if contact_status.isOnline(idurl):
                     p2p_service.RequestListFiles(idurl)

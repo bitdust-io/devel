@@ -59,7 +59,7 @@ from lib import net_misc
 
 from crypt import key
 
-from userid import identitycache
+from contacts import identitycache
 from userid import identity
 from userid import my_id
 

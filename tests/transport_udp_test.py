@@ -34,7 +34,7 @@ def main():
     lg.life_begins()
     from crypt import key
     key.InitMyKey()
-    from userid import identitycache
+    from contacts import identitycache
     identitycache.init()
     from system import tmpfile
     tmpfile.init()

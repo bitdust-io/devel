@@ -70,7 +70,7 @@ from p2p import commands
 from system import bpio
 
 from userid import my_id
-from userid import contacts
+from contacts import contactsdb
 
 from main import settings
 
@@ -184,13 +184,13 @@ class BackupDBKeeper(automat.Automat):
         # packetID_ = settings.BackupInfoFileName()
         # packetID = settings.BackupInfoEncryptedFileName()
         packetID = settings.BackupIndexFileName()
-        # for supplierId in contacts.getSupplierIDs():
+        # for supplierId in contacts.suppliers():
         #     if supplierId:
         #         callback.remove_interest(supplierId, packetID)
         self.requestedSuppliers.clear()
         Payload = ''
         localID = my_id.getLocalID()
-        for supplierId in contacts.getSupplierIDs():
+        for supplierId in contactsdb.suppliers():
             if not supplierId:
                 continue
             newpacket = signed.Packet(commands.Retrieve(), localID, localID, packetID, Payload, supplierId)
@@ -207,7 +207,7 @@ class BackupDBKeeper(automat.Automat):
         # lg.out(4, 'backup_db_keeper.doSuppliersSendDBInfo')
         # packetID = settings.BackupInfoEncryptedFileName()
         packetID = settings.BackupIndexFileName()
-        # for supplierId in contacts.getSupplierIDs():
+        # for supplierId in contacts.suppliers():
         #     if supplierId:
         #         callback.remove_interest(supplierId, packetID)
         self.sentSuppliers.clear()
@@ -216,7 +216,7 @@ class BackupDBKeeper(automat.Automat):
         localID = my_id.getLocalID()
         b = encrypted.Block(localID, packetID, 0, key.NewSessionKey(), key.SessionKeyType(), True, src)
         Payload = b.Serialize() 
-        for supplierId in contacts.getSupplierIDs():
+        for supplierId in contactsdb.suppliers():
             if not supplierId:
                 continue
             if not contact_status.isOnline(supplierId):
@@ -249,7 +249,7 @@ class BackupDBKeeper(automat.Automat):
 #                raise Exception('not found supplier connector')
 
     def _supplier_response(self, newpacket, pkt_out):
-        from supplier import supplier_connector
+        from customer import supplier_connector
         if newpacket.Command == commands.Data():
             self.requestedSuppliers.discard(newpacket.RemoteID)
         elif newpacket.Command == commands.Fail():
@@ -266,7 +266,7 @@ class BackupDBKeeper(automat.Automat):
         # lg.out(6, 'backup_db_keeper._supplier_response %s others: %r' % (packet, self.requestedSuppliers))
 
     def _supplier_acked(self, newpacket, info):
-        from supplier import supplier_connector
+        from customer import supplier_connector
         self.sentSuppliers.discard(newpacket.OwnerID)
         self.automat('db-info-acked', newpacket.OwnerID)
         sc = supplier_connector.by_idurl(newpacket.OwnerID)

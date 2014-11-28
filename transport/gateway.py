@@ -73,7 +73,7 @@ from main import settings
 from crypt import signed
 
 from userid import my_id
-from userid import identitycache
+from contacts import identitycache
 
 import callback
 import packet_in

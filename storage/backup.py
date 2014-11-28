@@ -145,7 +145,7 @@ class backup(automat.Automat):
     #------------------------------------------------------------------------------ 
         
     def A(self, event, arg):
-        from supplier import data_sender
+        from customer import data_sender
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'start' :

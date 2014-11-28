@@ -73,9 +73,9 @@ from logs import lg
 from system import bpio
 
 from userid import my_id
-from userid import contacts
+from contacts import contactsdb
 from userid import identity
-from userid import identitycache
+from contacts import identitycache
 
 from p2p import commands
 
@@ -203,8 +203,8 @@ def makeFilename(customerID, packetID):
                             settings.BackupIndexFileName() ]:
             # lg.out(1, "p2p_service.makeFilename ERROR failed packetID format: " + packetID )
             return ''
-    if not contacts.IsCustomer(customerID):  # SECURITY
-        lg.warn("%s not a customer: %s" % (customerID, str(contacts.getCustomerNames())))
+    if not contactsdb.is_customer(customerID):  # SECURITY
+        lg.warn("%s is not a customer" % (customerID))
         return ''
     return constructFilename(customerID, packetID)
 
@@ -334,7 +334,7 @@ def RequestService(request):
         if not bytes_for_customer or bytes_for_customer < 0:
             lg.warn("wrong storage value : %s" % request.Payload)
             return SendFail(request, 'wrong storage value')
-        current_customers = contacts.getCustomerIDs()
+        current_customers = contactsdb.customers()
         donated_bytes = settings.getDonatedBytes()
         if not os.path.isfile(settings.CustomersSpaceFile()):
             bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
@@ -361,8 +361,8 @@ def RequestService(request):
             new_customer = True
         from storage import local_tester
         if free_bytes <= bytes_for_customer:
-            contacts.setCustomerIDs(current_customers)
-            contacts.saveCustomerIDs()
+            contactsdb.update_customers(current_customers)
+            contactsdb.save_customers()
             bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
             reactor.callLater(0, local_tester.TestUpdateCustomers)
             if new_customer:
@@ -373,8 +373,8 @@ def RequestService(request):
         space_dict['free'] = free_bytes - bytes_for_customer
         current_customers.append(request.OwnerID)  
         space_dict[request.OwnerID] = bytes_for_customer
-        contacts.setCustomerIDs(current_customers)
-        contacts.saveCustomerIDs()
+        contactsdb.update_customers(current_customers)
+        contactsdb.save_customers()
         bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         if new_customer:
@@ -397,7 +397,7 @@ def SendRequestService(remote_idurl, service_info, response_callback=None):
 def CancelService(request):
     lg.out(8, "p2p_service.CancelService")
     if request.Payload.startswith('storage'):
-        if not contacts.IsCustomer(request.OwnerID):
+        if not contactsdb.is_customer(request.OwnerID):
             lg.warn("got packet from %s, but he is not a customer" % request.OwnerID)
             return SendFail(request, 'not a customer')
         donated_bytes = settings.getDonatedBytes()
@@ -414,10 +414,10 @@ def CancelService(request):
         except:
             lg.exc()
             return SendFail(request, 'broken space file')
-        new_customers = list(contacts.getCustomerIDs())
+        new_customers = list(contactsdb.customers())
         new_customers.remove(request.OwnerID)
-        contacts.setCustomerIDs(new_customers)
-        contacts.saveCustomerIDs()
+        contactsdb.update_customers(new_customers)
+        contactsdb.save_customers()
         space_dict.pop(request.OwnerID)
         bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
         from storage import local_tester
@@ -491,7 +491,7 @@ def Data(request):
 #            return
         return
     # 2. this Data is not belong to us
-    if not contacts.IsCustomer(request.OwnerID):  # SECURITY
+    if not contactsdb.is_customer(request.OwnerID):  # SECURITY
         lg.warn("%s not a customer, packetID=%s" % (request.OwnerID, request.PacketID))
         SendFail(request, 'not a customer')
         return
@@ -546,7 +546,7 @@ def Retrieve(request):
     Customer is asking us for data he previously stored with us.
     We send with ``outboxNoAck()`` method because he will ask again if he does not get it
     """
-    if not contacts.IsCustomer(request.OwnerID):
+    if not contactsdb.is_customer(request.OwnerID):
         lg.warn("had unknown customer " + request.OwnerID)
         SendFail(request, 'not a customer')
         return
@@ -726,7 +726,7 @@ def ListCustomerFiles1(customerNumber):
     On the status form when clicking on a customer, 
     find out what files we're holding for that customer
     """
-    idurl = contacts.getCustomerID(customerNumber)
+    idurl = contactsdb.customer(customerNumber)
     filename = nameurl.UrlFilename(idurl)
     customerDir = os.path.join(settings.getCustomersFilesDir(), filename)
     if os.path.exists(customerDir) and os.path.isdir(customerDir):
@@ -738,7 +738,7 @@ def ListCustomerFiles1(customerNumber):
 
 def RequestListFilesAll():
     r = []
-    for supi in range(contacts.numSuppliers()):
+    for supi in range(contactsdb.num_suppliers()):
         r.append(RequestListFiles(supi))
     return r
 
@@ -747,7 +747,7 @@ def RequestListFiles(supplierNumORidurl):
     if isinstance(supplierNumORidurl, str):
         RemoteID = supplierNumORidurl
     else:
-        RemoteID = contacts.getSupplierID(supplierNumORidurl)
+        RemoteID = contactsdb.supplier(supplierNumORidurl)
     if not RemoteID:
         lg.warn("RemoteID is empty supplierNumORidurl=%s" % str(supplierNumORidurl))
         return None
@@ -914,7 +914,7 @@ def RequestDeleteBackup(BackupID):
     Need to send a "DeleteBackup" command to all suppliers.
     """
     lg.out(8, "p2p_service.RequestDeleteBackup with BackupID=" + str(BackupID))
-    for supplier in contacts.getSupplierIDs():
+    for supplier in contactsdb.suppliers():
         if not supplier:
             continue
         prevItems = [] # transport_control.SendQueueSearch(BackupID)
@@ -930,7 +930,7 @@ def RequestDeleteBackup(BackupID):
 
 def RequestDeleteListBackups(backupIDs):
     lg.out(8, "p2p_service.RequestDeleteListBackups wish to delete %d backups" % len(backupIDs))
-    for supplier in contacts.getSupplierIDs():
+    for supplier in contactsdb.suppliers():
         if not supplier:
             continue
         found = False
@@ -945,7 +945,7 @@ def RequestDeleteListBackups(backupIDs):
 
 def RequestDeleteListPaths(pathIDs):
     lg.out(8, "p2p_service.RequestDeleteListPaths wish to delete %d paths" % len(pathIDs))
-    for supplier in contacts.getSupplierIDs():
+    for supplier in contactsdb.suppliers():
         if not supplier:
             continue
         found = False

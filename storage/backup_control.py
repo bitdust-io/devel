@@ -35,7 +35,7 @@ from lib import misc
 from system import tmpfile
 from system import dirsize
 
-from userid import contacts
+from contacts import contactsdb
 
 from lib import packetid
 from lib import nameurl
@@ -197,13 +197,13 @@ def IncomingSupplierListFiles(newpacket):
     """
     from p2p import p2p_service
     supplier_idurl = newpacket.OwnerID
-    num = contacts.numberForSupplier(supplier_idurl)
+    num = contactsdb.supplier_position(supplier_idurl)
     if num < -1:
         lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
         return
     src = p2p_service.UnpackListFiles(newpacket.Payload, settings.ListFilesFormat())
     backups2remove, paths2remove = backup_matrix.ReadRawListFiles(num, src)
-    from supplier import list_files_orator
+    from customer import list_files_orator
     list_files_orator.IncomingListFiles(newpacket)
     backup_matrix.SaveLatestRawListFiles(supplier_idurl, src)
     if len(backups2remove) > 0:
@@ -289,7 +289,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
         9) check and calculate used space
         10) save the modified index data base, soon it will be synchronized with "backup_db_keeper()" state machine  
     """
-    from supplier import io_throttle
+    from customer import io_throttle
     import backup_rebuilder
     lg.out(8, 'backup_control.DeleteBackup ' + backupID)
     # if the user deletes a backup, make sure we remove any work we're doing on it
@@ -326,7 +326,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     Doing same operations as ``DeleteBackup()``.
     """
     import backup_rebuilder
-    from supplier import io_throttle
+    from customer import io_throttle
     # get the working item
     item = backup_fs.GetByID(pathID)
     if item is None:
@@ -500,7 +500,7 @@ def OnJobDone(backupID, result):
     Here we need to save the index data base. 
     """
     import backup_rebuilder
-    from supplier import io_throttle
+    from customer import io_throttle
     lg.out(4, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     lg.out(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
@@ -713,7 +713,7 @@ if __name__ == "__main__":
     lg.set_debug_level(20)
     settings.init()
     tmpfile.init(settings.getTempDir())
-    contacts.init()
+    contactsdb.init()
     eccmap.init()
     key.InitMyKey()
     init()

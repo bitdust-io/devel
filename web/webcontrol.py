@@ -58,11 +58,11 @@ from transport import callback
 from transport import packet_out
 
 from userid import id_restorer
-from userid import propagate
-from userid import identitycache
 from userid import nickname_holder
-from userid import contacts
 from userid import my_id
+
+from contacts import identitycache
+from contacts import contactsdb
 
 from crypt import key
 
@@ -72,10 +72,10 @@ from main import events
 
 from p2p import commands
 from p2p import contact_status
+from p2p import propagate
+from p2p import ratings
 
 from chat import message
-
-from p2p import ratings
 
 #-------------------------------------------------------------------------------
 
@@ -699,7 +699,7 @@ def OnGlobalVersionReceived(txt):
     SendCommandToGUI('version: ' + str(global_checksum) + ' ' + str(local_checksum))
 
 def OnAliveStateChanged(idurl):
-    if contacts.IsSupplier(idurl):
+    if contactsdb.is_supplier(idurl):
         if currentVisiblePageName() in [_PAGE_SUPPLIERS, 
                                         _PAGE_SUPPLIER, 
                                         _PAGE_SUPPLIER_REMOTE_FILES, 
@@ -709,10 +709,10 @@ def OnAliveStateChanged(idurl):
                                         _PAGE_BACKUP_LOCAL_FILES,
                                         _PAGE_BACKUP_REMOTE_FILES,]:
             SendCommandToGUI('update')
-    if contacts.IsCustomer(idurl):
+    if contactsdb.is_customer(idurl):
         if currentVisiblePageName() in [_PAGE_CUSTOMERS, _PAGE_CUSTOMER]:
             SendCommandToGUI('update')
-    if contacts.IsCorrespondent(idurl):
+    if contactsdb.is_correspondent(idurl):
         if currentVisiblePageName() == _PAGE_CORRESPONDENTS:
             SendCommandToGUI('update')
 
@@ -862,7 +862,7 @@ def OnTrafficOut(pkt_out, item, status, size, message):
 #def OnSupplierQueuePacketCallback(sendORrequest, supplier_idurl, packetid, result):
 #    SendCommandToGUI('queue %s %s %d %d %s %s' % (
 #        sendORrequest, nameurl.GetName(supplier_idurl), 
-#        contacts.numberForSupplier(supplier_idurl), contacts.numSuppliers(),
+#        contactsdb.numberForSupplier(supplier_idurl), contactsdb.num_suppliers(),
 #        packetid, result))
 
 def OnTrayIconCommand(cmd):
@@ -2416,7 +2416,7 @@ class MainPage(Page):
                 for versionInfo in versions.values():
                     if versionInfo[1] > 0:
                         sizeVersions += versionInfo[1]
-                backupsSize = 0 if contacts.numSuppliers() == 0 else sizeVersions/contacts.numSuppliers()
+                backupsSize = 0 if contactsdb.num_suppliers() == 0 else sizeVersions/contactsdb.num_suppliers()
 
                 src += '<tr>'
                 src += '<td align=left valign=top nowrap>\n'
@@ -2582,7 +2582,7 @@ class MainPage(Page):
                             src += '</a>\n'
                         src += '</td>\n'
                         if versionInfo[1] >= 0:
-                            supplierSize = 0 if contacts.numSuppliers() == 0 else versionInfo[1]/contacts.numSuppliers()
+                            supplierSize = 0 if contactsdb.num_suppliers() == 0 else versionInfo[1]/contactsdb.num_suppliers()
                             src += '<td nowrap align=right>'
                             src += '<font size=-1 color=#80D080>%s</font>' % diskspace.MakeStringFromBytes(supplierSize)
                             src += '<font size=-1 color=gray>&nbsp;/&nbsp;</font>'
@@ -3003,7 +3003,7 @@ class MainPage(Page):
                 src += html_comment('  %s %s %s' % (pathID.ljust(27), localPath.ljust(70), sz.ljust(9)))
                 for version, vinfo in item.get_versions().items():
                     if vinfo[1] >= 0:
-                        szver = diskspace.MakeStringFromBytes(vinfo[1]/contacts.numSuppliers())+' / '+diskspace.MakeStringFromBytes(vinfo[1]) 
+                        szver = diskspace.MakeStringFromBytes(vinfo[1]/contactsdb.num_suppliers())+' / '+diskspace.MakeStringFromBytes(vinfo[1]) 
                     else:
                         szver = '?'
                     src += html_comment('  %s   %s %s' % (' '*27, (pathID+'/'+version).ljust(68), szver))
@@ -3014,8 +3014,8 @@ class MainPage(Page):
             src = ''
             src += html_comment('  %s %s %s' % ('[path ID]'.ljust(37), '[size]'.ljust(20), '[local path]'))
             for backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
-                if versionInfo[1] >= 0 and contacts.numSuppliers() > 0:
-                    szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1]/contacts.numSuppliers()) 
+                if versionInfo[1] >= 0 and contactsdb.num_suppliers() > 0:
+                    szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1]/contactsdb.num_suppliers()) 
                 else:
                     szver = '?'
                 szver = diskspace.MakeStringFromBytes(versionInfo[1]) if versionInfo[1] >= 0 else '?'
@@ -3073,7 +3073,7 @@ class MainPage(Page):
 
     def renderPage(self, request):
         from storage import backup_fs
-        if contacts.numSuppliers() == 0:
+        if contactsdb.num_suppliers() == 0:
             src = ''
             src += '<h1>my files</h1>\n'
             src += '<table width="80%"><tr><td align=left>\n'
@@ -3124,7 +3124,7 @@ class MainPage(Page):
         src += '<br><br><table><tr><td><div align=left>\n'
         availibleSpace = diskspace.MakeStringFromString(settings.getNeededString())
         backupsSizeTotal = backup_fs.sizebackups()
-        backupsSizeSupplier = -1 if contacts.numSuppliers() == 0 else backupsSizeTotal/contacts.numSuppliers()
+        backupsSizeSupplier = -1 if contactsdb.num_suppliers() == 0 else backupsSizeTotal/contactsdb.num_suppliers()
         usedSpaceTotal = diskspace.MakeStringFromBytes(backupsSizeTotal)
         usedSpaceSupplier = '-' if backupsSizeSupplier<0 else diskspace.MakeStringFromBytes(backupsSizeSupplier)
         src += 'availible space:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % (
@@ -3262,9 +3262,9 @@ class BackupPage(Page, BackupIDSplit):
             if dataSent > dirSizeBytes:
                 dataSent = dirSizeBytes
             percent = 100.0 * dataSent / dirSizeBytes
-        # percentSupplier = 0.0 if contacts.numSuppliers() == 0 else 100.0 / contacts.numSuppliers()
-        # sizePerSupplier = 0.0 if contacts.numSuppliers() == 0 else dirSizeBytes / contacts.numSuppliers()
-        w, h = misc.calculate_best_dimension(contacts.numSuppliers())
+        # percentSupplier = 0.0 if contactsdb.num_suppliers() == 0 else 100.0 / contactsdb.num_suppliers()
+        # sizePerSupplier = 0.0 if contactsdb.num_suppliers() == 0 else dirSizeBytes / contactsdb.num_suppliers()
+        w, h = misc.calculate_best_dimension(contactsdb.num_suppliers())
         imgW, imgH, padding =  misc.calculate_padding(w, h)
         #---info---
         src = ''
@@ -3315,10 +3315,10 @@ class BackupPage(Page, BackupIDSplit):
 #                src += '<td align=center valign=top>\n'
 #                supplierNum = y * w + x
 #                link = '/' + _PAGE_SUPPLIERS + '/' + str(supplierNum) + '?back=%s' % request.path
-#                if supplierNum >= contacts.numSuppliers():
+#                if supplierNum >= contactsdb.num_suppliers():
 #                    src += '&nbsp;\n'
 #                    continue
-#                idurl = contacts.getSupplierID(supplierNum)
+#                idurl = contactsdb.supplier(supplierNum)
 #                name = nameurl.GetName(idurl)
 #                if not name:
 #                    src += '&nbsp;\n'
@@ -3390,7 +3390,7 @@ class BackupPage(Page, BackupIDSplit):
         from storage import restore_monitor
         bstats = restore_monitor.GetProgress(self.backupID)
         totalPercent, totalNumberOfFiles, local_backup_size, maxBlockNum, statsLocalArray = backup_matrix.GetBackupLocalStats(self.backupID)
-        w, h = misc.calculate_best_dimension(contacts.numSuppliers())
+        w, h = misc.calculate_best_dimension(contactsdb.num_suppliers())
         imgW, imgH, padding =  misc.calculate_padding(w, h)
         maxBlockNum = backup_matrix.GetKnownMaxBlockNum(self.backupID)
         currentBlock = max(0, restoreObj.BlockNumber)
@@ -3415,10 +3415,10 @@ class BackupPage(Page, BackupIDSplit):
                 src += '<td align=center valign=top>\n'
                 supplierNum = y * w + x
                 link = '/' + _PAGE_SUPPLIERS + '/' + str(supplierNum) + '?back=%s' % request.path
-                if supplierNum >= contacts.numSuppliers():
+                if supplierNum >= contactsdb.num_suppliers():
                     src += '&nbsp;\n'
                     continue
-                idurl = contacts.getSupplierID(supplierNum)
+                idurl = contactsdb.supplier(supplierNum)
                 name = nameurl.GetName(idurl)
                 if not name:
                     src += '&nbsp;\n'
@@ -3636,19 +3636,19 @@ class BackupPage(Page, BackupIDSplit):
         #---requestrandomblock---
         elif action == 'requestrandomblock':
             randBlockNum = random.randint(0, backup_matrix.GetKnownMaxBlockNum(self.backupID))
-            randSupplierNum = random.randint(0, contacts.numSuppliers()-1)
+            randSupplierNum = random.randint(0, contactsdb.num_suppliers()-1)
             packetID = packetid.MakePacketID(self.backupID, randBlockNum, randSupplierNum, 'Data')
             lg.out(4, 'REQUEST: %s' % packetID)
             if driver.is_started('service_data_sender'):
                 try:
-                    from supplier import io_throttle
+                    from customer import io_throttle
                     io_throttle.QueueRequestFile(
                         lambda packet, state: 
                             lg.out(4, 'RECEIVED: %r with state %s' % (packet, state)),
                         my_id.getLocalID(),
                         packetID, 
                         my_id.getLocalID(),     
-                        contacts.getSupplierIDs()[randSupplierNum])
+                        contactsdb.suppliers()[randSupplierNum])
                 except:
                     lg.exc()
                                              
@@ -3696,7 +3696,7 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
         from storage import backup_control
         from storage import restore_monitor
         localPercent, numberOfFiles, totalSize, maxBlockNum, bstats = backup_matrix.GetBackupLocalStats(self.backupID)
-        w, h = misc.calculate_best_dimension(contacts.numSuppliers())
+        w, h = misc.calculate_best_dimension(contactsdb.num_suppliers())
         imgW, imgH, padding = misc.calculate_padding(w, h)
         #---info---
         src = '<h3>%s</h3>\n' % misc.wrap_long_string(str(self.localPath), 60, '<br>\n')
@@ -3718,10 +3718,10 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
                 src += '<td align=center valign=top>\n'
                 supplierNum = y * w + x
                 link = '/' + _PAGE_SUPPLIERS + '/' + str(supplierNum) + '?back=%s' % request.path
-                if supplierNum >= contacts.numSuppliers():
+                if supplierNum >= contactsdb.num_suppliers():
                     src += '&nbsp;\n'
                     continue
-                idurl = contacts.getSupplierID(supplierNum)
+                idurl = contactsdb.supplier(supplierNum)
                 name = nameurl.GetName(idurl)
                 if not name:
                     src += '&nbsp;\n'
@@ -3779,14 +3779,14 @@ class BackupRemoteFilesPage(Page, BackupIDSplit):
         from storage import backup_matrix
         totalNumberOfFiles, maxBlockNumber, bstats = backup_matrix.GetBackupStats(self.backupID)
         blocks, percent = backup_matrix.GetBackupBlocksAndPercent(self.backupID)
-        w, h = misc.calculate_best_dimension(contacts.numSuppliers())
+        w, h = misc.calculate_best_dimension(contactsdb.num_suppliers())
         imgW, imgH, padding =  misc.calculate_padding(w, h)
         versionSize = 0
         if self.fsitem:
             versionSize = self.fsitem.get_version_info(self.version)[1]
             if versionSize < 0:
                 versionSize = 0
-        supplierSize = diskspace.MakeStringFromBytes(versionSize/contacts.numSuppliers())
+        supplierSize = diskspace.MakeStringFromBytes(versionSize/contactsdb.num_suppliers())
         totalSize = diskspace.MakeStringFromBytes(versionSize)
         #---info---
         src = '<h3>%s</h3>\n' % misc.wrap_long_string(str(self.localPath), 60, '<br>\n')
@@ -3811,10 +3811,10 @@ class BackupRemoteFilesPage(Page, BackupIDSplit):
                 src += '<td align=center valign=top>\n'
                 supplierNum = y * w + x
                 link = '/' + _PAGE_SUPPLIERS + '/' + str(supplierNum) + '?back=%s' % request.path
-                if supplierNum >= contacts.numSuppliers():
+                if supplierNum >= contactsdb.num_suppliers():
                     src += '&nbsp;\n'
                     continue
-                idurl = contacts.getSupplierID(supplierNum)
+                idurl = contactsdb.supplier(supplierNum)
                 name = nameurl.GetName(idurl)
                 if not name:
                     src += '&nbsp;\n'
@@ -3929,7 +3929,7 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
         arrayLocal = backup_matrix.GetBackupLocalArray(self.backupID)
         arrayRemote = backup_matrix.GetBackupRemoteArray(self.backupID)
         suppliersActive = backup_matrix.GetActiveArray()
-        w = contacts.numSuppliers()
+        w = contactsdb.num_suppliers()
         h = backup_matrix.GetKnownMaxBlockNum(self.backupID) + 1
         backupObj = backup_control.GetRunningBackupObject(self.backupID)
         if backupObj is not None:
@@ -4014,7 +4014,7 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
                     x1 = math.cos(a * math.pi / 180.0) * R * 0.7 + x0
                     y1 = math.sin(a * math.pi / 180.0) * R * 0.7 + y0
                     draw.text((x1-20, y1-5), 
-                              '%s' % nameurl.GetName(contacts.getSupplierID(supplierNum)), 
+                              '%s' % nameurl.GetName(contactsdb.supplier(supplierNum)), 
                               fill="#000000", font=font)
         img.save(f, "PNG")
         f.seek(0)
@@ -4038,7 +4038,7 @@ class SupplierPage(Page):
             self.idurl = ''
             self.name = ''
             return
-        self.idurl = contacts.getSupplierID(self.index)
+        self.idurl = contactsdb.supplier(self.index)
         protocol, host, port, self.name = nameurl.UrlParse(self.idurl)
         self.name = self.name.strip()[0:-4]
 
@@ -4076,7 +4076,7 @@ class SupplierPage(Page):
             propagate.single(self.idurl)
         bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         bytesUsed = backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
-        suppliers_count = contacts.numSuppliers()
+        suppliers_count = contactsdb.num_suppliers()
         if suppliers_count > 0: 
             bytesNeededPerSupplier = bytesNeeded / suppliers_count 
             bytesUsedPerSupplier = bytesUsed / suppliers_count
@@ -4132,7 +4132,7 @@ class SupplierRemoteFilesPage(Page):
     def __init__(self, idurl):
         Page.__init__(self)
         self.idurl = idurl
-        self.supplierNum = contacts.numberForSupplier(self.idurl)
+        self.supplierNum = contactsdb.supplier_position(self.idurl)
         self.name = nameurl.GetName(self.idurl)
         
     def renderPage(self, request):
@@ -4163,7 +4163,7 @@ class SupplierLocalFilesPage(Page):
     def __init__(self, idurl):
         Page.__init__(self)
         self.idurl = idurl
-        self.supplierNum = contacts.numberForSupplier(self.idurl)
+        self.supplierNum = contactsdb.supplier_position(self.idurl)
         self.name = nameurl.GetName(self.idurl)
         
     def renderPage(self, request):
@@ -4201,7 +4201,7 @@ class SupplierChangePage(Page):
     def __init__(self, idurl):
         Page.__init__(self)
         self.idurl = idurl
-        self.supplierNum = contacts.numberForSupplier(self.idurl)
+        self.supplierNum = contactsdb.supplier_position(self.idurl)
         self.name = nameurl.GetName(self.idurl)
         
     def renderPage(self, request):
@@ -4253,7 +4253,7 @@ class SuppliersPage(Page):
         #---action call---
         if action == 'call':
             # transport_control.ClearAliveTimeSuppliers()
-            # contact_status.check_contacts(contacts.getSupplierIDs())
+            # contact_status.check_contacts(contactsdb.suppliers())
             propagate.SlowSendSuppliers(0.1)
             # request.redirect(request.path)
             # request.finish()
@@ -4262,20 +4262,20 @@ class SuppliersPage(Page):
             
         #---action callalive---    
         elif action == 'callalive':
-            for suplier_idurl in contacts.getSupplierIDs():
+            for suplier_idurl in contactsdb.suppliers():
                 if contact_status.isOnline(suplier_idurl):
                     propagate.PingContact(suplier_idurl)
 
         #---action cacheids---    
         elif action == 'cacheids':
-            for suplier_idurl in contacts.getSupplierIDs():
+            for suplier_idurl in contactsdb.suppliers():
                 identitycache.immediatelyCaching(suplier_idurl).addBoth(
                     lambda src: OnAliveStateChanged(suplier_idurl))
             
         #---action request---
         elif action == 'request':
             pass
-            # central_service.clear_users_statuses(contacts.getSupplierIDs())
+            # central_service.clear_users_statuses(contactsdb.suppliers())
             # central_service.SendRequestSuppliers()
         
         #---action replace---
@@ -4285,11 +4285,11 @@ class SuppliersPage(Page):
                 if idurl != '':
                     if not idurl.startswith('http://'):
                         try:
-                            idurl = contacts.getSupplierID(int(idurl))
+                            idurl = contactsdb.supplier(int(idurl))
                         except:
                             idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
-                    if contacts.IsSupplier(idurl):
-                        from supplier import fire_hire
+                    if contactsdb.is_supplier(idurl):
+                        from customer import fire_hire
                         fire_hire.AddSupplierToFire(idurl)
                         fire_hire.A('restart')
                         # backup_monitor.A('restart')
@@ -4302,12 +4302,12 @@ class SuppliersPage(Page):
             if idurl != '' and newidurl != '':
                 if not idurl.startswith('http://'):
                     try:
-                        idurl = contacts.getSupplierID(int(idurl))
+                        idurl = contactsdb.supplier(int(idurl))
                     except:
                         idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
                 if not newidurl.startswith('http://'):
                     newidurl = 'http://'+settings.IdentityServerName()+'/'+newidurl+'.xml'
-                if contacts.IsSupplier(idurl):
+                if contactsdb.is_supplier(idurl):
                     # fire_hire.A('fire-him-now', (idurl, newidurl))
                     fire_hire.A('fire-him-now', [idurl,])
 
@@ -4316,8 +4316,8 @@ class SuppliersPage(Page):
         src += '<p>my ID is <a href="%s" target=_blank>@:</a>%s</p>\n' % (my_id.getLocalID(), my_id.getIDName())
         src += '<h1>my suppliers</h1>\n'
 
-        if contacts.numSuppliers() > 0:
-            w, h = misc.calculate_best_dimension(contacts.numSuppliers())
+        if contactsdb.num_suppliers() > 0:
+            w, h = misc.calculate_best_dimension(contactsdb.num_suppliers())
             #DEBUG
             #w = 8; h = 8
 #            paddingX = str(40/w)
@@ -4338,11 +4338,11 @@ class SuppliersPage(Page):
                     src += '<td align=center valign=top>\n'
                     n = y * w + x
                     link = _PAGE_SUPPLIERS+'/'+str(n)+'?back='+back
-                    if n >= contacts.numSuppliers():
+                    if n >= contactsdb.num_suppliers():
                         src += '&nbsp;\n'
                         continue
 
-                    idurl = contacts.getSupplierID(n)
+                    idurl = contactsdb.supplier(n)
                     name = nameurl.GetName(idurl)
                     if not name:
                         src += '&nbsp;\n'
@@ -4386,7 +4386,7 @@ class SuppliersPage(Page):
 
         #---show_contacts---
                     if lg.is_debug(8):
-                        idobj = contacts.getSupplier(idurl)
+                        idobj = contactsdb.get_supplier_identity(idurl)
                         idcontacts = []
                         idversion = ''
                         if idobj:
@@ -4479,7 +4479,7 @@ class SuppliersPage(Page):
                 'of users that meet your requirements.')
 
         #---links---
-        if contacts.numSuppliers() > 0:
+        if contactsdb.num_suppliers() > 0:
             src += '<p><a href="?action=call&back=%s">Call all suppliers to find out who is alive</a></p><br>\n' % back 
             src += '<p><a href="?action=callalive&back=%s">Call only alive suppliers now - just to test</a></p><br>\n' % back
             src += '<p><a href="?action=cacheids&back=%s">Request suppliers\'s identities</a></p><br>\n' % back
@@ -4511,7 +4511,7 @@ class CustomerPage(Page):
             self.idurl = ''
             self.name = ''
             return
-        self.idurl = contacts.getCustomerID(self.index)
+        self.idurl = contactsdb.customer(self.index)
         protocol, host, port, self.name = nameurl.UrlParse(self.idurl)
         self.name = self.name.strip()[0:-4]
 
@@ -4525,7 +4525,7 @@ class CustomerPage(Page):
         action = arg(request, 'action')
         
         if action == 'remove':
-            if contacts.IsCustomer(self.idurl):
+            if contactsdb.is_customer(self.idurl):
                 # central_service.SendReplaceCustomer(self.idurl)
                 request.redirect('/'+_PAGE_CUSTOMERS)
                 request.finish()
@@ -4578,7 +4578,7 @@ class CustomerFilesPage(Page):
     def __init__(self, idurl):
         Page.__init__(self)
         self.idurl = idurl
-        self.customerNum = contacts.numberForCustomer(self.idurl)
+        self.customerNum = contactsdb.customer_position(self.idurl)
         self.name = nameurl.GetName(self.idurl)
         
     def renderPage(self, request):
@@ -4619,7 +4619,7 @@ class CustomersPage(Page):
         #---action call---
         if action == 'call':
             # transport_control.ClearAliveTimeCustomers()
-            # contact_status.check_contacts(contacts.getCustomerIDs())
+            # contact_status.check_contacts(contactsdb.customers())
             propagate.SlowSendCustomers(0.2)
             # request.redirect(request.path)
             # request.finish()
@@ -4628,7 +4628,7 @@ class CustomersPage(Page):
         #---action request---
         elif action == 'request':
             pass
-            # central_service.clear_users_statuses(contacts.getCustomerIDs())
+            # central_service.clear_users_statuses(contactsdb.customers())
             # central_service.SendRequestCustomers()
 
         #---action remove---
@@ -4637,10 +4637,10 @@ class CustomersPage(Page):
             if idurl != '':
                 if not idurl.startswith('http://'):
                     try:
-                        idurl = contacts.getCustomerID(int(idurl))
+                        idurl = contactsdb.customer(int(idurl))
                     except:
                         idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
-                # if contacts.IsCustomer(idurl):
+                # if contactsdb.is_customer(idurl):
                 #     central_service.SendReplaceCustomer(idurl)
 
         #---draw page---
@@ -4648,8 +4648,8 @@ class CustomersPage(Page):
         src += '<p>me is <a href="%s" target=_blank>@:</a>%s</p>\n' % (my_id.getLocalID(), my_id.getIDName())
         src += '<h1>my customers</h1>\n'
 
-        if contacts.numCustomers() > 0:
-            w, h = misc.calculate_best_dimension(contacts.numCustomers())
+        if contactsdb.num_customers() > 0:
+            w, h = misc.calculate_best_dimension(contactsdb.num_customers())
             imgW = 64
             imgH = 64
             if w > 4:
@@ -4664,11 +4664,11 @@ class CustomersPage(Page):
                     src += '<td align=center valign=top>\n'
                     n = y * w + x
                     link = _PAGE_CUSTOMERS+'/'+str(n)+'?back='+back
-                    if n >= contacts.numCustomers():
+                    if n >= contactsdb.num_customers():
                         src += '&nbsp;\n'
                         continue
 
-                    idurl = contacts.getCustomerID(n)
+                    idurl = contactsdb.customer(n)
                     name = nameurl.GetName(idurl)
                     if not name:
                         src += '&nbsp;\n'
@@ -4707,7 +4707,7 @@ class CustomersPage(Page):
 
         #---show_contacts---
                     if lg.is_debug(8):
-                        idobj = contacts.getCustomer(idurl)
+                        idobj = contactsdb.get_customer_identity(idurl)
                         idcontacts = []
                         idversion = ''
                         if idobj:
@@ -4767,7 +4767,7 @@ class CustomersPage(Page):
             src += html_comment('List of your customers is empty.\n')
 
         #---links---
-        if contacts.numCustomers() > 0:
+        if contactsdb.num_customers() > 0:
             src += '<p><a href="?action=call&back=%s">Call all customers to find out who is alive</a></p><br>\n' % back
         src += '<p><a href="?action=request&back=%s">Request list of my customers</a></p>\n' % (back)
         src += '<p><a href="%s?back=%s">Switch to Suppliers</a></p>\n' % ('/'+_PAGE_SUPPLIERS, back)
@@ -4791,7 +4791,7 @@ class StoragePage(Page):
         bytesNeeded = settings.getNeededBytes()
         bytesDonated = settings.getDonatedBytes()
         bytesUsed = int(backup_fs.sizebackups() / 2)
-        suppliers_count = contacts.numSuppliers()
+        suppliers_count = contactsdb.num_suppliers()
         if suppliers_count > 0: 
             bytesNeededPerSupplier = int(math.ceil(2.0 * bytesNeeded / suppliers_count)) 
             bytesUsedPerSupplier = int(math.ceil(2.0 * bytesUsed / suppliers_count))
@@ -4801,14 +4801,14 @@ class StoragePage(Page):
         dataDriveFreeSpace, dataDriveTotalSpace = diskusage.GetDriveSpace(dataDir)
         if dataDriveFreeSpace is None:
             dataDriveFreeSpace = 0
-        customers_count = contacts.numCustomers()
+        customers_count = contactsdb.num_customers()
         spaceDict = bpio._read_dict(settings.CustomersSpaceFile())
         try:
             freeDonatedBytes = spaceDict['free']
         except:
             lg.exc()
             freeDonatedBytes = 0.0
-        totalCustomersBytes = sum(map(lambda idurl: int(spaceDict[idurl]), contacts.getCustomerIDs()))
+        totalCustomersBytes = sum(map(lambda idurl: int(spaceDict[idurl]), contactsdb.customers()))
         usedSpace = bpio._read_dict(settings.CustomersUsedSpaceFile())
         try:
             currentlyUsedDonatedBytes = sum(map(int, usedSpace.values()))
@@ -4953,7 +4953,7 @@ class StorageNeededImage(resource.Resource):
             request.finish()
             return NOT_DONE_YET
         bytesUsed = backup_fs.sizebackups() # backup_db.GetTotalBackupsSize() * 2
-        w = contacts.numSuppliers()
+        w = contactsdb.num_suppliers()
         if w == 0:
             img.save(f, "PNG")
             f.seek(0)
@@ -4982,7 +4982,7 @@ class StorageNeededImage(resource.Resource):
                 a = float(supplierNum) * dA + dA / 2.0 
                 x1 = math.cos(a * math.pi / 180.0) * R * 0.7 + x0
                 y1 = math.sin(a * math.pi / 180.0) * R * 0.7 + y0
-                s = nameurl.GetName(contacts.getSupplierID(supplierNum))
+                s = nameurl.GetName(contactsdb.supplier(supplierNum))
                 sw, sh = draw.textsize(s, font=font)
                 draw.text((self.toInt(x1-sw/2.0), self.toInt(y1-sh/2.0)), s, fill="#000000", font=font)
         img.save(f, "PNG")
@@ -5026,8 +5026,8 @@ class StorageDonatedImage(resource.Resource):
         dataDriveFreeSpace, dataDriveTotalSpace = diskusage.GetDriveSpace(dataDir)
         if dataDriveFreeSpace is None:
             dataDriveFreeSpace = 0
-        customers_ids = list(contacts.getCustomerIDs())
-        customers_count = contacts.numCustomers()
+        customers_ids = list(contactsdb.customers())
+        customers_count = contactsdb.num_customers()
         spaceDict = bpio._read_dict(settings.CustomersSpaceFile(), {})
         usedSpaceDict = bpio._read_dict(settings.CustomersUsedSpaceFile())
         totalCustomersBytes = 0
@@ -6222,7 +6222,7 @@ class DevelopmentPage(Page):
 #
 #    def renderPage(self, request):
 #        bal, balnt, rcptnum = money.LoadBalance()
-#        idurls = contacts.getContactsAndCorrespondents()
+#        idurls = contactsdb.contacts_full()
 #        idurls.sort()
 #        recipient = arg(request, 'recipient')
 #        if recipient.strip() and not recipient.startswith('http://'):
@@ -6497,7 +6497,7 @@ class MessagePage(Page):
         self.path = path
 
     def renderPage(self, request):
-        nicks = contacts.getCorrespondentsDict()
+        nicks = contactsdb.correspondents_dict()
         msg = message.ReadMessage(self.path)
         src = ''
         if msg[0] == my_id.getLocalID():
@@ -6545,7 +6545,7 @@ class ConversationPage(Page):
             self.recipient = ''
             self.subject = ''
             lg.exc()
-        self.recipient_nickname = contacts.getCorrespondentNickname(self.recipient)
+        self.recipient_nickname = contactsdb.get_correspondent_nickname(self.recipient)
         
     def renderPage(self, request):
         body = arg(request, 'body')
@@ -6600,7 +6600,7 @@ class MessagesPage(Page):
         self.conversations = True
 
     def _body_conversations(self, request):
-        nicks = contacts.getCorrespondentsDict()
+        nicks = contactsdb.correspondents_dict()
         nicks[my_id.getLocalID()] = settings.getNickName() or nameurl.GetName(my_id.getLocalID())
         cdict = message.DictAllConversations()
         conversations_list = cdict.keys()
@@ -6647,7 +6647,7 @@ class MessagesPage(Page):
 
     def _body_messages_by_date(self, request, reverse_order):
         myid = my_id.getLocalID()
-        nicks = contacts.getCorrespondentsDict()
+        nicks = contactsdb.correspondents_dict()
         nicks[my_id.getLocalID()] = settings.getNickName() or nameurl.GetName(my_id.getLocalID())
         mlist = message.ListAllMessages()
         mlist.sort(key=lambda item: item[self.sortby], reverse=reverse_order)
@@ -6745,7 +6745,7 @@ class NewMessagePage(Page):
     pagename = _PAGE_NEW_MESSAGE
     
     def renderPage(self, request):
-        correspondents_dict = contacts.getCorrespondentsDict()
+        correspondents_dict = contactsdb.correspondents_dict()
         correspondents_names = sorted(correspondents_dict.keys(), key=lambda k: correspondents_dict[k])
         recipient = misc.unpack_url_param(arg(request, 'recipient', ''), '')
         subject = misc.unpack_url_param(arg(request, 'subject'), '')
@@ -6806,7 +6806,7 @@ class CorrespondentsPage(Page):
         SendCommandToGUI('update')
 
     def _body(self, request, nickname, msg, typ):
-        idurls = contacts.getCorrespondentIDs()
+        idurls = contactsdb.correspondents_ids()
         idurls.sort()
         src = ''
         src += '<h1>friends</h1>\n'
@@ -6908,7 +6908,7 @@ class CorrespondentsPage(Page):
         return src
 
     def renderPage(self, request):
-        idurls = contacts.getCorrespondentIDs()
+        idurls = contactsdb.correspondents_ids()
         idurls.sort()
         action = arg(request, 'action')
         nickname = arg(request, 'nickname', self.last_nickname or '')
@@ -6931,9 +6931,9 @@ class CorrespondentsPage(Page):
             self.results = []
             idurl = nameurl.UnQuote(arg(request, 'idurl'))
             # name = nameurl.GetName(idurl)
-            if idurl in contacts.getCorrespondentIDs():
-                nickname = contacts.removeCorrespondent(idurl) or nameurl.GetName(idurl)
-                contacts.saveCorrespondentIDs()
+            if idurl in contactsdb.correspondents_ids():
+                nickname = contactsdb.remove_correspondent(idurl) or nameurl.GetName(idurl)
+                contactsdb.save_correspondents()
                 msg = '%s were removed from friends list' % nickname
                 typ = 'success'
                 name = ''
@@ -6945,9 +6945,9 @@ class CorrespondentsPage(Page):
         elif action == 'add':
             self.results = []
             self.last_nickname = None
-            if not contacts.IsCorrespondent(arg(request, 'addidurl')):
-                contacts.addCorrespondent(arg(request, 'addidurl'), arg(request, 'addnickname'))
-                contacts.saveCorrespondentIDs()
+            if not contactsdb.is_correspondent(arg(request, 'addidurl')):
+                contactsdb.add_correspondent(arg(request, 'addidurl'), arg(request, 'addnickname'))
+                contactsdb.save_correspondents()
         src = self._body(request, nickname, msg, typ)
         return html(request, body=src, back=arg(request, 'back', _PAGE_CORRESPONDENTS))
 
@@ -7557,7 +7557,7 @@ class MonitorTransportsPage(Page):
                     bytes_in = '&nbsp;' if bytes_in == 0 else diskspace.MakeStringFromBytes(bytes_in) 
                     bytes_out = stats.counters_out().get(idurl, {'send': 0})['send']
                     bytes_out = '&nbsp;' if bytes_out == 0 else diskspace.MakeStringFromBytes(bytes_out)
-                    from supplier import io_throttle
+                    from customer import io_throttle
                     send_queue = io_throttle.GetSendQueueLength(idurl)
                     request_queue = io_throttle.GetRequestQueueLength(idurl)
                 if i % 2: 

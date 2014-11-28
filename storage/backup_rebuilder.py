@@ -53,14 +53,11 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in backup_rebuilder.py')
 
-from twisted.internet.defer import maybeDeferred
-
 #------------------------------------------------------------------------------ 
 
 from logs import lg
 
 from lib import packetid
-from lib import misc
 
 from automats import automat
 
@@ -68,7 +65,7 @@ from system import bpio
 
 from main import settings
 
-from userid import contacts
+from contacts import contactsdb
 from userid import my_id
 
 from raid import eccmap
@@ -224,16 +221,16 @@ class BackupRebuilder(automat.Automat):
         return False
     
     def isRequestQueueEmpty(self, arg):
-        from supplier import io_throttle
+        from customer import io_throttle
         # supplierSet = backup_matrix.suppliers_set()
-        for supplierNum in range(contacts.numSuppliers()):
-            supplierID = contacts.getSupplierID(supplierNum)
+        for supplierNum in range(contactsdb.num_suppliers()):
+            supplierID = contactsdb.supplier(supplierNum)
             if io_throttle.HasBackupIDInRequestQueue(supplierID, self.currentBackupID):
                 return False
         return True
 
     def doPrepareNextBackup(self, arg):
-        from supplier import io_throttle
+        from customer import io_throttle
         import backup_matrix
         global _BackupIDsQueue
         # clear block number from previous iteration
@@ -253,8 +250,8 @@ class BackupRebuilder(automat.Automat):
             # range(0) should return []
             for blockNum in range(backup_matrix.local_max_block_numbers().get(backupID, -1) + 1):
                 backup_matrix.remote_files()[backupID][blockNum] = {
-                    'D': [0] * contacts.numSuppliers(),
-                    'P': [0] * contacts.numSuppliers() }
+                    'D': [0] * contactsdb.num_suppliers(),
+                    'P': [0] * contactsdb.num_suppliers() }
         # detect missing blocks from remote info
         self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(backupID)
         lg.out(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
@@ -269,8 +266,8 @@ class BackupRebuilder(automat.Automat):
             if backup_matrix.remote_files()[backupID].has_key(blockNum):
                 continue
             backup_matrix.remote_files()[backupID][blockNum] = {
-                'D': [0] * contacts.numSuppliers(),
-                'P': [0] * contacts.numSuppliers() }
+                'D': [0] * contactsdb.num_suppliers(),
+                'P': [0] * contactsdb.num_suppliers() }
         if self.currentBackupID:
             # clear requesting queue from previous task
             io_throttle.DeleteBackupRequests(self.currentBackupID)
@@ -282,7 +279,7 @@ class BackupRebuilder(automat.Automat):
         self.automat('backup-ready')
 
     def doRequestAvailableBlocks(self, arg):
-        from supplier import io_throttle
+        from customer import io_throttle
         import backup_matrix
         self.missingPackets = 0
         # self.missingSuppliers.clear()
@@ -292,11 +289,11 @@ class BackupRebuilder(automat.Automat):
         # remember how many requests we did on this iteration
         total_requests_count = 0
         # at the moment I do download everything I have available and needed
-        if '' in contacts.getSupplierIDs():
+        if '' in contactsdb.suppliers():
             self.automat('requests-sent', total_requests_count)
             return
-        for supplierNum in range(contacts.numSuppliers()):
-            supplierID = contacts.getSupplierID(supplierNum)
+        for supplierNum in range(contactsdb.num_suppliers()):
+            supplierID = contactsdb.supplier(supplierNum)
             requests_count = 0
             # we do requests in reverse order because we start rebuilding from the last block 
             # for blockNum in range(self.currentBlockNumber, -1, -1):
@@ -390,13 +387,13 @@ class BackupRebuilder(automat.Automat):
                     return
                 lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(newData)))
                 if newData:
-                    for supplierNum in xrange(contacts.numSuppliers()):
+                    for supplierNum in xrange(contactsdb.num_suppliers()):
                         if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
                             backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Data')
                         if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
                             backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Parity')
                     self.blocksSucceed.append(self.currentBlockNumber)
-                    from supplier import data_sender
+                    from customer import data_sender
                     data_sender.A('new-data')
             else:
                 lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, result))

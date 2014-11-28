@@ -15,13 +15,17 @@ Also keep track of changing identities sources and maintain a several "index" di
 
 import os
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 from system import bpio
+
 from main import settings
+
 from lib import nameurl
 
-import identity
+from userid import identity
 
 #------------------------------------------------------------------------------ 
 

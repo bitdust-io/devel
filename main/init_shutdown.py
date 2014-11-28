@@ -134,11 +134,11 @@ def init_contacts(callback=None, errback=None):
             errback(1)
         return
 
-    from userid import contacts
+    from contacts import contactsdb
 #    import local_site
     # contacts.SetSuppliersChangedCallback(lambda old, new: local_site.update_suppliers(new))
     # contacts.SetCustomersChangedCallback(lambda old, new: local_site.update_customers(new))
-    contacts.init()
+    contactsdb.init()
 
     import userid.identitycache as identitycache
     identitycache.init(callback, errback)
@@ -203,9 +203,6 @@ def shutdown(x=None):
 
     from web import webcontrol
     dl.append(webcontrol.shutdown())
-
-    # from userid import propagate
-    # propagate.shutdown()
 
     from transport import bandwidth
     from transport import callback
