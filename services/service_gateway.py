@@ -39,6 +39,9 @@ class GatewayService(LocalService):
     def stop(self):
         from transport import bandwidth
         from transport import gateway
+        from transport import callback
+        callback.remove_inbox_callback(bandwidth.INfile)
+        callback.remove_finish_file_sending_callback(bandwidth.OUTfile)
         d = gateway.stop()
         bandwidth.shutdown()
         gateway.shutdown()

@@ -24,9 +24,8 @@ It also checks whether the program is installed and switch to run another "insta
 
 The ``initializer()`` machine is doing several operations:
 
-    * start low-level modules and init local data, see ``p2p.init_shutdown.init_local()``
-    * prepare lists of my contacts, see ``p2p.init_shutdown.init_contacts()``
-    * starts the network communications by running core method ``p2p.init_shutdown.init_connection()``
+    * start low-level modules and init local data, see ``initializer._init_local()``
+    * starts the network communications by running core method ``initializer.doInitServices()``
     * other modules is started after all other more important things 
     * machine can switch to "install" wizard if Private Key or local identity file is not fine
     * it will finally switch to "READY" state to indicate the whole status of the application
@@ -46,6 +45,7 @@ EVENTS:
     * :red:`shutdowner.state`
 """
 
+import os
 import sys
 
 try:
@@ -55,9 +55,12 @@ except:
 
 from twisted.internet import defer
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 from system import bpio
+
 from automats import automat
 from automats import global_state
 
@@ -65,7 +68,6 @@ from services import driver
 
 import installer
 import shutdowner
-# import webcontrol
 
 #------------------------------------------------------------------------------ 
 
@@ -206,9 +208,8 @@ class Initializer(automat.Automat):
         return None
 
     def isInstalled(self, arg):
-        import init_shutdown
         if self.is_installed is None:
-            self.is_installed = init_shutdown.check_install() 
+            self.is_installed = self._check_install() 
         return self.is_installed
     
     def isGUIPossible(self, arg):
@@ -250,22 +251,30 @@ class Initializer(automat.Automat):
         reactor.callLater(0, self.automat, 'init-modules-done')
 
     def doShowGUI(self, arg):
-        from web import webcontrol
-        d = webcontrol.init()
-        if self.flagGUI or not self.is_installed: 
-            d.addCallback(webcontrol.show)
+        from main import settings
+        if settings.NewWebGUI():
+            from web import control
+            control.init()
+        else:
+            from web import webcontrol
+            d = webcontrol.init()
         try:
-            from tray_icon import USE_TRAY_ICON
+            from main.tray_icon import USE_TRAY_ICON
         except:
             USE_TRAY_ICON = False
             lg.exc()
         if USE_TRAY_ICON:
             from main import tray_icon
-            tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
-        webcontrol.ready()
-        # sys.path.append(os.path.abspath('dj'))
-        # import local_site
-        # local_site.init()
+            if settings.NewWebGUI():
+                tray_icon.SetControlFunc(control.on_tray_icon_command)
+            else:
+                tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
+        if self.flagGUI or not self.is_installed:
+            if settings.NewWebGUI(): 
+                reactor.callLater(0.1, control.show)
+            else:
+                webcontrol.ready()
+                d.addCallback(webcontrol.show)
 
     def doPrintMessage(self, arg):
         """
@@ -280,6 +289,55 @@ class Initializer(automat.Automat):
         _Initializer = None
         self.destroy()
         
+    #------------------------------------------------------------------------------ 
+
+    def _check_install(self):
+        """
+        Return True if Private Key and local identity files exists and both is valid.
+        """
+        lg.out(2, 'initializer._check_install')
+        from main import settings
+        from userid import identity
+        from crypt import key
+        keyfilename = settings.KeyFileName()
+        keyfilenamelocation = settings.KeyFileNameLocation()
+        if os.path.exists(keyfilenamelocation):
+            keyfilename = bpio.ReadTextFile(keyfilenamelocation)
+            if not os.path.exists(keyfilename):
+                keyfilename = settings.KeyFileName()
+        idfilename = settings.LocalIdentityFilename()
+        if not os.path.exists(keyfilename) or not os.path.exists(idfilename):
+            lg.out(2, 'initializer._check_install local key or local id not exists')
+            return False
+        current_key = bpio.ReadBinaryFile(keyfilename)
+        current_id = bpio.ReadBinaryFile(idfilename)
+        if current_id == '':
+            lg.out(2, 'initializer._check_install local identity is empty ')
+            return False
+        if current_key == '':
+            lg.out(2, 'initializer._check_install private key is empty ')
+            return False
+        try:
+            key.InitMyKey()
+        except:
+            lg.out(2, 'initializer._check_install fail loading private key ')
+            return False
+        try:
+            ident = identity.identity(xmlsrc=current_id)
+        except:
+            lg.out(2, 'initializer._check_install fail init local identity ')
+            return False
+        try:
+            res = ident.Valid()
+        except:
+            lg.out(2, 'initializer._check_install wrong data in local identity   ')
+            return False
+        if not res:
+            lg.out(2, 'initializer._check_install local identity is not valid ')
+            return False
+        lg.out(2, 'initializer._check_install done')
+        return True
+        
     def _init_local(self):
         from p2p import commands 
         from lib import net_misc
@@ -289,14 +347,14 @@ class Initializer(automat.Automat):
         from system import run_upnpc
         from raid import eccmap
         from userid import my_id
-        misc.init()
-        commands.init()
         if settings.enableWebStream():
             from logs import weblog
             weblog.init(settings.getWebStreamPort())
         if settings.enableWebTraffic():
             from logs import webtraffic
             webtraffic.init(port=settings.getWebTrafficPort())
+        misc.init()
+        commands.init()
         tmpfile.init(settings.getTempDir())
         net_misc.init()
         settings.update_proxy_settings()
@@ -326,10 +384,8 @@ class Initializer(automat.Automat):
         Finish initialization part, run delayed methods.
         """
         lg.out(2,"initializer._init_modules")
-        from storage import local_tester
         from updates import os_windows_update
         from web import webcontrol
-        reactor.callLater(0, local_tester.init)
         os_windows_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
         reactor.callLater(0, os_windows_update.init)
         reactor.callLater(0, webcontrol.OnInitFinalDone)

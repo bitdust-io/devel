@@ -223,7 +223,7 @@ class CustomersRejector(automat.Automat):
         """
         Action method.
         """
-        from storage import local_tester
+        from supplier import local_tester
         local_tester.TestSpaceTime()
 
 

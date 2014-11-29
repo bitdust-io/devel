@@ -51,8 +51,6 @@ from automats import automat
 
 import installer
 
-from web import webcontrol
-
 #------------------------------------------------------------------------------ 
 
 _InstallWizard = None
@@ -80,7 +78,9 @@ class InstallWizard(automat.Automat):
     role = None
 
     def state_changed(self, oldstate, newstate, event, arg):
-        reactor.callLater(0, webcontrol.OnUpdateInstallPage)
+        if not settings.NewWebGUI():
+            from web import webcontrol
+            reactor.callLater(0, webcontrol.OnUpdateInstallPage)
         installer.A('install_wizard.state', newstate)
 
     def A(self, event, arg):

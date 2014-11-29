@@ -1408,9 +1408,8 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
 
 def UpdateSettings():
     """
-    This method is called at startup, during "local initialization" part, 
-    see ``p2p.init_shutdown.init_local()`` method.
-    I used that place sometimes to 'patch' users settings.
+    This method is called at startup, during "local initialization" part.
+    I used that place sometimes to 'patch' users settings on clients.
     """
     lg.out(6, 'misc.UpdateSettings')
 

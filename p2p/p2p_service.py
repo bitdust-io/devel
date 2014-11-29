@@ -74,7 +74,9 @@ from system import bpio
 
 from userid import my_id
 from contacts import contactsdb
+
 from userid import identity
+
 from contacts import identitycache
 
 from p2p import commands
@@ -91,6 +93,8 @@ from transport import gateway
 from transport import callback 
 
 from chat import message
+
+from services import driver
 
 #------------------------------------------------------------------------------
 
@@ -326,6 +330,8 @@ def RequestService(request):
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
     if words[0] == 'storage':
+        if not driver.is_started('service_supplier'):
+            return SendFail(request, 'supplier service is off')
         try:
             bytes_for_customer = int(words[1])
         except:
@@ -359,7 +365,7 @@ def RequestService(request):
             new_customer = False
         else:
             new_customer = True
-        from storage import local_tester
+        from supplier import local_tester
         if free_bytes <= bytes_for_customer:
             contactsdb.update_customers(current_customers)
             contactsdb.save_customers()
@@ -397,6 +403,8 @@ def SendRequestService(remote_idurl, service_info, response_callback=None):
 def CancelService(request):
     lg.out(8, "p2p_service.CancelService")
     if request.Payload.startswith('storage'):
+        if not driver.is_started('serivce_supplier'):
+            return SendFail(request, 'supplier service is off')
         if not contactsdb.is_customer(request.OwnerID):
             lg.warn("got packet from %s, but he is not a customer" % request.OwnerID)
             return SendFail(request, 'not a customer')
@@ -420,7 +428,7 @@ def CancelService(request):
         contactsdb.save_customers()
         space_dict.pop(request.OwnerID)
         bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
-        from storage import local_tester
+        from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         return SendAck(request, 'accepted')
     lg.warn("got wrong payload in %s" % request)
@@ -443,6 +451,8 @@ def ListFiles(request):
     and expect normal case is very few missing.
     This is to build the ``Files()`` we are holding for a customer.
     """
+    if not driver.is_started('service_supplier'):
+        return SendFail(request, 'supplier service is off')
     MyID = my_id.getLocalID()
     RemoteID = request.OwnerID
     PacketID = request.PacketID
@@ -491,6 +501,8 @@ def Data(request):
 #            return
         return
     # 2. this Data is not belong to us
+    if not driver.is_started('service_supplier'):
+        return SendFail(request, 'supplier service is off')
     if not contactsdb.is_customer(request.OwnerID):  # SECURITY
         lg.warn("%s not a customer, packetID=%s" % (request.OwnerID, request.PacketID))
         SendFail(request, 'not a customer')
@@ -534,7 +546,7 @@ def Data(request):
         SendFail(request, 'write error')
         return
     SendAck(request, str(len(request.Payload)))
-    from storage import local_tester
+    from supplier import local_tester
     reactor.callLater(0, local_tester.TestSpaceTime)
     del data
     lg.out(8, "p2p_service.Data saved from [%s/%s] to %s" % (
@@ -546,6 +558,8 @@ def Retrieve(request):
     Customer is asking us for data he previously stored with us.
     We send with ``outboxNoAck()`` method because he will ask again if he does not get it
     """
+    if not driver.is_started('service_supplier'):
+        return SendFail(request, 'supplier service is off')
     if not contactsdb.is_customer(request.OwnerID):
         lg.warn("had unknown customer " + request.OwnerID)
         SendFail(request, 'not a customer')
@@ -587,6 +601,8 @@ def DeleteFile(request):
     """
     Delete one ore multiple files or folders on my machine.
     """
+    if not driver.is_started('service_supplier'):
+        return SendFail(request, 'supplier service is off')
     if request.Payload == '':
         ids = [request.PacketID]
     else:
@@ -599,7 +615,7 @@ def DeleteFile(request):
             filename = constructFilename(request.OwnerID, pathID)
             if not os.path.exists(filename):
                 lg.warn("had unknown customer: %s or pathID is not correct or not exist: %s" % (nameurl.GetName(request.OwnerID), pathID))
-                return
+                return SendFail(request, 'not a customer, or file not found')
         if os.path.isfile(filename):
             try:
                 os.remove(filename)
@@ -645,6 +661,8 @@ def DeleteBackup(request):
     """
     Delete one or multiple backups on my machine.
     """
+    if not driver.is_started('service_supplier'):
+        return SendFail(request, 'supplier service is off')
     if request.Payload == '':
         ids = [request.PacketID]
     else:
@@ -656,7 +674,7 @@ def DeleteBackup(request):
             filename = constructFilename(request.OwnerID, backupID)
             if not os.path.exists(filename):
                 lg.warn("had unknown customer " + request.OwnerID + " or backupID " + backupID)
-                return
+                return SendFail(request, 'not a customer, or file not found')
         if os.path.isdir(filename):
             try:
                 bpio._dir_remove(filename)

@@ -31,13 +31,15 @@ EVENTS:
     * :red:`stop`
 """
 
-#------------------------------------------------------------------------------ 
-
 from twisted.internet.defer import Deferred, DeferredList
+
+#------------------------------------------------------------------------------ 
 
 from logs import lg
 
 from automats import automat
+
+from main import settings
 
 from driver import services
 from driver import on_service_callback
@@ -66,11 +68,9 @@ class LocalService(automat.Automat):
         """
         Method to catch the moment when automat's state were changed.
         """
-        try:
+        if not settings.NewWebGUI():
             from web import webcontrol
             webcontrol.OnServiceStateChanged(self.service_name)
-        except:
-            pass
 
     def state_not_changed(self, curstate, event, arg):
         """

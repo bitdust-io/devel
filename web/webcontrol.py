@@ -871,12 +871,10 @@ def OnTrayIconCommand(cmd):
     from p2p import network_connector
     if cmd == 'exit':
         SendCommandToGUI('exit')
-        #reactor.callLater(0, init_shutdown.shutdown_exit)
         shutdowner.A('stop', 'exit')
 
     elif cmd == 'restart':
         SendCommandToGUI('exit')
-        #reactor.callLater(0, init_shutdown.shutdown_restart, 'show')
         appList = bpio.find_process(['bpgui.',])
         if len(appList) > 0:
             shutdowner.A('stop', 'restartnshow') # ('restart', 'show'))
@@ -1080,14 +1078,14 @@ class Page(resource.Resource):
             return NOT_DONE_YET
 
         if not init_done:
-            # init_shutdown did not finished yet
+            # initialization is not finished yet
             # we should stop here at this moment
             # need to wait till all needed modules was initialized.
             # we want to call ".init()" method for all of them
             # let's show "Please wait ..." page here
             # typically we should not fall in this situation
             # because all local initializations should be done very fast
-            # we will open the web browser only AFTER init_shutdown was finished
+            # we will open the web browser only AFTER init was finished
             lg.out(4, 'webcontrol.Page.render will show "Please wait" page')
             d = {}
             d['reload'] = '1'

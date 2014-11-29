@@ -41,6 +41,8 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in shutdowner.py')
 
+from twisted.internet.defer import DeferredList
+
 #------------------------------------------------------------------------------ 
 
 from logs import lg
@@ -48,10 +50,7 @@ from logs import lg
 from automats import automat
 from automats import global_state
 
-from system import bpio
-
 import initializer
-import init_shutdown
 
 #------------------------------------------------------------------------------ 
 
@@ -157,11 +156,11 @@ class Shutdowner(automat.Automat):
         if param not in ['exit', 'restart', 'restartnshow']:
             param = 'exit'
         if param == 'exit':
-            init_shutdown.shutdown_exit()
+            self._shutdown_exit()
         elif param == 'restart':
-            init_shutdown.shutdown_restart()
+            self._shutdown_restart()
         elif param == 'restartnshow':
-            init_shutdown.shutdown_restart('show')
+            self._shutdown_restart('show')
 
     def doDestroyMe(self, arg):
         """
@@ -173,3 +172,61 @@ class Shutdowner(automat.Automat):
         self.destroy()
         lg.out(2, 'shutdowner.doDestroyMe %d machines left in memory' % len(automat.objects()))
 
+    #------------------------------------------------------------------------------ 
+    
+    def _shutdown(self, x=None):
+        """
+        This is a top level method which control the process of finishing the program.
+        Calls method ``shutdown()`` in other modules.
+        """
+        lg.out(2, "shutdowner.shutdown " + str(x))
+        from services import driver
+        from main import settings
+        from logs import weblog
+        from logs import webtraffic
+        from system import tmpfile
+        from system import run_upnpc
+        from raid import eccmap
+        from lib import net_misc
+        dl = []
+        driver.shutdown()
+        eccmap.shutdown()
+        run_upnpc.shutdown()
+        net_misc.shutdown()
+        if settings.NewWebGUI():
+            from web import control
+            control.shutdown()
+        else:
+            from web import webcontrol
+            dl.append(webcontrol.shutdown())
+        weblog.shutdown()
+        webtraffic.shutdown()
+        return DeferredList(dl)        
+
+    def _shutdown_restart(self, param=''):
+        """
+        Calls ``shutdown()`` method and stop the main reactor, then restart the program. 
+        """
+        lg.out(2, "shutdowner.shutdown_restart param=%s" % param)
+        def do_restart(param):
+            from lib import misc
+            misc.DoRestart(param)
+        def shutdown_finished(x, param):
+            lg.out(2, "shutdowner.shutdown_finished want to stop the reactor")
+            reactor.addSystemEventTrigger('after','shutdown', do_restart, param)
+            reactor.stop()
+        d = self._shutdown('restart')
+        d.addBoth(shutdown_finished, param)
+    
+    def _shutdown_exit(self, x=None):
+        """
+        Calls ``shutdown()`` method and stop the main reactor, this will finish the program. 
+        """
+        lg.out(2, "shutdowner.shutdown_exit")
+        def shutdown_reactor_stop(x=None):
+            lg.out(2, "shutdowner.shutdown_reactor_stop want to stop the reactor")
+            reactor.stop()
+        d = self._shutdown(x)
+        d.addBoth(shutdown_reactor_stop)
+
+        

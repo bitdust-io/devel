@@ -56,11 +56,17 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in installer.py')
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 from automats import automat
 from automats import global_state
+
 from system import bpio
+
+from main import settings
+
 from lib import misc
 from lib import nameurl
 
@@ -68,8 +74,6 @@ from userid import id_registrator
 from userid import id_restorer
 
 import initializer
-
-from web import webcontrol
 
 #------------------------------------------------------------------------------ 
 
@@ -117,7 +121,9 @@ class Installer(automat.Automat):
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('INSTALL ' + newstate)
         initializer.A('installer.state', newstate)
-        reactor.callLater(0, webcontrol.OnUpdateInstallPage)
+        if not settings.NewWebGUI():
+            from web import webcontrol
+            reactor.callLater(0, webcontrol.OnUpdateInstallPage)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -276,7 +282,9 @@ class Installer(automat.Automat):
 
     def doUpdate(self, arg):
         # lg.out(4, 'installer.doUpdate')
-        reactor.callLater(0, webcontrol.OnUpdateInstallPage)
+        if not settings.NewWebGUI():
+            from web import webcontrol
+            reactor.callLater(0, webcontrol.OnUpdateInstallPage)
 
     def doReadKey(self, arg):
         lg.out(2, 'installer.doReadKey arg=[%s]' % str(arg))

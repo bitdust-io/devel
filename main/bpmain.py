@@ -25,8 +25,13 @@ def show():
     """
     Just calls ``p2p.webcontrol.show()`` to open the GUI. 
     """
-    from web import webcontrol
-    webcontrol.show()
+    from main import settings
+    if settings.NewWebGUI():
+        from web import control
+        control.show()
+    else:
+        from web import webcontrol
+        webcontrol.show()
     return 0
 
 

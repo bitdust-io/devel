@@ -259,6 +259,10 @@ def convert_key(key):
 Below is a set of global constants.
 """
 
+def NewWebGUI():
+    return False # this is web/webcontrol.py
+    # return True # this is web/control.py - a django based GUI 
+
 def DefaultPrivateKeySize():
     """
     User can choose size of his Private Key during install.

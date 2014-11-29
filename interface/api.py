@@ -37,8 +37,13 @@ def restart():
 
 
 def show():
-    from web import webcontrol
-    webcontrol.show()
+    from main import settings
+    if settings.NewWebGUI():
+        from web import control
+        control.show()
+    else:
+        from web import webcontrol
+        webcontrol.show()
     
 #------------------------------------------------------------------------------ 
 

@@ -30,8 +30,10 @@ class PrivateMessagesService(LocalService):
     def start(self):
         from chat import message
         from web import webcontrol
+        from main import settings
         message.init()
-        message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
+        if not settings.NewWebGUI():
+            message.OnIncomingMessageFunc = webcontrol.OnIncomingMessage
         from chat import nickname_holder
         nickname_holder.A('set', None)
         return True

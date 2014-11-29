@@ -52,6 +52,8 @@ from logs import lg
 
 from lib import nameurl
 
+from main import settings
+
 from contacts import contactsdb
 
 from automats import automat
@@ -322,11 +324,9 @@ class ContactStatus(automat.Automat):
     def doRepaint(self, arg):
         """
         """
-        try:
+        if not settings.NewWebGUI():
             from web import webcontrol
             webcontrol.OnAliveStateChanged(self.idurl)
-        except:
-            lg.exc()
         # if transport_control.GetContactAliveStateNotifierFunc() is not None:
         #     transport_control.GetContactAliveStateNotifierFunc()(self.idurl)
  

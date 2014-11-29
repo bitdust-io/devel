@@ -67,7 +67,10 @@ def init():
     """
     Just in case.
     """
-    pass
+
+def shutdown():
+    """
+    """
 
 def SetConnectionDoneCallbackFunc(f):
     """

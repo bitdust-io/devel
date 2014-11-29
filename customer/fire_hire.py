@@ -87,6 +87,8 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in fire_hire.py')
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 from automats import global_state
@@ -431,8 +433,12 @@ class FireHire(automat.Automat):
         contactsdb.update_suppliers(current_suppliers)
         contactsdb.save_suppliers()
         misc.writeSupplierData(new_idurl, 'connected', time.strftime('%d%m%y %H:%M:%S'))
-        from web import webcontrol
-        webcontrol.OnListSuppliers()
+        if settings.NewWebGUI():
+            from web import control
+            control.on_suppliers_changed(current_suppliers)
+        else:
+            from web import webcontrol
+            webcontrol.OnListSuppliers()
         if position < 0:
             lg.out(2, '!!!!!!!!!!! ADD SUPPLIER : %s' % (new_idurl))
         else:
@@ -462,8 +468,12 @@ class FireHire(automat.Automat):
         current_suppliers = current_suppliers[:desired_suppliers]
         contactsdb.update_suppliers(current_suppliers)
         contactsdb.save_suppliers()
-        from web import webcontrol
-        webcontrol.OnListSuppliers()
+        if settings.NewWebGUI():
+            from web import control
+            control.on_suppliers_changed(current_suppliers)
+        else:
+            from web import webcontrol
+            webcontrol.OnListSuppliers()
         lg.out(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
 
     def doDisconnectSuppliers(self, arg):
