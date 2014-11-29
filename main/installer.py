@@ -236,7 +236,7 @@ class Installer(automat.Automat):
                 self.doUpdate(arg)
 
     def isNameValid(self, arg):
-        if not misc.ValidUserName(arg):
+        if not misc.ValidUserName(arg[0]):
             return False
         return True
 
@@ -244,7 +244,6 @@ class Installer(automat.Automat):
         """
         Action method.
         """
-        # gate.init()
 
     def doClearOutput(self, arg):
         # lg.out(4, 'installer.doClearOutput')

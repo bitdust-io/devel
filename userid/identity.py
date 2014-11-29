@@ -683,7 +683,9 @@ def makeDefaultIdentity(name='', ip=''):
     Use some local settings and config files to create some new identity.
     Nice to provide a user name or it will have a form like: [ip address]_[date].     
     """
-    import lib.misc
+    # import lib.misc
+    import my_id
+    from lib import misc
     lg.out(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
     if ip == '':
         ip = bpio.ReadTextFile(settings.ExternalIPFilename())
@@ -701,7 +703,7 @@ def makeDefaultIdentity(name='', ip=''):
     if settings.enableUDP():
         cdict['udp'] = 'udp://%s@%s' % (name.lower(), servername)
 
-    for c in lib.misc.validTransports:
+    for c in my_id.getValidTransports():
         if cdict.has_key(c):
             ident.contacts.append(cdict[c].encode("ascii").strip())
 
@@ -710,7 +712,7 @@ def makeDefaultIdentity(name='', ip=''):
     ident.postage = "1"
 
     vernum = bpio.ReadTextFile(settings.VersionNumberFile())
-    repo, location = lib.misc.ReadRepoLocation()
+    repo, location = misc.ReadRepoLocation()
     ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
 
     ident.sign()

@@ -22,7 +22,7 @@ Commands:
   restart
   stop
   show
-  register <account name> [private key size]
+  register <account name> [private key size] [preferred id server]
   recover <private key filename> [idurl or username]
   key copy
   key copy <filename for copy of private key>
@@ -81,7 +81,7 @@ Commands:
 
   show                  start BitPie.NET and show the main window
 
-  register <account name> [private key size]
+  register <account name> [private key size] [preferred id server]
                         generate a new private key and register new account
                         key size can be 1024, 2048 or 4096
 

@@ -124,6 +124,7 @@ class IdRegistrator(automat.Automat):
         """
         Method to initialize additional variables and flags at creation of the state machine.
         """
+        self.preferred_server = None
         self.discovered_servers = []
         self.good_servers = []
         self.registrations = []
@@ -260,6 +261,8 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
+        if self.preferred_server is not None:
+            self.discovered_servers.append(self.preferred_server)
         # In future we can do search such peers in DHT.
         for i in range(3):
             s = set(known_servers.by_host().keys())
@@ -346,7 +349,9 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        login = arg
+        login = arg[0]
+        if len(arg) > 1:
+            self.preferred_server = arg[1]
         lg.out(4, 'id_registrator.doSaveMyName [%s]' % login)
         bpio.WriteFile(settings.UserNameFilename(), login)
 
@@ -434,7 +439,7 @@ class IdRegistrator(automat.Automat):
                 cdict['udp'] = 'udp://%s@%s' % (login.lower(), host)
             except:
                 lg.exc()
-        for c in misc.validTransports:
+        for c in my_id.getValidTransports():
             if cdict.has_key(c):
                 ident.contacts.append(cdict[c])
         ident.publickey = key.MyPublicKey()
@@ -481,7 +486,11 @@ def main():
     settings.init()
     lg.set_debug_level(20)
     from twisted.internet import reactor
-    reactor.callWhenRunning(A, 'start', sys.argv[1])
+    if len(sys.argv) > 2:
+        args = (sys.argv[1], sys.argv[2])
+    else:
+        args = (sys.argv[1])
+    reactor.callWhenRunning(A, 'start', args)
     reactor.run()
 
 if __name__ == "__main__":

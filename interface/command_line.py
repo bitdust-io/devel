@@ -543,7 +543,11 @@ def cmd_register(opts, args, overDict):
     from automats import automat
     from main import initializer
     from main import shutdowner
-    initializer.A('run-cmd-line-register', args[1])
+    if len(args) >= 4:
+        regargs = (args[1], args[3])
+    else:
+        regargs = (args[1],)
+    initializer.A('run-cmd-line-register', regargs)
     reactor.run()
     # shutdowner.A('reactor-stopped')
     automat.objects().clear()

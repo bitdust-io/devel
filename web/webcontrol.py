@@ -1427,7 +1427,7 @@ class InstallPage(Page):
         if action:
             settings.setPrivateKeySize(self.pksize)
             if action == 'register-start':
-                installer.A(action, self.login)
+                installer.A(action, (self.login,))
             elif action == 'back':
                 installer.A('back')
             else:

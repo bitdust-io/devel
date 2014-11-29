@@ -168,6 +168,12 @@ def forgetLocalIdentity():
 
 #------------------------------------------------------------------------------ 
 
+def getValidTransports():
+    """
+    """
+    global _ValidTransports
+    return _ValidTransports
+
 def isValidTransport(transport):
     """
     Check string to be a valid transport.
