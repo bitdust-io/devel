@@ -1,13 +1,12 @@
-Описание:
-Служба network() это базовый сервис, который влияет на все другие сетевые сервисы в клиентском ПО BitPie.NET. При её остановке, произойдет выключение всех активных на данный момент сервисов, будут закрыты все сессии и соединения с другими машинами и программа прекратит всякое взаимодействие с сетью.
+п»ї# РЎРµСЂРІРёСЃ network
 
-Description:
-Service network() is a basic service that affects all other network services in the BitPie.NET software. When it is stopped, all currently active services will be also stopped, all sessions and connections to other machines will be closed, and the program should stop any interaction with the network.
+## РћРїРёСЃР°РЅРёРµ:
+РЎР»СѓР¶Р±Р° `network()` СЌС‚Рѕ Р±Р°Р·РѕРІС‹Р№ СЃРµСЂРІРёСЃ, РєРѕС‚РѕСЂС‹Р№ РІР»РёСЏРµС‚ РЅР° РІСЃРµ РґСЂСѓРіРёРµ СЃРµС‚РµРІС‹Рµ СЃРµСЂРІРёСЃС‹ РІ РєР»РёРµРЅС‚СЃРєРѕРј РџРћ BitPie.NET. РџСЂРё РµС‘ РѕСЃС‚Р°РЅРѕРІРєРµ, РїСЂРѕРёР·РѕР№РґРµС‚ РІС‹РєР»СЋС‡РµРЅРёРµ РІСЃРµС… Р°РєС‚РёРІРЅС‹С… РЅР° РґР°РЅРЅС‹Р№ РјРѕРјРµРЅС‚ СЃРµСЂРІРёСЃРѕРІ, Р±СѓРґСѓС‚ Р·Р°РєСЂС‹С‚С‹ РІСЃРµ СЃРµСЃСЃРёРё Рё СЃРѕРµРґРёРЅРµРЅРёСЏ СЃ РґСЂСѓРіРёРјРё РјР°С€РёРЅР°РјРё Рё РїСЂРѕРіСЂР°РјРјР° РїСЂРµРєСЂР°С‚РёС‚ РІСЃСЏРєРѕРµ РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёРµ СЃ СЃРµС‚СЊСЋ.
 
-Связанные файлы проекта:
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°:
 services/service_network.py 
 p2p/network_connector.py 
-p2p/run_upnpc.py
 
-Вызываемые автоматы: 
-network_connector()
+## Р’С‹Р·С‹РІР°РµРјС‹Рµ Р°РІС‚РѕРјР°С‚С‹: 
+![network_connector()[1]](http://bitpie.net/bitpie/p2p/network_connector.md)
+
