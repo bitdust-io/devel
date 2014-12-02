@@ -8,5 +8,5 @@ services/service_network.py
 p2p/network_connector.py 
 
 ## Вызываемые автоматы: 
-[network_connector()](http://bitpie.net/bitpie/p2p/network_connector.md)
+[network_connector()](p2p/network_connector.md)
 
