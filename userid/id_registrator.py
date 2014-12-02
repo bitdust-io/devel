@@ -278,7 +278,10 @@ class IdRegistrator(automat.Automat):
         lg.out(4, 'id_registrator.doPingServers    %d in list' % len(self.discovered_servers))
         def _cb(htmlsrc, id_server_host):
             lg.out(4, '            RESPONDED: %s' % id_server_host)
-            self.good_servers.append(id_server_host)
+            if self.preferred_server and id_server_host == self.preferred_server:
+                self.good_servers.insert(0, id_server_host)
+            else:
+                self.good_servers.append(id_server_host)
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-response', (id_server_host, htmlsrc))
         def _eb(err, id_server_host):
@@ -306,7 +309,10 @@ class IdRegistrator(automat.Automat):
             self.automat('id-exist', idurl)
         def _eb(err, idurl, host):
             lg.out(4, '            NOT EXIST: %s' % idurl)
-            self.free_idurls.append(idurl)
+            if self.preferred_server and self.preferred_server == host:
+                self.free_idurls.insert(0, idurl)
+            else:
+                self.free_idurls.append(idurl)
             self.registrations.remove(idurl)
             self.automat('id-not-exist', idurl)        
         for host in self.good_servers:
