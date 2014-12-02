@@ -1,6 +1,7 @@
 ﻿# Сервис gateway()
 
-## Описание:
+
+## Описание
 Сетевая служба `gateway()` является входной точкой для отправки и приема служебных пакетов данных и взаимодействия с другими узлами в сети BitPie.NET. Это своего рода "ворота" через которые проходит весь полезный трафик для клиентского ПО. 
 
 Основные два метода `inbox()` и `outbox()` обрабатывают входящие и исходящие пакеты, подписанные электронной подписью владельца данных. 
@@ -9,12 +10,19 @@
 Обработчики событий могут вызывать методы в других сервисах клиентского ПО в момент приема и передачи пакетов через "ворота". 
 Сервис `gateway()` так же ведет подсчет полезного трафика с момента запуска ПО и хранит статистику по дняв в подпапках `.bitpie/bandin` и `.bitpie/bandout`.
 
-## Связанные файлы проекта:
-services/service_gateway.py 
-transport/gateway.py
-transport/packet_in.py
-transport/packet_out.py 
-transport/bandwidth.py 
-transport/callback.py
-transport/stats.py
+Экземпляры атоматов `packet_in()` и `packet_out()` создаются в момент приема и передачи служебного пакета соответственно. Они управляют жизненным циклом пакета, позволяют отследить его текщее состояние и корректно отработать дальнейшие действия с ним.
 
+
+## Связанные файлы проекта
+* [services/service_gateway.py](services/service_gateway.py)
+* [transport/gateway.py](transport/gateway.py)
+* [transport/packet_in.py](transport/packet_in.py)
+* [transport/packet_out.py](transport/packet_out.py)
+* [transport/bandwidth.py](transport/bandwidth.py)
+* [transport/callback.py](transport/callback.py)
+* [transport/stats.py](transport/stats.py)
+
+
+## Вызываемые автоматы
+[packet_in()](transport/packet_in.md)
+[packet_out()](transport/packet_out.md)
