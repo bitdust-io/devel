@@ -165,6 +165,7 @@ def set_value(key, value, age=0):
     d.addErrback(error, 'set_value', key)
     return d
 
+
 def delete_key(key):
     if _Debug:
         lg.out(16, 'dht_service.delete_key [%s]' % key)
