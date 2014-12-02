@@ -1,4 +1,4 @@
-﻿# Сервис network
+﻿# Сервис network()
 
 ## Описание:
 Служба `network()` это базовый сервис, который влияет на все другие сетевые сервисы в клиентском ПО BitPie.NET. При её остановке, произойдет выключение всех активных на данный момент сервисов, будут закрыты все сессии и соединения с другими машинами и программа прекратит всякое взаимодействие с сетью.
@@ -8,5 +8,5 @@ services/service_network.py
 p2p/network_connector.py 
 
 ## Вызываемые автоматы: 
-![network_connector()[1]](http://bitpie.net/bitpie/p2p/network_connector.md)
+[network_connector()](http://bitpie.net/bitpie/p2p/network_connector.md)
 
