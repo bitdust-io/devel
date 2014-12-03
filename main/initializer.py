@@ -269,11 +269,12 @@ class Initializer(automat.Automat):
                 tray_icon.SetControlFunc(control.on_tray_icon_command)
             else:
                 tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
+        if not settings.NewWebGUI():
+            webcontrol.ready()
         if self.flagGUI or not self.is_installed:
             if settings.NewWebGUI(): 
                 reactor.callLater(0.1, control.show)
             else:
-                webcontrol.ready()
                 d.addCallback(webcontrol.show)
 
     def doPrintMessage(self, arg):

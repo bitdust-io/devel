@@ -62,7 +62,7 @@ class LocalService(automat.Automat):
         if self.service_name in services().keys():
             raise ServiceAlreadyExist(self.service_name)
         self.result_deferred = None
-        automat.Automat.__init__(self, self.service_name, 'OFF', 10, True)
+        automat.Automat.__init__(self, self.service_name, 'OFF', 12)
 
     def state_changed(self, oldstate, newstate, event, arg):
         """

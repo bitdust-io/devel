@@ -36,11 +36,12 @@ class StunClientService(LocalService):
         from stun import stun_client
         from main import settings
         stun_client.A('init', settings.getUDPPort())
-        d = Deferred()
-        reactor.callLater(0.5, stun_client.A, 'start', 
-            lambda result, typ, ip, details: 
-                self._on_stun_client_finished(result, typ, ip, details, d))
-        return d
+        return True
+        # d = Deferred()
+        # reactor.callLater(0.5, stun_client.A, 'start', 
+        #     lambda result, typ, ip, details: 
+        #         self._on_stun_client_finished(result, typ, ip, details, d))
+        # return d
     
     def stop(self):
         from stun import stun_client

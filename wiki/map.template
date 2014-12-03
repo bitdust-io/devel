@@ -7,7 +7,7 @@ BitPie.NET Network Services Tree
 </head>
 <body bgcolor="#FFFFFF">
 <center>
-<img SRC="../services/services.png" BORDER="0" USEMAP="#visImageMap" width=776>
+<img SRC="../services/services.png" BORDER="0" USEMAP="#visImageMap" width=727>
 </center>
 <div id=RasterDiv>
 {area}
