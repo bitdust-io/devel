@@ -1,26 +1,26 @@
-# Сервис customers_rejector()
+п»ї# РЎРµСЂРІРёСЃ customers_rejector()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [supplier()](services/service_supplier.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/customers-rejector/enabled
 
 
 
-## Связанные файлы проекта
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
 * [service_customers_rejector.py](services/service_customers_rejector)
 
 
 
-## Вызываемые автоматы
+## Р’С‹Р·С‹РІР°РµРјС‹Рµ Р°РІС‚РѕРјР°С‚С‹

@@ -1,28 +1,28 @@
-# Сервис entangled_dht()
+п»ї# РЎРµСЂРІРёСЃ entangled_dht()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [udp_datagrams()](services/service_udp_datagrams.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [stun_server()](services/service_stun_server.md)
 * [private_messages()](services/service_private_messages.md)
 * [stun_client()](services/service_stun_client.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/entangled-dht/enabled
 
 
 
-## Связанные файлы проекта
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
 * [service_entangled_dht.py](services/service_entangled_dht)
 
 
 
-## Вызываемые автоматы
+## Р’С‹Р·С‹РІР°РµРјС‹Рµ Р°РІС‚РѕРјР°С‚С‹

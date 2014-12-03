@@ -16,9 +16,9 @@
 
 
 ## Связанные файлы проекта
-* [service_network.py](services/service_network)
+* [service_network.py](services/service_network.py)
 * [p2p/network_connector.py](p2p/network_connector.py)
 
 
-## Вызываемые автоматы
+## Запуск автоматов
 * [network_connector()](p2p/network_connector.md)

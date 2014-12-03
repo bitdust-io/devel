@@ -1,28 +1,28 @@
-# Сервис customer()
+п»ї# РЎРµСЂРІРёСЃ customer()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [p2p_hookups()](services/service_p2p_hookups.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [data_sender()](services/service_data_sender.md)
 * [fire_hire()](services/service_fire_hire.md)
 * [list_files()](services/service_list_files.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/customer/enabled
 
 
 
-## Связанные файлы проекта
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
 * [service_customer.py](services/service_customer)
 
 
 
-## Вызываемые автоматы
+## Р’С‹Р·С‹РІР°РµРјС‹Рµ Р°РІС‚РѕРјР°С‚С‹

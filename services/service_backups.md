@@ -1,28 +1,28 @@
-# Сервис backups()
+п»ї# РЎРµСЂРІРёСЃ backups()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [list_files()](services/service_list_files.md)
 * [fire_hire()](services/service_fire_hire.md)
 * [rebuilding()](services/service_rebuilding.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [restores()](services/service_restores.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/backups/enabled
 
 
 
-## Связанные файлы проекта
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
 * [service_backups.py](services/service_backups)
 
 
 
-## Вызываемые автоматы
+## Р’С‹Р·С‹РІР°РµРјС‹Рµ Р°РІС‚РѕРјР°С‚С‹

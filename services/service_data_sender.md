@@ -1,27 +1,27 @@
-# Сервис data_sender()
+п»ї# РЎРµСЂРІРёСЃ data_sender()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [customer()](services/service_customer.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [rebuilding()](services/service_rebuilding.md)
 * [backup_db()](services/service_backup_db.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/data-sender/enabled
 
 
 
-## Связанные файлы проекта
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
 * [service_data_sender.py](services/service_data_sender)
 
 
 
-## Вызываемые автоматы
+## Р’С‹Р·С‹РІР°РµРјС‹Рµ Р°РІС‚РѕРјР°С‚С‹

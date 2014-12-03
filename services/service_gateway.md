@@ -27,7 +27,7 @@
 
 
 ## Настройки сервиса
-* services/gateway/enabled - включение/выключение сервиса gateway()
+* services/gateway/enabled - включение/выключение сервиса `gateway()`
 
 
 ## Связанные файлы проекта
@@ -40,6 +40,6 @@
 * [transport/stats.py](transport/stats.py)
 
 
-## Вызываемые автоматы
+## Запуск автоматов
 * [packet_in()](transport/packet_in.md)
 * [packet_out()](transport/packet_out.md)
