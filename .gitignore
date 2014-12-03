@@ -5,6 +5,7 @@
 *.orig
 web/*.db
 docs/
+services/area
 release/datahaven/
 release/windows/checksum
 release/windows/files

@@ -2,12 +2,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <title>
-BitPie.NET Network Services Tree
+network services map
 </title>
 </head>
 <body bgcolor="#FFFFFF">
 <center>
-<img SRC="../services/services.png" BORDER="0" USEMAP="#visImageMap" width=727>
+<img SRC="services.png" BORDER="0" USEMAP="#visImageMap" width=1551>
 </center>
 <div id=RasterDiv>
 {area}
