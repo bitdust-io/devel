@@ -325,17 +325,18 @@ class FireHire(automat.Automat):
         current_suppliers = contactsdb.suppliers()
         desired_number = settings.getSuppliersNumberDesired()
         needed_suppliers = current_suppliers[:desired_number]
-        if '' in needed_suppliers:
-            lg.warn('found empty suppliers!!!')
-            return True
+        empty_suppliers = needed_suppliers.count('')
+        # if '' in needed_suppliers:
+            # lg.warn('found empty suppliers!!!')
+            # return True
         supplier_idurl = arg
         s = set(needed_suppliers)
         s.add(supplier_idurl)
         s.difference_update(set(self.dismiss_list))
-        result = len(s) < settings.getSuppliersNumberDesired() 
-        lg.out(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
-            contactsdb.num_suppliers(), len(needed_suppliers), len(self.dismiss_list), 
-            len(s), settings.getSuppliersNumberDesired(), result))
+        result = len(s) - empty_suppliers < settings.getSuppliersNumberDesired() 
+        # lg.out(14, 'fire_hire.isStillNeeded %d %d %d %d %d, result=%s' % (
+        #     contactsdb.num_suppliers(), len(needed_suppliers), len(self.dismiss_list), 
+        #     len(s), settings.getSuppliersNumberDesired(), result))
         return result
 
     def isConfigChanged(self, arg):
