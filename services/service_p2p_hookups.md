@@ -1,29 +1,29 @@
-# Сервис p2p_hookups()
+# РЎРµСЂРІРёСЃ p2p_hookups()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [gateway()](services/service_gateway.md)
 * [identity_propagate()](services/service_identity_propagate.md)
 * [tcp_transport()](services/service_tcp_transport.md)
 * [udp_transport()](services/service_udp_transport.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [customer()](services/service_customer.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/p2p-hookups/enabled
 
 
 
-## Связанные файлы проекта
-* [service_p2p_hookups.py](services/service_p2p_hookups)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_p2p_hookups.py](services/service_p2p_hookups.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

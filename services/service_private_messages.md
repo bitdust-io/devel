@@ -1,27 +1,27 @@
-# Сервис private_messages()
+# РЎРµСЂРІРёСЃ private_messages()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [gateway()](services/service_gateway.md)
 * [entangled_dht()](services/service_entangled_dht.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/private-messages/enabled
 
 
 
-## Связанные файлы проекта
-* [service_private_messages.py](services/service_private_messages)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_private_messages.py](services/service_private_messages.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

@@ -1,27 +1,27 @@
-# Сервис identity_propagate()
+# РЎРµСЂРІРёСЃ identity_propagate()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [gateway()](services/service_gateway.md)
 * [tcp_connections()](services/service_tcp_connections.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [p2p_hookups()](services/service_p2p_hookups.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/identity-propagate/enabled
 
 
 
-## Связанные файлы проекта
-* [service_identity_propagate.py](services/service_identity_propagate)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_identity_propagate.py](services/service_identity_propagate.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

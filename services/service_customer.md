@@ -1,4 +1,4 @@
-﻿# Сервис customer()
+# Сервис customer()
 
 
 ## Описание
@@ -21,7 +21,7 @@
 
 
 ## Связанные файлы проекта
-* [service_customer.py](services/service_customer)
+* [service_customer.py](services/service_customer.py)
 
 
 

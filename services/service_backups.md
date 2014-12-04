@@ -1,4 +1,4 @@
-﻿# Сервис backups()
+# Сервис backups()
 
 
 ## Описание
@@ -21,7 +21,7 @@
 
 
 ## Связанные файлы проекта
-* [service_backups.py](services/service_backups)
+* [service_backups.py](services/service_backups.py)
 
 
 

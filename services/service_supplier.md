@@ -1,26 +1,26 @@
-# Сервис supplier()
+# РЎРµСЂРІРёСЃ supplier()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [gateway()](services/service_gateway.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [customers_rejector()](services/service_customers_rejector.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/supplier/enabled
 
 
 
-## Связанные файлы проекта
-* [service_supplier.py](services/service_supplier)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_supplier.py](services/service_supplier.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

@@ -1,26 +1,26 @@
-# Сервис rebuilding()
+# РЎРµСЂРІРёСЃ rebuilding()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [data_sender()](services/service_data_sender.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [backups()](services/service_backups.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/rebuilding/enabled
 
 
 
-## Связанные файлы проекта
-* [service_rebuilding.py](services/service_rebuilding)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_rebuilding.py](services/service_rebuilding.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

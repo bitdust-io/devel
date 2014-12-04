@@ -1,4 +1,4 @@
-﻿# Сервис tcp_connections()
+# Сервис tcp_connections()
 
 
 ## Описание

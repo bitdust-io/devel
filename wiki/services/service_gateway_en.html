@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang='ru'>
+<head>
+<title>
+service_gateway_en
+</title>
+<style type="text/css">
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+h1 {  }
+h2 {  }
+p {  }
+code {  }
+</style>
+</head>
+<body>
+<p>Description:
+The service gateway() is the entry point to send and receive service data packets and communicate with other nodes in the BitPie.NET network. This is a sort of "gates" - all useful traffic for client software is passed through it.
+The main two methods inbox() and outbox() process incoming and outgoing packets, digitally signed by data owner. The package body can also be encrypted by owner key, before will be passed to the method oubox(). Event handlers call methods in other services of the client software when receiving and transmitting packets appears.
+The service gateway() also counts the payload traffic of the software.</p>
+</body>

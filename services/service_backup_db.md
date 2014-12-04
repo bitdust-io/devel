@@ -1,4 +1,4 @@
-﻿# Сервис backup_db()
+# Сервис backup_db()
 
 
 ## Описание
@@ -20,7 +20,7 @@
 
 
 ## Связанные файлы проекта
-* [service_backup_db.py](services/service_backup_db)
+* [service_backup_db.py](services/service_backup_db.py)
 
 
 

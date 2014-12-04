@@ -1,4 +1,4 @@
-﻿# Сервис udp_datagrams()
+# Сервис udp_datagrams()
 
 
 ## Описание

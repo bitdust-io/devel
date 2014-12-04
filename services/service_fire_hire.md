@@ -1,4 +1,4 @@
-﻿# Сервис fire_hire()
+# Сервис fire_hire()
 
 
 ## Описание
@@ -19,7 +19,7 @@
 
 
 ## Связанные файлы проекта
-* [service_fire_hire.py](services/service_fire_hire)
+* [service_fire_hire.py](services/service_fire_hire.py)
 
 
 

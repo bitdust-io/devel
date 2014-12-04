@@ -1,26 +1,26 @@
-# Сервис restores()
+# РЎРµСЂРІРёСЃ restores()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [backups()](services/service_backups.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/restores/enabled
 
 
 
-## Связанные файлы проекта
-* [service_restores.py](services/service_restores)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_restores.py](services/service_restores.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

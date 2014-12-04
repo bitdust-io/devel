@@ -1,4 +1,4 @@
-﻿# Сервис customers_rejector()
+# Сервис customers_rejector()
 
 
 ## Описание
@@ -19,7 +19,7 @@
 
 
 ## Связанные файлы проекта
-* [service_customers_rejector.py](services/service_customers_rejector)
+* [service_customers_rejector.py](services/service_customers_rejector.py)
 
 
 

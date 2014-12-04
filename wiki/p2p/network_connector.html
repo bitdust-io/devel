@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang='ru'>
+<head>
+<title>
+network_connector
+</title>
+<style type="text/css">
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+h1 {  }
+h2 {  }
+p {  }
+code {  }
+</style>
+</head>
+<body>
+<h1>Автомат network_connector()</h1>
+<p><img width=1000 alt="network_connector[1]" src="http://bitpie.net/bitpie/p2p/network_connector.png" /></p>
+<h2>Описание</h2>
+<p>Автомат <code>network_connector()</code> нужен для контроля состояния подключения к сети Интернет и запуска процедур переподключения к сети в различных частях программного обеспечения при последующем восстановлении сетевого соединения.</p>
+<p>В состоянии <strong>CONNECTED</strong> он будет периодически проверяет наличие входящего трафика и определять текущиее состояние соединения.</p>
+<p>Два основных метода управляют процессом переподключения:</p>
+<pre><code>* doSetUp()
+* doSetDown()
+</code></pre>
+<p>Если некоторые сетевые интерфейсы активны в данный момент, но программное обеспечение по-прежнему не может соединиться с другими узлами, автомат будет пытаться провести пинг сайта http://bitpie.net и решить имеется ли какое либо подключение к сети Интернет.</p>
+<h2>События:</h2>
+<pre><code>* all-network-transports-disabled
+* all-network-transports-ready
+* connection-done
+* gateway-is-not-started
+* got-network-info
+* init
+* internet-failed
+* internet-success
+* network-down
+* network-transport-state-changed
+* network-up
+* reconnect
+* timer-1hour
+* timer-5sec
+* upnp-done
+</code></pre>
+</body>

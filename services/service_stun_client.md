@@ -1,27 +1,27 @@
-# Сервис stun_client()
+# РЎРµСЂРІРёСЃ stun_client()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [entangled_dht()](services/service_entangled_dht.md)
 * [udp_datagrams()](services/service_udp_datagrams.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [udp_transport()](services/service_udp_transport.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/stun-client/enabled
 
 
 
-## Связанные файлы проекта
-* [service_stun_client.py](services/service_stun_client)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_stun_client.py](services/service_stun_client.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

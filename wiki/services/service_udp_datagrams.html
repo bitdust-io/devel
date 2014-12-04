@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang='ru'>
+<head>
+<title>
+service_udp_datagrams
+</title>
+<style type="text/css">
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+h1 {  }
+h2 {  }
+p {  }
+code {  }
+</style>
+</head>
+<body>
+<h1>Сервис udp_datagrams()</h1>
+<h2>Описание</h2>
+<p>Служебный трафик в сети BitPie.NET может передавться по UDP протоколу.
+Сетевая служба <code>udp_datagrams()</code> позволяет включать/отключать использование UDP датаграм для общения с другими узлами.
+В настройках службы пользователь может установить номер порта, который будет использован для приема UDP пакетов.</p>
+<h2>Зависит от</h2>
+<ul>
+<li><a href="../services/service_network.html">network()</a></li>
+</ul>
+<h2>Влияет на</h2>
+<ul>
+<li><a href="../services/service_entangled_dht.html">entangled_dht()</a></li>
+<li><a href="../services/service_udp_transport.html">udp_transport()</a></li>
+<li><a href="../services/service_stun_server.html">stun_server()</a></li>
+<li><a href="../services/service_stun_client.html">stun_client()</a></li>
+</ul>
+<h2>Настройки сервиса</h2>
+<ul>
+<li>services/udp-datagrams/enabled - включение/выключение сервиса <code>udp_datagrams()</code></li>
+<li>services/udp-datagrams/udp-port - установка номера порта для входящих UDP соединений</li>
+</ul>
+<h2>Связанные файлы проекта</h2>
+<ul>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_udp_datagrams.py">service_udp_datagrams.py</a></li>
+</ul>
+</body>

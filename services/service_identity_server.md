@@ -1,26 +1,26 @@
-# Сервис identity_server()
+# РЎРµСЂРІРёСЃ identity_server()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [tcp_connections()](services/service_tcp_connections.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/id-server/enabled
 
 
 
-## Связанные файлы проекта
-* [service_identity_server.py](services/service_identity_server)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_identity_server.py](services/service_identity_server.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

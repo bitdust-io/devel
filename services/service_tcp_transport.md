@@ -1,27 +1,27 @@
-# Сервис tcp_transport()
+# РЎРµСЂРІРёСЃ tcp_transport()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [tcp_connections()](services/service_tcp_connections.md)
 * [gateway()](services/service_gateway.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [p2p_hookups()](services/service_p2p_hookups.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/tcp-transport/enabled
 
 
 
-## Связанные файлы проекта
-* [service_tcp_transport.py](services/service_tcp_transport)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_tcp_transport.py](services/service_tcp_transport.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

@@ -1,28 +1,28 @@
-# Сервис udp_transport()
+# РЎРµСЂРІРёСЃ udp_transport()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [udp_datagrams()](services/service_udp_datagrams.md)
 * [stun_client()](services/service_stun_client.md)
 * [gateway()](services/service_gateway.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [p2p_hookups()](services/service_p2p_hookups.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/udp-transport/enabled
 
 
 
-## Связанные файлы проекта
-* [service_udp_transport.py](services/service_udp_transport)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_udp_transport.py](services/service_udp_transport.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

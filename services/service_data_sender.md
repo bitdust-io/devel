@@ -1,4 +1,4 @@
-﻿# Сервис data_sender()
+# Сервис data_sender()
 
 
 ## Описание
@@ -20,7 +20,7 @@
 
 
 ## Связанные файлы проекта
-* [service_data_sender.py](services/service_data_sender)
+* [service_data_sender.py](services/service_data_sender.py)
 
 
 

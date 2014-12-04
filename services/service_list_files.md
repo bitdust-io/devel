@@ -1,27 +1,27 @@
-# Сервис list_files()
+# РЎРµСЂРІРёСЃ list_files()
 
 
-## Описание
+## РћРїРёСЃР°РЅРёРµ
 
 
 
-## Зависит от
+## Р—Р°РІРёСЃРёС‚ РѕС‚
 * [customer()](services/service_customer.md)
 
 
-## Влияет на
+## Р’Р»РёСЏРµС‚ РЅР°
 * [backup_db()](services/service_backup_db.md)
 * [backups()](services/service_backups.md)
 
 
-## Настройки сервиса
+## РќР°СЃС‚СЂРѕР№РєРё СЃРµСЂРІРёСЃР°
 * services/list-files/enabled
 
 
 
-## Связанные файлы проекта
-* [service_list_files.py](services/service_list_files)
+## РЎРІСЏР·Р°РЅРЅС‹Рµ С„Р°Р№Р»С‹ РїСЂРѕРµРєС‚Р°
+* [service_list_files.py](services/service_list_files.py)
 
 
 
-## Запуск автоматов
+## Р—Р°РїСѓСЃРє Р°РІС‚РѕРјР°С‚РѕРІ

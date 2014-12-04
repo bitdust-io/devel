@@ -1,4 +1,4 @@
-﻿# Сервис entangled_dht()
+# Сервис entangled_dht()
 
 
 ## Описание
