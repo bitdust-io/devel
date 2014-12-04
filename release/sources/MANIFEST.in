@@ -1,4 +1,3 @@
-recursive-include bitpie/automats *
 recursive-include bitpie/icons *
 recursive-include bitpie/fonts *
 recursive-include bitpie/dht/entangled *

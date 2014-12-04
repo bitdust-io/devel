@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang='ru'>
+<head>
+<title>
+install
+</title>
+<style type="text/css">
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.7;  }
+h1 { font-size: 2.5em; }
+h2 { font-size: 2em; }
+p {  }
+code { font-size: 1.3em; }
+a { color: #446E9B; text-decoration: none; }
+a:hover, a:focus { color: #345578; text-decoration: underline; }
+</style>
+</head>
+<body>
+<h1>Установка</h1>
+<h2>Из исходников</h2>
+<p>В Ubuntu нужно просто установить все зависимости одной командой:</p>
+<pre><code>sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging
+</code></pre>
+<p>Пользователи Windows могут использовать приведенные ниже ссылки для установки необходимых пакетов самостоятельно:</p>
+<ul>
+<li><a href="http://python.org/download/releases">python 2.6 или 2.7</a>, python3 не поддерживается</li>
+<li><a href="http://twistedmatrix.com">twisted 12.0</a> (или более поздние версии)</li>
+<li><a href="http://pyasn1.sourceforge.net">pyasn1</a></li>
+<li><a href="https://launchpad.net/pyopenssl">pyOpenSSL</a></li>
+<li><a href="https://www.dlitz.net/software/pycrypto/">pycrypto</a></li>
+<li><a href="http://www.pythonware.com/products/pil">PIL</a></li>
+<li><a href="http://wiki.wxpython.org/InstallingOnUbuntuOrDebian">wxgtk2.8</a></li>
+</ul>
+<p>Далее скачайте <a href="http://bitpie.net/download/bitpie.tar.gz">архив</a> с исходным кодом BitPie.NET. 
+Распакуйте архив в любое удобное для вас место.</p>
+<h2>Запуск</h2>
+<p>Для запуска ПО из коммандной строки используйте следующую комманду:</p>
+<pre><code>cd bitpie
+python bitpie.py show
+</code></pre>
+<p>Вы должны будете сгенерировать свой файл <code>identity</code>, чтобы иметь возможность общаться с другими
+пользователями сети - программа предложит сделать это при первом запуске.</p>
+<p>Если вы запускаете ПО в системе без графического интерфейса,
+вам нужно будет зарегистрироваться из командной строки самостоятельно:</p>
+<pre><code>python bitpie.py register &lt;your_nickname&gt;
+</code></pre>
+<p>Я рекомендую вам создать еще одну копию секретного ключа в надежном месте, 
+чтобы иметь возможность восстановить ваши данные в будущем.
+Вы можете сделать это из графического интерфейса или через коммандную строку:</p>
+<pre><code>python bitpie.py key copy &lt;filename&gt;
+</code></pre>
+<p>Ваши настройки и локальные файлы сохраняются в папке <code>~/.bitpie</code>.</p>
+<p>Используйте эту комманду что бы получить больше информации:</p>
+<pre><code>python bitpie.py help
+</code></pre>
+</body>
+</html>

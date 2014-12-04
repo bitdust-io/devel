@@ -4,7 +4,7 @@
 *.~vsd
 *.orig
 web/*.db
-docs/
+docs.teamlab/
 services/area
 release/datahaven/
 release/windows/checksum
@@ -30,6 +30,7 @@ release/windows_stable/bin/
 release/windows_stable/portable/
 release/windows_stable/bitpie*.zip
 release/sources/workspace/
+release/sources/*.zip
 release/sources/sdist.log
 release/ubuntu_devel/build.log
 release/ubuntu_devel/workspace/

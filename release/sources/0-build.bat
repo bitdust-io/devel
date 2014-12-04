@@ -1,6 +1,4 @@
-
 @echo off
-
 
 @echo [ prepare workspace folder ]
 rm -rf workspace

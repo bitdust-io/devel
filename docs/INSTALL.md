@@ -1,6 +1,16 @@
 # Установка
 
 
+## Windows
+
+Скачайте файл [bitpie-stable.msi](http://bitpie.net/download/bitpie-stable.msi) и запустите двойным щелчком.
+Это архив Windows Installer, программа BitPie.NET написана на языке [Python](http://python.org) и собрана под Windows 
+с использованием утилиты [py2exe](http://www.py2exe.org/).
+
+## Ubuntu
+
+Скачайте файл [datahaven_{version}_all.deb и запустите его. Это автоматически установит пакет datahaven на ваш компьютер.
+
 ## Из исходников
 
 В Ubuntu нужно просто установить все зависимости одной командой:
@@ -17,7 +27,7 @@
 * [PIL](http://www.pythonware.com/products/pil)
 * [wxgtk2.8](http://wiki.wxpython.org/InstallingOnUbuntuOrDebian)
 
-Далее скачайте [архив](http://bitpie.net/download/bitpie.tar.gz) с исходным кодом BitPie.NET. 
+Далее скачайте файл [bitpie.tar.gz](http://bitpie.net/download/bitpie.tar.gz) содержащий исходный код BitPie.NET. 
 Распакуйте архив в любое удобное для вас место.
 
 
