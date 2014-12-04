@@ -17,15 +17,14 @@ for fn in os.listdir(dirpath):
     fphtml = os.path.join(subdir, fn[:-3] + '.html')
     print fp, '->', fphtml
     try:
-        r = os.system('python -m markdown %s > %s' % (fp, fphtml))
-        if r != 0:
+        if os.system('python -m markdown %s > %s' % (fp, fphtml)):
             break
-        r = os.system('python utf8_to_ansi.py %s %s' % (fphtml, fphtml))
-        if r != 0:
+        if os.system('python utf8_to_ansi.py %s %s' % (fphtml, fphtml)):
             break
-        r = os.system('python fix_html.py %s %s' % (fphtml, fphtml))
-        if r != 0:
+        if os.system('python fix_html.py %s %s' % (fphtml, fphtml)):
             break
+        if os.system('cp %s/*.png %s' % (dirpath, subdir)):
+            break        
     except:
         import traceback
         traceback.print_exc()

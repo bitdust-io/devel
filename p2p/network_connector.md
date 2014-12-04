@@ -1,7 +1,7 @@
-﻿# Автомат network_connector()
+# Автомат network_connector()
 
 
-![network_connector[1]](http://bitpie.net/bitpie/p2p/network_connector.png)
+![network_connector[1]](network_connector.png)
 
 
 ## Описание

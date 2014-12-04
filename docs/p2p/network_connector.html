@@ -5,18 +5,33 @@
 p2p\network_connector
 </title>
 <style type="text/css">
-body { /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/ font-family: "Century Gothic"; line-height: 1.7;  }
-h1 { font-size: 2.5em; }
-h2 { font-size: 2em; }
-p {  }
-code { font-size: 1.3em; }
+body { 
+    /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+    font-family: "Century Gothic";
+    font-weight: 500;
+    line-height: 1.7;  
+    word-spacing: 0.2em;
+    letter-spacing: 0.03em;
+    }
+h1 { font-size: 2.5em; margin-bottom: 5px; }
+h2 { font-size: 2em; margin-bottom: 5px; }
+pre { 
+    padding: 10px; 
+    border: none; 
+    border-left: none;
+    border-right: none;
+    margin-left: 20px;
+    margin-right: 20px; }
+code { font-size: 1.3em; font-weight: 600; }
+p { padding: 0; margin: 0; }
 a { color: #446E9B; text-decoration: none; }
 a:hover, a:focus { color: #345578; text-decoration: underline; }
 </style>
 </head>
 <body>
+<div id="content">
 <h1>Автомат network_connector()</h1>
-<p><img width=1000 alt="network_connector[1]" src="http://bitpie.net/bitpie/p2p/network_connector.png" /></p>
+<p><img width=1000 alt="network_connector[1]" src="network_connector.png" /></p>
 <h2>Описание</h2>
 <p>Автомат <code>network_connector()</code> нужен для контроля состояния подключения к сети Интернет и запуска процедур переподключения к сети в различных частях программного обеспечения при последующем восстановлении сетевого соединения.</p>
 <p>В состоянии <strong>CONNECTED</strong> он будет периодически проверяет наличие входящего трафика и определять текущиее состояние соединения.</p>
@@ -42,5 +57,6 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 * timer-5sec
 * upnp-done
 </code></pre>
+</div>
 </body>
 </html>

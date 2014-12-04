@@ -5,30 +5,54 @@
 install
 </title>
 <style type="text/css">
-body { /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/ font-family: "Century Gothic"; line-height: 1.7;  }
-h1 { font-size: 2.5em; }
-h2 { font-size: 2em; }
-p {  }
-code { font-size: 1.3em; }
+body { 
+    /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+    font-family: "Century Gothic";
+    font-weight: 500;
+    line-height: 1.7;  
+    word-spacing: 0.2em;
+    letter-spacing: 0.03em;
+    }
+h1 { font-size: 2.5em; margin-bottom: 5px; }
+h2 { font-size: 2em; margin-bottom: 5px; }
+pre { 
+    padding: 10px; 
+    border: none; 
+    border-left: none;
+    border-right: none;
+    margin-left: 20px;
+    margin-right: 20px; }
+code { font-size: 1.3em; font-weight: 600; }
+p { padding: 0; margin: 0; }
 a { color: #446E9B; text-decoration: none; }
 a:hover, a:focus { color: #345578; text-decoration: underline; }
 </style>
 </head>
 <body>
+<div id="content">
 <h1>Установка</h1>
 <h2>Windows</h2>
-<p>Скачайте файл <a href="http://bitpie.net/download/bitpie-stable.msi">bitpie-stable.msi</a> и запустите двойным щелчком.
-Это архив Windows Installer, программа BitPie.NET написана на языке <a href="http://python.org">Python</a> и собрана под Windows 
+<p>Скачайте файл <a href="http://bitpie.net/download/bitpie-stable.msi">bitpie-stable.msi</a> 
+и запустите его двойным щелчком мыши.</p>
+<p>Это архив Windows Installer, программа BitPie.NET написана на языке <a href="http://python.org">Python</a> и собрана под Windows 
 с использованием утилиты <a href="http://www.py2exe.org/">py2exe</a>.</p>
+<p>Программа BitPie.NET будет установлена на ваш персональный компьютер в папку </p>
+<ul>
+<li><code>С:\Users\&lt;имя пользователя&gt;\.bitpie\</code> для Windows 8.1, Windows 7, и Windows Vista</li>
+<li><code>C:\Documents and Settings\&lt;имя пользователя&gt;\.bitpie\</code> для Windows XP и Windows 2000</li>
+</ul>
 <h2>Ubuntu</h2>
-<p>Скачайте файл [datahaven_{version}_all.deb и запустите его. Это автоматически установит пакет datahaven на ваш компьютер.</p>
+<p>Скачайте файл <a href="http://bitpie.net/download/bitpie-ubuntu-stable.deb">bitpie-ubuntu-stable.deb</a> и запустите его.</p>
+<p>Это автоматически установит пакет <code>bitpie</code> на ваш компьютер.</p>
+<p>Запускаемые файлы программы BitPie.NET располагаются в папке <code>/usr/share/bitpie</code> 
+в открытых исходных кодах на языке Python. </p>
 <h2>Из исходников</h2>
 <p>В Ubuntu нужно просто установить все зависимости одной командой:</p>
 <pre><code>sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging
 </code></pre>
 <p>Пользователи Windows могут использовать приведенные ниже ссылки для установки необходимых пакетов самостоятельно:</p>
 <ul>
-<li><a href="http://python.org/download/releases">python 2.6 или 2.7</a>, python3 не поддерживается</li>
+<li><a href="http://python.org/download/releases">python 2.6 или 2.7</a> (python3 не поддерживается)</li>
 <li><a href="http://twistedmatrix.com">twisted 12.0</a> (или более поздние версии)</li>
 <li><a href="http://pyasn1.sourceforge.net">pyasn1</a></li>
 <li><a href="https://launchpad.net/pyopenssl">pyOpenSSL</a></li>
@@ -38,25 +62,44 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 </ul>
 <p>Далее скачайте файл <a href="http://bitpie.net/download/bitpie.tar.gz">bitpie.tar.gz</a> содержащий исходный код BitPie.NET. 
 Распакуйте архив в любое удобное для вас место.</p>
+<p>Еще один способ получить исходники это клонировать себе наш публичный Git репозиторий:</p>
+<pre><code>git clone http://gitlab.bitpie.net/devel/bitpie.git
+</code></pre>
 <h2>Запуск</h2>
-<p>Для запуска ПО из коммандной строки используйте следующую комманду:</p>
+<p>Если вы установили программу BitPie.NET используя автоматический инсталляр
+то просто кликните дважды по иконке BitPie.NET на рабочем столе. 
+По умолчанию программа будет запущена автоматически после окончания работы инсталлятора.</p>
+<p>При утсановке <code>deb</code> пакета в операционной системе Ubuntu доступ к программе через коммандную строку, 
+возможен используя автоматически созданный алиас <code>bitpie</code>.</p>
+<pre><code>bitpie show
+</code></pre>
+<p>Для запуска ПО BitPie.NET из исходников используйте следующую комманду:</p>
 <pre><code>cd bitpie
 python bitpie.py show
 </code></pre>
-<p>Вы должны будете сгенерировать свой файл <code>identity</code>, чтобы иметь возможность общаться с другими
-пользователями сети - программа предложит сделать это при первом запуске.</p>
+<h2>Вход в сеть</h2>
+<p>Прежде чем начать взаимодействие с другими пользователями в сети вам необходимо сгенерировать
+секретный ключ и свой публичный <code>identity</code> файл - программа предложит сделать это при первом запуске.</p>
+<p>Введите предпочитаемое название файла - этот короткий псевдоним будет отображаться у других пользователей,
+когда они соединяются с вами и ведется обмен данными. </p>
 <p>Если вы запускаете ПО в системе без графического интерфейса,
-вам нужно будет зарегистрироваться из командной строки самостоятельно:</p>
+то вам нужно будет зарегистрироваться из командной строки самостоятельно:</p>
 <pre><code>python bitpie.py register &lt;your_nickname&gt;
 </code></pre>
-<p>Я рекомендую вам создать еще одну копию секретного ключа в надежном месте, 
-чтобы иметь возможность восстановить ваши данные в будущем.
-Вы можете сделать это из графического интерфейса или через коммандную строку:</p>
+<p>Я рекомендую вам после входа в сеть создать еще одну копию секретного ключа в надежном месте. 
+Так у вас будет возможность восстановить ваши данные и служебную информацию в будущем,
+например если данные на вашем ПК были утеряны.</p>
+<p>Вы можете сделать это из графического интерфейса или через коммандную строку:</p>
 <pre><code>python bitpie.py key copy &lt;filename&gt;
 </code></pre>
-<p>Ваши настройки и локальные файлы сохраняются в папке <code>~/.bitpie</code>.</p>
-<p>Используйте эту комманду что бы получить больше информации:</p>
+<h2>Локальные данные</h2>
+<p>Все файлы, которые относятся к программе BitPie.NET, по умолчанию располагаются в папке 
+<code>~/.bitpie</code>
+Ваши настройки, копии локальных данных, файлы принадлежащие и локальные файлы сохраняются в папке .</p>
+<h2>Справка</h2>
+<p>Используйте эту комманду что бы получить справочную информацию о программе:</p>
 <pre><code>python bitpie.py help
 </code></pre>
+</div>
 </body>
 </html>
