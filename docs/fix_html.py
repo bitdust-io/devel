@@ -9,6 +9,7 @@ sbody = open(src).read()
 sbody = re.sub('a href="(.+?)\.md"', 'a href="%s\g<1>.html"' % md_base, sbody)
 sbody = re.sub('a href="(.+?)\.py"', 'a href="%s\g<1>.py"' % gitlab_base, sbody)
 sbody = re.sub('a href="../docs/(.+?)\.html"', 'a href="\g<1>.html"', sbody)
+sbody = re.sub('a href="docs/(.+?)\.html"', 'a href="\g<1>.html"', sbody)
 sbody = re.sub('\<p\>\<img alt="', '<p><img width=1000 alt="', sbody) 
 newbody = template % {
 	'title': src.replace('.html', ''),
