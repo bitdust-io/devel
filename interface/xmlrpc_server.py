@@ -26,8 +26,11 @@ import api
 def init():
     lg.out(4, 'xmlrpc_server.init')
     from main import settings
+    from system import bpio
     port = settings.DefaultXMLRPCPort()
+    bpio.AtomicWriteFile(settings.LocalXMLRPCPortFilename(), str(port))
     reactor.listenTCP(port, server.Site(XMLRPCServer()))
+    lg.out(4, '    started on port %d' % port)
 
 #------------------------------------------------------------------------------ 
 

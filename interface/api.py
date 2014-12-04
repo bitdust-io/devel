@@ -52,6 +52,8 @@ def backups_list():
     result = []
     for pathID, localPath, item in backup_fs.IterateIDs():
         result.append((pathID, localPath, item))
+        if len(result) > 20:
+            break
     return result
 
 
@@ -67,6 +69,8 @@ def backups_id_list():
             szver = '?'
         szver = diskspace.MakeStringFromBytes(versionInfo[1]) if versionInfo[1] >= 0 else '?'
         result.append((backupID, szver, localPath))
+        if len(result) > 20:
+            break
     return result
 
 

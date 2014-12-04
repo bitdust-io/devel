@@ -42,6 +42,7 @@ includes = [
     ]
 
 excludes =[
+	'django',
     '__pypy__.builders',
     'ICCProfile',
     '_imaging_gif', 
@@ -108,6 +109,10 @@ setup(
     version = open('release/version').read().strip(), 
 
     console = [
+        {
+            'script': 'bpcmd.py',
+            'icon_resources': [(1, "icons/tray_icon.ico")],
+        },
         {
             'script': 'bppipe.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
