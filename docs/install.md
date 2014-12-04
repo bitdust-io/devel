@@ -10,10 +10,10 @@
 с использованием утилиты [py2exe](http://www.py2exe.org/).
 
 Программа BitPie.NET будет установлена на ваш персональный компьютер в папку 
-	
-	* `С:\Users\<имя пользователя>\.bitpie\` для Windows 8.1, Windows 7, и Windows Vista
-	* `C:\Documents and Settings\<имя пользователя>\.bitpie\` для Windows XP и Windows 2000
-	
+
+  * `С:\Users\<имя пользователя>\.bitpie\` для Windows 8.1, Windows 7, и Windows Vista
+  * `C:\Documents and Settings\<имя пользователя>\.bitpie\` для Windows XP и Windows 2000
+
 ## Ubuntu
 
 Скачайте файл [bitpie-ubuntu-stable.deb](http://bitpie.net/download/bitpie-ubuntu-stable.deb) и запустите его.
@@ -32,20 +32,20 @@
 
 Пользователи Windows могут использовать приведенные ниже ссылки для установки необходимых пакетов самостоятельно:
 
-	* [python 2.6 или 2.7](http://python.org/download/releases) (python3 не поддерживается)
-	* [twisted 12.0](http://twistedmatrix.com) (или более поздние версии)
-	* [pyasn1](http://pyasn1.sourceforge.net)
-	* [pyOpenSSL](https://launchpad.net/pyopenssl)
-	* [pycrypto](https://www.dlitz.net/software/pycrypto/)
-	* [PIL](http://www.pythonware.com/products/pil)
-	* [wxgtk2.8](http://wiki.wxpython.org/InstallingOnUbuntuOrDebian)
+  * [python 2.6 или 2.7](http://python.org/download/releases) (python3 не поддерживается)
+  * [twisted 12.0](http://twistedmatrix.com) (или более поздние версии)
+  * [pyasn1](http://pyasn1.sourceforge.net)
+  * [pyOpenSSL](https://launchpad.net/pyopenssl)
+  * [pycrypto](https://www.dlitz.net/software/pycrypto/)
+  * [PIL](http://www.pythonware.com/products/pil)
+  * [wxgtk2.8](http://wiki.wxpython.org/InstallingOnUbuntuOrDebian)
 
 Далее скачайте файл [bitpie.tar.gz](http://bitpie.net/download/bitpie.tar.gz) содержащий исходный код BitPie.NET. 
 Распакуйте архив в любое удобное для вас место.
 
 Еще один способ получить исходники это клонировать себе наш публичный Git репозиторий:
 
-	git clone http://gitlab.bitpie.net/devel/bitpie.git
+    git clone http://gitlab.bitpie.net/devel/bitpie.git
 
 
 ## Запуск
@@ -57,7 +57,7 @@
 При утсановке `deb` пакета в операционной системе Ubuntu доступ к программе через коммандную строку, 
 возможен используя автоматически созданный алиас `bitpie`.
 
-	bitpie show
+    bitpie show
 
 Для запуска ПО BitPie.NET из исходников используйте следующую комманду:
 
@@ -66,7 +66,7 @@
 
 
 ## Вход в сеть
-	
+
 Прежде чем начать взаимодействие с другими пользователями в сети вам необходимо сгенерировать
 секретный ключ и свой публичный `identity` файл - программа предложит сделать это при первом запуске.
 
@@ -76,7 +76,7 @@
 Если вы запускаете ПО в системе без графического интерфейса,
 то вам нужно будет зарегистрироваться из командной строки самостоятельно:
 
-    python bitpie.py register <your_nickname>
+  python bitpie.py register <your_nickname>
 
 Я рекомендую вам после входа в сеть создать еще одну копию секретного ключа в надежном месте. 
 Так у вас будет возможность восстановить ваши данные и служебную информацию в будущем,
@@ -84,8 +84,8 @@
 
 Вы можете сделать это из графического интерфейса или через коммандную строку:
 
-	python bitpie.py key copy <filename>
-	
+  python bitpie.py key copy <filename>
+
 
 ## Локальные данные
 
@@ -96,9 +96,8 @@
 
 ## Справка
 
-Используйте эту комманду что бы получить больше информации через командную строку:
+Используйте эту комманду что бы получить справочную информацию о программе:
 
-	python bitpie.py help
-	
-Описание
+    python bitpie.py help
+
 
