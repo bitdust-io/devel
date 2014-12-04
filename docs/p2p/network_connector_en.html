@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang='ru'>
+<head>
+<title>
+p2p\network_connector_en
+</title>
+<style type="text/css">
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.7;  }
+h1 { font-size: 2.5em; }
+h2 { font-size: 2em; }
+p {  }
+code { font-size: 1.3em; }
+a { color: #446E9B; text-decoration: none; }
+a:hover, a:focus { color: #345578; text-decoration: underline; }
+</style>
+</head>
+<body>
+<h1>Automat network_connector()</h1>
+<p><img width=1000 alt="network_connector[1]" src="http://bitpie.net/bitpie/p2p/network_connector.png" /></p>
+<h2>Description:</h2>
+<p>The <strong>network_connector()</strong> machine is needed to monitor status of the Internet connection
+and start reconnect actions in different parts of software.</p>
+<p>In <strong>CONNECTED</strong> state it will periodically checks for incoming traffic and decide about
+current connection status.</p>
+<p>Two key methods will manage the reconnection process and start/stop some key network services:</p>
+<pre><code>* doSetUp() 
+* doSetDown()
+</code></pre>
+<p>If some network interfaces is active but software is still disconnected 
+it will try to ping "http://bitpie.net" to know what is going on.</p>
+<h2>Events:</h2>
+<pre><code>* all-network-transports-disabled
+* all-network-transports-ready
+* connection-done
+* gateway-is-not-started
+* got-network-info
+* init
+* internet-failed
+* internet-success
+* network-down
+* network-transport-state-changed
+* network-up
+* reconnect
+* timer-1hour
+* timer-5sec
+* upnp-done
+</code></pre>
+</body>
+</html>
