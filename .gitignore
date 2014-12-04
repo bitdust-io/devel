@@ -5,7 +5,8 @@
 *.orig
 web/*.db
 docs.teamlab/
-services/area
+docs/area
+services/html_src/
 release/datahaven/
 release/windows/checksum
 release/windows/files
@@ -36,5 +37,3 @@ release/ubuntu_devel/build.log
 release/ubuntu_devel/workspace/
 release/ubuntu_stable/build.log
 release/ubuntu_stable/workspace/
-wiki/src/
-

@@ -1,0 +1,13 @@
+import re,sys;
+s=open(sys.argv[1]).read();
+m=s[s.find('<MAP NAME=\"visImageMap\">'):s.find('</MAP>')+6];
+m=re.sub('on\w+?=\".+?\"','',m);
+m=re.sub('%5C','/',m);
+m=re.sub('ALT="(\w+?)\"','ALT="service \g<1>()"',m);
+m=re.sub('TITLE="(\w+?)\"','TITLE="service \g<1>()"',m);
+m=re.sub('ALT="(\w+?)\(\)"','ALT="\g<1>() Automat"',m);
+m=re.sub('TITLE="(\w+?)\(\)"','TITLE="\g<1>() Automat"',m);
+m=re.sub('.vsd','.html',m);
+m=re.sub('HREF="../docs/services/','HREF="services/',m);
+m=re.sub('HREF="../','HREF="',m);
+open('area','w').write(m);
