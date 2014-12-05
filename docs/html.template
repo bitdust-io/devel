@@ -31,6 +31,8 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <body>
 <div id="content">
 %(body)s
+<br>
+<br>
 </div>
 </body>
 </html>

@@ -2,7 +2,12 @@
 
 
 ## Описание
-
+Сервис `stun_client()` предназначен для определения своего внешнего IP адреса и 
+номер открытого UDP порта. 
+Эти служебные данные используются для обеспечения возможности приема входящих UDP пакетов 
+от других участников сети.
+Для STUN процедуры, используются другие участники сети, у которых активен сетевой сервис 
+[stun_server()](services/service_stun_server.md).
 
 
 ## Зависит от
@@ -15,13 +20,15 @@
 
 
 ## Настройки сервиса
-* services/stun-client/enabled
-
+* services/stun-client/enabled - включение/выключение сервиса `stun_client()`
 
 
 ## Связанные файлы проекта
-* [service_stun_client.py](services/service_stun_client.py)
-
+* [services/service_stun_client.py](services/service_stun_client.py)
+* [stun/stun_client.py](stun/stun_client.py)
 
 
 ## Запуск автоматов
+* [stun_client()](stun/stun_client.md)
+
+

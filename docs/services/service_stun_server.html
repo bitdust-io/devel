@@ -32,21 +32,33 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <div id="content">
 <h1>Сервис stun_server()</h1>
 <h2>Описание</h2>
+<p>Сетевая служба <code>stun_server()</code> позволяет другим участникам сети производить процедуру STUN, 
+для определения собственного IP адреса и номра открытого UDP порта.</p>
+<p>Она работает как простейший STUN сервер и отвечает на запрросы других узлов, у которых активна
+служба <a href="../services/service_stun_client.html">stun_client()</a>.
+Обе эти службы работают в паре, но на разных машинах в сети.</p>
+<p>Для поддержки других пользователей сети BitPie.NET настоятельно рекомендуется 
+держать службу <code>stun_server()</code> активной, она включена по умолчанию.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_udp_datagrams.html">udp_datagrams()</a></li>
 <li><a href="../services/service_entangled_dht.html">entangled_dht()</a></li>
 </ul>
-<h2>Влияет на</h2>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/stun-server/enabled</li>
+<li>services/stun-server/enabled - включение/выключение сервиса <code>stun_server()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
 <li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_stun_server.py">service_stun_server.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/stun/stun_server.py">stun/stun_server.py</a></li>
 </ul>
 <h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../stun/stun_server.html">stun_server()</a></li>
+</ul>
+<br>
+<br>
 </div>
 </body>
 </html>

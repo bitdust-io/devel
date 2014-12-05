@@ -32,6 +32,12 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <div id="content">
 <h1>Сервис stun_client()</h1>
 <h2>Описание</h2>
+<p>Сервис <code>stun_client()</code> предназначен для определения своего внешнего IP адреса и 
+номер открытого UDP порта. 
+Эти служебные данные используются для обеспечения возможности приема входящих UDP пакетов 
+от других участников сети.
+Для STUN процедуры, используются другие участники сети, у которых активен сетевой сервис 
+<a href="../services/service_stun_server.html">stun_server()</a>.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_entangled_dht.html">entangled_dht()</a></li>
@@ -43,13 +49,19 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 </ul>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/stun-client/enabled</li>
+<li>services/stun-client/enabled - включение/выключение сервиса <code>stun_client()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_stun_client.py">service_stun_client.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_stun_client.py">services/service_stun_client.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/stun/stun_client.py">stun/stun_client.py</a></li>
 </ul>
 <h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../stun/stun_client.html">stun_client()</a></li>
+</ul>
+<br>
+<br>
 </div>
 </body>
 </html>
