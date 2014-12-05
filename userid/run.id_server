@@ -1,4 +1,4 @@
 #!/bin/bash 
 
-grepnkill id_server.py
+kill -9 `ps aux | grep id_server | grep -v grep | awk '{print $2}'`
 nohup python id_server.py 1>log.id_server 2>err.id_server &

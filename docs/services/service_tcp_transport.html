@@ -32,6 +32,17 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <div id="content">
 <h1>Сервис tcp_transport()</h1>
 <h2>Описание</h2>
+<p>Полезные данные между узлами в сети BitPie.NET передаются через так называемые транспортные протоколы.
+Сервис <code>tcp_transport()</code> реализует прямую передачу данных между машинами используя стандартный 
+сетевой протокол TCP. </p>
+<p>В момент запуска службы будет создан экземпляр автомата <code>network_connector()</code> - 
+его задача состоит в управлении жизненным циклом отдельно взятого сетевого транспорта.</p>
+<p>Когда сервис <code>tcp_transport()</code> активен, на машине пользователя будет запущен TCP сервер,
+который принимает входящие соединения и поддерживает открытыми TCP сессии с активными узлами.
+Экземпляр автомата <code>tcp_connection()</code> создается для каждой вновь открытой сессии - он
+отрабатывает запуск/остановку подключения и потока данных к/от удаленному узлу.</p>
+<p>Номер порта для TCP сервера пользовватель может указать в настройках службы, 
+по умолчанию используется порт <code>7771</code>.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_tcp_connections.html">tcp_connections()</a></li>
@@ -43,13 +54,22 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 </ul>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/tcp-transport/enabled</li>
+<li>services/tcp-transport/enabled - включение/выключение сервиса <code>tcp_transport()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_tcp_transport.py">service_tcp_transport.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_tcp_transport.py">services/service_tcp_transport.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/network_transport.py">transport/network_transport.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/tcp/tcp_connection.py">transport/tcp/tcp_connection.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/tcp/tcp_interface.py">transport/tcp/tcp_interface.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/tcp/tcp_node.py">transport/tcp/tcp_node.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/tcp/tcp_stream.py">transport/tcp/tcp_stream.py</a></li>
 </ul>
 <h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../transport/network_transport.html">network_transport()</a></li>
+<li><a href="../transport/tcp/tcp_connection.html">tcp_connection()</a></li>
+</ul>
 <br>
 <br>
 </div>
