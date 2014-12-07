@@ -102,7 +102,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             else:
                 return
         msgPrimitive = self._encoder.decode(datagram)
-        # print 'datagramReceived', msgPrimitive, 'from', address
+        print 'dht.datagramReceived', len(datagram), 'from', address
         message = self._translator.fromPrimitive(msgPrimitive)
 
         remoteContact = Contact(message.nodeID, address[0], address[1], self)
@@ -188,6 +188,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             self._write(data, address)
             
     def _write(self, data, address):
+        print 'dht._write %d bytes to %s' % (len(data), str(address)) 
         try:
             self.transport.write(data, address)
         except:
