@@ -382,7 +382,7 @@ def main():
         print result, typ, ip, details
         A('shutdown')
         reactor.stop()
-    A('init', (settings.getUDPPort()))
+    A('init', (udp_port))
     A('start', _cb)
     reactor.run()
 
