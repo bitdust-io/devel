@@ -260,6 +260,9 @@ class CommandsProtocol(BasicProtocol):
             inp.close()
             lg.warn('- different software version: %s' % version)
             return
+        if _Debug:
+            lg.out(18, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
+                command, datagramsz, str(address), self.bytes_in))
         # self.bytes_in += datagramsz
         handled = False
         try:
@@ -273,9 +276,6 @@ class CommandsProtocol(BasicProtocol):
         inp.close()
         self.bytes_in += datagramsz
         # if command in [CMD_DATA, CMD_ACK]:
-        if _Debug:
-            lg.out(18, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
-                command, datagramsz, str(address), self.bytes_in))
         
     def sendCommand(self, command, data, address):
         payloadsz = len(data)
@@ -288,6 +288,9 @@ class CommandsProtocol(BasicProtocol):
             #     self.SoftwareVersion,
             #     command,
             #     data))
+            if _Debug:
+                lg.out(18, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
+                    command, payloadsz + 2, address, self.bytes_out))
             result = self.sendDatagram(outp.getvalue(), address)
         except:
             outp.close()
@@ -295,9 +298,6 @@ class CommandsProtocol(BasicProtocol):
         outp.close()
         self.bytes_out += payloadsz + 2
         # if command in [CMD_DATA, CMD_ACK]:
-        if _Debug:
-            lg.out(18, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
-                command, payloadsz + 2, address, self.bytes_out))
         return result
 
 #------------------------------------------------------------------------------ 

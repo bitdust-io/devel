@@ -369,9 +369,15 @@ def main():
     from twisted.internet import reactor
     lg.set_debug_level(30)
     settings.init()
-    dht_service.init(settings.getDHTPort())
+    dht_port = settings.getDHTPort()
+    udp_port = settings.getUDPPort()
+    if len(sys.argv) > 1:
+        dht_port = int(sys.argv[1])
+    if len(sys.argv) > 2:
+        udp_port = int(sys.argv[2])
+    dht_service.init(dht_port)
     dht_service.connect()
-    udp.listen(settings.getUDPPort())
+    udp.listen(udp_port)
     def _cb(result, typ, ip, details):
         print result, typ, ip, details
         A('shutdown')
