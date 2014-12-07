@@ -74,7 +74,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Set the RPC timeout timer
         timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, msg.id) #IGNORE:E1101
         # Transmit the data
-        print '                sendRPC', (method, contact.address, contact.port)
+        # print '                sendRPC', (method, contact.address, contact.port)
         self._send(encodedMsg, msg.id, (contact.address, contact.port))
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
         return df
@@ -109,8 +109,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Refresh the remote node's details in the local node's k-buckets
         self._node.addContact(remoteContact)
         
-        print '                dht.datagramReceived %d (%s) from %s' % (
-            len(datagram), str(type(message)), str(address))
+        # print '                dht.datagramReceived %d (%s) from %s' % (
+        #     len(datagram), str(type(message)), str(address))
         
         if isinstance(message, msgtypes.RequestMessage):
             # This is an RPC method request
@@ -204,7 +204,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
         msgPrimitive = self._translator.toPrimitive(msg)
         encodedMsg = self._encoder.encode(msgPrimitive)
-        print '                sendResponse', (contact.address, contact.port)
+        # print '                sendResponse', (contact.address, contact.port)
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _sendError(self, contact, rpcID, exceptionType, exceptionMessage):
@@ -213,7 +213,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         msg = msgtypes.ErrorMessage(rpcID, self._node.id, exceptionType, exceptionMessage)
         msgPrimitive = self._translator.toPrimitive(msg)
         encodedMsg = self._encoder.encode(msgPrimitive)
-        print '                sendError', (contact.address, contact.port)
+        # print '                sendError', (contact.address, contact.port)
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _handleRPC(self, senderContact, rpcID, method, args):
@@ -229,8 +229,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         df.addCallback(handleResult)
         df.addErrback(handleError)
 
-        import base64
-        print '                    _handleRPC', base64.b64encode(rpcID), method, args
+        # import base64
+        # print '                    _handleRPC', base64.b64encode(rpcID), method, args
         # Execute the RPC
         func = getattr(self._node, method, None)
         if callable(func) and hasattr(func, 'rpcmethod'):
