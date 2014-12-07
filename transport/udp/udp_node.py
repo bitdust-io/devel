@@ -253,7 +253,6 @@ class UDPNode(automat.Automat):
         bandinlimit = settings.getBandInLimit() #  or settings.DefaultBandwidthInLimit()
         udp_stream.set_global_limit_send_bytes_per_sec(bandoutlimit)
         udp_stream.set_global_limit_receive_bytes_per_sec(bandinlimit)
-        # udp.proto(self.listen_port).set_command_filter_callback(udp_stream.command_received)
         reactor.callLater(0, udp_session.process_sessions)
 
     def doStartStunClient(self, arg):

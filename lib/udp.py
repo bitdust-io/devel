@@ -167,6 +167,7 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def run_callbacks(self, data, address):
         for cb in self.callbacks:
+            print cb
             if cb(data, address):
                 break
 
@@ -270,10 +271,10 @@ class CommandsProtocol(BasicProtocol):
                 handled = self.command_filter_callback(command, datagram, inp, address)
         except:
             lg.exc()
-        if not handled:
-            payload = inp.read()
-            self.run_callbacks((command, payload), address)
+        payload = inp.read()
         inp.close()
+        if not handled:
+            self.run_callbacks((command, payload), address)
         self.bytes_in += datagramsz
         # if command in [CMD_DATA, CMD_ACK]:
         
