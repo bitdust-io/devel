@@ -74,6 +74,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Set the RPC timeout timer
         timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, msg.id) #IGNORE:E1101
         # Transmit the data
+        print '                sendRPC', (method, contact.address, contact.port)
         self._send(encodedMsg, msg.id, (contact.address, contact.port))
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
         return df
@@ -84,7 +85,6 @@ class KademliaProtocol(protocol.DatagramProtocol):
         @note: This is automatically called by Twisted when the protocol
                receives a UDP datagram
         """
-        print '                dht.datagramReceived', len(datagram), 'from', address
         if datagram[0] == '\x00' and datagram[25] == '\x00':
             totalPackets = (ord(datagram[1]) << 8) | ord(datagram[2])
             msgID = datagram[5:25]
@@ -98,7 +98,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 data = ''
                 for key in keys:
                     data += self._partialMessages[msgID][key]
-                    datagram = data
+                datagram = data
                 del self._partialMessages[msgID]
             else:
                 return
@@ -188,7 +188,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             self._write(data, address)
             
     def _write(self, data, address):
-        print '                dht._write %d bytes to %s' % (len(data), str(address)) 
+        # print '                dht._write %d bytes to %s' % (len(data), str(address)) 
         try:
             self.transport.write(data, address)
         except:
@@ -201,6 +201,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
         msgPrimitive = self._translator.toPrimitive(msg)
         encodedMsg = self._encoder.encode(msgPrimitive)
+        print '                sendResponse', (contact.address, contact.port)
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _sendError(self, contact, rpcID, exceptionType, exceptionMessage):
@@ -209,6 +210,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         msg = msgtypes.ErrorMessage(rpcID, self._node.id, exceptionType, exceptionMessage)
         msgPrimitive = self._translator.toPrimitive(msg)
         encodedMsg = self._encoder.encode(msgPrimitive)
+        print '                sendError', (contact.address, contact.port)
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _handleRPC(self, senderContact, rpcID, method, args):
