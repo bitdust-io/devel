@@ -76,7 +76,8 @@ class StunClient(automat.Automat):
         self.listen_port = None
         self.callbacks = []
         self.find_nodes_attempts = 1
-        self.minimum_needed_servers = 2
+        self.minimum_needed_servers = 3
+        self.minimum_needed_results = 3
         self.stun_nodes = []
         self.stun_servers = []
         self.stun_results = {}
@@ -98,7 +99,7 @@ class StunClient(automat.Automat):
             elif event == 'start' :
                 self.state = 'RANDOM_NODES'
                 self.doAddCallback(arg)
-                self.doDHTFindRandomNodes(arg)
+                self.doDHTFindRandomNode(arg)
         #---REQUEST---
         elif self.state == 'REQUEST':
             if event == 'shutdown' :
@@ -148,7 +149,10 @@ class StunClient(automat.Automat):
                 self.doReportFailed(self.msg('MSG_01', arg))
             elif event == 'start' :
                 self.doAddCallback(arg)
-            elif event == 'found-some-nodes' :
+            elif event == 'found-some-nodes' and self.isNeedMoreNodes(arg) :
+                self.doRememberStunNodes(arg)
+                self.doDHTFindRandomNode(arg)
+            elif event == 'found-some-nodes' and not self.isNeedMoreNodes(arg) :
                 self.state = 'PORT_NUM?'
                 self.doRememberStunNodes(arg)
                 self.doRequestStunPortNumbers(arg)
@@ -190,7 +194,15 @@ class StunClient(automat.Automat):
         """
         Condition method.
         """
-        return len(self.stun_results) <= 3
+        return len(self.stun_results) <= self.minimum_needed_results
+
+    def isNeedMoreNodes(self, arg):
+        """
+        Condition method.
+        """
+        lg.out(12, 'stun_client.isNeedMoreNodes %d + %d ~ %d' %  
+            (len(self.stun_nodes), len(arg), self.minimum_needed_servers))
+        return len(self.stun_nodes) + len(arg) < self.minimum_needed_servers
 
     def doInit(self, arg):
         """
@@ -210,17 +222,20 @@ class StunClient(automat.Automat):
         if arg:
             self.callbacks.append(arg)
 
-    def doDHTFindRandomNodes(self, arg):
+    def doDHTFindRandomNode(self, arg):
         """
         Action method.
         """
-        self._find_random_nodes(self.find_nodes_attempts, [])
+        self._find_random_node()
 
     def doRememberStunNodes(self, arg):
         """
         Action method.
         """
-        self.stun_nodes = arg
+        nodes = arg
+        for node in nodes:
+            if node not in self.stun_nodes:
+                self.stun_nodes.append(node)
             
     def doRequestStunPortNumbers(self, arg):
         """
@@ -349,6 +364,22 @@ class StunClient(automat.Automat):
         d.addCallback(lambda nodes: self._find_random_nodes(tries-1, list(set(result_list+nodes)), new_key))
         d.addErrback(lambda x: self._find_random_nodes(tries-1, result_list, new_key))
         self.deferreds[new_key] = d
+
+    def _find_random_node(self):
+        lg.out(12, 'stun_client._find_random_node')
+        new_key = dht_service.random_key()
+        d = dht_service.find_node(new_key)
+        d.addCallback(self._some_nodes_found)
+        d.addErrback(self._nodes_not_found)
+        # self.deferreds[new_key] = d
+        
+    def _some_nodes_found(self, nodes):
+        lg.out(12, 'stun_client._some_nodes_found %s' % str(nodes))
+        self.automat('found-some-nodes', nodes)
+        
+    def _nodes_not_found(self, err):
+        lg.out(12, 'stun_client._find_random_node err=%s' % str(err))
+        self.automat('dht-nodes-not-found')
         
     def _stun_port_received(self, result, node):
         self.deferreds.pop(node)
@@ -367,8 +398,8 @@ class StunClient(automat.Automat):
 
 def main():
     from twisted.internet import reactor
-    lg.set_debug_level(30)
     settings.init()
+    lg.set_debug_level(30)
     dht_port = settings.getDHTPort()
     udp_port = settings.getUDPPort()
     if len(sys.argv) > 1:

@@ -167,7 +167,7 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def run_callbacks(self, data, address):
         for cb in self.callbacks:
-            print cb
+            # print cb
             if cb(data, address):
                 break
 
