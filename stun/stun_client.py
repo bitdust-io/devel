@@ -241,8 +241,10 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
+        lg.out(12, 'stun_client.doRequestStunPortNumbers')
         nodes = arg
         for node in nodes:
+            lg.out(12, '    %s' % node)
             d = node.request('stun_port')
             d.addBoth(self._stun_port_received, node)
             self.deferreds[node] = d

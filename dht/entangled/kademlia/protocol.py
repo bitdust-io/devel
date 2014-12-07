@@ -109,6 +109,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Refresh the remote node's details in the local node's k-buckets
         self._node.addContact(remoteContact)
         
+        print '                dht.datagramReceived %d (%s) from %s' % (
+            len(datagram), str(type(message)), str(address))
+        
         if isinstance(message, msgtypes.RequestMessage):
             # This is an RPC method request
             self._handleRPC(remoteContact, message.id, message.request, message.args)
@@ -226,6 +229,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         df.addCallback(handleResult)
         df.addErrback(handleError)
 
+        import base64
+        print '                    _handleRPC', base64.b64encode(rpcID), method, args
         # Execute the RPC
         func = getattr(self._node, method, None)
         if callable(func) and hasattr(func, 'rpcmethod'):
