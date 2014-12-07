@@ -121,6 +121,7 @@ class StunClient(automat.Automat):
                 self.doClearResults(arg)
             elif event == 'port-number-received' :
                 self.doAddStunServer(arg)
+                self.doStun(arg)
         #---KNOW_MY_IP---
         elif self.state == 'KNOW_MY_IP':
             if event == 'shutdown' :
@@ -235,13 +236,18 @@ class StunClient(automat.Automat):
         """
         Action method.
         """
+        lg.out(12, 'stun_client.doAddStunServer %s' % str(arg))
         self.stun_servers.append(arg)
        
     def doStun(self, arg):
         """
         Action method.
         """
-        lg.out(12, 'stun_client.doStun to %d nodes' % (
+        if arg is not None:
+            lg.out(12, 'stun_client.doStun to one stun_server: %s' % str(arg))
+            udp.send_command(self.listen_port, udp.CMD_STUN, '', arg)
+            return
+        lg.out(12, 'stun_client.doStun to %d stun_servers' % (
             len(self.stun_servers))) # , self.stun_servers))
         for address in self.stun_servers:
             if address is None:
