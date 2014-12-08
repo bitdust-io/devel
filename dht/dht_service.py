@@ -254,6 +254,11 @@ class KademliaProtocolConveyor(KademliaProtocol):
         self.worker = None
     
     def datagramReceived(self, datagram, address):
+        if len(self.datagrams_queue) > 10:
+            # TODO 
+            # DHT traffic is too 
+            # need to find some solution here probably
+            return
         self.datagrams_queue.append((datagram, address))
         if self.worker is None:
             self.worker = reactor.callLater(0, self._process)
