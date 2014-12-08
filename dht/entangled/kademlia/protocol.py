@@ -19,7 +19,7 @@ from contact import Contact
 
 reactor = twisted.internet.reactor
 
-_Debug = False
+_Debug = True
 
 class TimeoutError(Exception):
     """ Raised when a RPC times out """
@@ -88,6 +88,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         @note: This is automatically called by Twisted when the protocol
                receives a UDP datagram
         """
+        if _Debug:
+            import time
+            _t = time.time()
         if datagram[0] == '\x00' and datagram[25] == '\x00':
             totalPackets = (ord(datagram[1]) << 8) | ord(datagram[2])
             msgID = datagram[5:25]
@@ -102,6 +105,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 for key in keys:
                     data += self._partialMessages[msgID][key]
                 datagram = data
+                if _Debug:
+                    print '                finished partial message', keys
                 del self._partialMessages[msgID]
             else:
                 return
@@ -156,6 +161,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # If the original message isn't found, it must have timed out
                 #TODO: we should probably do something with this...
                 pass
+        if _Debug:
+            print '                dt=%s' % (time.time()-_t)    
 
     def _send(self, data, rpcID, address):
         """ Transmit the specified data over UDP, breaking it up into several
