@@ -19,7 +19,7 @@ from contact import Contact
 
 reactor = twisted.internet.reactor
 
-_Debug = True
+_Debug = False
 
 class TimeoutError(Exception):
     """ Raised when a RPC times out """
