@@ -32,7 +32,7 @@ _CachingTasks = {}
 
 #-------------------------------------------------------------------------------
 
-def init(success_func=None, fail_func=None):
+def init():
     """
     This should be called before all other things.
     Call to initialize identitydb and cache several important IDs.
@@ -40,9 +40,12 @@ def init(success_func=None, fail_func=None):
     lg.out(4, 'identitycache.init')
     identitydb.clear()
     identitydb.init()
-    if success_func:
-        success_func('')
+        
 
+def shutdown():
+    lg.out(4, 'identitycache.shutdown')
+
+#------------------------------------------------------------------------------ 
 
 def Clear(excludeList=None):
     """

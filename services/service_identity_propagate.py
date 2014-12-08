@@ -31,17 +31,26 @@ class IdentityPropagateService(LocalService):
         from userid import my_id
         my_id.loadLocalIdentity()
         if my_id._LocalIdentity is None:
-            raise Exception('Loading local identity failed - need to register first')
-            return
-        from contacts import contactsdb
-        contactsdb.init()
+            from logs import lg
+            lg.warn('Loading local identity failed - need to register first')
+            return False
         from contacts import identitycache
         identitycache.init()
+        from contacts import contactsdb
+        contactsdb.init()
         from p2p import propagate
         propagate.init()
         return True
     
     def stop(self):
+        from p2p import propagate
+        propagate.shutdown()
+        from contacts import contactsdb
+        contactsdb.shutdown()
+        from contacts import identitycache
+        identitycache.shutdown()
+        from userid import my_id
+        my_id.forgetLocalIdentity()
         return True
     
     

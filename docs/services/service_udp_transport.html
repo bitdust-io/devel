@@ -32,6 +32,24 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <div id="content">
 <h1>Сервис udp_transport()</h1>
 <h2>Описание</h2>
+<p>Полезные данные между узлами в сети BitPie.NET передаются через так называемые сетевые транспортные протоколы.
+Сервис <code>udp_transport()</code> реализует прямую передачу данных между машинами используя сетевой протокол UDP. 
+В BitPie.NET реализован собственный метод потоковой передачи бинарных данных через UDP датаграммы.</p>
+<p>По аналогии с протоколом TCP, создается отдельная сессия с каждым удаленным узлом. 
+Общая пропускная способность баланисруется между всеми открытыми сессиями, 
+в настройках сетевой службы <code>network()</code> пользователь имеет возможность настроить 
+лимиты для входящего и исходящего канала (байт в секунду).</p>
+<p>Этот сетевой транспорт позволяет соединять напрямую пользователей находящихся за NAT.
+Поддерживается большинство из существующих типов конфигураций сетевого оборудования,
+симметричный NAT на данный момент не поддерживается.</p>
+<p>Для корректной работы программы BitPie.NET необходимо, 
+что бы хотя бы один из сетевых транспортов был включен.
+На данный момент поддерживаются два сетевых транспорта: 
++ <code>tcp_transport()</code>
++ <code>udp_transport()</code></p>
+<p>Соединение пользователя с удаленным узлом возможно только
+если и обоих включен и корректно функционирует хотя бы один общий транспорт,
+рекомендуется поддерживать активными все доступные сетевые транспорты.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_udp_datagrams.html">udp_datagrams()</a></li>
@@ -44,13 +62,25 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 </ul>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/udp-transport/enabled</li>
+<li>services/udp-transport/enabled - включение/выключение сервиса <code>udp_transport()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
 <li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_udp_transport.py">service_udp_transport.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_node.py">transport/udp/udp_node.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_session.py">transport/udp/udp_session.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_connector.py">transport/udp/udp_connector.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_stream.py">transport/udp/udp_stream.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_file_queue.py">transport/udp/udp_file_queue.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_interface.py">transport/udp/udp_interface.py</a></li>
 </ul>
 <h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../transport/udp/udp_node.html">udp_node()</a></li>
+<li><a href="../transport/udp/udp_session.html">udp_session()</a></li>
+<li><a href="../transport/udp/udp_connector.html">udp_connector()</a></li>
+<li><a href="../transport/udp/udp_stream.html">udp_stream()</a></li>
+</ul>
 <br>
 <br>
 </div>

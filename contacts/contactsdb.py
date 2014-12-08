@@ -58,6 +58,17 @@ def init():
     if _CustomersChangedCallback is not None:
         _CustomersChangedCallback([], customers())
         
+def shutdown():
+    """
+    """
+    global _SuppliersChangedCallback
+    global _CustomersChangedCallback
+    lg.out(4, "contactsdb.shutdown")
+    if _SuppliersChangedCallback is not None:
+        _SuppliersChangedCallback = None
+    if _CustomersChangedCallback is not None:
+        _CustomersChangedCallback = None
+    
 #------------------------------------------------------------------------------ 
 
 def suppliers():

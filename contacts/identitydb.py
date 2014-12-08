@@ -56,6 +56,13 @@ def init():
     if not os.path.exists(iddir):
         lg.out(8, 'identitydb.init create folder ' + iddir)
         bpio._dir_make(iddir)
+        
+def shutdown():
+    """
+    """
+    lg.out(4,"identitydb.shutdown")
+        
+#------------------------------------------------------------------------------ 
 
 def clear(exclude_list=None):
     """
