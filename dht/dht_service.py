@@ -47,7 +47,7 @@ import known_nodes
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------ 
 
@@ -271,7 +271,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
             print '                dht._process, queue length:', len(self.datagrams_queue)
         datagram, address = self.datagrams_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
-        self.worker = reactor.callLater(0.02, self._process)
+        self.worker = reactor.callLater(0.005, self._process)
 
 #------------------------------------------------------------------------------ 
 
