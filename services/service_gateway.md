@@ -26,6 +26,11 @@
 * [identity_propagate()](services/service_identity_propagate.md)
 
 
+## Запуск автоматов
+* [packet_in()](transport/packet_in.md)
+* [packet_out()](transport/packet_out.md)
+
+
 ## Настройки сервиса
 * services/gateway/enabled - включение/выключение сервиса `gateway()`
 
@@ -40,6 +45,3 @@
 * [transport/stats.py](transport/stats.py)
 
 
-## Запуск автоматов
-* [packet_in()](transport/packet_in.md)
-* [packet_out()](transport/packet_out.md)

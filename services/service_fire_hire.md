@@ -13,6 +13,9 @@
 * [backups()](services/service_backups.md)
 
 
+## Запуск автоматов
+
+
 ## Настройки сервиса
 * services/fire-hire/enabled
 
@@ -23,4 +26,3 @@
 
 
 
-## Вызываемые автоматы

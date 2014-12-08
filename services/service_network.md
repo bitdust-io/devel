@@ -16,6 +16,10 @@
 * [udp_datagrams()](services/service_udp_datagrams.md)
 
 
+## Запуск автоматов
+* [network_connector()](p2p/network_connector.md)
+
+
 ## Настройки сервиса
 * services/network/enabled - включение/выключение сервиса `network()`
 
@@ -25,5 +29,3 @@
 * [p2p/network_connector.py](p2p/network_connector.py)
 
 
-## Запуск автоматов
-* [network_connector()](p2p/network_connector.md)

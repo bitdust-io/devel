@@ -1,7 +1,7 @@
 # Автомат network_connector()
 
 
-![network_connector[1]](network_connector.png)
+[![network_connector()](network_connector.png)](network_connector.pdf)
 
 
 ## Описание

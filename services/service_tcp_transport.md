@@ -39,6 +39,11 @@
 * [p2p_hookups()](services/service_p2p_hookups.md)
 
 
+## Запуск автоматов
+* [network_transport()](transport/network_transport.md)
+* [tcp_connection()](transport/tcp/tcp_connection.md)
+
+
 ## Настройки сервиса
 * services/tcp-transport/enabled - включение/выключение сервиса `tcp_transport()`
 
@@ -52,9 +57,6 @@
 * [transport/tcp/tcp_stream.py](transport/tcp/tcp_stream.py)
 
 
-## Запуск автоматов
-* [network_transport()](transport/network_transport.md)
-* [tcp_connection()](transport/tcp/tcp_connection.md)
 
 
 

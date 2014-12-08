@@ -4,40 +4,21 @@
 <title>
 services\service_stun_client
 </title>
-<style type="text/css">
-body { 
-    /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
-    font-family: "Century Gothic";
-    font-weight: 500;
-    line-height: 1.7;  
-    word-spacing: 0.2em;
-    letter-spacing: 0.03em;
-    }
-h1 { font-size: 2.5em; margin-bottom: 5px; }
-h2 { font-size: 2em; margin-bottom: 5px; }
-pre { 
-    padding: 10px; 
-    border: none; 
-    border-left: none;
-    border-right: none;
-    margin-left: 20px;
-    margin-right: 20px; }
-code { font-size: 1.3em; font-weight: 600; }
-p { padding: 0; margin: 0; }
-a { color: #446E9B; text-decoration: none; }
-a:hover, a:focus { color: #345578; text-decoration: underline; }
-</style>
+<link rel="stylesheet" type="text/css" href="../styles.css">
 </head>
 <body>
 <div id="content">
 <h1>Сервис stun_client()</h1>
 <h2>Описание</h2>
-<p>Сервис <code>stun_client()</code> предназначен для определения своего внешнего IP адреса и 
-номер открытого UDP порта. 
-Эти служебные данные используются для обеспечения возможности приема входящих UDP пакетов 
-от других участников сети.
-Для STUN процедуры, используются другие участники сети, у которых активен сетевой сервис 
-<a href="../services/service_stun_server.html">stun_server()</a>.</p>
+<p>Сервис <code>stun_client()</code> предназначен для определения внешнего IP адреса и 
+номер открытого UDP порта машины пользователя. </p>
+<p>Эти служебные данные используются для обеспечения возможности приема входящих TCP соединений и 
+UDP датаграмм от других узлов сети BitPie.NET.</p>
+<p>Для STUN процедуры, используются другие машины сети, у которых активен сетевой сервис 
+<code>stun_server()</code>.</p>
+<p>При отключении данной службы станет неактивным сетевой транспорт UDP.
+Он использует автомат <code>stun_client()</code>, экземпляр которого создается при запуске службы,
+для подготовки процедуры прохода через NAT.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_entangled_dht.html">entangled_dht()</a></li>
@@ -47,6 +28,10 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <ul>
 <li><a href="../services/service_udp_transport.html">udp_transport()</a></li>
 </ul>
+<h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../stun/stun_client.html">stun_client()</a></li>
+</ul>
 <h2>Настройки сервиса</h2>
 <ul>
 <li>services/stun-client/enabled - включение/выключение сервиса <code>stun_client()</code></li>
@@ -55,10 +40,6 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <ul>
 <li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_stun_client.py">services/service_stun_client.py</a></li>
 <li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/stun/stun_client.py">stun/stun_client.py</a></li>
-</ul>
-<h2>Запуск автоматов</h2>
-<ul>
-<li><a href="../stun/stun_client.html">stun_client()</a></li>
 </ul>
 <br>
 <br>

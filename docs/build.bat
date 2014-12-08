@@ -18,4 +18,6 @@ python fix_html.py index.html index.html
 python build_html.py services
 python build_html.py p2p
 
+cp ../services/services.pdf .
+
 pause

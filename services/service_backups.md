@@ -15,6 +15,10 @@
 * [restores()](services/service_restores.md)
 
 
+## Запуск автоматов
+
+
+
 ## Настройки сервиса
 * services/backups/enabled
 
@@ -25,4 +29,3 @@
 
 
 
-## Вызываемые автоматы

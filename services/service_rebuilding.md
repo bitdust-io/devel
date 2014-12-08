@@ -13,6 +13,9 @@
 * [backups()](services/service_backups.md)
 
 
+## Запуск автоматов
+
+
 ## Настройки сервиса
 * services/rebuilding/enabled
 
@@ -23,4 +26,3 @@
 
 
 
-## Запуск автоматов

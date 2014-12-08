@@ -22,6 +22,10 @@
 * [tcp_connections()](services/service_tcp_connections.md)
 
 
+## Запуск автоматов
+* [identity_server()](userid/identity_server.md)
+
+
 ## Настройки сервиса
 * services/id-server/enabled - включение/выключение сервиса `identity_server()`
 * services/id-server/host - доменное имя машины пользователя, если значение не задано то будет использован внешний IP адрес
@@ -34,6 +38,4 @@
 * [userid/identity_server.py](userid/identity_server.py)
 
 
-## Запуск автоматов
-* [identity_server()](userid/identity_server.md)
 

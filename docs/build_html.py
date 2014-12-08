@@ -25,6 +25,8 @@ for fn in os.listdir(dirpath):
             break
         if os.system('cp %s/*.png %s' % (dirpath, subdir)):
             break        
+        if os.system('cp %s/*.pdf %s' % (dirpath, subdir)):
+            break        
     except:
         import traceback
         traceback.print_exc()

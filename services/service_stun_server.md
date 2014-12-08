@@ -18,6 +18,10 @@
 * [entangled_dht()](services/service_entangled_dht.md)
 
 
+## Запуск автоматов
+* [stun_server()](stun/stun_server.md)
+
+
 ## Настройки сервиса
 * services/stun-server/enabled - включение/выключение сервиса `stun_server()`
 
@@ -27,6 +31,4 @@
 * [stun/stun_server.py](stun/stun_server.py)
 
 
-## Запуск автоматов
-* [stun_server()](stun/stun_server.md)
 

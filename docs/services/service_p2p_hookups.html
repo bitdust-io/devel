@@ -4,38 +4,27 @@
 <title>
 services\service_p2p_hookups
 </title>
-<style type="text/css">
-body { 
-    /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
-    font-family: "Century Gothic";
-    font-weight: 500;
-    line-height: 1.7;  
-    word-spacing: 0.2em;
-    letter-spacing: 0.03em;
-    }
-h1 { font-size: 2.5em; margin-bottom: 5px; }
-h2 { font-size: 2em; margin-bottom: 5px; }
-pre { 
-    padding: 10px; 
-    border: none; 
-    border-left: none;
-    border-right: none;
-    margin-left: 20px;
-    margin-right: 20px; }
-code { font-size: 1.3em; font-weight: 600; }
-p { padding: 0; margin: 0; }
-a { color: #446E9B; text-decoration: none; }
-a:hover, a:focus { color: #345578; text-decoration: underline; }
-</style>
+<link rel="stylesheet" type="text/css" href="../styles.css">
 </head>
 <body>
 <div id="content">
 <h1>Сервис p2p_hookups()</h1>
 <h2>Описание</h2>
-<p>Служба <code>p2p_hookups()</code> является ключевым элементом в ПО BitPie.NET, 
+<p>Сетевая служба <code>p2p_hookups()</code> является ключевым элементом в ПО BitPie.NET, 
 она организует соединение пользователя с другими узлами в сети и 
 поддерживает связь с активными контактами: хранителями, клиентами и др. </p>
-<p>Ар автомата </p>
+<p>При старте службы создается экземпляр автомата <code>p2p_connector()</code> и происходит
+его инициализация.</p>
+<p>Для каждого отдаленного узла, с которым поддерживается активный контакт,
+будет создан экземпляр автомата <code>contact_status()</code>. 
+Его задача отслеживать текущее состояние соединения с конкретным пользователем в сети BitPie.NET.</p>
+<p>Сервис <code>p2p_hookups()</code> анализирует текущее состояние активных транспортных протоколов
+и выстраивает их в порядке максимальной стабильности для текущего пользователя.
+После этого, в identity файле пользователя происходит обновление его контактных данных, 
+которые используются для непосредственной передачи входящих пакетов на его узел. </p>
+<p>Подробнее о работе транспортных протоколов вы можете прочитать в <a href="...">этом</a> документе.</p>
+<p>При отключении данного сервиса прекратится обновление identity файла пользователя, что
+может привести рано или поздно к невозможности активного взаимодействия с другими узлами.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_gateway.html">gateway()</a></li>
@@ -47,15 +36,24 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <ul>
 <li><a href="../services/service_customer.html">customer()</a></li>
 </ul>
+<h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../p2p/p2p_connector.html">p2p_connector()</a></li>
+<li><a href="../p2p/contact_status.html">contact_status()</a></li>
+</ul>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/p2p-hookups/enabled</li>
+<li>services/p2p-hookups/enabled - включение/выключение сервиса <code>p2p_hookups()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_p2p_hookups.py">service_p2p_hookups.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_p2p_hookups.py">service/service_p2p_hookups.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/p2p_connector.py">p2p/p2p_connector.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/p2p_service.py">p2p/p2p_service.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/contact_status.py">p2p/contact_status.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/commands.py">p2p/commands.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/ratings.py">p2p/ratings.py</a></li>
 </ul>
-<h2>Запуск автоматов</h2>
 <br>
 <br>
 </div>

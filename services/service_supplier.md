@@ -13,6 +13,9 @@
 * [customers_rejector()](services/service_customers_rejector.md)
 
 
+## Запуск автоматов
+
+
 ## Настройки сервиса
 * services/supplier/enabled
 
@@ -23,4 +26,3 @@
 
 
 
-## Запуск автоматов

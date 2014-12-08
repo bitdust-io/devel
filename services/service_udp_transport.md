@@ -38,6 +38,13 @@
 * [p2p_hookups()](services/service_p2p_hookups.md)
 
 
+## Запуск автоматов
+* [udp_node()](transport/udp/udp_node.md)
+* [udp_session()](transport/udp/udp_session.md)
+* [udp_connector()](transport/udp/udp_connector.md)
+* [udp_stream()](transport/udp/udp_stream.md)
+
+
 ## Настройки сервиса
 * services/udp-transport/enabled - включение/выключение сервиса `udp_transport()`
 
@@ -51,10 +58,4 @@
 * [transport/udp/udp_file_queue.py](transport/udp/udp_file_queue.py)
 * [transport/udp/udp_interface.py](transport/udp/udp_interface.py)
 
-
-## Запуск автоматов
-* [udp_node()](transport/udp/udp_node.md)
-* [udp_session()](transport/udp/udp_session.md)
-* [udp_connector()](transport/udp/udp_connector.md)
-* [udp_stream()](transport/udp/udp_stream.md)
 

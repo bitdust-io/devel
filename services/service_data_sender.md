@@ -14,6 +14,9 @@
 * [backup_db()](services/service_backup_db.md)
 
 
+## Запуск автоматов
+
+
 ## Настройки сервиса
 * services/data-sender/enabled
 
@@ -24,4 +27,3 @@
 
 
 
-## Вызываемые автоматы

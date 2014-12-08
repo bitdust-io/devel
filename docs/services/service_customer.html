@@ -4,34 +4,25 @@
 <title>
 services\service_customer
 </title>
-<style type="text/css">
-body { 
-    /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
-    font-family: "Century Gothic";
-    font-weight: 500;
-    line-height: 1.7;  
-    word-spacing: 0.2em;
-    letter-spacing: 0.03em;
-    }
-h1 { font-size: 2.5em; margin-bottom: 5px; }
-h2 { font-size: 2em; margin-bottom: 5px; }
-pre { 
-    padding: 10px; 
-    border: none; 
-    border-left: none;
-    border-right: none;
-    margin-left: 20px;
-    margin-right: 20px; }
-code { font-size: 1.3em; font-weight: 600; }
-p { padding: 0; margin: 0; }
-a { color: #446E9B; text-decoration: none; }
-a:hover, a:focus { color: #345578; text-decoration: underline; }
-</style>
+<link rel="stylesheet" type="text/css" href="../styles.css">
 </head>
 <body>
 <div id="content">
 <h1>—ервис customer()</h1>
 <h2>ќписание</h2>
+<p>—етева€ служба <code>customer()</code> организует подключение пользовател€ к удаленным хранител€м - узлам,
+которые предоставл€ют свои жесткие диски дл€ размещение личных данных пользовател€.</p>
+<p>—ам пользователь €вл€етс€ дл€ этих узлов клиентом, поскольку арендует пространство на их жестких дисках.
+¬ данный момент система монетизации распределенного хранени€ данных находитс€ в стадии переработки и 
+все пользователи предоставл€ют свое пространство в сеть BitPie.NET на добровольных основани€х.</p>
+<p> аждый участник сети BitPie.NET может выступать и как хранитель и как клиент.
+ѕользователь сможет разместить свои данные лишь на тех узлах, у которых
+посто€нно активна сетева€ служба <code>supplier()</code>.</p>
+<p>ƒл€ каждого хранител€ будет создан экземпл€р автомата <code>supplier_connector()</code>, он
+производит подключение удаленному узлу и запрос дисковой квоты дл€ хранени€ личных данных.</p>
+<p>ѕодробнее о системе распределенного хранени€ данных в сети BitPie.NET чатайте в разделе <a href="...">...</a>.</p>
+<p>ѕри отключении сервиса <code>customer()</code> будет прекращено взаимодействие со всеми хранител€ми, что приведет
+к полной потере всех сохраненных на данный момент данных.</p>
 <h2>«ависит от</h2>
 <ul>
 <li><a href="../services/service_p2p_hookups.html">p2p_hookups()</a></li>
@@ -42,15 +33,20 @@ a:hover, a:focus { color: #345578; text-decoration: underline; }
 <li><a href="../services/service_fire_hire.html">fire_hire()</a></li>
 <li><a href="../services/service_list_files.html">list_files()</a></li>
 </ul>
+<h2>«апуск автоматов</h2>
+<ul>
+<li><a href="../customer/supplier_connector.html">supplier_connector()</a></li>
+</ul>
 <h2>Ќастройки сервиса</h2>
 <ul>
-<li>services/customer/enabled</li>
+<li>services/customer/enabled - включение/выключение сервиса <code>customer()</code></li>
 </ul>
 <h2>—в€занные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_customer.py">service_customer.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_customer.py">service/service_customer.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/customer/supplier_connector.py">customer/supplier_connector.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/contacts/contactsdb.py">contacts/contactsdb.py</a></li>
 </ul>
-<h2>¬ызываемые автоматы</h2>
 <br>
 <br>
 </div>

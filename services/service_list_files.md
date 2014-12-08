@@ -14,6 +14,9 @@
 * [backups()](services/service_backups.md)
 
 
+## Запуск автоматов
+
+
 ## Настройки сервиса
 * services/list-files/enabled
 
@@ -24,4 +27,3 @@
 
 
 
-## Запуск автоматов
