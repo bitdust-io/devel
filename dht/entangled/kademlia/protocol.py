@@ -19,6 +19,8 @@ from contact import Contact
 
 reactor = twisted.internet.reactor
 
+_Debug = False
+
 class TimeoutError(Exception):
     """ Raised when a RPC times out """
 
@@ -74,7 +76,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Set the RPC timeout timer
         timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, msg.id) #IGNORE:E1101
         # Transmit the data
-        # print '                sendRPC', (method, contact.address, contact.port)
+        if _Debug:
+            print '                sendRPC', (method, contact.address, contact.port)
         self._send(encodedMsg, msg.id, (contact.address, contact.port))
         self._sentMessages[msg.id] = (contact.id, df, timeoutCall)
         return df
@@ -109,8 +112,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Refresh the remote node's details in the local node's k-buckets
         self._node.addContact(remoteContact)
         
-        # print '                dht.datagramReceived %d (%s) from %s' % (
-        #     len(datagram), str(type(message)), str(address))
+        if _Debug:
+            print '                dht.datagramReceived %d (%s) from %s' % (
+                len(datagram), str(type(message)), str(address))
         
         if isinstance(message, msgtypes.RequestMessage):
             # This is an RPC method request
@@ -191,7 +195,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
             self._write(data, address)
             
     def _write(self, data, address):
-        # print '                dht._write %d bytes to %s' % (len(data), str(address)) 
+        if _Debug:
+            print '                dht._write %d bytes to %s' % (len(data), str(address)) 
         try:
             self.transport.write(data, address)
         except:
@@ -204,7 +209,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
         msgPrimitive = self._translator.toPrimitive(msg)
         encodedMsg = self._encoder.encode(msgPrimitive)
-        # print '                sendResponse', (contact.address, contact.port)
+        if _Debug:
+            print '                sendResponse', (contact.address, contact.port)
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _sendError(self, contact, rpcID, exceptionType, exceptionMessage):
@@ -213,7 +219,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         msg = msgtypes.ErrorMessage(rpcID, self._node.id, exceptionType, exceptionMessage)
         msgPrimitive = self._translator.toPrimitive(msg)
         encodedMsg = self._encoder.encode(msgPrimitive)
-        # print '                sendError', (contact.address, contact.port)
+        if _Debug:
+            print '                sendError', (contact.address, contact.port)
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _handleRPC(self, senderContact, rpcID, method, args):
@@ -229,8 +236,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
         df.addCallback(handleResult)
         df.addErrback(handleError)
 
-        # import base64
-        # print '                    _handleRPC', base64.b64encode(rpcID), method, args
+        if _Debug:
+            import base64
+            print '                    _handleRPC', base64.b64encode(rpcID), method, args
+            
         # Execute the RPC
         func = getattr(self._node, method, None)
         if callable(func) and hasattr(func, 'rpcmethod'):
