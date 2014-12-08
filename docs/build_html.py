@@ -15,13 +15,14 @@ for fn in os.listdir(dirpath):
         continue
     fp = os.path.join(dirpath, fn)
     fphtml = os.path.join(subdir, fn[:-3] + '.html')
+    fpcss = '../styles.css'
     print fp, '->', fphtml
     try:
         if os.system('python -m markdown -x markdown.extensions.sane_lists %s > %s' % (fp, fphtml)):
             break
         if os.system('python utf8_to_ansi.py %s %s' % (fphtml, fphtml)):
             break
-        if os.system('python fix_html.py %s %s' % (fphtml, fphtml)):
+        if os.system('python fix_html.py %s %s %s' % (fphtml, fphtml, fpcss)):
             break
         if os.system('cp %s/*.png %s' % (dirpath, subdir)):
             break        
