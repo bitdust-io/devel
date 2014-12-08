@@ -77,7 +77,7 @@ class Node(object):
         if networkProtocol == None:
             self._protocol = protocol.KademliaProtocol(self)
         else:
-            self._protocol = networkProtocol
+            self._protocol = networkProtocol(self)
         # Initialize the data storage mechanism used by this node
         if dataStore == None:
             self._dataStore = datastore.DictDataStore()

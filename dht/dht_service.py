@@ -27,6 +27,7 @@ from entangled.dtuple import DistributedTupleSpacePeer
 from entangled.kademlia.datastore import SQLiteDataStore
 from entangled.kademlia.node import rpcmethod
 from entangled.kademlia.contact import Contact
+from entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
 
 #------------------------------------------------------------------------------ 
 
@@ -68,7 +69,10 @@ def init(udp_port, db_file_path=None):
     dbPath = bpio.portablePath(db_file_path)
     lg.out(4, 'dht_service.init UDP port is %d, DB file path: %s' % (udp_port, dbPath))
     dataStore = SQLiteDataStore(dbFile=dbPath)
-    _MyNode = DHTNode(udp_port, dataStore)
+    networkProtocol = KademliaProtocolConveyor
+        # None, encoding.Bencode(), msgformat.DefaultFormat())
+    _MyNode = DHTNode(udp_port, dataStore, networkProtocol=networkProtocol)
+    # _MyNode._protocol.node = _MyNode
     
 
 def shutdown():
@@ -76,6 +80,7 @@ def shutdown():
     if _MyNode is not None:
         _MyNode.listener.stopListening()
         _MyNode._dataStore._db.close()
+        _MyNode._protocol.node = None
         del _MyNode
         _MyNode = None
         if _Debug:
@@ -238,6 +243,30 @@ class DHTNode(DistributedTupleSpacePeer):
             self.refresher.reset(0)
         d.callback(1)
         return d
+
+#------------------------------------------------------------------------------ 
+
+class KademliaProtocolConveyor(KademliaProtocol):
+    
+    def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.DefaultFormat()):
+        KademliaProtocol.__init__(self, node, msgEncoder, msgTranslator)
+        self.datagrams_queue = []
+        self.worker = None
+    
+    def datagramReceived(self, datagram, address):
+        self.datagrams_queue.append((datagram, address))
+        if self.worker is None:
+            self.worker = reactor.callLater(0, self._process)
+
+    def _process(self):
+        if len(self.datagrams_queue) == 0:
+            self.worker = None
+            return
+        if _Debug:
+            print '                dht._process, queue length:', len(self.datagrams_queue)
+        datagram, address = self.datagrams_queue.pop(0)
+        KademliaProtocol.datagramReceived(self, datagram, address)
+        self.worker = reactor.callLater(0.02, self._process)
 
 #------------------------------------------------------------------------------ 
 
