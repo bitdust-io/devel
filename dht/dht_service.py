@@ -83,6 +83,7 @@ def shutdown():
     else:
         lg.warn('DHTNode not exist')
 
+#------------------------------------------------------------------------------ 
 
 def node():
     global _MyNode
@@ -260,7 +261,8 @@ def main():
         pass
     elif len(args) > 0:
         def _r(x):
-            reactor.stop()
+            print x
+            # reactor.stop()
         cmd = args[0] 
         if cmd == 'get':
             get_value(args[1]).addBoth(_r)
