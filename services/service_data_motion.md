@@ -1,4 +1,4 @@
-# Сервис data_sender()
+# Сервис data_motion()
 
 
 ## Описание
@@ -18,12 +18,12 @@
 
 
 ## Настройки сервиса
-* services/data-sender/enabled
+* services/data-motion/enabled
 
 
 
 ## Связанные файлы проекта
-* [service_data_sender.py](services/service_data_sender.py)
+* [service/service_data_motion.py](services/service_data_motion.py)
 
 
 

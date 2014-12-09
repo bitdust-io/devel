@@ -27,13 +27,9 @@ class SupplierService(LocalService):
                 ]
     
     def start(self):
-        from supplier import local_tester
-        local_tester.init()
         return True
     
     def stop(self):
-        from supplier import local_tester
-        local_tester.shutdown()
         return True
     
     

@@ -1,16 +1,16 @@
-# Сервис stun_server()
+# Сервис ip_port_responder()
 
 
 ## Описание
-Сетевая служба `stun_server()` позволяет другим участникам сети производить процедуру STUN, 
+Сетевая служба `ip_port_responder()` позволяет другим участникам сети производить процедуру STUN, 
 для определения собственного IP адреса и номра открытого UDP порта.
 
 Она работает как простейший STUN сервер и отвечает на запрросы других узлов, у которых активна
-служба [stun_client()](services/service_stun_client.md).
+служба [my_ip_port()](services/service_my_ip_port.md).
 Обе эти службы работают в паре, но на разных машинах в сети.
 
 Для поддержки других пользователей сети BitPie.NET настоятельно рекомендуется 
-держать службу `stun_server()` активной, она включена по умолчанию.
+держать службу `ip_port_responder()` активной, она включена по умолчанию.
 
 
 ## Зависит от
@@ -23,11 +23,11 @@
 
 
 ## Настройки сервиса
-* services/stun-server/enabled - включение/выключение сервиса `stun_server()`
+* services/ip-port-responder/enabled - включение/выключение сервиса `ip_port_responder()`
 
 
 ## Связанные файлы проекта
-* [service_stun_server.py](services/service_stun_server.py)
+* [service/service_ip_port_responder.py](services/service_ip_port_responder.py)
 * [stun/stun_server.py](stun/stun_server.py)
 
 

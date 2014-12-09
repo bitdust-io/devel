@@ -18,14 +18,6 @@ services\service_supplier
 клиентами - они арендуют пространство на его компьютере.
 В данный момент система монетизации распределенного хранения данных находится в стадии переработки и 
 все пользователи предоставляют свое пространство в сеть BitPie.NET на добровольных основаниях.</p>
-<p>Когда служба <code>supplier()</code> активна, ядро клиентского ПО BitPie.NET периодически запускает подпроцесс
-<code>bptester</code>, который проверяет файлы в папке <code>.bitpie/customers/</code>. Выполняются следующие тесты
-над хранимыми данными:</p>
-<ul>
-<li><code>validate</code> - проверка электронной подписи владельца данных</li>
-<li><code>update_customers</code> - хранимые данные принадлежат активным клиентам</li>
-<li><code>space_time</code> - объем хранимых данных не выходит за размер выделенной квоты, более ранние файлы будут удалены</li>
-</ul>
 <p>Подробнее о системе распределенного хранения данных в сети BitPie.NET чатайте в разделе <a href="...">...</a>.</p>
 <p>Если вы не желаете, чтобы другие пользователи использовали ваш компьютер для хранения
 личной информации, выключите данную службу в настройках ПО - 
@@ -37,7 +29,7 @@ services\service_supplier
 </ul>
 <h2>Влияет на</h2>
 <ul>
-<li><a href="../services/service_customers_rejector.html">customers_rejector()</a></li>
+<li><a href="../services/service_customer_patrol.html">customer_patrol()</a></li>
 </ul>
 <h2>Настройки сервиса</h2>
 <ul>
@@ -47,8 +39,6 @@ services\service_supplier
 <h2>Связанные файлы проекта</h2>
 <ul>
 <li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_supplier.py">services/service_supplier.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/supplier/local_tester.py">supplier/local_tester.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/main/bptester.py">main/bptester.py</a></li>
 </ul>
 <br>
 <br>

@@ -29,6 +29,8 @@ class CustomersRejectorService(LocalService):
     def start(self):
         from supplier import customers_rejector
         from main.config import conf
+        from supplier import local_tester
+        local_tester.init()
         customers_rejector.A('restart')
         conf().addCallback('services/supplier/donated-space',
             self._on_donated_space_modified)
@@ -37,6 +39,8 @@ class CustomersRejectorService(LocalService):
     def stop(self):
         from supplier import customers_rejector
         from main.config import conf
+        from supplier import local_tester
+        local_tester.shutdown()
         conf().removeCallback('services/supplier/donated-space')
         customers_rejector.Destroy()
         return True
