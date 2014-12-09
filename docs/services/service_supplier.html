@@ -14,6 +14,23 @@ services\service_supplier
 как хранилище для их собственных данных. 
 Зашифрованные файлы, закачанные с других машин, по умолчанию сохраняются 
 в папку <code>.bitpie/customers/[IDURL владельца]</code>. </p>
+<p>Те узлы, которые размещают свои файлы на жестком диске пользователя, называются
+клиентами - они арендуют пространство на его компьютере.
+В данный момент система монетизации распределенного хранения данных находится в стадии переработки и 
+все пользователи предоставляют свое пространство в сеть BitPie.NET на добровольных основаниях.</p>
+<p>Когда служба <code>supplier()</code> активна, ядро клиентского ПО BitPie.NET периодически запускает подпроцесс
+<code>bptester</code>, который проверяет файлы в папке <code>.bitpie/customers/</code>. Выполняются следующие тесты
+над хранимыми данными:</p>
+<ul>
+<li>validate - проверка электронной подписи владельца данных</li>
+<li>update_customers - хранимые данные принадлежат активным клиентам</li>
+<li>space_time - объем хранимых данных не выходит за размер выделенной квоты, более ранние файлы будут удалены</li>
+</ul>
+<p>Подробнее о системе распределенного хранения данных в сети BitPie.NET чатайте в разделе <a href="...">...</a>.</p>
+<p>Если вы не желаете, чтобы другие пользователи использовали ваш компьютер для хранения
+личной информации, выключите данную службу в настройках ПО - 
+все закачанные данные будут удалены, разорваны активные сессии с клиентами и остановлен подпроцесс
+<code>bptester</code>.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_gateway.html">gateway()</a></li>
@@ -22,15 +39,16 @@ services\service_supplier
 <ul>
 <li><a href="../services/service_customers_rejector.html">customers_rejector()</a></li>
 </ul>
-<h2>Запуск автоматов</h2>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/supplier/enabled</li>
+<li>services/supplier/enabled - включение/выключение сервиса <code>supplier()</code></li>
 <li>services/customer/donated-space - объем отданного в сеть пространства, которое может быть использовано другими пользователями</li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_supplier.py">service_supplier.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_supplier.py">services/service_supplier.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/supplier/local_tester.py">supplier/local_tester.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/main/bptester.py">main/bptester.py</a></li>
 </ul>
 <br>
 <br>
