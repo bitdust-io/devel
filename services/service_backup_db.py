@@ -24,7 +24,7 @@ class BackupDBService(LocalService):
     
     def dependent_on(self):
         return ['service_list_files',
-                'service_data_sender', 
+                'service_data_motion', 
                 ]
     
     def start(self):

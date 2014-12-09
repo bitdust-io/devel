@@ -23,7 +23,7 @@ class RebuildingService(LocalService):
     config_path = 'services/rebuilding/enabled'
     
     def dependent_on(self):
-        return ['service_data_sender',
+        return ['service_data_motion',
                 ]
     
     def start(self):

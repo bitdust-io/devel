@@ -3638,7 +3638,7 @@ class BackupPage(Page, BackupIDSplit):
             randSupplierNum = random.randint(0, contactsdb.num_suppliers()-1)
             packetID = packetid.MakePacketID(self.backupID, randBlockNum, randSupplierNum, 'Data')
             lg.out(4, 'REQUEST: %s' % packetID)
-            if driver.is_started('service_data_sender'):
+            if driver.is_started('service_data_motion'):
                 try:
                     from customer import io_throttle
                     io_throttle.QueueRequestFile(
@@ -7847,7 +7847,7 @@ def InitSettingsTreePages():
     'services/customer/needed-space':               SettingsTreeDiskSpaceNode,
     'services/customer/suppliers-number':           SettingsTreeComboboxNode,
     'services/customer-patrol/enabled':             SettingsTreeYesNoNode,
-    'services/data-sender/enabled':                 SettingsTreeYesNoNode,
+    'services/data-motion/enabled':                 SettingsTreeYesNoNode,
     'services/entangled-dht/enabled':               SettingsTreeYesNoNode,
     'services/entangled-dht/udp-port':              SettingsTreeNumericPositiveNode,
     'services/fire-hire/enabled':                   SettingsTreeYesNoNode,

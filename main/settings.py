@@ -1965,7 +1965,7 @@ def _setUpDefaultSettings():
                                   diskspace.MakeStringFromBytes(DefaultNeededBytes()))
     config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
     config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
-    config.conf().setDefaultValue('services/data-sender/enabled', 'true')
+    config.conf().setDefaultValue('services/data-motion/enabled', 'true')
     config.conf().setDefaultValue('services/entangled-dht/enabled', 'true')
     config.conf().setDefaultValue('services/entangled-dht/udp-port', DefaultDHTPort())
     config.conf().setDefaultValue('services/fire-hire/enabled', 'true')

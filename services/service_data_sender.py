@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_data_sender.py
+#service_data_motion.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: service_data_sender
+.. module:: service_data_motion
 
 """
 
@@ -19,8 +19,8 @@ def create_service():
     
 class DataSenderService(LocalService):
     
-    service_name = 'service_data_sender'
-    config_path = 'services/data-sender/enabled'
+    service_name = 'service_data_motion'
+    config_path = 'services/data-motion/enabled'
     
     def dependent_on(self):
         return ['service_customer',
