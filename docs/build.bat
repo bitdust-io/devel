@@ -10,6 +10,11 @@ python -m markdown concept.md > concept.html
 python utf8_to_ansi.py concept.html concept.html
 python fix_html.py concept.html concept.html styles.css
 
+@echo "storage.md -> storage.html"
+python -m markdown storage.md > storage.html
+python utf8_to_ansi.py storage.html storage.html
+python fix_html.py storage.html storage.html styles.css
+
 @echo "README.md -> index.html"
 python -m markdown ../README.md > index.html
 python utf8_to_ansi.py index.html index.html

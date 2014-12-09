@@ -14,7 +14,7 @@
   * `С:\Users\<имя пользователя>\.bitpie\` для Windows 8.1, Windows 7, и Windows Vista
   * `C:\Documents and Settings\<имя пользователя>\.bitpie\` для Windows XP и Windows 2000
 
-## Ubuntu
+## Ubuntu / Debian
 
 Скачайте файл [bitpie-ubuntu-stable.deb](http://bitpie.net/download/bitpie-ubuntu-stable.deb) и запустите его.
 
@@ -26,9 +26,14 @@
 
 ## Из исходников
 
-В Ubuntu нужно просто установить все зависимости одной командой:
+В Ubuntu нужно просто установить все зависимости используя менеджер пакетов:
 
-    sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging
+    sudo apt-get update
+    sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto
+    
+Для графического интерфейса необходимо так же установить следующие пакеты:
+    
+    sudo apt-get install python-wxgtk2.8 python-imaging
 
 Пользователи Windows могут использовать приведенные ниже ссылки для установки необходимых пакетов самостоятельно:
 
@@ -43,14 +48,29 @@
 Далее скачайте файл [bitpie.tar.gz](http://bitpie.net/download/bitpie.tar.gz) содержащий исходный код BitPie.NET. 
 Распакуйте архив в любое удобное для вас место.
 
+    wget http://bitpie.net/download/bitpie.tar.gz
+    cd bitpie-0.1.14.879/
+    cd bitpie
+
 Еще один способ получить исходники это клонировать себе наш публичный Git репозиторий:
 
+    sudo apt-get install git
     git clone http://gitlab.bitpie.net/devel/bitpie.git
+    cd bitpie
+    
+В этом случае вы всегда сможете одной коммандой обновиться до самой свежей версии ПО:
+    
+    git pull
+    
+Я рекомендую сразу после получения исходников использовать следующую комманду, которая создаст
+алиас для BitPie.NET в вашей ОС:
+
+    sudo python bitpie.py integrate
 
 
 ## Запуск
 
-Если вы установили программу BitPie.NET используя автоматический инсталляр
+Если вы установили программу BitPie.NET используя автоматический инсталлятор,
 то просто кликните дважды по иконке BitPie.NET на рабочем столе. 
 По умолчанию программа будет запущена автоматически после окончания работы инсталлятора.
 
@@ -59,7 +79,8 @@
 
     bitpie show
 
-Для запуска ПО BitPie.NET из исходников используйте следующую комманду:
+Для запуска ПО BitPie.NET из исходников используйте следующую комманду
+(если вы еще не выполнили команду `integrate`):
 
     cd bitpie
     python bitpie.py show
@@ -76,7 +97,7 @@
 Если вы запускаете ПО в системе без графического интерфейса,
 то вам нужно будет зарегистрироваться из командной строки самостоятельно:
 
-    python bitpie.py register <your_nickname>
+    bitpie register <your_nickname>
 
 Я рекомендую вам после входа в сеть создать еще одну копию секретного ключа в надежном месте. 
 Так у вас будет возможность восстановить ваши данные и служебную информацию в будущем,
@@ -84,7 +105,7 @@
 
 Вы можете сделать это из графического интерфейса или через коммандную строку:
 
-    python bitpie.py key copy <filename>
+    bitpie key copy <filename>
 
 
 ## Локальные данные
@@ -98,6 +119,6 @@
 
 Используйте эту комманду что бы получить справочную информацию о программе:
 
-    python bitpie.py help
+    bitpie help
 
 

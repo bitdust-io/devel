@@ -38,6 +38,8 @@
 
 ## Настройки сервиса
 * services/customer/enabled - включение/выключение сервиса `customer()`
+* services/customer/needed-space - общий объем запрошенного пользователем пространства под собственные данные 
+* services/customer/suppliers-number - желаемое колличество хранителей
 
 
 ## Связанные файлы проекта

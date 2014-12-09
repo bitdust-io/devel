@@ -10,6 +10,10 @@ services\service_supplier
 <div id="content">
 <h1>Сервис supplier()</h1>
 <h2>Описание</h2>
+<p>Служба <code>supplier()</code> позволяет другим узлам в сети BitPie.NET использовать машину самого пользователя
+как хранилище для их собственных данных. 
+Зашифрованные файлы, закачанные с других машин, по умолчанию сохраняются 
+в папку <code>.bitpie/customers/[IDURL владельца]</code>. </p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_gateway.html">gateway()</a></li>
@@ -22,6 +26,7 @@ services\service_supplier
 <h2>Настройки сервиса</h2>
 <ul>
 <li>services/supplier/enabled</li>
+<li>services/customer/donated-space - объем отданного в сеть пространства, которое может быть использовано другими пользователями</li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
