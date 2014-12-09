@@ -266,7 +266,7 @@ class P2PConnector(automat.Automat):
         """
         Action method.
         """
-        if driver.is_started('service_customers_rejector'):
+        if driver.is_started('service_customer_patrol'):
             from supplier import customers_rejector
             customers_rejector.A('restart')
 

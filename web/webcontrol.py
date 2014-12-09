@@ -7846,7 +7846,7 @@ def InitSettingsTreePages():
     'services/customer/enabled':                    SettingsTreeYesNoNode,
     'services/customer/needed-space':               SettingsTreeDiskSpaceNode,
     'services/customer/suppliers-number':           SettingsTreeComboboxNode,
-    'services/customers-rejector/enabled':          SettingsTreeYesNoNode,
+    'services/customer-patrol/enabled':             SettingsTreeYesNoNode,
     'services/data-sender/enabled':                 SettingsTreeYesNoNode,
     'services/entangled-dht/enabled':               SettingsTreeYesNoNode,
     'services/entangled-dht/udp-port':              SettingsTreeNumericPositiveNode,

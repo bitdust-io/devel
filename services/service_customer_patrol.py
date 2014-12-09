@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_customers_rejector.py
+#service_customer_patrol.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: service_customers_rejector
+.. module:: service_customer_patrol
 
 """
 
@@ -19,7 +19,7 @@ def create_service():
     
 class CustomersRejectorService(LocalService):
     
-    service_name = 'service_customers_rejector'
+    service_name = 'service_customer_patrol'
     config_path = 'services/customers-rejector/enabled'
     
     def dependent_on(self):

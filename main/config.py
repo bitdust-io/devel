@@ -386,7 +386,7 @@ class FixedTypesConfig(NotifiableConfig):
         'services/customer/enabled':                    TYPE_BOOLEAN,
         'services/customer/needed-space':               TYPE_DISK_SPACE,
         'services/customer/suppliers-number':           TYPE_COMBO_BOX,
-        'services/customers-rejector/enabled':          TYPE_BOOLEAN,
+        'services/customer-patrol/enabled':             TYPE_BOOLEAN,
         'services/data-sender/enabled':                 TYPE_BOOLEAN,
         'services/entangled-dht/enabled':               TYPE_BOOLEAN,
         'services/entangled-dht/udp-port':              TYPE_POSITIVE_INTEGER,

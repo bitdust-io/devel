@@ -1964,7 +1964,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/customer/needed-space', 
                                   diskspace.MakeStringFromBytes(DefaultNeededBytes()))
     config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
-    config.conf().setDefaultValue('services/customers-rejector/enabled', 'true')
+    config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
     config.conf().setDefaultValue('services/data-sender/enabled', 'true')
     config.conf().setDefaultValue('services/entangled-dht/enabled', 'true')
     config.conf().setDefaultValue('services/entangled-dht/udp-port', DefaultDHTPort())
