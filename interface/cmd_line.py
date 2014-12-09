@@ -870,16 +870,20 @@ def cmd_integrate(opts, args, overDict):
             /usr/bin/python bitpie.py $*
     If this is sterted without root permissions, it should create a file ~/bin/bitpie.
     """
+    def print_text(msg, nl='\n'):
+        """
+        """
+        sys.stdout.write(msg+nl)
     from system import bpio
     if bpio.Windows():
-        print_text('In Windows, this feature is not yet available')
+        print_text('this feature is not yet available in OS Windows.')
         return 0
     curpath = bpio.getExecutableDir()
     cmdpath = '/usr/local/bin/bitpie'
     src = "#!/bin/sh\n"
     src += "cd %s\n" % curpath
     src += "/usr/bin/python bitpie.py $*\n"
-    print_text('creating a command script : %s' % cmdpath)
+    print_text('creating a command script : %s ... ' % cmdpath, nl='')
     result = False
     try:
         f = open(cmdpath, 'w')
@@ -887,11 +891,12 @@ def cmd_integrate(opts, args, overDict):
         f.close()
         os.chmod(cmdpath, 0755)
         result = True
+        print_text('SUCCESS')
     except:
-        pass
+        print_text('FAILED')
     if not result:
         cmdpath = os.path.join(os.path.expanduser('~'), 'bin', 'bitpie')
-        print_text('try to create a command script in user home folder : %s' % cmdpath)
+        print_text('try to create a command script in user home folder : %s ... ' % cmdpath, nl='')
         try:
             if not os.path.isdir(os.path.join(os.path.expanduser('~'), 'bin')):
                 os.mkdir(os.path.join(os.path.expanduser('~'), 'bin'))
@@ -900,11 +905,12 @@ def cmd_integrate(opts, args, overDict):
             f.close()
             os.chmod(cmdpath, 0755)
             result = True
+            print_text('SUCCESS')
         except:
-            print_text('... failed!')
+            print_text('FAILED')
             return 0
     if result:
-        print_text('DONE. Now use "bitpie" command to access the software.')
+        print_text('now use "bitpie" command to access the BitPie.NET software.\n')
     return 0
 
 #------------------------------------------------------------------------------ 
