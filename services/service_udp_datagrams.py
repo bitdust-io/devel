@@ -31,10 +31,13 @@ class UDPDatagramsService(LocalService):
         from main import settings
         from main.config import conf
         udp_port = settings.getUDPPort()
-        if not udp.proto(udp_port):
-            udp.listen(udp_port)
         conf().addCallback('services/udp-datagrams/udp-port', 
             self._on_udp_port_modified)
+        if not udp.proto(udp_port):
+            try:
+                udp.listen(udp_port)
+            except:
+                return False
         return True
     
     def stop(self):

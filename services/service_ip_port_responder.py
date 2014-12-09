@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_stun_server.py
+#service_ip_port_responder.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: service_stun_server
+.. module:: service_ip_port_responder
 
 """
 
@@ -19,7 +19,7 @@ def create_service():
     
 class StunServerService(LocalService):
     
-    service_name = 'service_stun_server'
+    service_name = 'service_ip_port_responder'
     config_path = 'services/stun-server/enabled'
     
     def dependent_on(self):

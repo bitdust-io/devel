@@ -413,7 +413,7 @@ class FixedTypesConfig(NotifiableConfig):
         'services/rebuilding/enabled':                  TYPE_BOOLEAN,
         'services/restores/enabled':                    TYPE_BOOLEAN,
         'services/my-ip-port/enabled':                  TYPE_BOOLEAN,
-        'services/stun-server/enabled':                 TYPE_BOOLEAN,
+        'services/ip-port-responder/enabled':           TYPE_BOOLEAN,
         'services/supplier/donated-space':              TYPE_DISK_SPACE,
         'services/supplier/enabled':                    TYPE_BOOLEAN,
         'services/tcp-connections/enabled':             TYPE_BOOLEAN,

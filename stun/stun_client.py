@@ -130,7 +130,7 @@ class StunClient(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'start' :
                 self.state = 'RANDOM_NODES'
-                self.doDHTFindRandomNodes(arg)
+                self.doDHTFindRandomNode(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init' :
@@ -376,7 +376,7 @@ class StunClient(automat.Automat):
         # self.deferreds[new_key] = d
         
     def _some_nodes_found(self, nodes):
-        lg.out(12, 'stun_client._some_nodes_found %s' % str(nodes))
+        lg.out(12, 'stun_client._some_nodes_found : %d' % len(nodes))
         self.automat('found-some-nodes', nodes)
         
     def _nodes_not_found(self, err):

@@ -7872,7 +7872,7 @@ def InitSettingsTreePages():
     'services/rebuilding/enabled':                  SettingsTreeYesNoNode,
     'services/restores/enabled':                    SettingsTreeYesNoNode,
     'services/my-ip-port/enabled':                  SettingsTreeYesNoNode,
-    'services/stun-server/enabled':                 SettingsTreeYesNoNode,
+    'services/ip-port-responder/enabled':           SettingsTreeYesNoNode,
     'services/supplier/donated-space':              SettingsTreeDiskSpaceNode,
     'services/supplier/enabled':                    SettingsTreeYesNoNode,
     'services/tcp-connections/enabled':             SettingsTreeYesNoNode,

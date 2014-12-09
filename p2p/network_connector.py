@@ -288,7 +288,7 @@ class NetworkConnector(automat.Automat):
         if driver.is_started('service_service_entangled_dht'):
             from dht import dht_service
             dht_service.reconnect()
-        if driver.is_started('service_stun_server'):
+        if driver.is_started('service_ip_port_responder'):
             from stun import stun_server
             udp_port = int(settings.getUDPPort())
             stun_server.A('start', udp_port)
@@ -311,7 +311,7 @@ class NetworkConnector(automat.Automat):
         if driver.is_started('service_service_entangled_dht'):
             from dht import dht_service
             dht_service.disconnect()
-        if driver.is_started('service_stun_server'):
+        if driver.is_started('service_ip_port_responder'):
             from stun import stun_server
             stun_server.A('stop')
         # if driver.is_started('service_identity_server'): 
