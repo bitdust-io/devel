@@ -1,8 +1,8 @@
-# Сервис stun_client()
+# Сервис my_ip_port()
 
 
 ## Описание
-Сервис `stun_client()` предназначен для определения внешнего IP адреса и 
+Сервис `my_ip_port()` предназначен для определения внешнего IP адреса и 
 номер открытого UDP порта машины пользователя. 
 
 Эти служебные данные используются для обеспечения возможности приема входящих TCP соединений и 
@@ -30,11 +30,11 @@ UDP датаграмм от других узлов сети BitPie.NET.
 
 
 ## Настройки сервиса
-* services/stun-client/enabled - включение/выключение сервиса `stun_client()`
+* services/my-ip-port/enabled - включение/выключение сервиса `my_ip_port()`
 
 
 ## Связанные файлы проекта
-* [services/service_stun_client.py](services/service_stun_client.py)
+* [services/service_my_ip_port.py](services/service_my_ip_port.py)
 * [stun/stun_client.py](stun/stun_client.py)
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_stun_client.py
+#service_my_ip_port.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: service_stun_client
+.. module:: service_my_ip_port
 
 """
 
@@ -19,8 +19,8 @@ def create_service():
     
 class StunClientService(LocalService):
     
-    service_name = 'service_stun_client'
-    config_path = 'services/stun-client/enabled'
+    service_name = 'service_my_ip_port'
+    config_path = 'services/my-ip-port/enabled'
     
     def init(self):
         self._my_address = None

@@ -7871,7 +7871,7 @@ def InitSettingsTreePages():
     'services/private-messages/enabled':            SettingsTreeYesNoNode,
     'services/rebuilding/enabled':                  SettingsTreeYesNoNode,
     'services/restores/enabled':                    SettingsTreeYesNoNode,
-    'services/stun-client/enabled':                 SettingsTreeYesNoNode,
+    'services/my-ip-port/enabled':                  SettingsTreeYesNoNode,
     'services/stun-server/enabled':                 SettingsTreeYesNoNode,
     'services/supplier/donated-space':              SettingsTreeDiskSpaceNode,
     'services/supplier/enabled':                    SettingsTreeYesNoNode,

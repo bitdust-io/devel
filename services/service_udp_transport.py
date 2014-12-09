@@ -25,7 +25,7 @@ class UDPTransportService(LocalService):
     
     def dependent_on(self):
         return ['service_udp_datagrams',
-                'service_stun_client',
+                'service_my_ip_port',
                 'service_gateway',
                 ]
     

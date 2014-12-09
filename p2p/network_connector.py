@@ -292,7 +292,7 @@ class NetworkConnector(automat.Automat):
             from stun import stun_server
             udp_port = int(settings.getUDPPort())
             stun_server.A('start', udp_port)
-        if driver.is_started('service_stun_client'):
+        if driver.is_started('service_my_ip_port'):
             from stun import stun_client
             stun_client.A().dropMyExternalAddress()
             stun_client.A('start')    
@@ -321,7 +321,7 @@ class NetworkConnector(automat.Automat):
         if driver.is_started('service_gateway'):
             from transport import gateway
             gateway.stop()
-        # if driver.is_started('service_stun_client'):
+        # if driver.is_started('service_my_ip_port'):
         #     from stun import stun_client
         #     stun_client.A().drop...
         self.automat('network-down')

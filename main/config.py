@@ -412,7 +412,7 @@ class FixedTypesConfig(NotifiableConfig):
         'services/private-messages/enabled':            TYPE_BOOLEAN,
         'services/rebuilding/enabled':                  TYPE_BOOLEAN,
         'services/restores/enabled':                    TYPE_BOOLEAN,
-        'services/stun-client/enabled':                 TYPE_BOOLEAN,
+        'services/my-ip-port/enabled':                  TYPE_BOOLEAN,
         'services/stun-server/enabled':                 TYPE_BOOLEAN,
         'services/supplier/donated-space':              TYPE_DISK_SPACE,
         'services/supplier/enabled':                    TYPE_BOOLEAN,

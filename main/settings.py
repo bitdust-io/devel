@@ -1975,7 +1975,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/private-messages/enabled', 'true')
     config.conf().setDefaultValue('services/rebuilding/enabled', 'true')
     config.conf().setDefaultValue('services/restores/enabled', 'true')
-    config.conf().setDefaultValue('services/stun-client/enabled', 'true')
+    config.conf().setDefaultValue('services/my-ip-port/enabled', 'true')
     config.conf().setDefaultValue('services/stun-server/enabled', 'true')
     config.conf().setDefaultValue('services/supplier/enabled', 'true')
     config.conf().setDefaultValue('services/supplier/donated-space', 
