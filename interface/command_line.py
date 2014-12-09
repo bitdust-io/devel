@@ -951,7 +951,7 @@ def cmd_message(opts, args, overDict):
     return 2
 
 
-def cmd_integrate():
+def cmd_integrate(opts, args, overDict):
     """
     A platform-dependent method to make a "system" command called "bitpie".
     Than you can 

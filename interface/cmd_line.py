@@ -855,7 +855,7 @@ def option_name_to_path(name, default=''):
 #        return ret
 
 
-def cmd_integrate():
+def cmd_integrate(opts, args, overDict):
     """
     A platform-dependent method to make a "system" command called "bitpie".
     Than you can 
