@@ -864,12 +864,46 @@ def cmd_integrate():
         sudo python bitpie.py integrate
     
     Ubuntu: 
-        This will create an executable file /bin/bitpie with such content:
-            #!/bin/bash
-            cd /usr/share/bitpie
-            /usr/bin/python bitpie.py
-    Windows:   
+        This will create an executable file /usr/local/bin/bitpie with such content:
+            #!/bin/sh
+            cd [path to `bitpie` folder]
+            /usr/bin/python bitpie.py $*
+    If this is sterted without root permissions, it should create a file ~/bin/bitpie.
     """
+    from system import bpio
+    if bpio.Windows():
+        print_text('In Windows, this feature is not yet available')
+        return 0
+    curpath = bpio.getExecutableDir()
+    cmdpath = '/usr/local/bin/bitpie'
+    src = "#!/bin/sh\n"
+    src += "cd %s\n" % curpath
+    src += "/usr/bin/python bitpie.py $*\n"
+    print_text('creating a command script : %s' % cmdpath)
+    result = False
+    try:
+        f = open(cmdpath, 'w')
+        f.write(src)
+        f.close()
+        os.chmod(cmdpath, 0755)
+        result = True
+    except:
+        pass
+    if not result:
+        cmdpath = os.path.join(os.path.expanduser('~'), 'bin', 'bitpie')
+        print_text('try to create a command script in user home folder : %s' % cmdpath)
+        try:
+            f = open(cmdpath, 'w')
+            f.write(src)
+            f.close()
+            os.chmod(cmdpath, 0755)
+            result = True
+        except:
+            print_text('... failed!')
+            return 0
+    if result:
+        print_text('DONE. Now use "bitpie" command to access the software.')
+    return 0
 
 #------------------------------------------------------------------------------ 
 
