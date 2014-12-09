@@ -995,7 +995,7 @@ def cmd_integrate(opts, args, overDict):
         print_text('try to create a command script in user home folder : %s' % cmdpath)
         try:
             if not os.path.isdir(os.path.join(os.path.expanduser('~'), 'bin')):
-                os.mkdir(os.path.join(os.path.expanduser('~'), 'bin', 'bitpie'))
+                os.mkdir(os.path.join(os.path.expanduser('~'), 'bin'))
             f = open(cmdpath, 'w')
             f.write(src)
             f.close()
