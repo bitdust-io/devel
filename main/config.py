@@ -390,7 +390,7 @@ class FixedTypesConfig(NotifiableConfig):
         'services/data-motion/enabled':                 TYPE_BOOLEAN,
         'services/entangled-dht/enabled':               TYPE_BOOLEAN,
         'services/entangled-dht/udp-port':              TYPE_POSITIVE_INTEGER,
-        'services/fire-hire/enabled':                   TYPE_BOOLEAN,
+        'services/employer/enabled':                    TYPE_BOOLEAN,
         'services/gateway/enabled':                     TYPE_BOOLEAN,
         'services/id-server/enabled':                   TYPE_BOOLEAN,
         'services/id-server/host':                      TYPE_STRING,

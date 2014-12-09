@@ -1968,7 +1968,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/data-motion/enabled', 'true')
     config.conf().setDefaultValue('services/entangled-dht/enabled', 'true')
     config.conf().setDefaultValue('services/entangled-dht/udp-port', DefaultDHTPort())
-    config.conf().setDefaultValue('services/fire-hire/enabled', 'true')
+    config.conf().setDefaultValue('services/employer/enabled', 'true')
     config.conf().setDefaultValue('services/gateway/enabled', 'true')
     config.conf().setDefaultValue('services/list-files/enabled', 'true')
     config.conf().setDefaultValue('services/p2p-hookups/enabled', 'true')

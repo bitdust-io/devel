@@ -4279,7 +4279,7 @@ class SuppliersPage(Page):
         
         #---action replace---
         elif action == 'replace':
-            if driver.is_started('service_fire_hire'):
+            if driver.is_started('service_employer'):
                 idurl = arg(request, 'idurl')
                 if idurl != '':
                     if not idurl.startswith('http://'):
@@ -7850,7 +7850,7 @@ def InitSettingsTreePages():
     'services/data-motion/enabled':                 SettingsTreeYesNoNode,
     'services/entangled-dht/enabled':               SettingsTreeYesNoNode,
     'services/entangled-dht/udp-port':              SettingsTreeNumericPositiveNode,
-    'services/fire-hire/enabled':                   SettingsTreeYesNoNode,
+    'services/employer/enabled':                    SettingsTreeYesNoNode,
     'services/gateway/enabled':                     SettingsTreeYesNoNode,
     'services/id-server/enabled':                   SettingsTreeYesNoNode,
     'services/id-server/host':                      SettingsTreeUStringNode,

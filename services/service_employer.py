@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_fire_hire.py
+#service_employer.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -8,7 +8,7 @@
 #
 
 """
-.. module:: service_fire_hire
+.. module:: service_employer
 
 """
 
@@ -19,8 +19,8 @@ def create_service():
     
 class FireHireService(LocalService):
     
-    service_name = 'service_fire_hire'
-    config_path = 'services/fire-hire/enabled'
+    service_name = 'service_employer'
+    config_path = 'services/employer/enabled'
     
     def dependent_on(self):
         return ['service_customer',
