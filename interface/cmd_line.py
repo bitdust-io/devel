@@ -858,7 +858,7 @@ def option_name_to_path(name, default=''):
 def cmd_integrate():
     """
     A platform-dependent method to make a "system" command called "bitpie".
-    Then you can 
+    Than you can 
     
     Run: 
         sudo python bitpie.py integrate
@@ -893,6 +893,8 @@ def cmd_integrate():
         cmdpath = os.path.join(os.path.expanduser('~'), 'bin', 'bitpie')
         print_text('try to create a command script in user home folder : %s' % cmdpath)
         try:
+            if not os.path.isdir(os.path.join(os.path.expanduser('~'), 'bin')):
+                os.mkdir(os.path.join(os.path.expanduser('~'), 'bin', 'bitpie'))
             f = open(cmdpath, 'w')
             f.write(src)
             f.close()
@@ -1222,6 +1224,10 @@ def main():
             print_text('BitPie.NET is not running at the moment\n')
             return 0
         return cmd_friend(opts, args, overDict)
+
+    #---integrate---
+    elif cmd == 'integrate':
+        return cmd_integrate(opts, args, overDict)
     
 #    elif cmd == 'uninstall':
 #        return cmd_uninstall(opts, args, overDict)
