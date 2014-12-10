@@ -16,7 +16,7 @@ for fn in os.listdir(dirpath):
     fp = os.path.join(dirpath, fn)
     fphtml = os.path.join(subdir, fn[:-3] + '.html')
     fpcss = '../styles.css'
-    print fp, '->', fphtml
+    print fphtml
     try:
         if os.system('python -m markdown -x markdown.extensions.sane_lists %s > %s' % (fp, fphtml)):
             break

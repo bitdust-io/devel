@@ -10,6 +10,20 @@ services\service_rebuilding
 <div id="content">
 <h1>—ервис rebuilding()</h1>
 <h2>ќписание</h2>
+<p>—ервис <code>rebuilding()</code> предназначен дл€ поддержани€ размещенных в сети BitPie.NET 
+данных пользовател€ в целостном состо€нии, так что бы в любой момент они были доступны дл€ скачивани€.</p>
+<p>ѕри старте службы создаютс€ экземпл€ры автоматов <code>backup_rebuilder()</code> и <code>raid_worker()</code>, которые
+организуют процесс автоматического восстановлени€ файлов на машинах хранителей.</p>
+<p>ѕри смене одного из хранителей службой <code>employer()</code>, автоматически запускаетс€ процесс пересборки хранимых
+данных, которым руководит автомат <code>backup_rebuilder()</code>: </p>
+<ul>
+<li>данные скачиваютс€ с отсальных доступных в данный момент хранителей</li>
+<li>активизируетс€ автомат <code>raid_worker()</code>, который воссоздает потер€нные куски через RAID массив</li>
+<li>вновь созданные куски закачиваютс€ на нового хранител€</li>
+</ul>
+<p>ѕодробнее о процессе автоматического восстановлени€ данных читайте в разделе <a href="...">...</a>.</p>
+<p>ѕри отключении сервиса <code>rebuilding()</code> будет остановлено автоматическое восстановление и
+все уже размещенные в сети BitPie.NET данные пользовател€ окажутс€ под угрозой полной потери.</p>
 <h2>«ависит от</h2>
 <ul>
 <li><a href="../services/service_data_sender.html">data_motion()</a></li>
@@ -19,13 +33,19 @@ services\service_rebuilding
 <li><a href="../services/service_backups.html">backups()</a></li>
 </ul>
 <h2>«апуск автоматов</h2>
+<ul>
+<li><a href="../storage/backup_rebuilder.html">backup_rebuilder()</a></li>
+<li><a href="../storage/raid_worker.html">raid_worker()</a></li>
+</ul>
 <h2>Ќастройки сервиса</h2>
 <ul>
-<li>services/rebuilding/enabled</li>
+<li>services/rebuilding/enabled - включение/выключение сервиса <code>rebuilding()</code></li>
 </ul>
 <h2>—в€занные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_rebuilding.py">service_rebuilding.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_rebuilding.py">services/service_rebuilding.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/backup_rebuilder.py">storage/backup_rebuilder.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/raid_worker.py">storage/raid_worker.py</a></li>
 </ul>
 <br>
 <br>
