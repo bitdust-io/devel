@@ -15,9 +15,9 @@
 from services.local_service import LocalService
 
 def create_service():
-    return DataSenderService()
+    return DataMotionService()
     
-class DataSenderService(LocalService):
+class DataMotionService(LocalService):
     
     service_name = 'service_data_motion'
     config_path = 'services/data-motion/enabled'
@@ -36,9 +36,9 @@ class DataSenderService(LocalService):
     def stop(self):
         from customer import io_throttle
         from customer import data_sender
-        io_throttle.shutdown()
         data_sender.SetShutdownFlag()
         data_sender.Destroy()
+        io_throttle.shutdown()
         return True
     
     

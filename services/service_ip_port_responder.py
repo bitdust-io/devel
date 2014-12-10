@@ -15,9 +15,9 @@
 from services.local_service import LocalService
 
 def create_service():
-    return StunServerService()
+    return IPPortResponderService()
     
-class StunServerService(LocalService):
+class IPPortResponderService(LocalService):
     
     service_name = 'service_ip_port_responder'
     config_path = 'services/stun-server/enabled'

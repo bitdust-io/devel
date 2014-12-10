@@ -8,8 +8,19 @@ services\service_employer
 </head>
 <body>
 <div id="content">
-<h1>Сервис fire_hire()</h1>
+<h1>Сервис employer()</h1>
 <h2>Описание</h2>
+<p>Сервис <code>employer()</code> это один из ключевых элементов клиентского ПО BitPie.NET, который обеспечивает
+возможность распределенного хранения данных на многих узлах в сети.</p>
+<p>При старте службы, создается экземпляр автомата <code>fire_hire()</code>, он производит найм и увольнение хранителей 
+для пользователя. Программа BitPie.NET должна непрерывно работать на их машинах, а служба <code>supplier()</code>
+позволяет им предоставить часть своих жестких дисков и создает приватное и распрелеленное 
+файло-хранилище для самого пользователя. </p>
+<p>Автомат <code>fire_hire()</code> производит поиск новых и замену существующих хранителей - его задача поддерживать 
+общую максимальную доступность и работоспособность всего набора хранителей в каждый момент времени.</p>
+<p>Подбор новых хранителей производится случайным образом, путем выбора произвольного узла через DHT сеть
+и запрос услуги хранения данных. Этим управляет автомат <code>supplier_finder()</code>, экземпляр которого создается 
+и запускается для выбора нового хранителя.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_customer.html">customer()</a></li>
@@ -19,13 +30,19 @@ services\service_employer
 <li><a href="../services/service_backups.html">backups()</a></li>
 </ul>
 <h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../customer/fire_hire.html">fire_hire()</a></li>
+<li><a href="../customer/supplier_finder.html">supplier_finder()</a></li>
+</ul>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/fire-hire/enabled</li>
+<li>services/fire-hire/enabled - включение/выключение сервиса <code>employer()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_fire_hire.py">service_fire_hire.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_fire_hire.py">services/service_fire_hire.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/customer/fire_hire.py">customer/fire_hire.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/customer/supplier_finder.py">customer/supplier_finder.py</a></li>
 </ul>
 <br>
 <br>

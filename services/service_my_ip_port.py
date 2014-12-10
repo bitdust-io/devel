@@ -15,9 +15,9 @@
 from services.local_service import LocalService
 
 def create_service():
-    return StunClientService()
+    return MyIPPortService()
     
-class StunClientService(LocalService):
+class MyIPPortService(LocalService):
     
     service_name = 'service_my_ip_port'
     config_path = 'services/my-ip-port/enabled'

@@ -15,9 +15,9 @@
 from services.local_service import LocalService
 
 def create_service():
-    return FireHireService()
+    return EmployerService()
     
-class FireHireService(LocalService):
+class EmployerService(LocalService):
     
     service_name = 'service_employer'
     config_path = 'services/employer/enabled'

@@ -10,6 +10,16 @@ services\service_data_motion
 <div id="content">
 <h1>Сервис data_motion()</h1>
 <h2>Описание</h2>
+<p>Сетевая служба <code>data_motion()</code> ответственна за скачивание/загрузку пользовательских данных
+с/на машины хранителей. </p>
+<p>Поддерживаются две отдельные очереди пакетов для приема/передачи данных для каждого хранителя,
+а так же может быть установлено колличество одновременных трансферов на отдельного хранителя.</p>
+<p>Подготовленные для отправки файлы предварительно сохраняются в подпапке <code>.bitpie/backups/</code>,
+откуда их забирают сетевые транспортные протоколы и запускают трансфер на заданный узел в сети BitPie.NET.</p>
+<p>При старте сервиса создается экземпляр автомата <code>data_sender()</code>, он подготавливает список файлов
+для передачи на хранителей и помещает их в исходящую очередь пакетов.</p>
+<p>При отключении службы <code>data_motion()</code> станет невозможно передать или получить данные с других узлов в сети
+и будут отключены сервисы нижних уровней реализующие распределенное хранение данных.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_customer.html">customer()</a></li>
@@ -20,13 +30,16 @@ services\service_data_motion
 <li><a href="../services/service_backup_db.html">backup_db()</a></li>
 </ul>
 <h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../customer/data_sender.html">data_sender()</a></li>
+</ul>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/data-motion/enabled</li>
+<li>services/data-motion/enabled - включение/выключение сервиса <code>data_motion()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_data_motion.py">service/service_data_motion.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_data_motion.py">services/service_data_motion.py</a></li>
 </ul>
 <br>
 <br>

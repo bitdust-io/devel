@@ -10,6 +10,14 @@ services\service_list_files
 <div id="content">
 <h1>Сервис list_files()</h1>
 <h2>Описание</h2>
+<p>Cетевая служба <code>list_files()</code> ответственна за поддержание оперативного списка файлов,
+принадлежащих пользователю, которые хранятся на машинах его хранителей. </p>
+<p>При старте сервиса, будет создан экземпляр автомата <code>list_files_orator()</code> и произойдет его инициализация.
+Этот автомат запрашивает список хранимых файлов с машин хранителей
+и поддерживает оперативные копии этих данных на жестком диске. 
+Список файлов от каждого хранителя будет записан в локальный файл <code>.bitpie/supplier/[IDURL]/listfiles</code>.</p>
+<p>При отключении службы <code>list_files()</code> станет невозможно получить информацию о хранимых в сети данных
+и отключены сервисы нижних уровней реализующие распределенное хранение данных.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_customer.html">customer()</a></li>
@@ -20,13 +28,17 @@ services\service_list_files
 <li><a href="../services/service_backups.html">backups()</a></li>
 </ul>
 <h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../customer/list_files_orator.html">list_files_orator()</a></li>
+</ul>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/list-files/enabled</li>
+<li>services/list-files/enabled - включение/выключение сервиса <code>list_files()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_list_files.py">service_list_files.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_list_files.py">services/service_list_files.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/customer/list_files_orator.py">customer/list_files_orator.py</a></li>
 </ul>
 <br>
 <br>

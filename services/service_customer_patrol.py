@@ -15,9 +15,9 @@
 from services.local_service import LocalService
 
 def create_service():
-    return CustomersRejectorService()
+    return CustomerPatrolService()
     
-class CustomersRejectorService(LocalService):
+class CustomerPatrolService(LocalService):
     
     service_name = 'service_customer_patrol'
     config_path = 'services/customers-rejector/enabled'
@@ -30,10 +30,10 @@ class CustomersRejectorService(LocalService):
         from supplier import customers_rejector
         from main.config import conf
         from supplier import local_tester
-        local_tester.init()
         customers_rejector.A('restart')
         conf().addCallback('services/supplier/donated-space',
             self._on_donated_space_modified)
+        local_tester.init()
         return True
     
     def stop(self):
