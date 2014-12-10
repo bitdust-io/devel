@@ -27,8 +27,8 @@
 
 
 ## Влияет на
-* [data_sender()](services/service_data_sender.md)
-* [fire_hire()](services/service_fire_hire.md)
+* [data_motion()](services/service_data_sender.md)
+* [employer()](services/service_fire_hire.md)
 * [list_files()](services/service_list_files.md)
 
 

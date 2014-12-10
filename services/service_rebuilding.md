@@ -6,7 +6,7 @@
 
 
 ## Зависит от
-* [data_sender()](services/service_data_sender.md)
+* [data_motion()](services/service_data_sender.md)
 
 
 ## Влияет на
