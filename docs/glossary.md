@@ -10,7 +10,7 @@
     предоставляемое и распространяемое [BitPie.NET Inc.](http://bitpie.net) под данной 
     [лицензией](http://bitpie.net/license.html)  
   
-##### <a id="node"></a>__Узел__
+##### <a id="node"></a>__Node__
 :   компьютер, подключенный к сети Интернет, на котором установлено [ПО BitPie.NET](#software)  
 
 ##### <a id="network"></a>__Сеть BitPie.NET__
