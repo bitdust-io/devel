@@ -13,6 +13,26 @@ h2 {
     margin-bottom: 5px;
 }
 
+h3 {
+    font-size: 1.7em;
+    margin-bottom: 5px;
+}
+
+h4 {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+}
+
+h5 {
+    font-size: 1.2em;
+    margin-bottom: 5px;
+}
+
+h6 {
+    font-size: 1.0em;
+    margin-bottom: 5px;
+}
+
 pre { 
     padding: 10px; 
     border: none; 
