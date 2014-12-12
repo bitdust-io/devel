@@ -10,6 +10,19 @@ services\service_backups
 <div id="content">
 <h1>Сервис backups()</h1>
 <h2>Описание</h2>
+<p>В сетевой службе <code>backups()</code> собран функционал, реализующий хранение распределенных копий пользовательских
+данных на машинах хранителей.</p>
+<p>При старте сервиса происходит запуск экземпляра автомата <code>backup_monitor()</code>, он следит за уже
+размещенными в сети данными. </p>
+<p>Автомат <code>backup()</code> управляет созданием новой резервной копии файла или папки с локального диска
+пользователя. Будет создан новый экземпляр автомата для каждого активного процесса резервирования
+данных. Сгенерированные файлы, сперва помещаются в подпапку <code>.bitpie/backups/</code>, а позже пересылаются
+на машины хранителей. В настройках ПО можно настроить их автоматическое удаление после окончание
+трансфера.</p>
+<p>Подробнее о процессе резервирования данных читайте в разделе <a href="...">...</a>.</p>
+<p>При отключении сервиса <code>backups()</code>, будет невозможна загрузка новых копий данных пользователя на его хранитлей,
+а также прекращен процесс автоматического слежения за уже размещенными в сети данными - рано или поздно
+это приведет к их полной утрате.</p>
 <h2>Зависит от</h2>
 <ul>
 <li><a href="../services/service_list_files.html">list_files()</a></li>
@@ -21,13 +34,23 @@ services\service_backups
 <li><a href="../services/service_restores.html">restores()</a></li>
 </ul>
 <h2>Запуск автоматов</h2>
+<ul>
+<li><a href="../storage/backup.html">backup()</a></li>
+<li><a href="../storage/backup_monitor.html">backup_monitor()</a></li>
+</ul>
 <h2>Настройки сервиса</h2>
 <ul>
-<li>services/backups/enabled</li>
+<li>services/backups/enabled - включение/выключение сервиса <code>backups()</code></li>
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_backups.py">service_backups.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_backups.py">services/service_backups.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/backup.py">storage/backup.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/backup_control.py">storage/backup_control.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/backup_fs.py">storage/backup_fs.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/backup_matrix.py">storage/backup_matrix.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/backup_monitor.py">storage/backup_monitor.py</a></li>
+<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/backup_tar.py">storage/backup_tar.py</a></li>
 </ul>
 <br>
 <br>

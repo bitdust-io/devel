@@ -15,9 +15,9 @@
 from services.local_service import LocalService
 
 def create_service():
-    return BackupMonitorService()
+    return BackupsService()
     
-class BackupMonitorService(LocalService):
+class BackupsService(LocalService):
     
     service_name = 'service_backups'
     config_path = 'services/backups/enabled'

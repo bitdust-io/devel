@@ -18,7 +18,7 @@ for fn in os.listdir(dirpath):
     fpcss = '../styles.css'
     print fphtml
     try:
-        if os.system('python -m markdown -x markdown.extensions.sane_lists %s > %s' % (fp, fphtml)):
+        if os.system('python -m markdown -x markdown.extensions.sane_lists -x markdown.extensions.def_list %s > %s' % (fp, fphtml)):
             break
         if os.system('python utf8_to_ansi.py %s %s' % (fphtml, fphtml)):
             break

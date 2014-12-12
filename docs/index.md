@@ -3,7 +3,7 @@
 ## Содержание
 * [Начало](docs/beginning.md)
 * [Установка](docs/install.md)
-* [Словарь терминов](docs/glossary.md)
+* [Словарь понятий](docs/glossary.md)
 * [Комманды](docs/cmdline.md)
 * [Пользовательские настройки](docs/settings.md)
 * [Идентификация пользователей](docs/identities.md)

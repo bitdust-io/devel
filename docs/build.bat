@@ -6,7 +6,7 @@ for %%i in (*.md) DO (
     set fmd=%%i
     set fhtml=!fmd:~0,-3!.html
     @echo !fhtml! 
-    python -m markdown !fmd! > !fhtml!
+    python -m markdown -x markdown.extensions.sane_lists -x markdown.extensions.def_list !fmd! > !fhtml!
     python utf8_to_ansi.py !fhtml! !fhtml!
     python fix_html.py !fhtml! !fhtml! styles.css    
 )
