@@ -3136,7 +3136,7 @@ class MainPage(Page):
         src = self._body(request)
         
         src += '<br><br><table><tr><td><div align=left>\n'
-        availibleSpace = diskspace.MakeStringFromString(settings.getNeededString())
+        availibleSpace = diskspace.MakeStringFromBytes(settings.getNeededBytes())
         backupsSizeTotal = backup_fs.sizebackups()
         backupsSizeSupplier = -1 if contactsdb.num_suppliers() == 0 else backupsSizeTotal/contactsdb.num_suppliers()
         usedSpaceTotal = diskspace.MakeStringFromBytes(backupsSizeTotal)
