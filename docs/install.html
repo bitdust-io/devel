@@ -15,22 +15,17 @@ install
 <p>Это архив Windows Installer, программа BitPie.NET написана на языке <a href="http://python.org">Python</a> и собрана под Windows 
 с использованием утилиты <a href="http://www.py2exe.org/">py2exe</a>.</p>
 <p>Программа BitPie.NET будет установлена на ваш персональный компьютер в папку </p>
-<ul>
-<li><code>С:\Users\&lt;имя пользователя&gt;\.bitpie\</code> для Windows 8.1, Windows 7, и Windows Vista</li>
-<li><code>C:\Documents and Settings\&lt;имя пользователя&gt;\.bitpie\</code> для Windows XP и Windows 2000</li>
-</ul>
-<h2>Ubuntu / Debian</h2>
+<pre><code>* `С:\Users\&lt;имя пользователя&gt;\.bitpie\` для Windows 8.1, Windows 7, и Windows Vista
+* `C:\Documents and Settings\&lt;имя пользователя&gt;\.bitpie\` для Windows XP и Windows 2000
+</code></pre>
+<h2>Ubuntu</h2>
 <p>Скачайте файл <a href="http://bitpie.net/download/bitpie-ubuntu-stable.deb">bitpie-ubuntu-stable.deb</a> и запустите его.</p>
 <p>Это автоматически установит пакет <code>bitpie</code> на ваш компьютер.</p>
 <p>Запускаемые файлы программы BitPie.NET располагаются в папке <code>/usr/share/bitpie</code> 
 в открытых исходных кодах на языке Python. </p>
 <h2>Из исходников</h2>
-<p>В Ubuntu нужно просто установить все зависимости используя менеджер пакетов:</p>
-<pre><code>sudo apt-get update
-sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto
-</code></pre>
-<p>Для графического интерфейса необходимо так же установить следующие пакеты:</p>
-<pre><code>sudo apt-get install python-wxgtk2.8 python-imaging
+<p>В Ubuntu нужно просто установить все зависимости одной командой:</p>
+<pre><code>sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging
 </code></pre>
 <p>Пользователи Windows могут использовать приведенные ниже ссылки для установки необходимых пакетов самостоятельно:</p>
 <ul>
@@ -44,32 +39,18 @@ sudo apt-get install python python-twisted python-pyasn1 python-openssl python-c
 </ul>
 <p>Далее скачайте файл <a href="http://bitpie.net/download/bitpie.tar.gz">bitpie.tar.gz</a> содержащий исходный код BitPie.NET. 
 Распакуйте архив в любое удобное для вас место.</p>
-<pre><code>wget http://bitpie.net/download/bitpie.tar.gz
-cd bitpie-0.1.14.879/
-cd bitpie
-</code></pre>
 <p>Еще один способ получить исходники это клонировать себе наш публичный Git репозиторий:</p>
-<pre><code>sudo apt-get install git
-git clone http://gitlab.bitpie.net/devel/bitpie.git
-cd bitpie
-</code></pre>
-<p>В этом случае вы всегда сможете одной коммандой обновиться до самой свежей версии ПО:</p>
-<pre><code>git pull
-</code></pre>
-<p>Я рекомендую сразу после получения исходников использовать следующую комманду, которая создаст
-алиас для BitPie.NET в вашей ОС:</p>
-<pre><code>sudo python bitpie.py integrate
+<pre><code>git clone http://gitlab.bitpie.net/devel/bitpie.git
 </code></pre>
 <h2>Запуск</h2>
-<p>Если вы установили программу BitPie.NET используя автоматический инсталлятор,
+<p>Если вы установили программу BitPie.NET используя автоматический инсталляр
 то просто кликните дважды по иконке BitPie.NET на рабочем столе. 
 По умолчанию программа будет запущена автоматически после окончания работы инсталлятора.</p>
 <p>При утсановке <code>deb</code> пакета в операционной системе Ubuntu доступ к программе через коммандную строку, 
 возможен используя автоматически созданный алиас <code>bitpie</code>.</p>
 <pre><code>bitpie show
 </code></pre>
-<p>Для запуска ПО BitPie.NET из исходников используйте следующую комманду
-(если вы еще не выполнили команду <code>integrate</code>):</p>
+<p>Для запуска ПО BitPie.NET из исходников используйте следующую комманду:</p>
 <pre><code>cd bitpie
 python bitpie.py show
 </code></pre>
@@ -80,22 +61,23 @@ python bitpie.py show
 когда они соединяются с вами и ведется обмен данными. </p>
 <p>Если вы запускаете ПО в системе без графического интерфейса,
 то вам нужно будет зарегистрироваться из командной строки самостоятельно:</p>
-<pre><code>bitpie register &lt;your_nickname&gt;
+<pre><code>python bitpie.py register &lt;your_nickname&gt;
 </code></pre>
 <p>Я рекомендую вам после входа в сеть создать еще одну копию секретного ключа в надежном месте. 
 Так у вас будет возможность восстановить ваши данные и служебную информацию в будущем,
 например если данные на вашем ПК были утеряны.</p>
 <p>Вы можете сделать это из графического интерфейса или через коммандную строку:</p>
-<pre><code>bitpie key copy &lt;filename&gt;
+<pre><code>python bitpie.py key copy &lt;filename&gt;
 </code></pre>
 <h2>Локальные данные</h2>
 <p>Все файлы, которые относятся к программе BitPie.NET, по умолчанию располагаются в папке 
 <code>~/.bitpie</code>
 Ваши настройки, копии локальных данных, файлы принадлежащие и локальные файлы сохраняются в папке .</p>
 <h2>Справка</h2>
-<p>Используйте эту комманду что бы получить справочную информацию о программе:</p>
-<pre><code>bitpie help
+<p>Используйте эту комманду что бы получить больше информации через командную строку:</p>
+<pre><code>python bitpie.py help
 </code></pre>
+<p>Описание</p>
 <br>
 <br>
 </div>
