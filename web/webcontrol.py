@@ -2792,13 +2792,13 @@ class MainPage(Page):
                         pathID, iter, iterID = backup_fs.AddFile(localPath, True)
                         self.htmlComment += html_comment('new file was added:')
                     backup_control.StartSingle(pathID)
-                    backup_fs.Calculate()
-                    backup_control.Save()
-                    self.listExpandedDirs = None
-                    self.listExpandedVersions = None
                     self.htmlComment += html_comment('  %s' % localPath)
                 else:
                     backup_control.StartSingle(pathID)
+                backup_fs.Calculate()
+                backup_control.Save()
+                self.listExpandedDirs = None
+                self.listExpandedVersions = None
                 self.htmlComment += html_comment('  %s : backup started' % pathID)
 
         #---startpathrecursive---
@@ -2811,7 +2811,7 @@ class MainPage(Page):
                 if newPathID:
                     self.htmlComment += html_comment('%d items were added to catalog, parent path ID is:' % num)
                     self.htmlComment += html_comment('  %s %s' % (newPathID.ljust(27), opendir.ljust(70)))
-                    backup_control.StartRecursive(self.selected_items.pop())
+                    backup_control.StartRecursive(newPathID)
                     self.listExpandedDirs = None
                     self.listExpandedVersions = None
                     self.htmlComment += html_comment('  %s : recursive backup started' % newPathID)
