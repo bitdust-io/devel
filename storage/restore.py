@@ -149,7 +149,7 @@ class restore(automat.Automat):
         self.packetInCallback = None
         self.blockRestoredCallback = None
         
-        automat.Automat.__init__(self, 'restore', 'AT_STARTUP', 4)
+        automat.Automat.__init__(self, 'restore_%s' % self.BackupID, 'AT_STARTUP', 4)
         events.info('restore', '%s start restoring' % self.BackupID)
         # lg.out(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 
@@ -414,7 +414,7 @@ class restore(automat.Automat):
         events.info('restore', '%s restoring were aborted' % self.BackupID)
     
     def doReportFailed(self, arg):
-        lg.out(6, "restore.doReportFailed ERROR - the block does not look good")
+        lg.out(6, "restore.doReportFailed ERROR %s : the block does not look good" % str(arg))
         self.Done = True
         self.MyDeferred.errback(Exception(self.BackupID+' failed'))
         events.notify('restore', '%s failed to restore block number %d' % (self.BackupID, self.BlockNumber))

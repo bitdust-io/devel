@@ -87,9 +87,7 @@ def restore_done(x, tarfilename, outputlocation, callback):
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
-    
     backupID, result = x.split(' ')
-    
     if result == 'done':
         p = backup_tar.extracttar(tarfilename, outputlocation)
         if p:
@@ -97,15 +95,11 @@ def restore_done(x, tarfilename, outputlocation, callback):
             d.addBoth(extract_done, backupID, tarfilename, callback)
             return
         result = 'extract failed'
-
     _WorkingBackupIDs.pop(backupID, None)
     _WorkingRestoreProgress.pop(backupID, None)
-
     tmpfile.throw_out(tarfilename, 'restore '+result)
-
     if OnRestoreDoneFunc is not None:
         OnRestoreDoneFunc(backupID, result)
-    
     if callback:
         callback(backupID, result)
 
@@ -115,20 +109,24 @@ def restore_failed(x, tarfilename, callback):
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     global OnRestoreDoneFunc
-
-    if isinstance(x, Exception) or isinstance(x, str):
-        backupID, result = str(x).split(' ')
-        
-        _WorkingBackupIDs.pop(backupID, None)
-        _WorkingRestoreProgress.pop(backupID, None)
-        
-        tmpfile.throw_out(tarfilename, 'restore '+result)
-    
-        if OnRestoreDoneFunc is not None:
-            OnRestoreDoneFunc(backupID, result)
-        
-        if callback:
-            callback(backupID, result) 
+    backupID = result = None
+    try:
+        if isinstance(x, Exception):
+            backupID, result = x.getErrorMessage().split(' ')
+        elif isinstance(x, str):
+            backupID, result = x.split(' ')
+    except:
+        lg.exc()
+    if not backupID:
+        lg.warn('Unknown backupID: %s' % str(x))
+        return
+    _WorkingBackupIDs.pop(backupID, None)
+    _WorkingRestoreProgress.pop(backupID, None)
+    tmpfile.throw_out(tarfilename, 'restore '+result)
+    if OnRestoreDoneFunc is not None:
+        OnRestoreDoneFunc(backupID, result)
+    if callback:
+        callback(backupID, result) 
 
 
 def Start(backupID, outputLocation, callback=None):

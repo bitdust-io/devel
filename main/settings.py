@@ -1941,7 +1941,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/backups/max-block-size', 
                                   diskspace.MakeStringFromBytes(DefaultBackupMaxBlockSize()))
     config.conf().setDefaultValue('services/backups/max-copies', '2')
-    config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'true')
+    config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
     config.conf().setDefaultValue('services/id-server/enabled', 'false')
     config.conf().setDefaultValue('services/id-server/host', '')
