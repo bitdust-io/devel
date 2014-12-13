@@ -2801,6 +2801,21 @@ class MainPage(Page):
                     backup_control.StartSingle(pathID)
                 self.htmlComment += html_comment('  %s : backup started' % pathID)
 
+        #---startpathrecursive---
+        elif action == 'startpathrecursive':
+            opendir = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
+            if opendir:
+                newPathID, iter, iterID, num = backup_fs.AddLocalPath(opendir, True)
+                backup_fs.Calculate()
+                backup_control.Save()
+                if newPathID:
+                    self.htmlComment += html_comment('%d items were added to catalog, parent path ID is:' % num)
+                    self.htmlComment += html_comment('  %s %s' % (newPathID.ljust(27), opendir.ljust(70)))
+                    backup_control.StartRecursive(self.selected_items.pop())
+                    self.listExpandedDirs = None
+                    self.listExpandedVersions = None
+                    self.htmlComment += html_comment('  %s : recursive backup started' % newPathID)
+
         #---startid---
         elif action == 'startid':
             pathID = misc.unpack_url_param(arg(request, 'pathid'), '')

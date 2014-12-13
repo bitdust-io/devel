@@ -14,7 +14,7 @@ A methods to just store text constants, used to print command-line instructions.
 """
 
 def usage():
-    return '''usage: python bitpie.py [options] [command] [arguments]
+    return '''usage: bitpie [options] [command] [arguments]
     
 Commands:
   start
@@ -23,7 +23,6 @@ Commands:
   stop
   show
   register <account name> [private key size] [preferred id server]
-  recover <private key filename> [idurl or username]
   key copy
   key copy <filename for copy of private key>
   key print
@@ -59,7 +58,8 @@ Commands:
   version
   help
 '''    
-    
+  
+#  recover <private key filename> [idurl or username]
 #  schedule <folder> [schedule in compact format]
 #  money
 #  money transfer <username or idurl> <amount>
@@ -68,7 +68,7 @@ Commands:
 
 
 def help():
-    return '''usage: python bitpie.py [options] [command] [arguments]
+    return '''usage: bitpie [options] [command] [arguments]
 
 Commands:
   [start]               start BitPie.NET
@@ -85,9 +85,6 @@ Commands:
                         generate a new private key and register new account
                         key size can be 1024, 2048 or 4096
 
-  recover <private key filename> [idurl or username]
-                        recover existing account with your private key file
-                        
   key copy              copy private key to clipboard to paste with Ctrl+V somewhere 
   
   key copy <a filename for copy of private key>
@@ -183,6 +180,10 @@ Commands:
 
 '''
 
+
+# recover <private key filename> [idurl or username]
+#                       recover existing account with your private key file
+#                       
 #  schedule <folder> [schedule in compact format]
 #                        set or get a schedule for a folder to start backups automatically
 #   help schedule         print format description to set scheduled backup

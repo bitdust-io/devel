@@ -196,7 +196,7 @@ def parser():
     """
     from optparse import OptionParser, OptionGroup
     parser = OptionParser(usage = usage())
-    group = OptionGroup(parser, "Log")
+    group = OptionGroup(parser, "Logs")
     group.add_option('-d', '--debug',
                         dest='debug',
                         type='int',
@@ -217,34 +217,34 @@ def parser():
                         dest='output',
                         type='string',
                         help='print log messages to the file',)
-    group.add_option('-t', '--tempdir',
-                        dest='tempdir',
-                        type='string',
-                        help='set location for temporary files, default is ~/.bitpie/temp',)
+#    group.add_option('-t', '--tempdir',
+#                        dest='tempdir',
+#                        type='string',
+#                        help='set location for temporary files, default is ~/.bitpie/temp',)
     group.add_option('--twisted',
                         dest='twisted',
                         action='store_true',
                         help='show twisted log messages too',)
-    group.add_option('--memdebug',
-                        dest='memdebug',
-                        action='store_true',
-                        help='start web server to debug memory usage, need cherrypy and dozer modules',)
+#    group.add_option('--memdebug',
+#                        dest='memdebug',
+#                        action='store_true',
+#                        help='start web server to debug memory usage, need cherrypy and dozer modules',)
     parser.add_option_group(group)
-    group = OptionGroup(parser, "Network")
-    group.add_option('--tcp-port',
-                        dest='tcp_port',
-                        type='int',
-                        help='set tcp port number for incoming connections',)
-    group.add_option('--no-upnp',
-                        dest='no_upnp',
-                        action='store_true',
-                        help='do not use UPnP',)
-    group.add_option('--memdebug-port',
-                        dest='memdebug_port',
-                        type='int',
-                        default=9996,
-                        help='set port number for memdebug web server, default is 9995',)    
-    parser.add_option_group(group)
+#    group = OptionGroup(parser, "Network")
+#    group.add_option('--tcp-port',
+#                        dest='tcp_port',
+#                        type='int',
+#                        help='set tcp port number for incoming connections',)
+#    group.add_option('--no-upnp',
+#                        dest='no_upnp',
+#                        action='store_true',
+#                        help='do not use UPnP',)
+#    group.add_option('--memdebug-port',
+#                        dest='memdebug_port',
+#                        type='int',
+#                        default=9996,
+#                        help='set port number for memdebug web server, default is 9995',)    
+#    parser.add_option_group(group)
     return parser
 
 
@@ -254,18 +254,18 @@ def override_options(opts, args):
     This method return a dictionary where is stored a key-value pairs for new options.   
     """
     overDict = {}
-    if opts.tcp_port:
-        overDict['services/tcp-connections/tcp-port'] = str(opts.tcp_port)
-    if opts.no_upnp:
-        overDict['services/tcp-connections/upnp-enabled'] = 'false'
+#    if opts.tcp_port:
+#        overDict['services/tcp-connections/tcp-port'] = str(opts.tcp_port)
+#    if opts.no_upnp:
+#        overDict['services/tcp-connections/upnp-enabled'] = 'false'
     if opts.debug or str(opts.debug) == '0':
         overDict['logs/debug-level'] = str(opts.debug)
-    if opts.memdebug:
-        overDict['logs/memdebug-enable'] = str(opts.memdebug)
-        if opts.memdebug_port:
-            overDict['logs/memdebug-port'] = str(opts.memdebug_port)
-        else:
-            overDict['logs/memdebug-port'] = '9996'
+#    if opts.memdebug:
+#        overDict['logs/memdebug-enable'] = str(opts.memdebug)
+#        if opts.memdebug_port:
+#            overDict['logs/memdebug-port'] = str(opts.memdebug_port)
+#        else:
+#            overDict['logs/memdebug-port'] = '9996'
     return overDict
 
 #------------------------------------------------------------------------------ 

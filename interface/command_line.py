@@ -353,6 +353,16 @@ def cmd_backups(opts, args, overDict):
         run_url_command(url).addCallback(print_and_stop)
         reactor.run()
         return 0
+    
+    elif args[1] == 'starttree' and len(args) >= 3:
+        localpath = os.path.abspath(args[2])
+        if not os.path.isdir(os.path.abspath(args[2])):
+            print 'folder %s not exist\n' % args[2]
+            return 1
+        url = webcontrol._PAGE_BACKUPS+'?action=startpathrecursive&path='+misc.pack_url_param(localpath)
+        run_url_command(url).addCallback(print_and_stop)
+        reactor.run()
+        return 0
 
     elif args[1] == 'delete' and len(args) >= 3:
         if args[2] == 'local':

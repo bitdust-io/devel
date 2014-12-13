@@ -211,8 +211,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         try:
             self.transport.write(data, address)
         except:
-            import traceback
-            traceback.print_exc()
+            if _Debug:
+                import traceback
+                traceback.print_exc()
 
     def _sendResponse(self, contact, rpcID, response):
         """ Send a RPC response to the specified contact

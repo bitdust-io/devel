@@ -288,7 +288,7 @@ def defaultDebugLevel():
     """
     Default debug level, lower values produce less messages.
     """
-    return 6
+    return 0
 
 def IntSize():
     """

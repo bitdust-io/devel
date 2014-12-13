@@ -1386,8 +1386,10 @@ def main():
     inpt.close()
     Scan()
     Calculate()
-    print ToPath('2')
-    
+    for pathID, localPath, item in IterateIDs():
+        sz = diskspace.MakeStringFromBytes(item.size) if item.exist() else '' 
+        print '  %s %s %s' % (pathID.ljust(27), localPath.ljust(70), sz.ljust(9))
+
 #    import pprint
 #    bpio.init()
 #    for path in sys.argv[1:]:
