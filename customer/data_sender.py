@@ -221,9 +221,16 @@ class DataSender(automat.Automat):
         count = 0 
         from storage import backup_matrix
         from storage import restore_monitor
+        from storage import backup_rebuilder
         for backupID in misc.sorted_backup_ids(backup_matrix.local_files().keys()):
             if restore_monitor.IsWorking(backupID):
                 continue
+            if backup_rebuilder.IsBackupNeedsWork(backupID):
+                continue
+            if not backup_rebuilder.ReadStoppedFlag():
+                if backup_rebuilder.A().currentBackupID is not None:
+                    if backup_rebuilder.A().currentBackupID == backupID:
+                        continue
             packets = backup_matrix.ScanBlocksToRemove(backupID, settings.getGeneralWaitSuppliers())
             for packetID in packets:
                 filename = os.path.join(settings.getLocalBackupsDir(), packetID)

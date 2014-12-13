@@ -403,6 +403,35 @@ class restore(automat.Automat):
         except:
             return 
         tmpfile.throw_out(filename, 'block restored')
+        if settings.getBackupsKeepLocalCopies():
+            return
+        import backup_rebuilder
+        import backup_matrix
+        if backup_rebuilder.IsBackupNeedsWork(self.BackupID):
+            continue
+        if not backup_rebuilder.ReadStoppedFlag():
+            if backup_rebuilder.A().currentBackupID is not None:
+                if backup_rebuilder.A().currentBackupID == self.BackupID:
+                    continue
+        count = 0
+        for supplierNum in xrange(contactsdb.num_suppliers()):
+            supplierIDURL = contactsdb.supplier(supplierNum)
+            if not supplierIDURL:
+                continue
+            for dataORparity in ['Data', 'Parity']:
+                packetID = packetid.MakePacketID(self.BackupID, self.BlockNumber, 
+                                                 supplierNum, dataORparity)
+                filename = os.path.join(settings.getLocalBackupsDir(), packetID)
+                if os.path.isfile(filename):
+                    try:
+                        os.remove(filename)
+                    except:
+                        lg.exc()
+                        continue
+                    count += 1
+        backup_matrix.LocalBlockReport(self.BackupID, self.BlockNumber, arg)
+        lg.out(6, 'restore.doRemoveTempFile %d files were removed' % count)
+            
 
     def doCloseFile(self, arg):
         os.close(self.File)

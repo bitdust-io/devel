@@ -493,12 +493,16 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
     if supplierNum >= contactsdb.num_suppliers():
         lg.warn('supplier number %d > %d %s' % (supplierNum, contactsdb.num_suppliers(), filename))
         return
+    localDest = os.path.join(settings.getLocalBackupsDir(), filename)
     if not local_files().has_key(backupID):
         local_files()[backupID] = {}
     if not local_files()[backupID].has_key(blockNum):
         local_files()[backupID][blockNum] = {
             'D': [0] * contactsdb.num_suppliers(),
             'P': [0] * contactsdb.num_suppliers()}
+    if not os.path.isfile(localDest):
+        local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
+        return
     local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
     if not local_max_block_numbers().has_key(backupID):
         local_max_block_numbers()[backupID] = -1
@@ -506,12 +510,10 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         local_max_block_numbers()[backupID] = blockNum
     if not local_backup_size().has_key(backupID):
         local_backup_size()[backupID] = 0
-    localDest = os.path.join(settings.getLocalBackupsDir(), filename)
-    if os.path.isfile(localDest):
-        try:
-            local_backup_size()[backupID] += os.path.getsize(localDest)
-        except:
-            lg.exc()
+    try:
+        local_backup_size()[backupID] += os.path.getsize(localDest)
+    except:
+        lg.exc()
     RepaintBackup(backupID)
 
 
@@ -523,6 +525,7 @@ def LocalBlockReport(backupID, blockNumber, result):
     #     lg.out(6, 'backup_matrix.LocalBlockReport %s skipped, because number of suppliers were changed' % str(newblock))
     #     return
     if result is None:
+        lg.warn('result is None')
         return
     try:
         blockNum = int(blockNumber)
@@ -532,6 +535,7 @@ def LocalBlockReport(backupID, blockNumber, result):
     for supplierNum in xrange(contactsdb.num_suppliers()):
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
+            local_file = os.path.join(settings.getLocalBackupsDir(), packetID)
             if not local_files().has_key(backupID):
                 local_files()[backupID] = {}
                 # lg.out(14, 'backup_matrix.LocalFileReport new local entry for %s created in the memory' % backupID)
@@ -539,12 +543,15 @@ def LocalBlockReport(backupID, blockNumber, result):
                 local_files()[backupID][blockNum] = {
                     'D': [0] * contactsdb.num_suppliers(),
                     'P': [0] * contactsdb.num_suppliers()}
+            if not os.path.isfile(local_file):
+                local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
+                continue
             local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
             # lg.out(6, 'backup_matrix.LocalFileReport %s max block num is %d' % (backupID, local_max_block_numbers()[backupID]))
             if not local_backup_size().has_key(backupID):
                 local_backup_size()[backupID] = 0
             try:
-                local_backup_size()[backupID] += os.path.getsize(os.path.join(settings.getLocalBackupsDir(), packetID))
+                local_backup_size()[backupID] += os.path.getsize(local_file)
             except:
                 lg.exc()
     if not local_max_block_numbers().has_key(backupID):

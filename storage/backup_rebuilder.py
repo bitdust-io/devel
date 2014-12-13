@@ -238,6 +238,7 @@ class BackupRebuilder(automat.Automat):
         # check it, may be we already fixed all things
         if len(_BackupIDsQueue) == 0:
             self.workingBlocksQueue = []
+            self.currentBackupID = None
             self.automat('backup-ready')
             return
         # take a first backup from queue to work on it
@@ -410,67 +411,6 @@ class BackupRebuilder(automat.Automat):
         reactor.callLater(0, _prepare_one_block)
         
                 
-#    def doAttemptRebuild(self, arg):
-#        self.workBlock = None
-#        self.blocksSucceed = []
-#        if len(self.workingBlocksQueue) == 0:
-#            self.automat('rebuilding-finished', False)
-#            return            
-#        # let's rebuild the backup blocks in reverse order, take last blocks first ... 
-#        # in such way we can propagate how big is the whole backup as soon as possible!
-#        # remote machine can multiply [file size] * [block number] 
-#        # and calculate the whole size to be received ... smart!
-#        # ... remote supplier should not use last file to calculate
-#        self.blockIndex = len(self.workingBlocksQueue) - 1
-#        lg.out(8, 'backup_rebuilder.doAttemptRebuild %d more blocks' % (self.blockIndex+1))
-#        def _prepare_one_block(): 
-#            if self.blockIndex < 0:
-#                # lg.out(8, '        _prepare_one_block finish all blocks')
-#                reactor.callLater(0, _finish_all_blocks)
-#                return
-#            self.currentBlockNumber = self.workingBlocksQueue[self.blockIndex]
-#            # lg.out(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
-#            self.workBlock = block_rebuilder.BlockRebuilder(
-#                eccmap.Current(), #self.eccMap,
-#                self.currentBackupID,
-#                self.currentBlockNumber,
-#                backup_matrix.suppliers_set(),
-#                backup_matrix.GetRemoteDataArray(self.currentBackupID, self.currentBlockNumber),
-#                backup_matrix.GetRemoteParityArray(self.currentBackupID, self.currentBlockNumber),
-#                backup_matrix.GetLocalDataArray(self.currentBackupID, self.currentBlockNumber),
-#                backup_matrix.GetLocalParityArray(self.currentBackupID, self.currentBlockNumber),)
-#            reactor.callLater(0, _identify_block_packets)
-#        def _identify_block_packets():
-#            self.workBlock.IdentifyMissing()
-##            if not self.workBlock.IsMissingFilesOnHand():
-##                lg.out(8, '        _identify_block_packets some missing files is not come yet')
-##                reactor.callLater(0, self.automat, 'rebuilding-finished', False)
-##                return
-#            reactor.callLater(0, _work_on_block)
-#        def _work_on_block():
-#            # self.workBlock.AttemptRebuild().addBoth(_rebuild_finished)
-#            maybeDeferred(self.workBlock.AttemptRebuild).addCallback(_rebuild_finished)
-#        def _rebuild_finished(someNewData):
-#            # lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(someNewData)))
-#            if someNewData:
-#                self.workBlock.WorkDoneReport()
-#                self.blocksSucceed.append(self.currentBlockNumber)
-#                data_sender.A('new-data')
-#            self.workBlock = None
-#            self.blockIndex -= 1
-#            delay = 0
-#            if someNewData:
-#                delay = 0.5
-#            reactor.callLater(delay, _prepare_one_block)
-#        def _finish_all_blocks():
-#            for blockNum in self.blocksSucceed:
-#                self.workingBlocksQueue.remove(blockNum)
-#            lg.out(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
-#            result = len(self.blocksSucceed) > 0
-#            self.blocksSucceed = []
-#            self.automat('rebuilding-finished', result)  
-#        reactor.callLater(0, _prepare_one_block)
-
     def doClearStoppedFlag(self, arg):
         ClearStoppedFlag()
 
@@ -524,7 +464,14 @@ def RemoveBackupToWork(backupID):
     global _BackupIDsQueue
     if backupID in _BackupIDsQueue:
         _BackupIDsQueue.remove(backupID)
-        
+
+
+def IsBackupNeedsWork(backupID):
+    """
+    """
+    global _BackupIDsQueue
+    return backupID in _BackupIDsQueue
+
 
 def RemoveAllBackupsToWork():
     """
