@@ -408,11 +408,11 @@ class restore(automat.Automat):
         import backup_rebuilder
         import backup_matrix
         if backup_rebuilder.IsBackupNeedsWork(self.BackupID):
-            continue
+            return
         if not backup_rebuilder.ReadStoppedFlag():
             if backup_rebuilder.A().currentBackupID is not None:
                 if backup_rebuilder.A().currentBackupID == self.BackupID:
-                    continue
+                    return
         count = 0
         for supplierNum in xrange(contactsdb.num_suppliers()):
             supplierIDURL = contactsdb.supplier(supplierNum)
