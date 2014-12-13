@@ -926,7 +926,9 @@ def TraverseByID(callback, iterID=None):
             if isinstance(i[id], dict):
                 recursive_traverse(i[id], path_id+'/'+str(id) if path_id else str(id), path, cb)
             elif isinstance(i[id], FSItemInfo):
-                cb(path_id+'/'+str(id) if path_id else str(id), path+'/'+i[id].name() if path else i[id].name(), i[id])
+                cb(path_id+'/'+str(id) if path_id else str(id), 
+                   path+'/'+i[id].name() if path not in ['', '/'] else '/'+i[id].name(), 
+                   i[id])
             else:
                 raise Exception('Error, wrong item type in the index')
     if iterID is None:
@@ -952,9 +954,11 @@ def TraverseByIDSorted(callback, iterID=None):
             if id == INFO_KEY:
                 continue
             if isinstance(i[id], dict):
-                dirs.append((id, path+'/'+i[id][INFO_KEY].name() if path else i[id][INFO_KEY].name()))
+                dirs.append((id, 
+                    path+'/'+i[id][INFO_KEY].name() if path else i[id][INFO_KEY].name()))
             elif isinstance(i[id], FSItemInfo):
-                files.append((id, path+'/'+i[id].name() if path else i[id].name()))
+                files.append((id, 
+                    path+'/'+i[id].name() if path not in ['', '/'] else '/'+i[id].name()))
             else:
                 raise Exception('Error, wrong item type in the index')   
         dirs.sort(key=lambda e: e[1])
@@ -1011,7 +1015,9 @@ def IterateIDs(iterID=None):
                 for t in recursive_iterate(i[id], path_id+'/'+str(id) if path_id else str(id), path): 
                     yield t
             elif isinstance(i[id], FSItemInfo):
-                yield path_id+'/'+str(id) if path_id else str(id), path+'/'+i[id].name(), i[id]
+                yield ( path_id+'/'+str(id) if path_id else str(id),   
+                        path+'/'+i[id].name() if path not in ['', '/'] else '/'+i[id].name(), 
+                        i[id] )
             else:
                 raise Exception('Error, wrong item type in the index')        
     startpth = '' if bpio.Windows() else '/'
