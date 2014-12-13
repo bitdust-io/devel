@@ -407,11 +407,10 @@ class restore(automat.Automat):
             return
         import backup_rebuilder
         import backup_matrix
-        if backup_rebuilder.IsBackupNeedsWork(self.BackupID):
-            return
         if not backup_rebuilder.ReadStoppedFlag():
             if backup_rebuilder.A().currentBackupID is not None:
                 if backup_rebuilder.A().currentBackupID == self.BackupID:
+                    lg.out(6, 'restore.doRemoveTempFile SKIP because rebuilding in process')
                     return
         count = 0
         for supplierNum in xrange(contactsdb.num_suppliers()):
@@ -431,7 +430,6 @@ class restore(automat.Automat):
                     count += 1
         backup_matrix.LocalBlockReport(self.BackupID, self.BlockNumber, arg)
         lg.out(6, 'restore.doRemoveTempFile %d files were removed' % count)
-            
 
     def doCloseFile(self, arg):
         os.close(self.File)
