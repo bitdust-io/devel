@@ -160,7 +160,8 @@ class BackupRebuilder(automat.Automat):
         elif self.state == 'NEXT_BACKUP':
             if event == 'instant' and not self.isStopped(arg) and self.isMoreBackups(arg) :
                 self.state = 'PREPARE'
-                self.doPrepareNextBackup(arg)
+                self.doOpenNextBackup(arg)
+                self.doScanBrokenBlocks(arg)
             elif event == 'instant' and not self.isMoreBackups(arg) and not self.isStopped(arg) :
                 self.state = 'DONE'
             elif event == 'instant' and self.isStopped(arg) :
@@ -174,7 +175,7 @@ class BackupRebuilder(automat.Automat):
         elif self.state == 'PREPARE':
             if event == 'backup-ready' and not self.isStopped(arg) and self.isMoreBlocks(arg) :
                 self.state = 'REQUEST'
-                self.doRequestAvailableBlocks(arg)
+                self.doRequestAvailablePieces(arg)
             elif event == 'backup-ready' and not self.isStopped(arg) and not self.isMoreBlocks(arg) and self.isMoreBackups(arg) :
                 self.state = 'NEXT_BACKUP'
                 self.doCloseThisBackup(arg)
@@ -188,14 +189,14 @@ class BackupRebuilder(automat.Automat):
         elif self.state == 'REBUILDING':
             if event == 'rebuilding-finished' and not self.isStopped(arg) and self.isMoreBlocks(arg) :
                 self.state = 'REQUEST'
-                self.doRequestAvailableBlocks(arg)
-            elif event == 'rebuilding-finished' and not self.isStopped(arg) and not self.isMoreBlocks(arg) :
-                self.state = 'NEXT_BACKUP'
-                self.doCloseThisBackup(arg)
+                self.doRequestAvailablePieces(arg)
             elif ( event == 'instant' or event == 'rebuilding-finished' ) and self.isStopped(arg) :
                 self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
                 self.doKillRebuilders(arg)
+            elif event == 'rebuilding-finished' and not self.isStopped(arg) and not self.isMoreBlocks(arg) :
+                self.state = 'PREPARE'
+                self.doScanBrokenBlocks(arg)
         return None
 
     def isMoreBackups(self, arg):
@@ -258,6 +259,7 @@ class BackupRebuilder(automat.Automat):
         
     def doScanBrokenBlocks(self, arg):
         """
+        Action method.
         """
         # if remote data structure is not exist for this backup - create it
         # this mean this is only local backup!
@@ -293,6 +295,39 @@ class BackupRebuilder(automat.Automat):
         self.automat('backup-ready')
 
     def doRequestAvailablePieces(self, arg):
+        """
+        Action method.
+        """
+        self._request_files()
+            
+    def doAttemptRebuild(self, arg):
+        """
+        Action method.
+        """
+        self.blocksSucceed = []
+        if len(self.workingBlocksQueue) == 0:
+            self.automat('rebuilding-finished', False)
+            return            
+        # let's rebuild the backup blocks in reverse order, take last blocks first ... 
+        # in such way we can propagate how big is the whole backup as soon as possible!
+        # remote machine can multiply [file size] * [block number] 
+        # and calculate the whole size to be received ... smart!
+        # ... remote supplier should not use last file to calculate
+        self.blockIndex = len(self.workingBlocksQueue) - 1
+        reactor.callLater(0, self._start_one_block)
+
+    def doKillRebuilders(self, arg):
+        """
+        Action method.
+        """
+        raid_worker.A('shutdown')
+
+    def doClearStoppedFlag(self, arg):
+        ClearStoppedFlag()
+
+    #------------------------------------------------------------------------------ 
+
+    def _request_files(self):
         import backup_matrix
         from customer import io_throttle
         self.missingPackets = 0
@@ -302,7 +337,7 @@ class BackupRebuilder(automat.Automat):
         total_requests_count = 0
         # at the moment I do download everything I have available and needed
         if '' in contactsdb.suppliers():
-            lg.out(8, 'backup_rebuilder.doRequestAvailablePieces SKIP - empty supplier')
+            lg.out(8, 'backup_rebuilder._request_files SKIP - empty supplier')
             self.automat('requests-sent', total_requests_count)
             return
         for supplierNum in range(contactsdb.num_suppliers()):
@@ -358,36 +393,9 @@ class BackupRebuilder(automat.Automat):
                         self.missingPackets += 1
                         # self.missingSuppliers.add(supplierNum)
             total_requests_count += requests_count
-        lg.out(8, 'backup_rebuilder.doRequestAvailablePieces : %d chunks requested')
+        lg.out(8, 'backup_rebuilder._request_files : %d chunks requested')
         self.automat('requests-sent', total_requests_count)
-            
-    def doAttemptRebuild(self, arg):
-        """
-        Action method.
-        """
-        self.blocksSucceed = []
-        if len(self.workingBlocksQueue) == 0:
-            self.automat('rebuilding-finished', False)
-            return            
-        # let's rebuild the backup blocks in reverse order, take last blocks first ... 
-        # in such way we can propagate how big is the whole backup as soon as possible!
-        # remote machine can multiply [file size] * [block number] 
-        # and calculate the whole size to be received ... smart!
-        # ... remote supplier should not use last file to calculate
-        self.blockIndex = len(self.workingBlocksQueue) - 1
-        reactor.callLater(0, self._start_one_block)
-
-    def doKillRebuilders(self, arg):
-        """
-        Action method.
-        """
-        raid_worker.A('shutdown')
-
-    def doClearStoppedFlag(self, arg):
-        ClearStoppedFlag()
-
-    #------------------------------------------------------------------------------ 
-
+        
     def _file_received(self, newpacket, state):
         if state in ['in queue', 'shutdown', 'exist', 'failed']:
             return
@@ -403,6 +411,7 @@ class BackupRebuilder(automat.Automat):
             return
         if os.path.isfile(filename):
             lg.warn("found existed file" + filename)
+            self.automat('inbox-data-packet', packetID)
             return
             # try: 
             #     os.remove(filename)
@@ -416,9 +425,11 @@ class BackupRebuilder(automat.Automat):
                 lg.out(2, "backup_rebuilder._file_received ERROR can not create sub dir " + dirname)
                 return 
         if not bpio.WriteFile(filename, newpacket.Payload):
+            lg.out(2, "backup_rebuilder._file_received ERROR writing " + filename)
             return
         import backup_matrix
         backup_matrix.LocalFileReport(packetID)
+        lg.out(10, "backup_rebuilder._file_received and wrote to " + filename)
         self.automat('inbox-data-packet', packetID)
 
     def _start_one_block(self): 

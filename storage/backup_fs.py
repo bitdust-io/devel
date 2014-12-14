@@ -1213,7 +1213,7 @@ def Scan(basedir=None):
     """
     Walk all items in the index and check if local files and folders with same names exists.
     Parameter ``basedir`` is a root path of that structure, 
-    if None taken from ``lib.settings.getLocalBackupsDir()``.
+    default is ``lib.settings.getLocalBackupsDir()``.
     Also calculate size of the files. 
     """
     if basedir is None:
