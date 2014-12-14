@@ -234,64 +234,75 @@ class BackupRebuilder(automat.Automat):
                 return False
         return True
 
-    def doPrepareNextBackup(self, arg):
-        from customer import io_throttle
-        import backup_matrix
+    def doOpenNextBackup(self, arg):
+        """
+        """
         global _BackupIDsQueue
         # check it, may be we already fixed all things
         if len(_BackupIDsQueue) == 0:
             self.automat('backup-ready')
             return
         # take a first backup from queue to work on it
-        backupID = _BackupIDsQueue.pop(0)
+        self.currentBackupID = _BackupIDsQueue.pop(0)
+         
+    def doCloseThisBackup(self, arg):
+        """
+        Action method.
+        """
+        self.workingBlocksQueue = []
+        if self.currentBackupID:
+            # clear requesting queue from previous task
+            from customer import io_throttle
+            io_throttle.DeleteBackupRequests(self.currentBackupID)
+        self.currentBackupID = None
+        
+    def doScanBrokenBlocks(self, arg):
+        """
+        """
         # if remote data structure is not exist for this backup - create it
         # this mean this is only local backup!
-        if not backup_matrix.remote_files().has_key(backupID):
-            backup_matrix.remote_files()[backupID] = {}
+        import backup_matrix
+        if not backup_matrix.remote_files().has_key(self.currentBackupID):
+            backup_matrix.remote_files()[self.currentBackupID] = {}
             # we create empty remote info for every local block
             # range(0) should return []
-            for blockNum in range(backup_matrix.local_max_block_numbers().get(backupID, -1) + 1):
-                backup_matrix.remote_files()[backupID][blockNum] = {
+            for blockNum in range(backup_matrix.local_max_block_numbers().get(self.currentBackupID, -1) + 1):
+                backup_matrix.remote_files()[self.currentBackupID][blockNum] = {
                     'D': [0] * contactsdb.num_suppliers(),
                     'P': [0] * contactsdb.num_suppliers() }
         # detect missing blocks from remote info
-        self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(backupID)
-        lg.out(8, 'backup_rebuilder.doPrepareNextBackup [%s] working blocks: %s' % (backupID, str(self.workingBlocksQueue)))
+        self.workingBlocksQueue = backup_matrix.ScanMissingBlocks(self.currentBackupID)
         # find the correct max block number for this backup
         # we can have remote and local files
         # will take biggest block number from both 
-        backupMaxBlock = max(backup_matrix.remote_max_block_numbers().get(backupID, -1),
-                             backup_matrix.local_max_block_numbers().get(backupID, -1))
+        backupMaxBlock = max(backup_matrix.remote_max_block_numbers().get(self.currentBackupID, -1),
+                             backup_matrix.local_max_block_numbers().get(self.currentBackupID, -1))
         # now need to remember this biggest block number
         # remote info may have less blocks - need to create empty info for missing blocks
         for blockNum in range(backupMaxBlock + 1):
-            if backup_matrix.remote_files()[backupID].has_key(blockNum):
+            if backup_matrix.remote_files()[self.currentBackupID].has_key(blockNum):
                 continue
-            backup_matrix.remote_files()[backupID][blockNum] = {
+            backup_matrix.remote_files()[self.currentBackupID][blockNum] = {
                 'D': [0] * contactsdb.num_suppliers(),
                 'P': [0] * contactsdb.num_suppliers() }
-        if self.currentBackupID:
-            # clear requesting queue from previous task
-            io_throttle.DeleteBackupRequests(self.currentBackupID)
-        # really take the next backup
-        self.currentBackupID = backupID
         # clear requesting queue, remove old packets for this backup, we will send them again
+        from customer import io_throttle
         io_throttle.DeleteBackupRequests(self.currentBackupID)
-        # lg.out(6, 'backup_rebuilder.doTakeNextBackup currentBackupID=%s workingBlocksQueue=%d' % (self.currentBackupID, len(self.workingBlocksQueue)))
+        lg.out(8, 'backup_rebuilder.doScanBrokenBlocks for %s : %s' % (
+            self.currentBackupID, str(self.workingBlocksQueue)))
         self.automat('backup-ready')
 
-    def doRequestAvailableBlocks(self, arg):
-        from customer import io_throttle
+    def doRequestAvailablePieces(self, arg):
         import backup_matrix
+        from customer import io_throttle
         self.missingPackets = 0
-        # self.missingSuppliers.clear()
         # here we want to request some packets before we start working to rebuild the missed blocks
-        # supplierSet = backup_matrix.suppliers_set()
         availableSuppliers = backup_matrix.GetActiveArray()
         # remember how many requests we did on this iteration
         total_requests_count = 0
         # at the moment I do download everything I have available and needed
         if '' in contactsdb.suppliers():
+            lg.out(8, 'backup_rebuilder.doRequestAvailablePieces SKIP - empty supplier')
             self.automat('requests-sent', total_requests_count)
             return
         for supplierNum in range(contactsdb.num_suppliers()):
@@ -347,20 +358,24 @@ class BackupRebuilder(automat.Automat):
                         self.missingPackets += 1
                         # self.missingSuppliers.add(supplierNum)
             total_requests_count += requests_count
+        lg.out(8, 'backup_rebuilder.doRequestAvailablePieces : %d chunks requested')
         self.automat('requests-sent', total_requests_count)
             
     def doAttemptRebuild(self, arg):
         """
         Action method.
         """
-        self._attempt_rebuild()
-         
-    def doCloseThisBackup(self, arg):
-        """
-        Action method.
-        """
-        self.workingBlocksQueue = []
-        self.currentBackupID = None
+        self.blocksSucceed = []
+        if len(self.workingBlocksQueue) == 0:
+            self.automat('rebuilding-finished', False)
+            return            
+        # let's rebuild the backup blocks in reverse order, take last blocks first ... 
+        # in such way we can propagate how big is the whole backup as soon as possible!
+        # remote machine can multiply [file size] * [block number] 
+        # and calculate the whole size to be received ... smart!
+        # ... remote supplier should not use last file to calculate
+        self.blockIndex = len(self.workingBlocksQueue) - 1
+        reactor.callLater(0, self._start_one_block)
 
     def doKillRebuilders(self, arg):
         """
@@ -406,25 +421,11 @@ class BackupRebuilder(automat.Automat):
         backup_matrix.LocalFileReport(packetID)
         self.automat('inbox-data-packet', packetID)
 
-    def _attempt_rebuild(self):
-        self.blocksSucceed = []
-        if len(self.workingBlocksQueue) == 0:
-            self.automat('rebuilding-finished', False)
-            return            
-        # let's rebuild the backup blocks in reverse order, take last blocks first ... 
-        # in such way we can propagate how big is the whole backup as soon as possible!
-        # remote machine can multiply [file size] * [block number] 
-        # and calculate the whole size to be received ... smart!
-        # ... remote supplier should not use last file to calculate
-        self.blockIndex = len(self.workingBlocksQueue) - 1
-        lg.out(10, 'backup_rebuilder._attempt_rebuild %d more blocks' % (self.blockIndex+1))
-        reactor.callLater(0, self._start_one_block)
-
     def _start_one_block(self): 
         import backup_matrix
         if self.blockIndex < 0:
             lg.out(10, 'backup_rebuilder._start_one_block finish all blocks blockIndex=%d' % self.blockIndex)
-            reactor.callLater(0, self._finish_all_blocks)
+            reactor.callLater(0, self._finish_rebuilding)
             return
         BlockNumber = self.workingBlocksQueue[self.blockIndex]
         lg.out(10, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
@@ -440,42 +441,40 @@ class BackupRebuilder(automat.Automat):
     def _block_finished(self, result, params):
         if not result:
             lg.out(10, 'backup_rebuilder._block_finished FAILED, blockIndex=%d' % self.blockIndex)
-            self.automat('rebuilding-finished', False)
+            reactor.callLater(0, self._finish_rebuilding)
             return
-        lg.out(10, 'backup_rebuilder._block_finished result=%s..., params=%s...' % (
-             str(result)[:30], str(params)[:30]))
         try:
+            newData, localData, localParity, reconstructedData, reconstructedParity = result
             _backupID = params[0]
             _blockNumber = params[1]
         except:
-            _backupID = None
-            _blockNumber = -1
-        self.blockIndex -= 1
-        try:
-            newData, localData, localParity, reconstructedData, reconstructedParity = result
-        except:
             lg.exc()
-            self.automat('rebuilding-finished', False)
+            reactor.callLater(0, self._finish_rebuilding)
             return
-        if newData:
+        if newData: 
             import backup_matrix
+            count = 0
             for supplierNum in xrange(contactsdb.num_suppliers()):
                 if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
                     backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Data')
+                    count += 1
                 if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
                     backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Parity')
+                    count += 1
             self.blocksSucceed.append(_blockNumber)
             from customer import data_sender
             data_sender.A('new-data')
+            lg.out(10, 'backup_rebuilder._block_finished !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
+                count, self.blockIndex))
         else:
-            lg.warn('new data is None, blockIndex=%d' % self.blockIndex)
-            # self.automat('rebuilding-finished', False)
+            lg.out(10, 'backup_rebuilder._block_finished NO CHANGES, blockIndex=%d' % self.blockIndex)
+        self.blockIndex -= 1
         reactor.callLater(0, self._start_one_block)
 
-    def _finish_all_blocks(self):
+    def _finish_rebuilding(self):
         for blockNum in self.blocksSucceed:
             self.workingBlocksQueue.remove(blockNum)
-        lg.out(10, 'backup_rebuilder._finish_all_blocks succeed:%s working:%s' % (
+        lg.out(10, 'backup_rebuilder._finish_rebuilding succeed:%s working:%s' % (
             str(self.blocksSucceed), str(self.workingBlocksQueue)))
         result = len(self.blocksSucceed) > 0
         self.blocksSucceed = []
