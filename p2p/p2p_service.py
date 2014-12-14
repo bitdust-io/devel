@@ -854,52 +854,41 @@ def TreeSummary(ownerdir):
             if None in [pathID, versionName, blockNum, supplierNum, dataORparity]:
                 result.write('F%s %d\n' % (packetID, filesz))
                 continue
-            if dataORparity == 'Data':
-                if not dataBlocks.has_key(supplierNum):
-                    dataBlocks[supplierNum] = {}
-                    dataMissing[supplierNum] = []
-                    versionSize[supplierNum] = 0
-                dataBlocks[supplierNum][blockNum] = filesz
-            elif dataORparity == 'Parity':
-                if not parityBlocks.has_key(supplierNum):
-                    parityBlocks[supplierNum] = {}
-                    parityMissing[supplierNum] = []
-                    versionSize[supplierNum] = 0
-                parityBlocks[supplierNum][blockNum] = filesz
-            else:
+            if dataORparity != 'Data' and dataORparity != 'Parity':
                 result.write('F%s %d\n' % (packetID, filesz))
                 continue
             if maxBlock < blockNum:
                 maxBlock = blockNum
-        for blockNum in range(maxBlock+1):
-            for supplierNum in dataBlocks.keys():
+            if not versionSize.has_key(supplierNum):
+                versionSize[supplierNum] = 0
+            if not dataBlocks.has_key(supplierNum):
+                dataBlocks[supplierNum] = {}
+            if not parityBlocks.has_key(supplierNum):
+                parityBlocks[supplierNum] = {}
+            if dataORparity == 'Data':
+                dataBlocks[supplierNum][blockNum] = filesz
+            elif dataORparity == 'Parity':
+                parityBlocks[supplierNum][blockNum] = filesz
+        for supplierNum in versionSize.keys():
+            dataMissing[supplierNum] = set(range(maxBlock+1))
+            parityMissing[supplierNum] = set(range(maxBlock+1))
+            for blockNum in range(maxBlock+1):
                 if blockNum in dataBlocks[supplierNum].keys():
                     versionSize[supplierNum] += dataBlocks[supplierNum][blockNum]
-                else:
-                    dataMissing[supplierNum].append(str(blockNum))
-            for supplierNum in parityBlocks.keys():
+                    dataMissing[supplierNum].discard(blockNum)
                 if blockNum in parityBlocks[supplierNum].keys():
                     versionSize[supplierNum] += parityBlocks[supplierNum][blockNum]
-                else:
-                    parityMissing[supplierNum].append(str(blockNum))
+                    parityMissing[supplierNum].discard(blockNum)
         suppliers = set(dataBlocks.keys() + parityBlocks.keys())
         for supplierNum in suppliers:
             versionString = '%s %d 0-%d %d' % (
                 subpath, supplierNum, maxBlock, versionSize[supplierNum])
-            dataMiss = []
-            parityMiss = []
-            if dataMissing.has_key(supplierNum):
-                dataMiss = dataMissing[supplierNum]
-            if parityMissing.has_key(supplierNum):
-                parityMiss = parityMissing[supplierNum]   
-            if len(dataMiss) > 0 or len(parityMiss) > 0:
+            if len(dataMissing[supplierNum]) > 0 or len(parityMissing[supplierNum]) > 0:
                 versionString += ' missing'
-                if len(dataMiss) > 0:
-                    versionString += ' Data:' + (','.join(dataMiss))
-                if len(parityMiss) > 0:
-                    versionString += ' Parity:' + (','.join(parityMiss))
-            del dataMiss
-            del parityMiss
+                if len(dataMissing[supplierNum]) > 0:
+                    versionString += ' Data:' + (','.join(map(str, dataMissing[supplierNum])))
+                if len(parityMissing[supplierNum]) > 0:
+                    versionString += ' Parity:' + (','.join(map(str, parityMissing[supplierNum])))
             result.write('V%s\n' % versionString)
         del dataBlocks
         del parityBlocks
