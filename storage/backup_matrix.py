@@ -308,7 +308,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                 continue
             if lineSupplierNum != supplierNum:
                 # this mean supplier have old files and we do not need that 
-                backups2remove.add(backupID)
+                # backups2remove.add(backupID)
                 lg.out(8, '        V%s - remove, different supplier number' % backupID)
                 continue
             iter_path = backup_fs.WalkByID(pathID)
