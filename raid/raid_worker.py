@@ -272,7 +272,7 @@ class RaidWorker(automat.Automat):
         try:
             task_id, cmd, params, result = arg
             cb = self.callbacks.pop(task_id)
-            cb(cmd, params, result)
+            reactor.callLater(0, cb, cmd, params, result)
             lg.out(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
                 len(self.callbacks), len(self.tasks), len(self.activetasks)))
         except:
@@ -285,10 +285,10 @@ class RaidWorker(automat.Automat):
         for i in xrange(len(self.tasks)):
             task_id, cmd, params = self.tasks[i]
             cb = self.callbacks.pop(task_id)
-            cb(cmd, params, None)
+            reactor.callLater(0, cb, cmd, params, None)
         for task_id in self.activetasks.keys():
             cb = self.callbacks.pop(task_id)
-            cb(cmd, params, None)
+            reactor.callLater(0, cb, cmd, params, None)
 
     def doDestroyMe(self, arg):
         """

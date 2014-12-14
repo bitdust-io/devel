@@ -410,10 +410,11 @@ class BackupRebuilder(automat.Automat):
             self.blocksSucceed = []
             self.automat('rebuilding-finished', result)         
         reactor.callLater(0, _prepare_one_block)
-        
-                
+         
     def doClearStoppedFlag(self, arg):
         ClearStoppedFlag()
+
+    #------------------------------------------------------------------------------ 
 
     def _file_received(self, newpacket, state):
         import backup_matrix
