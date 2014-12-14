@@ -448,13 +448,14 @@ class BackupRebuilder(automat.Automat):
             lg.out(10, 'backup_rebuilder._block_finished FAILED, blockIndex=%d' % self.blockIndex)
             self.automat('rebuilding-finished', False)
             return
+        lg.out(10, 'backup_rebuilder._block_finished result is %s..., params=%s' % (
+             str(result)[:20], str(params)))
         try:
-            _backupID, _blockNumber = params[0:1]
+            _backupID = params[0]
+            _blockNumber = params[1]
         except:
             _backupID = None
             _blockNumber = -1
-        lg.out(10, 'backup_rebuilder._block_finished [%d], result is %s...' % (
-             _blockNumber, str(result)[:20]))
         self.blockIndex -= 1
         try:
             newData, localData, localParity, reconstructedData, reconstructedParity = result
