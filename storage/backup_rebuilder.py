@@ -368,7 +368,8 @@ class BackupRebuilder(automat.Automat):
                 reactor.callLater(0, _finish_all_blocks)
                 return
             self.currentBlockNumber = self.workingBlocksQueue[self.blockIndex]
-            lg.out(8, '        _prepare_one_block %d to rebuild' % self.currentBlockNumber)
+            lg.out(8, '        _prepare_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
+                (self.currentBlockNumber, self.blockIndex, str(self.workingBlocksQueue))))
             task_params = (
                 self.currentBackupID, self.currentBlockNumber, eccmap.Current(),
                 backup_matrix.GetActiveArray(),
@@ -379,7 +380,6 @@ class BackupRebuilder(automat.Automat):
         def _rebuild_finished(result):
             lg.out(8, '        _rebuild_finished on block %d, blockIndex=%d, result is %s...' % (
                 self.currentBlockNumber, self.blockIndex, str(result)[:20]))
-            import backup_matrix
             self.blockIndex -= 1
             if result:
                 try:
@@ -389,6 +389,7 @@ class BackupRebuilder(automat.Automat):
                     self.automat('rebuilding-finished', False)
                     return
                 if newData:
+                    import backup_matrix
                     for supplierNum in xrange(contactsdb.num_suppliers()):
                         if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
                             backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Data')
@@ -397,6 +398,9 @@ class BackupRebuilder(automat.Automat):
                     self.blocksSucceed.append(self.currentBlockNumber)
                     from customer import data_sender
                     data_sender.A('new-data')
+                else:
+                    lg.warn('new data is None, blockIndex=%d' % self.blockIndex)
+                    # self.automat('rebuilding-finished', False)
             else:
                 self.automat('rebuilding-finished', False)
                 return

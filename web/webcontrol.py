@@ -3457,7 +3457,7 @@ class BackupPage(Page, BackupIDSplit):
                     localFiles = statsLocalArray[supplierNum][1]
                 except:
                     localFiles = 0
-                src += '%d files on hand' % localFiles
+                src += '    %d files on hand' % localFiles
                 comment = '%d files on hand' % localFiles
                 if received > 0:  
                     sreceived = diskspace.MakeStringFromBytes(received)
