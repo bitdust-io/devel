@@ -347,7 +347,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                 remote_files()[backupID] = {}
                 # lg.out(6, 'backup_matrix.ReadRawListFiles new remote entry for %s created in the memory' % backupID)
             # +1 because range(2) give us [0,1] but we want [0,1,2]
-            for blockNum in xrange(maxBlockNum+1):
+            for blockNum in xrange(maxBlockNum + 1):
                 if not remote_files()[backupID].has_key(blockNum):
                     remote_files()[backupID][blockNum] = {
                         'D': [0] * contactsdb.num_suppliers(),
@@ -583,7 +583,9 @@ def ScanMissingBlocks(backupID):
             # we have no remote info, but some local files exists
             # so let's try to sent all of them
             # need to scan all block numbers 
-            for blockNum in xrange(localMaxBlockNum):
+            lg.out(6, 'backup_matrix.ScanMissingBlocks for %s, use LOCAL maxBlockNum=%d' % (
+                backupID, localMaxBlockNum))
+            for blockNum in xrange(localMaxBlockNum + 1):
                 # we check for Data and Parity packets
                 localData = GetLocalDataArray(backupID, blockNum)
                 localParity = GetLocalParityArray(backupID, blockNum)  
@@ -600,7 +602,8 @@ def ScanMissingBlocks(backupID):
         # now we have some remote info
         # we take max block number from local and remote
         maxBlockNum = max(remoteMaxBlockNum, localMaxBlockNum)
-        # lg.out(6, 'backup_matrix.ScanMissingBlocks maxBlockNum=%d' % maxBlockNum)
+        lg.out(6, 'backup_matrix.ScanMissingBlocks for %s, maxBlockNum=%d' % (
+            backupID, maxBlockNum))
         # and increase by one because range(3) give us [0, 1, 2], but we want [0, 1, 2, 3]
         for blockNum in xrange(maxBlockNum + 1):
             # if we have few remote files, but many locals - we want to send all missed 
@@ -1090,7 +1093,7 @@ def GetWeakLocalBlock(backupID):
     maxBlockNum = GetKnownMaxBlockNum(backupID)
     weakBlockNum = -1
     lessSuppliers = supplierCount
-    for blockNum in xrange(maxBlockNum+1):
+    for blockNum in xrange(maxBlockNum + 1):
         if blockNum not in local_files()[backupID].keys():
             return blockNum, 0, supplierCount
         goodSuppliers = supplierCount
@@ -1115,7 +1118,7 @@ def GetWeakRemoteBlock(backupID):
     weakBlockNum = -1
     lessSuppliers = supplierCount
     activeArray = GetActiveArray()
-    for blockNum in xrange(maxBlockNum+1):
+    for blockNum in xrange(maxBlockNum + 1):
         if blockNum not in remote_files()[backupID].keys():
             return blockNum, 0, supplierCount
         goodSuppliers = supplierCount

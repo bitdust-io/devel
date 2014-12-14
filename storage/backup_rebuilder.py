@@ -122,7 +122,6 @@ class BackupRebuilder(automat.Automat):
         Initialize needed variables.
         """
         self.currentBackupID = None             # currently working on this backup
-        self.currentBlockNumber = -1            # currently working on this block
         self.workingBlocksQueue = []            # list of missing blocks we work on for current backup
         self.missingPackets = 0 
         self.missingSuppliers = set()
@@ -206,7 +205,6 @@ class BackupRebuilder(automat.Automat):
     def isMoreBlocks(self, arg):
         # because started from 0,  -1 means not found
         return len(self.workingBlocksQueue) > 0 
-        # return self.currentBlockNumber > -1
         
     def isMissingPackets(self, arg):
         return self.missingPackets > 0 
@@ -240,8 +238,6 @@ class BackupRebuilder(automat.Automat):
         from customer import io_throttle
         import backup_matrix
         global _BackupIDsQueue
-        # clear block number from previous iteration
-        self.currentBlockNumber = -1
         # check it, may be we already fixed all things
         if len(_BackupIDsQueue) == 0:
             self.automat('backup-ready')
@@ -302,7 +298,6 @@ class BackupRebuilder(automat.Automat):
             supplierID = contactsdb.supplier(supplierNum)
             requests_count = 0
             # we do requests in reverse order because we start rebuilding from the last block 
-            # for blockNum in range(self.currentBlockNumber, -1, -1):
             for blockIndex in range(len(self.workingBlocksQueue)-1, -1, -1):
                 blockNum = self.workingBlocksQueue[blockIndex] 
                 # do not keep too many requests in the queue
@@ -366,7 +361,6 @@ class BackupRebuilder(automat.Automat):
         """
         self.workingBlocksQueue = []
         self.currentBackupID = None
-        self.currentBlockNumber = -1
 
     def doKillRebuilders(self, arg):
         """
@@ -432,14 +426,14 @@ class BackupRebuilder(automat.Automat):
             lg.out(10, 'backup_rebuilder._start_one_block finish all blocks blockIndex=%d' % self.blockIndex)
             reactor.callLater(0, self._finish_all_blocks)
             return
-        self.currentBlockNumber = self.workingBlocksQueue[self.blockIndex]
+        BlockNumber = self.workingBlocksQueue[self.blockIndex]
         lg.out(10, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
-            (self.currentBlockNumber, self.blockIndex, str(self.workingBlocksQueue))))
+            (BlockNumber, self.blockIndex, str(self.workingBlocksQueue))))
         task_params = (
-            self.currentBackupID, self.currentBlockNumber, eccmap.Current(),
+            self.currentBackupID, BlockNumber, eccmap.Current(),
             backup_matrix.GetActiveArray(),
-            backup_matrix.GetRemoteMatrix(self.currentBackupID, self.currentBlockNumber),
-            backup_matrix.GetLocalMatrix(self.currentBackupID, self.currentBlockNumber),)
+            backup_matrix.GetRemoteMatrix(self.currentBackupID, BlockNumber),
+            backup_matrix.GetLocalMatrix(self.currentBackupID, BlockNumber),)
         raid_worker.add_task('rebuild', task_params,
             lambda cmd, params, result: self._block_finished(result, params))
         
@@ -448,8 +442,8 @@ class BackupRebuilder(automat.Automat):
             lg.out(10, 'backup_rebuilder._block_finished FAILED, blockIndex=%d' % self.blockIndex)
             self.automat('rebuilding-finished', False)
             return
-        lg.out(10, 'backup_rebuilder._block_finished result is %s..., params=%s' % (
-             str(result)[:20], str(params)))
+        lg.out(10, 'backup_rebuilder._block_finished result=%s..., params=%s...' % (
+             str(result)[:25], str(params)[:25]))
         try:
             _backupID = params[0]
             _blockNumber = params[1]
