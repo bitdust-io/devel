@@ -660,7 +660,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
                     continue
                 if localArray[dataORparity][supplierNum] == 1:  
                     packets.append(packetID)
-                    lg.out(10, '    mark to remove %s, blockNum:%d remote:%s local:%s' % (packetID, blockNum, str(remoteArray), str(localArray)))
+                    # lg.out(10, '    mark to remove %s, blockNum:%d remote:%s local:%s' % (packetID, blockNum, str(remoteArray), str(localArray)))
 #                if check_all_suppliers:
 #                    if localArray[dataORparity][supplierNum] == 1:  
 #                        packets.append(packetID)

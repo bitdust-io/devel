@@ -441,35 +441,40 @@ class BackupRebuilder(automat.Automat):
             backup_matrix.GetRemoteMatrix(self.currentBackupID, self.currentBlockNumber),
             backup_matrix.GetLocalMatrix(self.currentBackupID, self.currentBlockNumber),)
         raid_worker.add_task('rebuild', task_params,
-            lambda cmd, params, result: self._block_finished(result))
+            lambda cmd, params, result: self._block_finished(result, params))
         
-    def _block_finished(self, result):
-        lg.out(10, 'backup_rebuilder._block_finished on block %d, blockIndex=%d, result is %s...' % (
-            self.currentBlockNumber, self.blockIndex, str(result)[:20]))
-        self.blockIndex -= 1
-        if result:
-            try:
-                newData, localData, localParity, reconstructedData, reconstructedParity = result
-            except:
-                lg.exc()
-                self.automat('rebuilding-finished', False)
-                return
-            if newData:
-                import backup_matrix
-                for supplierNum in xrange(contactsdb.num_suppliers()):
-                    if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
-                        backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Data')
-                    if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
-                        backup_matrix.LocalFileReport(None, self.currentBackupID, self.currentBlockNumber, supplierNum, 'Parity')
-                self.blocksSucceed.append(self.currentBlockNumber)
-                from customer import data_sender
-                data_sender.A('new-data')
-            else:
-                lg.warn('new data is None, blockIndex=%d' % self.blockIndex)
-                # self.automat('rebuilding-finished', False)
-        else:
+    def _block_finished(self, result, params):
+        if not result:
+            lg.out(10, 'backup_rebuilder._block_finished FAILED, blockIndex=%d' % self.blockIndex)
             self.automat('rebuilding-finished', False)
             return
+        try:
+            _backupID, _blockNumber = params[0:1]
+        except:
+            _backupID = None
+            _blockNumber = -1
+        lg.out(10, 'backup_rebuilder._block_finished [%d], result is %s...' % (
+             _blockNumber, str(result)[:20]))
+        self.blockIndex -= 1
+        try:
+            newData, localData, localParity, reconstructedData, reconstructedParity = result
+        except:
+            lg.exc()
+            self.automat('rebuilding-finished', False)
+            return
+        if newData:
+            import backup_matrix
+            for supplierNum in xrange(contactsdb.num_suppliers()):
+                if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
+                    backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Data')
+                if localParity[supplierNum] == 1 and reconstructedParity[supplierNum] == 1:
+                    backup_matrix.LocalFileReport(None, _backupID, _blockNumber, supplierNum, 'Parity')
+            self.blocksSucceed.append(_blockNumber)
+            from customer import data_sender
+            data_sender.A('new-data')
+        else:
+            lg.warn('new data is None, blockIndex=%d' % self.blockIndex)
+            # self.automat('rebuilding-finished', False)
         reactor.callLater(0, self._start_one_block)
 
     def _finish_all_blocks(self):
