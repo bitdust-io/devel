@@ -433,12 +433,13 @@ class BackupRebuilder(automat.Automat):
             # if we didn't get a valid packet ... re-request it or delete it?
             lg.warn("%s is not a valid packet: %r" % (packetID, newpacket))
             return
-        if os.path.exists(filename):
-            lg.warn("rewriting existed file" + filename)
-            try: 
-                os.remove(filename)
-            except:
-                lg.exc()
+        if os.path.isfile(filename):
+            lg.warn("found existed file" + filename)
+            return
+            # try: 
+            #     os.remove(filename)
+            # except:
+            #     lg.exc()
         dirname = os.path.dirname(filename)
         if not os.path.exists(dirname):
             try:

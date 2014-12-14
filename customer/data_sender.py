@@ -222,14 +222,18 @@ class DataSender(automat.Automat):
         from storage import backup_matrix
         from storage import restore_monitor
         from storage import backup_rebuilder
+        lg.out(10, 'data_sender.doRemoveUnusedFiles')
         for backupID in misc.sorted_backup_ids(backup_matrix.local_files().keys()):
             if restore_monitor.IsWorking(backupID):
+                lg.out(10, '        %s : SKIP, because restoring' % backupID)
                 continue
             if backup_rebuilder.IsBackupNeedsWork(backupID):
+                lg.out(10, '        %s : SKIP, because needs rebuilding' % backupID)
                 continue
             if not backup_rebuilder.ReadStoppedFlag():
                 if backup_rebuilder.A().currentBackupID is not None:
                     if backup_rebuilder.A().currentBackupID == backupID:
+                        lg.out(10, '        %s : SKIP, because rebuilding is in process' % backupID)
                         continue
             packets = backup_matrix.ScanBlocksToRemove(backupID, settings.getGeneralWaitSuppliers())
             for packetID in packets:
@@ -242,7 +246,7 @@ class DataSender(automat.Automat):
                         lg.exc()
                         continue
                     count += 1
-        lg.out(8, 'data_sender.doRemoveUnusedFiles %d files were removed' % count)
+        lg.out(10, '    %d files were removed' % count)
         backup_matrix.ReadLocalFiles()
                          
     def _packetAcked(self, packet, ownerID, packetID):

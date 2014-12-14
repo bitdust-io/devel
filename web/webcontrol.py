@@ -3123,7 +3123,7 @@ class MainPage(Page):
             src += 'Please wait a bit while establishing connection with other nodes\n'
             src += 'or check your network settings and Internet connection status.</p>\n'
             src += '</td></tr></table>\n'
-            src += html_comment('Connecting ...'+
+            src += html_comment('Connecting...\n'+
                 'The software is in process of configuring your distributed data storage.\n'+
                 'Please wait a bit while establishing connection with other nodes\n'+
                 'or check your network settings and Internet connection status.\n')
