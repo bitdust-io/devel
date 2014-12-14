@@ -417,8 +417,7 @@ class BackupRebuilder(automat.Automat):
     #------------------------------------------------------------------------------ 
 
     def _file_received(self, newpacket, state):
-        import backup_matrix
-        if state in ['in queue', 'shutdown', 'exist']:
+        if state in ['in queue', 'shutdown', 'exist', 'failed']:
             return
         if state != 'received':
             lg.warn("incorrect state [%s] for packet %s" % (str(state), str(newpacket)))
@@ -445,6 +444,7 @@ class BackupRebuilder(automat.Automat):
                 return 
         if not bpio.WriteFile(filename, newpacket.Payload):
             return
+        import backup_matrix
         backup_matrix.LocalFileReport(packetID)
         self.automat('inbox-data-packet', packetID)
         
