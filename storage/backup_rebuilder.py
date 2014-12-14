@@ -429,7 +429,7 @@ class BackupRebuilder(automat.Automat):
         BlockNumber = self.workingBlocksQueue[self.blockIndex]
         lg.out(10, 'backup_rebuilder._start_one_block %d to rebuild, blockIndex=%d, other blocks: %s' % (
             (BlockNumber, self.blockIndex, str(self.workingBlocksQueue))))
-        task_params = (
+        task_params = ( 
             self.currentBackupID, BlockNumber, eccmap.Current(),
             backup_matrix.GetActiveArray(),
             backup_matrix.GetRemoteMatrix(self.currentBackupID, BlockNumber),
@@ -443,7 +443,7 @@ class BackupRebuilder(automat.Automat):
             self.automat('rebuilding-finished', False)
             return
         lg.out(10, 'backup_rebuilder._block_finished result=%s..., params=%s...' % (
-             str(result)[:25], str(params)[:25]))
+             str(result)[:30], str(params)[:30]))
         try:
             _backupID = params[0]
             _blockNumber = params[1]

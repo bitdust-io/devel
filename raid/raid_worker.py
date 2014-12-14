@@ -85,7 +85,7 @@ _RaidWorker = None
 #------------------------------------------------------------------------------ 
 
 def add_task(cmd, params, callback):
-    lg.out(10, 'raid_worker.add_task [%s] %r' % (cmd, params))
+    lg.out(10, 'raid_worker.add_task [%s] %s' % (cmd, str(params)[:50]))
     A('new-task', (cmd, params, callback))
      
 #------------------------------------------------------------------------------ 
