@@ -364,7 +364,7 @@ class BackupRebuilder(automat.Automat):
         def _prepare_one_block(): 
             import backup_matrix
             if self.blockIndex < 0:
-                lg.out(8, '        _prepare_one_block finish all blocks')
+                lg.out(8, '        _prepare_one_block finish all blocks blockIndex=%d' % self.blockIndex)
                 reactor.callLater(0, _finish_all_blocks)
                 return
             self.currentBlockNumber = self.workingBlocksQueue[self.blockIndex]
@@ -377,6 +377,8 @@ class BackupRebuilder(automat.Automat):
             raid_worker.add_task('rebuild', task_params,
                 lambda cmd, params, result: _rebuild_finished(result))
         def _rebuild_finished(result):
+            lg.out(8, '        _rebuild_finished on block %d, blockIndex=%d, result is %s...' % (
+                self.currentBlockNumber, self.blockIndex, str(result)[:20]))
             import backup_matrix
             self.blockIndex -= 1
             if result:
@@ -386,7 +388,6 @@ class BackupRebuilder(automat.Automat):
                     lg.exc()
                     self.automat('rebuilding-finished', False)
                     return
-                lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, str(newData)))
                 if newData:
                     for supplierNum in xrange(contactsdb.num_suppliers()):
                         if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:
@@ -397,14 +398,14 @@ class BackupRebuilder(automat.Automat):
                     from customer import data_sender
                     data_sender.A('new-data')
             else:
-                lg.out(8, '        _rebuild_finished on block %d, result is %s' % (self.currentBlockNumber, result))
                 self.automat('rebuilding-finished', False)
                 return
             reactor.callLater(0, _prepare_one_block)
         def _finish_all_blocks():
             for blockNum in self.blocksSucceed:
                 self.workingBlocksQueue.remove(blockNum)
-            lg.out(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (str(self.blocksSucceed), str(self.workingBlocksQueue)))
+            lg.out(8, 'backup_rebuilder.doAttemptRebuild._finish_all_blocks succeed:%s working:%s' % (
+                str(self.blocksSucceed), str(self.workingBlocksQueue)))
             result = len(self.blocksSucceed) > 0
             self.blocksSucceed = []
             self.automat('rebuilding-finished', result)         
