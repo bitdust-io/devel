@@ -992,6 +992,18 @@ def GetKnownMaxBlockNum(backupID):
                local_max_block_numbers().get(backupID, -1))
 
 
+def GetLocalMatrix(backupID, blockNum):
+    """
+    """
+    if not local_files().has_key(backupID):
+        return {'D': [0] * contactsdb.num_suppliers(),
+                'P': [0] * contactsdb.num_suppliers(),}
+    if not local_files()[backupID].has_key(blockNum):
+        return {'D': [0] * contactsdb.num_suppliers(),
+                'P': [0] * contactsdb.num_suppliers(),}
+    return local_files()[backupID][blockNum]
+    
+
 def GetLocalDataArray(backupID, blockNum):
     """
     Get "local" info for a single block of given backup, this is for "Data" surface.  
@@ -1013,6 +1025,18 @@ def GetLocalParityArray(backupID, blockNum):
         return [0] * contactsdb.num_suppliers()
     return local_files()[backupID][blockNum]['P']
     
+    
+def GetRemoteMatrix(backupID, blockNum):
+    """
+    """
+    if not remote_files().has_key(backupID):
+        return {'D': [0] * contactsdb.num_suppliers(),
+                'P': [0] * contactsdb.num_suppliers(),}
+    if not remote_files()[backupID].has_key(blockNum):
+        return {'D': [0] * contactsdb.num_suppliers(),
+                'P': [0] * contactsdb.num_suppliers(),}
+    return remote_files()[backupID][blockNum]
+
 
 def GetRemoteDataArray(backupID, blockNum):
     """
