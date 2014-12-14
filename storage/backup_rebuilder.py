@@ -374,7 +374,7 @@ class BackupRebuilder(automat.Automat):
                 self.currentBackupID, self.currentBlockNumber, eccmap.Current(),
                 backup_matrix.GetActiveArray(),
                 backup_matrix.GetRemoteMatrix(self.currentBackupID, self.currentBlockNumber),
-                backup_matrix.GetLocalMatrix()(self.currentBackupID, self.currentBlockNumber),)
+                backup_matrix.GetLocalMatrix(self.currentBackupID, self.currentBlockNumber),)
             raid_worker.add_task('rebuild', task_params,
                 lambda cmd, params, result: _rebuild_finished(result))
         def _rebuild_finished(result):
