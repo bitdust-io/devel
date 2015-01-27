@@ -14,12 +14,12 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/installer/installer.png" target="_blank">
-    <img src="http://bitpie.net/automats/installer/installer.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/installer/installer.png" target="_blank">
+    <img src="http://bitdust.io/automats/installer/installer.png" style="max-width:100%;">
     </a>
     
 The ``installer()`` machine is a sort of installation wizard 
-which is executed when user first time executes BitPie.NET software.
+which is executed when user first time executes BitDust software.
 
 It have two directions: 
 

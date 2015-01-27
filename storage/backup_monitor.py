@@ -12,8 +12,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/backup_monitor/backup_monitor.png" target="_blank">
-    <img src="http://bitpie.net/automats/backup_monitor/backup_monitor.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/backup_monitor/backup_monitor.png" target="_blank">
+    <img src="http://bitdust.io/automats/backup_monitor/backup_monitor.png" style="max-width:100%;">
     </a>
 
 This is a state machine to manage rebuilding process of all backups.

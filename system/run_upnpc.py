@@ -170,7 +170,7 @@ def lst():
 def add(port, proto):
     global _MyPortMapping
     cmd_out = run(('-r', str(port), str(proto)))
-    # cmd_out = run(('-e', 'BitPie.NET', '-r', str(port), str(proto)))
+    # cmd_out = run(('-e', 'BitDust', '-r', str(port), str(proto)))
     if cmd_out is None:
         return None
     _MyPortMapping[str(port)] = str(proto)

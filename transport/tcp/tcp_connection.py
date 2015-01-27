@@ -4,7 +4,7 @@
 .. module:: tcp_connection
 .. role:: red
 
-BitPie.NET tcp_connection() Automat
+BitDust tcp_connection() Automat
 
 EVENTS:
     * :red:`connection-lost`

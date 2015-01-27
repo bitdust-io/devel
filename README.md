@@ -1,4 +1,4 @@
-# BitPie.NET
+# BitDust
 
 ## Содержание
 * [Начало](docs/beginning.md)

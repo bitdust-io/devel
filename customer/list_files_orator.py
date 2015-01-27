@@ -13,8 +13,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/list_files_orator/list_files_orator.png" target="_blank">
-    <img src="http://bitpie.net/automats/list_files_orator/list_files_orator.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/list_files_orator/list_files_orator.png" target="_blank">
+    <img src="http://bitdust.io/automats/list_files_orator/list_files_orator.png" style="max-width:100%;">
     </a>
     
 This simple state machine requests a list of files stored on remote machines.

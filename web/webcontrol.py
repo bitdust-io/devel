@@ -296,7 +296,7 @@ def init(port = 6001):
 <body>
 <center>
 %(body)s
-<font size=-3>Copyright \xa9 2014, BitPie.NET</font>
+<font size=-3>Copyright \xa9 2014, BitDust</font>
 </center>
 </body>
 </html>'''  
@@ -394,7 +394,7 @@ def init(port = 6001):
 def show(x=None):
     global local_port
     if bpio.Linux() and not bpio.X11_is_running():
-        lg.out(0, 'X11 is not running, can not start BitPie.NET GUI')
+        lg.out(0, 'X11 is not running, can not start BitDust GUI')
         return
     if local_port == 0:
         try:
@@ -522,7 +522,7 @@ def confirmurl(request, yes=None, no=None, text='', back='', args=None):
         lnk += '&args=%s' % base64.urlsafe_b64encode(str(args))
     return lnk
 
-def help_url(page_name, base_url='http://bitpie.net/gui.html'):
+def help_url(page_name, base_url='http://bitdust.io/gui.html'):
     return base_url + '#' + { _PAGE_MAIN: 'main', }.get(page_name, '')
 
 #------------------------------------------------------------------------------
@@ -601,7 +601,7 @@ def html_from_dict(request, d):
                 d['debug'] += 'sys.modules:<br><pre>%s</pre><br>\n'+pprint.pformat(sys.modules) + '<br>\n'
         else:
             d['debug'] = ''
-    d['title'] = 'BitPie.NET'
+    d['title'] = 'BitDust'
     if d.has_key('window_title'):
         d['title'] = d['window_title']
     if d.has_key('align'):
@@ -635,7 +635,7 @@ def html_centered_src(d, request):
 #    else:
 #        d['exit'] = '<div style="position: absolute; right:0px; padding: 5px;"><a href="?action=exit">Exit</a></div>'
     if not d.has_key('title'):
-        d['title'] = 'BitPie.NET'
+        d['title'] = 'BitDust'
     if not d.has_key('body'):
         d['body'] = ''
     return centered_page_src % d
@@ -1064,7 +1064,7 @@ class Page(resource.Resource):
                 lg.out(2, 'webcontrol.Page.render did not found bpgui process')
                 reactor.callLater(0, shutdowner.A, 'stop', 'restart')
             d = {}
-            d['body'] = ('<br>' * 10) + '\n<h1>Restarting BitPie.NET</h1>\n'
+            d['body'] = ('<br>' * 10) + '\n<h1>Restarting BitDust</h1>\n'
             print >>request, html_centered_src(d, request)
             request.finish()
             return NOT_DONE_YET
@@ -1094,7 +1094,7 @@ class Page(resource.Resource):
             request.finish()
             return NOT_DONE_YET
 
-        # BitPie.NET is not installed or broken somehow
+        # BitDust is not installed or broken somehow
         if not check_install():
             # page requested is not the install page
             # we do not need this in that moment because bpmain is not installed
@@ -1107,7 +1107,7 @@ class Page(resource.Resource):
             # current page is install page - okay, show it
             return self.renderPage(request)
 
-        # BitPie.NET is installed, show the requested page normally
+        # BitDust is installed, show the requested page normally
         try:
             ret = self.renderPage(request)
         except:
@@ -1215,12 +1215,12 @@ class StartingPage(Page):
     def renderStartingPage(self, request):
         from main import initializer
         src = '<br>' * 3 + '\n'
-        src += '<h1>launching BitPie.NET</h1>\n'
+        src += '<h1>launching BitDust</h1>\n'
         src += '<table width="400px"><tr><td>\n'
         src += '<div align=left>'
         src += 'Now the program is starting a transport protocols.<br><br>\n'
         src += 'You start connecting with other nodes in the network to prepare a list of your suppliers.<br><br>\n'
-        src += 'These users will store your data, and BitPie.NET software will monitor every piece of your remote data.<br><br>\n'
+        src += 'These users will store your data, and BitDust software will monitor every piece of your remote data.<br><br>\n'
         src += 'All process may take a while.\n'
         src += '</div>'
         src += '</td></tr></table>\n'
@@ -1303,7 +1303,7 @@ class InstallPage(Page):
 
     def renderSelectPage(self, request):
         src = '<br>' * 6 + '\n'
-        src += '<h1>Install BitPie.NET</h1>\n'
+        src += '<h1>Install BitDust</h1>\n'
         src += '<br>\n'
         src += '<form action="%s" method="post">\n' % request.path
         src += '<table align=center cellspacing=10>\n'
@@ -1341,12 +1341,12 @@ class InstallPage(Page):
         src += '<p align=justify>In order to allow others to send a data to you - \n'
         src += 'they must know the address of your computer on the Internet. \n'
         src += 'These contacts are kept in XML file called '
-        src += '<a href="http://bitpie.net/glossary.html#identity" target=_blank>identity</a>.\n'
+        src += '<a href="http://bitdust.io/glossary.html#identity" target=_blank>identity</a>.\n'
         src += 'File identity - is a publicly accessible file, '
         src += 'so that every user may download your identity file \n'
         src += 'and find out your contact information.\n'
         src += 'Identity file is digitally signed and that would change it '
-        src += 'is necessary to know your <a href="http://bitpie.net/glossary.html#public_private_key" target=_blank>Private Key</a>. \n'
+        src += 'is necessary to know your <a href="http://bitdust.io/glossary.html#public_private_key" target=_blank>Private Key</a>. \n'
         src += 'The combination of these two keys provides '
         src += 'reliable identification of the user.</p>\n'
         src += '</td></tr></table>\n'
@@ -1476,7 +1476,7 @@ class InstallPage(Page):
         src = ''
         src += '<table width=90%><tr><td colspan=3 align=center>\n'
         src += '<h1>recover existing account</h1>\n'
-        src += '<p align=justify>To <a href="http://bitpie.net/glossary.html#recovery" target=_blank>recover</a> '
+        src += '<p align=justify>To <a href="http://bitdust.io/glossary.html#recovery" target=_blank>recover</a> '
         src += 'your previously backed up data you need to provide your Private Key and Identity file.\n'
         src += 'There are 3 different ways to do this below.\n'
         src += 'Choose depending on the way you stored a copy of your Key.</p>\n'
@@ -1584,7 +1584,7 @@ class InstallPage(Page):
         src += '<tr><td colspan=2 align=center valign=top>\n'
         src += '<br><br><input fontsize="+5" fontweight="bold" id="radio5" type="radio" name="select-try-it" value="don\'t know, just let me try the software" %s />\n' % (
             'checked' if self.role==5 else '') 
-        src += '<br><font size="-1">no problem, you can configure BitPie.NET later</font>\n'
+        src += '<br><font size="-1">no problem, you can configure BitDust later</font>\n'
         src += '</td></tr>\n'
         src += '</table>\n'
         src += '<input type="hidden" name="action" value="next" />\n'
@@ -1617,14 +1617,14 @@ class InstallPage(Page):
         src = ''
         src += '<h1>almost ready to start</h1>\n'
         src += '<table width=80%><tr><td>\n'
-        src += '<p align=justify>You spent <a href="http://bitpie.net/glossary.html#money" target="_blank">credits</a> '
-        src += 'to rent a storage from your <a href="http://bitpie.net/glossary.html#supplier" target="_blank">suppliers</a>.\n'
-        src += 'BitPie.NET gives you a <b>$ 10</b> virtual credits as gift, so you can '
+        src += '<p align=justify>You spent <a href="http://bitdust.io/glossary.html#money" target="_blank">credits</a> '
+        src += 'to rent a storage from your <a href="http://bitdust.io/glossary.html#supplier" target="_blank">suppliers</a>.\n'
+        src += 'BitDust gives you a <b>$ 10</b> virtual credits as gift, so you can '
         src += 'start doing backups immediately after installation.</p>\n'
-        src += '<p align=justify>Thanks for your choice, we hope you like BitPie.NET!</p>\n'
+        src += '<p align=justify>Thanks for your choice, we hope you like BitDust!</p>\n'
         src += '<p align=justify>Feel free to send your feedback on '
-        src += '<a href="mailto:bitpie.net@gmail.com" target=_blank>bitpie.net@gmail.com</a>, '
-        src += 'visit our <a href="http://bitpie.net/forum" target=_blank>message board</a> to read talks. '
+        src += '<a href="mailto:bitdust.io@gmail.com" target=_blank>bitdust.io@gmail.com</a>, '
+        src += 'visit our <a href="http://bitdust.io/forum" target=_blank>message board</a> to read talks. '
         src += 'Your attention is important to us!</p>\n'
         src += '</td></tr></table><br>\n'
         src += '<form action="%s" method="post">\n' % request.path
@@ -1658,11 +1658,11 @@ class InstallPage(Page):
 #        src += 'You must donate at least <b>5 Gigabytes</b> to count as active user. </p>\n'
 #        src += '<p align=justify>Every hour, the program sends a short control packet on the Central \n'
 #        src += 'server so we know who is online, watch \n'
-#        src += '<a href="http://id.bitpie.net/statistics/" target=_blank>statistics page</a> \n'
+#        src += '<a href="http://id.bitdust.io/statistics/" target=_blank>statistics page</a> \n'
 #        src += 'to check your online days.\n'
 #        src += 'To get 50$ US or 1 oz silver coin you have to collect <b>365</b> points '
 #        src += 'in the column <i>effective days active</i>.</p>\n'
-#        src += '<p align=justify>Users who report bugs, spread BitPie.NET around the world \n'
+#        src += '<p align=justify>Users who report bugs, spread BitDust around the world \n'
 #        src += 'and actively assist in the development may be further rewarded. \n'
 #        src += '<br>This offer is currently limited to the <b>first 75 people</b> '
 #        src += 'to sign up in the beta testing.</p>\n'
@@ -1694,12 +1694,12 @@ class InstallPage(Page):
         src = ''
         src += '<h1>donate space to others</h1>\n'
         src += '<table width=80%><tr><td>\n'
-        src += '<p align=justify>You gain <a href="http://bitpie.net/glossary.html#money" target="_blank">credits</a> '
-        src += 'for providing space to your <a href="http://bitpie.net/glossary.html#customer" target="_blank">customers</a>. \n'
+        src += '<p align=justify>You gain <a href="http://bitdust.io/glossary.html#money" target="_blank">credits</a> '
+        src += 'for providing space to your <a href="http://bitdust.io/glossary.html#customer" target="_blank">customers</a>. \n'
         src += 'It needs time to get customers fill your donated space, '
         src += 'keep software working and stay online as much as possible to have higher '
-        src += '<a href="http://bitpie.net/glossary.html#rating" target="_blank">rating</a> and count as '
-        src += 'reliable <a href="http://bitpie.net/glossary.html#supplier" target="_blank">supplier</a>.\n'
+        src += '<a href="http://bitdust.io/glossary.html#rating" target="_blank">rating</a> and count as '
+        src += 'reliable <a href="http://bitdust.io/glossary.html#supplier" target="_blank">supplier</a>.\n'
         src += 'Donate more HDD space to accumulate more credits.</p>\n'
         src += '<p align=justify>We are going to provide a way to exchange accumulated credits for real money, bit coins or other currency.\n'
         src += 'At the moment we are focused on other things, this should be done early or later. '
@@ -1725,17 +1725,17 @@ class InstallPage(Page):
         src = ''
         src += '<h1>needed and donated space</h1>\n'
         src += '<table width=90%><tr><td>\n'
-        src += '<p align=justify>You gain <a href="http://bitpie.net/glossary.html#money" target=_blank>credits</a> for providing space to \n' 
-        src += 'your <a href="http://bitpie.net/glossary.html#customer" target=_blank>customers</a> \n'
-        src += 'and also spent credits to rent a space from <a href="http://bitpie.net/glossary.html#supplier" target="_blank">suppliers</a>. </p>\n'
+        src += '<p align=justify>You gain <a href="http://bitdust.io/glossary.html#money" target=_blank>credits</a> for providing space to \n' 
+        src += 'your <a href="http://bitdust.io/glossary.html#customer" target=_blank>customers</a> \n'
+        src += 'and also spent credits to rent a space from <a href="http://bitdust.io/glossary.html#supplier" target="_blank">suppliers</a>. </p>\n'
         src += '<p align=justify>If other users takes from you twice more space than you need for your data - <b>it is FREE</b>!\n'
-        src += 'This is because the <a href="http://bitpie.net/glossary.html#redundancy_in_backup" target=_blank>redundancy ratio</a> is 1:2, '
+        src += 'This is because the <a href="http://bitdust.io/glossary.html#redundancy_in_backup" target=_blank>redundancy ratio</a> is 1:2, '
         src += 'so every your backup takes twice more space on suppliers machines.</p>\n'
-        src += '<p align=justify>After registration the software starts counting your <a href="http://bitpie.net/glossary.html#rating" target="_blank">rating</a>, '
+        src += '<p align=justify>After registration the software starts counting your <a href="http://bitdust.io/glossary.html#rating" target="_blank">rating</a>, '
         src += 'more online hours - higher rating in the network.\n'
         src += 'The rating is used to decide who will be a more reliable supplier - new users probably wants you as supplier if you are mostly online.\n'
         src += 'So you get your customers early or later and fill most of your donated space.</p>\n'
-        src += '<p align=justify>BitPie.NET gives you a <b>$ 10</b> virtual credits as gift, so you can \n'
+        src += '<p align=justify>BitDust gives you a <b>$ 10</b> virtual credits as gift, so you can \n'
         src += 'start doing backups immediately after installation.</p>\n'
         src += '<p align=justify>Go to <i>[menu]->[money]</i> page to check your current credits and daily history.</p>\n'
         src += '</td></tr></table><br>\n'
@@ -1759,17 +1759,17 @@ class InstallPage(Page):
         src = ''
         src += '<h1>own encrypted storage</h1>\n'
         src += '<table width=90%><tr><td>\n'
-        src += '<p align=justify>I wish to introduce a new feature in the BitPie.NET.</p>\n'
+        src += '<p align=justify>I wish to introduce a new feature in the BitDust.</p>\n'
         src += '<p align=justify>Now you can create a <b>completely inaccessible for anybody but you</b>, keeping your data, \n'
         src += 'if after creating a distributed remote copy of your data - delete the original data from your computer.</p>\n'
-        src += '<p align=justify>Your <a href="http://bitpie.net/glossary.html#public_private_key" target=_blank>Private Key</a> '
+        src += '<p align=justify>Your <a href="http://bitdust.io/glossary.html#public_private_key" target=_blank>Private Key</a> '
         src += 'can be stored on a USB flash drive and local copy of the Key can be removed from your HDD.</p>\n'
-        src += '<p align=justify>Than, BitPie.NET will only run with this USB stick and read the Private Key at start up, \n'
+        src += '<p align=justify>Than, BitDust will only run with this USB stick and read the Private Key at start up, \n'
         src += 'so it will only be stored in RAM. After starting the program, disconnect the USB stick, and hide it in a safe place.</p>\n'
         src += '<p align=justify>If control of that computer was lost - just be sure that the power is turned off, it is easy to provide. \n'
         src += 'In this case the memory is reset and working key will be erased, so that copy of your Private Key will remain only on a USB flash drive, hidden by you.</p>\n'
-        src += '<p align=justify>This way, only you will have access to the data after a loss of the computer, where BitPie.NET were launched. '
-        src += 'Just need to download BitPie.NET Software again and <a href="http://bitpie.net/glossary.html#recovery" target=_blank>recover your account</a> '
+        src += '<p align=justify>This way, only you will have access to the data after a loss of the computer, where BitDust were launched. '
+        src += 'Just need to download BitDust Software again and <a href="http://bitdust.io/glossary.html#recovery" target=_blank>recover your account</a> '
         src += 'with your Private Key and than you can restore your backed up data.</p>\n'
         src += '<p align=left>To move your Private Key on USB flash drive go to <i>[menu]->[settings]->[security]</i> page.</p>\n'
         src += '</td></tr></table><br>\n'
@@ -2032,9 +2032,9 @@ class InstallPage(Page):
 #        src = ''
 #        src += '<table width=80%><tr><td>\n'
 #        src += '<center><h1>software updates</h1><center>\n'
-#        src += '<p align=justify>The BitPie.NET is now being actively developed and '
+#        src += '<p align=justify>The BitDust is now being actively developed and '
 #        src += 'current software version can be updated several times a month.</p>\n'
-#        src += '<p align=justify>If your computer will run an old version of BitPie.NET, '
+#        src += '<p align=justify>If your computer will run an old version of BitDust, '
 #        src += 'then sooner or later, you can lose touch with other users.\n'
 #        src += 'Since data transmission protocols may be changed - '
 #        src += 'users will not be able to understand each other '
@@ -2061,7 +2061,7 @@ class InstallPage(Page):
 #                src += '</td>\n'
 #            src += '</tr></table>'
 #        elif bpio.Linux():
-#            src += '<br><p align=justify>If you installed BitPie.NET through a package <b>bitpie-stable</b>, \n'
+#            src += '<br><p align=justify>If you installed BitDust through a package <b>bitdust-stable</b>, \n'
 #            src += 'it should be updated automatically with daily cron job.</p>\n'
 #        src += '<br><br><br>\n'
 #        src += '<center><input type="hidden" name="action" value="next" />\n'
@@ -2084,7 +2084,7 @@ class InstallPage(Page):
         src = ''
         src += '<br>' * 6 + '\n'
         src += '<table width=80%><tr><td>\n'
-        src += '<font size=+2 color=green><h1>BitPie.NET<br>is now configured</h1></font>\n'
+        src += '<font size=+2 color=green><h1>BitDust<br>is now configured</h1></font>\n'
         src += '<br><br><br>\n'
         src += '<form action="%s" method="get">\n' % request.path
         src += '<input type="hidden" name="action" value="next" />\n'
@@ -2137,7 +2137,7 @@ class InstallNetworkSettingsPage(Page):
         src += '<table><tr><td>\n'
         src += '<br><input type="checkbox" name="upnpenable" value="%s" %s />' % ('True', checked.get(upnpenable=='True'))
         src += '</td><td valign=center align=left>'
-        src += 'Use UPnP to automaticaly configure port forwarding for BitPie.NET.<br>'
+        src += 'Use UPnP to automaticaly configure port forwarding for BitDust.<br>'
         src += 'Enable this if you are connected to the Internet with network router.'
         src += '</td></tr></table>\n'
         src += '<br><br><br><input type="submit" name="button" value="   set   " />'
@@ -2391,7 +2391,7 @@ class MainPage(Page):
 
         if len(self.listExpandedDirs) == 0:
             # src += '<p>Add some files to backup on remote machines.</p>\n'
-            src += html_comment('run "python bitpie.py add <folder path>" to add backup folder')
+            src += html_comment('run "python bitdust.py add <folder path>" to add backup folder')
             # return src
 
         #--- list items
@@ -3099,7 +3099,7 @@ class MainPage(Page):
             src += html_comment(
                 'List of your suppliers is empty.\n'+
                 'This may be due to the fact that the connection with other users \n'+
-                'is not yet established or BitPie.NET can not find the number \n'+
+                'is not yet established or BitDust can not find the number \n'+
                 'of users that meet your requirements.')
             return html(request, body=str(src), title='my files', back='', reload=reload )
         
@@ -3108,12 +3108,12 @@ class MainPage(Page):
             if not config.conf().getBool('services/restores/enabled'):
                 src += '<h1>my files</h1>\n'
                 src += '<table width="70%"><tr><td align=left>\n'
-                src += '<p>The BitPie.NET software is not ready to manage your remote files.<br><br>\n'
+                src += '<p>The BitDust software is not ready to manage your remote files.<br><br>\n'
                 src += 'Network service <a href="%s"><b>restores<b></a> is disabled,\n' % ('/'+_PAGE_SERVICES_SETTINGS)
                 src += 'please check your software configs.</p>\n'
                 src += '</td></tr></table>\n'
                 src += html_comment(
-                    'The BitPie.NET software is not ready to manage your remote files.\n'+
+                    'The BitDust software is not ready to manage your remote files.\n'+
                     'Network service "restores" is disabled,\n'+
                     'please check your software configs.\n')
                 return html(request, body=str(src), title='my files', back='', reload=reload )
@@ -3217,7 +3217,7 @@ class MenuPage(Page):
         src += '<br><br>\n'
         shutdown_link = confirmurl(request, 
             yes=request.path+'?action=exit', 
-            text='Do you want to stop BitPie.NET?',
+            text='Do you want to stop BitDust?',
             back=back)
         return html(request, body=src, home='', title='menu', back=back, next='<a href="%s">[shutdown]</a>' % shutdown_link)
 
@@ -3289,7 +3289,7 @@ class BackupPage(Page, BackupIDSplit):
         src += '<table width=90%><tr><td align=center>\n'
         src += '<p align=justify>This backup is currently running.\n'
         src += 'Contents of the %s will be compressed, encrypted and divided into blocks. \n' % folder_or_file
-        src += 'After this BitPie.NET will monitor your data and restore the missing blocks. </p>\n'
+        src += 'After this BitDust will monitor your data and restore the missing blocks. </p>\n'
         src += html_comment('  this backup is currently running')
         src += '<p align=justify>'
         if dirSizeBytes == 0:
@@ -4070,7 +4070,7 @@ class SupplierPage(Page):
         if action == 'replace':
             msg = ''
             msg += '<font color=red><b>WARNING!</b></font><br>\n'
-            msg += 'After changing one of your suppliers BitPie.NET start the rebuilding process to distribute your data.\n' 
+            msg += 'After changing one of your suppliers BitDust start the rebuilding process to distribute your data.\n' 
             msg += 'This takes some time depending on data size and network speed.<br>\n'
             msg += 'If you change your suppliers too often you can loose your backed up data!<br>' 
             msg += 'Do you want to replace user <b>%s</b> with someone else?' % nameurl.GetName(self.idurl)
@@ -4234,7 +4234,7 @@ class SupplierChangePage(Page):
         src += '<table width=50%><tr><td align=center>\n'
         src += '<p>'
         src += '<font color=red><b>WARNING!</b></font><br>\n'
-        src += 'After changing one of your suppliers BitPie.NET start the rebuilding process to distribute your data.\n' 
+        src += 'After changing one of your suppliers BitDust start the rebuilding process to distribute your data.\n' 
         src += 'This takes some time depending on data size and network speed.<br>\n'
         src += 'If you change your suppliers too often you can loose your backed up data!'
         src += '</p><br><br>\n'
@@ -4301,7 +4301,7 @@ class SuppliersPage(Page):
                         try:
                             idurl = contactsdb.supplier(int(idurl))
                         except:
-                            idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                            idurl = ''
                     if contactsdb.is_supplier(idurl):
                         from customer import fire_hire
                         fire_hire.AddSupplierToFire(idurl)
@@ -4318,9 +4318,9 @@ class SuppliersPage(Page):
                     try:
                         idurl = contactsdb.supplier(int(idurl))
                     except:
-                        idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                        idurl = ''
                 if not newidurl.startswith('http://'):
-                    newidurl = 'http://'+settings.IdentityServerName()+'/'+newidurl+'.xml'
+                    newidurl = ''
                 if contactsdb.is_supplier(idurl):
                     # fire_hire.A('fire-him-now', (idurl, newidurl))
                     fire_hire.A('fire-him-now', [idurl,])
@@ -4489,7 +4489,7 @@ class SuppliersPage(Page):
             src += html_comment(
                 'List of your suppliers is empty.\n'+
                 'This may be due to the fact that the connection with other users \n'+
-                'is not yet established or BitPie.NET can not find the number \n'+
+                'is not yet established or BitDust can not find the number \n'+
                 'of users that meet your requirements.')
 
         #---links---
@@ -4653,7 +4653,7 @@ class CustomersPage(Page):
                     try:
                         idurl = contactsdb.customer(int(idurl))
                     except:
-                        idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                        idurl = ''
                 # if contactsdb.is_customer(idurl):
                 #     central_service.SendReplaceCustomer(idurl)
 
@@ -5358,7 +5358,7 @@ class SecurityPage(Page):
         src += '<p>If this machine is lost due to a broken disk, theft, fire, flood, earthquake, tornado, hurricane, etc. you must have a copy of your key someplace else to recover your data.</p>\n'
         src += '<p>We recommend at least 3 copies in different locations. For example one in your safe deposit box at the bank, one in your fireproof safe, and one at work.'
         src += 'You only need to do this at the beginning, then the keys can stay put till you need one.<\p>\n'
-        src += '<p><b>Without a copy of your key nobody can recover your data!</b><br>Not even BitPie.NET ...</p>\n'
+        src += '<p><b>Without a copy of your key nobody can recover your data!</b><br>Not even BitDust ...</p>\n'
         src += '<p>You can do the following with your Private Key:</p>\n'
 
         src += '<table><tr>\n'
@@ -5387,7 +5387,7 @@ class SecurityPage(Page):
         src += '<input type="hidden" name="label" value="Select filename to save" />\n'
         src += '<input type="hidden" name="showincluded" value="true" />\n'
         src += '<input type="submit" name="savefile" value=" write to file " path="%s" />\n' % (
-            misc.pack_url_param(os.path.join(os.path.expanduser('~'), '%s-BitPie.NET.key' % my_id.getIDName())))
+            misc.pack_url_param(os.path.join(os.path.expanduser('~'), '%s-BitDust.key' % my_id.getIDName())))
         src += '</form>\n'
         src += '</td>\n'
 
@@ -5397,11 +5397,11 @@ class SecurityPage(Page):
 
         src += '<p>You can create <b>a completely inaccessible for anybody but you</b>, keeping your data, if after creating a distributed remote backup - delete the original data from your computer. '
         src += 'Private key can be stored on a USB flash drive and <b>local copy of the Key can be removed from your HDD</b>.</p>\n'
-        src += '<p>Than, BitPie.NET will only run with this USB stick and read the Private Key at startup, it will only be stored in RAM. '
+        src += '<p>Than, BitDust will only run with this USB stick and read the Private Key at startup, it will only be stored in RAM. '
         src += 'After starting the program, disconnect the USB stick, and hide it in a safe place.</p>\n'
         src += '<p>If control of the computer was lost - just <b>be sure that the power is turned off</b>, it is easy to provide. '
         src += 'In this case the memory is reset and working key will be erased, so that copy of your Key will remain only on USB flash drive, hidden by you.</p>\n'
-        src += '<p>This way, <b>only you will have access to the data</b> after a loss of the computer, where BitPie.NET were launched.</p>\n'
+        src += '<p>This way, <b>only you will have access to the data</b> after a loss of the computer, where BitDust were launched.</p>\n'
         
         src += '<table><tr>\n'
         src += '<td>\n'
@@ -5413,7 +5413,7 @@ class SecurityPage(Page):
         src += '<input type="hidden" name="showincluded" value="true" />\n'
         removable_drives = bpio.listRemovableDrives()
         if len(removable_drives) > 0:
-            start_path = os.path.join(removable_drives[0], my_id.getIDName()+'-BitPie.NET.key')
+            start_path = os.path.join(removable_drives[0], my_id.getIDName()+'-BitDust.key')
         else:
             start_path = ''
         src += '<input type="submit" name="savefile" value=" move my key to removable media " path="%s" />\n' % start_path 
@@ -5535,12 +5535,12 @@ class SoftwareUpdatePage(Page):
             button = (' check latest version ', True, 'check')
         else:
             if local_checksum == '':
-                button = (' update BitPie.NET now ', True, 'update')
+                button = (' update BitDust now ', True, 'update')
             else:
                 if local_checksum != global_checksum:
-                    button = (' update BitPie.NET now ', True, 'update')
+                    button = (' update BitDust now ', True, 'update')
                 else:
-                    button = (' BitPie.NET is up to date ', False, 'check')
+                    button = (' BitDust is up to date ', False, 'check')
         src = ''
         src += '<h3>Update repository</h3>\n'
         src += '<form action="%s" method="post">\n' % request.path
@@ -5594,11 +5594,11 @@ class SoftwareUpdatePage(Page):
     def _body_linux_deb(self, request):
         src = ''
         src += '<table align=center><tr><td><div align=left>\n'
-        src += '<p>You can manually update BitPie.NET<br>\n'
+        src += '<p>You can manually update BitDust<br>\n'
         src += 'from command line using apt-get:</p>\n'
         src += '<code><br>\n'
         src += 'sudo apt-get update<br>\n'
-        src += 'sudo apt-get install bitpie-stable\n'
+        src += 'sudo apt-get install bitdust-stable\n'
         src += '</code></div></td></tr></table>\n'
         return src
            
@@ -5652,7 +5652,7 @@ class SoftwareUpdatePage(Page):
                 else:
                     src += self._body_windows_soures(request)
         else:
-            if bpio.getExecutableDir().count('/usr/share/bitpie'):
+            if bpio.getExecutableDir().count('/usr/share/bitdust'):
                 src += self._body_linux_deb(request)
             else:
                 src += self._body_linux_sources(request)
@@ -5677,7 +5677,7 @@ class DevelopmentPage(Page):
         if settings.enableWebStream():
             src += '<p>You can browse logs by clicking on icon "Logs" in top right of the main window, '
             src += 'or <a href="http://127.0.0.1:%d" target="_blank">here</a>.<br>\n' % settings.getWebStreamPort()
-            src += 'It is needed to restart BitPie.NET to be able to see the logs.</p>\n'
+            src += 'It is needed to restart BitDust to be able to see the logs.</p>\n'
         # src += '<br><br><h3>To see current packets transfers go to the <a href="%s">Packet Transfers page</a>.</h3>\n' % ('/'+_PAGE_MONITOR_TRANSPORTS)
         src += '<p>You can watch current memory usage on the <a href="%s">Memory page</a>.</p>\n' % ('/'+_PAGE_MEMORY)
         src += '<h3>If you want to give a feedback or you found a bug or other cause,<br>you can <a href="%s?back=%s">send a developer report</a> now.</h3>' % (
@@ -5715,8 +5715,8 @@ class DevelopmentPage(Page):
 #        src += html_comment('not transferable balance: %s BP' % misc.float2str(balnt))
 #        src += html_comment('bitcoins: %s BTC' % str(bitcoins))
 #        src += '<br>\n'
-#        src += '<br><br><a href="%s">I want to <b>BUY</b> BitPie.NET credits <b>for $ US</b> with my <b>CreditCard</b></a>\n' % _PAGE_MONEY_ADD
-#        src += '<br><br><a href="%s"><b>BUY/SELL</b> BP credits <b>for BitCoins</b> on the BitPie.NET Market Place</a>\n' % _PAGE_MONEY_MARKET_LIST
+#        src += '<br><br><a href="%s">I want to <b>BUY</b> BitDust credits <b>for $ US</b> with my <b>CreditCard</b></a>\n' % _PAGE_MONEY_ADD
+#        src += '<br><br><a href="%s"><b>BUY/SELL</b> BP credits <b>for BitCoins</b> on the BitDust Market Place</a>\n' % _PAGE_MONEY_MARKET_LIST
 #        src += '<br><br><a href="%s">Let\'s <b>SEND</b> some of my <b>earned</b> BP credits to one of my friends</a>\n' % _PAGE_TRANSFER
 #        src += '<br><br><a href="%s">Show me the full receipts <b>HISTORY</b></a>\n' % _PAGE_RECEIPTS
 #        return html(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU), title='money')
@@ -5727,7 +5727,7 @@ class DevelopmentPage(Page):
 #    def renderPage(self, request):
 #        action = arg(request, 'action')
 #        back = arg(request, 'back', '/'+_PAGE_MONEY)
-#        src = '<h1>add BitPie.NET credits</h1>\n'
+#        src = '<h1>add BitDust credits</h1>\n'
 #        
 #        if action == 'pay':
 #            url = 'http://%s:%s?id=%s' % (
@@ -5748,7 +5748,7 @@ class DevelopmentPage(Page):
 #        src += '<form action="%s" method="post">\n' % request.path
 #        src += '<input type="hidden" name="action" value="pay" />\n'
 #        src += '<input type="hidden" name="back" value="%s" />\n' % back
-#        src += '<input type="submit" name="submit" value=" buy BitPie.NET credits ON-LINE with your Credit Card " />\n'
+#        src += '<input type="submit" name="submit" value=" buy BitDust credits ON-LINE with your Credit Card " />\n'
 #        src += '</form>\n'
 #        return html(request, body=src, back=back, title='buy credits for $ US')
 
@@ -5777,7 +5777,7 @@ class DevelopmentPage(Page):
 #        back = arg(request, 'back', '/'+_PAGE_MONEY)
 #        message = ''
 #        maxamount = arg(request, 'maxamount', '10.0')
-#        price = arg(request, 'price', str(settings.DefaultBitCoinCostPerBitPie.NETCredit())) 
+#        price = arg(request, 'price', str(settings.DefaultBitCoinCostPerBitDustCredit())) 
 #        days = arg(request, 'days', '365')
 #        comment = misc.MakeValidHTMLComment(arg(request, 'comment'))
 #        btcaddress = arg(request, 'btcaddress')
@@ -5789,7 +5789,7 @@ class DevelopmentPage(Page):
 #                src = '<br>' * 3
 #                src += '<table width=70%><tr><td align=center>\n'
 #                src += '<h1>Please, confirm your bid</h1>\n'
-#                src += '<font size=+1><p align=center>Buy <b>%s BitPie.NET</b> for <b>%s BTC</b> each, <br><br>\n' % (misc.float2str(maxamount), misc.float2str(price)) 
+#                src += '<font size=+1><p align=center>Buy <b>%s BitDust</b> for <b>%s BTC</b> each, <br><br>\n' % (misc.float2str(maxamount), misc.float2str(price)) 
 #                src += 'a total of <b>%s BTC</b> will be deducted from your BitCoin account. <br><br>\n' % misc.float2str(amount)
 #                src += 'This bid will be available for <b>%s</b> days' % days
 #                if comment.strip():
@@ -5834,7 +5834,7 @@ class DevelopmentPage(Page):
 #                    ret = bitcoin.connection().sendtoaddress( 
 #                                   settings.MarketServerBitCoinAddress(), 
 #                                   float( float(maxamount) * float(price) ),
-#                                   'BitPie.NET bid from ' + my_id.getLocalID())
+#                                   'BitDust bid from ' + my_id.getLocalID())
 #                    message = ''
 #                except Exception, e:
 #                    message = str(e)
@@ -5846,13 +5846,13 @@ class DevelopmentPage(Page):
 #                    src += '<font color=green><p><b>%s BTC</b> were sent to the Market Server</p></font>\n' % misc.float2str(amount)
 #                    src += '<p>Transaction ID is <a href="https://blockchain.info/tx/%s" target=_blank>%s</a></p>\n' % (str(ret), str(ret))
 #                    src += '<p>Your bid will be published as soon as we receive your BitCoins in our account.<br>\n'
-#                    src += 'When will be found suitable offer - <b>%s BitPie.NET</b> will be credited to your account.<br>\n' % misc.float2str(maxamount)
+#                    src += 'When will be found suitable offer - <b>%s BitDust</b> will be credited to your account.<br>\n' % misc.float2str(maxamount)
 #                    src += 'After <b>%s</b> days there will be no suitable offer - <b>%s BTC</b> will be transferred back to this address:' % (days, misc.float2str(amount))
 #                    src += '<br><font color=green>%s</font></p>\n' % btcaddress
-#                    src += '<p>You can view offers and bids from all users on the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>\n' % settings.MarketPlaceURL()
+#                    src += '<p>You can view offers and bids from all users on the BitDust <a href="%s" target=_blank>Market Place</a>.</p>\n' % settings.MarketPlaceURL()
 #                    src += '<br><br><a href="%s">Go to a list of my current bids and offers</a>\n' % ('/'+_PAGE_MONEY_MARKET_LIST) 
 #                    src += '</td></tr></table>\n'
-#                    return html(request, body=src, back=back, title='buy BitPie.NET credits for BitCoins')
+#                    return html(request, body=src, back=back, title='buy BitDust credits for BitCoins')
 #                    
 #        # elif action == 'update':
 #        #     bitcoin.update(OnBitCoinUpdateBalance)
@@ -5860,12 +5860,12 @@ class DevelopmentPage(Page):
 #        src = ''
 #        src += '<h3>place a bid to buy credits for BitCoins</h3>\n'
 #        src += '<table align=center><tr><td align=left>\n'
-#        src += 'Transferable balance: <b>%s BitPie.NET</b>\n' % misc.float2str(bal)
+#        src += 'Transferable balance: <b>%s BitDust</b>\n' % misc.float2str(bal)
 #        src += '<br><br>BitCoins: <b>%s</b> \n' % str(bitcoins)
 #        # src += '&nbsp;&nbsp;&nbsp; <a href="%s?action=update&back=%s">[update]</a>\n' % (request.path, request.path)
 #        # src += '&nbsp;&nbsp;&nbsp; <a href="/%s?back=%s">[BitCoin settings]</a></p>\n' % (_PAGE_BIT_COIN_SETTINGS, request.path)
 #        src += '</td></tr></table>\n'
-#        src += html_comment('transferable balance: %s BitPie.NET' % misc.float2str(bal))
+#        src += html_comment('transferable balance: %s BitDust' % misc.float2str(bal))
 #        src += html_comment('bitcoins: %s BTC' % str(bitcoins))
 #        src += '<br>\n'
 #        src += '<form action="%s" method="post">\n' % request.path
@@ -5873,10 +5873,10 @@ class DevelopmentPage(Page):
 #        src += '<table><tr><td align=left>\n'
 #        src += '<table><tr><td align=left colspan=2>buy:</td></tr>\n'
 #        src += '<tr><td><input type="text" name="maxamount" value="%s" size=12 /></td>\n' % maxamount
-#        src += '<td align=left>BitPie.NET credits</td></tr></table>\n'
+#        src += '<td align=left>BitDust credits</td></tr></table>\n'
 #        src += '<table><tr><td align=left colspan=2>price is:</td></tr>\n'
 #        src += '<tr><td><input type="text" name="price" value="%s" size=12 /></td>\n' % price
-#        src += '<td align=left>BTC per 1 BitPie.NET </td></tr></table>\n'
+#        src += '<td align=left>BTC per 1 BitDust </td></tr></table>\n'
 #        src += '<table><tr><td align=left colspan=2>duration:</td></tr>\n'
 #        src += '<tr><td><input type="text" name="days" value="%s" size=4 /></td>\n' % days 
 #        src += '<td align=left>days</td></tr></table>\n'
@@ -5910,14 +5910,14 @@ class DevelopmentPage(Page):
 #        if float(maxamount) <= float(minamount):
 #            return 'incorrect minimum and maximum amount values'
 #        if float(minamount) < 1.0:
-#            return 'minimum amount is 1 BitPie.NET'
+#            return 'minimum amount is 1 BitDust'
 #        if len(comment) > 256:
 #            return 'your comment is too long'
 #        if not misc.ValidateBitCoinAddress(btaddress):
 #            return 'BitCoin address is not valid'
 #        bal, balnt, rcptnum = money.LoadBalance()
 #        if float(bal) <= float(maxamount):
-#            return 'you have insufficient funds in your BitPie.NET account'
+#            return 'you have insufficient funds in your BitDust account'
 #        return ''
 #
 #    def renderPage(self, request):
@@ -5928,7 +5928,7 @@ class DevelopmentPage(Page):
 #        message = ''
 #        maxamount = arg(request, 'maxamount', '10.0')
 #        minamount = arg(request, 'minamount', '1.0')
-#        price = arg(request, 'price', str(settings.DefaultBitCoinCostPerBitPie.NETCredit())) 
+#        price = arg(request, 'price', str(settings.DefaultBitCoinCostPerBitDustCredit())) 
 #        days = arg(request, 'days', '365')
 #        comment = misc.MakeValidHTMLComment(arg(request, 'comment'))
 #        btcaddress = arg(request, 'btcaddress')
@@ -5940,12 +5940,12 @@ class DevelopmentPage(Page):
 #                src = '<br>' * 3
 #                src += '<table width=70%><tr><td align=center>\n'
 #                src += '<h1>Please, confirm your offer</h1>\n'
-#                src += '<font size=+1><p align=center>Sell up to <b>%s BitPie.NET</b> for <b>%s BTC</b> each, <br><br>\n' % (misc.float2str(maxamount), misc.float2str(price)) 
-#                src += 'a total of <b>%s BitPie.NET</b> will be deducted from your BitPie.NET account. <br><br>\n' % misc.float2str(maxamount)
+#                src += '<font size=+1><p align=center>Sell up to <b>%s BitDust</b> for <b>%s BTC</b> each, <br><br>\n' % (misc.float2str(maxamount), misc.float2str(price)) 
+#                src += 'a total of <b>%s BitDust</b> will be deducted from your BitDust account. <br><br>\n' % misc.float2str(maxamount)
 #                src += 'Your purchased BitCoins will be transferred to this address:<br>\n'
 #                src += '<font color=green>%s</font><br><br>\n' % btcaddress
-#                src += 'The minimum amount of the deal is <b>%s BitPie.NET</b> credits.\n' % minamount
-#                src += 'If there is a bid on the Market that satisfies only part of your offer, the remainder of the loans will be transferred back to your BitPie.NET account.<br><br>\n'
+#                src += 'The minimum amount of the deal is <b>%s BitDust</b> credits.\n' % minamount
+#                src += 'If there is a bid on the Market that satisfies only part of your offer, the remainder of the loans will be transferred back to your BitDust account.<br><br>\n'
 #                src += 'This offer will be available for <b>%s</b> days' % days
 #                if comment.strip():
 #                    src += ' and published with comment:</p></font>\n'
@@ -5981,7 +5981,7 @@ class DevelopmentPage(Page):
 #                src += '</form>\n'
 #                src += '</td>\n'
 #                src += '</tr></table>\n'
-#                return html(request, body=src, back=back, title='sell BitPie.NET credits for BitCoins') 
+#                return html(request, body=src, back=back, title='sell BitDust credits for BitCoins') 
 #
 #        elif action == 'acceptoffer':
 #            message = self._checkInput(maxamount, minamount, price, days, comment, btcaddress)
@@ -5991,27 +5991,27 @@ class DevelopmentPage(Page):
 #                src = '<br><br><br>\n'
 #                src += '<tabler width=50%><tr><td>\n'
 #                src += '<h1>your successfully made an offer</h1>\n'
-#                src += '<font color=green><p><b>%s BitPie.NET</b> were transferred to the Market Server</p></font>\n' % misc.float2str(maxamount)
+#                src += '<font color=green><p><b>%s BitDust</b> were transferred to the Market Server</p></font>\n' % misc.float2str(maxamount)
 #                src += '<p>Your offer should be published immediately.<br>\n'
 #                src += 'When will be found a suitable bid your purchased BTC will be credited to this BitCoin address:<br>\n'
 #                src += '<font color=green>%s</font><br><br>\n' % btcaddress
-#                src += 'After <b>%s</b> days there will be no suitable offer - <b>%s BitPie.NET</b> will be transferred back to your account.</p>\n' % (days, misc.float2str(maxamount))
-#                src += '<p>You can view offers and bids from all users on the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>\n' % settings.MarketPlaceURL()
+#                src += 'After <b>%s</b> days there will be no suitable offer - <b>%s BitDust</b> will be transferred back to your account.</p>\n' % (days, misc.float2str(maxamount))
+#                src += '<p>You can view offers and bids from all users on the BitDust <a href="%s" target=_blank>Market Place</a>.</p>\n' % settings.MarketPlaceURL()
 #                src += '<br><br><a href="%s">Go to a list of my current bids and offers</a>\n' % ('/'+_PAGE_MONEY_MARKET_LIST) 
 #                src += '</td></tr></table>\n'
-#                return html(request, body=src, back=back, title='buy BitPie.NET credits for BitCoins')
+#                return html(request, body=src, back=back, title='buy BitDust credits for BitCoins')
 #                                
 #        # elif action == 'update':
 #        #     bitcoin.update(OnBitCoinUpdateBalance)
 #        
 #        src = '<h3>place offer to sell credits for BitCoins</h3>\n'
 #        src += '<table align=center><tr><td align=left>\n'
-#        src += 'Transferable balance: <b>%s BitPie.NET</b>\n' % misc.float2str(bal)
+#        src += 'Transferable balance: <b>%s BitDust</b>\n' % misc.float2str(bal)
 #        src += '<br><br>BitCoins: <b>%s</b>\n' % bitcoins
 #        # src += '&nbsp;&nbsp;&nbsp; <a href="%s?action=update&back=%s">[update]</a>\n' % (request.path, request.path)
 #        # src += '&nbsp;&nbsp;&nbsp; <a href="/%s?back=%s">[BitCoin settings]</a></p>\n' % (_PAGE_BIT_COIN_SETTINGS, request.path)
 #        src += '</td></tr></table>\n'
-#        src += html_comment('transferable balance: %s BitPie.NET' % misc.float2str(bal))
+#        src += html_comment('transferable balance: %s BitDust' % misc.float2str(bal))
 #        src += html_comment('bitcoins: %s' % bitcoins)
 #        src += '<br>\n'
 #        src += '<form action="%s" method="post">\n' % request.path
@@ -6019,15 +6019,15 @@ class DevelopmentPage(Page):
 #        src += '<table><tr><td align=left>\n'
 #        src += '<table><tr><td align=left colspan=2>sell up to:</td></tr>\n'
 #        src += '<tr><td><input type="text" name="maxamount" value="%s" size=12 /></td>\n' % maxamount
-#        src += '<td align=left>BitPie.NET credits</td></tr></table>\n'
+#        src += '<td align=left>BitDust credits</td></tr></table>\n'
 #        src += '</td><td align=left>\n'
 #        src += '<table><tr><td align=left colspan=2>but not less than:</td></tr>\n'
 #        src += '<tr><td><input type="text" name="minamount" value="%s" size=12 /></td>\n' % minamount
-#        src += '<td align=left>BitPie.NET credits</td></tr></table>\n'
+#        src += '<td align=left>BitDust credits</td></tr></table>\n'
 #        src += '</td></tr><tr><td align=left>\n'
 #        src += '<table><tr><td align=left colspan=2>price is:</td></tr>\n'
 #        src += '<tr><td><input type="text" name="price" value="%s" size=12 /></td>\n' % price
-#        src += '<td align=left nowrap>BTC per 1 BitPie.NET </td></tr></table>\n'
+#        src += '<td align=left nowrap>BTC per 1 BitDust </td></tr></table>\n'
 #        src += '</td><td align=left>\n'
 #        src += '<table><tr><td align=left colspan=2>duration:</td></tr>\n'
 #        src += '<tr><td><input type="text" name="days" value="%s" size=4 /></td>\n' % days 
@@ -6106,10 +6106,10 @@ class DevelopmentPage(Page):
 ##                    src += '<tr>\n'
 ##                    if public:
 ##                        src += '<td align=center><font color=red>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(bid.get('price', 'error'))
-##                        src += '<td align=center><font color=blue>%s</font><font color=gray size=-2> BitPie.NET</font></td>\n' % misc.float2str(bid.get('maxamount', 'error'))
+##                        src += '<td align=center><font color=blue>%s</font><font color=gray size=-2> BitDust</font></td>\n' % misc.float2str(bid.get('maxamount', 'error'))
 ##                    else:
 ##                        src += '<td align=center><font color=gray>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(bid.get('price', 'error'))
-##                        src += '<td align=center><font color=gray>%s</font><font color=gray size=-2> BitPie.NET</font></td>\n' % misc.float2str(bid.get('maxamount', 'error'))
+##                        src += '<td align=center><font color=gray>%s</font><font color=gray size=-2> BitDust</font></td>\n' % misc.float2str(bid.get('maxamount', 'error'))
 ##                    src += '<td align=center><font color=green>%s</font></td>\n' % timeleft 
 ##                    src += '<td align=right><a href="%s"><img src="%s" width=16 height=16></a></td>\n' % (request.path+'?action=cancelbid&bidid='+bid.get('id', ''), iconurl(request, 'icons/delete01.png'))
 ##                    src += '</tr>\n'
@@ -6141,7 +6141,7 @@ class DevelopmentPage(Page):
 ##                    src += '<tr><td colspan=4><hr></td></tr>\n'
 ##                    src += '<tr>\n'
 ##                    src += '<td align=center><font color=red>%s</font><font color=gray size=-2> BTC</font></td>\n' % misc.float2str(offer.get('price', 'error'))
-##                    src += '<td align=center><font color=blue>%s - %s</font><font color=gray size=-2> BitPie.NET</font></td>\n' % (misc.float2str(offer.get('minamount', 'error')), misc.float2str(offer.get('maxamount', 'error')))
+##                    src += '<td align=center><font color=blue>%s - %s</font><font color=gray size=-2> BitDust</font></td>\n' % (misc.float2str(offer.get('minamount', 'error')), misc.float2str(offer.get('maxamount', 'error')))
 ##                    src += '<td align=center><font color=green>%s</font></td>\n' % misc.seconds_to_time_left_string(offer.get('timeleft', 0))
 ##                    src += '<td align=right><a href="%s"><img src="%s" width=16 height=16></a></td>\n' % (request.path+'?action=canceloffer&offerid='+offer.get('id', ''), iconurl(request, 'icons/delete01.png'))
 ##                    src += '</tr>\n'
@@ -6159,16 +6159,16 @@ class DevelopmentPage(Page):
 #        src += '<tr>\n'
 #        src += '<td align=center>\n'
 #        src += '<br><br><br>\n'
-#        src += '<font size=4><b><a href="%s?back=%s">[buy BitPie.NET credits]</a></b></font><br><br>\n' % ('/'+_PAGE_MONEY_MARKET_BUY, request.path)
+#        src += '<font size=4><b><a href="%s?back=%s">[buy BitDust credits]</a></b></font><br><br>\n' % ('/'+_PAGE_MONEY_MARKET_BUY, request.path)
 #        src += '</td>\n'
 #        src += '<td align=center>\n'
 #        src += '<br><br><br>\n'
-#        src += '<font size=4><b><a href="%s?back=%s">[sell BitPie.NET credits]</a></b></font><br><br>\n' % ('/'+_PAGE_MONEY_MARKET_SELL, request.path)
+#        src += '<font size=4><b><a href="%s?back=%s">[sell BitDust credits]</a></b></font><br><br>\n' % ('/'+_PAGE_MONEY_MARKET_SELL, request.path)
 #        src += '</td>\n'
 #        src += '</tr>\n'
 #        src += '</table>\n'
 #        src += '<p><a href="%s?action=request&back=%s">Send a request to the Market Server for a list of my bids and offers</a></p>\n' % (request.path, back)
-#        src += '<br><p>To see bids and offers from all users go to the BitPie.NET <a href="%s" target=_blank>Market Place</a>.</p>' % settings.MarketPlaceURL() 
+#        src += '<br><p>To see bids and offers from all users go to the BitDust <a href="%s" target=_blank>Market Place</a>.</p>' % settings.MarketPlaceURL() 
 #        return html(request, body=src, back=back, title='list of my bids and offers')
 
 
@@ -6259,10 +6259,10 @@ class DevelopmentPage(Page):
 #                button = 'Yes! Send the money!'
 #                modify = False
 #                msg = '<table width="60%"><tr><td align=center>'
-#                msg += 'Do you want to transfer <font color=blue><b>%s BitPie.NET</b></font>' % misc.float2str(amount)
-#                msg += ' of your total <font color=blue><b>%s BitPie.NET</b></font> transferable funds ' % misc.float2str(bal)
+#                msg += 'Do you want to transfer <font color=blue><b>%s BitDust</b></font>' % misc.float2str(amount)
+#                msg += ' of your total <font color=blue><b>%s BitDust</b></font> transferable funds ' % misc.float2str(bal)
 #                msg += ' to user <font color=blue><b>%s</b></font> ?<br>\n' % nameurl.GetName(recipient)
-#                msg += '<br>Your transferable balance will become <font color=blue><b>%s BitPie.NET</b></font>.' % misc.float2str(float(bal)-float(amount))
+#                msg += '<br>Your transferable balance will become <font color=blue><b>%s BitDust</b></font>.' % misc.float2str(float(bal)-float(amount))
 #                msg += '</td></tr></table>'
 #                typ = 'info'
 #            elif res == 1:
@@ -6317,9 +6317,9 @@ class DevelopmentPage(Page):
 #
 #        src = '<h1>money</h1>\n'
 #        src += '<table align=center><tr><td align=left>\n'
-#        # src += 'Total balance: <b>%s BitPie.NET</b>\n' % misc.float2str(bal + balnt)
-#        src += 'transferable balance: <b>%s BitPie.NET</b>\n' % misc.float2str(bal)
-#        # src += '<br><br>Not transferable balance: <b>%s BitPie.NET</b>\n' % misc.float2str(balnt)
+#        # src += 'Total balance: <b>%s BitDust</b>\n' % misc.float2str(bal + balnt)
+#        src += 'transferable balance: <b>%s BitDust</b>\n' % misc.float2str(bal)
+#        # src += '<br><br>Not transferable balance: <b>%s BitDust</b>\n' % misc.float2str(balnt)
 #        src += '</td></tr></table>\n'
 #        src += '<br><br><br>\n'
 #        src += '<form action="%s" method="post">\n' % request.path
@@ -6373,8 +6373,8 @@ class DevelopmentPage(Page):
 #        src += '<tr><td align=right><b>To:</b></td><td align=left>' + str(receipt[4]) + '</td></tr>\n'
 #        src += html_comment('  To:     %s' % str(receipt[4]))
 #        if str(receipt[2]) not in ['bid', 'offer', 'cancelbid', 'canceloffer']:
-#            src += '<tr><td align=right><b>Amount:</b></td><td align=left>' + misc.float2str(money.GetTrueAmount(receipt)) + ' BitPie.NET</td></tr>\n'
-#            src += html_comment('  Amount: %s BitPie.NET' % misc.float2str(money.GetTrueAmount(receipt)))
+#            src += '<tr><td align=right><b>Amount:</b></td><td align=left>' + misc.float2str(money.GetTrueAmount(receipt)) + ' BitDust</td></tr>\n'
+#            src += html_comment('  Amount: %s BitDust' % misc.float2str(money.GetTrueAmount(receipt)))
 #        src += '<tr><td align=right><b>Date:</b></td><td align=left>' + str(receipt[1]) + '</td></tr>\n'
 #        src += html_comment('  Date:   %s' % str(receipt[1]))
 #        d = money.UnpackReport(receipt[-1])
@@ -6416,19 +6416,19 @@ class DevelopmentPage(Page):
 #            src += '<tr><td align=right>\n'
 #            src += '<table><tr><td nowrap>total taken space</td><td nowrap>%s Mb</td></tr>\n' % str(d['suppliers']['space'])
 #            src += html_comment('    total taken space: %s Mb' % str(d['suppliers']['space']))
-#            src += '<tr><td nowrap>suppliers costs</td><td nowrap>%s BitPie.NET</td></tr></table>\n' % str(d['suppliers']['costs'])
-#            src += html_comment('    suppliers costs:   %s BitPie.NET' % str(d['suppliers']['costs']))
+#            src += '<tr><td nowrap>suppliers costs</td><td nowrap>%s BitDust</td></tr></table>\n' % str(d['suppliers']['costs'])
+#            src += html_comment('    suppliers costs:   %s BitDust' % str(d['suppliers']['costs']))
 #            src += '</td><td>\n'
 #            src += '<table><tr><td nowrap>total given space</td><td nowrap>%s Mb</td></tr>\n' %  str(d['customers']['space'])
 #            src += html_comment('    total given space: %s Mb' % str(d['customers']['space']))
-#            src += '<tr><td>customers income</td><td nowrap>%s BitPie.NET</td></tr></table>\n' % str(d['customers']['income'])
-#            src += html_comment('    customers income:  %s BitPie.NET' % str(d['customers']['income']))
+#            src += '<tr><td>customers income</td><td nowrap>%s BitDust</td></tr></table>\n' % str(d['customers']['income'])
+#            src += html_comment('    customers income:  %s BitDust' % str(d['customers']['income']))
 #            src += '</td></tr>'
 #            src += '</table>\n'
 #            src += '</td></tr>\n'
 #            src += '<tr><td colspan=2 align=center>\n'
-#            src += '<br><b>Total profits:</b> %s BitPie.NET\n' % str(d['total']).strip()
-#            src += html_comment('    total profits:     %s BitPie.NET' % str(d['total']).strip())
+#            src += '<br><b>Total profits:</b> %s BitDust\n' % str(d['total']).strip()
+#            src += html_comment('    total profits:     %s BitDust' % str(d['total']).strip())
 #            src += '</td></tr>\n'
 #            src += '<tr><td colspan=2>\n'
 #            src += d['text']
@@ -7380,7 +7380,7 @@ class DevReportPage(Page):
         src += '<form action="%s", method="post">\n' % request.path
         src += '<table>\n'
         src += '<tr><td align=right><b>To:</b></td>\n'
-        src += '<td>BitPie.NET'
+        src += '<td>BitDust'
         src += '</td>\n'
         src += '<td align=right>\n'
         src += '<input type="checkbox" name="includelogs" value="True" %s /> include logs\n' % (
@@ -7401,7 +7401,7 @@ class MemoryPage(Page):
     def renderPage(self, request):
         src = '<h1>memory usage</h1>\n'
         if not settings.enableMemoryProfile():
-            src = '<p>You need to switch on <a href="%s">memory profiler</a> in the settings and restart BitPie.NET.</p>\n' % (
+            src = '<p>You need to switch on <a href="%s">memory profiler</a> in the settings and restart BitDust.</p>\n' % (
                 '/'+_PAGE_SETTINGS+'/'+'logs.memprofile-enabled')
             src += html_comment('You need to switch on memory profiler in the settings.')
             return html(request, back=arg(request, 'back', '/'+_PAGE_CONFIG), body=src)

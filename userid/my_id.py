@@ -117,7 +117,7 @@ def getIDName():
 def loadLocalIdentity():
     """
     The core method.
-    The file [BitPie.NET data dir]/metadata/localidentity keeps the user identity in XML format.
+    The file [BitDust data dir]/metadata/localidentity keeps the user identity in XML format.
     Do read the local file and set into object in memory.  
     """
     global _LocalIdentity
@@ -205,7 +205,7 @@ def validateTransports(orderL):
 
 def setTransportOrder(orderL):
     """
-    Validate transports and save the list in the [BitPie.NET data dir]\metadata\torder.
+    Validate transports and save the list in the [BitDust data dir]\metadata\torder.
     It is useful to remember the priority of used transports. 
     """
     orderl = orderL
@@ -216,7 +216,7 @@ def setTransportOrder(orderL):
 
 def getTransportOrder():
     """
-    Read and validate tranports from [BitPie.NET data dir]\metadata\torder file.
+    Read and validate tranports from [BitDust data dir]\metadata\torder file.
     """
     global _ValidTransports
     lg.out(8, 'my_id.getTransportOrder')

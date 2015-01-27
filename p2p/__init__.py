@@ -8,5 +8,5 @@
 """
 .. module:: p2p
 
-Contains modules to run BitPie.NET client code.
+Contains modules to run BitDust client code.
 """

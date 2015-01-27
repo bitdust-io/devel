@@ -11,7 +11,7 @@
 .. module:: nameurl
 
 Here is a methods to work with URL strings.
-We assume BitPie.NET URLs are of the form::
+We assume BitDust URLs are of the form::
 
     ssh://host.name.com:port/fooobar.xml  (maybe no foobar.xml)
     tcp://123.45.67.89:4321
@@ -38,8 +38,8 @@ def UrlParse(url):
     """
     Return a tuple of strings from url address : ( proto, host, port, filename )
         >>> import nameurl
-        >>> nameurl.UrlParse('http://id.bitpie.net/veselin.xml')
-        ('http', 'id.bitpie.net', '', 'veselin.xml')
+        >>> nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
+        ('http', 'id.bitdust.io', '', 'veselin.xml')
     """
     o = urlparse.urlparse(url)
     proto = o.scheme.strip()
@@ -86,8 +86,8 @@ def UrlFilename(url):
     """
     Generate a 'safe' filename from URL address.
     This is useful when need to store identity files on disk.
-        >>> nameurl.UrlFilename('http://id.bitpie.net/veselin.xml')
-        'http###id.bitpie.net#veselin.xml'     
+        >>> nameurl.UrlFilename('http://id.bitdust.io/veselin.xml')
+        'http###id.bitdust.io#veselin.xml'     
     """
     if url is None:
         return None
@@ -118,8 +118,8 @@ def FilenameUrl(filename):
 def UrlFilenameHTML(url):
     """
     Another method to simplify URL, so you can create a filename from URL string.
-        >>> nameurl.UrlFilenameHTML('http://id.bitpie.net/veselin.xml')
-        'id_bitpie_net_veselin_xml'     
+        >>> nameurl.UrlFilenameHTML('http://id.bitdust.io/veselin.xml')
+        'id_bitdust_net_veselin_xml'     
     """
     global legalset
     s = url.replace('http://', '')
@@ -135,7 +135,7 @@ def UrlFilenameHTML(url):
 def GetName(url):
     """
     Deal with the identities, return a filename (without extension) from URL address. 
-        >>> nameurl.GetName('http://id.bitpie.net/kinggeorge.xml')
+        >>> nameurl.GetName('http://id.bitdust.io/kinggeorge.xml')
         'kinggeorge'    
     """
     if url in [None, 'None', '',]:
@@ -177,7 +177,7 @@ def main():
     """
     I used this place for tests.
     """
-#    url = 'http://id.bitpie.net:565/sdfsdfsdf/veselin2.xml'
+#    url = 'http://id.bitdust.io:565/sdfsdfsdf/veselin2.xml'
 ##    url = 'ssh://34.67.22.5: 5654 /gfgfg.sdfsdf/sdfsd'
 ##    url = 'q2q://d5wJMQRBYD72V6Zb5aZ1@work.offshore.ai'
 ##    print UrlParse(url)

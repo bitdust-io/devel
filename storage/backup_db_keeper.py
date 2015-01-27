@@ -12,8 +12,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/backup_db_keeper/backup_db_keeper.png" target="_blank">
-    <img src="http://bitpie.net/automats/backup_db_keeper/backup_db_keeper.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/backup_db_keeper/backup_db_keeper.png" target="_blank">
+    <img src="http://bitdust.io/automats/backup_db_keeper/backup_db_keeper.png" style="max-width:100%;">
     </a>
 
 

@@ -4,7 +4,7 @@
 .. module:: stun_client
 .. role:: red
 
-BitPie.NET ``stun_client()`` Automat
+BitDust ``stun_client()`` Automat
 
 
 EVENTS:

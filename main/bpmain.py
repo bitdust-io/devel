@@ -220,7 +220,7 @@ def parser():
 #    group.add_option('-t', '--tempdir',
 #                        dest='tempdir',
 #                        type='string',
-#                        help='set location for temporary files, default is ~/.bitpie/temp',)
+#                        help='set location for temporary files, default is ~/.bitdust/temp',)
     group.add_option('--twisted',
                         dest='twisted',
                         action='store_true',
@@ -272,7 +272,7 @@ def override_options(opts, args):
 
 def kill():
     """
-    Kill all running BitPie.NET processes (except current).
+    Kill all running BitDust processes (except current).
     """
     from logs import lg
     from system import bpio
@@ -280,10 +280,10 @@ def kill():
     found = False
     while True:
         appList = bpio.find_process([
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
-            'bitpie.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+            'bitdust.py',
+            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             'bpgui.exe',
             'bpgui.py',
             'bppipe.exe',
@@ -299,13 +299,13 @@ def kill():
             bpio.kill_process(pid)
         if len(appList) == 0:
             if found:
-                lg.out(0, 'BitPie.NET stopped\n')
+                lg.out(0, 'BitDust stopped\n')
             else:
-                lg.out(0, 'BitPie.NET was not started\n')
+                lg.out(0, 'BitDust was not started\n')
             return 0
         total_count += 1
         if total_count > 10:
-            lg.out(0, 'some BitPie.NET process found, but can not stop it\n')
+            lg.out(0, 'some BitDust process found, but can not stop it\n')
             return 1
         time.sleep(1)
 
@@ -325,10 +325,10 @@ def wait_then_kill(x):
     total_count = 0
     while True:
         appList = bpio.find_process([
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
-            'bitpie.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+            'bitdust.py',
+            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             'bpgui.exe',
             'bpgui.py',
             'bppipe.exe',
@@ -421,7 +421,7 @@ def main():
         sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
         # sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
         from distutils.sysconfig import get_python_lib
-        sys.path.append(os.path.join(get_python_lib(), 'bitpie'))
+        sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
         try:
             from logs import lg
         except:
@@ -456,7 +456,7 @@ def main():
                     os.path.abspath(
                         os.path.join(
                             os.path.expanduser('~'),
-                                '.bitpie', 'config', 'logs', 'debug-level')))))
+                                '.bitdust', 'config', 'logs', 'debug-level')))))
     except:
         pass
     
@@ -464,7 +464,7 @@ def main():
         lg.disable_logs()
 
     #---logpath---
-    logpath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs', 'start.log')
+    logpath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs', 'start.log')
     if opts.output:
         logpath = opts.output
 
@@ -476,7 +476,7 @@ def main():
             lg.out(2, 'bpmain.main redirecting started')
 
     try:
-        os.remove(os.path.join(os.path.expanduser('~'), '.bitpie', 'logs', 'exception.log'))
+        os.remove(os.path.join(os.path.expanduser('~'), '.bitdust', 'logs', 'exception.log'))
     except:
         pass
 
@@ -498,19 +498,19 @@ def main():
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go':
         appList = bpio.find_process([
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
-            'bitpie.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+            'bitdust.py',
+            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         
 #        pid = -1
 #        try:
 #            if bpio.Windows():
-#                _data_path = os.path.join(os.environ.get('APPDATA', os.path.join(os.path.expanduser('~'), 'Application Data')), 'BitPie.NET')
+#                _data_path = os.path.join(os.environ.get('APPDATA', os.path.join(os.path.expanduser('~'), 'Application Data')), 'BitDust')
 #                pid_path = os.path.join(_data_path, 'metadata', 'processid')
 #            else:
-#                pid_path = os.path.join(os.path.expanduser('~'), '.bitpie', 'metadata', 'processid')
+#                pid_path = os.path.join(os.path.expanduser('~'), '.bitdust', 'metadata', 'processid')
 #            if os.path.isfile(pid_path):
 #                pid = int(bpio.ReadBinaryFile(pid_path).strip())
 #        except:
@@ -518,7 +518,7 @@ def main():
         # this is extra protection for Debian release
         # I am not sure how process name can looks on different systems
         # check the process ID from previous start 
-        # it file exists and we found this PID in the currently running apps - BitPie.NET is working
+        # it file exists and we found this PID in the currently running apps - BitDust is working
         # if file not exists we don't want to start if found some other jobs with same name 
         # PREPRO probably in future we can switch to this line:
         # if len(appList) > 0 and pid != -1 and pid in appList
@@ -528,7 +528,7 @@ def main():
 #        if len(appList) > 0 and ( ( pid != -1 and pid in appList ) or ( pid == -1 ) ):
 
         if len(appList) > 0:
-            lg.out(0, 'BitPie.NET already started, found another process: %s' % str(appList))
+            lg.out(0, 'BitDust already started, found another process: %s' % str(appList))
             bpio.shutdown()
             return 0
         try:
@@ -543,25 +543,25 @@ def main():
     elif cmd == 'detach':
         # lg.set_debug_level(20)
         appList = bpio.find_process([
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
-            'bitpie.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+            'bitdust.py',
+            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         if len(appList) > 0:
-            lg.out(0, 'main BitPie.NET process already started: %s' % str(appList))
+            lg.out(0, 'main BitDust process already started: %s' % str(appList))
             bpio.shutdown()
             return 0
         from lib import misc
         # from twisted.internet import reactor
         # def _detach():
         #     result = misc.DoRestart(detach=True)
-        #     lg.out(0, 'run and detach main BitPie.NET process: %s' % str(result))
+        #     lg.out(0, 'run and detach main BitDust process: %s' % str(result))
         #     reactor.callLater(2, reactor.stop)
         # reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart, detach=True)
         # reactor.callLater(0.01, _detach)
         # reactor.run()
-        lg.out(0, 'run and detach main BitPie.NET process')
+        lg.out(0, 'run and detach main BitDust process')
         bpio.shutdown()
         result = misc.DoRestart(detach=True)
         try:
@@ -574,13 +574,13 @@ def main():
     #---restart---
     elif cmd == 'restart':
         appList = bpio.find_process([
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
-            'bitpie.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+            'bitdust.py',
+            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         if len(appList) > 0:
-            lg.out(0, 'found main BitPie.NET process: %s, sending "restart" command ... ' % str(appList), '')
+            lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
             def done(x):
                 lg.out(0, 'DONE\n', '')
                 from twisted.internet import reactor
@@ -625,17 +625,17 @@ def main():
             'bpgui.py',
             ])
         appList = bpio.find_process([
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
-            'bitpie.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+            'bitdust.py',
+            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         if len(appList_bpgui) > 0:
             if len(appList) == 0:
                 for pid in appList_bpgui:
                     bpio.kill_process(pid)
             else:
-                lg.out(0, 'BitPie.NET GUI already opened, found another process: %s' % str(appList))
+                lg.out(0, 'BitDust GUI already opened, found another process: %s' % str(appList))
                 bpio.shutdown()
                 return 0
         if len(appList) == 0:
@@ -647,7 +647,7 @@ def main():
             bpio.shutdown()
             return ret
         
-        lg.out(0, 'found main BitPie.NET process: %s, start the GUI\n' % str(appList))
+        lg.out(0, 'found main BitDust process: %s, start the GUI\n' % str(appList))
         ret = show()
         bpio.shutdown()
         return ret
@@ -655,13 +655,13 @@ def main():
     #---stop---
     elif cmd == 'stop' or cmd == 'kill' or cmd == 'shutdown':
         appList = bpio.find_process([
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
-            'bitpie.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+            'bitdust.py',
+            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         if len(appList) > 0:
-            lg.out(0, 'found main BitPie.NET process: %s, sending command "exit" ... ' % str(appList), '')
+            lg.out(0, 'found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:
                 from twisted.internet import reactor
                 from interface.command_line import run_url_command
@@ -676,7 +676,7 @@ def main():
                 bpio.shutdown()
                 return ret
         else:
-            lg.out(0, 'BitPie.NET is not running at the moment')
+            lg.out(0, 'BitDust is not running at the moment')
             bpio.shutdown()
             return 0
 
@@ -706,12 +706,12 @@ def main():
             bpio.shutdown()
             return 0
         if not bpio.isFrozen():
-            lg.out(0, 'You are running BitPie.NET from sources, uninstall command is available only for binary version.')
+            lg.out(0, 'You are running BitDust from sources, uninstall command is available only for binary version.')
             bpio.shutdown()
             return 0
-        appList = bpio.find_process(['bitpie.exe',])
+        appList = bpio.find_process(['bitdust.exe',])
         if len(appList) > 0:
-            lg.out(0, 'found main BitPie.NET process...   ', '')
+            lg.out(0, 'found main BitDust process...   ', '')
             try:
                 from twisted.internet import reactor
                 from interface.command_line import run_url_command
@@ -739,7 +739,7 @@ def main():
 
 def usage():
     """
-    Calls ``p2p.help.usage()`` method to print out how to run BitPie.NET software from command line.
+    Calls ``p2p.help.usage()`` method to print out how to run BitDust software from command line.
     """
     try:
         import help
@@ -774,7 +774,7 @@ def copyright():
     """
     Prints the copyright string.
     """
-    print 'Copyright BitPie.NET, 2014. All rights reserved.'
+    print 'Copyright BitDust, 2014. All rights reserved.'
 
 #------------------------------------------------------------------------------ 
 

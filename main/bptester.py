@@ -10,7 +10,7 @@
 """
 .. module:: bptester
 
-This is a BitPie.NET child process, do monitoring of customer's files.
+This is a BitDust child process, do monitoring of customer's files.
 
 In case some of customers do not play fair - need to stop this.:
    
@@ -37,11 +37,11 @@ def sharedPath(filename, subdir='logs'):
             try:
                 appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read()) 
             except:
-                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
             if not os.path.isdir(appdata):
-                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         else: 
-            appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+            appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         AppData = appdata
     return os.path.join(AppData, subdir, filename)
 
@@ -51,7 +51,7 @@ def logfilepath():
     Need to make sure the ``bptester`` log is in a directory the user has permissions for,
     Such as the customer data directory.  Possibly move to temp directory?
     """
-#    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
+#    logspath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs')
 #    if not os.path.isdir(logspath):
 #        return 'tester.log'
 #    return os.path.join(logspath, 'tester.log')

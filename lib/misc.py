@@ -82,19 +82,19 @@ def init():
 
 def readLocalIP():
     """
-    Read local IP stored in the file [BitPie.NET data dir]/metadata/localip.
+    Read local IP stored in the file [BitDust data dir]/metadata/localip.
     """
     return bpio.ReadBinaryFile(settings.LocalIPFilename())
 
 def readExternalIP():
     """
-    Read external IP stored in the file [BitPie.NET data dir]/metadata/externalip.
+    Read external IP stored in the file [BitDust data dir]/metadata/externalip.
     """
     return bpio.ReadBinaryFile(settings.ExternalIPFilename())
 
 def readSupplierData(idurl, filename):
     """
-    Read a file from [BitPie.NET data dir]/suppliers/[IDURL] folder.
+    Read a file from [BitDust data dir]/suppliers/[IDURL] folder.
     The file names right now is ['connected', 'disconnected', 'listfiles']. 
     """
     path = settings.SupplierPath(idurl, filename)
@@ -619,7 +619,7 @@ def receiptIDstr(receipt_id):
     except:
         return str(receipt_id)
 
-def username2idurl(username, host='id.bitpie.net'):
+def username2idurl(username, host='id.bitdust.io'):
     """
     Creates an IDURL from given username, default identity server is used.
     """
@@ -1011,7 +1011,7 @@ def ReadRepoLocation():
                     return src.split('\n')[0].strip(), src.split('\n')[1].strip() 
                 except:
                     lg.exc()
-        return 'sources', 'http://bitpie.net/download/'
+        return 'sources', 'http://bitdust.io/download/'
     src = bpio.ReadTextFile(settings.RepoFile()).strip()
     if src == '':
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
@@ -1029,7 +1029,7 @@ def SetAutorunWindows():
     if os.path.abspath(bpio.getExecutableDir()) != os.path.abspath(settings.WindowsBinDir()):
         return
     createWindowsShortcut(
-        'BitPie.NET.lnk',
+        'BitDust.lnk',
         '%s' % settings.getIconLaunchFilename(),
         bpio.getExecutableDir(),
         os.path.join(bpio.getExecutableDir(), 'icons', settings.IconFilename()),
@@ -1040,7 +1040,7 @@ def ClearAutorunWindows():
     """
     Remove a shortcut from Windows startup menu.
     """
-    removeWindowsShortcut('BitPie.NET.lnk', folder='Startup')
+    removeWindowsShortcut('BitDust.lnk', folder='Startup')
 
 #def SetAutorunWindowsOld(CUorLM='CU', location=settings.getAutorunFilename(), name=settings.ApplicationName()):
 #    cmdexec = r'reg add HK%s\software\microsoft\windows\currentversion\run /v "%s" /t REG_SZ /d "%s" /f' % (CUorLM, name, location)
@@ -1085,7 +1085,7 @@ def pathToWindowsShortcut(filename, folder='Desktop'):
 
 def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
     """
-    Creates a shortcut for BitPie.NET on the desktop. 
+    Creates a shortcut for BitDust on the desktop. 
     """
     if bpio.Windows():
         try:
@@ -1105,7 +1105,7 @@ def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder
 
 def removeWindowsShortcut(filename, folder='Desktop'):
     """
-    Removes a BitPie.NET shortcut from the desktop.
+    Removes a BitDust shortcut from the desktop.
     """
     if bpio.Windows():
         path = pathToWindowsShortcut(filename, folder)
@@ -1134,7 +1134,7 @@ def pathToStartMenuShortcut(filename):
 
 def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
     """
-    Create a BitPie.NET shortcut in the Windows start menu.
+    Create a BitDust shortcut in the Windows start menu.
     """
     if bpio.Windows():
         try:
@@ -1215,8 +1215,8 @@ def DoRestart(param='', detach=False):
         lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
         pypyth = sys.executable
         cmdargs = [sys.executable]
-        if sys.argv[0] == '/usr/share/bitpie/bitpie.py':
-            cmdargs.append('/usr/bin/bitpie')
+        if sys.argv[0] == '/usr/share/bitdust/bitdust.py':
+            cmdargs.append('/usr/bin/bitdust')
         else:
             cmdargs.append(sys.argv[0])
         if param:
@@ -1368,7 +1368,7 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
 
 #def UpdateDesktopShortcut():
 #    """
-#    Called at startup to update BitPie.NET shortcut on the desktop.
+#    Called at startup to update BitDust shortcut on the desktop.
 #    I was playing with that, tried to keep the shortcut on the desktop always (even if user removes it).
 #    This is switched off now, it was very anoying for one my friend who install the software.
 #    """
@@ -1461,7 +1461,7 @@ def SendDevReportOld(subject, body, includelogs):
 def SendDevReport(subject, body, includelogs, progress=None):
     """
     Send a developer report to our public cgi script at:
-        http://bitpie.net/cgi-bin/feedback.py
+        http://bitdust.io/cgi-bin/feedback.py
     It should record it and so I can get your message and ( optional ) your logs.
         TODO:
             This seems to be not working correct yet.
@@ -1504,7 +1504,7 @@ def SendDevReport(subject, body, includelogs, progress=None):
         if zipfilename:
             files['upload'] = zipfilename
         data = {'subject': subject, 'body': body}
-        return net_misc.uploadHTTP('http://bitpie.net/cgi-bin/feedback.py', files, data, progress)
+        return net_misc.uploadHTTP('http://bitdust.io/cgi-bin/feedback.py', files, data, progress)
         # r.addErrback(lambda err: lg.out(2, 'misc.SendDevReport ERROR : %s' % str(err)))
         # r.addCallback(lambda src: lg.out(2, 'misc.SendDevReport : %s' % str(src)))            
         # return r 
@@ -1547,23 +1547,23 @@ def GetUserProfilePicturePath():
 def UpdateRegistryUninstall(uninstall=False):
     """
     This is not used right now.
-    Now BitPie.NET is installed via .msi file and we do all that stuff inside it.
+    Now BitDust is installed via .msi file and we do all that stuff inside it.
     """
     try:
         import _winreg
     except:
         return False
     unistallpath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall" 
-    regpath = unistallpath + "\\BitPie.NET"
+    regpath = unistallpath + "\\BitDust"
     values = {
         'DisplayIcon':      '%s,0' % str(bpio.getExecutableFilename()),
-        'DisplayName':      'BitPie.NET',
+        'DisplayName':      'BitDust',
         'DisplayVersion':   bpio.ReadTextFile(settings.VersionNumberFile()).strip(),
         'InstallLocation:': settings.BaseDir(),
         'NoModify':         1,
         'NoRepair':         1,
         'UninstallString':  '%s uninstall' % bpio.getExecutableFilename(),
-        'URLInfoAbout':     'http://bitpie.net', }    
+        'URLInfoAbout':     'http://bitdust.io', }    
     # open
     try:
         reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, regpath, 0, _winreg.KEY_ALL_ACCESS)
@@ -1590,7 +1590,7 @@ def UpdateRegistryUninstall(uninstall=False):
                 except:
                     lg.exc()
         else:
-            if name == 'DisplayName' and value == 'BitPie.NET':
+            if name == 'DisplayName' and value == 'BitDust':
                 _winreg.CloseKey(reg)
                 return True
     # delete
@@ -1602,7 +1602,7 @@ def UpdateRegistryUninstall(uninstall=False):
             lg.exc()
             return False
         try:
-            _winreg.DeleteKey(reg, 'BitPie.NET')
+            _winreg.DeleteKey(reg, 'BitDust')
         except:
             lg.exc()
             _winreg.CloseKey(reg)
@@ -1624,7 +1624,7 @@ def MakeBatFileToUninstall(wait_appname='bpmain.exe', local_dir=bpio.getExecutab
     Not used.
     """
     lg.out(0, 'misc.MakeBatFileToUninstall')
-    batfileno, batfilename = tempfile.mkstemp('.bat', 'BitPie.NET-uninstall-')
+    batfileno, batfilename = tempfile.mkstemp('.bat', 'BitDust-uninstall-')
     batsrc = ''
     batsrc += 'cd "%s"\n' % local_dir
     batsrc += 'del search.log /Q\n'

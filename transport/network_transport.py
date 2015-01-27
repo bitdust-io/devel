@@ -11,7 +11,7 @@
 """
 .. module:: network_transport
 .. role:: red
-BitPie.NET network_transport() Automat
+BitDust network_transport() Automat
 
 
 EVENTS:

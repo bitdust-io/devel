@@ -50,9 +50,9 @@ def sharedPath(filename, subdir='logs'):
         if os.path.isfile(os.path.join(curdir, 'appdata')):
             appdata = os.path.abspath(read_file(os.path.join(curdir, 'appdata')).strip())
             if not os.path.isdir(appdata):
-                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         else: 
-            appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+            appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         AppData = appdata
     sharedDir = os.path.join(AppData, subdir)
     if filename is None:
@@ -66,12 +66,12 @@ StarterFilename = os.path.basename(sys.argv[0].lower()) #'bpstarter.exe'
 UpdateRepo = ''
 DefaultRepoURL = ''
 DefaultRepo = 'stable'
-DefaultDefaultRepoURL = 'http://bitpie.net/repo/stable/'
+DefaultDefaultRepoURL = 'http://bitdust.io/repo/stable/'
 
 FilesDigestsFilename = 'files'
 CurrentVersionDigestsFilename = 'checksum'
 WGetFilename = 'wget.exe'
-MainExecutableFilename = 'bitpie.exe'
+MainExecutableFilename = 'bitdust.exe'
 StarterFilename = 'bpstarter.exe'
 
 LogFilePath = sharedPath('bpstarter.log', 'logs')
@@ -202,11 +202,11 @@ def main():
         #we want to check if another instance is running
         return stop_all([
             'bpstarter.exe',
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
             'bpgui.exe',
             'bpgui.py',
-            'bitpie.py',
+            'bitdust.py',
             'bpworker.py',
             ])
 
@@ -223,13 +223,13 @@ def main():
         show = True
 
     if not show:
-        #if bitpie.exe or bpgui.exe is running - stop it.
+        #if bitdust.exe or bpgui.exe is running - stop it.
         search_list.extend([
-            'bitpie.exe',
+            'bitdust.exe',
             'bpmain.py',
             'bpgui.exe',
             'bpgui.py',
-            'bitpie.py',
+            'bitdust.py',
             ])
         res = stop_all(search_list)
         if res != 0:
@@ -362,7 +362,7 @@ def main():
 
             if dlgshow:
                 dlg = EasyDialogs.ProgressBar(
-                    'Downloading BitPie.NET binaries',
+                    'Downloading BitDust binaries',
                     len(download_list),
                     '')
 
@@ -423,7 +423,7 @@ def main():
         except KeyboardInterrupt:
             return 'canceled'
 
-    #finally - start bitpie.exe and exit
+    #finally - start bitdust.exe and exit
     return launch(show)
 
 
@@ -478,14 +478,14 @@ def run():
     logwrite('shared location is     [%s]\n' % sharedStarterFilename)
 
     if (not binDirExist) or executable_filename != sharedStarterFilename:
-        #if BitPie.NET is running - stop it.
+        #if BitDust is running - stop it.
         res = stop_all([    'bpstarter.',
                             'bpmain.',
                             'bpgui.',
-                            'bitpie.',
+                            'bitdust.',
                             ])
         if res != 0:
-            logwrite('can not stop BitPie.NET: %s\n' % res)
+            logwrite('can not stop BitDust: %s\n' % res)
             sys.exit(res)
             return
 

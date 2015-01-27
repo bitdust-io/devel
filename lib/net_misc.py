@@ -52,7 +52,7 @@ _ConnectionFailedCallbackFunc = None
 
 #------------------------------------------------------------------------------ 
 
-_UserAgentString = "BitPie.NET-http-agent"
+_UserAgentString = "BitDust-http-agent"
 _ProxySettings = {
     'host': '',
     'port': '',
@@ -82,7 +82,7 @@ def SetConnectionDoneCallbackFunc(f):
 def SetConnectionFailedCallbackFunc(f):
     """
     Set a callback to catch events for ````failed```` network transfers or connections.
-    Later, BitPie.NET code will compare both counters to decide that connection to Internet is gone. 
+    Later, BitDust code will compare both counters to decide that connection to Internet is gone. 
     """
     global _ConnectionFailedCallbackFunc
     _ConnectionFailedCallbackFunc = f
@@ -553,7 +553,7 @@ def TestInternetConnection(remote_hosts=None, timeout=10):
     """
     if remote_hosts is None:
         remote_hosts = []
-        remote_hosts.append('http://bitpie.net')
+        remote_hosts.append('http://bitdust.io')
         # remote_hosts.append('http://www.google.com')
         # remote_hosts.append('http://www.facebook.com')
         # remote_hosts.append('http://www.youtube.com')

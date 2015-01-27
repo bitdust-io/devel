@@ -131,7 +131,7 @@ setup(
     windows = [
 
         {
-            'script': 'bitpie.py',
+            'script': 'bitdust.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
         },
 

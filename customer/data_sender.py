@@ -12,8 +12,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/data_sender/data_sender.png" target="_blank">
-    <img src="http://bitpie.net/automats/data_sender/data_sender.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/data_sender/data_sender.png" target="_blank">
+    <img src="http://bitdust.io/automats/data_sender/data_sender.png" style="max-width:100%;">
     </a>
     
 A state machine to manage data sending process, acts very simple:

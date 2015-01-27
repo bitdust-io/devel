@@ -24,15 +24,15 @@ User can decide to put his identity file on his own host, or he can use some ano
 All identity files is signed with user's Key and client code should verify signatures.
 Even if someone tried to fake my identity - this will be refused by other nodes in the network.  
 
-Example in http://id.bitpie.net/veselin.xml
+Example in http://id.bitdust.io/veselin.xml
 
 Could have info just be XML on a web page.  So an Identity could be a URL.
 If we do this, then we get the scaling of DNS for free.  
 
-BitPie.NET could have mappings from unique short names to URLs for
+BitDust could have mappings from unique short names to URLs for
 identities.  Or we could just make sure that the MD5 of the URL was
 always unique (this is 16 bytes).  Or we could go with the primary URL.  
-Hum.  bitpie.net does need some sort of unique identifier, as do others.  
+Hum. BitDust does need some sort of unique identifier, as do others.  
 Also, would be nice to be able to send someone a list of their 
 current 64 nodes they use, or the 300 that use them, without
 crazy amounts of data.  For display
@@ -77,12 +77,12 @@ signature on all identity info
 Contact list has enough info we can tell what protocol to use.
 User could put in order he prefers us to try the contact methods.  
 So we might have a list like:
-    bitpie:offshore.ai:5008
-    bitpie:209.88.68.34:5008
+    bitdust:offshore.ai:5008
+    bitdust:209.88.68.34:5008
     stun:stun.me:90
     vertex:foo@bar.com
-    email:bitpie@gmail.com
-    email:bitpie@hotmal.com
+    email:bitdust@gmail.com
+    email:bitdust@hotmal.com
     http://foobar.com/data.pl?vince    
 
 Really best if all the identity servers use SSL.
@@ -252,7 +252,7 @@ class identity:
     def getIDName(self, index = 0):
         """
         Return an account name - this is just a user name taken from IDURL:
-            "veselin" for "http://id.bitpie.net/veselin.xml"
+            "veselin" for "http://id.bitdust.io/veselin.xml"
         """
         protocol, host, port, filename = nameurl.UrlParse(self.getIDURL(index))
         return filename.strip()[0:-4]
@@ -260,7 +260,7 @@ class identity:
     def getIDHost(self, index = 0):
         """
         Return a server host name where that identity is stored:
-            "id.bitpie.net" for "http://id.bitpie.net/veselin.xml"
+            "id.bitdust.io" for "http://id.bitdust.io/veselin.xml"
         """
         protocol, host, port, filename = nameurl.UrlParse(self.getIDURL(index))
         if port:

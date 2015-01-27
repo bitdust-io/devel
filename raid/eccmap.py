@@ -325,7 +325,7 @@ class eccmap:
         data = GetEccMapData(name)
         self.ParityToData = []
         for PS in data:
-            oneset=[]
+            oneset = []
             for datanum in PS:
                 try:
                     oneset.append(datanum)
@@ -489,19 +489,19 @@ class eccmap:
         #out(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
         bestParityNum = -1
         bestParityMap = []
-        if DataSegs[DataSegNum] == 1 :           
+        if DataSegs[DataSegNum] == 1:           
             # we have the data segment nothing to fix, unclear why this was called, don't expect this to happen
             #out(12, "eccmap.GetDataFixPath we already have the data segment requested to fix?")
             return bestParityNum, bestParityMap
         for paritynum in range(0, self.paritysegments):
-            if ((ParitySegs[paritynum]==1) or (ParitySegs[paritynum]==True)) and \
-                    (DataSegNum in self.ParityToData[paritynum]): # If parity is not missing (so we can use it) and contains the missing DataSegNum
-                Parity=self.ParityToData[paritynum]
-                missing=0                       # We will see how many of the datas are missing
+            # If parity is not missing (so we can use it) and contains the missing DataSegNum
+            if ParitySegs[paritynum] and (DataSegNum in self.ParityToData[paritynum]): 
+                Parity = self.ParityToData[paritynum]
+                missing = 0                       # We will see how many of the datas are missing
                 for DataNum in Parity:          # look at all datas that went into this parity
-                    if (DataSegs[DataNum]==0):  # if this data is missing
+                    if DataSegs[DataNum] == 0:  # if this data is missing
                         missing += 1            #     increase count of those missing in this parity
-                if (missing == 1):              # if missing exactly 1 of datas in parity
+                if missing == 1:              # if missing exactly 1 of datas in parity
                     if (len(bestParityMap) == 0) or (len(Parity) < len(bestParityMap)):
                         bestParityNum = paritynum
                         bestParityMap = Parity

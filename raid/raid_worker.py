@@ -12,7 +12,7 @@
 .. module:: raid_worker
 .. role:: red
 
-BitPie.NET raid_worker Automat
+BitDust raid_worker Automat
 
 .. raw:: html
 
@@ -216,7 +216,7 @@ class RaidWorker(automat.Automat):
         Action method.
         """
         os.environ['PYTHONUNBUFFERED'] = '1'
-        self.processor = pp.Server(secret='bitpie')
+        self.processor = pp.Server(secret='bitdust')
         # do not use all cpus at once 
         # need to keep at least one for all other operations
         ncpus = self.processor.get_ncpus()

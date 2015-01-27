@@ -3,7 +3,7 @@
 """
 .. module:: supplier_finder
 .. role:: red
-BitPie.NET supplier_finder() Automat
+BitDust supplier_finder() Automat
 
 
 EVENTS:

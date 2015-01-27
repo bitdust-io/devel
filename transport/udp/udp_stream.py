@@ -5,7 +5,7 @@
 .. module:: udp_stream
 .. role:: red
 
-BitPie.NET udp_stream() Automat
+BitDust udp_stream() Automat
 
 .. raw:: html
 

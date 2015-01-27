@@ -13,11 +13,11 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/install_wizard/install_wizard.png" target="_blank">
-    <img src="http://bitpie.net/automats/install_wizard/install_wizard.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/install_wizard/install_wizard.png" target="_blank">
+    <img src="http://bitdust.io/automats/install_wizard/install_wizard.png" style="max-width:100%;">
     </a>
     
-A state machine to show installation wizard for BitPie.NET software.
+A state machine to show installation wizard for BitDust software.
 User need to answer some questions step by step to configure the program first time.
 
 This is several pages:
@@ -70,7 +70,7 @@ def A(event=None, arg=None):
 
 class InstallWizard(automat.Automat):
     """
-    BitPie.NET install_wizard() Automat.
+    BitDust install_wizard() Automat.
     Runs install wizard process.
     """
     

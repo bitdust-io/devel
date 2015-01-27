@@ -1,32 +1,32 @@
-  2014-08-20 Veselin Penev <veselin@bitpie.net>
+  2014-08-20 Veselin Penev <veselin@bitdust.io>
 
     * new tray icons for Microsoft Windows
     
     
-  2014-10-10 Veselin Penev <veselin@bitpie.net>
+  2014-10-10 Veselin Penev <veselin@bitdust.io>
 
     * switched on a new imporved UDP transport - can use UDP to transfer packets now
     * upgrade messaging service - safe p2p encrypted chat
     * added command line support to send/list messages
 
-  2014-15-10 Veselin Penev <veselin@bitpie.net>
+  2014-15-10 Veselin Penev <veselin@bitdust.io>
     
     * fixed error in registration part
 
-  2014-10-17 Veselin Penev <veselin@bitpie.net>
+  2014-10-17 Veselin Penev <veselin@bitdust.io>
   
     * a bugfix in the backups, error when trying to add a network location under Windows
-    * make developer reports working again, set up a script http://bitpie.net/cgi-bin/feedback.py
+    * make developer reports working again, set up a script http://bitdust.io/cgi-bin/feedback.py
     * changed UDP PING timeout from 10sec to 1 minute
     * small fixes in the command line interface
 
-  2014-10-21 Veselin Penev <veselin@bitpie.net>
+  2014-10-21 Veselin Penev <veselin@bitdust.io>
   
     * fixed messages - p2p chat is working now! 
     * did small fixes in: GUI, DHT code, API
     * changed UDP PING timeout agin, from 1 minute to 30 seconds
     
-  2014-11-23 Veselin Penev <veselin@bitpie.net>
+  2014-11-23 Veselin Penev <veselin@bitdust.io>
   
     * KEY FEATURE: software core is transformed into a system of interrelated services
     * made upgrade on stun client - multiple stun requests at same time to increase performace

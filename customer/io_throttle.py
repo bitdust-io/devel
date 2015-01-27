@@ -11,7 +11,7 @@
 .. module:: io_throttle
 
 When reconstructing a backup we don't want to take over everything
-and make BitPie.NET unresponsive by requesting 1000's of files at once
+and make BitDust unresponsive by requesting 1000's of files at once
 and make it so no other packets can go out.
 
 This just tries to limit how much we are sending out or receiving at any time

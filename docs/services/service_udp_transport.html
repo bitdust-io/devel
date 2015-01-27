@@ -10,9 +10,9 @@ services\service_udp_transport
 <div id="content">
 <h1>Сервис udp_transport()</h1>
 <h2>Описание</h2>
-<p>Полезные данные между узлами в сети BitPie.NET передаются через так называемые сетевые транспортные протоколы.
+<p>Полезные данные между узлами в сети BitDust передаются через так называемые сетевые транспортные протоколы.
 Сервис <code>udp_transport()</code> реализует прямую передачу данных между машинами используя сетевой протокол UDP. 
-В BitPie.NET реализован собственный метод потоковой передачи бинарных данных через UDP датаграммы.</p>
+В BitDust реализован собственный метод потоковой передачи бинарных данных через UDP датаграммы.</p>
 <p>По аналогии с протоколом TCP, создается отдельная сессия с каждым удаленным узлом. 
 Общая пропускная способность баланисруется между всеми открытыми сессиями, 
 в настройках сетевой службы <code>network()</code> пользователь имеет возможность настроить 
@@ -20,7 +20,7 @@ services\service_udp_transport
 <p>Этот сетевой транспорт позволяет соединять напрямую пользователей находящихся за NAT.
 Поддерживается большинство из существующих типов конфигураций сетевого оборудования,
 симметричный NAT на данный момент не поддерживается.</p>
-<p>Для корректной работы программы BitPie.NET необходимо, 
+<p>Для корректной работы программы BitDust необходимо, 
 что бы хотя бы один из сетевых транспортов был включен.
 На данный момент поддерживаются два сетевых транспорта:</p>
 <ul>
@@ -57,13 +57,13 @@ services\service_udp_transport
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_udp_transport.py">service_udp_transport.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_node.py">transport/udp/udp_node.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_session.py">transport/udp/udp_session.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_connector.py">transport/udp/udp_connector.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_stream.py">transport/udp/udp_stream.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_file_queue.py">transport/udp/udp_file_queue.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/udp/udp_interface.py">transport/udp/udp_interface.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/services/service_udp_transport.py">service_udp_transport.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/udp/udp_node.py">transport/udp/udp_node.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/udp/udp_session.py">transport/udp/udp_session.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/udp/udp_connector.py">transport/udp/udp_connector.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/udp/udp_stream.py">transport/udp/udp_stream.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/udp/udp_file_queue.py">transport/udp/udp_file_queue.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/udp/udp_interface.py">transport/udp/udp_interface.py</a></li>
 </ul>
 <br>
 <br>

@@ -4,7 +4,7 @@
 .. module:: supplier
 .. role:: red
 
-BitPie.NET supplier_connector() Automat
+BitDust supplier_connector() Automat
 
 .. raw:: html
 

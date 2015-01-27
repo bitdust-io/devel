@@ -10,7 +10,7 @@
 """
 .. module:: api
 
-Here is a bunch of methods to interact with BitPie.NET software.
+Here is a bunch of methods to interact with BitDust software.
 """
 
 #------------------------------------------------------------------------------ 

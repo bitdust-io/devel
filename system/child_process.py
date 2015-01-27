@@ -10,7 +10,7 @@
 """
 .. module:: child_process
 
-BitPie.NET executes periodically several slaves:
+BitDust executes periodically several slaves:
     - bppipe
     - bptester
     - bpgui
@@ -116,7 +116,7 @@ def kill_process(process):
 
 def kill_child(child_name):
     """
-    Search (by "pid") for BitPie.NET child process with name ``child_name`` and tries to kill it.
+    Search (by "pid") for BitDust child process with name ``child_name`` and tries to kill it.
     """
     killed = False
     for pid in bpio.find_process([child_name+'.']): 

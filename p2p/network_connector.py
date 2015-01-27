@@ -14,8 +14,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/network_connector/network_connector.png" target="_blank">
-    <img src="http://bitpie.net/automats/network_connector/network_connector.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/network_connector/network_connector.png" target="_blank">
+    <img src="http://bitdust.io/automats/network_connector/network_connector.png" style="max-width:100%;">
     </a>
     
 The ``network_connector()`` machine is needed to monitor status of the Internet connection.
@@ -23,7 +23,7 @@ The ``network_connector()`` machine is needed to monitor status of the Internet 
 It will periodically check for incoming traffic and start STUN discovery procedure 
 to detect connection status and possible external IP changes.
 
-If BitPie.NET get disconnected it will ping "http://google.com" to know what is going on.
+If BitDust get disconnected it will ping "http://google.com" to know what is going on.
 
 
 EVENTS:

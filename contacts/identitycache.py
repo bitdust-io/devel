@@ -11,7 +11,7 @@
 
 Here we store a local copies of identities.
 This fetches identities off the web and stores an XML copy in file and an identity object in a dictionary.  
-Other parts of BitPie.NET call this to get an identity using an IDURL.
+Other parts of BitDust call this to get an identity using an IDURL.
 So this is a local cache of user ID's.
 """
 

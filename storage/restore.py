@@ -12,8 +12,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/restore/restore.png" target="_blank">
-    <img src="http://bitpie.net/automats/restore/restore.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/restore/restore.png" target="_blank">
+    <img src="http://bitdust.io/automats/restore/restore.png" style="max-width:100%;">
     </a>
     
 
@@ -42,7 +42,7 @@ in this module we have to read block by block all of the blocks.
 How do we restore if we lost everything?
 Our ( public/private-key and eccmap) could be:
 
-    1)  at BitPie.NET  (encrypted with pass phrase)
+    1)  at BitDust  (encrypted with pass phrase)
     2)  on USB in safe or deposit box   (encrypted with passphrase or clear text)
     3)  with friends or scrubbers (encrypted with passphrase)
                 

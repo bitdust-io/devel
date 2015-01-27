@@ -52,7 +52,6 @@ _Prefix = 'bpapp_'
 
 # BASE_DIR1 = os.path.dirname(os.path.dirname(__file__))
 # DB_FILE = os.path.join(BASE_DIR1, 'asite.sqlite3')
-# DB_FILE = '/Users/mihailmakeev/sites/bitpie.net/src/asite.sqlite3'
 
 _SQL = \
     """[create supplier]

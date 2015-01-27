@@ -410,13 +410,13 @@ def restore_original_stdout():
         sys.stdout = _OriginalStdOut
         _std_out.close()
     except:
-        traceback.print_last(file=open('bitpie.error', 'w'))
+        traceback.print_last(file=open('bitdust.error', 'w'))
 
 
 def set_weblog_func(webstreamfunc):
     """
     Set callback method to be called in Dprint, used to show logs in the WEB browser.
-    See ``bitpie.lib.weblog`` module. 
+    See ``bitdust.lib.weblog`` module. 
     """
     global _WebStreamFunc
     _WebStreamFunc = webstreamfunc

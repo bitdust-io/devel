@@ -11,7 +11,7 @@
 .. module:: automat
 
 This is the base class for State Machine.
-The BitPie.NET project is developing in principles of 
+The BitDust project is developing in principles of 
 `Automata-based programming <http://en.wikipedia.org/wiki/Automata-based_programming>`_.
 
 This is a programming paradigm in which the program or its part is thought of as a model of a 
@@ -26,14 +26,14 @@ The transition graphs of state machines are used in all stages of software devel
 - debugging and 
 - documentation.
 
-You can see Transition graph for all BitPie.NET state machines in the file  
-`automats.pdf <http://bitpie.net/automats.pdf>`_, 
+You can see Transition graph for all BitDust state machines in the file  
+`automats.pdf <http://bitdust.io/automats.pdf>`_, 
 MS Visio, 'editable' version:
-`automats.vsd <http://bitpie.net/automats.vsd>`_, 
-stencils is here: `automats.vss <http://bitpie.net/automats.vss>`_
+`automats.vsd <http://bitdust.io/automats.vsd>`_, 
+stencils is here: `automats.vss <http://bitdust.io/automats.vss>`_
 
 A small tool called `visio2python <http://code.google.com/p/visio2python/>`_ 
-was written to simplify working with the BitPie.NET project. 
+was written to simplify working with the BitDust project. 
 
 It can translate transition graphs created in Microsoft Visio into Python code.
 

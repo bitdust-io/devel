@@ -14,11 +14,11 @@
 
 Here is a bunch of methods to process input from command-line.
 
-User can pass arguments via command line and newly executed BitPie.NET process 
-will communicate with already started BitPie.NET main application to do needed operations.
+User can pass arguments via command line and newly executed BitDust process 
+will communicate with already started BitDust main application to do needed operations.
 In some cases we do not need to communicate - the new process just prints some static data and exit.
 
-To communicate with existing BitPie.NET process new instance first reads the port number of the 
+To communicate with existing BitDust process new instance first reads the port number of the 
 HTML web server (see ``p2p.webcontrol`` module) and then connect to that port and send request.
 
 See ``p2p.help`` module for commands details.
@@ -62,7 +62,7 @@ def run(opts, args, overDict, pars):
     """
     The entry point, this is called from ``p2p.bpmain`` to process command line arguments.
     """
-    print 'Copyright 2014, BitPie.NET. All rights reserved.'
+    print 'Copyright 2014, BitDust. All rights reserved.'
     
     if overDict:
         settings.override_dict(overDict)
@@ -72,10 +72,10 @@ def run(opts, args, overDict, pars):
         lg.set_debug_level(0)
 
     appList = bpio.find_process([
-        'bitpie.exe',
+        'bitdust.exe',
         'bpmain.py',
-        'bitpie.py',
-        'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+        'bitdust.py',
+        'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
         ])
     running = len(appList) > 0
    
@@ -98,49 +98,49 @@ def run(opts, args, overDict, pars):
     #---backup---
     elif cmd in ['backup', 'backups', 'bk']:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_backups(opts, args, overDict)
 
     #---restore---
     elif cmd in ['restore', 're']:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_restore(opts, args, overDict)
 
     #---schedule---
     elif cmd in ['schedule', 'shed', 'sched', 'sh']:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_schedule(opts, args, overDict)
 
     #---suppliers---
     elif cmd in [ 'suppliers', 'supplier', 'sup', 'supp', 'sp', ]:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_suppliers(opts, args, overDict)
     
     #---customers---
     elif cmd in [ 'customers', 'customer', 'cus', 'cust', 'cs', ]:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_customers(opts, args, overDict)
 
     #---register---
     elif cmd == 'register':
         if running:
-            print 'BitPie.NET already started.\n'
+            print 'BitDust already started.\n'
             return 0
         return cmd_register(opts, args, overDict)
 
     #---recover---
     elif cmd == 'recover':
         if running:
-            print 'BitPie.NET already started.\n'
+            print 'BitDust already started.\n'
             return 0
         return cmd_recover(opts, args, overDict)
 
@@ -151,7 +151,7 @@ def run(opts, args, overDict, pars):
     #---stats---
     elif cmd in [ 'stats', 'st' ]:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_stats(opts, args, overDict)
 
@@ -169,21 +169,21 @@ def run(opts, args, overDict, pars):
     #---states---
     elif cmd in [ 'states', 'sta', 'automats', 'auto' ]:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_states(opts, args, overDict)
     
     #---cache---
     elif cmd in [ 'cache' ]:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_cache(opts, args, overDict)
 
     #---reconnect---
     elif cmd in [ 'reconnect', ]:
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_reconnect(opts, args, overDict)
         
@@ -201,28 +201,28 @@ def run(opts, args, overDict, pars):
     #---memory---
     elif cmd == 'memory':
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_memory(opts, args, overDict)
     
     #---money---
     elif cmd == 'money':
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_money(opts, args, overDict)
 
     #---storage---
     elif cmd == 'storage':
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_storage(opts, args, overDict)
     
     #---message---
     elif cmd == 'msg' or cmd == 'message' or cmd == 'messages':
         if not running:
-            print 'BitPie.NET is not running at the moment\n'
+            print 'BitDust is not running at the moment\n'
             return 0
         return cmd_message(opts, args, overDict)
 
@@ -239,7 +239,7 @@ def run(opts, args, overDict, pars):
 
 def run_url_command(address, stop_reactor_in_errback=True):
     """
-    Method to communicate with existing BitPie.NET process with HTTP request.
+    Method to communicate with existing BitDust process with HTTP request.
     Reads port number of the local HTTP server and do the request.
     """
     try:
@@ -437,7 +437,7 @@ def cmd_suppliers(opts, args, overDict):
             print '  supplier %s is fired !' % supplier_name
             print_and_stop(src)
             return
-        if count >= 20:
+        if count >= 60:
             print ' time is out\n'
             reactor.stop()
             return
@@ -466,9 +466,9 @@ def cmd_suppliers(opts, args, overDict):
             try:
                 idurl = contactsdb.supplier(int(idurl))
             except:
-                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                idurl = ''
         if not idurl:
-            print 'supplier IDURL is None\n'
+            print 'supplier IDURL is unknown\n'
             return 0
         name = nameurl.GetName(idurl)
         url = webcontrol._PAGE_SUPPLIERS + '?action=replace&idurl=%s' % misc.pack_url_param(idurl)
@@ -483,13 +483,11 @@ def cmd_suppliers(opts, args, overDict):
             try:
                 idurl = contactsdb.supplier(int(idurl))
             except:
-                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                idurl = ''
         if not idurl:
-            print 'supplier IDURL is None\n'
+            print 'supplier IDURL is unknown\n'
             return 0
         newidurl = args[3].strip()
-        if not newidurl.startswith('http://'):
-            newidurl = 'http://'+settings.IdentityServerName()+'/'+newidurl+'.xml'
         name = nameurl.GetName(idurl)
         newname = nameurl.GetName(newidurl)
         url = webcontrol._PAGE_SUPPLIERS + '?action=change&idurl=%s&newidurl=%s' % (misc.pack_url_param(idurl), misc.pack_url_param(newidurl))
@@ -539,7 +537,10 @@ def cmd_customers(opts, args, overDict):
             try:
                 idurl = contactsdb.customer(int(idurl))
             except:
-                idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+                idurl = ''
+        if not idurl:
+            print 'customer IDURL is unknown\n'
+            return 0
         name = nameurl.GetName(idurl)
         url = webcontrol._PAGE_CUSTOMERS + '?action=remove&idurl=%s' % misc.pack_url_param(idurl)
         run_url_command(url).addCallback(_wait_remove_customer_and_stop, name, 0)
@@ -592,10 +593,10 @@ def cmd_recover(opts, args, overDict):
     if idurl == '' and len(args) >= 3:
         idurl = args[2]
         if not idurl.startswith('http://'):
-            idurl = 'http://'+settings.IdentityServerName()+'/'+idurl+'.xml'
+            idurl = ''
     if idurl == '':
-        print 'BitPie.NET need to know your username to recover your account\n'
-        return 2
+        print 'BitDust need to know your username to recover your account\n'
+        return 0
     from main import initializer
     from main import shutdowner
     initializer.A('run-cmd-line-recover', { 'idurl': idurl, 'keysrc': txt })
@@ -832,8 +833,6 @@ def cmd_money(opts, args, overDict):
     
     elif len(args) >= 4 and args[1] == 'transfer':
         recipient = args[2].strip()
-        if not recipient.startswith('http://'):
-            recipient = 'http://'+settings.IdentityServerName()+'/'+recipient+'.xml'
         url = '%s?action=commit&recipient=%s&amount=%s' % (webcontrol._PAGE_TRANSFER, misc.pack_url_param(recipient), args[3]) 
         run_url_command(url).addCallback(print_and_stop)
         reactor.run()
@@ -847,7 +846,7 @@ def cmd_uninstall(opts, args, overDict):
         print 'This command can be used only under OS Windows.'
         return 0
     if not bpio.isFrozen():
-        print 'You are running BitPie.NET from sources, uninstall command is available only for binary version.'
+        print 'You are running BitDust from sources, uninstall command is available only for binary version.'
         return 0
     def do_uninstall():
         lg.out(0, 'command_line.do_uninstall')
@@ -860,10 +859,10 @@ def cmd_uninstall(opts, args, overDict):
         found = False
         while True:
             appList = bpio.find_process([
-                'bitpie.exe',
+                'bitdust.exe',
                 'bpmain.py',
-                'bitpie.py',
-                'regexp:^/usr/bin/python\ +/usr/bin/bitpie.*$',
+                'bitdust.py',
+                'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
                 'bpgui.exe',
                 'bpgui.py',
                 'bppipe.exe',
@@ -879,13 +878,13 @@ def cmd_uninstall(opts, args, overDict):
                 bpio.kill_process(pid)
             if len(appList) == 0:
                 if found:
-                    lg.out(0, 'BitPie.NET stopped\n')
+                    lg.out(0, 'BitDust stopped\n')
                 else:
-                    lg.out(0, 'BitPie.NET was not started\n')
+                    lg.out(0, 'BitDust was not started\n')
                 return 0
             total_count += 1
             if total_count > 10:
-                lg.out(0, 'some BitPie.NET process found, but can not stop it\n')
+                lg.out(0, 'some BitDust process found, but can not stop it\n')
                 return 1
             time.sleep(1)            
     def wait_then_kill(x):
@@ -895,7 +894,7 @@ def cmd_uninstall(opts, args, overDict):
         def _try():
             lg.out(0, '_try')
             appList = bpio.find_process([
-                'bitpie.exe',
+                'bitdust.exe',
                 'bpgui.exe',
                 'bppipe.exe',
                 'bptester.exe',
@@ -920,17 +919,17 @@ def cmd_uninstall(opts, args, overDict):
         _try()
 #            time.sleep(1)
     appList = bpio.find_process([
-        'bitpie.exe',
+        'bitdust.exe',
         'bpgui.exe',
         'bppipe.exe',
         'bptester.exe',
         'bpstarter.exe',
         ])
     if len(appList) == 0:
-        lg.out(0, 'uninstalling BitPie.NET ...   ')
+        lg.out(0, 'uninstalling BitDust ...   ')
         do_uninstall()
         return 0
-    lg.out(0, 'found BitPie.NET processes ...   ')
+    lg.out(0, 'found BitDust processes ...   ')
     try:
         url = webcontrol._PAGE_ROOT+'?action=exit'
         run_url_command(url).addCallback(wait_then_kill)
@@ -963,19 +962,19 @@ def cmd_message(opts, args, overDict):
 
 def cmd_integrate(opts, args, overDict):
     """
-    A platform-dependent method to make a "system" command called "bitpie".
+    A platform-dependent method to make a "system" command called "bitdust".
     Than you can 
     
     Run: 
-        sudo python bitpie.py integrate
+        sudo python bitdust.py integrate
     
     Ubuntu: 
-        This will create an executable file /usr/local/bin/bitpie with such content:
+        This will create an executable file /usr/local/bin/bitdust with such content:
             #!/bin/sh
-            cd [path to `bitpie` folder]
-            /usr/bin/python bitpie.py $*
+            cd [path to `bitdust` folder]
+            /usr/bin/python bitdust.py $*
             
-    If this is sterted without root permissions, it should create a file ~/bin/bitpie.
+    If this is sterted without root permissions, it should create a file ~/bin/bitdust.
     """
     def print_text(msg, nl='\n'):
         """
@@ -986,10 +985,10 @@ def cmd_integrate(opts, args, overDict):
         print_text('this feature is not yet available in OS Windows.')
         return 0
     curpath = bpio.getExecutableDir()
-    cmdpath = '/usr/local/bin/bitpie'
+    cmdpath = '/usr/local/bin/bitdust'
     src = "#!/bin/sh\n"
     src += "cd %s\n" % curpath
-    src += "/usr/bin/python bitpie.py $*\n"
+    src += "/usr/bin/python bitdust.py $*\n"
     print_text('creating a command script : %s ... ' % cmdpath, nl='')
     result = False
     try:
@@ -1002,7 +1001,7 @@ def cmd_integrate(opts, args, overDict):
     except:
         print_text('FAILED')
     if not result:
-        cmdpath = os.path.join(os.path.expanduser('~'), 'bin', 'bitpie')
+        cmdpath = os.path.join(os.path.expanduser('~'), 'bin', 'bitdust')
         print_text('try to create a command script in user home folder : %s ... ' % cmdpath, nl='')
         try:
             if not os.path.isdir(os.path.join(os.path.expanduser('~'), 'bin')):
@@ -1017,5 +1016,5 @@ def cmd_integrate(opts, args, overDict):
             print_text('FAILED')
             return 0
     if result:
-        print_text('now use "bitpie" command to access the BitPie.NET software.\n')
+        print_text('now use "bitdust" command to access the BitDust software.\n')
     return 0

@@ -3,7 +3,7 @@
 """
 .. module:: stun_server
 
-BitPie.NET stun_server() Automat
+BitDust stun_server() Automat
 
 EVENTS:
     * :red:`datagram-received`

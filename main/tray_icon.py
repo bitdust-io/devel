@@ -12,7 +12,7 @@
 """
 .. module:: tray_icon
 
-Uses wxPython to show tray icon for BitPie.NET.
+Uses wxPython to show tray icon for BitDust.
 This is working inside ``bpmain`` process, uses wxreactor to connect with main Twisted loop.
 """
 
@@ -20,7 +20,7 @@ import os
 import sys
 
 USE_TRAY_ICON = True
-LABEL = 'BitPie.NET'
+LABEL = 'BitDust'
     
 _IconObject = None
 _ControlFunc = None

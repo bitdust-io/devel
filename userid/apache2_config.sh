@@ -8,10 +8,10 @@ sudo a2enmod proxy_http
 sudo a2enmod rewrite
 sudo service apache2 restart
 
-# configure BitPie.NET
+# configure BitDust
 python bitpie.py set service/id-server/enabled true
 python bitpie.py set service/id-server/host my-own-identity-server.com
 
 # you can run only identity server: ./run.id_server
-# or just start the whole BitPie.NET software in background
+# or just start the whole BitDust software in background
 python bitpie.py detach

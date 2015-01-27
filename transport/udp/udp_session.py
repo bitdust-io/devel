@@ -3,7 +3,7 @@
 """
 .. module:: udp_session
 
-BitPie.NET udp_session() Automat
+BitDust udp_session() Automat
 
 
 EVENTS:

@@ -103,7 +103,7 @@ def commit(new_revision_number=None):
 def init():
     """
     Must be called before other methods here.
-    Load index database from file .bitpie/metadata/index.
+    Load index database from file .bitdust/metadata/index.
     """
     lg.out(4, 'backup_control.init')
     Load()
@@ -118,7 +118,7 @@ def shutdown():
 
 def WriteIndex(filepath=None):
     """
-    Write index data base to the local file .bitpie/metadata/index.
+    Write index data base to the local file .bitdust/metadata/index.
     """
     global _LoadingFlag
     if _LoadingFlag:
@@ -430,7 +430,7 @@ class Task():
             lg.out(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return 
-        compress_mode = 'none' # 'gz'
+        compress_mode = 'bz2' # 'none' # 'gz'
         if bpio.pathIsDir(sourcePath):
             backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
         else:    
@@ -533,7 +533,7 @@ def OnJobDone(backupID, result):
         # do we really need to restart backup_monitor after each backup?
         # if we have a lot tasks started this will produce a lot unneeded actions
         # will be smarter to restart it once we finish all tasks
-        # because user will probable leave BitPie.NET working after starting a long running operation
+        # because user will probable leave BitDust working after starting a long running operation
         import backup_monitor
         backup_monitor.A('restart') 
     RunTasks()

@@ -13,8 +13,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/p2p_connector/p2p_connector.png" target="_blank">
-    <img src="http://bitpie.net/automats/p2p_connector/p2p_connector.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/p2p_connector/p2p_connector.png" target="_blank">
+    <img src="http://bitdust.io/automats/p2p_connector/p2p_connector.png" style="max-width:100%;">
     </a>
 
 The ``p2p_connector()`` state machine manages the user's connection with other remote users.

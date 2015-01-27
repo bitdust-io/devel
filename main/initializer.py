@@ -13,8 +13,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/initializer/initializer.png" target="_blank">
-    <img src="http://bitpie.net/automats/initializer/initializer.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/initializer/initializer.png" target="_blank">
+    <img src="http://bitdust.io/automats/initializer/initializer.png" style="max-width:100%;">
     </a>
 
 This Automat is the "entry point" to run all other state machines.
@@ -104,7 +104,7 @@ def Destroy():
     
 class Initializer(automat.Automat):
     """
-    A class to execute start up operations to launch BitPie.NET software. 
+    A class to execute start up operations to launch BitDust software. 
     """
     
     fast = True
@@ -282,7 +282,7 @@ class Initializer(automat.Automat):
         Action method.
         """
         lg.out(0, 'You must register first, run command:')
-        lg.out(0, '   bitpie register <your name>')
+        lg.out(0, '   bitdust register <your name>')
 
     def doDestroyMe(self, arg):
         global _Initializer

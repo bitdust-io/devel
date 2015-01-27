@@ -37,12 +37,12 @@ import config
 
 #------------------------------------------------------------------------------ 
 
-_BaseDirPath = ''   # location for ".bitpie" folder, lets keep all program DB in one place
+_BaseDirPath = ''   # location for ".bitdust" folder, lets keep all program DB in one place
                     # however you can setup your donated location in another place, second disk ...
-                    # Linux: /home/$USER/.bitpie
-                    # WindowsXP: c:\\Document and Settings\\[user]\\.bitpie
-                    # Windows7: c:\\Users\\[user]\\.bitpie
-_UserConfig = None  # user settings read from file .bitpie/metadata/userconfig
+                    # Linux: /home/$USER/.bitdust
+                    # WindowsXP: c:\\Document and Settings\\[user]\\.bitdust
+                    # Windows7: c:\\Users\\[user]\\.bitdust
+_UserConfig = None  # user settings read from file .bitdust/metadata/userconfig
 _OverrideDict = {}  # list of values to replace some of user settings 
 _InitDone = False    
 
@@ -71,7 +71,7 @@ def _init(base_dir=None):
     This is called only once, prepare a bunch of things:
         - Set the base folder where for program data
         - Check and create if not exist "metadata" directory 
-        - Load settings from [BitPie.NET data dir]/metadata/userconfig or create a new, default settings
+        - Load settings from [BitDust data dir]/metadata/userconfig or create a new, default settings
         - Check other "static" folders
         - Validate most important user settings
         - Check custom folders 
@@ -482,7 +482,7 @@ def DefaultBackupMaxBlockSize():
 
 def MinimumBandwidthInLimitKBSec():
     """
-    Not used, idea was to limit the minimum bandwidth given to BitPie.NET.
+    Not used, idea was to limit the minimum bandwidth given to BitDust.
     """
     return 10
 
@@ -520,7 +520,7 @@ def ApplicationName():
     May be one day we decide to do some rebranding - so this can be useful method. :-)
     But this is not used at the moment. 
     """
-    return 'BitPie.NET'
+    return 'BitDust'
 
 def ListFilesFormat():         
     """
@@ -544,7 +544,7 @@ def HMAC_key_word():
 
 def DefaultRepo(): 
     """
-    BitPie.NET software can be updated from different "repositories".
+    BitDust software can be updated from different "repositories".
     Right now we have three locations for Windows (testing, development and stable) 
     and one for Linux (going to add another one).
     This is to be able to run different code in the network and so be able to test new features
@@ -557,22 +557,22 @@ def DefaultRepoURL(repo='stable'):
     Return a given repository location for Windows.
     """
     if repo == 'stable':
-        return 'http://bitpie.net/repo/stable/'
+        return 'http://bitdust.io/repo/stable/'
     elif repo == 'devel':
-        return 'http://bitpie.net/repo/devel/'
+        return 'http://bitdust.io/repo/devel/'
     else: 
-        return 'http://bitpie.net/repo/test/'
+        return 'http://bitdust.io/repo/test/'
 
 def FilesDigestsFilename():
     """
     This file keeps MD5 checksum of all binary files for Windows release.
     Every Windows repository have such file, this is link for "stable" repo::
     
-        http://bitpie.net/repo/stable/files
+        http://bitdust.io/repo/stable/files
         
     Local copy of this file is also stored in the file::
     
-        .bitpie/bin/files
+        .bitdust/bin/files
         
     Our bpstarter.exe read local copy and than can request a public copy and compare the content.
     If some files were changed or new files added to the repo - it will update the local binaries from repo.
@@ -585,13 +585,13 @@ def CurrentVersionDigestsFilename():
     This file keeps a MD5 checksum of the file "files", see ``FilesDigestsFilename()``.
     It is also placed in the Windows repository::
     
-        http://bitpie.net/repo/stable/checksum
+        http://bitdust.io/repo/stable/checksum
             
     If some binary files have been changed - the file "files" also changed and 
     its checksum also.
     Locally this is stored in the file::
         
-        .bitpie/bin/checksum
+        .bitdust/bin/checksum
         
     The software check "checksum" file first and if it is not the same - further download "files". 
     """
@@ -616,28 +616,28 @@ def LegalNickNameChars():
 
 def BaseDirDefault():
     """
-    A default location for BitPie.NET data folder.
+    A default location for BitDust data folder.
     All of the paths below should be under some base directory.
     """
-    return os.path.join(os.path.expanduser('~'), '.bitpie')
+    return os.path.join(os.path.expanduser('~'), '.bitdust')
 
 def BaseDirLinux():
     """
     Default data folder location for Linux users.
     """
-    return os.path.join(os.path.expanduser('~'), '.bitpie')
+    return os.path.join(os.path.expanduser('~'), '.bitdust')
 
 def BaseDirWindows():
     """
     Default data folder location for Windows users.
     """
-    return os.path.join(os.path.expanduser('~'), '.bitpie')
+    return os.path.join(os.path.expanduser('~'), '.bitdust')
 
 def BaseDirMac():
     """
     Default data folder location for MacOS users.
     """
-    return os.path.join(os.path.expanduser('~'), '.bitpie')
+    return os.path.join(os.path.expanduser('~'), '.bitdust')
 
 def GetBaseDir():
     """
@@ -661,8 +661,8 @@ def BaseDir():
 
 def BaseDirPathFileName():
     """
-    You can configure BitPie.NET software to use another place for data folder.
-    Say you want to store BitPie.NET files on another disk.
+    You can configure BitDust software to use another place for data folder.
+    Say you want to store BitDust files on another disk.
     In the binary folder file "appdata" can be created and it will keep the path to the data folder. 
     """
     return os.path.join(bpio.getExecutableDir(), "appdata")
@@ -675,7 +675,7 @@ def DefaultRestoreDir():
 
 def WindowsBinDir():
     """
-    Under Windows executable files is placed in the [BitPie.NET data folder]/bin/.
+    Under Windows executable files is placed in the [BitDust data folder]/bin/.
     This is because Windows Vista and later not allow to write to "Program files" folder. 
     """
     return os.path.join(BaseDir(), 'bin')
@@ -693,7 +693,7 @@ def ConfigDir():
 
 def TempDir():
     """
-    A place for temporary BitPie.NET files, we really need some extra disk space to operate.
+    A place for temporary BitDust files, we really need some extra disk space to operate.
     TODO: need to add some stuff to control how much extra space we use and be able limit that. 
     """
     return os.path.join(BaseDir(), "temp")
@@ -777,7 +777,7 @@ def BandwidthOutDir():
 
 def RatingsDir():
     """
-    In that location BitPie.NET software keeps a rating stats for known users. 
+    In that location BitDust software keeps a rating stats for known users. 
     """
     return os.path.join(BaseDir(), 'ratings')
 
@@ -794,8 +794,8 @@ def KeyFileName():
 def KeyFileNameLocation():
     """
     User can set another location for his Private Key file - he can use USB stick to keep his Key.
-    After BitPie.NET stars he can remove the USB stick and keep it in safe place.
-    So BitPie.NET will keep user's key in the RAM only - this way you can have more protection for your Key. 
+    After BitDust stars he can remove the USB stick and keep it in safe place.
+    So BitDust will keep user's key in the RAM only - this way you can have more protection for your Key. 
     If your machine is stolen - thief can not get your Private key. 
     But you must be sure that machine was switched off - the RAM is erased when power is off.
     This file keeps alternative location of your Private Key.
@@ -876,7 +876,7 @@ def GUIOptionsFilename():
 def UpdateSheduleFilename():
     """
     Under Windows software update process is made by bpstarter.exe file.
-    Periodically, the main file process "bitpie.exe" requests 
+    Periodically, the main file process "bitdust.exe" requests 
     the file "checksum" (from user configurable repository location) 
     to check for new software release of that repository.
     Main process can restart itself thru bpstarter to be able to update the binaries.
@@ -887,7 +887,7 @@ def UpdateSheduleFilename():
 def LocalPortFilename():
     """
     This is a file to keep randomly generated port number 
-    for HTTP server to provide a Web Access to BitPie.NET main process.
+    for HTTP server to provide a Web Access to BitDust main process.
     See module ``p2p.webcontrol`` for more details.  
     """
     return os.path.join(MetaDataDir(), 'localport')
@@ -919,7 +919,7 @@ def BackupIndexFileName():
     """
     This is backup data base index file location.
     This store folder and files names and locations with path ID's and some extra info.
-    Located in the file .bitpie/metadata/index .
+    Located in the file .bitdust/metadata/index .
     Also this file is saved on suppliers in encrypted state.
     
     TODO:
@@ -983,7 +983,7 @@ def MainLogFilename():
     """
     A prefix for file names to store main process logs.
     """
-    return os.path.join(LogsDir(), 'bitpie')
+    return os.path.join(LogsDir(), 'bitdust')
 
 def UpdateLogFilename():
     """
@@ -1054,7 +1054,7 @@ def CustomersUsedSpaceFile():
 
 def BalanceFile():
     """
-    This file keeps our current BitPie.NET balance - two values: 
+    This file keeps our current BitDust balance - two values: 
         - transferable funds
         - not transferable funds 
     """
@@ -1062,11 +1062,11 @@ def BalanceFile():
 
 def CertificateFiles():
     """
-    The idea is to have a global certificate for BitPie.NET server, just like https works.
+    The idea is to have a global certificate for BitDust server, just like https works.
     """
-    return [    os.path.join(MetaDataDir(), 'bitpie.cer'),
-                os.path.join('.', 'bitpie.cer'),
-                os.path.join(bpio.getExecutableDir() ,'bitpie.cer'),]
+    return [    os.path.join(MetaDataDir(), 'bitdust.cer'),
+                os.path.join('.', 'bitdust.cer'),
+                os.path.join(bpio.getExecutableDir() ,'bitdust.cer'),]
 
 def DHTDBFile():
     return os.path.join(MetaDataDir(), 'dhtdb')
@@ -1094,7 +1094,7 @@ def getIconLaunchFilename():
     Not used.
     For Windows platforms this should target to executable file to run when clicked on Desktop icon. 
     """
-    return os.path.join(bpio.getExecutableDir(), 'bitpie.exe')
+    return os.path.join(bpio.getExecutableDir(), 'bitdust.exe')
 
 def getIconLinkFilename():
     """
@@ -1538,7 +1538,7 @@ def setDebugLevel(level):
 def enableWebStream(enable=None):
     """
     Get current state or enable/disable using of HTTP server to print logs,
-    need to restart BitPie.NET to take place changes.
+    need to restart BitDust to take place changes.
     """
     if enable is None:
         return config.conf().getBool('logs/stream-enabled')
@@ -1547,7 +1547,7 @@ def enableWebStream(enable=None):
 def enableWebTraffic(enable=None):
     """
     Get current state or enable/disable using of HTTP server to print packets traffic, 
-    need to restart BitPie.NET to take place changes.
+    need to restart BitDust to take place changes.
     """
     if enable is None:
         return config.conf().getBool('logs/traffic-enabled')
@@ -1675,7 +1675,7 @@ def setNickName(nickname):
     
 def getUpdatesMode():
     """
-    User can set different modes to update the BitPie.NET software.
+    User can set different modes to update the BitDust software.
     """
     return config.conf().getData('updates/mode')
 
@@ -1783,7 +1783,7 @@ def enableUPNP(enable=None):
 
 def RenameBaseDir(newdir):
     """
-    The idea was to be able to move BitPie.NET data folder to another place if user want that.
+    The idea was to be able to move BitDust data folder to another place if user want that.
     Not used.
     """
     global _BaseDirPath
@@ -1836,57 +1836,57 @@ def _initBaseDir(base_dir=None):
     # get the default place for thet machine
     default_path = GetBaseDir()
 
-    # we can use folder ".bitpie" placed on the same level with binary folder:
+    # we can use folder ".bitdust" placed on the same level with binary folder:
     # /..
-    #   /.bitpie - data files
-    #   /bitpie  - binary files
-    path1 = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), '..', '.bitpie')))
+    #   /.bitdust - data files
+    #   /bitdust  - binary files
+    path1 = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), '..', '.bitdust')))
     # and default path will have lower priority
     path2 = default_path
     
     # if default path exists - use it
     if os.path.isdir(path2):
         _BaseDirPath = path2
-    # but .bitpie on same level will have bigger priority
+    # but .bitdust on same level will have bigger priority
     if os.path.isdir(path1):
         _BaseDirPath = path1
 
-    # if we did not found "metadata" subfolder - use default path, new copy of BitPie.NET
+    # if we did not found "metadata" subfolder - use default path, new copy of BitDust
     if not os.path.isdir(MetaDataDir()):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             bpio._dirs_make(_BaseDirPath)
         return
     
-    # if we did not found our key - use default path, new copy of BitPie.NET
+    # if we did not found our key - use default path, new copy of BitDust
     if not os.access(KeyFileName(), os.R_OK) or not os.access(KeyFileNameLocation(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             bpio._dirs_make(_BaseDirPath)
         return
     
-    # if we did not found our identity - use default path, new copy of BitPie.NET
+    # if we did not found our identity - use default path, new copy of BitDust
     if not os.access(LocalIdentityFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             bpio._dirs_make(_BaseDirPath)
         return
 
-    # if we did not found our config - use default path, new copy of BitPie.NET
+    # if we did not found our config - use default path, new copy of BitDust
     if not os.access(UserConfigFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             bpio._dirs_make(_BaseDirPath)
         return
 
-    # if we did not found our suppliers - use default path, new copy of BitPie.NET
+    # if we did not found our suppliers - use default path, new copy of BitDust
     if not os.access(SupplierIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             bpio._dirs_make(_BaseDirPath)
         return
 
-    # if we did not found our customers - use default path, new copy of BitPie.NET
+    # if we did not found our customers - use default path, new copy of BitDust
     if not os.access(CustomerIDsFilename(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):

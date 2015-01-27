@@ -3,7 +3,7 @@
 """
 .. module:: id_server
 .. role:: red
-BitPie.NET id_server() Automat
+BitDust id_server() Automat
 
 EVENTS:
     * :red:`incoming-identity-file`

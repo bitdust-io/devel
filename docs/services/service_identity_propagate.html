@@ -12,7 +12,7 @@ services\service_identity_propagate
 <h2>Описание</h2>
 <p>Данная служба ответственна за поддержание identity файла пользователя в актуальном состоянии 
 и распространении обновленных копий на другие узлы в сети.</p>
-<p>Периодически ПО BitPie.NET запускает процедуру <code>propagate</code>:</p>
+<p>Периодически ПО BitDust запускает процедуру <code>propagate</code>:</p>
 <ol>
 <li>
 <p>обновленный identiy файл пользователя пересылается на те Identity сервера,
@@ -31,7 +31,7 @@ services\service_identity_propagate
 </ol>
 <p>При отключении службы <code>identity_propagate()</code> будет прекращено обновление и распростарнение identity файла
 пользователя и отключены многие службы нижних уровней, которые реализуют большинство функционала ПО.</p>
-<p>Подробнее про систему идентификации пользователей в сети BitPie.NET вы можете прочитать в 
+<p>Подробнее про систему идентификации пользователей в сети BitDust вы можете прочитать в 
 <a href="...">этом</a> документе.</p>
 <h2>Зависит от</h2>
 <ul>
@@ -48,10 +48,10 @@ services\service_identity_propagate
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_identity_propagate.py">service_identity_propagate.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/propagate.py">p2p/propagate.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/contacts/identitycache.py">contacts/identitycache.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/contacts/contactsdb.py">contacts/contactsdb.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/services/service_identity_propagate.py">service_identity_propagate.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/p2p/propagate.py">p2p/propagate.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/contacts/identitycache.py">contacts/identitycache.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/contacts/contactsdb.py">contacts/contactsdb.py</a></li>
 </ul>
 <br>
 <br>

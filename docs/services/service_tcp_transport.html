@@ -10,7 +10,7 @@ services\service_tcp_transport
 <div id="content">
 <h1>Сервис tcp_transport()</h1>
 <h2>Описание</h2>
-<p>Полезные данные между узлами в сети BitPie.NET передаются через так называемые транспортные протоколы.
+<p>Полезные данные между узлами в сети BitDust передаются через так называемые транспортные протоколы.
 Сервис <code>tcp_transport()</code> реализует прямую передачу данных между машинами используя стандартный 
 сетевой протокол TCP. </p>
 <p>В момент запуска службы будет создан экземпляр автомата <code>network_connector()</code> - 
@@ -21,7 +21,7 @@ services\service_tcp_transport
 отрабатывает запуск/остановку подключения и потока данных к/от удаленному узлу.</p>
 <p>Номер порта для TCP сервера пользовватель может указать в настройках службы, 
 по умолчанию используется порт <code>7771</code>.</p>
-<p>Для корректной работы программы BitPie.NET необходимо, 
+<p>Для корректной работы программы BitDust необходимо, 
 что бы хотя бы один из сетевых транспортов был включен.
 На данный момент поддерживаются два сетевых транспорта: </p>
 <ul>
@@ -55,12 +55,12 @@ services\service_tcp_transport
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_tcp_transport.py">services/service_tcp_transport.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/network_transport.py">transport/network_transport.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/tcp/tcp_connection.py">transport/tcp/tcp_connection.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/tcp/tcp_interface.py">transport/tcp/tcp_interface.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/tcp/tcp_node.py">transport/tcp/tcp_node.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/transport/tcp/tcp_stream.py">transport/tcp/tcp_stream.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/services/service_tcp_transport.py">services/service_tcp_transport.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/network_transport.py">transport/network_transport.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/tcp/tcp_connection.py">transport/tcp/tcp_connection.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/tcp/tcp_interface.py">transport/tcp/tcp_interface.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/tcp/tcp_node.py">transport/tcp/tcp_node.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/transport/tcp/tcp_stream.py">transport/tcp/tcp_stream.py</a></li>
 </ul>
 <br>
 <br>

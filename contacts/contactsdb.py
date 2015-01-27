@@ -44,7 +44,7 @@ _CorrespondentsChangedCallback = None
 def init():
     """
     We read from disk and if we have all the info we are set.
-    If we don't have enough, then we have to ask BitPie.NET to list contacts and use
+    If we don't have enough, then we have to ask BitDust to list contacts and use
     that list to get and then store all the identities for our contacts.
     """
     global _SuppliersChangedCallback

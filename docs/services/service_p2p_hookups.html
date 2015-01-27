@@ -10,14 +10,14 @@ services\service_p2p_hookups
 <div id="content">
 <h1>Сервис p2p_hookups()</h1>
 <h2>Описание</h2>
-<p>Сетевая служба <code>p2p_hookups()</code> является ключевым элементом в ПО BitPie.NET, 
+<p>Сетевая служба <code>p2p_hookups()</code> является ключевым элементом в ПО BitDust, 
 она организует соединение пользователя с другими узлами в сети и 
 поддерживает связь с активными контактами: хранителями, клиентами и др. </p>
 <p>При старте службы создается экземпляр автомата <code>p2p_connector()</code> и происходит
 его инициализация.</p>
 <p>Для каждого отдаленного узла, с которым поддерживается активный контакт,
 будет создан экземпляр автомата <code>contact_status()</code>. 
-Его задача отслеживать текущее состояние соединения с конкретным пользователем в сети BitPie.NET.</p>
+Его задача отслеживать текущее состояние соединения с конкретным пользователем в сети BitDust.</p>
 <p>Сервис <code>p2p_hookups()</code> анализирует текущее состояние активных транспортных протоколов
 и выстраивает их в порядке максимальной стабильности для текущего пользователя.
 После этого, в identity файле пользователя происходит обновление его контактных данных, 
@@ -47,12 +47,12 @@ services\service_p2p_hookups
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_p2p_hookups.py">service/service_p2p_hookups.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/p2p_connector.py">p2p/p2p_connector.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/p2p_service.py">p2p/p2p_service.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/contact_status.py">p2p/contact_status.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/commands.py">p2p/commands.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/p2p/ratings.py">p2p/ratings.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/services/service_p2p_hookups.py">service/service_p2p_hookups.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/p2p/p2p_connector.py">p2p/p2p_connector.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/p2p/p2p_service.py">p2p/p2p_service.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/p2p/contact_status.py">p2p/contact_status.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/p2p/commands.py">p2p/commands.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/p2p/ratings.py">p2p/ratings.py</a></li>
 </ul>
 <br>
 <br>

@@ -1,7 +1,7 @@
 # Automat network_connector()
 
 
-![network_connector[1]](http://bitpie.net/bitpie/p2p/network_connector.png)
+![network_connector[1]](http://bitdust.io/bitpie/p2p/network_connector.png)
 
 
 ## Description:    
@@ -18,7 +18,7 @@ Two key methods will manage the reconnection process and start/stop some key net
     * doSetDown()
     
 If some network interfaces is active but software is still disconnected 
-it will try to ping "http://bitpie.net" to know what is going on.
+it will try to ping "http://bitdust.io" to know what is going on.
 
 
 ## Events:

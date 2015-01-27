@@ -4,7 +4,7 @@
 .. module:: packet_out
 .. role:: red
 
-BitPie.NET packet_out() Automat
+BitDust packet_out() Automat
 
 .. raw:: html
 

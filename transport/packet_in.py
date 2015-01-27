@@ -4,7 +4,7 @@
 .. module:: packet_in
 .. role:: red
 
-BitPie.NET packet_in() Automat
+BitDust packet_in() Automat
 
 .. raw:: html
 

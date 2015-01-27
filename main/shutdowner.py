@@ -13,8 +13,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/shutdowner/shutdowner.png" target="_blank">
-    <img src="http://bitpie.net/automats/shutdowner/shutdowner.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/shutdowner/shutdowner.png" target="_blank">
+    <img src="http://bitdust.io/automats/shutdowner/shutdowner.png" style="max-width:100%;">
     </a>
     
 The state machine ``shutdowner()`` manages the completion of the program.
@@ -69,7 +69,7 @@ def A(event=None, arg=None):
 
 class Shutdowner(automat.Automat):
     """
-    This is a state machine to manage a process of correctly finishing the BitPie.NET software. 
+    This is a state machine to manage a process of correctly finishing the BitDust software. 
     """
     
     fast = True

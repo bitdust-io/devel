@@ -4,7 +4,7 @@
 .. module:: customers_rejector
 .. role:: red
 
-BitPie.NET customers_rejector() Automat
+BitDust customers_rejector() Automat
 
 .. raw:: html
 

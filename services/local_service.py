@@ -11,7 +11,7 @@
 .. module:: local_service
 .. role:: red
 
-BitPie.NET local_service() Automat
+BitDust local_service() Automat
 
 .. raw:: html
 

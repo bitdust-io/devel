@@ -3,7 +3,7 @@
 """
 .. module:: udp_node
 .. role:: red
-BitPie.NET udp_node() Automat
+BitDust udp_node() Automat
 
 
 EVENTS:
@@ -98,7 +98,6 @@ class UDPNode(automat.Automat):
         self.my_address = None
         if driver.is_started('service_my_ip_port'):
             self.my_address = stun_client.A().getMyExternalAddress()
-        self.my_current_incomings = []
         self.notified = False
         self.IncomingPosition = -1
         

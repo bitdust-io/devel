@@ -12,7 +12,7 @@
 This python code can be used to replace the Unix tar command
 and so be portable to non-unix machines.
 There are other python tar libraries, but this is included with Python.
-So that file is starter as child process of BitPie.NET to prepare data for backup.
+So that file is starter as child process of BitDust to prepare data for backup.
 
 .. warning:: Note that we should not print things here because tar output goes to standard out.
              If we print anything else to stdout the .tar file will be ruined.
@@ -50,11 +50,11 @@ def sharedPath(filename, subdir='logs'):
             try:
                 appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read()) 
             except:
-                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
             if not os.path.isdir(appdata):
-                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         else: 
-            appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+            appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         AppData = appdata
     return os.path.join(AppData, subdir, filename)
 
@@ -62,7 +62,7 @@ def logfilepath():
     """
     A method to detect where is placed the log file for ``bppipe`` child process.
     """
-#    logspath = os.path.join(os.path.expanduser('~'), '.bitpie', 'logs')
+#    logspath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs')
 #    if not os.path.isdir(logspath):
 #        return 'bppipe.log'
 #    return os.path.join(logspath, 'bppipe.log')
@@ -103,7 +103,7 @@ def _LinuxExcludeFunction(filename):
     If tar gets stuff it can not read - it just stops and we the whole process is failed.
     """
     # TODO - must do more smart checking 
-    if filename.count(".bitpie"):
+    if filename.count(".bitdust"):
         return True
     if not os.access(filename, os.R_OK):
         return True
@@ -122,7 +122,7 @@ def _WindowsExcludeFunction(filename):
         os.access(filename, os.R_OK) == False 
     to skip a file if I couldn't read it, but I did not get it to work every time. DWC.
     """
-    if (filename.lower().find("local settings\\temp") != -1) or (filename.lower().find(".bitpie") != -1) :
+    if (filename.lower().find("local settings\\temp") != -1) or (filename.lower().find(".bitdust") != -1) :
         return True
     if sys.version_info[:2] == (2, 7):
         if not os.access(filename, os.R_OK):

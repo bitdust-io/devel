@@ -4,7 +4,7 @@
 .. module:: nickname_holder
 .. role:: red
 
-BitPie.NET nickname_holder() Automat
+BitDust nickname_holder() Automat
 
 .. raw:: html
 

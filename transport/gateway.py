@@ -20,11 +20,11 @@ Keeps a list of available `transports` - we use a plug-in system so you can
 use external p2p, mech, or centralized networks to transfer files in different ways.
 
 To identify user need to place his ID inside given external network to his public identity file.
-So BitPie.NET users can use different ways to communicate and transfer data.
-BitPie.NET code will use that module to talk with nodes in the network.
+So BitDust users can use different ways to communicate and transfer data.
+BitDust code will use that module to talk with nodes in the network.
 
 Seems like we faced with such situation - 
-BitPie.NET software need to work together with other networks software on same machine.
+BitDust software need to work together with other networks software on same machine.
 This means we need to communicate between system processes - this is work for plug-ins.
 So the idea is to make plug-ins code working inside the main process thread - 
 they just need to send/receive a short commands to another process in the OS.
@@ -32,7 +32,7 @@ So it must be atomic operations (or deferred) and do not use any resources.
 
 And it seems like some plug-ins must have 2 parts:
 
-    * BitPie.NET python module with interface to do peers communications
+    * BitDust python module with interface to do peers communications
     * external code to run the given network 
     
 Communication between both parts can be done in a different ways, I think XMLRPC can work for most cases.
@@ -305,7 +305,7 @@ def inbox(info):
        (encryptedblock, scrubber, remotetester, customerservice, ...)
        to dispatch it to right place(s).
     8) We have to keep track of bandwidth to/from everyone, and make a report every 24 hours
-       which we send to BitPie.NET sometime in the 24 hours after that.
+       which we send to BitDust sometime in the 24 hours after that.
     """
     global _DoingShutdown
     global _LastInboxPacketTime

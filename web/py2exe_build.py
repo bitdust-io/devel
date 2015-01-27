@@ -99,9 +99,9 @@ ignores = [
 
 setup(
 
-    name = 'BitPie.NET',
+    name = 'BitDust',
 
-    description = 'BitPie.NET',
+    description = 'BitDust',
 
     version = open('release/version').read().strip(), 
 
@@ -124,7 +124,7 @@ setup(
     windows = [
 
         {
-            'script': 'bitpie.py',
+            'script': 'bitdust.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
         },
 

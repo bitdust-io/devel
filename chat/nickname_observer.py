@@ -4,7 +4,7 @@
 .. module:: nickname_observer
 .. role:: red
 
-BitPie.NET nickname_observer() Automat
+BitDust nickname_observer() Automat
 
 .. raw:: html
 

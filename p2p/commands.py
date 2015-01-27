@@ -8,7 +8,7 @@
 """
 .. module:: commands
 
-This module describes all commands in the BitPie.NET p2p communication protocol.
+This module describes all commands in the BitDust p2p communication protocol.
 The command is stored as a string in the packet.Command field. 
 If all commands are repeatable, then sequence numbers are not so critical,
 though we would want date so time for replay trouble was limited.
@@ -22,10 +22,10 @@ These are the valid values for the command field of a packet:
     - Retrieve/Data|Fail        (data packets returned exactly as is with our signature)
     - ListFiles/Files           (ask supplier to list backup IDs he knows about for us)
     
-To BitPie.NET:
+To BitDust:
     ListContacts/Contacts
         
-From BitPie.NET:
+From BitDust:
     NearnessCheck/Nearness
 """
 

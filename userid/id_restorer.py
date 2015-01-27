@@ -22,8 +22,8 @@ EVENTS:
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/identity_restorer/identity_restorer.png" target="_blank">
-    <img src="http://bitpie.net/automats/identity_restorer/identity_restorer.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/identity_restorer/identity_restorer.png" target="_blank">
+    <img src="http://bitdust.io/automats/identity_restorer/identity_restorer.png" style="max-width:100%;">
     </a>
     
 A state machine to restore the user account.
@@ -88,7 +88,7 @@ def A(event=None, arg=None):
 
 class IdRestorer(automat.Automat):
     """
-    BitPie.NET identity_restorer() Automat.
+    BitDust identity_restorer() Automat.
     Class to run the process to restore user account. 
     """
     

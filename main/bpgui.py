@@ -57,7 +57,7 @@ AppData = ''
 ShowLogs = False
 GUISettingsExists = False
 
-WindowTitle = 'BitPie.NET'
+WindowTitle = 'BitDust'
 LogWindowTitle = 'Logs'
 TrafficWindowTitle = 'Packets'
 EventsWindowTitle = 'Events'
@@ -186,11 +186,11 @@ def sharedPath(filename, subdir='logs'):
             try:
                 appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read()) 
             except:
-                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
             if not os.path.isdir(appdata):
-                appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+                appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         else: 
-            appdata = os.path.join(os.path.expanduser('~'), '.bitpie')
+            appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         AppData = appdata
     return os.path.join(AppData, subdir, filename)
 
@@ -242,7 +242,7 @@ def about():
     except:
         vernum = '0'
     return '''<html>
-<b>BitPie.NET<b> is a peer-to-peer backup utility.<br>
+<b>BitDust<b> is a peer-to-peer backup utility.<br>
 Current release is %s.<br>
 </html>''' % (vernum,)
 
@@ -635,7 +635,7 @@ class MyHtmlWindow(wx.html.HtmlWindow):
             self.UnRegisterClick()
             if not self.is_child:
                 src = '<html><center><br><br>\n'
-                src += '<h1>BitPie.NET is not working<br>\nor some error happens in the main process</h1><br><br>\n'
+                src += '<h1>BitDust is not working<br>\nor some error happens in the main process</h1><br><br>\n'
                 src += 'Go <a href="%s">Back</a>\n' % self.current_url
                 src += 'or just close this window.<br><br><br>\n'
                 src += '<font size=-2>\n'
@@ -696,7 +696,7 @@ class MyHtmlWindow(wx.html.HtmlWindow):
                 WriteText('OnFormSubmit.errback: %s\n' % str(err))
             self.UnRegisterClick()
             src = '<html><center><br><br><br><br>\n'
-            src += 'BitPie.NET is not working or some errors happens.<br><br>\n'
+            src += 'BitDust is not working or some errors happens.<br><br>\n'
             src += 'Error message is:<br>\n'
             src += err.getErrorMessage()
             src += '<br><br>\n'
@@ -1162,8 +1162,8 @@ class MyCountersWindow(wx.Frame):
 class MyUpdateSoftwareDialog(wx.MessageDialog):
     def __init__(self, parent):
         msg = 'New software version is available.\n'
-        msg += 'Would you like to update BitPie.NET Software now?'
-        label = 'Update BitPie.NET Software'
+        msg += 'Would you like to update BitDust Software now?'
+        label = 'Update BitDust Software'
         wx.MessageDialog.__init__(self, parent, msg, label, wx.OK | wx.CANCEL)
  
 #------------------------------------------------------------------------------ 
@@ -1197,7 +1197,7 @@ class MyFrame(wx.Frame):
         #---menu
         if False:
             menuFile = wx.Menu()
-            self.Bind(wx.EVT_MENU, self.OnClose, menuFile.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window, BitPie.NET will work in background."))
+            self.Bind(wx.EVT_MENU, self.OnClose, menuFile.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Close window, BitDust will work in background."))
             menuView = wx.Menu()
             self.Bind(wx.EVT_MENU, self.OnLogs, menuView.Append(-1, "&Logs", "Browse system messages"))
             self.Bind(wx.EVT_MENU, self.OnTraffic, menuView.Append(-1, "&Traffic", "View packets traffic"))
@@ -1218,10 +1218,10 @@ class MyFrame(wx.Frame):
         self.CreateStatusBar(2)
         if platform.uname()[0] == 'Windows': 
             self.SetStatusWidths([-1, 200])
-            self.SetStatusText('  \xa9 2014, BitPie.NET Inc.', 1)
+            self.SetStatusText('  \xa9 2014, BitDust Inc.', 1)
         else:
             self.SetStatusWidths([-1, 300])
-            self.SetStatusText(u'  \u00a9 2014, BitPie.NET Inc.'.encode('utf8'), 1)
+            self.SetStatusText(u'  \u00a9 2014, BitDust Inc.'.encode('utf8'), 1)
         
         # self.statusTextTimer = None
 
@@ -1323,7 +1323,7 @@ class MyAppBusyInfoFrame(wx.Frame):
         self.panel.SetCursor(wx.HOURGLASS_CURSOR)
         self.text = wx.StaticText(self.panel, wx.ID_ANY, message,  style=wx.ALIGN_CENTRE)
         self.text.SetCursor(wx.HOURGLASS_CURSOR)
-        self.label = wx.StaticText(self.panel, wx.ID_ANY, 'BitPie.NET', style=wx.ALIGN_CENTRE)
+        self.label = wx.StaticText(self.panel, wx.ID_ANY, 'BitDust', style=wx.ALIGN_CENTRE)
         self.label.SetFont(wx.Font(20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         self.label.SetCursor(wx.HOURGLASS_CURSOR)
         sizeText = self.text.GetBestSize()

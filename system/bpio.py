@@ -10,7 +10,7 @@
 """
 .. module:: bpio
 
-This module is for simple BitPie.NET routines that do not require importing any of our code.:
+This module is for simple BitDust routines that do not require importing any of our code.:
     - print logs
     - file system IO operations
     - pack/unpack lists and dictionaries into strings 
@@ -168,7 +168,7 @@ def Mac():
 
 def isFrozen():
     """
-    Return True if BitPie.NET is running from exe, not from sources.
+    Return True if BitDust is running from exe, not from sources.
     """
     return main_is_frozen()
 
@@ -881,7 +881,7 @@ def pathIsNetworkLocation(path):
 
 def main_is_frozen():
     """
-    Return True if BitPie.NET is started from .exe not from sources.
+    Return True if BitDust is started from .exe not from sources.
         http://www.py2exe.org/index.cgi/HowToDetermineIfRunningFromExe
     """
     return (hasattr(sys, "frozen") or       # new py2exe
@@ -890,7 +890,7 @@ def main_is_frozen():
 
 def X11_is_running():
     """
-    Linux method to check if BitPie.NET GUI is possible.
+    Linux method to check if BitDust GUI is possible.
         http://stackoverflow.com/questions/1027894/detect-if-x11-is-available-python
     """
     global X11isRunning

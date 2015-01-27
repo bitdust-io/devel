@@ -14,7 +14,7 @@ A methods to just store text constants, used to print command-line instructions.
 """
 
 def usage():
-    return '''usage: bitpie [options] [command] [arguments]
+    return '''usage: bitdust [options] [command] [arguments]
     
 Commands:
   start
@@ -68,18 +68,18 @@ Commands:
 
 
 def help():
-    return '''usage: bitpie [options] [command] [arguments]
+    return '''usage: bitdust [options] [command] [arguments]
 
 Commands:
-  [start]               start BitPie.NET
+  [start]               start BitDust
   
-  detach                start BitPie.NET in a child process
+  detach                start BitDust in a child process
   
-  restart               restart BitPie.NET 
+  restart               restart BitDust 
 
-  stop                  stop BitPie.NET
+  stop                  stop BitDust
 
-  show                  start BitPie.NET and show the main window
+  show                  start BitDust and show the main window
 
   register <account name> [private key size] [preferred id server]
                         generate a new private key and register new account

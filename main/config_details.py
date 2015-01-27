@@ -31,7 +31,7 @@ def raw():
 {personal} personal information
     Your personal information.
 {personal/betatester} betatester
-    Are you agree to participate in the BitPie.NET project testing?
+    Are you agree to participate in the BitDust project testing?
     We are going to provide some bonuses to people who help us at this stage.
 {personal/name} name
     Set your name if you wish.
@@ -99,7 +99,7 @@ def raw():
     How many megabytes you ready to donate to other users?
 
 {services/id-server} own identity server
-    You can start own Identity server and store identity files of other users on your machine to support the BitPie.NETwork.
+    You can start own Identity server and store identity files of other users on your machine to support the BitDustwork.
 {services/id-server/enabled} ebable identity server
     Enable this to start "id-server" service.
 {services/id-server/host} identity server hostname
@@ -135,7 +135,7 @@ def raw():
     "Entangled-DHT" service settings.
 {services/entangled-dht/udp-port} udp port number for distributed hash table 
     This is a UDP port number for Distributed Hash Table communications.
-    BitPie.NET uses <a href="http://entangled.sourceforge.net/">Entangled Project</a> to implement DHT functionality.
+    BitDust uses <a href="http://entangled.sourceforge.net/">Entangled Project</a> to implement DHT functionality.
 
 {services/tcp-connections/tcp-port} tcp port number
     Enter the TCP port number, it will be used to connect with your machine by other users.

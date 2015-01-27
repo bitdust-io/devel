@@ -3,7 +3,7 @@
 """
 .. module:: udp_connector
 .. role:: red
-BitPie.NET udp_connector() Automat
+BitDust udp_connector() Automat
 
 
 EVENTS:

@@ -13,18 +13,19 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/contact_status/contact_status.png" target="_blank">
-    <img src="http://bitpie.net/automats/contact_status/contact_status.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/contact_status/contact_status.png" target="_blank">
+    <img src="http://bitdust.io/automats/contact_status/contact_status.png" style="max-width:100%;">
     </a>
     
 A state machine and several extra methods to keep track of current users's online state.
-To do p2p communications need to know who is available and who is not.
+To do p2p communications need to know who is available and who is not at the moment.
 
 This simple state machine is used to detect connection status with remote user.
 The situation when remote user replies to a packet sent to him 
 means that he is currently available over the network.   
 
-A one instance of ``contact_status()`` machine is created for every remote contact and monitor his status.
+A one instance of ``contact_status()`` machine is created for 
+every remote contact and monitor his status.
 
 
 EVENTS:
@@ -112,6 +113,7 @@ def shutdown():
 
 def isKnown(idurl):
     """
+    Return `True` if state machine contact_status() already exists for this user. 
     """
     if idurl in [None, 'None', '']:
         return False
@@ -166,6 +168,9 @@ def isCheckingNow(idurl):
 
 
 def getStatusLabel(idurl):
+    """
+    Return some text description about the current state of that user.
+    """
     global _ShutdownFlag
     if _ShutdownFlag:
         return '?'
@@ -179,6 +184,9 @@ def getStatusLabel(idurl):
 
 
 def getStatusIcon(idurl):
+    """
+    Return an icon name depending on current state of that user.
+    """
     global _ShutdownFlag
     if _ShutdownFlag:
         return '?'
@@ -311,24 +319,32 @@ class ContactStatus(automat.Automat):
                 self.doRepaint(arg)
 
     def isPingPacket(self, arg):
+        """
+        Condition method.
+        """
         pkt_out = arg
         return pkt_out.outpacket and pkt_out.outpacket.Command == commands.Identity() and pkt_out.wide is True
 
     def isDataPacket(self, arg):
+        """
+        Condition method.
+        """
         outpacket, status, error = arg
         return outpacket.Command not in [commands.Identity(), commands.Ack()]
 
     def doRememberTime(self, arg):
+        """
+        Action method.
+        """
         self.time_connected = time.time()
         
     def doRepaint(self, arg):
         """
+        Action method.
         """
         if not settings.NewWebGUI():
             from web import webcontrol
             webcontrol.OnAliveStateChanged(self.idurl)
-        # if transport_control.GetContactAliveStateNotifierFunc() is not None:
-        #     transport_control.GetContactAliveStateNotifierFunc()(self.idurl)
  
 #------------------------------------------------------------------------------ 
 
@@ -373,6 +389,5 @@ def PacketSendingTimeout(remoteID, packetID):
     Called from ``p2p.io_throttle`` when some packet is timed out.
     Right now this do nothing, state machine ignores that event.
     """
-    # lg.out(6, 'contact_status.PacketSendingTimeout ' + remoteID)
     A(remoteID, 'sent-timeout', packetID)
 

@@ -22,7 +22,7 @@ TODO:
 All this stuff must be simplified.
 We really do not need to use a real STUN servers.
 No need to detect a network metric or other info, just detect our external IP:PORT.
-BitPie.NET already have some sort of own stun server, need to use that stuff instead of shtoom code.   
+BitDust already have some sort of own stun server, need to use that stuff instead of shtoom code.   
 """
 
 import sys

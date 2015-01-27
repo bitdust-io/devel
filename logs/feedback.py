@@ -18,8 +18,8 @@ import time
 #------------------------------------------------------------------------------ 
 
 SETTINGS_FILE_PATH = '/home/veselin/feedback.conf'
-MAIL_SERVER_CERTIFICATE_FILE_PATH = '/home/veselin/mail.bitpie.net.cert'
-MAIL_SERVER_KEY_FILE_PATH = '/home/veselin/mail.bitpie.net.key'
+MAIL_SERVER_CERTIFICATE_FILE_PATH = '/home/veselin/mail.bitdust.io.cert'
+MAIL_SERVER_KEY_FILE_PATH = '/home/veselin/mail.bitdust.io.key'
 
 #------------------------------------------------------------------------------ 
 

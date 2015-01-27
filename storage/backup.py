@@ -13,15 +13,15 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/backup/backup.png" target="_blank">
-    <img src="http://bitpie.net/automats/backup/backup.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/backup/backup.png" target="_blank">
+    <img src="http://bitdust.io/automats/backup/backup.png" style="max-width:100%;">
     </a>
 
 The core module.
 The ``backup()`` state machine is doing a bunch of things to create a single backup.
 
 Here is an interfaces between a pipe from something like tar 
-and the twisted code for rest of BitPie.NET.
+and the twisted code for rest of BitDust.
 
 Main idea:
    1) when a backup is started a backup object is created

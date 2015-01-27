@@ -10,9 +10,9 @@
 .. module:: key
 
 Here is a bunch of cryptography methods used in all parts of the software.
-BitPie.NET uses PyCrypto library:
+BitDust uses PyCrypto library:
     https://www.dlitz.net/software/pycrypto/
-For most of BitPie.NET code (outside ssh I think) we will only use ascii encoded string versions of keys.
+For most of BitDust code (outside ssh I think) we will only use ascii encoded string versions of keys.
 Expect to make keys, signatures, and hashes all base64 strings soon.
 Our local key is always on hand.
 Main thing is to be able to use public keys in contacts to verify packets.
@@ -64,13 +64,13 @@ def InitMyKey(keyfilename=None):
     """
     This is core method. 
     At first it check the Private Key in the memory, if it is already initialized it does nothing. 
-    The local key are placed in the "[BitPie.NET data dir]/metadata/mykeyfile".
-    If file "[BitPie.NET data dir]/metadata/mykeyfile_location" exists - 
+    The local key are placed in the "[BitDust data dir]/metadata/mykeyfile".
+    If file "[BitDust data dir]/metadata/mykeyfile_location" exists - 
     it should contain the location of the mykeyfile. Useful to store Private Key on the USB flash.
-    BitPie.NET data dir is platform dependent:
-        - Linux: ~/.bitpie
-        - Windows XP: C:/Documents and Settings/[user]/.bitpie
-        - Windows Vista, 7, 8: C:/Users/[user]/.bitpie
+    BitDust data dir is platform dependent:
+        - Linux: ~/.bitdust
+        - Windows XP: C:/Documents and Settings/[user]/.bitdust
+        - Windows Vista, 7, 8: C:/Users/[user]/.bitdust
     Finally if target file exist - the Private Key will be loaded into memory.
     If file does not exist - the new key will be generated. 
     The size for new key will be taken from settings.  

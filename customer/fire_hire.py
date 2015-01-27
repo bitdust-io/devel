@@ -13,8 +13,8 @@
 
 .. raw:: html
 
-    <a href="http://bitpie.net/automats/fire_hire/fire_hire.png" target="_blank">
-    <img src="http://bitpie.net/automats/fire_hire/fire_hire.png" style="max-width:100%;">
+    <a href="http://bitdust.io/automats/fire_hire/fire_hire.png" target="_blank">
+    <img src="http://bitdust.io/automats/fire_hire/fire_hire.png" style="max-width:100%;">
     </a>
     
 If at some point we are not getting good answers from a node

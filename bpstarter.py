@@ -9,10 +9,10 @@
 
 """
 This is a Windows starter process.
-It is used to check and update binaries before start up "bitpie.exe" process.
+It is used to check and update binaries before start up "bitdust.exe" process.
 
-This file is a wrapper for `p2p.bpstarter <bitpie.p2p.bpstarter.html>`_ module.
-See also `p2p.bptester <bitpie.p2p.bptester.html>`_ module.
+This file is a wrapper for `p2p.bpstarter <bitdust.p2p.bpstarter.html>`_ module.
+See also `p2p.bptester <bitdust.p2p.bptester.html>`_ module.
 """
 
 if __name__ == "__main__":

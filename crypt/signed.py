@@ -13,7 +13,7 @@
 These packets usually hold on the order of 1 MB.
 Something equal to a packet number so we can detect duplicates in transport.
 Packet Fields are all strings (no integers, objects, etc)
-    - Command : Legal Commands are in bitpie/lib/commands.py               
+    - Command : Legal Commands are in bitdust/lib/commands.py               
     - OwnerID : who owns this data and pays bills - http://cate.com/id1.xml                
     - CreatorID : this is signer - http://cate.com/id1.xml - might be an authorized scrubber            
     - PacketID : string of the above 4 "Number"s with "-" separator to uniquely identify a packet
@@ -55,9 +55,9 @@ class Packet:
     """
     The core class.
     Represents a data packet in the network. 
-    Payload can be encrypted using bitpie.key.encrypted.Block.
+    Payload can be encrypted using bitdust.key.encrypted.Block.
     We expect remote user run the correct software.
-    His BitPie.NET must verify signature of that packet .
+    His BitDust must verify signature of that packet .
     If you want to encrypt the fields and so hide that service traffic completely - 
     do that in the transport protocols. 
     Need to transfer our public key to remote peer and than he can send us a safe messages.

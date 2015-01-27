@@ -10,7 +10,7 @@ services\service_rebuilding
 <div id="content">
 <h1>—ервис rebuilding()</h1>
 <h2>ќписание</h2>
-<p>—ервис <code>rebuilding()</code> предназначен дл€ поддержани€ размещенных в сети BitPie.NET 
+<p>—ервис <code>rebuilding()</code> предназначен дл€ поддержани€ размещенных в сети BitDust 
 данных пользовател€ в целостном состо€нии, так что бы в любой момент они были доступны дл€ скачивани€.</p>
 <p>ѕри старте службы создаютс€ экземпл€ры автоматов <code>backup_rebuilder()</code> и <code>raid_worker()</code>, которые
 организуют процесс автоматического восстановлени€ файлов на машинах хранителей.</p>
@@ -23,7 +23,7 @@ services\service_rebuilding
 </ul>
 <p>ѕодробнее о процессе автоматического восстановлени€ данных читайте в разделе <a href="...">...</a>.</p>
 <p>ѕри отключении сервиса <code>rebuilding()</code> будет остановлено автоматическое восстановление и
-все уже размещенные в сети BitPie.NET данные пользовател€ окажутс€ под угрозой полной потери.</p>
+все уже размещенные в сети BitDust данные пользовател€ окажутс€ под угрозой полной потери.</p>
 <h2>«ависит от</h2>
 <ul>
 <li><a href="../services/service_data_sender.html">data_motion()</a></li>
@@ -43,9 +43,9 @@ services\service_rebuilding
 </ul>
 <h2>—в€занные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/services/service_rebuilding.py">services/service_rebuilding.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/backup_rebuilder.py">storage/backup_rebuilder.py</a></li>
-<li><a href="http://gitlab.bitpie.net/devel/bitpie.devel/blob/master/storage/raid_worker.py">storage/raid_worker.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/services/service_rebuilding.py">services/service_rebuilding.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/storage/backup_rebuilder.py">storage/backup_rebuilder.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/storage/raid_worker.py">storage/raid_worker.py</a></li>
 </ul>
 <br>
 <br>

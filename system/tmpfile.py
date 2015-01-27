@@ -11,7 +11,7 @@
 .. module:: tmpfile
 
 Keep track of temporary files created in the program.
-The temp folder is placed in the BitPie.NET data directory. 
+The temp folder is placed in the BitDust data directory. 
 All files are divided into several sub folders.
 """
 
@@ -85,7 +85,7 @@ def init(temp_dir_path=''):
             _TempDirPath = temp_dir_path
         else:
             os_temp_dir = tempfile.gettempdir()
-            temp_dir = os.path.join(os_temp_dir, 'bitpie')
+            temp_dir = os.path.join(os_temp_dir, 'bitdust')
 
             if not os.path.exists(temp_dir):
                 try:

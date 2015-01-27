@@ -66,7 +66,7 @@ except ImportError:
 
 def is_frozen():
     """
-    Return True if BitPie.NET is started from .exe not from sources.
+    Return True if BitDust is started from .exe not from sources.
         http://www.py2exe.org/index.cgi/HowToDetermineIfRunningFromExe
     """
     if hasattr(sys, "frozen") or hasattr(sys, "importers"):
