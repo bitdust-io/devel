@@ -43,6 +43,8 @@ includes = [
 
 excludes =[
 	'django',
+    'django.conf',
+    'django.core.wsgi',
     '__pypy__.builders',
     'ICCProfile',
     '_imaging_gif', 
@@ -102,9 +104,9 @@ ignores = [
 
 setup(
 
-    name = 'BitPie.NET',
+    name = 'BitDust',
 
-    description = 'BitPie.NET',
+    description = 'BitDust',
 
     version = open('release/version').read().strip(), 
 
@@ -126,21 +128,25 @@ setup(
             'icon_resources': [(1, "icons/tray_icon.ico")],
             'unbuffered': True,
         },
-    ],
-
-    windows = [
-
         {
             'script': 'bitdust.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
         },
-
-        {
-            'script': 'bpgui.py',
-            'icon_resources': [(1, "icons/tray_icon.ico")],
-        },
-
     ],
+
+    # windows = [
+
+        #{
+        #    'script': 'bitdust.py',
+        #    'icon_resources': [(1, "icons/tray_icon.ico")],
+        #},
+
+        # {
+        #     'script': 'bpgui.py',
+        #     'icon_resources': [(1, "icons/tray_icon.ico")],
+        # },
+
+    # ],
 
     options = {
         'py2exe': {

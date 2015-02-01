@@ -24,7 +24,7 @@ services\service_private_messages
 <p>Для глобального поиска создается экземпляр автомата <code>nickname_observer()</code>, он сканирует
 DHT сеть и возвращает список всех пользователей, которые указали заданный никнейм.
 Пользователь, производящий поиск собеседника, может выбрать нужного адресата и начать переписку.</p>
-<p>Личная переписка пользователя хранится на жестком диске в подпапке <code>.bitpie/messages/</code>.
+<p>Личная переписка пользователя хранится на жестком диске в подпапке <code>.bitdust/messages/</code>.
 Сервис <code>private_messages()</code> находится в разработке и его функционал будет расширен в будущем.</p>
 <p>При выключении данного сервиса, будет удален экземпляр автомата <code>nickname_holder()</code> и
 прекращен обмен личными сообщениями с другими пользователями в сети BitDust.</p>
@@ -44,10 +44,10 @@ DHT сеть и возвращает список всех пользователей, которые указали заданный никней
 </ul>
 <h2>Связанные файлы проекта</h2>
 <ul>
-<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/services/service_private_messages.py">services/service_private_messages.py</a></li>
-<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/chat/nickname_holder.py">chat/nickname_holder.py</a></li>
-<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/chat/nickname_observer.py">chat/nickname_observer.py</a></li>
-<li><a href="http://gitlab.bitdust.io/devel/bitpie.devel/blob/master/chat/message.py">chat/message.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitdust.devel/blob/master/services/service_private_messages.py">services/service_private_messages.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitdust.devel/blob/master/chat/nickname_holder.py">chat/nickname_holder.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitdust.devel/blob/master/chat/nickname_observer.py">chat/nickname_observer.py</a></li>
+<li><a href="http://gitlab.bitdust.io/devel/bitdust.devel/blob/master/chat/message.py">chat/message.py</a></li>
 </ul>
 <br>
 <br>

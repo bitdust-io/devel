@@ -63,7 +63,7 @@ def run(UI='', options=None, args=None, overDict=None):
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
         try:
             from tray_icon import USE_TRAY_ICON
-            if bpio.Linux() and not bpio.X11_is_running():
+            if not bpio.isGUIpossible():
                 USE_TRAY_ICON = False
             if USE_TRAY_ICON:
                 from twisted.internet import wxreactor
@@ -290,7 +290,7 @@ def kill():
             'bppipe.py',
             'bptester.exe',
             'bptester.py',
-            'bpstarter.exe',
+            'bitstarter.exe',
             ])
         if len(appList) > 0:
             found = True
@@ -335,7 +335,7 @@ def wait_then_kill(x):
             'bppipe.py',
             'bptester.exe',
             'bptester.py',
-            'bpstarter.exe',
+            'bitstarter.exe',
             ])
         if len(appList) == 0:
             lg.out(0, 'DONE')
@@ -468,12 +468,12 @@ def main():
     if opts.output:
         logpath = opts.output
 
-    if logpath != '':
-        lg.open_log_file(logpath)
-        lg.out(2, 'bpmain.main log file opened ' + logpath)
-        if bpio.Windows() and bpio.isFrozen():
-            lg.stdout_start_redirecting()
-            lg.out(2, 'bpmain.main redirecting started')
+    # if logpath != '':
+        # lg.open_log_file(logpath)
+        # lg.out(2, 'bpmain.main log file opened ' + logpath)
+        # if bpio.Windows() and bpio.isFrozen():
+        #     lg.stdout_start_redirecting()
+        #     lg.out(2, 'bpmain.main redirecting started')
 
     try:
         os.remove(os.path.join(os.path.expanduser('~'), '.bitdust', 'logs', 'exception.log'))
@@ -483,8 +483,8 @@ def main():
     if opts.debug or str(opts.debug) == '0':
         lg.set_debug_level(opts.debug)
 
-    if opts.quite and not opts.verbose:
-        lg.disable_output()
+    # if opts.quite and not opts.verbose:
+    #     lg.disable_output()
 
     if opts.verbose:
         copyright()
@@ -496,7 +496,7 @@ def main():
     lg.out(2, 'bpmain.main args=%s' % str(args))
 
     #---start---
-    if cmd == '' or cmd == 'start' or cmd == 'go':
+    if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':
         appList = bpio.find_process([
             'bitdust.exe',
             'bpmain.py',
@@ -568,7 +568,7 @@ def main():
             result = result.pid
         except:
             pass
-        print result
+        # print result
         return 0
 
     #---restart---
@@ -619,7 +619,15 @@ def main():
             return ret
 
     #---show---
-    elif cmd == 'show' or cmd == 'open':
+    elif False and (cmd == 'show' or cmd == 'open'):
+        if not bpio.isGUIpossible():
+            lg.out(0, 'BitDust GUI is turned OFF')
+            bpio.shutdown()
+            return 0
+        if bpio.X11_is_running(): 
+            lg.out(0, 'BitDust GUI already opened, found another process: %s' % str(appList))
+            bpio.shutdown()
+            return 0
         appList_bpgui = bpio.find_process([
             'bpgui.exe',
             'bpgui.py',
@@ -685,7 +693,7 @@ def main():
         def do_spawn(x=None):
             from main.settings import WindowsStarterFileName
             starter_filepath = os.path.join(bpio.getExecutableDir(), WindowsStarterFileName())
-            lg.out(0, "bpmain.main bpstarter.exe path: %s " % starter_filepath)
+            lg.out(0, "bpmain.main bitstarter.exe path: %s " % starter_filepath)
             if not os.path.isfile(starter_filepath):
                 lg.out(0, "bpmain.main ERROR %s not found" % starter_filepath)
                 bpio.shutdown()

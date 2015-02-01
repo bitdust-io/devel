@@ -2,7 +2,7 @@
 
 
 @echo [ run "python setup.py sdist" ]
-rm -rf bitpie.tar.gz
+rm -rf bitdust.tar.gz
 cd workspace
 rm -rf dist
 python setup.py sdist >../sdist.log

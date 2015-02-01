@@ -316,16 +316,16 @@ def step2(info, version_digest):
         fail('wrong data')
         return
 
-    bpstarter_server_digest = info.get(settings.WindowsStarterFileName(), None)
-    if bpstarter_server_digest is None:
+    bitstarter_server_digest = info.get(settings.WindowsStarterFileName(), None)
+    if bitstarter_server_digest is None:
         lg.warn('windows starter executable is not found in the info file')
         reactor.callLater(0.5, step4, version_digest)
         #fail('windows starter executable is not found in the info file')
         return
 
-    bpstarter_local_digest = misc.file_hash(os.path.join(GetLocalDir(), settings.WindowsStarterFileName()))
+    bitstarter_local_digest = misc.file_hash(os.path.join(GetLocalDir(), settings.WindowsStarterFileName()))
 
-    if bpstarter_local_digest != bpstarter_server_digest:
+    if bitstarter_local_digest != bitstarter_server_digest:
         reactor.callLater(0.5, step3, version_digest)
     else:
         reactor.callLater(0.5, step4, version_digest)

@@ -27,31 +27,31 @@ Windows ussers can use links bellow and install packages by hands.
 
 If you installed from sources using command "python setup.py install", can do it this way:
     
-    python -c "from bitpie.bitpie import main; main()"
+    python -c "from bitdust.bitdust import main; main()"
 
 But I recomend to just download and extract sources in any place you want and just run the main script:
 
-    cd bitpie
-    python bitpie.py show
+    cd bitdust
+    python bitdust.py show
 
 
 You will have to create a new "Identity" for you to be able to communicate with others,
 program will ask you to do that during first start. 
 If you run on a system without graphical interface you need to register from command line by hands:
 
-    python bitpie.py register <your_nickname>
+    python bitdust.py register <your_nickname>
 
 
 I recommend you to create another copy of your Private Key in a safe place to be able to recover your data in the future.
 You can do it from GUI or type a command:
 
-python bitpie.py key copy <filename>
+python bitdust.py key copy <filename>
 
 
-Your settings and local files placed in the folder ~/.bitpie.
+Your settings and local files placed in the folder ~/.bitdust.
 Type this to read more info:
 
-python bitpie.py help
+python bitdust.py help
 
 
 

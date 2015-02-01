@@ -3,14 +3,14 @@
 @echo [ prepare workspace folder ]
 rm -rf workspace
 mkdir workspace
-mkdir workspace\bitpie
+mkdir workspace\bitdust
 cp MANIFEST.in workspace
 
 @echo [ export from git repo into workspace ]
 pushd ..\.. 
-git archive master > release\sources\workspace\bitpie\master.tar
+git archive master > release\sources\workspace\bitdust\master.tar
 popd 
-pushd workspace\bitpie
+pushd workspace\bitdust
 tar xf master.tar
 rm master.tar
 popd
@@ -20,7 +20,7 @@ cp setup.py workspace
 python -c "v=open('../version').read().strip(); s=open('workspace/setup.py').read(); s=s.replace('{version}', v); open('workspace/setup.py', 'w').write(s);"
 
 @echo [ remove some files ]
-pushd workspace\bitpie
+pushd workspace\bitdust
 rm commit.bat
 rm commit.sh
 rm -rf screenshots\*.*

@@ -2,7 +2,7 @@
 
 set -e
 
-cd ~/bitpie/release/ubuntu_stable
+cd ~/bitdust/release/ubuntu_stable
 
 echo "building .deb file"
 cd workspace

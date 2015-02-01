@@ -1,9 +1,9 @@
 [Desktop Entry]
 Encoding=UTF-8
-Name=BitPie.NET
+Name=BitDust
 Comment=Distributed peer-to-peer encrypted backup program
-GenericName=BitPie.NET
-Icon=bitpie.png
+GenericName=BitDust
+Icon=bitdust.png
 Type=Application
-Exec=bitpie show
+Exec=bitdust show
 Categories=Network;Application;

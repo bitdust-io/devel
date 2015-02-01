@@ -2,19 +2,19 @@
 
 set -e
 
-cd ~/bitpie/release/ubuntu_stable
+cd ~/bitdust/release/ubuntu_stable
 
 version=`cat ../version`
-dirname="bitpie-$version.orig"
-packagename="bitpie_${version}_all.deb"
+dirname="bitdust-$version.orig"
+packagename="bitdust_${version}_all.deb"
 
 echo "remove old files"
-rm -f bitpie*.deb
-rm -f bitpie*.changes
-rm -f bitpie*.dsc
-rm -f bitpie*.gz
-rm -f bitpie*.upload
-rm -f bitpie*.build
+rm -f bitdust*.deb
+rm -f bitdust*.changes
+rm -f bitdust*.dsc
+rm -f bitdust*.gz
+rm -f bitdust*.upload
+rm -f bitdust*.build
 
 echo "prepare workspace folders"
 rm -rf workspace
@@ -48,43 +48,43 @@ cp debian/preinst workspace/debian
 cp debian/postinst workspace/debian
 cp debian/prerm workspace/debian
 cp debian/copyright workspace/debian
-cp debian/bitpie.cron.daily workspace/debian 
-# cp debian/bitpie.cron.hourly workspace/debian 
-cp debian/bitpie-stable.menu workspace/shortcuts 
+cp debian/bitdust.cron.daily workspace/debian 
+# cp debian/bitdust.cron.hourly workspace/debian 
+cp debian/bitdust-stable.menu workspace/shortcuts 
 
 echo "prepare project files"
-cp debian/bitpie.1 workspace/doc
-cp debian/bitpie workspace/bin
-cp debian/bitpie.xpm workspace/pixmaps
-cp debian/bitpie.png workspace/pixmaps
-cp debian/bitpie.list workspace/apt 
-cp debian/bitpie.desktop workspace/shortcuts
-cp -T debian/bitpie-autostart.desktop workspace/autostart/bitpie.desktop
-cp -T debian/bitpie.default workspace/default/bitpie-update 
+cp debian/bitdust.1 workspace/doc
+cp debian/bitdust workspace/bin
+cp debian/bitdust.xpm workspace/pixmaps
+cp debian/bitdust.png workspace/pixmaps
+cp debian/bitdust.list workspace/apt 
+cp debian/bitdust.desktop workspace/shortcuts
+cp -T debian/bitdust-autostart.desktop workspace/autostart/bitdust.desktop
+cp -T debian/bitdust.default workspace/default/bitdust-update 
 
 echo "build sources"
 ../sources/0-build
 
 echo "copy sources"
-cp -r ../sources/workspace/bitpie/* workspace/src/
+cp -r ../sources/workspace/bitdust/* workspace/src/
 
 # echo "rename LICENSE.txt file"
 # mv workspace/src/LICENSE.txt workspace/src/TERMS.txt
 
 echo "create repo.txt file"
 echo "stable" > workspace/src/repo.txt
-echo "http://bitpie.net/deb/stable" >> workspace/src/repo.txt
+echo "http://bitdust.io/deb/stable" >> workspace/src/repo.txt
 
 echo "setting permissions"
 find workspace/debian -type d | xargs chmod 0755
 find workspace/debian -type f | xargs chmod 0644
-chmod 0755 workspace/bin/bitpie
+chmod 0755 workspace/bin/bitdust
 chmod 0755 workspace/debian/rules
 chmod 0755 workspace/debian/postinst
 chmod 0755 workspace/debian/preinst
 chmod 0755 workspace/debian/prerm
-# chmod 0755 workspace/debian/bitpie.cron.hourly
-chmod 0755 workspace/debian/bitpie.cron.daily
+# chmod 0755 workspace/debian/bitdust.cron.hourly
+chmod 0755 workspace/debian/bitdust.cron.daily
 
 echo "DONE!"
 

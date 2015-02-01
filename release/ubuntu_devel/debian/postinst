@@ -1,12 +1,12 @@
 #!/bin/sh
 
-#echo "starting bitpie.postinst"
+#echo "starting bitdust.postinst"
 
 set -e
 
 INSTALLATOR=""
-if [ -f /usr/share/bitpie/user.txt ]; then
-    INSTALLATOR=`cat /usr/share/bitpie/user.txt`
+if [ -f /usr/share/bitdust/user.txt ]; then
+    INSTALLATOR=`cat /usr/share/bitdust/user.txt`
 fi
 
 if [ "$1" = configure ] ; then
@@ -52,26 +52,26 @@ KEYDATA
         update-menus
     fi
 
-    find /usr/share/bitpie -type f -name '*.pyc' -exec rm -f {} \;
+    find /usr/share/bitdust -type f -name '*.pyc' -exec rm -f {} \;
 
     if [ -d "/home/$INSTALLATOR/.config/autostart/" ] ; then
         mkdir -p /home/$INSTALLATOR/.config/autostart/
-        cp /usr/share/bitpie/bitpie.desktop /home/$INSTALLATOR/.config/autostart/
-        chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.config/autostart/bitpie.desktop
+        cp /usr/share/bitdust/bitdust.desktop /home/$INSTALLATOR/.config/autostart/
+        chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.config/autostart/bitdust.desktop
     fi    
 
     mkdir -p /home/$INSTALLATOR/.icons/
-    cp /usr/share/icons/bitpie.png /home/$INSTALLATOR/.icons/
+    cp /usr/share/icons/bitdust.png /home/$INSTALLATOR/.icons/
     
     if [ -n "$INSTALLATOR" ]; then
 
-        echo "restarting BitPie.NET from user $INSTALLATOR"
-        nohup su $INSTALLATOR -c "/usr/bin/bitpie restart" >/dev/null &
+        echo "restarting BitDust from user $INSTALLATOR"
+        nohup su $INSTALLATOR -c "/usr/bin/bitdust restart" >/dev/null &
 
     fi
 fi
 
-#echo "bitpie.postinst done"
+#echo "bitdust.postinst done"
 
 #DEBHELPER#
 

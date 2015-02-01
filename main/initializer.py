@@ -213,12 +213,8 @@ class Initializer(automat.Automat):
         return self.is_installed
     
     def isGUIPossible(self, arg):
-        if bpio.Windows():
-            return True
-        if bpio.Linux():
-            return bpio.X11_is_running()
-        return False
-
+        return bpio.isGUIpossible()
+    
     def doUpdate(self, arg):
         from web import webcontrol
         reactor.callLater(0, webcontrol.OnUpdateStartingPage)

@@ -393,6 +393,9 @@ def init(port = 6001):
 
 def show(x=None):
     global local_port
+    if not bpio.isGUIpossible():
+        lg.out(0, 'BitDust GUI is turned OFF')
+        return
     if bpio.Linux() and not bpio.X11_is_running():
         lg.out(0, 'X11 is not running, can not start BitDust GUI')
         return

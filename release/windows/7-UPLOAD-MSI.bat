@@ -1,13 +1,13 @@
 @echo off
 
 @echo.
-@echo [ upload bitpie-testing.msi to bitpie.net ]
+@echo [ upload bitdust-testing.msi to bitdust.io ]
 pushd advinstaller\output\
-rename bitpie.msi bitpie-testing.msi
-REM scp bitpie-testing.msi veselin@bitpie.net:/var/www/download
-rsync -rptgoE --force -z --compress-level=9 -h --progress -vv --stats -c bitpie-testing.msi rsync://veselin@bitpie.net/download
+rename bitdust.msi bitdust-testing.msi
+REM scp bitdust-testing.msi veselin@bitdust.io:/var/www/download
+rsync -rptgoE --force -z --compress-level=9 -h --progress -vv --stats -c bitdust-testing.msi rsync://veselin@bitdust.io/download
 popd
-REM ssh veselin@bitpie.net "chmod u+x /var/www/download/bitpie-testing.msi"
+REM ssh veselin@bitdust.io "chmod u+x /var/www/download/bitdust-testing.msi"
 
 @echo.
 @echo [ DONE ]

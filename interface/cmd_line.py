@@ -197,7 +197,7 @@ def kill():
             'bppipe.py',
             'bptester.exe',
             'bptester.py',
-            'bpstarter.exe',
+            'bitstarter.exe',
             ])
         if len(appList) > 0:
             found = True
@@ -243,7 +243,7 @@ def wait_then_kill(x):
             'bppipe.py',
             'bptester.exe',
             'bptester.py',
-            'bpstarter.exe',
+            'bitstarter.exe',
             ])
         if len(appList) == 0:
             print_text('DONE')
@@ -780,7 +780,7 @@ def option_name_to_path(name, default=''):
 #                'bppipe.py',
 #                'bptester.exe',
 #                'bptester.py',
-#                'bpstarter.exe',
+#                'bitstarter.exe',
 #                ])
 #            if len(appList) > 0:
 #                found = True
@@ -809,7 +809,7 @@ def option_name_to_path(name, default=''):
 #                'bpgui.exe',
 #                'bppipe.exe',
 #                'bptester.exe',
-#                'bpstarter.exe',
+#                'bitstarter.exe',
 #                ])
 #            lg.out(0, 'appList:' + str(appList))
 #            if len(appList) == 0:
@@ -834,7 +834,7 @@ def option_name_to_path(name, default=''):
 #        'bpgui.exe',
 #        'bppipe.exe',
 #        'bptester.exe',
-#        'bpstarter.exe',
+#        'bitstarter.exe',
 #        ])
 #    if len(appList) == 0:
 #        lg.out(0, 'uninstalling BitDust ...   ')

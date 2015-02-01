@@ -6,14 +6,14 @@ xcopy ..\version   bin\     /Y /Q
 
 @echo. 
 @echo [ update version number ( %VER% ) in binaries ]
-set FILEDESCR=/s desc "BitPie.NET - Easy as a pie"
+set FILEDESCR=/s desc "BitDust project"
 set BUILDINFO=/s pb "Built by Veselin Penev"
-set COMPINFO=/s company "BitPie.NET Inc." /s (c) "(c) BitPie.NET Inc. 2014."
-set PRODINFO=/s product "BitPie.NET" /pv "%VER%"
-verpatch /va bin\bitpie.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
-verpatch /va bin\bpstarter.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
+set COMPINFO=/s company "BitDust Inc." /s (c) "(c) BitDust Inc. 2014."
+set PRODINFO=/s product "BitDust" /pv "%VER%"
+verpatch /va bin\bitdust.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
+verpatch /va bin\bitstarter.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
 verpatch /va bin\bppipe.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
-verpatch /va bin\bpgui.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
+rem verpatch /va bin\bpgui.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
 verpatch /va bin\bptester.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
 verpatch /va bin\bpworker.exe %VER% %FILEDESCR% %COMPINFO% %PRODINFO% %BUILDINFO%
 

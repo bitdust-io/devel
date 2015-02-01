@@ -16,7 +16,7 @@ if exist bin\NUL rmdir /S /Q bin
 @echo.
 @echo [ clear msi output folder ]
 del advinstaller\output\*   /Q /F
-rm -rf advinstaller\bitpie-cache\
+rm -rf advinstaller/bitdust-cache/
 
 
 @echo.
@@ -27,7 +27,7 @@ mkdir upload
 
 @echo.
 @echo [ clear portable folder ]
-if exist bitpie-testing.zip del bitpie-testing.zip 
+if exist bitdust-testing.zip del bitdust-testing.zip 
 if exist portable\NUL rmdir /S /Q portable
 mkdir portable
 

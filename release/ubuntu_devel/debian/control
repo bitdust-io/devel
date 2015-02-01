@@ -1,16 +1,16 @@
-Source: bitpie
+Source: bitdust
 Section: python
 Priority: optional
-Maintainer: Veselin Penev <veselin@bitpie.net>
+Maintainer: Veselin Penev <veselin@bitdust.io>
 Build-Depends: debhelper (>= 7), python-support, python (>=2.6)
 Standards-Version: 3.8.4
-Homepage: http://bitpie.net
+Homepage: http://bitdust.io
 
-Package: bitpie
+Package: bitdust
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, python, python-twisted, python-pyasn1, python-openssl, python-crypto, python-wxgtk2.8, python-imaging
 Description: Distributed backup utility.
- BitPie.NET is a peer-to-peer online backup utility.
+ BitDust is a peer-to-peer online backup utility.
  .
  This is a distributed network for backup data storage. 
  Each participant of the network provides a portion of his hard drive 
@@ -26,4 +26,4 @@ Description: Distributed backup utility.
  Recover data is only one way - download the necessary pieces 
  from computers of other users and decrypt them with your private key.
  .
- BitPie.NET - is written in Python using Twisted.
+ BitDust - is written in Python using Twisted.

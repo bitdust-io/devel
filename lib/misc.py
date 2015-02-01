@@ -1175,17 +1175,22 @@ def DoRestart(param='', detach=False):
     """
     if bpio.Windows():
         if bpio.isFrozen():
-            lg.out(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
-            lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
-            lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
+            # lg.out(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
+            # lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
+            # lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
             starter_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsStarterFileName())
             if not os.path.isfile(starter_filepath):
-                lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
-                return None
+                # lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
+                main_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsMainScritpFileName())
+                cmdargs = [os.path.basename(main_filepath),]
+                if param != '':
+                    cmdargs.append(param)
+                # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
+                return os.spawnve(os.P_DETACH, main_filepath, cmdargs, os.environ)
             cmdargs = [os.path.basename(starter_filepath),]
             if param != '':
                 cmdargs.append(param)
-            lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
+            # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
             return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
 
         else:

@@ -1,9 +1,9 @@
-recursive-include bitpie/icons *
-recursive-include bitpie/fonts *
-recursive-include bitpie/dht/entangled *
-recursive-include bitpie/parallelp/pp *
+recursive-include bitdust/icons *
+recursive-include bitdust/fonts *
+recursive-include bitdust/dht/entangled *
+recursive-include bitdust/parallelp/pp *
 
-include bitpie/parallelp/README
+include bitdust/parallelp/README
 include LICENSE.txt
 include README.txt
 include CHANGELOG.txt

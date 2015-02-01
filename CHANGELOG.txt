@@ -30,7 +30,7 @@
   
     * KEY FEATURE: software core is transformed into a system of interrelated services
     * made upgrade on stun client - multiple stun requests at same time to increase performace
-    * changed user settings engine, now it is splited on single files in sub folder: .bitpie/config/
+    * changed user settings engine, now it is splited on single files in sub folder: .bitdust/config/
     * many fixes in GUI and command line interface
     * hash method was changed from MD5 to SHA1 
     * added a small feature - can request a single random packet for given backup from GUI

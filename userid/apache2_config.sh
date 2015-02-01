@@ -9,9 +9,9 @@ sudo a2enmod rewrite
 sudo service apache2 restart
 
 # configure BitDust
-python bitpie.py set service/id-server/enabled true
-python bitpie.py set service/id-server/host my-own-identity-server.com
+python bitdust.py set service/id-server/enabled true
+python bitdust.py set service/id-server/host my-own-identity-server.com
 
 # you can run only identity server: ./run.id_server
 # or just start the whole BitDust software in background
-python bitpie.py detach
+python bitdust.py detach

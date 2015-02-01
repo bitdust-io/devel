@@ -1,7 +1,7 @@
 # Automat network_connector()
 
 
-![network_connector[1]](http://bitdust.io/bitpie/p2p/network_connector.png)
+![network_connector[1]](http://bitdust.io/bitdust/p2p/network_connector.png)
 
 
 ## Description:    

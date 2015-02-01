@@ -19,7 +19,7 @@ This is working inside ``bpmain`` process, uses wxreactor to connect with main T
 import os
 import sys
 
-USE_TRAY_ICON = True
+USE_TRAY_ICON = False # True
 LABEL = 'BitDust'
     
 _IconObject = None

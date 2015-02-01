@@ -869,7 +869,7 @@ def cmd_uninstall(opts, args, overDict):
                 'bppipe.py',
                 'bptester.exe',
                 'bptester.py',
-                'bpstarter.exe',
+                'bitstarter.exe',
                 ])
             if len(appList) > 0:
                 found = True
@@ -898,7 +898,7 @@ def cmd_uninstall(opts, args, overDict):
                 'bpgui.exe',
                 'bppipe.exe',
                 'bptester.exe',
-                'bpstarter.exe',
+                'bitstarter.exe',
                 ])
             lg.out(0, 'appList:' + str(appList))
             if len(appList) == 0:
@@ -923,7 +923,7 @@ def cmd_uninstall(opts, args, overDict):
         'bpgui.exe',
         'bppipe.exe',
         'bptester.exe',
-        'bpstarter.exe',
+        'bitstarter.exe',
         ])
     if len(appList) == 0:
         lg.out(0, 'uninstalling BitDust ...   ')

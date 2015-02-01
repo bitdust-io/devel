@@ -574,7 +574,7 @@ def FilesDigestsFilename():
     
         .bitdust/bin/files
         
-    Our bpstarter.exe read local copy and than can request a public copy and compare the content.
+    Our bitstarter.exe read local copy and than can request a public copy and compare the content.
     If some files were changed or new files added to the repo - it will update the local binaries from repo.
     The idea is to update only modified files when new release will be published.
     """
@@ -875,11 +875,11 @@ def GUIOptionsFilename():
 
 def UpdateSheduleFilename():
     """
-    Under Windows software update process is made by bpstarter.exe file.
+    Under Windows software update process is made by bitstarter.exe file.
     Periodically, the main file process "bitdust.exe" requests 
     the file "checksum" (from user configurable repository location) 
     to check for new software release of that repository.
-    Main process can restart itself thru bpstarter to be able to update the binaries.
+    Main process can restart itself thru bitstarter to be able to update the binaries.
     User can set a schedule to check for updates in the settings. 
     """
     return os.path.join(MetaDataDir(), "updateshedule")
@@ -1077,13 +1077,19 @@ def DHTDBFile():
 
 def WindowsStarterFileName():
     """
-    Return a file name of the Windows starter: "bpstarter.exe".
+    Return a file name of the Windows starter: "bitstarter.exe".
     """
-    return 'bpstarter.exe'
+    return 'bitstarter.exe'
+
+def WindowsMainScritpFileName():
+    """
+    Return a file name of the root Windows executable script : "bitdust.exe".
+    """
+    return 'bitdust.exe'
 
 def WindowsStarterFileURL(repo=DefaultRepo()):
     """
-    Return a public URL of the "bpstarter.exe" file, according to given ``repo``.
+    Return a public URL of the "bitstarter.exe" file, according to given ``repo``.
     When need to modify the starter code need to place it in the repository along with other binaries.
     It will be downloaded automatically by all users and updated.  
     """

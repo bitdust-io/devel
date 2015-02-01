@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ~/bitpie/release/
+cd ~/bitdust/release/
 echo "[ update revision number ]"
 git rev-list --count HEAD >revnum
 REVNUM=`cat revnum`

@@ -888,11 +888,24 @@ def main_is_frozen():
             hasattr(sys, "importers") or    # old py2exe
             imp.is_frozen("__main__"))      # tools/freeze
 
+
+def isGUIpossible():
+    """
+    """
+    return False # TODO
+    if Windows():
+        return True
+    if Linux():
+        return X11_is_running()
+    return False
+    
+
 def X11_is_running():
     """
     Linux method to check if BitDust GUI is possible.
         http://stackoverflow.com/questions/1027894/detect-if-x11-is-available-python
     """
+    return False
     global X11isRunning
     if not Linux():
         return False

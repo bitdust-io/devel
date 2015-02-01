@@ -2,10 +2,10 @@
 @echo off
 
 @echo.
-@echo [ upload bitpie-development.msi to bitpie.net ]
+@echo [ upload bitdust-development.msi to bitdust.io ]
 pushd advinstaller\output\
-rename bitpie.msi bitpie-development.msi
-rsync -rptgoE --force -z --compress-level=9 -h --progress -vv --stats -c bitpie-development.msi rsync://veselin@bitpie.net/download
+rename bitdust.msi bitdust-development.msi
+rsync -rptgoE --force -z --compress-level=9 -h --progress -vv --stats -c bitdust-development.msi rsync://veselin@bitdust.io/download
 popd
 
 @echo.

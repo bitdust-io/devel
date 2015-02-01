@@ -2,9 +2,9 @@
 #
 
 
-DEFAULTS_FILE="/etc/default/bitpie-update"
+DEFAULTS_FILE="/etc/default/bitdust-update"
 
-REPOCONFIG="deb http://bitpie.net/deb/stable stable main"
+REPOCONFIG="deb http://bitdust.io/deb/stable stable main"
 
 APT_GET="`which apt-get 2> /dev/null`"
 APT_CONFIG="`which apt-config 2> /dev/null`"
@@ -72,7 +72,7 @@ update_bad_sources() {
 
   find_apt_sources
 
-  SOURCELIST="$APT_SOURCESDIR/bitpie.list"
+  SOURCELIST="$APT_SOURCESDIR/bitdust.list"
   if [ ! -r "$SOURCELIST" ]; then
     return 0
   fi
@@ -117,7 +117,7 @@ create_sources_lists() {
 
   find_apt_sources
 
-  SOURCELIST="$APT_SOURCESDIR/bitpie.list"
+  SOURCELIST="$APT_SOURCESDIR/bitdust.list"
   if [ -d "$APT_SOURCESDIR" ]; then
     printf "$SOURCES_PREAMBLE" > "$SOURCELIST"
     printf "$REPOCONFIG\n" >> "$SOURCELIST"
@@ -135,7 +135,7 @@ clean_sources_lists() {
 
   find_apt_sources
 
-  rm -f "$APT_SOURCESDIR/bitpie.list" 
+  rm -f "$APT_SOURCESDIR/bitdust.list" 
 }
 
 handle_distro_upgrade() {
@@ -144,7 +144,7 @@ handle_distro_upgrade() {
   fi
 
   find_apt_sources
-  SOURCELIST="$APT_SOURCESDIR/bitpie.list"
+  SOURCELIST="$APT_SOURCESDIR/bitdust.list"
   if [ -r "$SOURCELIST" ]; then
     REPOLINE=$(grep -E "^[[:space:]]*#[[:space:]]*$REPOCONFIG[[:space:]]*# disabled on upgrade to .*" "$SOURCELIST")
     if [ $? -eq 0 ]; then
@@ -160,7 +160,7 @@ handle_distro_upgrade() {
 
 
 ## MAIN ##
-DEFAULTS_FILE="/etc/default/bitpie-update"
+DEFAULTS_FILE="/etc/default/bitdust-update"
 if [ -r "$DEFAULTS_FILE" ]; then
   . "$DEFAULTS_FILE"
 fi
@@ -180,7 +180,7 @@ if [ "$repo_reenable_on_distupgrade" = "true" ]; then
   handle_distro_upgrade
 fi
 
-apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitpie.list" -o Dir::Etc::sourceparts="-" 
-apt-get install bitpie
+apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitdust.list" -o Dir::Etc::sourceparts="-" 
+apt-get install bitdust
 
 exit 0

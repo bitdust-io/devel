@@ -94,16 +94,16 @@ excludes = [
 
 setup(
 
-    name = 'BitPie.NET Starter',
+    name = 'BitDust Starter',
 
-    description = 'BitPie.NET Starter',
+    description = 'BitDust Starter',
 
     version = open('release/version').read().strip(), 
 
     windows = [
 
         {
-            'script': 'bpstarter.py',
+            'script': 'bitstarter.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
         },
 

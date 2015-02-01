@@ -12,7 +12,7 @@ xcopy build\*                                   bin  /E /R /H /Y /Q
 
 
 @echo.
-@echo [ copy bpstarter files ]
+@echo [ copy bitstarter files ]
 xcopy starter\*                                 bin\ /E /R /H /Y /Q
 
 
@@ -27,6 +27,9 @@ if exist bin\win32com\gen_py\NUL rmdir /S /Q    bin\win32com\gen_py\
 xcopy ..\..\LICENSE.txt                         bin\ /Y /Q
 xcopy ..\..\README.txt                          bin\ /Y /Q
 xcopy ..\..\CHANGELOG.txt                       bin\ /Y /Q
+xcopy install.cmd                               bin\ /Y /Q
+xcopy console.cmd                               bin\ /Y /Q
+xcopy run.cmd                                   bin\ /Y /Q
 
 
 @echo.
