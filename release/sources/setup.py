@@ -3,6 +3,7 @@ from distutils.core import setup
 setup(  name='bitdust',
         version='{version}',
         author='Veselin Penev, BitDust Inc.',
+<<<<<<< HEAD
         author_email='veselin@bitdust.io',
         maintainer='Veselin Penev, BitDust Inc.',
         maintainer_email='veselin@bitdust.io',
@@ -10,6 +11,15 @@ setup(  name='bitdust',
         description='p2p communication tool',
         long_description='p2p communication tool',
         download_url='http://bitdust.io',
+=======
+        author_email='veselin@bitdust.net',
+        maintainer='Veselin Penev, BitDust Inc.',
+        maintainer_email='veselin@bitdust.net',
+        url='http://bitdust.net',
+        description='p2p communication tool',
+        long_description='p2p communication tool',
+        download_url='http://bitdust.net',
+>>>>>>> cf6e46c332eca7780c082f28e7158a601330b712
         license='Copyright BitDust Inc., 2014',
         
         keywords='''p2p, peer to peer, peer, to, 
