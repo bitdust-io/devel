@@ -2,15 +2,15 @@ from distutils.core import setup
 
 setup(  name='bitdust',
         version='{version}',
-        author='Veselin Penev, BitPie.NET Inc.',
+        author='Veselin Penev, BitDust Inc.',
         author_email='veselin@bitdust.net',
-        maintainer='Veselin Penev, BitPie.NET Inc.',
+        maintainer='Veselin Penev, BitDust Inc.',
         maintainer_email='veselin@bitdust.net',
         url='http://bitdust.net',
         description='p2p communication tool',
         long_description='p2p communication tool',
         download_url='http://bitdust.net',
-        license='Copyright BitPie.NET Inc., 2014',
+        license='Copyright BitDust Inc., 2014',
         
         keywords='''p2p, peer to peer, peer, to, 
                     backup, restore, storage, data, recover,

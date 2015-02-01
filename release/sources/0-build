@@ -1,16 +1,16 @@
 #!/bin/bash
 
-cd ~/bitpie/release/sources
+cd ~/bitdust/release/sources
 
 echo "[ prepare workspace folder ]"
 rm -rf workspace
 mkdir workspace
-mkdir workspace/bitpie
+mkdir workspace/bitdust
 cp MANIFEST.in workspace
 
 echo "[ export from git repo into workspace ]"
 pushd ../.. >/dev/null
-git archive master | (cd release/sources/workspace/bitpie; tar x)
+git archive master | (cd release/sources/workspace/bitdust; tar x)
 popd >/dev/null
 
 echo "[ prepare setup.py file ]"
@@ -20,7 +20,7 @@ regexp="s/{version}/$version/g;"
 perl -i -pe $regexp workspace/setup.py 
 
 echo "[ remove some files ]"
-cd workspace/bitpie
+cd workspace/bitdust
 rm -v commit.bat
 rm -v commit.sh
 rm -rf screenshots/*
