@@ -31,6 +31,8 @@ rm -rf icons/*
 rm -vfr icons
 rm -rf fonts/*
 rm -vfr fonts
+rm -rf web/static/*
+rm -fr web/html/*
 
 echo "[ move some files to the top level ]"
 mv -v *.txt ..
