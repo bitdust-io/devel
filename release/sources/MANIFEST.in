@@ -1,5 +1,3 @@
-recursive-include bitdust/icons *
-recursive-include bitdust/fonts *
 recursive-include bitdust/dht/entangled *
 recursive-include bitdust/parallelp/pp *
 

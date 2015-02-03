@@ -82,8 +82,7 @@ setup(  name='bitdust',
             ],
 
         package_data = {
-            'bitdust': [ 'icons/*', 
-                        'fonts/*', 
+            'bitdust': [ 
                         'parallelp/README', 
                         'dht/entangled/AUTHORS', 
                         'dht/entangled/COPYING', 
