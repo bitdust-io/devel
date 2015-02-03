@@ -7,3 +7,4 @@ Icon=bitdust.png
 Type=Application
 Exec=bitdust show
 Categories=Network;Application;
+Name[ru]=bitdust.desktop
