@@ -10,8 +10,8 @@ rm -rf dist
 python setup.py sdist >../sdist.log
 
 
-echo "[ publish sources ]"
-cp dist/*.tar.gz /var/www/download/bitdust.tar.gz
-cp -v dist/*.tar.gz /var/www/download/
-rm -rf dist
-cd ..
+# echo "[ publish sources ]"
+# cp dist/*.tar.gz /var/www/download/bitdust.tar.gz
+# cp -v dist/*.tar.gz /var/www/download/
+# rm -rf dist
+# cd ..
