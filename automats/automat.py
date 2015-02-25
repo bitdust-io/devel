@@ -159,6 +159,17 @@ def SetStateChangedCallback(cb):
     _StateChangedCallback = cb
 
 
+def RedirectLogFile(stream):
+    """
+    You can simple send all output to the stdout:
+    
+        import sys
+        RedirectLogFile(sys.stdout)
+    """
+    global _LogFile
+    _LogFile = stream
+
+
 def OpenLogFile(filename):
     """
     Open a file to write logs from all state machines. Very useful during debug.
@@ -454,7 +465,7 @@ class Automat(object):
         if not _Debug:
             return
         if _LogFile is not None:
-            if _LogsCount > 100000:
+            if _LogsCount > 100000 and _LogFilename:
                 _LogFile.close()
                 _LogFile = open(_LogFilename, 'w')
                 _LogsCount = 0

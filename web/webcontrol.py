@@ -600,8 +600,8 @@ def html_from_dict(request, d):
             d['debug'] += 'request.getClientIP: ' + str(request.getClientIP()) + '<br>\n'
             d['debug'] += 'request.getHost: ' + str(request.getHost()) + '<br>\n'
             d['debug'] += 'request.getRequestHostname: ' + str(request.getRequestHostname()) + '<br>\n'
-            if lg.is_debug(30):
-                d['debug'] += 'sys.modules:<br><pre>%s</pre><br>\n'+pprint.pformat(sys.modules) + '<br>\n'
+            # if lg.is_debug(30):
+            #     d['debug'] += 'sys.modules:<br><pre>%s</pre><br>\n'+pprint.pformat(sys.modules) + '<br>\n'
         else:
             d['debug'] = ''
     d['title'] = 'BitDust'
@@ -682,7 +682,7 @@ def check_install():
 #------------------------------------------------------------------------------
 
 def OnGlobalStateChanged(state):
-    SendCommandToGUI('BITPIE-SERVER:' + state)
+    SendCommandToGUI('BITDUST-SERVER:' + state)
     if currentVisiblePageName() == _PAGE_STARTING:
         SendCommandToGUI('update')
 #    elif currentVisiblePageUrl().count(_PAGE_SETTINGS):
@@ -955,11 +955,11 @@ class LocalHTTPChannel(http.HTTPChannel):
 
     def lineReceived(self, line):
         global _GUICommandCallbacks
-        if line.strip().upper() == 'BITPIE-VIEW-REQUEST':
+        if line.strip().upper() == 'BITDUST-VIEW-REQUEST':
             lg.out(2, 'GUI: view request received from ' + str(self.transport.getHost()))
             self.controlState = True
             _GUICommandCallbacks.append(self.send)
-            SendCommandToGUI('BITPIE-SERVER:' + GetGlobalState())
+            SendCommandToGUI('BITDUST-SERVER:' + GetGlobalState())
             for index, object in automat.objects().items():
                 SendCommandToGUI('automat %s %s %s %s' % (str(index), object.id, object.name, object.state))
         else:

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "suppliers:"
+cat .bitdust/metadata/supplierids
+echo
+
+echo "customers:"
+cat .bitdust/metadata/customerids
+echo
+
+echo "space:"
+cat .bitdust/metadata/space
+echo
+
+echo "used:"
+cat .bitdust/metadata/spaceused
+echo
+
+exit 0

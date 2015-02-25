@@ -1,0 +1,35 @@
+#!/bin/bash
+
+./stop
+
+# ./reset
+
+./up
+
+if [ '0' == '1' ]; 
+then
+  rm -rf ~/.bitdust/temp/*
+  rm -rf ~/.bitdust/logs/*
+  rm -rf ~/.bitdust/identitycache/*
+
+  # python bitdust/bitdust.py set suppliers 2
+  # python bitdust/bitdust.py set needed 64 MB
+  # python bitdust/bitdust.py set donated 10 GB
+  # python bitdust/bitdust.py set limit-send 12500000
+  # python bitdust/bitdust.py set limit-receive 12500000
+  # python bitdust/bitdust.py set udp True
+  # python bitdust/bitdust.py set tcp True
+  # python bitdust/bitdust.py set debug 14
+
+fi
+
+# ps aux | grep -v grep | grep bitdust.py
+# ping megafaq.ru -c 2
+# rm -f ~/.bitdust/metadata/localidentity
+# rm -f ~/.bitdust/metadata/mykeyfile
+# python bitdust/bitdust.py register "f_$1"
+
+./go
+
+exit 0
+

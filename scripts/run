@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cd ~/bitdust
+python bitdust.py

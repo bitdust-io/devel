@@ -200,9 +200,9 @@ class StunClient(automat.Automat):
         """
         Condition method.
         """
-        lg.out(12, 'stun_client.isNeedMoreNodes %d + %d ~ %d' %  
-            (len(self.stun_nodes), len(arg), self.minimum_needed_servers))
-        return len(self.stun_nodes) + len(arg) < self.minimum_needed_servers
+        # lg.out(12, 'stun_client.isNeedMoreNodes %d + %d ~ %d' %  
+        #     (len(self.stun_nodes), len(arg), self.minimum_needed_servers))
+        return len(self.stun_nodes) + len(arg) < self.minimum_needed_servers 
 
     def doInit(self, arg):
         """
@@ -377,7 +377,10 @@ class StunClient(automat.Automat):
         
     def _some_nodes_found(self, nodes):
         lg.out(12, 'stun_client._some_nodes_found : %d' % len(nodes))
-        self.automat('found-some-nodes', nodes)
+        if len(nodes) > 0:
+            self.automat('found-some-nodes', nodes)
+        else:
+            self.automat('dht-nodes-not-found')
         
     def _nodes_not_found(self, err):
         lg.out(12, 'stun_client._find_random_node err=%s' % str(err))

@@ -1,0 +1,9 @@
+#!/bin/bash 
+
+ssh root@"$1" "adduser veselin; adduser veselin sudo;"
+ssh-copy-id -i ~/.ssh/id_rsa.pub "$1"
+scp * "$2":
+scp .bash* "$2":
+
+
+

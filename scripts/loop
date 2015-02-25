@@ -1,0 +1,10 @@
+#!/bin/bash
+while true; do 
+    echo "loop iteration"
+    ./up
+    nohup ./run 1>log 2>err.log &
+    ps -C "bitdust.py" -o "%p" --no-heading >~/pid
+    sleep 60000
+done
+sleep 1
+exit 0

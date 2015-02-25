@@ -1,0 +1,15 @@
+#!/bin/bash
+
+cd ~
+chmod +x grepnkill
+./grepnkill loop
+# sleep 1
+./grepnkill bitdust.py
+# sleep 1
+chmod +x loop
+/bin/rm -f /tmp/nohup.loop.dhn
+nohup ./loop > /tmp/nohup.loop.dhn &
+# sleep 1
+echo "loop started"
+# sleep 1
+exit 0
