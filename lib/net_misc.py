@@ -866,7 +866,7 @@ def getNetworkInterfaces():
         
     elif plat == 'Linux':
         try:
-            pipe = os.popen("/bin/ip -f inet a")
+            pipe = os.popen("`which ip` -f inet a")
         except IOError:
             return []
         try:
