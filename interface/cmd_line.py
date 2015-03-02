@@ -142,14 +142,14 @@ def print_and_stop(result):
     print result
     import pprint
     pprint.pprint(result, indent=2,)
-    # reactor.stop()
+    reactor.stop()
     
 def fail_and_stop(err):
     try:
         print_text(err.getErrorMessage())
     except:
         print err
-    # reactor.stop()
+    reactor.stop()
 
 #------------------------------------------------------------------------------ 
 
