@@ -1309,7 +1309,7 @@ def ExplorePathInOS(filepath):
                 subprocess.Popen(['explorer', '%s' % (filepath.replace('/','\\'))])
 
         elif bpio.Linux():
-            subprocess.Popen(['xdg-open', filepath])
+            subprocess.Popen(['`which xdg-open`', filepath])
 
         elif bpio.Mac():
             subprocess.Popen(['open', filepath])

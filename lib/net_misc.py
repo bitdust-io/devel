@@ -464,7 +464,7 @@ def getLocalIp():
     if os_str=='LINUX' :
 
         # Linux:
-        arg='ip route list'
+        arg='`which ip` route list'
         p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
         data = p.communicate()
         sdata = data[0].split()
