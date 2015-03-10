@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#api.py
+#xmlrpc_server.py
 #
 # <<<COPYRIGHT>>>
 #
@@ -40,7 +40,7 @@ class XMLRPCServer(xmlrpc.XMLRPC):
         self.methods = {
             'stop':                     api.stop,
             'restart':                  api.restart,
-            'show':                     api.show,
+            # 'show':                     api.show,
             
             'backups_list':             api.backups_list,
             'backups_id_list':          api.backups_id_list,

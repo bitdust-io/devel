@@ -897,6 +897,11 @@ def LocalXMLRPCPortFilename():
     """
     return os.path.join(MetaDataDir(), 'localxmlrpcport')
 
+def LocalJsonRPCPortFilename():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'localjsonrpcport')
+
 def BackupInfoFileNameOld():
     """
     Long time ago backup data base were stored in that file. Obsolete, see ``BackupIndexFileName()``..

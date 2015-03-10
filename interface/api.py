@@ -51,9 +51,9 @@ def backups_list():
     from storage import backup_fs
     result = []
     for pathID, localPath, item in backup_fs.IterateIDs():
-        result.append((pathID, localPath, item))
-        if len(result) > 20:
-            break
+        result.append((pathID, localPath, item.type, item.size, item.versions))
+        # if len(result) > 20:
+        #     break
     return result
 
 
