@@ -1,0 +1,175 @@
+[
+    {
+        "pk": 1000,
+        "model": "auth.user",
+        "fields": {
+            "username": "mickey",
+            "first_name": "mickey",
+            "last_name": "mouse",
+            "is_active": true,
+            "is_superuser": false,
+            "is_staff": false,
+            "last_login": "2008-11-26 16:47:23",
+            "groups": [],
+            "user_permissions": [],
+            "password": "sha1$71957$112aa4fa4ee1da543dd410d63aba788c81c93e29",
+            "email": "",
+            "date_joined": "2008-11-26 16:47:23"
+        }
+    },
+    {
+        "pk": 1001,
+        "model": "auth.user",
+        "fields": {
+            "username": "donald",
+            "first_name": "donald",
+            "last_name": "duck",
+            "is_active": true,
+            "is_superuser": false,
+            "is_staff": false,
+            "last_login": "2008-11-26 16:47:23",
+            "groups": [],
+            "user_permissions": [],
+            "password": "sha1$71957$112aa4fa4ee1da543dd410d63aba788c81c93e29",
+            "email": "",
+            "date_joined": "2008-11-26 16:47:23"
+        }
+    },
+    {
+        "pk": 1002,
+        "model": "auth.user",
+        "fields": {
+            "username": "pluto",
+            "first_name": "pluto",
+            "last_name": "",
+            "is_active": true,
+            "is_superuser": false,
+            "is_staff": false,
+            "last_login": "2008-11-26 16:47:23",
+            "groups": [],
+            "user_permissions": [],
+            "password": "sha1$71957$112aa4fa4ee1da543dd410d63aba788c81c93e29",
+            "email": "",
+            "date_joined": "2008-11-26 16:47:23"
+        }
+    },
+    {
+        "pk": 1,
+        "model": "jqchat.room",
+        "fields": {
+            "name": "The first room",
+            "created": "2008-11-25 14:25:39",
+            "last_activity": "0"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "jqchat.room",
+        "fields": {
+            "name": "A second room",
+            "created": "2008-11-25 15:05:45",
+            "description": "Enter description here!",
+            "description_modified": 1227625469,
+            "last_activity": "0"
+        }
+    },
+    {
+        "pk": 1,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: hello<br />",
+            "user": 1000,
+            "unix_timestamp": 1227625469,
+            "created": "2008-11-25 15:04:29",
+            "room": 1
+        }
+    },
+    {
+        "pk": 2,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: msg 1<br />",
+            "user": 1000,
+            "unix_timestamp": 1227626124,
+            "created": "2008-11-25 15:05:45",
+            "room": 1
+        }
+    },
+    {
+        "pk": 3,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: room 2<br />",
+            "user": 1000,
+            "unix_timestamp": 1227626182,
+            "created": "2008-11-25 15:05:45",
+            "room": 2
+        }
+    },
+    {
+        "pk": 4,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: fff<br />",
+            "user": 1000,
+            "unix_timestamp": 1227626998,
+            "created": "2008-11-25 15:29:58",
+            "room": 1
+        }
+    },
+    {
+        "pk": 5,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: test 2<br />",
+            "user": 1000,
+            "unix_timestamp": 1227627740,
+            "created": "2008-11-25 15:42:20",
+            "room": 2
+        }
+    },
+    {
+        "pk": 6,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: saasa<br />",
+            "user": 1000,
+            "unix_timestamp": 1227628776,
+            "created": "2008-11-25 15:59:36",
+            "room": 2
+        }
+    },
+    {
+        "pk": 7,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: Want to play a game?<br />",
+            "user": 1000,
+            "unix_timestamp": 1227629878,
+            "created": "2008-11-25 16:17:58",
+            "room": 2
+        }
+    },
+    {
+        "pk": 8,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: Yes, let's play!<br />",
+            "user": 1000,
+            "unix_timestamp": 1227629882,
+            "created": "2008-11-25 16:18:02",
+            "room": 2
+        }
+    },
+    {
+        "pk": 9,
+        "model": "jqchat.message",
+        "fields": {
+            "text": "<strong>mickey</strong>: Yes, let's play!<br />",
+            "user": 1000,
+            "unix_timestamp": 1227629907,
+            "created": "2008-11-25 16:18:27",
+            "room": 1
+        }
+    }
+]

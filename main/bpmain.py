@@ -531,8 +531,11 @@ def main():
             lg.out(0, 'BitDust already started, found another process: %s' % str(appList))
             bpio.shutdown()
             return 0
+        UI = ''
+        if cmd == 'show' or cmd == 'open':
+            UI = 'show'
         try:
-            ret = run('', opts, args, overDict)
+            ret = run(UI, opts, args, overDict)
         except:
             lg.exc()
             ret = 1
@@ -619,7 +622,9 @@ def main():
             return ret
 
     #---show---
-    elif False and (cmd == 'show' or cmd == 'open'):
+    elif (cmd == 'show' or cmd == 'open'):
+        print cmd
+        from main import settings
         if not bpio.isGUIpossible():
             lg.out(0, 'BitDust GUI is turned OFF')
             bpio.shutdown()
@@ -628,24 +633,25 @@ def main():
             lg.out(0, 'BitDust GUI already opened, found another process: %s' % str(appList))
             bpio.shutdown()
             return 0
-        appList_bpgui = bpio.find_process([
-            'bpgui.exe',
-            'bpgui.py',
-            ])
         appList = bpio.find_process([
             'bitdust.exe',
             'bpmain.py',
             'bitdust.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
-        if len(appList_bpgui) > 0:
-            if len(appList) == 0:
-                for pid in appList_bpgui:
-                    bpio.kill_process(pid)
-            else:
-                lg.out(0, 'BitDust GUI already opened, found another process: %s' % str(appList))
-                bpio.shutdown()
-                return 0
+        if not settings.NewWebGUI():
+            appList_bpgui = bpio.find_process([
+                'bpgui.exe',
+                'bpgui.py',
+                ])
+            if len(appList_bpgui) > 0:
+                if len(appList) == 0:
+                    for pid in appList_bpgui:
+                        bpio.kill_process(pid)
+                else:
+                    lg.out(0, 'BitDust GUI already opened, found another process: %s' % str(appList))
+                    bpio.shutdown()
+                    return 0
         if len(appList) == 0:
             try:
                 ret = run('show', opts, args, overDict)
@@ -653,8 +659,7 @@ def main():
                 lg.exc()
                 ret = 1
             bpio.shutdown()
-            return ret
-        
+            return ret        
         lg.out(0, 'found main BitDust process: %s, start the GUI\n' % str(appList))
         ret = show()
         bpio.shutdown()

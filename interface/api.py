@@ -37,6 +37,8 @@ def restart():
 
 
 def show():
+    from logs import lg
+    lg.out(4, 'api.show')
     from main import settings
     if settings.NewWebGUI():
         from web import control

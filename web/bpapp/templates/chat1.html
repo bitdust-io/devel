@@ -1,0 +1,16 @@
+{% extends "topmenu.html" %}
+{% block bottombody %}
+<div style="border: 1px dotted lightgray; text-align: center; border-radius: 10px;">
+  {% block page %}
+   {% block content %}
+   {{ block.super }}
+   <h1> {{ chat.name }} </h1>
+   <textarea name="term" id="inputbox" cols="40" rows="4"></textarea>
+   <div id="message_list">
+     <ul>
+     </ul>
+   </div>
+   {% endblock %}
+  {% endblock page %} 
+</div>
+{% endblock bottombody %}

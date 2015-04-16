@@ -49,6 +49,7 @@ def init():
     """
     global _SuppliersChangedCallback
     global _CustomersChangedCallback
+    global _CorrespondentsChangedCallback
     lg.out(4, "contactsdb.init")
     load_suppliers(settings.SupplierIDsFilename())
     load_customers(settings.CustomerIDsFilename())
@@ -57,6 +58,8 @@ def init():
         _SuppliersChangedCallback([], suppliers())
     if _CustomersChangedCallback is not None:
         _CustomersChangedCallback([], customers())
+    if _CorrespondentsChangedCallback is not None:
+        _CorrespondentsChangedCallback([], correspondents())
         
 def shutdown():
     """
@@ -234,6 +237,16 @@ def update_customers(idslist):
     if _ContactsChangedCallback is not None:
         _ContactsChangedCallback(oldcontacts, contacts())
 
+def update_correspondents(tuplslist):
+    """
+    Set correspondents ID's list.
+    """
+    global _CorrespondentsChangedCallback
+    oldcorrespondents = correspondents()
+    set_correspondents(tuplslist)
+    if _CorrespondentsChangedCallback is not None:
+        _CorrespondentsChangedCallback(oldcorrespondents, correspondents())
+
 #-------------------------------------------------------------------------------
 
 def is_customer(idurl):
@@ -355,6 +368,7 @@ def load_suppliers(path):
     if lst is None:
         lst = list()
     set_suppliers(lst)
+    lg.out(4, 'contactsdb.load_suppliers %d items' % len(lst))
 
 def load_customers(path):
     """
@@ -364,6 +378,7 @@ def load_customers(path):
     if lst is None:
         lst = list()
     set_customers(lst)
+    lg.out(4, 'contactsdb.load_customers %d items' % len(lst))
 
 def load_correspondents(path):
     """
@@ -373,10 +388,14 @@ def load_correspondents(path):
     if lst is None:
         lst = list()
     for i in xrange(len(lst)):
-        lst[i] = tuple(lst[i].split(' ', 1))
+        lst[i] = tuple(lst[i].strip().split(' ', 1))
         if len(lst[i]) < 2:
             lst[i] = (lst[i][0], '')
+        if lst[i][1].strip() == '':
+            lst[i] = (lst[i][0], nameurl.GetName(lst[i][0]))
     set_correspondents(lst)
+    lg.out(4, 'contactsdb.load_correspondents %d items' % len(lst))
+    print lst
 
 #------------------------------------------------------------------------------ 
 

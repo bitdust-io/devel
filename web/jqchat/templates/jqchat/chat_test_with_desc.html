@@ -1,0 +1,85 @@
+{% extends "chat.html" %}
+{% load url from future %}
+
+{# An example chat window #}
+
+{% block head_title %}Chat Client{% endblock %}
+
+{% block extra_head %}
+<!-- Load the JS for the chat window and start retrieving messages. -->
+<script type="text/javascript" src="/static/jqchat/jqchat.js"></script>
+<script type="text/javascript">
+	$(document).ready(function(){
+		InitChatWindow("{% url 'jqchat_test_window_with_description_ajax' room.id %}", HandleRoomDescription);
+		// Initialise the custom code to POST new descriptions.
+		InitChatDescription();
+	});
+</script>
+<style type="text/css">
+	/* Example styling for the chat window */
+   #chatwindow {
+     height: 250px;
+     width: 400px;
+     border: 1px solid;
+     padding: 5px;
+     margin: 10px 0;
+     overflow: auto;
+     background-color: white;
+     float: left;
+   }
+   #memberswindow {
+     height: 250px;
+     width: 100px;
+     border: 1px solid;
+     padding: 5px;
+     margin: 10px 0;
+     overflow: auto;
+     background-color: white;
+     float: left;
+   }
+ .clear{
+     clear: both;
+   }
+</style>
+
+{% endblock %}
+
+{% block body %}
+<div id="chat_left_col">
+	<h1>Test Chat Client</h1>
+	
+	<p>This is a demo of the <a href="http://code.google.com/p/django-jqchat/">
+	django-jqchat chat client</a>.</p>
+	<p>This page shows how the basic chat client can be extended: the extra field
+	<em>room description</em> can be updated from the client window and sent as part
+	of the chat client messages. Likewise, updates to the <em>room description</em>
+	elsewhere are piggybacked on to the ajax messages received from the server.</p>
+	<p>For the basic client,
+	<a href="{% url 'jqchat_test_window' room.id %}">see here</a>.</p>
+	<p>There are 2 rooms in this demo,
+	<a href="{% url 'jqchat_test_window' 1 %}">here</a> and 
+	<a href="{% url 'jqchat_test_window' 2 %}">here</a>.</p>
+</div>
+
+<h2>Room name: {{ room }}</h2>
+<h2>Room description: <span id="chatroom_description"></span></h2>
+
+<div id="chatwindow"><span id="loading">Loading...</span></div>
+<div id="memberswindow"></div>
+<div class="clear"></div>
+<form id="chatform">
+	<label for="msg">Message:</label>
+	<input type="text" id="msg" />
+	<input type="submit" value="Send message" /><br />
+</form>
+
+<form id="chatroom_description_form" method="post" action="">
+	<label for="id_description">Room description:</label>
+	<input id="id_description" type="text" name="description" maxlength="100" />
+	<input type="submit" value="Update room description" />
+</form>
+
+<script type="text/javascript">document.getElementById("msg").focus();</script>
+
+{% endblock %}
+

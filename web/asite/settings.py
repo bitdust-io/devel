@@ -17,8 +17,12 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'asite',
-    'bpapp',
+    # 'django.contrib.sites',
+    'web.asite',
+    'web.bpapp',
+    'web.jqchat',
+    # 'registration',
+    # 'account',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -28,6 +32,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # "account.middleware.LocaleMiddleware",
+    # "account.middleware.TimezoneMiddleware",    
 )
 
 STATICFILES_FINDERS = ( 
@@ -35,9 +41,9 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
 
-ROOT_URLCONF = 'asite.urls'
+ROOT_URLCONF = 'web.asite.urls'
 
-WSGI_APPLICATION = 'asite.wsgi.application'
+WSGI_APPLICATION = 'web.asite.wsgi.application'
 
 DATABASES = {
     'default': {
@@ -56,9 +62,23 @@ USE_L10N = True
 
 USE_TZ = True
 
+# TEMPLATES_DIR = (os.path.join(BASE_DIR, 'bpapp'),)
 
 ADMIN_MEDIA_PREFIX = '/media/admin/'
 
 STATIC_ROOT = os.path.join(PROJECT_PATH, 'static')
 
 STATIC_URL = '/static/'
+
+# ACCOUNT_ACTIVATION_DAYS = 7
+
+AUTHENTICATION_BACKENDS = (
+    'bpapp.auth.PasswordlessAuthBackend',
+) 
+
+# TEMPLATE_CONTEXT_PROCESSORS = [
+#     "account.context_processors.account",
+#     "django.contrib.auth.context_processors.auth",
+# ]
+
+

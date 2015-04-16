@@ -46,6 +46,8 @@ from system import bpio
 
 from main import settings
 
+from contacts import contactsdb
+
 #------------------------------------------------------------------------------
 
 _Prefix = 'bpapp_'
@@ -97,6 +99,21 @@ INSERT INTO %s VALUES (?,?,?,?);
 
 [update backupfsitem]
 UPDATE %s SET size=? path=? WHERE backupid=?;
+
+[create friend]
+CREATE TABLE %s (
+id integer NOT NULL PRIMARY KEY, 
+idurl text,
+name text);
+
+[delete friend]
+DELETE FROM %s;
+
+[insert friend]
+INSERT INTO %s VALUES (?,?,?);
+
+[update friend]
+UPDATE %s SET idurl=? name=? WHERE id=?;
 
 [create localfsitem]
 CREATE TABLE %s (
@@ -185,15 +202,22 @@ def init():
     if _Listener:
         return
     lg.out(4, 'control.init')
+    lg.out(4, '    system variable: DJANGO_SETTINGS_MODULE=web.asite.settings')
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.asite.settings")
     init_database()
-    sub_path = os.path.abspath(os.path.join(bpio.getExecutableDir(), 'web'))
+    sub_path = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), 'web')))
     if not sys.path.count(sub_path):
-        sys.path.insert(1, sub_path)
+        lg.out(4, '    insert into python path: %s' % sub_path)
+        # sys.path.insert(0, sub_path)
     wsgi_resource = wsgi.WSGIResource(
         reactor, reactor.getThreadPool(), get_wsgi_application())
     site = server.Site(wsgi_resource)
-    _Listener = reactor.listenTCP(8080, site)
+    web_port = 8080
+    _Listener = reactor.listenTCP(web_port, site)
+    lg.out(4, '    listener started on port %d' % web_port)
+    contactsdb.SetSuppliersChangedCallback(update_suppliers)
+    contactsdb.SetCustomersChangedCallback(update_customers)
+    contactsdb.SetCorrespondentsChangedCallback(update_friends)
 
 
 def shutdown():
@@ -243,6 +267,11 @@ def init_database():
     else:
         dbcur().execute(_SQL['create customer'])
         lg.out(4, '    created table "customer"')
+    if withprefix('friend') in tableslist:
+        lg.out(4, '    "friend" table exist')
+    else:
+        dbcur().execute(_SQL['create friend'])
+        lg.out(4, '    created table "friend"')
     db().commit()
 
 #------------------------------------------------------------------------------
@@ -284,7 +313,7 @@ def on_tray_icon_command(cmd):
 
 #------------------------------------------------------------------------------ 
 
-def update_suppliers(suppliers_list):
+def update_suppliers(old_suppliers_list, suppliers_list):
     dbcur().execute(_SQL['delete supplier'])
     l = map(lambda i: (i, suppliers_list[i],), range(len(suppliers_list)))
     dbcur().executemany(_SQL['insert supplier'], l)
@@ -293,13 +322,22 @@ def update_suppliers(suppliers_list):
     lg.out(4, '    updated %d suppliers' % len(suppliers_list))
 
 
-def update_customers(customers_list):
+def update_customers(old_customers_list, customers_list):
     dbcur().execute(_SQL['delete customer'])
     l = map(lambda i: (i, customers_list[i],), range(len(customers_list)))
     dbcur().executemany(_SQL['insert customer'], l)
     db().commit()
     # TODO - need to repaint GUI here
     lg.out(4, '    updated %d customers' % len(customers_list))
+
+
+def update_friends(old_friends_list, friends_list):
+    dbcur().execute(_SQL['delete friend'])
+    l = map(lambda i: (i, friends_list[i][0], friends_list[i][1]), range(len(friends_list)))
+    dbcur().executemany(_SQL['insert friend'], l)
+    db().commit()
+    # TODO - need to repaint GUI here
+    lg.out(4, '    updated %d friends' % len(friends_list))
 
 
 def update_contact_status(idurl):
@@ -313,7 +351,7 @@ def update_backup_fs(backup_fs_raw_list):
     # db().commit()
     # TODO - need to repaint GUI here
     lg.out(4, '    updated %d backup_fs items' % len(backup_fs_raw_list))
-
+    
 #------------------------------------------------------------------------------
 
 if __name__ == "__main__":

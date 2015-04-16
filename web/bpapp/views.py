@@ -1,39 +1,55 @@
 from django.views import generic
 
-from bpapp.models import Supplier
-from bpapp.models import Customer
-from bpapp.models import BackupFSItem
+from models import Supplier
+from models import Customer
+from models import BackupFSItem
+from models import Friend
  
 
 class IndexView(generic.TemplateView):
-    template_name = 'bpapp/index.html'
+    template_name = 'index.html'
 
 class SuppliersView(generic.ListView):
-    template_name = 'bpapp/suppliers.html'
+    template_name = 'suppliers.html'
     context_object_name = 'suppliers_list'
     def get_queryset(self):
         return Supplier.objects.order_by('id')
 
 class SupplierView(generic.DetailView):
-    template_name = 'bpapp/supplier.html'
+    template_name = 'supplier.html'
     model = Supplier
 
 class CustomersView(generic.ListView):
-    template_name = 'bpapp/customers.html'
+    template_name = 'customers.html'
     context_object_name = 'customers_list'
     def get_queryset(self):
         return Customer.objects.order_by('id')
 
 class CustomerView(generic.DetailView):
-    template_name = 'bpapp/customer.html'
+    template_name = 'customer.html'
     model = Customer
 
 class BackupFSView(generic.ListView):
-    template_name = 'bpapp/backupfs.html'
+    template_name = 'backupfs.html'
     context_object_name = 'backup_fs_items_list'
     def get_queryset(self):
         return BackupFSItem.objects.order_by('backupid')
 
 class BackupFSItemView(generic.DetailView):
-    template_name = 'bpapp/backupfsitem.html'
+    template_name = 'backupfsitem.html'
     model = BackupFSItem
+
+class FriendsView(generic.ListView):
+    template_name = 'friends.html'
+    context_object_name = 'friends_list'
+    def get_queryset(self):
+        return Friend.objects.order_by('id')
+
+class FriendView(generic.DetailView):
+    template_name = 'friend.html'
+    model = Friend
+
+class ChatView(generic.DetailView):
+    template_name = 'chat.html'
+    model = Friend
+    
