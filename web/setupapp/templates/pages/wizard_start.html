@@ -1,0 +1,24 @@
+{% extends "setup.html" %}
+{% block page %}
+<h1>configure BitDust software now?</h1>
+<table align=center>
+ <tr>
+  <td>
+   <p align=justify>
+    Do you want configure most important things in the program in a few steps now?
+    <br />
+    You can skip this step and do this later on the program settings page.
+   </p>
+  </td>
+ </tr>
+ <tr>
+  <td>
+   <form action="{{ request.path }}" method="post">
+    <input type="submit" name="action" value="skip" />
+    <input type="submit" name="action" value="next" />
+   </form>
+  </td>
+ </tr>
+</table>
+<br />
+{% endblock page %}

@@ -426,6 +426,8 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
             self._finishedStun()
 
     def retransmitStunState3(self, address, tid, count=1):
+        global _ForceStunType
+        global STUNVERBOSE
         # <AP>
         if self._finished:
             return
@@ -437,11 +439,17 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
                                                     address, tid, count+1)
             self.sendRequest(self._altStunAddress, tid)
         else:
-            log.err("STUN Failed in state 3, retrying")
+            log.err("STUN Failed in state 3, retries=%d" % self.stunDiscoveryRetries)
             # We should do _something_ here. a new type BrokenNAT?
             self.stunDiscoveryRetries = self.stunDiscoveryRetries + 1
             if self.stunDiscoveryRetries < 5:
+                STUNVERBOSE = True
+                _ForceStunType = NatTypeNone
                 reactor.callLater(0.2, self.startDiscovery)
+            else:
+                self.natType = NatTypeNone
+                self._finishedStun()
+            
 
     def handleStunState4(self, resdict, address):
         self.state4DelayedCall.cancel()

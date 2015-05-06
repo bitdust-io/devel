@@ -1,0 +1,103 @@
+{% extends "setup.html" %}
+{% block page %}
+<h1>needed and donated space</h1>
+<form action="{{ request.path }}" method="post">
+<table width="90%" align=center>
+ <tr>
+  <td>
+   <p align=justify>
+Here you need to set most important options to configure the distributed data storage
+for you and other users, who will use your machine to keep their personal files.
+   </p>
+   <p align=justify>
+Donate to other users at least twice as much as will be consumed - that you voluntarily
+support the entire BitDust network and increase its overall stability.
+   </p>
+   <p align=justify>
+Verify that the specified drive has enough free space to store data belonging to other users.
+<br />
+You also need additional space on your local hard drive for caching your own files, 
+which fragments are distributed to remote machines on the network.
+   </p>
+  </td> 
+ </tr>
+</table>
+{% if mounts %}
+ <table align=center cellspacing=2>
+  <tr>
+   {% for mount in mounts %}
+    <td bgcolor={{ mount.3 }}>
+     &nbsp;&nbsp;
+     <font size=-2>
+      <b>{{ mount.0 }}</b>
+      <br>{{ mount.1 }} free / {{ mount.2 }} total
+     </font>
+     &nbsp;&nbsp;
+    </td>
+   {% endfor %}
+  </tr>
+ </table>
+ <br />
+{% endif %}
+<table cellpadding=5 width=80% align=center>
+ <tr>
+  <td>
+   megabytes needed:
+   <br />
+   <input type="text" name="needed" size="3" value="{{ needed }}" />
+  </td>
+ </tr>
+ <tr>
+  <td>
+   megabytes donated:
+   <br />
+   <input type="text" name="donated" size="3" value="{{ donated }}" />
+  </td>
+ </tr>
+ <tr>
+  <td>
+   number of suppliers:
+   <br />
+   <input type="text" name="suppliers" size="1" value="{{ suppliers }}" />
+  </td>
+ </tr>
+ <tr>
+  <td>
+   set a folder to store cached copies of your personal files:
+   <br />
+   <input type="text" name="localbackupsdir" size=80 value="{{ localbackupsdir }}" />
+  </td>
+ </tr>
+  <td>
+   set a folder for your donated space - other's files will be stored here:
+   <br />
+   <input type="text" name="customersdir" size=80 value="{{ customersdir }}" />
+  </td>
+ <tr>
+  <td>
+   set a location to store downloaded files:
+   <br />
+   <input type="text" name="restoredir" size=80 value="{{ restoredir }}" />
+  </td>
+ </tr>
+</table>
+<table align=center width=300>
+ <tr>
+  <td align=left nowrap>
+   {% if output != "" %}
+    {% autoescape off %}
+    {{ output }}
+    {% endautoescape %}
+   {% endif %} 
+  </td>
+ </tr>
+ <tr>
+  <td>
+   <input type="submit" name="action" value="back" />
+   <input type="submit" name="action" value="next" />
+  </td>
+ </tr>
+</table>
+</form>
+<br />
+{% endblock page %}

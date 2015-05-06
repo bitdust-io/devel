@@ -81,6 +81,14 @@ _Installer = None
 
 #------------------------------------------------------------------------------ 
 
+def IsExist():
+    """
+    """
+    global _Installer
+    return _Installer is not None
+
+#------------------------------------------------------------------------------ 
+
 def A(event=None, arg=None):
     """
     Access method to interact with the state machine.
@@ -97,6 +105,8 @@ class Installer(automat.Automat):
     """
     A class to control the whole process of program installation.
     """
+    
+    fast = True
     
     output = {}
     RECOVER_RESULTS = {
@@ -116,6 +126,7 @@ class Installer(automat.Automat):
         return self.output.get(state, {})
 
     def init(self):
+        self.log_events = True
         self.flagCmdLine = False
         
     def state_changed(self, oldstate, newstate, event, arg):
@@ -158,6 +169,7 @@ class Installer(automat.Automat):
             elif event == 'register-start' and self.isNameValid(arg) :
                 self.state = 'REGISTER'
                 self.doClearOutput(arg)
+                self.doSaveName(arg)
                 id_registrator.A('start', arg)
                 self.doUpdate(arg)
             elif event == 'register-start' and not self.isNameValid(arg) :
@@ -201,6 +213,7 @@ class Installer(automat.Automat):
                 self.doUpdate(arg)
             elif ( event == 'id_registrator.state' and arg == 'DONE' ) and not self.flagCmdLine :
                 self.state = 'AUTHORIZED'
+                self.doPrepareSettings(arg)
                 self.doUpdate(arg)
         #---AUTHORIZED---
         elif self.state == 'AUTHORIZED':
@@ -219,7 +232,8 @@ class Installer(automat.Automat):
                 self.state = 'LOAD_KEY'
                 self.doUpdate(arg)
             elif ( event == 'id_restorer.state' and arg == 'RESTORED!' ) or ( ( event == 'id_restorer.state' and arg == 'FAILED' ) and self.flagCmdLine ) :
-                self.state = 'DONE'
+                self.state = 'RESTORED'
+                self.doRestoreSettings(arg)
                 self.doUpdate(arg)
         #---DONE---
         elif self.state == 'DONE':
@@ -234,9 +248,18 @@ class Installer(automat.Automat):
             elif ( event == 'install_wizard.state' and arg == 'DONE' ) :
                 self.state = 'DONE'
                 self.doUpdate(arg)
+        #---RESTORED---
+        elif self.state == 'RESTORED':
+            if event == 'print' :
+                self.doPrint(arg)
+                self.doUpdate(arg)
+            elif event == 'next' :
+                self.state = 'WIZARD'
+                self.doUpdate(arg)
+        return None
 
     def isNameValid(self, arg):
-        if not misc.ValidUserName(arg[0]):
+        if not misc.ValidUserName(arg['username']):
             return False
         return True
 
@@ -245,6 +268,15 @@ class Installer(automat.Automat):
         Action method.
         """
 
+    def doUpdate(self, arg):
+        # lg.out(4, 'installer.doUpdate')
+        if not settings.NewWebGUI():
+            from web import webcontrol
+            reactor.callLater(0, webcontrol.OnUpdateInstallPage)
+        else:
+            from web import control
+            control.request_update()
+            
     def doClearOutput(self, arg):
         # lg.out(4, 'installer.doClearOutput')
         for state in self.output.keys():
@@ -279,22 +311,21 @@ class Installer(automat.Automat):
         self.output[self.state]['data'].append((text, color))
         # lg.out(0, '  [%s]' % text)
 
-    def doUpdate(self, arg):
-        # lg.out(4, 'installer.doUpdate')
-        if not settings.NewWebGUI():
-            from web import webcontrol
-            reactor.callLater(0, webcontrol.OnUpdateInstallPage)
+    def doSaveName(self, arg):
+        settings.setPrivateKeySize(arg['pksize'])
+        bpio.WriteFile(settings.UserNameFilename(), arg['username'])
 
     def doReadKey(self, arg):
-        lg.out(2, 'installer.doReadKey arg=[%s]' % str(arg))
-        src = bpio.ReadBinaryFile(arg)
+        # keyfn = arg['keyfilename']
+        src = arg['keysrc']
+        lg.out(2, 'installer.doReadKey length=%s' % len(src))
+        # src = bpio.ReadBinaryFile(keyfn)
         if len(src) > 1024*10:
             self.doPrint(('file is too big for private key', 'red'))
             return
-
         try:
-            lines = src.split('\n')
-            idurl = lines[0]
+            lines = src.splitlines()
+            idurl = lines[0].strip()
             keysrc = '\n'.join(lines[1:])
             if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
                 idurl = ''
@@ -303,7 +334,6 @@ class Installer(automat.Automat):
             lg.exc()
             idurl = ''
             keysrc = src
-
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['idurl'] = idurl
@@ -325,6 +355,17 @@ class Installer(automat.Automat):
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['idurl'] = idurl
+        self.output[self.state]['keysrc'] = keysrc
+
+    def doPrepareSettings(self, arg):
+        """
+        Action method.
+        """
+
+    def doRestoreSettings(self, arg):
+        """
+        Action method.
+        """
 
 #    def doIncreaseDebugLevel(self, arg):
 #        """

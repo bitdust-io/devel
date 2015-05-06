@@ -117,7 +117,7 @@ def warn(message, level=2):
 def exc(msg=''):
     if msg:
         out(2, msg)
-    exception(0, 100, None)
+    return exception(0, 100, None)
 
 
 def exception(level, maxTBlevel, exc_info):

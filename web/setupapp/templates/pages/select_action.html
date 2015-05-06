@@ -1,0 +1,30 @@
+{% extends "setup.html" %}
+{% block page %}
+<h1>Setup BitDust software</h1>
+<form action="{{ request.path }}" method="post">
+ <table align=center cellspacing=10>
+  <tr>
+   <td align=left>
+    <label>
+     <input id="radio1" type="radio" name="mode" value="register-selected" checked />
+     register a new identity
+    </label>
+   </td>
+  </tr>
+  <tr>
+   <td align=left>
+    <label>
+     <input id="radio2" type="radio" name="mode" value="recover-selected" />
+     recover my existing identity
+    </label>
+   </td>
+  </tr>
+  <tr>
+   <td align=center>
+    <input type="submit" name="action" value="next"/>
+   </td>
+  </tr>
+ </table>
+</form>
+<br/>
+{% endblock page %}

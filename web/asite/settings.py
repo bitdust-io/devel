@@ -8,7 +8,7 @@ DEBUG = True
 
 TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 INSTALLED_APPS = (
     'django.contrib.admin',
@@ -17,23 +17,36 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'django.contrib.sites',
     'web.asite',
-    'web.bpapp',
-    'web.jqchat',
-    # 'registration',
-    # 'account',
+    'web.updateapp',
+    'web.mainapp',
+    'web.setupapp',
+    'web.jqchatapp',
 )
+
+#STATICFILES_DIRS = (
+#     os.path.join(PROJECT_PATH, 'asite', '/static/'),
+#     os.path.join(PROJECT_PATH, 'updateapp', '/static/'),
+#     os.path.join(PROJECT_PATH, 'mainapp', '/static/'),
+#     os.path.join(PROJECT_PATH, 'setupapp', '/static/'),
+#     os.path.join(PROJECT_PATH, 'jqchatapp', '/static/'),
+#)
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # "account.middleware.LocaleMiddleware",
-    # "account.middleware.TimezoneMiddleware",    
+)
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+    'django.core.context_processors.request',
 )
 
 STATICFILES_FINDERS = ( 
@@ -62,23 +75,9 @@ USE_L10N = True
 
 USE_TZ = True
 
-# TEMPLATES_DIR = (os.path.join(BASE_DIR, 'bpapp'),)
-
 ADMIN_MEDIA_PREFIX = '/media/admin/'
 
-STATIC_ROOT = os.path.join(PROJECT_PATH, 'static')
+# STATIC_ROOT = os.path.join(PROJECT_PATH, 'static')
 
 STATIC_URL = '/static/'
-
-# ACCOUNT_ACTIVATION_DAYS = 7
-
-AUTHENTICATION_BACKENDS = (
-    'bpapp.auth.PasswordlessAuthBackend',
-) 
-
-# TEMPLATE_CONTEXT_PROCESSORS = [
-#     "account.context_processors.account",
-#     "django.contrib.auth.context_processors.auth",
-# ]
-
 

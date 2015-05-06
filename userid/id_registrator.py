@@ -93,11 +93,11 @@ class IdRegistrator(automat.Automat):
         }
 
     MESSAGES = {
-        'MSG_0': ['ping ID servers'],
+        'MSG_0': ['ping identity servers...'],
         'MSG_1': ['checking the availability of a user name'],
         'MSG_2': ['checking network configuration'],
-        'MSG_3': ['detecting external IP'],
-        'MSG_4': ['registering on ID servers'],
+        'MSG_3': ['detecting external IP...'],
+        'MSG_4': ['registering on ID servers...'],
         'MSG_5': ['verifying my identity'],
         'MSG_6': ['new user %(login)s registered successfully!', 'green'], 
         'MSG_7': ['ID servers not responding', 'red'],
@@ -355,9 +355,12 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        login = arg[0]
-        if len(arg) > 1:
-            self.preferred_server = arg[1]
+        try:
+            login = arg['username']
+        except:
+            login = arg[0]
+            if len(arg) > 1:
+                self.preferred_server = arg[1]
         lg.out(4, 'id_registrator.doSaveMyName [%s]' % login)
         bpio.WriteFile(settings.UserNameFilename(), login)
 
@@ -402,6 +405,7 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
+        lg.out(4, 'id_registrator.doSaveMyIdentity %s' % self.new_identity)
         my_id.setLocalIdentity(self.new_identity)
         my_id.saveLocalIdentity()
         

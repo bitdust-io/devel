@@ -1,0 +1,52 @@
+{% extends "setup.html" %}
+{% block page %}
+<h1 align=center>preparing new user identity</h1>
+<table width=80% align=center>
+ <tr>
+  <td>
+   <p align=justify>
+In order to allow others to send a data to you - 
+they must know the address of your computer on the Internet. 
+These contacts are kept in XML file called 
+<a href="http://bitdust.io/glossary.html#identity" target=_blank>identity</a>.
+   </p>
+   <p align=justify>
+File identity - is a publicly accessible file, 
+so that every user may download your identity file 
+and find out your contact information.
+Identity file is digitally signed and that would change it 
+is necessary to posses your
+<a href="http://bitdust.io/glossary.html#public_private_key" target=_blank>Private Key</a>. 
+   </p>
+   <p align=justify>
+The combination of these two keys provides 
+reliable identification for any user in the BitDust Network.</p>
+  </td>
+ </tr>
+</table>
+<table align=center width=300>
+ <tr>
+  <td align=left nowrap>
+   {% autoescape off %}
+   {{ output }}
+   {% endautoescape %}
+  </td>
+ </tr>
+ <tr>
+  <td>
+   {% if idurl != '' %}
+   <h3><font color=green>Configuration successfully finished!</font></h3>
+   here is a link to your identity file:
+   <br /> 
+   <a href="{{ idurl }}" target="_blank">{{ idurl }}</a>
+   <br />
+   <br />
+   <form action="{{ request.path }}" method="get">
+    <input type="submit" name="action" value="next" />
+   </form>
+   {% endif %}
+  </td> 
+ </tr>
+</table>
+<br />
+{% endblock page %}

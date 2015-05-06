@@ -173,7 +173,7 @@ class IdRestorer(automat.Automat):
     def doRequestMyIdentity(self, arg):
         global _WorkingIDURL
         idurl = _WorkingIDURL
-        lg.out(4, 'identity_restorer.doRequestMyIdentity %s' % idurl)
+        lg.out(4, 'identity_restorer.doRequestMyIdentity %s %s' % (idurl, type(idurl)))
         net_misc.getPageTwisted(idurl).addCallbacks(
             lambda src: self.automat('my-id-received', src),
             lambda err: self.automat('my-id-failed', err))
@@ -261,6 +261,7 @@ class IdRestorer(automat.Automat):
     def doPrint(self, arg):
         from main import installer
         installer.A().event('print', arg)
+        lg.out(6, 'id_restorer.doPrint: %s' % str(arg))
 
     def doDestroyMe(self, arg):
         """

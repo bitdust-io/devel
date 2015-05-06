@@ -60,7 +60,8 @@ def init():
         _CustomersChangedCallback([], customers())
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback([], correspondents())
-        
+
+
 def shutdown():
     """
     """
@@ -395,7 +396,6 @@ def load_correspondents(path):
             lst[i] = (lst[i][0], nameurl.GetName(lst[i][0]))
     set_correspondents(lst)
     lg.out(4, 'contactsdb.load_correspondents %d items' % len(lst))
-    print lst
 
 #------------------------------------------------------------------------------ 
 

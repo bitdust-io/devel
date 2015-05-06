@@ -170,6 +170,41 @@ def IdContactSplit(contact):
         return contact.split('://')
     except:
         return '', '' 
+    
+def DjangoQuote(s):
+    """
+    Ensure that primary key values do not confuse the admin URLs by escaping
+    any '/', '_' and ':' and similarly problematic characters.
+    Similar to urllib.quote, except that the quoting is slightly different so
+    that it doesn't get automatically unquoted by the Web browser.
+    """
+    res = list(s)
+    for i in range(len(res)):
+        c = res[i]
+        if c in """:/_#?;@&=+$,"<>%\\""":
+            res[i] = '_%02X' % ord(c)
+    return ''.join(res)
+
+
+def DjangoUnQuote(s):
+    """
+    Undo the effects of quote(). Based heavily on urllib.unquote().
+    """
+    mychr = chr
+    myatoi = int
+    list = s.split('_')
+    res = [list[0]]
+    myappend = res.append
+    del list[0]
+    for item in list:
+        if item[1:2]:
+            try:
+                myappend(mychr(myatoi(item[:2], 16)) + item[2:])
+            except ValueError:
+                myappend('_' + item)
+        else:
+            myappend('_' + item)
+    return "".join(res)    
 
 #------------------------------------------------------------------------------ 
 

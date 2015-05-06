@@ -1,0 +1,50 @@
+{% extends "setup.html" %}
+{% block page %}
+<h1>enter your personal information</h1>
+<form action="{{ request.path }}" method="post">
+<table width="90%" align=center>
+ <tr>
+  <td align=left>
+   <p align=justify>
+Please, enter information about yourself if you wish other users to be able to identify who you are.
+You can enter any information, it can be tweaked!
+   </p>
+   <p align=justify>
+Or just leave the field blank, but then other users will see only your IDURL address: 
+{{ idurl }}
+   </p>
+  </td>
+ </tr>
+ <tr>
+  <td align=center>
+   <table align=center>
+    <tr>
+     <td>
+      name:
+      <br />
+      <input type="text" name="name" size="25" value="{{ name }}" />
+     </td>
+     <td>
+      surname:
+      <br />
+      <input type="text" name="surname" size="25" value="{{ surname }}" />
+     </td>
+     <td>
+      nickname:
+      <br>
+      <input type="text" name="nickname" size="25" value="{{ nickname }}" />
+     </td>
+    </tr>
+   </table>
+  </td>
+ </tr>
+ <tr>
+  <td align=center>
+   <input type="submit" name="action" value="back" />
+   <input type="submit" name="action" value="next" />
+  </td>
+ </tr>
+</table>
+</form>
+<br />
+{% endblock page %}

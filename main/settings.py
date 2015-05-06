@@ -888,9 +888,19 @@ def LocalPortFilename():
     """
     This is a file to keep randomly generated port number 
     for HTTP server to provide a Web Access to BitDust main process.
-    See module ``p2p.webcontrol`` for more details.  
+    See module ``web.webcontrol`` for more details.
+    This is old stuff, will be removed soon!  
     """
     return os.path.join(MetaDataDir(), 'localport')
+
+def LocalWSGIPortFilename():
+    """
+    This is a file to keep randomly generated port number 
+    for Django WSGI server. 
+    This stuff creates a User Interface to the BitDust main process.
+    See module ``web.control`` for more details.  
+    """
+    return os.path.join(MetaDataDir(), 'localwsgiport')
 
 def LocalXMLRPCPortFilename():
     """

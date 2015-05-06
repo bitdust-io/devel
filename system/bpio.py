@@ -892,7 +892,7 @@ def main_is_frozen():
 def isGUIpossible():
     """
     """
-    return False # TODO
+    # return False # TODO
     if Windows():
         return True
     if Linux():

@@ -1,0 +1,80 @@
+{% extends "setup.html" %}
+{% block page %}
+<h1>load existing Private Key</h1>
+<table width=80% align=center>
+ <tr>
+  <td align=center>
+   <p align=justify>
+To <a href="http://bitdust.io/glossary.html#recovery" target=_blank>recover</a>
+your previously backed up data you need to provide your Private Key file 
+and IDURL address where your identity file is stored.
+   </p>
+   <p align=justify>
+There are 2 ways to do this below,
+choose depending on the way you stored a copy of your Key.
+   </p>
+  </td>
+ </tr>
+ </table>
+<table align=center>
+  <!--
+  <td align=center>
+   <form action="{{ request.path }}" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="load-barcode" />
+    <input type="file" name="barcodesrc" />
+    <input type="submit" name="submit" value=" load from 2D barcode scan " disabled />
+   </form>
+  </td>
+  -->
+ <tr>
+  <td align=left width=50%>
+   <form action="{{ request.path }}" method="post">
+    <input type="hidden" name="action" value="paste-from-clipboard" />
+    <input type="submit" name="submit" value=" paste from clipboard " />
+   </form>
+  </td>
+  <td align=left width=50%>
+   <form action="{{ request.path }}" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="load-from-file" />
+    <input type="file" name="keyfilename" accept="text/csv"  /> 
+    <input type="submit" name="submit" value=" load from file " />
+   </form>
+  </td>
+ </tr>
+</table>
+<br />
+<table align=center>
+ <tr>
+  <td align=center>
+   <form action="{{ request.path }}" method="post">
+    <table width=100%>
+     <tr align=top>
+      <td nowrap>
+       Identity URL:
+      </td>
+      <td align=right>
+       <input type="text" name="idurl" value="{{ idurl }}" style="width: 552px" />
+      </td>
+     </tr>
+     <tr>
+      <td nowrap valign=top>
+       Private Key:
+      </td>
+      <td>
+       <textarea name="keysrc" rows=7 style="width: 550px">{{ keysrc }}</textarea>
+      </td>
+     </tr>
+    </table>
+     {% if output != "" %}
+      {% autoescape off %}
+      {{ output }}
+      {% endautoescape %}
+     {% endif %} 
+    <input type="submit" name="action" value="back" />
+    <input type="submit" name="action" value="next" />
+   </form>
+  </td>
+ </tr>
+</table>
+<br />
+{% endblock page %}

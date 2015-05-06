@@ -1,0 +1,42 @@
+{% extends "setup.html" %}
+{% block page %}
+<h1>restore my identity</h1>
+<table width=80% align=center>
+ <tr>
+  <td>
+   <p align=justify>
+In order to restore your account, BitDust software must verify Identity file
+that is stored on the Identity server, with your Private Key. 
+If the signature match - your identity will be restored. 
+   </p>
+  </td>
+ </tr>
+</table>
+<table align=center width=300>
+ <tr>
+  <td align=left>
+   {% if output != "" %}
+    {% autoescape off %}
+    {{ output }}
+    {% endautoescape %}
+   {% endif %} 
+  </td>
+ </tr>
+ <tr>
+  <td>
+   {% if idurl != '' %}
+    <h3><font color=green>Identity successfully restored!</font></h3>
+    here is your identity file: 
+    <br /> 
+    <a href="{{ idurl }}" target="_blank">{{ idurl }}</a>
+    <br/ >
+    <br />
+    <form action="{{ request.path }}" method="get">
+     <input type="submit" name="action" value="next" />
+    </form>
+   {% endif %}
+  </td> 
+ </tr>
+</table>
+<br />
+{% endblock page %}

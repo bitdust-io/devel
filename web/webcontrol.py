@@ -2092,7 +2092,7 @@ class InstallPage(Page):
         src += '<form action="%s" method="get">\n' % request.path
         src += '<input type="hidden" name="action" value="next" />\n'
         src += '<input type="submit" name="submit" value=" start " />\n'
-        src += '</form>'
+        src += '</form></td></tr></table>\n'
         action = arg(request, 'action', None)
         result = html(request, body=src, title='installed', home='', back='%s?action=back'%request.path)
         if action:

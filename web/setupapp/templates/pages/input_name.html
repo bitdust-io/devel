@@ -1,0 +1,56 @@
+{% extends "setup.html" %}
+{% block page %}
+<h1>enter your preferred user name</h1>
+<form action="{{ request.path }}" method="post">
+<table align=center>
+ <tr>
+  <td align=left>
+   <ul>
+    <li>you can use <b>lower</b> case letters (a-z)
+    <li>also digits (0-9), underscore (_) and dash (-)
+    <li>the name must be from 3 to 20 characters
+    <li>it must begin from a letter
+   </ul>
+  </td>
+ </tr>
+</table>
+<table width="80%" align=center>
+ <tr>
+  <td>
+   {% autoescape off %}
+    {{ output }}
+   {% endautoescape %}
+  </td> 
+ </tr>
+ <tr>
+  <td>
+   <input type="text" name="username" value="{{ username }}" size=20 />
+   <br />
+   <h3 align=center>select your private key size</h3>
+   <p align=justify>
+Big key harder to crack, but it costs more resources. 
+If your computer is fast enough or you want more secure storage select 2048 or 4096 bits length. 
+If you plan to do a lot of backups regularly choose 1024 bits.
+   </p>
+  </td>
+ </tr>
+ <tr>
+  <td align=center>
+   <input id="radio2" type="radio" name="pksize" value="1024" {% if pksize == 1024 %} checked {% endif %} />
+   1024
+   &nbsp;&nbsp;&nbsp; 
+   <input id="radio3" type="radio" name="pksize" value="2048" {% if pksize == 2048 %} checked {% endif %} />
+   2048
+   &nbsp;&nbsp;&nbsp; 
+   <input id="radio4" type="radio" name="pksize" value="4096" {% if pksize == 4096 %} checked {% endif %} />
+   4096
+   <br/>
+   <br/>
+   <input type="submit" name="action" value="back" />
+   <input type="submit" name="action" value="next" />
+  </td>
+ </tr>
+</table>
+</form>
+<br/>
+{% endblock page %}

@@ -61,6 +61,8 @@ from logs import lg
 
 from system import bpio
 
+from main import settings
+
 from automats import automat
 from automats import global_state
 
@@ -141,10 +143,10 @@ class Initializer(automat.Automat):
         elif self.state == 'LOCAL':
             if event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg) :
                 self.state = 'INSTALL'
-                self.doShowGUI(arg)
                 installer.A('init')
-                self.doUpdate(arg)
                 shutdowner.A('ready')
+                self.doShowGUI(arg)
+                self.doUpdate(arg)
             elif event == 'init-local-done' and not self.isInstalled(arg) and not self.isGUIPossible(arg) :
                 self.state = 'STOPPING'
                 self.doPrintMessage(arg)
@@ -216,8 +218,9 @@ class Initializer(automat.Automat):
         return bpio.isGUIpossible()
     
     def doUpdate(self, arg):
-        from web import webcontrol
-        reactor.callLater(0, webcontrol.OnUpdateStartingPage)
+        if not settings.NewWebGUI():
+            from web import webcontrol
+            reactor.callLater(0, webcontrol.OnUpdateStartingPage)
 
     def doInitLocal(self, arg):
         """
@@ -252,7 +255,7 @@ class Initializer(automat.Automat):
         from main import settings
         if settings.NewWebGUI():
             from web import control
-            control.init()
+            d = control.init()
         else:
             from web import webcontrol
             d = webcontrol.init()
@@ -270,8 +273,12 @@ class Initializer(automat.Automat):
         if not settings.NewWebGUI():
             webcontrol.ready()
         if self.flagGUI or not self.is_installed:
-            if settings.NewWebGUI(): 
-                reactor.callLater(0.1, control.show)
+            if settings.NewWebGUI():
+                def _show_gui(wsgiport):
+                    bpio.WriteFile(settings.LocalWSGIPortFilename(), str(wsgiport))
+                    reactor.callLater(0.1, control.show)
+                d.addCallback(_show_gui) 
+                # reactor.callLater(0.1, control.show)
             else:
                 d.addCallback(webcontrol.show)
 
@@ -346,6 +353,7 @@ class Initializer(automat.Automat):
         from system import run_upnpc
         from raid import eccmap
         from userid import my_id
+        my_id.init()
         if settings.enableWebStream():
             from logs import weblog
             weblog.init(settings.getWebStreamPort())

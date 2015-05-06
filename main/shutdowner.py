@@ -195,7 +195,7 @@ class Shutdowner(automat.Automat):
         net_misc.shutdown()
         if settings.NewWebGUI():
             from web import control
-            control.shutdown()
+            dl.append(control.shutdown())
         else:
             from web import webcontrol
             dl.append(webcontrol.shutdown())
