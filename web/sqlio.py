@@ -17,6 +17,8 @@ import sys
 
 import sqlite3
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 from lib import nameurl
@@ -28,7 +30,19 @@ _DBCursor = None
 
 #------------------------------------------------------------------------------ 
 
-_Prefix = 'bpapp_'
+_Prefix = {'identity': 'identityapp_',
+           'supplier': 'supplierapp_',
+           'customer': 'customerapp_',
+           'friend': 'firendapp_',
+           'backupfsitem': 'myfilesapp_',
+           'localfsitem': 'myfilesapp_',
+           'remotematrixitem': 'myfilesapp_',
+           'localmatrixitem': 'myfilesapp_',
+           'option': 'settingsapp_',
+           'automat': 'debugapp_',
+           'ratingmonth': 'ratingapp_',
+           'ratingtotal': 'ratingapp_',
+           }
 
 _SQL = \
     """[create identity]
@@ -162,6 +176,11 @@ alive integer);"""
 
 #------------------------------------------------------------------------------ 
 
+def withprefix(table_name):
+    global _Prefix
+    return _Prefix[table_name] + table_name
+
+
 def db():
     global _DBConnection
     return _DBConnection
@@ -176,9 +195,10 @@ def dbcur():
     return _DBCursor
 
 
-def withprefix(table_name):
-    global _Prefix
-    return _Prefix + table_name
+def dbcommit():
+    lg.out(8, 'sqlio.dbcommit')
+    db().commit()
+    lg.out(8, '        OK')
 
 #------------------------------------------------------------------------------ 
 
@@ -220,7 +240,7 @@ def init(database_info):
     else:
         dbcur().execute(_SQL['create friend'])
         lg.out(4, '    created table "friend"')
-    db().commit()
+    dbcommit()
     
 
 def shutdown():    
@@ -236,51 +256,51 @@ def shutdown():
 #------------------------------------------------------------------------------
 
 def update_identities(ids, cache, updated_idurl):
+    lg.out(6, 'sqlio.update_identities %d items' % len(cache))
     l = map(lambda itm: (ids[itm[0]], itm[0], itm[1].serialize(),), cache.items())
     try:
         dbcur().execute(_SQL['delete identity'])
         dbcur().executemany(_SQL['insert identity'], l)
     except:
         lg.exc()
-    db().commit()
+    dbcommit()
     # TODO - need to repaint GUI here
-    lg.out(6, 'sqlio.update_identities %d items' % len(cache))
 
 
 def update_suppliers(old_suppliers_list, suppliers_list):
+    lg.out(6, 'sqlio.update_suppliers %d items' % len(suppliers_list))
     l = map(lambda i: (i, suppliers_list[i],), range(len(suppliers_list)))
     try:
         dbcur().execute(_SQL['delete supplier'])
         dbcur().executemany(_SQL['insert supplier'], l)
     except:
         lg.exc()
-    db().commit()
+    dbcommit()
     # TODO - need to repaint GUI here
-    lg.out(6, 'sqlio.update_suppliers %d items' % len(suppliers_list))
 
 
 def update_customers(old_customers_list, customers_list):
+    lg.out(6, 'sqlio.update_customers %d items' % len(customers_list))
     l = map(lambda i: (i, customers_list[i],), range(len(customers_list)))
     try:
         dbcur().execute(_SQL['delete customer'])
         dbcur().executemany(_SQL['insert customer'], l)
     except:
         lg.exc()
-    db().commit()
+    dbcommit()
     # TODO - need to repaint GUI here
-    lg.out(6, 'sqlio.update_customers %d items' % len(customers_list))
 
 
 def update_friends(old_friends_list, friends_list):
+    lg.out(6, 'sqlio.update_friends %d items' % len(friends_list))
     l = map(lambda i: (i, friends_list[i][0], friends_list[i][1]), range(len(friends_list)))
     try:
         dbcur().execute(_SQL['delete friend'])
         dbcur().executemany(_SQL['insert friend'], l)
     except:
         lg.exc()
-    db().commit()
+    dbcommit()
     # TODO - need to repaint GUI here
-    lg.out(6, 'sqlio.update_friends %d items' % len(friends_list))
 
 
 def update_contact_status(idurl):
@@ -289,9 +309,9 @@ def update_contact_status(idurl):
 
 
 def update_backup_fs(backup_fs_raw_list):
+    lg.out(6, 'sqlio.update_backup_fs %d items' % len(backup_fs_raw_list))
     # dbcur().execute(_SQL['delete backupfsitem'])
     # dbcur().executemany(_SQL['insert backupfsitem'], backup_fs_raw_list)
     # db().commit()
     # TODO - need to repaint GUI here
-    lg.out(6, 'sqlio.update_backup_fs %d items' % len(backup_fs_raw_list))
     

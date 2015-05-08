@@ -1,0 +1,16 @@
+{% extends "page.html" %}
+{% block page %}
+<h1>search users</h1>
+<form action="{{ request.path }}" method="post">
+ <input type="text" name="target_username" value="{{ target_username }}" />
+ <input type="submit" name="action" value="search" />
+</form>
+{% if results_list %}
+<hr />
+ {% for item in results_list %}
+  <a href="{{ item.0 }}" target=_blank>@</a> {{ friend.name }}
+  <a href='{{ item.0 }}/'>{{ item.0 }}</a><br>
+ {% endfor %}
+{% endif%}
+<br/>  
+{% endblock page %}

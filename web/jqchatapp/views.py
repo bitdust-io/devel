@@ -7,7 +7,6 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
 from django.utils.html import escape
 from django.views import generic
 # from django.contrib.auth import authenticate, login
@@ -32,7 +31,6 @@ JQCHAT_DISPLAY_COUNT = getattr(settings, 'JQCHAT_DISPLAY_COUNT', 100)
 
 #------------------------------------------------------------------------------ 
 
-@login_required
 def room_by_id(request, id):
     """A basic chat client window."""
     try:
@@ -45,7 +43,6 @@ def room_by_id(request, id):
 
 #------------------------------------------------------------------------------
 
-@login_required
 def room_by_idurl(request, idurl):
     """A basic chat client window."""
     idurl = nameurl.DjangoUnQuote(idurl)
@@ -60,7 +57,6 @@ def room_by_idurl(request, idurl):
 
 #------------------------------------------------------------------------------
 
-@login_required
 def room_with_description(request, id):
     """A variant of the basic chat window, includes an updatable description to demonstrate
     how to extend the chat system."""

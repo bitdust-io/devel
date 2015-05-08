@@ -52,15 +52,15 @@ def init():
     global _CorrespondentsChangedCallback
     lg.out(4, "contactsdb.init")
     load_suppliers(settings.SupplierIDsFilename())
-    load_customers(settings.CustomerIDsFilename())
-    load_correspondents(settings.CorrespondentIDsFilename())
     if _SuppliersChangedCallback is not None:
         _SuppliersChangedCallback([], suppliers())
+    load_customers(settings.CustomerIDsFilename())
     if _CustomersChangedCallback is not None:
         _CustomersChangedCallback([], customers())
+    load_correspondents(settings.CorrespondentIDsFilename())
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback([], correspondents())
-
+        
 
 def shutdown():
     """
@@ -238,13 +238,13 @@ def update_customers(idslist):
     if _ContactsChangedCallback is not None:
         _ContactsChangedCallback(oldcontacts, contacts())
 
-def update_correspondents(tuplslist):
+def update_correspondents(idslist):
     """
     Set correspondents ID's list.
     """
     global _CorrespondentsChangedCallback
     oldcorrespondents = correspondents()
-    set_correspondents(tuplslist)
+    set_correspondents(idslist)
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback(oldcorrespondents, correspondents())
 

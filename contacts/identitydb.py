@@ -145,8 +145,11 @@ def idset(idurl, id_obj):
     if not has_key(idurl):
         lg.out(6, 'identitydb.idset new identity: ' + idurl)
     _IdentityCache[idurl] = id_obj
-    _IdentityCacheIDs[idurl] = _IdentityCacheCounter
-    _IdentityCacheCounter += 1
+    identid = _IdentityCacheIDs.get(idurl, None)
+    if identid is None: 
+        identid = _IdentityCacheCounter
+        _IdentityCacheCounter += 1
+        _IdentityCacheIDs[idurl] = identid
     for contact in id_obj.getContacts():
         if not _Contact2IDURL.has_key(contact):
             _Contact2IDURL[contact] = set()
@@ -164,7 +167,8 @@ def idset(idurl, id_obj):
         except:
             pass
     # TODO when identity contacts changed - need to remove old items from _Contact2IDURL
-    fire_cache_updated_callbacks(updated_idurl=idurl)        
+    fire_cache_updated_callbacks(single_item=(
+        identid, idurl, id_obj))        
 
 
 def idget(url):
@@ -185,7 +189,7 @@ def idremove(url):
     global _IDURL2Contacts
     global _IPPort2IDURL
     idobj = _IdentityCache.pop(url, None)
-    idobj = _IdentityCacheIDs.pop(url, None)
+    identid = _IdentityCacheIDs.pop(url, None)
     _IDURL2Contacts.pop(url, None)
     if idobj is not None:
         for contact in idobj.getContacts():
@@ -196,7 +200,7 @@ def idremove(url):
                 _IPPort2IDURL.pop(ipport, None) 
             except:
                 pass
-    fire_cache_updated_callbacks()        
+    fire_cache_updated_callbacks(single_item=(identid, None, None))        
     return idobj
 
 
@@ -404,10 +408,10 @@ def RemoveCacheUpdatedCallback(cb):
         _IdentityCacheUpdatedCallbacks.remove(cb)
 
 
-def fire_cache_updated_callbacks(updated_idurl=None):
+def fire_cache_updated_callbacks(single_item=None):
     global _IdentityCacheUpdatedCallbacks
     for cb in _IdentityCacheUpdatedCallbacks:
-        cb(cache_ids(), cache(), updated_idurl)    
+        cb(cache_ids(), cache(), single_item)    
 
 
 
