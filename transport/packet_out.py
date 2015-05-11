@@ -167,7 +167,7 @@ class PacketOut(automat.Automat):
         self.callbacks = callbacks
         self.caching_deferred = None
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
-        self.label = 'out_%d_%s' % (get_packets_counter(), self.description)
+        self.label = 'out_%d_%s (%d callbacks)' % (get_packets_counter(), self.description, len(self.callbacks))
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', 18)
         increment_packets_counter()
 
@@ -220,6 +220,7 @@ class PacketOut(automat.Automat):
             elif event == 'inbox-packet' and self.isResponse(arg) :
                 self.Acked=True
                 self.doSaveResponse(arg)
+                self.doReportResponse(arg)
             elif event == 'unregister-item' and not self.isMoreItems(arg) and self.isAckNeeded(arg) and not self.Acked :
                 self.state = 'RESPONSE?'
                 self.doPopItem(arg)
@@ -328,6 +329,7 @@ class PacketOut(automat.Automat):
             elif event == 'inbox-packet' and self.isResponse(arg) :
                 self.state = 'SENT'
                 self.doSaveResponse(arg)
+                self.doReportResponse(arg)
                 self.doReportDoneWithAck(arg)
                 self.doDestroyMe(arg)
         return None
@@ -492,17 +494,26 @@ class PacketOut(automat.Automat):
             callback.run_finish_file_sending_callbacks(
                 self, item, 'failed', 0, self.error_message)
 
+    def doReportResponse(self, arg):
+        """
+        Action method.
+        """
+        if self.response_packet.Command in self.callbacks:
+            self.callbacks[self.response_packet.Command](self.response_packet, self)
+
     def doReportDoneWithAck(self, arg):
         """
         Action method.
         """
-        self.callbacks[self.response_packet.Command](self.response_packet, self)
+        # self.callbacks[self.response_packet.Command](self.response_packet, self)
         callback.run_queue_item_status_callbacks(self, 'finished', '')
 
     def doReportDoneNoAck(self, arg):
         """
         Action method.
         """
+        # if self.response_packet:
+        #     self.callbacks[self.response_packet.Command](self.response_packet, self)
         callback.run_queue_item_status_callbacks(self, 'finished', '')
 
     def doReportFailed(self, arg):

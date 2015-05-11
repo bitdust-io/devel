@@ -92,8 +92,6 @@ from main import settings
 from transport import gateway
 from transport import callback 
 
-from chat import message
-
 from services import driver
 
 #------------------------------------------------------------------------------
@@ -165,6 +163,7 @@ def inbox(newpacket, info, status, error_message):
         RequestIdentity(newpacket) # contact asking for our current identity
         commandhandled = True
     elif newpacket.Command == commands.Message():
+        from chat import message
         message.Message(newpacket) # contact asking for our current identity
         commandhandled = True
     elif newpacket.Command == commands.Correspondent():

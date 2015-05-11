@@ -196,7 +196,9 @@ class NicknameObserver(automat.Automat):
         """
         lg.out(8, 'nickname_observer.doReportNicknameExist : (%s, %s)' % (self.key, arg))
         if self.result_callback is not None:
-            self.result_callback('exist', self.key, arg)
+            nik, num = self.key.split(':')
+            num = int(num)
+            self.result_callback('exist', nik, num, arg)
 
     def doReportNicknameNotExist(self, arg):
         """
@@ -204,7 +206,7 @@ class NicknameObserver(automat.Automat):
         """
         lg.out(8, 'nickname_observer.doReportNicknameNotExist : %s' % self.nickname)
         if self.result_callback is not None:
-            self.result_callback('not exist', self.nickname, arg)
+            self.result_callback('not exist', self.nickname, -1, arg)
 
     def doReportFinished(self, arg):
         """
@@ -212,15 +214,22 @@ class NicknameObserver(automat.Automat):
         """
         lg.out(8, 'nickname_observer.doReportFinished')
         if self.result_callback is not None:
-            self.result_callback('finished', '', '')
+            self.result_callback('finished', '', -1, '')
         
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
         """
+        if self.dht_read_defer is not None:
+            self.dht_read_defer.pause()
+            self.dht_read_defer.cancel()
+            self.dht_read_defer = None
+        self.result_callback = None
         self.destroy()
 
     def _dht_read_result(self, value, key):
+        if self.dht_read_defer is None:
+            return
         self.dht_read_defer = None
         if type(value) != dict:
             self.automat('dht-read-failed')
@@ -235,8 +244,10 @@ class NicknameObserver(automat.Automat):
         self.automat('dht-read-success', v)
         
     def _dht_read_failed(self, x):
-        self.dht_read_defer = None
+        if self.dht_read_defer is None:
+            return
         self.automat('dht-read-failed', x)
+        self.dht_read_defer = None
 
 #------------------------------------------------------------------------------ 
 
@@ -254,7 +265,7 @@ def main():
         if result == 'finished':
             reactor.stop()
     if sys.argv[1] == 'many':
-        observe_many(sys.argv[2], int(sys.argv[3]), _result)
+        observe_many(sys.argv[2], int(sys.argv[3]), results_callback=_result)
     else:
         find_one(sys.argv[2], int(sys.argv[3]), _result)
     reactor.run()

@@ -1,7 +1,7 @@
 (function() { 
 
     var updater_task = null;
-    var flag_url = '/repaintflag/';
+    var flag_url = '/repaintflag';
     
     function read_flag() {
         // debug.log('read_flag');

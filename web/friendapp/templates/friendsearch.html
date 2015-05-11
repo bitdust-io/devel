@@ -1,16 +1,104 @@
 {% extends "page.html" %}
 {% block page %}
 <h1>search users</h1>
-<form action="{{ request.path }}" method="post">
- <input type="text" name="target_username" value="{{ target_username }}" />
- <input type="submit" name="action" value="search" />
-</form>
-{% if results_list %}
-<hr />
- {% for item in results_list %}
-  <a href="{{ item.0 }}" target=_blank>@</a> {{ friend.name }}
-  <a href='{{ item.0 }}/'>{{ item.0 }}</a><br>
- {% endfor %}
-{% endif%}
+<div style="width: 75%; margin:0 auto;">
+<p align=justify>
+Enter a user name for the search or a full IDURL address in the field below.
+The search results will quickly appear in the space below and you will
+be able to add discovered users to your contact list immediately.
+</p>
+</div>
+<input type="text" size=20 name="target_username" id="target_username_field" value="{{ target_username }}" />
+<br />
+<br />
+<div id="search_results">
+</div>
+<script  type="text/javascript">
+
+ var updateTask = null;
+ var newSearchTask = null;
+ 
+ function startNewSearch() {
+  var target_username = $('#target_username_field').val();
+  debug.log('startNewSearch', target_username);
+  if (target_username) {
+   $.ajax({
+    type: 'POST',
+    data: {'target_username': target_username},
+    dataType: 'json',
+    contentType: 'application/json; charset=utf-8',
+    url: '{{ request.path }}?target_username='+encodeURIComponent(target_username),
+    success: function(data) {
+     debug.log('ajax.POST.success', data);
+    },
+    fail: function(e) {
+     clearInterval(updateTask);
+    }
+   });
+  }
+ }
+ 
+ function updateSearchResults() {
+  var target_username = $('#target_username_field').val();
+  // debug.log('updateSearchResults', target_username);
+  if (target_username) {
+   $.ajax({
+    type: 'GET',
+    dataType: 'json',
+    contentType: 'application/json; charset=utf-8',
+    url: '{{ request.path }}?target_username='+target_username,
+    success: function(data) {
+     // debug.log('ajax.GET.success', data);
+     $('#search_results').empty();
+     $.each(data.result, function(i,item){
+      var newLine = $('<div class="search_result"></div>');
+      add_lnk = '<a href="/friend?action=add&username='+
+       encodeURIComponent(item.nickname)+'&idurl='+
+       encodeURIComponent(item.idurl)+'">[add]</a>';
+      item_color = 'light_gray';
+      if (item.status == 'online') item_color = 'green';
+      newLine.append('&nbsp;&nbsp;&nbsp;&nbsp;');
+      newLine.append('<b>' + item.nickname + '</b>');
+      newLine.append('&nbsp;&nbsp;&nbsp;&nbsp;');
+      newLine.append('<font color="lightgray">' + item.idurl + '</font>');
+      newLine.append('&nbsp;&nbsp;&nbsp;&nbsp;');
+      newLine.append('<font color="'+item_color+'">' + item.status + '</font>');
+      newLine.append('&nbsp;&nbsp;&nbsp;&nbsp;');
+      newLine.append(add_lnk);
+      $('#search_results').append(newLine);
+     });
+    },
+    fail: function(e) {
+     clearInterval(updateTask);
+    }
+   });
+  }
+ }  
+
+ $(document).ready(function() {
+  $('#target_username_field').on('keypress', function (e) {
+   var event = e || window.event;
+   var charCode = event.which || event.keyCode;
+   if ( charCode == '13' ) {
+    event.preventDefault();
+    return false;
+   }
+   return true;
+  });
+
+  $('#target_username_field').on('keyup', function (e) {
+   if (newSearchTask) {
+    clearTimeout(newSearchTask);
+   }
+   newSearchTask = setTimeout(function() {
+    newSearchTask = null;
+    startNewSearch();
+   }, 500);
+  });
+
+  updateTask = setInterval(updateSearchResults, 250);
+ });
+ 
+</script>
 <br/>  
 {% endblock page %}

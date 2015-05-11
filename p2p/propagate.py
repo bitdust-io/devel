@@ -146,11 +146,11 @@ def allcontacts(AckHandler=None, wide=False):
     return propagate(contactsdb.contacts_full(), AckHandler, wide)
 
 
-def single(idurl, AckHandler=None, wide=False):
+def single(idurl, ack_handler=None, wide=False):
     """
     Do "propagate" for a single contact.
     """
-    FetchSingle(idurl).addBoth(lambda x: SendToIDs([idurl], AckHandler, wide))
+    FetchSingle(idurl).addBoth(lambda x: SendToIDs([idurl], ack_handler, wide))
     
 
 def update():
@@ -314,14 +314,13 @@ def OnFileSent(pkt_out, item, status, size, error_message):
     """
     """
 
-
-def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
+def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     """
     Create ``packet`` with my Identity file and calls ``lib.transport_control.outbox()`` to send it.
     """
     lg.out(8, "propagate.SendToID [%s] NeedAck=%s" % (nameurl.GetName(idurl), str(NeedAck)))
-    if AckHandler is None:
-        AckHandler = HandleAck
+    if ack_handler is None:
+        ack_handler = HandleAck
     thePayload = Payload
     if thePayload is None:
         thePayload = my_id.getLocalIdentity().serialize()
@@ -329,26 +328,26 @@ def SendToID(idurl, AckHandler=None, Payload=None, NeedAck=False, wide=False):
         commands.Identity(),
         my_id.getLocalID(), #MyID,
         my_id.getLocalID(), #MyID,
-        'identity', # my_id.getLocalID(), #PacketID,
+        'Identity', # my_id.getLocalID(), #PacketID,
         thePayload,
         idurl)
     # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
     gateway.outbox(p, wide, callbacks={
-        commands.Ack(): AckHandler,
-        commands.Fail(): AckHandler}) 
+        commands.Ack(): ack_handler,
+        commands.Fail(): ack_handler}) 
     if wide:
         # this is a ping packet - need to clear old info
         stats.ErasePeerProtosStates(idurl)
         stats.EraseMyProtosStates(idurl)
 
 
-def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
+def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
     """
     Same, but send to many IDs.
     """
     lg.out(8, "propagate.SendToIDs to %d users" % len(idlist))
-    if AckHandler is None:
-        AckHandler = HandleAck
+    if ack_handler is None:
+        ack_handler = HandleAck
     MyID = my_id.getLocalID()
     PacketID = MyID
     LocalIdentity = my_id.getLocalIdentity()
@@ -387,14 +386,14 @@ def SendToIDs(idlist, AckHandler=None, wide=False, NeedAck=False):
             commands.Identity(),
             my_id.getLocalID(), #MyID,
             my_id.getLocalID(), #MyID,
-            'identity', # my_id.getLocalID(), #PacketID,
+            'Identity', # my_id.getLocalID(), #PacketID,
             Payload,
             contact)
         lg.out(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
         # callback.register_interest(AckHandler, signed.RemoteID, signed.PacketID)
         gateway.outbox(p, wide, callbacks={
-            commands.Ack(): AckHandler,
-            commands.Fail(): AckHandler}) 
+            commands.Ack(): ack_handler,
+            commands.Fail(): ack_handler, }) 
         if wide:
             # this is a ping packet - need to clear old info
             stats.ErasePeerProtosStates(contact)
@@ -408,6 +407,6 @@ def PingContact(idurl, ack_handler=None):
     Called from outside when need to "ping" some user, this will just send my Identity to that guy, 
     he will need to respond.
     """
-    SendToID(idurl, NeedAck=True, AckHandler=ack_handler, wide=True)
+    SendToID(idurl, ack_handler=ack_handler, NeedAck=True, wide=True)
 
 

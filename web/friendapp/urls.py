@@ -9,9 +9,9 @@ import views
 #------------------------------------------------------------------------------ 
 
 urlpatterns = patterns('',
-    url(r'(?P<pk>\d+)/$', 
+    url(r'(?P<pk>\d+)$', 
         login_required(views.FriendView.as_view())),
-    url(r'search/$', 
+    url(r'search$', 
         login_required(views.FriendSearchView.as_view())),
     url(r'$', 
         login_required(views.FriendsView.as_view())),

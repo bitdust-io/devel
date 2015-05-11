@@ -1,7 +1,9 @@
 {% extends "page.html" %}
 {% block page %}
-<h1>identity <a href="{{ identity.idurl }}" target=_blank>{{ identity.idurl }}</a></h1>
+<h1><a href="{{ identity.idurl }}" target=_blank>@</a> {{ identity.idurl }}</h1>
 <p>This identity is cached with key: {{ identity.id }}</p>
-<p><a href="{{ identity.idurl }}" target=_blank>open Identity source</a></p>
-<p>Start a <a href="/chat/room/{{ chatid }}">live chat</a> now.</p>
+<textarea cols="80" rows="15" readonly="readonly">
+{{ identity.src }}
+</textarea>
+<p>Start a <a href="/chat/open?idurl={{ identity.idurl|urlencode:'' }}">live chat</a> with that user now.</p>
 {% endblock page %}

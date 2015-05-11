@@ -1,8 +1,9 @@
 {% extends "page.html" %}
 {% block page %}
-<h1><a href="{{ idurl }}" target=_blank>@</a> {{ friend.name }}</h1>
-<p><a href="{{ supplier.idurl }}" target=_blank>open Identity source</a></p>
-<p><a href="/identity/{{ identity_id }}/">open Identity cache</a></p>
-<p>User <b>{{ friend.name }}</b> is listed in your friends.</p>
-<p>Start a <a href="/chat/room/{{ identity_id }}">live chat</a> now.</p>
+ <h1><a href="{{ friend.idurl }}" target=_blank>@</a> {{ friend.name }}</h1>
+ {% if identity_id %}
+  <p>this identity is <a href="/identity/{{ identity_id }}">cached</a></p>
+ {% endif %}
+ <p>User <b>{{ friend.name }}</b> is listed in your friends.</p>
+ <p>Start a <a href="/chat/open?idurl={{ friend.idurl|urlencode:'' }}">live chat</a> now.</p>
 {% endblock page %}

@@ -65,11 +65,36 @@ def update_friends(old_friends_list, friends_list):
     current_friends = Friend.objects.all()
     lg.out(6, '        currently %d items will be removed' % len(current_friends))
     new_friends = []
-    for idurl in friends_list:
-        new_friends.append(Friend(idurl=idurl))
+    for idurl, username in friends_list:
+        new_friends.append(Friend(idurl=idurl, name=username))
     current_friends.delete()
     Friend.objects.bulk_create(new_friends)
     lg.out(6, '        wrote %d items' % len(new_friends))
     
+#------------------------------------------------------------------------------ 
+
+def incoming_message(request, message_text):
+    lg.out(6, 'dbwrite.incoming_message of %d bytes' % len(message_text))
+    from django.shortcuts import get_object_or_404
+    from django.utils.html import escape
+    from django.contrib.auth.models import User
+    from web.jqchatapp.models import Room, Message
+    from contacts import contactsdb
+    from userid import my_id
+    from lib import nameurl
+    idurl = request.OwnerID
+    try:
+        ThisUser = User.objects.get(username=my_id.getIDName())
+    except:
+        lg.exc()
+        return
+    try:
+        ThisRoom = get_object_or_404(Room, idurl=idurl)
+    except:
+        nik = contactsdb.get_correspondent_nickname(idurl)
+        ThisRoom = Room(idurl=idurl, 
+                        name=(nik or nameurl.GetName(idurl)))
+        ThisRoom.save()
+    Message.objects.create_message(idurl, ThisRoom, escape(message_text))
     
     

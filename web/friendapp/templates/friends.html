@@ -3,11 +3,15 @@
 <h1>my friends</h1>
   {% if friends_list %}
       {% for friend in friends_list %}
-          <a href='{{ friend.id }}/'>{{ friend.name }}</a><br>
+          <a href='{{ friend.id }}'>{{ friend.name }}</a>
+          &nbsp;&nbsp;&nbsp;
+          <a href="/chat/open?idurl={{ friend.idurl|urlencode:'' }}">[chat]</a>
+          <br/>
       {% endfor %}
+      <p>Go on and <a href="/friend/search">search</a> more friends now.</p>
   {% else %}
-      <p>You do not have any friends yet.</p>
-      <p>Try to <a href="/friend/search">search</a> someone in the BitDust Network right now.</p>
+      <p>You do not have any friends in your contact list yet.</p>
+      <p>Please, try to <a href="/friend/search">search</a> someone in the BitDust Network right now.</p>
   {% endif %}
 <br>
 <br>  

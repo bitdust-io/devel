@@ -101,23 +101,6 @@ def contacts_list():
     """
     return list(suppliers()+customers())
 
-def correspondents():
-    """
-    Return list of correspondent ID's.
-    """
-    global _CorrespondentsList
-    return _CorrespondentsList
-
-def correspondents_ids():
-    global _CorrespondentsList
-    return map(lambda tupl: tupl[0], _CorrespondentsList) 
-
-def correspondents_dict():
-    """
-    """
-    global _CorrespondentsList
-    return dict(_CorrespondentsList)
-
 def contacts_full():
     """
     Return a union of suppliers, customers and correspondents. 
@@ -147,13 +130,6 @@ def set_customers(idlist):
     global _CustomersList
     _CustomersList = map(lambda idurl: idurl.strip(), idlist)
 
-def set_correspondents(idlist):
-    """
-    Set correspondents list.
-    """
-    global _CorrespondentsList
-    _CorrespondentsList = list(idlist)
-
 def add_customer(idurl):
     """
     Add customer and return its position in the list.
@@ -170,25 +146,6 @@ def add_supplier(idurl):
     _SuppliersList.append(idurl)
     return len(_SuppliersList) - 1
 
-def add_correspondent(idurl, nickname=''):
-    """
-    Add correspondent and return its position in the list.
-    """
-    global _CorrespondentsList
-    _CorrespondentsList.append((idurl, nickname))
-    return len(_CorrespondentsList) - 1
-
-def remove_correspondent(idurl):
-    """
-    Remove correspondent with given ID and return True if success.
-    """
-    global _CorrespondentsList
-    for tupl in _CorrespondentsList:
-        if idurl == tupl[0]:
-            _CorrespondentsList.remove(tupl)
-            return tupl[1]
-    return None
-
 def clear_suppliers():
     """
     Remove all suppliers.
@@ -202,13 +159,8 @@ def clear_customers():
     """
     global _CustomersList
     _CustomersList = []
-    
-def clear_correspondents():
-    """
-    Remove all correspondents.
-    """
-    global _CorrespondentsList
-    _CorrespondentsList = []
+
+#------------------------------------------------------------------------------ 
 
 def update_suppliers(idslist):
     """
@@ -237,6 +189,82 @@ def update_customers(idslist):
         _CustomersChangedCallback(oldcustomers, customers())
     if _ContactsChangedCallback is not None:
         _ContactsChangedCallback(oldcontacts, contacts())
+
+
+#------------------------------------------------------------------------------ 
+
+def correspondents():
+    """
+    Return list of tuples of correspondents: (IDURL, nickname).
+    """
+    global _CorrespondentsList
+    return _CorrespondentsList
+
+
+def correspondents_ids():
+    """
+    Return list of correspondents IDURLs.
+    """
+    global _CorrespondentsList
+    return map(lambda tupl: tupl[0], _CorrespondentsList) 
+
+
+def correspondents_dict():
+    """
+    Return dictionary of correspondents : IDURL->nickname.
+    """
+    global _CorrespondentsList
+    return dict(_CorrespondentsList)
+
+
+def set_correspondents(idlist):
+    """
+    Set correspondents from list of tuples without notification.
+    """
+    global _CorrespondentsList
+    _CorrespondentsList = list(idlist)
+
+
+def clear_correspondents():
+    """
+    Remove all correspondents without notification.
+    """
+    global _CorrespondentsList
+    _CorrespondentsList = []
+
+
+def add_correspondent(idurl, nickname=''):
+    """
+    Add correspondent,
+    execute notification callback
+    and return its position in the list.
+    """
+    global _CorrespondentsList
+    global _CorrespondentsChangedCallback
+    curlist = _CorrespondentsList
+    _CorrespondentsList.append((idurl, nickname))
+    if _CorrespondentsChangedCallback is not None:
+        _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
+    return len(curlist)
+
+
+def remove_correspondent(idurl):
+    """
+    Remove correspondent with given IDURL,
+    execute notification callback
+    and return True if success.
+    """
+    global _CorrespondentsList
+    global _CorrespondentsChangedCallback
+    curlist = _CorrespondentsList
+    for tupl in _CorrespondentsList:
+        if idurl == tupl[0]:
+            _CorrespondentsList.remove(tupl)
+            if _CorrespondentsChangedCallback is not None:
+                _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
+            return tupl[1]
+    return None
+
 
 def update_correspondents(idslist):
     """

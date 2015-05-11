@@ -16,42 +16,70 @@
 <style type="text/css">
 	/* Example styling for the chat window */
    #chatwindow {
-     height: 250px;
-     width: 400px;
-     border: 1px solid;
-     padding: 5px;
-     margin: 10px 0;
-     overflow: auto;
-     background-color: white;
+     border-radius: 10px;
+     height: 250px; 
+     width: calc(100% - 170px);  
+     border: 1px dotted lightgray;
+     padding: 10px;
+     margin-right: 10px;
+     overflow-y: auto; 
+     /* background-color: white; */
      float: left;
+     text-align: left;
    }
   #memberswindow {
+     border-radius: 10px;
      height: 250px;
      width: 100px;
-     border: 1px solid;
-     padding: 5px;
-     margin: 10px 0;
-     overflow: auto;
-     background-color: white;
+     border: 1px dotted lightgray;
+     padding: 10px;
+     margin-left: 10px;
+     overflow-y: auto;
+     /* background-color: white; */
      float: left;
    }
- .clear{
+  .clear{
      clear: both;
+     height: 10px;
    }
+  .chatline {
+    width: 100%;
+  }
+  .chatname {
+    font-weight: bold;
+    padding: 0px 5px;
+  }
+  .chattime {
+    color: lightgray;
+  }
+  .chatevent {
+    color: lightgray;
+  }
 </style>
 {% endblock %}
 
 {% block page %}
-<h1>room name: {{ room }}</h2>
+<h1>chat with {{ room.name }}</h1>
 
-<div id="chatwindow"><span id="loading">Loading...</span></div>
-<div id="memberswindow"></div>
-<div class="clear"></div>
-<form id="chatform">
-	<label for="msg">Message:</label>
-	<input type="text" id="msg" />
-	<input type="submit" value="Send message" /><br />
-</form>
+
+<div id="memberswindow">
+</div>
+
+<div id="chatwindow">
+<span id="loading">Loading...</span>
+</div>
+
+<div class="clear">
+</div>
+
+<div id="messagewindow">
+ <form id="chatform">
+  <input type="text" id="msg" size=80 />
+  <input type="submit" value="send" />
+  <br />
+ </form>
+</div>
+<br />
 
 <script type="text/javascript">
 document.getElementById("msg").focus();

@@ -1,10 +1,28 @@
 import os
+import sys
+
 gettext = lambda s: s
 PROJECT_PATH = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
+APP_DATA_PATH = ''
+
+if APP_DATA_PATH == '':
+    curdir = os.path.dirname(os.path.abspath(sys.executable))
+    appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+    if os.path.isfile(os.path.join(curdir, 'appdata')):
+        try:
+            appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read()) 
+        except:
+            pass
+    if not os.path.exists(appdata):
+        try:
+            os.makedirs(appdata)
+        except:
+            pass
+    APP_DATA_PATH = appdata
 
 SECRET_KEY = '7a9*@f0v9z3ma7my+=oxfi6!q9nrm0fu#bu94bz%o5_1bc$=51'
 
-DEBUG = False
+DEBUG = True
 
 TEMPLATE_DEBUG = True
 
@@ -26,14 +44,6 @@ INSTALLED_APPS = (
     'web.friendapp',
     'web.myfilesapp',
 )
-
-#STATICFILES_DIRS = (
-#     os.path.join(PROJECT_PATH, 'asite', '/static/'),
-#     os.path.join(PROJECT_PATH, 'updateapp', '/static/'),
-#     os.path.join(PROJECT_PATH, 'mainapp', '/static/'),
-#     os.path.join(PROJECT_PATH, 'setupapp', '/static/'),
-#     os.path.join(PROJECT_PATH, 'jqchatapp', '/static/'),
-#)
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -64,7 +74,8 @@ WSGI_APPLICATION = 'web.asite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(PROJECT_PATH, 'asite.db'),
+        # 'NAME': os.path.join(PROJECT_PATH, 'asite.db'),
+        'NAME': os.path.join(APP_DATA_PATH, 'metadata', 'asite.db'),
     }
 }
 

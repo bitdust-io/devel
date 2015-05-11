@@ -14,7 +14,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^accounts/login/$', views.LoginPoint), 
     url(r'^accounts/logout/$', views.LogoutPoint), 
-    url(r'^repaintflag/$', views.RepaintFlagView.as_view()),     
+    url(r'^repaintflag$', views.RepaintFlagView.as_view()),     
     url(r'^admin/', include(admin.site.urls)),
     url(r'^chat/', include('web.jqchatapp.urls')),  
     url(r'^setup/', include('web.setupapp.urls')), 

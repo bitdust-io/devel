@@ -34,7 +34,6 @@ from twisted.python import threadpool
 
 from django.conf import settings as django_settings
 from django.core.wsgi import get_wsgi_application
-from django.core.handlers.wsgi import WSGIHandler
 
 #------------------------------------------------------------------------------ 
 
@@ -51,10 +50,7 @@ from system import bpio
 
 from main import settings
 
-from contacts import contactsdb
-from contacts import identitydb
-
-from web import sqlio
+# from web import sqlio
 from web import dbwrite
 
 #------------------------------------------------------------------------------
@@ -93,16 +89,29 @@ def init():
     lg.out(4, '        %s' % site)
     
     result = start_listener(site)
-    result.addCallback(lambda portnum: setup_database())
+    result.addCallback(lambda portnum: post_init())
 
     return result
 
+def post_init():
+    lg.out(4, 'control.post_init')
+    from contacts import contactsdb
+    contactsdb.SetCorrespondentsChangedCallback(dbwrite.update_friends)
+    from contacts import identitydb
+    identitydb.AddCacheUpdatedCallback(dbwrite.update_identities)
+    from chat import message
+    message.SetIncomingMessageCallback(dbwrite.incoming_message)
+    
+    # sqlio.init(database_info)
+#    contactsdb.SetSuppliersChangedCallback(sqlio.update_suppliers)
+#    contactsdb.SetCustomersChangedCallback(sqlio.update_customers)
+    
 
 def shutdown():
     global _WSGIListener
     global _WSGIPort
     lg.out(4, 'control.shutdown')
-    sqlio.shutdown()
+    # sqlio.shutdown()
     result = Deferred()
     if _WSGIListener:
         lg.out(4, '    close listener %s' % _WSGIListener)
@@ -145,16 +154,6 @@ def start_listener(site):
 
 #------------------------------------------------------------------------------ 
 
-def setup_database():
-    lg.out(4, 'control.setup_database')
-    sqlio.init(django_settings.DATABASES['default']['NAME'])
-#    contactsdb.SetSuppliersChangedCallback(sqlio.update_suppliers)
-#    contactsdb.SetCustomersChangedCallback(sqlio.update_customers)
-    contactsdb.SetCorrespondentsChangedCallback(dbwrite.update_friends)
-    identitydb.AddCacheUpdatedCallback(dbwrite.update_identities)
-    
-#------------------------------------------------------------------------------ 
-
 def show():
     global _WSGIPort
     lg.out(4, 'control.show')
@@ -187,8 +186,8 @@ def get_update_flag():
 
 #------------------------------------------------------------------------------ 
 
-def on_suppliers_changed(current_suppliers):
-    sqlio.update_suppliers([], current_suppliers)
+# def on_suppliers_changed(current_suppliers):
+#     sqlio.update_suppliers([], current_suppliers)
 
 
 def on_tray_icon_command(cmd):

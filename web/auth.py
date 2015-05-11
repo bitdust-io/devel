@@ -13,12 +13,12 @@ from crypt import key
 
 def is_session_authenticated(user):
     ok = user.is_authenticated()
-    lg.out(8, 'django.is_session_authenticated session=%s' % (ok))
+    # lg.out(8, 'django.is_session_authenticated session=%s' % (ok))
     return ok  
 
 def is_identity_authenticated():
     ok = my_id.isLocalIdentityReady() and key.isMyKeyReady()
-    lg.out(8, 'django.is_identity_authenticated node=%s' % (ok))
+    # lg.out(8, 'django.is_identity_authenticated node=%s' % (ok))
     return ok
 
 

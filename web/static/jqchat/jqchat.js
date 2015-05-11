@@ -49,7 +49,7 @@ var timestamp = 0;
 var url = null;
 
 // How often to call updates (in milliseconds)
-var CallInterval = 8000;
+var CallInterval = 1000;
 // ID of the function called at regular intervals.
 var IntervalID = 0;
 
@@ -74,18 +74,18 @@ function processResponse(payload) {
 	for(message in payload.messages) {
 		$("#chatwindow").append(payload.messages[message].text);
 	}
-        // Populate the room members window
-        $("#memberswindow").html("")
-        for(member in payload.members) {
-                $("#memberswindow").append('<strong>'+payload.members[member].username+'</strong><br />');
-        }
+    // Populate the room members window
+    $("#memberswindow").html("")
+    for(member in payload.members) {
+        $("#memberswindow").append('<strong>'+payload.members[member].username+'</strong><br />');
+    }
 
 	// Scroll down if messages fill up the div.
 	var chatDiv = document.getElementById("chatwindow");
 	chatDiv.scrollTop = chatDiv.scrollHeight;
 
-        // Scroll down if members fill up the div.
-        var membDiv = document.getElementById("memberswindow");
+    // Scroll down if members fill up the div.
+    var membDiv = document.getElementById("memberswindow");
 	membDiv.scrollTop = membDiv.scrollHeight;
 
 	// Handle custom data (data other than messages).
@@ -115,7 +115,8 @@ function InitChatWindow(ChatMessagesUrl, ProcessResponseCallback){
 	// Process messages input by the user & send them to the server.
 	$("form#chatform").submit(function(){
 		// If user clicks to send a message on a empty message box, then don't do anything.
-		if($("#msg").val() == "") return false;
+		if($("#msg").val() == "")
+			return false;
 
 		// We don't want to post a call at the same time as the regular message update call,
 		// so cancel that first.
@@ -128,10 +129,10 @@ function InitChatWindow(ChatMessagesUrl, ProcessResponseCallback){
 				message: $("#msg").val()
            		},
            		function(payload) {
-         						$("#msg").val(""); // clean out contents of input field.
-         						// Calls to the server always return the latest messages, so display them.
-         						processResponse(payload);
-       							},
+					$("#msg").val(""); // clean out contents of input field.
+					// Calls to the server always return the latest messages, so display them.
+					processResponse(payload);
+				},
        			'json'
        	);
        	
@@ -158,7 +159,8 @@ function InitChatDescription(){
 
 	$("form#chatroom_description_form").submit(function(){
 		// If user clicks to send a message on a empty message box, then don't do anything.
-		if($("#id_description").val() == "") return false;
+		if($("#id_description").val() == "")
+			return false;
 		// We don't want to post a call at the same time as the regular message update call,
 		// so cancel that first.
 		clearInterval(IntervalID);
@@ -169,10 +171,10 @@ function InitChatDescription(){
 				description: $("#id_description").val()
            		},
            		function(payload) {
-         						$("#id_description").val(""); // clean out contents of input field.
-         						// Calls to the server always return the latest messages, so display them.
-         						processResponse(payload);
-       							},
+					$("#id_description").val(""); // clean out contents of input field.
+					// Calls to the server always return the latest messages, so display them.
+					processResponse(payload);
+				},
        			'json'
        	);
        	// Start calling the server again at regular intervals.
@@ -195,5 +197,5 @@ function room_leave() {
     IntervalID = setInterval(callServer, CallInterval);
 }
 
-$(window).load(function(){room_join()});
-$(window).unload(function(){room_leave()});
+// $(window).load(function(){room_join()});
+// $(window).unload(function(){room_leave()});

@@ -1,10 +1,10 @@
 (function() { 
 
     var updater_task = null;
-    var flag_url = '/repaintflag/';
+    var flag_url = '/repaintflag';
     
     function read_flag() {
-        debug.log('read_flag');
+        // debug.log('read_flag');
         $.get(flag_url, function(data) {
             // debug.log('    ', data);
             if (data == 'True') {

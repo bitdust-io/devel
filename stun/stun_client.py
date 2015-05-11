@@ -395,6 +395,7 @@ class StunClient(automat.Automat):
             address = node.address
         except:
             lg.exc()
+            lg.out(2, 'result=%s' % str(result))
             return
         self.automat('port-number-received', (address, port))
             
