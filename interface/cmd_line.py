@@ -139,7 +139,7 @@ def print_exception():
 def print_and_stop(result):
     """
     """
-    print result
+    print 'print_and_stop', result
     import pprint
     pprint.pprint(result, indent=2,)
     reactor.stop()

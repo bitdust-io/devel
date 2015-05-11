@@ -3,7 +3,6 @@
 <h1>cached identities</h1>
   {% if identities_list %}
       {% for identity in identities_list %}
-          {{ identity.id }}
           <a href='{{ identity.id }}'>{{ identity.idurl }}</a>
           <br>
       {% endfor %}

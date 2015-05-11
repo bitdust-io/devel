@@ -150,7 +150,7 @@ def single(idurl, ack_handler=None, wide=False):
     """
     Do "propagate" for a single contact.
     """
-    FetchSingle(idurl).addBoth(lambda x: SendToIDs([idurl], ack_handler, wide))
+    return FetchSingle(idurl).addBoth(lambda x: SendToIDs([idurl], ack_handler, wide))
     
 
 def update():
