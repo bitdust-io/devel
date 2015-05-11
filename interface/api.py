@@ -20,6 +20,7 @@ def stop():
     lg.out(2, 'api.stop sending event "stop" to the shutdowner() machine')
     from main import shutdowner
     shutdowner.A('stop', 'exit')
+    return { 'result': 'stopped', }
     
 
 def restart():
@@ -33,7 +34,7 @@ def restart():
         return 'restarted with GUI'
     lg.out(2, 'api.restart did not found bpgui process, just do the restart, sending event "stop" to the shutdowner() machine')
     shutdowner.A('stop', 'restart')
-    return 'restarted'
+    return { 'result': 'restarted', }
 
 
 def show():
@@ -46,7 +47,8 @@ def show():
     else:
         from web import webcontrol
         webcontrol.show()
-    
+    return { 'result': '"show" event sent to UI', }
+
 #------------------------------------------------------------------------------ 
 
 def backups_list():
@@ -56,7 +58,7 @@ def backups_list():
         result.append((pathID, localPath, item.type, item.size, item.versions))
         # if len(result) > 20:
         #     break
-    return result
+    return { 'result': result, }
 
 
 def backups_id_list():
@@ -73,22 +75,23 @@ def backups_id_list():
         result.append((backupID, szver, localPath))
         if len(result) > 20:
             break
-    return result
+    return { 'result': result, }
 
 
 def backup_start_id(pathID):
     from system import bpio
     from storage import backup_fs
     from storage import backup_control
-    localPath = backup_fs.ToPath(pathID)
-    if localPath is not None:
-        if bpio.pathExist(localPath):
+    local_path = backup_fs.ToPath(pathID)
+    if local_path is not None:
+        if bpio.pathExist(local_path):
             backup_control.StartSingle(pathID)
             backup_fs.Calculate()
             backup_control.Save()
-            return (localPath, 'backup started : %s' % pathID)
+            return { 'result': 'backup started : %s' % pathID,
+                     'local_path': local_path, }
     else:
-        return 'item %s not found' % pathID
+        return { 'result': 'item %s not found' % pathID, }
 
     
 def backup_start_path(path):
@@ -97,7 +100,7 @@ def backup_start_path(path):
     from storage import backup_control
     localPath = unicode(path)
     if not bpio.pathExist(localPath):
-        return 'local path %s not found' % path
+        return {'result': 'local path %s not found' % path, }
     result = []
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
@@ -111,7 +114,7 @@ def backup_start_path(path):
     backup_fs.Calculate()
     backup_control.Save()
     result.append('backup started: %s' % pathID)
-    return result
+    return { 'result': result, }
 
         
 def backup_dir_add(dirpath):
@@ -122,7 +125,7 @@ def backup_dir_add(dirpath):
     dirsize.ask(dirpath, backup_control.FoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
     backup_control.Save()
-    return 'new folder was added: %s %s' % (newPathID, dirpath)
+    return { 'result': 'new folder was added: %s %s' % (newPathID, dirpath), }
 
 
 def backup_file_add(filepath):    
@@ -131,7 +134,7 @@ def backup_file_add(filepath):
     newPathID, iter, iterID = backup_fs.AddFile(filepath, True)
     backup_fs.Calculate()
     backup_control.Save()
-    return 'new file was added: %s %s' % (newPathID, filepath)
+    return { 'result': 'new file was added: %s %s' % (newPathID, filepath), }
 
 
 def backup_tree_add(dirpath):
@@ -142,9 +145,9 @@ def backup_tree_add(dirpath):
     backup_fs.Calculate()
     backup_control.Save()
     if not newPathID:
-        return 'nothing was added to catalog'
-    return '%d items were added to catalog, parent path ID is: %s  %s' % (
-        num, newPathID, dirpath)
+        return { 'result': 'nothing was added to catalog', }
+    return { 'result': '%d items were added to catalog, parent path ID is: %s  %s' % (
+        num, newPathID, dirpath), }
 
 #------------------------------------------------------------------------------ 
 
@@ -152,7 +155,7 @@ def list_messages():
     from chat import message
     mlist = message.ListAllMessages()
     mlist.sort(key=lambda item: item[3])
-    return mlist
+    return { 'result': mlist, }
     
     
 def send_message(recipient, message_body):
@@ -162,7 +165,8 @@ def send_message(recipient, message_body):
         recipient = contactsdb.find_correspondent_by_nickname(recipient) or recipient
     # msgbody = message.MakeMessage(recipient, message_body)
     # message.SaveMessage(msgbody)
-    return message.SendMessage(recipient, message_body)
+    return {'result': message.SendMessage(recipient, message_body),
+            'recipient': recipient, }
     
 
 def find_peer_by_nickname(nickname):
@@ -171,7 +175,10 @@ def find_peer_by_nickname(nickname):
     nickname_observer.stop_all()
     d = Deferred()
     nickname_observer.find_one(nickname, 
-        results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
+        results_callback=lambda result, nik, idurl: d.callback(
+            {'result': result,
+             'nickname': nik,
+             'idurl': idurl}))
     # nickname_observer.observe_many(nickname, 
         # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
     return d
@@ -179,6 +186,6 @@ def find_peer_by_nickname(nickname):
 
 def list_correspondents():
     from contacts import contactsdb
-    return contactsdb.correspondents_dict() 
+    return { 'result': contactsdb.correspondents_dict(), } 
     
     

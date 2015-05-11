@@ -352,7 +352,6 @@ def cmd_schedule(opts, args, overDict):
 
 
 def cmd_message(opts, args, overDict):
-    print 'cmd_message', args, opts
     if len(args) < 2 or args[1] == 'list':
         return call_xmlrpc_method_and_stop('list_messages')
     if len(args) >= 4 and args[1] in [ 'send', ]:
