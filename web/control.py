@@ -72,6 +72,9 @@ def init():
     lg.out(4, '    setting environment DJANGO_SETTINGS_MODULE=web.asite.settings')
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.asite.settings")
     
+    # TODO run "python manage.py syncdb"
+
+
     lg.out(4, '    configuring WSGI bridge from Twisted to Django')
     wsgi_handler = get_wsgi_application()
     my_wsgi_handler = MyFakedWSGIHandler(wsgi_handler) 

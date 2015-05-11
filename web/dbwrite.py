@@ -86,7 +86,8 @@ def incoming_message(request, message_text):
     try:
         ThisUser = User.objects.get(username=my_id.getIDName())
     except:
-        lg.exc()
+        lg.out(6, '        SKIP, seems user did not logged in')
+        # lg.exc()
         return
     try:
         ThisRoom = get_object_or_404(Room, idurl=idurl)
