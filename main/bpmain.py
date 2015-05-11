@@ -590,7 +590,7 @@ def main():
                 if reactor.running and not reactor._stopped:
                     reactor.stop()
             def failed(x):
-                lg.out(0, 'FAILED, killing previous process and do restart\n', '')
+                lg.out(0, 'FAILED while killing previous process - do HARD restart\n', '')
                 try:
                     kill()
                 except:
@@ -601,8 +601,10 @@ def main():
                 reactor.stop()
             try:
                 from twisted.internet import reactor
-                from interface.command_line import run_url_command
-                d = run_url_command('?action=restart', False)
+                # from interface.command_line import run_url_command
+                # d = run_url_command('?action=restart', False)
+                from interface import cmd_line
+                d = cmd_line.call_xmlrpc_method('restart')
                 d.addCallback(done)
                 d.addErrback(failed)
                 reactor.run()
@@ -677,11 +679,17 @@ def main():
             lg.out(0, 'found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:
                 from twisted.internet import reactor
-                from interface.command_line import run_url_command
-                url = '?action=exit'
-                run_url_command(url, False).addBoth(wait_then_kill)
-                reactor.run()
-                bpio.shutdown()
+                # from interface.command_line import run_url_command
+                # url = '?action=exit'
+                # run_url_command(url, False).addBoth(wait_then_kill)
+                # reactor.run()
+                # bpio.shutdown()
+                def _stopped(x):
+                    lg.out(0, 'BitDust process finished correctly\n')
+                    reactor.run()
+                    bpio.shutdown()
+                from interface import cmd_line
+                cmd_line.call_xmlrpc_method('stop').addBoth(_stopped)
                 return 0
             except:
                 lg.exc()
@@ -709,6 +717,7 @@ def main():
             bpio.shutdown()
             return ret
         def do_reactor_stop_and_spawn(x=None):
+            lg.out(0, 'BitDust process finished correctly\n')
             reactor.stop()
             ret = do_spawn()
             bpio.shutdown()
@@ -726,12 +735,14 @@ def main():
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process...   ', '')
             try:
-                from twisted.internet import reactor
-                from interface.command_line import run_url_command
-                url = '?action=exit'
-                run_url_command(url).addBoth(do_reactor_stop_and_spawn)
-                reactor.run()
-                bpio.shutdown()
+                # from twisted.internet import reactor
+                # from interface.command_line import run_url_command
+                # url = '?action=exit'
+                # run_url_command(url).addBoth(do_reactor_stop_and_spawn)
+                # reactor.run()
+                # bpio.shutdown()
+                from interface import cmd_line
+                cmd_line.call_xmlrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
                 return 0
             except:
                 lg.exc()
@@ -740,8 +751,10 @@ def main():
         return ret
         
     #---command_line---
-    from interface import command_line
-    ret = command_line.run(opts, args, overDict, pars)
+    # from interface import command_line
+    # ret = command_line.run(opts, args, overDict, pars)
+    from interface import cmd_line
+    ret = cmd_line.run(opts, args, pars, overDict)
     if ret == 2:
         print usage()
     bpio.shutdown()

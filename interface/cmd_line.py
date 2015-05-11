@@ -352,6 +352,7 @@ def cmd_schedule(opts, args, overDict):
 
 
 def cmd_message(opts, args, overDict):
+    print 'cmd_message', args, opts
     if len(args) < 2 or args[1] == 'list':
         return call_xmlrpc_method_and_stop('list_messages')
     if len(args) >= 4 and args[1] in [ 'send', ]:
@@ -915,26 +916,7 @@ def cmd_integrate(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
-def main():
-    try:
-        from system import bpio
-    except:
-        dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-        sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-        from distutils.sysconfig import get_python_lib
-        sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
-        try:
-            from system import bpio
-        except:
-            print_text('ERROR! can not import working code.  Python Path:\n')
-            print_text('\n'.join(sys.path))
-            return 1
-    
-    pars = parser()
-    (opts, args) = pars.parse_args()
-
-    if opts.verbose:
-        print_copyright()
+def run(opts, args, pars=None, overDict=None): 
 
     cmd = ''
     if len(args) > 0:
@@ -1107,12 +1089,32 @@ def main():
             return 0
         return cmd_restore(opts, args, overDict)
 
+    #---messages---
+    elif cmd == 'msg' or cmd == 'message' or cmd == 'messages':
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_message(opts, args, overDict)
+    
+    #---friends---
+    elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy':
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_friend(opts, args, overDict)
+
+    #---integrate---
+    elif cmd == 'integrate':
+        return cmd_integrate(opts, args, overDict)
+
     #---schedule---
     elif cmd in ['schedule', 'shed', 'sched', 'sh']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_schedule(opts, args, overDict)
+
+
 
     #---suppliers---
 #    elif cmd in [ 'suppliers', 'supplier', 'sup', 'supp', 'sp', ]:
@@ -1217,26 +1219,36 @@ def main():
 #            return 0
 #        return cmd_storage(opts, args, overDict)
     
-    #---messages---
-    elif cmd == 'msg' or cmd == 'message' or cmd == 'messages':
-        if not running:
-            print_text('BitDust is not running at the moment\n')
-            return 0
-        return cmd_message(opts, args, overDict)
-    
-    #---friends---
-    elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy':
-        if not running:
-            print_text('BitDust is not running at the moment\n')
-            return 0
-        return cmd_friend(opts, args, overDict)
-
-    #---integrate---
-    elif cmd == 'integrate':
-        return cmd_integrate(opts, args, overDict)
-    
+   
 #    elif cmd == 'uninstall':
 #        return cmd_uninstall(opts, args, overDict)
     
     return 2
+
+#------------------------------------------------------------------------------ 
+
+def main():
+    try:
+        from system import bpio
+    except:
+        dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+        sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+        from distutils.sysconfig import get_python_lib
+        sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
+        try:
+            from system import bpio
+        except:
+            print_text('ERROR! can not import working code.  Python Path:\n')
+            print_text('\n'.join(sys.path))
+            return 1
+    
+    pars = parser()
+    (opts, args) = pars.parse_args()
+
+    if opts.verbose:
+        print_copyright()
+
+    return run(opts, args)
+
+#------------------------------------------------------------------------------ 
 
