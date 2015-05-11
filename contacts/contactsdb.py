@@ -33,6 +33,7 @@ import identitycache
 _CustomersList = []      # comes from settings.CustomerIDsFilename() 
 _SuppliersList = []      # comes from settings.SupplierIDsFilename()  
 _CorrespondentsList = []   # comes from settings.CorrespondentIDsFilename()
+_CorrespondentsDict = {}
 
 _SuppliersChangedCallback = None
 _CustomersChangedCallback = None
@@ -481,6 +482,12 @@ def get_correspondent_nickname(correspondent_idurl):
     for idurl, nickname in correspondents():
         if idurl == correspondent_idurl:
             return nickname
+    return ''
+
+def find_correspondent_by_nickname(nickname): 
+    for idurl, corr_nickname in correspondents_dict().items():
+        if nickname == corr_nickname:
+            return idurl
     return ''
 
 #------------------------------------------------------------------------------ 

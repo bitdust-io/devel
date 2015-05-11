@@ -136,15 +136,16 @@ def SendMessage(remote_idurl, messagebody, packet_id=None):
     Amessage = MessageClass(remote_identity, messagebody)
     Payload = misc.ObjectToString(Amessage)
     lg.out(6, "message.SendMessage to %s with %d bytes" % (remote_idurl, len(Payload)))
-    result = signed.Packet(commands.Message(),
+    outpacket = signed.Packet(commands.Message(),
                            my_id.getLocalID(),
                            my_id.getLocalID(),
                            packet_id,
                            Payload,
                            remote_idurl)
-    gateway.outbox(result)
+    result = gateway.outbox(outpacket)
     if _OutgoingMessageCallback:
         _OutgoingMessageCallback(result, messagebody, remote_identity, packet_id)
+    return result
 
 
 def SortMessagesList(mlist, sort_by_column):

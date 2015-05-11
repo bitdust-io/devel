@@ -155,18 +155,14 @@ def list_messages():
     return mlist
     
     
-def send_message(recipient, subject, body):
+def send_message(recipient, message_body):
     from chat import message
     if not recipient.startswith('http://'):
         from contacts import contactsdb
-        for idurl, nickname in contactsdb.correspondents_dict().items():
-            if recipient == nickname:
-                recipient = idurl
-                break 
-    msgbody = message.MakeMessage(recipient, subject, body)
-    message.SendMessage(recipient, msgbody)
-    message.SaveMessage(msgbody)
-    return msgbody
+        recipient = contactsdb.find_correspondent_by_nickname(recipient) or recipient
+    # msgbody = message.MakeMessage(recipient, message_body)
+    # message.SaveMessage(msgbody)
+    return message.SendMessage(recipient, message_body)
     
 
 def find_peer_by_nickname(nickname):
