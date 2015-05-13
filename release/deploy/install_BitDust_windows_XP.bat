@@ -146,7 +146,7 @@ Git-1.9.5-preview20150319.exe /DIR="%BITDUST_HOME%\git" /NOICONS /SILENT /NOREST
 
 
 echo Checking for PyWin32 installed
-if exist %BITDUST_HOME%\python\Lib\site-packages\win32\win32api.pyd goto PyWin32Installed
+if exist %BITDUST_HOME%\python\Lib\site-packages\pywin32-219-py2.7-win32.egg\win32api.pyd goto PyWin32Installed
 
 
 if exist pywin32-219.win32-py2.7.exe goto PyWin32Downloaded 
@@ -158,14 +158,14 @@ wget.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/py
 
 
 echo Installing pywin32-219.win32-py2.7.exe
-%BITDUST_HOME%\python\python.exe -m easy_install pywin32-219.win32-py2.7.exe 1>NUL 2>NUL
+%BITDUST_HOME%\python\python.exe -m easy_install pywin32-219.win32-py2.7.exe -Z -e -b %TMPDIR% 1>NUL 
 
 
 :PyWin32Installed
 
 
 echo Checking for PyCrypto installed
-if exist "%BITDUST_HOME%\python\Lib\site-packages\Crypto\__init__.py" goto PyCryptoInstalled
+if exist "%BITDUST_HOME%\python\Lib\site-packages\pycrypto-2.6-py2.7-win32.egg" goto PyCryptoInstalled
 
 
 if exist pycrypto-2.6.win32-py2.7.exe goto PyCryptoDownloaded 
@@ -177,7 +177,7 @@ wget.exe -nv http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32
 
 
 echo Installing pycrypto-2.6.win32-py2.7.exe
-%BITDUST_HOME%\python\python.exe -m easy_install pycrypto-2.6.win32-py2.7.exe 1>NUL 2>NUL
+%BITDUST_HOME%\python\python.exe -m easy_install pycrypto-2.6.win32-py2.7.exe 1>NUL
 
 
 :PyCryptoInstalled
@@ -187,24 +187,85 @@ echo Installing dependencies using "pip" package manager
 %BITDUST_HOME%\python\python.exe -m pip -q install zope.interface service_identity twisted pyasn1 pyOpenSSL Django==1.7
 
 
-cd ..
+if not exist %BITDUST_HOME%\src echo Prepare sources folder
+if not exist %BITDUST_HOME%\src mkdir %BITDUST_HOME%\src
+
+
+cd %BITDUST_HOME%\src
 
 
 if exist %BITDUST_HOME%\src\bitdust.py goto SourcesExist
-echo Cloning locally public BitDust repository
-%BITDUST_HOME%\git\bin\git.exe clone http://gitlab.bitdust.io/devel/bitdust.git src
+echo Downloading BitDust software, use "git clone" command to get official public repository
+%BITDUST_HOME%\git\bin\git.exe clone --depth 0 http://gitlab.bitdust.io/devel/bitdust.git .
 
 
 :SourcesExist
 
 
-echo Starting BitDust Software, the main script is %BITDUST_HOME%\src\bitdust.py
-cd src
-call %BITDUST_HOME%\python\pythonw.exe bitdust.py show
+echo Update sources, running command "git pull"
+%BITDUST_HOME%\git\bin\git.exe pull
+
+
+cd %TMPDIR%
+
+
+if not exist %BITDUST_HOME%\bin echo Prepare shortcuts
+if not exist %BITDUST_HOME%\bin mkdir %BITDUST_HOME%\bin
+echo cd %BITDUST_HOME%\src > %BITDUST_HOME%\bin\bitdustd.bat
+echo call %BITDUST_HOME%\python\python.exe bitdust.py %%* >> %BITDUST_HOME%\bin\bitdustd.bat
+echo pause >> %BITDUST_HOME%\bin\bitdustd.bat
+echo cd %BITDUST_HOME%\src > %BITDUST_HOME%\bin\bitdust.bat
+echo start %BITDUST_HOME%\python\pythonw.exe bitdust.py %%* >> %BITDUST_HOME%\bin\bitdust.bat
+echo exit >> %BITDUST_HOME%\bin\bitdust.bat
+
+
+echo Prepare Desktop icon
+echo set WshShell = WScript.CreateObject("WScript.Shell") > find_desktop.vbs
+echo strDesktop = WshShell.SpecialFolders("Desktop") >> find_desktop.vbs
+echo wscript.echo(strDesktop) >> find_desktop.vbs
+for /F "usebackq delims=" %%i in (`cscript find_desktop.vbs`) do set DESKTOP_DIR1=%%i
+rem echo Desktop folder is %DESKTOP_DIR1%
+
+
+set DESKTOP_REG_ENTRY="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+set DESKTOP_REG_KEY="Desktop"
+set DESKTOP_DIR=
+for /F "tokens=1,2*" %%a in ('REG QUERY %DESKTOP_REG_ENTRY% /v %DESKTOP_REG_KEY% ^| FINDSTR "REG_SZ"') do (
+    set DESKTOP_DIR2=%%c
+)
+rem echo Desktop folder is %DESKTOP_DIR2%
+
+
+echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut.vbs
+echo sLinkFile = "%DESKTOP_DIR2%\BitDust.lnk" >> CreateShortcut.vbs
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%\python\python.exe" >> CreateShortcut.vbs
+echo oLink.Arguments = "bitdust.py show" >> CreateShortcut.vbs
+echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut.vbs
+echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop.ico" >> CreateShortcut.vbs
+echo oLink.Description = "BitDust Software" >> CreateShortcut.vbs
+echo oLink.WindowStyle = "2" >> CreateShortcut.vbs
+echo oLink.Save >> CreateShortcut.vbs
+cscript //Nologo CreateShortcut.vbs
+rem del CreateShortcut.vbs
+
+
+cd %BITDUST_HOME%\src
+
+
+echo Prepare Django db, run command "python manage.py syncdb"
+call %BITDUST_HOME%\python\python.exe manage.py syncdb 1>NUL
+
+
+echo Starting BitDust Software, the main script is %HOME%\.bitdust\src\bitdust.py
+cd "%DESKTOP_DIR1%"
+start BitDust.lnk
 
 
 cd %CURRENT_PATH%
 
 
 pause
+
+
 exit
