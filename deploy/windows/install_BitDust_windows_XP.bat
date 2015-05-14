@@ -2,7 +2,7 @@
 
 
 set CURRENT_PATH=%cd%
-set BITDUST_FULL_HOME="%HOME%\.bitdust"
+set BITDUST_FULL_HOME="%HOMEDRIVE%%HOMEPATH%\.bitdust"
 echo Destination folder is %BITDUST_FULL_HOME%
 
 
@@ -34,7 +34,7 @@ set /P BITDUST_HOME_0=<shortpath.txt
 call :StripHome %BITDUST_HOME_0%
 :StripHome
 set BITDUST_HOME=%1
-echo A short and safe path is [%BITDUST_HOME%]
+echo Short and safe path is %BITDUST_HOME%
 del /Q shortpath.txt
 del /Q shortpath.bat
 
@@ -105,8 +105,8 @@ wget.exe -nv https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check
 
 
 echo Installing python-2.7.9.msi to %BITDUST_HOME%\python
-if not exist "%BITDUST_HOME%\python" mkdir "%BITDUST_HOME%\python"
-msiexec /i python-2.7.9.msi /qb /norestart /l python-2.7.9.install.log TARGETDIR="%BITDUST_HOME%\python" ALLUSERS=1
+if not exist %BITDUST_HOME%\python mkdir %BITDUST_HOME%\python
+msiexec /i python-2.7.9.msi /qb /norestart /l python-2.7.9.install.log TARGETDIR=%BITDUST_HOME%\python ALLUSERS=1
 
 
 set msierror=%errorlevel%
@@ -158,7 +158,7 @@ wget.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/py
 
 
 echo Installing pywin32-219.win32-py2.7.exe
-%BITDUST_HOME%\python\python.exe -m easy_install pywin32-219.win32-py2.7.exe -Z -e -b %TMPDIR% 1>NUL 
+%BITDUST_HOME%\python\python.exe -m easy_install pywin32-219.win32-py2.7.exe -e -b %TMPDIR% 1>NUL 2>NUL
 
 
 :PyWin32Installed
@@ -184,7 +184,18 @@ REM :PyCryptoInstalled
 
 
 echo Installing dependencies using "pip" package manager
-%BITDUST_HOME%\python\python.exe -m pip -q install pycrypto zope.interface service_identity twisted pyasn1 pyOpenSSL Django==1.7
+echo pip install zope.interface
+%BITDUST_HOME%\python\python.exe -m pip -q install zope.interface
+echo pip install service_identity
+%BITDUST_HOME%\python\python.exe -m pip -q install service_identity
+echo pip install pyOpenSSL 
+%BITDUST_HOME%\python\python.exe -m pip -q install pyOpenSSL 
+echo pip install pyasn1 
+%BITDUST_HOME%\python\python.exe -m pip -q install pyasn1 
+echo pip install twisted 
+%BITDUST_HOME%\python\python.exe -m pip -q install twisted
+echo pip install Django==1.7
+%BITDUST_HOME%\python\python.exe -m pip -q install Django==1.7
 
 
 if not exist %BITDUST_HOME%\src echo Prepare sources folder
@@ -196,7 +207,7 @@ cd %BITDUST_HOME%\src
 
 if exist %BITDUST_HOME%\src\bitdust.py goto SourcesExist
 echo Downloading BitDust software, use "git clone" command to get official public repository
-%BITDUST_HOME%\git\bin\git.exe clone --depth 0 http://gitlab.bitdust.io/devel/bitdust.git .
+%BITDUST_HOME%\git\bin\git.exe clone --depth 1 http://gitlab.bitdust.io/devel/bitdust.git .
 
 
 :SourcesExist
@@ -301,7 +312,7 @@ call %BITDUST_HOME%\python\python.exe manage.py syncdb 1>NUL
 @echo.
 echo ALL DONE !!!!!!
 @echo.
-echo The main Python script is %HOME%\.bitdust\src\bitdust.py
+echo The main Python script is %HOMEDRIVE%%HOMEPATH%\.bitdust\src\bitdust.py
 echo Use desktop icons to start and stop BitDust software
 echo Starting BitDust software in background mode, this window can be closed now
 start %BITDUST_HOME%\python\pythonw.exe bitdust.py show
