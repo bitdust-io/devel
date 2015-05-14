@@ -275,7 +275,6 @@ class Initializer(automat.Automat):
         if self.flagGUI or not self.is_installed:
             if settings.NewWebGUI():
                 def _show_gui(wsgiport):
-                    bpio.WriteFile(settings.LocalWSGIPortFilename(), str(wsgiport))
                     reactor.callLater(0.1, control.show)
                 d.addCallback(_show_gui) 
                 # reactor.callLater(0.1, control.show)

@@ -496,7 +496,7 @@ def main():
     lg.out(2, 'bpmain.main args=%s' % str(args))
     
     #---start---
-    if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':
+    if cmd == '' or cmd == 'start' or cmd == 'go':
         appList = bpio.find_process([
             'bitdust.exe',
             'bpmain.py',
@@ -630,8 +630,8 @@ def main():
             lg.out(0, 'BitDust GUI is turned OFF')
             bpio.shutdown()
             return 0
-        if bpio.X11_is_running(): 
-            lg.out(0, 'BitDust GUI already opened, found another process: %s' % str(appList))
+        if bpio.Linux() and not bpio.X11_is_running(): 
+            lg.out(0, 'this operating system not supported X11 interface')
             bpio.shutdown()
             return 0
         appList = bpio.find_process([

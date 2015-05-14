@@ -905,7 +905,6 @@ def X11_is_running():
     Linux method to check if BitDust GUI is possible.
         http://stackoverflow.com/questions/1027894/detect-if-x11-is-available-python
     """
-    return False
     global X11isRunning
     if not Linux():
         return False

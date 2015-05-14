@@ -92,7 +92,7 @@ def init():
     lg.out(4, '        %s' % site)
     
     result = start_listener(site)
-    result.addCallback(lambda portnum: post_init())
+    result.addCallback(lambda portnum: post_init(portnum))
 
     return result
 
@@ -147,6 +147,7 @@ def start_listener(site):
         if _WSGIListener is None:
             reactor.callLater(0.5, _try, site, result, counter+1)
             return
+        bpio.WriteFile(settings.LocalWSGIPortFilename(), str(_WSGIPort))
         lg.out(4, '                _try STARTED on port %d' % _WSGIPort)
         result.callback(_WSGIPort)
 
@@ -159,16 +160,24 @@ def start_listener(site):
 
 def show():
     global _WSGIPort
-    lg.out(4, 'control.show')
     if _WSGIPort is not None:
+        lg.out(4, 'control.show on port %d' % _WSGIPort)
         webbrowser.open('http://localhost:%d' % _WSGIPort)
         # webbrowser.open_new('http://127.0.0.1:%d' % _WSGIPort)
         # webbrowser.open_new('http://localhost/:%d' % _WSGIPort)
         # webbrowser.open_new('http://localhost:8080')
         # webbrowser.open('http://localhost:8080')
     else:
-        lg.out(4, '    SKIP,    LocalWebPort is None')
-    
+        try:
+            local_port = int(bpio.ReadBinaryFile(settings.LocalWSGIPortFilename()))
+        except:
+            local_port = None
+        if not local_port:
+            lg.out(4, 'control.show SKIP, LocalWebPort is None, %s is empty' % settings.LocalWSGIPortFilename())
+        else:
+            lg.out(4, 'control.show on port %d' % local_port)
+            webbrowser.open('http://localhost:%d' % local_port)
+
 #------------------------------------------------------------------------------ 
 
 def stop_updating():
