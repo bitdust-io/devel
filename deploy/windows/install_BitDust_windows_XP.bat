@@ -164,27 +164,27 @@ echo Installing pywin32-219.win32-py2.7.exe
 :PyWin32Installed
 
 
-echo Checking for PyCrypto installed
-if exist "%BITDUST_HOME%\python\Lib\site-packages\pycrypto-2.6-py2.7-win32.egg" goto PyCryptoInstalled
+REM echo Checking for PyCrypto installed
+REM if exist "%BITDUST_HOME%\python\Lib\site-packages\pycrypto-2.6-py2.7-win32.egg" goto PyCryptoInstalled
 
 
-if exist pycrypto-2.6.win32-py2.7.exe goto PyCryptoDownloaded 
-echo Downloading pycrypto-2.6.win32-py2.7.exe
-wget.exe -nv http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe 2>NUL
+REM if exist pycrypto-2.6.win32-py2.7.exe goto PyCryptoDownloaded 
+REM echo Downloading pycrypto-2.6.win32-py2.7.exe
+REM wget.exe -nv http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe 2>NUL
 
 
-:PyCryptoDownloaded
+REM :PyCryptoDownloaded
 
 
-echo Installing pycrypto-2.6.win32-py2.7.exe
-%BITDUST_HOME%\python\python.exe -m easy_install pycrypto-2.6.win32-py2.7.exe 1>NUL
+REM echo Installing pycrypto-2.6.win32-py2.7.exe
+REM %BITDUST_HOME%\python\python.exe -m easy_install pycrypto-2.6.win32-py2.7.exe 1>NUL
 
 
-:PyCryptoInstalled
+REM :PyCryptoInstalled
 
 
 echo Installing dependencies using "pip" package manager
-%BITDUST_HOME%\python\python.exe -m pip -q install zope.interface service_identity twisted pyasn1 pyOpenSSL Django==1.7
+%BITDUST_HOME%\python\python.exe -m pip -q install pycrypto zope.interface service_identity twisted pyasn1 pyOpenSSL Django==1.7
 
 
 if not exist %BITDUST_HOME%\src echo Prepare sources folder
@@ -206,6 +206,10 @@ echo Update sources, running command "git pull"
 %BITDUST_HOME%\git\bin\git.exe pull
 
 
+echo Update binary extensions
+xcopy /E /H /R /Y deploy\windows\Python2.7.9\* %BITDUST_HOME%\python
+
+
 cd %TMPDIR%
 
 
@@ -221,7 +225,7 @@ echo start %BITDUST_HOME%\python\pythonw.exe bitdust.py %%* >> %BITDUST_HOME%\bi
 echo exit >> %BITDUST_HOME%\bin\bitdust.bat
 
 
-echo Prepare Desktop icon
+echo Prepare Desktop icons
 echo set WshShell = WScript.CreateObject("WScript.Shell") > find_desktop.vbs
 echo strDesktop = WshShell.SpecialFolders("Desktop") >> find_desktop.vbs
 echo wscript.echo(strDesktop) >> find_desktop.vbs
@@ -238,18 +242,46 @@ for /F "tokens=1,2*" %%a in ('REG QUERY %DESKTOP_REG_ENTRY% /v %DESKTOP_REG_KEY%
 rem echo Desktop folder is %DESKTOP_DIR2%
 
 
-echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut.vbs
-echo sLinkFile = "%DESKTOP_DIR2%\BitDust.lnk" >> CreateShortcut.vbs
-echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut.vbs
-echo oLink.TargetPath = "%BITDUST_HOME%\python\python.exe" >> CreateShortcut.vbs
-echo oLink.Arguments = "bitdust.py show" >> CreateShortcut.vbs
-echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut.vbs
-echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop.ico" >> CreateShortcut.vbs
-echo oLink.Description = "BitDust Software" >> CreateShortcut.vbs
-echo oLink.WindowStyle = "2" >> CreateShortcut.vbs
-echo oLink.Save >> CreateShortcut.vbs
-cscript //Nologo CreateShortcut.vbs
-rem del CreateShortcut.vbs
+echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut1.vbs
+echo sLinkFile = "%DESKTOP_DIR2%\Start BitDust in background.lnk" >> CreateShortcut1.vbs
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut1.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%\python\pythonw.exe" >> CreateShortcut1.vbs
+echo oLink.Arguments = "bitdust.py show" >> CreateShortcut1.vbs
+echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut1.vbs
+echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop.ico" >> CreateShortcut1.vbs
+echo oLink.Description = "Launch BitDust software in background mode" >> CreateShortcut1.vbs
+echo oLink.WindowStyle = "2" >> CreateShortcut1.vbs
+echo oLink.Save >> CreateShortcut1.vbs
+cscript //Nologo CreateShortcut1.vbs
+rem del CreateShortcut1.vbs
+
+
+echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut2.vbs
+echo sLinkFile = "%DESKTOP_DIR2%\Start BitDust in debug mode.lnk" >> CreateShortcut2.vbs
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut2.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdustd.bat" >> CreateShortcut2.vbs
+echo oLink.Arguments = "show" >> CreateShortcut2.vbs
+echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut2.vbs
+echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop-debug.ico" >> CreateShortcut2.vbs
+echo oLink.Description = "Launch BitDust software in debug mode" >> CreateShortcut2.vbs
+echo oLink.WindowStyle = "3" >> CreateShortcut2.vbs
+echo oLink.Save >> CreateShortcut2.vbs
+cscript //Nologo CreateShortcut2.vbs
+rem del CreateShortcut1.vbs
+
+
+echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut3.vbs
+echo sLinkFile = "%DESKTOP_DIR2%\Stop BitDust.lnk" >> CreateShortcut3.vbs
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut3.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdustd.bat" >> CreateShortcut3.vbs
+echo oLink.Arguments = "stop" >> CreateShortcut3.vbs
+echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut3.vbs
+echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop-stop.ico" >> CreateShortcut3.vbs
+echo oLink.Description = "Completely stop BitDust software" >> CreateShortcut3.vbs
+echo oLink.WindowStyle = "1" >> CreateShortcut3.vbs
+echo oLink.Save >> CreateShortcut3.vbs
+cscript //Nologo CreateShortcut3.vbs
+rem del CreateShortcut1.vbs
 
 
 cd %BITDUST_HOME%\src

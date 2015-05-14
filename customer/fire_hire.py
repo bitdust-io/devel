@@ -436,7 +436,7 @@ class FireHire(automat.Automat):
         misc.writeSupplierData(new_idurl, 'connected', time.strftime('%d%m%y %H:%M:%S'))
         if settings.NewWebGUI():
             from web import control
-            control.on_suppliers_changed(current_suppliers)
+            # control.on_suppliers_changed(current_suppliers)
         else:
             from web import webcontrol
             webcontrol.OnListSuppliers()

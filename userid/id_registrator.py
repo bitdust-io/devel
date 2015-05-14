@@ -107,6 +107,7 @@ class IdRegistrator(automat.Automat):
         'MSG_11':['identity verification failed', 'red'],
         'MSG_12':['time out requesting from identity server', 'red'],
         'MSG_13':['time out sending to identity server', 'red'],
+        'MSG_14':['generating your Private Key'],
         }
 
     def msg(self, msgid, arg=None): 
@@ -183,9 +184,10 @@ class IdRegistrator(automat.Automat):
         elif self.state == 'EXTERNAL_IP':
             if event == 'stun-success' :
                 self.state = 'SEND_ID'
+                self.doPrint(self.msg('MSG_14', arg))
                 self.doCreateMyIdentity(arg)
-                self.doSendMyIdentity(arg)
                 self.doPrint(self.msg('MSG_4', arg))
+                self.doSendMyIdentity(arg)
             elif event == 'stun-failed' :
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_9', arg))
