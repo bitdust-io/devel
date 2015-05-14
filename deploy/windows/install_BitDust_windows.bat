@@ -228,6 +228,10 @@ echo Running command "git pull"
 %BITDUST_HOME%\git\bin\git.exe pull
 
 
+echo Shutdown the BitDust software in case it was already started earlier
+call %BITDUST_HOME%\python\python.exe bitdust.py stop
+
+
 echo Update binary extensions
 xcopy /E /H /R /Y deploy\windows\Python2.7.9\* %BITDUST_HOME%\python 1>NUL
 
@@ -248,7 +252,7 @@ echo exit >> %BITDUST_HOME%\bin\bitdust.bat
 echo @echo off > %BITDUST_HOME%\bin\bitdust-sync.bat
 echo cd %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo echo Running command "git clean" >> %BITDUST_HOME%\bin\bitdust-sync.bat
-echo %BITDUST_HOME%\git\bin\git.exe clean -d -fx "" >> %BITDUST_HOME%\bin\bitdust-sync.bat
+echo %BITDUST_HOME%\git\bin\git.exe clean -d -fx "" 1^>NUL >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo echo Running command "git reset" >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo %BITDUST_HOME%\git\bin\git.exe reset --hard origin/master >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo echo Running command "git pull" >> %BITDUST_HOME%\bin\bitdust-sync.bat
@@ -294,7 +298,7 @@ echo oLink.Arguments = "show" >> CreateShortcut2.vbs
 echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut2.vbs
 echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop-debug.ico" >> CreateShortcut2.vbs
 echo oLink.Description = "Launch BitDust software in debug mode" >> CreateShortcut2.vbs
-echo oLink.WindowStyle = "3" >> CreateShortcut2.vbs
+echo oLink.WindowStyle = "1" >> CreateShortcut2.vbs
 echo oLink.Save >> CreateShortcut2.vbs
 cscript //Nologo CreateShortcut2.vbs
 
@@ -313,14 +317,14 @@ cscript //Nologo CreateShortcut3.vbs
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut4.vbs
-echo sLinkFile = "%DESKTOP_DIR2%\Synchronize BitDust sources" >> CreateShortcut4.vbs
+echo sLinkFile = "%DESKTOP_DIR2%\Synchronize BitDust sources.lnk" >> CreateShortcut4.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut4.vbs
 echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdust-sync.bat" >> CreateShortcut4.vbs
 echo oLink.Arguments = "" >> CreateShortcut4.vbs
 echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut4.vbs
 echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop-sync.ico" >> CreateShortcut4.vbs
 echo oLink.Description = "Synchronize BitDust sources from public repository at http://gitlab.bitdust.io/devel/bitdust/" >> CreateShortcut4.vbs
-echo oLink.WindowStyle = "3" >> CreateShortcut4.vbs
+echo oLink.WindowStyle = "1" >> CreateShortcut4.vbs
 echo oLink.Save >> CreateShortcut4.vbs
 cscript //Nologo CreateShortcut4.vbs
 
@@ -340,9 +344,10 @@ echo Use desktop icons to start and stop BitDust at any time.
 echo To be sure you are running the latest version use "Synchronize BitDust sources" icon.
 @echo.
 echo Starting BitDust software in background mode, this window can be closed now.
-echo Your WEB browser will be opened in a few seconds and you will see the starting page of BitDust Software.
+echo Your WEB browser will be opened at the moment and you will see the starting page of BitDust Software.
 @echo.
-call %BITDUST_HOME%\bin\bitdust.bat stop
+
+
 cd "%DESKTOP_DIR1%"
 "Start BitDust.lnk"
 
@@ -352,6 +357,4 @@ cd %CURRENT_PATH%
 
 
 pause
-
-
 exit
