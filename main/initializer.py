@@ -225,8 +225,8 @@ class Initializer(automat.Automat):
     def doInitLocal(self, arg):
         """
         """
-        lg.out(2, 'initializer.doInitLocal')
-        self.flagGUI = arg
+        self.flagGUI = arg.strip() == 'show'
+        lg.out(2, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
         self._init_local()
         reactor.callLater(0, self.automat, 'init-local-done')
 

@@ -468,12 +468,12 @@ def main():
     if opts.output:
         logpath = opts.output
 
-    # if logpath != '':
-        # lg.open_log_file(logpath)
-        # lg.out(2, 'bpmain.main log file opened ' + logpath)
-        # if bpio.Windows() and bpio.isFrozen():
-        #     lg.stdout_start_redirecting()
-        #     lg.out(2, 'bpmain.main redirecting started')
+    if logpath != '':
+        lg.open_log_file(logpath)
+        lg.out(2, 'bpmain.main log file opened ' + logpath)
+        if bpio.Windows() and bpio.isFrozen():
+            lg.stdout_start_redirecting()
+            lg.out(2, 'bpmain.main redirecting started')
 
     try:
         os.remove(os.path.join(os.path.expanduser('~'), '.bitdust', 'logs', 'exception.log'))
@@ -532,8 +532,8 @@ def main():
             bpio.shutdown()
             return 0
         UI = ''
-        if cmd == 'show' or cmd == 'open':
-            UI = 'show'
+        # if cmd == 'show' or cmd == 'open':
+            # UI = 'show'
         try:
             ret = run(UI, opts, args, overDict)
         except:

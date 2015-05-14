@@ -96,7 +96,7 @@ def init():
 
     return result
 
-def post_init():
+def post_init(portnum):
     lg.out(4, 'control.post_init')
     from contacts import contactsdb
     contactsdb.SetCorrespondentsChangedCallback(dbwrite.update_friends)
@@ -104,10 +104,10 @@ def post_init():
     identitydb.AddCacheUpdatedCallback(dbwrite.update_identities)
     from chat import message
     message.SetIncomingMessageCallback(dbwrite.incoming_message)
-    
     # sqlio.init(database_info)
 #    contactsdb.SetSuppliersChangedCallback(sqlio.update_suppliers)
 #    contactsdb.SetCustomersChangedCallback(sqlio.update_customers)
+    return portnum
     
 
 def shutdown():
