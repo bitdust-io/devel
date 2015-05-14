@@ -163,8 +163,9 @@ def call_xmlrpc_method(method, *args):
     try:
         local_port = int(bpio.ReadBinaryFile(settings.LocalXMLRPCPortFilename()))
     except:
-        local_port = settings.DefaultXMLRPCPort() 
-    proxy = xmlrpc.Proxy('http://127.0.0.1:'+str(local_port), allowNone=True)
+        local_port = settings.DefaultXMLRPCPort()
+    xml_url = 'http://127.0.0.1:'+str(local_port) 
+    proxy = xmlrpc.Proxy(xml_url, allowNone=True)
     return proxy.callRemote(method, *args)
 
 
@@ -1064,7 +1065,7 @@ def run(opts, args, pars=None, overDict=None):
             print_text(help.help())
             print_text(pars.format_option_help())
         return 0
-    
+
     appList = bpio.find_process([
         'bitdust.exe',
         'bpmain.py',
@@ -1073,6 +1074,17 @@ def run(opts, args, pars=None, overDict=None):
         ])
     running = len(appList) > 0
     overDict = override_options(opts, args)
+
+    #---set---
+#    if cmd == 'set':
+#        if len(args) == 1 or args[1].lower() in [ 'help', '?' ]:
+#            from main import help
+#            print_text(help.settings_help())
+#            return 0
+#        if not running:
+#            cmd_set_directly(opts, args, overDict)
+#            return 0
+#        return cmd_set_request(opts, args, overDict)
     
     #---backup---
     if cmd in ['backup', 'backups', 'bk']:
@@ -1187,17 +1199,6 @@ def run(opts, args, pars=None, overDict=None):
 #            return 0
 #        return cmd_reconnect(opts, args, overDict)
         
-    #---set---
-#    elif cmd == 'set':
-#        if len(args) == 1 or args[1].lower() in [ 'help', '?' ]:
-#            import help
-#            print_text(help.settings_help())
-#            return 0
-#        if not running:
-#            cmd_set_directly(opts, args, overDict)
-#            return 0
-#        return cmd_set_request(opts, args, overDict)
-    
     #---memory---
 #    elif cmd == 'memory':
 #        if not running:

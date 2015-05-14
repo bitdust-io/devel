@@ -202,12 +202,19 @@ echo Downloading BitDust software, use "git clone" command to get official publi
 :SourcesExist
 
 
-echo Update sources, running command "git pull"
+echo Update sources
+
+
+echo Running command "git clean"
+%BITDUST_HOME%\git\bin\git.exe clean -d -fx "" 1>NUL
+
+
+echo Running command "git pull"
 %BITDUST_HOME%\git\bin\git.exe pull
 
 
 echo Update binary extensions
-xcopy /E /H /R /Y deploy\windows\Python2.7.9\* %BITDUST_HOME%\python
+xcopy /E /H /R /Y deploy\windows\Python2.7.9\* %BITDUST_HOME%\python 1>NUL
 
 
 cd %TMPDIR%
@@ -243,7 +250,7 @@ rem echo Desktop folder is %DESKTOP_DIR2%
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut1.vbs
-echo sLinkFile = "%DESKTOP_DIR2%\Start BitDust in background.lnk" >> CreateShortcut1.vbs
+echo sLinkFile = "%DESKTOP_DIR2%\Start BitDust.lnk" >> CreateShortcut1.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut1.vbs
 echo oLink.TargetPath = "%BITDUST_HOME%\python\pythonw.exe" >> CreateShortcut1.vbs
 echo oLink.Arguments = "bitdust.py show" >> CreateShortcut1.vbs
@@ -273,8 +280,8 @@ rem del CreateShortcut1.vbs
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut3.vbs
 echo sLinkFile = "%DESKTOP_DIR2%\Stop BitDust.lnk" >> CreateShortcut3.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut3.vbs
-echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdustd.bat" >> CreateShortcut3.vbs
-echo oLink.Arguments = "stop" >> CreateShortcut3.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%\python\pythonw.exe" >> CreateShortcut3.vbs
+echo oLink.Arguments = "bitdust.py stop" >> CreateShortcut3.vbs
 echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut3.vbs
 echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop-stop.ico" >> CreateShortcut3.vbs
 echo oLink.Description = "Completely stop BitDust software" >> CreateShortcut3.vbs
@@ -291,12 +298,19 @@ echo Prepare Django db, run command "python manage.py syncdb"
 call %BITDUST_HOME%\python\python.exe manage.py syncdb 1>NUL
 
 
-echo Starting BitDust Software, the main script is %HOME%\.bitdust\src\bitdust.py
-cd "%DESKTOP_DIR1%"
-start BitDust.lnk
+@echo.
+echo ALL DONE !!!!!!
+@echo.
+echo The main Python script is %HOME%\.bitdust\src\bitdust.py
+echo Use desktop icons to start and stop BitDust software
+echo Starting BitDust software in background mode, this window can be closed now
+start %BITDUST_HOME%\python\pythonw.exe bitdust.py show
+rem cd "%DESKTOP_DIR1%"
+rem start "Start BitDust.lnk"
 
 
 cd %CURRENT_PATH%
+@echo.
 
 
 pause

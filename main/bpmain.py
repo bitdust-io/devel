@@ -494,7 +494,7 @@ def main():
     overDict = override_options(opts, args)
 
     lg.out(2, 'bpmain.main args=%s' % str(args))
-
+    
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':
         appList = bpio.find_process([
@@ -624,8 +624,7 @@ def main():
             return ret
 
     #---show---
-    elif (cmd == 'show' or cmd == 'open'):
-        print cmd
+    elif cmd == 'show' or cmd == 'open':
         from main import settings
         if not bpio.isGUIpossible():
             lg.out(0, 'BitDust GUI is turned OFF')
@@ -686,10 +685,11 @@ def main():
                 # bpio.shutdown()
                 def _stopped(x):
                     lg.out(0, 'BitDust process finished correctly\n')
-                    reactor.run()
+                    reactor.stop()
                     bpio.shutdown()
                 from interface import cmd_line
                 cmd_line.call_xmlrpc_method('stop').addBoth(_stopped)
+                reactor.run()
                 return 0
             except:
                 lg.exc()
@@ -743,6 +743,7 @@ def main():
                 # bpio.shutdown()
                 from interface import cmd_line
                 cmd_line.call_xmlrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
+                reactor.run()
                 return 0
             except:
                 lg.exc()
