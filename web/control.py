@@ -189,8 +189,9 @@ def get_update_flag():
 
 #------------------------------------------------------------------------------ 
 
-# def on_suppliers_changed(current_suppliers):
-#     sqlio.update_suppliers([], current_suppliers)
+def on_suppliers_changed(current_suppliers):
+    pass
+    # sqlio.update_suppliers([], current_suppliers)
 
 
 def on_tray_icon_command(cmd):
