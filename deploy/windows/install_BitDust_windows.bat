@@ -263,8 +263,8 @@ rem echo Desktop folder is %DESKTOP_DIR2%
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut1.vbs
 echo sLinkFile = "%DESKTOP_DIR2%\Start BitDust.lnk" >> CreateShortcut1.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut1.vbs
-echo oLink.TargetPath = "%BITDUST_HOME%\python\pythonw.exe" >> CreateShortcut1.vbs
-echo oLink.Arguments = "bitdust.py show" >> CreateShortcut1.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdust.bat" >> CreateShortcut1.vbs
+echo oLink.Arguments = "show" >> CreateShortcut1.vbs
 echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut1.vbs
 echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop.ico" >> CreateShortcut1.vbs
 echo oLink.Description = "Launch BitDust software in background mode" >> CreateShortcut1.vbs
@@ -315,9 +315,9 @@ echo ALL DONE !!!!!!
 echo The main Python script is %HOMEDRIVE%%HOMEPATH%\.bitdust\src\bitdust.py
 echo Use desktop icons to start and stop BitDust software
 echo Starting BitDust software in background mode, this window can be closed now
-start %BITDUST_HOME%\python\pythonw.exe bitdust.py show
-rem cd "%DESKTOP_DIR1%"
-rem start "Start BitDust.lnk"
+rem start %BITDUST_HOME%\python\pythonw.exe bitdust.py show
+cd "%DESKTOP_DIR1%"
+"Start BitDust.lnk"
 
 
 cd %CURRENT_PATH%
