@@ -2,7 +2,7 @@
 
 
 set CURRENT_PATH=%cd%
-set BITDUST_FULL_HOME="%HOMEDRIVE%%HOMEPATH%\.bitdust"
+set BITDUST_FULL_HOME=%HOMEDRIVE%%HOMEPATH%\.bitdust
 echo Destination folder is %BITDUST_FULL_HOME%
 
 
@@ -18,25 +18,25 @@ exit
 
 :StartInstall
 echo Start installation
-SET CURRENT_PATH="%cd%"
+SET CURRENT_PATH=%cd%
 
 
-if not exist "%BITDUST_FULL_HOME%" echo Prepare destination folder
+if not exist "%BITDUST_FULL_HOME%" echo Prepare destination folder %BITDUST_FULL_HOME%
 if not exist "%BITDUST_FULL_HOME%" mkdir "%BITDUST_FULL_HOME%"
-cd "%BITDUST_FULL_HOME%"
 
 
-set SHORT_PATH_SCRIPT="shortpath.bat"
+set SHORT_PATH_SCRIPT=%BITDUST_FULL_HOME%\shortpath.bat
+set SHORT_PATH_OUT=%BITDUST_FULL_HOME%\shortpath.txt
 echo @echo OFF > "%SHORT_PATH_SCRIPT%"
-echo for %%%%f in ("%%cd%%") do @echo %%%%~sf >> "%SHORT_PATH_SCRIPT%"
-call shortpath.bat > shortpath.txt
-set /P BITDUST_HOME_0=<shortpath.txt
+echo echo %%~s1 >> "%SHORT_PATH_SCRIPT%"
+call "%SHORT_PATH_SCRIPT%" "%BITDUST_FULL_HOME%" > "%SHORT_PATH_OUT%"
+set /P BITDUST_HOME_0=<"%SHORT_PATH_OUT%"
 call :StripHome %BITDUST_HOME_0%
 :StripHome
 set BITDUST_HOME=%1
 echo Short and safe path is %BITDUST_HOME%
-del /Q shortpath.txt
-del /Q shortpath.bat
+del /Q "%SHORT_PATH_OUT%"
+del /Q "%SHORT_PATH_SCRIPT%"
 
 
 set TMPDIR=%TEMP%\BitDust_Install_TEMP
@@ -47,7 +47,7 @@ if not exist %TMPDIR%\site-packages mkdir %TMPDIR%\site-packages
 echo Prepared a temp folder %TMPDIR%
 
 
-cd %TMPDIR%
+cd /D %TMPDIR%
 
 
 echo Checking wget.exe
@@ -139,7 +139,7 @@ wget.exe -nv https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-prev
 
 echo Installing Git-1.9.5-preview20150319.exe to %BITDUST_HOME%\git
 if not exist %BITDUST_HOME%\git mkdir "%BITDUST_HOME%\git"
-Git-1.9.5-preview20150319.exe /DIR="%BITDUST_HOME%\git" /NOICONS /SILENT /NORESTART /COMPONENTS="icons,ext\reg\shellhere,assoc,assoc_sh"
+Git-1.9.5-preview20150319.exe /DIR="%BITDUST_HOME%\git" /NOICONS /SILENT /NORESTART /COMPONENTS=""
 
 
 :GitInstalled
@@ -164,25 +164,6 @@ echo Installing pywin32-219.win32-py2.7.exe
 :PyWin32Installed
 
 
-REM echo Checking for PyCrypto installed
-REM if exist "%BITDUST_HOME%\python\Lib\site-packages\pycrypto-2.6-py2.7-win32.egg" goto PyCryptoInstalled
-
-
-REM if exist pycrypto-2.6.win32-py2.7.exe goto PyCryptoDownloaded 
-REM echo Downloading pycrypto-2.6.win32-py2.7.exe
-REM wget.exe -nv http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe 2>NUL
-
-
-REM :PyCryptoDownloaded
-
-
-REM echo Installing pycrypto-2.6.win32-py2.7.exe
-REM %BITDUST_HOME%\python\python.exe -m easy_install pycrypto-2.6.win32-py2.7.exe 1>NUL
-
-
-REM :PyCryptoInstalled
-
-
 echo Installing dependencies using "pip" package manager
 echo pip install zope.interface
 %BITDUST_HOME%\python\python.exe -m pip -q install zope.interface
@@ -202,7 +183,7 @@ if not exist %BITDUST_HOME%\src echo Prepare sources folder
 if not exist %BITDUST_HOME%\src mkdir %BITDUST_HOME%\src
 
 
-cd %BITDUST_HOME%\src
+cd /D %BITDUST_HOME%\src
 
 
 if exist %BITDUST_HOME%\src\bitdust.py goto SourcesExist
@@ -236,49 +217,79 @@ echo Update binary extensions
 xcopy /E /H /R /Y deploy\windows\Python2.7.9\* %BITDUST_HOME%\python 1>NUL
 
 
-cd %TMPDIR%
+cd /D %TMPDIR%
 
 
-if not exist %BITDUST_HOME%\bin echo Prepare command-line aliases
+if not exist %BITDUST_HOME%\bin echo Create %BITDUST_HOME%\bin folder to make aliases for system commands
 if not exist %BITDUST_HOME%\bin mkdir %BITDUST_HOME%\bin
+
+
+echo Update system commands
 echo @echo off > %BITDUST_HOME%\bin\bitdustd.bat
-echo cd %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdustd.bat
+echo cd /D %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdustd.bat
 echo call %BITDUST_HOME%\python\python.exe bitdust.py %%* >> %BITDUST_HOME%\bin\bitdustd.bat
 echo pause >> %BITDUST_HOME%\bin\bitdustd.bat
 echo @echo off > %BITDUST_HOME%\bin\bitdust.bat
-echo cd %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdust.bat
+echo cd /D %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdust.bat
 echo start %BITDUST_HOME%\python\pythonw.exe bitdust.py %%* >> %BITDUST_HOME%\bin\bitdust.bat
 echo exit >> %BITDUST_HOME%\bin\bitdust.bat
 echo @echo off > %BITDUST_HOME%\bin\bitdust-sync.bat
-echo cd %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdust-sync.bat
+echo cd /D %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo echo Running command "git clean" >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo %BITDUST_HOME%\git\bin\git.exe clean -d -fx "" 1^>NUL >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo echo Running command "git reset" >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo %BITDUST_HOME%\git\bin\git.exe reset --hard origin/master >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo echo Running command "git pull" >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo %BITDUST_HOME%\git\bin\git.exe pull >> %BITDUST_HOME%\bin\bitdust-sync.bat
+echo echo Running command "python manage.py syncdb" >> %BITDUST_HOME%\bin\bitdust-sync.bat
+echo call %BITDUST_HOME%\python\python.exe manage.py syncdb >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo pause >> %BITDUST_HOME%\bin\bitdust-sync.bat
+echo @echo off > %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo cd /D %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo call %BITDUST_HOME%\python\python.exe bitdust.py stop >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo echo Running command "git clean" >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo %BITDUST_HOME%\git\bin\git.exe clean -d -fx "" 1^>NUL >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo echo Running command "git reset" >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo %BITDUST_HOME%\git\bin\git.exe reset --hard origin/master >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo echo Running command "git pull" >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo %BITDUST_HOME%\git\bin\git.exe pull >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo echo Running command "python manage.py syncdb" >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo call %BITDUST_HOME%\python\python.exe manage.py syncdb >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo start %BITDUST_HOME%\python\pythonw.exe bitdust.py %%* >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo exit >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
 
 
-echo Prepare Desktop icons
+echo Prepare Desktop icon
 echo set WshShell = WScript.CreateObject("WScript.Shell") > find_desktop.vbs
 echo strDesktop = WshShell.SpecialFolders("Desktop") >> find_desktop.vbs
 echo wscript.echo(strDesktop) >> find_desktop.vbs
 for /F "usebackq delims=" %%i in (`cscript find_desktop.vbs`) do set DESKTOP_DIR1=%%i
 rem echo Desktop folder is %DESKTOP_DIR1%
-
-
 set DESKTOP_REG_ENTRY="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 set DESKTOP_REG_KEY="Desktop"
 set DESKTOP_DIR=
 for /F "tokens=1,2*" %%a in ('REG QUERY %DESKTOP_REG_ENTRY% /v %DESKTOP_REG_KEY% ^| FINDSTR "REG_SZ"') do (
     set DESKTOP_DIR2=%%c
 )
-rem echo Desktop folder is %DESKTOP_DIR2%
+echo Desktop folder is %DESKTOP_DIR1%
+
+
+echo Updating shortcuts
+echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut0.vbs
+echo sLinkFile = "%DESKTOP_DIR2%\BitDust.lnk" >> CreateShortcut0.vbs
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut0.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%" >> CreateShortcut0.vbs
+echo oLink.Arguments = "" >> CreateShortcut0.vbs
+echo oLink.WorkingDirectory = "%BITDUST_HOME%" >> CreateShortcut0.vbs
+echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop.ico" >> CreateShortcut0.vbs
+echo oLink.Description = "Open root folder of BitDust Software" >> CreateShortcut0.vbs
+echo oLink.WindowStyle = "1" >> CreateShortcut0.vbs
+echo oLink.Save >> CreateShortcut0.vbs
+cscript //Nologo CreateShortcut0.vbs
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut1.vbs
-echo sLinkFile = "%DESKTOP_DIR2%\Start BitDust.lnk" >> CreateShortcut1.vbs
+echo sLinkFile = "%BITDUST_HOME%\START.lnk" >> CreateShortcut1.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut1.vbs
 echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdust.bat" >> CreateShortcut1.vbs
 echo oLink.Arguments = "show" >> CreateShortcut1.vbs
@@ -291,10 +302,10 @@ cscript //Nologo CreateShortcut1.vbs
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut2.vbs
-echo sLinkFile = "%DESKTOP_DIR2%\Start BitDust in debug mode.lnk" >> CreateShortcut2.vbs
+echo sLinkFile = "%BITDUST_HOME%\DEBUG.lnk" >> CreateShortcut2.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut2.vbs
 echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdustd.bat" >> CreateShortcut2.vbs
-echo oLink.Arguments = "show" >> CreateShortcut2.vbs
+echo oLink.Arguments = "--debug=10 show" >> CreateShortcut2.vbs
 echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut2.vbs
 echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop-debug.ico" >> CreateShortcut2.vbs
 echo oLink.Description = "Launch BitDust software in debug mode" >> CreateShortcut2.vbs
@@ -304,7 +315,7 @@ cscript //Nologo CreateShortcut2.vbs
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut3.vbs
-echo sLinkFile = "%DESKTOP_DIR2%\Stop BitDust.lnk" >> CreateShortcut3.vbs
+echo sLinkFile = "%BITDUST_HOME%\STOP.lnk" >> CreateShortcut3.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut3.vbs
 echo oLink.TargetPath = "%BITDUST_HOME%\python\pythonw.exe" >> CreateShortcut3.vbs
 echo oLink.Arguments = "bitdust.py stop" >> CreateShortcut3.vbs
@@ -317,9 +328,9 @@ cscript //Nologo CreateShortcut3.vbs
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut4.vbs
-echo sLinkFile = "%DESKTOP_DIR2%\Synchronize BitDust sources.lnk" >> CreateShortcut4.vbs
+echo sLinkFile = "%BITDUST_HOME%\SYNCHRONIZE.lnk" >> CreateShortcut4.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut4.vbs
-echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdust-sync.bat" >> CreateShortcut4.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdust-sync-restart.bat" >> CreateShortcut4.vbs
 echo oLink.Arguments = "" >> CreateShortcut4.vbs
 echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut4.vbs
 echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop-sync.ico" >> CreateShortcut4.vbs
@@ -329,7 +340,20 @@ echo oLink.Save >> CreateShortcut4.vbs
 cscript //Nologo CreateShortcut4.vbs
 
 
-cd %BITDUST_HOME%\src
+echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut5.vbs
+echo sLinkFile = "%BITDUST_HOME%\SYNC&RESTART.lnk" >> CreateShortcut5.vbs
+echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut5.vbs
+echo oLink.TargetPath = "%BITDUST_HOME%\bin\bitdust-sync-restart.bat" >> CreateShortcut5.vbs
+echo oLink.Arguments = "" >> CreateShortcut5.vbs
+echo oLink.WorkingDirectory = "%BITDUST_HOME%\src" >> CreateShortcut5.vbs
+echo oLink.IconLocation = "%BITDUST_HOME%\src\icons\desktop-sync.ico" >> CreateShortcut5.vbs
+echo oLink.Description = "Synchronize BitDust sources from public repository at http://gitlab.bitdust.io/devel/bitdust/" >> CreateShortcut5.vbs
+echo oLink.WindowStyle = "2" >> CreateShortcut5.vbs
+echo oLink.Save >> CreateShortcut5.vbs
+cscript //Nologo CreateShortcut5.vbs
+
+
+cd /D %BITDUST_HOME%\src
 
 
 echo Prepare Django db, run command "python manage.py syncdb"
@@ -340,19 +364,28 @@ call %BITDUST_HOME%\python\python.exe manage.py syncdb 1>NUL
 echo ALL DONE !!!!!!
 @echo.
 echo A python script %HOMEDRIVE%%HOMEPATH%\.bitdust\src\bitdust.py is main entry point to run the software.
-echo Use desktop icons to start and stop BitDust at any time.
-echo To be sure you are running the latest version use "Synchronize BitDust sources" icon.
+echo You can click on the new icon created on the desktop to open the root application folder.
+echo Use shortcuts in there to control BitDust at any time:
+echo     START :        execute the main process and/or open the web browser to access the user interface
+echo     STOP:          stop (or kill) the main BitDust process completely
+echo     SYNCHRONIZE:   update BitDust sources from the public repository
+echo     SYNC^&RESTART:  update sources and restart the software softly in background
+echo     DEBUG:         run the program in debug mode and watch the full log
 @echo.
-echo Starting BitDust software in background mode, this window can be closed now.
-echo Your WEB browser will be opened at the moment and you will see the starting page of BitDust Software.
+echo To be sure you are running the latest version use "SYNCHRONIZE" and "SYNC&RESTART" shortcuts.
+echo You may want to copy "SYNC&RESTART" shortcut to Startup folder in the Windows Start menu to start the program during bootup process and keep it fresh and ready.
+@echo.
+echo Now executing "START" command and running BitDust software in background mode, this window can be closed now.
+echo Your web browser will be opened at the moment and you will see the starting page.
+@echo.
+echo Welcome to the Bit Dust World !!!.
 @echo.
 
+cd /D "%BITDUST_HOME%"
+"START.lnk"
 
-cd "%DESKTOP_DIR1%"
-"Start BitDust.lnk"
 
-
-cd %CURRENT_PATH%
+cd /D %CURRENT_PATH%
 @echo.
 
 
