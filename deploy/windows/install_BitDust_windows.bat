@@ -6,7 +6,7 @@ set BITDUST_FULL_HOME="%HOMEDRIVE%%HOMEPATH%\.bitdust"
 echo Destination folder is %BITDUST_FULL_HOME%
 
 
-if exist %BITDUST_FULL_HOME%\python\python.exe goto StartInstall
+if exist "%BITDUST_FULL_HOME%\python\python.exe" goto StartInstall
 python --version 2>NUL
 if errorlevel 1 goto StartInstall
 echo Python already installed on your machine.
@@ -18,11 +18,11 @@ exit
 
 :StartInstall
 echo Start installation
-SET CURRENT_PATH=%cd%
+SET CURRENT_PATH="%cd%"
 
 
-if not exist %BITDUST_FULL_HOME% echo Prepare destination folder
-if not exist %BITDUST_FULL_HOME% mkdir %BITDUST_FULL_HOME%
+if not exist "%BITDUST_FULL_HOME%" echo Prepare destination folder
+if not exist "%BITDUST_FULL_HOME%" mkdir "%BITDUST_FULL_HOME%"
 cd "%BITDUST_FULL_HOME%"
 
 
