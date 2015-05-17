@@ -7,8 +7,16 @@ echo Destination folder is %BITDUST_FULL_HOME%
 
 
 if exist "%BITDUST_FULL_HOME%\python\python.exe" goto StartInstall
-python --version 2>NUL
+
+
+python --version 1>NUL 2>NUL
 if errorlevel 1 goto StartInstall
+reg query "hkcu\software\Python"
+if errorlevel 1 goto StartInstall
+reg query "hklm\software\Python"
+if errorlevel 1 goto StartInstall
+
+
 echo Python already installed on your machine.
 echo Please install BitDust software manually by following this howto: 
 echo     http://bitdust.io/install.html
