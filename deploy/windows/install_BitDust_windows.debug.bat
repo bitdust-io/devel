@@ -112,7 +112,7 @@ if exist %BITDUST_HOME%\python\python.exe goto PythonInstalled
 
 if exist python-2.7.9.msi goto PythonDownloaded 
 echo Downloading python-2.7.9.msi
-wget.exe -nv https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-certificate 2>NUL
+wget.exe -nv https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-certificate 
 
 
 :PythonDownloaded
@@ -145,7 +145,7 @@ if exist %BITDUST_HOME%\git\bin\git.exe goto GitInstalled
 
 if exist Git-1.9.5-preview20150319.exe goto GitDownloaded 
 echo Downloading Git-1.9.5-preview20150319.exe
-wget.exe -nv https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-preview20150319/Git-1.9.5-preview20150319.exe --no-check-certificate 2>NUL
+wget.exe -nv https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-preview20150319/Git-1.9.5-preview20150319.exe --no-check-certificate 
 
 
 :GitDownloaded
@@ -165,14 +165,14 @@ if exist %BITDUST_HOME%\python\Lib\site-packages\pywin32-219-py2.7-win32.egg\win
 
 if exist pywin32-219.win32-py2.7.exe goto PyWin32Downloaded 
 echo Downloading pywin32-219.win32-py2.7.exe
-wget.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywin32-219.win32-py2.7.exe/download" -O "%TMPDIR%\pywin32-219.win32-py2.7.exe" 2>NUL
+wget.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywin32-219.win32-py2.7.exe/download" -O "%TMPDIR%\pywin32-219.win32-py2.7.exe" 
 
 
 :PyWin32Downloaded
 
 
 echo Installing pywin32-219.win32-py2.7.exe
-%BITDUST_HOME%\python\python.exe -m easy_install pywin32-219.win32-py2.7.exe -e -b %TMPDIR% 1>NUL 2>NUL
+%BITDUST_HOME%\python\python.exe -m easy_install pywin32-219.win32-py2.7.exe -e -b %TMPDIR% 
 
 
 :PyWin32Installed
@@ -180,19 +180,19 @@ echo Installing pywin32-219.win32-py2.7.exe
 
 echo Installing dependencies using "pip" package manager
 echo pip install cryptography
-%BITDUST_HOME%\python\python.exe -m pip -q install cryptography
+%BITDUST_HOME%\python\python.exe -m pip  install cryptography
 echo pip install zope.interface
-%BITDUST_HOME%\python\python.exe -m pip -q install zope.interface
+%BITDUST_HOME%\python\python.exe -m pip  install zope.interface
 echo pip install service_identity
-%BITDUST_HOME%\python\python.exe -m pip -q install service_identity
+%BITDUST_HOME%\python\python.exe -m pip  install service_identity
 echo pip install pyOpenSSL 
-%BITDUST_HOME%\python\python.exe -m pip -q install pyOpenSSL 
+%BITDUST_HOME%\python\python.exe -m pip  install pyOpenSSL 
 echo pip install pyasn1 
-%BITDUST_HOME%\python\python.exe -m pip -q install pyasn1 
+%BITDUST_HOME%\python\python.exe -m pip  install pyasn1 
 echo pip install twisted 
-%BITDUST_HOME%\python\python.exe -m pip -q install twisted
+%BITDUST_HOME%\python\python.exe -m pip  install twisted
 echo pip install Django==1.7
-%BITDUST_HOME%\python\python.exe -m pip -q install Django==1.7
+%BITDUST_HOME%\python\python.exe -m pip  install Django==1.7
 
 
 if not exist %BITDUST_HOME%\src echo Prepare sources folder
@@ -214,11 +214,11 @@ echo Update sources
 
 
 echo Running command "git clean"
-%BITDUST_HOME%\git\bin\git.exe clean -d -fx "" 1>NUL
+%BITDUST_HOME%\git\bin\git.exe clean -d -fx "" 
 
 
 echo Running command "git reset"
-%BITDUST_HOME%\git\bin\git.exe reset --hard origin/master 1>NUL
+%BITDUST_HOME%\git\bin\git.exe reset --hard origin/master 
 
 
 echo Running command "git pull"
@@ -230,7 +230,7 @@ rem call %BITDUST_HOME%\python\python.exe bitdust.py stop
 
 
 echo Update binary extensions
-xcopy /E /H /R /Y deploy\windows\Python2.7.9\* %BITDUST_HOME%\python 1>NUL
+xcopy /E /H /R /Y deploy\windows\Python2.7.9\* %BITDUST_HOME%\python 
 
 
 cd /D %TMPDIR%
@@ -373,7 +373,7 @@ cd /D %BITDUST_HOME%\src
 
 
 echo Prepare Django db, run command "python manage.py syncdb"
-call %BITDUST_HOME%\python\python.exe manage.py syncdb 1>NUL
+call %BITDUST_HOME%\python\python.exe manage.py syncdb 
 
 
 @echo.
