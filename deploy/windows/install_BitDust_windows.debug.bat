@@ -118,11 +118,10 @@ if exist python-2.7.9.msi goto PythonDownloaded
 echo Downloading python-2.7.9.msi
 wget.exe -nv https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-certificate 
 :PythonDownloaded
-
-
-echo Installing python-2.7.9.msi to %BITDUST_HOME%\python
+echo Extracting python-2.7.9.msi to %BITDUST_HOME%\python
 if not exist %BITDUST_HOME%\python mkdir %BITDUST_HOME%\python
 msiexec /i python-2.7.9.msi /qb /norestart /l python-2.7.9.install.log TARGETDIR=%BITDUST_HOME%\python ALLUSERS=1
+rem msiexec /a
 set msierror=%errorlevel%
 if %msierror%==0 goto :PythonInstalled
 if %msierror%==1641 goto :PythonInstalled
@@ -182,21 +181,19 @@ xcopy pycrypto\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
 :PyCryptoInstalled
 
 
-echo Installing dependencies using "pip" package manager
-echo pip install zope.interface
-%BITDUST_HOME%\python\python.exe -m pip  install zope.interface
-echo pip install pyOpenSSL 
-%BITDUST_HOME%\python\python.exe -m pip  install pyOpenSSL 
-echo pip install pyasn1 
-%BITDUST_HOME%\python\python.exe -m pip  install pyasn1 
-echo pip install twisted 
-%BITDUST_HOME%\python\python.exe -m pip  install twisted
-rem echo pip install cryptography
-rem %BITDUST_HOME%\python\python.exe -m pip  install cryptography
-rem echo pip install service_identity
-rem %BITDUST_HOME%\python\python.exe -m pip  install service_identity
-echo pip install Django==1.7
-%BITDUST_HOME%\python\python.exe -m pip  install Django==1.7
+echo Installing dependencies with easy_install
+%BITDUST_HOME%\python\python.exe -m easy_install zope.interface pyOpenSSL pyasn1 twisted Django==1.7
+
+REM echo pip install zope.interface
+REM %BITDUST_HOME%\python\python.exe -m pip install zope.interface 
+REM echo pip install pyOpenSSL 
+REM %BITDUST_HOME%\python\python.exe -m pip install pyOpenSSL 
+REM echo pip install pyasn1 
+REM %BITDUST_HOME%\python\python.exe -m pip install pyasn1 
+REM echo pip install twisted 
+REM %BITDUST_HOME%\python\python.exe -m pip install twisted
+REM echo pip install Django==1.7
+REM %BITDUST_HOME%\python\python.exe -m pip  install Django==1.7
 
 
 if not exist %BITDUST_HOME%\src echo Prepare sources folder
