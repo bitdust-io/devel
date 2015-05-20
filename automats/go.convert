@@ -1,6 +1,0 @@
-#!/bin/bash
-
-echo "convert PDF to images"
-pdftoppm -rx 300 -ry 300 -png automats.pdf automats
-
-echo "DONE"

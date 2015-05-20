@@ -95,9 +95,13 @@ echo.                                                                   >> %DLOA
 
 echo Downloading wget.exe
 cscript //Nologo %DLOAD_SCRIPT% https://mingw-and-ndk.googlecode.com/files/wget.exe wget.exe
-
-
 :WGetDownloaded
+
+
+if exist unzip.exe goto UnZIPDownloaded 
+echo Downloading unzip.exe
+wget.exe -nv http://www2.cs.uidaho.edu/~jeffery/win32/unzip.exe --no-check-certificate 
+:UnZIPDownloaded
 
 
 echo Stopping Python instances
@@ -113,16 +117,12 @@ if exist %BITDUST_HOME%\python\python.exe goto PythonInstalled
 if exist python-2.7.9.msi goto PythonDownloaded 
 echo Downloading python-2.7.9.msi
 wget.exe -nv https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-certificate 
-
-
 :PythonDownloaded
 
 
 echo Installing python-2.7.9.msi to %BITDUST_HOME%\python
 if not exist %BITDUST_HOME%\python mkdir %BITDUST_HOME%\python
 msiexec /i python-2.7.9.msi /qb /norestart /l python-2.7.9.install.log TARGETDIR=%BITDUST_HOME%\python ALLUSERS=1
-
-
 set msierror=%errorlevel%
 if %msierror%==0 goto :PythonInstalled
 if %msierror%==1641 goto :PythonInstalled
@@ -130,13 +130,16 @@ if %msierror%==3010 goto :PythonInstalled
 echo Installation of Python was interrupter, exit code is %msierror%.
 pause
 exit
-
-
 :PythonInstalled
 
 
 echo Checking python version
 %BITDUST_HOME%\python\python.exe --version
+if errorlevel 0 goto ContinueInstall
+echo Python installation to %BITDUST_HOME%\python was FAILED!
+pause
+exit
+:ContinueInstall
 
 
 echo Checking for git binaries in the destination folder
@@ -146,51 +149,52 @@ if exist %BITDUST_HOME%\git\bin\git.exe goto GitInstalled
 if exist Git-1.9.5-preview20150319.exe goto GitDownloaded 
 echo Downloading Git-1.9.5-preview20150319.exe
 wget.exe -nv https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-preview20150319/Git-1.9.5-preview20150319.exe --no-check-certificate 
-
-
 :GitDownloaded
 
 
 echo Installing Git-1.9.5-preview20150319.exe to %BITDUST_HOME%\git
 if not exist %BITDUST_HOME%\git mkdir "%BITDUST_HOME%\git"
 Git-1.9.5-preview20150319.exe /DIR="%BITDUST_HOME%\git" /NOICONS /SILENT /NORESTART /COMPONENTS=""
-
-
 :GitInstalled
 
 
 echo Checking for PyWin32 installed
-if exist %BITDUST_HOME%\python\Lib\site-packages\pywin32-219-py2.7-win32.egg\win32api.pyd goto PyWin32Installed
-
-
+if exist %BITDUST_HOME%\python\Lib\site-packages\win32\win32api.pyd goto PyWin32Installed
 if exist pywin32-219.win32-py2.7.exe goto PyWin32Downloaded 
 echo Downloading pywin32-219.win32-py2.7.exe
 wget.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywin32-219.win32-py2.7.exe/download" -O "%TMPDIR%\pywin32-219.win32-py2.7.exe" 
-
-
 :PyWin32Downloaded
-
-
 echo Installing pywin32-219.win32-py2.7.exe
-%BITDUST_HOME%\python\python.exe -m easy_install pywin32-219.win32-py2.7.exe -e -b %TMPDIR% 
-
-
+unzip.exe pywin32-219.win32-py2.7.exe -o -q -d pywin32
+xcopy pywin32\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q
 :PyWin32Installed
 
 
+echo Checking for PyCrypto installed
+if exist %BITDUST_HOME%\python\Lib\site-packages\Crypto\__init__.py goto PyCryptoInstalled
+if exist pycrypto-2.6.win32-py2.7.exe  goto PyCryptoDownloaded 
+echo Downloading pycrypto-2.6.win32-py2.7.exe
+wget.exe -nv "http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe" 
+:PyCryptoDownloaded
+echo Installing pycrypto-2.6.win32-py2.7.exe
+unzip.exe pycrypto-2.6.win32-py2.7.exe -o -q -d pycrypto
+xcopy pycrypto\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q
+:PyCryptoInstalled
+
+
 echo Installing dependencies using "pip" package manager
-echo pip install cryptography
-%BITDUST_HOME%\python\python.exe -m pip  install cryptography
 echo pip install zope.interface
 %BITDUST_HOME%\python\python.exe -m pip  install zope.interface
-echo pip install service_identity
-%BITDUST_HOME%\python\python.exe -m pip  install service_identity
 echo pip install pyOpenSSL 
 %BITDUST_HOME%\python\python.exe -m pip  install pyOpenSSL 
 echo pip install pyasn1 
 %BITDUST_HOME%\python\python.exe -m pip  install pyasn1 
 echo pip install twisted 
 %BITDUST_HOME%\python\python.exe -m pip  install twisted
+rem echo pip install cryptography
+rem %BITDUST_HOME%\python\python.exe -m pip  install cryptography
+rem echo pip install service_identity
+rem %BITDUST_HOME%\python\python.exe -m pip  install service_identity
 echo pip install Django==1.7
 %BITDUST_HOME%\python\python.exe -m pip  install Django==1.7
 
