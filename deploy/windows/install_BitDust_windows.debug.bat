@@ -2,7 +2,8 @@
 
 
 set CURRENT_PATH=%cd%
-set BITDUST_FULL_HOME=%HOMEDRIVE%%HOMEPATH%\.bitdust
+rem set BITDUST_FULL_HOME=%HOMEDRIVE%%HOMEPATH%\.bitdust
+set BITDUST_FULL_HOME=%AllUsersProfile%\.bitdust
 echo Destination folder is %BITDUST_FULL_HOME%
 
 
@@ -45,13 +46,15 @@ set BITDUST_HOME=%1
 echo Short and safe path is %BITDUST_HOME%
 del /Q "%SHORT_PATH_OUT%"
 del /Q "%SHORT_PATH_SCRIPT%"
+rem set HOME_CUR=%HOME%
+rem set HOME=%BITDUST_HOME%
 
 
 set TMPDIR=%TEMP%\BitDust_Install_TEMP
 rem set TMPDIR=%TEMP%\BitDust_Install_TEMP.%RANDOM%
 rem if exist "%TMPDIR%\NUL" rmdir /S /Q %TMPDIR%
 rem mkdir %TMPDIR%
-if not exist %TMPDIR%\site-packages mkdir %TMPDIR%\site-packages
+if not exist %TMPDIR% mkdir %TMPDIR%
 echo Prepared a temp folder %TMPDIR%
 
 
@@ -104,6 +107,27 @@ wget0.exe  http://www2.cs.uidaho.edu/~jeffery/win32/unzip.exe --no-check-certifi
 :UnZIPDownloaded
 
 
+set EXTRACT_SCRIPT="msiextract.vbs"
+echo Set args = Wscript.Arguments > %EXTRACT_SCRIPT%
+echo Set objShell = CreateObject("Wscript.Shell") >> %EXTRACT_SCRIPT%
+echo objCommand ^= ^"msiexec /a ^" ^& Chr(34) ^& args(0) ^& Chr(34) ^& ^" /qb TargetDir^=^" ^& Chr(34) ^& args(1) ^& Chr(34) >> %EXTRACT_SCRIPT%
+echo objShell.Run objCommand, 1, true >> %EXTRACT_SCRIPT%
+
+
+set SUBSTITUTE="substitute.vbs"
+echo strFileName ^= Wscript.Arguments(0) > %SUBSTITUTE%
+echo strOldText ^= Wscript.Arguments(1) >> %SUBSTITUTE%
+echo strNewText ^= Wscript.Arguments(2) >> %SUBSTITUTE%
+echo Set objFSO = CreateObject("Scripting.FileSystemObject") >> %SUBSTITUTE%
+echo Set objFile = objFSO.OpenTextFile(strFileName, 1) >> %SUBSTITUTE%
+echo strText = objFile.ReadAll >> %SUBSTITUTE%
+echo objFile.Close >> %SUBSTITUTE%
+echo strNewText = Replace(strText, strOldText, strNewText) >> %SUBSTITUTE%
+echo Set objFile = objFSO.OpenTextFile(strFileName, 2) >> %SUBSTITUTE%
+echo objFile.WriteLine strNewText >> %SUBSTITUTE%
+echo objFile.Close >> %SUBSTITUTE%
+
+
 echo Stopping Python instances
 tasklist /FI "IMAGENAME eq bitdust.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bitdust.exe" >NUL && ( taskkill  /IM bitdust.exe /F /T )
 tasklist /FI "IMAGENAME eq bpstarter.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bpstarter.exe" >NUL && ( taskkill  /IM bpstarter.exe /F /T )
@@ -124,20 +148,7 @@ wget0.exe  https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-c
 :PythonDownloaded
 echo Extracting python-2.7.9.msi to %BITDUST_HOME%\python
 if not exist %BITDUST_HOME%\python mkdir %BITDUST_HOME%\python
-set EXTRACT_SCRIPT="msiextract.vbs"
-echo Set args = Wscript.Arguments > %EXTRACT_SCRIPT%
-echo Set objShell = CreateObject("Wscript.Shell") >> %EXTRACT_SCRIPT%
-echo objCommand ^= ^"msiexec /a ^" ^& Chr(34) ^& args(0) ^& Chr(34) ^& ^" /qb TargetDir^=^" ^& Chr(34) ^& args(1) ^& Chr(34) >> %EXTRACT_SCRIPT%
-echo objShell.Run objCommand, 1, true >> %EXTRACT_SCRIPT%
 cscript //Nologo %EXTRACT_SCRIPT% python-2.7.9.msi %BITDUST_HOME%\python
-rem msiexec /i python-2.7.9.msi /qb /norestart /l python-2.7.9.install.log TARGETDIR=%BITDUST_HOME%\python ALLUSERS=1
-rem set msierror=%errorlevel%
-rem if %msierror%==0 goto :PythonInstalled
-rem if %msierror%==1641 goto :PythonInstalled
-rem if %msierror%==3010 goto :PythonInstalled
-rem echo Installation of Python was interrupter, exit code is %msierror%.
-rem pause
-rem exit
 echo Verifying Python binaries
 if exist %BITDUST_HOME%\python\python.exe goto PythonInstalled
 echo Python installation to %BITDUST_HOME%\python was failed!
@@ -155,18 +166,42 @@ exit
 :ContinueInstall
 
 
+REM echo Checking for Visual C compiler
+REM if exist %BITDUST_HOME%\vc goto VCForPython27Installed
+REM if exist VCForPython27.msi goto VCForPython27Downloaded 
+REM echo Downloading VCForPython27.msi
+REM wget0.exe  http://download.microsoft.com/download/7/9/6/796EF2E4-801B-4FC4-AB28-B59FBF6D907B/VCForPython27.msi 
+REM :VCForPython27Downloaded
+REM echo Installing VCForPython27.msi to %BITDUST_HOME%\vc 
+REM msiexec /i VCForPython27.msi /qb /norestart /l vc.install.log TARGETDIR=%BITDUST_HOME%\vc
+REM rem if not exist %BITDUST_HOME%\python\vc mkdir %BITDUST_HOME%\python\vc
+REM rem cscript //Nologo %EXTRACT_SCRIPT% VCForPython27.msi %BITDUST_HOME%\python\vc
+REM rem call "%BITDUST_HOME%\python\vc\Microsoft\Visual C++ for Python\9.0\vcvarsall.bat" 
+REM :VCForPython27Installed
+
+
 echo Checking for easy_install
 if exist %BITDUST_HOME%\python\Scripts\easy_install.exe goto EasyInstallInstalled
 echo Installing setuptools
-wget0  https://bootstrap.pypa.io/ez_setup.py --no-check-certificate 
+wget0  https://bootstrap.pypa.io/ez_setup.py -O "ez_setup.py" --no-check-certificate 
 %BITDUST_HOME%\python\python.exe ez_setup.py
 :EasyInstallInstalled
 
 
+echo Checking for pip installed
+if exist %BITDUST_HOME%\python\Scripts\pip.exe goto PipInstalled
+echo Installing pip
+%BITDUST_HOME%\python\python.exe -m easy_install pip
+if not exist %BITDUST_HOME%\python\Lib\site-packages\pip-6.1.1-py2.7.egg\pip\_vendor\lockfile\__init__.py goto PipInstalled
+echo Putting a bug fix into pip source code at %BITDUST_HOME%\python\Lib\site-packages\pip-6.1.1-py2.7.egg\pip\_vendor\lockfile\__init__.py
+cscript //Nologo %SUBSTITUTE% %BITDUST_HOME%\python\Lib\site-packages\pip-6.1.1-py2.7.egg\pip\_vendor\lockfile\__init__.py "socket.gethostname()" "hash(socket.gethostname())" 
+rem del %BITDUST_HOME%\python\Lib\site-packages\pip-6.1.1-py2.7.egg\pip\_vendor\lockfile\__init__.py /F /S /Q
+rem xcopy __init__.py %BITDUST_HOME%\python\Lib\site-packages\pip-6.1.1-py2.7.egg\pip\_vendor\lockfile /E /I /Q /Y
+:PipInstalled
+
+
 echo Checking for git binaries in the destination folder
 if exist %BITDUST_HOME%\git\bin\git.exe goto GitInstalled
-
-
 if exist Git-1.9.5-preview20150319.exe goto GitDownloaded 
 echo Downloading Git-1.9.5-preview20150319.exe
 wget0.exe  https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-preview20150319/Git-1.9.5-preview20150319.exe --no-check-certificate 
@@ -186,6 +221,7 @@ wget0.exe  "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywi
 echo Installing pywin32-219.win32-py2.7.exe
 unzip.exe -o -q pywin32-219.win32-py2.7.exe -d pywin32
 xcopy pywin32\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
+xcopy pywin32\PLATLIB\pywin32_system32\*.dll %BITDUST_HOME%\python\Lib\site-packages\win32 /E /I /Q /Y
 :PyWin32Installed
 
 
@@ -199,10 +235,6 @@ echo Installing pycrypto-2.6.win32-py2.7.exe
 unzip.exe -o -q pycrypto-2.6.win32-py2.7.exe -d pycrypto
 xcopy pycrypto\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
 :PyCryptoInstalled
-
-
-echo Installing dependencies with easy_install
-%BITDUST_HOME%\python\python.exe -m easy_install -Z -O2 -a -U -N zope.interface pyOpenSSL pyasn1 twisted Django==1.7
 
 
 if not exist %BITDUST_HOME%\src echo Prepare sources folder
@@ -231,6 +263,54 @@ echo Running command "git pull"
 
 echo Update binary extensions
 xcopy deploy\windows\Python2.7.9\* %BITDUST_HOME%\python /E /H /R /Y 
+
+
+echo Installing dependencies with pip package manager
+%BITDUST_HOME%\python\Scripts\pip.exe install zope.interface
+%BITDUST_HOME%\python\Scripts\pip.exe install pyOpenSSL
+%BITDUST_HOME%\python\Scripts\pip.exe install pyasn1
+%BITDUST_HOME%\python\Scripts\pip.exe install service_identity
+%BITDUST_HOME%\python\Scripts\pip.exe install Twisted
+%BITDUST_HOME%\python\Scripts\pip.exe install six>=1.5.2
+%BITDUST_HOME%\python\Scripts\pip.exe install cffi>=0.8
+rem %BITDUST_HOME%\python\Scripts\pip.exe install https://pypi.python.org/packages/cp27/c/cryptography/cryptography-0.2.2-cp27-none-win32.whl#md5=7f3979da8340a7fe3aa859d3bfc1a5f1
+%BITDUST_HOME%\python\Scripts\pip.exe install cryptography
+%BITDUST_HOME%\python\Scripts\pip.exe install idna
+%BITDUST_HOME%\python\Scripts\pip.exe install enum34
+%BITDUST_HOME%\python\Scripts\pip.exe install ipaddress
+%BITDUST_HOME%\python\Scripts\pip.exe install pycparser
+%BITDUST_HOME%\python\Scripts\pip.exe install Django==1.7
+
+
+REM echo Installing dependencies with easy_install
+REM if not exist %TMPDIR%\python mkdir %TMPDIR%\python
+REM if not exist %TMPDIR%\python\Scripts mkdir %TMPDIR%\python\Scripts
+REM if not exist %TMPDIR%\python\Lib mkdir %TMPDIR%\python\Lib
+REM if not exist %TMPDIR%\python\Lib\site-packages mkdir %TMPDIR%\python\Lib\site-packages
+REM del %TMPDIR%\python\* /F /S /Q 1>NUL 2>NUL
+REM set PYTHONPATH_TEMP=%PYTHONPATH%
+REM set PYTHONPATH=%TMPDIR%\python\Lib\site-packages
+rem set DISTUTILS_USE_SDK=1
+rem set MSSdk=1
+rem xcopy %BITDUST_HOME%\python\Scripts\* %TMPDIR%\python\Script /E /I /Q /Y
+
+REM cd /D %BITDUST_HOME%\python
+REM python.exe -m easy_install -Z -O2 -a -U zope.interface
+REM python.exe -m easy_install -Z -O2 -a -U pyOpenSSL
+REM python.exe -m easy_install -Z -O2 -a -U pyasn1
+REM python.exe -m easy_install -Z -O2 -a -U twisted
+REM python.exe -m easy_install -Z -O2 -a -U six>=1.5.2
+REM python.exe -m easy_install -Z -O2 -a -U idna
+REM python.exe -m easy_install -Z -O2 -a -U enum34
+REM python.exe -m easy_install -Z -O2 -a -U ipaddress
+REM python.exe -m easy_install -Z -O2 -a -U cffi>=0.8
+REM python.exe -m easy_install -Z -O2 -a -U pycparser
+REM python.exe -m easy_install -Z -O2 -a -U cryptography>=0.7
+REM python.exe -m easy_install -Z -O2 -a -U Django==1.7
+
+REM xcopy %TMPDIR%\python\*.egg %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
+REM xcopy %TMPDIR%\python\easy_install.pth %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
+REM if %PYTHONPATH_TEMP% set PYTHONPATH=%PYTHONPATH_TEMP%
 
 
 cd /D %TMPDIR%
