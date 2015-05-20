@@ -12,9 +12,9 @@ if exist "%BITDUST_FULL_HOME%\python\python.exe" goto StartInstall
 
 python --version 1>NUL 2>NUL
 if errorlevel 1 goto StartInstall
-reg query "hkcu\software\Python"
+reg query "hkcu\software\Python" 1>NUL 2>NUL
 if errorlevel 1 goto StartInstall
-reg query "hklm\software\Python"
+reg query "hklm\software\Python" 1>NUL 2>NUL
 if errorlevel 1 goto StartInstall
 
 
@@ -57,6 +57,37 @@ echo Prepared a temp folder %TMPDIR%
 
 
 cd /D %TMPDIR%
+
+
+set FINISHED="%TMPDIR%\finished.bat"
+echo @echo off > %FINISHED%
+echo echo. >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo INSTALLATION SUCCESSFULLY FINISHED !!! >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo A python script %HOMEDRIVE%%HOMEPATH%\.bitdust\src\bitdust.py is main entry point to run the software. >> %FINISHED%
+echo echo You can click on the new icon created on the desktop to open the root application folder. >> %FINISHED%
+echo echo Use shortcuts in there to control BitDust at any time: >> %FINISHED%
+echo echo     START:            execute the main process and/or open the web browser to access the user interface >> %FINISHED%
+echo echo     STOP:             stop (or kill) the main BitDust process completely >> %FINISHED%
+echo echo     SYNCHRONIZE:      update BitDust sources from the public repository >> %FINISHED%
+echo echo     SYNC^^^&RESTART:     update sources and restart the software softly in background >> %FINISHED%
+echo echo     DEBUG:            run the program in debug mode so you can watch the full program output >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo To be sure you are running the latest version use "SYNCHRONIZE" and "SYNC&RESTART" shortcuts. >> %FINISHED%
+echo echo You may want to copy "SYNC^&RESTART" shortcut to Startup folder in the Windows Start menu to start the program during bootup process - jsut to keep it fresh and updated. >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo Now executing "START" command and running BitDust software in background mode, this window can be closed now. >> %FINISHED%
+echo echo Your web browser will be opened at the moment and you will see the starting page. >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo Welcome to the Bit Dust World !!!. >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo. >> %FINISHED%
+echo echo. >> %FINISHED%
+rem echo pause >> %FINISHED%
 
 
 echo Checking wget.exe
@@ -329,7 +360,6 @@ set DESKTOP_REG_ENTRY="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\S
 set DESKTOP_REG_KEY="Desktop"
 set DESKTOP_DIR2=
 for /F "tokens=1,2*" %%a in ('REG QUERY %DESKTOP_REG_ENTRY% /v %DESKTOP_REG_KEY% ^| FINDSTR "REG_SZ"') do ( set DESKTOP_DIR2=%%c )
-if %errorlevel% neq 0 goto EXIT
 echo Desktop folder is %DESKTOP_DIR1%
 
 
@@ -346,7 +376,8 @@ echo oLink.WindowStyle = "1" >> CreateShortcut0.vbs
 echo oLink.Save >> CreateShortcut0.vbs
 cscript //Nologo CreateShortcut0.vbs
 if %errorlevel% neq 0 goto EXIT
-xcopy BitDust.lnk "%DESKTOP_DIR2%" /Y
+del /Q "%DESKTOP_DIR1%\BitDust.lnk"
+xcopy "BitDust.lnk" "%DESKTOP_DIR1%" /Q /Y
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut1.vbs
@@ -427,38 +458,15 @@ call %BITDUST_HOME%\python\python.exe manage.py syncdb
 if %errorlevel% neq 0 goto EXIT
 
 
-@echo.
-@echo.
-@echo.
-echo INSTALLATION SUCCESSFULLY FINISHED !!!
-@echo.
-echo A python script %HOMEDRIVE%%HOMEPATH%\.bitdust\src\bitdust.py is main entry point to run the software.
-echo You can click on the new icon created on the desktop to open the root application folder.
-echo Use shortcuts in there to control BitDust at any time:
-echo     START :        execute the main process and/or open the web browser to access the user interface
-echo     STOP:          stop (or kill) the main BitDust process completely
-echo     SYNCHRONIZE:   update BitDust sources from the public repository
-echo     SYNC^&RESTART:  update sources and restart the software softly in background
-echo     DEBUG:         run the program in debug mode so you can watch the full program output
-@echo.
-echo To be sure you are running the latest version use "SYNCHRONIZE" and "SYNC&RESTART" shortcuts.
-echo You may want to copy "SYNC&RESTART" shortcut to Startup folder in the Windows Start menu to start the program during bootup process and keep it fresh and ready.
-@echo.
-echo Now executing "START" command and running BitDust software in background mode, this window can be closed now.
-echo Your web browser will be opened at the moment and you will see the starting page.
-@echo.
-echo Welcome to the Bit Dust World !!!.
-@echo.
-@echo.
-
 cd /D "%BITDUST_HOME%"
 "START.lnk"
+cd /D "%CURRENT_PATH%"
 
 
-cd /D %CURRENT_PATH%
-@echo.
+cmd.exe /k cmd /c %FINISHED%
+exit
 
 
 :EXIT
 pause
-exit /b %errorlevel%
+rem exit /b %errorlevel%
