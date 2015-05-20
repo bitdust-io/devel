@@ -165,7 +165,7 @@ echo Downloading pywin32-219.win32-py2.7.exe
 wget.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywin32-219.win32-py2.7.exe/download" -O "%TMPDIR%\pywin32-219.win32-py2.7.exe" 
 :PyWin32Downloaded
 echo Installing pywin32-219.win32-py2.7.exe
-unzip.exe pywin32-219.win32-py2.7.exe -o -q -d pywin32
+unzip.exe -o -q pywin32-219.win32-py2.7.exe -d pywin32
 xcopy pywin32\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
 :PyWin32Installed
 
@@ -177,7 +177,7 @@ echo Downloading pycrypto-2.6.win32-py2.7.exe
 wget.exe -nv "http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe" 
 :PyCryptoDownloaded
 echo Installing pycrypto-2.6.win32-py2.7.exe
-unzip.exe pycrypto-2.6.win32-py2.7.exe -o -q -d pycrypto
+unzip.exe -o -q pycrypto-2.6.win32-py2.7.exe -d pycrypto
 xcopy pycrypto\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
 :PyCryptoInstalled
 
