@@ -100,7 +100,7 @@ cscript //Nologo %DLOAD_SCRIPT% https://mingw-and-ndk.googlecode.com/files/wget.
 
 if exist unzip.exe goto UnZIPDownloaded 
 echo Downloading unzip.exe
-wget0.exe -nv http://www2.cs.uidaho.edu/~jeffery/win32/unzip.exe --no-check-certificate 
+wget0.exe  http://www2.cs.uidaho.edu/~jeffery/win32/unzip.exe --no-check-certificate 
 :UnZIPDownloaded
 
 
@@ -155,9 +155,12 @@ exit
 :ContinueInstall
 
 
+echo Checking for easy_install
+if exist %BITDUST_HOME%\python\Scripts\easy_install.exe goto EasyInstallInstalled
 echo Installing setuptools
-wget0 -nv https://bootstrap.pypa.io/ez_setup.py --no-check-certificate 
+wget0  https://bootstrap.pypa.io/ez_setup.py --no-check-certificate 
 %BITDUST_HOME%\python\python.exe ez_setup.py
+:EasyInstallInstalled
 
 
 echo Checking for git binaries in the destination folder
@@ -166,7 +169,7 @@ if exist %BITDUST_HOME%\git\bin\git.exe goto GitInstalled
 
 if exist Git-1.9.5-preview20150319.exe goto GitDownloaded 
 echo Downloading Git-1.9.5-preview20150319.exe
-wget0.exe -nv https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-preview20150319/Git-1.9.5-preview20150319.exe --no-check-certificate 
+wget0.exe  https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-preview20150319/Git-1.9.5-preview20150319.exe --no-check-certificate 
 :GitDownloaded
 echo Installing Git-1.9.5-preview20150319.exe to %BITDUST_HOME%\git
 if not exist %BITDUST_HOME%\git mkdir "%BITDUST_HOME%\git"
@@ -178,7 +181,7 @@ echo Checking for PyWin32 installed
 if exist %BITDUST_HOME%\python\Lib\site-packages\win32\win32api.pyd goto PyWin32Installed
 if exist pywin32-219.win32-py2.7.exe goto PyWin32Downloaded 
 echo Downloading pywin32-219.win32-py2.7.exe
-wget0.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywin32-219.win32-py2.7.exe/download" -O "%TMPDIR%\pywin32-219.win32-py2.7.exe" 
+wget0.exe  "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywin32-219.win32-py2.7.exe/download" -O "%TMPDIR%\pywin32-219.win32-py2.7.exe" 
 :PyWin32Downloaded
 echo Installing pywin32-219.win32-py2.7.exe
 unzip.exe -o -q pywin32-219.win32-py2.7.exe -d pywin32
@@ -190,7 +193,7 @@ echo Checking for PyCrypto installed
 if exist %BITDUST_HOME%\python\Lib\site-packages\Crypto\__init__.py goto PyCryptoInstalled
 if exist pycrypto-2.6.win32-py2.7.exe  goto PyCryptoDownloaded 
 echo Downloading pycrypto-2.6.win32-py2.7.exe
-wget0.exe -nv "http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe" 
+wget0.exe  "http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe" 
 :PyCryptoDownloaded
 echo Installing pycrypto-2.6.win32-py2.7.exe
 unzip.exe -o -q pycrypto-2.6.win32-py2.7.exe -d pycrypto
@@ -199,7 +202,7 @@ xcopy pycrypto\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
 
 
 echo Installing dependencies with easy_install
-%BITDUST_HOME%\python\python.exe -m easy_install -Z -O -a -U -N zope.interface pyOpenSSL pyasn1 twisted Django==1.7
+%BITDUST_HOME%\python\python.exe -m easy_install -Z -O2 -a -U -N zope.interface pyOpenSSL pyasn1 twisted Django==1.7
 
 
 if not exist %BITDUST_HOME%\src echo Prepare sources folder
