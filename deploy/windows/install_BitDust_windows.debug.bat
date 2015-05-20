@@ -166,7 +166,7 @@ wget.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/py
 :PyWin32Downloaded
 echo Installing pywin32-219.win32-py2.7.exe
 unzip.exe pywin32-219.win32-py2.7.exe -o -q -d pywin32
-xcopy pywin32\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q
+xcopy pywin32\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
 :PyWin32Installed
 
 
@@ -178,7 +178,7 @@ wget.exe -nv "http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win3
 :PyCryptoDownloaded
 echo Installing pycrypto-2.6.win32-py2.7.exe
 unzip.exe pycrypto-2.6.win32-py2.7.exe -o -q -d pycrypto
-xcopy pycrypto\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q
+xcopy pycrypto\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
 :PyCryptoInstalled
 
 
@@ -234,7 +234,7 @@ rem call %BITDUST_HOME%\python\python.exe bitdust.py stop
 
 
 echo Update binary extensions
-xcopy /E /H /R /Y deploy\windows\Python2.7.9\* %BITDUST_HOME%\python 
+xcopy deploy\windows\Python2.7.9\* %BITDUST_HOME%\python /E /H /R /Y 
 
 
 cd /D %TMPDIR%
@@ -287,16 +287,14 @@ for /F "usebackq delims=" %%i in (`cscript find_desktop.vbs`) do set DESKTOP_DIR
 rem echo Desktop folder is %DESKTOP_DIR1%
 set DESKTOP_REG_ENTRY="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 set DESKTOP_REG_KEY="Desktop"
-set DESKTOP_DIR=
-for /F "tokens=1,2*" %%a in ('REG QUERY %DESKTOP_REG_ENTRY% /v %DESKTOP_REG_KEY% ^| FINDSTR "REG_SZ"') do (
-    set DESKTOP_DIR2=%%c
-)
+set DESKTOP_DIR2=
+for /F "tokens=1,2*" %%a in ('REG QUERY %DESKTOP_REG_ENTRY% /v %DESKTOP_REG_KEY% ^| FINDSTR "REG_SZ"') do ( set DESKTOP_DIR2=%%c )
 echo Desktop folder is %DESKTOP_DIR1%
 
 
 echo Updating shortcuts
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut0.vbs
-echo sLinkFile = "%DESKTOP_DIR2%\BitDust.lnk" >> CreateShortcut0.vbs
+echo sLinkFile = "BitDust.lnk" >> CreateShortcut0.vbs
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> CreateShortcut0.vbs
 echo oLink.TargetPath = "%BITDUST_HOME%" >> CreateShortcut0.vbs
 echo oLink.Arguments = "" >> CreateShortcut0.vbs
@@ -306,6 +304,7 @@ echo oLink.Description = "Open root folder of BitDust Software" >> CreateShortcu
 echo oLink.WindowStyle = "1" >> CreateShortcut0.vbs
 echo oLink.Save >> CreateShortcut0.vbs
 cscript //Nologo CreateShortcut0.vbs
+xcopy BitDust.lnk "%DESKTOP_DIR2%" /Y
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut1.vbs
