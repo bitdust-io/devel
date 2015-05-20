@@ -59,7 +59,7 @@ cd /D %TMPDIR%
 
 
 echo Checking wget.exe
-if exist wget.exe goto WGetDownloaded
+if exist wget0.exe goto WGetDownloaded
 
 
 set DLOAD_SCRIPT="download.vbs"
@@ -94,20 +94,24 @@ echo.                                                                   >> %DLOA
 
 
 echo Downloading wget.exe
-cscript //Nologo %DLOAD_SCRIPT% https://mingw-and-ndk.googlecode.com/files/wget.exe wget.exe
+cscript //Nologo %DLOAD_SCRIPT% https://mingw-and-ndk.googlecode.com/files/wget.exe wget0.exe
 :WGetDownloaded
 
 
 if exist unzip.exe goto UnZIPDownloaded 
 echo Downloading unzip.exe
-wget.exe -nv http://www2.cs.uidaho.edu/~jeffery/win32/unzip.exe --no-check-certificate 
+wget0.exe -nv http://www2.cs.uidaho.edu/~jeffery/win32/unzip.exe --no-check-certificate 
 :UnZIPDownloaded
 
 
 echo Stopping Python instances
-tasklist /FI "IMAGENAME eq bitdust.exe"  | c:\windows\system32\find.exe /I /N "bitdust.exe" >NUL && ( taskkill  /IM bitdust.exe /F /T )
-tasklist /FI "IMAGENAME eq python.exe"  | c:\windows\system32\find.exe /I /N "python.exe" >NUL && ( taskkill  /IM python.exe /F /T )
-tasklist /FI "IMAGENAME eq pythonw.exe"  | c:\windows\system32\find.exe /I /N "pythonw.exe" >NUL && ( taskkill  /IM pythonw.exe /F /T )
+tasklist /FI "IMAGENAME eq bitdust.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bitdust.exe" >NUL && ( taskkill  /IM bitdust.exe /F /T )
+tasklist /FI "IMAGENAME eq bpstarter.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bpstarter.exe" >NUL && ( taskkill  /IM bpstarter.exe /F /T )
+tasklist /FI "IMAGENAME eq bpgui.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bpgui.exe" >NUL && ( taskkill  /IM bpgui.exe /F /T )
+tasklist /FI "IMAGENAME eq bppipe.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bppipe.exe" >NUL && ( taskkill  /IM bppipe.exe /F /T )
+tasklist /FI "IMAGENAME eq bptester.exe" 2>NUL | c:\windows\system32\find.exe /I /N "bptester.exe" >NUL && ( taskkill  /IM bptester.exe /F /T )
+tasklist /FI "IMAGENAME eq python.exe" >NUL | c:\windows\system32\find.exe /I /N "python.exe" >NUL && ( taskkill  /IM python.exe /F /T )
+tasklist /FI "IMAGENAME eq pythonw.exe" >NUL | c:\windows\system32\find.exe /I /N "pythonw.exe" >NUL && ( taskkill  /IM pythonw.exe /F /T )
 
 
 echo Checking for python binaries in the destination folder
@@ -116,29 +120,44 @@ if exist %BITDUST_HOME%\python\python.exe goto PythonInstalled
 
 if exist python-2.7.9.msi goto PythonDownloaded 
 echo Downloading python-2.7.9.msi
-wget.exe -nv https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-certificate 
+wget0.exe -nv https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-certificate 
 :PythonDownloaded
 echo Extracting python-2.7.9.msi to %BITDUST_HOME%\python
 if not exist %BITDUST_HOME%\python mkdir %BITDUST_HOME%\python
-msiexec /i python-2.7.9.msi /qb /norestart /l python-2.7.9.install.log TARGETDIR=%BITDUST_HOME%\python ALLUSERS=1
-rem msiexec /a
-set msierror=%errorlevel%
-if %msierror%==0 goto :PythonInstalled
-if %msierror%==1641 goto :PythonInstalled
-if %msierror%==3010 goto :PythonInstalled
-echo Installation of Python was interrupter, exit code is %msierror%.
+set EXTRACT_SCRIPT="msiextract.vbs"
+echo Set args = Wscript.Arguments > %EXTRACT_SCRIPT%
+echo Set objShell = CreateObject("Wscript.Shell") >> %EXTRACT_SCRIPT%
+echo objCommand ^= ^"msiexec /a ^" ^& Chr(34) ^& args(0) ^& Chr(34) ^& ^" /qb TargetDir^=^" ^& Chr(34) ^& args(1) ^& Chr(34) >> %EXTRACT_SCRIPT%
+echo objShell.Run objCommand, 1, true >> %EXTRACT_SCRIPT%
+cscript //Nologo %EXTRACT_SCRIPT% python-2.7.9.msi %BITDUST_HOME%\python
+rem msiexec /i python-2.7.9.msi /qb /norestart /l python-2.7.9.install.log TARGETDIR=%BITDUST_HOME%\python ALLUSERS=1
+rem set msierror=%errorlevel%
+rem if %msierror%==0 goto :PythonInstalled
+rem if %msierror%==1641 goto :PythonInstalled
+rem if %msierror%==3010 goto :PythonInstalled
+rem echo Installation of Python was interrupter, exit code is %msierror%.
+rem pause
+rem exit
+echo Verifying Python binaries
+if exist %BITDUST_HOME%\python\python.exe goto PythonInstalled
+echo Python installation to %BITDUST_HOME%\python was failed!
 pause
 exit
 :PythonInstalled
 
 
-echo Checking python version
+echo Checking Python version
 %BITDUST_HOME%\python\python.exe --version
 if errorlevel 0 goto ContinueInstall
-echo Python installation to %BITDUST_HOME%\python was FAILED!
+echo Python installation to %BITDUST_HOME%\python is corrupted!
 pause
 exit
 :ContinueInstall
+
+
+echo Installing setuptools
+wget0 -nv https://bootstrap.pypa.io/ez_setup.py --no-check-certificate 
+%BITDUST_HOME%\python\python.exe ez_setup.py
 
 
 echo Checking for git binaries in the destination folder
@@ -147,10 +166,8 @@ if exist %BITDUST_HOME%\git\bin\git.exe goto GitInstalled
 
 if exist Git-1.9.5-preview20150319.exe goto GitDownloaded 
 echo Downloading Git-1.9.5-preview20150319.exe
-wget.exe -nv https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-preview20150319/Git-1.9.5-preview20150319.exe --no-check-certificate 
+wget0.exe -nv https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-preview20150319/Git-1.9.5-preview20150319.exe --no-check-certificate 
 :GitDownloaded
-
-
 echo Installing Git-1.9.5-preview20150319.exe to %BITDUST_HOME%\git
 if not exist %BITDUST_HOME%\git mkdir "%BITDUST_HOME%\git"
 Git-1.9.5-preview20150319.exe /DIR="%BITDUST_HOME%\git" /NOICONS /SILENT /NORESTART /COMPONENTS=""
@@ -161,7 +178,7 @@ echo Checking for PyWin32 installed
 if exist %BITDUST_HOME%\python\Lib\site-packages\win32\win32api.pyd goto PyWin32Installed
 if exist pywin32-219.win32-py2.7.exe goto PyWin32Downloaded 
 echo Downloading pywin32-219.win32-py2.7.exe
-wget.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywin32-219.win32-py2.7.exe/download" -O "%TMPDIR%\pywin32-219.win32-py2.7.exe" 
+wget0.exe -nv "http://sourceforge.net/projects/pywin32/files/pywin32/Build 219/pywin32-219.win32-py2.7.exe/download" -O "%TMPDIR%\pywin32-219.win32-py2.7.exe" 
 :PyWin32Downloaded
 echo Installing pywin32-219.win32-py2.7.exe
 unzip.exe -o -q pywin32-219.win32-py2.7.exe -d pywin32
@@ -173,7 +190,7 @@ echo Checking for PyCrypto installed
 if exist %BITDUST_HOME%\python\Lib\site-packages\Crypto\__init__.py goto PyCryptoInstalled
 if exist pycrypto-2.6.win32-py2.7.exe  goto PyCryptoDownloaded 
 echo Downloading pycrypto-2.6.win32-py2.7.exe
-wget.exe -nv "http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe" 
+wget0.exe -nv "http://www.voidspace.org.uk/downloads/pycrypto26/pycrypto-2.6.win32-py2.7.exe" 
 :PyCryptoDownloaded
 echo Installing pycrypto-2.6.win32-py2.7.exe
 unzip.exe -o -q pycrypto-2.6.win32-py2.7.exe -d pycrypto
@@ -182,18 +199,7 @@ xcopy pycrypto\PLATLIB\*.* %BITDUST_HOME%\python\Lib\site-packages /E /I /Q /Y
 
 
 echo Installing dependencies with easy_install
-%BITDUST_HOME%\python\python.exe -m easy_install zope.interface pyOpenSSL pyasn1 twisted Django==1.7
-
-REM echo pip install zope.interface
-REM %BITDUST_HOME%\python\python.exe -m pip install zope.interface 
-REM echo pip install pyOpenSSL 
-REM %BITDUST_HOME%\python\python.exe -m pip install pyOpenSSL 
-REM echo pip install pyasn1 
-REM %BITDUST_HOME%\python\python.exe -m pip install pyasn1 
-REM echo pip install twisted 
-REM %BITDUST_HOME%\python\python.exe -m pip install twisted
-REM echo pip install Django==1.7
-REM %BITDUST_HOME%\python\python.exe -m pip  install Django==1.7
+%BITDUST_HOME%\python\python.exe -m easy_install -Z -O -a -U -N zope.interface pyOpenSSL pyasn1 twisted Django==1.7
 
 
 if not exist %BITDUST_HOME%\src echo Prepare sources folder
@@ -212,22 +218,12 @@ echo Downloading BitDust software, use "git clone" command to get official publi
 
 
 echo Update sources
-
-
 echo Running command "git clean"
 %BITDUST_HOME%\git\bin\git.exe clean -d -fx "" 
-
-
 echo Running command "git reset"
 %BITDUST_HOME%\git\bin\git.exe reset --hard origin/master 
-
-
 echo Running command "git pull"
 %BITDUST_HOME%\git\bin\git.exe pull
-
-
-rem echo Shutdown the BitDust software in case it was already started earlier
-rem call %BITDUST_HOME%\python\python.exe bitdust.py stop
 
 
 echo Update binary extensions
