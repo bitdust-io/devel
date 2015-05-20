@@ -3,10 +3,10 @@ import sys
 
 gettext = lambda s: s
 PROJECT_PATH = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
+
 APP_DATA_PATH = ''
 
 if APP_DATA_PATH == '':
-
     try:
         import sys
         reload(sys)
@@ -33,6 +33,9 @@ if APP_DATA_PATH == '':
             
     APP_DATA_PATH = unicode(appdata)
 
+SQLITE_DB_FILENAME = os.path.join(APP_DATA_PATH, 'metadata', 'asite.db')
+if not os.path.isdir(os.path.dirname(SQLITE_DB_FILENAME)):
+    os.makedirs(os.path.dirname(SQLITE_DB_FILENAME))
 
 SECRET_KEY = '7a9*@f0v9z3ma7my+=oxfi6!q9nrm0fu#bu94bz%o5_1bc$=51'
 
@@ -88,7 +91,7 @@ WSGI_APPLICATION = 'web.asite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(APP_DATA_PATH, 'metadata', 'asite.db'),
+        'NAME': SQLITE_DB_FILENAME,
     }
 }
 

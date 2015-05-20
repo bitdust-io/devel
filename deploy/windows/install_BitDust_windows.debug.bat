@@ -2,8 +2,8 @@
 
 
 set CURRENT_PATH=%cd%
-rem set BITDUST_FULL_HOME=%HOMEDRIVE%%HOMEPATH%\.bitdust
-set BITDUST_FULL_HOME=%AllUsersProfile%\.bitdust
+set BITDUST_FULL_HOME=%HOMEDRIVE%%HOMEPATH%\.bitdust
+rem set BITDUST_FULL_HOME=%AllUsersProfile%\.bitdust
 echo Destination folder is %BITDUST_FULL_HOME%
 
 
@@ -22,7 +22,7 @@ echo Python already installed on your machine.
 echo Please install BitDust software manually by following this howto: 
 echo     http://bitdust.io/install.html
 pause
-exit 
+exit /b %errorlevel% 
 
 
 :StartInstall
@@ -153,7 +153,7 @@ echo Verifying Python binaries
 if exist %BITDUST_HOME%\python\python.exe goto PythonInstalled
 echo Python installation to %BITDUST_HOME%\python was failed!
 pause
-exit
+exit /b %errorlevel%
 :PythonInstalled
 
 
@@ -162,7 +162,7 @@ echo Checking Python version
 if errorlevel 0 goto ContinueInstall
 echo Python installation to %BITDUST_HOME%\python is corrupted!
 pause
-exit
+exit /b %errorlevel%
 :ContinueInstall
 
 
@@ -185,6 +185,7 @@ if exist %BITDUST_HOME%\python\Scripts\easy_install.exe goto EasyInstallInstalle
 echo Installing setuptools
 wget0  https://bootstrap.pypa.io/ez_setup.py -O "ez_setup.py" --no-check-certificate 
 %BITDUST_HOME%\python\python.exe ez_setup.py
+if %errorlevel% neq 0 goto EXIT
 :EasyInstallInstalled
 
 
@@ -197,6 +198,7 @@ echo Putting a bug fix into pip source code at %BITDUST_HOME%\python\Lib\site-pa
 cscript //Nologo %SUBSTITUTE% %BITDUST_HOME%\python\Lib\site-packages\pip-6.1.1-py2.7.egg\pip\_vendor\lockfile\__init__.py "socket.gethostname()" "hash(socket.gethostname())" 
 rem del %BITDUST_HOME%\python\Lib\site-packages\pip-6.1.1-py2.7.egg\pip\_vendor\lockfile\__init__.py /F /S /Q
 rem xcopy __init__.py %BITDUST_HOME%\python\Lib\site-packages\pip-6.1.1-py2.7.egg\pip\_vendor\lockfile /E /I /Q /Y
+if %errorlevel% neq 0 goto EXIT
 :PipInstalled
 
 
@@ -209,6 +211,7 @@ wget0.exe  https://github.com/msysgit/msysgit/releases/download/Git-1.9.5-previe
 echo Installing Git-1.9.5-preview20150319.exe to %BITDUST_HOME%\git
 if not exist %BITDUST_HOME%\git mkdir "%BITDUST_HOME%\git"
 Git-1.9.5-preview20150319.exe /DIR="%BITDUST_HOME%\git" /NOICONS /SILENT /NORESTART /COMPONENTS=""
+if %errorlevel% neq 0 goto EXIT
 :GitInstalled
 
 
@@ -247,6 +250,7 @@ cd /D %BITDUST_HOME%\src
 if exist %BITDUST_HOME%\src\bitdust.py goto SourcesExist
 echo Downloading BitDust software, use "git clone" command to get official public repository
 %BITDUST_HOME%\git\bin\git.exe clone --depth 1 http://gitlab.bitdust.io/devel/bitdust.git .
+if %errorlevel% neq 0 goto EXIT
 
 
 :SourcesExist
@@ -267,18 +271,29 @@ xcopy deploy\windows\Python2.7.9\* %BITDUST_HOME%\python /E /H /R /Y
 
 echo Installing dependencies with pip package manager
 %BITDUST_HOME%\python\Scripts\pip.exe install zope.interface
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install pyOpenSSL
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install pyasn1
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install service_identity
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install Twisted
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install six>=1.5.2
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install cffi>=0.8
-rem %BITDUST_HOME%\python\Scripts\pip.exe install https://pypi.python.org/packages/cp27/c/cryptography/cryptography-0.2.2-cp27-none-win32.whl#md5=7f3979da8340a7fe3aa859d3bfc1a5f1
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install cryptography
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install idna
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install enum34
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install ipaddress
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install pycparser
+if %errorlevel% neq 0 goto EXIT
 %BITDUST_HOME%\python\Scripts\pip.exe install Django==1.7
 
 
@@ -365,6 +380,7 @@ set DESKTOP_REG_ENTRY="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\S
 set DESKTOP_REG_KEY="Desktop"
 set DESKTOP_DIR2=
 for /F "tokens=1,2*" %%a in ('REG QUERY %DESKTOP_REG_ENTRY% /v %DESKTOP_REG_KEY% ^| FINDSTR "REG_SZ"') do ( set DESKTOP_DIR2=%%c )
+if %errorlevel% neq 0 goto EXIT
 echo Desktop folder is %DESKTOP_DIR1%
 
 
@@ -380,6 +396,7 @@ echo oLink.Description = "Open root folder of BitDust Software" >> CreateShortcu
 echo oLink.WindowStyle = "1" >> CreateShortcut0.vbs
 echo oLink.Save >> CreateShortcut0.vbs
 cscript //Nologo CreateShortcut0.vbs
+if %errorlevel% neq 0 goto EXIT
 xcopy BitDust.lnk "%DESKTOP_DIR2%" /Y
 
 
@@ -394,6 +411,7 @@ echo oLink.Description = "Launch BitDust software in background mode" >> CreateS
 echo oLink.WindowStyle = "2" >> CreateShortcut1.vbs
 echo oLink.Save >> CreateShortcut1.vbs
 cscript //Nologo CreateShortcut1.vbs
+if %errorlevel% neq 0 goto EXIT
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut2.vbs
@@ -407,6 +425,7 @@ echo oLink.Description = "Launch BitDust software in debug mode" >> CreateShortc
 echo oLink.WindowStyle = "1" >> CreateShortcut2.vbs
 echo oLink.Save >> CreateShortcut2.vbs
 cscript //Nologo CreateShortcut2.vbs
+if %errorlevel% neq 0 goto EXIT
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut3.vbs
@@ -420,6 +439,7 @@ echo oLink.Description = "Completely stop BitDust software" >> CreateShortcut3.v
 echo oLink.WindowStyle = "1" >> CreateShortcut3.vbs
 echo oLink.Save >> CreateShortcut3.vbs
 cscript //Nologo CreateShortcut3.vbs
+if %errorlevel% neq 0 goto EXIT
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut4.vbs
@@ -433,6 +453,7 @@ echo oLink.Description = "Synchronize BitDust sources from public repository at 
 echo oLink.WindowStyle = "1" >> CreateShortcut4.vbs
 echo oLink.Save >> CreateShortcut4.vbs
 cscript //Nologo CreateShortcut4.vbs
+if %errorlevel% neq 0 goto EXIT
 
 
 echo Set oWS = WScript.CreateObject("WScript.Shell") > CreateShortcut5.vbs
@@ -446,6 +467,7 @@ echo oLink.Description = "Synchronize BitDust sources from public repository at 
 echo oLink.WindowStyle = "2" >> CreateShortcut5.vbs
 echo oLink.Save >> CreateShortcut5.vbs
 cscript //Nologo CreateShortcut5.vbs
+if %errorlevel% neq 0 goto EXIT
 
 
 cd /D %BITDUST_HOME%\src
@@ -453,6 +475,7 @@ cd /D %BITDUST_HOME%\src
 
 echo Prepare Django db, run command "python manage.py syncdb"
 call %BITDUST_HOME%\python\python.exe manage.py syncdb 
+if %errorlevel% neq 0 goto EXIT
 
 
 @echo.
@@ -484,5 +507,6 @@ cd /D %CURRENT_PATH%
 @echo.
 
 
+:EXIT
 pause
-exit
+exit /b %errorlevel%
