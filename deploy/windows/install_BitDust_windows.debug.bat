@@ -120,7 +120,7 @@ if exist %BITDUST_HOME%\python\python.exe goto PythonInstalled
 
 if exist python-2.7.9.msi goto PythonDownloaded 
 echo Downloading python-2.7.9.msi
-wget0.exe -nv https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-certificate 
+wget0.exe  https://www.python.org/ftp/python/2.7.9/python-2.7.9.msi --no-check-certificate 
 :PythonDownloaded
 echo Extracting python-2.7.9.msi to %BITDUST_HOME%\python
 if not exist %BITDUST_HOME%\python mkdir %BITDUST_HOME%\python
