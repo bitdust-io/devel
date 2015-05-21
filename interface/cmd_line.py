@@ -1036,7 +1036,7 @@ def run(opts, args, pars=None, overDict=None):
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         if len(appList) > 0:
-            print_text('found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
+            print_text('found main BitDust process: %s, sending command "exit"' % str(appList))
             try:
                 from twisted.internet import reactor
                 call_xmlrpc_method('stop').addBoth(wait_then_kill)

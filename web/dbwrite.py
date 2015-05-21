@@ -74,7 +74,7 @@ def update_friends(old_friends_list, friends_list):
 #------------------------------------------------------------------------------ 
 
 def incoming_message(request, message_text):
-    lg.out(6, 'dbwrite.incoming_message of %d bytes' % len(message_text))
+    lg.out(6, 'dbwrite.incoming_message of %d bytes, type=%s' % (len(message_text), type(message_text)))
     from django.shortcuts import get_object_or_404
     from django.utils.html import escape
     from django.contrib.auth.models import User
@@ -96,6 +96,7 @@ def incoming_message(request, message_text):
         ThisRoom = Room(idurl=idurl, 
                         name=(nik or nameurl.GetName(idurl)))
         ThisRoom.save()
-    Message.objects.create_message(idurl, ThisRoom, escape(message_text))
+    message_text = escape(unicode(message_text))
+    Message.objects.create_message(idurl, ThisRoom, message_text)
     
     
