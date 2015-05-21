@@ -752,10 +752,10 @@ def main():
         return ret
         
     #---command_line---
-    # from interface import command_line
-    # ret = command_line.run(opts, args, overDict, pars)
-    from interface import cmd_line
-    ret = cmd_line.run(opts, args, pars, overDict)
+    # from interface import command_line as cmdln
+    # from interface import cmd_line as cmdln
+    from interface import cmd_line_json as cmdln
+    ret = cmdln.run(opts, args, pars, overDict)
     if ret == 2:
         print usage()
     bpio.shutdown()

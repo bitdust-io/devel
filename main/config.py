@@ -430,6 +430,12 @@ class FixedTypesConfig(NotifiableConfig):
         'updates/mode':                                 TYPE_COMBO_BOX,
         'updates/shedule':                              TYPE_TEXT,
     }
+
+    def listKnownTypes(self):
+        return self._types.keys()
+    
+    def setType(self, key, typ):
+        self._types[key] = typ
     
     def getType(self, entry):
         return self._types.get(entry, TYPE_UNDEFINED)
@@ -456,6 +462,9 @@ class CachedConfig(FixedTypesConfig):
         result = FixedTypesConfig._get(self, entryPath)
         self._cache[entryPath] = result
         return result
+    
+    def cache(self):
+        return self._cache
     
     def reloadCache(self):
         """
@@ -505,7 +514,7 @@ class DetailedConfig(CachedConfig):
     
     def getInfo(self, entryPath):
         return self._infos.get(entryPath, '')
-
+    
 #------------------------------------------------------------------------------ 
 
 

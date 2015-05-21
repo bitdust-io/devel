@@ -51,6 +51,69 @@ def show():
 
 #------------------------------------------------------------------------------ 
 
+def config_get(key, default=None):
+    from logs import lg
+    lg.out(4, 'api.config_get [%s]' % key)
+    from main import config
+    if not config.conf().exist(key):
+        return { 'result': {'error': 'option "%s" not exist' % key} }
+    return { 'result': {
+        'key': key, 
+        'value': config.conf().getData(key, default), 
+        'type': config.conf().getTypeLabel(key),
+        # 'code': config.conf().getType(key),
+        # 'label': config.conf().getLabel(key),
+        # 'info': config.conf().getInfo(key)
+        } }
+        
+def config_set(key, value, typ=None):
+    from logs import lg
+    lg.out(4, 'api.config_set [%s]' % key)
+    from main import config
+    v = {}
+    if config.conf().exist(key):
+        v['old_value'] = config.conf().getData(key)
+    if type in [ config.TYPE_STRING, 
+                 config.TYPE_TEXT,
+                 config.TYPE_UNDEFINED, ] or typ is None: 
+        config.conf().setData(key, value)
+    elif typ in [config.TYPE_BOOLEAN, ]:
+        config.conf().setBool(key, value)
+    elif typ in [config.TYPE_INTEGER, 
+                 config.TYPE_POSITIVE_INTEGER, 
+                 config.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
+        config.conf().setInt(key, value)
+    elif typ in [config.TYPE_FOLDER_PATH,
+                 config.TYPE_FILE_PATH, 
+                 config.TYPE_COMBO_BOX,
+                 config.TYPE_PASSWORD,]:
+        config.conf().setString(key, value)
+    else:
+        config.conf().setData(key, str(value))
+    v.update({  'key': key, 
+                'value': config.conf().getData(key), 
+                'type': config.conf().getTypeLabel(key)
+                # 'code': config.conf().getType(key),
+                # 'label': config.conf().getLabel(key),
+                # 'info': config.conf().getInfo(key), 
+                })
+    return { 'result': v }
+
+def config_list(sort=False):
+    from logs import lg
+    lg.out(4, 'api.config_list')
+    from main import config
+    r = config.conf().cache()
+    r = map(lambda key: {
+        'key': key,
+        'value': r[key],
+        'type': config.conf().getTypeLabel(key)}, r.keys())
+    if sort:
+        r = sorted(r, key=lambda i: i['key'])
+    return { 'result': r } 
+
+#------------------------------------------------------------------------------ 
+
 def backups_list():
     from storage import backup_fs
     result = []
@@ -155,7 +218,7 @@ def list_messages():
     from chat import message
     mlist = message.ListAllMessages()
     mlist.sort(key=lambda item: item[3])
-    return { 'result': mlist, }
+    return { 'result': mlist }
     
     
 def send_message(recipient, message_body):
@@ -165,8 +228,8 @@ def send_message(recipient, message_body):
         recipient = contactsdb.find_correspondent_by_nickname(recipient) or recipient
     # msgbody = message.MakeMessage(recipient, message_body)
     # message.SaveMessage(msgbody)
-    return {'result': message.SendMessage(recipient, message_body),
-            'recipient': recipient, }
+    return {'result': { 'packet': message.SendMessage(recipient, message_body) },
+            'recipient': recipient }
     
 
 def find_peer_by_nickname(nickname):

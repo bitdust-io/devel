@@ -43,11 +43,28 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_stop(self):
         return api.stop()
 
+    def jsonrpc_show(self):
+        return api.show()
+
     def jsonrpc_restart(self):
         return api.restart()
     
     def jsonrpc_backups_list(self):
-        return {'backups': map(lambda x: {'data': '~%s~' % str(x)}, api.backups_list())}
+        return { 'backups': map(
+                    lambda x: {'data': '<%s>' % str(x)},
+                        api.backups_list()) }
+        
+    def jsonrpc_config_list(self, sort=False):
+        return api.config_list(sort)
+
+    def jsonrpc_config_get(self, key, default=None):
+        return api.config_get(key, default)
+
+    def jsonrpc_config_set(self, key, value, typ=None):
+        return api.config_set(key, value, typ)
+    
+    def jsonrpc_list_messages(self):
+        return api.list_messages()
     
 #------------------------------------------------------------------------------ 
 

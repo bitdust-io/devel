@@ -111,10 +111,16 @@ def print_and_stop(result):
     reactor.stop()
 
 
+def print_template(result, template):
+    """
+    """
+    sys.stdout.write(template.expand(result))
+
+
 def print_template_and_stop(result, template):
     """
     """
-    print template.expand(result)
+    print_template(result, template)
     reactor.stop()
 
 
@@ -260,6 +266,14 @@ def run_now(opts, args):
 
 #------------------------------------------------------------------------------ 
 
+def cmd_api(opts, args, overDict):
+    tpl = jsontemplate.Template("""{.section result}
+    {@}
+{.end}""")
+    return call_jsonrpc_method_template_and_stop(args[1], tpl, *args[2:])
+
+#------------------------------------------------------------------------------ 
+
 def cmd_backups(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template("""{.section backups}
@@ -277,45 +291,7 @@ no info yet
     
     return 2
 
-
-def option_name_to_path(name, default=''):
-    path = default
-    if name in [ 'donated', 'shared', 'given', ]:
-        path = 'services/supplier/donated-space'
-    elif name in [ 'needed', ]:
-        path = 'services/customer/needed-space'
-    elif name in [ 'suppliers', ]:
-        path = 'services/customer/suppliers-number'
-    elif name in [ 'debug' ]:
-        path = 'logs/debug-level'
-    elif name in [ 'block-size', ]:
-        path = 'services/backups/block-size'
-    elif name in [ 'block-size-max', 'max-block-size', ]:
-        path = 'services/backups/max-block-size'
-    elif name in [ 'max-backups', 'max-copies', 'copies' ]:
-        path = 'services/backups/max-copies'
-    elif name in [ 'local-backups', 'local-data', 'keep-local-data', ]:
-        path = 'services/backups/keep-local-copies-enabled'
-    elif name in [ 'tcp' ]:
-        path = 'services/tcp-transport/enabled'
-    elif name in [ 'tcp-port' ]:
-        path = 'services/tcp-connections/tcp-port'
-    elif name in [ 'udp' ]:
-        path = 'services/udp-transport/enabled'
-    elif name in [ 'udp-port' ]:
-        path = 'services/udp-datagrams/udp-port'
-    elif name in [ 'dht-port' ]:
-        path = 'services/entangled-dht/udp-port'
-    elif name in [ 'limit-send' ]:
-        path = 'services/network/send-limit'
-    elif name in [ 'limit-receive' ]:
-        path = 'services/network/receive-limit'
-    elif name in [ 'weblog' ]:
-        path = 'logs/stream-enable'
-    elif name in [ 'weblog-port' ]:
-        path = 'logs/stream-port'
-    return path
-
+#------------------------------------------------------------------------------ 
 
 def cmd_integrate(opts, args, overDict):
     """
@@ -377,27 +353,117 @@ def cmd_integrate(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
-def main():
-    try:
-        from system import bpio
-    except:
-        dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-        sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-        from distutils.sysconfig import get_python_lib
-        sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
-        try:
-            from system import bpio
-        except:
-            print_text('ERROR! can not import working code.  Python Path:\n')
-            print_text('\n'.join(sys.path))
-            return 1
-    
-    pars = parser()
-    (opts, args) = pars.parse_args()
+def option_name_to_path(name, default=''):
+    path = default
+    if name in [ 'donated', 'shared', 'given', ]:
+        path = 'services/supplier/donated-space'
+    elif name in [ 'needed', ]:
+        path = 'services/customer/needed-space'
+    elif name in [ 'suppliers', ]:
+        path = 'services/customer/suppliers-number'
+    elif name in [ 'debug' ]:
+        path = 'logs/debug-level'
+    elif name in [ 'block-size', ]:
+        path = 'services/backups/block-size'
+    elif name in [ 'block-size-max', 'max-block-size', ]:
+        path = 'services/backups/max-block-size'
+    elif name in [ 'max-backups', 'max-copies', 'copies' ]:
+        path = 'services/backups/max-copies'
+    elif name in [ 'local-backups', 'local-data', 'keep-local-data', ]:
+        path = 'services/backups/keep-local-copies-enabled'
+    elif name in [ 'tcp' ]:
+        path = 'services/tcp-transport/enabled'
+    elif name in [ 'tcp-port' ]:
+        path = 'services/tcp-connections/tcp-port'
+    elif name in [ 'udp' ]:
+        path = 'services/udp-transport/enabled'
+    elif name in [ 'udp-port' ]:
+        path = 'services/udp-datagrams/udp-port'
+    elif name in [ 'dht-port' ]:
+        path = 'services/entangled-dht/udp-port'
+    elif name in [ 'limit-send' ]:
+        path = 'services/network/send-limit'
+    elif name in [ 'limit-receive' ]:
+        path = 'services/network/receive-limit'
+    elif name in [ 'weblog' ]:
+        path = 'logs/stream-enable'
+    elif name in [ 'weblog-port' ]:
+        path = 'logs/stream-port'
+    return path
 
-    if opts.verbose:
-        print_copyright()
+def cmd_set_directly(opts, args, overDict):
+    from main import settings
+    from interface import api
+    name = args[1].lower()
+    if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
+        settings.init()
+        sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
+        result = api.config_list(sort)
+        tpl = jsontemplate.Template("""{.section result}
+{.repeated section @}
+    {key} ({type}) : {value}
+{.end}
+{.end}""")
+        print_template(result, tpl)
+        return 0 
+    path = '' if len(args) < 2 else args[1]
+    path = option_name_to_path(name, path)
+    if path != '':
+        settings.init()
+        if len(args) > 2:
+            value = ' '.join(args[2:])
+            result = api.config_set(path, unicode(value))
+        else:
+            result = api.config_get(path)
+        tpl = jsontemplate.Template("""{.section result}
+{.section error}
+    {@}
+{.or}
+    {key} ({type}) : {value}
+{.section old_value}
+    previous setting : {@}
+{.or}
+{.end}    
+{.end}
+{.end}""")
+        print_template(result, tpl)
+        return 0
+    return 2
 
+def cmd_set_request(opts, args, overDict):
+    name = args[1].lower()
+    if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
+        sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
+        tpl = jsontemplate.Template("""{.section result}
+{.repeated section @}
+    {key} ({type}) = {value}
+{.end}
+{.end}""")
+        return call_jsonrpc_method_template_and_stop('config_list', tpl, sort)
+    path = '' if len(args) < 2 else args[1]
+    path = option_name_to_path(name, path)    
+    if len(args) == 2:
+        tpl = jsontemplate.Template("""{.section result}
+{.section error}
+    {@}
+{.or}
+    {key} ({type}) : {value}
+{.end}
+{.end}""")
+        return call_jsonrpc_method_template_and_stop('config_get', tpl, path)
+    value = ' '.join(args[2:])
+    tpl = jsontemplate.Template("""{.section result}
+    {key} ({type}) : {value}
+{.section old_value}
+    previous setting : {@}
+{.or}
+{.end}
+{.end}""")
+    return call_jsonrpc_method_template_and_stop('config_set', tpl, path, value)
+
+#------------------------------------------------------------------------------ 
+
+def run(opts, args, pars=None, overDict=None):
     cmd = ''
     if len(args) > 0:
         cmd = args[0].lower()
@@ -449,14 +515,14 @@ def main():
             ])
         if len(appList) == 0:
             return run_now()
-        print_text('found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
+        print_text('found main BitDust process: %s, sending "restart" command' % str(appList))
         def done(x):
             print_text('DONE\n', '')
             from twisted.internet import reactor
             if reactor.running and not reactor._stopped:
                 reactor.stop()
         def failed(x):
-            print_text('FAILED, killing previous process and do restart\n', '')
+            print_text('soft restart FAILED, now killing previous process and do restart')
             try:
                 kill()
             except:
@@ -555,8 +621,25 @@ def main():
     running = len(appList) > 0
     overDict = override_options(opts, args)
     
+    #---set---
+    if cmd in ['set', 'get', 'conf', 'config', 'option', 'setting',]:
+        if len(args) == 1 or args[1].lower() in [ 'help', '?' ]:
+            from main import help
+            print_text(help.settings_help())
+            return 0
+        if not running:
+            return cmd_set_directly(opts, args, overDict)
+        return cmd_set_request(opts, args, overDict)    
+    
+    #---api---
+    elif cmd in ['api', 'call', ]:
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_api(opts, args, overDict)
+    
     #---backup---
-    if cmd in ['backup', 'backups', 'bk']:
+    elif cmd in ['backup', 'backups', 'bk']:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
@@ -579,4 +662,31 @@ def main():
         return cmd_integrate(opts, args, overDict)
     
     return 2
+
+#------------------------------------------------------------------------------ 
+
+def main():
+    try:
+        from system import bpio
+    except:
+        dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+        sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+        from distutils.sysconfig import get_python_lib
+        sys.path.append(os.path.join(get_python_lib(), 'bitdust'))
+        try:
+            from system import bpio
+        except:
+            print_text('ERROR! can not import working code.  Python Path:\n')
+            print_text('\n'.join(sys.path))
+            return 1
+    
+    pars = parser()
+    (opts, args) = pars.parse_args()
+
+    if opts.verbose:
+        print_copyright()
+
+    return run(opts, args)
+
+#------------------------------------------------------------------------------ 
 

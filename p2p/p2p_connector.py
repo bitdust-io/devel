@@ -242,6 +242,7 @@ class P2PConnector(automat.Automat):
         self.automat('my-id-updated')
         
     def doPropagateMyIdentity(self, arg):
+        #TODO need to run this actions one by one, not in parallel - use Defered chain
         propagate.update()
         propagate.write_to_dht()
         dht_service.set_node_data('idurl', my_id.getLocalID())
