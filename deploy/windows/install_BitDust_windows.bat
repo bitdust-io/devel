@@ -323,7 +323,7 @@ echo pause >> %BITDUST_HOME%\bin\bitdustd.bat
 echo @echo off > %BITDUST_HOME%\bin\bitdust.bat
 echo cd /D %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdust.bat
 echo start %BITDUST_HOME%\python\pythonw.exe bitdust.py %%* >> %BITDUST_HOME%\bin\bitdust.bat
-echo exit >> %BITDUST_HOME%\bin\bitdust.bat
+echo pause >> %BITDUST_HOME%\bin\bitdust.bat
 echo @echo off > %BITDUST_HOME%\bin\bitdust-sync.bat
 echo cd /D %BITDUST_HOME%\src >> %BITDUST_HOME%\bin\bitdust-sync.bat
 echo echo Running command "git clean" >> %BITDUST_HOME%\bin\bitdust-sync.bat
@@ -347,7 +347,7 @@ echo %BITDUST_HOME%\git\bin\git.exe pull >> %BITDUST_HOME%\bin\bitdust-sync-rest
 echo echo Running command "python manage.py syncdb" >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
 echo call %BITDUST_HOME%\python\python.exe manage.py syncdb >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
 echo start %BITDUST_HOME%\python\pythonw.exe bitdust.py %%* >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
-echo exit >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
+echo pause >> %BITDUST_HOME%\bin\bitdust-sync-restart.bat
 
 
 echo Prepare Desktop icon
