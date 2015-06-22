@@ -56,6 +56,12 @@ xcopy ..\..\raid\rebuild.py                     bin\raid\ /Y /Q
 
 
 @echo.
+@echo [ copy django static files ]
+mkdir bin\web\static
+xcopy ..\..\web\static\*                          bin\web\static\ /E /R /H /Y /Q
+
+
+@echo.
 @echo [ create DONE ]
 @echo.
 

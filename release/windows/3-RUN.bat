@@ -15,11 +15,11 @@ sleep 2
 pushd "%USERPROFILE%\.bitdust"
 rm -rf bin.off
 mkdir bin.off
-mv bin\* bin.off\
+xcopy "bin\*.*" "bin.off\" /E /R /H /Y /Q
 rm -rf bin
 mkdir bin
 popd
-xcopy "bin\*" "%USERPROFILE%\.bitdust\bin\" /E /R /H /Y /Q
+xcopy "bin\*.*" "%USERPROFILE%\.bitdust\bin\" /E /R /H /Y /Q
 cd "%USERPROFILE%\.bitdust\bin\"
 
 
@@ -27,9 +27,9 @@ cd "%USERPROFILE%\.bitdust\bin\"
 @echo [ GO ! ]
 @echo.
 
-START cmd /k "cd %USERPROFILE%\.bitdust\bin\ & echo Welcome to BitDust project! & echo Type `bitdust usage` to list all available commands and options."
+rem START cmd /k "cd %USERPROFILE%\.bitdust\bin\ & echo Welcome to BitDust project! & echo Type `bitdust usage` to list all available commands and options."
 
-bitdust.exe
+bitdust.exe show
 
 
 @echo.

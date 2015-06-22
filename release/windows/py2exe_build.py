@@ -28,9 +28,13 @@ import zope
 import zope.interface
 import zope.interface.adapter
 
+import pprint
+pprint.pprint(sys.path)
 
 packages = [
     'encodings',
+    "django",
+    "sqlite3",
     ]
 
 includes = [
@@ -39,12 +43,20 @@ includes = [
     'twisted.web.resource',
     'optparse',
     'services.*',
+    'Cookie',
+    'htmlentitydefs',
+    'difflib',
+    'web.asite.*',
+    'web.customerapp.*',
+    'web.friendapp.*',
+    'web.identityapp.*',
+    'web.jqchatapp.*',
+    'web.myfilesapp.*',
+    'web.setupapp.*',
+    'web.supplierapp.*',
     ]
-
+    
 excludes =[
-	'django',
-    'django.conf',
-    'django.core.wsgi',
     '__pypy__.builders',
     'ICCProfile',
     '_imaging_gif', 
@@ -95,7 +107,6 @@ excludes =[
     'Carbon',
     'Carbon.Files',
     '_sysconfigdata',
-    'html',
     'queue',
     ]
 
@@ -111,6 +122,10 @@ setup(
     version = open('release/version').read().strip(), 
 
     console = [
+        {
+            'script': 'bitdust.py',
+            'icon_resources': [(1, "icons/tray_icon.ico")],
+        },
         {
             'script': 'bpcmd.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
@@ -129,7 +144,7 @@ setup(
             'unbuffered': True,
         },
         {
-            'script': 'bitdust.py',
+            'script': 'manage.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
         },
     ],

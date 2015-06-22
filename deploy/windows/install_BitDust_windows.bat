@@ -461,8 +461,6 @@ if %errorlevel% neq 0 goto EXIT
 cd /D "%BITDUST_HOME%"
 "START.lnk"
 cd /D "%CURRENT_PATH%"
-
-
 cmd.exe /k cmd /c %FINISHED%
 exit
 

@@ -34,6 +34,9 @@ from twisted.python import threadpool
 
 from django.conf import settings as django_settings
 from django.core.wsgi import get_wsgi_application
+import django.test
+import Cookie
+import HTMLParser
 
 #------------------------------------------------------------------------------ 
 
