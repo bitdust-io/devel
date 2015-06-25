@@ -1,88 +1,46 @@
 {% extends "chat.html" %}
+
+
 {% load url from future %}
 
-{# An example chat window #}
 
 {% block head_title %}Chat Client{% endblock %}
 
+
 {% block extra_head %}
-<!-- Load the JS for the chat window and start retrieving messages. -->
-<script type="text/javascript" src="/static/jqchat/jqchat.js"></script>
-<script type="text/javascript">
-	$(document).ready(function(){
-		InitChatWindow("{% url 'jqchat_ajax' room.id %}", null);
-	});
-</script>
-<style type="text/css">
-	/* Example styling for the chat window */
-   #chatwindow {
-     border-radius: 10px;
-     height: 250px; 
-     width: calc(100% - 170px);  
-     border: 1px dotted lightgray;
-     padding: 10px;
-     margin-right: 10px;
-     overflow-y: auto; 
-     /* background-color: white; */
-     float: left;
-     text-align: left;
-   }
-  #memberswindow {
-     border-radius: 10px;
-     height: 250px;
-     width: 100px;
-     border: 1px dotted lightgray;
-     padding: 10px;
-     margin-left: 10px;
-     overflow-y: auto;
-     /* background-color: white; */
-     float: left;
-   }
-  .clear{
-     clear: both;
-     height: 10px;
-   }
-  .chatline {
-    width: 100%;
-  }
-  .chatname {
-    font-weight: bold;
-    padding: 0px 5px;
-  }
-  .chattime {
-    color: lightgray;
-  }
-  .chatevent {
-    color: lightgray;
-  }
-</style>
-{% endblock %}
-
-{% block page %}
-<h1>chat with {{ room.name }}</h1>
+  {{ block.super }}
+  <script type="text/javascript" src="/jqchatapp/js/jqchat.js"></script>
+{% endblock extra_head %}
 
 
-<div id="memberswindow">
+{% block chat_page %}
+<div id="memberswindow" class="col-sm-3 col-md-2 col-xs-4 sidebar"> 
 </div>
 
-<div id="chatwindow">
-<span id="loading">Loading...</span>
+<div class="col-sm-9 col-sm-offset-3 col-md-8 col-md-offset-4 col-xs-8 col-xs-offset-4 main">
+ <div class="row">
+ <div class="placeholder"> 
+ 
+  <h1>chat with {{ room.name }}</h1>
+  
+  <div id="chatwindow" >
+    <span id="loading">loading...</span>
+  </div>
+    
+  <div id="messagewindow">
+    <form id="chatform">
+      <input type="text" id="msg" size=40 />
+      <input type="submit" value="send" />
+    </form>
+  </div>
+ </div>
+ </div> 
 </div>
-
-<div class="clear">
-</div>
-
-<div id="messagewindow">
- <form id="chatform">
-  <input type="text" id="msg" size=80 />
-  <input type="submit" value="send" />
-  <br />
- </form>
-</div>
-<br />
 
 <script type="text/javascript">
-document.getElementById("msg").focus();
+  document.getElementById("msg").focus();
+  $(document).ready(function(){
+    InitChatWindow("{% url 'jqchat_ajax' room.id %}", null);
+  });
 </script>
-
-{% endblock page %}
+{% endblock chat_page %}

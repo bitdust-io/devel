@@ -12,7 +12,7 @@
 
 	"members": [
 {% for row in NewMembers %}
-	{ "username": "{{ row.user.username }}"}{% if not forloop.last %},{% endif %}
+	{ "idurl": "{{ row.idurl }}"}{% if not forloop.last %},{% endif %}
 {% endfor %}
 	]
 }

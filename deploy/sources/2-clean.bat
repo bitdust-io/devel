@@ -1,5 +1,6 @@
 @echo off
 
+@echo.
 @echo [ clear workspace folder ] 
 rm -rf workspace
 rm -f bitdust-*.zip

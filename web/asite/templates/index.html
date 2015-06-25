@@ -1,10 +1,83 @@
-{% extends "page.html" %}
-{% block page %}
-<h1>home</h1>
-<p>
-Welcome to the BitDust project!
-<br />
-This is the main page.
-</p>
-<br>
-{% endblock page %}
+{% extends "base.html" %}
+
+
+{% block extra_head %}
+  {{ block.super }}
+  <link href="/asite/css/cover.css" rel="stylesheet">
+  <link href="/asite/css/footer.css" rel="stylesheet">
+{% endblock extra_head %}
+
+
+{% block body %}
+<nav class="navbar navbar-default navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">BitDust project</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li><a href="/">Home</a></li>
+        <li><a href="/friend/">Friends</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+<div class="site-wrapper" style="padding-top: 50px;">
+  <div class="site-wrapper-inner">
+    <div class="cover-container">
+
+      <div class="masthead clearfix">
+        <div class="inner">
+<!--             <h3 class="masthead-brand">BitDust project</h3>
+            <nav>
+              <ul class="nav masthead-nav">
+                <li class="active"><a href="/">home</a></li>
+                <li><a href="/friend/">friends</a></li>
+                <li><a href="/supplier/">suppliers</a></li>
+                <li><a href="/customer/">customers</a></li>
+                <li><a href="/myfiles/">my files</a></li>
+                <li><a href="/docs/">docs</a></li>
+                <li><a href="/about/">about</a></li>
+              </ul>
+            </nav>
+ -->        </div>
+      </div> 
+          
+      <div class="inner cover">           
+        <h1>Welcome!</h1>
+        <p>
+        Good to see you!
+        <br />
+        Welcome to the BitDust team!
+        </p>
+        <br>
+      </div>
+
+       <div class="mastfoot">
+        <!-- <div class="pull-right">
+          <p>&copy; BitDust, 2015&nbsp;&nbsp;&nbsp;</p>
+        </div> -->
+      </div> 
+
+           
+    </div>
+  </div>
+</div> 
+
+
+<div class="footer">
+  <div class="pull-right" style="height: 30px; line-height: 30px;">  
+    &copy; BitDust, 2015&nbsp;&nbsp;&nbsp;
+  </div>
+</div>
+{% endblock body %}
+
+

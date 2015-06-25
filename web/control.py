@@ -65,11 +65,7 @@ def init():
         lg.out(4, '    SKIP listener already exist')
         return
 
-    if bpio.isFrozen():
-        lg.out(4, '    detected a fozen binary executables')
-        # sys.path.insert(0, os.path.join(bpio.getExecutableDir(), 'django'))
-        sys.path.append(os.path.join(bpio.getExecutableDir(), 'web'))
-    lg.out(4, '    \n' + pprint.pformat(sys.path))
+    lg.out(10, '    \n' + pprint.pformat(sys.path))
 
     lg.out(4, '    setting environment DJANGO_SETTINGS_MODULE=web.asite.settings')
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.asite.settings")
@@ -77,6 +73,7 @@ def init():
     from django.core.wsgi import get_wsgi_application
     from django.conf import settings as django_settings
     from django.core import management
+    from django.contrib.auth.management.commands import changepassword
     
     lg.out(4, '    configuring WSGI bridge from Twisted to Django')
     wsgi_handler = get_wsgi_application()
@@ -88,17 +85,40 @@ def init():
     root = DjangoRootResource(resource)
     root_static_dir = os.path.join(bpio.getExecutableDir(), "web")  
     for sub in os.listdir(root_static_dir):
-        static_path = os.path.join(root_static_dir, sub, 'static') 
-        root.putChild(sub, static.File(static_path))
+        static_path = os.path.join(root_static_dir, sub, 'static')
+        node = static.File(static_path) 
+        root.putChild(sub, node)
+        if sub == 'asite':
+            node.putChild('admin', 
+                static.File(os.path.join(root_static_dir, sub, 'admin', 'static')))
     site = server.Site(root)
     _WSGIPort = 8080
     lg.out(4, '        %s' % my_wsgi_handler)
     lg.out(4, '        %s' % resource)
     lg.out(4, '        %s' % site)
 
-    # TODO run "python manage.py syncdb"
-    lg.out(4, '    running "syncdb" command')
-    management.call_command('syncdb', stdout=sys.stdout)
+    verbosity = 0
+    if lg.is_debug(18):
+        verbosity = 3
+    if lg.is_debug(12):
+        verbosity = 2
+    if lg.is_debug(8):
+        verbosity = 1
+        
+    # lg.out(4, '    running django "flush" command')
+    # management.call_command('flush', interactive=False, verbosity=verbosity)
+
+    # lg.out(4, '    running django "createsuperuser" command')
+    # management.call_command('createsuperuser',
+    #     interactive=False, verbosity=verbosity, 
+    #     username="admin", email="admin@localhost")
+    # command = changepassword.Command()
+    # command._get_pass = lambda *args: 'admin'
+    # command.execute("admin")
+
+    lg.out(4, '    running django "syncdb" command')
+    management.call_command('syncdb', stdout=sys.stdout,
+        interactive=False, verbosity=verbosity)
 
     lg.out(4, '    starting listener: %s' % site)
     result = start_listener(site)

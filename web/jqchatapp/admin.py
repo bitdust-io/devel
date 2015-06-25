@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from models import Message, Room
+from models import Message, Room, RoomMember
 from django.contrib import admin
+
+#------------------------------------------------------------------------------ 
 
 class RoomAdmin(admin.ModelAdmin):
     list_display = ('name', 'created', 'last_activity_formatted', 'description')
@@ -27,9 +29,20 @@ class RoomAdmin(admin.ModelAdmin):
 
 admin.site.register(Room, RoomAdmin)
 
+#------------------------------------------------------------------------------ 
+
+class RoomMemberAdmin(admin.ModelAdmin):
+    list_display = ('room', 'idurl',)
+    list_filter = ['room', 'idurl',]
+
+admin.site.register(RoomMember, RoomMemberAdmin)
+
+#------------------------------------------------------------------------------ 
+
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('room', 'created', 'unix_timestamp', 'idurl', 'text', 'event')
     list_filter = ['room', 'idurl']
 
 admin.site.register(Message, MessageAdmin)
+
 

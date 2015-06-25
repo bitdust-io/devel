@@ -1,7 +1,7 @@
 import os
 import sys
 
-gettext = lambda s: s
+# gettext = lambda s: s
 PROJECT_PATH = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 
 APP_DATA_PATH = ''
@@ -107,7 +107,7 @@ USE_TZ = True
 
 ADMIN_MEDIA_PREFIX = '/media/admin/'
 
-STATIC_ROOT = os.path.join(PROJECT_PATH, 'static')
+STATIC_ROOT = os.path.join(PROJECT_PATH, 'asite', 'static')
 
-STATIC_URL = '/static/'
+STATIC_URL = '/asite/'
 

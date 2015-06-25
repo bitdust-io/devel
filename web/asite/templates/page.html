@@ -1,7 +1,14 @@
 {% extends "topmenu.html" %}
+
+
+{% block extra_head %}
+  {{ block.super }}
+{% endblock extra_head %}
+
+
 {% block bottombody %}
-<div style="border: 1px dotted black; text-align: center; border-radius: 20px;">
   {% block page %}
-  {% endblock page %} 
-</div>
+  {% endblock page %}
 {% endblock bottombody %}
+
+

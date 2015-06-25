@@ -3,6 +3,8 @@
 import os
 import sys
 
+#------------------------------------------------------------------------------ 
+#--- win32com patch ---
 try:
     try:
         import py2exe.mf as modulefinder
@@ -19,6 +21,9 @@ try:
 except ImportError:
     pass
 
+modulefinder.AddPackagePath('django', 'util')
+
+#------------------------------------------------------------------------------ 
 
 from distutils.core import setup
 import py2exe
@@ -31,13 +36,74 @@ import zope.interface.adapter
 import pprint
 pprint.pprint(sys.path)
 
+#------------------------------------------------------------------------------ 
+
 packages = [
     'encodings',
     "django",
     "sqlite3",
+    'email',
+    'web',
+    'unittest',
     ]
 
+#------------------------------------------------------------------------------ 
+
 includes = [
+    'django.*',
+    'django.template.loaders.filesystem',
+    'django.template.loaders.app_directories',
+    'django.middleware.common',
+    'django.contrib.sessions.middleware',
+    'django.contrib.auth.middleware',
+    'django.middleware.doc',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sessions.backends.db',
+    'django.contrib.sites',
+    'django.contrib.admin',
+    'django.core.cache.backends',
+    'django.db.backends.sqlite3.base',
+    'django.db.backends.sqlite3.introspection',
+    'django.db.backends.sqlite3.creation',
+    'django.db.backends.sqlite3.client',
+    'django.template.defaulttags',
+    'django.template.defaultfilters',
+    'django.template.loader_tags',
+    'django.contrib.admin.views.main',
+    'django.core.context_processors',
+    'django.contrib.auth.views',
+    'django.contrib.auth.backends',
+    'django.views.static',
+    'django.contrib.admin.templatetags.admin_list',
+    'django.contrib.admin.templatetags.admin_modify',
+    'django.contrib.admin.templatetags.log',
+    'django.conf.urls.shortcut',
+    'django.views.defaults',
+    'django.core.cache.backends.locmem',
+    'django.templatetags.i18n',
+    'django.views.i18n',
+    'email',
+    'email.mime.audio',
+    'email.mime.base',
+    'email.mime.image',
+    'email.mime.message',
+    'email.mime.multipart',
+    'email.mime.nonmultipart',
+    'email.mime.text',
+    'email.charset',
+    'email.encoders',
+    'email.errors',
+    'email.feedparser',
+    'email.generator',
+    'email.header',
+    'email.iterators',
+    'email.message',
+    'email.parser',
+    'email.utils',
+    'email.base64mime',
+    'email.quoprimime',
     'encodings',
     'encodings.*',
     'twisted.web.resource',
@@ -56,6 +122,8 @@ includes = [
     'web.supplierapp.*',
     ]
     
+#------------------------------------------------------------------------------ 
+
 excludes =[
     '__pypy__.builders',
     'ICCProfile',
@@ -74,14 +142,14 @@ excludes =[
     'dl',
     'doctest',
     'dowser',
-    'email.Generator',
-    'email.Iterators',
-    'email.Utils',
-    'email.Encoders', 
-    'email.MIMEBase', 
-    'email.MIMEMultipart', 
-    'email.MIMEText', 
-    'email.base64MIME',    
+    # 'email.Generator',
+    # 'email.Iterators',
+    # 'email.Utils',
+    # 'email.Encoders', 
+    # 'email.MIMEBase', 
+    # 'email.MIMEMultipart', 
+    # 'email.MIMEText', 
+    # 'email.base64MIME',    
     'guppy',
     'guppy.heapy.RM',
     'hotshot',
@@ -110,8 +178,13 @@ excludes =[
     'queue',
     ]
 
+#------------------------------------------------------------------------------ 
+
 ignores = [
     ]
+
+#------------------------------------------------------------------------------ 
+#--- SETUP -------------------------------------------------------------------- 
 
 setup(
 

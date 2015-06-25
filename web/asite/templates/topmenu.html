@@ -1,13 +1,46 @@
 {% extends "base.html" %}
+
+
+{% block extra_head %}
+  {{ block.super }}
+  <link href="/asite/css/cover.css" rel="stylesheet">
+  <link href="/asite/css/footer.css" rel="stylesheet">
+{% endblock extra_head %}
+
+
 {% block body %}
-<div style="text-align: center; background-color: #efd; text-align: center; text-color: white; 
-border-radius: 20px; border: 1px dotted black; line-height:30px;">
-<a href="/">[home]</a>
-<a href="/friend/">[friends]</a>
-<!-- <a href='/supplier/'>[suppliers]</a> -->
-<!-- <a href='/customer/'>[customers]</a> -->
-<!-- <a href='/myfiles/'>[my files]</a> -->
+<nav class="navbar navbar-default navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">BitDust project</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li><a href="/">Home</a></li>
+        <li><a href="/friend/">Friends</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+    
+<div class="container page_content">
+  {% block bottombody %}
+  {% endblock bottombody %}
 </div>
-{% block bottombody %}
-{% endblock bottombody %}
+
+
+<div class="footer">
+  <div class="pull-right" style="height: 30px; line-height: 30px;">  
+    &copy; BitDust, 2015&nbsp;&nbsp;&nbsp;
+  </div>
+</div>
 {% endblock body %}
+
+

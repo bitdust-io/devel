@@ -1,22 +1,36 @@
 {% extends "page.html" %}
+
+
 {% block page %}
 <h1>search users</h1>
-<div style="width: 75%; margin:0 auto;">
-<p align=justify>
+<div style="margin:0 auto;">
+<p align=center>
 Enter a user name for the search or a full IDURL address in the field below.
+<!-- 
 The search results will quickly appear in the space below and you will
 be able to add discovered users to your contact list immediately.
+-->
 </p>
 </div>
-<input type="text" size=20 name="target_username" id="target_username_field" value="{{ target_username }}" />
-<br />
-<br />
-<div id="search_results">
+<div class="row">
+  <div class="center-block col-md-3" style="float: none;">
+    <input type="text" size=20 name="target_username" id="target_username_field" value="{{ target_username }}" />
+    <input id="lookup_button" type="button" value="lookup">
+  </div>
 </div>
+<br />
+<div class="row">
+  <div class="center-block col-md-6" style="float: none;">
+    <div id="search_results">
+    </div>
+  </div>
+</div>
+    
 <script  type="text/javascript">
 
  var updateTask = null;
  var newSearchTask = null;
+ var updateCounts = 0;
  
  function startNewSearch() {
   var target_username = $('#target_username_field').val();
@@ -30,8 +44,11 @@ be able to add discovered users to your contact list immediately.
     url: '{{ request.path }}?target_username='+encodeURIComponent(target_username),
     success: function(data) {
      debug.log('ajax.POST.success', data);
+     updateCounts = 0;
+     updateTask = setInterval(updateSearchResults, 250);
     },
     fail: function(e) {
+     $('#lookup_button').removeAttr('disabled');
      clearInterval(updateTask);
     }
    });
@@ -40,8 +57,14 @@ be able to add discovered users to your contact list immediately.
  
  function updateSearchResults() {
   var target_username = $('#target_username_field').val();
-  // debug.log('updateSearchResults', target_username);
+  debug.log('updateSearchResults', target_username);
+  updateCounts += 1;
+  if (updateCounts > 20) {
+   $('#lookup_button').removeAttr('disabled');
+   clearInterval(updateTask); 
+  }
   if (target_username) {
+   //$('#lookup_button').attr('disabled','disabled');
    $.ajax({
     type: 'GET',
     dataType: 'json',
@@ -49,6 +72,7 @@ be able to add discovered users to your contact list immediately.
     url: '{{ request.path }}?target_username='+target_username,
     success: function(data) {
      // debug.log('ajax.GET.success', data);
+     // $('#lookup_button').removeAttr('disabled');
      $('#search_results').empty();
      $.each(data.result, function(i,item){
       var newLine = $('<div class="search_result"></div>');
@@ -69,6 +93,7 @@ be able to add discovered users to your contact list immediately.
      });
     },
     fail: function(e) {
+     $('#lookup_button').removeAttr('disabled');
      clearInterval(updateTask);
     }
    });
@@ -80,12 +105,14 @@ be able to add discovered users to your contact list immediately.
    var event = e || window.event;
    var charCode = event.which || event.keyCode;
    if ( charCode == '13' ) {
+    prepareSearch();
     event.preventDefault();
     return false;
    }
    return true;
   });
 
+  /*
   $('#target_username_field').on('keyup', function (e) {
    if (newSearchTask) {
     clearTimeout(newSearchTask);
@@ -95,8 +122,27 @@ be able to add discovered users to your contact list immediately.
     startNewSearch();
    }, 500);
   });
+  */
 
-  updateTask = setInterval(updateSearchResults, 250);
+  //updateTask = setInterval(updateSearchResults, 250);
+  
+  function prepareSearch() {
+   if (newSearchTask) {
+    $('#lookup_button').removeAttr('disabled');
+    clearTimeout(newSearchTask);
+   }
+   $('#lookup_button').attr('disabled','disabled');
+   $('#search_results').empty();
+   newSearchTask = setTimeout(function() {
+    newSearchTask = null;
+    startNewSearch();
+   }, 500);
+  }
+  
+  $('#lookup_button').click(function() {
+    prepareSearch();
+  });
+  
  });
  
 </script>

@@ -26,5 +26,5 @@ urlpatterns = patterns('',
     url(r'^$', login_required(views.IndexView.as_view()), name='index'),
 ) 
 
-urlpatterns += staticfiles_urlpatterns()
+# urlpatterns += staticfiles_urlpatterns()
 

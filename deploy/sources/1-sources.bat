@@ -1,6 +1,7 @@
 @echo off
 
 
+@echo.
 @echo [ run "python setup.py sdist" ]
 rm -rf bitdust.tar.gz
 cd workspace
@@ -10,6 +11,7 @@ cp dist/*.zip ..
 rm -rf dist
 cd ..
 
+@echo.
 @echo [ archive DONE ]
 
 pause

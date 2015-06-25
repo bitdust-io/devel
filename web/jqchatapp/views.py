@@ -131,10 +131,10 @@ class Ajax(object):
         
                 if action == 'postmsg':
                     msg_text = self.request.POST['message']
-                # if action == 'room_join':
-                #     RoomMember.objects.create_member(idurl=idurl, room=self.ThisRoom)
-                # if action == 'room_leave':
-                #     RoomMember.objects.remove_member(idurl=idurl, room=self.ThisRoom)
+                if action == 'room_join':
+                    RoomMember.objects.create_member(idurl=id, room=self.ThisRoom)
+                if action == 'room_leave':
+                    RoomMember.objects.remove_member(idurl=id, room=self.ThisRoom)
                 if len(msg_text.strip()) > 0: # Ignore empty strings.
                     Message.objects.create_message(
                         my_id.getLocalID(), 

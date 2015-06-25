@@ -1,19 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>BitDust</title>
-    <!-- <link href="/static/css/reset.css" rel="stylesheet" type="text/css"> -->
-    <script src="/static/js/jquery-1.11.0.min.js"></script>
-    <script src="/static/js/ba-debug.js"></script>
-    <script src="/static/js/autoupdater.js"></script> 
-    {% block extra_head %}
-    {% endblock extra_head %}
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="BitDust">
+<meta name="author" content="Veselin Penev">
+
+<link rel="icon" href="/favicon.ico"> 
+
+<title>BitDust</title>
+
+<link href="/asite/css/bootstrap.css" rel="stylesheet">
+    
+<script src="/asite/js/jquery-1.11.0.min.js"></script>
+<script src="/asite/js/ba-debug.js"></script>
+<script src="/asite/js/autoupdater.js"></script> 
+<script src="/asite/js/bootstrap.js"></script>
+<script src="/asite/js/ie10-viewport-bug-workaround.js"></script> 
+
+{% block extra_head %}
+{% endblock extra_head %}
 </head>
+
 <body>
-<div style="width: 790px; margin:0 auto; padding: 0px;">
-    {% block body %}
-    {% endblock body %}
-</div>
+ 
+{% block body %}
+{% endblock body %}
+
 </body>
 </html>
