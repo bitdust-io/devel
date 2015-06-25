@@ -14,6 +14,7 @@
 
 import os
 import sys
+import pprint
 import random
 import webbrowser
 
@@ -29,14 +30,6 @@ from twisted.web import server
 from twisted.web import resource
 from twisted.web import static
 from twisted.python import threadpool
-
-#------------------------------------------------------------------------------ 
-
-from django.conf import settings as django_settings
-from django.core.wsgi import get_wsgi_application
-import django.test
-import Cookie
-import HTMLParser
 
 #------------------------------------------------------------------------------ 
 
@@ -72,12 +65,19 @@ def init():
         lg.out(4, '    SKIP listener already exist')
         return
 
+    if bpio.isFrozen():
+        lg.out(4, '    detected a fozen binary executables')
+        # sys.path.insert(0, os.path.join(bpio.getExecutableDir(), 'django'))
+        sys.path.append(os.path.join(bpio.getExecutableDir(), 'web'))
+    lg.out(4, '    \n' + pprint.pformat(sys.path))
+
     lg.out(4, '    setting environment DJANGO_SETTINGS_MODULE=web.asite.settings')
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.asite.settings")
+
+    from django.core.wsgi import get_wsgi_application
+    from django.conf import settings as django_settings
+    from django.core import management
     
-    # TODO run "python manage.py syncdb"
-
-
     lg.out(4, '    configuring WSGI bridge from Twisted to Django')
     wsgi_handler = get_wsgi_application()
     my_wsgi_handler = MyFakedWSGIHandler(wsgi_handler) 
@@ -85,15 +85,22 @@ def init():
     pool.start()
     reactor.addSystemEventTrigger('after', 'shutdown', pool.stop)
     resource = wsgi.WSGIResource(reactor, pool, my_wsgi_handler)
-    root = DjangoRootResource(resource) 
-    static_path = os.path.join(bpio.getExecutableDir(), "web", "static")
-    root.putChild('static', static.File(static_path))
+    root = DjangoRootResource(resource)
+    root_static_dir = os.path.join(bpio.getExecutableDir(), "web")  
+    for sub in os.listdir(root_static_dir):
+        static_path = os.path.join(root_static_dir, sub, 'static') 
+        root.putChild(sub, static.File(static_path))
     site = server.Site(root)
     _WSGIPort = 8080
     lg.out(4, '        %s' % my_wsgi_handler)
     lg.out(4, '        %s' % resource)
     lg.out(4, '        %s' % site)
-    
+
+    # TODO run "python manage.py syncdb"
+    lg.out(4, '    running "syncdb" command')
+    management.call_command('syncdb', stdout=sys.stdout)
+
+    lg.out(4, '    starting listener: %s' % site)
     result = start_listener(site)
     result.addCallback(lambda portnum: post_init(portnum))
 
