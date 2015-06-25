@@ -728,7 +728,7 @@ class UDPStream(automat.Automat):
         # lg.out(18, 'doDestroyMe %s' % (str(self.stream_id)))
 
     def on_block_received(self, inpt):
-        if self.consumer:
+        if self.consumer and getattr(self.consumer, 'on_received_raw_data', None):
             block_id = inpt.read(4)
             try:
                 block_id = struct.unpack('i', block_id)[0]
@@ -792,7 +792,7 @@ class UDPStream(automat.Automat):
             # self.event('block-received', inpt)
     
     def on_ack_received(self, inpt):
-        if self.consumer:
+        if self.consumer and getattr(self.consumer, 'on_sent_raw_data', None):
             try:
                 eof_flag = None
                 acks = []

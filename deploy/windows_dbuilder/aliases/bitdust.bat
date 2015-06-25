@@ -1,4 +1,3 @@
 @echo off
 cd ..\src
-start ..\python\pythonw.exe bitdust.py %* 
-pause
+start ..\python\pythonw.exe bitdust.py %*
