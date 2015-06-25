@@ -60,10 +60,24 @@ _UpdateFlag = None
 def init():
     global _WSGIListener
     global _WSGIPort
+    result = Deferred()
     lg.out(4, 'control.init')
     if _WSGIListener:
         lg.out(4, '    SKIP listener already exist')
-        return
+        result.callback(0)
+        return result
+    
+    try:
+        import django
+        ver = django.get_version()
+        if not ver.startswith('1.7'):
+            lg.out(4, '    Django version must be 1.7, skip!')
+            result.callback(0)
+            return result
+    except:
+        lg.exc()
+        result.callback(0)
+        return result
 
     lg.out(10, '    \n' + pprint.pformat(sys.path))
 
