@@ -66,6 +66,24 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_list_messages(self):
         return api.list_messages()
     
+    def jsonrpc_send_message(self, recipient, message_body):
+        return api.send_message(recipient, message_body)
+    
+    def jsonrpc_list_correspondents(self):
+        return api.list_correspondents()
+    
+    def jsonrpc_add_correspondent(self, idurl, nickname=''):
+        return api.add_correspondent(idurl, nickname)
+
+    def jsonrpc_remove_correspondent(self, idurl):
+        return api.remove_correspondent(idurl)
+
+    def jsonrpc_find_peer_by_nickname(self, nickname):
+        return api.find_peer_by_nickname(nickname)
+    
+    # def jsonrpc_:
+    #     return api.
+    
 #------------------------------------------------------------------------------ 
 
 if __name__ == "__main__":

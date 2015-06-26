@@ -463,6 +463,69 @@ def cmd_set_request(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
+def cmd_message(opts, args, overDict):
+    if len(args) < 2 or args[1] == 'list':
+        tpl = jsontemplate.Template("""{.section result}
+    {@}        
+{.end}""")
+        return call_jsonrpc_method_template_and_stop('list_messages', tpl)
+    if len(args) >= 4 and args[1] in [ 'send', ]:
+        tpl = jsontemplate.Template("""{.section result}
+    {@}
+{.end}""")
+        return call_jsonrpc_method_template_and_stop('send_message', tpl, args[2], args[3]) 
+    return 2
+
+#------------------------------------------------------------------------------ 
+
+def cmd_friend(opts, args, overDict):
+    tpl_lookup = jsontemplate.Template(
+"""{.section result}
+    {result}
+    {nickname}
+    {position}
+    {idurl}
+{.end}""")
+    tpl_add = jsontemplate.Template(
+"""{.section result}
+    {@}
+{.end}""")
+    if len(args) < 2:
+        tpl = jsontemplate.Template("""{.section result}
+{.repeated section @}
+    {idurl} : {nickname}
+{.end}
+{.end}""")
+        return call_jsonrpc_method_template_and_stop('list_correspondents', tpl)
+    elif len(args) > 2 and args[1] in [ 'check', 'nick', 'nickname', 'test', ]:
+        return call_jsonrpc_method_template_and_stop('find_peer_by_nickname', tpl_lookup, unicode(args[2]))
+    elif len(args) > 2 and args[1] in [ 'add', 'append', ]:
+        inp = unicode(args[2])
+        if inp.startswith('http://'):
+            return call_jsonrpc_method_template_and_stop('add_correspondent', tpl_add, inp)
+        def _lookup(result):
+            try:
+                if result['result'] == 'exist':
+                    print_template(result, tpl_lookup)
+                    d = call_jsonrpc_method('add_correspondent', result['idurl'])
+                    d.addCallback(print_template_and_stop, tpl_add)
+                    d.addErrback(fail_and_stop) 
+                    return 0
+                else:                                                    
+                    return print_template_and_stop(result, tpl_lookup)
+            except:
+                from logs import lg
+                lg.exc()
+                return 0
+        d = call_jsonrpc_method('find_peer_by_nickname', inp)
+        d.addCallback(_lookup)
+        d.addErrback(fail_and_stop) 
+        reactor.run()
+        return 0
+    return 2    
+
+#------------------------------------------------------------------------------ 
+
 def run(opts, args, pars=None, overDict=None):
     cmd = ''
     if len(args) > 0:
@@ -637,6 +700,20 @@ def run(opts, args, pars=None, overDict=None):
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_api(opts, args, overDict)
+    
+    #---messages---
+    elif cmd == 'msg' or cmd == 'message' or cmd == 'messages':
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_message(opts, args, overDict)
+    
+    #---friends---
+    elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy' or cmd == 'correspondent' or cmd == 'contact' or cmd == 'peer':
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_friend(opts, args, overDict)
     
     #---backup---
     elif cmd in ['backup', 'backups', 'bk']:

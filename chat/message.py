@@ -147,6 +147,7 @@ def SendMessage(remote_idurl, messagebody, packet_id=None):
         _OutgoingMessageCallback(result, messagebody, remote_identity, packet_id)
     return result
 
+#------------------------------------------------------------------------------ 
 
 def SortMessagesList(mlist, sort_by_column):
     order = {}

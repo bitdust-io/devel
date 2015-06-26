@@ -216,39 +216,69 @@ def backup_tree_add(dirpath):
 
 def list_messages():
     from chat import message
-    mlist = message.ListAllMessages()
-    mlist.sort(key=lambda item: item[3])
+    mlist = {} # TODO !!!
     return { 'result': mlist }
     
     
 def send_message(recipient, message_body):
     from chat import message
+    recipient = str(recipient)
     if not recipient.startswith('http://'):
         from contacts import contactsdb
         recipient = contactsdb.find_correspondent_by_nickname(recipient) or recipient
-    # msgbody = message.MakeMessage(recipient, message_body)
-    # message.SaveMessage(msgbody)
-    return {'result': { 'packet': message.SendMessage(recipient, message_body) },
+    packet = message.SendMessage(recipient, message_body)
+    if packet:
+        packet = str(packet.outpacket)
+    return {'result': { 
+            'packet': packet },
             'recipient': recipient }
     
+#------------------------------------------------------------------------------ 
+
+def list_correspondents():
+    from contacts import contactsdb
+    return { 'result': map(lambda v: {
+        'idurl': v[0],
+        'nickname': v[1],},
+        contactsdb.correspondents()), } 
+    
+    
+def add_correspondent(idurl, nickname=''):
+    from contacts import contactsdb
+    contactsdb.add_correspondent(idurl, nickname)
+    contactsdb.save_correspondents()
+    return { 'result': 'new correspondent was added',
+             'nickname': nickname,
+             'idurl': idurl, }
+    
+
+def remove_correspondent(idurl):
+    from contacts import contactsdb
+    result = contactsdb.remove_correspondent(idurl)
+    contactsdb.save_correspondents()
+    if result:
+        result = 'correspondent %s were removed'
+    else:
+        result = 'correspondent %s was not found'
+    return { 'result': result, }
+
 
 def find_peer_by_nickname(nickname):
     from twisted.internet.defer import Deferred
     from chat import nickname_observer
     nickname_observer.stop_all()
     d = Deferred()
+    def _result(result, nik, pos, idurl):
+        return d.callback({'result':
+            { 'result': result,
+              'nickname': nik,
+              'position': pos,
+              'idurl': idurl,}})        
     nickname_observer.find_one(nickname, 
-        results_callback=lambda result, nik, idurl: d.callback(
-            {'result': result,
-             'nickname': nik,
-             'idurl': idurl}))
+        results_callback=_result)
     # nickname_observer.observe_many(nickname, 
         # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
     return d
 
 
-def list_correspondents():
-    from contacts import contactsdb
-    return { 'result': contactsdb.correspondents_dict(), } 
-    
-    
+

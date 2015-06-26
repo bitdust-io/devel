@@ -263,8 +263,8 @@ def remove_correspondent(idurl):
             _CorrespondentsList.remove(tupl)
             if _CorrespondentsChangedCallback is not None:
                 _CorrespondentsChangedCallback(curlist, _CorrespondentsList)
-            return tupl[1]
-    return None
+            return True
+    return False
 
 
 def update_correspondents(idslist):
