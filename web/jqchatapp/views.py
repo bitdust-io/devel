@@ -60,7 +60,7 @@ def open_room(request):
             ThisRoom.save() 
             # myname = settings.getNickName() or my_id.getIDName() 
             RoomMember.objects.create_member(idurl=my_id.getLocalID(),
-                                             # idurl=idurl,
+                                             # name=nameurl.GetName(my_id.getLocalID()),
                                              room=ThisRoom)
         return HttpResponseRedirect('/chat/room/%d' % ThisRoom.id)
 
@@ -72,7 +72,7 @@ def open_room(request):
                             name=name)
             ThisRoom.save() 
             RoomMember.objects.create_member(idurl=my_id.getLocalID(),
-                                             # idurl=idurl,
+                                             # name=nameurl.GetName(my_id.getLocalID()),
                                              room=ThisRoom)
         return HttpResponseRedirect('/chat/room/%d' % ThisRoom.id)
 
@@ -132,9 +132,13 @@ class Ajax(object):
                 if action == 'postmsg':
                     msg_text = self.request.POST['message']
                 if action == 'room_join':
-                    RoomMember.objects.create_member(idurl=id, room=self.ThisRoom)
+                    RoomMember.objects.create_member(idurl=id,
+                                                     # name=nameurl.GetName(id),
+                                                     room=self.ThisRoom)
                 if action == 'room_leave':
-                    RoomMember.objects.remove_member(idurl=id, room=self.ThisRoom)
+                    RoomMember.objects.remove_member(idurl=id,
+                                                     # name=nameurl.GetName(id),
+                                                     room=self.ThisRoom)
                 if len(msg_text.strip()) > 0: # Ignore empty strings.
                     Message.objects.create_message(
                         my_id.getLocalID(), 
@@ -153,6 +157,7 @@ class Ajax(object):
                 StatusCode = 1
     
             NewMembers = RoomMember.objects.filter(room=self.ThisRoom)
+            NewMembersNames = map(lambda mem: nameurl.GetName(mem.idurl), NewMembers)
     
             l = len(NewMessages)
             if l > JQCHAT_DISPLAY_COUNT:
@@ -164,6 +169,7 @@ class Ajax(object):
                  'StatusCode': StatusCode,
                  'NewDescription': NewDescription,
                  'NewMembers': NewMembers,
+                 'NewMembersNames': NewMembersNames,
                  'CustomPayload': '',
                  'TimeDisplayFormat': DATE_FORMAT
                 },

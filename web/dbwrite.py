@@ -98,5 +98,7 @@ def incoming_message(request, message_text):
         ThisRoom.save()
     message_text = escape(unicode(message_text))
     Message.objects.create_message(idurl, ThisRoom, message_text)
-    RoomMember.objects.create_member(idurl=idurl, room=ThisRoom)
+    RoomMember.objects.create_member(idurl=idurl,
+                                     # name=nameurl.GetName(idurl),
+                                     room=ThisRoom)
     

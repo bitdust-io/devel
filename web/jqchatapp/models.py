@@ -136,9 +136,11 @@ class memberManager(models.Manager):
         usr_prev_rooms.delete()
 
     def create_member(self, idurl, room):
-        # self.remove_member(idurl, room)        
+        self.remove_member(idurl, room)        
         Message.objects.create_event(idurl, room, 2)
-        m = RoomMember.objects.create(idurl=idurl, room=room)
+        m = RoomMember.objects.create(idurl=idurl, 
+                                      # name=name, 
+                                      room=room)
         return m
 
 #------------------------------------------------------------------------------ 
@@ -146,12 +148,13 @@ class memberManager(models.Manager):
 class RoomMember(models.Model):
     room = models.ForeignKey(Room, null=True)
     idurl = models.URLField(max_length=255)
+    # name = models.URLField(max_length=255) 
     
     def save(self, **kw):
         super(RoomMember, self).save(**kw)
         
     class Meta:
-        ordering = ['idurl']
+        ordering = ['idurl', ]
 
     objects = memberManager()
 

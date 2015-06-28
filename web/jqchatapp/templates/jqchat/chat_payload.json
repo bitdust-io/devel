@@ -11,8 +11,8 @@
 	],
 
 	"members": [
-{% for row in NewMembers %}
-	{ "idurl": "{{ row.idurl }}"}{% if not forloop.last %},{% endif %}
+{% for row in NewMembersNames %}
+	{ "name": "{{ row }}"}{% if not forloop.last %},{% endif %}
 {% endfor %}
 	]
 }

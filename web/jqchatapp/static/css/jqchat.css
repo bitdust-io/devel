@@ -34,7 +34,7 @@
 	text-align: left;
 	color: #777;
     /* border-radius: 10px; */
- /* height: 250px; */
+    height: 30px; 
  /* width: 100px; */
  /* border: 1px dotted lightgray; */
      padding: 10px; 
@@ -54,7 +54,7 @@
 	width: 100%;
 }
 #msg {
-	width: 80%;
+	width: 95%;
 }
 
 

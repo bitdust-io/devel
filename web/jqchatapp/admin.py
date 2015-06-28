@@ -32,16 +32,16 @@ admin.site.register(Room, RoomAdmin)
 #------------------------------------------------------------------------------ 
 
 class RoomMemberAdmin(admin.ModelAdmin):
-    list_display = ('room', 'idurl',)
-    list_filter = ['room', 'idurl',]
+    list_display = ('room', 'idurl', )
+    list_filter = ['room', 'idurl', ]
 
 admin.site.register(RoomMember, RoomMemberAdmin)
 
 #------------------------------------------------------------------------------ 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('room', 'created', 'unix_timestamp', 'idurl', 'text', 'event')
-    list_filter = ['room', 'idurl']
+    list_display = ('room', 'created', 'unix_timestamp', 'idurl', 'text', 'event',)
+    list_filter = ['room', 'idurl',]
 
 admin.site.register(Message, MessageAdmin)
 

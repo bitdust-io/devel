@@ -77,7 +77,7 @@ function processResponse(payload) {
     // Populate the room members window
     $("#memberswindow").html("")
     for(member in payload.members) {
-        $("#memberswindow").append('<strong>'+payload.members[member].idurl+'</strong><br />');
+        $("#memberswindow").append('<strong>'+payload.members[member].name+'</strong>&nbsp;&nbsp;&nbsp;');
     }
 
 	// Scroll down if messages fill up the div.

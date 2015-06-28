@@ -318,7 +318,7 @@ def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     """
     Create ``packet`` with my Identity file and calls ``lib.transport_control.outbox()`` to send it.
     """
-    lg.out(8, "propagate.SendToID [%s] NeedAck=%s" % (nameurl.GetName(idurl), str(NeedAck)))
+    lg.out(8, "propagate.SendToID [%s] wide=%s" % (nameurl.GetName(idurl), str(wide)))
     if ack_handler is None:
         ack_handler = HandleAck
     thePayload = Payload
@@ -345,7 +345,7 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
     """
     Same, but send to many IDs.
     """
-    lg.out(8, "propagate.SendToIDs to %d users" % len(idlist))
+    lg.out(8, "propagate.SendToIDs to %d users, wide=%s" % (len(idlist), wide))
     if ack_handler is None:
         ack_handler = HandleAck
     MyID = my_id.getLocalID()

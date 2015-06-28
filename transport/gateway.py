@@ -367,11 +367,12 @@ def outbox(outpacket, wide=False, callbacks={}):
                       to all contacts of Remote Identity
         :param callbacks: provide a callback methods to get response
     """
-    lg.out(16, "gateway.outbox [%s] signed by %s|%s to %s" % (
+    lg.out(16, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
         outpacket.Command, 
         nameurl.GetName(outpacket.OwnerID),
         nameurl.GetName(outpacket.CreatorID),
-        nameurl.GetName(outpacket.RemoteID),))
+        nameurl.GetName(outpacket.RemoteID),
+        wide,))
     return packet_out.create(outpacket, wide, callbacks)
 
 #------------------------------------------------------------------------------ 
