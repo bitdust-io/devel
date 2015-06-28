@@ -119,8 +119,8 @@ def init():
     if lg.is_debug(8):
         verbosity = 1
         
-    lg.out(4, '    running django "flush" command')
-    management.call_command('flush', interactive=False, verbosity=verbosity)
+    # lg.out(4, '    running django "flush" command')
+    # management.call_command('flush', interactive=False, verbosity=verbosity)
 
     # lg.out(4, '    running django "createsuperuser" command')
     # management.call_command('createsuperuser',

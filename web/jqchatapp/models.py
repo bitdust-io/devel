@@ -154,7 +154,7 @@ class RoomMember(models.Model):
         super(RoomMember, self).save(**kw)
         
     class Meta:
-        ordering = ['idurl', ]
+        ordering = ['idurl',]
 
     objects = memberManager()
 

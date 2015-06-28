@@ -25,7 +25,7 @@ urlpatterns = patterns('',
     url(r'^myfiles/', include('web.myfilesapp.urls')),
     url(r'^api/(?P<method>[a-zA-Z0-9_.-]+)$', login_required(views.call_api_method)),
     url(r'^$', login_required(views.IndexView.as_view()), name='index'),
-    url(r'', login_required(views.IndexView.as_view()), name='index'),
+    # url(r'', login_required(views.IndexView.as_view()), name='index'),
 ) 
 
 # urlpatterns += staticfiles_urlpatterns()

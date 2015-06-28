@@ -59,7 +59,7 @@ be able to add discovered users to your contact list immediately.
   var target_username = $('#target_username_field').val();
   debug.log('updateSearchResults', target_username);
   updateCounts += 1;
-  if (updateCounts > 20) {
+  if (updateCounts > 6) {
    $('#lookup_button').removeAttr('disabled');
    clearInterval(updateTask); 
   }
