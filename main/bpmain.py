@@ -604,10 +604,10 @@ def main():
                 # from interface.command_line import run_url_command
                 # d = run_url_command('?action=restart', False)
                 from interface import cmd_line
-                show = False
+                ui = False
                 if cmd == 'restart':
-                    show = True
-                d = cmd_line.call_xmlrpc_method('restart', show)
+                    ui = True
+                d = cmd_line.call_xmlrpc_method('restart', ui)
                 d.addCallback(done)
                 d.addErrback(failed)
                 reactor.run()
