@@ -213,7 +213,7 @@ def makeFilename(customerID, packetID):
 
 #------------------------------------------------------------------------------
 
-def SendAck(packettoack, response='', wide = False):
+def SendAck(packettoack, response='', wide=False):
     result = signed.Packet(commands.Ack(), my_id.getLocalID(), my_id.getLocalID(), 
                                  packettoack.PacketID, response, packettoack.OwnerID)
     lg.out(8, "p2p_service.SendAck %s to %s" % (result.PacketID, result.RemoteID))

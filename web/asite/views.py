@@ -39,13 +39,14 @@ class IndexView(TemplateView):
 
 def call_api_method(request, method):
     lg.out(2, 'views.asite.call_api_method:    %s()' % method)
+    from twisted.internet import reactor
     pth = request.path
     if method == 'stop':
         pth = '/'
-        from twisted.internet import reactor
-        reactor.callLater(0.2, api.stop)
+        reactor.callLater(1, api.stop)
     elif method == 'restart':
-        api.restart(True)
+        pth = '/'
+        reactor.callLater(1, api.restart, True)
     return HttpResponseRedirect(pth) 
 
 #------------------------------------------------------------------------------ 
