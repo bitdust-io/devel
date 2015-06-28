@@ -23,7 +23,7 @@ def stop():
     return { 'result': 'stopped', }
     
 
-def restart():
+def restart(show=False):
     from logs import lg
     from system import bpio
     from main import shutdowner
@@ -31,8 +31,12 @@ def restart():
     if len(appList) > 0:
         lg.out(2, 'api.restart found bpgui process, added param "show", sending event "stop" to the shutdowner() machine')
         shutdowner.A('stop', 'restartnshow')
-        return 'restarted with GUI'
-    lg.out(2, 'api.restart did not found bpgui process, just do the restart, sending event "stop" to the shutdowner() machine')
+        return { 'result': 'restarted with GUI', }
+    if show: 
+        lg.out(2, 'api.restart forced for GUI, added param "show", sending event "stop" to the shutdowner() machine')
+        shutdowner.A('stop', 'restartnshow')
+        return { 'result': 'restarted with GUI', }
+    lg.out(2, 'api.restart did not found bpgui process nor forced for GUI, just do the restart, sending event "stop" to the shutdowner() machine')
     shutdowner.A('stop', 'restart')
     return { 'result': 'restarted', }
 

@@ -24,7 +24,7 @@
  /* border-radius: 10px; */
  /* width: calc(100% - 170px);   */
  /* border: 1px dotted lightgray; */
- /* padding: 10px; */
+ padding: 10px;
  /* margin-right: 10px; */
  /* overflow-y: auto;  */
  /* background-color: white; */
@@ -37,7 +37,7 @@
  /* height: 250px; */
  /* width: 100px; */
  /* border: 1px dotted lightgray; */
- /* padding: 10px; */
+     padding: 10px; 
  /* margin-left: 10px; */
  /* overflow-y: auto; */
  /* background-color: white; */
@@ -46,6 +46,15 @@
 #messagewindow {
     position: absolute;
     bottom: 30px;
+    right: 0px;
+    left: 0px;
+    /* padding: 10px; */
+}
+#chatform {
+	width: 100%;
+}
+#msg {
+	width: 80%;
 }
 
 

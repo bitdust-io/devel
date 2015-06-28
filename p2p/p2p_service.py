@@ -213,11 +213,11 @@ def makeFilename(customerID, packetID):
 
 #------------------------------------------------------------------------------
 
-def SendAck(packettoack, response=''):
+def SendAck(packettoack, response='', wide = False):
     result = signed.Packet(commands.Ack(), my_id.getLocalID(), my_id.getLocalID(), 
                                  packettoack.PacketID, response, packettoack.OwnerID)
     lg.out(8, "p2p_service.SendAck %s to %s" % (result.PacketID, result.RemoteID))
-    gateway.outbox(result)
+    gateway.outbox(result, wide=wide)
     return result
     
 
@@ -290,7 +290,8 @@ def Identity(newpacket):
         return
 
     if newpacket.OwnerID == idurl:
-        SendAck(newpacket)
+        # wide=True : a small trick to respond to all contacts if we receive pings  
+        SendAck(newpacket, wide=True)
         lg.out(8, "p2p_service.Identity from [%s], sent Ack" % nameurl.GetName(idurl))
     else:
         lg.out(8, "p2p_service.Identity from [%s]" % nameurl.GetName(idurl))

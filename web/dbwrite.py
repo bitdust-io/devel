@@ -78,7 +78,7 @@ def incoming_message(request, message_text):
     from django.shortcuts import get_object_or_404
     from django.utils.html import escape
     from django.contrib.auth.models import User
-    from web.jqchatapp.models import Room, Message
+    from web.jqchatapp.models import Room, Message, RoomMember
     from contacts import contactsdb
     from userid import my_id
     from lib import nameurl
@@ -98,5 +98,5 @@ def incoming_message(request, message_text):
         ThisRoom.save()
     message_text = escape(unicode(message_text))
     Message.objects.create_message(idurl, ThisRoom, message_text)
-    
+    RoomMember.objects.create_member(idurl=idurl, room=ThisRoom)
     

@@ -1025,7 +1025,7 @@ class Template(object):
     It also accepts all the compile options that CompileTemplate does.
     """
     self._program = CompileTemplate(
-        template_str.lstrip(' \n'), builder=builder, **compile_options)
+        template_str, builder=builder, **compile_options)
     self.undefined_str = undefined_str
 
   #

@@ -8,39 +8,94 @@
 
 
 {% block extra_head %}
-  {{ block.super }}
-  <script type="text/javascript" src="/jqchatapp/js/jqchat.js"></script>
+    {{ block.super }}
+    <link href="/asite/css/scrolling.css" rel="stylesheet" />
+    <!--
+    <link href="/asite/css/jquery.mCustomScrollbar.css" rel="stylesheet" />
+    <script src="/asite/js/jquery.mCustomScrollbar.js"></script>
+    -->
 {% endblock extra_head %}
 
 
 {% block chat_page %}
-<div id="memberswindow" class="col-sm-3 col-md-2 col-xs-4 sidebar"> 
-</div>
 
-<div class="col-sm-9 col-sm-offset-3 col-md-8 col-md-offset-4 col-xs-8 col-xs-offset-4 main">
+
+<!-- 
+<div id="memberswindow" class="col-sm-3 col-md-3 col-xs-4 sidebar"> 
+</div>
+-->
+
+
+<!-- 
+<div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 col-xs-8 col-xs-offset-4 main">
  <div class="row">
  <div class="placeholder"> 
+-->
+
+<div id="memberswindow" class=""> 
+</div>
+
+<h1>chat with {{ room.name }}</h1>
+
  
-  <h1>chat with {{ room.name }}</h1>
-  
-  <div id="chatwindow" >
-    <span id="loading">loading...</span>
+<div class="scroll_outer">
+  <div class="scroll_inner">
+    <div id="chatwindow">
+      <span id="loading">loading...</span>
+    </div>
   </div>
-    
-  <div id="messagewindow">
+</div>
+
+
+<div id="messagewindow">
     <form id="chatform">
-      <input type="text" id="msg" size=40 />
-      <input type="submit" value="send" />
+        <input type="text" id="msg" />
+        <!-- <input type="submit" value="send" /> -->
     </form>
-  </div>
+</div>
+  
+<!--  
  </div>
  </div> 
 </div>
+-->
+
 
 <script type="text/javascript">
-  document.getElementById("msg").focus();
-  $(document).ready(function(){
-    InitChatWindow("{% url 'jqchat_ajax' room.id %}", null);
-  });
+    document.getElementById("msg").focus();
+    $(document).ready(function(){
+        InitChatWindow("{% url 'jqchat_ajax' room.id %}", null);
+    });
 </script>
+
+
+<!--
+<script>
+    (function($){
+        $(window).load(function(){
+            $("#chatwindow").mCustomScrollbar(
+                axis:"x" // horizontal scrollbar
+            );
+        });
+    })(jQuery);
+</script>
+-->
+
+<script>
+    $(document).ready(function(){
+        resizeContent();
+    
+        $(window).resize(function() {
+            resizeContent();
+        });
+    });
+    
+    function resizeContent() {
+        $height = $('.page_content').height() - 180;
+        $('.scroll_outer').height($height);
+    }
+</script>
+
+
+
 {% endblock chat_page %}

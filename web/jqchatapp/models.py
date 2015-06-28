@@ -136,7 +136,7 @@ class memberManager(models.Manager):
         usr_prev_rooms.delete()
 
     def create_member(self, idurl, room):
-        self.remove_member(idurl, room)        
+        # self.remove_member(idurl, room)        
         Message.objects.create_event(idurl, room, 2)
         m = RoomMember.objects.create(idurl=idurl, room=room)
         return m

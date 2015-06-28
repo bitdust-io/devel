@@ -260,7 +260,10 @@ def run_now(opts, args):
         lg.disable_logs()
     overDict = override_options(opts, args)
     from main.bpmain import run
-    ret = run('', opts, args, overDict)
+    ui = ''
+    if len(args) > 0 and args[0].lower() in ['restart',]:
+        ui = 'show'
+    ret = run(ui, opts, args, overDict)
     bpio.shutdown()
     return ret
 
@@ -569,7 +572,7 @@ def run(opts, args, pars=None, overDict=None):
         return 0
 
     #---restart---
-    elif cmd == 'restart':
+    elif cmd == 'restart' or cmd == 'reboot':
         appList = bpio.find_process([
             'bitdust.exe',
             'bpmain.py',
@@ -577,7 +580,7 @@ def run(opts, args, pars=None, overDict=None):
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         if len(appList) == 0:
-            return run_now()
+            return run_now(opts, args)
         print_text('found main BitDust process: %s, sending "restart" command' % str(appList))
         def done(x):
             print_text('DONE\n', '')
@@ -594,9 +597,12 @@ def run(opts, args, pars=None, overDict=None):
             from lib import misc
             reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart)
             reactor.stop()
+        show = False
+        if cmd == 'restart':
+            show = True
         try:
             from twisted.internet import reactor
-            call_jsonrpc_method('restart').addCallbacks(done, failed)
+            call_jsonrpc_method('restart', show).addCallbacks(done, failed)
             reactor.run()
         except:
             print_exception()

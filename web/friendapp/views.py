@@ -43,7 +43,7 @@ class FriendView(DetailView):
         return context
 
 
-class FriendsView(ListView):
+class FriendsView(ListView, control.DebugMixin):
     template_name = 'friends.html'
     context_object_name = 'friends_list'
     

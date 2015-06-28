@@ -7,6 +7,8 @@
       {% for friend in friends_list %}
           <a href='{{ friend.id }}'>{{ friend.name }}</a>
           &nbsp;&nbsp;&nbsp;
+          <span style="color: #888;">{{ friend.idurl }}</span>
+          &nbsp;&nbsp;&nbsp;
           <a href="/chat/open?idurl={{ friend.idurl|urlencode:'' }}">[chat]</a>
           <br/>
       {% endfor %}

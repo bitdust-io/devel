@@ -11,6 +11,8 @@
 .. module:: jsonrpc_server
 """
 
+import pprint
+
 from twisted.internet import reactor
 from twisted.web import server
 
@@ -40,15 +42,19 @@ def init():
 #------------------------------------------------------------------------------ 
 
 class BitDustJsonRPCServer(JSONRPCServer):
+    def _callMethod(self, request_dict):
+        lg.out(6, 'jsontpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
+        return JSONRPCServer._callMethod(self, request_dict)
+    
     def jsonrpc_stop(self):
         return api.stop()
 
     def jsonrpc_show(self):
         return api.show()
 
-    def jsonrpc_restart(self):
-        return api.restart()
-    
+    def jsonrpc_restart(self, show=False):
+        return api.restart(show)
+
     def jsonrpc_backups_list(self):
         return { 'backups': map(
                     lambda x: {'data': '<%s>' % str(x)},

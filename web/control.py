@@ -301,6 +301,17 @@ class DjangoRootResource(resource.Resource):
         request.postpath.insert(0, path0)
         return self.wsgi_resource
 
+
+class DebugMixin(object):
+    def get_context_data(self, **kwargs):
+        if 'debug' not in kwargs:
+            try:
+                kwargs['debug'] = str(pprint.pformat(self.context))
+                pprint.pprint(self.context)
+            except:
+                lg.exc()
+        return kwargs
+    
 #------------------------------------------------------------------------------ 
 
 if __name__ == "__main__":

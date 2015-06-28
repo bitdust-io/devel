@@ -82,7 +82,11 @@ function processResponse(payload) {
 
 	// Scroll down if messages fill up the div.
 	var chatDiv = document.getElementById("chatwindow");
-	chatDiv.scrollTop = chatDiv.scrollHeight;
+	var scrollDiv = $(".scroll_inner");
+	var height = scrollDiv[0].scrollHeight;
+	//var scrollOutDiv = $(".scroll_outer");
+	debug.log(height);
+	scrollDiv.scrollTop(height);
 
     // Scroll down if members fill up the div.
     var membDiv = document.getElementById("memberswindow");

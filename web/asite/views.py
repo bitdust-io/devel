@@ -15,6 +15,8 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 #------------------------------------------------------------------------------ 
 
 from logs import lg
+
+from interface import api
  
 from web import auth
 from web import control 
@@ -33,6 +35,20 @@ class IndexView(TemplateView):
     # def dispatch(self, request, *args, **kwargs):
     #     return generic.View.dispatch(self, request, *args, **kwargs)
 
+#------------------------------------------------------------------------------ 
+
+def call_api_method(request, method):
+    lg.out(2, 'views.asite.call_api_method:    %s()' % method)
+    pth = request.path
+    if method == 'stop':
+        pth = '/'
+        from twisted.internet import reactor
+        reactor.callLater(0.2, api.stop)
+    elif method == 'restart':
+        api.restart(True)
+    return HttpResponseRedirect(pth) 
+
+#------------------------------------------------------------------------------ 
 
 @never_cache
 def LoginPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
@@ -85,6 +101,7 @@ def LogoutPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
         redirect_to = resolve_url(settings.LOGIN_REDIRECT_URL)
     return HttpResponseRedirect(redirect_to)
 
+#------------------------------------------------------------------------------ 
 
 class RepaintFlagView(View):
     def get(self, request):

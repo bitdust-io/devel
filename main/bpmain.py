@@ -575,7 +575,7 @@ def main():
         return 0
 
     #---restart---
-    elif cmd == 'restart':
+    elif cmd == 'restart' or cmd == 'reboot':
         appList = bpio.find_process([
             'bitdust.exe',
             'bpmain.py',
@@ -604,7 +604,10 @@ def main():
                 # from interface.command_line import run_url_command
                 # d = run_url_command('?action=restart', False)
                 from interface import cmd_line
-                d = cmd_line.call_xmlrpc_method('restart')
+                show = False
+                if cmd == 'restart':
+                    show = True
+                d = cmd_line.call_xmlrpc_method('restart', show)
                 d.addCallback(done)
                 d.addErrback(failed)
                 reactor.run()
@@ -615,8 +618,11 @@ def main():
                 bpio.shutdown()
                 return 1
         else:
+            ui = ''
+            if cmd == 'restart':
+                ui = 'show'
             try:
-                ret = run('', opts, args, overDict)
+                ret = run(ui, opts, args, overDict)
             except:
                 lg.exc()
                 ret = 1

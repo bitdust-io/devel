@@ -295,6 +295,10 @@ class P2PConnector(automat.Automat):
         if first not in active_protos():
             lg.out(2, 'p2p_connector._check_to_use_best_proto first contact (%s) is not working!   active_protos()=%s' % (first, str(active_protos())))
             return False
+        # #small hack to make udp as first method if all is fine
+        # if first != 'udp' and ('udp' in active_protos() and 'tcp' in active_protos()):
+        #     lg.out(2, 'p2p_connector._check_to_use_best_proto first contact (%s) but UDP also works!  active_protos()=%s' % (first, str(active_protos())))
+        #     return False
         #if tcp contact is on first place and it is working - we are VERY HAPPY! - no need to change anything - return False
         if first == 'tcp' and 'tcp' in active_protos():
             return True
@@ -325,6 +329,9 @@ class P2PConnector(automat.Automat):
             #take (but not remove) any item from the set
             wantedproto = active_protos().pop()
             active_protos().add(wantedproto)
+        # #small hack to make udp as first method if all is fine
+        # if first != 'udp' and ('udp' in active_protos() and 'tcp' in active_protos()):
+        #     wantedproto = 'udp'
         #if udp method is not the first but it works - switch to udp
         if first != 'udp' and 'udp' in active_protos():
             wantedproto = 'udp'
