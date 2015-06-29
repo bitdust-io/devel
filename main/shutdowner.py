@@ -210,7 +210,11 @@ class Shutdowner(automat.Automat):
         lg.out(2, "shutdowner.shutdown_restart param=%s" % param)
         def do_restart(param):
             from lib import misc
-            misc.DoRestart(param)
+            from system import bpio
+            detach = False
+            if bpio.Windows():
+                detach = True
+            misc.DoRestart(param, detach=detach)
         def shutdown_finished(x, param):
             lg.out(2, "shutdowner.shutdown_finished want to stop the reactor")
             reactor.addSystemEventTrigger('after','shutdown', do_restart, param)

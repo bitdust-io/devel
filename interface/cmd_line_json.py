@@ -581,6 +581,9 @@ def run(opts, args, pars=None, overDict=None):
             ])
         if len(appList) == 0:
             return run_now(opts, args)
+        ui = False
+        if cmd == 'restart':
+            ui = True
         print_text('found main BitDust process: %s, sending "restart" command' % str(appList))
         def done(x):
             print_text('DONE\n', '')
@@ -595,14 +598,11 @@ def run(opts, args, pars=None, overDict=None):
                 print_exception()
             from twisted.internet import reactor
             from lib import misc
-            reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart)
+            reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param=ui, detach=True)
             reactor.stop()
-        show = False
-        if cmd == 'restart':
-            show = True
         try:
             from twisted.internet import reactor
-            call_jsonrpc_method('restart', show).addCallbacks(done, failed)
+            call_jsonrpc_method('restart', ui).addCallbacks(done, failed)
             reactor.run()
         except:
             print_exception()

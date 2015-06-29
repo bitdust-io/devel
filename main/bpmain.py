@@ -582,6 +582,9 @@ def main():
             'bitdust.py',
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
+        ui = False
+        if cmd == 'restart':
+            ui = True
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
             def done(x):
@@ -597,17 +600,16 @@ def main():
                     lg.exc()
                 from twisted.internet import reactor
                 from lib import misc
-                reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart)
+                reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart, param=ui, detach=True)
                 reactor.stop()
             try:
                 from twisted.internet import reactor
                 # from interface.command_line import run_url_command
                 # d = run_url_command('?action=restart', False)
-                from interface import cmd_line
-                ui = False
-                if cmd == 'restart':
-                    ui = True
-                d = cmd_line.call_xmlrpc_method('restart', ui)
+                # from interface import cmd_line
+                # d = cmd_line.call_xmlrpc_method('restart', ui)
+                from interface import cmd_line_json
+                d = cmd_line_json.call_jsonrpc_method('restart', ui)
                 d.addCallback(done)
                 d.addErrback(failed)
                 reactor.run()
@@ -693,8 +695,10 @@ def main():
                     lg.out(0, 'BitDust process finished correctly\n')
                     reactor.stop()
                     bpio.shutdown()
-                from interface import cmd_line
-                cmd_line.call_xmlrpc_method('stop').addBoth(_stopped)
+                # from interface import cmd_line
+                # cmd_line.call_xmlrpc_method('stop').addBoth(_stopped)
+                from interface import cmd_line_json
+                cmd_line_json.call_jsonrpc_method('stop').addBoth(_stopped)
                 reactor.run()
                 return 0
             except:
@@ -747,8 +751,10 @@ def main():
                 # run_url_command(url).addBoth(do_reactor_stop_and_spawn)
                 # reactor.run()
                 # bpio.shutdown()
-                from interface import cmd_line
-                cmd_line.call_xmlrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
+                # from interface import cmd_line
+                # cmd_line.call_xmlrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
+                from interface import cmd_line_json
+                cmd_line_json.call_jsonrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
                 reactor.run()
                 return 0
             except:
