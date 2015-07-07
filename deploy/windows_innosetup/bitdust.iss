@@ -44,9 +44,10 @@ end;
 
 [Icons]
 Name: "{commondesktop}\Start {#Name}"; Filename: "{app}\python\pythonw.exe"; WorkingDir: "{app}\src"; Parameters: "bitdust.py show"; Comment: "Launch BitDust software"; IconFilename: "{app}\icons\desktop.ico"
-Name: "{commondesktop}\Start {#Name} in   debug mode"; Filename: "{app}\bin\{#ProcName}d.bat"; WorkingDir: "{app}\src"; Parameters: "-d20 show"; Comment: "Launch BitDust software in debug mode"; IconFilename: "{app}\icons\desktop-debug.ico"
+Name: "{commondesktop}\Start {#Name} in debug mode"; Filename: "{app}\bin\{#ProcName}d.bat"; WorkingDir: "{app}\src"; Parameters: "-d20 show"; Comment: "Launch BitDust software in debug mode"; IconFilename: "{app}\icons\desktop-debug.ico"
 Name: "{commondesktop}\Stop {#Name}"; Filename: "{app}\python\pythonw.exe"; WorkingDir: "{app}\src"; Parameters: "bitdust.py stop"; Comment: "Completely stop BitDust software"; IconFilename: "{app}\icons\desktop-stop.ico"
 Name: "{commondesktop}\Synchronize {#Name} sources"; Filename: "{app}\bin\{#ProcName}sync.bat"; WorkingDir: "{app}\src"; Parameters: ""; Comment: "Synchronize BitDust sources from public repository at http://gitlab.bitdust.io/devel/bitdust/"; IconFilename: "{app}\icons\desktop-sync.ico"
+Name: "{userstartup}\{#Name}"; Filename: ""
 
 [Run]
 Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources from public Git repository"; StatusMsg: "Downloading BitDust sources from public Git repository"; 

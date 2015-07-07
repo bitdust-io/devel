@@ -172,6 +172,16 @@ def isFrozen():
     """
     return main_is_frozen()
 
+def isConsoled():
+    """
+    Return True if output can be sent to console
+    """
+    if getExecutableFilename().count('pythonw.exe'):
+        return False
+    if not sys.stdout:
+        return False
+    return True
+
 #-------------------------------------------------------------------------------
 
 def list_dir_safe(dirpath):

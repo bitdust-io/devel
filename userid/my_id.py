@@ -37,7 +37,7 @@ import identity
 _LocalIdentity = None
 _LocalIDURL = None
 _LocalName = None
-_ValidTransports = ['tcp', 'udp', ]
+_ValidTransports = ['tcp', 'udp', 'proxy',]
 
 #------------------------------------------------------------------------------ 
 

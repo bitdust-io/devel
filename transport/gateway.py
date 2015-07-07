@@ -139,69 +139,6 @@ def init():
     _LocalListener = TransportGateLocalProxy()
 
 
-#def init1(transportslist=[]):
-#    """
-#    Initialize the transports gateway - this will start all installed transports.
-#    Return a list if started transports.
-#    """
-#    global _LocalListener
-#    global _XMLRPCListener
-#    global _XMLRPCPort
-#    global _XMLRPCURL
-#    global _DoingShutdown
-#    global _TransportsDict
-#    global _AvailableTransports
-#    lg.out(4, 'gateway.init')
-#    if _DoingShutdown:
-#        return []
-#    result = []
-#    _LocalListener = TransportGateLocalProxy()
-#    lg.out(6, 'gateway.init transports: %s' % str(transportslist))
-#    for proto in transportslist:
-#        iface = None
-#        if proto == 'tcp':
-#            try:
-#                from tcp import tcp_interface
-#                _AvailableTransports['tcp'] = True
-#            except:
-#                lg.exc()
-#                continue
-#            iface = tcp_interface.GateInterface()
-#        elif proto == 'udp':
-#            try:
-#                from udp import udp_interface
-#                _AvailableTransports['udp'] = True
-#            except:
-#                lg.exc()
-#                continue
-#            iface = udp_interface.GateInterface()
-#        if iface is None:
-#            raise Exception('transport not supported: %s'  % proto)
-#        _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface, on_transport_state_changed)
-#        transport(proto).automat('init', _LocalListener)
-#        result.append(proto)
-#        lg.out(6, 'gateway.init initialized transport [%s]' % proto)
-##    _XMLRPCListener = reactor.listenTCP(0, server.Site(TransportGateXMLRPCServer()))
-##    _XMLRPCPort = _XMLRPCListener.getHost().port
-##    _XMLRPCURL = "http://localhost:%d" % int(_XMLRPCPort)
-##    if not transportslist:
-##        transportslist = _AvailableTransports.keys()
-##    lg.out(6, 'gateway.init  XML-RPC: %s, transports: %s' % (_XMLRPCURL, transportslist))
-##    for proto in transportslist:
-##        iface = None
-##        if proto == 'tcp':
-##            iface = tcp_interface.GateInterface()
-##        elif proto == 'udp':
-##            iface = udp_interface.GateInterface()
-##        if iface is None:
-##            raise Exception('transport not supported: %s'  % proto)
-##        _TransportsDict[proto] = network_transport.NetworkTransport(proto, iface)
-##        transport(proto).automat('init', _XMLRPCURL)
-##        result.append(proto)
-##        lg.out(6, 'gateway.init want to start transport [%s]' % proto)
-#    return result
-
-
 def shutdown():
     """
     Shut down the gateway, need to stop all transports.
@@ -215,13 +152,6 @@ def shutdown():
     if _DoingShutdown:
         return
     _DoingShutdown = True
-    # for transp in transports().values():
-    #     transp.automat('shutdown')
-#    if _XMLRPCListener:
-#        del _XMLRPCListener
-#        _XMLRPCListener = None
-#        _XMLRPCPort = None
-#        _XMLRPCURL = None
     if _LocalListener:
         _LocalListener = None
 
@@ -509,24 +439,7 @@ def on_transport_state_changed(transport, oldstate, newstate):
     global _TransportsStopping
     lg.out(6, 'gateway.on_transport_state_changed in %r : %s->%s' % (
         transport, oldstate, newstate))
-    # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
-#        if A().state == 'GATE_INIT':
-#            if newstate in ['STARTING', 'OFFLINE',]:
-#                _TransportsInitialization.remove(proto)
-#                if len(_TransportsInitialization) == 0:
-#                    A('all-transports-ready')                
-#    if A().state == 'UP':
-#        if newstate in ['LISTENING', 'OFFLINE',]:
-#            _TransportsStarting.remove(proto)
-#            if len(_TransportsStarting) == 0:
-#                A('network-up')
-#    elif A().state == 'DOWN':
-#        if newstate == 'OFFLINE':
-#            _TransportsStopping.remove(proto)
-#            if len(_TransportsStopping) == 0:
-#                A('network-down')
-    # print _TransportsInitialization, _TransportsStarting, _TransportsStopping
-    
+   
 def on_transport_initialized(proto, xmlrpcurl=None):
     """
     """
@@ -793,7 +706,7 @@ def main():
         import dht.dht_service
         dht.dht_service.init(options.dhtport)
     reactor.addSystemEventTrigger('before', 'shutdown', shutdown)
-    init(['tcp', 'udp'])
+    init()
     start()
     globals()['num_in'] = 0
     def _in(a,b,c,d):

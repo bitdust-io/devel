@@ -471,9 +471,10 @@ def main():
     if logpath != '':
         lg.open_log_file(logpath)
         lg.out(2, 'bpmain.main log file opened ' + logpath)
-        if bpio.Windows() and bpio.isFrozen():
-            lg.stdout_start_redirecting()
-            lg.out(2, 'bpmain.main redirecting started')
+
+    if bpio.Windows() and (bpio.isFrozen() or bpio.isConsoled()):
+        lg.stdout_start_redirecting()
+        lg.out(2, 'bpmain.main redirecting started')
 
     try:
         os.remove(os.path.join(os.path.expanduser('~'), '.bitdust', 'logs', 'exception.log'))

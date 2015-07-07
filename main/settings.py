@@ -1538,6 +1538,13 @@ def transportSendingIsEnabled(proto):
         return False
     return config.conf().getBool(key)
 
+def enableProxyServer(enable=None):
+    """
+    """
+    if enable is None:
+        return config.conf().getBool('services/proxy-server/enabled')
+    config.conf().setData('services/proxy-server/enabled', str(enable))
+
 def getDebugLevelStr(): 
     """
     This is just for checking if it is set, the int() would throw an error.
@@ -2011,6 +2018,8 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/udp-transport/enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
+    config.conf().setDefaultValue('services/proxy-transport/enabled', 'true')
+    config.conf().setDefaultValue('services/proxy-server/enabled', 'true')
 
 def _createNotExisingSettings():
     """

@@ -15,7 +15,6 @@
 
 import os
 import sys
-import time
 
 try:
     from twisted.internet import reactor
@@ -23,12 +22,10 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in udp_interface.py')
 
 from twisted.web import xmlrpc
-from twisted.internet import protocol
 from twisted.internet.defer import Deferred, succeed
 
 from logs import lg
 
-from system import bpio
 from lib import nameurl
 
 import udp_node
@@ -43,6 +40,8 @@ _GateProxy = None
 def proxy():
     global _GateProxy
     return _GateProxy
+
+#------------------------------------------------------------------------------ 
 
 def idurl_to_id(idurl):
     """

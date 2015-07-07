@@ -98,7 +98,10 @@ def out(level, msg, nl='\n'):
                 s = str(s) + nl
                 sys.stdout.write(s)
             except:
-                sys.stdout.write(format_exception() + '\n\n' + s)
+                try:
+                    sys.stdout.write(format_exception() + '\n\n' + s)
+                except:
+                    pass
                 
     if _WebStreamFunc is not None:
         _WebStreamFunc(level, s_ + nl)

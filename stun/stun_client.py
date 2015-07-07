@@ -320,6 +320,7 @@ class StunClient(automat.Automat):
             bpio.WriteFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
         lg.out(4, 'stun_client.doReportSuccess based on %d nodes: %s' % (
             len(self.stun_results), str(self.my_address)))
+        lg.out(12, '    %s' % str(result))
         for cb in self.callbacks:
             cb(result[0], result[1], result[2], result[3])
         self.callbacks = []

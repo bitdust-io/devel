@@ -427,6 +427,8 @@ class FixedTypesConfig(NotifiableConfig):
         'services/udp-transport/enabled':               TYPE_BOOLEAN,
         'services/udp-transport/receiving-enabled':     TYPE_BOOLEAN,
         'services/udp-transport/sending-enabled':       TYPE_BOOLEAN,
+        'services/proxy-transport/enabled':             TYPE_BOOLEAN,
+        'services/proxy-server/enabled':                TYPE_BOOLEAN,
         'updates/mode':                                 TYPE_COMBO_BOX,
         'updates/shedule':                              TYPE_TEXT,
     }
