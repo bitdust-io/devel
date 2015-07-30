@@ -22,9 +22,10 @@ Commands:
   restart
   stop
   show
-  register <account name> [private key size] [preferred id server]
+  identity create <username> [private key size]
+  identity restore <private key source file> [IDURL]
   key copy
-  key copy <filename for copy of private key>
+  key copy <destination filename to write your private key>
   key print
   backup list
   backup idlist
@@ -53,7 +54,7 @@ Commands:
   cache
   cache clear
   messages list
-  message send <nickname or idurl> <subject> <body>
+  message send <username or idurl> <subject> <body>
   set <option> [value]
   version
   help
@@ -81,9 +82,14 @@ Commands:
 
   show                  start BitDust and show the main window
 
-  register <account name> [private key size] [preferred id server]
-                        generate a new private key and register new account
+  identity create <username> [private key size]
+                        generate a new private key and new identity file for you
                         key size can be 1024, 2048 or 4096
+
+  identity restore <private key source file> [IDURL]
+                        recover existing identity file with your private key file
+
+  register <account name> [private key size] [preferred id server]
 
   key copy              copy private key to clipboard to paste with Ctrl+V somewhere 
   
@@ -165,7 +171,7 @@ Commands:
 
   messages list         list all messages
 
-  message send <nickname or idurl> <subject> <body>
+  message send <username or idurl> <subject> <body>
                         send a message to given user
   
   set <option> [value]  to modify program setting

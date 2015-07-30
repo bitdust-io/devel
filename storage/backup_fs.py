@@ -261,6 +261,11 @@ class FSItemInfo():
     def get_versions(self):
         return self.versions
     
+    def get_latest_version(self):
+        if len(self.versions) == 0:
+            return None
+        return self.list_versions(True)[0] 
+    
     def pack_versions(self):
         out = []
         for version in self.list_versions(True):
@@ -584,8 +589,11 @@ def WalkByPath(path, iter=None):
     """
     if iter is None:
         iter = fs()
+    ppath = bpio.portablePath(path)
+    if ppath == '' or ppath == '/':
+        return iter, iter[0] if iter.has_key(0) else ''
     path_id = ''
-    parts = bpio.portablePath(path).split('/')
+    parts = ppath.split('/')
     for j in range(len(parts)):
         name = parts[j]
         if not iter.has_key(name):
@@ -617,7 +625,7 @@ def WalkByID(pathID, iterID=None):
         iterID = fsID()
     if pathID is None:
         return None
-    if pathID.strip() == '':
+    if pathID.strip() == '' or pathID.strip() == '/':
         return iterID, ''
     path = ''
     parts = pathID.strip('/').split('/')
@@ -1025,10 +1033,21 @@ def IterateIDs(iterID=None):
 
 #------------------------------------------------------------------------------ 
 
+def ListRootItems(iter=None):
+    """
+    """
+    result = []
+    root_items = WalkByPath('', iter)
+    for item_dict in root_items[0].values():
+        item = GetByID(str(item_dict[0]))
+        result.append((str(item_dict[0]), item.name(), item))
+    return result
+
 def ListByPath(path, iter=None):
     """
     List sub items in the index at given ``path``. 
     """
+    lg.out(4, 'backup_fs.ListByPath %s' % (path))
     path = bpio.portablePath(path)
     iter_and_id = WalkByPath(path, iter)
     if iter_and_id is None:
@@ -1036,7 +1055,7 @@ def ListByPath(path, iter=None):
     result = []
     iter, path_id = iter_and_id
     if isinstance(iter, int):
-        return [(path_id, path),]
+        return [(path_id, path, None),]
     if not isinstance(iter, dict):
         raise Exception('Wrong data type in the index')
     if not iter.has_key(0):
@@ -1065,7 +1084,7 @@ def ListByID(pathID, iterID=None):
     result = []
     iterID, path = iter_and_path
     if isinstance(iterID, FSItemInfo):
-        return [(pathID, path),]
+        return [(pathID, path, iterID),]
     if not isinstance(iterID, dict):
         raise Exception('Wrong data type in the index')
     if not iterID.has_key(INFO_KEY) and pathID.strip() != '':
@@ -1077,12 +1096,14 @@ def ListByID(pathID, iterID=None):
             if not iterID[id].has_key(INFO_KEY):
                 raise Exception('Error, directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
+            itm = iterID[id][INFO_KEY]
         elif isinstance(iterID[id], FSItemInfo):
             name = iterID[id].name()
+            itm = iterID[id]
         else:
             raise Exception('Wrong data type in the index')
-        result.append((pathID+'/'+str(id), path+'/'+name))
-    return result    
+        result.append((pathID+'/'+str(id), path+'/'+name, itm))
+    return result
 
 def ListAllBackupIDs(sorted=False, reverse=False, iterID=None):
     """

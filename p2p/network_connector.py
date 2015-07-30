@@ -451,7 +451,7 @@ def ConnectionDoneCallback(param, proto, info):
     
 def ConnectionFailedCallback(param, proto, info):
     global _CounterFailedConnections
-    if proto is not 'udp':
+    if proto is not 'udp' and proto is not 'proxy':
         _CounterFailedConnections += 1
     A('connection-failed')
 

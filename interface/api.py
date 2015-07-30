@@ -118,6 +118,12 @@ def config_list(sort=False):
 
 #------------------------------------------------------------------------------ 
 
+def filemanager(json_request):
+    from storage import filemanager_api
+    return filemanager_api.process(json_request) 
+
+#------------------------------------------------------------------------------ 
+
 def backups_list():
     from storage import backup_fs
     result = []
@@ -125,6 +131,8 @@ def backups_list():
         result.append((pathID, localPath, item.type, item.size, item.versions))
         # if len(result) > 20:
         #     break
+    from logs import lg
+    lg.out(4, 'api.backups_list %s' % result)
     return { 'result': result, }
 
 

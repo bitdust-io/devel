@@ -198,6 +198,10 @@ class NetworkTransport(automat.Automat):
             options['host'] = id_contact or default_host
             options['dht_port'] = settings.getDHTPort()
             options['udp_port'] = settings.getUDPPort()
+        elif self.proto == 'proxy':
+            if not id_contact:
+                default_host = nameurl.GetName(my_id.getLocalID())+'@'+platform.node()
+            options['host'] = id_contact or default_host
         self.interface.receive(options) 
 
     def doCreateProxy(self, arg):

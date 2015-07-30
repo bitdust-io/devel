@@ -1,52 +1,137 @@
 {% extends "page.html" %}
+
+{% block extra_head %}
+  {{ block.super }}
+  <script src="/asite/js/angular.min.js" type="text/javascript"></script>
+  <script src="/asite/js/angular.treeview.js" type="text/javascript"></script>
+  <script src="/myfilesapp/js/myfiles.js" type="text/javascript"></script>
+  <link href="/asite/css/angular.treeview.css" rel="stylesheet" type="text/css">
+  <link href="/asite/css/myfiles.css" rel="stylesheet" type="text/css">
+{% endblock extra_head %}
+
 {% block page %}
-<h1>my files</h1>
-<table width=100% align=center cellspacing=0 cellpadding=0 border=0>
-  <tr>
-    <td align=center width=10%>
-      <a href="/main?action=diradd&showincluded=true" target="_opendir">
-        <img src="/myfilesapp/icons/folder-add.png">
-      </a>
-    </td>
-    <td align=center width=10%>
-      <a href="/main?action=diraddrecursive&showincluded=true" target="_opendir">
-        <img src="/myfilesapp/icons/folders-many-add.png">
-      </a>
-    </td>
-    <td align=center width=10%><img src="/myfilesapp/icons/folder-delete-gray.png"></td>
-    <td align=center width=10%><img src="/myfilesapp/icons/box-gray.png"></td>
-    <td align=center width=10%><img src="/myfilesapp/icons/folder-tree-backup-gray.png"></td>
-    <td align=center width=10%><img src="/myfilesapp/icons/box-delete-gray.png"></td>
-    <td align=center width=10%><img src="/myfilesapp/icons/select-gray.png"></td>
-    <td align=center width=10%><img src="/myfilesapp/icons/select-tree-gray.png"></td>
-    <td align=center width=10%><img src="/myfilesapp/icons/restore-gray.png"></td>
-    <td align=center width=10%><img src="/myfilesapp/icons/restoretodir-gray.png"></td>
-  </tr>
-  <tr valign=top>
-    <td nowrap><font size=-2 color=gray>add folder<br>to the catalog</font></td>
-    <td nowrap><font size=-2 color=gray>recursive add all<br>sub folders and files</font></td>
-    <td nowrap><font size=-2 color=gray>remove from<br>catalog</font></td>
-    <td nowrap><font size=-2 color=gray>backup to<br>remote peers</font></td>
-    <td nowrap><font size=-2 color=gray>recursive backup<br>a directory</font></td>
-    <td nowrap><font size=-2 color=gray>erase remote<br>data</font></td>
-    <td nowrap><font size=-2 color=gray>select latest<br>versions</font></td>
-    <td nowrap><font size=-2 color=gray>recursive select<br>latest versions</font></td>
-    <td nowrap><font size=-2 color=gray>restore from<br>remote peers</font></td>
-    <td nowrap><font size=-2 color=gray>restore to<br>given folder</font></td>
-  </tr>
-</table>
-<hr width=100%>
-  {% if backup_fs_items_list %}
-      {% for backup_fs_item in backup_fs_items_list %}
-          <a href='{{ backup_fs_item.id }}/'>
-           {{ backup_fs_item.backupid }}  {{ backup_fs_item.size }}  {{backup_fs_item.path}}
-          </a><br>
-      {% endfor %}
-  {% else %}
-      <p>No backups made yet.</p>
-  {% endif %}
-<hr width=100%>
-<p><a href="/main?action=update">Request my suppliers to check my backups now</a></p>
-<p><a href="/backupsettings?back=/main">Check the backup settings</a></p>
-<br>
+
+<div>
+    <div class="row">
+        <div class="col-sm-3 col-md-2 sidebar">
+            
+            <div class="list-group">
+                <a href="#" class="list-group-item">
+                    Statistics
+                </a>
+                <a href="#" class="list-group-item">
+                    Suppliers
+                </a>
+                <a href="#" class="list-group-item">
+                    Customers
+                </a>
+                <a href="#" class="list-group-item">
+                    Settings
+                </a>
+                <a href="#" class="list-group-item">
+                    Help
+                </a>
+               
+            </div>        
+        </div>
+        
+        <div class="myfiles-controls">
+        
+            <table width=80% align=center cellspacing=0 cellpadding=0 border=0>
+              <tr>
+                <td align=center width=10%>
+                  <a href="/main?action=diradd&showincluded=true" target="_opendir">
+                    <img src="/asite/icons/folder-add.png">
+                  </a>
+                </td>
+                <td align=center width=10%><img src="/asite/icons/box-gray.png"></td>
+                <td align=center width=10%><img src="/asite/icons/explore48.png"></td>
+                <td align=center width=10%><img src="/asite/icons/restore-gray.png"></td>
+                <td align=center width=10%><img src="/asite/icons/folder-delete-gray.png"></td>
+              </tr>
+              <tr valign=top>
+                <td nowrap><font size=-1 color=gray>Add file/folder</font></td>
+                <td nowrap><font size=-1 color=gray>Upload</font></td>
+                <td nowrap><font size=-1 color=gray>Explore</font></td>
+                <td nowrap><font size=-1 color=gray>Download</font></td>
+                <td nowrap><font size=-1 color=gray>Delete</font></td>
+              </tr>
+            </table>
+                    
+        </div>
+        
+        <div class="col-sm-9 col-md-10">
+            <div class="myfiles-wrap">
+                <div class="myfiles-list">
+            
+                {% if backup_fs_items_list %}
+              
+                    {% for backup_fs_item in backup_fs_items_list %}
+                    {% endfor %}
+              
+              
+                <!-- 
+                <table width="100%">
+                    <tr align=left>
+                        <td>Name</td>
+                        <td>Type</td>
+                        <td>Status</td>
+                        <td>Progress</td>
+                        <td>Created</td>
+                        <td>Size</td>
+                    <tr>   
+                
+                    {% for backup_fs_item in backup_fs_items_list %}
+              
+                    <tr align=left>
+                        <td  class="myfiles-name-col" nowrap>
+                            <input type="checkbox" /> 
+                            <a href="{{ backup_fs_item.backupid }}">{{backup_fs_item.path}}</a>
+                        </td>
+                        <td>PNG</td>
+                        <td>uploading</td>
+                        <td>67%</td>
+                        <td>15.08.2015</td>
+                        <td>{{ backup_fs_item.size }}</td>
+                    </tr>
+                         
+                    {% endfor %}
+              
+                </table> 
+                -->
+            
+                {% else %}
+            
+                <div class="upload-file-input">
+                    <input type="button" value="Select file" />
+                </div>
+                <div class="upload-area">
+                    Drop your files here
+                </div>
+                           
+                {% endif %}
+            
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function(){
+    
+        $('#slide-submenu').on('click',function() {                 
+            $(this).closest('.list-group').fadeOut('slide',function(){
+                $('.mini-submenu').fadeIn();    
+            });
+            
+        });
+    
+        $('.mini-submenu').on('click',function(){       
+            $(this).next('.list-group').toggle('slide');
+            $('.mini-submenu').hide();
+        })
+    })
+</script>
+
 {% endblock page %}

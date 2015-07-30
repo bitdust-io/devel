@@ -10,22 +10,22 @@ a:hover {
 .btn-default,
 .btn-default:hover,
 .btn-default:focus {
-  color: #333;
-  text-shadow: none; /* Prevent inheritence from `body` */
+  /* color: #333;
+  text-shadow: none; Prevent inheritence from `body`
   background-color: #fff;
-  border: 1px solid #fff;
+  border: 1px solid #fff; */
 }
 
 
 html,
 body {
   height: 100%;
-  background-color: #333;
+  /* background-color: #333; */
 }
 body {
-  color: #fff;
-  text-align: center;
-  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+  /* color: #444; */
+  /* text-align: center; */
+  /* text-shadow: 0 1px 3px rgba(0,0,0,.5); */
 }
 
 /* Extra markup and styles for table-esque vertical and horizontal centering */
@@ -156,9 +156,32 @@ body {
 }
 
 .page_content {
-  padding-top: 50px;
+  /* padding-top: 50px; */
   /* padding-bottom: 60px; */
-  height: 100%;	
+  padding-left: 0px!important;
+  padding-right: 0px!important;
+  /* margin-top: 52px; */
+  height: 100%;
+  position: relative;
+  /* background-color: #eee; */	
 }
 
+.upload-file-input {
+    width: 470px;
+    height: 40px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.upload-area {
+	margin-left: auto;
+	margin-right: auto;
+	width: 470px;
+	height: 220px;
+	border: 1px #555 dashed;
+	padding: 10px;
+	background: url("/asite/icons/upload-icon.png") 50% 70% no-repeat;
+	font-size: 32px;
+	border-radius: 20px;
+}
 

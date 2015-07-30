@@ -60,6 +60,7 @@ INSTALLED_APPS = (
     'web.supplierapp',
     'web.friendapp',
     'web.myfilesapp',
+    'web.filemanagerapp',
 )
 
 MIDDLEWARE_CLASSES = (

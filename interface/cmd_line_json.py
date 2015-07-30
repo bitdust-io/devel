@@ -269,6 +269,72 @@ def run_now(opts, args):
 
 #------------------------------------------------------------------------------ 
 
+def cmd_identity(opts, args, overDict, running):
+    from userid import my_id
+    from main import settings
+    settings.init()
+    
+    def _register():
+        if len(args) <= 2:
+            return 2
+        # if len(args) > 3:
+        #     settings.setPrivateKeySize(args[3])
+        from automats import automat
+        from main import initializer
+        initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': args[3]})
+        reactor.run()
+        automat.objects().clear()
+        if my_id.isLocalIdentityReady():
+            print_text('new identity created:')
+            print_text(my_id.getLocalIdentity().serialize())
+        else:
+            print_text('identity creation FAILED')
+        return 0
+    
+    def _recover():
+        from system import bpio
+        from lib import nameurl
+        if len(args) < 3:
+            return 2
+        src = bpio.ReadBinaryFile(args[2])
+        if len(src) > 1024*10:
+            print_text('file is too big for private key')
+            return 0
+        try:
+            lines = src.split('\n')
+            idurl = lines[0]
+            txt = '\n'.join(lines[1:])
+            if idurl != nameurl.FilenameUrl(nameurl.UrlFilename(idurl)):
+                idurl = ''
+                txt = src
+        except:
+            idurl = ''
+            txt = src
+        if idurl == '' and len(args) > 3:
+            idurl = args[3]
+        if idurl == '':
+            print_text('BitDust need to know your IDURL to recover your account\n')
+            return 2
+        from automats import automat
+        from main import initializer
+        initializer.A('run-cmd-line-recover', { 'idurl': idurl, 'keysrc': txt })
+        reactor.run()
+        automat.objects().clear()
+        if my_id.isLocalIdentityReady():
+            print_text('your identity were restored:')
+            print_text(my_id.getLocalIdentity().serialize())
+        else:
+            print_text('identity recovery FAILED')
+        return 0
+    
+    if args[1].lower() in ['create', 'new', 'register', 'generate', ]:
+        return _register()
+    if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
+        return _recover()
+    return 2
+
+#------------------------------------------------------------------------------ 
+
 def cmd_api(opts, args, overDict):
     tpl = jsontemplate.Template("""{.section result}
     {@}
@@ -279,14 +345,8 @@ def cmd_api(opts, args, overDict):
 
 def cmd_backups(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
-        tpl = jsontemplate.Template("""{.section backups}
-backups:
-{.repeated section @}
-    {data}
-{.end}
-end!!!
-{.or}
-no info yet
+        tpl = jsontemplate.Template("""{.section result}
+    {@}
 {.end}""")
         return call_jsonrpc_method_template_and_stop('backups_list', tpl)
 
@@ -382,6 +442,8 @@ def option_name_to_path(name, default=''):
         path = 'services/udp-transport/enabled'
     elif name in [ 'udp-port' ]:
         path = 'services/udp-datagrams/udp-port'
+    elif name in [ 'proxy' ]:
+        path = 'services/proxy-transport/enabled'
     elif name in [ 'dht-port' ]:
         path = 'services/entangled-dht/udp-port'
     elif name in [ 'limit-send' ]:
@@ -424,7 +486,7 @@ def cmd_set_directly(opts, args, overDict):
 {.or}
     {key} ({type}) : {value}
 {.section old_value}
-    previous setting : {@}
+    previous value : {@}
 {.or}
 {.end}    
 {.end}
@@ -458,7 +520,7 @@ def cmd_set_request(opts, args, overDict):
     tpl = jsontemplate.Template("""{.section result}
     {key} ({type}) : {value}
 {.section old_value}
-    previous setting : {@}
+    previous value : {@}
 {.or}
 {.end}
 {.end}""")
@@ -689,9 +751,24 @@ def run(opts, args, pars=None, overDict=None):
         ])
     running = len(appList) > 0
     overDict = override_options(opts, args)
-    
+            
+    #---identity---
+    if cmd == 'identity' or cmd == 'id':
+        if len(args) == 1 or args[1].lower() in [ 'info', '?', 'show', 'print' ]:
+            from userid import my_id
+            my_id.loadLocalIdentity()
+            if my_id.isLocalIdentityReady():
+                print_text(my_id.getLocalIdentity().serialize())
+            else:
+                print_text('local identity is not ready')
+            return 0
+        if running:
+            print_text('BitDust is running at the moment, need to stop the software at first\n')
+            return 0
+        return cmd_identity(opts, args, overDict, running)    
+                
     #---set---
-    if cmd in ['set', 'get', 'conf', 'config', 'option', 'setting',]:
+    elif cmd in ['set', 'get', 'conf', 'config', 'option', 'setting',]:
         if len(args) == 1 or args[1].lower() in [ 'help', '?' ]:
             from main import help
             print_text(help.settings_help())

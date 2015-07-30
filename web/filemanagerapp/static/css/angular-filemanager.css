@@ -1,0 +1,387 @@
+/*!
+ * Angular FileManager v1.0.1 (https://github.com/joni2back/angular-filemanager)
+ * Jonas Sciangula Street <joni2back@gmail.com>
+ * Licensed under MIT (https://github.com/joni2back/angular-filemanager/blob/master/LICENSE)
+ */
+ 
+#filemanager {
+    position: absolute;
+    top: 103px;
+    bottom: 30px;
+    left: 0px;
+    right: 0px;	
+    overflow: auto;
+}
+#filemanager
+.detail-sources,
+.modal {
+    word-wrap: break-word
+}
+#filemanager
+.detail-sources,
+.ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis
+}
+#filemanager
+textarea.code {
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+    font-size: 13px;
+    min-height: 250px;
+    resize: vertical;
+    color: #000
+}
+#filemanager
+.modal .label.error-msg {
+    display: block;
+    font-size: 12px;
+    padding: 5px;
+    margin-top: 10px;
+    text-align: left
+}
+#filemanager
+div,span {
+    cursor: default
+}
+#filemanager 
+a,
+a *,
+a:focus,
+a:focus *,
+a:hover,
+a:hover * {
+    cursor: pointer;
+    text-decoration: none
+}
+#filemanager 
+.btn,
+.dropdown-menu,
+.input-sm,
+.modal .modal-content,
+.panel,
+.panel-heading,
+input,
+select,
+textarea {
+    border-radius: 0!important
+}
+#filemanager 
+.bold {
+    font-weight: 700
+}
+#filemanager 
+.mb0 {
+    margin-bottom: 0
+}
+#filemanager 
+.sub-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee
+}
+#filemanager 
+.navbar-fixed-top {
+    border: 0
+}
+#filemanager 
+.sidebar {
+    display: none
+}
+@media (min-width: 768px) {
+	#filemanager 
+    .sidebar {
+        /* position: fixed; */
+        /* top: 51px; */
+        /* bottom: 0; */
+        /* left: 0; */
+        z-index: 1000;
+        display: block;
+        padding: 5px 0;
+        /* overflow-x: hidden; */
+        /* overflow-y: auto; */
+        background-color: #f5f5f5;
+        border-right: 1px solid #eee
+    }
+}
+@media (max-width: 768px) {
+	#filemanager 
+    .navbar-form .btn {
+        margin-top: 5px
+    }
+}
+#filemanager 
+.nav-sidebar {
+    margin-right: -21px;
+    margin-bottom: 20px;
+    margin-left: -20px
+}
+#filemanager 
+.nav-sidebar>li>a {
+    padding-right: 20px;
+    padding-left: 20px
+}
+#filemanager 
+.nav-sidebar>.active>a,
+.nav-sidebar>.active>a:focus,
+.nav-sidebar>.active>a:hover {
+    color: #fff;
+    background-color: #428bca
+}
+#filemanager 
+.main {
+    padding: 0
+}
+@media (min-width: 768px) {
+	#filemanager 
+    .main {
+        padding-right: 0;
+        padding-left: 0
+    }
+}
+#filemanager 
+.main .page-header {
+    margin-top: 0
+}
+#filemanager 
+.file-tree ul.nav.nav-sidebar {
+    margin: 0;
+    padding: 0 0 0 12px
+}
+#filemanager 
+.file-tree ul.nav.nav-sidebar>li {
+    border-left: 1px solid #ddd;
+    padding-left: 4px
+}
+#filemanager 
+.file-tree ul.nav.nav-sidebar>li>a {
+    padding: 2px 2px 2px 4px
+}
+#filemanager 
+.file-tree ul.nav.nav-sidebar:first-child {
+    padding-left: 0
+}
+#filemanager 
+.file-tree .file-tree-root>li {
+    border-left: none!important;
+    padding-left: 0!important
+}
+#filemanager 
+.mr2 {
+    margin-right: 2px
+}
+#filemanager 
+.mr5 {
+    margin-right: 5px
+}
+#filemanager 
+.table-files td {
+    padding: 3px 8px!important;
+    vertical-align: middle!important
+}
+#filemanager 
+#context-menu {
+    position: absolute;
+    display: none;
+    z-index: 9999
+}
+#filemanager 
+.iconset {
+    padding: 10px
+}
+#filemanager 
+.col-120 {
+    width: 100px;
+    max-height: 100px;
+    float: left;
+    margin-bottom: 9px;
+    margin-right: 9px
+}
+#filemanager 
+.col-120:last-child {
+    margin-right: 0
+}
+#filemanager 
+.iconset .thumbnail {
+    border-radius: 0;
+    overflow: hidden;
+    margin: 0;
+    padding: 10px 0
+}
+#filemanager 
+.iconset .thumbnail .item-icon {
+    font-size: 32px
+}
+#filemanager 
+.modal-fullscreen .modal-content,
+.modal-fullscreen .modal-dialog {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0
+}
+#filemanager 
+.modal-fullscreen .modal-dialog {
+    margin: 0;
+    width: 100%
+}
+#filemanager 
+.modal-fullscreen .modal-content {
+    border: none;
+    -moz-border-radius: 0;
+    border-radius: 0;
+    -webkit-box-shadow: inherit;
+    -moz-box-shadow: inherit;
+    -o-box-shadow: inherit;
+    box-shadow: inherit
+}
+#filemanager 
+.modal-fullscreen textarea.code {
+    min-height: 450px
+}
+#filemanager 
+.animated {
+    -webkit-animation-duration: .7s;
+    animation-duration: .7s;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both
+}
+#filemanager 
+.animated.fast,
+.modal.animated {
+    -webkit-animation-duration: .2s;
+    animation-duration: .2s
+}
+#filemanager 
+@-webkit-keyframes fadeIn {
+    0% {
+        opacity: 0
+    }
+    100% {
+        opacity: 1
+    }
+}
+#filemanager 
+@keyframes fadeIn {
+    0% {
+        opacity: 0
+    }
+    100% {
+        opacity: 1
+    }
+}
+#filemanager 
+@-webkit-keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        -webkit-transform: translate3d(0, -100%, 0);
+        transform: translate3d(0, -100%, 0)
+    }
+    100% {
+        opacity: 1;
+        -webkit-transform: none;
+        transform: none
+    }
+}
+#filemanager 
+@keyframes fadeInDown {
+    0% {
+        opacity: 0;
+        -webkit-transform: translate3d(0, -100%, 0);
+        transform: translate3d(0, -100%, 0)
+    }
+    100% {
+        opacity: 1;
+        -webkit-transform: none;
+        transform: none
+    }
+}
+#filemanager 
+.fadeInDown {
+    -webkit-animation-name: fadeInDown;
+    animation-name: fadeInDown
+}
+#filemanager 
+.fadeIn {
+    -webkit-animation-name: fadeIn;
+    animation-name: fadeIn
+}
+#filemanager 
+.mt10 {
+    margin-top: 10px
+}
+#filemanager 
+.pointer {
+    cursor: pointer
+}
+#filemanager 
+.block {
+    display: block
+}
+#filemanager 
+.ellipsis {
+    white-space: nowrap
+}
+#filemanager 
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background-color: #fff;
+    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, .1), inset -1px -1px 0 rgba(0, 0, 0, .07)
+}
+#filemanager 
+::-webkit-scrollbar:hover {
+    background-color: #eee
+}
+#filemanager 
+::-webkit-scrollbar-thumb {
+    min-height: .8em;
+    min-width: .8em;
+    background-color: rgba(0, 0, 0, .2);
+    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, .1), inset -1px -1px 0 rgba(0, 0, 0, .07)
+}
+#filemanager 
+::-webkit-scrollbar-thumb:hover {
+    background-color: #bbb
+}
+#filemanager 
+::-webkit-scrollbar-thumb:active {
+    background-color: #888
+}
+#filemanager 
+.dropdown-menu.dropdown-right-click {
+    display: block;
+    position: static;
+    margin-bottom: 5px;
+    font-size: 1em
+}
+#filemanager 
+.dropdown-menu.dropdown-right-click>li>a {
+    padding: 5px 12px
+}
+#filemanager 
+.dropdown-menu.dropdown-right-click>li>a>i {
+    font-size: .9em;
+    margin-right: 1px
+}
+#filemanager 
+.dropdown-menu.dropdown-right-click .divider {
+    margin: 3px 0
+}
+#filemanager
+#navbar-filemanager {
+	top: 51px!important;
+	background-color: #fff!important;
+	background-image: none!important;
+}
+#filemanager
+#filemanager-content {
+	/* margin-top: 51px; */
+}
+#filemanager
+.main-navigation {
+	height: 100%;
+}
+#filemanager
+.table-files td {
+	/* text-align: left; */
+}

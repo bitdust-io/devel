@@ -100,6 +100,11 @@ def inbox(newpacket, info, status, message):
             lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
             lg.out(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
+    elif info.proto in ['proxy',]:
+        if info.proto not in active_protos():
+            lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+            lg.out(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
+            active_protos().add(info.proto)
     A('inbox-packet', (newpacket, info, status, message))
 
 #------------------------------------------------------------------------------ 
@@ -313,6 +318,13 @@ class P2PConnector(automat.Automat):
         if first != 'udp' and 'udp' in active_protos():
             lg.out(2, 'p2p_connector._check_to_use_best_proto udp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
+        #if we are using proxy and it is working - that is fine - it must work always!
+        if first == 'proxy' and 'proxy' in active_protos():
+            return True
+        #proxy seems to be working and first contact is not working - so switch to proxy
+        if first != 'proxy' and 'proxy' in active_protos():
+            lg.out(2, 'p2p_connector._check_to_use_best_proto proxy is not first but it works active_protos()=%s' % str(active_protos()))
+            return False
         #in other cases - do nothing
         return True
 
@@ -329,9 +341,9 @@ class P2PConnector(automat.Automat):
             #take (but not remove) any item from the set
             wantedproto = active_protos().pop()
             active_protos().add(wantedproto)
-        # #small hack to make udp as first method if all is fine
-        # if first != 'udp' and ('udp' in active_protos() and 'tcp' in active_protos()):
-        #     wantedproto = 'udp'
+        #if proxy method is not the first but it works - switch to proxy
+        if first != 'proxy' and 'proxy' in active_protos():
+            wantedproto = 'proxy'
         #if udp method is not the first but it works - switch to udp
         if first != 'udp' and 'udp' in active_protos():
             wantedproto = 'udp'
@@ -379,6 +391,13 @@ class P2PConnector(automat.Automat):
         cdict = {}
         cdict['tcp'] = 'tcp://'+nowip+':'+str(settings.getTCPPort())
         cdict['udp'] = 'udp://%s@%s' % (lid.getIDName().lower(), lid.getIDHost())
+        if driver.is_started('service_proxy_transport'):
+            # when proxy transport is started
+            from transport.proxy import proxy_node
+            if proxy_node.A().router_identity:
+                cdict['proxy'] = 'proxy://%s@%s' % (
+                    proxy_node.A().router_identity.getIDName(), 
+                    proxy_node.A().router_identity.getIDHost(),)
         #making full order list
         for proto in cdict.keys():
             if proto not in order:

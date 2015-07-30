@@ -598,6 +598,9 @@ class PacketOut(automat.Automat):
         udp_contact = None
         if settings.enableUDP() and settings.enableUDPsending():
             udp_contact = byproto.get('udp', None)
+        proxy_contact = None
+        if settings.enableProxy():
+            proxy_contact = byproto.get('proxy', None)
         working_protos = stats.peers_protos().get(self.remote_idurl, set())
         # tcp seems to be the most stable proto
         # now let's check if we know his local IP and 
@@ -626,6 +629,14 @@ class PacketOut(automat.Automat):
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
+                gateway.send_file(proto, host, self.filename, self.description)
+                self.items.append(WorkItem(proto, host))
+                self.automat('items-sent')
+                return
+        # proxy contact - he may use other node to receive and send packets
+        if proxy_contact and 'proxy' in working_protos:
+            proto, host = nameurl.IdContactSplit(proxy_contact)
+            if host.strip() and gateway.is_installed('proxy') and gateway.can_send(proto):
                 gateway.send_file(proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')

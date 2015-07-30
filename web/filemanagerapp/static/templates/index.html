@@ -1,0 +1,16 @@
+<div id="filemanager-content" data-ng-controller="FileManagerCtrl">
+    <div ng-include="config.tplPath + '/navbar.html'"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2 sidebar file-tree" ng-include="config.tplPath + '/sidebar.html'"></div>
+            <div class="col-md-10 main">
+                <div ng-include="config.tplPath + '/current-folder-breadcrumb.html'"></div>
+                <div ng-include="config.tplPath + '/' + viewTemplate" class="main-navigation"></div>
+            </div>
+        </div>
+    </div>
+
+    <div ng-include="config.tplPath + '/modals.html'"></div>
+    <div ng-include="config.tplPath + '/item-context-menu.html'"></div>
+</div>

@@ -36,6 +36,7 @@ def init():
     from system import bpio
     port = settings.DefaultJsonRPCPort()
     bpio.AtomicWriteFile(settings.LocalJsonRPCPortFilename(), str(port))
+    # TODO add protection: accept connections only from local host: 127.0.0.1
     reactor.listenTCP(port, server.Site(BitDustJsonRPCServer()))
     lg.out(4, '    started on port %d' % port)
 
@@ -43,7 +44,7 @@ def init():
 
 class BitDustJsonRPCServer(JSONRPCServer):
     def _callMethod(self, request_dict):
-        lg.out(6, 'jsontpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
+        lg.out(12, 'jsontpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
         return JSONRPCServer._callMethod(self, request_dict)
     
     def jsonrpc_stop(self):
@@ -54,11 +55,15 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_restart(self, show=False):
         return api.restart(show)
+    
+    def jsonrpc_filemanager(self, json_request):
+        return api.filemanager(json_request)
 
     def jsonrpc_backups_list(self):
-        return { 'backups': map(
-                    lambda x: {'data': '<%s>' % str(x)},
-                        api.backups_list()) }
+        return api.backups_list()
+        
+    def jsonrpc_backup_start_path(self, path):
+        return api.backup_start_path(path)
         
     def jsonrpc_config_list(self, sort=False):
         return api.config_list(sort)

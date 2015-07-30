@@ -117,10 +117,10 @@ def warn(message, level=2):
     # caller = inspect.
     out(level, '%s.%s WARNING %s' % (modul, caller, message))
 
-def exc(msg=''):
+def exc(msg='', level=2, maxTBlevel=100):
     if msg:
-        out(2, msg)
-    return exception(0, 100, None)
+        out(level, msg)
+    return exception(level, maxTBlevel, None)
 
 
 def exception(level, maxTBlevel, exc_info):

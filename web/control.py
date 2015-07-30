@@ -100,11 +100,15 @@ def init():
     root_static_dir = os.path.join(bpio.getExecutableDir(), "web")  
     for sub in os.listdir(root_static_dir):
         static_path = os.path.join(root_static_dir, sub, 'static')
+        if not os.path.isdir(static_path):
+            continue
         node = static.File(static_path) 
         root.putChild(sub, node)
+        lg.out(4, '        added static dir: %s->%s' % (sub, static_path))
         if sub == 'asite':
-            node.putChild('admin', 
-                static.File(os.path.join(root_static_dir, sub, 'admin', 'static')))
+            admin_path = os.path.join(root_static_dir, sub, 'admin', 'static')
+            node.putChild('admin', static.File(admin_path))
+            lg.out(4, '        added ADMIN static dir: admin->%s' % admin_path)
     site = server.Site(root)
     _WSGIPort = 8080
     lg.out(4, '        %s' % my_wsgi_handler)
@@ -299,6 +303,7 @@ class DjangoRootResource(resource.Resource):
     def getChild(self, path, request):
         path0 = request.prepath.pop(0)
         request.postpath.insert(0, path0)
+        # lg.out(4, 'control.DjangoRootResource.getChild %s' % path0)
         return self.wsgi_resource
 
 

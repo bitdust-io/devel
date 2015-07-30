@@ -66,7 +66,7 @@ def A(event=None, arg=None):
     """
     global _ListFilesOrator
     if _ListFilesOrator is None:
-        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 4)
+        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 8)
     if event is not None:
         _ListFilesOrator.automat(event, arg)
     return _ListFilesOrator

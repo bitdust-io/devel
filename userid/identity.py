@@ -540,8 +540,8 @@ class identity:
         try:
             doc = minidom.parseString(xmlsrc)
         except:
-            lg.exc()
-            lg.out(2, '\n'+xmlsrc[:256]+'\n')
+            lg.exc('identity unserialize failed', 8, 1)
+            lg.out(12, '\n'+xmlsrc[:256]+'\n')
             return
         self.clear_data()
         self.from_xmlobj(doc.documentElement)
@@ -702,6 +702,8 @@ def makeDefaultIdentity(name='', ip=''):
         cdict['tcp'] = 'tcp://'+ip+':'+str(settings.getTCPPort())
     if settings.enableUDP():
         cdict['udp'] = 'udp://%s@%s' % (name.lower(), servername)
+    if settings.enableProxy():
+        cdict['proxy'] = 'proxy://%s@%s' % (name.lower(), servername)
 
     for c in my_id.getValidTransports():
         if cdict.has_key(c):

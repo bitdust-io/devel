@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.http import HttpResponseBadRequest
 from django.http import HttpResponse
 from django.utils.http import is_safe_url
 from django.shortcuts import resolve_url
@@ -41,6 +42,12 @@ def call_api_method(request, method):
     lg.out(2, 'views.asite.call_api_method:    %s()' % method)
     from twisted.internet import reactor
     pth = request.path
+    args = request.REQUEST.get('args', '')
+    if not args:
+        args = '{}'
+    if not args:
+        return HttpResponseBadRequest('wrong arguments format')
+     
     if method == 'stop':
         pth = '/'
         reactor.callLater(1, api.stop)

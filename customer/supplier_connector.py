@@ -235,7 +235,7 @@ class SupplierConnector(automat.Automat):
             bytes_per_supplier = int(math.ceil(2.0*bytes_needed/float(num_suppliers)))
         else:
             bytes_per_supplier = int(math.ceil(2.0*settings.MinimumNeededBytes()/float(settings.DefaultDesiredSuppliers()))) 
-        service_info = 'storage %d' % bytes_per_supplier
+        service_info = 'service_supplier %d' % bytes_per_supplier
         request = p2p_service.SendRequestService(self.idurl, service_info, self._supplier_acked)
         self.request_packet_id = request.PacketID
 
@@ -243,7 +243,7 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        request = p2p_service.SendCancelService(self.idurl, 'storage', self._supplier_acked)
+        request = p2p_service.SendCancelService(self.idurl, 'service_supplier', self._supplier_acked)
         self.request_packet_id = request.PacketID
 
     def doDestroyMe(self, arg):

@@ -384,7 +384,7 @@ class StunClient(automat.Automat):
             self.automat('dht-nodes-not-found')
         
     def _nodes_not_found(self, err):
-        lg.out(12, 'stun_client._find_random_node err=%s' % str(err))
+        lg.out(12, 'stun_client._nodes_not_found err=%s' % str(err))
         self.automat('dht-nodes-not-found')
         
     def _stun_port_received(self, result, node):

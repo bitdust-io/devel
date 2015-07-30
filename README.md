@@ -1,16 +1,13 @@
 # BitDust
+[bitdust.io](http://bitdust.io)
 
-## Содержание
-* [Начало](docs/beginning.md)
-* [Установка](docs/install.md)
-* [Идентификация пользователей](docs/identities.md)
-* [Хранение данных](docs/storage.md)
-* [Защита данных](docs/security.md)
-* [Распределенная хэш-таблица](docs/dht.md)
-* [Транспортные протоколы](docs/network_transports.md)
-* [Сетевые сервисы](docs/map.html) 
-* [Конечные автоматы](docs/automats.md)
-* [Словарь терминов](docs/glossary.md)
-* [План разработки](docs/roadmap.md)
-* [Идеи по развитию](docs/ideas.md)
-* [Об Авторах](docs/about_us.md)
+
+## English
+* [Public Git repository](http://gitlab.bitdust.io/devel/bitdust.docs.english/blob/master/README.md)
+* [Mirror in GitHub repository](http://gitlab.bitdust.io/devel/bitdust.docs.english/blob/master/README.md)
+
+## Russian
+
+* [Official Web Site](http://bitdust.io/toc.html)
+* [Mirror in Public Git repository](http://gitlab.bitdust.io/devel/bitdust.docs/blob/master/README.md)
+

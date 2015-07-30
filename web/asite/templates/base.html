@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" {% block extra_html_args %} {% endblock extra_html_args %}>
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -11,16 +11,21 @@
 
 <title>BitDust</title>
 
-<link href="/asite/css/bootstrap.css" rel="stylesheet">
-    
+{% block extra_head_before %}
+{% endblock extra_head_before %}
+
 <script src="/asite/js/jquery-1.11.0.min.js"></script>
+<!-- <script src="/asite/js/jquery.min.js"></script> -->
 <script src="/asite/js/ba-debug.js"></script>
-<script src="/asite/js/autoupdater.js"></script> 
-<script src="/asite/js/bootstrap.js"></script>
+<!-- <script src="/asite/js/autoupdater.js"></script> --> 
+<script src="/asite/js/bootstrap.min.js"></script>
 <script src="/asite/js/ie10-viewport-bug-workaround.js"></script> 
 
+<link href="/asite/css/bootstrap.css" rel="stylesheet">
+    
 {% block extra_head %}
 {% endblock extra_head %}
+
 </head>
 
 <body>
@@ -29,4 +34,5 @@
 {% endblock body %}
 
 </body>
+
 </html>

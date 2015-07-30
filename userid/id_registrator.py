@@ -451,6 +451,16 @@ class IdRegistrator(automat.Automat):
                 cdict['udp'] = 'udp://%s@%s' % (login.lower(), host)
             except:
                 lg.exc()
+        if settings.enableProxy():
+            # proxy node is not yet known
+            # so just put our own info for now
+            try:
+                protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])
+                if port and port not in ['80', 80, ]:
+                    host += ':%s' % str(port) 
+                cdict['proxy'] = 'proxy://%s@%s' % (login.lower(), host)
+            except:
+                lg.exc()
         for c in my_id.getValidTransports():
             if cdict.has_key(c):
                 ident.contacts.append(cdict[c])

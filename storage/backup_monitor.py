@@ -91,7 +91,7 @@ def A(event=None, arg=None):
     """
     global _BackupMonitor
     if _BackupMonitor is None:
-        _BackupMonitor = BackupMonitor('backup_monitor', 'AT_STARTUP', 4, False)
+        _BackupMonitor = BackupMonitor('backup_monitor', 'AT_STARTUP', 8, False)
     if event is not None:
         _BackupMonitor.automat(event, arg)
     return _BackupMonitor

@@ -622,6 +622,8 @@ def option_name_to_path(name, default=''):
         path = 'services/udp-transport/enabled'
     elif name in [ 'udp-port' ]:
         path = 'services/udp-datagrams/udp-port'
+    elif name in [ 'proxy' ]:
+        path = 'services/proxy-transport/enabled'
     elif name in [ 'dht-port' ]:
         path = 'services/entangled-dht/udp-port'
     elif name in [ 'limit-send' ]:

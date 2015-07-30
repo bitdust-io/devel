@@ -70,6 +70,18 @@ def is_started(name):
 def is_exist(name):
     return services().has_key(name)
 
+def request(name, request):
+    svc = services().get(name, None)
+    if svc is None:
+        raise Exception('service %s not found' % name)
+    return svc.request(request)
+
+def cancel(name, request):
+    svc = services().get(name, None)
+    if svc is None:
+        raise Exception('service %s not found' % name)
+    return svc.cancel(request)
+
 #------------------------------------------------------------------------------ 
 
 def init():

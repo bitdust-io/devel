@@ -142,7 +142,7 @@ def A(event=None, arg=None):
     """
     global _FireHire
     if _FireHire is None:
-        _FireHire = FireHire('fire_hire', 'READY', 4)
+        _FireHire = FireHire('fire_hire', 'READY', 8)
     if event is not None:
         _FireHire.automat(event, arg)
     return _FireHire

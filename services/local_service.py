@@ -64,6 +64,32 @@ class LocalService(automat.Automat):
         self.result_deferred = None
         automat.Automat.__init__(self, self.service_name, 'OFF', 12)
 
+    #------------------------------------------------------------------------------ 
+
+    def dependent_on(self):
+        return []
+    
+    def installed(self):
+        return True
+    
+    def enabled(self):
+        from main import config
+        return config.conf().getBool(self.config_path)
+
+    def start(self):
+        raise RequireSubclass()
+    
+    def stop(self):
+        raise RequireSubclass()
+
+    def request(self, request):
+        raise RequireSubclass()
+
+    def cancel(self, request):
+        raise RequireSubclass()
+
+    #------------------------------------------------------------------------------ 
+
     def state_changed(self, oldstate, newstate, event, arg):
         """
         Method to catch the moment when automat's state were changed.
@@ -342,23 +368,5 @@ class LocalService(automat.Automat):
         self.result_deferred = None  
         self.destroy()
             
-    #------------------------------------------------------------------------------ 
 
-    def dependent_on(self):
-        return []
-    
-    def installed(self):
-        return True
-    
-    def enabled(self):
-        from main import config
-        return config.conf().getBool(self.config_path)
-
-    def start(self):
-        raise RequireSubclass()
-    
-    def stop(self):
-        raise RequireSubclass()
-
-    
         

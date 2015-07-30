@@ -12,6 +12,7 @@ import views
 admin.autodiscover()
 
 urlpatterns = patterns('',
+    url(r'^api/(?P<method>[a-zA-Z0-9_.-]+)$', login_required(views.call_api_method)),
     url(r'^accounts/login/$', views.LoginPoint), 
     url(r'^accounts/logout/$', views.LogoutPoint), 
     url(r'^repaintflag$', views.RepaintFlagView.as_view()),     
@@ -23,9 +24,8 @@ urlpatterns = patterns('',
     url(r'^customer/', include('web.customerapp.urls')),
     url(r'^friend/', include('web.friendapp.urls')),
     url(r'^myfiles/', include('web.myfilesapp.urls')),
-    url(r'^api/(?P<method>[a-zA-Z0-9_.-]+)$', login_required(views.call_api_method)),
-    url(r'^$', login_required(views.IndexView.as_view()), name='index'),
-    # url(r'', login_required(views.IndexView.as_view()), name='index'),
+    url(r'^filemanager/', include('web.filemanagerapp.urls')),
+    url(r'^$', login_required(views.IndexView.as_view())),
 ) 
 
 # urlpatterns += staticfiles_urlpatterns()

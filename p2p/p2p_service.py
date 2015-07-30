@@ -329,67 +329,18 @@ def RequestService(request):
     if len(words) <= 1:
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
-    if words[0] == 'storage':
+    service_name = words[0]
+    # TODO - temporary keep that for backward compatibility
+    if service_name == 'storage':
         if not driver.is_started('service_supplier'):
             return SendFail(request, 'supplier service is off')
-        try:
-            bytes_for_customer = int(words[1])
-        except:
-            lg.exc()
-            bytes_for_customer = None
-        if not bytes_for_customer or bytes_for_customer < 0:
-            lg.warn("wrong storage value : %s" % request.Payload)
-            return SendFail(request, 'wrong storage value')
-        current_customers = contactsdb.customers()
-        donated_bytes = settings.getDonatedBytes()
-        if not os.path.isfile(settings.CustomersSpaceFile()):
-            bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
-            lg.out(6, 'p2p_service.RequestService created a new space file')
-        space_dict = bpio._read_dict(settings.CustomersSpaceFile())
-        try:
-            free_bytes = int(space_dict['free'])
-        except:
-            lg.exc()
-            return SendFail(request, 'broken space file')
-        if ( request.OwnerID not in current_customers and request.OwnerID in space_dict.keys() ):
-            lg.warn("broken space file")
-            return SendFail(request, 'broken space file')
-        if ( request.OwnerID in current_customers and request.OwnerID not in space_dict.keys() ):
-            lg.warn("broken customers file")
-            return SendFail(request, 'broken customers file')
-        if request.OwnerID in current_customers:
-            free_bytes += int(space_dict[request.OwnerID])
-            space_dict['free'] = free_bytes
-            current_customers.remove(request.OwnerID)  
-            space_dict.pop(request.OwnerID)
-            new_customer = False
-        else:
-            new_customer = True
-        from supplier import local_tester
-        if free_bytes <= bytes_for_customer:
-            contactsdb.update_customers(current_customers)
-            contactsdb.save_customers()
-            bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
-            reactor.callLater(0, local_tester.TestUpdateCustomers)
-            if new_customer:
-                lg.out(8, "    NEW CUSTOMER - DENIED !!!!!!!!!!!    not enough space")
-            else:
-                lg.out(8, "    OLD CUSTOMER - DENIED !!!!!!!!!!!    not enough space")
-            return SendAck(request, 'deny')
-        space_dict['free'] = free_bytes - bytes_for_customer
-        current_customers.append(request.OwnerID)  
-        space_dict[request.OwnerID] = bytes_for_customer
-        contactsdb.update_customers(current_customers)
-        contactsdb.save_customers()
-        bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
-        reactor.callLater(0, local_tester.TestUpdateCustomers)
-        if new_customer:
-            lg.out(8, "    NEW CUSTOMER ACCEPTED !!!!!!!!!!!!!!")
-        else:
-            lg.out(8, "    OLD CUSTOMER ACCEPTED !!!!!!!!!!!!!!")
-        return SendAck(request, 'accepted')
-    lg.warn("wrong service request in %s" % request)
-    return SendFail(request, 'wrong service request')
+        return driver.request('service_supplier', request)
+    if not driver.is_exist(service_name):
+        lg.warn("got wrong payload in %s" % request)
+        return SendFail(request, 'service %s not exist' % service_name)
+    if not driver.is_started(service_name):
+        return SendFail(request, 'service %s is off' % service_name)
+    return driver.request(service_name, request)
     
 def SendRequestService(remote_idurl, service_info, response_callback=None):
     lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
@@ -402,37 +353,22 @@ def SendRequestService(remote_idurl, service_info, response_callback=None):
 
 def CancelService(request):
     lg.out(8, "p2p_service.CancelService")
-    if request.Payload.startswith('storage'):
-        if not driver.is_started('serivce_supplier'):
+    words = request.Payload.split(' ')
+    if len(words) <= 1:
+        lg.warn("got wrong payload in %s" % request)
+        return SendFail(request, 'wrong payload')
+    service_name = words[0]
+    # TODO - temporary keep that for backward compatibility
+    if service_name == 'storage':
+        if not driver.is_started('service_supplier'):
             return SendFail(request, 'supplier service is off')
-        if not contactsdb.is_customer(request.OwnerID):
-            lg.warn("got packet from %s, but he is not a customer" % request.OwnerID)
-            return SendFail(request, 'not a customer')
-        donated_bytes = settings.getDonatedBytes()
-        if not os.path.isfile(settings.CustomersSpaceFile()):
-            bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
-            lg.out(6, 'p2p_service.CancelService created a new space file')
-        space_dict = bpio._read_dict(settings.CustomersSpaceFile())
-        if request.OwnerID not in space_dict.keys():
-            lg.warn("got packet from %s, but not found him in space dictionary" % request.OwnerID)
-            return SendFail(request, 'not a customer')
-        try:
-            free_bytes = int(space_dict['free'])
-            space_dict['free'] = free_bytes + int(space_dict[request.OwnerID])
-        except:
-            lg.exc()
-            return SendFail(request, 'broken space file')
-        new_customers = list(contactsdb.customers())
-        new_customers.remove(request.OwnerID)
-        contactsdb.update_customers(new_customers)
-        contactsdb.save_customers()
-        space_dict.pop(request.OwnerID)
-        bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
-        from supplier import local_tester
-        reactor.callLater(0, local_tester.TestUpdateCustomers)
-        return SendAck(request, 'accepted')
-    lg.warn("got wrong payload in %s" % request)
-    return SendFail(request, 'wrong service request')
+        return driver.cancel('service_supplier', request)
+    if not driver.is_exist(service_name):
+        lg.warn("got wrong payload in %s" % request)
+        return SendFail(request, 'service %s not exist' % service_name)
+    if not driver.is_started(service_name):
+        return SendFail(request, 'service %s is off' % service_name)
+    return driver.cancel(service_name, request)
 
 def SendCancelService(remote_idurl, service_info, response_callback=None):
     lg.out(8, "p2p_service.SendCancelService [%s]" % service_info)

@@ -792,6 +792,10 @@ def portablePath(path):
             - convert disk letter to lower case
         - convert to unicode 
     """
+    if path == '' or path == '/':
+        return path
+    if Windows() and len(path) == 2 and path[1] == ':':
+        path += '/'
     p = os.path.abspath(path)
     if not isinstance(p, unicode):
         # p = p.encode('utf-8')

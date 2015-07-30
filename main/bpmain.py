@@ -468,11 +468,18 @@ def main():
     if opts.output:
         logpath = opts.output
 
+    need_redirecting = False
+    
+    if bpio.Windows() and not bpio.isConsoled():
+        need_redirecting = True
+    
     if logpath != '':
         lg.open_log_file(logpath)
         lg.out(2, 'bpmain.main log file opened ' + logpath)
-
-    if bpio.Windows() and (bpio.isFrozen() or bpio.isConsoled()):
+        if bpio.Windows() and bpio.isFrozen():
+            need_redirecting = True
+    
+    if need_redirecting:
         lg.stdout_start_redirecting()
         lg.out(2, 'bpmain.main redirecting started')
 
@@ -763,6 +770,7 @@ def main():
         ret = do_spawn()
         bpio.shutdown()
         return ret
+
         
     #---command_line---
     # from interface import command_line as cmdln
