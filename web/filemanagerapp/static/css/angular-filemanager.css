@@ -385,3 +385,6 @@ textarea {
 .table-files td {
 	/* text-align: left; */
 }
+#navbar-filemanager .navbar-toggle {
+	background-color: #178ACC; 
+}

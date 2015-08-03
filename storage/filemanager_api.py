@@ -15,10 +15,14 @@
 #------------------------------------------------------------------------------ 
 
 import os
+import time
 import pprint
 import traceback
 
 from logs import lg
+
+from lib import packetid
+from lib import misc
 
 #------------------------------------------------------------------------------ 
 
@@ -50,26 +54,66 @@ def _list(params):
     path = params['path'].lstrip('/')
     from storage import backup_fs
     root_item_id = backup_fs.ToID(path)
-    print '_list', root_item_id
-    if not root_item_id:
-        for pathID, localPath, item in backup_fs.ListRootItems():
+    if root_item_id:
+        root_item = backup_fs.WalkByID(root_item_id)
+        if not root_item:
+            lg.warn('backup_fs item %s was not found, but exist' % root_item_id)
+            return { "result": { "success": False, "error": 'backup_fs item %s was not found, but exist' % root_item_id }}
+        root_item = root_item[0]
+        root_item_info = root_item.get(backup_fs.INFO_KEY, None)
+        if root_item_info and isinstance(root_item_info, backup_fs.FSItemInfo):
+            for version in root_item_info.list_versions(True, True):
+                # print root_item_id, version, misc.TimeStructFromVersion(packetid.SplitBackupID(version)[1])
+                result.append({
+                    "name": str(root_item_id + '/' + version),
+                    "rights": "", # "drwxr-xr-x",
+                    "size": str(root_item_info.get_version_size(version)),
+                    # "date": "-".join(map(str,misc.TimeStructFromVersion(packetid.SplitBackupID(version)[1]))),
+                    # "date": list(misc.TimeStructFromVersion(packetid.SplitBackupID(version)[1])),
+                    'date': time.strftime("YYYY-mm-dd HH:MM:SS", misc.TimeStructFromVersion(packetid.SplitBackupID(version)[1])),
+                    "type": "file", 
+                })
+        for pathID, localPath, item in backup_fs.ListChilds(root_item):
+            item_size = 0
+            item_time = 0 
+            for version in item.list_versions(True, True):
+                version_size = item.get_version_size(version)
+                if version_size > 0:
+                    item_size += version_size 
+                version_time = misc.TimeFromBackupID(version)
+                if version_time and version_time > item_time:
+                    item_time = version_time
+            # print pathID, localPath, item_size, item_time
             result.append({
                 "name": item.name(),
-                "rights": "drwxr-xr-x",
-                "size": str(item.size if item else ''),
-                "date": '',
-                "type": "dir" if item.type != backup_fs.FILE else "file", 
+                "rights": "", # "drwxr-xr-x",
+                "size": str(item_size),
+                # "date": "-".join(map(str,time.gmtime(item_time))) if item_time else '',
+                # "date": list(time.gmtime(item_time)) if item_time else [],
+                "date": time.strftime("YYYY-mm-dd HH:MM:SS", time.gmtime(item_time)) if item_time else '',
+                "type": "dir", 
             })
     else:
-        for pathID, localPath, item in backup_fs.ListByID(root_item_id):
-            print pathID, localPath, item
+        for pathID, localPath, item in backup_fs.ListRootItems():
+            item_size = 0 
+            item_time = 0 
+            for version in item.list_versions(True, True):
+                version_size = item.get_version_size(version)
+                if version_size > 0:
+                    item_size += version_size 
+                version_time = misc.TimeFromBackupID(version)
+                if version_time and version_time > item_time:
+                    item_time = version_time
             result.append({
                 "name": item.name(),
-                "rights": "drwxr-xr-x",
-                "size": str(item.size if item else ''),
-                "date": item.get_latest_version() if item else '',
-                "type": "dir" if item.type != backup_fs.FILE else "file", 
+                "rights": "", # "drwxr-xr-x",
+                "size": str(item_size),
+                # "date": "-".join(map(str,time.gmtime(item_time))) if item_time else '',
+                # "date": list(time.gmtime(item_time)) if item_time else [],
+                "date": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else '',
+                "type": "dir", 
             })
+    pprint.pprint(result)
     return { 'result': result, }
 
 #------------------------------------------------------------------------------ 

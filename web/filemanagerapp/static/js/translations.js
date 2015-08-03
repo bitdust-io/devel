@@ -11,7 +11,7 @@
             confirm: "Confirm",
             cancel: "Cancel",
             close: "Close",
-            upload_file: "Upload",
+            upload_file: "Upload Files and Folders",
             download_file: "Download",
             explore_file: "Explore",
             files_will_uploaded_to: "Files will be uploaded to",

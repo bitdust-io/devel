@@ -129,9 +129,8 @@ def NewBackupID(time_st=None):
     result = "F" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
     return result
 
-def TimeFromBackupID(backupID):
+def TimeStructFromVersion(backupID):
     """
-    Reverse method - return a date and time from given BackupID.
     """
     try:
         if backupID.endswith('AM') or backupID.endswith('PM'):
@@ -143,9 +142,18 @@ def TimeFromBackupID(backupID):
             st_time = list(time.strptime(backupID[1:i-1], '%Y%m%d%I%M%S'))
         if ampm == 'PM':
             st_time[3] += 12
-        return time.mktime(st_time)
+        return st_time
     except:
         lg.exc()
+        return None
+
+def TimeFromBackupID(backupID):
+    """
+    Reverse method - return a date and time from given BackupID with ``time.mktime()``.
+    """
+    try:
+        return time.mktime(TimeStructFromVersion(backupID))
+    except:
         return None
 
 def modified_version(a):

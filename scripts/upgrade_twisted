@@ -1,0 +1,6 @@
+#!/bin/bash
+
+sudo apt-get update
+sudo apt-get install python-setuptools python-dev python-pip
+sudo pip install twisted --upgrade
+python -c "import twisted; print twisted.version"

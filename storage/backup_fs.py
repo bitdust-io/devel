@@ -240,6 +240,9 @@ class FSItemInfo():
         
     def get_version_info(self, version):
         return self.versions.get(version, [-1, -1])
+    
+    def get_version_size(self, version):
+        return self.versions.get(version, [-1, -1])[1]
         
     def delete_version(self, version):
         # self.versions.remove(version)
@@ -1040,7 +1043,66 @@ def ListRootItems(iter=None):
     root_items = WalkByPath('', iter)
     for item_dict in root_items[0].values():
         item = GetByID(str(item_dict[0]))
-        result.append((str(item_dict[0]), item.name(), item))
+        if item:
+            result.append((str(item_dict[0]), item.name(), item))
+    return result
+
+def ListChilds(iterID):
+    """
+    """
+    lg.out(4, 'backup_fs.ListChilds %s' % (iterID))
+    result = []
+    if isinstance(iterID, FSItemInfo):
+        return [('', '', iterID),]
+    if not isinstance(iterID, dict):
+        raise Exception('Wrong data type in the index')
+    if not iterID.has_key(INFO_KEY):
+        raise Exception('Error, directory info missed in the index')
+    for id in iterID.keys():
+        if id == INFO_KEY:
+            continue
+        if isinstance(iterID[id], dict):
+            if not iterID[id].has_key(INFO_KEY):
+                raise Exception('Error, directory info missed in the index')
+            name = iterID[id][INFO_KEY].name()
+            itm = iterID[id][INFO_KEY]
+        elif isinstance(iterID[id], FSItemInfo):
+            name = iterID[id].name()
+            itm = iterID[id]
+        else:
+            raise Exception('Wrong data type in the index')
+        result.append((str(id), name, itm))
+    return result
+    
+def ListByID(pathID, iterID=None):
+    """
+    List sub items in the index at given ``ID``. 
+    """  
+    iter_and_path = WalkByID(pathID, iterID)
+    if iter_and_path is None:
+        return None
+    result = []
+    iterID, path = iter_and_path
+    if isinstance(iterID, FSItemInfo):
+        return [(pathID, path, iterID),]
+    if not isinstance(iterID, dict):
+        raise Exception('Wrong data type in the index')
+    if not iterID.has_key(INFO_KEY) and pathID.strip() != '':
+        raise Exception('Error, directory info missed in the index')
+    for id in iterID.keys():
+        if id == INFO_KEY:
+            continue
+        if isinstance(iterID[id], dict):
+            if not iterID[id].has_key(INFO_KEY):
+                raise Exception('Error, directory info missed in the index')
+            name = iterID[id][INFO_KEY].name()
+            itm = iterID[id][INFO_KEY]
+        elif isinstance(iterID[id], FSItemInfo):
+            name = iterID[id].name()
+            itm = iterID[id]
+        else:
+            raise Exception('Wrong data type in the index')
+        result.append((pathID+'/'+str(id), path+'/'+name, itm))
     return result
 
 def ListByPath(path, iter=None):
@@ -1073,37 +1135,6 @@ def ListByPath(path, iter=None):
             raise Exception('Wrong data type in the index')
         result.append((path_id+'/'+str(id), path+'/'+key))
     return result    
-    
-def ListByID(pathID, iterID=None):
-    """
-    List sub items in the index at given ``ID``. 
-    """  
-    iter_and_path = WalkByID(pathID, iterID)
-    if iter_and_path is None:
-        return None
-    result = []
-    iterID, path = iter_and_path
-    if isinstance(iterID, FSItemInfo):
-        return [(pathID, path, iterID),]
-    if not isinstance(iterID, dict):
-        raise Exception('Wrong data type in the index')
-    if not iterID.has_key(INFO_KEY) and pathID.strip() != '':
-        raise Exception('Error, directory info missed in the index')
-    for id in iterID.keys():
-        if id == INFO_KEY:
-            continue
-        if isinstance(iterID[id], dict):
-            if not iterID[id].has_key(INFO_KEY):
-                raise Exception('Error, directory info missed in the index')
-            name = iterID[id][INFO_KEY].name()
-            itm = iterID[id][INFO_KEY]
-        elif isinstance(iterID[id], FSItemInfo):
-            name = iterID[id].name()
-            itm = iterID[id]
-        else:
-            raise Exception('Wrong data type in the index')
-        result.append((pathID+'/'+str(id), path+'/'+name, itm))
-    return result
 
 def ListAllBackupIDs(sorted=False, reverse=False, iterID=None):
     """

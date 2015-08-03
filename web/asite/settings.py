@@ -59,7 +59,7 @@ INSTALLED_APPS = (
     'web.customerapp',
     'web.supplierapp',
     'web.friendapp',
-    'web.myfilesapp',
+    # 'web.myfilesapp',
     'web.filemanagerapp',
 )
 

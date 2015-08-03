@@ -23,9 +23,10 @@ urlpatterns = patterns('',
     url(r'^supplier/', include('web.supplierapp.urls')),
     url(r'^customer/', include('web.customerapp.urls')),
     url(r'^friend/', include('web.friendapp.urls')),
-    url(r'^myfiles/', include('web.myfilesapp.urls')),
+    # url(r'^myfiles/', include('web.myfilesapp.urls')),
     url(r'^filemanager/', include('web.filemanagerapp.urls')),
-    url(r'^$', login_required(views.IndexView.as_view())),
+    url(r'^$', include('web.filemanagerapp.urls')),
+    # url(r'^$', login_required(views.IndexView.as_view())),
 ) 
 
 # urlpatterns += staticfiles_urlpatterns()

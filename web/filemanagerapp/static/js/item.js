@@ -1,3 +1,9 @@
+Date.prototype.isValid = function () {
+    // An invalid date object returns NaN for getTime() and NaN is the only
+    // object not strictly equal to itself.
+    return this.getTime() === this.getTime();
+}; 
+
 (function(window, angular, $) {
     "use strict";
     angular.module('FileManagerApp').factory('item', ['$http', '$translate', 'fileManagerConfig', 'chmod', function($http, $translate, fileManagerConfig, Chmod) {
@@ -26,9 +32,21 @@
             this.model = angular.copy(rawModel);
             this.tempModel = angular.copy(rawModel);
 
-            function convertDate(mysqlDate) {
+            function convertDate(d) {
+            	debug.log("convertDate", d);
+            	if (!d)
+        			return "";
+                var result = new Date(d[0], d[1] - 1, d[2], d[3], d[4], d[5]);
+                if (!result.isValid())
+                	return "";
+            	return result.format('yyyy-mm-dd HH:mm:ss');
+            	/*
                 var d = (mysqlDate || '').toString().split(/[- :]/);
-                return new Date(d[0], d[1] - 1, d[2], d[3], d[4], d[5]);
+                var result = new Date(d[0], d[1] - 1, d[2], d[3], d[4], d[5]);
+                if (!result.isValid()) result = '';
+            	debug.log('convertDate: ', mysqlDate, result);
+                return result;
+                */
             }
         };
 
