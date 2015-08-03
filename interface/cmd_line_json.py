@@ -277,11 +277,16 @@ def cmd_identity(opts, args, overDict, running):
     def _register():
         if len(args) <= 2:
             return 2
-        # if len(args) > 3:
-        #     settings.setPrivateKeySize(args[3])
+        pksize = settings.getPrivateKeySize()
+        if len(args) > 3:
+            try:
+                pksize = int(args[3])
+            except:
+                print_text('incorrect private key size\n')
+                return 0
         from automats import automat
         from main import initializer
-        initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': args[3]})
+        initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
         reactor.run()
         automat.objects().clear()
         if my_id.isLocalIdentityReady():

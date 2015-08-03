@@ -414,6 +414,9 @@ def main():
     """
     THIS IS THE ENTRY POINT OF THE PROGRAM!
     """
+    import warnings
+    warnings.filterwarnings("ignore", message="You do not have a working installation of the service_identity module")
+    
     try:
         from logs import lg
     except:
