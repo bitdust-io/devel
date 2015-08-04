@@ -8,38 +8,54 @@
     </thead>
     <tbody class="file-item">
         <tr data-ng-show="fileNavigator.requesting">
-            <td colspan="3">
+            <td colspan="2">
                 {{"loading" | translate}}...
             </td>
         </tr>
+        <!-- 
         <tr data-ng-show="!fileNavigator.requesting && !fileNavigator.listHasFolders() && !fileNavigator.error">
-            <td colspan="2">
+            <td colspan="1">
                 {{"no_folders_in_folder" | translate}}...
             </td>
             <td class="text-right">
                 <button class="btn btn-sm btn-default" data-ng-click="fileNavigator.upDir()">{{"go_back" | translate}}</button>
             </td>
         </tr>
+        -->
+        <tr data-ng-show="!fileNavigator.requesting && fileNavigator.isEmpty() && !fileNavigator.error">
+            <td colspan="2">
+                <div class="pull-left">
+                    {{"no_items_in_folder" | translate}}...
+                </div>
+                <div class="pull-right">
+                    <button class="btn btn-sm btn-default" data-ng-click="fileNavigator.upDir()">{{"go_back" | translate}}</button>
+                </div>
+            </td>
+        </tr>
         <tr data-ng-show="!fileNavigator.requesting && fileNavigator.error">
-            <td colspan="3">
+            <td colspan="2">
                 {{ fileNavigator.error }}
             </td>
         </tr>
         <tr data-ng-repeat="item in fileNavigator.fileList | orderBy: orderProp" data-ng-show="!fileNavigator.requesting">
-            <td>
-                <a href="" data-ng-click="fileNavigator.folderClick(item)" title="{{item.model.name}} ({{item.model.sizeKb()}}kb)">
-                    <i class="glyphicon glyphicon-folder-close"></i>
-                    {{item.model.name | strLimit : 99}}
-                </a>
+            <td width="1%" class="text-left">
+                <button class="btn btn-sm btn-default" data-ng-click="addFileFolder(item, temp)" title='{{"select_this" | translate}}'>
+                    <i class="glyphicon glyphicon-hand-up"></i>
+                </button>
+            </td>
+            <td class="text-left">
+                <div class="local-table-item-name">
+                    <a href="" data-ng-click="fileNavigator.folderClick(item)" title="{{item.model.name}} ({{item.model.sizeKb()}}kb)">
+                        <i class="glyphicon glyphicon-folder-close"></i>
+                        {{item.model.name}}
+                    </a>
+                </div>
             </td>
             <!-- 
             <td class="hidden-sm hidden-xs">
                 {{item.model.date.toString()}}
             </td>
             -->
-            <td class="text-right" width="105">
-                <button class="btn btn-sm btn-default" data-ng-click="addFileFolder(item, temp)"><i class="glyphicon glyphicon-hand-up"></i> {{"select_this" | translate}}</button>
-            </td>
         </tr>
     </tbody>
 </table>

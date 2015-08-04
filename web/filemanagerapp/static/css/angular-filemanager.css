@@ -388,3 +388,16 @@ textarea {
 #navbar-filemanager .navbar-toggle {
 	background-color: #178ACC; 
 }
+#local-table-modal {
+	overflow: auto;
+	height: 200px;
+}
+#local-table-modal .file-item td {
+	padding-left: 0px!important;	
+    padding-right: 0px!important;  
+}
+.local-table-item-name {
+    max-width:425px;
+    overflow:hidden;
+    white-space: nowrap;
+}

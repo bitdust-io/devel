@@ -141,6 +141,7 @@ class NetworkConnector(automat.Automat):
                 self.state = 'START_UP'
                 self.Disconnects=0
                 self.Reset=False
+                self.ColdStart=True
                 self.doCheckNetworkInterfaces(arg)
         #---UPNP---
         elif self.state == 'UPNP':
@@ -185,11 +186,15 @@ class NetworkConnector(automat.Automat):
         elif self.state == 'UP':
             if event == 'reconnect' :
                 self.Reset=True
-            elif event == 'network-up' and self.isNeedUPNP(arg) :
+            elif not self.ColdStart and event == 'network-up' and not self.isNeedUPNP(arg) :
+                self.state = 'TRANSPORTS?'
+                self.doStartNetworkTransports(arg)
+            elif not self.ColdStart and event == 'network-up' and self.isNeedUPNP(arg) :
                 self.state = 'UPNP'
                 self.doUPNP(arg)
-            elif event == 'network-up' and not self.isNeedUPNP(arg) :
-                self.state = 'TRANSPORTS?'
+            elif self.ColdStart and event == 'network-up' :
+                self.state = 'CONNECTED'
+                self.ColdStart=False
                 self.doStartNetworkTransports(arg)
         #---DOWN---
         elif self.state == 'DOWN':
@@ -369,13 +374,14 @@ class NetworkConnector(automat.Automat):
             return
         from transport import gateway
         # transports = gateway.transports().values()
-        if len(gateway.start()) > 0:
+        if len(gateway.start()) == 0:
+            self.automat('all-network-transports-ready')
             return
         # transports = gateway.transports().values()
         # if len(transports) == 0: 
         #     self.automat('all-network-transports-disabled')
         #     return
-        self.automat('all-network-transports-ready')
+        # self.automat('all-network-transports-ready')
 
 #------------------------------------------------------------------------------ 
 

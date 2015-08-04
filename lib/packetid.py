@@ -58,7 +58,7 @@ def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity):
 
 def Valid(packetID):
     """
-    The packet ID may be in different forms:
+    The packet ID may have a different forms:
         - full:     0/0/1/0/F20131120053803PM/0-1-Data
         - backupID: 0/0/1/0/F20131120053803PM
         - pathID:   0/0/1/0

@@ -35,7 +35,7 @@
 
         $rootScope.openLocalNavigator = function(temp) {
             $scope.fileNavigator.is_local = true;
-            $scope.fileNavigator.currentPath = ['']; // temp.tempModel.path.slice(); // item.model.path.slice();
+            $scope.fileNavigator.currentPath = []; // temp.tempModel.path.slice(); // item.model.path.slice();
             $scope.fileNavigator.refresh();
             $('#localselector').modal('show');
         };

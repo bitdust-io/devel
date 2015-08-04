@@ -25,7 +25,7 @@
             </td>
         </tr>
         <tr data-ng-repeat="item in fileNavigator.fileList | filter: query | orderBy: orderProp" data-ng-show="!fileNavigator.requesting">
-            <td width="100%>
+            <td width="100%">
                 <a href="" data-ng-click="smartClick(item)" ng-right-click="smartRightClick(item)" title="{{item.model.name}} ({{item.model.sizeKb()}}kb)">
                     <i class="glyphicon glyphicon-folder-close" data-ng-show="item.model.type === 'dir'"></i>
                     <i class="glyphicon glyphicon-file" data-ng-show="item.model.type === 'file'"></i>
@@ -35,7 +35,7 @@
             <td> <!-- class="hidden-xs" -->
                 {{item.model.sizeKb()}}kb
             </td>
-            <td> <!-- class="hidden-sm hidden-xs" -->
+            <td style="white-space: nowrap"> <!-- class="hidden-sm hidden-xs" -->
                 {{item.model.date}} <!-- toString() -->
             </td>
             <!--
@@ -43,7 +43,7 @@
                 {{item.model.perms.toCode(item.model.type === 'dir'?'d':'-')}}
             </td>
             -->
-            <td class="text-right">
+            <td class="text-right" style="white-space: nowrap">
                 <div ng-include="config.tplPath + '/item-toolbar.html'"></div>
             </td>
         </tr>

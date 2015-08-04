@@ -16,16 +16,17 @@
 
         FileNavigator.prototype.refresh = function(success, error) {
             var self = this;
-            var path = self.currentPath.join('/');
             var needed_mode = "list";
+            var path = self.currentPath.join('/');
             if (self.is_local) {
             	needed_mode = "listlocal";
             }
             var data = {params: {
                 mode: needed_mode,
                 onlyFolders: false,
-                path: '/' + path
+                path: path
             }};
+            debug.log('refresh', needed_mode, path);
 
             self.requesting = true;
             self.fileList = [];
@@ -117,6 +118,7 @@
                     return true;
                 }
             }
+            return false;
         };
 
         FileNavigator.prototype.listHasFolders = function() {
@@ -126,8 +128,23 @@
                     return true;
                 }
             }
+            return false;
         };
 
+        FileNavigator.prototype.isEmpty = function() {
+            var self = this;
+            debug.log('isEmpty', self.currentPath);
+        	if (!self.currentPath[0])
+        		return false;
+            for (var item in self.fileList) {
+                if (self.fileList[item].model.type === 'dir' ||
+            		self.fileList[item].model.type === 'file') {
+                    return false;
+                }
+            }
+            return true;
+        };
+        
         return FileNavigator;
     }]);
 })(angular);

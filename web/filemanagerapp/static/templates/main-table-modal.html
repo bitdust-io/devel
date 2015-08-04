@@ -26,7 +26,7 @@
             </td>
         </tr>
         <tr data-ng-repeat="item in fileNavigator.fileList | orderBy: orderProp" data-ng-show="!fileNavigator.requesting && item.model.type === 'dir'">
-            <td>
+            <td >
                 <a href="" data-ng-click="fileNavigator.folderClick(item)" title="{{item.model.name}} ({{item.model.sizeKb()}}kb)">
                     <i class="glyphicon glyphicon-folder-close"></i>
                     {{item.model.name | strLimit : 32}}

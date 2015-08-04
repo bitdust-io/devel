@@ -46,7 +46,9 @@ class P2PHookupsService(LocalService):
         network_connector.A().addStateChangedCallback(
             self._on_network_connector_switched)
         p2p_connector.A('init')
-        return self._starting_defer
+        # # self._starting_defer.callback(p2p_connector.A().state)
+        # return self._starting_defer
+        return True
     
     def stop(self):
         from p2p import contact_status
@@ -61,8 +63,8 @@ class P2PHookupsService(LocalService):
         return True
     
     def _on_p2p_connector_switched(self, oldstate, newstate, evt, args ):
-        if self._starting_defer is not None:
-            if newstate == 'INCOMMING?':
+        if newstate == 'INCOMMING?':
+            if self._starting_defer is not None:
                 self._starting_defer.callback(newstate)
                 self._starting_defer = None
         from p2p import network_connector

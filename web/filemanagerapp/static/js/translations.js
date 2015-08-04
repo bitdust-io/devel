@@ -48,6 +48,7 @@
             size: "Size",
             actions: "Actions",
             date: "Date",
+            no_items_in_folder: "This folder is empty",
             no_files_in_folder: "No files in this folder",
             no_folders_in_folder: "This folder not contains children folders",
             select_this: "Select this",

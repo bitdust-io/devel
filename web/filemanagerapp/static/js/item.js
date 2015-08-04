@@ -12,6 +12,7 @@ Date.prototype.isValid = function () {
             var rawModel = {
                 name: model && model.name || '',
                 path: path || [],
+                id: model && model.id || '',
                 type: model && model.type || 'file',
                 size: model && model.size || 0,
                 date: convertDate(model && model.date),
@@ -22,8 +23,9 @@ Date.prototype.isValid = function () {
                     return Math.round(this.size / 1024, 1);
                 },
                 fullPath: function() {
-                    return ('/' + this.path.join('/') + '/' + this.name).replace(/\/\//, '/');
+                    return ('/' + this.path.join('/') + '/' + this.name).trimLeft('/').replace(/\/\//, '/');
                 }
+                
             };
 
             this.error = '';
@@ -33,13 +35,16 @@ Date.prototype.isValid = function () {
             this.tempModel = angular.copy(rawModel);
 
             function convertDate(d) {
-            	debug.log("convertDate", d);
+            	/*debug.log("convertDate", d);*/
+            	return d;
+            	/*
             	if (!d)
         			return "";
                 var result = new Date(d[0], d[1] - 1, d[2], d[3], d[4], d[5]);
                 if (!result.isValid())
                 	return "";
             	return result.format('yyyy-mm-dd HH:mm:ss');
+            	*/
             	/*
                 var d = (mysqlDate || '').toString().split(/[- :]/);
                 var result = new Date(d[0], d[1] - 1, d[2], d[3], d[4], d[5]);
@@ -63,6 +68,7 @@ Date.prototype.isValid = function () {
 
         Item.prototype.defineCallback = function(data, success, error) {
             /* Check if there was some error in a 200 response */
+        	debug.log('defineCallback:', data, data.result.error);
             var self = this;
             if (data.result && data.result.error) {
                 self.error = data.result.error;
@@ -104,7 +110,8 @@ Date.prototype.isValid = function () {
             var self = this;
             var data = {params: {
                 mode: "addfilefolder",
-                path: self.tempModel.path.join('/') + '/' + self.tempModel.name
+                path: self.tempModel.fullPath()
+                // path: self.tempModel.path.join('/') + '/' + self.tempModel.name
             }};
            
             if (self.tempModel.name.trim()) {
@@ -258,13 +265,16 @@ Date.prototype.isValid = function () {
             var self = this;
             var data = {params: {
                 mode: "delete",
-                path: self.tempModel.fullPath()
+                id: self.tempModel.id,
+                path: self.tempModel.fullPath(),
+                name: self.tempModel.name,
             }};
             self.inprocess = true;
             self.error = '';
             return $http.post(fileManagerConfig.removeUrl, data).success(function(data) {
                 self.defineCallback(data, success, error);
             }).error(function(data) {
+            	debug.log('delete.error:', data, data.result.error);
                 self.error = data.result && data.result.error ?
                     data.result.error:
                     $translate.instant('error_deleting');
