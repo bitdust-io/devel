@@ -25,7 +25,7 @@
 
 (function(angular, $) {
     "use strict";
-    angular.module('FileManagerApp').controller('ModalLocalFileManagerCtrl', [
+    angular.module('FileManagerApp').controller('ModalUploadFromFileManagerCtrl', [
         '$scope', '$rootScope', 'fileManagerConfig', 'fileNavigator',
         function($scope, $rootScope, fileManagerConfig, FileNavigator) {
 
@@ -33,11 +33,34 @@
         $scope.orderProp = ['model.type', 'model.name'];
         $scope.fileNavigator = new FileNavigator();
 
-        $rootScope.openLocalNavigator = function(temp) {
-            $scope.fileNavigator.is_local = true;
+        $rootScope.openUploadFromNavigator = function(temp) {
+            $scope.fileNavigator.mode = 'select_upload_path';
             $scope.fileNavigator.currentPath = []; // temp.tempModel.path.slice(); // item.model.path.slice();
             $scope.fileNavigator.refresh();
             $('#localselector').modal('show');
+        };
+
+    }]);
+})(angular, jQuery);
+
+
+(function(angular, $) {
+    "use strict";
+    angular.module('FileManagerApp').controller('ModalDownloadToFileManagerCtrl', [
+        '$scope', '$rootScope', 'fileManagerConfig', 'fileNavigator',
+        function($scope, $rootScope, fileManagerConfig, FileNavigator) {
+
+        $scope.appName = fileManagerConfig.appName;
+        $scope.orderProp = ['model.type', 'model.name'];
+        $scope.fileNavigator = new FileNavigator();
+
+        $rootScope.openDownloadToNavigator = function(temp) {
+        	debug.log('openDownloadToNavigator', temp);
+            $scope.fileNavigator.mode = 'select_download_path';
+            $scope.fileNavigator.targetItem = temp;
+            $scope.fileNavigator.currentPath = temp.tempModel.path.slice(); // item.model.path.slice();
+            $scope.fileNavigator.refresh();
+            $('#downloadselector').modal('show');
         };
 
     }]);

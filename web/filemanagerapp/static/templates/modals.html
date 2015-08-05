@@ -346,7 +346,7 @@
   </div>
 </div>
 
-<div class="modal animated fadeIn" id="localselector" data-ng-controller="ModalLocalFileManagerCtrl">
+<div class="modal animated fadeIn" id="localselector" data-ng-controller="ModalUploadFromFileManagerCtrl">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
@@ -360,6 +360,48 @@
         <div>
             <div ng-include="config.tplPath + '/current-folder-breadcrumb.html'"></div>
             <div id="local-table-modal" ng-include="config.tplPath + '/local-table-modal.html'"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-default" data-dismiss="modal" data-ng-disabled="temp.inprocess">{{"close" | translate}}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal animated fadeIn" id="downloadselector" data-ng-controller="ModalDownloadToFileManagerCtrl">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">
+            <span aria-hidden="true">&times;</span>
+            <span class="sr-only">{{"close" | translate}}</span>
+        </button>
+        <h4 class="modal-title">{{"select_destination_folder" | translate}}</h4>
+      </div>
+      <div class="modal-body">
+        <div class="path-selector-area">
+            <table>
+              <tr>
+                <td>
+                    <div class="path-selector-input">
+                        <b>{{fileNavigator.currentPath.join('/')}}</b>
+                    </div>
+                </td>
+                <td width="1%">
+                    <div data-ng-show="fileNavigator.currentPath.join('/') != ''">
+                        <button class="btn btn-success btn-sm" data-ng-click="downloadTo(fileNavigator.targetItem, fileNavigator.currentPath.join('/'))">
+                            <i class="glyphicon glyphicon-hand-up"></i>
+                            {{"download_to_folder" | translate}}
+                        </button>
+                    </div>
+                </td>
+              </tr>
+            </table>
+        </div>
+        <div>
+            <div ng-include="config.tplPath + '/current-folder-breadcrumb.html'"></div>
+            <div id="local-table-modal" ng-include="config.tplPath + '/local-dest-table-modal.html'"></div>
         </div>
       </div>
       <div class="modal-footer">

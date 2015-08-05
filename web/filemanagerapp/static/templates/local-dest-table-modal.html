@@ -15,7 +15,7 @@
         <tr data-ng-show="!fileNavigator.requesting && fileNavigator.isEmpty() && !fileNavigator.error">
             <td colspan="2">
                 <div class="pull-left">
-                    {{"no_items_in_folder" | translate}}...
+                    {{"no_folders_in_folder" | translate}}...
                 </div>
                 <div class="pull-right">
                     <button class="btn btn-sm btn-default" data-ng-click="fileNavigator.upDir()">{{"go_back" | translate}}</button>
@@ -27,26 +27,14 @@
                 {{ fileNavigator.error }}
             </td>
         </tr>
-        <tr data-ng-show="!fileNavigator.requesting" data-ng-repeat="item in fileNavigator.fileList | orderBy: orderProp">
-            <td class="text-left">
+        <tr data-ng-show="!fileNavigator.requesting" data-ng-repeat="item in fileNavigator.fileList | orderBy: orderProp" class="item">
+            <td class="text-left" colspan="2">
                 <div class="local-table-item-name">
                     <a href="" data-ng-click="fileNavigator.folderClick(item)" title="{{item.model.name}}">
                         <i class="glyphicon glyphicon-folder-close"></i>
                         {{item.model.name}}
                     </a>
                 </div>
-            </td>
-            <td data-ng-show="!item.isFolder()" width="1%" class="text-right">
-                <button class="btn btn-sm btn-success" data-ng-click="uploadFrom(item, temp)">
-                    <i class="glyphicon glyphicon-hand-up"></i>
-                    {{"upload_file_item" | translate}}
-                </button>
-            </td>
-            <td data-ng-show="item.isFolder()" width="1%" class="text-right">
-                <button class="btn btn-sm btn-success" data-ng-click="uploadFrom(item, temp)">
-                    <i class="glyphicon glyphicon-hand-up"></i>
-                    {{"upload_folder_item" | translate}}
-                </button>
             </td>
         </tr>
     </tbody>

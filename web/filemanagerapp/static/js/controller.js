@@ -126,14 +126,28 @@
             }
         };
         
-        $scope.addFileFolder = function(item, temp) {
-            temp.tempModel.path = item.model.fullPath().split('/');
-            item.addFileOrFolder(function() {
+        $scope.uploadFrom = function(item, temp) {
+            temp.tempModel.path = item.model.fullPath().replace(/^\/*/g, '').split('/');
+            item.upload(function(data) {
+            	var fullPath = temp.tempModel.path;
+            	$scope.fileNavigator.currentPath = fullPath && fullPath[0] === "" ? [] : fullPath;
+            	//debug.log('controller.upload.success', temp.tempModel.path, $scope.fileNavigator.currentPath);
                 $scope.fileNavigator.refresh();
                 $('#localselector').modal('hide');
             }, function() {
             	$scope.fileNavigator.refresh();
             	$('#localselector').modal('hide');
+        	});
+        };
+        
+        $scope.downloadTo = function(item, dest_path) {
+        	debug.log('controller.downloadTo', item, dest_path);
+        	item.downloadTo(dest_path, function(data) {
+            	$scope.fileNavigator.refresh();
+                $('#downloadselector').modal('hide');
+        	}, function() {
+            	$scope.fileNavigator.refresh();
+                $('#downloadselector').modal('hide');
         	});
         };
 

@@ -31,6 +31,7 @@ from main import settings
 from storage import backup_fs
 from storage import backup_control
 from storage import backup_monitor
+from storage import restore_monitor
 
 from services import driver
 
@@ -53,10 +54,12 @@ def process(json_request):
             result = _list(json_request['params'])
         elif mode == 'listlocal':
             result = _list_local(json_request['params'])
-        elif mode == 'addfilefolder':
-            result = _add_file_folder(json_request['params'])
+        elif mode == 'upload':
+            result = _upload(json_request['params'])
         elif mode == 'delete':
             result = _delete(json_request['params'])
+        elif mode == 'download':
+            result = _download(json_request['params'])
         lg.out(14, '    %s' % pprint.pformat(result))
         return result
     except:
@@ -74,7 +77,6 @@ def _list(params):
     if not isinstance(lst, list):
         lg.warn('backup_fs.ListByPathAdvanced returned: %s' % lst)
         return { "result": [], }
-        # return { "result": { "success": False, "error": lst }}        
     for item in lst:
         if item[2] == 'index':
             continue
@@ -86,7 +88,6 @@ def _list(params):
             "size": str(item[3]),
             "date": item[4]
         })
-    # pprint.pprint(result)
     return { 'result': result, }
         
         
@@ -164,19 +165,24 @@ def _list(params):
 def _list_local(params):
     result = []
     path = params['path'].lstrip('/')
+    only_folders = params['onlyFolders']
     if path == '' or path == '/' and bpio.Windows():
         for itemname in bpio.listLocalDrivesWindows():
             result.append({
-                "name": itemname,
+                "name": itemname.rstrip('\\').rstrip('/'),
                 "rights": "drwxr-xr-x",
                 "size": "",
                 "date": "",
                 "type": "dir", 
             })
     else:
+        if bpio.Windows() and len(path) == 2 and path[1] == ':':
+            path += '/' 
         apath = os.path.abspath(path)
         for itemname in bpio.list_dir_safe(apath):
             itempath = os.path.join(apath, itemname)
+            if only_folders and not os.path.isdir(itempath):
+                continue
             result.append({
                 "name": itemname,
                 "rights": "drwxr-xr-x",
@@ -188,7 +194,7 @@ def _list_local(params):
   
 #------------------------------------------------------------------------------ 
 
-def _add_file_folder(params):
+def _upload(params):
     path = params['path'].lstrip('/')
     localPath = unicode(path)
     if not bpio.pathExist(localPath):
@@ -240,13 +246,32 @@ def _delete(params):
     
 #------------------------------------------------------------------------------ 
 
-def _rename(params):
-    pass
-    
+def _download(params):
+    localName = params['name']
+    backupID = params['id']
+    restorePath = bpio.portablePath(params['dest_path'])
+    overwrite = params['overwrite']
+    if not packetid.Valid(backupID):
+        return { 'result': { "success": False, "error": "path %s is not valid" % backupID} }
+    pathID, version = packetid.SplitBackupID(backupID)
+    if not pathID:
+        return { 'result': { "success": False, "error": "path %s is not valid" % backupID} }
+    if backup_control.IsBackupInProcess(backupID):
+        return { 'result': { "success": True, "error": None } }
+    if backup_control.HasTask(pathID):
+        return { 'result': { "success": True, "error": None } }
+    localPath = backup_fs.ToPath(pathID)
+    if localPath == restorePath:
+        restorePath = os.path.dirname(restorePath)
+    def _itemRestored(backupID, result): 
+        backup_fs.ScanID(packetid.SplitBackupID(backupID)[0])
+        backup_fs.Calculate()
+    restore_monitor.Start(backupID, restorePath, _itemRestored) 
+    return { 'result': { "success": True, "error": None } }
 
 #------------------------------------------------------------------------------ 
 
 def _rename(params):
-    pass
+    return { 'result': { "success": False, "error": "not done yet" } }
 
 

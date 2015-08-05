@@ -68,7 +68,7 @@ Date.prototype.isValid = function () {
 
         Item.prototype.defineCallback = function(data, success, error) {
             /* Check if there was some error in a 200 response */
-        	debug.log('defineCallback:', data, data.result.error);
+        	//debug.log('defineCallback:', data, data.result.error);
             var self = this;
             if (data.result && data.result.error) {
                 self.error = data.result.error;
@@ -106,18 +106,18 @@ Date.prototype.isValid = function () {
             }
         };
 
-        Item.prototype.addFileOrFolder = function(success, error) {
+        Item.prototype.upload = function(success, error) {
             var self = this;
             var data = {params: {
-                mode: "addfilefolder",
+                mode: "upload",
                 path: self.tempModel.fullPath()
                 // path: self.tempModel.path.join('/') + '/' + self.tempModel.name
             }};
-           
+            //debug.log('item.upload', self.tempModel.name, self.tempModel.fullPath());
             if (self.tempModel.name.trim()) {
                 self.inprocess = true;
                 self.error = '';
-                return $http.post(fileManagerConfig.addFileFolderUrl, data).success(function(data) {
+                return $http.post(fileManagerConfig.uploadUrl, data).success(function(data) {
                     self.defineCallback(data, success, error);
                 }).error(function(data) {
                     self.error = data.result && data.result.error ?
@@ -130,6 +130,32 @@ Date.prototype.isValid = function () {
             }
         };
         
+        Item.prototype.downloadTo = function(dest_path, success, error) {
+            var self = this;
+            var data = {params: {
+                mode: "download",
+                dest_path: dest_path,
+                id: self.model.id,
+                name: self.model.name,
+                overwrite: true,
+            }};
+            debug.log('item.downloadTo', self, dest_path);
+            if (dest_path) {
+                self.inprocess = true;
+                self.error = '';
+                return $http.post(fileManagerConfig.downloadUrl, data).success(function(data) {
+                    self.defineCallback(data, success, error);
+                }).error(function(data) {
+                    self.error = data.result && data.result.error ?
+                        data.result.error:
+                        $translate.instant('error_downloading_file_folder');
+                    typeof error === 'function' && error(data);
+                })['finally'](function() {
+                    self.inprocess = false;
+                });
+            }
+        };
+                
         Item.prototype.rename = function(success, error) {
             var self = this;
             var data = {params: {
@@ -274,7 +300,7 @@ Date.prototype.isValid = function () {
             return $http.post(fileManagerConfig.removeUrl, data).success(function(data) {
                 self.defineCallback(data, success, error);
             }).error(function(data) {
-            	debug.log('delete.error:', data, data.result.error);
+            	//debug.log('delete.error:', data, data.result.error);
                 self.error = data.result && data.result.error ?
                     data.result.error:
                     $translate.instant('error_deleting');

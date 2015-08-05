@@ -11,22 +11,27 @@
             this.currentPath = [];
             this.history = [];
             this.error = '';
-            this.is_local = false;
+            this.targetItem = null;
+            this.mode = 'default';
         };
 
         FileNavigator.prototype.refresh = function(success, error) {
             var self = this;
             var needed_mode = "list";
+            var need_only_Folders = false;
             var path = self.currentPath.join('/');
-            if (self.is_local) {
+            if (self.mode != 'default') {
             	needed_mode = "listlocal";
+            }
+            if (self.mode == 'select_download_path') {
+            	need_only_Folders = true;
             }
             var data = {params: {
                 mode: needed_mode,
-                onlyFolders: false,
+                onlyFolders: need_only_Folders,
                 path: path
             }};
-            debug.log('refresh', needed_mode, path);
+            //debug.log('refresh', needed_mode, path);
 
             self.requesting = true;
             self.fileList = [];
@@ -133,7 +138,7 @@
 
         FileNavigator.prototype.isEmpty = function() {
             var self = this;
-            debug.log('isEmpty', self.currentPath);
+            //debug.log('isEmpty', self.currentPath);
         	if (!self.currentPath[0])
         		return false;
             for (var item in self.fileList) {

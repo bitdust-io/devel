@@ -6,11 +6,12 @@
  
 #filemanager {
     position: absolute;
-    top: 103px;
+    top: 51px;
     bottom: 30px;
     left: 0px;
     right: 0px;	
     overflow: auto;
+    padding: 10px;
 }
 #filemanager
 .detail-sources,
@@ -372,6 +373,7 @@ textarea {
 	top: 51px!important;
 	background-color: #fff!important;
 	background-image: none!important;
+	padding: 8px;
 }
 #filemanager
 #filemanager-content {
@@ -380,6 +382,7 @@ textarea {
 #filemanager
 .main-navigation {
 	height: 100%;
+	padding-bottom: 20px;
 }
 #filemanager
 .table-files td {
@@ -400,4 +403,15 @@ textarea {
     max-width:425px;
     overflow:hidden;
     white-space: nowrap;
+}
+.path-selector-area {
+	color: #000;
+	font-size: 1.25em;
+	margin-bottom: 5px;
+	min-height: 30px;
+}
+.path-selector-input {
+	border: 1px solid #eee;
+	line-height: 28px;
+	padding-left: 5px;
 }

@@ -36,7 +36,7 @@
     </button>
     -->
     
-    <button class="btn btn-sm btn-default" data-ng-show="config.allowedActions.download && !item.isFolder()" data-ng-click="item.download()" title="{{'download' | translate}}">
+    <button class="btn btn-sm btn-default" data-ng-show="config.allowedActions.download && !item.isFolder()" data-ng-click="openDownloadToNavigator(item)" title="{{'download' | translate}}">
         <i class="glyphicon glyphicon-cloud-download"></i>
     </button>
     
