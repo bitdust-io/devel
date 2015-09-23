@@ -400,31 +400,8 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        self.popped_item = None
-        if len(arg) == 4:
-            transfer_id, status, size, error_message = arg
-            for i in self.items:
-                if i.transfer_id and i.transfer_id == transfer_id:
-                    self.items.remove(i)
-                    i.status = status
-                    i.error_message = error_message
-                    i.bytes_sent = size
-                    self.results.append(i)
-                    self.popped_item = i
-                    break
-        elif len(arg) == 6:
-            proto, host, filename, size, descr, err_msg = arg
-            for i in self.items:
-                if i.proto == proto and i.host == host:
-                    self.items.remove(i)
-                    i.status = 'failed'
-                    i.error_message = err_msg
-                    i.bytes_sent = size
-                    self.results.append(i)
-                    self.popped_item = i
-                    break
-        else:
-            raise Exception('Wrong argument!')
+        self._pop(arg)
+
             
     def doPopItems(self, arg):
         """
@@ -574,12 +551,13 @@ class PacketOut(automat.Automat):
             for contactmethod in self.remote_identity.getContacts():
                 proto, host = nameurl.IdContactSplit(contactmethod)
                 if  host.strip() and \
+                    settings.transportIsEnabled(proto) and \
                     settings.transportSendingIsEnabled(proto) and \
                     gateway.can_send(proto) and \
                     gateway.is_installed(proto):
                         if proto == 'tcp' and localIP:
                             host = localIP
-                        d = gateway.send_file(proto, host, self.filename, self.description)
+                        d = gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                         self.items.append(WorkItem(proto, host))
                         workitem_sent = True
             if not workitem_sent:
@@ -599,7 +577,7 @@ class PacketOut(automat.Automat):
         if settings.enableUDP() and settings.enableUDPsending():
             udp_contact = byproto.get('udp', None)
         proxy_contact = None
-        if settings.enableProxy():
+        if settings.enablePROXY() and settings.enablePROXYsending():
             proxy_contact = byproto.get('proxy', None)
         working_protos = stats.peers_protos().get(self.remote_idurl, set())
         # tcp seems to be the most stable proto
@@ -611,7 +589,7 @@ class PacketOut(automat.Automat):
                 proto, host, port, fn = nameurl.UrlParse(tcp_contact)
                 if port:
                     host = localIP+':'+str(port)
-                gateway.send_file(proto, host , self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
                 return
@@ -621,7 +599,7 @@ class PacketOut(automat.Automat):
             if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):  
                 if port:
                     host = host+':'+str(port)
-                gateway.send_file(proto, host, self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
                 return
@@ -629,7 +607,7 @@ class PacketOut(automat.Automat):
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
-                gateway.send_file(proto, host, self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
                 return
@@ -637,7 +615,7 @@ class PacketOut(automat.Automat):
         if proxy_contact and 'proxy' in working_protos:
             proto, host = nameurl.IdContactSplit(proxy_contact)
             if host.strip() and gateway.is_installed('proxy') and gateway.can_send(proto):
-                gateway.send_file(proto, host, self.filename, self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host))
                 self.automat('items-sent')
                 return
@@ -651,7 +629,7 @@ class PacketOut(automat.Automat):
                 # try sending with tcp even if it is switched off in the settings
                 if gateway.is_installed(proto) and gateway.can_send(proto):
                     if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
-                        gateway.send_file(proto, host, self.filename, self.description)
+                        gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                         self.items.append(WorkItem(proto, host))
                         self.automat('items-sent')
                         return
@@ -659,3 +637,30 @@ class PacketOut(automat.Automat):
         lg.warn('no supported protocols with %s : %s %s %s, byproto:%s' % (
             self.remote_idurl, tcp_contact, udp_contact, working_protos, str(byproto)))
         
+
+    def _pop(self, packet_args):
+        self.popped_item = None
+        if len(packet_args) == 4:
+            transfer_id, status, size, error_message = packet_args
+            for i in self.items:
+                if i.transfer_id and i.transfer_id == transfer_id:
+                    self.items.remove(i)
+                    i.status = status
+                    i.error_message = error_message
+                    i.bytes_sent = size
+                    self.results.append(i)
+                    self.popped_item = i
+                    break
+        elif len(packet_args) == 6:
+            proto, host, filename, size, descr, err_msg = packet_args
+            for i in self.items:
+                if i.proto == proto and i.host == host:
+                    self.items.remove(i)
+                    i.status = 'failed'
+                    i.error_message = err_msg
+                    i.bytes_sent = size
+                    self.results.append(i)
+                    self.popped_item = i
+                    break
+        else:
+            raise Exception('Wrong argument!')        

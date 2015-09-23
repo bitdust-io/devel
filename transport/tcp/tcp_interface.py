@@ -24,6 +24,7 @@ except:
     sys.exit('Error initializing twisted.internet.reactor in t_tcp.py')
 
 from twisted.web import xmlrpc
+from twisted.internet.defer import fail
 
 from logs import lg
 
@@ -84,7 +85,7 @@ class GateInterface():
         host = (host[0], int(host[1]))
         return tcp_node.send(filename, host, description, False)
 
-    def send_file_single(self, filename, host, description=''):
+    def send_file_single(self, remote_idurl, filename, host, description=''):
         host = host.split(':')
         host = (host[0], int(host[1]))
         return tcp_node.send(filename, host, description, True)
@@ -119,21 +120,29 @@ class GateInterface():
 def interface_transport_initialized(xmlrpcurl):
     if proxy():
         return proxy().callRemote('transport_initialized', 'tcp', xmlrpcurl)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
     
     
 def interface_receiving_started(host, new_options=None):
     if proxy():
         return proxy().callRemote('receiving_started', 'tcp', host, new_options)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
 
 
 def interface_receiving_failed(error_code=None):
     if proxy():
         return proxy().callRemote('receiving_failed', 'tcp', error_code)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
 
 
 def interface_disconnected(result=None):
     if proxy():
         return proxy().callRemote('disconnected', 'tcp', result)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
 
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
@@ -141,6 +150,8 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
     """
     if proxy():
         return proxy().callRemote('register_file_sending', 'tcp', '%s:%d' % host, receiver_idurl, filename, size, description)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
 
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
@@ -148,6 +159,8 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     """
     if proxy():
         return proxy().callRemote('register_file_receiving', 'tcp', '%s:%d' % host, sender_idurl, filename, size)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
 
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
@@ -155,6 +168,8 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
     """
     if proxy():
         return proxy().callRemote('unregister_file_sending', transfer_id, status, size, error_message)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
 
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
@@ -162,6 +177,8 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
     """
     if proxy():
         return proxy().callRemote('unregister_file_receiving', transfer_id, status, size, error_message)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
 
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
@@ -169,5 +186,7 @@ def interface_cancelled_file_sending(host, filename, size=0, description=None, e
     """
     if proxy():
         return proxy().callRemote('cancelled_file_sending', 'tcp', '%s:%d' % host, filename, size, description, error_message)
+    lg.warn('transport_tcp is not ready')
+    return fail('transport_tcp is not ready')
 
 

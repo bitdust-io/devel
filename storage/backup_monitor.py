@@ -292,7 +292,7 @@ class BackupMonitor(automat.Automat):
                 if backup_control.IsPathInProcess(pathID):
                     continue
                 versions = itemInfo.list_versions()
-                # TODO do we need to sort the list? it comes from a set, so must be sorted may be
+                # TODO: do we need to sort the list? it comes from a set, so must be sorted may be
                 while len(versions) > versionsToKeep:
                     backupID = pathID + '/' + versions.pop(0)
                     lg.out(6, 'backup_monitor.doCleanUpBackups %d of %d backups for %s, so remove older %s' % (len(versions), versionsToKeep, localPath, backupID))
@@ -325,7 +325,9 @@ class BackupMonitor(automat.Automat):
         if delete_count > 0:
             backup_fs.Scan()
             backup_fs.Calculate()
-            backup_control.Save() 
+            backup_control.Save()
+            from web import control 
+            control.request_update()
         collected = gc.collect()
         lg.out(6, 'backup_monitor.doCleanUpBackups collected %d objects' % collected)
 
@@ -337,5 +339,5 @@ class BackupMonitor(automat.Automat):
             lg.out(6, 'backup_monitor.doOverallCheckUp found empty supplier, restart now')
             self.automat('restart')
             return
-        # TODO 
+        # TODO: more tests here: low rating(), time offline, low ping, etc.. 
         

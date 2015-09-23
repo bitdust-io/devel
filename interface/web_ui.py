@@ -249,7 +249,9 @@ def get_update_flag():
 #------------------------------------------------------------------------------ 
 
 def on_suppliers_changed(current_suppliers):
-    request_update()
+    pass
+    # sqlio.update_suppliers([], current_suppliers)
+
 
 def on_tray_icon_command(cmd):
     from main import shutdowner
@@ -282,12 +284,6 @@ def on_tray_icon_command(cmd):
 
     else:
         lg.warn('wrong command: ' + str(cmd))    
-
-def on_backup_stats(backupID):
-    request_update()
-    
-def on_read_local_files():
-    request_update()
 
 #------------------------------------------------------------------------------ 
 

@@ -447,7 +447,7 @@ def get_contact_identity(idurl):
         # lg.warn("who is %s ?" % nameurl.GetName(idurl))
         return identitycache.FromCache(idurl)
     lg.out(6, "contactsdb.getContact %s is not found" % nameurl.GetName(idurl))
-    # TODO
+    # TODO:
     # this is not correct: 
     # need to check if other contacts is fine - if internet is turned off we can get lots fails ...  
     return None

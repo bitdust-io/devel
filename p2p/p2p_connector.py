@@ -247,7 +247,7 @@ class P2PConnector(automat.Automat):
         self.automat('my-id-updated')
         
     def doPropagateMyIdentity(self, arg):
-        #TODO need to run this actions one by one, not in parallel - use Defered chain
+        #TODO: need to run this actions one by one, not in parallel - use Defered chain
         propagate.update()
         propagate.write_to_dht()
         dht_service.set_node_data('idurl', my_id.getLocalID())
@@ -387,23 +387,36 @@ class P2PConnector(automat.Automat):
         nowip = misc.readExternalIP()
         order = lid.getProtoOrder()
         lid.clearContacts()
-        #prepare contacts data
+        # prepare contacts data
         cdict = {}
-        cdict['tcp'] = 'tcp://'+nowip+':'+str(settings.getTCPPort())
-        cdict['udp'] = 'udp://%s@%s' % (lid.getIDName().lower(), lid.getIDHost())
+        # TCP
+        if driver.is_started('service_tcp_transport'):
+            if settings.enableTCPreceiving():
+                cdict['tcp'] = 'tcp://%s:%s' % (
+                    nowip,
+                    str(settings.getTCPPort()))
+        # UDP
+        if driver.is_started('service_udp_transport'):
+            if settings.enableUDPreceiving():
+                cdict['udp'] = 'udp://%s@%s' % (
+                    lid.getIDName().lower(), 
+                    lid.getIDHost())
+        # PROXY
         if driver.is_started('service_proxy_transport'):
             # when proxy transport is started
-            from transport.proxy import proxy_node
-            if proxy_node.A().router_identity:
-                cdict['proxy'] = 'proxy://%s@%s' % (
-                    proxy_node.A().router_identity.getIDName(), 
-                    proxy_node.A().router_identity.getIDHost(),)
-        #making full order list
+            if settings.enablePROXYreceiving(): 
+                # and receiving via proxy is enabled
+                from transport.proxy import proxy_receiver
+                if proxy_receiver.A().router_identity:
+                    cdict['proxy'] = 'proxy://%s@%s' % (
+                        proxy_receiver.A().router_identity.getIDName(), 
+                        proxy_receiver.A().router_identity.getIDHost(),)
+        # making full order list
         for proto in cdict.keys():
             if proto not in order:
                 order.append(proto)
-        #add contacts data to the local identity
-        #check if some transport is not installed
+        # add contacts data to the local identity
+        # check if some transport is not installed
         for proto in order:
             if settings.transportIsEnabled(proto) and settings.transportReceivingIsEnabled(proto):
                 contact = cdict.get(proto, None)
@@ -414,24 +427,24 @@ class P2PConnector(automat.Automat):
                 # because we may want to turn it on in the future
                 active_protos().discard(proto)
         del order
-    #    #if IP is not external and upnp configuration was failed for some reasons
-    #    #we may want to use another contact methods, NOT tcp
-    #    if IPisLocal() and run_upnpc.last_result('tcp') != 'upnp-done':
-    #        lg.out(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
-    #        lid.pushProtoContact('tcp')
-        #update software version number
+        # TODO:
+        #    # if IP is not external and upnp configuration was failed for some reasons
+        #    # we may want to use another contact methods, NOT tcp
+        #    if IPisLocal() and run_upnpc.last_result('tcp') != 'upnp-done':
+        #        lg.out(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
+        #        lid.pushProtoContact('tcp')
+        # update software version number
         repo, location = misc.ReadRepoLocation()
         lid.version = (self.version_number.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
-        #generate signature with changed content
+        # generate signature with changed content
         lid.sign()
-        #remember the identity
+        # remember the identity
         my_id.setLocalIdentity(lid)
-        #finally saving local identity
+        # finally saving local identity
         my_id.saveLocalIdentity()
         lg.out(4, 'p2p_connector.UpdateIdentity')
         lg.out(4, '    version: %s' % str(lid.version))
         lg.out(4, '    contacts: %s' % str(lid.contacts))
-        #_UpnpResult.clear()
         changed = False
         for proto, contact in my_id.getLocalIdentity().getContactsByProto().items():
             if proto not in oldcontats.keys():

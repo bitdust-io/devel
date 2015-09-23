@@ -702,7 +702,7 @@ def makeDefaultIdentity(name='', ip=''):
         cdict['tcp'] = 'tcp://'+ip+':'+str(settings.getTCPPort())
     if settings.enableUDP():
         cdict['udp'] = 'udp://%s@%s' % (name.lower(), servername)
-    if settings.enableProxy():
+    if settings.enablePROXY() and settings.enablePROXYreceiving():
         cdict['proxy'] = 'proxy://%s@%s' % (name.lower(), servername)
 
     for c in my_id.getValidTransports():

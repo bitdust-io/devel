@@ -43,11 +43,17 @@ class ProxyTransportService(LocalService):
         reactor.callLater(0, self.transport.automat, 'start')
         conf().addCallback('services/proxy-transport/enabled', 
                            self._on_enabled_disabled)
+        conf().addCallback('services/proxy-transport/sending-enabled', 
+                           self._on_sending_enabled_disabled)
+        conf().addCallback('services/proxy-transport/receiving-enabled', 
+                           self._on_receiving_enabled_disabled)
         return self.starting_deferred
     
     def stop(self):
         from main.config import conf
         conf().removeCallback('services/proxy-transport/enabled') 
+        conf().removeCallback('services/proxy-transport/sending-enabled') 
+        conf().removeCallback('services/proxy-transport/receiving-enabled') 
         t = self.transport
         self.transport = None
         self.interface = None
@@ -71,9 +77,26 @@ class ProxyTransportService(LocalService):
             network_connector.A('network-transport-state-changed', self.transport)
             
     def _on_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
-        network_connector.A('reconnect')
+        from transport.proxy import proxy_receiver
+        from transport.proxy import proxy_sender
+        if value:
+            proxy_receiver.A('stop')
+            proxy_sender.A('stop')
+        else:
+            proxy_receiver.A('start')
+            proxy_sender.A('start')
         
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
-        network_connector.A('reconnect')
+        from transport.proxy import proxy_receiver
+        if value:
+            proxy_receiver.A('stop')
+        else:
+            proxy_receiver.A('start')
+        
+    def _on_sending_enabled_disabled(self, path, value, oldvalue, result):
+        from transport.proxy import proxy_sender
+        if value:
+            proxy_sender.A('stop')
+        else:
+            proxy_sender.A('start')
+

@@ -31,7 +31,7 @@
                 onlyFolders: need_only_Folders,
                 path: path
             }};
-            //debug.log('refresh', needed_mode, path);
+            // debug.log('refresh', needed_mode, path);
 
             self.requesting = true;
             self.fileList = [];
@@ -55,6 +55,62 @@
             });
         };
 
+        FileNavigator.prototype.refresh_soft = function(success, error) {
+            var self = this;
+            var needed_mode = "list";
+            var need_only_Folders = false;
+            var path = self.currentPath.join('/');
+            if (self.mode != 'default') {
+            	needed_mode = "listlocal";
+            }
+            if (self.mode == 'select_download_path') {
+            	need_only_Folders = true;
+            }
+            var data = {params: {
+                mode: needed_mode,
+                onlyFolders: need_only_Folders,
+                path: path
+            }};
+            // debug.log('refresh_soft', needed_mode, path);
+
+            //self.requesting = true;
+            // self.fileList = [];
+            self.error = '';
+            $http.post(fileManagerConfig.listUrl, data).success(function(data) {
+                //self.fileList = [];
+                //angular.forEach(data.result, function(file) {
+                //    self.fileList.push(new Item(file, self.currentPath));
+                //});
+                //self.requesting = false;
+                // self.buildTree(path);
+                // debug.log('refresh_soft now');
+                angular.forEach(data.result, function(file) {
+                	// debug.log('		', file);
+                    for (var o in self.fileList) {
+                        var item = self.fileList[o];
+                        if (item.model.id == file.id) {
+                        	// debug.log('				', item);
+                        	item.model.size = file.size;
+                        	item.model.status = file.status;
+                        	item.model.date = file.date;
+                        	// item.update();
+                        	break;
+                        }
+                    }
+                	
+                });
+
+                if (data.error) {
+                    self.error = data.error;
+                    return typeof error === 'function' && error(data);
+                }
+                typeof success === 'function' && success(data);
+            }).error(function(data) {
+                //self.requesting = false;
+                typeof error === 'function' && error(data);
+            });
+        };
+        
         FileNavigator.prototype.buildTree = function(path) {
             var self = this;
             function recursive(parent, file, path) {

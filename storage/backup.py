@@ -307,13 +307,14 @@ class backup(automat.Automat):
         os.close(fileno)
         self.workBlocks[newblock.BlockNumber] = filename
         dt = time.time()
-        task_params = (filename, self.eccmap.name, self.backupID, newblock.BlockNumber, 
-                       os.path.join(settings.getLocalBackupsDir(), self.backupID)) 
+        outputpath = os.path.join(settings.getLocalBackupsDir(), self.backupID)
+        task_params = (filename, self.eccmap.name, self.backupID, newblock.BlockNumber, outputpath) 
         raid_worker.add_task('make', task_params, 
             lambda cmd, params, result: self._raidmakeCallback(params, result, dt),)
         self.automat('block-raid-started', newblock)
-        lg.out(12, 'backup.doBlockPushAndRaid %s' % newblock.BlockNumber)
         del serializedblock
+        lg.out(12, 'backup.doBlockPushAndRaid %s : start process data from %s to %s' % (
+            newblock.BlockNumber, filename, outputpath))
 
     def doPopBlock(self, arg):
         """

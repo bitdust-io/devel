@@ -220,7 +220,7 @@ class FileQueue:
                 return
             if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
                 # too many incoming streams, seems remote side is cheating - drop that session!
-                # TODO : need to add some protection - keep a list of bad guys?  
+                # TODO: need to add some protection - keep a list of bad guys?  
                 inp.close()
                 # lg.warn('too many incoming files for session %s' % str(self.session))
                 # self.session.automat('shutdown')

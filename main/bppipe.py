@@ -102,7 +102,7 @@ def _LinuxExcludeFunction(filename):
     Also should test that the file is readable and maybe that directory is executable. 
     If tar gets stuff it can not read - it just stops and we the whole process is failed.
     """
-    # TODO - must do more smart checking 
+    # TODO: - must do more smart checking 
     if filename.count(".bitdust"):
         return True
     if not os.access(filename, os.R_OK):

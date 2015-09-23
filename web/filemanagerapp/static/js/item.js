@@ -18,6 +18,7 @@ Date.prototype.isValid = function () {
                 date: convertDate(model && model.date),
                 perms: new Chmod(model && model.rights),
                 content: model && model.content || '',
+                status: model && model.status || '',
                 recursive: false,
                 sizeKb: function() {
                     return Math.round(this.size / 1024, 1);
@@ -357,6 +358,10 @@ Date.prototype.isValid = function () {
 
         Item.prototype.isFolder = function() {
             return this.model.type === 'dir';
+        };
+
+        Item.prototype.isDrive = function() {
+            return this.model.type === 'dir' && this.model.name.length == 2 && this.model.name[1] == ':';
         };
 
         Item.prototype.isEditable = function() {

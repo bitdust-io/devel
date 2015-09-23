@@ -32,19 +32,21 @@ from storage import backup_fs
 from storage import backup_control
 from storage import backup_monitor
 from storage import restore_monitor
+from web import control 
 
 from services import driver
 
 #------------------------------------------------------------------------------ 
 
 def process(json_request):
-    lg.out(4, 'filemanager_api.process %s' % json_request)
+    # lg.out(4, 'filemanager_api.process %s' % json_request)
     if not driver.is_started('service_backups'):
         return { 'result': {
             "success": False,
             "error": "network [service_backups] is not started: %s" % (
                driver.services().get('service_backups', '!!! not found !!!')) }}
     mode = ''
+    result = []
     try:
         if isinstance(json_request, str) or isinstance(json_request, unicode):
             import json
@@ -60,7 +62,7 @@ def process(json_request):
             result = _delete(json_request['params'])
         elif mode == 'download':
             result = _download(json_request['params'])
-        lg.out(14, '    %s' % pprint.pformat(result))
+        # lg.out(14, '    %s' % pprint.pformat(result))
         return result
     except:
         lg.exc()
@@ -85,80 +87,11 @@ def _list(params):
             "name": item[1],
             "id": item[2],
             "rights": "",
-            "size": str(item[3]),
-            "date": item[4]
+            "size": item[3],
+            "date": item[4],
+            "status": item[5],
         })
     return { 'result': result, }
-        
-        
-        
-    
-#    root_item_id = backup_fs.ToID(path)
-#    if root_item_id:
-#        root_item = backup_fs.WalkByID(root_item_id)
-#        if not root_item:
-#            lg.warn('backup_fs item %s was not found, but exist' % root_item_id)
-#            return { "result": { "success": False, "error": 'backup_fs item %s was not found, but exist' % root_item_id }}
-#        root_item = root_item[0]
-#        print path, root_item_id, root_item
-#        if isinstance(root_item, backup_fs.FSItemInfo):
-#            root_item_info = root_item
-#        else:
-#            root_item_info = root_item.get(backup_fs.INFO_KEY, None)
-#            if root_item_info and isinstance(root_item_info, backup_fs.FSItemInfo):
-#                for version in root_item_info.list_versions(True, True):
-#                    # print root_item_id, version, misc.TimeStructFromVersion(packetid.SplitBackupID(version)[1])
-#                    result.append({
-#                        "name": str(root_item_id + '/' + version),
-#                        "rights": "", # "drwxr-xr-x",
-#                        "size": str(root_item_info.get_version_size(version)),
-#                        # "date": "-".join(map(str,misc.TimeStructFromVersion(packetid.SplitBackupID(version)[1]))),
-#                        # "date": list(misc.TimeStructFromVersion(packetid.SplitBackupID(version)[1])),
-#                        'date': time.strftime("%Y-%m-%d %H:%M:%S", misc.TimeStructFromVersion(packetid.SplitBackupID(version)[1])),
-#                        "type": "file", 
-#                    })
-#        for pathID, localPath, item in backup_fs.ListChilds(root_item):
-#            item_size = 0
-#            item_time = 0 
-#            for version in item.list_versions(True, True):
-#                version_size = item.get_version_size(version)
-#                if version_size > 0:
-#                    item_size += version_size 
-#                version_time = misc.TimeFromBackupID(version)
-#                if version_time and version_time > item_time:
-#                    item_time = version_time
-#            # print pathID, localPath, item_size, item_time
-#            result.append({
-#                "name": item.name(),
-#                "rights": "", # "drwxr-xr-x",
-#                "size": str(item_size),
-#                # "date": "-".join(map(str,time.gmtime(item_time))) if item_time else '',
-#                # "date": list(time.gmtime(item_time)) if item_time else [],
-#                "date": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else '',
-#                "type": "dir", 
-#            })
-#    else:
-#        for pathID, localPath, item in backup_fs.ListRootItems():
-#            item_size = 0 
-#            item_time = 0 
-#            for version in item.list_versions(True, True):
-#                version_size = item.get_version_size(version)
-#                if version_size > 0:
-#                    item_size += version_size 
-#                version_time = misc.TimeFromBackupID(version)
-#                if version_time and version_time > item_time:
-#                    item_time = version_time
-#            result.append({
-#                "name": item.name(),
-#                "rights": "", # "drwxr-xr-x",
-#                "size": str(item_size),
-#                # "date": "-".join(map(str,time.gmtime(item_time))) if item_time else '',
-#                # "date": list(time.gmtime(item_time)) if item_time else [],
-#                "date": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else '',
-#                "type": "dir", 
-#            })
-#    pprint.pprint(result)
-#    return { 'result': result, }
 
 #------------------------------------------------------------------------------ 
 
@@ -166,14 +99,14 @@ def _list_local(params):
     result = []
     path = params['path'].lstrip('/')
     only_folders = params['onlyFolders']
-    if path == '' or path == '/' and bpio.Windows():
+    if ( path == '' or path == '/' ) and bpio.Windows():
         for itemname in bpio.listLocalDrivesWindows():
             result.append({
-                "name": itemname.rstrip('\\').rstrip('/'),
+                "name": itemname.rstrip('\\').rstrip('/').lower(),
                 "rights": "drwxr-xr-x",
                 "size": "",
                 "date": "",
-                "type": "dir", 
+                "type": "dir",
             })
     else:
         if bpio.Windows() and len(path) == 2 and path[1] == ':':
@@ -212,6 +145,7 @@ def _upload(params):
     backup_control.StartSingle(pathID)
     backup_fs.Calculate()
     backup_control.Save()
+    control.request_update()
     result.append('backup started: %s' % pathID)
     return { 'result': result, }
 
@@ -239,6 +173,7 @@ def _delete(params):
     backup_fs.Scan()
     backup_fs.Calculate()
     backup_control.Save()
+    control.request_update()
     backup_monitor.A('restart')
     return { 'result': { "success": True, "error": None } }
 

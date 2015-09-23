@@ -49,6 +49,8 @@ from raid import eccmap
 from crypt import encrypted
 from crypt import key
 
+from web import control
+
 import backup_fs
 import backup_matrix
 
@@ -248,7 +250,7 @@ def IncomingSupplierBackupIndex(newpacket):
         backup_fs.Scan()
         backup_fs.Calculate()
         WriteIndex()
-        # TODO repaint a GUI
+        control.request_update()
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
             revision(), newpacket.RemoteID))
     input.close()
@@ -273,6 +275,8 @@ def DeleteAllBackups():
     backup_fs.Calculate()
     # save the index
     Save()
+    # refresh the GUI
+    control.request_update()
 
 def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True):
     """
@@ -319,6 +323,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     # in some cases we want to save the DB later 
     if saveDB:
         Save()
+        control.request_update()
     
 def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=True):
     """
@@ -362,6 +367,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     # save the index if needed
     if saveDB:
         Save()
+        control.request_update()
 
 #------------------------------------------------------------------------------ 
 
@@ -389,7 +395,8 @@ class Task():
         Return a string like "Task-5: 0/1/2/3".
         """
         return 'Task-%d: %s' % (self.number, self.pathID)
-        
+       
+    #--- !!! STARTING BACKUP HERE !!! --- 
     def run(self):
         """
         Runs a new ``Job`` from that ``Task``.
@@ -444,6 +451,8 @@ class Task():
         jobs()[backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
         lg.out(4, 'backup_control.Task.run %s [%s], size=%d' % (self.pathID, dataID, itemInfo.size))
+    
+#------------------------------------------------------------------------------ 
         
 def PutTask(pathID):
     """
@@ -525,7 +534,8 @@ def OnJobDone(backupID, result):
         backup_fs.ScanID(pathID)
         backup_fs.Calculate()
         Save()
-        # TODO check used space, if we have over use - stop all tasks immediately
+        control.request_update()
+        #TODO: check used space, if we have over use - stop all tasks immediately
         backup_matrix.RepaintBackup(backupID)
     elif result == 'abort':
         DeleteBackup(backupID)

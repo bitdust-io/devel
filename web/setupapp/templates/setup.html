@@ -1,4 +1,11 @@
 {% extends "base.html" %}
+
+{% block extra_head %}
+  {{ block.super }}
+  <script src="/asite/js/autoupdater.js"></script> 
+  <link href="/asite/css/cover.css" rel="stylesheet">
+{% endblock extra_head %}
+
 {% block body %}
 
 <div class="site-wrapper">
@@ -10,7 +17,7 @@
         </div>
       </div> 
 
-      <div class="inner cover">           
+      <div class="inner cover text-center">           
         {% block page %}
         {% endblock page %}
       </div>
@@ -26,6 +33,3 @@
 </div> 
 {% endblock body %}
 
-{% block extra_head %}
-  <link href="/asite/css/cover.css" rel="stylesheet">
-{% endblock extra_head %}

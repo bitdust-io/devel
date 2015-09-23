@@ -532,33 +532,40 @@ def LocalBlockReport(backupID, blockNumber, result):
     except:
         lg.exc()
         return
+    repaint_flag = False
     for supplierNum in xrange(contactsdb.num_suppliers()):
         for dataORparity in ('Data', 'Parity'):
             packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
             local_file = os.path.join(settings.getLocalBackupsDir(), packetID)
             if not local_files().has_key(backupID):
                 local_files()[backupID] = {}
+                repaint_flag = True
                 # lg.out(14, 'backup_matrix.LocalFileReport new local entry for %s created in the memory' % backupID)
             if not local_files()[backupID].has_key(blockNum):
                 local_files()[backupID][blockNum] = {
                     'D': [0] * contactsdb.num_suppliers(),
                     'P': [0] * contactsdb.num_suppliers()}
+                repaint_flag = True
             if not os.path.isfile(local_file):
                 local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
+                repaint_flag = True
                 continue
             local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
             # lg.out(6, 'backup_matrix.LocalFileReport %s max block num is %d' % (backupID, local_max_block_numbers()[backupID]))
             if not local_backup_size().has_key(backupID):
                 local_backup_size()[backupID] = 0
+                repaint_flag = True
             try:
                 local_backup_size()[backupID] += os.path.getsize(local_file)
+                repaint_flag = True
             except:
                 lg.exc()
     if not local_max_block_numbers().has_key(backupID):
         local_max_block_numbers()[backupID] = -1
     if local_max_block_numbers()[backupID] < blockNum:
         local_max_block_numbers()[backupID] = blockNum
-    RepaintBackup(backupID)
+    if repaint_flag:
+        RepaintBackup(backupID)
 
 #------------------------------------------------------------------------------ 
 
@@ -577,7 +584,7 @@ def ScanMissingBlocks(backupID):
         if not local_files().has_key(backupID):
             # we have no local and no remote info for this backup
             # no chance to do some rebuilds...
-            # TODO but how we get here ?! 
+            # TODO: but how we get here ?! 
             lg.out(4, 'backup_matrix.ScanMissingBlocks no local and no remote info for %s' % backupID)
         else:
             # we have no remote info, but some local files exists

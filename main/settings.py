@@ -1278,7 +1278,7 @@ def getTempDir():
 #--- PROXY SERVER OPTIONS -----------------------------------------------------
 #------------------------------------------------------------------------------ 
 
-def enableProxy(enable=None):
+def enableLocalProxy(enable=None):
     """
     Enable/disable using of proxy server.
     """
@@ -1330,12 +1330,12 @@ def update_proxy_settings():
     """
     from lib import net_misc
     net_misc.init()
-    if enableProxy():
+    if enableLocalProxy():
         if getProxyHost() == '' or getProxyPort() == '':
             d = net_misc.detect_proxy_settings()
             net_misc.set_proxy_settings(d)
             setProxySettings(d)
-            enableProxy(d.get('host', '') != '')
+            enableLocalProxy(d.get('host', '') != '')
             lg.out(2, 'settings.update_proxy_settings UPDATED!!!')
         else:
             net_misc.set_proxy_settings(getProxySettingsDict())
@@ -1488,6 +1488,31 @@ def getDHTPort():
     """
     return config.conf().getInt("services/entangled-dht/udp-port", DefaultDHTPort())
 
+
+def enablePROXY(enable=None):
+    """
+    Switch on/off transport_proxy in the settings or get its current state.
+    """
+    if enable is None:
+        return config.conf().getBool('services/proxy-transport/enabled')
+    config.conf().setData('services/proxy-transport/enabled', str(enable))
+    
+def enablePROXYsending(enable=None):
+    """
+    Switch on/off sending over proxy transport in the settings or get current state.
+    """
+    if enable is None:
+        return config.conf().getBool('services/proxy-transport/sending-enabled')
+    config.conf().setData('services/proxy-transport/sending-enabled', str(enable))
+        
+def enablePROXYreceiving(enable=None):
+    """
+    Switch on/off receiving over proxy transport in the settings or get current state.
+    """
+    if enable is None:
+        return config.conf().getBool('services/proxy-transport/receiving-enabled')
+    config.conf().setData('services/proxy-transport/receiving-enabled', str(enable))
+ 
 def setDHTPort(port):
     """
     Set a UDP port number for entangled "DHT" network.  
@@ -1523,7 +1548,7 @@ def transportReceivingIsEnabled(proto):
     Return True if receiving over given transport is switched on. 
     """
     # key = 'transport.transport-%s.transport-%s-receiving-enable' % (proto, proto)
-    key = 'services/%s-transport/enabled' % proto
+    key = 'services/%s-transport/receiving-enabled' % proto
     if config.conf().getData(key) is None:
         return False
     return config.conf().getBool(key)
@@ -1533,7 +1558,7 @@ def transportSendingIsEnabled(proto):
     Return True if sending over given transport is switched on. 
     """
     # key = 'transport.transport-%s.transport-%s-sending-enable' % (proto, proto)
-    key = 'services/%s-transport/enabled' % proto
+    key = 'services/%s-transport/sending-enabled' % proto
     if config.conf().getData(key) is None:
         return False
     return config.conf().getBool(key)
@@ -2018,8 +2043,10 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/udp-transport/enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
-    config.conf().setDefaultValue('services/proxy-transport/enabled', 'true')
     config.conf().setDefaultValue('services/proxy-server/enabled', 'true')
+    config.conf().setDefaultValue('services/proxy-transport/enabled', 'true')
+    config.conf().setDefaultValue('services/proxy-transport/sending-enabled', 'true')
+    config.conf().setDefaultValue('services/proxy-transport/receiving-enabled', 'false')
 
 def _createNotExisingSettings():
     """

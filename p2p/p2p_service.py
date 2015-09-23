@@ -330,7 +330,7 @@ def RequestService(request):
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
     service_name = words[0]
-    # TODO - temporary keep that for backward compatibility
+    # TODO: - temporary keep that for backward compatibility
     if service_name == 'storage':
         if not driver.is_started('service_supplier'):
             return SendFail(request, 'supplier service is off')
@@ -358,7 +358,7 @@ def CancelService(request):
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
     service_name = words[0]
-    # TODO - temporary keep that for backward compatibility
+    # TODO: - temporary keep that for backward compatibility
     if service_name == 'storage':
         if not driver.is_started('service_supplier'):
             return SendFail(request, 'supplier service is off')
@@ -424,7 +424,8 @@ def Data(request):
     """
     This is when we 
         1) save my requested data to restore the backup 
-        2) or save the customer file on our local HDD 
+        2) or save the customer file on our local HDD
+        3) pass packet to proxy_server if this is a routed data  
     """
     # 1. this is our Data! 
     if request.OwnerID == my_id.getLocalID():
@@ -433,8 +434,11 @@ def Data(request):
         if request.PacketID in [ settings.BackupIndexFileName(), ]:
             from storage import backup_control
             backup_control.IncomingSupplierBackupIndex(request)
-#        elif request.PacketID in [ settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName(), ]:
-#            return
+        if driver.is_started('service_proxy_server'):
+            # 3. we work as a proxy server and received a packet for third node
+            if request.PacketID == 'routed_packet':
+                from transport.proxy import proxy_router
+                proxy_router.A('routed-inbox-packet-received', request) 
         return
     # 2. this Data is not belong to us
     if not driver.is_started('service_supplier'):
@@ -656,7 +660,7 @@ def Correspondent(request):
     RemoteID = request.OwnerID
     PacketID = request.PacketID
     Msg = misc.decode64(request.Payload)
-    # TODO !!!
+    # TODO: need to connect users here
 
 #------------------------------------------------------------------------------ 
 

@@ -143,6 +143,14 @@ textarea {
     margin-top: 0
 }
 #filemanager 
+.file-tree {
+	overflow: auto;
+}
+#filemanager 
+.file-tree ul.nav.nav-sidebar li {
+    white-space: nowrap;
+}
+#filemanager 
 .file-tree ul.nav.nav-sidebar {
     margin: 0;
     padding: 0 0 0 12px
@@ -151,10 +159,12 @@ textarea {
 .file-tree ul.nav.nav-sidebar>li {
     border-left: 1px solid #ddd;
     padding-left: 4px
+    
 }
 #filemanager 
 .file-tree ul.nav.nav-sidebar>li>a {
     padding: 2px 2px 2px 4px
+    
 }
 #filemanager 
 .file-tree ul.nav.nav-sidebar:first-child {
@@ -414,4 +424,7 @@ textarea {
 	border: 1px solid #eee;
 	line-height: 28px;
 	padding-left: 5px;
+}
+.upload-from-button {
+	margin-right: 5px;
 }

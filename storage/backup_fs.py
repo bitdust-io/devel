@@ -54,11 +54,11 @@ if __name__ == '__main__':
 
 from logs import lg
         
-from system import bpio        
-from lib import misc
+from system import bpio
 
 from main import settings      
   
+from lib import misc
 from lib import packetid
 from lib import diskspace
 
@@ -174,9 +174,7 @@ class FSItemInfo():
         if not bpio.pathExist(path):
             self.size = -1
             return
-        # if self.type in [DIR, PARENT]:
         if bpio.pathIsDir(path):
-#            dirsize.ask(path, callback=lambda pth, sz, arg: self.set_size(sz))
             self.size = -1
             return
         try:
@@ -995,14 +993,13 @@ def TraverseChildsByID(callback, iterID=None):
         if path not in ['', '/']:
             path += '/'
         if isinstance(i, FSItemInfo):
-            cb('', name, path_id, i, i.get_versions())
+            cb('parent', name, path_id, i, i.get_versions())
             return
         if i.has_key(INFO_KEY):
             info = i[INFO_KEY]
             name = info.name()
             path += name
-#            cb(path_id, path, info)
-            cb('', name, path_id, info, info.get_versions())
+            cb('parent', name, path_id, info, info.get_versions())
         dirs = []
         files = []
         for id in i.keys():
@@ -1249,10 +1246,14 @@ def ListByPathAdvanced(path, iter=None):
     """
     List sub items and versions at given ``path``. 
     """
+    from storage import backup_control
+    from storage import restore_monitor
+    from storage import backup_matrix
+    from system import dirsize
     if path == '/':
         path = ''
     path = bpio.portablePath(path)
-    lg.out(4, 'backup_fs.ListByPathAdvanced %s' % (path))
+    # lg.out(4, 'backup_fs.ListByPathAdvanced %s' % (path))
     iter_and_id = WalkByPath(path, iter)
     if iter_and_id is None:
         return '%s not found' % path
@@ -1264,38 +1265,102 @@ def ListByPathAdvanced(path, iter=None):
     if path != path_exist:
         return '%s exist, but not valid: %s' % (path_exist, path)
     result = []
+    def getBackupStatus(backupID, item_info, item_name):
+        if backup_control.IsBackupInProcess(backupID):
+            backupObj = backup_control.GetRunningBackupObject(backupID)
+            if backupObj:
+                if item_info.type == PARENT or item_info.size == 0: 
+                    dir_size = dirsize.getInBytes(path_exist+'/'+item_name, 0)
+                else:
+                    dir_size = max(item_info.size, 0)
+                dataSent = backupObj.dataSent
+                # blockNumber = backupObj.blockNumber + 1
+                percent = 0.0
+                if dir_size > 0: 
+                    if dataSent > dir_size:
+                        dataSent = dir_size
+                    percent = 100.0 * dataSent / dir_size
+                blocks, percent_remote, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
+                return '%s / %s ' % (misc.percent2string(percent), misc.percent2string(weakPercent))
+        elif restore_monitor.IsWorking(backupID):
+            restoreObj = restore_monitor.GetWorkingRestoreObject(backupID)
+            if restoreObj:
+                maxBlockNum = backup_matrix.GetKnownMaxBlockNum(backupID)
+                currentBlock = max(0, restoreObj.BlockNumber)
+                percent = 0.0
+                if maxBlockNum > 0:
+                    percent = 100.0 * currentBlock / maxBlockNum
+                blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
+                return '%s / %s' % (misc.percent2string(percent), misc.percent2string(weakPercent))
+        blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
+        localPercent, localFiles, totalSize, maxBlockNum, localStats = backup_matrix.GetBackupLocalStats(backupID)
+        return '%s / %s' % (misc.percent2string(localPercent), misc.percent2string(weakPercent))
     def visitor(item_type, item_name, item_path_id, item_info, item_versions):
-        if item_type == '':
+        if item_type == 'parent':
             for version, version_info in item_versions.items():
-                version_time = misc.TimeFromBackupID(version)
-                result.append(('file', version, (pathID+'/'+version).lstrip('/'), version_info[1],
-                    time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(version_time))))
+                backupID = (pathID+'/'+version).lstrip('/')
+                ver_time = misc.TimeFromBackupID(version)
+                if ver_time and ver_time > 0:
+                    ver_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(ver_time))
+                else: 
+                    ver_time = ''
+                version_size = version_info[1]
+                version_status = getBackupStatus(backupID, item_info, item_name) 
+                result.append(('file', 
+                    version, 
+                    backupID, 
+                    version_size,
+                    ver_time,
+                    version_status,
+                    ))
         elif item_type == 'dir':
+            item_id = (pathID + '/' + item_path_id).lstrip('/')
             item_size = 0
             item_time = 0
+            item_status = ''
             for version, version_info in item_versions.items():
+                backupID = item_id + '/' + version 
                 version_time = misc.TimeFromBackupID(version)
                 if version_time and version_time > item_time:
                     item_time = version_time                
                 version_size = version_info[1]
                 if version_size > 0:
                     item_size += version_size 
-            result.append(('dir', item_name, (pathID+'/'+item_path_id).lstrip('/'),
-                           str(item_size), 
-                time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''))
+                item_status += getBackupStatus(backupID, item_info, item_name)
+            if not item_status:
+                item_status = '-'
+            item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''
+            result.append(('dir', 
+                item_name, 
+                item_id,
+                item_size, 
+                item_time,
+                item_status,
+                ))
         elif item_type == 'file':
+            item_id = (pathID+'/'+item_path_id).lstrip('/')
             item_size = 0
             item_time = 0
+            item_status = ''
             for version, version_info in item_versions.items():
+                backupID = item_id + '/' + version 
                 version_time = misc.TimeFromBackupID(version)
                 if version_time and version_time > item_time:
                     item_time = version_time                
                 version_size = version_info[1]
                 if version_size > 0:
                     item_size += version_size 
-            result.append(('dir', item_name, (pathID+'/'+item_path_id).lstrip('/'),
-                str(item_size), 
-                time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''))
+                item_status += getBackupStatus(backupID, item_info, item_name)
+            if not item_status:
+                item_status = '-'
+            item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else '' 
+            result.append(('dir', 
+                item_name, 
+                item_id,
+                item_size, 
+                item_time,
+                item_status,
+                ))
     TraverseChildsByID(visitor, iterID)
     return result
  
@@ -1351,8 +1416,11 @@ def DeleteLocalBackup(basedir, backupID):
         raise Exception('Error, %s is not a directory' % backupDir)
     def visitor(fullpath):
         if os.path.isfile(fullpath):
-            count_and_size[0] += 1
-            count_and_size[1] += os.path.getsize(fullpath) 
+            try:
+                count_and_size[1] += os.path.getsize(fullpath) 
+                count_and_size[0] += 1
+            except:
+                pass
         return True
     bpio.rmdir_recursive(backupDir, ignore_errors=True, pre_callback=visitor)
     return count_and_size[0], count_and_size[1]

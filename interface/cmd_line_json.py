@@ -355,7 +355,7 @@ def cmd_backups(opts, args, overDict):
 {.end}""")
         return call_jsonrpc_method_template_and_stop('backups_list', tpl)
 
-    # TODO
+    # TODO: do finish that!
     
     return 2
 
@@ -461,7 +461,7 @@ def option_name_to_path(name, default=''):
         path = 'logs/stream-port'
     return path
 
-def cmd_set_directly(opts, args, overDict):
+def cmd_set(opts, args, overDict):
     from main import settings
     from interface import api
     name = args[1].lower()
@@ -501,6 +501,7 @@ def cmd_set_directly(opts, args, overDict):
     return 2
 
 def cmd_set_request(opts, args, overDict):
+    print_text('connecting to already started BitDust process ...')
     name = args[1].lower()
     if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
         sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
@@ -779,7 +780,7 @@ def run(opts, args, pars=None, overDict=None):
             print_text(help.settings_help())
             return 0
         if not running:
-            return cmd_set_directly(opts, args, overDict)
+            return cmd_set(opts, args, overDict)
         return cmd_set_request(opts, args, overDict)    
     
     #---api---

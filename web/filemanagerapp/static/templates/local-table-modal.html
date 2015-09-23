@@ -37,13 +37,13 @@
                 </div>
             </td>
             <td data-ng-show="!item.isFolder()" width="1%" class="text-right">
-                <button class="btn btn-sm btn-success" data-ng-click="uploadFrom(item, temp)">
+                <button class="btn btn-sm btn-success upload-from-button" data-ng-click="uploadFrom(item, temp)">
                     <i class="glyphicon glyphicon-hand-up"></i>
                     {{"upload_file_item" | translate}}
                 </button>
             </td>
             <td data-ng-show="item.isFolder()" width="1%" class="text-right">
-                <button class="btn btn-sm btn-success" data-ng-click="uploadFrom(item, temp)">
+                <button data-ng-show="!item.isDrive()" class="btn btn-sm btn-success upload-from-button" data-ng-click="uploadFrom(item, temp)">
                     <i class="glyphicon glyphicon-hand-up"></i>
                     {{"upload_folder_item" | translate}}
                 </button>

@@ -36,7 +36,7 @@ def init():
     from system import bpio
     port = settings.DefaultJsonRPCPort()
     bpio.AtomicWriteFile(settings.LocalJsonRPCPortFilename(), str(port))
-    # TODO add protection: accept connections only from local host: 127.0.0.1
+    # TODO: add protection: accept connections only from local host: 127.0.0.1
     reactor.listenTCP(port, server.Site(BitDustJsonRPCServer()))
     lg.out(4, '    started on port %d' % port)
 

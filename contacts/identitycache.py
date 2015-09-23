@@ -150,7 +150,7 @@ def RemapContactAddress(address):
     """
     For local peers in same sub network we need to use local IP, not external IP.
     We pass local IP to transports to send packets inside sub network. 
-    TODO Would be great to get rid of that - transport must keep track of local and external situations.  
+    TODO: Would be great to get rid of that - transport must keep track of local and external situations.  
     So this is another index - IDURL to local IP, see identitydb.  
     """
     idurl = GetIDURLByIPPort(address[0], address[1])

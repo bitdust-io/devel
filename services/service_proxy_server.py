@@ -35,17 +35,27 @@ class ProxyServerService(LocalService):
         return settings.enableProxyServer()
     
     def start(self):
-        from transport.proxy import packets_router 
-        packets_router.A('init')
-        packets_router.A('start')
+        from transport.proxy import proxy_router
+        proxy_router.A('init')
+        proxy_router.A('start')
         return True
     
     def stop(self):
-        from transport.proxy import packets_router 
-        packets_router.A('stop')
-        packets_router.Destroy()
+        from transport.proxy import proxy_router 
+        proxy_router.A('stop')
+        proxy_router.Destroy()
         return True
     
+    def request(self, request):
+        from transport.proxy import proxy_router 
+        proxy_router.A('request-route', request)
+        proxy_router.Destroy()
+        return None
     
+    def cancel(self, request):
+        from transport.proxy import proxy_router 
+        proxy_router.A('cancel-route', request)
+        proxy_router.Destroy()
+        return None
 
     

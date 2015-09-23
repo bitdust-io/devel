@@ -189,6 +189,10 @@ class DataSender(automat.Automat):
                         else:
                             log.write('io_throttle.QueueSendFile FAILED %s\n' % packetID)
                         # lg.out(6, '  %s for %s' % (packetID, backupID))
+                        
+                        # DEBUG
+                        # break
+                        
         self.automat('scan-done')
         log.flush()
         log.close()

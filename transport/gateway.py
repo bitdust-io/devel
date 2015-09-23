@@ -73,6 +73,7 @@ from main import settings
 from crypt import signed
 
 from userid import my_id
+
 from contacts import identitycache
 
 import callback
@@ -91,6 +92,7 @@ _XMLRPCURL = ''
 _LastTransferID = None
 _LastInboxPacketTime = 0
 _PacketsTimeOutTask = None
+_TransportStateChangedCallbacksList = []
                 
 #------------------------------------------------------------------------------ 
 
@@ -330,13 +332,13 @@ def disconnect_from(proto, host):
     return transport(proto).call('disconnect_from', host)
 
     
-def send_file(proto, host, filename, description=''):
+def send_file(remote_idurl, proto, host, filename, description=''):
     # print 'send_file', proto, host, filename, description
-    return transport(proto).call('send_file', filename, host, description)
+    return transport(proto).call('send_file', remote_idurl, filename, host, description)
 
 
-def send_file_single(proto, host, filename, description=''):
-    return transport(proto).call('send_file_single', filename, host, description)
+def send_file_single(remote_idurl, proto, host, filename, description=''):
+    return transport(proto).call('send_file_single', remote_idurl, filename, host, description)
 
   
 def make_transfer_ID():
@@ -434,11 +436,11 @@ def stop_packets_timeout_loop():
 #------------------------------------------------------------------------------ 
 
 def on_transport_state_changed(transport, oldstate, newstate):
-    global _TransportsInitialization
-    global _TransportsStarting
-    global _TransportsStopping
+    global _TransportStateChangedCallbacksList
     lg.out(6, 'gateway.on_transport_state_changed in %r : %s->%s' % (
         transport, oldstate, newstate))
+    for cb in _TransportStateChangedCallbacksList:
+        cb(transport, oldstate, newstate)
    
 def on_transport_initialized(proto, xmlrpcurl=None):
     """
@@ -571,6 +573,18 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
 
 #------------------------------------------------------------------------------ 
 
+def add_transport_state_changed_callback(cb):
+    global _TransportStateChangedCallbacksList
+    if cb not in _TransportStateChangedCallbacksList: 
+        _TransportStateChangedCallbacksList.append(cb)
+    
+def remove_transport_state_changed_callback(cb):
+    global _TransportStateChangedCallbacksList
+    if cb in _TransportStateChangedCallbacksList:
+        _TransportStateChangedCallbacksList.remove(cb)
+
+#------------------------------------------------------------------------------ 
+
 #class InputFile():
 #    """
 #    Keeps info about single incoming file transfer running at the moment.
@@ -685,6 +699,8 @@ def parseCommandLine():
     (options, args) = oparser.parse_args()
     return options, args
 
+#------------------------------------------------------------------------------ 
+
 def main():
     lg.life_begins()
     bpio.init()
@@ -735,6 +751,8 @@ def main():
         
     reactor.run()
     
+#------------------------------------------------------------------------------ 
+
 if __name__ == "__main__":
     main()
       

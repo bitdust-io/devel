@@ -255,8 +255,8 @@ class KademliaProtocolConveyor(KademliaProtocol):
     
     def datagramReceived(self, datagram, address):
         if len(self.datagrams_queue) > 10:
-            # TODO 
-            # DHT traffic is too 
+            # TODO: 
+            # seems like DHT traffic is too huge at that moment
             # need to find some solution here probably
             return
         self.datagrams_queue.append((datagram, address))

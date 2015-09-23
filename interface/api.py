@@ -111,7 +111,7 @@ def config_list(sort=False):
     r = map(lambda key: {
         'key': key,
         'value': r[key],
-        'type': config.conf().getTypeLabel(key)}, r.keys())
+        'type': config.conf().getTypeLabel(key)}, sorted(r.keys()))
     if sort:
         r = sorted(r, key=lambda i: i['key'])
     return { 'result': r } 
@@ -123,6 +123,22 @@ def filemanager(json_request):
     return filemanager_api.process(json_request) 
 
 #------------------------------------------------------------------------------ 
+
+
+def backups_update():
+    import backup_monitor
+    backup_monitor.A('restart') 
+        
+    from storage import backup_fs
+    result = []
+    for pathID, localPath, item in backup_fs.IterateIDs():
+        result.append((pathID, localPath, item.type, item.size, item.versions))
+        # if len(result) > 20:
+        #     break
+    from logs import lg
+    lg.out(4, 'api.backups_list %s' % result)
+    return { 'result': result, }
+
 
 def backups_list():
     from storage import backup_fs
@@ -157,12 +173,14 @@ def backup_start_id(pathID):
     from system import bpio
     from storage import backup_fs
     from storage import backup_control
+    from web import control
     local_path = backup_fs.ToPath(pathID)
     if local_path is not None:
         if bpio.pathExist(local_path):
             backup_control.StartSingle(pathID)
             backup_fs.Calculate()
             backup_control.Save()
+            control.request_update()
             return { 'result': 'backup started : %s' % pathID,
                      'local_path': local_path, }
     else:
@@ -173,6 +191,7 @@ def backup_start_path(path):
     from system import bpio
     from storage import backup_fs
     from storage import backup_control
+    from web import control
     localPath = unicode(path)
     if not bpio.pathExist(localPath):
         return {'result': 'local path %s not found' % path, }
@@ -188,6 +207,7 @@ def backup_start_path(path):
     backup_control.StartSingle(pathID)
     backup_fs.Calculate()
     backup_control.Save()
+    control.request_update()
     result.append('backup started: %s' % pathID)
     return { 'result': result, }
 
@@ -196,29 +216,35 @@ def backup_dir_add(dirpath):
     from storage import backup_fs
     from storage import backup_control
     from system import dirsize
+    from web import control
     newPathID, iter, iterID = backup_fs.AddDir(dirpath, True)
     dirsize.ask(dirpath, backup_control.FoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
     backup_control.Save()
+    control.request_update()
     return { 'result': 'new folder was added: %s %s' % (newPathID, dirpath), }
 
 
 def backup_file_add(filepath):    
     from storage import backup_fs
     from storage import backup_control
+    from web import control
     newPathID, iter, iterID = backup_fs.AddFile(filepath, True)
     backup_fs.Calculate()
     backup_control.Save()
+    control.request_update()
     return { 'result': 'new file was added: %s %s' % (newPathID, filepath), }
 
 
 def backup_tree_add(dirpath):
     from storage import backup_fs
     from storage import backup_control
+    from web import control
     from lib import packetid
     newPathID, iter, iterID, num = backup_fs.AddLocalPath(dirpath, True)
     backup_fs.Calculate()
     backup_control.Save()
+    control.request_update()
     if not newPathID:
         return { 'result': 'nothing was added to catalog', }
     return { 'result': '%d items were added to catalog, parent path ID is: %s  %s' % (
@@ -228,7 +254,7 @@ def backup_tree_add(dirpath):
 
 def list_messages():
     from chat import message
-    mlist = {} # TODO !!!
+    mlist = {} #TODO: just need some good idea to keep messages synchronized!!!
     return { 'result': mlist }
     
     

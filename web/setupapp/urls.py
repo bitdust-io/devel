@@ -21,6 +21,7 @@ urlpatterns = patterns('',
 #    url(r'^wizard/donator/$', views.WizardDonatorView.as_view()),
 #    url(r'^wizard/freespace/$', views.WizardFreeSpaceView.as_view()),
 #    url(r'^wizard/tryit/$', views.WizardTryItView.as_view()),
+
 )
 
 

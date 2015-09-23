@@ -163,6 +163,7 @@ class Block:
         e = misc.ObjectToString(self)
         return e
 
+#------------------------------------------------------------------------------ 
 
 def Unserialize(data):
     """

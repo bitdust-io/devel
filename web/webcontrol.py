@@ -1485,7 +1485,7 @@ class InstallPage(Page):
         src += 'Choose depending on the way you stored a copy of your Key.</p>\n'
         src += '</td></tr>'
         src += '<tr><td align=center>\n'
-        #TODO barcodes is not finished yet
+        #TODO: 2D barcodes is not finished yet
         src += '<form action="%s" method="post" enctype="multipart/form-data">\n' % request.path
         src += '<input type="hidden" name="action" value="load-barcode" />\n'
         src += '<input type="file" name="barcodesrc" />\n'
@@ -2120,7 +2120,7 @@ class InstallNetworkSettingsPage(Page):
             d = {'host': host.strip(), 'port': port.strip()}
             net_misc.set_proxy_settings(d)
             settings.setProxySettings(d)
-            settings.enableProxy(d.get('host', '') != '')
+            settings.enableLocalProxy(d.get('host', '') != '')
             request.redirect(back)
             request.finish()
             return NOT_DONE_YET
@@ -2971,7 +2971,7 @@ class MainPage(Page):
                     # even if we are not under windows - we may restore in other OS 
                     # so if the second character is ':' and third is '/' - means path starts from drive letter 
                     # here we assume the path is in portable form - separator is "/"
-                    # TODO - also may need to check other options like network drive (//) or so 
+                    # TODO: - also may need to check other options like network drive (//) or so 
                     localPath = localPath[3:]
                 # remove the leading separator - for Linux we want to have relative path
                 localPath = localPath.lstrip('/')
@@ -2993,7 +2993,7 @@ class MainPage(Page):
                     if localPath:
                         if dest:
                             if len(localPath) > 3 and localPath[1] == ':' and localPath[2] == '/':
-                                # TODO - also may need to check other options like network drive (//) or so 
+                                # TODO: - also may need to check other options like network drive (//) or so 
                                 localPath = localPath[3:]
                             localDir = os.path.dirname(localPath.lstrip('/'))
                             restoreDir = os.path.join(dest, localDir)
@@ -3645,7 +3645,7 @@ class BackupPage(Page, BackupIDSplit):
                             # even if we are not under windows - we may restore in other OS 
                             # so if the second character is ':' and third is '/' - means path starts from drive letter 
                             # here we assume the path is in portable form - separator is "/"
-                            # TODO - also may need to check other options like network drive (//) or so 
+                            # TODO: - also may need to check other options like network drive (//) or so 
                             restorePath = restorePath[3:]
                         restoreDir = os.path.dirname(restorePath)
                         restore_monitor.Start(self.backupID, os.path.join(settings.getRestoreDir(), restoreDir))

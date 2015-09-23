@@ -451,7 +451,7 @@ class IdRegistrator(automat.Automat):
                 cdict['udp'] = 'udp://%s@%s' % (login.lower(), host)
             except:
                 lg.exc()
-        if settings.enableProxy():
+        if settings.enablePROXY() and settings.enablePROXYreceiving():
             # proxy node is not yet known
             # so just put our own info for now
             try:
@@ -497,7 +497,7 @@ class IdRegistrator(automat.Automat):
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             srvhost = '%s:%d' % (host, tcpport)
             dlist.append(gateway.send_file_single(
-                'tcp', srvhost, sendfilename, 'Identity'))
+                idurl, 'tcp', srvhost, sendfilename, 'Identity'))
         assert len(self.free_idurls) == 0
         return DeferredList(dlist)
 

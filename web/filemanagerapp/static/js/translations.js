@@ -49,6 +49,7 @@
             list: "List",
             name: "Name",
             size: "Size",
+            status: "Status",
             actions: "Actions",
             date: "Date",
             no_items_in_folder: "", // "This folder is empty",

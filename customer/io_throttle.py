@@ -232,7 +232,7 @@ class FileToSend:
 
 #------------------------------------------------------------------------------ 
 
-#TODO I'm not removing items from the dict's at the moment
+#TODO: I'm not removing items from the dict's at the moment
 class SupplierQueue:
     def __init__(self, supplierIdentity, creatorID):
         self.creatorID = creatorID
@@ -644,8 +644,9 @@ class SupplierQueue:
                 packetsToRemove.add(packetID)
                 lg.out(12, 'io_throttle.DeleteBackupSendings %s from send queue' % packetID)
         for packetID in packetsToRemove:
-            self.fileSendQueue.remove(packetID)
-            del self.fileSendDict[packetID]
+            if self.fileSendDict.has_key(packetID):
+                self.fileSendQueue.remove(packetID)
+                del self.fileSendDict[packetID]
         if len(self.fileSendQueue) > 0:
             reactor.callLater(0, self.DoSend)
             #self.DoSend()

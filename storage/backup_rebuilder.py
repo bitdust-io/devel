@@ -405,8 +405,7 @@ class BackupRebuilder(automat.Automat):
         packetID = newpacket.PacketID
         filename = os.path.join(settings.getLocalBackupsDir(), packetID)
         if not newpacket.Valid():
-            # TODO 
-            # if we didn't get a valid packet ... re-request it or delete it?
+            # TODO: if we didn't get a valid packet ... re-request it or delete it?
             lg.warn("%s is not a valid packet: %r" % (packetID, newpacket))
             return
         if os.path.isfile(filename):

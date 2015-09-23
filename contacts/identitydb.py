@@ -166,7 +166,7 @@ def idset(idurl, id_obj):
             _IPPort2IDURL[ipport] = idurl 
         except:
             pass
-    # TODO when identity contacts changed - need to remove old items from _Contact2IDURL
+    #TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
     fire_cache_updated_callbacks(single_item=(
         identid, idurl, id_obj))        
 

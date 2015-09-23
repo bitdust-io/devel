@@ -1,8 +1,8 @@
 (function(window, angular, $) {
     "use strict";
     angular.module('FileManagerApp').controller('FileManagerCtrl', [
-    '$scope', '$translate', '$cookies', 'fileManagerConfig', 'item', 'fileNavigator', 'fileUploader',
-    function($scope, $translate, $cookies, fileManagerConfig, Item, FileNavigator, FileUploader) {
+    '$scope', '$translate', '$cookies', '$interval', '$http', 'fileManagerConfig', 'item', 'fileNavigator', 'fileUploader',
+    function($scope, $translate, $cookies, $interval, $http, fileManagerConfig, Item, FileNavigator, FileUploader) {
 
         $scope.config = fileManagerConfig;
         $scope.appName = fileManagerConfig.appName;
@@ -13,6 +13,7 @@
         $scope.fileUploader = FileUploader;
         $scope.uploadFileList = [];
         $scope.viewTemplate = $cookies.viewTemplate || 'main-table.html';
+        $scope.refresher_task = null;
 
         $scope.setTemplate = function(name) {
             $scope.viewTemplate = $cookies.viewTemplate = name;
@@ -130,7 +131,7 @@
             temp.tempModel.path = item.model.fullPath().replace(/^\/*/g, '').split('/');
             item.upload(function(data) {
             	var fullPath = temp.tempModel.path;
-            	$scope.fileNavigator.currentPath = fullPath && fullPath[0] === "" ? [] : fullPath;
+            	$scope.fileNavigator.currentPath = fullPath && fullPath[0] === "" ? [] : fullPath.slice(0, fullPath.length-1);
             	//debug.log('controller.upload.success', temp.tempModel.path, $scope.fileNavigator.currentPath);
                 $scope.fileNavigator.refresh();
                 $('#localselector').modal('hide');
@@ -194,10 +195,47 @@
             });
             return found;
         };
+        
+        $scope.readRepaintFlag = function() { 
+            // debug.log('read_flag');
+            $http.get('/repaintflag').success(function(data) {
+                // debug.log('    ', data);
+                if (data == 'True') {
+                	// debug.log('need to update !!!');
+                	$scope.fileNavigator.refresh_soft();
+                } else if (data == 'False') {
+                	//debug.log('not need to update'); 
+                } else if (data == 'None') {
+                	debug.log('repaintflag is None, stop refreshing');
+                	$scope.stopRefresherTask();
+                } else {
+                	debug.log('WARNING, wrong value: ', data);
+                }
+            }).error(function(data) {
+            	debug.log('FAIL, stop refreshing', data);
+            	$scope.stopRefresherTask();
+            });
+        };
+        
+        $scope.startRefresherTask = function () {
+        	$scope.refresher_task = $interval(function() {
+        		$scope.readRepaintFlag();
+        	},	
+        	250);
+        };
+        
+        $scope.stopRefresherTask = function () {
+            if (angular.isDefined($scope.refresher_task)) {
+                $interval.cancel($scope.refresher_task);
+                $scope.refresher_task = null;
+            }
+        };    	
 
         $scope.changeLanguage($scope.getQueryParam('lang'));
         $scope.isWindows = $scope.getQueryParam('server') === 'Windows';
-        $scope.fileNavigator.refresh();
 
+        $scope.fileNavigator.refresh();
+        $scope.startRefresherTask();
+        
     }]);
 })(window, angular, jQuery);

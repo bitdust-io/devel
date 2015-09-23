@@ -20,7 +20,7 @@ This module is for simple BitDust routines that do not require importing any of 
     
 Most used method here is ``log`` - prints a log string.
 
-TODO need to do some refactoring here
+TODO: need to do some refactoring here
 """
 
 import os

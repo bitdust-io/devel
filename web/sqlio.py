@@ -264,7 +264,8 @@ def update_identities(ids, cache, updated_idurl):
     except:
         lg.exc()
     dbcommit()
-    # TODO - need to repaint GUI here
+    # control.request_update()
+    # TODO: - need to repaint GUI here
 
 
 def update_suppliers(old_suppliers_list, suppliers_list):
@@ -276,7 +277,7 @@ def update_suppliers(old_suppliers_list, suppliers_list):
     except:
         lg.exc()
     dbcommit()
-    # TODO - need to repaint GUI here
+    # TODO: - need to repaint GUI here
 
 
 def update_customers(old_customers_list, customers_list):
@@ -288,7 +289,7 @@ def update_customers(old_customers_list, customers_list):
     except:
         lg.exc()
     dbcommit()
-    # TODO - need to repaint GUI here
+    # TODO: - need to repaint GUI here
 
 
 def update_friends(old_friends_list, friends_list):
@@ -300,12 +301,12 @@ def update_friends(old_friends_list, friends_list):
     except:
         lg.exc()
     dbcommit()
-    # TODO - need to repaint GUI here
+    # TODO: - need to repaint GUI here
 
 
 def update_contact_status(idurl):
     pass
-    # TODO - need to repaint GUI here
+    # TODO: - need to repaint GUI here
 
 
 def update_backup_fs(backup_fs_raw_list):
@@ -313,5 +314,5 @@ def update_backup_fs(backup_fs_raw_list):
     # dbcur().execute(_SQL['delete backupfsitem'])
     # dbcur().executemany(_SQL['insert backupfsitem'], backup_fs_raw_list)
     # db().commit()
-    # TODO - need to repaint GUI here
+    # TODO: - need to repaint GUI here
     
