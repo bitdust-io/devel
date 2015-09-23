@@ -27,6 +27,8 @@ EVENTS:
     * :red:`timer-10sec`
 """
 
+import random
+
 from automats import automat
 
 from logs import lg
@@ -37,6 +39,7 @@ from p2p import p2p_service
 from p2p import commands
 
 from contacts import identitydb
+from contacts import identitycache
 
 #------------------------------------------------------------------------------
 
@@ -188,8 +191,8 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         self.router_idurl = None
-        self.request_service_packet_id = None
         self.router_identity = None
+        self.request_service_packet_id = None
 
     def doDHTFindRandomNode(self, arg):
         """
@@ -295,9 +298,29 @@ class ProxyReceiver(automat.Automat):
     def _some_nodes_found(self, nodes):
         lg.out(12, 'proxy_receiver._some_nodes_found : %d' % len(nodes))
         if len(nodes) > 0:
-            self.automat('found-one-node', nodes[0])
+            node = random.choice(nodes)
+            d = node.request('idurl')
+            d.addCallback(self._got_remote_idurl)
+            d.addErrback(lambda x: self.automat('nodes-not-found'))
         else:
             self.automat('nodes-not-found')
+            
+    def _got_remote_idurl(self, response):
+        lg.out(14, 'proxy_receiver._got_remote_idurl response=%s' % str(response) )
+        try:
+            idurl = response['idurl']
+        except:
+            idurl = None
+        if not idurl or idurl == 'None':
+            self.automat('nodes-not-found')
+            return response
+        d = identitycache.immediatelyCaching(idurl)
+        d.addCallback(lambda src: self._got_remote_identity(src, idurl))
+        d.addErrback(lambda x: self.automat('nodes-not-found'))
+        return response
+
+    def _got_remote_identity(self, src, idurl):
+        self.automat('found-one-node', idurl)
 
     def _nodes_not_found(self, err):
         lg.out(12, 'proxy_receiver._nodes_not_found err=%s' % str(err))
@@ -306,6 +329,7 @@ class ProxyReceiver(automat.Automat):
     def _router_acked(self, response):
         lg.out(12, 'proxy_receiver._router_acked response=%s' % str(response))
         #TODO
+        
         
 #------------------------------------------------------------------------------
 

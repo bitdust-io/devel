@@ -80,7 +80,7 @@ class GateInterface():
         tcp_node.close_connections()
         return tcp_node.disconnect()
     
-    def send_file(self, filename, host, description=''):
+    def send_file(self, remote_idurl, filename, host, description=''):
         host = host.split(':')
         host = (host[0], int(host[1]))
         return tcp_node.send(filename, host, description, False)
