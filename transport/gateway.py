@@ -83,7 +83,7 @@ import packet_out
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 18
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------ 
 
@@ -216,7 +216,6 @@ def attach(transport_instance):
     global _TransportsDict
     global _AvailableTransports
     _AvailableTransports[transport_instance.proto] = True
-    # transport_instance.transport.state_changed_callback = on_transport_state_changed
     _TransportsDict[transport_instance.proto] = transport_instance
     if _Debug:
         lg.out(4, 'gateway.attach : %r' % transport_instance)
@@ -234,7 +233,6 @@ def detach(transport_instance):
         lg.warn('transport [%s] not attached' % transport_instance.proto)
         return
     _AvailableTransports.pop(transport_instance.proto)
-    # transport_instance.transport.state_changed_callback = None
     _TransportsDict.pop(transport_instance.proto)
     if _Debug:
         lg.out(4, 'gateway.detach : %r' % transport_instance)

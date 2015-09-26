@@ -79,6 +79,7 @@ class NetworkTransport(automat.Automat):
         """
         if self.state_changed_callback:
             self.state_changed_callback(self, oldstate, newstate)
+        gateway.on_transport_state_changed(self, oldstate, newstate)
 
     def A(self, event, arg):
         #---AT_STARTUP---

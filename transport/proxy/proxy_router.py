@@ -160,6 +160,7 @@ class ProxyRouter(automat.Automat):
                 continue
             if t.state == 'STARTING':
                 self.starting_transports.append(t.proto)
+        lg.out(12, 'proxy_router.doWaitOtherTransports : %s' % str(self.starting_transports))
 
     def doProcessRequest(self, arg):
         """
