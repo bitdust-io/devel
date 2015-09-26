@@ -49,13 +49,11 @@ class ProxyServerService(LocalService):
     def request(self, request, info):
         from transport.proxy import proxy_router 
         proxy_router.A('request-route', (request, info))
-        proxy_router.Destroy()
         return None
     
     def cancel(self, request, info):
         from transport.proxy import proxy_router 
         proxy_router.A('cancel-route', (request, info))
-        proxy_router.Destroy()
         return None
 
     
