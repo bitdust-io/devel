@@ -159,7 +159,7 @@ class ProxyRouter(automat.Automat):
             if t.proto == 'proxy':
                 continue
             if t.state == 'STARTING':
-                self.starting_transports.append(t)
+                self.starting_transports.append(t.proto)
 
     def doProcessRequest(self, arg):
         """
@@ -210,9 +210,11 @@ class ProxyRouter(automat.Automat):
     #         self.automat('routed-inbox-packet-received', newpacket)
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
-        if transport in self.starting_transports:
+        lg.out(12, 'proxy_router._on_transport_state_changed %s : %s, starting transports: %s' % (
+            transport.proto, newstate, self.starting_transports))
+        if transport.proto in self.starting_transports:
             if newstate in ['LISTENING', 'OFFLINE',]:
-                self.starting_transports.remove(transport)
+                self.starting_transports.remove(transport.proto)
         if len(self.starting_transports) == 0:
             self.automat('all-transports-ready')
 
