@@ -72,7 +72,7 @@ class GateInterface():
             proxy_receiver.A('start')
         if settings.enablePROXYsending():
             proxy_sender.A('start')
-        return True
+        return succeed(True)
 
     def disconnect(self):
         """

@@ -81,16 +81,10 @@ class ProxyTransportService(LocalService):
         network_connector.A('reconnect')
         
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
-        from transport.proxy import proxy_receiver
-        if value:
-            proxy_receiver.A('stop')
-        else:
-            proxy_receiver.A('start')
+        from p2p import network_connector
+        network_connector.A('reconnect')
         
     def _on_sending_enabled_disabled(self, path, value, oldvalue, result):
-        from transport.proxy import proxy_sender
-        if value:
-            proxy_sender.A('stop')
-        else:
-            proxy_sender.A('start')
+        from p2p import network_connector
+        network_connector.A('reconnect')
 
