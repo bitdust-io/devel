@@ -54,6 +54,11 @@ import stats
 
 #------------------------------------------------------------------------------ 
 
+_Debug = False
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------ 
+
 _OutboxQueue = []
 _PacketsCounter = 0
 
@@ -93,9 +98,10 @@ def search(proto, host, filename):
         for i in p.items:
             if i.proto == proto:
                 return p, i
-    for p in queue():
-        lg.out(18, '%s [%s]' % (os.path.basename(p.filename), 
-            ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
+    if _Debug:
+        for p in queue():
+            lg.out(_DebugLevel, '%s [%s]' % (os.path.basename(p.filename), 
+                ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
     return None, None
 
 
@@ -168,7 +174,7 @@ class PacketOut(automat.Automat):
         self.caching_deferred = None
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.label = 'out_%d_%s (%d callbacks)' % (get_packets_counter(), self.description, len(self.callbacks))
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 18)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel)
         increment_packets_counter()
 
     def init(self):

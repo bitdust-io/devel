@@ -82,6 +82,11 @@ import packet_out
 
 #------------------------------------------------------------------------------ 
 
+_Debug = True
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------ 
+
 _AvailableTransports = {}
 _TransportsDict = {}
 _DoingShutdown = False
@@ -125,6 +130,8 @@ def can_send(proto):
 
 
 def last_inbox_time():
+    """
+    """
     global _LastInboxPacketTime
     return _LastInboxPacketTime
     
@@ -135,7 +142,8 @@ def init():
     """
     global _LocalListener
     global _DoingShutdown
-    lg.out(4, 'gateway.init')
+    if _Debug:
+        lg.out(4, 'gateway.init')
     if _DoingShutdown:
         return
     _LocalListener = TransportGateLocalProxy()
@@ -150,7 +158,8 @@ def shutdown():
     global _XMLRPCPort
     global _XMLRPCURL
     global _DoingShutdown
-    lg.out(4, 'gateway.shutdown')
+    if _Debug:
+        lg.out(4, 'gateway.shutdown')
     if _DoingShutdown:
         return
     _DoingShutdown = True
@@ -161,16 +170,19 @@ def shutdown():
 def start():
     """
     """
-    lg.out(4, 'gateway.start')
+    if _Debug:
+        lg.out(4, 'gateway.start')
     result = []
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto): 
             if transp.state != 'LISTENING':
-                lg.out(4, '    sending "start" to %s' % transp)
+                if _Debug:
+                    lg.out(4, '    sending "start" to %s' % transp)
                 transp.automat('start')
                 result.append(proto)
             else:
-                lg.out(4, '    %r is ready' % transp)
+                if _Debug:
+                    lg.out(4, '    %r is ready' % transp)
     reactor.callLater(5, packets_timeout_loop)
     return result
 
@@ -178,7 +190,8 @@ def start():
 def stop():
     """
     """
-    lg.out(4, 'gateway.stop')
+    if _Debug:
+        lg.out(4, 'gateway.stop')
     stop_packets_timeout_loop()
     shutdown_all_inbox_packets()
     shutdown_all_outbox_packets()
@@ -186,11 +199,13 @@ def stop():
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto): 
             if transp.state != 'OFFLINE':
-                lg.out(4, '    send "stop" to %s' % transp)
+                if _Debug:
+                    lg.out(4, '    send "stop" to %s' % transp)
                 transp.automat('stop')
                 result.append(proto)
             else:
-                lg.out(4, '    %s already stopped' % proto)
+                if _Debug:
+                    lg.out(4, '    %s already stopped' % proto)
     return result
 
 #------------------------------------------------------------------------------ 
@@ -203,7 +218,8 @@ def attach(transport_instance):
     _AvailableTransports[transport_instance.proto] = True
     # transport_instance.transport.state_changed_callback = on_transport_state_changed
     _TransportsDict[transport_instance.proto] = transport_instance
-    lg.out(6, 'gateway.attach : %r' % transport_instance)
+    if _Debug:
+        lg.out(4, 'gateway.attach : %r' % transport_instance)
 
 
 def detach(transport_instance):
@@ -220,7 +236,8 @@ def detach(transport_instance):
     _AvailableTransports.pop(transport_instance.proto)
     # transport_instance.transport.state_changed_callback = None
     _TransportsDict.pop(transport_instance.proto)
-    lg.out(6, 'gateway.detach : %r' % transport_instance)
+    if _Debug:
+        lg.out(4, 'gateway.detach : %r' % transport_instance)
 
 #------------------------------------------------------------------------------ 
 
@@ -242,23 +259,24 @@ def inbox(info):
     global _DoingShutdown
     global _LastInboxPacketTime
     if _DoingShutdown:
-        lg.out(6, "gateway.inbox ignoring input since _DoingShutdown ")
+        if _Debug:
+            lg.out(_DebugLevel, "gateway.inbox ignoring input since _DoingShutdown ")
         return None
     if info.filename == "" or not os.path.exists(info.filename):
-        lg.out(1, "gateway.inbox  ERROR bad filename=" + info.filename)
+        lg.err("bad filename=" + info.filename)
         return None
     try:
         data = bpio.ReadBinaryFile(info.filename)
     except:
-        lg.out(1, "gateway.inbox ERROR reading file " + info.filename)
+        lg.err("gateway.inbox ERROR reading file " + info.filename)
         return None
     if len(data) == 0:
-        lg.out(1, "gateway.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
+        lg.err("gateway.inbox ERROR zero byte file from %s://%s" % (info.proto, info.host))
         return None
     try:
         newpacket = signed.Unserialize(data)
     except:
-        lg.out(1, "gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
+        lg.err("gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
         lg.exc()
         return None
     if newpacket is None:
@@ -275,20 +293,19 @@ def inbox(info):
         Signature = newpacket.Signature
         packet_sz = len(data)
     except:
-        lg.out(1, "gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
-        lg.out(1, "data length=" + str(len(data)))
+        lg.err("gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
+        lg.err("data length=" + str(len(data)))
         lg.exc()
         fd, filename = tmpfile.make('other', '.bad')
         os.write(fd, data)
         os.close(fd)
         return None
     _LastInboxPacketTime = time.time()
-    lg.out(16, "gateway.inbox [%s] signed by %s|%s from %s://%s" % (
-        newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
-        nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
+    if _Debug:
+        lg.out(_DebugLevel, "gateway.inbox [%s] signed by %s|%s from %s://%s" % (
+            newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
+            nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
     return newpacket
-
-#------------------------------------------------------------------------------ 
 
 def outbox(outpacket, wide=False, callbacks={}): 
     """
@@ -299,12 +316,13 @@ def outbox(outpacket, wide=False, callbacks={}):
                       to all contacts of Remote Identity
         :param callbacks: provide a callback methods to get response
     """
-    lg.out(16, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
-        outpacket.Command, 
-        nameurl.GetName(outpacket.OwnerID),
-        nameurl.GetName(outpacket.CreatorID),
-        nameurl.GetName(outpacket.RemoteID),
-        wide,))
+    if _Debug:
+        lg.out(_DebugLevel, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
+            outpacket.Command, 
+            nameurl.GetName(outpacket.OwnerID),
+            nameurl.GetName(outpacket.CreatorID),
+            nameurl.GetName(outpacket.RemoteID),
+            wide,))
     return packet_out.create(outpacket, wide, callbacks)
 
 #------------------------------------------------------------------------------ 
@@ -322,24 +340,24 @@ def send_work_item(proto, host, filename, description):
     """
     send_file(proto, host, filename, description)
 
-#------------------------------------------------------------------------------ 
-
 def connect_to(proto, host):
+    """
+    """
     return transport(proto).call('connect_to', host)
     
     
 def disconnect_from(proto, host):
+    """
+    """
     return transport(proto).call('disconnect_from', host)
 
     
 def send_file(remote_idurl, proto, host, filename, description=''):
-    # print 'send_file', proto, host, filename, description
     return transport(proto).call('send_file', remote_idurl, filename, host, description)
 
 
 def send_file_single(remote_idurl, proto, host, filename, description=''):
     return transport(proto).call('send_file_single', remote_idurl, filename, host, description)
-
   
 def make_transfer_ID():
     """
@@ -359,7 +377,8 @@ def cancel_output_file(transferID, why=None):
         lg.warn('%s is not found' % str(transferID))
         return False
     pkt_out.automat('cancel', why)
-    lg.out(14, 'gateway.cancel_output_file    %s' % transferID)
+    if _Debug:
+        lg.out(_DebugLevel, 'gateway.cancel_output_file    %s' % transferID)
     return True
 
         
@@ -373,7 +392,7 @@ def cancel_input_file(transferID, why=None):
 def cancel_outbox_file(proto, host, filename, why=None):
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        lg.out(2, 'gateway.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename),))
+        lg.err('gateway.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename),))
         return None
     pkt_out.automat('cancel', why)
 
@@ -402,14 +421,16 @@ def current_bytes_received():
 def shutdown_all_outbox_packets():
     """
     """
-    lg.out(12, 'gateway.shutdown_all_outbox_packets, %d live objects at the moment' % len(packet_out.queue()))
+    if _Debug:
+        lg.out(_DebugLevel, 'gateway.shutdown_all_outbox_packets, %d live objects at the moment' % len(packet_out.queue()))
     for pkt_out in list(packet_out.queue()):
         pkt_out.event('cancel', 'shutdown')
 
 def shutdown_all_inbox_packets():
     """
     """
-    lg.out(12, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(packet_in.items().values()))
+    if _Debug:
+        lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(packet_in.items().values()))
     for pkt_in in list(packet_in.items().values()):
         pkt_in.event('cancel', 'shutdown')
 
@@ -436,9 +457,12 @@ def stop_packets_timeout_loop():
 #------------------------------------------------------------------------------ 
 
 def on_transport_state_changed(transport, oldstate, newstate):
+    """
+    """
     global _TransportStateChangedCallbacksList
-    lg.out(6, 'gateway.on_transport_state_changed in %r : %s->%s' % (
-        transport, oldstate, newstate))
+    if _Debug:
+        lg.out(_DebugLevel, 'gateway.on_transport_state_changed in %r : %s->%s' % (
+            transport, oldstate, newstate))
     for cb in _TransportStateChangedCallbacksList:
         cb(transport, oldstate, newstate)
    
@@ -451,21 +475,24 @@ def on_transport_initialized(proto, xmlrpcurl=None):
 def on_receiving_started(proto, host, options_modified=None):
     """
     """
-    lg.out(6, 'gateway.on_receiving_started %s host=%s' % (proto.upper(), host))
+    if _Debug:
+        lg.out(_DebugLevel, 'gateway.on_receiving_started %s host=%s' % (proto.upper(), host))
     transport(proto).automat('receiving-started')
     return True
 
 def on_receiving_failed(proto, error_code=None):
     """
     """
-    lg.out(6, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
+    if _Debug:
+        lg.out(_DebugLevel, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
     transport(proto).automat('failed')
     return True
 
 def on_disconnected(proto, result=None):
     """
     """
-    lg.out(6, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
+    if _Debug:
+        lg.out(_DebugLevel, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
     if transports().has_key(proto):
         transport(proto).automat('stopped')
     return True
@@ -497,18 +524,20 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     Must return a unique transfer ID so plug-in will know that ID.
     After finishing that given transfer - that ID is passed to `unregister_file_sending()`.
     """
-    lg.out(18, 'gateway.on_register_file_sending %s %s' % (filename, description))
+    if _Debug:
+        lg.out(_DebugLevel, 'gateway.on_register_file_sending %s %s' % (filename, description))
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        lg.out(2, 'gateway.on_register_file_sending ERROR packet_out not found: %r %r %r' % (
+        lg.err('gateway.on_register_file_sending ERROR packet_out not found: %r %r %r' % (
             proto, host, os.path.basename(filename)))
         return None
     transfer_id = make_transfer_ID()
-    lg.out(14, '>>> OUT >>> %s (%d) send {%s} via [%s] to %s at %s' % (
-        pkt_out.description, transfer_id, os.path.basename(filename), proto, 
-        nameurl.GetName(receiver_idurl), host))
+    if _Debug:
+        lg.out(_DebugLevel, '>>> OUT >>> %s (%d) send {%s} via [%s] to %s at %s' % (
+            pkt_out.description, transfer_id, os.path.basename(filename), proto, 
+            nameurl.GetName(receiver_idurl), host))
     if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
-        lg.out(2, 'gateway.on_register_file_sending ERROR  [%s] [%s]' % (pkt_out.remote_idurl, receiver_idurl))
+        lg.err('gateway.on_register_file_sending ERROR  [%s] [%s]' % (pkt_out.remote_idurl, receiver_idurl))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
     return transfer_id
 
@@ -516,18 +545,21 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     """
     Called from transport plug-in after finish sending a single file.
     """
-    lg.out(18, 'on_unregister_file_sending %s %s' % (transfer_id, status))
+    if _Debug:
+        lg.out(_DebugLevel, 'on_unregister_file_sending %s %s' % (transfer_id, status))
     pkt_out, work_item = packet_out.search_by_transfer_id(transfer_id)
     if pkt_out is None:
         lg.warn('%s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
     if status == 'finished':
-        lg.out(14, '<<< OUT <<< %s (%d) [%s] %s with %d bytes' % (
-            pkt_out.description, transfer_id, work_item.proto, status.upper(), bytes_sent))
+        if _Debug:
+            lg.out(_DebugLevel, '<<< OUT <<< %s (%d) [%s] %s with %d bytes' % (
+                pkt_out.description, transfer_id, work_item.proto, status.upper(), bytes_sent))
     else:
-        lg.out(14, '<<< OUT <<< %s (%d) [%s] %s : %s' % (
-            pkt_out.description, transfer_id, work_item.proto, str(status).upper(), error_message))
+        if _Debug:
+            lg.out(_DebugLevel, '<<< OUT <<< %s (%d) [%s] %s : %s' % (
+                pkt_out.description, transfer_id, work_item.proto, str(status).upper(), error_message))
     return True
 
 def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
@@ -537,9 +569,10 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     Plug-in's code must create a temporary file and write incoming data into that file.
     """
     transfer_id = make_transfer_ID()
-    lg.out(14, '>>> IN >>> %d receive {%s} via [%s] from %s at %s' % (
-        transfer_id, os.path.basename(filename), proto, 
-        nameurl.GetName(sender_idurl), host))
+    if _Debug:
+        lg.out(_DebugLevel, '>>> IN >>> %d receive {%s} via [%s] from %s at %s' % (
+            transfer_id, os.path.basename(filename), proto, 
+            nameurl.GetName(sender_idurl), host))
     packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))
     return transfer_id
 
@@ -550,11 +583,13 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     pkt_in = packet_in.get(transfer_id)
     assert pkt_in != None
     if status == 'finished':
-        lg.out(14, '<<< IN <<< (%d) [%s] %s with %d bytes' % (
-            transfer_id, pkt_in.proto, status.upper(), bytes_received))
+        if _Debug:
+            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s] %s with %d bytes' % (
+                transfer_id, pkt_in.proto, status.upper(), bytes_received))
     else:
-        lg.out(14, '<<< IN <<< (%d) [%s] %s : %s' % (
-            transfer_id, pkt_in.proto, status.upper(), error_message))
+        if _Debug:
+            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s] %s : %s' % (
+                transfer_id, pkt_in.proto, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
     return True
 
@@ -563,12 +598,14 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
     """
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
-        lg.out(2, 'gateway.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (
-            proto, host, os.path.basename(filename)))
+        if _Debug:
+            lg.out(_DebugLevel, 'gateway.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (
+                proto, host, os.path.basename(filename)))
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
-    lg.out(14, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
-        os.path.basename(filename), proto, host, error_message))
+    if _Debug:
+        lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
+            os.path.basename(filename), proto, host, error_message))
     return True
 
 #------------------------------------------------------------------------------ 
@@ -583,34 +620,6 @@ def remove_transport_state_changed_callback(cb):
     if cb in _TransportStateChangedCallbacksList:
         _TransportStateChangedCallbacksList.remove(cb)
 
-#------------------------------------------------------------------------------ 
-
-#class InputFile():
-#    """
-#    Keeps info about single incoming file transfer running at the moment.
-#    """
-#    def __init__(self, filename, transfer_id, proto, host, idurl, size=0):
-#        self.filename = filename
-#        self.transfer_id = transfer_id
-#        self.proto = proto
-#        self.host = host
-#        self.remote_idurl = idurl
-#        self.size = size
-#        self.started = time.time()
-        
-#------------------------------------------------------------------------------ 
-
-#class OutputFile():
-#    def __init__(self, filename, transfer_id, proto, host, remote_idurl, size=0, description=''):
-#        self.filename = filename
-#        self.transfer_id = transfer_id
-#        self.proto = proto
-#        self.host = host
-#        self.remote_idurl = remote_idurl
-#        self.size = size
-#        self.description = description
-#        self.started = time.time()
-        
 #------------------------------------------------------------------------------ 
 
 class TransportGateLocalProxy():

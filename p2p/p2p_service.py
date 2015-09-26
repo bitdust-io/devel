@@ -311,14 +311,14 @@ def RequestIdentity(request):
     result = signed.Packet(commands.Identity(), MyID, MyID, PacketID, identitystr, RemoteID)
     gateway.outbox(result, False)
        
-def SendIdentity(remote_idurl, wide=False):
+def SendIdentity(remote_idurl, wide=False, callbacks={}):
     """
     """
     lg.out(8, "p2p_service.SendIdentity to %s" % nameurl.GetName(remote_idurl))
     result = signed.Packet(commands.Identity(), my_id.getLocalID(), 
                                  my_id.getLocalID(), 'identity', # my_id.getLocalID(),
                                  my_id.getLocalIdentity().serialize(), remote_idurl)
-    gateway.outbox(result, wide)
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result       
     
 #------------------------------------------------------------------------------ 
@@ -326,7 +326,7 @@ def SendIdentity(remote_idurl, wide=False):
 def RequestService(request, info):
     lg.out(8, "p2p_service.RequestService %s" % request.OwnerID)
     words = request.Payload.split(' ')
-    if len(words) <= 1:
+    if len(words) < 1:
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
     service_name = words[0]
@@ -342,13 +342,11 @@ def RequestService(request, info):
         return SendFail(request, 'service %s is off' % service_name)
     return driver.request(service_name, request, info)
     
-def SendRequestService(remote_idurl, service_info, response_callback=None):
+def SendRequestService(remote_idurl, service_info, callbacks={}):
     lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
     result = signed.Packet(commands.RequestService(), my_id.getLocalID(), my_id.getLocalID(), 
                                  packetid.UniqueID(), service_info, remote_idurl)
-    gateway.outbox(result, callbacks={
-        commands.Ack(): response_callback,
-        commands.Fail(): response_callback})
+    gateway.outbox(result, callbacks=callbacks)
     return result       
 
 def CancelService(request, info):

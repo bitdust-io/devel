@@ -114,10 +114,20 @@ def warn(message, level=2):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '') 
     caller = cod.co_name
-    # caller = inspect.
     out(level, '%s.%s WARNING %s' % (modul, caller, message))
+    
+def err(message, level=0):
+    cod = sys._getframe().f_back.f_code
+    modul = os.path.basename(cod.co_filename).replace('.py', '') 
+    caller = cod.co_name
+    if not message.count('ERROR'):
+        message = 'ERROR ' + message
+    funcname = '%s.%s' % (modul, caller)
+    if not message.count(funcname):
+        message = funcname + ' ' + message
+    out(level, message)
 
-def exc(msg='', level=2, maxTBlevel=100):
+def exc(msg='', level=0, maxTBlevel=100):
     if msg:
         out(level, msg)
     return exception(level, maxTBlevel, None)

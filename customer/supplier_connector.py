@@ -208,10 +208,9 @@ class SupplierConnector(automat.Automat):
         Condition method.
         """
         newpacket = arg
-        if newpacket.Command == commands.Ack():
-            if newpacket.Payload.startswith('accepted'):
-                # lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
-                return True
+        if newpacket.Payload.startswith('accepted'):
+            # lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
+            return True
         return False
 
     def isServiceCancelled(self, arg):
@@ -236,7 +235,10 @@ class SupplierConnector(automat.Automat):
         else:
             bytes_per_supplier = int(math.ceil(2.0*settings.MinimumNeededBytes()/float(settings.DefaultDesiredSuppliers()))) 
         service_info = 'service_supplier %d' % bytes_per_supplier
-        request = p2p_service.SendRequestService(self.idurl, service_info, self._supplier_acked)
+        request = p2p_service.SendRequestService(
+            self.idurl, service_info, callbacks={
+                commands.Ack(): lambda response, info: self.automat('ack', response),
+                commands.Fail(): lambda response, info: self.automat('fail', response)})
         self.request_packet_id = request.PacketID
 
     def doCancelService(self, arg):
