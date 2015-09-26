@@ -43,13 +43,15 @@ except:
 
 from automats import automat
 
+from system import tmpfile
+
 from crypt import encrypted
 from crypt import key
 from crypt import signed
 
 from transport import gateway
 
-from system import tmpfile
+from p2p import p2p_service
 
 #------------------------------------------------------------------------------ 
 
@@ -172,9 +174,14 @@ class ProxyRouter(automat.Automat):
         if request.Command == commands.RequestService():
             if not self.routes.has_key(target):
                 self.routes[target] = (info.proto, info.host, time.time())
+                p2p_service.SendAck(request, 'accepted')
+                return
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
                 self.routes.pop(target)
+                p2p_service.SendAck(request, 'accepted')
+                return
+        p2p_service.SendAck(request, 'rejected')
 
     def doUnregisterAllRouts(self, arg):
         """

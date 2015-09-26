@@ -83,7 +83,7 @@ import packet_out
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 18
 
 #------------------------------------------------------------------------------ 
 
@@ -258,7 +258,7 @@ def inbox(info):
     global _LastInboxPacketTime
     if _DoingShutdown:
         if _Debug:
-            lg.out(_DebugLevel, "gateway.inbox ignoring input since _DoingShutdown ")
+            lg.out(_DebugLevel-4, "gateway.inbox ignoring input since _DoingShutdown ")
         return None
     if info.filename == "" or not os.path.exists(info.filename):
         lg.err("bad filename=" + info.filename)
@@ -300,7 +300,7 @@ def inbox(info):
         return None
     _LastInboxPacketTime = time.time()
     if _Debug:
-        lg.out(_DebugLevel, "gateway.inbox [%s] signed by %s|%s from %s://%s" % (
+        lg.out(_DebugLevel-4, "gateway.inbox [%s] signed by %s|%s from %s://%s" % (
             newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
             nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
     return newpacket
@@ -315,7 +315,7 @@ def outbox(outpacket, wide=False, callbacks={}):
         :param callbacks: provide a callback methods to get response
     """
     if _Debug:
-        lg.out(_DebugLevel, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
+        lg.out(_DebugLevel-4, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
             outpacket.Command, 
             nameurl.GetName(outpacket.OwnerID),
             nameurl.GetName(outpacket.CreatorID),
@@ -376,7 +376,7 @@ def cancel_output_file(transferID, why=None):
         return False
     pkt_out.automat('cancel', why)
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.cancel_output_file    %s' % transferID)
+        lg.out(_DebugLevel-4, 'gateway.cancel_output_file    %s' % transferID)
     return True
 
         
@@ -459,7 +459,7 @@ def on_transport_state_changed(transport, oldstate, newstate):
     """
     global _TransportStateChangedCallbacksList
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.on_transport_state_changed in %r : %s->%s' % (
+        lg.out(_DebugLevel-8, 'gateway.on_transport_state_changed in %r : %s->%s' % (
             transport, oldstate, newstate))
     for cb in _TransportStateChangedCallbacksList:
         cb(transport, oldstate, newstate)
@@ -474,7 +474,7 @@ def on_receiving_started(proto, host, options_modified=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.on_receiving_started %s host=%s' % (proto.upper(), host))
+        lg.out(_DebugLevel-8, 'gateway.on_receiving_started %s host=%s' % (proto.upper(), host))
     transport(proto).automat('receiving-started')
     return True
 
@@ -482,7 +482,7 @@ def on_receiving_failed(proto, error_code=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
+        lg.out(_DebugLevel-8, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
     transport(proto).automat('failed')
     return True
 
@@ -490,7 +490,7 @@ def on_disconnected(proto, result=None):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
+        lg.out(_DebugLevel-8, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
     if transports().has_key(proto):
         transport(proto).automat('stopped')
     return True
@@ -531,7 +531,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
         return None
     transfer_id = make_transfer_ID()
     if _Debug:
-        lg.out(_DebugLevel, '>>> OUT >>> %s (%d) send {%s} via [%s] to %s at %s' % (
+        lg.out(_DebugLevel-8, '>>> OUT >>> %s (%d) send {%s} via [%s] to %s at %s' % (
             pkt_out.description, transfer_id, os.path.basename(filename), proto, 
             nameurl.GetName(receiver_idurl), host))
     if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
@@ -544,7 +544,7 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     Called from transport plug-in after finish sending a single file.
     """
     if _Debug:
-        lg.out(_DebugLevel, 'on_unregister_file_sending %s %s' % (transfer_id, status))
+        lg.out(_DebugLevel, 'gateway.on_unregister_file_sending %s %s' % (transfer_id, status))
     pkt_out, work_item = packet_out.search_by_transfer_id(transfer_id)
     if pkt_out is None:
         lg.warn('%s is not found' % str(transfer_id))
@@ -552,11 +552,11 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
     if status == 'finished':
         if _Debug:
-            lg.out(_DebugLevel, '<<< OUT <<< %s (%d) [%s] %s with %d bytes' % (
+            lg.out(_DebugLevel-8, '<<< OUT <<< %s (%d) [%s] %s with %d bytes' % (
                 pkt_out.description, transfer_id, work_item.proto, status.upper(), bytes_sent))
     else:
         if _Debug:
-            lg.out(_DebugLevel, '<<< OUT <<< %s (%d) [%s] %s : %s' % (
+            lg.out(_DebugLevel-8, '<<< OUT <<< %s (%d) [%s] %s : %s' % (
                 pkt_out.description, transfer_id, work_item.proto, str(status).upper(), error_message))
     return True
 
@@ -568,7 +568,7 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     """
     transfer_id = make_transfer_ID()
     if _Debug:
-        lg.out(_DebugLevel, '>>> IN >>> %d receive {%s} via [%s] from %s at %s' % (
+        lg.out(_DebugLevel-8, '>>> IN >>> %d receive {%s} via [%s] from %s at %s' % (
             transfer_id, os.path.basename(filename), proto, 
             nameurl.GetName(sender_idurl), host))
     packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))
@@ -582,11 +582,11 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     assert pkt_in != None
     if status == 'finished':
         if _Debug:
-            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s] %s with %d bytes' % (
+            lg.out(_DebugLevel-8, '<<< IN <<< (%d) [%s] %s with %d bytes' % (
                 transfer_id, pkt_in.proto, status.upper(), bytes_received))
     else:
         if _Debug:
-            lg.out(_DebugLevel, '<<< IN <<< (%d) [%s] %s : %s' % (
+            lg.out(_DebugLevel-8, '<<< IN <<< (%d) [%s] %s : %s' % (
                 transfer_id, pkt_in.proto, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
     return True
@@ -602,7 +602,7 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
     if _Debug:
-        lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
+        lg.out(_DebugLevel-8, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
             os.path.basename(filename), proto, host, error_message))
     return True
 
