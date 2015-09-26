@@ -39,6 +39,7 @@ from dht import dht_service
 
 from p2p import p2p_service
 from p2p import commands
+from p2p import network_connector
 
 from contacts import identitydb
 from contacts import identitycache
@@ -132,7 +133,7 @@ class ProxyReceiver(automat.Automat):
             if event == 'service-accepted' :
                 self.state = 'LISTEN'
                 self.doRememberProxyNode(arg)
-                self.doUpdateMyIdentity(arg)
+                network_connector.A('reconnect')
                 self.doStartListening(arg)
                 self.doReportStarted(arg)
             elif event == 'shutdown' :
