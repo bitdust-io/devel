@@ -88,11 +88,11 @@ class GateInterface():
             _GateProxy = None
         return succeed(True)
 
-    def receive(self, options):
+    def connect(self, options):
         """
         """
+        lg.out(8, 'udp_interface.connect %s' % str(options))
         udp_node.A('go-online', options)
-        # lg.out(8, 'udp_interface.receive')
         return True
 
     def disconnect(self):

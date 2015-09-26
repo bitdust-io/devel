@@ -167,13 +167,6 @@ class NetworkTransport(automat.Automat):
         self.state_changed_callback = state_changed_callback
         self.interface.init(listener)
 
-    def doStop(self, arg):
-        """
-        Action method.
-        """
-        lg.out(12, 'network_transport.doStop disconnecting %r' % self.interface)
-        self.interface.disconnect()
-
     def doStart(self, arg):
         """
         Action method.
@@ -202,7 +195,14 @@ class NetworkTransport(automat.Automat):
             if not id_contact:
                 default_host = nameurl.GetName(my_id.getLocalID())+'@'+platform.node()
             options['host'] = id_contact or default_host
-        self.interface.receive(options) 
+        self.interface.connect(options) 
+
+    def doStop(self, arg):
+        """
+        Action method.
+        """
+        lg.out(12, 'network_transport.doStop disconnecting %r' % self.interface)
+        self.interface.disconnect()
 
     def doCreateProxy(self, arg):
         """

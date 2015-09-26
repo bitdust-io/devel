@@ -30,6 +30,7 @@ EVENTS:
 import os
 import sys
 import time
+import cStringIO
 
 from twisted.internet import reactor
 
@@ -40,9 +41,15 @@ except:
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
 
-from logs import lg
-
 from automats import automat
+
+from crypt import encrypted
+from crypt import key
+from crypt import signed
+
+from transport import gateway
+
+from system import tmpfile
 
 #------------------------------------------------------------------------------ 
 
@@ -139,7 +146,7 @@ class ProxyRouter(automat.Automat):
         from transport import gateway
         from transport import callback
         self.starting_transports = []
-        callback.add_inbox_callback(self._on_inbox_packet_received)
+        # callback.add_inbox_callback(self._on_inbox_packet_received)
         gateway.add_transport_state_changed_callback(self._on_transport_state_changed)
 
     def doWaitOtherTransports(self, arg):
@@ -159,11 +166,11 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         from p2p import commands
-        request = arg
+        request, info = arg
         target = request.CreatorID
         if request.Command == commands.RequestService():
             if not self.routes.has_key(target):
-                self.routes[target] = time.time()
+                self.routes[target] = (info.proto, info.host, time.time())
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
                 self.routes.pop(target)
@@ -182,6 +189,7 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
+        self._forward_routed_packet(arg)
         
     def doDestroyMe(self, arg):
         """
@@ -190,16 +198,16 @@ class ProxyRouter(automat.Automat):
         from transport import gateway
         from transport import callback
         gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
-        callback.remove_inbox_callback(self._on_inbox_packet_received)
+        # callback.remove_inbox_callback(self._on_inbox_packet_received)
         automat.objects().pop(self.index)
         global _ProxyRouter
         del _ProxyRouter
         _ProxyRouter = None
 
-    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
-        target = newpacket.CreatorID
-        if target in self.routes.keys():
-            self.automat('routed-inbox-packet-received', newpacket)
+    # def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+    #     target = newpacket.CreatorID
+    #     if target in self.routes.keys():
+    #         self.automat('routed-inbox-packet-received', newpacket)
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         if transport in self.starting_transports:
@@ -208,6 +216,41 @@ class ProxyRouter(automat.Automat):
         if len(self.starting_transports) == 0:
             self.automat('all-transports-ready')
 
+    def _forward_routed_packet(self, newpacket):
+        block = encrypted.Unserialize(newpacket.Payload)
+        if block is None:
+            lg.out(2, 'proxy_router._forward_routed_packet ERROR reading data from %s' % newpacket.RemoteID)
+            return
+        try:
+            session_key = key.DecryptLocalPK(block.EncryptedSessionKey)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
+            inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
+            sender_idurl = inpt.readline().rstrip('\n')
+            receiver_idurl = inpt.readline().rstrip('\n')
+        except:
+            lg.out(2, 'proxy_router._forward_routed_packet ERROR reading data from %s' % newpacket.RemoteID)
+            lg.out(2, '\n' + padded_data)
+            lg.exc()
+            try:
+                inpt.close()
+            except:
+                pass
+            return
+        data = inpt.read()
+        inpt.close()
+        route = self.routes.get(receiver_idurl, None)
+        if not route:
+            lg.warn('route to %s not found, sender: %s' % (receiver_idurl, sender_idurl))
+            return 
+        # input_packet = signed.Unserialize(data)
+        fileno, filename = tmpfile.make('outbox')
+        os.write(fileno, data)
+        os.close(fileno)
+        filesize = len(data)
+        proto, host, tm = route
+        gateway.send_file(receiver_idurl, proto, host, filename, 'routed packet')
+        lg.out(12, 'proxy_router._forward_routed_packet route %d bytes from %s to %s on %s://%s' % (
+            filesize, sender_idurl, receiver_idurl, proto, host))
 
 #------------------------------------------------------------------------------ 
 

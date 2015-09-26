@@ -130,19 +130,19 @@ def inbox(newpacket, info, status, error_message):
 
     commandhandled = False
     if newpacket.Command == commands.Fail():
-        Fail(newpacket)
+        Fail(newpacket) # some operation was failed on other side
         commandhandled = True
     elif newpacket.Command == commands.Retrieve():
         Retrieve(newpacket) # retrieve some packet customer stored with us
         commandhandled = True
     elif newpacket.Command == commands.Ack():
-        Ack(newpacket)
+        Ack(newpacket) # a response from remote node, typically handled in other places  
         commandhandled = True 
     elif newpacket.Command == commands.RequestService():
-        RequestService(newpacket)
+        RequestService(newpacket, info) # other node send us a request to get some service
         commandhandled = True
     elif newpacket.Command == commands.CancelService():
-        CancelService(newpacket) # new packet to store for customer
+        CancelService(newpacket, info) # other node wants to stop the service we gave him
         commandhandled = True    
     elif newpacket.Command == commands.Data():
         Data(newpacket) # new packet to store for customer
@@ -323,7 +323,7 @@ def SendIdentity(remote_idurl, wide=False):
     
 #------------------------------------------------------------------------------ 
 
-def RequestService(request):
+def RequestService(request, info):
     lg.out(8, "p2p_service.RequestService %s" % request.OwnerID)
     words = request.Payload.split(' ')
     if len(words) <= 1:
@@ -334,13 +334,13 @@ def RequestService(request):
     if service_name == 'storage':
         if not driver.is_started('service_supplier'):
             return SendFail(request, 'supplier service is off')
-        return driver.request('service_supplier', request)
+        return driver.request('service_supplier', request, info)
     if not driver.is_exist(service_name):
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'service %s not exist' % service_name)
     if not driver.is_started(service_name):
         return SendFail(request, 'service %s is off' % service_name)
-    return driver.request(service_name, request)
+    return driver.request(service_name, request, info)
     
 def SendRequestService(remote_idurl, service_info, response_callback=None):
     lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
@@ -351,7 +351,7 @@ def SendRequestService(remote_idurl, service_info, response_callback=None):
         commands.Fail(): response_callback})
     return result       
 
-def CancelService(request):
+def CancelService(request, info):
     lg.out(8, "p2p_service.CancelService")
     words = request.Payload.split(' ')
     if len(words) <= 1:
@@ -362,13 +362,13 @@ def CancelService(request):
     if service_name == 'storage':
         if not driver.is_started('service_supplier'):
             return SendFail(request, 'supplier service is off')
-        return driver.cancel('service_supplier', request)
+        return driver.cancel('service_supplier', request, info)
     if not driver.is_exist(service_name):
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'service %s not exist' % service_name)
     if not driver.is_started(service_name):
         return SendFail(request, 'service %s is off' % service_name)
-    return driver.cancel(service_name, request)
+    return driver.cancel(service_name, request, info)
 
 def SendCancelService(remote_idurl, service_info, response_callback=None):
     lg.out(8, "p2p_service.SendCancelService [%s]" % service_info)
@@ -431,9 +431,10 @@ def Data(request):
     if request.OwnerID == my_id.getLocalID():
         lg.out(8, "p2p_service.Data %r for us from %s" % (
             request, nameurl.GetName(request.RemoteID)))
-        if request.PacketID in [ settings.BackupIndexFileName(), ]:
-            from storage import backup_control
-            backup_control.IncomingSupplierBackupIndex(request)
+        if driver.is_started('service_backups'):
+            if request.PacketID in [ settings.BackupIndexFileName(), ]:
+                from storage import backup_control
+                backup_control.IncomingSupplierBackupIndex(request)
         if driver.is_started('service_proxy_server'):
             # 3. we work as a proxy server and received a packet for third node
             if request.PacketID == 'routed_packet':

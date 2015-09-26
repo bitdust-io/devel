@@ -69,8 +69,8 @@ class GateInterface():
             _GateProxy = None
         return ret
 
-    def receive(self, options):
-        lg.out(4, 'tcp_interface.receive')
+    def connect(self, options):
+        lg.out(4, 'tcp_interface.connect %s' % str(options))
         tcp_node.start_streams()
         return tcp_node.receive(options)
 

@@ -95,8 +95,8 @@ class ProxySender(automat.Automat):
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'send-file' :
-                self.doReportFileSent(arg)
-                self.doSendOutboxPacket(arg)
+                self.doRegisterOutboxFile(arg)
+                self.doEncryptAndSendOutboxPacket(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init' :
@@ -141,7 +141,7 @@ class ProxySender(automat.Automat):
             d.addCallback(self._on_outbox_file_registered, remote_idurl, filename, host, description)
             d.addErrback(self._on_outbox_file_register_failed, remote_idurl, filename, host, description)
         
-    def doSendOutboxPacket(self, arg):
+    def doEncryptAndSendOutboxPacket(self, arg):
         """
         Action method.
         """
@@ -161,19 +161,17 @@ class ProxySender(automat.Automat):
             key.SessionKeyType(),
             True,
             src,)
-        Payload = block.Serialize()
         newpacket = signed.Packet(
             commands.Data(), 
             router_idurl, 
             my_id.getLocalID(),
             'routed_packet', 
-            Payload, 
+            block.Serialize(), 
             router_idurl)
         gateway.outbox(newpacket, callbacks={
             commands.Ack(): self._on_outbox_packet_acked,
             commands.Fail(): self._on_outbox_packet_failed}) 
         del src
-        del Payload
         del block
         del newpacket
         lg.out(12, 'proxy_sender.doSendOutboxPacket for %s routed via %s' % (remote_idurl, router_idurl))
@@ -203,7 +201,6 @@ class ProxySender(automat.Automat):
         lg.out(12, 'proxy_sender._on_outbox_packet_failed')
     
 #------------------------------------------------------------------------------ 
-
 
 def main():
     from twisted.internet import reactor

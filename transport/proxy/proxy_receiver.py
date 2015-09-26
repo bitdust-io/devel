@@ -29,9 +29,11 @@ EVENTS:
 
 import random
 
-from automats import automat
+from twisted.internet import reactor
 
 from logs import lg
+
+from automats import automat
 
 from dht import dht_service
 
@@ -40,6 +42,11 @@ from p2p import commands
 
 from contacts import identitydb
 from contacts import identitycache
+
+#------------------------------------------------------------------------------ 
+
+_Debug = False
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -96,67 +103,49 @@ class ProxyReceiver(automat.Automat):
             if event == 'inbox-packet' and self.isAckFromNode(arg) :
                 self.state = 'SERVICE?'
                 self.doSendRequestService(arg)
-            elif self.Attempts==5 and event == 'timer-10sec' :
-                self.state = 'OFFLINE'
-                self.doReportResponseTimeout(arg)
-            elif event == 'timer-10sec' and self.Attempts<5 :
-                self.state = 'RANDOM_NODE?'
-                self.doDHTFindRandomNode(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+            elif event == 'timer-10sec' :
+                self.state = 'RANDOM_NODE?'
+                self.doDHTFindRandomNode(arg)
             elif event == 'stop' :
-                self.state = 'OFFLINE'
+                self.state = 'STOPPED'
                 self.doReportStopped(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init' :
-                self.state = 'OFFLINE'
+                self.state = 'STOPPED'
                 self.doInit(arg)
         #---LISTEN---
         elif self.state == 'LISTEN':
-            if event == 'stop' :
-                self.state = 'OFFLINE'
-                self.doStopListening(arg)
-                self.doUpdateMyIdentity(arg)
-                self.doReportStopped(arg)
-            elif event == 'send-file' :
+            if event == 'send-file' :
                 self.doSendFileToRouter(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-        #---OFFLINE---
-        elif self.state == 'OFFLINE':
-            if event == 'start' :
-                self.state = 'RANDOM_NODE?'
-                self.Attempts=0
-                self.doDHTFindRandomNode(arg)
-            elif event == 'shutdown' :
-                self.state = 'CLOSED'
-                self.doDestroyMe(arg)
+            elif event == 'stop' :
+                self.state = 'STOPPED'
+                self.doStopListening(arg)
+                self.doUpdateMyIdentity(arg)
+                self.doReportStopped(arg)
         #---RANDOM_NODE?---
         elif self.state == 'RANDOM_NODE?':
             if event == 'found-one-node' :
                 self.state = 'ACK?'
-                self.doCleanPrevNode(arg)
                 self.doRememberNode(arg)
-                self.Attempts+=1
                 self.doSendMyIdentity(arg)
-            elif event == 'stop' :
-                self.state = 'OFFLINE'
-                self.doReportStopped(arg)
-            elif event == 'nodes-not-found' :
-                self.state = 'OFFLINE'
-                self.doReportNodesNotFound(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+            elif event == 'nodes-not-found' :
+                self.doWaitAndTryAgain(arg)
+            elif event == 'stop' :
+                self.state = 'STOPPED'
+                self.doReportStopped(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
-            if self.Attempts==5 and ( event == 'timer-10sec' or event == 'service-refused' ) :
-                self.state = 'OFFLINE'
-                self.doReportServiceRefused(arg)
-            elif event == 'service-accepted' :
+            if event == 'service-accepted' :
                 self.state = 'LISTEN'
                 self.doRememberProxyNode(arg)
                 self.doUpdateMyIdentity(arg)
@@ -166,14 +155,22 @@ class ProxyReceiver(automat.Automat):
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'stop' :
-                self.state = 'OFFLINE'
+                self.state = 'STOPPED'
                 self.doReportStopped(arg)
-            elif event == 'timer-10sec' and self.Attempts<5 :
+            elif event == 'timer-10sec' or event == 'service-refused' :
                 self.state = 'RANDOM_NODE?'
                 self.doDHTFindRandomNode(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
+        #---STOPPED---
+        elif self.state == 'STOPPED':
+            if event == 'start' :
+                self.state = 'RANDOM_NODE?'
+                self.doDHTFindRandomNode(arg)
+            elif event == 'shutdown' :
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
         return None
 
     def isAckFromNode(self, arg):
@@ -198,24 +195,19 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        lg.out(12, 'proxy_receiver.doDHTFindRandomNode')
-        new_key = dht_service.random_key()
-        d = dht_service.find_node(new_key)
-        d.addCallback(self._some_nodes_found)
-        d.addErrback(self._nodes_not_found)        
+        self._find_random_node()
 
+    def doWaitAndTryAgain(self, arg):
+        """
+        Action method.
+        """
+        reactor.callLater(10, self._find_random_node)
     
     def doSendMyIdentity(self, arg):
         """
         Action method.
         """
         p2p_service.SendIdentity(self.router_idurl, wide=True)
-
-    def doCleanPrevNode(self, arg):
-        """
-        Action method.
-        """
-        self.router_idurl = None
 
     def doSendRequestService(self, arg):
         """
@@ -295,8 +287,18 @@ class ProxyReceiver(automat.Automat):
         del _ProxyReceiver
         _ProxyReceiver = None
 
+    def _find_random_node(self):
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
+        new_key = dht_service.random_key()
+        d = dht_service.find_node(new_key)
+        d.addCallback(self._some_nodes_found)
+        d.addErrback(lambda x: self.automat('nodes-not-found'))
+        return d
+
     def _some_nodes_found(self, nodes):
-        lg.out(12, 'proxy_receiver._some_nodes_found : %d' % len(nodes))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver._some_nodes_found : %d' % len(nodes))
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')
@@ -304,9 +306,11 @@ class ProxyReceiver(automat.Automat):
             d.addErrback(lambda x: self.automat('nodes-not-found'))
         else:
             self.automat('nodes-not-found')
+        return nodes
             
     def _got_remote_idurl(self, response):
-        lg.out(14, 'proxy_receiver._got_remote_idurl response=%s' % str(response) )
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver._got_remote_idurl response=%s' % str(response) )
         try:
             idurl = response['idurl']
         except:
@@ -315,19 +319,13 @@ class ProxyReceiver(automat.Automat):
             self.automat('nodes-not-found')
             return response
         d = identitycache.immediatelyCaching(idurl)
-        d.addCallback(lambda src: self._got_remote_identity(src, idurl))
+        d.addCallback(lambda src: self.automat('found-one-node', idurl))
         d.addErrback(lambda x: self.automat('nodes-not-found'))
         return response
 
-    def _got_remote_identity(self, src, idurl):
-        self.automat('found-one-node', idurl)
-
-    def _nodes_not_found(self, err):
-        lg.out(12, 'proxy_receiver._nodes_not_found err=%s' % str(err))
-        self.automat('nodes-not-found')
-
     def _router_acked(self, response):
-        lg.out(12, 'proxy_receiver._router_acked response=%s' % str(response))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_receiver._router_acked response=%s' % str(response))
         #TODO
         
         

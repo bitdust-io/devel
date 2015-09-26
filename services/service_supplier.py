@@ -50,7 +50,7 @@ class SupplierService(LocalService):
     def stop(self):
         return True
     
-    def request(self, request):
+    def request(self, request, info):
         words = request.Payload.split(' ')
         try:
             bytes_for_customer = int(words[1])
@@ -109,7 +109,7 @@ class SupplierService(LocalService):
             lg.out(8, "    OLD CUSTOMER ACCEPTED !!!!!!!!!!!!!!")
         return p2p_service.SendAck(request, 'accepted')
     
-    def cancel(self, request):
+    def cancel(self, request, info):
         if not contactsdb.is_customer(request.OwnerID):
             lg.warn("got packet from %s, but he is not a customer" % request.OwnerID)
             return p2p_service.SendFail(request, 'not a customer')

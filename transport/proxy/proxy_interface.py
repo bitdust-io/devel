@@ -19,6 +19,8 @@ from twisted.internet.defer import succeed, fail
 
 from logs import lg
 
+from main import settings
+
 import proxy_receiver
 import proxy_sender
 
@@ -62,11 +64,14 @@ class GateInterface():
             _GateProxy = None
         return ret
 
-    def receive(self, options):
+    def connect(self, options):
         """
         """
-        lg.out(8, 'proxy_interface.receive %s' % options)
-        proxy_receiver.A('start', options)
+        lg.out(4, 'proxy_interface.connect %s' % str(options))
+        if settings.enablePROXYreceiving():
+            proxy_receiver.A('start')
+        if settings.enablePROXYsending():
+            proxy_sender.A('start')
         return True
 
     def disconnect(self):
@@ -74,6 +79,7 @@ class GateInterface():
         """
         lg.out(4, 'proxy_interface.disconnect')
         proxy_receiver.A('stop')
+        proxy_sender.A('stop')
         return succeed(True)
     
     def send_file(self, remote_idurl, filename, host, description='', single=False):
