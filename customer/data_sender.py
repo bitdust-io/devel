@@ -60,6 +60,11 @@ import io_throttle
 
 #------------------------------------------------------------------------------ 
 
+_Debug = False
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------ 
+
 _DataSender = None
 _ShutdownFlag = False
 
@@ -71,7 +76,7 @@ def A(event=None, arg=None):
     """
     global _DataSender
     if _DataSender is None:
-        _DataSender = DataSender('data_sender', 'READY', 4)
+        _DataSender = DataSender('data_sender', 'READY', _DebugLevel)
     if event is not None:
         _DataSender.automat(event, arg)
     return _DataSender
@@ -137,20 +142,25 @@ class DataSender(automat.Automat):
     
     def doScanAndQueue(self, arg):
         global _ShutdownFlag
-        lg.out(10, 'data_sender.doScanAndQueue _ShutdownFlag=%r' % _ShutdownFlag)
-        log = open(os.path.join(settings.LogsDir(), 'data_sender.log'), 'w')
-        log.write('doScanAndQueue %s\n' % time.asctime())
+        if _Debug:
+            lg.out(_DebugLevel, 'data_sender.doScanAndQueue _ShutdownFlag=%r' % _ShutdownFlag)
+        if _Debug:
+            log = open(os.path.join(settings.LogsDir(), 'data_sender.log'), 'w')
+            log.write('doScanAndQueue %s\n' % time.asctime())
         if _ShutdownFlag:
-            log.write('doScanAndQueue _ShutdownFlag is True\n')
+            if _Debug:
+                log.write('doScanAndQueue _ShutdownFlag is True\n')
             self.automat('scan-done')
-            log.flush()
-            log.close()
+            if _Debug:
+                log.flush()
+                log.close()
             return
         if '' not in contactsdb.suppliers():
             from storage import backup_matrix
             for backupID in misc.sorted_backup_ids(backup_matrix.local_files().keys(), True):
                 packetsBySupplier = backup_matrix.ScanBlocksToSend(backupID)
-                log.write('%s\n' % packetsBySupplier)
+                if _Debug:
+                    log.write('%s\n' % packetsBySupplier)
                 for supplierNum in packetsBySupplier.keys():
                     supplier_idurl = contactsdb.supplier(supplierNum)
                     if not supplier_idurl:
@@ -165,10 +175,12 @@ class DataSender(automat.Automat):
                             lg.warn('?supplierNum? %s for %s' % (packetID, backupID))
                             continue
                         if io_throttle.HasPacketInSendQueue(supplier_idurl, packetID):
-                            log.write('%s in the send queue to %s\n' % (packetID, supplier_idurl))
+                            if _Debug:
+                                log.write('%s in the send queue to %s\n' % (packetID, supplier_idurl))
                             continue
                         if not io_throttle.OkToSend(supplier_idurl):
-                            log.write('ok to send %s ? - NO!\n' % supplier_idurl)
+                            if _Debug:
+                                log.write('ok to send %s ? - NO!\n' % supplier_idurl)
                             continue
                         # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
                         # if len(tranByID) > 3:
@@ -176,7 +188,8 @@ class DataSender(automat.Automat):
                         #     continue
                         filename = os.path.join(settings.getLocalBackupsDir(), packetID)
                         if not os.path.isfile(filename):
-                            log.write('%s is not file\n' % filename)
+                            if _Debug:
+                                log.write('%s is not file\n' % filename)
                             continue
                         if io_throttle.QueueSendFile(
                                 filename, 
@@ -185,17 +198,20 @@ class DataSender(automat.Automat):
                                 my_id.getLocalID(), 
                                 self._packetAcked, 
                                 self._packetFailed):
-                            log.write('io_throttle.QueueSendFile %s\n' % packetID)
+                            if _Debug:
+                                log.write('io_throttle.QueueSendFile %s\n' % packetID)
                         else:
-                            log.write('io_throttle.QueueSendFile FAILED %s\n' % packetID)
+                            if _Debug:
+                                log.write('io_throttle.QueueSendFile FAILED %s\n' % packetID)
                         # lg.out(6, '  %s for %s' % (packetID, backupID))
                         
                         # DEBUG
                         # break
                         
         self.automat('scan-done')
-        log.flush()
-        log.close()
+        if _Debug:
+            log.flush()
+            log.close()
         
     def doPrintStats(self, arg):
         """
@@ -226,18 +242,22 @@ class DataSender(automat.Automat):
         from storage import backup_matrix
         from storage import restore_monitor
         from storage import backup_rebuilder
-        lg.out(10, 'data_sender.doRemoveUnusedFiles')
+        if _Debug:
+            lg.out(_DebugLevel, 'data_sender.doRemoveUnusedFiles')
         for backupID in misc.sorted_backup_ids(backup_matrix.local_files().keys()):
             if restore_monitor.IsWorking(backupID):
-                lg.out(10, '        %s : SKIP, because restoring' % backupID)
+                if _Debug:
+                    lg.out(_DebugLevel, '        %s : SKIP, because restoring' % backupID)
                 continue
             if backup_rebuilder.IsBackupNeedsWork(backupID):
-                lg.out(10, '        %s : SKIP, because needs rebuilding' % backupID)
+                if _Debug:
+                    lg.out(_DebugLevel, '        %s : SKIP, because needs rebuilding' % backupID)
                 continue
             if not backup_rebuilder.ReadStoppedFlag():
                 if backup_rebuilder.A().currentBackupID is not None:
                     if backup_rebuilder.A().currentBackupID == backupID:
-                        lg.out(10, '        %s : SKIP, because rebuilding is in process' % backupID)
+                        if _Debug:
+                            lg.out(_DebugLevel, '        %s : SKIP, because rebuilding is in process' % backupID)
                         continue
             packets = backup_matrix.ScanBlocksToRemove(backupID, settings.getGeneralWaitSuppliers())
             for packetID in packets:
@@ -250,7 +270,8 @@ class DataSender(automat.Automat):
                         lg.exc()
                         continue
                     count += 1
-        lg.out(10, '    %d files were removed' % count)
+        if _Debug:
+            lg.out(_DebugLevel, '    %d files were removed' % count)
         backup_matrix.ReadLocalFiles()
                          
     def _packetAcked(self, packet, ownerID, packetID):
