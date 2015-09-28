@@ -28,6 +28,8 @@ from logs import lg
 
 from lib import nameurl
 
+from userid import my_id
+
 import udp_node
 import udp_session
 
@@ -102,6 +104,15 @@ class GateInterface():
         udp_node.A('go-offline')
         return succeed(True)
 
+    def build_contacts(self):
+        """
+        """
+        result = []
+        lid = my_id.getLocalIdentity()
+        result.append('udp://%s@%s' % (lid.getIDName().lower(),lid.getIDHost()))
+        lg.out(4, 'udp_interface.build_contacts : %s' % str(result))
+        return result
+    
     def send_file(self, remote_idurl, filename, host, description='', single=False):
         """
         """

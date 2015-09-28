@@ -82,6 +82,20 @@ class GateInterface():
         proxy_sender.A('stop')
         return succeed(True)
     
+    def build_contacts(self):
+        """
+        """
+        if not proxy_receiver.A().router_identity:
+            # if not yet found one node to route your traffic - do nothing
+            lg.out(4, 'proxy_interface.build_contacts SKIP, router not yet found')
+            return []
+        # switch contacts - use router contacts instead of my 
+        # he will get all packets sent to my and redirect to my
+        result = proxy_receiver.A().router_identity.getContacts()
+        lg.out(4, 'proxy_interface.build_contacts %s : %s' % (
+            proxy_receiver.A().router_identity.getIDName(), str(result)))
+        return result
+    
     def send_file(self, remote_idurl, filename, host, description='', single=False):
         """
         """

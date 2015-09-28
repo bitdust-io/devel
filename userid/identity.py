@@ -72,6 +72,7 @@ contact: http://foobar.com/data.pl    (use a web account to forward requests/dat
 scrubbers: URL1, URL2, URL3           (people who can access our data if we stop checking it)
 date
 version number
+revision number
 signature on all identity info
 
 Contact list has enough info we can tell what protocol to use.
@@ -100,7 +101,7 @@ any ISP anywhere (pair.com etc), and users always use 3 identity servers,
 then we could just pop up as many as needed on ISPs all over
 the world as fast as we grew.  It would not be an infrastructure
 limitation really.  And we don't need to farm it out.
-Identity's are signed and have a version number, so an identity
+Identity's are signed and have a revision number, so an identity
 server can pass on an update that it gets to other servers listed
 for that identity (in case there is network partition funnyness)
 to help keep all of them updated. 
@@ -137,12 +138,13 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
   </certificates>
   <scrubbers>
   </scrubbers>
-  <postage>1
+  <postage>
   </postage>
   <date></date>
-  <version>0</version>
+  <version></version>
   <publickey></publickey>
   <signature></signature>
+  <revision>0</revision>
 </identity>"""
 
 #------------------------------------------------------------------------------ 
@@ -158,7 +160,8 @@ class identity:
         * contacts : list of ways to contact this identity
         * scrubbers : list of URLs for people allowed to scrub
         * date : the date an time when that identity was created 
-        * version : a version string
+        * version : a version string - some info about BitDust software and platform
+        * revision : every time identity were modified this value will be increased by 1
         * signature : digital signature to protect the file
     """
     sources = []        # list of URLs, first is primary URL and name
@@ -167,7 +170,8 @@ class identity:
     contacts = []       # list of ways to contact this identity
     scrubbers = []      # list of URLs for people allowed to scrub
     date = ""           # date
-    version = "0"       # version string
+    version = ""        # version string
+    revision = 0        # revision number, every time my id were modified this value will be increased by 1
     signature = ""      # digital signature
 
     def __init__ (  self,
@@ -176,9 +180,10 @@ class identity:
                     publickey = '',
                     contacts = [],
                     scrubbers = [],
-                    postage = "1",
+                    postage = "",
                     date = "",
-                    version = "0",
+                    version = "",
+                    revision = 0,
                     xmlsrc = None,
                     filename = '' ):
 
@@ -190,6 +195,7 @@ class identity:
         self.postage = postage
         self.date = date
         self.version = version
+        self.revision = revision
 
         if publickey != '':
             self.sign()
@@ -216,9 +222,10 @@ class identity:
         self.contacts = []     # list of ways to contact this identity
         self.scrubbers = []    # list of URLs for people allowed to scrub
         self.date = ''         # date
-        self.postage = '1'     # postage price for message delivery if not on correspondents list
-        self.version = '0'     # version string
+        self.postage = ''     # postage price for message delivery if not on correspondents list
+        self.version = ''     # version string
         self.signature = ''    # digital signature
+        self.revision = 0       # revision number
 
     def default(self):
         """
@@ -505,7 +512,12 @@ class identity:
         sr = ''
         for i in self.sources:
             sr += i
-        stufftohash = c + sep + s + sep + sr + sep + self.version + sep + self.postage + sep + self.date.replace(' ', '_')
+        stufftohash = c + sep + s
+        stufftohash += sep + sr 
+        stufftohash += sep + self.version
+        stufftohash += sep + self.postage
+        stufftohash += sep + self.date.replace(' ', '_')
+        stufftohash += sep + str(self.revision) 
         hashcode = key.Hash(stufftohash)          
         return hashcode
 
@@ -571,8 +583,10 @@ class identity:
         Call this to convert to XML format. 
         """
         impl = getDOMImplementation()
+        
         doc = impl.createDocument(None, 'identity', None)
         root = doc.documentElement
+        
         contacts = doc.createElement('contacts')
         root.appendChild(contacts)
         for contact in self.contacts:
@@ -613,6 +627,10 @@ class identity:
         version.appendChild(doc.createTextNode(self.version))
         root.appendChild(version)
 
+        revision = doc.createElement('revision')
+        revision.appendChild(doc.createTextNode(str(self.revision)))
+        root.appendChild(revision)
+
         publickey = doc.createElement('publickey')
         publickey.appendChild(doc.createTextNode(self.publickey))
         root.appendChild(publickey)
@@ -628,7 +646,7 @@ class identity:
         This is to load identity fields from DOM object - used during ``unserialize`` procedure.
         """
         if root_node is None:
-            return
+            return False
         try:
             for xsection in root_node.childNodes:
                 if xsection.nodeType != Node.ELEMENT_NODE:
@@ -638,88 +656,59 @@ class identity:
                         for xcontact in xcontacts.childNodes:
                             if (xcontact.nodeType == Node.TEXT_NODE):
                                 self.contacts.append(xcontact.wholeText.strip().encode())
+                                break
                 elif xsection.tagName == 'sources':
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
                             if (xsource.nodeType == Node.TEXT_NODE):
                                 self.sources.append(xsource.wholeText.strip().encode())
+                                break
                 elif xsection.tagName == 'certificates':
                     for xcertificates in xsection.childNodes:
                         for xcertificate in xcertificates.childNodes:
                             if (xcertificate.nodeType == Node.TEXT_NODE):
                                 self.certificates.append(xcertificate.wholeText.strip().encode())
+                                break
                 elif xsection.tagName == 'scrubbers':
                     for xscrubbers in xsection.childNodes:
                         for xscrubber in xscrubbers.childNodes:
                             if (xscrubber.nodeType == Node.TEXT_NODE):
                                 self.scrubbers.append(xscrubber.wholeText.strip().encode())
+                                break
                 elif xsection.tagName == 'publickey':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.publickey=xkey.wholeText.strip().encode()
+                            self.publickey = xkey.wholeText.strip().encode()
+                            break
                 elif xsection.tagName == 'postage':
                     for xpostage in xsection.childNodes:
                         if (xpostage.nodeType == Node.TEXT_NODE):
-                            self.date=xpostage.wholeText.strip().encode()
+                            self.date = xpostage.wholeText.strip().encode()
+                            break
                 elif xsection.tagName == 'date':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.date=xkey.wholeText.strip().encode()
+                            self.date = xkey.wholeText.strip().encode()
+                            break
                 elif xsection.tagName == 'version':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.version=xkey.wholeText.strip().encode()
+                            self.version = xkey.wholeText.strip().encode()
+                            break
+                elif xsection.tagName == 'revision':
+                    for xkey in xsection.childNodes:
+                        if (xkey.nodeType == Node.TEXT_NODE):
+                            self.revision = int(xkey.wholeText.strip().encode())
+                            break
                 elif xsection.tagName == 'signature':
                     for xkey in xsection.childNodes:
                         if (xkey.nodeType == Node.TEXT_NODE):
-                            self.signature=xkey.wholeText.strip().encode()
+                            self.signature = xkey.wholeText.strip().encode()
+                            break
         except:
             lg.exc()
-
-#-------------------------------------------------------------------------------
-
-def makeDefaultIdentity(name='', ip=''):
-    """
-    Use some local settings and config files to create some new identity.
-    Nice to provide a user name or it will have a form like: [ip address]_[date].     
-    """
-    # import lib.misc
-    import my_id
-    from lib import misc
-    lg.out(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
-    if ip == '':
-        ip = bpio.ReadTextFile(settings.ExternalIPFilename())
-    if name == '':
-        name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
-    servername = settings.IdentityServerName()
-    url = 'http://'+servername+'/'+name.lower()+'.xml'
-
-    ident = identity(xmlsrc=default_identity_src)
-    ident.sources.append(url.encode("ascii").strip())
-    ident.certificates=[]
-    cdict = {}
-    if settings.enableTCP() and settings.enableTCPreceiving():
-        cdict['tcp'] = 'tcp://'+ip+':'+str(settings.getTCPPort())
-    if settings.enableUDP():
-        cdict['udp'] = 'udp://%s@%s' % (name.lower(), servername)
-    if settings.enablePROXY() and settings.enablePROXYreceiving():
-        cdict['proxy'] = 'proxy://%s@%s' % (name.lower(), servername)
-
-    for c in my_id.getValidTransports():
-        if cdict.has_key(c):
-            ident.contacts.append(cdict[c].encode("ascii").strip())
-
-    ident.publickey = key.MyPublicKey()
-    ident.date = time.strftime('%b %d, %Y')
-    ident.postage = "1"
-
-    vernum = bpio.ReadTextFile(settings.VersionNumberFile())
-    repo, location = misc.ReadRepoLocation()
-    ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
-
-    ident.sign()
-
-    return ident
+            return False
+        return True
 
 #-------------------------------------------------------------------------------
 
@@ -756,7 +745,8 @@ def test2():
     """
     More tests.
     """
-    ident = makeDefaultIdentity()
+    from userid import my_id
+    ident = my_id.buildDefaultIdentity()
     print ident.serialize() 
 
 #------------------------------------------------------------------------------ 
@@ -773,7 +763,7 @@ def main():
         print my_id.getLocalIdentity().serialize()
         print 'Valid is: ', my_id.getLocalIdentity().Valid()
     else:
-        my_id.setLocalIdentity(makeDefaultIdentity(sys.argv[1]))
+        my_id.setLocalIdentity(my_id.buildDefaultIdentity(sys.argv[1]))
         my_id.saveLocalIdentity()
         print my_id.getLocalIdentity().serialize()
         print 'Valid is: ', my_id.getLocalIdentity().Valid()

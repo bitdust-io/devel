@@ -56,6 +56,7 @@ from p2p import p2p_service
 #------------------------------------------------------------------------------ 
 
 _ProxyRouter = None
+_MaxRoutesNumber = 20
 
 #------------------------------------------------------------------------------ 
 
@@ -168,20 +169,24 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
+        global _MaxRoutesNumber
         from p2p import commands
         request, info = arg
         target = request.CreatorID
         if request.Command == commands.RequestService():
-            if not self.routes.has_key(target):
+            if len(self.routes) < _MaxRoutesNumber:
                 self.routes[target] = (info.proto, info.host, time.time())
                 p2p_service.SendAck(request, 'accepted')
-                return
+            else:
+                p2p_service.SendAck(request, 'rejected')
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
                 self.routes.pop(target)
                 p2p_service.SendAck(request, 'accepted')
-                return
-        p2p_service.SendAck(request, 'rejected')
+            else:
+                p2p_service.SendAck(request, 'rejected')
+        else:
+            p2p_service.SendFail(request, 'wrong command or payload')
 
     def doUnregisterAllRouts(self, arg):
         """

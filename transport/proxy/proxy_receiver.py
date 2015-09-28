@@ -62,7 +62,7 @@ def A(event=None, arg=None):
     global _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
-        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP')
+        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', _DebugLevel)
     if event is not None:
         _ProxyReceiver.automat(event, arg)
     return _ProxyReceiver
@@ -83,6 +83,9 @@ class ProxyReceiver(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of proxy_receiver() machine.
         """
+        self.router_idurl = None
+        self.router_identity = None
+        self.request_service_packet_id = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -176,9 +179,6 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        self.router_idurl = None
-        self.router_identity = None
-        self.request_service_packet_id = None
 
     def doDHTFindRandomNode(self, arg):
         """

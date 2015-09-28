@@ -1513,6 +1513,16 @@ def enablePROXYreceiving(enable=None):
         return config.conf().getBool('services/proxy-transport/receiving-enabled')
     config.conf().setData('services/proxy-transport/receiving-enabled', str(enable))
  
+def getTransportPriority(proto):
+    """
+    """
+    return config.conf().getInt('services/%s-transport/priority' % proto, 1)
+
+def setTransportPriority(proto, value):
+    """
+    """
+    return config.conf().setInt('services/%s-transport/priority' % proto, value)
+ 
 def setDHTPort(port):
     """
     Set a UDP port number for entangled "DHT" network.  
@@ -2038,15 +2048,18 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/tcp-transport/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/tcp-transport/sending-enabled', 'true')
+    config.conf().setDefaultValue('services/tcp-transport/priority', 10)
     config.conf().setDefaultValue('services/udp-datagrams/enabled', 'true')
     config.conf().setDefaultValue('services/udp-datagrams/udp-port', DefaultUDPPort())
     config.conf().setDefaultValue('services/udp-transport/enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
+    config.conf().setDefaultValue('services/udp-transport/priority', 20)
     config.conf().setDefaultValue('services/proxy-server/enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/sending-enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/receiving-enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-transport/priority', 30)
 
 def _createNotExisingSettings():
     """

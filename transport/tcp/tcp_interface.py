@@ -28,7 +28,9 @@ from twisted.internet.defer import fail
 
 from logs import lg
 
-from system import bpio
+from main import settings
+
+from lib import misc
 
 import tcp_node
 
@@ -70,22 +72,45 @@ class GateInterface():
         return ret
 
     def connect(self, options):
+        """
+        """
         lg.out(4, 'tcp_interface.connect %s' % str(options))
         tcp_node.start_streams()
         return tcp_node.receive(options)
 
     def disconnect(self):
+        """
+        """
         lg.out(4, 'tcp_interface.disconnect')
         tcp_node.stop_streams()
         tcp_node.close_connections()
         return tcp_node.disconnect()
     
+    def build_contacts(self):
+        """
+        """
+        result = []
+        nowip = misc.readExternalIP()
+        result.append('tcp://%s:%s' % (nowip, str(settings.getTCPPort())))
+        # TODO:
+        #    # if IP is not external and upnp configuration was failed for some reasons
+        #    # we may want to use another contact methods, NOT tcp
+        #    if IPisLocal() and run_upnpc.last_result('tcp') != 'upnp-done':
+        #        lg.out(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
+        #        lid.pushProtoContact('tcp')
+        lg.out(4, 'tcp_interface.build_contacts : %s' % str(result))
+        return result
+    
     def send_file(self, remote_idurl, filename, host, description=''):
+        """
+        """
         host = host.split(':')
         host = (host[0], int(host[1]))
         return tcp_node.send(filename, host, description, False)
 
     def send_file_single(self, remote_idurl, filename, host, description=''):
+        """
+        """
         host = host.split(':')
         host = (host[0], int(host[1]))
         return tcp_node.send(filename, host, description, True)

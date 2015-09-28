@@ -55,7 +55,6 @@ from system import bpio
 
 from main import settings
 
-from lib import misc
 from lib import net_misc
 
 from automats import automat
@@ -93,17 +92,17 @@ def inbox(newpacket, info, status, message):
             # because we do not want to use this proto as first method if it is not working for all
             if info.proto not in active_protos():
                 lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
-                lg.out(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
+                lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
                 active_protos().add(info.proto)
     elif info.proto in ['udp',]:
         if info.proto not in active_protos():
             lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
-            lg.out(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
+            lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     elif info.proto in ['proxy',]:
         if info.proto not in active_protos():
             lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
-            lg.out(2, '                    We got the first packet from %s://%s' % (info.proto, str(info.host)))
+            lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     A('inbox-packet', (newpacket, info, status, message))
 
@@ -144,7 +143,6 @@ class P2PConnector(automat.Automat):
     def init(self):
         self.log_events = True
         self.identity_changed = False
-        self.version_number = ''
 
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('P2P ' + newstate)
@@ -238,12 +236,16 @@ class P2PConnector(automat.Automat):
         propagate.single(arg, wide=True)
 
     def doInit(self, arg):
-        self.version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
-        lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(self.version_number))
+        version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
+        lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
         callback.add_inbox_callback(inbox)
         
     def doUpdateMyIdentity(self, arg):
-        self.identity_changed = self._update_my_identity()
+        lg.out(4, 'p2p_connector.doUpdateMyIdentity')
+        self.identity_changed = my_id.rebuildLocalIdentity()
+        if self.identity_changed:
+            # erase all stats about received packets
+            active_protos().clear()
         self.automat('my-id-updated')
         
     def doPropagateMyIdentity(self, arg):
@@ -294,6 +296,23 @@ class P2PConnector(automat.Automat):
         #if no protocols in local identity - do nothing
         if len(order) == 0:
             return True
+        # when transport proxy is working we do not need to check our contacts at all
+        if settings.transportIsEnabled('proxy'):
+            if driver.is_started('service_proxy_transport'):
+                if settings.transportReceivingIsEnabled('proxy'):
+                    from transport.proxy import proxy_receiver  
+                    if proxy_receiver.A().router_identity:
+                        contacts_is_ok = True
+                        router_protos = proxy_receiver.A().router_identity.getContactsByProto().items()
+                        if lid.getContactsNumber() != router_protos.getContactsNumber():
+                            contacts_is_ok = False
+                        if contacts_is_ok:
+                            for proto, contact in router_protos:
+                                if lid.getProtoContact(proto) != contact:
+                                    contacts_is_ok = False
+                        if contacts_is_ok:
+                            lg.out(6, 'p2p_connector._check_to_use_best_proto returning True : proxy_transport is fine :-)')
+                            return True    
         first = order[0]
         #if first contact in local identity is not working yet
         #but there is another working methods - switch first method
@@ -360,7 +379,7 @@ class P2PConnector(automat.Automat):
         # other users must know our new contacts
         my_id.setLocalIdentity(lid)
         my_id.saveLocalIdentity() 
-    
+
 #    def _is_id_changed(self, changes):
 #        s = set(changes)
 #        if s.intersection([
@@ -375,83 +394,4 @@ class P2PConnector(automat.Automat):
 #        # if 'transport.transport-udp.transport-udp-port' in s and settings.enableUDP():
 #        #     return True
 #        return False
-    
-    def _update_my_identity(self):
-        """
-        If some transports was enabled or disabled we want to update identity contacts.
-        Just empty all of the contacts and create it again in the same order.
-        """
-        #getting local identity
-        lid = my_id.getLocalIdentity()
-        oldcontats = lid.getContactsByProto()
-        nowip = misc.readExternalIP()
-        order = lid.getProtoOrder()
-        lid.clearContacts()
-        # prepare contacts data
-        cdict = {}
-        # TCP
-        if driver.is_started('service_tcp_transport'):
-            if settings.enableTCPreceiving():
-                cdict['tcp'] = 'tcp://%s:%s' % (
-                    nowip,
-                    str(settings.getTCPPort()))
-        # UDP
-        if driver.is_started('service_udp_transport'):
-            if settings.enableUDPreceiving():
-                cdict['udp'] = 'udp://%s@%s' % (
-                    lid.getIDName().lower(), 
-                    lid.getIDHost())
-        # PROXY
-        if driver.is_started('service_proxy_transport'):
-            # when proxy transport is started
-            if settings.enablePROXYreceiving(): 
-                # and receiving via proxy is enabled
-                from transport.proxy import proxy_receiver
-                if proxy_receiver.A().router_identity:
-                    cdict['proxy'] = 'proxy://%s@%s' % (
-                        proxy_receiver.A().router_identity.getIDName(), 
-                        proxy_receiver.A().router_identity.getIDHost(),)
-        # making full order list
-        for proto in cdict.keys():
-            if proto not in order:
-                order.append(proto)
-        # add contacts data to the local identity
-        # check if some transport is not installed
-        for proto in order:
-            if settings.transportIsEnabled(proto) and settings.transportReceivingIsEnabled(proto):
-                contact = cdict.get(proto, None)
-                if contact is not None:
-                    lid.setProtoContact(proto, contact)
-            else:
-                # if protocol is disabled - mark this
-                # because we may want to turn it on in the future
-                active_protos().discard(proto)
-        del order
-        # TODO:
-        #    # if IP is not external and upnp configuration was failed for some reasons
-        #    # we may want to use another contact methods, NOT tcp
-        #    if IPisLocal() and run_upnpc.last_result('tcp') != 'upnp-done':
-        #        lg.out(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
-        #        lid.pushProtoContact('tcp')
-        # update software version number
-        repo, location = misc.ReadRepoLocation()
-        lid.version = (self.version_number.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
-        # generate signature with changed content
-        lid.sign()
-        # remember the identity
-        my_id.setLocalIdentity(lid)
-        # finally saving local identity
-        my_id.saveLocalIdentity()
-        lg.out(4, 'p2p_connector.UpdateIdentity')
-        lg.out(4, '    version: %s' % str(lid.version))
-        lg.out(4, '    contacts: %s' % str(lid.contacts))
-        changed = False
-        for proto, contact in my_id.getLocalIdentity().getContactsByProto().items():
-            if proto not in oldcontats.keys():
-                changed = True
-                break
-            if contact != oldcontats.get(proto, ''):
-                changed = True
-                break
-        return changed
 
