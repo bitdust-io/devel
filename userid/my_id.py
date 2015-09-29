@@ -368,17 +368,17 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     return ident
 
     
-def rebuildLocalIdentity(self):
+def rebuildLocalIdentity():
     """
     If some transports was enabled or disabled we want to update identity contacts.
     Just empty all of the contacts and create it again in the same order.
     Also increase revision number by one - others may keep track of my modifications.
     """
-    # remember the current identity - full XML source code   
-    current_identity_xmlsrc = getLocalIdentity().serialize()
-    lg.out(4, 'my_id.rebuildLocalIdentity current identity is %d bytes long' % len(current_identity_xmlsrc))
     # getting current copy of local identity
     lid = getLocalIdentity()
+    # remember the current identity - full XML source code   
+    current_identity_xmlsrc = lid.serialize()
+    lg.out(4, 'my_id.rebuildLocalIdentity current identity is %d bytes long' % len(current_identity_xmlsrc))
     # create a full list of needed transport methods
     # to be able to accept incoming traffic from other nodes
     new_contacts, new_order = buildProtoContacts(lid)
@@ -392,8 +392,9 @@ def rebuildLocalIdentity(self):
             continue
         lid.setProtoContact(proto, contact)
     # update software version number
+    vernum = bpio.ReadTextFile(settings.VersionNumberFile())
     repo, location = misc.ReadRepoLocation()
-    lid.version = (self.version_number.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
+    lid.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
     # generate signature with changed content
     lid.sign()
     changed = False
@@ -404,13 +405,13 @@ def rebuildLocalIdentity(self):
         lid.revision = str(int(lid.revision)+1)   
         # generate signature again because revision were changed !!!
         lid.sign()
-        lg.out(4, '    revision add: %s' % lid.revision)
+        lg.out(4, '    add revision: %s' % lid.revision)
         changed = True
         # remember the new identity
         setLocalIdentity(lid)
     lg.out(4, '    version: %s' % str(lid.version))
     lg.out(4, '    contacts: %s' % str(lid.contacts))
-    lg.out(4, '    %s identity contacts has %been changed' % (('' if changed else 'NOT ')))
+    lg.out(4, '    identity contacts has %sbeen changed' % (('' if changed else 'not ')))
 
     if changed:
         # finally saving modified local identity

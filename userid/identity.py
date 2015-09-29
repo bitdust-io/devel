@@ -250,8 +250,6 @@ class identity:
             return False
         if self.signature == '':
             return False
-        if self.revision == '':
-            return False
         return True
 
     def makehash(self):
@@ -268,13 +266,30 @@ class identity:
         hsh = ''
         hsh += sep + sep.join(self.sources)
         hsh += sep + sep.join(self.contacts)
-        hsh += sep + sep.join(self.certificates)
+        # hsh += sep + sep.join(self.certificates)
         hsh += sep + sep.join(self.scrubbers) 
         hsh += sep + self.postage
         hsh += sep + self.date.replace(' ', '_')
         hsh += sep + self.version
         hsh += sep + self.revision
         hashcode = key.Hash(hsh)          
+        return hashcode
+
+    def makehash_old(self):
+        """
+        """
+        sep = "-"
+        c = ''
+        for i in self.contacts:
+            c += i
+        s = ''
+        for i in self.scrubbers:
+            s += i
+        sr = ''
+        for i in self.sources:
+            sr += i
+        stufftohash = c + sep + s + sep + sr + sep + self.version + sep + self.postage + sep + self.date.replace(' ', '_')
+        hashcode = key.Hash(stufftohash)          
         return hashcode
 
     def sign(self):
@@ -299,6 +314,13 @@ class identity:
             self.publickey,
             hashcode,
             str(self.signature))
+        if not result:
+            # TODO: old code still has old identity format - but it is valid
+            hashcode = self.makehash_old()
+            result = key.VerifySignature(
+                self.publickey,
+                hashcode,
+                str(self.signature))
         return result
 
     #------------------------------------------------------------------------------ 
