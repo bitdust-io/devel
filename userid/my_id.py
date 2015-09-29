@@ -201,7 +201,7 @@ def validateTransports(orderL):
         if isValidTransport(transport):
             transports.append(transport)
         else:
-            lg.warn('invalid entry int transport list: %s , ignored' % str(transport))
+            lg.warn('invalid entry in transport list: %s , ignored' % str(transport))
     if len(transports) == 0:
         lg.out(1, 'my_id.validateTransports ERROR no valid transports, using default transports ' + str(_ValidTransports))
         transports = _ValidTransports
@@ -284,14 +284,14 @@ def buildProtoContacts(lid):
                 clist.reverse()
                 for contact in clist: 
                     cproto, cdata = contact.split('://')
-                    cdict[cproto] = cdata
+                    cdict[cproto] = contact
                     if cproto in new_order:
                         new_order.remove(cproto)
                     new_order.insert(0, proto)
             else:
                 for contact in clist: 
                     cproto, cdata = contact.split('://')
-                    cdict[cproto] = cdata
+                    cdict[cproto] = contact
                     if cproto in new_order:
                         new_order.remove(cproto)
                     if cproto in current_order and current_order.index(cproto) == 0:
