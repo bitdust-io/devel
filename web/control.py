@@ -234,8 +234,9 @@ def stop_updating():
     _UpdateFlag = None
 
 def request_update():
-    lg.out(2, 'request_update')
     global _UpdateFlag
+    if not _UpdateFlag:
+        lg.out(8, 'control.request_update  _UpdateFlag were set to True')
     _UpdateFlag = True
 
 def set_updated():

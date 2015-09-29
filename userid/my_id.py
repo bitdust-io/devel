@@ -32,6 +32,7 @@ from system import bpio
 from main import settings
 
 from lib import misc
+from lib import nameurl
 
 from crypt import key 
 
@@ -138,7 +139,7 @@ def loadLocalIdentity():
         return
     lid = identity.identity(xmlsrc=xmlid)
     if not lid.Valid():
-        lg.out(2, "my_id.loadLocalIdentity ERROR local identity is not Valid")
+        lg.out(2, "my_id.loadLocalIdentity ERROR loaded identity is not Valid")
         return
     _LocalIdentity = lid
     _LocalIDURL = lid.getIDURL()
@@ -252,6 +253,7 @@ def buildProtoContacts(lid):
     # prepare contacts
     current_contats = lid.getContactsByProto()
     current_order = lid.getProtoOrder()
+    lg.out(4, 'my_id.buildProtoContacts')
     lg.out(4, '    current contacts: %s' % str(current_contats))
     lg.out(4, '    current order: %s' % str(current_order))
     new_contacts = {}
@@ -302,7 +304,7 @@ def buildProtoContacts(lid):
     return new_contacts, new_order
 
 
-def buildDefaultIdentity(name='', ip='', id_server = 'localhost'):
+def buildDefaultIdentity(name='', ip='', idurls=[]):
     """
     Use some local settings and config files to create some new identity.
     Nice to provide a user name or it will have a form like: [ip address]_[date].     
@@ -311,19 +313,29 @@ def buildDefaultIdentity(name='', ip='', id_server = 'localhost'):
         ip = bpio.ReadTextFile(settings.ExternalIPFilename())
     if name == '':
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
-    lg.out(4, 'identity.makeDefaultIdentity: %s %s' % (name, ip))
+    lg.out(4, 'my_id.buildDefaultIdentity: %s %s' % (name, ip))
     # create a new identity object
     # it is stored in memory and another copy on disk drive 
-    ident = identity(xmlsrc=identity.default_identity_src)
+    ident = identity.identity(xmlsrc=identity.default_identity_src)
     # this is my IDURL address
     # you can have many IDURL locations for same identity
     # just need to keep all them synchronized
-    # this is identity propagate procedure, see p2p/propagate.py 
-    idurl = 'http://'+id_server+'/'+name.lower()+'.xml'
-    ident.sources.append(idurl.encode("ascii").strip())
+    # this is identity propagate procedure, see p2p/propagate.py
+    if len(idurls) == 0:
+        idurls.append('http://localhost/'+name.lower()+'.xml')
+    for idurl in idurls: 
+        ident.sources.append(idurl.encode("ascii").strip())
     # create a full list of needed transport methods
     # to be able to accept incoming traffic from other nodes
     new_contacts, new_order = buildProtoContacts(ident)
+    if len(new_contacts) == 0:
+        if settings.enableTCP() and settings.enableTCPreceiving():
+            new_contacts['tcp'] = 'tcp://'+ip+':'+str(settings.getTCPPort())
+            new_order.append('tcp')
+        if settings.enableUDP() and settings.enableUDPreceiving():
+            x, servername, x, x = nameurl.UrlParse(ident.sources[0])
+            new_contacts['udp'] = 'udp://%s@%s' % (name.lower(), servername)
+            new_order.append('udp')
     # erase current contacts from my identity
     ident.clearContacts()
     # add contacts data to the local identity
@@ -337,7 +349,7 @@ def buildDefaultIdentity(name='', ip='', id_server = 'localhost'):
     ident.certificates = []
     ident.date = time.strftime('%b %d, %Y')
     ident.postage = "1"
-    ident.revision = 0
+    ident.revision = "0"
     # update software version number
     version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
     repo, location = misc.ReadRepoLocation()
@@ -350,6 +362,9 @@ def buildDefaultIdentity(name='', ip='', id_server = 'localhost'):
     ident.publickey = key.MyPublicKey()
     # generate signature
     ident.sign()
+    # validate new identity
+    if not ident.Valid():
+        lg.warn('generated identity is not valid !!!') 
     return ident
 
     
@@ -361,6 +376,7 @@ def rebuildLocalIdentity(self):
     """
     # remember the current identity - full XML source code   
     current_identity_xmlsrc = getLocalIdentity().serialize()
+    lg.out(4, 'my_id.rebuildLocalIdentity current identity is %d bytes long' % len(current_identity_xmlsrc))
     # getting current copy of local identity
     lid = getLocalIdentity()
     # create a full list of needed transport methods
@@ -383,12 +399,12 @@ def rebuildLocalIdentity(self):
     changed = False
     if lid.serialize() == current_identity_xmlsrc:
         # no modifications in my identity - cool !!!
-        lg.out(4, '    same revision: %d' % lid.revision)
+        lg.out(4, '    same revision: %s' % lid.revision)
     else:
-        lid.revision += 1   
+        lid.revision = str(int(lid.revision)+1)   
         # generate signature again because revision were changed !!!
         lid.sign()
-        lg.out(4, '    revision add: %d' % lid.revision)
+        lg.out(4, '    revision add: %s' % lid.revision)
         changed = True
         # remember the new identity
         setLocalIdentity(lid)

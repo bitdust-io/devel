@@ -88,15 +88,16 @@ def InitMyKey(keyfilename=None):
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     if os.path.exists(keyfilename):
-        lg.out(4, 'key.InitMyKey load private key from\n        %s' % keyfilename)
         _MyPubKey = keys.Key.fromFile(keyfilename)
         _MyRsaKey = _MyPubKey.keyObject
+        lg.out(4, 'key.InitMyKey loaded private key from %s' % (keyfilename))
     else:
         lg.out(4, 'key.InitMyKey generate new private key')
         _MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)       
         _MyPubKey = keys.Key(_MyRsaKey)
         keystring = _MyPubKey.toString('openssh')
         bpio.WriteFile(keyfilename, keystring)
+        lg.out(4, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
 
 def ForgetMyKey():
     """

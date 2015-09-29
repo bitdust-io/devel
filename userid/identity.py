@@ -116,7 +116,12 @@ from xml.dom.minidom import getDOMImplementation
 
 #------------------------------------------------------------------------------ 
 
-from logs import lg
+try:
+    from logs import lg
+except:
+    dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
+    sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
+    from logs import lg
 
 from main import settings
 
@@ -130,21 +135,16 @@ from crypt import key
 
 default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 <identity>
-  <contacts>
-  </contacts>
-  <sources>
-  </sources>
-  <certificates>
-  </certificates>
-  <scrubbers>
-  </scrubbers>
-  <postage>
-  </postage>
+  <sources></sources>
+  <contacts></contacts>
+  <certificates></certificates>
+  <scrubbers></scrubbers>
+  <postage>1</postage>
   <date></date>
   <version></version>
+  <revision>0</revision>
   <publickey></publickey>
   <signature></signature>
-  <revision>0</revision>
 </identity>"""
 
 #------------------------------------------------------------------------------ 
@@ -155,47 +155,49 @@ class identity:
     Also can construct an Identity by providing all fields. 
     The fields is:
         * sources : list of URLs, first is primary URL and name
-        * certificates : signatures by identity servers
-        * publickey : the public part of user's key, string in twisted.conch.ssh format
         * contacts : list of ways to contact this identity
+        * certificates : signatures by identity servers
         * scrubbers : list of URLs for people allowed to scrub
+        * postage : a price for message delivery if not on correspondents list
         * date : the date an time when that identity was created 
         * version : a version string - some info about BitDust software and platform
         * revision : every time identity were modified this value will be increased by 1
+        * publickey : the public part of user's key, string in twisted.conch.ssh format
         * signature : digital signature to protect the file
     """
     sources = []        # list of URLs, first is primary URL and name
-    certificates = []   # signatures by identity servers
-    publickey = ""      # string in twisted.conch.ssh format
     contacts = []       # list of ways to contact this identity
+    certificates = []   # signatures by identity servers
     scrubbers = []      # list of URLs for people allowed to scrub
+    postage = "1"       # a price for message delivery if not on correspondents list
     date = ""           # date
     version = ""        # version string
-    revision = 0        # revision number, every time my id were modified this value will be increased by 1
+    revision = "0"      # revision number, every time my id were modified this value will be increased by 1
+    publickey = ""      # string in twisted.conch.ssh format
     signature = ""      # digital signature
 
     def __init__ (  self,
                     sources = [],
-                    certificates = [],
-                    publickey = '',
                     contacts = [],
+                    certificates = [],
                     scrubbers = [],
-                    postage = "",
+                    postage = "1",
                     date = "",
                     version = "",
-                    revision = 0,
+                    revision = "0",
+                    publickey = '',
                     xmlsrc = None,
                     filename = '' ):
 
         self.sources = sources
-        self.certificates = certificates
-        self.publickey = publickey
         self.contacts = contacts
+        self.certificates = certificates
         self.scrubbers = scrubbers
         self.postage = postage
         self.date = date
         self.version = version
         self.revision = revision
+        self.publickey = publickey
 
         if publickey != '':
             self.sign()
@@ -222,10 +224,10 @@ class identity:
         self.contacts = []     # list of ways to contact this identity
         self.scrubbers = []    # list of URLs for people allowed to scrub
         self.date = ''         # date
-        self.postage = ''     # postage price for message delivery if not on correspondents list
-        self.version = ''     # version string
+        self.postage = '1'     # postage price for message delivery if not on correspondents list
+        self.version = ''      # version string
         self.signature = ''    # digital signature
-        self.revision = 0       # revision number
+        self.revision = '0'    # revision number
 
     def default(self):
         """
@@ -233,6 +235,8 @@ class identity:
         """
         global default_identity_src
         self.unserialize(default_identity_src)
+
+    #------------------------------------------------------------------------------ 
 
     def isCorrect(self):
         """
@@ -246,7 +250,225 @@ class identity:
             return False
         if self.signature == '':
             return False
+        if self.revision == '':
+            return False
         return True
+
+    def makehash(self):
+        """
+        http://docs.python.org/lib/module-urlparse.html
+        Note that certificates and signatures are not part of what is hashed.
+        PREPRO 
+        Thinking of standard that fields have labels and empty fields are left out,
+        including label, so future versions could have same signatures as older which had fewer fields - 
+        can just do this for fields after these, so maybe don't need to change anything for now.
+        Don't include certificate - so identity server can just add it.
+        """
+        sep = "-"
+        hsh = ''
+        hsh += sep + sep.join(self.sources)
+        hsh += sep + sep.join(self.contacts)
+        hsh += sep + sep.join(self.certificates)
+        hsh += sep + sep.join(self.scrubbers) 
+        hsh += sep + self.postage
+        hsh += sep + self.date.replace(' ', '_')
+        hsh += sep + self.version
+        hsh += sep + self.revision
+        hashcode = key.Hash(hsh)          
+        return hashcode
+
+    def sign(self):
+        """
+        Make a hash, generate digital signature on it and remember the signature.
+        """
+        hashcode = self.makehash()
+        self.signature = key.Sign(hashcode)
+##        if self.Valid():
+##            lg.out(12, "identity.sign tested after making and it looks good")
+##        else:
+##            lg.out(1, "identity.sign ERROR tested after making sign ")
+##            raise Exception("sign fails")
+
+    def Valid(self):
+        """
+        This will make a hash and verify the signature by public key.
+        PREPRO - should test certificate too.
+        """
+        hashcode = self.makehash()
+        result = key.VerifySignature(
+            self.publickey,
+            hashcode,
+            str(self.signature))
+        return result
+
+    #------------------------------------------------------------------------------ 
+
+    def unserialize(self, xmlsrc):
+        """
+        A smart method to load object fields data from XML content.
+        """
+        try:
+            doc = minidom.parseString(xmlsrc)
+        except:
+            lg.exc('identity unserialize failed', 8, 1)
+            lg.out(12, '\n'+xmlsrc[:256]+'\n')
+            return
+        self.clear_data()
+        self.from_xmlobj(doc.documentElement)
+
+    def unserialize_object(self, xmlobject):
+        """
+        This is almost same but load data from existing DOM object.
+        """
+        self.clear_data()
+        self.from_xmlobj(xmlobject)
+
+    def serialize(self):
+        """
+        A method to generate XML content for that identity object. 
+        Used to save identity on disk or transfer over network.  
+        """
+        return self.toxml()[0]
+
+    def serialize_object(self):
+        """
+        Almost the same but return a DOM object.
+        """
+        return self.toxml()[1]
+
+    def toxml(self):
+        """
+        Call this to convert to XML format. 
+        """
+        impl = getDOMImplementation()
+        
+        doc = impl.createDocument(None, 'identity', None)
+        root = doc.documentElement
+        
+        sources = doc.createElement('sources')
+        root.appendChild(sources)
+        for source in self.sources:
+            n = doc.createElement('source')
+            n.appendChild(doc.createTextNode(source))
+            sources.appendChild(n)
+
+        contacts = doc.createElement('contacts')
+        root.appendChild(contacts)
+        for contact in self.contacts:
+            n = doc.createElement('contact')
+            n.appendChild(doc.createTextNode(contact))
+            contacts.appendChild(n)
+
+        certificates = doc.createElement('certificates')
+        root.appendChild(certificates)
+        for certificate in self.certificates:
+            n = doc.createElement('certificate')
+            n.appendChild(doc.createTextNode(certificate))
+            certificates.appendChild(n)
+
+        scrubbers = doc.createElement('scrubbers')
+        root.appendChild(scrubbers)
+        for scrubber in self.scrubbers:
+            n = doc.createElement('scrubber')
+            n.appendChild(doc.createTextNode(scrubber))
+            scrubbers.appendChild(n)
+
+        postage = doc.createElement('postage')
+        postage.appendChild(doc.createTextNode(self.postage))
+        root.appendChild(postage)
+
+        date = doc.createElement('date')
+        date.appendChild(doc.createTextNode(self.date))
+        root.appendChild(date)
+
+        version = doc.createElement('version')
+        version.appendChild(doc.createTextNode(self.version))
+        root.appendChild(version)
+
+        revision = doc.createElement('revision')
+        revision.appendChild(doc.createTextNode(self.revision))
+        root.appendChild(revision)
+
+        publickey = doc.createElement('publickey')
+        publickey.appendChild(doc.createTextNode(self.publickey))
+        root.appendChild(publickey)
+
+        signature = doc.createElement('signature')
+        signature.appendChild(doc.createTextNode(self.signature))
+        root.appendChild(signature)
+
+        return doc.toprettyxml("  ", "\n", "ISO-8859-1"), root, doc
+
+    def from_xmlobj(self, root_node):
+        """
+        This is to load identity fields from DOM object - used during ``unserialize`` procedure.
+        """
+        if root_node is None:
+            return False
+        try:
+            for xsection in root_node.childNodes:
+                if xsection.nodeType != Node.ELEMENT_NODE:
+                    continue
+                if xsection.tagName == 'sources':
+                    for xsources in xsection.childNodes:
+                        for xsource in xsources.childNodes:
+                            if (xsource.nodeType == Node.TEXT_NODE):
+                                self.sources.append(xsource.wholeText.strip().encode())
+                                break
+                elif xsection.tagName == 'contacts':
+                    for xcontacts in xsection.childNodes:
+                        for xcontact in xcontacts.childNodes:
+                            if (xcontact.nodeType == Node.TEXT_NODE):
+                                self.contacts.append(xcontact.wholeText.strip().encode())
+                                break
+                elif xsection.tagName == 'certificates':
+                    for xcertificates in xsection.childNodes:
+                        for xcertificate in xcertificates.childNodes:
+                            if (xcertificate.nodeType == Node.TEXT_NODE):
+                                self.certificates.append(xcertificate.wholeText.strip().encode())
+                                break
+                elif xsection.tagName == 'scrubbers':
+                    for xscrubbers in xsection.childNodes:
+                        for xscrubber in xscrubbers.childNodes:
+                            if (xscrubber.nodeType == Node.TEXT_NODE):
+                                self.scrubbers.append(xscrubber.wholeText.strip().encode())
+                                break
+                elif xsection.tagName == 'postage':
+                    for xpostage in xsection.childNodes:
+                        if (xpostage.nodeType == Node.TEXT_NODE):
+                            self.date = xpostage.wholeText.strip().encode()
+                            break
+                elif xsection.tagName == 'date':
+                    for xkey in xsection.childNodes:
+                        if (xkey.nodeType == Node.TEXT_NODE):
+                            self.date = xkey.wholeText.strip().encode()
+                            break
+                elif xsection.tagName == 'version':
+                    for xkey in xsection.childNodes:
+                        if (xkey.nodeType == Node.TEXT_NODE):
+                            self.version = xkey.wholeText.strip().encode()
+                            break
+                elif xsection.tagName == 'revision':
+                    for xkey in xsection.childNodes:
+                        if (xkey.nodeType == Node.TEXT_NODE):
+                            self.revision = xkey.wholeText.strip().encode()
+                            break
+                elif xsection.tagName == 'publickey':
+                    for xkey in xsection.childNodes:
+                        if (xkey.nodeType == Node.TEXT_NODE):
+                            self.publickey = xkey.wholeText.strip().encode()
+                            break
+                elif xsection.tagName == 'signature':
+                    for xkey in xsection.childNodes:
+                        if (xkey.nodeType == Node.TEXT_NODE):
+                            self.signature = xkey.wholeText.strip().encode()
+                            break
+        except:
+            lg.exc()
+            return False
+        return True
+
+    #------------------------------------------------------------------------------ 
 
     def getIDURL(self, index = 0):
         """
@@ -274,12 +496,6 @@ class identity:
             host += ':' + str(port)
         return host
 
-    def clearContacts(self):
-        """
-        Erase all items in identity contacts list.
-        """
-        self.contacts = []
-
     def getContacts(self):
         """
         Return identity contacts list.
@@ -301,28 +517,6 @@ class identity:
         except:
             return None
 
-    def setContact(self, contact, index):
-        """
-        Set a string value ``contact`` at given ``index`` position in the list.
-        """
-        self.contacts[index] = contact
-
-    def setCertificate(self, certificate):
-        """
-        Not used yet. 
-        TODO. Need to ask Vince for more details about id certificates.
-        """
-        self.certificate = certificate
-        self.sign()
-
-    def setContactPort(self, index, newport):
-        """
-        This is useful when listening port get changed. 
-        """
-        protocol, host, port, filename = nameurl.UrlParse(self.contacts[index])
-        url = nameurl.UrlMake(protocol, host, newport, filename)
-        self.contacts[index] = url.encode("ascii").strip()
-
     def getContactHost(self, index):
         """
         Get the host name part of the contact.
@@ -336,14 +530,6 @@ class identity:
         """
         protocol, host, port, filename = nameurl.UrlParse(self.contacts[index])
         return port
-
-    def setContactHost(self, host, index):
-        """
-        This is to set only host part of the contact. 
-        """
-        protocol, host_, port, filename = nameurl.UrlParse(self.contacts[index])
-        url = nameurl.UrlMake(protocol, host, port, filename)
-        self.contacts[index] = url.encode("ascii").strip()
 
     def getContactParts(self, index):
         """
@@ -371,13 +557,6 @@ class identity:
             return default
         return host
 
-    def setContactParts(self, index, protocol, host, port, filename):
-        """
-        Set a contact at given position by its 4 parts.
-        """
-        url = nameurl.UrlMake(protocol, host, port, filename)
-        self.contacts[index] = url.encode("ascii").strip()
-
     def getContactIndex(self, proto):
         """
         Search a first contact with given ``proto``.
@@ -386,17 +565,6 @@ class identity:
             if self.contacts[i].find(proto+"://") == 0:
                 return i
         return -1
-
-    def setProtoContact(self, proto, contact):
-        """
-        Found a contact with given ``proto`` and set its value or append a new contact.
-        """
-        for i in range(0,len(self.contacts)):
-            proto_, host, port, filename = nameurl.UrlParse(self.contacts[i])
-            if proto_.strip() == proto.strip():
-                self.contacts[i] = contact
-                return
-        self.contacts.append(contact)
 
     def getProtoContact(self, proto):
         """
@@ -457,6 +625,66 @@ class identity:
 #            host = self.getProtoHost('http')
         return host
 
+    #------------------------------------------------------------------------------ 
+
+    def setContact(self, contact, index):
+        """
+        Set a string value ``contact`` at given ``index`` position in the list.
+        """
+        self.contacts[index] = contact
+        
+    def setProtoContact(self, proto, contact):
+        """
+        Found a contact with given ``proto`` and set its value or append a new contact.
+        """
+        for i in range(0,len(self.contacts)):
+            proto_, host, port, filename = nameurl.UrlParse(self.contacts[i])
+            if proto_.strip() == proto.strip():
+                self.contacts[i] = contact
+                return
+        self.contacts.append(contact)
+
+    def setContactParts(self, index, protocol, host, port, filename):
+        """
+        Set a contact at given position by its 4 parts.
+        """
+        url = nameurl.UrlMake(protocol, host, port, filename)
+        self.contacts[index] = url.encode("ascii").strip()
+
+    def setContactHost(self, host, index):
+        """
+        This is to set only host part of the contact. 
+        """
+        protocol, host_, port, filename = nameurl.UrlParse(self.contacts[index])
+        url = nameurl.UrlMake(protocol, host, port, filename)
+        self.contacts[index] = url.encode("ascii").strip()
+
+
+
+    def setContactPort(self, index, newport):
+        """
+        This is useful when listening port get changed. 
+        """
+        protocol, host, port, filename = nameurl.UrlParse(self.contacts[index])
+        url = nameurl.UrlMake(protocol, host, newport, filename)
+        self.contacts[index] = url.encode("ascii").strip()
+
+    def setCertificate(self, certificate):
+        """
+        Not used yet. 
+        TODO. Need to ask Vince for more details about id certificates.
+        """
+        self.certificates.append(certificate)
+        self.sign()
+                
+    #------------------------------------------------------------------------------ 
+
+    def clearContacts(self):
+        """
+        Erase all items in identity contacts list.
+        """
+        self.contacts = []
+
     def deleteProtoContact(self, proto):
         """
         Remove all contacts with given ``proto``.
@@ -492,223 +720,6 @@ class identity:
         del self.contacts[i]
         self.contacts.insert(0, contact)
 
-    def makehash(self):
-        """
-        http://docs.python.org/lib/module-urlparse.html
-        Note that certificates and signatures are not part of what is hashed.
-        PREPRO 
-        Thinking of standard that fields have labels and empty fields are left out,
-        including label, so future versions could have same signatures as older which had fewer fields - 
-        can just do this for fields after these, so maybe don't need to change anything for now.
-        Don't include certificate - so identity server can just add it.
-        """
-        sep = "-"
-        c = ''
-        for i in self.contacts:
-            c += i
-        s = ''
-        for i in self.scrubbers:
-            s += i
-        sr = ''
-        for i in self.sources:
-            sr += i
-        stufftohash = c + sep + s
-        stufftohash += sep + sr 
-        stufftohash += sep + self.version
-        stufftohash += sep + self.postage
-        stufftohash += sep + self.date.replace(' ', '_')
-        stufftohash += sep + str(self.revision) 
-        hashcode = key.Hash(stufftohash)          
-        return hashcode
-
-    def sign(self):
-        """
-        Make a hash, generate digital signature on it and remember the signature.
-        """
-        hashcode = self.makehash()
-        self.signature = key.Sign(hashcode)
-##        if self.Valid():
-##            lg.out(12, "identity.sign tested after making and it looks good")
-##        else:
-##            lg.out(1, "identity.sign ERROR tested after making sign ")
-##            raise Exception("sign fails")
-
-    def Valid(self):
-        """
-        This will make a hash and verify the signature by public key.
-        PREPRO - should test certificate too.
-        """
-        hashcode = self.makehash()
-        result = key.VerifySignature(
-            self.publickey,
-            hashcode,
-            str(self.signature))
-        return result
-
-    def unserialize(self, xmlsrc):
-        """
-        A smart method to load object fields data from XML content.
-        """
-        try:
-            doc = minidom.parseString(xmlsrc)
-        except:
-            lg.exc('identity unserialize failed', 8, 1)
-            lg.out(12, '\n'+xmlsrc[:256]+'\n')
-            return
-        self.clear_data()
-        self.from_xmlobj(doc.documentElement)
-
-    def unserialize_object(self, xmlobject):
-        """
-        This is almost same but load data from existing DOM object.
-        """
-        self.clear_data()
-        self.from_xmlobj(xmlobject)
-
-    def serialize(self):
-        """
-        A method to generate XML content for that identity object. 
-        Used to save identity on disk or transfer over network.  
-        """
-        return self.toxml()[0]
-
-    def serialize_object(self):
-        """
-        Almost the same but return a DOM object.
-        """
-        return self.toxml()[1]
-
-    def toxml(self):
-        """
-        Call this to convert to XML format. 
-        """
-        impl = getDOMImplementation()
-        
-        doc = impl.createDocument(None, 'identity', None)
-        root = doc.documentElement
-        
-        contacts = doc.createElement('contacts')
-        root.appendChild(contacts)
-        for contact in self.contacts:
-            n = doc.createElement('contact')
-            n.appendChild(doc.createTextNode(contact))
-            contacts.appendChild(n)
-
-        sources = doc.createElement('sources')
-        root.appendChild(sources)
-        for source in self.sources:
-            n = doc.createElement('source')
-            n.appendChild(doc.createTextNode(source))
-            sources.appendChild(n)
-
-        certificates = doc.createElement('certificates')
-        root.appendChild(certificates)
-        for certificate in self.certificates:
-            n = doc.createElement('certificate')
-            n.appendChild(doc.createTextNode(certificate))
-            certificates.appendChild(n)
-
-        scrubbers = doc.createElement('scrubbers')
-        root.appendChild(scrubbers)
-        for scrubber in self.scrubbers:
-            n = doc.createElement('scrubber')
-            n.appendChild(doc.createTextNode(scrubber))
-            scrubbers.appendChild(n)
-
-        postage = doc.createElement('postage')
-        postage.appendChild(doc.createTextNode(self.postage))
-        root.appendChild(postage)
-
-        date = doc.createElement('date')
-        date.appendChild(doc.createTextNode(self.date))
-        root.appendChild(date)
-
-        version = doc.createElement('version')
-        version.appendChild(doc.createTextNode(self.version))
-        root.appendChild(version)
-
-        revision = doc.createElement('revision')
-        revision.appendChild(doc.createTextNode(str(self.revision)))
-        root.appendChild(revision)
-
-        publickey = doc.createElement('publickey')
-        publickey.appendChild(doc.createTextNode(self.publickey))
-        root.appendChild(publickey)
-
-        signature = doc.createElement('signature')
-        signature.appendChild(doc.createTextNode(self.signature))
-        root.appendChild(signature)
-
-        return doc.toprettyxml("  ", "\n", "ISO-8859-1"), root, doc
-
-    def from_xmlobj(self, root_node):
-        """
-        This is to load identity fields from DOM object - used during ``unserialize`` procedure.
-        """
-        if root_node is None:
-            return False
-        try:
-            for xsection in root_node.childNodes:
-                if xsection.nodeType != Node.ELEMENT_NODE:
-                    continue
-                if xsection.tagName == 'contacts':
-                    for xcontacts in xsection.childNodes:
-                        for xcontact in xcontacts.childNodes:
-                            if (xcontact.nodeType == Node.TEXT_NODE):
-                                self.contacts.append(xcontact.wholeText.strip().encode())
-                                break
-                elif xsection.tagName == 'sources':
-                    for xsources in xsection.childNodes:
-                        for xsource in xsources.childNodes:
-                            if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(xsource.wholeText.strip().encode())
-                                break
-                elif xsection.tagName == 'certificates':
-                    for xcertificates in xsection.childNodes:
-                        for xcertificate in xcertificates.childNodes:
-                            if (xcertificate.nodeType == Node.TEXT_NODE):
-                                self.certificates.append(xcertificate.wholeText.strip().encode())
-                                break
-                elif xsection.tagName == 'scrubbers':
-                    for xscrubbers in xsection.childNodes:
-                        for xscrubber in xscrubbers.childNodes:
-                            if (xscrubber.nodeType == Node.TEXT_NODE):
-                                self.scrubbers.append(xscrubber.wholeText.strip().encode())
-                                break
-                elif xsection.tagName == 'publickey':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.publickey = xkey.wholeText.strip().encode()
-                            break
-                elif xsection.tagName == 'postage':
-                    for xpostage in xsection.childNodes:
-                        if (xpostage.nodeType == Node.TEXT_NODE):
-                            self.date = xpostage.wholeText.strip().encode()
-                            break
-                elif xsection.tagName == 'date':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.date = xkey.wholeText.strip().encode()
-                            break
-                elif xsection.tagName == 'version':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.version = xkey.wholeText.strip().encode()
-                            break
-                elif xsection.tagName == 'revision':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.revision = int(xkey.wholeText.strip().encode())
-                            break
-                elif xsection.tagName == 'signature':
-                    for xkey in xsection.childNodes:
-                        if (xkey.nodeType == Node.TEXT_NODE):
-                            self.signature = xkey.wholeText.strip().encode()
-                            break
-        except:
-            lg.exc()
-            return False
-        return True
 
 #-------------------------------------------------------------------------------
 

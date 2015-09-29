@@ -26,9 +26,8 @@ EVENTS:
 import os
 import sys
 import random
-import time
 
-from twisted.internet.defer import Deferred, DeferredList
+from twisted.internet.defer import DeferredList
 
 #------------------------------------------------------------------------------ 
 
@@ -37,16 +36,12 @@ try:
 except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
-
-#------------------------------------------------------------------------------ 
-
-from logs import lg
+    from logs import lg
 
 from automats import automat
 
 from system import bpio
 
-from lib import misc
 from lib import nameurl
 from lib import net_misc
 
@@ -376,7 +371,9 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
-        mycurrentidentity = my_id.getLocalIdentity()
+        mycurrentidentity = None
+        if my_id.isLocalIdentityReady():
+            mycurrentidentity = my_id.getLocalIdentity()
         my_id.setLocalIdentity(self.new_identity)
         def _cb(x):
             my_id.setLocalIdentity(mycurrentidentity)
@@ -431,47 +428,61 @@ class IdRegistrator(automat.Automat):
         Generate new Private key and new identity file.
         Reads some extra info from config files.
         """
-        key.InitMyKey()
         login = bpio.ReadTextFile(settings.UserNameFilename())
         externalIP = bpio.ReadTextFile(settings.ExternalIPFilename())
-        # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
+
         lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
-        ident = identity.identity()
-        ident.default()
-        ident.sources = []
-        ident.sources.extend(self.free_idurls)
-        cdict = {}
-        if settings.enableTCP():
-            cdict['tcp'] = 'tcp://'+externalIP+':'+str(settings.getTCPPort())
-        if settings.enableUDP():
-            try:
-                protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])
-                if port and port not in ['80', 80, ]:
-                    host += ':%s' % str(port) 
-                cdict['udp'] = 'udp://%s@%s' % (login.lower(), host)
-            except:
-                lg.exc()
-#        if settings.enablePROXY() and settings.enablePROXYreceiving():
-#            # proxy node is not yet known
-#            # so just put our own info for now
+
+        key.InitMyKey()
+        
+        lg.out(4, '    my key is ready')
+
+        ident = my_id.buildDefaultIdentity(
+            name=login, ip=externalIP, idurls=self.free_idurls)
+        # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
+        
+#        ident = identity.identity()
+#        ident.default()
+#        ident.sources = []
+#        ident.sources.extend(self.free_idurls)
+#        cdict = {}
+#        if settings.enableTCP():
+#            cdict['tcp'] = 'tcp://'+externalIP+':'+str(settings.getTCPPort())
+#        if settings.enableUDP():
 #            try:
 #                protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])
 #                if port and port not in ['80', 80, ]:
 #                    host += ':%s' % str(port) 
-#                cdict['proxy'] = 'proxy://%s@%s' % (login.lower(), host)
+#                cdict['udp'] = 'udp://%s@%s' % (login.lower(), host)
 #            except:
 #                lg.exc()
-        for c in my_id.getValidTransports():
-            if cdict.has_key(c):
-                ident.contacts.append(cdict[c])
-        ident.publickey = key.MyPublicKey()
-        ident.date = time.ctime() #time.strftime('%b %d, %Y')
-        vernum = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
-        repo, location = misc.ReadRepoLocation()
-        ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
-        ident.sign()
-        bpio.WriteFile(settings.LocalIdentityFilename()+'.new', ident.serialize())
+##        if settings.enablePROXY() and settings.enablePROXYreceiving():
+##            # proxy node is not yet known
+##            # so just put our own info for now
+##            try:
+##                protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])
+##                if port and port not in ['80', 80, ]:
+##                    host += ':%s' % str(port) 
+##                cdict['proxy'] = 'proxy://%s@%s' % (login.lower(), host)
+##            except:
+##                lg.exc()
+#        for c in my_id.getValidTransports():
+#            if cdict.has_key(c):
+#                ident.contacts.append(cdict[c])
+#        ident.publickey = key.MyPublicKey()
+#        ident.date = time.ctime() #time.strftime('%b %d, %Y')
+#        vernum = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
+#        repo, location = misc.ReadRepoLocation()
+#        ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
+#        ident.sign()
+
+
+        my_identity_xmlsrc = ident.serialize()
+        newfilename = settings.LocalIdentityFilename()+'.new'
+        bpio.WriteFile(newfilename, my_identity_xmlsrc)
         self.new_identity = ident
+        lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
+        
         
     def _send_new_identity(self):
         """
