@@ -1,0 +1,5 @@
+#!/bin/bash
+cd ~
+chmod +x grepnkill
+./grepnkill bitdust.py
+exit 0
