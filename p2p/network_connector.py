@@ -419,7 +419,7 @@ class NetworkConnector(automat.Automat):
             order, all_results = all_results
             for proto in order:
                 if not all_results[proto]:
-                    gateway.transport(proto).A('restart')
+                    gateway.transport(proto).automat('restart')
                     return
             self.automat('network-transports-verified')
         gateway.verify().addCallback(_transports_verified)

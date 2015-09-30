@@ -119,6 +119,12 @@ def inbox(newpacket, info, status, error_message):
         lg.warn('new packet from %s://%s is not valid: %r' % (
             info.proto, info.host, newpacket))
         return False
+    
+    if driver.is_started('service_proxy_server'):
+        from transport.proxy import proxy_router
+        if newpacket.RemoteID in proxy_router.A().routes.keys():
+            proxy_router.A('routed-inbox-packet-received', newpacket)             
+            return True
   
     if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
         lg.out(1, "p2p_service.inbox  ERROR packet is NOT for us")
@@ -315,9 +321,10 @@ def SendIdentity(remote_idurl, wide=False, callbacks={}):
     """
     """
     lg.out(8, "p2p_service.SendIdentity to %s" % nameurl.GetName(remote_idurl))
-    result = signed.Packet(commands.Identity(), my_id.getLocalID(), 
-                                 my_id.getLocalID(), 'identity', # my_id.getLocalID(),
-                                 my_id.getLocalIdentity().serialize(), remote_idurl)
+    result = signed.Packet(
+        commands.Identity(), my_id.getLocalID(), 
+        my_id.getLocalID(), 'identity', 
+        my_id.getLocalIdentity().serialize(), remote_idurl)
     gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result       
     
@@ -423,7 +430,6 @@ def Data(request):
     This is when we 
         1) save my requested data to restore the backup 
         2) or save the customer file on our local HDD
-        3) pass packet to proxy_server if this is a routed data  
     """
     # 1. this is our Data! 
     if request.OwnerID == my_id.getLocalID():
@@ -433,11 +439,11 @@ def Data(request):
             if request.PacketID in [ settings.BackupIndexFileName(), ]:
                 from storage import backup_control
                 backup_control.IncomingSupplierBackupIndex(request)
-        if driver.is_started('service_proxy_server'):
-            # 3. we work as a proxy server and received a packet for third node
-            if request.PacketID == 'routed_packet':
-                from transport.proxy import proxy_router
-                proxy_router.A('routed-inbox-packet-received', request) 
+#        if driver.is_started('service_proxy_server'):
+#            # 3. we work as a proxy server and received a packet for third node
+#            if request.PacketID == 'routed_packet':
+#                from transport.proxy import proxy_router
+#                proxy_router.A('routed-inbox-packet-received', request) 
         return
     # 2. this Data is not belong to us
     if not driver.is_started('service_supplier'):
@@ -490,6 +496,21 @@ def Data(request):
     del data
     lg.out(8, "p2p_service.Data saved from [%s/%s] to %s" % (
         nameurl.GetName(request.OwnerID), nameurl.GetName(request.CreatorID), filename,))
+
+
+def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
+    """
+    """
+    # TODO:
+    newpacket = signed.Packet(
+        commands.Data(), 
+        ownerID, 
+        creatorID, 
+        packetID, 
+        raw_data, 
+        remoteID)
+    result = gateway.outbox(newpacket, callbacks=callbacks)     
+    return result
 
 
 def Retrieve(request):

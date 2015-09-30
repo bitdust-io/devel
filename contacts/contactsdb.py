@@ -191,7 +191,6 @@ def update_customers(idslist):
     if _ContactsChangedCallback is not None:
         _ContactsChangedCallback(oldcontacts, contacts())
 
-
 #------------------------------------------------------------------------------ 
 
 def correspondents():

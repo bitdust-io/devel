@@ -24,11 +24,13 @@ from logs import lg
 
 from lib import net_misc
 
+from userid import identity 
 import identitydb
 
 #------------------------------------------------------------------------------ 
 
 _CachingTasks = {}
+_OverriddenIdentities = {}
 
 #-------------------------------------------------------------------------------
 
@@ -61,11 +63,11 @@ def CacheLen():
     return identitydb.size()
 
 
-def PrintID(url):
+def PrintID(idurl):
     """
     For debug, print an item from cache.
     """
-    identitydb.print_id(url)
+    identitydb.print_id(idurl)
 
 
 def PrintCacheKeys():
@@ -88,22 +90,24 @@ def Items():
     return identitydb.cache()
 
 
-def HasKey(url):
+def HasKey(idurl):
     """
     Check for some user IDURL in the cache.
     """
-    return identitydb.has_key(url)
+    return identitydb.has_key(idurl) or IsOverridden(idurl)
 
 
-def HasFile(url):
-    return identitydb.has_file(url)
+def HasFile(idurl):
+    return identitydb.has_file(idurl)
 
 
-def FromCache(url):
+def FromCache(idurl):
     """
     Get identity object from cache.
     """
-    return identitydb.get(url)
+    if IsOverridden(idurl):
+        return identity.identity(xmlsrc=ReadOverriddenIdentityXMLSource(idurl))
+    return identitydb.get(idurl)
 
 
 def GetIDURLsByContact(contact):
@@ -122,28 +126,28 @@ def GetIDURLByIPPort(ip, port):
     return identitydb.get_idurl_by_ip_port(ip, port)
 
 
-def GetContacts(url):
+def GetContacts(idurl):
     """
     This is another one index - return a set of contacts for given IDURL.
     Instead of read identity object and parse it every time - this method can be used.
     This is a "cached" info. 
     """
-    return identitydb.idcontacts(url)
+    return identitydb.idcontacts(idurl)
 
 
-def Remove(url):
+def Remove(idurl):
     """
     Remove an item from cache.
     """
-    return identitydb.remove(url)
+    return identitydb.remove(idurl)
 
 
-def UpdateAfterChecking(url, xml_src):
+def UpdateAfterChecking(idurl, xml_src):
     """
     Need to call that method to update the cache when some identity sources is changed.
     """
     #out(12, 'identitycache.UpdateAfterChecking ' + url)
-    return identitydb.update(url, xml_src)
+    return identitydb.update(idurl, xml_src)
 
 
 def RemapContactAddress(address):
@@ -161,71 +165,95 @@ def RemapContactAddress(address):
         return newaddress
     return address
 
+def OverrideIdentity(idurl, xml_src):
+    """
+    """
+    global _OverriddenIdentities
+    _OverriddenIdentities[idurl] = xml_src
+
+def StopOverridingIdentity(idurl):
+    """
+    """
+    global _OverriddenIdentities
+    return _OverriddenIdentities.pop(idurl, None)
+
+def IsOverridden(idurl):
+    """
+    """
+    global _OverriddenIdentities
+    return _OverriddenIdentities.has_key(idurl)
+
+def ReadOverriddenIdentityXMLSource(idurl):
+    """
+    """
+    global _OverriddenIdentities
+    return _OverriddenIdentities.get(idurl, None)
+
 #------------------------------------------------------------------------------ 
 
-def getPageSuccess(src, url):
+def getPageSuccess(src, idurl):
     """
     This is called when requested identity source gets received.
     """
-    UpdateAfterChecking(url, src)
+    UpdateAfterChecking(idurl, src)
     return src
 
 
-def getPageFail(x, url):
+def getPageFail(x, idurl):
     """
     This is called when identity request is failed. 
     """
-    lg.out(6, "identitycache.getPageFail NETERROR in request to " + url)
+    lg.out(6, "identitycache.getPageFail NETERROR in request to " + idurl)
     return x
 
 
-def pageRequestTwisted(url):
+def pageRequestTwisted(idurl):
     """
     Request an HTML page - this can be an user identity.
     """
-    d = net_misc.getPageTwisted(url)
-    d.addCallback(getPageSuccess, url)
-    d.addErrback(getPageFail, url)
+    d = net_misc.getPageTwisted(idurl)
+    d.addCallback(getPageSuccess, idurl)
+    d.addErrback(getPageFail, idurl)
     return d
 
 
-def scheduleForCaching(url):
+def scheduleForCaching(idurl):
     """
     Even if we have a copy in cache we are to try and read another one.
     """
-    return pageRequestTwisted(url)
+    return pageRequestTwisted(idurl)
 
 #------------------------------------------------------------------------------ 
 
-def immediatelyCaching(url):
+def immediatelyCaching(idurl):
     """
     A smart method to start caching some identity and get results in callbacks.
     """
     global _CachingTasks
-    if _CachingTasks.has_key(url):
-        return _CachingTasks[url]
-    def _getPageSuccess(src, url, res):
+    if _CachingTasks.has_key(idurl):
+        return _CachingTasks[idurl]
+    def _getPageSuccess(src, idurl, res):
         global _CachingTasks
-        _CachingTasks.pop(url)
-        if UpdateAfterChecking(url, src):
+        _CachingTasks.pop(idurl)
+        if UpdateAfterChecking(idurl, src):
             res.callback(src)
-            lg.out(14, '    [cached] %s' % url)
+            lg.out(14, '    [cached] %s' % idurl)
         else:
             res.errback(Exception(src))
-            lg.out(14, '    [cache error] %s' % url)
+            lg.out(14, '    [cache error] %s' % idurl)
         return src
-    def _getPageFail(x, url, res):
+    def _getPageFail(x, idurl, res):
         global _CachingTasks
-        _CachingTasks.pop(url)
+        _CachingTasks.pop(idurl)
         res.errback(x)
-        lg.out(14, '    [cache failed] %s' % url)
+        lg.out(14, '    [cache failed] %s' % idurl)
         return None
     result = Deferred()
-    d = net_misc.getPageTwisted(url)
-    d.addCallback(_getPageSuccess, url, result)
-    d.addErrback(_getPageFail, url, result)
-    _CachingTasks[url] = result
-    lg.out(14, 'identitycache.immediatelyCaching %s' % url)
+    d = net_misc.getPageTwisted(idurl)
+    d.addCallback(_getPageSuccess, idurl, result)
+    d.addErrback(_getPageFail, idurl, result)
+    _CachingTasks[idurl] = result
+    lg.out(14, 'identitycache.immediatelyCaching %s' % idurl)
     return result
 
 #------------------------------------------------------------------------------ 

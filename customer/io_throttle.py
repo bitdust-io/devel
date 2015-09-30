@@ -390,6 +390,12 @@ class SupplierQueue:
             gateway.outbox(newpacket, callbacks={
                 commands.Ack(): self.FileSendAck,
                 commands.Fail(): self.FileSendAck}) 
+            
+            # str(bpio.ReadBinaryFile(fileToSend.fileName))
+            # {commands.Ack(): self.FileSendAck,
+            # commands.Fail(): self.FileSendAck}
+            
+            
             # transport_control.RegisterInterest(
             #     self.FileSendAck, 
             #     fileToSend.remoteID, 

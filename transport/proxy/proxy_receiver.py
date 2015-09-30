@@ -25,6 +25,7 @@ EVENTS:
     * :red:`start`
     * :red:`stop`
     * :red:`timer-10sec`
+    * :red:`timer-30sec`
 """
 
 import random
@@ -76,7 +77,8 @@ class ProxyReceiver(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['ACK?','SERVICE?']),
+        'timer-30sec': (30.0, ['SERVICE?']),
+        'timer-10sec': (10.0, ['ACK?']),
         }
 
     def init(self):
@@ -145,7 +147,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'stop' :
                 self.state = 'STOPPED'
                 self.doReportStopped(arg)
-            elif event == 'timer-10sec' or event == 'service-refused' :
+            elif event == 'timer-30sec' or event == 'service-refused' :
                 self.state = 'FIND_NODE?'
                 self.doDHTFindRandomNode(arg)
         #---CLOSED---

@@ -31,7 +31,6 @@ _Debug = True
 
 #------------------------------------------------------------------------------ 
 
-
 import os
 import sys
 import time
@@ -52,11 +51,13 @@ from system import tmpfile
 
 from crypt import encrypted
 from crypt import key
-from crypt import signed
+
+from contacts import identitycache
 
 from transport import gateway
 
 from p2p import p2p_service
+from p2p import commands
 
 #------------------------------------------------------------------------------ 
 
@@ -151,17 +152,13 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        from transport import gateway
-        from transport import callback
         self.starting_transports = []
-        # callback.add_inbox_callback(self._on_inbox_packet_received)
         gateway.add_transport_state_changed_callback(self._on_transport_state_changed)
 
     def doWaitOtherTransports(self, arg):
         """
         Action method.
         """
-        from transport import gateway
         self.starting_transports = []
         for t in gateway.transports().values():
             if t.proto == 'proxy':
@@ -175,11 +172,12 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         global _MaxRoutesNumber
-        from p2p import commands
         request, info = arg
         target = request.CreatorID
         if request.Command == commands.RequestService():
             if len(self.routes) < _MaxRoutesNumber:
+                cached_id = identitycache.FromCache(target)
+                identitycache.OverrideIdentity(target, cached_id.serialize())
                 self.routes[target] = (info.proto, info.host, time.time())
                 p2p_service.SendAck(request, 'accepted')
             else:
@@ -191,6 +189,7 @@ class ProxyRouter(automat.Automat):
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
                 self.routes.pop(target)
+                identitycache.StopOverridingIdentity(target)
                 p2p_service.SendAck(request, 'accepted')
             else:
                 p2p_service.SendAck(request, 'rejected')
@@ -205,24 +204,28 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
+        for idurl in self.routes.keys():
+            identitycache.StopOverridingIdentity(idurl)
+        self.routes.clear()
 
     def doUnRegisterRoute(self, arg):
         """
         Action method.
         """
+        idurl = arg
+        identitycache.StopOverridingIdentity(idurl)
 
     def doForwardRoutedPacket(self, arg):
         """
         Action method.
         """
-        self._forward_routed_packet(arg)
+        gateway.outbox(arg)
+        # self._forward_routed_packet(arg)
         
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
         """
-        from transport import gateway
-        from transport import callback
         gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
         # callback.remove_inbox_callback(self._on_inbox_packet_received)
         automat.objects().pop(self.index)
