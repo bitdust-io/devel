@@ -43,6 +43,8 @@ from p2p import p2p_connector
 
 from contacts import identitycache
 
+import proxy_interface
+
 #------------------------------------------------------------------------------ 
 
 _Debug = True
@@ -124,19 +126,19 @@ class ProxyReceiver(automat.Automat):
         elif self.state == 'LISTEN':
             if event == 'shutdown' :
                 self.state = 'CLOSED'
+                self.doStopListening(arg)
+                self.doReportDisconnected(arg)
                 self.doDestroyMe(arg)
             elif event == 'stop' :
                 self.state = 'STOPPED'
                 self.doStopListening(arg)
-                p2p_connector.A('check-synchronize')
-                self.doReportStopped(arg)
+                self.doReportDisconnected(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted' :
                 self.state = 'LISTEN'
                 self.doStartListening(arg)
-                p2p_connector.A('check-synchronize')
-                self.doReportStarted(arg)
+                self.doReportConnected(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
@@ -230,16 +232,23 @@ class ProxyReceiver(automat.Automat):
         self.router_identity = None
         self.router_idurl = None
 
-    def doReportStarted(self, arg):
-        """
-        Action method.
-        """
-
     def doReportStopped(self, arg):
         """
         Action method.
         """
 
+    def doReportConnected(self, arg):
+        """
+        Action method.
+        """
+        proxy_interface.interface_receiving_started(self.router_idurl)
+
+    def doReportDisconnected(self, arg):
+        """
+        Action method.
+        """
+        proxy_interface.interface_disconnected()
+        
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
@@ -297,7 +306,6 @@ class ProxyReceiver(automat.Automat):
             self.automat('service-refused')
         
 #------------------------------------------------------------------------------
-
 
 
 def main():

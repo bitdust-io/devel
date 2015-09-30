@@ -416,9 +416,9 @@ class NetworkConnector(automat.Automat):
         def _transports_verified(all_results):
             if _Debug:
                 lg.out(4, 'network_connector.doVerifyTransports : %s' % str(all_results))
-            protos, order = all_results
+            order, all_results = all_results
             for proto in order:
-                if not protos[proto]:
+                if not all_results[proto]:
                     gateway.transport(proto).A('restart')
                     return
             self.automat('network-transports-verified')

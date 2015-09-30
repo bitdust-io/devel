@@ -25,6 +25,11 @@ EVENTS:
     * :red:`timeout`
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+
+#------------------------------------------------------------------------------ 
 
 
 import os
@@ -178,6 +183,10 @@ class ProxyRouter(automat.Automat):
                 self.routes[target] = (info.proto, info.host, time.time())
                 p2p_service.SendAck(request, 'accepted')
             else:
+                if _Debug:
+                    lg.out(4, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
+                    import pprint
+                    lg.out(4, '    %s' % pprint.pformat(self.routes))
                 p2p_service.SendAck(request, 'rejected')
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
@@ -185,6 +194,10 @@ class ProxyRouter(automat.Automat):
                 p2p_service.SendAck(request, 'accepted')
             else:
                 p2p_service.SendAck(request, 'rejected')
+                if _Debug:
+                    lg.out(4, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
+                    import pprint
+                    lg.out(4, '    %s' % pprint.pformat(self.routes))
         else:
             p2p_service.SendFail(request, 'wrong command or payload')
 

@@ -247,7 +247,7 @@ def verify():
     def _on_verified_one(t_result, proto):
         all_results[proto] = t_result
         if _Debug:
-            lg.out(_DebugLevel, '        verified %s transport, result=%r' % t_result)
+            lg.out(_DebugLevel, '        verified %s transport, result=%r' % (proto, t_result))
         if len(all_results) == len(ordered_list):
             resulted.callback((ordered_list, all_results))
     

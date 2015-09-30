@@ -45,6 +45,12 @@ EVENTS:
     * :red:`timer-20sec`
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+
+#------------------------------------------------------------------------------ 
+
 import sys
 
 #------------------------------------------------------------------------------ 
@@ -71,10 +77,6 @@ from userid import my_id
 import propagate
 import ratings
 import network_connector
-
-#------------------------------------------------------------------------------ 
-
-_Debug = True
 
 #------------------------------------------------------------------------------ 
 
@@ -148,11 +150,6 @@ class P2PConnector(automat.Automat):
         'timer-20sec': (20.0, ['INCOMMING?']),
         }
     
-    def init(self):
-        self.log_events = True
-        self.identity_changed = False
-        self.contacts_changed = False
-
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('P2P ' + newstate)
         # tray_icon.state_changed(network_connector.A().state, self.state)
@@ -215,12 +212,12 @@ class P2PConnector(automat.Automat):
                 self.state = 'NETWORK?'
                 self.NeedPropagate=True
                 network_connector.A('check-reconnect')
-            elif event == 'my-id-updated' and not self.isMyIdentityChanged(arg) and ( event == 'network_connector.state' is not 'CONNECTED' ) :
-                self.state = 'DISCONNECTED'
-            elif event == 'my-id-updated' and ( self.NeedPropagate or ( self.isMyIdentityChanged(arg) and not self.isMyContactsChanged(arg) ) ) :
+            elif event == 'my-id-updated' and not self.isMyContactsChanged(arg) and ( self.NeedPropagate or self.isMyIdentityChanged(arg) ) :
                 self.state = 'PROPAGATE'
                 self.doPropagateMyIdentity(arg)
-            elif event == 'my-id-updated' and not self.NeedPropagate and not self.isMyIdentityChanged(arg) and ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) :
+            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(arg) ) and ( network_connector.A().state is not 'CONNECTED' ) :
+                self.state = 'DISCONNECTED'
+            elif event == 'my-id-updated' and not ( self.NeedPropagate or self.isMyIdentityChanged(arg) ) and ( network_connector.A().state is 'CONNECTED' ) :
                 self.state = 'CONNECTED'
         #---PROPAGATE---
         elif self.state == 'PROPAGATE':
@@ -243,13 +240,13 @@ class P2PConnector(automat.Automat):
         """
         Condition method.
         """
-        return self.identity_changed
+        return arg[1]
 
     def isMyContactsChanged(self, arg):
         """
         Condition method.
         """
-        return self.contacts_changed
+        return arg[0]
 
     def doSendMyIdentity(self, arg):
         """
@@ -266,30 +263,29 @@ class P2PConnector(automat.Automat):
     def doUpdateMyIdentity(self, arg):
         if _Debug:
             lg.out(4, 'p2p_connector.doUpdateMyIdentity')
-        self.identity_changed = False
-        self.contacts_changed = False
-        current_local_identity = my_id.getLocalIdentity()
-        xml_source_changed = my_id.rebuildLocalIdentity()
-        if not xml_source_changed and len(active_protos()) > 0:
-            self.automat('my-id-updated')
+        contacts_changed = False
+        old_contacts = list(my_id.getLocalIdentity().getContacts())
+        identity_changed = my_id.rebuildLocalIdentity()
+        if not identity_changed and len(active_protos()) > 0:
+            self.automat('my-id-updated', (False, False))
             return
-        self.identity_changed = True
-        old_contacts = current_local_identity.getContacts()
         new_contacts = my_id.getLocalIdentity().getContacts()
         if len(old_contacts) != len(new_contacts):
-            self.contacts_changed = True
-        if not self.contacts_changed:
+            contacts_changed = True
+        if not contacts_changed:
             for pos in range(len(old_contacts)):
                 if old_contacts[pos] != new_contacts[pos]:
-                    self.contacts_changed = True
+                    contacts_changed = True
                     break
-        if self.contacts_changed:
+        if contacts_changed:
             # erase all stats about received packets
             # if some contacts in my identity has been changed
             if _Debug:
-                lg.out(4, '    erase incoming traffic flags because my contacts were changed')
+                lg.out(4, '    my contacts were changed, erase active_protos() flags')
             active_protos().clear()
-        self.automat('my-id-updated')
+        if _Debug:
+            lg.out(4, '    identity has %sbeen changed' % ('' if identity_changed else 'not '))
+        self.automat('my-id-updated', (contacts_changed, identity_changed))
         
     def doPropagateMyIdentity(self, arg):
         #TODO: need to run this actions one by one, not in parallel - use Defered chain

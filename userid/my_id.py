@@ -412,7 +412,7 @@ def rebuildLocalIdentity():
     lg.out(4, '    version: %s' % str(lid.version))
     lg.out(4, '    contacts: %s' % str(lid.contacts))
     lg.out(4, '    sources: %s' % str(lid.sources))
-    lg.out(4, '    identity contacts has %sbeen changed' % (('' if changed else 'not ')))
+    lg.out(4, '    my identity has %sbeen changed' % (('' if changed else 'not ')))
 
     if changed:
         # finally saving modified local identity

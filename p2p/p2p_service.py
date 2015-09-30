@@ -216,7 +216,7 @@ def makeFilename(customerID, packetID):
 def SendAck(packettoack, response='', wide=False):
     result = signed.Packet(commands.Ack(), my_id.getLocalID(), my_id.getLocalID(), 
                                  packettoack.PacketID, response, packettoack.OwnerID)
-    lg.out(8, "p2p_service.SendAck %s to %s" % (result.PacketID, result.RemoteID))
+    lg.out(8, "p2p_service.SendAck %s to %s    response: %s ..." % (result.PacketID, result.RemoteID, str(response)[:15]))
     gateway.outbox(result, wide=wide)
     return result
     
@@ -231,7 +231,7 @@ def Ack(newpacket):
 def SendFail(request, response=''):
     result = signed.Packet(commands.Fail(), my_id.getLocalID(), my_id.getLocalID(), 
                                  request.PacketID, response, request.OwnerID) # request.CreatorID)
-    lg.out(8, "p2p_service.SendFail %s to %s" % (result.PacketID, result.RemoteID))
+    lg.out(8, "p2p_service.SendFail %s to %s    response: %s ..." % (result.PacketID, result.RemoteID, str(response)[:15]))
     gateway.outbox(result)
     return result
     
