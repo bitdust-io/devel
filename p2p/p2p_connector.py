@@ -35,13 +35,13 @@ the ``p2p_connector()`` goes into state "CONNECTED".
 If user changes his network settings all process should be restarted.
 
 EVENTS:
+    * :red:`check-synchronize`
     * :red:`inbox-packet`
     * :red:`init`
     * :red:`my-id-propagated`
     * :red:`my-id-updated`
     * :red:`network_connector.state`
     * :red:`ping-contact`
-    * :red:`reconnect`
     * :red:`timer-20sec`
 """
 
@@ -74,6 +74,10 @@ import network_connector
 
 #------------------------------------------------------------------------------ 
 
+_Debug = True
+
+#------------------------------------------------------------------------------ 
+
 _P2PConnector = None
 _ActiveProtocols = set()
 
@@ -91,18 +95,21 @@ def inbox(newpacket, info, status, message):
             # but we want to check that this packet is come from the Internet, not our local network
             # because we do not want to use this proto as first method if it is not working for all
             if info.proto not in active_protos():
-                lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
-                lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
+                if _Debug:
+                    lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                    lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
                 active_protos().add(info.proto)
     elif info.proto in ['udp',]:
         if info.proto not in active_protos():
-            lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
-            lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
+            if _Debug:
+                lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     elif info.proto in ['proxy',]:
         if info.proto not in active_protos():
-            lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
-            lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
+            if _Debug:
+                lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     A('inbox-packet', (newpacket, info, status, message))
 
@@ -114,7 +121,8 @@ def A(event=None, arg=None):
     """    
     global _P2PConnector
     if _P2PConnector is None:
-        _P2PConnector = P2PConnector('p2p_connector', 'AT_STARTUP', 6, True)
+        _P2PConnector = P2PConnector(
+            'p2p_connector', 'AT_STARTUP', 6, _Debug)
     if event is not None:
         _P2PConnector.automat(event, arg)
     return _P2PConnector
@@ -143,6 +151,7 @@ class P2PConnector(automat.Automat):
     def init(self):
         self.log_events = True
         self.identity_changed = False
+        self.contacts_changed = False
 
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('P2P ' + newstate)
@@ -153,6 +162,7 @@ class P2PConnector(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init' :
                 self.state = 'NETWORK?'
+                self.NeedPropagate=True
                 self.doInit(arg)
                 network_connector.A('reconnect')
         #---NETWORK?---
@@ -160,14 +170,6 @@ class P2PConnector(automat.Automat):
             if ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :
                 self.state = 'DISCONNECTED'
             elif ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
-                self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(arg)
-        #---CONTACTS---
-        elif self.state == 'CONTACTS':
-            if event == 'my-id-propagated' :
-                self.state = 'INCOMMING?'
-                self.doRestartFireHire(arg)
-            elif ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) or event == 'reconnect' :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
         #---INCOMMING?---
@@ -181,12 +183,12 @@ class P2PConnector(automat.Automat):
                 self.doInitRatings(arg)
                 self.doRestartBackupMonitor(arg)
                 self.doRestartCustomersRejector(arg)
-            elif event == 'reconnect' or ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
-                self.state = 'MY_IDENTITY'
-                self.doUpdateMyIdentity(arg)
             elif event == 'timer-20sec' or ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :
                 self.state = 'DISCONNECTED'
                 self.doInitRatings(arg)
+            elif event == 'check-synchronize' or ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
+                self.state = 'MY_IDENTITY'
+                self.doUpdateMyIdentity(arg)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'ping-contact' :
@@ -195,7 +197,7 @@ class P2PConnector(automat.Automat):
                 self.state = 'NETWORK?'
             elif ( event == 'network_connector.state' and arg == 'DISCONNECTED' ) :
                 self.state = 'DISCONNECTED'
-            elif event == 'reconnect' or ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
+            elif event == 'check-synchronize' or ( event == 'network_connector.state' and arg == 'CONNECTED' ) :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
         #---DISCONNECTED---
@@ -204,17 +206,31 @@ class P2PConnector(automat.Automat):
                 self.doSendMyIdentity(arg)
             elif ( event == 'network_connector.state' and arg not in [ 'CONNECTED', 'DISCONNECTED', ] ) :
                 self.state = 'NETWORK?'
-            elif event == 'inbox-packet' or event == 'reconnect' or ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) :
+            elif event == 'inbox-packet' or event == 'check-synchronize' or ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) :
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
         #---MY_IDENTITY---
         elif self.state == 'MY_IDENTITY':
-            if event == 'my-id-updated' and not self.isMyIdentityChanged(arg) :
-                self.state = 'CONTACTS'
-                self.doPropagateMyIdentity(arg)
-            elif event == 'my-id-updated' and self.isMyIdentityChanged(arg) :
+            if event == 'my-id-updated' and self.isMyContactsChanged(arg) :
                 self.state = 'NETWORK?'
-                network_connector.A('reconnect')
+                self.NeedPropagate=True
+                network_connector.A('check-reconnect')
+            elif event == 'my-id-updated' and not self.isMyIdentityChanged(arg) and ( event == 'network_connector.state' is not 'CONNECTED' ) :
+                self.state = 'DISCONNECTED'
+            elif event == 'my-id-updated' and ( self.NeedPropagate or ( self.isMyIdentityChanged(arg) and not self.isMyContactsChanged(arg) ) ) :
+                self.state = 'PROPAGATE'
+                self.doPropagateMyIdentity(arg)
+            elif event == 'my-id-updated' and not self.NeedPropagate and not self.isMyIdentityChanged(arg) and ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) :
+                self.state = 'CONNECTED'
+        #---PROPAGATE---
+        elif self.state == 'PROPAGATE':
+            if ( ( event == 'network_connector.state' and arg == 'CONNECTED' ) ) or event == 'check-synchronize' :
+                self.state = 'MY_IDENTITY'
+                self.doUpdateMyIdentity(arg)
+            elif event == 'my-id-propagated' :
+                self.state = 'INCOMMING?'
+                self.NeedPropagate=False
+                self.doRestartFireHire(arg)
         return None
 
     def isUsingBestProto(self, arg):
@@ -229,6 +245,12 @@ class P2PConnector(automat.Automat):
         """
         return self.identity_changed
 
+    def isMyContactsChanged(self, arg):
+        """
+        Condition method.
+        """
+        return self.contacts_changed
+
     def doSendMyIdentity(self, arg):
         """
         Action method.
@@ -237,14 +259,35 @@ class P2PConnector(automat.Automat):
 
     def doInit(self, arg):
         version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
-        lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
+        if _Debug:
+            lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
         callback.add_inbox_callback(inbox)
         
     def doUpdateMyIdentity(self, arg):
-        lg.out(4, 'p2p_connector.doUpdateMyIdentity')
-        self.identity_changed = my_id.rebuildLocalIdentity()
-        if self.identity_changed:
+        if _Debug:
+            lg.out(4, 'p2p_connector.doUpdateMyIdentity')
+        self.identity_changed = False
+        self.contacts_changed = False
+        current_local_identity = my_id.getLocalIdentity()
+        xml_source_changed = my_id.rebuildLocalIdentity()
+        if not xml_source_changed and len(active_protos()) > 0:
+            self.automat('my-id-updated')
+            return
+        self.identity_changed = True
+        old_contacts = current_local_identity.getContacts()
+        new_contacts = my_id.getLocalIdentity().getContacts()
+        if len(old_contacts) != len(new_contacts):
+            self.contacts_changed = True
+        if not self.contacts_changed:
+            for pos in range(len(old_contacts)):
+                if old_contacts[pos] != new_contacts[pos]:
+                    self.contacts_changed = True
+                    break
+        if self.contacts_changed:
             # erase all stats about received packets
+            # if some contacts in my identity has been changed
+            if _Debug:
+                lg.out(4, '    erase incoming traffic flags because my contacts were changed')
             active_protos().clear()
         self.automat('my-id-updated')
         
@@ -311,13 +354,15 @@ class P2PConnector(automat.Automat):
                                 if lid.getProtoContact(proto) != contact:
                                     contacts_is_ok = False
                         if contacts_is_ok:
-                            lg.out(6, 'p2p_connector._check_to_use_best_proto returning True : proxy_transport is fine :-)')
+                            if _Debug:
+                                lg.out(6, 'p2p_connector._check_to_use_best_proto returning True : proxy_transport is fine :-)')
                             return True    
         first = order[0]
         #if first contact in local identity is not working yet
         #but there is another working methods - switch first method
         if first not in active_protos():
-            lg.out(2, 'p2p_connector._check_to_use_best_proto first contact (%s) is not working!   active_protos()=%s' % (first, str(active_protos())))
+            if _Debug:
+                lg.out(2, 'p2p_connector._check_to_use_best_proto first contact (%s) is not working!   active_protos()=%s' % (first, str(active_protos())))
             return False
         # #small hack to make udp as first method if all is fine
         # if first != 'udp' and ('udp' in active_protos() and 'tcp' in active_protos()):
@@ -328,21 +373,24 @@ class P2PConnector(automat.Automat):
             return True
         #but if tcp method is not the first and it works - we want to TURN IT ON! - return True
         if first != 'tcp' and 'tcp' in active_protos():
-            lg.out(2, 'p2p_connector._check_to_use_best_proto tcp is not first but it works active_protos()=%s' % str(active_protos()))
+            if _Debug:
+                lg.out(2, 'p2p_connector._check_to_use_best_proto tcp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
         #if we are using udp and it is working - this is fantastic!
         if first == 'udp' and 'udp' in active_protos():
             return True
         #udp seems to be working and first contact is not working - so switch to udp
         if first != 'udp' and 'udp' in active_protos():
-            lg.out(2, 'p2p_connector._check_to_use_best_proto udp is not first but it works active_protos()=%s' % str(active_protos()))
+            if _Debug:
+                lg.out(2, 'p2p_connector._check_to_use_best_proto udp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
         #if we are using proxy and it is working - that is fine - it must work always!
         if first == 'proxy' and 'proxy' in active_protos():
             return True
         #proxy seems to be working and first contact is not working - so switch to proxy
         if first != 'proxy' and 'proxy' in active_protos():
-            lg.out(2, 'p2p_connector._check_to_use_best_proto proxy is not first but it works active_protos()=%s' % str(active_protos()))
+            if _Debug:
+                lg.out(2, 'p2p_connector._check_to_use_best_proto proxy is not first but it works active_protos()=%s' % str(active_protos()))
             return False
         #in other cases - do nothing
         return True
@@ -369,8 +417,9 @@ class P2PConnector(automat.Automat):
         #if tcp method is not the first but it works - switch to tcp
         if first != 'tcp' and 'tcp' in active_protos():
             wantedproto = 'tcp'
-        lg.out(4, 'p2p_connector.PopWorkingProto will pop %s contact order=%s active_protos()=%s' % (
-            wantedproto, str(order), str(active_protos())))
+        if _Debug:
+            lg.out(4, 'p2p_connector.PopWorkingProto will pop %s contact order=%s active_protos()=%s' % (
+                wantedproto, str(order), str(active_protos())))
         # now move best proto on the top
         # other users will use this method to send to us
         lid.popProtoContact(wantedproto)

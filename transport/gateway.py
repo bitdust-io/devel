@@ -52,7 +52,7 @@ import optparse
 
 from twisted.web import xmlrpc
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred 
+from twisted.internet.defer import Deferred, DeferredList, succeed 
 from twisted.internet.defer import maybeDeferred 
 from twisted.internet.defer import fail
 
@@ -207,6 +207,55 @@ def stop():
                 if _Debug:
                     lg.out(4, '    %s already stopped' % proto)
     return result
+
+
+def verify():
+    """
+    """
+    ordered_list = transports().keys()
+    ordered_list.sort(key=settings.getTransportPriority, reverse=True)
+    if _Debug:
+        lg.out(4, 'gateway.verify sorted list : %r' % ordered_list)
+    my_id_obj = my_id.getLocalIdentity()
+    resulted = Deferred()
+    all_results = {}
+    
+    def _verify_transport(proto):
+        if _Debug:
+            lg.out(_DebugLevel, '    verifying %s transport' % proto)
+        if not settings.transportIsEnabled(proto):
+            return succeed(True)
+        transp = transport(proto)
+        if transp.state == 'OFFLINE':
+            return succeed(True)
+        if transp.state != 'LISTENING':
+            return succeed(True)
+        transp_result = transp.interface.verify_contacts(my_id_obj)
+        if _Debug:
+            lg.out(_DebugLevel, '        %s result is %r' % (proto, transp_result))
+        if isinstance(transp_result, bool) and transp_result == True:
+            return succeed(True)
+        if isinstance(transp_result, bool) and transp_result == False:
+            return succeed(False)
+        if isinstance(transp_result, Deferred):
+            ret = Deferred()
+            transp_result.addCallback(lambda result_value: ret.callback(result_value))
+            return ret
+        lg.warn('incorrect result returned from %s transport verify_contacts(): %r' % (proto, transp_result))
+        return succeed(False)
+
+    def _on_verified_one(t_result, proto):
+        all_results[proto] = t_result
+        if _Debug:
+            lg.out(_DebugLevel, '        verified %s transport, result=%r' % t_result)
+        if len(all_results) == len(ordered_list):
+            resulted.callback((ordered_list, all_results))
+    
+    for proto in ordered_list:
+        d = _verify_transport(proto)
+        d.addCallback(_on_verified_one, proto)
+
+    return resulted
 
 #------------------------------------------------------------------------------ 
 

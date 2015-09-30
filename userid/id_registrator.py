@@ -440,50 +440,12 @@ class IdRegistrator(automat.Automat):
         ident = my_id.buildDefaultIdentity(
             name=login, ip=externalIP, idurls=self.free_idurls)
         # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
-        
-#        ident = identity.identity()
-#        ident.default()
-#        ident.sources = []
-#        ident.sources.extend(self.free_idurls)
-#        cdict = {}
-#        if settings.enableTCP():
-#            cdict['tcp'] = 'tcp://'+externalIP+':'+str(settings.getTCPPort())
-#        if settings.enableUDP():
-#            try:
-#                protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])
-#                if port and port not in ['80', 80, ]:
-#                    host += ':%s' % str(port) 
-#                cdict['udp'] = 'udp://%s@%s' % (login.lower(), host)
-#            except:
-#                lg.exc()
-##        if settings.enablePROXY() and settings.enablePROXYreceiving():
-##            # proxy node is not yet known
-##            # so just put our own info for now
-##            try:
-##                protocol, host, port, filename = nameurl.UrlParse(ident.sources[0])
-##                if port and port not in ['80', 80, ]:
-##                    host += ':%s' % str(port) 
-##                cdict['proxy'] = 'proxy://%s@%s' % (login.lower(), host)
-##            except:
-##                lg.exc()
-#        for c in my_id.getValidTransports():
-#            if cdict.has_key(c):
-#                ident.contacts.append(cdict[c])
-#        ident.publickey = key.MyPublicKey()
-#        ident.date = time.ctime() #time.strftime('%b %d, %Y')
-#        vernum = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
-#        repo, location = misc.ReadRepoLocation()
-#        ident.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
-#        ident.sign()
-
-
         my_identity_xmlsrc = ident.serialize()
         newfilename = settings.LocalIdentityFilename()+'.new'
         bpio.WriteFile(newfilename, my_identity_xmlsrc)
         self.new_identity = ident
         lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
-        
-        
+ 
     def _send_new_identity(self):
         """
         Send created identity to the identity server to register it. 

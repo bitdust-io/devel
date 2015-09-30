@@ -579,13 +579,21 @@ class identity:
             return default
         return host
 
-    def getContactIndex(self, proto):
+    def getContactIndex(self, proto='', host='', contact=''):
         """
-        Search a first contact with given ``proto``.
+        Search a first contact with given conditions.
         """
         for i in range(0, len(self.contacts)):
-            if self.contacts[i].find(proto+"://") == 0:
-                return i
+            c = self.contacts[i]
+            if proto: 
+                if c.find(proto+"://") == 0:
+                    return i
+            if host:
+                if c.find('://'+host) == 0:
+                    return i
+            if contact:
+                if c == contact:
+                    return i
         return -1
 
     def getProtoContact(self, proto):
@@ -723,7 +731,7 @@ class identity:
         Push less reliable protocols to the end of the list.
         This is to decrease its priority. 
         """
-        i = self.getContactIndex(proto)
+        i = self.getContactIndex(proto=proto)
         if i < 0:
             return
         contact = self.contacts[i]
@@ -735,7 +743,7 @@ class identity:
         Move given protocol to the top of the contacts list.
         This is to increase its priority.
         """
-        i = self.getContactIndex(proto)
+        i = self.getContactIndex(proto=proto)
         if i < 0:
             return
         contact = self.contacts[i]

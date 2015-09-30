@@ -243,7 +243,7 @@ def getOrderFromContacts(ident):
 
 #------------------------------------------------------------------------------ 
 
-def buildProtoContacts(lid):
+def buildProtoContacts(id_obj):
     """
     Create a full list of needed transport methods
     to be able to accept incoming traffic from other nodes.
@@ -251,8 +251,8 @@ def buildProtoContacts(lid):
     """
     from services import driver
     # prepare contacts
-    current_contats = lid.getContactsByProto()
-    current_order = lid.getProtoOrder()
+    current_contats = id_obj.getContactsByProto()
+    current_order = id_obj.getProtoOrder()
     lg.out(4, 'my_id.buildProtoContacts')
     lg.out(4, '    current contacts: %s' % str(current_contats))
     lg.out(4, '    current order: %s' % str(current_order))
@@ -278,7 +278,7 @@ def buildProtoContacts(lid):
         from transport import gateway
         # build contacts data according transports priorities
         for proto in active_transports:
-            clist = gateway.transport(proto).interface.build_contacts()
+            clist = gateway.transport(proto).interface.build_contacts(id_obj)
             cdict = {}
             if len(clist) > 1:
                 clist.reverse()
@@ -287,7 +287,7 @@ def buildProtoContacts(lid):
                     cdict[cproto] = contact
                     if cproto in new_order:
                         new_order.remove(cproto)
-                    new_order.insert(0, proto)
+                    new_order.insert(0, cproto)
             else:
                 for contact in clist: 
                     cproto, cdata = contact.split('://')
@@ -295,9 +295,9 @@ def buildProtoContacts(lid):
                     if cproto in new_order:
                         new_order.remove(cproto)
                     if cproto in current_order and current_order.index(cproto) == 0:
-                        new_order.insert(0, proto)
+                        new_order.insert(0, cproto)
                     else:
-                        new_order.append(proto)
+                        new_order.append(cproto)
             new_contacts.update(cdict)
     lg.out(4, '    new contacts: %s' % str(new_contacts))
     lg.out(4, '    new order: %s' % str(new_order))
@@ -411,6 +411,7 @@ def rebuildLocalIdentity():
         setLocalIdentity(lid)
     lg.out(4, '    version: %s' % str(lid.version))
     lg.out(4, '    contacts: %s' % str(lid.contacts))
+    lg.out(4, '    sources: %s' % str(lid.sources))
     lg.out(4, '    identity contacts has %sbeen changed' % (('' if changed else 'not ')))
 
     if changed:

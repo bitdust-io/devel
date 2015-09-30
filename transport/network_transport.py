@@ -18,12 +18,19 @@ EVENTS:
     * :red:`failed`
     * :red:`init`
     * :red:`receiving-started`
+    * :red:`restart`
     * :red:`shutdown`
     * :red:`start`
     * :red:`stop`
     * :red:`stopped`
     * :red:`transport-initialized`
 """
+
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+
+#------------------------------------------------------------------------------ 
 
 import platform
 
@@ -59,12 +66,13 @@ class NetworkTransport(automat.Automat):
         self.proto = proto
         self.interface = interface
         self.state_changed_callback = None
-        automat.Automat.__init__(self, '%s_transport' % proto, 'AT_STARTUP', 8, True)
+        automat.Automat.__init__(
+            self, '%s_transport' % proto, 'AT_STARTUP', 6, _Debug)
         
     def call(self, method_name, *args):
         method = getattr(self.interface, method_name, None)
         if method is None:
-            lg.out(2, 'network_transport.call ERROR method %s not found in protos' % (method_name, self.proto))
+            lg.err('method %s not found in protos' % (method_name, self.proto))
             return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
         return method(*args)
 
@@ -80,6 +88,14 @@ class NetworkTransport(automat.Automat):
         if self.state_changed_callback:
             self.state_changed_callback(self, oldstate, newstate)
         gateway.on_transport_state_changed(self, oldstate, newstate)
+
+    def state_not_changed(self, curstate, event_string, arg):
+        """
+        A small hack to catch all events after "verify" processing.
+        """
+        if self.state_changed_callback:
+            self.state_changed_callback(self, curstate, curstate)
+        gateway.on_transport_state_changed(self, curstate, curstate)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -104,6 +120,9 @@ class NetworkTransport(automat.Automat):
                 self.state = 'STOPPING'
                 self.StopNow=False
                 self.doStop(arg)
+            elif event == 'restart' :
+                self.StopNow=True
+                self.StartNow=True
         #---LISTENING---
         elif self.state == 'LISTENING':
             if event == 'shutdown' :
@@ -114,13 +133,19 @@ class NetworkTransport(automat.Automat):
                 self.state = 'STOPPING'
                 self.StopNow=False
                 self.doStop(arg)
+            elif event == 'restart' :
+                self.state = 'STOPPING'
+                self.StopNow=False
+                self.StartNow=True
+                self.doStop(arg)
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'start' :
+            elif event == 'start' or event == 'restart' :
                 self.state = 'STARTING'
+                self.StopNow=False
                 self.StartNow=False
                 self.doStart(arg)
         #---STOPPING---
@@ -130,12 +155,12 @@ class NetworkTransport(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'stopped' and not self.StartNow :
                 self.state = 'OFFLINE'
-            elif event == 'start' :
-                self.StartNow=True
             elif event == 'stopped' and self.StartNow :
                 self.state = 'STARTING'
                 self.StartNow=False
                 self.doStart(arg)
+            elif event == 'start' or event == 'restart' :
+                self.StartNow=True
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -144,8 +169,6 @@ class NetworkTransport(automat.Automat):
             if event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'start' :
-                self.StartNow=True
             elif event == 'transport-initialized' and self.StartNow :
                 self.state = 'STARTING'
                 self.doCreateProxy(arg)
@@ -154,6 +177,8 @@ class NetworkTransport(automat.Automat):
             elif event == 'transport-initialized' and not self.StartNow :
                 self.state = 'OFFLINE'
                 self.doCreateProxy(arg)
+            elif event == 'start' or event == 'restart' :
+                self.StartNow=True
         return None
 
     def doInit(self, arg):
@@ -196,13 +221,16 @@ class NetworkTransport(automat.Automat):
             if not id_contact:
                 default_host = nameurl.GetName(my_id.getLocalID())+'@'+platform.node()
             options['host'] = id_contact or default_host
+        if _Debug:
+            lg.out(8, 'network_transport.doStart connecting %s transport : %s' % (self.proto.upper(), options))
         self.interface.connect(options) 
 
     def doStop(self, arg):
         """
         Action method.
         """
-        lg.out(12, 'network_transport.doStop disconnecting %r' % self.interface)
+        if _Debug:
+            lg.out(8, 'network_transport.doStop disconnecting %s transport' % (self.proto.upper()))
         self.interface.disconnect()
 
     def doCreateProxy(self, arg):

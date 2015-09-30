@@ -37,11 +37,10 @@ from automats import automat
 
 from dht import dht_service
 
-from p2p import p2p_service
 from p2p import commands
-from p2p import network_connector
+from p2p import p2p_service
+from p2p import p2p_connector
 
-from contacts import identitydb
 from contacts import identitycache
 
 #------------------------------------------------------------------------------ 
@@ -129,15 +128,14 @@ class ProxyReceiver(automat.Automat):
             elif event == 'stop' :
                 self.state = 'STOPPED'
                 self.doStopListening(arg)
-                self.doUpdateMyIdentity(arg)
+                p2p_connector.A('check-synchronize')
                 self.doReportStopped(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted' :
                 self.state = 'LISTEN'
-                self.doRememberProxyNode(arg)
-                network_connector.A('reconnect')
                 self.doStartListening(arg)
+                p2p_connector.A('check-synchronize')
                 self.doReportStarted(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
@@ -219,23 +217,11 @@ class ProxyReceiver(automat.Automat):
         """
         self.router_idurl = arg        
 
-    def doRememberProxyNode(self, arg):
-        """
-        Action method.
-        """
-        self.router_identity = identitydb.get(self.router_idurl)
-
-    def doUpdateMyIdentity(self, arg):
-        """
-        Action method.
-        """
-        from p2p import network_connector
-        network_connector.A('reconnect')        
-        
     def doStartListening(self, arg):
         """
         Action method.
         """
+        self.router_identity = identitycache.FromCache(self.router_idurl)
 
     def doStopListening(self, arg):
         """
@@ -267,7 +253,7 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
         # DEBUG
-        self._got_remote_idurl({'idurl': 'http://37.18.255.32/h_vps1001.xml'})
+        self._got_remote_idurl({'idurl': 'http://37.18.255.32/h_1001.xml'})
         return
         new_key = dht_service.random_key()
         d = dht_service.find_node(new_key)

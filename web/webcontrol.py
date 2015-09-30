@@ -8048,7 +8048,7 @@ class SettingsTreeNode(Page):
 #                'services.entangled-dht.udp-port',
 #                ):
 #            network_connector.A('reconnect')
-#            p2p_connector.A('reconnect')
+#            p2p_connector.A('check-synchronize')
 #
 #        if self.path in ('services.network.receive-limit',):
 #            from transport.udp import udp_stream 

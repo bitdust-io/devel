@@ -72,19 +72,19 @@ class ProxyTransportService(LocalService):
             if newstate in ['LISTENING', 'OFFLINE',]:
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
-        if self.transport:
-            from p2p import network_connector
-            network_connector.A('network-transport-state-changed', self.transport)
+#        if self.transport:
+#            from p2p import network_connector
+#            network_connector.A('network-transport-state-changed', self.transport)
             
     def _on_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
-        network_connector.A('reconnect')
+        from p2p import p2p_connector
+        p2p_connector.A('check-synchronize')
         
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
-        network_connector.A('reconnect')
+        from p2p import p2p_connector
+        p2p_connector.A('check-synchronize')
         
     def _on_sending_enabled_disabled(self, path, value, oldvalue, result):
-        from p2p import network_connector
-        network_connector.A('reconnect')
+        from p2p import p2p_connector
+        p2p_connector.A('check-synchronize')
 

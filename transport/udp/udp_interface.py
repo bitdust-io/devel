@@ -13,6 +13,12 @@
 
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 
@@ -27,8 +33,6 @@ from twisted.internet.defer import Deferred, succeed, fail
 from logs import lg
 
 from lib import nameurl
-
-from userid import my_id
 
 import udp_node
 import udp_session
@@ -71,7 +75,8 @@ class GateInterface():
         """
         """
         global _GateProxy
-        lg.out(4, 'udp_interface.init %s' % xml_rpc_url_or_object)
+        if _Debug:
+            lg.out(4, 'udp_interface.init %s' % xml_rpc_url_or_object)
         if type(xml_rpc_url_or_object) == str:
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
@@ -83,7 +88,8 @@ class GateInterface():
         """
         """
         global _GateProxy
-        lg.out(4, 'udp_interface.shutdown')
+        if _Debug:
+            lg.out(4, 'udp_interface.shutdown')
         udp_node.Destroy()
         if _GateProxy:
             # del _GateProxy
@@ -93,25 +99,37 @@ class GateInterface():
     def connect(self, options):
         """
         """
-        lg.out(8, 'udp_interface.connect %s' % str(options))
+        if _Debug:
+            lg.out(8, 'udp_interface.connect %s' % str(options))
         udp_node.A('go-online', options)
         return True
 
     def disconnect(self):
         """
         """
-        lg.out(4, 'udp_interface.disconnect')
+        if _Debug:
+            lg.out(4, 'udp_interface.disconnect')
         udp_node.A('go-offline')
         return succeed(True)
 
-    def build_contacts(self):
+    def build_contacts(self, id_obj):
         """
         """
         result = []
-        lid = my_id.getLocalIdentity()
-        result.append('udp://%s@%s' % (lid.getIDName().lower(),lid.getIDHost()))
-        lg.out(4, 'udp_interface.build_contacts : %s' % str(result))
+        result.append('udp://%s@%s' % (id_obj.getIDName().lower(),id_obj.getIDHost()))
+        if _Debug:
+            lg.out(4, 'udp_interface.build_contacts : %s' % str(result))
         return result
+    
+    def verify_contacts(self, id_obj):
+        """
+        """
+        udp_contact = 'udp://%s@%s' % (id_obj.getIDName().lower(),id_obj.getIDHost())
+        if id_obj.getContactIndex(contact=udp_contact) < 0:
+            if _Debug:
+                lg.out(4, 'udp_interface.verify_contacts returning False: udp contact not found or changed')
+            return False        
+        return True
     
     def send_file(self, remote_idurl, filename, host, description='', single=False):
         """
@@ -143,7 +161,8 @@ class GateInterface():
         """
         if not host:
             host = idurl_to_id(idurl)
-        lg.out(12, 'udp_interface.connect %s' % host)
+        if _Debug:
+            lg.out(12, 'udp_interface.connect %s' % host)
         udp_node.A('connect', host)
 
     def disconnect_from_host(self, host):
@@ -161,7 +180,8 @@ class GateInterface():
             while i < len(sess.file_queue.outboxQueue):
                 fn, descr, result_defer, single = sess.file_queue.outboxQueue[i]
                 if fn == filename:
-                    lg.out(14, 'udp_interface.cancel_outbox_file removed %s in %s' % (os.path.basename(fn), sess))
+                    if _Debug:
+                        lg.out(14, 'udp_interface.cancel_outbox_file removed %s in %s' % (os.path.basename(fn), sess))
                     sess.file_queue.outboxQueue.pop(i)
                     ok = True
                 else:
@@ -191,7 +211,8 @@ class GateInterface():
         for sess in udp_session.sessions().values():
             for in_file in sess.file_queue.inboxFiles.values():
                 if in_file.transfer_id and in_file.transfer_id == transferID:
-                    lg.out(6, 'udp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
+                    if _Debug:
+                        lg.out(6, 'udp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
                     sess.automat('shutdown')
                     return True
         return False
@@ -199,7 +220,8 @@ class GateInterface():
 #------------------------------------------------------------------------------ 
 
 def proxy_errback(x):
-    lg.out(6, 'udp_interface.proxy_errback ERROR %s' % x)
+    if _Debug:
+        lg.out(6, 'udp_interface.proxy_errback ERROR %s' % x)
 
 #------------------------------------------------------------------------------ 
 

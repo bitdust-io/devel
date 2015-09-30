@@ -15,6 +15,12 @@ This is a client side part of the TCP plug-in.
 The server side part is placed in the file tcp_process.py. 
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 
@@ -52,7 +58,8 @@ class GateInterface():
         """
         """
         global _GateProxy
-        lg.out(4, 'tcp_interface.init')
+        if _Debug:
+            lg.out(4, 'tcp_interface.init')
         if type(xml_rpc_url_or_object) == str:
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
@@ -63,7 +70,8 @@ class GateInterface():
     def shutdown(self):
         """
         """
-        lg.out(4, 'tcp_interface.shutdown')
+        if _Debug:
+            lg.out(4, 'tcp_interface.shutdown')
         ret = self.disconnect()
         global _GateProxy
         if _GateProxy:
@@ -74,19 +82,21 @@ class GateInterface():
     def connect(self, options):
         """
         """
-        lg.out(4, 'tcp_interface.connect %s' % str(options))
+        if _Debug:
+            lg.out(4, 'tcp_interface.connect %s' % str(options))
         tcp_node.start_streams()
         return tcp_node.receive(options)
 
     def disconnect(self):
         """
         """
-        lg.out(4, 'tcp_interface.disconnect')
+        if _Debug:
+            lg.out(4, 'tcp_interface.disconnect')
         tcp_node.stop_streams()
         tcp_node.close_connections()
         return tcp_node.disconnect()
     
-    def build_contacts(self):
+    def build_contacts(self, id_obj):
         """
         """
         result = []
@@ -98,8 +108,20 @@ class GateInterface():
         #    if IPisLocal() and run_upnpc.last_result('tcp') != 'upnp-done':
         #        lg.out(4, 'p2p_connector.update_identity want to push tcp contact: local IP, no upnp ...')
         #        lid.pushProtoContact('tcp')
-        lg.out(4, 'tcp_interface.build_contacts : %s' % str(result))
+        if _Debug:
+            lg.out(4, 'tcp_interface.build_contacts : %s' % str(result))
         return result
+    
+    def verify_contacts(self, id_obj):
+        """
+        """
+        nowip = misc.readExternalIP()
+        tcp_contact = 'tcp://%s:%s' % (nowip, str(settings.getTCPPort()))
+        if id_obj.getContactIndex(contact=tcp_contact) < 0:
+            if _Debug:
+                lg.out(4, 'tcp_interface.verify_contacts returning False: tcp contact not found or changed')
+            return False        
+        return True
     
     def send_file(self, remote_idurl, filename, host, description=''):
         """
