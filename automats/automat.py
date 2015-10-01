@@ -382,8 +382,9 @@ class Automat(object):
             self.log(self.debug_level * 4, '%s fired with event "%s", refs=%d' % (
                 self, event_string, sys.getrefcount(self)))
         elif self.log_events:
-            self.log(self.debug_level, '%s fired with event "%s", refs=%d' % (
-                self, event_string, sys.getrefcount(self)))
+            if not event_string.startswith('timer-'):
+                self.log(self.debug_level, '%s fired with event "%s", refs=%d' % (
+                    self, event_string, sys.getrefcount(self)))
         old_state = self.state
         if self.post:
             try:
