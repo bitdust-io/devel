@@ -780,7 +780,7 @@ def run(opts, args, pars=None, overDict=None):
         tpl = jsontemplate.Template("""{.section result}
     {@}        
 {.end}""")
-        return call_jsonrpc_method_template_and_stop('ping', tpl, str(args[1]))            
+        return call_jsonrpc_method_template_and_stop('ping', tpl, args[1])            
                 
     #---set---
     elif cmd in ['set', 'get', 'conf', 'config', 'option', 'setting',]:

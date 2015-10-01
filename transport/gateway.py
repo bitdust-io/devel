@@ -580,7 +580,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
         return None
     transfer_id = make_transfer_ID()
     if _Debug:
-        lg.out(_DebugLevel, '>>> OUT >>> %s (%d) send {%s} via [%s] to %s at %s' % (
+        lg.out(_DebugLevel, '<<< OUT <<< %s (%d) send {%s} via [%s] to %s at %s' % (
             pkt_out.description, transfer_id, os.path.basename(filename), proto, 
             nameurl.GetName(receiver_idurl), host))
     if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
@@ -609,6 +609,22 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
                 pkt_out.description, transfer_id, work_item.proto, str(status).upper(), error_message))
     return True
 
+
+def on_cancelled_file_sending(proto, host, filename, size, description='', error_message=None):
+    """
+    """
+    pkt_out, work_item = packet_out.search(proto, host, filename)
+    if pkt_out is None:
+        if _Debug:
+            lg.out(_DebugLevel, 'gateway.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (
+                proto, host, os.path.basename(filename)))
+        return True
+    pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
+    if _Debug:
+        lg.out(_DebugLevel-8, '<<< OUT <<<  {%s} CANCELLED via [%s] to %s : %s' % (
+            os.path.basename(filename), proto, host, error_message))
+    return True
+
 def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     """
     Called from transport plug-in when receiving a single file were started from some peer.
@@ -631,28 +647,13 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     assert pkt_in != None
     if status == 'finished':
         if _Debug:
-            lg.out(_DebugLevel-8, '<<< IN <<< (%d) [%s] %s with %d bytes' % (
+            lg.out(_DebugLevel-8, '>>> IN >>> (%d) [%s] %s with %d bytes' % (
                 transfer_id, pkt_in.proto, status.upper(), bytes_received))
     else:
         if _Debug:
-            lg.out(_DebugLevel-8, '<<< IN <<< (%d) [%s] %s : %s' % (
+            lg.out(_DebugLevel-8, '>>> IN >>> (%d) [%s] %s : %s' % (
                 transfer_id, pkt_in.proto, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
-    return True
-
-def on_cancelled_file_sending(proto, host, filename, size, description='', error_message=None):
-    """
-    """
-    pkt_out, work_item = packet_out.search(proto, host, filename)
-    if pkt_out is None:
-        if _Debug:
-            lg.out(_DebugLevel, 'gateway.on_cancelled_file_sending packet_out %s %s %s not found - IT IS OK' % (
-                proto, host, os.path.basename(filename)))
-        return True
-    pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
-    if _Debug:
-        lg.out(_DebugLevel-8, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
-            os.path.basename(filename), proto, host, error_message))
     return True
 
 #------------------------------------------------------------------------------ 
