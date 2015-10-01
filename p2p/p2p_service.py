@@ -98,7 +98,7 @@ from services import driver
 
 def init():
     lg.out(4, 'p2p_service.init')
-    callback.add_inbox_callback(inbox)
+    callback.append_inbox_callback(inbox)
 
 #------------------------------------------------------------------------------
 
@@ -120,12 +120,6 @@ def inbox(newpacket, info, status, error_message):
             info.proto, info.host, newpacket))
         return False
     
-    if driver.is_started('service_proxy_server'):
-        from transport.proxy import proxy_router
-        if newpacket.RemoteID in proxy_router.A().routes.keys():
-            proxy_router.A('routed-inbox-packet-received', newpacket)             
-            return True
-  
     if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
         lg.out(1, "p2p_service.inbox  ERROR packet is NOT for us")
         lg.out(1, "p2p_service.inbox  getLocalID=" + my_id.getLocalID() )

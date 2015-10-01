@@ -49,7 +49,7 @@ def init(root=None, path='traffic', port=9997):
     global _WebListener
     if root is not None:
         from transport import callback
-        callback.add_inbox_callback(inbox)
+        callback.insert_inbox_callback(-1, inbox)
         callback.add_finish_file_sending_callback(outbox)
         root.putChild(path, TrafficPage())
         return
@@ -65,7 +65,7 @@ def init(root=None, path='traffic', port=9997):
         lg.exc()
         return
     from transport import callback
-    callback.add_inbox_callback(inbox)
+    callback.insert_inbox_callback(-1, inbox)
     callback.add_finish_file_sending_callback(outbox)
 
 def shutdown():
@@ -123,7 +123,7 @@ def inbox(newpacket, info, status, error_message):
     global _InboxByType
     
     if newpacket is None:
-        return
+        return False
 
     byts = len(newpacket)
     idurl = newpacket.CreatorID
@@ -167,6 +167,8 @@ def inbox(newpacket, info, status, error_message):
     _InboxByType[typ][3] += 1
 
     _InboxPacketsCount += 1
+    return False
+
 
 def outbox(pkt_out, item, status, size, error_message):
     global _OutboxPacketsCount
@@ -217,6 +219,7 @@ def outbox(pkt_out, item, status, size, error_message):
     _OutboxByType[typ][3] += 1
 
     _OutboxPacketsCount += 1
+    return False    
 
 #-------------------------------------------------------------------------------
 

@@ -296,13 +296,14 @@ def INfile(newpacket, pkt_in, status, error_message):
     Count incoming file from ``proto``://``host``, ``newpacket`` is already Unserialized.
     """
     if status != 'finished':
-        return
+        return False
     packet_from = newpacket.OwnerID
     if newpacket.OwnerID == my_id.getLocalID() and newpacket.Command == commands.Data():
         packet_from = newpacket.RemoteID
     if pkt_in.size:
         IN(packet_from, pkt_in.size)
     # IN(packet_from, len(newpacket.Payload))
+    return False
 
 
 def OUTfile(pkt_out, item, status, size, error_message):
@@ -310,11 +311,11 @@ def OUTfile(pkt_out, item, status, size, error_message):
     Count outgoing file to ``proto``://``host``, ``workitem`` is from sending queue.
     """
     if status != 'finished':
-        return
+        return False
     if pkt_out.filesize and pkt_out.remote_idurl:
         OUT(pkt_out.remote_idurl, pkt_out.filesize)
     # OUT(workitem.remoteid, workitem.payloadsize)
-
+    return False
 
 
 

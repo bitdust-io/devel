@@ -782,6 +782,7 @@ class IOThrottle:
         """
         for supplierIdentity in self.supplierQueues.keys():
             self.supplierQueues[supplierIdentity].OutboxStatus(pkt_out, status, error)
+        return False
 
 
     def IsSendingQueueEmpty(self):

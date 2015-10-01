@@ -52,9 +52,12 @@ from system import tmpfile
 from crypt import encrypted
 from crypt import key
 
+from userid import my_id
+
 from contacts import identitycache
 
 from transport import gateway
+from transport import callback
 
 from p2p import p2p_service
 from p2p import commands
@@ -154,6 +157,7 @@ class ProxyRouter(automat.Automat):
         """
         self.starting_transports = []
         gateway.add_transport_state_changed_callback(self._on_transport_state_changed)
+        callback.insert_inbox_callback(0, self._on_inbox_packet_received)
 
     def doWaitOtherTransports(self, arg):
         """
@@ -179,26 +183,30 @@ class ProxyRouter(automat.Automat):
                 cached_id = identitycache.FromCache(target)
                 identitycache.OverrideIdentity(target, cached_id.serialize())
                 self.routes[target] = (info.proto, info.host, time.time())
-                p2p_service.SendAck(request, 'accepted')
+                p2p_service.SendAck(request, 'accepted', wide=True)
+                if _Debug:
+                    lg.out(2, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED ROUTE for %s' % target)
             else:
                 if _Debug:
                     lg.out(4, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
                     import pprint
                     lg.out(4, '    %s' % pprint.pformat(self.routes))
-                p2p_service.SendAck(request, 'rejected')
+                p2p_service.SendAck(request, 'rejected', wide=True)
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
                 self.routes.pop(target)
                 identitycache.StopOverridingIdentity(target)
-                p2p_service.SendAck(request, 'accepted')
+                p2p_service.SendAck(request, 'accepted', wide=True)
+                if _Debug:
+                    lg.out(2, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % target)
             else:
-                p2p_service.SendAck(request, 'rejected')
+                p2p_service.SendAck(request, 'rejected', wide=True)
                 if _Debug:
                     lg.out(4, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
                     import pprint
                     lg.out(4, '    %s' % pprint.pformat(self.routes))
         else:
-            p2p_service.SendFail(request, 'wrong command or payload')
+            p2p_service.SendFail(request, 'wrong command or payload', wide=True)
 
     def doUnregisterAllRouts(self, arg):
         """
@@ -227,16 +235,19 @@ class ProxyRouter(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
-        # callback.remove_inbox_callback(self._on_inbox_packet_received)
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
         automat.objects().pop(self.index)
         global _ProxyRouter
         del _ProxyRouter
         _ProxyRouter = None
 
-    # def _on_inbox_packet_received(self, newpacket, info, status, error_message):
-    #     target = newpacket.CreatorID
-    #     if target in self.routes.keys():
-    #         self.automat('routed-inbox-packet-received', newpacket)
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        if newpacket.RemoteID == my_id.getLocalID():
+            return False
+        if newpacket.RemoteID in self.routes.keys():
+            self.automat('routed-inbox-packet-received', newpacket)
+            return True
+        return False             
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         lg.out(12, 'proxy_router._on_transport_state_changed %s : %s, starting transports: %s' % (

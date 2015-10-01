@@ -32,7 +32,7 @@ class GatewayService(LocalService):
         from transport import bandwidth
         gateway.init()
         bandwidth.init()
-        callback.add_inbox_callback(bandwidth.INfile)
+        callback.insert_inbox_callback(0, bandwidth.INfile)
         callback.add_finish_file_sending_callback(bandwidth.OUTfile)
         return True
     

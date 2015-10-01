@@ -264,7 +264,7 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
         # DEBUG
-        self._got_remote_idurl({'idurl': 'http://37.18.255.32/h_1001.xml'})
+        self._got_remote_idurl({'idurl': 'http://p2p-id.ru/bitdust_vps1001_i.xml'})
         return
         new_key = dht_service.random_key()
         d = dht_service.find_node(new_key)

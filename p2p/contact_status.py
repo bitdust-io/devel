@@ -93,7 +93,7 @@ def init():
     Needs to be called before other methods here.
     """
     lg.out(4, 'contact_status.init')
-    callback.add_inbox_callback(Inbox)
+    callback.insert_inbox_callback(-1, Inbox)
     callback.add_outbox_callback(Outbox)
     callback.add_queue_item_status_callback(OutboxStatus)
     
@@ -357,6 +357,7 @@ def OutboxStatus(pkt_out, status, error=''):
         A(pkt_out.remote_idurl, 'sent-done', (pkt_out.outpacket, status, error))
     else:
         A(pkt_out.remote_idurl, 'sent-failed', (pkt_out.outpacket, status, error))
+    return False
 
 
 def Inbox(newpacket, info, status, message):
@@ -365,6 +366,7 @@ def Inbox(newpacket, info, status, message):
     """
     A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
     ratings.remember_connected_time(newpacket.OwnerID)
+    return False
     
 
 def Outbox(pkt_out):
@@ -374,6 +376,7 @@ def Outbox(pkt_out):
     to try to connect with that man.    
     """
     A(pkt_out.outpacket.RemoteID, 'outbox-packet', pkt_out)
+    return False
 
 
 def FileSent(workitem, args):

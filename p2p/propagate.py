@@ -313,6 +313,7 @@ def HandleAck(ackpacket, info):
 def OnFileSent(pkt_out, item, status, size, error_message):
     """
     """
+    return False
 
 def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     """

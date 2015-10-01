@@ -15,6 +15,11 @@ Other parts of BitDust call this to get an identity using an IDURL.
 So this is a local cache of user ID's.
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = True 
+
+#------------------------------------------------------------------------------ 
 
 from twisted.internet.defer import Deferred
 
@@ -39,13 +44,15 @@ def init():
     This should be called before all other things.
     Call to initialize identitydb and cache several important IDs.
     """
-    lg.out(4, 'identitycache.init')
+    if _Debug:
+        lg.out(4, 'identitycache.init')
     identitydb.clear()
     identitydb.init()
         
 
 def shutdown():
-    lg.out(4, 'identitycache.shutdown')
+    if _Debug:
+        lg.out(4, 'identitycache.shutdown')
 
 #------------------------------------------------------------------------------ 
 
@@ -106,7 +113,11 @@ def FromCache(idurl):
     Get identity object from cache.
     """
     if IsOverridden(idurl):
-        return identity.identity(xmlsrc=ReadOverriddenIdentityXMLSource(idurl))
+        overridden_xmlsrc = ReadOverriddenIdentityXMLSource(idurl)
+        if overridden_xmlsrc:
+            if _Debug:
+                lg.out(14, '        returning overridden identity (%d bytes) for %s' % (len(overridden_xmlsrc), idurl))
+            return identity.identity(xmlsrc=overridden_xmlsrc)
     return identitydb.get(idurl)
 
 
@@ -160,7 +171,7 @@ def RemapContactAddress(address):
     idurl = GetIDURLByIPPort(address[0], address[1])
     if idurl is not None and HasLocalIP(idurl):
         newaddress = (GetLocalIP(idurl), address[1])
-#        lg.out(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
+#        if _Debug: lg.out(8, 'identitycache.RemapContactAddress for %s [%s] -> [%s]' % (
 #            nameurl.GetName(idurl), str(address), str(newaddress)))
         return newaddress
     return address
@@ -170,12 +181,18 @@ def OverrideIdentity(idurl, xml_src):
     """
     global _OverriddenIdentities
     _OverriddenIdentities[idurl] = xml_src
+    if _Debug:
+        lg.out(4, 'identitycache.OverrideIdentity a new identity source saved for %s' % idurl)
+        lg.out(4, '            total number of overrides is %d' % len(_OverriddenIdentities))
 
 def StopOverridingIdentity(idurl):
     """
     """
     global _OverriddenIdentities
     return _OverriddenIdentities.pop(idurl, None)
+    if _Debug:
+        lg.out(4, 'identitycache.OverrideIdentity   removed overridden source for %s' % idurl)
+        lg.out(4, '            total number of overrides is %d' % len(_OverriddenIdentities))
 
 def IsOverridden(idurl):
     """
@@ -203,7 +220,8 @@ def getPageFail(x, idurl):
     """
     This is called when identity request is failed. 
     """
-    lg.out(6, "identitycache.getPageFail NETERROR in request to " + idurl)
+    if _Debug:
+        lg.out(6, "identitycache.getPageFail NETERROR in request to " + idurl)
     return x
 
 
@@ -237,23 +255,27 @@ def immediatelyCaching(idurl):
         _CachingTasks.pop(idurl)
         if UpdateAfterChecking(idurl, src):
             res.callback(src)
-            lg.out(14, '    [cached] %s' % idurl)
+            if _Debug:
+                lg.out(14, '    [cached] %s' % idurl)
         else:
             res.errback(Exception(src))
-            lg.out(14, '    [cache error] %s' % idurl)
+            if _Debug:
+                lg.out(14, '    [cache error] %s' % idurl)
         return src
     def _getPageFail(x, idurl, res):
         global _CachingTasks
         _CachingTasks.pop(idurl)
         res.errback(x)
-        lg.out(14, '    [cache failed] %s' % idurl)
+        if _Debug:
+            lg.out(14, '    [cache failed] %s' % idurl)
         return None
     result = Deferred()
     d = net_misc.getPageTwisted(idurl)
     d.addCallback(_getPageSuccess, idurl, result)
     d.addErrback(_getPageFail, idurl, result)
     _CachingTasks[idurl] = result
-    lg.out(14, 'identitycache.immediatelyCaching %s' % idurl)
+    if _Debug:
+        lg.out(14, 'identitycache.immediatelyCaching %s' % idurl)
     return result
 
 #------------------------------------------------------------------------------ 

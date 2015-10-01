@@ -349,9 +349,12 @@ def inbox(info):
         return None
     _LastInboxPacketTime = time.time()
     if _Debug:
-        lg.out(_DebugLevel-4, "gateway.inbox [%s] signed by %s|%s from %s://%s" % (
-            newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
-            nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
+        lg.out(_DebugLevel-4, "gateway.inbox [%s] signed by %s|%s (for %s) from %s://%s" % (
+            Command, 
+            nameurl.GetName(OwnerID), 
+            nameurl.GetName(CreatorID), 
+            nameurl.GetName(RemoteID), 
+            info.proto, info.host))
     return newpacket
 
 def outbox(outpacket, wide=False, callbacks={}): 
@@ -788,7 +791,7 @@ def main():
         lg.out(2, 'INBOX %d : %r' % (globals()['num_in'], a))
         globals()['num_in'] += 1
         return True
-    callback.add_inbox_callback(_in)
+    callback.insert_inbox_callback(-1, _in)
     if len(args) > 0:
         globals()['num_out'] = 0
         def _s():

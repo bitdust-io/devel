@@ -100,7 +100,7 @@ def delete_backup_interest(BackupName):
 
 #------------------------------------------------------------------------------ 
 
-def add_inbox_callback(cb):
+def append_inbox_callback(cb):
     """
     You can add a callback to receive incoming ``packets``.
     Callback will be called with such arguments::
@@ -110,6 +110,21 @@ def add_inbox_callback(cb):
     global _InboxPacketCallbacksList
     if cb not in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.append(cb)
+
+
+def insert_inbox_callback(index, cb):
+    """
+    Same like ``append_inbox_callback(cb)`` but put the callback
+    at the given position in the callbacks list.
+    If you put your callback at the top you will catch the 
+    inbox packet as soon as possible - before other callbacks.
+    Callback will be called in a such way:
+  
+        callback(newpacket, info, status, error_message).
+    """
+    global _InboxPacketCallbacksList
+    if cb not in _InboxPacketCallbacksList:
+        _InboxPacketCallbacksList.insert(index, cb)
     
         
 def remove_inbox_callback(cb):
@@ -194,6 +209,8 @@ def run_inbox_callbacks(newpacket, info, status, error_message):
                 handled = True
         except:
             lg.exc()
+        if handled:
+            break
     return handled
 
 
@@ -208,6 +225,8 @@ def run_outbox_callbacks(pkt_out):
                 handled = True
         except:
             lg.exc()
+        if handled:
+            break
     return handled
 
 
@@ -222,6 +241,8 @@ def run_queue_item_status_callbacks(pkt_out, status, error_message):
                 handled = True
         except:
             lg.exc()
+        if handled:
+            break
     return handled
     
 
@@ -241,6 +262,8 @@ def run_finish_file_sending_callbacks(pkt_out, item, status, size, error_message
                 handled = True
         except:
             lg.exc()
+        if handled:
+            break
     return handled
     
     

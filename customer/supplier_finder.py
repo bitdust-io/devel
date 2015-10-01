@@ -181,7 +181,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        callback.add_inbox_callback(self._inbox_packet_received)
+        callback.insert_inbox_callback(-1, self._inbox_packet_received)
 
     def doSendMyIdentity(self, arg):
         """
@@ -254,6 +254,7 @@ class SupplierFinder(automat.Automat):
         """
         """
         self.automat('inbox-packet', (newpacket, info, status, error_message))
+        return False
         
     def _found_nodes(self, nodes):
         lg.out(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))

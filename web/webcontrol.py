@@ -252,7 +252,7 @@ def init(port = 6001):
     # p2p_service.SetTrafficOutFunc(OnTrafficOut)
     # io_throttle.SetPacketReportCallbackFunc(OnSupplierQueuePacketCallback)
     # list_files_orator.SetRepaintFunc(OnRepaintBackups)
-    callback.add_inbox_callback(OnTrafficIn)
+    callback.insert_inbox_callback(0, OnTrafficIn)
     callback.add_finish_file_sending_callback(OnTrafficOut)
     # callback.add_queue_item_status_callback(OnPacketOut)
     global_state.SetGlobalStateNotifyFunc(OnGlobalStateChanged)
@@ -822,10 +822,11 @@ def OnTrafficIn(newpacket, info, status, message):
                 newpacket.Command, nameurl.GetName(packet_from),
                 info.proto, info.host, newpacket.PacketID,
                 len(newpacket), status, message))
+    return False
 
 def OnPacketOut(pkt_out, status, message):
     if status == 'finished':
-        return
+        return False
     if message:
         message = message.replace(' ', '_')
     addr = ''
@@ -841,7 +842,6 @@ def OnPacketOut(pkt_out, status, message):
             pkt_out.outpacket.Command, nameurl.GetName(pkt_out.remote_idurl),
             addr, pkt_out.outpacket.PacketID, size, status, 
             error_message or message or ''))
-
 #    for result in pkt_out.results:
 #        proto, host, status, size, description, error_message = result
 #        if error_message:
@@ -851,6 +851,7 @@ def OnPacketOut(pkt_out, status, message):
 #                pkt_out.outpacket.Command, nameurl.GetName(pkt_out.remote_idurl),
 #                proto, host, pkt_out.outpacket.PacketID, size, status, 
 #                error_message or message or ''))
+    return False
 
 def OnTrafficOut(pkt_out, item, status, size, message):
     # if status != 'finished':
@@ -862,6 +863,7 @@ def OnTrafficOut(pkt_out, item, status, size, message):
             pkt_out.outpacket.Command, nameurl.GetName(pkt_out.remote_idurl),
             item.proto, item.host, pkt_out.outpacket.PacketID, pkt_out.filesize,
             status, message))
+    return False
 
 #def OnSupplierQueuePacketCallback(sendORrequest, supplier_idurl, packetid, result):
 #    SendCommandToGUI('queue %s %s %d %d %s %s' % (

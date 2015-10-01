@@ -114,6 +114,7 @@ def inbox(newpacket, info, status, message):
                 lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     A('inbox-packet', (newpacket, info, status, message))
+    return False
 
 #------------------------------------------------------------------------------ 
 
@@ -258,7 +259,7 @@ class P2PConnector(automat.Automat):
         version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         if _Debug:
             lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
-        callback.add_inbox_callback(inbox)
+        callback.insert_inbox_callback(-1, inbox)
         
     def doUpdateMyIdentity(self, arg):
         if _Debug:
@@ -342,11 +343,11 @@ class P2PConnector(automat.Automat):
                     from transport.proxy import proxy_receiver  
                     if proxy_receiver.A().router_identity:
                         contacts_is_ok = True
-                        router_protos = proxy_receiver.A().router_identity.getContactsByProto().items()
-                        if lid.getContactsNumber() != router_protos.getContactsNumber():
+                        router_protos = proxy_receiver.A().router_identity.getContactsByProto()
+                        if lid.getContactsNumber() != len(router_protos):
                             contacts_is_ok = False
                         if contacts_is_ok:
-                            for proto, contact in router_protos:
+                            for proto, contact in router_protos.items():
                                 if lid.getProtoContact(proto) != contact:
                                     contacts_is_ok = False
                         if contacts_is_ok:
