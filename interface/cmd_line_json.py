@@ -771,7 +771,16 @@ def run(opts, args, pars=None, overDict=None):
         if running:
             print_text('BitDust is running at the moment, need to stop the software at first\n')
             return 0
-        return cmd_identity(opts, args, overDict, running)    
+        return cmd_identity(opts, args, overDict, running)
+    
+    #---ping---
+    if cmd == 'ping' or cmd == 'call' or cmd == 'sendid':
+        if len(args) < 1:
+            return 2
+        tpl = jsontemplate.Template("""{.section result}
+    {@}        
+{.end}""")
+        return call_jsonrpc_method_template_and_stop('ping', tpl, args[1])            
                 
     #---set---
     elif cmd in ['set', 'get', 'conf', 'config', 'option', 'setting',]:

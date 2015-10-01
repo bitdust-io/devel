@@ -92,6 +92,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_find_peer_by_nickname(self, nickname):
         return api.find_peer_by_nickname(nickname)
     
+    def jsonrpc_ping(self, idurl):
+        return api.ping(idurl)
+
     # def jsonrpc_:
     #     return api.
     

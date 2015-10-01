@@ -15,6 +15,16 @@ Here is a bunch of methods to interact with BitDust software.
 
 #------------------------------------------------------------------------------ 
 
+_Debug = True
+
+#------------------------------------------------------------------------------ 
+
+from twisted.internet.defer import Deferred
+
+from services import driver
+
+#------------------------------------------------------------------------------ 
+
 def stop():
     from logs import lg
     lg.out(2, 'api.stop sending event "stop" to the shutdowner() machine')
@@ -124,11 +134,9 @@ def filemanager(json_request):
 
 #------------------------------------------------------------------------------ 
 
-
 def backups_update():
-    import backup_monitor
+    from storage import backup_monitor
     backup_monitor.A('restart') 
-        
     from storage import backup_fs
     result = []
     for pathID, localPath, item in backup_fs.IterateIDs():
@@ -136,7 +144,7 @@ def backups_update():
         # if len(result) > 20:
         #     break
     from logs import lg
-    lg.out(4, 'api.backups_list %s' % result)
+    lg.out(4, 'api.backups_update %s' % result)
     return { 'result': result, }
 
 
@@ -317,6 +325,19 @@ def find_peer_by_nickname(nickname):
     # nickname_observer.observe_many(nickname, 
         # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
     return d
+
+#------------------------------------------------------------------------------ 
+
+def ping(idurl):
+    if not driver.is_started('service_identity_propagate'):
+        return { 'result': 'service_identity_propagate() is not started', }
+    from p2p import propagate
+    d = Deferred()
+    propagate.PingContact(idurl, ack_handler=lambda newpacket, info: d.callback(
+        { 'result': str(newpacket), }))
+    return d
+    
+#------------------------------------------------------------------------------ 
 
 
 
