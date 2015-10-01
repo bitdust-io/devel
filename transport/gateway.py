@@ -365,6 +365,9 @@ def outbox(outpacket, wide=False, callbacks={}):
         :param wide:  set to True if you need to send the packet 
                       to all contacts of Remote Identity
         :param callbacks: provide a callback methods to get response
+        
+            callbacks arguments are: (response_packet, info)
+            
     """
     if _Debug:
         lg.out(_DebugLevel-4, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (

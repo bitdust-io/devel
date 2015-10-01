@@ -369,13 +369,11 @@ def CancelService(request, info):
         return SendFail(request, 'service %s is off' % service_name)
     return driver.cancel(service_name, request, info)
 
-def SendCancelService(remote_idurl, service_info, response_callback=None):
+def SendCancelService(remote_idurl, service_info, callbacks={}):
     lg.out(8, "p2p_service.SendCancelService [%s]" % service_info)
     result = signed.Packet(commands.CancelService(), my_id.getLocalID(), my_id.getLocalID(), 
                                   packetid.UniqueID(), service_info, remote_idurl)
-    gateway.outbox(result, callbacks={
-        commands.Ack():  response_callback,
-        commands.Fail(): response_callback})
+    gateway.outbox(result, callbacks=callbacks)
     return result   
 
 #------------------------------------------------------------------------------ 

@@ -128,11 +128,13 @@ class ProxyReceiver(automat.Automat):
         elif self.state == 'LISTEN':
             if event == 'shutdown' :
                 self.state = 'CLOSED'
+                self.doSendCancelService(arg)
                 self.doStopListening(arg)
                 self.doReportDisconnected(arg)
                 self.doDestroyMe(arg)
             elif event == 'stop' :
                 self.state = 'STOPPED'
+                self.doSendCancelService(arg)
                 self.doStopListening(arg)
                 self.doReportDisconnected(arg)
         #---SERVICE?---
@@ -214,6 +216,13 @@ class ProxyReceiver(automat.Automat):
                 commands.Ack(): self._request_service_ack,
                 commands.Fail(): lambda response, info: self.automat('service-refused', response)})
         self.request_service_packet_id = request.PacketID
+
+    def doSendCancelService(self, arg):
+        """
+        Action method.
+        """
+        p2p_service.SendCancelService(
+            self.router_idurl, 'service_proxy_server') 
 
     def doRememberNode(self, arg):
         """
@@ -300,15 +309,17 @@ class ProxyReceiver(automat.Automat):
         return response
 
     def _request_service_ack(self, response, info):
+        if response.PacketID != self.request_service_packet_id:
+            lg.warn('wong PacketID in response: %s, but outgoing was %s' % (response.PacketID, self.request_service_packet_id))
+            return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._request_service_ack : %s' % str(response.Payload))
         if response.Payload.startswith('accepted'):
             self.automat('service-accepted')
         else:
             self.automat('service-refused')
-        
-#------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
 
 def main():
     from twisted.internet import reactor

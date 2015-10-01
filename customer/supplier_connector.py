@@ -23,8 +23,13 @@ EVENTS:
     * :red:`timer-20sec`
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+
+#------------------------------------------------------------------------------ 
+
 import os
-import time
 import math 
 
 #------------------------------------------------------------------------------ 
@@ -209,7 +214,8 @@ class SupplierConnector(automat.Automat):
         """
         newpacket = arg
         if newpacket.Payload.startswith('accepted'):
-            # lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
+            if _Debug:
+                lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
             return True
         return False
 
@@ -220,7 +226,8 @@ class SupplierConnector(automat.Automat):
         newpacket = arg
         if newpacket.Command == commands.Ack():
             if newpacket.Payload.startswith('accepted'):
-                # lg.out(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
+                if _Debug:
+                    lg.out(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
                 return True
         return False
 
@@ -245,7 +252,11 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        request = p2p_service.SendCancelService(self.idurl, 'service_supplier', self._supplier_acked)
+        request = p2p_service.SendCancelService(
+            self.idurl, 'service_supplier', 
+            callbacks = {
+                commands.Ack():  self._supplier_acked,
+                commands.Fail(): self._supplier_failed})
         self.request_packet_id = request.PacketID
 
     def doDestroyMe(self, arg):
@@ -265,7 +276,8 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        # lg.out(14, 'supplier_connector.doReportConnect')
+        if _Debug:
+            lg.out(14, 'supplier_connector.doReportConnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'CONNECTED')
 
@@ -273,7 +285,8 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        # lg.out(14, 'supplier_connector.doReportNoService')
+        if _Debug:
+            lg.out(14, 'supplier_connector.doReportNoService')
         for cb in self.callbacks.values():
             cb(self.idurl, 'NO_SERVICE')
 
@@ -281,12 +294,19 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        # lg.out(14, 'supplier_connector.doReportDisconnect')
+        if _Debug:
+            lg.out(14, 'supplier_connector.doReportDisconnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'DISCONNECTED')
 
     def _supplier_acked(self, response, info):
-        # lg.out(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
+        if _Debug:
+            lg.out(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
+        self.automat(response.Command.lower(), response)
+
+    def _supplier_failed(self, response, info):
+        if _Debug:
+            lg.out(16, 'supplier_connector._supplier_failed %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
 
 

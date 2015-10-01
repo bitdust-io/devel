@@ -26,6 +26,13 @@ EVENTS:
     * :red:`write-error`
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = False
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------ 
+
 import os
 import time
 
@@ -54,11 +61,6 @@ import stats
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
-_DebugLevel = 18
-
-#------------------------------------------------------------------------------ 
-
 _OutboxQueue = []
 _PacketsCounter = 0
 
@@ -84,7 +86,8 @@ def queue():
 def create(outpacket, wide, callbacks):
     """
     """
-    # lg.out(10, 'packet_out.create  %s' % str(outpacket))
+    if _Debug:
+        lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
     p = PacketOut(outpacket, wide, callbacks)
     queue().append(p)
     p.automat('run')
@@ -114,9 +117,10 @@ def search_by_transfer_id(transfer_id):
 
 
 def search_by_response_packet(newpacket):
-#    lg.out(18, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
-#        nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
-#        nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
+    if _Debug:
+        lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
+            nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
+            nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
     target_idurl = newpacket.CreatorID
     if newpacket.OwnerID == my_id.getLocalID():
@@ -127,14 +131,16 @@ def search_by_response_packet(newpacket):
         if target_idurl != p.outpacket.RemoteID:
             continue  
         result.append(p)
-        # lg.out(20, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
-        #     nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID), 
-        #     nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
-        #     p.callbacks.keys()))
-    # if len(result) == 0:
-        # lg.warn('- not found [%s/%s/%s]:%s %s' % (
-        #     nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
-        #     nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
+        if _Debug:
+            lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
+                nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID), 
+                 nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
+                 p.callbacks.keys()))
+    if len(result) == 0:
+        if _Debug:
+            lg.warn('- not found [%s/%s/%s]:%s %s' % (
+                nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
+                nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     return result
 
 #------------------------------------------------------------------------------ 
@@ -174,7 +180,7 @@ class PacketOut(automat.Automat):
         self.caching_deferred = None
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.label = 'out_%d_%s (%d callbacks)' % (get_packets_counter(), self.description, len(self.callbacks))
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 
     def init(self):
@@ -193,8 +199,9 @@ class PacketOut(automat.Automat):
             if self.outpacket.Command == commands.Data():      
                 self.remote_idurl = self.outpacket.CreatorID.strip()       
             else:
-                self.remote_idurl = None
-                lg.warn('sending a packet we did not make, and that is not Data packet')
+                self.remote_idurl = self.outpacket.RemoteID.strip()
+                if _Debug:
+                    lg.out(_DebugLevel, 'packet_out.init sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         self.timeout = None
         self.packetdata = None
@@ -424,7 +431,8 @@ class PacketOut(automat.Automat):
         for i in xrange(len(self.items)):
             if self.items[i].proto == proto: # and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
-                # lg.out(18, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
+                if _Debug:
+                    lg.out(_DebugLevel, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
                 ok = True
         if not ok:
             lg.warn('not found item for %r:%r' % (proto, host))
@@ -469,9 +477,6 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        # msg = self.error_message
-        # if not isinstance(msg, str):
-        #     msg = 'cancelled'
         for item in self.results:
             stats.count_outbox(self.remote_idurl, item.proto, 'failed', 0)
             callback.run_finish_file_sending_callbacks(
@@ -488,15 +493,12 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        # self.callbacks[self.response_packet.Command](self.response_packet, self)
         callback.run_queue_item_status_callbacks(self, 'finished', '')
 
     def doReportDoneNoAck(self, arg):
         """
         Action method.
         """
-        # if self.response_packet:
-        #     self.callbacks[self.response_packet.Command](self.response_packet, self)
         callback.run_queue_item_status_callbacks(self, 'finished', '')
 
     def doReportFailed(self, arg):
