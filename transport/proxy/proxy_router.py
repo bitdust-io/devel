@@ -183,7 +183,7 @@ class ProxyRouter(automat.Automat):
                 cached_id = identitycache.FromCache(target)
                 identitycache.OverrideIdentity(target, cached_id.serialize())
                 self.routes[target] = (info.proto, info.host, time.time())
-                p2p_service.SendAck(request, 'accepted', wide=True)
+                p2p_service.SendAck(request, 'accepted') # , wide=True)
                 if _Debug:
                     lg.out(2, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED ROUTE for %s' % target)
             else:
@@ -191,22 +191,22 @@ class ProxyRouter(automat.Automat):
                     lg.out(4, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
                     import pprint
                     lg.out(4, '    %s' % pprint.pformat(self.routes))
-                p2p_service.SendAck(request, 'rejected', wide=True)
+                p2p_service.SendAck(request, 'rejected') # , wide=True)
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
                 self.routes.pop(target)
                 identitycache.StopOverridingIdentity(target)
-                p2p_service.SendAck(request, 'accepted', wide=True)
+                p2p_service.SendAck(request, 'accepted') # , wide=True)
                 if _Debug:
                     lg.out(2, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % target)
             else:
-                p2p_service.SendAck(request, 'rejected', wide=True)
+                p2p_service.SendAck(request, 'rejected') # , wide=True)
                 if _Debug:
                     lg.out(4, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
                     import pprint
                     lg.out(4, '    %s' % pprint.pformat(self.routes))
         else:
-            p2p_service.SendFail(request, 'wrong command or payload', wide=True)
+            p2p_service.SendFail(request, 'wrong command or payload') # , wide=True)
 
     def doUnregisterAllRouts(self, arg):
         """

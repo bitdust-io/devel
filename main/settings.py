@@ -1840,6 +1840,11 @@ def enableUPNP(enable=None):
         return config.conf().getBool('services/tcp-connections/upnp-enabled')
     config.conf().setData('services/tcp-connections/upnp-enabled', str(enable))
     
+def enableService(svc_name, enable=None):
+    if enable is None:
+        return config.conf().getBool('services/%s/enabled' % svc_name)    
+    config.conf().setBool('services/%s/enabled' % svc_name, enable)
+    
 #------------------------------------------------------------------------------ 
 #--- INITIALIZE BASE DIR ------------------------------------------------------
 #------------------------------------------------------------------------------ 

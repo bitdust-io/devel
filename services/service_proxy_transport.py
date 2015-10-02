@@ -24,9 +24,9 @@ class ProxyTransportService(LocalService):
     proto = 'proxy'
     
     def dependent_on(self):
-        return ['service_gateway',
+        return ['service_p2p_hookups',
                 ]
-    
+
     def start(self):
         from twisted.internet import reactor
         from twisted.internet.defer import Deferred

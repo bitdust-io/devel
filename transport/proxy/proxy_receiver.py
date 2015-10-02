@@ -102,6 +102,7 @@ class ProxyReceiver(automat.Automat):
         """
         self.router_idurl = None
         self.router_identity = None
+        self.router_proto
         self.request_service_packet_id = None
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -248,6 +249,8 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        response, info = arg
+        
         self.router_identity = identitycache.FromCache(self.router_idurl)
 
     def doStopListening(self, arg):

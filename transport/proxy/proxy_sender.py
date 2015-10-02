@@ -33,6 +33,8 @@ from logs import lg
 
 from system import bpio
 
+from lib import packetid
+
 from crypt import encrypted
 from crypt import key
 from crypt import signed
@@ -138,21 +140,28 @@ class ProxySender(automat.Automat):
         """
         callback.remove_finish_file_sending_callback(self._on_outbox_packet)
 
-#    def doRegisterOutboxFile(self, arg):
-#        """
-#        Action method.
-#        """
-#        remote_idurl, filename, host, description, single = arg
-#        if not single:
-#            d = proxy_interface.interface_register_file_sending(
-#                host, remote_idurl, filename, description)
-#            d.addCallback(self._on_outbox_file_registered, remote_idurl, filename, host, description)
-#            d.addErrback(self._on_outbox_file_register_failed, remote_idurl, filename, host, description)
+    def doRegisterOutboxFile(self, arg):
+        """
+        Action method.
+        """
+        remote_idurl, filename, host, description, single = arg
+        if not single:
+            d = proxy_interface.interface_register_file_sending(
+                host, remote_idurl, filename, description)
+            d.addCallback(self._on_outbox_file_registered, remote_idurl, filename, host, description)
+            d.addErrback(self._on_outbox_file_register_failed, remote_idurl, filename, host, description)
         
-#    def doEncryptAndSendOutboxPacket(self, arg):
-#        """
-#        Action method.
-#        """
+    def doEncryptAndSendOutboxPacket(self, arg):
+        """
+        Action method.
+        """
+        router_idurl = proxy_receiver.GetRouterIDURL()
+        outpacket, wide, callbacks = arg
+        src = ''
+        src += my_id.getLocalID() + '\n'
+        src += outpacket.RemoteID + '\n'
+        src += 'wide\n' if wide else '\n' 
+        src += outpacket.serialize()
 #        try:
 #            remote_idurl, filename, host, description, single = arg
 #            router_name, router_host = host.split('@')
@@ -161,28 +170,29 @@ class ProxySender(automat.Automat):
 #            lg.exc()
 #            return
 #        src = my_id.getLocalID() + '\n' + remote_idurl + '\n' + bpio.ReadBinaryFile(filename)
-#        block = encrypted.Block(
-#            my_id.getLocalID(),
-#            'routed data',
-#            0,
-#            key.NewSessionKey(),
-#            key.SessionKeyType(),
-#            True,
-#            src,)
-#        newpacket = signed.Packet(
-#            commands.Data(), 
-#            router_idurl, 
-#            my_id.getLocalID(),
-#            'routed_packet', 
-#            block.Serialize(), 
-#            router_idurl)
+        block = encrypted.Block(
+            my_id.getLocalID(),
+            'routed data',
+            0,
+            key.NewSessionKey(),
+            key.SessionKeyType(),
+            True,
+            src,)
+        newpacket = signed.Packet(
+            commands.Data(), 
+            router_idurl, 
+            my_id.getLocalID(),
+            'routed_'+packetid.UniqueID(), 
+            block.Serialize(), 
+            router_idurl)
+        
 #        gateway.outbox(newpacket, callbacks={
 #            commands.Ack(): self._on_outbox_packet_acked,
 #            commands.Fail(): self._on_outbox_packet_failed}) 
-#        del src
-#        del block
-#        del newpacket
-#        lg.out(12, 'proxy_sender.doSendOutboxPacket for %s routed via %s' % (remote_idurl, router_idurl))
+        del src
+        del block
+        del newpacket
+        lg.out(12, 'proxy_sender.doSendOutboxPacket %s for %s' % (newpacket, router_idurl))
 
     def doDestroyMe(self, arg):
         """
@@ -209,7 +219,11 @@ class ProxySender(automat.Automat):
             return None
         if _Debug:
             lg.out(14, 'proxy_sender._on_outbox_packet   %s were redirected for %s' % (outpacket, router_idurl))
-        return packet_out.create(outpacket, wide, callbacks, target=router_idurl)
+        self.automat('outbox-packet', (outpacket, wide, callbacks))
+        return True
+        # return packet_out.create(outpacket, wide, callbacks, target=router_idurl)
+
+
 
 #    def _on_outbox_file_registered(self, remote_idurl, filename, host, description):
 #        """

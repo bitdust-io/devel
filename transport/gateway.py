@@ -166,7 +166,6 @@ def shutdown():
     if _LocalListener:
         _LocalListener = None
 
-
 def start():
     """
     """
@@ -188,6 +187,31 @@ def start():
     return result
 
         
+def cold_start():
+    """
+    """
+    if _Debug:
+        lg.out(4, 'gateway.cold_start')
+    callback.append_outbox_filter_callback(on_outbox_packet)
+    ordered_list = transports().keys()
+    ordered_list.sort(key=settings.getTransportPriority, reverse=False)
+    result = []
+    for proto in ordered_list:
+        transp = transport(proto)
+        if settings.transportIsEnabled(proto): 
+            if transp.state != 'LISTENING':
+                if _Debug:
+                    lg.out(4, '    sending "start" to %s' % transp)
+                transp.automat('start')
+                result.append(proto)
+                break
+            else:
+                if _Debug:
+                    lg.out(4, '    %r is ready' % transp)
+    reactor.callLater(5, packets_timeout_loop)
+    return result
+
+
 def stop():
     """
     """
