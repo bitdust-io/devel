@@ -196,13 +196,19 @@ class ProxySender(automat.Automat):
     def _on_outbox_packet(self, outpacket, wide, callbacks):
         """
         """
+        if _Debug:
+            lg.out(8, 'proxy_sender._on_outbox_packet filtering %s' % (outpacket))
         router_idurl = proxy_receiver.GetRouterIDURL()
         if not router_idurl:
+            if _Debug:
+                lg.out(8, '        proxy_receiver() is not yet found a router')
             return None
-        if outpacket.RemoteID != router_idurl:
+        if outpacket.RemoteID == router_idurl:
+            if _Debug:
+                lg.out(8, '        outpacket is addressed for router')
             return None
         if _Debug:
-            lg.out(8, 'proxy_sender._on_outbox_packet %s were redirected to %s' % (outpacket, router_idurl))
+            lg.out(8, '    packet were redirected for %s' % (router_idurl))
         return packet_out.create(outpacket, wide, callbacks, target=router_idurl)
 
 #    def _on_outbox_file_registered(self, remote_idurl, filename, host, description):

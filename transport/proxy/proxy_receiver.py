@@ -81,7 +81,7 @@ def GetRouterIdentity():
     global _ProxyReceiver
     if not _ProxyReceiver:
         return None
-    return _ProxyReceiver.router_idurl
+    return _ProxyReceiver.router_identity
 
 #------------------------------------------------------------------------------ 
 
@@ -103,7 +103,6 @@ class ProxyReceiver(automat.Automat):
         self.router_idurl = None
         self.router_identity = None
         self.request_service_packet_id = None
-        self.router_proto_host = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -249,9 +248,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        response, info = arg
         self.router_identity = identitycache.FromCache(self.router_idurl)
-        self.router_proto_host = (info.proto, info.host) 
 
     def doStopListening(self, arg):
         """

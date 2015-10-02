@@ -105,76 +105,66 @@ def init():
 def inbox(newpacket, info, status, error_message):
     """
     """
-    if newpacket.Command == commands.Identity():
-        # contact sending us current identity we might not have
-        # so we handle it before check that packet is valid
-        # because we might not have his identity on hands and so can not verify the packet  
-        # so we check that his Identity is valid and save it into cache
-        # than we check the packet to be valid too.
-        Identity(newpacket)            
-        return True
-
-    # check that signed by a contact of ours
-    if not newpacket.Valid():              
-        lg.warn('new packet from %s://%s is not valid: %r' % (
-            info.proto, info.host, newpacket))
-        return False
-    
     if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
-        lg.out(1, "p2p_service.inbox  ERROR packet is NOT for us")
-        lg.out(1, "p2p_service.inbox  getLocalID=" + my_id.getLocalID() )
-        lg.out(1, "p2p_service.inbox  CreatorID=" + newpacket.CreatorID )
-        lg.out(1, "p2p_service.inbox  RemoteID=" + newpacket.RemoteID )
-        lg.out(1, "p2p_service.inbox  PacketID=" + newpacket.PacketID )
+        # packet is NOT for us, skip  
         return False
 
     commandhandled = False
-    if newpacket.Command == commands.Fail():
-        Fail(newpacket) # some operation was failed on other side
-        commandhandled = True
+    if newpacket.Command == commands.Ack():
+        # a response from remote node, typically handled in other places
+        Ack(newpacket)   
+        commandhandled = False 
+    elif newpacket.Command == commands.Fail():
+        # some operation was failed on other side
+        Fail(newpacket) 
+        commandhandled = False
     elif newpacket.Command == commands.Retrieve():
-        Retrieve(newpacket) # retrieve some packet customer stored with us
+        # retrieve some packet customer stored with us
+        Retrieve(newpacket) 
         commandhandled = True
-    elif newpacket.Command == commands.Ack():
-        Ack(newpacket) # a response from remote node, typically handled in other places  
-        commandhandled = True 
     elif newpacket.Command == commands.RequestService():
-        RequestService(newpacket, info) # other node send us a request to get some service
+        # other node send us a request to get some service
+        RequestService(newpacket, info)
         commandhandled = True
     elif newpacket.Command == commands.CancelService():
-        CancelService(newpacket, info) # other node wants to stop the service we gave him
+        # other node wants to stop the service we gave him
+        CancelService(newpacket, info) 
         commandhandled = True    
     elif newpacket.Command == commands.Data():
-        Data(newpacket) # new packet to store for customer
+        # new packet to store for customer
+        Data(newpacket) 
         commandhandled = True
     elif newpacket.Command == commands.ListFiles():
-        ListFiles(newpacket) # customer wants list of their files
+        # customer wants list of their files
+        ListFiles(newpacket) 
         commandhandled = True
     elif newpacket.Command == commands.Files():
-        Files(newpacket) # supplier sent us list of files
+        # supplier sent us list of files
+        Files(newpacket) 
         commandhandled = True
     elif newpacket.Command == commands.DeleteFile():
-        DeleteFile(newpacket) # will Delete a customer file for them
+        # will Delete a customer file for them
+        DeleteFile(newpacket) 
         commandhandled = True
     elif newpacket.Command == commands.DeleteBackup():
-        DeleteBackup(newpacket) # will Delete all files starting in a backup
+        # will Delete all files starting in a backup
+        DeleteBackup(newpacket) 
         commandhandled = True
     elif newpacket.Command == commands.RequestIdentity():
-        RequestIdentity(newpacket) # contact asking for our current identity
+        # contact asking for our current identity
+        RequestIdentity(newpacket) 
         commandhandled = True
     elif newpacket.Command == commands.Message():
-        from chat import message
-        message.Message(newpacket) # contact asking for our current identity
-        commandhandled = True
+        # contact asking for our current identity
+        if driver.is_started('service_private_messages'):
+            from chat import message
+            message.Message(newpacket) 
+            commandhandled = True
     elif newpacket.Command == commands.Correspondent():
-        Correspondent(newpacket) # contact asking for our current identity
+        # contact asking for our current identity
+        Correspondent(newpacket) 
         commandhandled = True
     
-    if not commandhandled:
-        lg.warn("[%s] from %s|%s (%s://%s) NOT handled" % (
-            newpacket.Command, nameurl.GetName(newpacket.CreatorID), 
-            nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
-
     return commandhandled
 
 
@@ -223,9 +213,6 @@ def SendAck(packettoack, response='', wide=False):
 
 def Ack(newpacket):
     lg.out(8, "p2p_service.Ack %s from [%s] : %s" % (newpacket.PacketID, newpacket.CreatorID, newpacket.Payload))
-    # for p in packet_out.search_by_packet_id(newpacket.CreatorID, newpacket.PacketID):
-    #     lg.out(8, '        found matched outbox packet : %r' % p)
-    #     p.automat('ack', newpacket)
      
     
 def SendFail(request, response=''):
@@ -246,9 +233,6 @@ def SendFailNoRequest(remoteID, packetID, response):
 
 def Fail(newpacket):
     lg.out(8, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
-    # for p in packet_out.search_by_packet_id(newpacket.RemoteID, newpacket.PacketID):
-    #     lg.out(8, '        found matched outbox packet : %r' % p)
-    #     p.automat('fail', newpacket)
  
 #------------------------------------------------------------------------------ 
 
@@ -270,8 +254,7 @@ def Identity(newpacket):
     if not identitycache.UpdateAfterChecking(idurl, newxml):
         lg.out(1,"p2p_service.Identity ERROR has non-Valid identity")
         return
-        
-
+    
     # if contacts.isKnown(idurl):
         # This checks that old public key matches new
     #     identitycache.UpdateAfterChecking(idurl, newxml)
@@ -295,6 +278,7 @@ def Identity(newpacket):
         lg.out(8, "p2p_service.Identity from [%s], sent Ack" % nameurl.GetName(idurl))
     else:
         lg.out(8, "p2p_service.Identity from [%s]" % nameurl.GetName(idurl))
+
 
 def RequestIdentity(request):
     """

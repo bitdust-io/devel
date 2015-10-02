@@ -22,6 +22,12 @@ EVENTS:
     * :red:`valid-inbox-packet`
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+
+#------------------------------------------------------------------------------ 
+
 import os
 import time
 
@@ -36,8 +42,12 @@ from system import tmpfile
 
 from main import settings
 
+from userid import my_id
+
 from contacts import contactsdb 
 from contacts import identitycache
+
+from services import driver
 
 import gateway
 import stats
@@ -246,9 +256,39 @@ class PacketIn(automat.Automat):
         """
         newpacket = arg
         stats.count_inbox(self.sender_idurl, self.proto, self.status, self.bytes_received)
-        for p in packet_out.search_by_response_packet(newpacket):
-            p.automat('inbox-packet', newpacket)
-        callback.run_inbox_callbacks(newpacket, self, self.status, self.error_message)
+        
+        if not driver.is_started('service_p2p_hookups'):
+            if _Debug:
+                lg.out(8, 'packet_in.doReportReceived SKIP incoming packet, service_p2p_hookups is not started')
+            return
+        
+        from p2p import commands
+        from p2p import p2p_service
+        
+        if newpacket.Command == commands.Identity() and newpacket.RemoteID == my_id.getLocalID():
+            # contact sending us current identity we might not have
+            # so we handle it before check that packet is valid
+            # because we might not have his identity on hands and so can not verify the packet  
+            # so we check that his Identity is valid and save it into cache
+            # than we check the packet to be valid too.
+            p2p_service.Identity(newpacket)            
+            return
+        
+        # check that signed by a contact of ours
+        if not newpacket.Valid():              
+            lg.warn('new packet from %s://%s is NOT VALID: %r' % (
+                self.proto, self.host, newpacket))
+            return False
+        
+        handled = callback.run_inbox_callbacks(newpacket, self, self.status, self.error_message)
+        if not handled:
+            for p in packet_out.search_by_response_packet(newpacket):
+                p.automat('inbox-packet', newpacket)
+                handled = True
+                
+        if not handled:
+            lg.warn('incoming %s from [%s://%s] was NOT HANDLED' % (
+                newpacket, self.proto, self.host))
 
     def doReportFailed(self, arg):
         """

@@ -345,7 +345,7 @@ class P2PConnector(automat.Automat):
                     try:
                         router_idurl = driver.services()['service_proxy_transport'].transport.options['router_idurl']
                     except:
-                        pass
+                        router_idurl = None
                     if router_idurl:
                         router_identity = identitycache.FromCache(router_idurl)
                         contacts_is_ok = True
