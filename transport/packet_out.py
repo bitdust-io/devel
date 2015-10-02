@@ -121,7 +121,7 @@ def search_by_transfer_id(transfer_id):
     return None, None
 
 
-def search_by_response_packet(newpacket):
+def search_by_response_packet(newpacket, info):
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
             nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
@@ -133,8 +133,12 @@ def search_by_response_packet(newpacket):
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:
             continue
-        if target_idurl != p.outpacket.RemoteID and target_idurl != p.remote_idurl:
-            continue  
+        if p.outpacket.RemoteID != p.remote_idurl:
+            if target_idurl != p.remote_idurl:
+                # ????
+                pass
+        if target_idurl != p.outpacket.RemoteID:
+            continue
         result.append(p)
         if _Debug:
             lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
