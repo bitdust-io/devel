@@ -25,6 +25,13 @@ Packet Fields are all strings (no integers, objects, etc)
     - Signature : signature on Hash is always by CreatorID
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 
@@ -44,6 +51,7 @@ from p2p import commands
 
 from lib import misc
 from lib import packetid
+from lib import nameurl
 
 from contacts import contactsdb
 
@@ -89,7 +97,14 @@ class Packet:
         self.Sign()
 
     def __repr__(self):
-        return 'signed.Packet(command=%s id=%s)' % (str(self.Command), str(self.PacketID))
+        args = '%s(%s)' % (str(self.Command), str(self.PacketID))
+        if _Debug:
+            if lg.is_debug(_DebugLevel):
+                args += ' %s|%s for %s' % (
+                    nameurl.GetName(self.OwnerID),
+                    nameurl.GetName(self.CreatorID),
+                    nameurl.GetName(self.RemoteID))
+        return 'signed.Packet[%s]' % args
 
     def Sign(self):
         """

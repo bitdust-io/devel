@@ -107,7 +107,7 @@ def receive(options):
         _InternalPort = int(options['tcp_port'])
         _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None))
         _MyHost = options['host'].split(':')[0]+':'+str(_InternalPort)
-        tcp_interface.interface_receiving_started(_MyHost, {'tcp_port': _InternalPort})
+        tcp_interface.interface_receiving_started(_MyHost, options)
     except CannotListenError, ex:
         tcp_interface.interface_receiving_failed('port is busy')
     except Exception, ex:

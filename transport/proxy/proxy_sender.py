@@ -14,11 +14,16 @@ BitDust proxy_sender(at_startup) Automat
 
 EVENTS:
     * :red:`init`
-    * :red:`send-file`
     * :red:`shutdown`
     * :red:`start`
     * :red:`stop`
 """
+
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+
+#------------------------------------------------------------------------------ 
 
 import time
 
@@ -37,8 +42,11 @@ from p2p import commands
 from userid import my_id
 
 from transport import gateway 
+from transport import callback
+from transport import packet_out
 
 import proxy_interface
+import proxy_receiver
 
 #------------------------------------------------------------------------------ 
 
@@ -86,33 +94,31 @@ class ProxySender(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://code.google.com/p/visio2python/>`_ tool.
         """
-        #---READY---
-        if self.state == 'READY':
+        #---AT_STARTUP---
+        if self.state == 'AT_STARTUP':
+            if event == 'init' :
+                self.state = 'STOPPED'
+                self.doInit(arg)
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
+        #---REDIRECTING---
+        elif self.state == 'REDIRECTING':
             if event == 'stop' :
-                self.state = 'OFF'
+                self.state = 'STOPPED'
                 self.doStop(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
+                self.doStop(arg)
                 self.doDestroyMe(arg)
-            elif event == 'send-file' :
-                self.doRegisterOutboxFile(arg)
-                self.doEncryptAndSendOutboxPacket(arg)
-        #---AT_STARTUP---
-        elif self.state == 'AT_STARTUP':
-            if event == 'init' :
-                self.state = 'OFF'
-                self.doInit(arg)
-        #---OFF---
-        elif self.state == 'OFF':
+        #---STOPPED---
+        elif self.state == 'STOPPED':
             if event == 'start' :
-                self.state = 'READY'
+                self.state = 'REDIRECTING'
                 self.doStart(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
-            pass
         return None
 
     def doInit(self, arg):
@@ -124,57 +130,59 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
+        callback.insert_outbox_filter_callback(-1, self._on_outbox_packet)
 
     def doStop(self, arg):
         """
         Action method.
         """
+        callback.remove_finish_file_sending_callback(self._on_outbox_packet)
 
-    def doRegisterOutboxFile(self, arg):
-        """
-        Action method.
-        """
-        remote_idurl, filename, host, description, single = arg
-        if not single:
-            d = proxy_interface.interface_register_file_sending(
-                host, remote_idurl, filename, description)
-            d.addCallback(self._on_outbox_file_registered, remote_idurl, filename, host, description)
-            d.addErrback(self._on_outbox_file_register_failed, remote_idurl, filename, host, description)
+#    def doRegisterOutboxFile(self, arg):
+#        """
+#        Action method.
+#        """
+#        remote_idurl, filename, host, description, single = arg
+#        if not single:
+#            d = proxy_interface.interface_register_file_sending(
+#                host, remote_idurl, filename, description)
+#            d.addCallback(self._on_outbox_file_registered, remote_idurl, filename, host, description)
+#            d.addErrback(self._on_outbox_file_register_failed, remote_idurl, filename, host, description)
         
-    def doEncryptAndSendOutboxPacket(self, arg):
-        """
-        Action method.
-        """
-        try:
-            remote_idurl, filename, host, description, single = arg
-            router_name, router_host = host.split('@')
-            router_idurl = 'http://%s/%s.xml' % (router_host, router_name)
-        except:
-            lg.exc()
-            return
-        src = my_id.getLocalID() + '\n' + remote_idurl + '\n' + bpio.ReadBinaryFile(filename)
-        block = encrypted.Block(
-            my_id.getLocalID(),
-            'routed data',
-            0,
-            key.NewSessionKey(),
-            key.SessionKeyType(),
-            True,
-            src,)
-        newpacket = signed.Packet(
-            commands.Data(), 
-            router_idurl, 
-            my_id.getLocalID(),
-            'routed_packet', 
-            block.Serialize(), 
-            router_idurl)
-        gateway.outbox(newpacket, callbacks={
-            commands.Ack(): self._on_outbox_packet_acked,
-            commands.Fail(): self._on_outbox_packet_failed}) 
-        del src
-        del block
-        del newpacket
-        lg.out(12, 'proxy_sender.doSendOutboxPacket for %s routed via %s' % (remote_idurl, router_idurl))
+#    def doEncryptAndSendOutboxPacket(self, arg):
+#        """
+#        Action method.
+#        """
+#        try:
+#            remote_idurl, filename, host, description, single = arg
+#            router_name, router_host = host.split('@')
+#            router_idurl = 'http://%s/%s.xml' % (router_host, router_name)
+#        except:
+#            lg.exc()
+#            return
+#        src = my_id.getLocalID() + '\n' + remote_idurl + '\n' + bpio.ReadBinaryFile(filename)
+#        block = encrypted.Block(
+#            my_id.getLocalID(),
+#            'routed data',
+#            0,
+#            key.NewSessionKey(),
+#            key.SessionKeyType(),
+#            True,
+#            src,)
+#        newpacket = signed.Packet(
+#            commands.Data(), 
+#            router_idurl, 
+#            my_id.getLocalID(),
+#            'routed_packet', 
+#            block.Serialize(), 
+#            router_idurl)
+#        gateway.outbox(newpacket, callbacks={
+#            commands.Ack(): self._on_outbox_packet_acked,
+#            commands.Fail(): self._on_outbox_packet_failed}) 
+#        del src
+#        del block
+#        del newpacket
+#        lg.out(12, 'proxy_sender.doSendOutboxPacket for %s routed via %s' % (remote_idurl, router_idurl))
 
     def doDestroyMe(self, arg):
         """
@@ -185,20 +193,32 @@ class ProxySender(automat.Automat):
         del _ProxySender
         _ProxySender = None
         
-    def _on_outbox_file_registered(self, remote_idurl, filename, host, description):
+    def _on_outbox_packet(self, outpacket, wide, callbacks):
         """
         """
-        lg.out(12, 'proxy_sender._on_outbox_file_registered')
+        router_idurl = proxy_receiver.GetRouterIDURL()
+        if not router_idurl:
+            return None
+        if outpacket.RemoteID != router_idurl:
+            return None
+        if _Debug:
+            lg.out(8, 'proxy_sender._on_outbox_packet %s were redirected to %s' % (outpacket, router_idurl))
+        return packet_out.create(outpacket, wide, callbacks, target=router_idurl)
+
+#    def _on_outbox_file_registered(self, remote_idurl, filename, host, description):
+#        """
+#        """
+#        lg.out(12, 'proxy_sender._on_outbox_file_registered')
         
-    def _on_outbox_packet_acked(self, newpacket, info):
-        """
-        """
-        lg.out(12, 'proxy_sender._on_outbox_packet_acked')
+#    def _on_outbox_packet_acked(self, newpacket, info):
+#        """
+#        """
+#        lg.out(12, 'proxy_sender._on_outbox_packet_acked')
         
-    def _on_outbox_packet_failed(self, remote_id, packet_id, why):
-        """
-        """
-        lg.out(12, 'proxy_sender._on_outbox_packet_failed')
+#    def _on_outbox_packet_failed(self, remote_id, packet_id, why):
+#        """
+#        """
+#        lg.out(12, 'proxy_sender._on_outbox_packet_failed')
     
 #------------------------------------------------------------------------------ 
 

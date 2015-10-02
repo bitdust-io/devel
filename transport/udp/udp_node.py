@@ -96,6 +96,7 @@ class UDPNode(automat.Automat):
         self.listen_port = None
         self.my_id = None
         self.my_address = None
+        self.options = {}
         if driver.is_started('service_my_ip_port'):
             self.my_address = stun_client.A().getMyExternalAddress()
         self.notified = False
@@ -243,9 +244,9 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
-        options = arg
-        self.my_idurl = options['idurl']
-        self.listen_port = int(options['udp_port']) 
+        self.options = arg
+        self.my_idurl = self.options['idurl']
+        self.listen_port = int(self.options['udp_port']) 
         self.my_id = udp_interface.idurl_to_id(self.my_idurl)
         udp.proto(self.listen_port).add_callback(self._datagram_received)
         bandoutlimit = settings.getBandOutLimit() #  or settings.DefaultBandwidthOutLimit()
@@ -395,7 +396,7 @@ class UDPNode(automat.Automat):
         Action method.
         """
         if not self.notified:
-            udp_interface.interface_receiving_started(self.my_id)
+            udp_interface.interface_receiving_started(self.my_id, self.options)
             self.notified = True
             if _Debug:
                 lg.out(4, 'udp_node.doNotifyConnected my host is %s' % self.my_id)

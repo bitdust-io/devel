@@ -71,6 +71,20 @@ def A(event=None, arg=None):
 
 #------------------------------------------------------------------------------
 
+def GetRouterIDURL():
+    global _ProxyReceiver
+    if not _ProxyReceiver:
+        return None
+    return _ProxyReceiver.router_idurl
+
+def GetRouterIdentity():
+    global _ProxyReceiver
+    if not _ProxyReceiver:
+        return None
+    return _ProxyReceiver.router_idurl
+
+#------------------------------------------------------------------------------ 
+
 class ProxyReceiver(automat.Automat):
     """
     This class implements all the functionality of the ``proxy_receiver()`` state machine.
@@ -89,6 +103,7 @@ class ProxyReceiver(automat.Automat):
         self.router_idurl = None
         self.router_identity = None
         self.request_service_packet_id = None
+        self.router_proto_host = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -234,7 +249,9 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        response, info = arg
         self.router_identity = identitycache.FromCache(self.router_idurl)
+        self.router_proto_host = (info.proto, info.host) 
 
     def doStopListening(self, arg):
         """
@@ -252,7 +269,9 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        proxy_interface.interface_receiving_started(self.router_idurl)
+        proxy_interface.interface_receiving_started(self.router_idurl,
+            {'router_idurl': self.router_idurl,
+             })
 
     def doReportDisconnected(self, arg):
         """
@@ -311,11 +330,12 @@ class ProxyReceiver(automat.Automat):
     def _request_service_ack(self, response, info):
         if response.PacketID != self.request_service_packet_id:
             lg.warn('wong PacketID in response: %s, but outgoing was %s' % (response.PacketID, self.request_service_packet_id))
+            self.automat('service-refused')
             return
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._request_service_ack : %s' % str(response.Payload))
         if response.Payload.startswith('accepted'):
-            self.automat('service-accepted')
+            self.automat('service-accepted', (response, info))
         else:
             self.automat('service-refused')
 

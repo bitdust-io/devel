@@ -10,14 +10,18 @@ from logs import lg
 
 #------------------------------------------------------------------------------ 
 
+# receiving callbacks
 _InterestedParties = {}
 _InboxPacketCallbacksList = []
+_BeginFileReceivingCallbacksList = []
+_FinishFileReceivingCallbacksList = []
+
+# sending callbacks
 _OutboxPacketCallbacksList = []
+_OutboxPacketFilterCallbacksList = []
 _QueueItemStatusCallbacksList = []
 _BeginFileSendingCallbacksList = []
 _FinishFileSendingCallbacksList = []
-_BeginFileReceivingCallbacksList = []
-_FinishFileReceivingCallbacksList = []
 
 #------------------------------------------------------------------------------ 
 
@@ -135,6 +139,42 @@ def remove_inbox_callback(cb):
         _InboxPacketCallbacksList.remove(cb)
 
 
+def append_outbox_filter_callback(cb):
+    """
+    You can add a callback to filter all outgoing traffic.  
+    Callback will be called with such arguments::
+  
+        callback(outpacket, wide, callbacks)
+    """
+    global _OutboxPacketFilterCallbacksList
+    if cb not in _OutboxPacketFilterCallbacksList:
+        _OutboxPacketFilterCallbacksList.append(cb)
+
+
+def insert_outbox_filter_callback(index, cb):
+    """
+    Same like ``append_outbox_filter_callback(cb)`` but put the callback
+    at the given position in the filters list.
+    If you put your callback at the top you will catch the 
+    outgoing packet as soon as possible - before other callbacks.
+    If callback returned True - all other callbacks will be skipped. 
+    Callback will be called in a such way:
+  
+        callback(outpacket, wide, callbacks).
+    """
+    global _OutboxPacketFilterCallbacksList
+    if cb not in _OutboxPacketFilterCallbacksList:
+        _OutboxPacketFilterCallbacksList.insert(index, cb)
+    
+        
+def remove_outbox_filter_callback(cb):
+    """
+    """
+    global _OutboxPacketFilterCallbacksList
+    if cb in _OutboxPacketFilterCallbacksList:
+        _OutboxPacketFilterCallbacksList.remove(cb)
+
+
 def add_outbox_callback(cb):
     """
     You can add a callback to be notified when ``outbox()`` method was called.
@@ -228,6 +268,20 @@ def run_outbox_callbacks(pkt_out):
         if handled:
             break
     return handled
+
+
+def run_outbox_filter_callbacks(outpacket, wide, callbacks):
+    """
+    """
+    global _OutboxPacketFilterCallbacksList 
+    for cb in _OutboxPacketFilterCallbacksList:
+        try:
+            result = cb(outpacket, wide, callbacks)
+        except:
+            lg.exc()
+        if result:
+            return result
+    return None
 
 
 def run_queue_item_status_callbacks(pkt_out, status, error_message):

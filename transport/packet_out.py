@@ -83,23 +83,28 @@ def queue():
     return _OutboxQueue
 
 
-def create(outpacket, wide, callbacks):
+def create(outpacket, wide, callbacks, target=None):
     """
     """
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
-    p = PacketOut(outpacket, wide, callbacks)
+    p = PacketOut(outpacket, wide, callbacks, target)
     queue().append(p)
     p.automat('run')
     return p
     
     
-def search(proto, host, filename):
+def search(proto, host, filename, remote_idurl=None):
     for p in queue():
         if p.filename != filename:
             continue
         for i in p.items:
             if i.proto == proto:
+                if not remote_idurl:
+                    return p, i
+                if p.remote_idurl and remote_idurl != p.remote_idurl:
+                    if _Debug:
+                        lg.out(_DebugLevel, 'packet_out.search found a packet addressed for another idurl: %s' % p.remote_idurl)
                 return p, i
     if _Debug:
         for p in queue():
@@ -128,7 +133,7 @@ def search_by_response_packet(newpacket):
     for p in queue():
         if p.outpacket.PacketID != newpacket.PacketID:
             continue
-        if target_idurl != p.outpacket.RemoteID:
+        if target_idurl != p.outpacket.RemoteID and target_idurl != p.remote_idurl:
             continue  
         result.append(p)
         if _Debug:
@@ -173,10 +178,11 @@ class PacketOut(automat.Automat):
         'MSG_5': 'pushing outgoing packet was cancelled',
         }
     
-    def __init__(self, outpacket, wide, callbacks={}):
+    def __init__(self, outpacket, wide, callbacks={}, target=None):
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = callbacks
+        self.remote_idurl = target
         self.caching_deferred = None
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.label = 'out_%d_%s (%d callbacks)' % (get_packets_counter(), self.description, len(self.callbacks))
@@ -192,16 +198,17 @@ class PacketOut(automat.Automat):
         self.time = time.time()
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.payloadsize = len(self.outpacket.Payload)
-        if self.outpacket.CreatorID == my_id.getLocalID():
-            # our data will go to
-            self.remote_idurl = self.outpacket.RemoteID.strip()
-        else:
-            if self.outpacket.Command == commands.Data():      
-                self.remote_idurl = self.outpacket.CreatorID.strip()       
-            else:
+        if not self.remote_idurl:
+            if self.outpacket.CreatorID == my_id.getLocalID():
+                # our data will go to
                 self.remote_idurl = self.outpacket.RemoteID.strip()
-                if _Debug:
-                    lg.out(_DebugLevel, 'packet_out.init sending a packet we did not make, and that is not Data packet')
+            else:
+                if self.outpacket.Command == commands.Data():      
+                    self.remote_idurl = self.outpacket.CreatorID.strip()       
+                else:
+                    self.remote_idurl = self.outpacket.RemoteID.strip()
+                    if _Debug:
+                        lg.out(_DebugLevel, 'packet_out.init sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         self.timeout = None
         self.packetdata = None

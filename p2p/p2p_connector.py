@@ -68,6 +68,8 @@ from automats import global_state
 
 from dht import dht_service
 
+from contacts import identitycache
+
 from transport import callback
 
 from services import driver
@@ -340,10 +342,14 @@ class P2PConnector(automat.Automat):
         if settings.transportIsEnabled('proxy'):
             if driver.is_started('service_proxy_transport'):
                 if settings.transportReceivingIsEnabled('proxy'):
-                    from transport.proxy import proxy_receiver  
-                    if proxy_receiver.A().router_identity:
+                    try:
+                        router_idurl = driver.services()['service_proxy_transport'].transport.options['router_idurl']
+                    except:
+                        pass
+                    if router_idurl:
+                        router_identity = identitycache.FromCache(router_idurl)
                         contacts_is_ok = True
-                        router_protos = proxy_receiver.A().router_identity.getContactsByProto()
+                        router_protos = router_identity.getContactsByProto()
                         if lid.getContactsNumber() != len(router_protos):
                             contacts_is_ok = False
                         if contacts_is_ok:

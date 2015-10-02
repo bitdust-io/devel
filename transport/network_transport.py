@@ -64,8 +64,10 @@ class NetworkTransport(automat.Automat):
 
     def __init__(self, proto, interface, state_changed_callback=None):
         self.proto = proto
+        self.host = None
         self.interface = interface
         self.state_changed_callback = None
+        self.options = {}
         automat.Automat.__init__(
             self, '%s_transport' % proto, 'AT_STARTUP', 6, _Debug)
         
@@ -114,6 +116,7 @@ class NetworkTransport(automat.Automat):
                 self.state = 'OFFLINE'
             elif event == 'receiving-started' and not self.StopNow :
                 self.state = 'LISTENING'
+                self.doSaveOptions(arg)
             elif event == 'stop' :
                 self.StopNow=True
             elif event == 'receiving-started' and self.StopNow :
@@ -218,9 +221,10 @@ class NetworkTransport(automat.Automat):
             options['dht_port'] = settings.getDHTPort()
             options['udp_port'] = settings.getUDPPort()
         elif self.proto == 'proxy':
-            if not id_contact:
-                default_host = nameurl.GetName(my_id.getLocalID())+'@'+platform.node()
-            options['host'] = id_contact or default_host
+            pass
+#            if not id_contact:
+#                default_host = nameurl.GetName(my_id.getLocalID())+'@'+platform.node()
+#            options['host'] = id_contact or default_host
         if _Debug:
             lg.out(8, 'network_transport.doStart connecting %s transport : %s' % (self.proto.upper(), options))
         self.interface.connect(options) 
@@ -239,6 +243,14 @@ class NetworkTransport(automat.Automat):
         """
         if arg:
             self.interface.create_proxy(arg)
+
+    def doSaveOptions(self, arg):
+        """
+        Action method.
+        """
+        p, self.host, self.options = arg
+        if p != self.proto:
+            lg.warn('wrong protocol')
 
     def doDestroyMe(self, arg):
         """

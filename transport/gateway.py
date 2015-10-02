@@ -172,6 +172,7 @@ def start():
     """
     if _Debug:
         lg.out(4, 'gateway.start')
+    callback.append_outbox_filter_callback(on_outbox_packet)
     result = []
     for proto, transp in transports().items():
         if settings.transportIsEnabled(proto): 
@@ -206,6 +207,7 @@ def stop():
             else:
                 if _Debug:
                     lg.out(4, '    %s already stopped' % proto)
+    callback.remove_outbox_filter_callback(on_outbox_packet)
     return result
 
 
@@ -365,8 +367,9 @@ def outbox(outpacket, wide=False, callbacks={}):
         :param wide:  set to True if you need to send the packet 
                       to all contacts of Remote Identity
         :param callbacks: provide a callback methods to get response
+                          here need to provide a callback for given command
         
-            callbacks arguments are: (response_packet, info)
+            callback arguments are: (response_packet, info)
             
     """
     if _Debug:
@@ -376,7 +379,7 @@ def outbox(outpacket, wide=False, callbacks={}):
             nameurl.GetName(outpacket.CreatorID),
             nameurl.GetName(outpacket.RemoteID),
             wide,))
-    return packet_out.create(outpacket, wide, callbacks)
+    return callback.run_outbox_filter_callbacks(outpacket, wide, callbacks)
 
 #------------------------------------------------------------------------------ 
 
@@ -509,6 +512,11 @@ def stop_packets_timeout_loop():
 
 #------------------------------------------------------------------------------ 
 
+def on_outbox_packet(outpacket, wide, callbacks):
+    """
+    """
+    return packet_out.create(outpacket, wide, callbacks)
+
 def on_transport_state_changed(transport, oldstate, newstate):
     """
     """
@@ -532,7 +540,7 @@ def on_receiving_started(proto, host, options_modified=None):
     """
     if _Debug:
         lg.out(_DebugLevel-8, 'gateway.on_receiving_started %s host=%s' % (proto.upper(), host))
-    transport(proto).automat('receiving-started')
+    transport(proto).automat('receiving-started', (proto, host, options_modified))
     return True
 
 def on_receiving_failed(proto, error_code=None):
@@ -581,7 +589,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.on_register_file_sending %s %s' % (filename, description))
-    pkt_out, work_item = packet_out.search(proto, host, filename)
+    pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
     if pkt_out is None:
         lg.err('gateway.on_register_file_sending ERROR packet_out not found: %r %r %r' % (
             proto, host, os.path.basename(filename)))
@@ -591,8 +599,9 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
         lg.out(_DebugLevel, '<<< OUT <<< %s (%d) send {%s} via [%s] to %s at %s' % (
             pkt_out.description, transfer_id, os.path.basename(filename), proto, 
             nameurl.GetName(receiver_idurl), host))
-    if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
-        lg.err('gateway.on_register_file_sending ERROR  [%s] [%s]' % (pkt_out.remote_idurl, receiver_idurl))
+#    if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
+#        if _Debug:
+#            lg.out(_DebugLevel, 'gateway.on_register_file_sending [%s] receiver idurl is different [%s]' % (pkt_out.remote_idurl, receiver_idurl))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
     return transfer_id
 

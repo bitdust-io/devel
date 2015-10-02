@@ -81,9 +81,9 @@ class GateInterface():
         if _Debug:
             lg.out(4, 'proxy_interface.connect %s' % str(options))
         if settings.enablePROXYreceiving():
-            proxy_receiver.A('start')
+            proxy_receiver.A('start', options)
         if settings.enablePROXYsending():
-            proxy_sender.A('start')
+            proxy_sender.A('start', options)
         return succeed(True)
 
     def disconnect(self):
@@ -98,44 +98,44 @@ class GateInterface():
     def build_contacts(self, id_obj):
         """
         """
-        if not proxy_receiver.A().router_identity:
+        if not proxy_receiver.GetRouterIdentity():
             # if not yet found one node to route your traffic - do nothing
             if _Debug:
                 lg.out(4, 'proxy_interface.build_contacts SKIP, router not yet found')
             return []
         # switch contacts - use router contacts instead of my 
         # he will get all packets sent to my and redirect to my
-        result = proxy_receiver.A().router_identity.getContacts()
+        result = proxy_receiver.GetRouterIdentity().getContacts()
         if _Debug:
             lg.out(4, 'proxy_interface.build_contacts %s : %s' % (
-                proxy_receiver.A().router_identity.getIDName(), str(result)))
+                proxy_receiver.GetRouterIdentity().getIDName(), str(result)))
         return result
     
     def verify_contacts(self, id_obj):
         """
         Check if router is ready and his contacts exists in that identity. 
         """
-        if not proxy_receiver.A().router_idurl or not proxy_receiver.A().router_identity:
+        if not proxy_receiver.GetRouterIDURL() or not proxy_receiver.GetRouterIdentity():
             # if not yet found one node to route your traffic - do nothing
             if _Debug:
                 lg.out(4, 'proxy_interface.verify_contacts returning True : router not yet found')
             return True
         result = Deferred()
         def _finish_verification(res):
-            cached_id = identitycache.FromCache(proxy_receiver.A().router_idurl)
+            cached_id = identitycache.FromCache(proxy_receiver.GetRouterIDURL())
             if not cached_id:
                 if _Debug:
                     lg.out(4, 'proxy_interface.verify_contacts return False: router identity is not cached')
                 res.callback(False) 
                 return
-            if cached_id.serialize() != proxy_receiver.A().router_identity.serialize():
+            if cached_id.serialize() != proxy_receiver.GetRouterIdentity().serialize():
                 if _Debug:
                     lg.out(4, 'proxy_interface.verify_contacts return False: cached copy is different')
                     lg.out(20, '\n%s\n' % cached_id.serialize())
-                    lg.out(20, '\n%s\n' % proxy_receiver.A().router_identity.serialize())
+                    lg.out(20, '\n%s\n' % proxy_receiver.GetRouterIdentity().serialize())
                 res.callback(False) 
                 return
-            router_contacts = proxy_receiver.A().router_identity.getContacts()
+            router_contacts = proxy_receiver.GetRouterIdentity().getContacts()
             if len(router_contacts) != id_obj.getContactsNumber():
                 if _Debug:
                     lg.out(4, 'proxy_interface.is_valid return False: router contacts is different') 
@@ -155,7 +155,7 @@ class GateInterface():
             # TODO: probably need to check the order also ... 
             res.callback(True) 
             return
-        d = identitycache.immediatelyCaching(proxy_receiver.A().router_idurl)
+        d = identitycache.immediatelyCaching(proxy_receiver.GetRouterIDURL())
         d.addCallback(lambda src: _finish_verification(result))
         d.addErrback(lambda err: result.callback(False))
         return result
@@ -180,7 +180,7 @@ def interface_transport_initialized(xmlrpcurl):
     return fail('transport_proxy is not ready')
     
     
-def interface_receiving_started(host, new_options=None):
+def interface_receiving_started(host, new_options={}):
     if proxy():
         return proxy().callRemote('receiving_started', 'proxy', host, new_options)
     lg.warn('transport_proxy is not ready')

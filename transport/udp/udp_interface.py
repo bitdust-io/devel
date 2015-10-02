@@ -234,7 +234,7 @@ def interface_transport_initialized():
     return fail('transport_udp is not ready')
 
 
-def interface_receiving_started(host, new_options=None):
+def interface_receiving_started(host, new_options={}):
     """
     """
     if proxy():

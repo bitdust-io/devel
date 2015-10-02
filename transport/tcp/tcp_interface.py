@@ -171,7 +171,7 @@ def interface_transport_initialized(xmlrpcurl):
     return fail('transport_tcp is not ready')
     
     
-def interface_receiving_started(host, new_options=None):
+def interface_receiving_started(host, new_options={}):
     if proxy():
         return proxy().callRemote('receiving_started', 'tcp', host, new_options)
     lg.warn('transport_tcp is not ready')
