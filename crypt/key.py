@@ -50,8 +50,6 @@ from logs import lg
 
 from system import bpio
 
-from lib import misc
-
 from main import settings
 
 #------------------------------------------------------------------------------ 
@@ -265,12 +263,14 @@ def EncryptWithSessionKey(session_key, inp, session_key_type=SessionKeyType()):
     """
     if session_key_type == 'DES3':
         SessionKey = DES3.new(session_key)
+        from lib import misc
         data = misc.RoundupString(inp, 24)
         ret = SessionKey.encrypt(data)
         del data
     elif session_key_type == 'AES':
         # TODO: AES is not tested yet
         SessionKey = AES.new(session_key)
+        from lib import misc
         data = misc.RoundupString(inp, 24)
         ret = SessionKey.encrypt(data)
         del data
