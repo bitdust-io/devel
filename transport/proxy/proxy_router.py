@@ -47,8 +47,6 @@ except:
 
 from automats import automat
 
-from system import tmpfile
-
 from lib import nameurl
 
 from crypt import key
@@ -291,8 +289,8 @@ class ProxyRouter(automat.Automat):
         newpacket, info = arg
         receiver_idurl = newpacket.RemoteID
         # receiver_proto, receiver_host, route_creation_time = self.routes[receiver_idurl]
-        receiver_identity = identitycache.FromCache(receiver_idurl)
-        if not receiver_identity:
+        receiver_ident_obj = identitycache.FromCache(receiver_idurl)
+        if not receiver_ident_obj:
             lg.warn('receiver identity is not found in cache')
             return
         src = ''
@@ -305,7 +303,7 @@ class ProxyRouter(automat.Automat):
             key.SessionKeyType(),
             True,
             src,
-            EncryptFunc=lambda inp: key.EncryptStringPK(receiver_identity.publickey, inp))
+            EncryptFunc=lambda inp: key.EncryptStringPK(receiver_ident_obj.publickey, inp))
         routed_packet = signed.Packet(
             commands.Data(), 
             newpacket.OwnerID,
@@ -319,7 +317,7 @@ class ProxyRouter(automat.Automat):
         del src
         del block
         del newpacket
-        del receiver_identity
+        # del receiver_ident_obj
         del routed_packet
                 
     def doCountOutgoingTraffic(self, arg):
