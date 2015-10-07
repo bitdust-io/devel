@@ -221,7 +221,9 @@ class BackupDBKeeper(automat.Automat):
                 continue
             if not contact_status.isOnline(supplierId):
                 continue
-            newpacket = signed.Packet(commands.Data(), localID, localID, packetID, Payload, supplierId)
+            newpacket = signed.Packet(
+                commands.Data(), localID, localID, packetID, 
+                Payload, supplierId)
             gateway.outbox(newpacket, callbacks={
                 commands.Ack(): self._supplier_acked,
                 commands.Fail(): self._supplier_acked})

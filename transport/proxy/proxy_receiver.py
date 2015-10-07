@@ -17,6 +17,7 @@ EVENTS:
     * :red:`ack-received`
     * :red:`fail-received`
     * :red:`found-one-node`
+    * :red:`inbox-packet`
     * :red:`init`
     * :red:`nodes-not-found`
     * :red:`service-accepted`
@@ -29,6 +30,7 @@ EVENTS:
 """
 
 import random
+import cStringIO
 
 from twisted.internet import reactor
 
@@ -36,13 +38,21 @@ from logs import lg
 
 from automats import automat
 
+from crypt import key
+from crypt import signed
+from crypt import encrypted
+
 from dht import dht_service
 
 from p2p import commands
 from p2p import p2p_service
-from p2p import p2p_connector
 
 from contacts import identitycache
+
+from transport import callback
+from transport import packet_in
+
+from userid import my_id
 
 import proxy_interface
 
@@ -83,6 +93,12 @@ def GetRouterIdentity():
         return None
     return _ProxyReceiver.router_identity
 
+def GetRouterProtoHost():
+    global _ProxyReceiver
+    if not _ProxyReceiver:
+        return None
+    return _ProxyReceiver.router_proto_host
+
 #------------------------------------------------------------------------------ 
 
 class ProxyReceiver(automat.Automat):
@@ -102,7 +118,7 @@ class ProxyReceiver(automat.Automat):
         """
         self.router_idurl = None
         self.router_identity = None
-        self.router_proto
+        self.router_proto_host = None
         self.request_service_packet_id = None
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -152,6 +168,8 @@ class ProxyReceiver(automat.Automat):
                 self.doSendCancelService(arg)
                 self.doStopListening(arg)
                 self.doReportDisconnected(arg)
+            elif event == 'inbox-packet' :
+                self.doProcessInboxPacket(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted' :
@@ -250,15 +268,51 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         response, info = arg
-        
         self.router_identity = identitycache.FromCache(self.router_idurl)
+        self.router_proto_host = (info.proto, info.host)
+        callback.insert_inbox_callback(0, self._on_inbox_packet_received)
 
     def doStopListening(self, arg):
         """
         Action method.
         """
+        callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.router_identity = None
         self.router_idurl = None
+        self.router_proto_host = None
+
+    def doProcessInboxPacket(self, arg):
+        """
+        Action method.
+        """
+        newpacket, info, status, error_message = arg
+        block = encrypted.Unserialize(newpacket.Payload)
+        if block is None:
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.RemoteID)
+            return
+        try:
+            session_key = key.DecryptLocalPK(block.EncryptedSessionKey)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
+            inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
+            data = inpt.read()
+        except:
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.RemoteID)
+            lg.out(2, '\n' + padded_data)
+            lg.exc()
+            try:
+                inpt.close()
+            except:
+                pass
+            return
+        inpt.close()
+        routed_packet = signed.Unserialize(data)
+        packet_in.process(routed_packet, info.proto, info.host, status, error_message)
+        del block
+        del data
+        del padded_data
+        del inpt
+        del session_key
+        del routed_packet
 
     def doReportStopped(self, arg):
         """
@@ -270,8 +324,7 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         proxy_interface.interface_receiving_started(self.router_idurl,
-            {'router_idurl': self.router_idurl,
-             })
+            {'router_idurl': self.router_idurl,})
 
     def doReportDisconnected(self, arg):
         """
@@ -339,6 +392,18 @@ class ProxyReceiver(automat.Automat):
         else:
             self.automat('service-refused')
 
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        if newpacket.Command != commands.Data():
+            return False
+        if not newpacket.PacketID.startswith('routed_in_'):
+            return False
+        if newpacket.RemoteID != my_id.getLocalID():
+            return False
+        if newpacket.CreatorID != self.router_idurl:
+            return False
+        self.automat('inbox-packet', (newpacket, info, status, error_message))
+        return True             
+        
 #------------------------------------------------------------------------------
 
 def main():

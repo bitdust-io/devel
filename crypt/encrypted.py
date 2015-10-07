@@ -71,11 +71,19 @@ class Block:
     Signature              digital signature by Creator - verifiable by public key in creator identity
     """
 
-    def __init__ (self, CreatorID, BackupID, BlockNumber, SessionKey, SessionKeyType, LastBlock, Data,):
+    def __init__ (self, 
+                  CreatorID,
+                  BackupID, 
+                  BlockNumber, 
+                  SessionKey, 
+                  SessionKeyType, 
+                  LastBlock, 
+                  Data, 
+                  EncryptFunc=key.EncryptLocalPK):
         self.CreatorID = CreatorID
         self.BackupID = BackupID
         self.BlockNumber = BlockNumber
-        self.EncryptedSessionKey = key.EncryptLocalPK(SessionKey)
+        self.EncryptedSessionKey = EncryptFunc(SessionKey)
         self.SessionKeyType = SessionKeyType
         self.Length = len(Data)
         self.LastBlock = bool(LastBlock)               

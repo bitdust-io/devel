@@ -40,6 +40,13 @@ _SubDirs = {
     # 10 minutes for incoming tcp files
     
     'udp-in': 60*10,
+    # 10 minutes for incoming udp files
+
+    'proxy-in': 60*10,
+    # 10 minutes for incoming proxy files
+    
+    'proxy-out': 60*10,
+    # 10 minutes for outgoing proxy files
     
     'propagate': 60*10,
     # propagate happens often enough,

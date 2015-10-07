@@ -496,9 +496,21 @@ def RoundupFile(filename, stepsize):
     increase = 0
     if mod > 0:
         increase = stepsize - mod
-        file = open(filename, 'a')         
-        file.write(' ' * increase)
-        file.close()
+        fil = open(filename, 'a')         
+        fil.write(' ' * increase)
+        fil.close()
+
+def RoundupString(data, stepsize):
+    """
+    """
+    size = len(data)
+    mod = size % stepsize
+    increase = 0
+    addon = ''
+    if mod > 0:
+        increase = stepsize - mod
+        addon = ' ' * increase
+    return data + addon
 
 def AddNL(s):
     """

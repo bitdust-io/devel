@@ -32,6 +32,7 @@ import hashlib
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import DES3
 from Crypto.Cipher import AES  
+from Crypto.Cipher import Blowfish
 
 import warnings
 warnings.filterwarnings('ignore',category=DeprecationWarning)
@@ -48,6 +49,8 @@ if __name__ == '__main__':
 from logs import lg
 
 from system import bpio
+
+from lib import misc
 
 from main import settings
 
@@ -148,6 +151,8 @@ def MyPrivateKeyObject():
     InitMyKey()
     return _MyPubKey
 
+#------------------------------------------------------------------------------ 
+
 def Sign(inp):
     """
     Sign some ``inp`` string with our Private Key, this calls PyCrypto method ``Crypto.PublicKey.RSA.sign``.
@@ -177,6 +182,8 @@ def VerifySignature(keystring, hashcode, signature):
     Result = bool(keyobj.verify(hashcode, sig_long))
     return Result
 
+#------------------------------------------------------------------------------ 
+
 def Verify(ConIdentity, hashcode, signature):
     """
     This takes Public Key from user identity and calls ``VerifySignature``.
@@ -186,6 +193,8 @@ def Verify(ConIdentity, hashcode, signature):
     key = ConIdentity.publickey
     Result = VerifySignature(key, hashcode, signature)
     return Result
+
+#------------------------------------------------------------------------------ 
 
 def HashMD5(inp):
     """
@@ -213,47 +222,7 @@ def Hash(inp):
     # return HashMD5(inp)
     return HashSHA(inp)
 
-def EncryptStringPK(publickeystring, inp):
-    """
-    Encrypt ``inp`` string with given Public Key.
-    This will construct a temporary Public Key object in the memory from ``publickeystring``. 
-    Outside of this file we just use the string version of the public keys.
-    """
-    keyobj = keys.Key.fromString(publickeystring)
-    return EncryptBinaryPK(keyobj, inp)
-
-def EncryptLocalPK(inp):
-    """
-    This is just using local key, encrypt ``inp`` string.
-    """
-    global _MyPubKey
-    InitMyKey()
-    return EncryptBinaryPK(_MyPubKey, inp)
-
-def EncryptBinaryPK(publickey, inp):
-    """
-    Encrypt ``inp`` string using given Public Key in the ``publickey`` object.
-    Return encrypted string.
-    """
-    # There is a bug in rsa.encrypt if there is a leading '\0' in the string.
-    # Only think we encrypt is produced by NewSessionKey() which takes care not to have leading zero.
-    # See   bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
-    # So we add a 1 in front.
-    atuple = publickey.keyObject.encrypt('1'+inp, "")
-    return atuple[0]                     
-
-def DecryptLocalPK(inp):
-    """
-    Decrypt ``inp`` string with your Private Key.
-    We only decrypt with our local private key so no argument for that.
-    """
-    global _MyRsaKey
-    InitMyKey()
-    atuple = (inp,)
-    padresult = _MyRsaKey.decrypt(atuple)
-    # remove the "1" added in EncryptBinaryPK
-    result = padresult[1:]                   
-    return result
+#------------------------------------------------------------------------------ 
 
 def SessionKeyType():
     """
@@ -269,39 +238,91 @@ def NewSessionKey():
     # to work around bug in rsa.encrypt - do not want leading 0.          
     return chr(random.randint(1, 255)) + os.urandom(23)   
 
-def RoundupString(data, stepsize):
-    """
-    """
-    size = len(data)
-    mod = size % stepsize
-    increase = 0
-    addon = ''
-    if mod > 0:
-        increase = stepsize - mod
-        addon = ' ' * increase
-    return data + addon
+#------------------------------------------------------------------------------ 
 
-def EncryptWithSessionKey(rand24, inp):
+def DecryptWithSessionKey(rand24, inp, session_key_type=SessionKeyType()):
+    """
+    Decrypt string with given session key.
+
+    :param rand24: a session key comes with the message in encrypted form  
+    :param inp: input string to encrypt 
+    """
+    if session_key_type == 'DES3':
+        SessionKey = DES3.new(rand24)
+        ret = SessionKey.decrypt(inp) 
+    elif session_key_type == 'AES':
+        # TODO: AES is not tested yet
+        SessionKey = AES.new(rand24)
+        ret = SessionKey.decrypt(inp)
+    return ret
+
+def EncryptWithSessionKey(session_key, inp, session_key_type=SessionKeyType()):
     """
     Encrypt input string with Session Key.
     
-    :param rand24: randomly generated session key 
+    :param session_key: randomly generated session key 
     :param inp: input string to encrypt 
     """
-    SessionKey = DES3.new(rand24)
-    # SessionKey = AES.new(rand24)
-    data = RoundupString(inp, 24)
-    ret = SessionKey.encrypt(data)
-    del data
+    if session_key_type == 'DES3':
+        SessionKey = DES3.new(session_key)
+        data = misc.RoundupString(inp, 24)
+        ret = SessionKey.encrypt(data)
+        del data
+    elif session_key_type == 'AES':
+        # TODO: AES is not tested yet
+        SessionKey = AES.new(session_key)
+        data = misc.RoundupString(inp, 24)
+        ret = SessionKey.encrypt(data)
+        del data
+    elif session_key_type == 'Blowfish':
+        # TODO: BlowFish is not done yet!
+        SessionKey = Blowfish.new(session_key)
+        ret = ''
     return ret
 
-def DecryptWithSessionKey(rand24, inp):
+#------------------------------------------------------------------------------ 
+
+def DecryptLocalPK(inp):
     """
-    Decrypt string with given session key.
+    Decrypt ``inp`` string with your Private Key.
+    We only decrypt with our local private key so no argument for that.
     """
-    SessionKey = DES3.new(rand24)
-    # SessionKey = AES.new(rand24)
-    return SessionKey.decrypt(inp)
+    global _MyRsaKey
+    InitMyKey()
+    atuple = (inp,)
+    padresult = _MyRsaKey.decrypt(atuple)
+    # remove the "1" added in EncryptBinaryPK
+    result = padresult[1:]                   
+    return result
+
+def EncryptLocalPK(inp):
+    """
+    This is just using local key, encrypt ``inp`` string.
+    """
+    global _MyPubKey
+    InitMyKey()
+    return EncryptBinaryPK(_MyPubKey, inp)
+
+#------------------------------------------------------------------------------ 
+
+def EncryptStringPK(publickeystring, inp):
+    """
+    Encrypt ``inp`` string with given Public Key.
+    """
+    keyobj = keys.Key.fromString(publickeystring)
+    return EncryptBinaryPK(keyobj, inp)
+
+def EncryptBinaryPK(publickey, inp):
+    """
+    Encrypt ``inp`` string using given Public Key in the ``publickey`` object.
+    Return encrypted string.
+    """
+    # There is a bug in rsa.encrypt if there is a leading '\0' in the string.
+    # Only think we encrypt is produced by NewSessionKey() which takes care not to have leading zero.
+    # See   bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
+    # So we add a 1 in front.
+    atuple = publickey.keyObject.encrypt('1'+inp, "")
+    return atuple[0]                     
 
 #------------------------------------------------------------------------------ 
 
