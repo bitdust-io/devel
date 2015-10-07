@@ -620,7 +620,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
         return None
     transfer_id = make_transfer_ID()
     if _Debug:
-        lg.out(_DebugLevel, '<<< OUT <<< %s (%d) send {%s} via [%s] to %s at %s' % (
+        lg.out(_DebugLevel-8, '... OUT ... %s (%d) send {%s} via [%s] to %s at %s' % (
             pkt_out.description, transfer_id, os.path.basename(filename), proto, 
             nameurl.GetName(receiver_idurl), host))
 #    if pkt_out.remote_idurl != receiver_idurl and receiver_idurl:
@@ -674,7 +674,7 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     """
     transfer_id = make_transfer_ID()
     if _Debug:
-        lg.out(_DebugLevel, '>>> IN >>> %d receive {%s} via [%s] from %s at %s' % (
+        lg.out(_DebugLevel-8, '... IN ... %d receive {%s} via [%s] from %s at %s' % (
             transfer_id, os.path.basename(filename), proto, 
             nameurl.GetName(sender_idurl), host))
     packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))

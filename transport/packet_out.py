@@ -121,7 +121,7 @@ def search_by_transfer_id(transfer_id):
     return None, None
 
 
-def search_by_response_packet(newpacket, info):
+def search_by_response_packet(newpacket, proto=None, host=None):
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
             nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
@@ -380,7 +380,7 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
-        newpacket = arg
+        newpacket, proto, host = arg
         return newpacket.Command in self.callbacks.keys()
 
     def doInit(self, arg):
@@ -452,7 +452,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        self.response_packet = arg
+        self.response_packet, proto, host = arg
 
     def doCancelItems(self, arg):
         """

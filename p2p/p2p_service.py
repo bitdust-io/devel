@@ -327,11 +327,11 @@ def RequestService(request, info):
         return SendFail(request, 'service %s is off' % service_name)
     return driver.request(service_name, request, info)
     
-def SendRequestService(remote_idurl, service_info, callbacks={}):
+def SendRequestService(remote_idurl, service_info, wide=False, callbacks={}):
     lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
     result = signed.Packet(commands.RequestService(), my_id.getLocalID(), my_id.getLocalID(), 
                                  packetid.UniqueID(), service_info, remote_idurl)
-    gateway.outbox(result, callbacks=callbacks)
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result       
 
 def CancelService(request, info):

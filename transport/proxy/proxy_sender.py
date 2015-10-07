@@ -23,6 +23,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------ 
 
@@ -48,10 +49,6 @@ from userid import my_id
 
 from transport import gateway 
 from transport import callback
-from transport import packet_out
-
-import proxy_interface
-import proxy_receiver
 
 #------------------------------------------------------------------------------ 
 
@@ -66,7 +63,7 @@ def A(event=None, arg=None):
     global _ProxySender
     if _ProxySender is None:
         # set automat name and starting state here
-        _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP')
+        _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _ProxySender.automat(event, arg)
     return _ProxySender
@@ -149,15 +146,17 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
+        import proxy_receiver
         router_idurl = proxy_receiver.GetRouterIDURL()
-        router_identity = proxy_receiver.GetRouterIdentity()
+        router_identity_obj = proxy_receiver.GetRouterIdentity()
         router_proto_host = proxy_receiver.GetRouterProtoHost()
-        if not router_idurl or not router_proto_host or not router_identity:
+        if not router_idurl or not router_proto_host or not router_identity_obj:
             if _Debug:
                 lg.warn('proxy router is not configured yet')
             return
         outpacket, wide, callbacks = arg
         router_proto, router_host = router_proto_host
+        publickey = router_identity_obj.publickey
         src = ''
         src += my_id.getLocalID() + '\n'
         src += outpacket.RemoteID + '\n'
@@ -171,7 +170,7 @@ class ProxySender(automat.Automat):
             key.SessionKeyType(),
             True,
             src,
-            EncryptFunc=lambda inp: key.EncryptStringPK(router_identity.publickey, inp))
+            EncryptFunc=lambda inp: key.EncryptStringPK(publickey, inp))
         newpacket = signed.Packet(
             commands.Data(), 
             outpacket.OwnerID,
@@ -194,65 +193,9 @@ class ProxySender(automat.Automat):
         del block
         del newpacket
         del outpacket
-        del router_identity
+        del router_identity_obj
         del router_idurl
         del router_proto_host
-
-
-        
-#    def doRegisterOutboxFile(self, arg):
-#        """
-#        Action method.
-#        """
-#        remote_idurl, filename, host, description, single = arg
-#        if not single:
-#            d = proxy_interface.interface_register_file_sending(
-#                host, remote_idurl, filename, description)
-#            d.addCallback(self._on_outbox_file_registered, remote_idurl, filename, host, description)
-#            d.addErrback(self._on_outbox_file_register_failed, remote_idurl, filename, host, description)
-        
-#    def doEncryptAndSendOutboxPacket(self, arg):
-#        """
-#        Action method.
-#        """
-#        router_idurl = proxy_receiver.GetRouterIDURL()
-#        outpacket, wide, callbacks = arg
-#        src = ''
-#        src += my_id.getLocalID() + '\n'
-#        src += outpacket.RemoteID + '\n'
-#        src += 'wide\n' if wide else '\n' 
-#        src += outpacket.serialize()
-##        try:
-##            remote_idurl, filename, host, description, single = arg
-##            router_name, router_host = host.split('@')
-##            router_idurl = 'http://%s/%s.xml' % (router_host, router_name)
-##        except:
-##            lg.exc()
-##            return
-##        src = my_id.getLocalID() + '\n' + remote_idurl + '\n' + bpio.ReadBinaryFile(filename)
-#        block = encrypted.Block(
-#            my_id.getLocalID(),
-#            'routed data',
-#            0,
-#            key.NewSessionKey(),
-#            key.SessionKeyType(),
-#            True,
-#            src,)
-#        newpacket = signed.Packet(
-#            commands.Data(), 
-#            router_idurl, 
-#            my_id.getLocalID(),
-#            'routed_'+packetid.UniqueID(), 
-#            block.Serialize(), 
-#            router_idurl)
-#        
-##        gateway.outbox(newpacket, callbacks={
-##            commands.Ack(): self._on_outbox_packet_acked,
-##            commands.Fail(): self._on_outbox_packet_failed}) 
-#        del src
-#        del block
-#        del newpacket
-#        lg.out(12, 'proxy_sender.doSendOutboxPacket %s for %s' % (newpacket, router_idurl))
 
     def doDestroyMe(self, arg):
         """
@@ -268,6 +211,7 @@ class ProxySender(automat.Automat):
         """
         # if _Debug:
             # lg.out(8, 'proxy_sender._on_outbox_packet filtering %s' % (outpacket))
+        import proxy_receiver
         router_idurl = proxy_receiver.GetRouterIDURL()
         if not router_idurl:
             # if _Debug:
@@ -299,6 +243,22 @@ class ProxySender(automat.Automat):
 #        """
 #        """
 #        lg.out(12, 'proxy_sender._on_outbox_packet_failed')
+
+
+
+        
+#    def doRegisterOutboxFile(self, arg):
+#        """
+#        Action method.
+#        """
+#        remote_idurl, filename, host, description, single = arg
+#        if not single:
+#            d = proxy_interface.interface_register_file_sending(
+#                host, remote_idurl, filename, description)
+#            d.addCallback(self._on_outbox_file_registered, remote_idurl, filename, host, description)
+#            d.addErrback(self._on_outbox_file_register_failed, remote_idurl, filename, host, description)
+        
+
     
 #------------------------------------------------------------------------------ 
 

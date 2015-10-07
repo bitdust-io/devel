@@ -64,6 +64,8 @@ class ProxyTransportService(LocalService):
         try:
             from transport.proxy import proxy_interface
         except:
+            from logs import lg
+            lg.exc()
             return False
         return True
 

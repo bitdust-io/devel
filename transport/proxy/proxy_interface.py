@@ -30,9 +30,6 @@ from main import settings
 
 from contacts import identitycache
 
-import proxy_receiver
-import proxy_sender
-
 #------------------------------------------------------------------------------ 
 
 _GateProxy = None
@@ -53,6 +50,8 @@ class GateInterface():
         global _GateProxy
         if _Debug:
             lg.out(4, 'proxy_interface.init')
+        import proxy_receiver
+        import proxy_sender
         if type(xml_rpc_url_or_object) == str:
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
@@ -67,6 +66,8 @@ class GateInterface():
         """
         if _Debug:
             lg.out(4, 'proxy_interface.shutdown')
+        import proxy_receiver
+        import proxy_sender
         ret = self.disconnect()
         proxy_receiver.A('shutdown')
         proxy_sender.A('shutdown')
@@ -80,6 +81,8 @@ class GateInterface():
         """
         if _Debug:
             lg.out(4, 'proxy_interface.connect %s' % str(options))
+        import proxy_receiver
+        import proxy_sender
         if settings.enablePROXYreceiving():
             proxy_receiver.A('start', options)
         if settings.enablePROXYsending():
@@ -91,6 +94,8 @@ class GateInterface():
         """
         if _Debug:
             lg.out(4, 'proxy_interface.disconnect')
+        import proxy_receiver
+        import proxy_sender
         proxy_receiver.A('stop')
         proxy_sender.A('stop')
         return succeed(True)
@@ -98,6 +103,7 @@ class GateInterface():
     def build_contacts(self, id_obj):
         """
         """
+        import proxy_receiver
         if not proxy_receiver.GetRouterIdentity():
             # if not yet found one node to route your traffic - do nothing
             if _Debug:
@@ -115,6 +121,7 @@ class GateInterface():
         """
         Check if router is ready and his contacts exists in that identity. 
         """
+        import proxy_receiver
         if not proxy_receiver.GetRouterIDURL() or not proxy_receiver.GetRouterIdentity():
             # if not yet found one node to route your traffic - do nothing
             if _Debug:

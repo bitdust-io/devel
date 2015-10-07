@@ -51,10 +51,9 @@ from contacts import identitycache
 
 from transport import callback
 from transport import packet_in
+from transport import gateway
 
 from userid import my_id
-
-import proxy_interface
 
 #------------------------------------------------------------------------------ 
 
@@ -74,7 +73,7 @@ def A(event=None, arg=None):
     global _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
-        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', _DebugLevel)
+        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _ProxyReceiver.automat(event, arg)
     return _ProxyReceiver
@@ -119,7 +118,7 @@ class ProxyReceiver(automat.Automat):
         self.router_idurl = None
         self.router_identity = None
         self.router_proto_host = None
-        self.request_service_packet_id = None
+        self.request_service_packet_id = []
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -185,6 +184,8 @@ class ProxyReceiver(automat.Automat):
             elif event == 'timer-30sec' or event == 'service-refused' :
                 self.state = 'FIND_NODE?'
                 self.doDHTFindRandomNode(arg)
+            elif event == 'ack-received' :
+                self.doSendRequestService(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -244,11 +245,17 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        response, info = arg
+        wide = False
+        if len(self.request_service_packet_id) > 0:
+            wide = True
         request = p2p_service.SendRequestService(
-            self.router_idurl, 'service_proxy_server', callbacks={
-                commands.Ack(): self._request_service_ack,
-                commands.Fail(): lambda response, info: self.automat('service-refused', response)})
-        self.request_service_packet_id = request.PacketID
+            self.router_idurl, 'service_proxy_server',
+                wide=wide, 
+                callbacks={
+                    commands.Ack(): self._request_service_ack,
+                    commands.Fail(): lambda response, info: self.automat('service-refused', response)})
+        self.request_service_packet_id.append(request.PacketID)
 
     def doSendCancelService(self, arg):
         """
@@ -271,6 +278,9 @@ class ProxyReceiver(automat.Automat):
         self.router_identity = identitycache.FromCache(self.router_idurl)
         self.router_proto_host = (info.proto, info.host)
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
+        if _Debug:
+            lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
+                self.router_idurl, info.proto, info.host))
 
     def doStopListening(self, arg):
         """
@@ -280,6 +290,9 @@ class ProxyReceiver(automat.Automat):
         self.router_identity = None
         self.router_idurl = None
         self.router_proto_host = None
+        self.request_service_packet_id = []
+        if _Debug:
+            lg.out(2, 'proxy_receiver.doStopListening')
 
     def doProcessInboxPacket(self, arg):
         """
@@ -306,7 +319,11 @@ class ProxyReceiver(automat.Automat):
             return
         inpt.close()
         routed_packet = signed.Unserialize(data)
-        packet_in.process(routed_packet, info.proto, info.host, status, error_message)
+#        transfer_id = gateway.make_transfer_ID()
+#        pkt_in = packet_in.create(transfer_id)
+#        pkt_in.setup(pkt_in)
+#        pkt_in.automat('valid-inbox-packet', routed_packet)
+        packet_in.process(routed_packet, info)
         del block
         del data
         del padded_data
@@ -323,6 +340,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        import proxy_interface
         proxy_interface.interface_receiving_started(self.router_idurl,
             {'router_idurl': self.router_idurl,})
 
@@ -330,6 +348,7 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        import proxy_interface
         proxy_interface.interface_disconnected()
         
     def doDestroyMe(self, arg):
@@ -345,7 +364,7 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
         # DEBUG
-        self._got_remote_idurl({'idurl': 'http://p2p-id.ru/bitdust_vps1001_i.xml'})
+        self._got_remote_idurl({'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml'})
         return
         new_key = dht_service.random_key()
         d = dht_service.find_node(new_key)
@@ -381,8 +400,9 @@ class ProxyReceiver(automat.Automat):
         return response
 
     def _request_service_ack(self, response, info):
-        if response.PacketID != self.request_service_packet_id:
-            lg.warn('wong PacketID in response: %s, but outgoing was %s' % (response.PacketID, self.request_service_packet_id))
+        if response.PacketID not in self.request_service_packet_id:
+            lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
+                response.PacketID, str(self.request_service_packet_id)))
             self.automat('service-refused')
             return
         if _Debug:

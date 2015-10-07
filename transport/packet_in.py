@@ -24,7 +24,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------ 
 
@@ -91,11 +92,14 @@ def get(transfer_id):
 
 #------------------------------------------------------------------------------ 
 
-def process(newpacket, proto, host, status, error_message):
+def process(newpacket, info):
     if not driver.is_started('service_p2p_hookups'):
         if _Debug:
-            lg.out(8, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
+            lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
         return
+    if _Debug:
+        lg.out(_DebugLevel, 'packet_in.process %s from %s://%s : %s' % (
+            str(newpacket), info.proto, info.host, info.status))
     from p2p import commands
     from p2p import p2p_service
     if newpacket.Command == commands.Identity() and newpacket.RemoteID == my_id.getLocalID():
@@ -109,17 +113,18 @@ def process(newpacket, proto, host, status, error_message):
     # check that signed by a contact of ours
     if not newpacket.Valid():              
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
-            proto, host, newpacket))
+            info.proto, info.host, newpacket))
         return
     handled = False
-    for p in packet_out.search_by_response_packet(newpacket, self):
-        p.automat('inbox-packet', newpacket)
+    for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
+        p.automat('inbox-packet', (newpacket, info.proto, info.host))
         handled = True
-    handled = handled or callback.run_inbox_callbacks(newpacket, self, status, error_message)
-    if not handled:
+    handled = handled or callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message)
+    if not handled and newpacket.Command not in [ commands.Ack(), commands.Fail() ]:
         if _Debug:
-            lg.out(10, '    incoming %s from [%s://%s] was NOT HANDLED' % (
-                newpacket, proto, host))
+            lg.out(_DebugLevel-8, '    incoming %s from [%s://%s]' % (
+                newpacket, info.proto, info.host))
+            lg.out(_DebugLevel-8,'     was NOT HANDLED !!!')
 
 #------------------------------------------------------------------------------ 
 
@@ -141,7 +146,7 @@ class PacketIn(automat.Automat):
         self.status = None
         self.error_message = None
         self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', 18)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
         
     def is_timed_out(self):
@@ -279,8 +284,8 @@ class PacketIn(automat.Automat):
             except:
                 lg.exc()
             self.automat('unserialize-failed', None)
-        else:
-            self.automat('valid-inbox-packet', newpacket)
+            return
+        self.automat('valid-inbox-packet', newpacket)
 
     def doReportReceived(self, arg):
         """
@@ -288,7 +293,7 @@ class PacketIn(automat.Automat):
         """
         newpacket = arg
         stats.count_inbox(self.sender_idurl, self.proto, self.status, self.bytes_received)
-        process(newpacket, self.proto, self.host, self.status, self.error_message)
+        process(newpacket, self)
 
     def doReportFailed(self, arg):
         """

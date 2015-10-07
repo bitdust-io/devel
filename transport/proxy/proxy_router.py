@@ -28,6 +28,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------ 
 
@@ -77,7 +78,7 @@ def A(event=None, arg=None):
     global _ProxyRouter
     if _ProxyRouter is None:
         # set automat name and starting state here
-        _ProxyRouter = ProxyRouter('proxy_router', 'AT_STARTUP', 2, True)
+        _ProxyRouter = ProxyRouter('proxy_router', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _ProxyRouter.automat(event, arg)
     return _ProxyRouter
