@@ -46,7 +46,7 @@ def init():
     """
     if _Debug:
         lg.out(4, 'identitycache.init')
-    identitydb.clear()
+    # identitydb.clear()
     identitydb.init()
         
 

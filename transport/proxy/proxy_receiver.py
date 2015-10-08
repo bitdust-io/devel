@@ -30,6 +30,13 @@ EVENTS:
     * :red:`timer-30sec`
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------
+
 import random
 import cStringIO
 
@@ -38,6 +45,8 @@ from twisted.internet import reactor
 from logs import lg
 
 from automats import automat
+
+from main import config
 
 from crypt import key
 from crypt import signed
@@ -57,11 +66,6 @@ from userid import my_id
 from userid import identity
 
 #------------------------------------------------------------------------------ 
-
-_Debug = True
-_DebugLevel = 6
-
-#------------------------------------------------------------------------------
 
 _ProxyReceiver = None
 
@@ -174,6 +178,9 @@ class ProxyReceiver(automat.Automat):
                 self.doProcessInboxPacket(arg)
             elif event == 'router-id-received' :
                 self.doUpdateRouterID(arg)
+            elif event == 'service-refused' :
+                self.state = 'FIND_NODE?'
+                self.doDHTFindRandomNode(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted' :
@@ -199,7 +206,12 @@ class ProxyReceiver(automat.Automat):
             if event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'start' :
+            elif event == 'start' and self.isCurrentRouterExist(arg) :
+                self.state = 'LISTEN'
+                self.doLoadRouterInfo(arg)
+                self.doStartListening(arg)
+                self.doReportConnected(arg)
+            elif event == 'start' and not self.isCurrentRouterExist(arg) :
                 self.state = 'FIND_NODE?'
                 self.doDHTFindRandomNode(arg)
         #---FIND_NODE?---
@@ -217,6 +229,26 @@ class ProxyReceiver(automat.Automat):
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
         return None
+
+    def isCurrentRouterExist(self, arg):
+        """
+        Condition method.
+        """
+        return config.conf().getString('services/proxy-transport/current-router', '').strip() != ''
+
+    def doLoadRouterInfo(self, arg):
+        """
+        Action method.
+        """
+        s = config.conf().getString('services/proxy-transport/current-router').strip()
+        try:
+            self.router_idurl, proto, host = s.split(' ')
+        except:
+            lg.exc()
+        self.router_proto_host = (proto, host)
+        self.router_identity = identitycache.FromCache(self.router_idurl)
+        if not self.router_identity:
+            identitycache.immediatelyCaching(self.router_idurl)
 
     def doInit(self, arg):
         """
@@ -280,18 +312,24 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        response, info = arg
+        try:
+            response, info = arg
+            self.router_proto_host = (info.proto, info.host)
+        except:
+            pass
         self.router_identity = identitycache.FromCache(self.router_idurl)
-        self.router_proto_host = (info.proto, info.host)
+        config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
+            self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         if _Debug:
             lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
-                self.router_idurl, info.proto, info.host))
+                self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
 
     def doStopListening(self, arg):
         """
         Action method.
         """
+        config.conf().setString('services/proxy-transport/current-router', '')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.router_identity = None
         self.router_idurl = None
@@ -459,6 +497,7 @@ class ProxyReceiver(automat.Automat):
         return True             
         
 #------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor

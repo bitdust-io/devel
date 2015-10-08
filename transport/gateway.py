@@ -46,6 +46,13 @@ Different networks provides various functions, something more than just transfer
 Some of them uses DHT to store data on nodes - we can use that stuff also. 
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------ 
+
 import os
 import time
 import optparse
@@ -79,11 +86,6 @@ from contacts import identitycache
 import callback
 import packet_in
 import packet_out
-
-#------------------------------------------------------------------------------ 
-
-_Debug = True
-_DebugLevel = 18
 
 #------------------------------------------------------------------------------ 
 
@@ -191,23 +193,23 @@ def cold_start():
     """
     """
     if _Debug:
-        lg.out(4, 'gateway.cold_start')
+        lg.out(4, 'gateway.cold_start : sending "start" only to one transport - most preferable')
     callback.append_outbox_filter_callback(on_outbox_packet)
     ordered_list = transports().keys()
-    ordered_list.sort(key=settings.getTransportPriority, reverse=False)
+    ordered_list.sort(key=settings.getTransportPriority, reverse=True)
     result = []
     for proto in ordered_list:
         transp = transport(proto)
         if settings.transportIsEnabled(proto): 
             if transp.state != 'LISTENING':
                 if _Debug:
-                    lg.out(4, '    sending "start" to %s' % transp)
+                    lg.out(4, '    sending "start" to %s and stop' % transp)
                 transp.automat('start')
                 result.append(proto)
                 break
             else:
                 if _Debug:
-                    lg.out(4, '    %r is ready' % transp)
+                    lg.out(4, '    %r is ready, try next one' % transp)
     reactor.callLater(5, packets_timeout_loop)
     return result
 
@@ -381,7 +383,7 @@ def inbox(info):
         return None
     _LastInboxPacketTime = time.time()
     if _Debug:
-        lg.out(_DebugLevel-4, "gateway.inbox [%s] signed by %s|%s (for %s) from %s://%s" % (
+        lg.out(_DebugLevel, "gateway.inbox [%s] signed by %s|%s (for %s) from %s://%s" % (
             Command, 
             nameurl.GetName(OwnerID), 
             nameurl.GetName(CreatorID), 
@@ -403,7 +405,7 @@ def outbox(outpacket, wide=False, callbacks={}):
             
     """
     if _Debug:
-        lg.out(_DebugLevel-4, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
+        lg.out(_DebugLevel, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
             outpacket.Command, 
             nameurl.GetName(outpacket.OwnerID),
             nameurl.GetName(outpacket.CreatorID),

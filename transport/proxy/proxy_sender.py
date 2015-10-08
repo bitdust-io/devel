@@ -23,7 +23,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 6
+_DebugLevel = 18
 
 #------------------------------------------------------------------------------ 
 
@@ -187,8 +187,9 @@ class ProxySender(automat.Automat):
                           router_host, 
                           filename, 
                           'Routed packet for %s' % outpacket.RemoteID)
-        lg.out(12, 'proxy_sender.doEncryptAndSendToProxyRouter %s : %d bytes sent to %s://%s for %s' % (
-            str(result), len(packetdata), router_proto, router_host, nameurl.GetName(outpacket.RemoteID)))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_sender.doEncryptAndSendToProxyRouter %s : %d bytes sent to %s://%s for %s' % (
+                str(result), len(packetdata), router_proto, router_host, nameurl.GetName(outpacket.RemoteID)))
         del src
         del block
         del newpacket
@@ -222,7 +223,7 @@ class ProxySender(automat.Automat):
                 # lg.out(8, '        outpacket is addressed for router and must be sent in a usual way')
             return None
         if _Debug:
-            lg.out(14, 'proxy_sender._on_outbox_packet   %s were redirected for %s' % (outpacket, router_idurl))
+            lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet   %s were redirected for %s' % (outpacket, router_idurl))
         self.automat('outbox-packet', (outpacket, wide, callbacks))
         return True
         # return packet_out.create(outpacket, wide, callbacks, target=router_idurl)
