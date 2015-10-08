@@ -295,7 +295,7 @@ class ProxyRouter(automat.Automat):
             lg.warn('receiver identity is not found in cache')
             return
         src = ''
-        src += newpacket.serialize()
+        src += newpacket.Serialize()
         block = encrypted.Block(
             my_id.getLocalID(),
             'routed incoming data',

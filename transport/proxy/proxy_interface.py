@@ -129,39 +129,47 @@ class GateInterface():
             return True
         result = Deferred()
         def _finish_verification(res):
-            cached_id = identitycache.FromCache(proxy_receiver.GetRouterIDURL())
-            if not cached_id:
-                if _Debug:
-                    lg.out(4, 'proxy_interface.verify_contacts return False: router identity is not cached')
-                res.callback(False) 
-                return
-#            if cached_id.serialize() != proxy_receiver.GetRouterIdentity().serialize():
-#                if _Debug:
-#                    lg.out(4, 'proxy_interface.verify_contacts return False: cached copy is different')
-#                    lg.out(20, '\n%s\n' % cached_id.serialize())
-#                    lg.out(20, '\n%s\n' % proxy_receiver.GetRouterIdentity().serialize())
-#                res.callback(False) 
-#                return
-            router_contacts = proxy_receiver.GetRouterIdentity().getContacts()
-            if len(router_contacts) != id_obj.getContactsNumber():
-                if _Debug:
-                    lg.out(4, 'proxy_interface.is_valid return False: router contacts is different') 
-                res.callback(False) 
-                return
-            for proto, contact in id_obj.getContactsByProto().items():
-                if proto not in router_contacts.keys():
+            if _Debug:
+                lg.out(4, 'proxy_interface._finish_verification')
+            try:
+                cached_id = identitycache.FromCache(proxy_receiver.GetRouterIDURL())
+                if not cached_id:
                     if _Debug:
-                        lg.out(4, 'proxy_interface.is_valid return False: [%s] is not present in router contacts' % proto) 
+                        lg.out(4, '    returning False: router identity is not cached')
+                    res.callback(False) 
+                    return False
+                if cached_id.serialize() != proxy_receiver.GetRouterIdentity().serialize():
+                    if _Debug:
+                        lg.out(4, 'proxy_interface.verify_contacts return False: cached copy is different')
+                        lg.out(20, '\n%s\n' % cached_id.serialize())
+                        lg.out(20, '\n%s\n' % proxy_receiver.GetRouterIdentity().serialize())
                     res.callback(False) 
                     return
-                if router_contacts[proto] != contact:
+                router_contacts = proxy_receiver.GetRouterIdentity().getContactsByProto()
+                if len(router_contacts) != id_obj.getContactsNumber():
                     if _Debug:
-                        lg.out(4, 'proxy_interface.is_valid return False: [%s] contact is different in router id' % proto) 
+                        lg.out(4, '    returning False: router contacts is different') 
                     res.callback(False) 
-                    return
-            # TODO: probably need to check the order also ... 
-            res.callback(True) 
-            return
+                    return False
+                for proto, contact in id_obj.getContactsByProto().items():
+                    if proto not in router_contacts.keys():
+                        if _Debug:
+                            lg.out(4, '    returning False: [%s] is not present in router contacts' % proto) 
+                        res.callback(False) 
+                        return False
+                    if router_contacts[proto] != contact:
+                        if _Debug:
+                            lg.out(4, '    returning False: [%s] contact is different in router id' % proto) 
+                        res.callback(False) 
+                        return False
+                if _Debug:
+                    lg.out(4, '    returning True : my contacts and router contacts is same') 
+                res.callback(True) 
+                return True
+            except:
+                lg.exc()
+                res.callback(True) 
+                return True
         d = identitycache.immediatelyCaching(proxy_receiver.GetRouterIDURL())
         d.addCallback(lambda src: _finish_verification(result))
         d.addErrback(lambda err: result.callback(False))

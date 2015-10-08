@@ -417,11 +417,32 @@ class NetworkConnector(automat.Automat):
             if _Debug:
                 lg.out(4, 'network_connector.doVerifyTransports : %s' % str(all_results))
             order, all_results = all_results
+            not_valid_count = 0
+            restarts_count = 0
+            if len(order) == 0:
+                self.automat('network-transports-verified')
+                return
             for proto in order:
                 if not all_results[proto]:
+                    not_valid_count += 1
+            for priority in range(len(order)):
+                proto = order[priority]
+                if not all_results[proto]:
+                    if _Debug:
+                        lg.out(4, '    [%s] at position %d needs restart' % (proto, priority))
                     gateway.transport(proto).automat('restart')
+                    restarts_count += 1
+                    if not_valid_count > 1:
+                        return
+                    continue
+                if not_valid_count > 0:
+                    if _Debug:
+                        lg.out(4, '    skip other transports')
                     return
-            self.automat('network-transports-verified')
+                if _Debug:
+                    lg.out(4, '        [%s] at position %d is fine, skip other transports' % (proto, priority))
+                self.automat('network-transports-verified')
+                return
         gateway.verify().addCallback(_transports_verified)
 
 #------------------------------------------------------------------------------ 

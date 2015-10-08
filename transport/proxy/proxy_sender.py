@@ -161,7 +161,7 @@ class ProxySender(automat.Automat):
         src += my_id.getLocalID() + '\n'
         src += outpacket.RemoteID + '\n'
         src += 'wide\n' if wide else '\n' 
-        src += outpacket.serialize()
+        src += outpacket.Serialize()
         block = encrypted.Block(
             my_id.getLocalID(),
             'routed outgoing data',

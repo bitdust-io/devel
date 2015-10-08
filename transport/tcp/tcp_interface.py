@@ -121,6 +121,8 @@ class GateInterface():
             if _Debug:
                 lg.out(4, 'tcp_interface.verify_contacts returning False: tcp contact not found or changed')
             return False        
+        if _Debug:
+            lg.out(4, 'tcp_interface.verify_contacts returning True')
         return True
     
     def send_file(self, remote_idurl, filename, host, description=''):

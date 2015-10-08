@@ -248,17 +248,23 @@ def verify():
     
     def _verify_transport(proto):
         if _Debug:
-            lg.out(_DebugLevel, '    verifying %s transport' % proto)
+            lg.out(_DebugLevel-8, '    verifying %s_transport' % proto)
         if not settings.transportIsEnabled(proto):
+            if _Debug:
+                lg.out(_DebugLevel-8, '    %s_transport is disabled' % proto)
             return succeed(True)
         transp = transport(proto)
         if transp.state == 'OFFLINE':
+            if _Debug:
+                lg.out(_DebugLevel-8, '    %s_transport state is OFFLINE' % proto)
             return succeed(True)
         if transp.state != 'LISTENING':
+            if _Debug:
+                lg.out(_DebugLevel-8, '    %s_transport state is not LISTENING' % proto)
             return succeed(True)
         transp_result = transp.interface.verify_contacts(my_id_obj)
         if _Debug:
-            lg.out(_DebugLevel, '        %s result is %r' % (proto, transp_result))
+            lg.out(_DebugLevel-8, '        %s result is %r' % (proto, transp_result))
         if isinstance(transp_result, bool) and transp_result == True:
             return succeed(True)
         if isinstance(transp_result, bool) and transp_result == False:
@@ -267,13 +273,13 @@ def verify():
             ret = Deferred()
             transp_result.addCallback(lambda result_value: ret.callback(result_value))
             return ret
-        lg.warn('incorrect result returned from %s transport verify_contacts(): %r' % (proto, transp_result))
+        lg.warn('incorrect result returned from %s_interface.verify_contacts(): %r' % (proto, transp_result))
         return succeed(False)
 
     def _on_verified_one(t_result, proto):
         all_results[proto] = t_result
         if _Debug:
-            lg.out(_DebugLevel, '        verified %s transport, result=%r' % (proto, t_result))
+            lg.out(_DebugLevel-8, '        verified %s transport, result=%r' % (proto, t_result))
         if len(all_results) == len(ordered_list):
             resulted.callback((ordered_list, all_results))
     

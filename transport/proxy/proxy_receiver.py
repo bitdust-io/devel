@@ -107,7 +107,7 @@ class ProxyReceiver(automat.Automat):
     """
 
     timers = {
-        'timer-30sec': (30.0, ['SERVICE?']),
+        'timer-30sec': (30.0, ['ACK?','SERVICE?']),
         'timer-10sec': (10.0, ['ACK?']),
         }
 
@@ -147,9 +147,11 @@ class ProxyReceiver(automat.Automat):
             elif event == 'ack-received' :
                 self.state = 'SERVICE?'
                 self.doSendRequestService(arg)
-            elif event == 'timer-10sec' or event == 'fail-received' :
+            elif event == 'timer-30sec' or event == 'fail-received' :
                 self.state = 'FIND_NODE?'
                 self.doDHTFindRandomNode(arg)
+            elif event == 'timer-10sec' :
+                self.doSendMyIdentity(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init' :
@@ -249,6 +251,11 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         response, info = arg
+        if len(self.request_service_packet_id) >= 3:
+            if _Debug:
+                lg.warn('too many service requests to %s' % self.router_idurl)
+            self.automat('service-refused', arg)
+            return
         request = p2p_service.SendRequestService(
             self.router_idurl, 'service_proxy_server',
                 callbacks={
