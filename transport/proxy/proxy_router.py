@@ -263,10 +263,10 @@ class ProxyRouter(automat.Automat):
             except:
                 pass
             return
-        route = self.routes.get(receiver_idurl, None)
+        route = self.routes.get(sender_idurl, None)
         if not route:
             inpt.close()
-            lg.warn('route to %s not found, sender: %s' % (receiver_idurl, sender_idurl))
+            lg.warn('route with %s not found' % (sender_idurl))
             return 
         data = inpt.read()
         inpt.close()

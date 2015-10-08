@@ -110,7 +110,8 @@ def streams():
 def create(stream_id, consumer, producer):
     """
     """
-    lg.out(14, 'udp_stream.create stream_id=%s' % str(stream_id))
+    if _Debug:
+        lg.out(14, 'udp_stream.create stream_id=%s' % str(stream_id))
     s = UDPStream(stream_id, consumer, producer)
     streams()[s.stream_id] = s
     s.automat('init')
@@ -151,8 +152,9 @@ def balance_streams_limits():
     if num_streams > 0:
         receive_limit_per_stream /= num_streams
         send_limit_per_stream /= num_streams
-    lg.out(18, 'udp_stream.balance_streams_limits in:%r out:%r total:%d' % (
-        receive_limit_per_stream, send_limit_per_stream, num_streams))
+    if _Debug:
+        lg.out(18, 'udp_stream.balance_streams_limits in:%r out:%r total:%d' % (
+            receive_limit_per_stream, send_limit_per_stream, num_streams))
     for s in streams().values():
         s.automat('set-limits', (receive_limit_per_stream, send_limit_per_stream))
 
@@ -366,10 +368,11 @@ class UDPStream(automat.Automat):
         else:
             self.rtt_avarage = (RTT_MIN_LIMIT + RTT_MAX_LIMIT) / 2.0
         self.rtt_counter = 1.0
-        lg.out(18, 'udp_stream.doInit %d with %s limits: (in=%r|out=%r)  rtt=%r' % (
-            self.stream_id, self.producer.session.peer_id,
-            self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec,
-            self.rtt_avarage))
+        if _Debug:
+            lg.out(18, 'udp_stream.doInit %d with %s limits: (in=%r|out=%r)  rtt=%r' % (
+                self.stream_id, self.producer.session.peer_id,
+                self.limit_receive_bytes_per_sec, self.limit_send_bytes_per_sec,
+                self.rtt_avarage))
 
     def doPushBlocks(self, arg):
         """
@@ -548,11 +551,12 @@ class UDPStream(automat.Automat):
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
-                lg.out(self.debug_level, 'udp_stream[%d] | %r%% sent | %d/%d/%d | %r bps | %r sec dt' % (
-                    self.stream_id, round(100.0*(float(self.bytes_acked)/self.consumer.size),2),
-                    self.bytes_sent, self.bytes_acked,
-                    self.consumer.size, int(self.current_send_bytes_per_sec),
-                    round(relative_time-self.last_ack_received_time,4)))
+                if _Debug:
+                    lg.out(self.debug_level, 'udp_stream[%d] | %r%% sent | %d/%d/%d | %r bps | %r sec dt' % (
+                        self.stream_id, round(100.0*(float(self.bytes_acked)/self.consumer.size),2),
+                        self.bytes_sent, self.bytes_acked,
+                        self.consumer.size, int(self.current_send_bytes_per_sec),
+                        round(relative_time-self.last_ack_received_time,4)))
         if self.loop is None:
             next_iteration = min(MAX_BLOCKS_INTERVAL, 
                                  self._rtt_current() * self.resend_inactivity_counter)
@@ -575,12 +579,13 @@ class UDPStream(automat.Automat):
             relative_time = time.time() - self.creation_time
             if relative_time - self.last_progress_report > 1.0:
                 self.last_progress_report = relative_time
-                lg.out(18, 'udp_stream[%d] | %r%% received | %d/%d/%d | %dbps | %r sec dt | from %s' % (self.stream_id, 
-                    round(100.0*(float(self.consumer.bytes_received)/self.consumer.size),2), 
-                    self.bytes_in, self.consumer.bytes_received, 
-                    self.consumer.size, int(self.current_receive_bytes_per_sec),
-                    round(relative_time-self.last_received_block_time, 4),
-                    self.producer.session.peer_id))
+                if _Debug:
+                    lg.out(18, 'udp_stream[%d] | %r%% received | %d/%d/%d | %dbps | %r sec dt | from %s' % (self.stream_id, 
+                        round(100.0*(float(self.consumer.bytes_received)/self.consumer.size),2), 
+                        self.bytes_in, self.consumer.bytes_received, 
+                        self.consumer.size, int(self.current_receive_bytes_per_sec),
+                        round(relative_time-self.last_received_block_time, 4),
+                        self.producer.session.peer_id))
         if self.loop is None:
             next_iteration = min(MAX_ACKS_INTERVAL, 
                              max(RTT_MIN_LIMIT/2.0, 

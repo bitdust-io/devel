@@ -107,7 +107,7 @@ class ProxySender(automat.Automat):
         #---REDIRECTING---
         elif self.state == 'REDIRECTING':
             if event == 'outbox-packet' :
-                self.doEncryptAndSendOutboxPacket(arg)
+                self.doEncryptAndSendToProxyRouter(arg)
             elif event == 'stop' :
                 self.state = 'STOPPED'
                 self.doStop(arg)

@@ -621,8 +621,9 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
         lg.out(_DebugLevel, 'gateway.on_register_file_sending %s %s' % (filename, description))
     pkt_out, work_item = packet_out.search(proto, host, filename, remote_idurl=receiver_idurl)
     if pkt_out is None:
-        lg.err('gateway.on_register_file_sending ERROR packet_out not found: %r %r %r' % (
-            proto, host, os.path.basename(filename)))
+        if _Debug:
+            lg.out(_DebugLevel, '    skip, packet_out not found: %r %r %r' % (
+                proto, host, os.path.basename(filename)))
         return None
     transfer_id = make_transfer_ID()
     if _Debug:
@@ -639,6 +640,8 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     """
     Called from transport plug-in after finish sending a single file.
     """
+    if transfer_id is None:
+        return False
     if _Debug:
         lg.out(_DebugLevel, 'gateway.on_unregister_file_sending %s %s' % (transfer_id, status))
     pkt_out, work_item = packet_out.search_by_transfer_id(transfer_id)
