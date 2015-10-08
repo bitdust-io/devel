@@ -24,8 +24,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
-_DebugLevel = 18
+_Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------ 
 
@@ -124,7 +124,7 @@ def process(newpacket, info):
         if _Debug:
             lg.out(_DebugLevel-8, '    incoming %s from [%s://%s]' % (
                 newpacket, info.proto, info.host))
-            lg.out(_DebugLevel-8,'     was NOT HANDLED !!!')
+            lg.out(_DebugLevel-8, '        NOT HANDLED !!!')
 
 #------------------------------------------------------------------------------ 
 

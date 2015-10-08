@@ -261,12 +261,16 @@ def backup_tree_add(dirpath):
 #------------------------------------------------------------------------------ 
 
 def list_messages():
+    if not driver.is_started('service_private_messages'):
+        return { 'result': 'service_private_messages() is not started', }
     from chat import message
     mlist = {} #TODO: just need some good idea to keep messages synchronized!!!
     return { 'result': mlist }
     
     
 def send_message(recipient, message_body):
+    if not driver.is_started('service_private_messages'):
+        return { 'result': 'service_private_messages() is not started', }
     from chat import message
     recipient = str(recipient)
     if not recipient.startswith('http://'):
@@ -274,7 +278,10 @@ def send_message(recipient, message_body):
         recipient = contactsdb.find_correspondent_by_nickname(recipient) or recipient
     packet = message.SendMessage(recipient, message_body)
     if packet:
-        packet = str(packet.outpacket)
+        try:
+            packet = str(packet.outpacket)
+        except:
+            packet = str(packet)
     return {'result': { 
             'packet': packet },
             'recipient': recipient }
