@@ -221,6 +221,7 @@ class PacketOut(automat.Automat):
         self.items = []
         self.results = []
         self.response_packet = None
+        self.response_info = None
 
     def msg(self, msgid, arg=None):
         return self.MESSAGES.get(msgid, '')
@@ -380,7 +381,7 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
-        newpacket, proto, host = arg
+        newpacket, info = arg
         return newpacket.Command in self.callbacks.keys()
 
     def doInit(self, arg):
@@ -452,7 +453,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        self.response_packet, proto, host = arg
+        self.response_packet, self.response_info = arg
 
     def doCancelItems(self, arg):
         """
@@ -498,7 +499,7 @@ class PacketOut(automat.Automat):
         Action method.
         """
         if self.response_packet.Command in self.callbacks:
-            self.callbacks[self.response_packet.Command](self.response_packet, self)
+            self.callbacks[self.response_packet.Command](self.response_packet, self.response_info)
 
     def doReportDoneWithAck(self, arg):
         """

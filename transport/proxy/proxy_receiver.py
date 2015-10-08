@@ -20,6 +20,7 @@ EVENTS:
     * :red:`inbox-packet`
     * :red:`init`
     * :red:`nodes-not-found`
+    * :red:`router-id-received`
     * :red:`service-accepted`
     * :red:`service-refused`
     * :red:`shutdown`
@@ -51,9 +52,9 @@ from contacts import identitycache
 
 from transport import callback
 from transport import packet_in
-from transport import gateway
 
 from userid import my_id
+from userid import identity
 
 #------------------------------------------------------------------------------ 
 
@@ -169,6 +170,8 @@ class ProxyReceiver(automat.Automat):
                 self.doReportDisconnected(arg)
             elif event == 'inbox-packet' :
                 self.doProcessInboxPacket(arg)
+            elif event == 'router-id-received' :
+                self.doUpdateRouterID(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'service-accepted' :
@@ -246,15 +249,11 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         response, info = arg
-        wide = False
-        if len(self.request_service_packet_id) > 0:
-            wide = True
         request = p2p_service.SendRequestService(
             self.router_idurl, 'service_proxy_server',
-                wide=wide, 
                 callbacks={
                     commands.Ack(): self._request_service_ack,
-                    commands.Fail(): lambda response, info: self.automat('service-refused', response)})
+                    commands.Fail(): self._request_service_fail})
         self.request_service_packet_id.append(request.PacketID)
 
     def doSendCancelService(self, arg):
@@ -331,6 +330,22 @@ class ProxyReceiver(automat.Automat):
         del session_key
         del routed_packet
 
+    def doUpdateRouterID(self, arg):
+        """
+        Action method.
+        """
+        newpacket, info = arg
+        newxml = newpacket.Payload
+        newidentity = identity.identity(xmlsrc=newxml)
+        cachedidentity = identitycache.FromCache(self.router_idurl)
+        if self.router_idurl != newidentity.getIDURL():
+            lg.warn('router_idurl != newidentity.getIDURL()')
+            return
+        if newidentity.serialize() != cachedidentity.serialize():
+            lg.warn('cached identity is not same')
+            return
+        self.router_identity = newidentity
+
     def doReportStopped(self, arg):
         """
         Action method.
@@ -403,16 +418,28 @@ class ProxyReceiver(automat.Automat):
         if response.PacketID not in self.request_service_packet_id:
             lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
                 response.PacketID, str(self.request_service_packet_id)))
-            self.automat('service-refused')
+            self.automat('service-refused', (response, info))
             return
+        self.request_service_packet_id.remove(response.PacketID)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._request_service_ack : %s' % str(response.Payload))
         if response.Payload.startswith('accepted'):
             self.automat('service-accepted', (response, info))
         else:
-            self.automat('service-refused')
+            self.automat('service-refused', (response, info))
+            
+    def _request_service_fail(self, response, info):
+        if response.PacketID not in self.request_service_packet_id:
+            lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
+                response.PacketID, str(self.request_service_packet_id)))
+        else:
+            self.request_service_packet_id.remove(response.PacketID)
+        self.automat('service-refused', (response, info))
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
+        if newpacket.Command == commands.Identity() and newpacket.CreatorID == self.router_idurl and newpacket.RemoteID == my_id.getLocalID():
+            self.automat('router-id-received', (newpacket, info))
+            return True
         if newpacket.Command != commands.Data():
             return False
         if not newpacket.PacketID.startswith('routed_in_'):

@@ -243,41 +243,35 @@ def Identity(newpacket):
     """
     newxml = newpacket.Payload
     newidentity = identity.identity(xmlsrc=newxml)
-
     # SECURITY - check that identity is signed correctly
     # if not newidentity.Valid():
     #     lg.out(1,"p2p_service.Identity ERROR has non-Valid identity")
     #     return
-
     idurl = newidentity.getIDURL()
-
     if not identitycache.UpdateAfterChecking(idurl, newxml):
         lg.out(1,"p2p_service.Identity ERROR has non-Valid identity")
-        return
-    
+        return False
     # if contacts.isKnown(idurl):
         # This checks that old public key matches new
     #     identitycache.UpdateAfterChecking(idurl, newxml)
-
     # else:
         # TODO
         # may be we need to make some temporary storage
         # for identities who we did not know yet
         # just to be able to receive packets from them
     #     identitycache.UpdateAfterChecking(idurl, newxml)
-
     # Now that we have ID we can check packet
     if not newpacket.Valid():
         # If not valid do nothing
         lg.warn("not Valid packet from %s" % idurl)
-        return
-
+        return False
     if newpacket.OwnerID == idurl:
         # wide=True : a small trick to respond to all contacts if we receive pings  
         SendAck(newpacket, wide=True)
-        lg.out(8, "p2p_service.Identity from [%s], sent Ack" % nameurl.GetName(idurl))
+        lg.out(8, "p2p_service.Identity from [%s], sent wide Acks" % nameurl.GetName(idurl))
     else:
         lg.out(8, "p2p_service.Identity from [%s]" % nameurl.GetName(idurl))
+    return True
 
 
 def RequestIdentity(request):

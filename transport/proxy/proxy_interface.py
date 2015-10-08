@@ -135,13 +135,13 @@ class GateInterface():
                     lg.out(4, 'proxy_interface.verify_contacts return False: router identity is not cached')
                 res.callback(False) 
                 return
-            if cached_id.serialize() != proxy_receiver.GetRouterIdentity().serialize():
-                if _Debug:
-                    lg.out(4, 'proxy_interface.verify_contacts return False: cached copy is different')
-                    lg.out(20, '\n%s\n' % cached_id.serialize())
-                    lg.out(20, '\n%s\n' % proxy_receiver.GetRouterIdentity().serialize())
-                res.callback(False) 
-                return
+#            if cached_id.serialize() != proxy_receiver.GetRouterIdentity().serialize():
+#                if _Debug:
+#                    lg.out(4, 'proxy_interface.verify_contacts return False: cached copy is different')
+#                    lg.out(20, '\n%s\n' % cached_id.serialize())
+#                    lg.out(20, '\n%s\n' % proxy_receiver.GetRouterIdentity().serialize())
+#                res.callback(False) 
+#                return
             router_contacts = proxy_receiver.GetRouterIdentity().getContacts()
             if len(router_contacts) != id_obj.getContactsNumber():
                 if _Debug:

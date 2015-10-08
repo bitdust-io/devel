@@ -25,7 +25,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = False
-_DebugLevel = 10
+_DebugLevel = 18
 
 #------------------------------------------------------------------------------ 
 
@@ -97,6 +97,7 @@ def process(newpacket, info):
         if _Debug:
             lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
         return
+    handled = False
     if _Debug:
         lg.out(_DebugLevel, 'packet_in.process %s from %s://%s : %s' % (
             str(newpacket), info.proto, info.host, info.status))
@@ -108,16 +109,15 @@ def process(newpacket, info):
         # because we might not have his identity on hands and so can not verify the packet  
         # so we check that his Identity is valid and save it into cache
         # than we check the packet to be valid too.
-        p2p_service.Identity(newpacket)            
-        return
+        handled = handled or p2p_service.Identity(newpacket)            
+        # return
     # check that signed by a contact of ours
     if not newpacket.Valid():              
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
             info.proto, info.host, newpacket))
         return
-    handled = False
     for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
-        p.automat('inbox-packet', (newpacket, info.proto, info.host))
+        p.automat('inbox-packet', (newpacket, info))
         handled = True
     handled = handled or callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message)
     if not handled and newpacket.Command not in [ commands.Ack(), commands.Fail() ]:
