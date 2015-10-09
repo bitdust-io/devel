@@ -17,6 +17,13 @@ EVENTS:
 
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------ 
+
 import random
 
 #------------------------------------------------------------------------------ 
@@ -61,7 +68,7 @@ def A(event=None, arg=None):
     global _SupplierFinder
     if _SupplierFinder is None:
         # set automat name and starting state here
-        _SupplierFinder = SupplierFinder('supplier_finder', 'AT_STARTUP', 8)
+        _SupplierFinder = SupplierFinder('supplier_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _SupplierFinder.automat(event, arg)
     return _SupplierFinder

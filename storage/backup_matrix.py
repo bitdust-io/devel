@@ -491,7 +491,7 @@ def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=Non
         lg.warn('Data or Parity? ' + filename)
         return
     if supplierNum >= contactsdb.num_suppliers():
-        lg.warn('supplier number %d > %d %s' % (supplierNum, contactsdb.num_suppliers(), filename))
+        lg.warn('supplier number? %d > %d : %s' % (supplierNum, contactsdb.num_suppliers(), filename))
         return
     localDest = os.path.join(settings.getLocalBackupsDir(), filename)
     if not local_files().has_key(backupID):

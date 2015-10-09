@@ -188,8 +188,9 @@ class ProxySender(automat.Automat):
                           filename, 
                           'Routed packet for %s' % outpacket.RemoteID)
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_sender.doEncryptAndSendToProxyRouter %s : %d bytes sent to %s://%s for %s' % (
-                str(result), len(packetdata), router_proto, router_host, nameurl.GetName(outpacket.RemoteID)))
+            lg.out(_DebugLevel-8, '<<< ROUTED-OUT <<< %s' % str(outpacket))
+            lg.out(_DebugLevel-8, '                   sent on %s://%s with %d bytes' % (
+                router_proto, router_host, len(packetdata)))
         del src
         del block
         del newpacket

@@ -47,7 +47,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------ 
 
@@ -127,7 +128,7 @@ def A(event=None, arg=None):
     global _P2PConnector
     if _P2PConnector is None:
         _P2PConnector = P2PConnector(
-            'p2p_connector', 'AT_STARTUP', 6, _Debug)
+            'p2p_connector', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _P2PConnector.automat(event, arg)
     return _P2PConnector
