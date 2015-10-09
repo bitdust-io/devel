@@ -1590,7 +1590,7 @@ def getDebugLevel():
     """
     Return current debug level.
     """
-    return config.conf().getInt('logs/debug-level', lg._DebugLevel)
+    return config.conf().getInt('logs/debug-level', lg._GlobalDebugLevel)
 
 def setDebugLevel(level):
     """
