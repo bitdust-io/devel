@@ -284,7 +284,6 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        response, info = arg
         if len(self.request_service_packet_id) >= 3:
             if _Debug:
                 lg.warn('too many service requests to %s' % self.router_idurl)

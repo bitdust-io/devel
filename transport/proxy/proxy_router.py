@@ -269,7 +269,7 @@ class ProxyRouter(automat.Automat):
         if not route:
             inpt.close()
             lg.warn('route with %s not found' % (sender_idurl))
-            p2p_service.SendFail(newpacket, 'route not exist')
+            p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
             return 
         data = inpt.read()
         inpt.close()
