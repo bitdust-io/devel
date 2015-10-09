@@ -161,6 +161,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         self.starting_transports = []
+        self._load_routes()
         gateway.add_transport_state_changed_callback(self._on_transport_state_changed)
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
 
@@ -174,7 +175,8 @@ class ProxyRouter(automat.Automat):
                 continue
             if t.state == 'STARTING':
                 self.starting_transports.append(t.proto)
-        lg.out(12, 'proxy_router.doWaitOtherTransports : %s' % str(self.starting_transports))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router.doWaitOtherTransports : %s' % str(self.starting_transports))
 
     def doProcessRequest(self, arg):
         """
@@ -190,12 +192,12 @@ class ProxyRouter(automat.Automat):
                 self.routes[target] = (info.proto, info.host, time.time())
                 p2p_service.SendAck(request, 'accepted') # , wide=True)
                 if _Debug:
-                    lg.out(2, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED ROUTE for %s' % target)
+                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED ROUTE for %s' % target)
             else:
                 if _Debug:
-                    lg.out(4, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
+                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
                     import pprint
-                    lg.out(4, '    %s' % pprint.pformat(self.routes))
+                    lg.out(_DebugLevel-10, '    %s' % pprint.pformat(self.routes))
                 p2p_service.SendAck(request, 'rejected') # , wide=True)
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
@@ -203,13 +205,13 @@ class ProxyRouter(automat.Automat):
                 identitycache.StopOverridingIdentity(target)
                 p2p_service.SendAck(request, 'accepted') # , wide=True)
                 if _Debug:
-                    lg.out(2, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % target)
+                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % target)
             else:
                 p2p_service.SendAck(request, 'rejected') # , wide=True)
                 if _Debug:
-                    lg.out(4, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
+                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
                     import pprint
-                    lg.out(4, '    %s' % pprint.pformat(self.routes))
+                    lg.out(_DebugLevel-10, '    %s' % pprint.pformat(self.routes))
         else:
             p2p_service.SendFail(request, 'wrong command or payload') # , wide=True)
 
@@ -267,13 +269,15 @@ class ProxyRouter(automat.Automat):
         if not route:
             inpt.close()
             lg.warn('route with %s not found' % (sender_idurl))
+            p2p_service.SendFail(newpacket, 'route not exist')
             return 
         data = inpt.read()
         inpt.close()
         routed_packet = signed.Unserialize(data)
         gateway.outbox(routed_packet, wide=wide)
-        lg.out(12, 'proxy_router.doForwardOutboxPacket %d bytes from %s routed to %s : %s' % (
-            len(data), nameurl.GetName(sender_idurl), nameurl.GetName(receiver_idurl), str(routed_packet)))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router.doForwardOutboxPacket %d bytes from %s routed to %s : %s' % (
+                len(data), nameurl.GetName(sender_idurl), nameurl.GetName(receiver_idurl), str(routed_packet)))
         del block
         del data
         del padded_data
@@ -313,8 +317,9 @@ class ProxyRouter(automat.Automat):
             block.Serialize(), 
             receiver_idurl)
         gateway.outbox(routed_packet)
-        lg.out(12, 'proxy_router.doForwardInboxPacket %d bytes from %s sent to %s' % (
-            len(src),  nameurl.GetName(newpacket.CreatorID), nameurl.GetName(receiver_idurl)))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router.doForwardInboxPacket %d bytes from %s sent to %s' % (
+                len(src),  nameurl.GetName(newpacket.CreatorID), nameurl.GetName(receiver_idurl)))
         del src
         del block
         del newpacket
@@ -356,49 +361,14 @@ class ProxyRouter(automat.Automat):
         return False             
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
-        lg.out(12, 'proxy_router._on_transport_state_changed %s : %s, starting transports: %s' % (
-            transport.proto, newstate, self.starting_transports))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router._on_transport_state_changed %s : %s, starting transports: %s' % (
+                transport.proto, newstate, self.starting_transports))
         if transport.proto in self.starting_transports:
             if newstate in ['LISTENING', 'OFFLINE',]:
                 self.starting_transports.remove(transport.proto)
         if len(self.starting_transports) == 0:
             self.automat('all-transports-ready')
-
-#    def _forward_routed_packet(self, newpacket):
-#        block = encrypted.Unserialize(newpacket.Payload)
-#        if block is None:
-#            lg.out(2, 'proxy_router._forward_routed_packet ERROR reading data from %s' % newpacket.RemoteID)
-#            return
-#        try:
-#            session_key = key.DecryptLocalPK(block.EncryptedSessionKey)
-#            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
-#            inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
-#            sender_idurl = inpt.readline().rstrip('\n')
-#            receiver_idurl = inpt.readline().rstrip('\n')
-#        except:
-#            lg.out(2, 'proxy_router._forward_routed_packet ERROR reading data from %s' % newpacket.RemoteID)
-#            lg.out(2, '\n' + padded_data)
-#            lg.exc()
-#            try:
-#                inpt.close()
-#            except:
-#                pass
-#            return
-#        data = inpt.read()
-#        inpt.close()
-#        route = self.routes.get(receiver_idurl, None)
-#        if not route:
-#            lg.warn('route to %s not found, sender: %s' % (receiver_idurl, sender_idurl))
-#            return 
-#        # input_packet = signed.Unserialize(data)
-#        fileno, filename = tmpfile.make('outbox')
-#        os.write(fileno, data)
-#        os.close(fileno)
-#        filesize = len(data)
-#        proto, host, tm = route
-#        gateway.send_file(receiver_idurl, proto, host, filename, 'routed packet')
-#        lg.out(12, 'proxy_router._forward_routed_packet route %d bytes from %s to %s on %s://%s' % (
-#            filesize, sender_idurl, receiver_idurl, proto, host))
 
 #------------------------------------------------------------------------------ 
 

@@ -63,6 +63,8 @@ def out(level, msg, nl='\n'):
     if isinstance(s, unicode):
         s = s.encode('utf-8')
     s_ = s
+    if level < 0:
+        level = 0
     if level % 2:
         level -= 1
     if level:

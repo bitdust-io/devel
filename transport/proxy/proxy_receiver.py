@@ -33,7 +33,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 18
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -180,6 +180,8 @@ class ProxyReceiver(automat.Automat):
                 self.doUpdateRouterID(arg)
             elif event == 'service-refused' :
                 self.state = 'FIND_NODE?'
+                self.doStopListening(arg)
+                self.doReportDisconnected(arg)
                 self.doDHTFindRandomNode(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
@@ -424,8 +426,8 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
         # DEBUG
-        self._got_remote_idurl({'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml'})
-        return
+        # self._got_remote_idurl({'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml'})
+        # return
         new_key = dht_service.random_key()
         d = dht_service.find_node(new_key)
         d.addCallback(self._some_nodes_found)
@@ -482,9 +484,17 @@ class ProxyReceiver(automat.Automat):
         self.automat('service-refused', (response, info))
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
-        if newpacket.Command == commands.Identity() and newpacket.CreatorID == self.router_idurl and newpacket.RemoteID == my_id.getLocalID():
-            self.automat('router-id-received', (newpacket, info))
-            return True
+        if  newpacket.Command == commands.Identity() and \
+            newpacket.CreatorID == self.router_idurl and \
+            newpacket.RemoteID == my_id.getLocalID():
+                self.automat('router-id-received', (newpacket, info))
+                return True
+        if  newpacket.Command == commands.Fail() and \
+            newpacket.CreatorID == self.router_idurl and \
+            newpacket.RemoteID == my_id.getLocalID() and \
+            newpacket.Payload == 'route not exist':
+                self.automat('service-refused', (newpacket, info))
+                return True
         if newpacket.Command != commands.Data():
             return False
         if not newpacket.PacketID.startswith('routed_in_'):
