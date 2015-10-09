@@ -215,7 +215,9 @@ class ProxySender(automat.Automat):
             # lg.out(8, 'proxy_sender._on_outbox_packet filtering %s' % (outpacket))
         import proxy_receiver
         router_idurl = proxy_receiver.GetRouterIDURL()
-        if not router_idurl:
+        router_identity_obj = proxy_receiver.GetRouterIdentity()
+        router_proto_host = proxy_receiver.GetRouterProtoHost()
+        if not router_idurl or not router_identity_obj or not router_proto_host:
             # if _Debug:
                 # lg.out(8, '        proxy_receiver() is not yet found a router')
             return None

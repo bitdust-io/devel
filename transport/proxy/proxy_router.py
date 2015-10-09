@@ -197,7 +197,7 @@ class ProxyRouter(automat.Automat):
             if len(self.routes) < _MaxRoutesNumber:
                 cached_id = identitycache.FromCache(target)
                 idsrc = cached_id.serialize()
-                identitycache.OverrideIdentity(target, )
+                identitycache.OverrideIdentity(target, idsrc)
                 self.routes[target] = (info.proto, info.host, time.time(), idsrc)
                 self._write_route(target)
                 p2p_service.SendAck(request, 'accepted') # , wide=True)

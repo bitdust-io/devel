@@ -216,6 +216,7 @@ class ProxyReceiver(automat.Automat):
                 self.doReportConnected(arg)
             elif event == 'start' and not self.isCurrentRouterExist(arg) :
                 self.state = 'FIND_NODE?'
+                self.doReportNotReady(arg)
                 self.doDHTFindRandomNode(arg)
         #---FIND_NODE?---
         elif self.state == 'FIND_NODE?':
@@ -405,6 +406,13 @@ class ProxyReceiver(automat.Automat):
         import proxy_interface
         proxy_interface.interface_receiving_started(self.router_idurl,
             {'router_idurl': self.router_idurl,})
+        
+    def doReportNotReady(self, arg):
+        """
+        Action method.
+        """
+        import proxy_interface
+        proxy_interface.interface_receiving_failed('router not ready yet')
 
     def doReportDisconnected(self, arg):
         """
@@ -426,8 +434,8 @@ class ProxyReceiver(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
         # DEBUG
-        # self._got_remote_idurl({'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml'})
-        # return
+        self._got_remote_idurl({'idurl': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml'})
+        return
         new_key = dht_service.random_key()
         d = dht_service.find_node(new_key)
         d.addCallback(self._some_nodes_found)
