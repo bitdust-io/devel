@@ -20,7 +20,7 @@ import traceback
 
 #------------------------------------------------------------------------------ 
 
-_DebugLevel = 0
+_GlobalDebugLevel = 0
 _LogLinesCounter = 0
 _LogsEnabled = True
 _RedirectStdOut = False
@@ -39,13 +39,13 @@ _TimeCountsDict = {}
 
 #------------------------------------------------------------------------------ 
 
-def out(level, msg, nl='\n'):
+def out(_DebugLevel, msg, nl='\n'):
     """
     The core method, most used thing in the whole project.
     Print a line to the log file or console.  
     
-    :param level: lower values is count as more important messages. I am using only even values from 0 to 18. 
-    :param s: message string to be printed
+    :param _DebugLevel: lower values is count as more important messages. I am using only even values from 0 to 18. 
+    :param msg: message string to be printed
     :param nl: this string is added at the end, set to empty string to avoid new line.     
     """
     global _WebStreamFunc
@@ -56,13 +56,14 @@ def out(level, msg, nl='\n'):
     global _NoOutput
     global _LogLinesCounter
     global _LogsEnabled
-    global _DebugLevel
+    global _GlobalDebugLevel
     if not _LogsEnabled:
         return
     s = '' + msg
     if isinstance(s, unicode):
         s = s.encode('utf-8')
     s_ = s
+    level = _DebugLevel
     if level < 0:
         level = 0
     if level % 2:
@@ -74,7 +75,7 @@ def out(level, msg, nl='\n'):
             dt = time.time() - _LifeBeginsTime
             mn = dt // 60
             sc = dt - mn * 60
-            if _DebugLevel >= 10:
+            if _GlobalDebugLevel >= 10:
                 s = ('%02d:%06.3f' % (mn, sc)) + s
             else:
                 s = ('%02d:%02d' % (mn, sc)) + s
@@ -216,10 +217,10 @@ def set_debug_level(level):
     Level 14 and higher is for things we don't think we want to see again.
     Can set ``level`` to 0 for no debug messages at all.
     """
-    global _DebugLevel
-    if _DebugLevel > level:
-        out(level, 'lg.SetDebug _DebugLevel=' + str(level))
-    _DebugLevel = level
+    global _GlobalDebugLevel
+    if _GlobalDebugLevel > level:
+        out(level, 'lg.SetDebug _GlobalDebugLevel=' + str(level))
+    _GlobalDebugLevel = level
 
 
 def life_begins():
@@ -238,18 +239,18 @@ def when_life_begins():
 
 def is_debug(level):
     """
-    Return True if something at this ``level`` should be reported given current _DebugLevel.
+    Return True if something at this ``level`` should be reported given current _GlobalDebugLevel.
     """
-    global _DebugLevel
-    return _DebugLevel >= level
+    global _GlobalDebugLevel
+    return _GlobalDebugLevel >= level
 
 
 def out_globals(level, glob_dict):
     """
-    Print all items from dictionary ``glob_dict`` to the logs if current _DebugLevel is higher than ``level``. 
+    Print all items from dictionary ``glob_dict`` to the logs if current _GlobalDebugLevel is higher than ``level``. 
     """
-    global _DebugLevel
-    if level > _DebugLevel:
+    global _GlobalDebugLevel
+    if level > _GlobalDebugLevel:
         return
     keys = glob_dict.keys()
     keys.sort()

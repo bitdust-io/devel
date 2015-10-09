@@ -36,8 +36,11 @@ import os
 import sys
 import time
 import cStringIO
+import json
 
 from twisted.internet import reactor
+
+#------------------------------------------------------------------------------ 
 
 try:
     from logs import lg
@@ -45,10 +48,15 @@ except:
     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..')))
     sys.path.insert(0, os.path.abspath(os.path.join(dirpath, '..', '..')))
+    from logs import lg
 
 from automats import automat
 
+from system import bpio
+
 from lib import nameurl
+
+from main import config
 
 from crypt import key
 from crypt import signed
@@ -161,6 +169,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         self.starting_transports = []
+        self._load_routes()
         gateway.add_transport_state_changed_callback(self._on_transport_state_changed)
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
 
@@ -187,8 +196,10 @@ class ProxyRouter(automat.Automat):
         if request.Command == commands.RequestService():
             if len(self.routes) < _MaxRoutesNumber:
                 cached_id = identitycache.FromCache(target)
-                identitycache.OverrideIdentity(target, cached_id.serialize())
-                self.routes[target] = (info.proto, info.host, time.time())
+                idsrc = cached_id.serialize()
+                identitycache.OverrideIdentity(target, )
+                self.routes[target] = (info.proto, info.host, time.time(), idsrc)
+                self._write_route(target)
                 p2p_service.SendAck(request, 'accepted') # , wide=True)
                 if _Debug:
                     lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED ROUTE for %s' % target)
@@ -200,6 +211,7 @@ class ProxyRouter(automat.Automat):
                 p2p_service.SendAck(request, 'rejected') # , wide=True)
         elif request.Command == commands.CancelService():
             if self.routes.has_key(target):
+                self._remove_route(target)
                 self.routes.pop(target)
                 identitycache.StopOverridingIdentity(target)
                 p2p_service.SendAck(request, 'accepted') # , wide=True)
@@ -221,6 +233,7 @@ class ProxyRouter(automat.Automat):
         for idurl in self.routes.keys():
             identitycache.StopOverridingIdentity(idurl)
         self.routes.clear()
+        self._clear_routes()
 
 #    def doUnRegisterRoute(self, arg):
 #        """
@@ -357,6 +370,17 @@ class ProxyRouter(automat.Automat):
             # sent by node B : a man from outside world  
             self.automat('routed-inbox-packet-received', (newpacket, info))
             return True
+        if  newpacket.Command == commands.Identity() and \
+            newpacket.CreatorID in self.routes.keys() and \
+            newpacket.CreatorID == newpacket.OwnerID and \
+            newpacket.RemoteID == my_id.getLocalID():
+                # this is a "propagate" packet from node A
+                # need to remember his identity
+                # hm ....
+                # but he probably already pathed his contacts so this is not needed 
+                # identitycache.OverrideIdentity(newpacket.CreatorID, newpacket.Payload)
+                # so just handle that packet as accepted - no need to send Ack back to him
+                return True
         return False             
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
@@ -368,6 +392,45 @@ class ProxyRouter(automat.Automat):
                 self.starting_transports.remove(transport.proto)
         if len(self.starting_transports) == 0:
             self.automat('all-transports-ready')
+            
+    def _load_routes(self):
+        src = config.conf().getData('services/proxy-server/current-routes')
+        if src is None:
+            lg.warn('setting [services/proxy-server/current-routes] not exist')
+            return
+        dct = json.loads(src)
+        for k,v in dct.items():
+            self.routes[k] = v
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router._load_routes %d routes total' % len(self.routes))
+
+    def _clear_routes(self):
+        config.conf().setData('services/proxy-server/current-routes', '{}')
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router._clear_routes') 
+    
+    def _write_route(self, target):
+        src = config.conf().getData('services/proxy-server/current-routes')
+        if src is None:
+            src = '{}'
+        dct = json.loads(src)
+        dct[target] = self.routes[target]
+        newsrc = json.dumps(dct)
+        config.conf().setData('services/proxy-server/current-routes', newsrc)
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc)) 
+    
+    def _remove_route(self, target):
+        src = config.conf().getData('services/proxy-server/current-routes')
+        if src is None:
+            src = '{}'
+        dct = json.loads(src)
+        if target in dct:
+            dct.pop(target)
+        newsrc = json.dumps(dct)
+        config.conf().setData('services/proxy-server/current-routes', newsrc)
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router._remove_route %d bytes wrote' % len(newsrc)) 
 
 #------------------------------------------------------------------------------ 
 

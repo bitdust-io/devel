@@ -491,8 +491,8 @@ class ProxyReceiver(automat.Automat):
                 return True
         if  newpacket.Command == commands.Fail() and \
             newpacket.CreatorID == self.router_idurl and \
-            newpacket.RemoteID == my_id.getLocalID() and \
-            newpacket.Payload == 'route not exist':
+            newpacket.RemoteID == my_id.getLocalID():
+            # newpacket.Payload == 'route not exist':
                 self.automat('service-refused', (newpacket, info))
                 return True
         if newpacket.Command != commands.Data():

@@ -431,6 +431,7 @@ class FixedTypesConfig(NotifiableConfig):
         'services/udp-transport/priority':              TYPE_POSITIVE_INTEGER,
         'services/proxy-server/enabled':                TYPE_BOOLEAN,
         'services/proxy-server/routes-limit':           TYPE_POSITIVE_INTEGER,
+        'services/proxy-server/current-routes':         TYPE_TEXT,
         'services/proxy-transport/enabled':             TYPE_BOOLEAN,
         'services/proxy-transport/sending-enabled':     TYPE_BOOLEAN,
         'services/proxy-transport/receiving-enabled':   TYPE_BOOLEAN,
