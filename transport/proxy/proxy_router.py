@@ -161,7 +161,6 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         self.starting_transports = []
-        self._load_routes()
         gateway.add_transport_state_changed_callback(self._on_transport_state_changed)
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
 
