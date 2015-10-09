@@ -211,6 +211,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'start' and self.isCurrentRouterExist(arg) :
                 self.state = 'LISTEN'
                 self.doLoadRouterInfo(arg)
+                self.doSendRequestService(arg)
                 self.doStartListening(arg)
                 self.doReportConnected(arg)
             elif event == 'start' and not self.isCurrentRouterExist(arg) :
