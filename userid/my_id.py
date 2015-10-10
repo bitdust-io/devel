@@ -281,7 +281,7 @@ def buildProtoContacts(id_obj):
             clist = gateway.transport(proto).interface.build_contacts(id_obj)
             cdict = {}
             if len(clist) > 1:
-                clist.reverse()
+                # clist.reverse()
                 for contact in clist: 
                     cproto, cdata = contact.split('://')
                     cdict[cproto] = contact

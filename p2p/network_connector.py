@@ -427,7 +427,7 @@ class NetworkConnector(automat.Automat):
         from transport import gateway
         def _transports_verified(all_results):
             if _Debug:
-                lg.out(4, 'network_connector.doVerifyTransports : %s' % str(all_results))
+                lg.out(4, 'network_connector._transports_verified : %s' % str(all_results))
             order, all_results = all_results
             not_valid_count = 0
             restarts_count = 0
@@ -445,11 +445,14 @@ class NetworkConnector(automat.Automat):
                     gateway.transport(proto).automat('restart')
                     restarts_count += 1
                     if not_valid_count > 1:
+                        self.automat('network-transports-verified')
                         return
                     continue
                 if not_valid_count > 0:
                     if _Debug:
                         lg.out(4, '    skip other transports')
+                    if restarts_count == 0:
+                        self.automat('network-transports-verified')
                     return
                 if _Debug:
                     lg.out(4, '        [%s] at position %d is fine, skip other transports' % (proto, priority))

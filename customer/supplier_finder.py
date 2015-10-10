@@ -188,7 +188,7 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        callback.insert_inbox_callback(-1, self._inbox_packet_received)
+        callback.insert_inbox_callback(0, self._inbox_packet_received)
 
     def doSendMyIdentity(self, arg):
         """
@@ -265,6 +265,9 @@ class SupplierFinder(automat.Automat):
         
     def _found_nodes(self, nodes):
         lg.out(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
+        # DEBUG
+        # self._got_target_idurl({'idurl':'http://p2p-id.ru/bitdust_j_vps1002.xml'})
+        # return
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')

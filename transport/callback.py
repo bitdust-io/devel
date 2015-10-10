@@ -6,6 +6,8 @@
 
 from twisted.internet.defer import Deferred
 
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 #------------------------------------------------------------------------------ 
@@ -111,9 +113,12 @@ def append_inbox_callback(cb):
   
         callback(newpacket, info, status, error_message).
     """
+    # lg.out(8, 'callback.append_inbox_callback new callback, current callbacks:')
     global _InboxPacketCallbacksList
     if cb not in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.append(cb)
+    # import pprint
+    # lg.out(8, '        %s' % pprint.pformat(_InboxPacketCallbacksList))
 
 
 def insert_inbox_callback(index, cb):
@@ -126,17 +131,23 @@ def insert_inbox_callback(index, cb):
   
         callback(newpacket, info, status, error_message).
     """
+    # lg.out(8, 'callback.insert_inbox_callback new callback at position %d, current callbacks:' % index)
     global _InboxPacketCallbacksList
     if cb not in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.insert(index, cb)
+    # import pprint
+    # lg.out(8, '        %s' % pprint.pformat(_InboxPacketCallbacksList))
     
         
 def remove_inbox_callback(cb):
     """
     """
+    # lg.out(8, 'callback.remove_inbox_callback removing a callback, current callbacks:')
     global _InboxPacketCallbacksList
     if cb in _InboxPacketCallbacksList:
         _InboxPacketCallbacksList.remove(cb)
+    # import pprint
+    # lg.out(8, '        %s' % pprint.pformat(_InboxPacketCallbacksList))
 
 
 def append_outbox_filter_callback(cb):
