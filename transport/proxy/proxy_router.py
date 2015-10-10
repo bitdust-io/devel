@@ -53,6 +53,7 @@ except:
 from automats import automat
 
 from system import bpio
+from system import tmpfile
 
 from lib import nameurl
 
@@ -198,7 +199,7 @@ class ProxyRouter(automat.Automat):
                 cached_id = identitycache.FromCache(target)
                 idsrc = cached_id.serialize()
                 identitycache.OverrideIdentity(target, idsrc)
-                self.routes[target] = (info.proto, info.host, time.time(), idsrc)
+                self.routes[target] = (info.proto, info.host, time.time(), cached_id.publickey)
                 self._write_route(target)
                 p2p_service.SendAck(request, 'accepted') # , wide=True)
                 if _Debug:
@@ -305,11 +306,11 @@ class ProxyRouter(automat.Automat):
         # encrypt with proxy_receiver()'s key and sent to man behind my proxy
         newpacket, info = arg
         receiver_idurl = newpacket.RemoteID
-        # receiver_proto, receiver_host, route_creation_time = self.routes[receiver_idurl]
-        receiver_ident_obj = identitycache.FromCache(receiver_idurl)
-        if not receiver_ident_obj:
-            lg.warn('receiver identity is not found in cache')
+        route_info = self.routes.get(receiver_idurl, None)
+        if not route_info:
+            lg.warn('route with %s not exist' % receiver_idurl)
             return
+        receiver_proto, receiver_host, route_time, publickey = route_info
         src = ''
         src += newpacket.Serialize()
         block = encrypted.Block(
@@ -320,7 +321,7 @@ class ProxyRouter(automat.Automat):
             key.SessionKeyType(),
             True,
             src,
-            EncryptFunc=lambda inp: key.EncryptStringPK(receiver_ident_obj.publickey, inp))
+            EncryptFunc=lambda inp: key.EncryptStringPK(publickey, inp))
         routed_packet = signed.Packet(
             commands.Data(), 
             newpacket.OwnerID,
@@ -328,10 +329,23 @@ class ProxyRouter(automat.Automat):
             'routed_in_'+newpacket.PacketID, 
             block.Serialize(), 
             receiver_idurl)
-        gateway.outbox(routed_packet)
+        fileno, filename = tmpfile.make('proxy-in')
+        packetdata = routed_packet.Serialize()
+        os.write(fileno, packetdata)
+        os.close(fileno)
+        gateway.send_file(
+            receiver_idurl, 
+            receiver_proto, 
+            receiver_host, filename,
+            'Routed packet for %s' % receiver_idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doForwardInboxPacket %d bytes from %s sent to %s' % (
-                len(src),  nameurl.GetName(newpacket.CreatorID), nameurl.GetName(receiver_idurl)))
+            lg.out(_DebugLevel-8, '>>> ROUTED-IN >>> %s' % str(routed_packet))
+            lg.out(_DebugLevel-8, '                   sent on %s://%s with %d bytes' % (
+                receiver_proto, receiver_host, len(packetdata)))
+        # gateway.outbox(routed_packet)
+#        if _Debug:
+#            lg.out(_DebugLevel, 'proxy_router.doForwardInboxPacket %d bytes from %s sent to %s' % (
+#                len(src),  nameurl.GetName(newpacket.CreatorID), nameurl.GetName(receiver_idurl)))
         del src
         del block
         del newpacket
@@ -370,17 +384,18 @@ class ProxyRouter(automat.Automat):
             # sent by node B : a man from outside world  
             self.automat('routed-inbox-packet-received', (newpacket, info))
             return True
-        if  newpacket.Command == commands.Identity() and \
-            newpacket.CreatorID in self.routes.keys() and \
-            newpacket.CreatorID == newpacket.OwnerID and \
-            newpacket.RemoteID == my_id.getLocalID():
-                # this is a "propagate" packet from node A
-                # need to remember his identity
-                # hm ....
-                # but he probably already pathed his contacts so this is not needed 
-                # identitycache.OverrideIdentity(newpacket.CreatorID, newpacket.Payload)
-                # so just handle that packet as accepted - no need to send Ack back to him
-                return True
+#        if  newpacket.Command == commands.Identity() and \
+#            newpacket.CreatorID in self.routes.keys() and \
+#            newpacket.CreatorID == newpacket.OwnerID and \
+#            newpacket.RemoteID == my_id.getLocalID():
+#                self.automat('', arg)
+#                # this is a "propagate" packet from node A
+#                # need to remember his identity
+#                # hm ....
+#                # but he probably already patched his own contacts so this is not needed 
+#                # identitycache.OverrideIdentity(newpacket.CreatorID, newpacket.Payload)
+#                # so just mark that packet as handled - no need to send Ack back to him
+#                return True
         return False             
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):

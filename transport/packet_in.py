@@ -109,8 +109,8 @@ def process(newpacket, info):
         # because we might not have his identity on hands and so can not verify the packet  
         # so we check that his Identity is valid and save it into cache
         # than we check the packet to be valid too.
-        handled = handled or p2p_service.Identity(newpacket)            
-        # return
+        if not p2p_service.Identity(newpacket):
+            return
     # check that signed by a contact of ours
     if not newpacket.Valid():              
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (

@@ -182,7 +182,7 @@ class ProxySender(automat.Automat):
         packetdata = newpacket.Serialize()
         os.write(fileno, packetdata)
         os.close(fileno)
-        result = gateway.send_file(router_idurl, 
+        gateway.send_file(router_idurl, 
                           router_proto, 
                           router_host, 
                           filename, 

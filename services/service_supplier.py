@@ -26,8 +26,6 @@ from main import settings
 
 from services.local_service import LocalService
 
-from p2p import p2p_service
-
 from contacts import contactsdb
 
 #------------------------------------------------------------------------------ 
@@ -51,6 +49,7 @@ class SupplierService(LocalService):
         return True
     
     def request(self, request, info):
+        from p2p import p2p_service
         words = request.Payload.split(' ')
         try:
             bytes_for_customer = int(words[1])
@@ -64,7 +63,7 @@ class SupplierService(LocalService):
         donated_bytes = settings.getDonatedBytes()
         if not os.path.isfile(settings.CustomersSpaceFile()):
             bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
-            lg.out(6, 'p2p_service.RequestService created a new space file')
+            lg.out(6, 'service_supplier.request created a new space file')
         space_dict = bpio._read_dict(settings.CustomersSpaceFile())
         try:
             free_bytes = int(space_dict['free'])
@@ -110,13 +109,14 @@ class SupplierService(LocalService):
         return p2p_service.SendAck(request, 'accepted')
     
     def cancel(self, request, info):
+        from p2p import p2p_service
         if not contactsdb.is_customer(request.OwnerID):
             lg.warn("got packet from %s, but he is not a customer" % request.OwnerID)
             return p2p_service.SendFail(request, 'not a customer')
         donated_bytes = settings.getDonatedBytes()
         if not os.path.isfile(settings.CustomersSpaceFile()):
             bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
-            lg.out(6, 'p2p_service.CancelService created a new space file')
+            lg.out(6, 'service_supplier.cancel created a new space file')
         space_dict = bpio._read_dict(settings.CustomersSpaceFile())
         if request.OwnerID not in space_dict.keys():
             lg.warn("got packet from %s, but not found him in space dictionary" % request.OwnerID)

@@ -208,16 +208,13 @@ class ProxyReceiver(automat.Automat):
             if event == 'shutdown' :
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'start' and self.isCurrentRouterExist(arg) :
-                self.state = 'LISTEN'
-                self.doLoadRouterInfo(arg)
-                self.doSendRequestService(arg)
-                self.doStartListening(arg)
-                self.doReportConnected(arg)
             elif event == 'start' and not self.isCurrentRouterExist(arg) :
                 self.state = 'FIND_NODE?'
-                self.doReportNotReady(arg)
                 self.doDHTFindRandomNode(arg)
+            elif event == 'start' and self.isCurrentRouterExist(arg) :
+                self.state = 'ACK?'
+                self.doLoadRouterInfo(arg)
+                self.doSendMyIdentity(arg)
         #---FIND_NODE?---
         elif self.state == 'FIND_NODE?':
             if event == 'nodes-not-found' :
@@ -240,6 +237,11 @@ class ProxyReceiver(automat.Automat):
         """
         return config.conf().getString('services/proxy-transport/current-router', '').strip() != ''
 
+    def doInit(self, arg):
+        """
+        Action method.
+        """
+
     def doLoadRouterInfo(self, arg):
         """
         Action method.
@@ -249,15 +251,10 @@ class ProxyReceiver(automat.Automat):
             self.router_idurl, proto, host = s.split(' ')
         except:
             lg.exc()
-        self.router_proto_host = (proto, host)
-        self.router_identity = identitycache.FromCache(self.router_idurl)
-        if not self.router_identity:
-            identitycache.immediatelyCaching(self.router_idurl)
-
-    def doInit(self, arg):
-        """
-        Action method.
-        """
+#        self.router_proto_host = (proto, host)
+#        self.router_identity = identitycache.FromCache(self.router_idurl)
+#        if not self.router_identity:
+#            identitycache.immediatelyCaching(self.router_idurl)
 
     def doDHTFindRandomNode(self, arg):
         """
@@ -315,11 +312,8 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        try:
-            response, info = arg
-            self.router_proto_host = (info.proto, info.host)
-        except:
-            pass
+        response, info = arg
+        self.router_proto_host = (info.proto, info.host)
         self.router_identity = identitycache.FromCache(self.router_idurl)
         config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
             self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
@@ -515,7 +509,6 @@ class ProxyReceiver(automat.Automat):
         return True             
         
 #------------------------------------------------------------------------------
-
 
 def main():
     from twisted.internet import reactor
