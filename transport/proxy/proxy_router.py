@@ -244,11 +244,11 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        pkt_out, item, status, size, error_message = arg
-        self.routes[pkt_out.outpacket.RemoteID]['hosts'].append((item.proto, item.host))
+        idurl, pkt_out, item, status, size, error_message = arg
+        self.routes[idurl]['hosts'].append((item.proto, item.host))
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : %s:%s added for %s' % (
-                item.proto, item.host, nameurl.GetName(pkt_out.outpacket.RemoteID)))
+                item.proto, item.host, nameurl.GetName(idurl)))
 
     def doUnregisterAllRouts(self, arg):
         """
@@ -426,11 +426,17 @@ class ProxyRouter(automat.Automat):
     def _on_finish_file_sending(self, pkt_out, item, status, size, error_message):
         if status != 'finished':
             return False
-        if pkt_out.outpacket.Command != commands.Ack():
+        try:
+            Command = pkt_out.outpacket.Command
+            RemoteID = pkt_out.outpacket.RemoteID
+        except:
+            lg.exc()
             return False
-        if not pkt_out.outpacket.RemoteID in self.routes.keys():
+        if Command != commands.Ack():
             return False
-        self.automat('request-ack-success', (pkt_out, item, status, size, error_message))
+        if not RemoteID in self.routes.keys():
+            return False
+        self.automat('request-ack-success', (RemoteID, pkt_out, item, status, size, error_message))
         return True
                     
     def _load_routes(self):
