@@ -203,11 +203,16 @@ def makeFilename(customerID, packetID):
 
 #------------------------------------------------------------------------------
 
-def SendAck(packettoack, response='', wide=False):
-    result = signed.Packet(commands.Ack(), my_id.getLocalID(), my_id.getLocalID(), 
-                                 packettoack.PacketID, response, packettoack.OwnerID)
+def SendAck(packettoack, response='', wide=False, callbacks={}):
+    result = signed.Packet(
+        commands.Ack(), 
+        my_id.getLocalID(), 
+        my_id.getLocalID(), 
+        packettoack.PacketID,
+        response, 
+        packettoack.OwnerID)
     lg.out(8, "p2p_service.SendAck %s to %s    response: %s ..." % (result.PacketID, result.RemoteID, str(response)[:15]))
-    gateway.outbox(result, wide=wide)
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
     
 

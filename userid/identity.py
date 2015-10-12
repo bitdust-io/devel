@@ -617,6 +617,15 @@ class identity:
             orderL.append(proto)
         return orderL
 
+    def getContactsAsTuples(self):
+        """
+        """
+        result = []
+        for c in self.contacts:
+            proto,host,port,filename = nameurl.UrlParse(c)
+            result.append((proto, host))
+        return result
+
     def getContactsByProto(self):
         """
         Return a dictionary of all contacts where keys are protos.
