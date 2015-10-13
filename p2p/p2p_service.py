@@ -203,12 +203,12 @@ def makeFilename(customerID, packetID):
 
 #------------------------------------------------------------------------------
 
-def SendAck(packettoack, response='', wide=False, callbacks={}):
+def SendAck(packettoack, response='', wide=False, callbacks={}, packetid=None):
     result = signed.Packet(
         commands.Ack(), 
         my_id.getLocalID(), 
         my_id.getLocalID(), 
-        packettoack.PacketID,
+        packetid or packettoack.PacketID,
         response, 
         packettoack.OwnerID)
     lg.out(8, "p2p_service.SendAck %s to %s    response: %s ..." % (result.PacketID, result.RemoteID, str(response)[:15]))
@@ -330,8 +330,13 @@ def RequestService(request, info):
     
 def SendRequestService(remote_idurl, service_info, wide=False, callbacks={}):
     lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
-    result = signed.Packet(commands.RequestService(), my_id.getLocalID(), my_id.getLocalID(), 
-                                 packetid.UniqueID(), service_info, remote_idurl)
+    result = signed.Packet(
+        commands.RequestService(), 
+        my_id.getLocalID(), 
+        my_id.getLocalID(), 
+        packetid.UniqueID(),
+        service_info,
+        remote_idurl)
     gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result       
 

@@ -106,6 +106,7 @@ class ProxyRouter(automat.Automat):
         at creation phase of proxy_router() machine.
         """
         self.routes = {}
+        self.acks = []
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -213,7 +214,12 @@ class ProxyRouter(automat.Automat):
                 self.routes[target]['contacts'] = cached_id.getContactsAsTuples()
                 self.routes[target]['hosts'] = []
                 self._write_route(target)
-                p2p_service.SendAck(request, 'accepted', wide=True) 
+                self.acks.append(
+                    p2p_service.SendAck(
+                        request, 
+                        'accepted', 
+                        wide=True, 
+                        packetid=request.PacketID)) 
                 if _Debug:
                     lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED ROUTE for %s' % target)
             else:
@@ -429,6 +435,7 @@ class ProxyRouter(automat.Automat):
         try:
             Command = pkt_out.outpacket.Command
             RemoteID = pkt_out.outpacket.RemoteID
+            PacketID = pkt_out.outpacket.PacketID
         except:
             lg.exc()
             return False
@@ -436,7 +443,9 @@ class ProxyRouter(automat.Automat):
             return False
         if not RemoteID in self.routes.keys():
             return False
-        self.automat('request-ack-success', (RemoteID, pkt_out, item, status, size, error_message))
+        for ack in self.acks:
+            if PacketID == ack.outpacket.PacketID:
+                self.automat('request-ack-success', (RemoteID, pkt_out, item, status, size, error_message))
         return True
                     
     def _load_routes(self):

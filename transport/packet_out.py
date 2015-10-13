@@ -254,8 +254,8 @@ class PacketOut(automat.Automat):
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
                 self.doErrMsg(event,self.msg('MSG_2', arg))
-                self.doReportCancelItems(arg)
                 self.doPopItems(arg)
+                self.doReportCancelItems(arg)
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
             elif ( event == 'unregister-item' or event == 'item-cancelled' ) and not self.isMoreItems(arg) and ( self.Acked or not self.isAckNeeded(arg) ) :
@@ -311,14 +311,15 @@ class PacketOut(automat.Automat):
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
                 self.doErrMsg(event,self.msg('MSG_5', arg))
-                self.doReportCancelItems(arg)
                 self.doPopItems(arg)
+                self.doReportCancelItems(arg)
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
         #---IN_QUEUE---
         elif self.state == 'IN_QUEUE':
             if event == 'item-cancelled' and self.isMoreItems(arg) :
                 self.doPopItem(arg)
+                self.doReportItem(arg)
             elif event == 'register-item' :
                 self.state = 'SENDING'
                 self.Acked=False
@@ -327,8 +328,8 @@ class PacketOut(automat.Automat):
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
                 self.doErrMsg(event,self.msg('MSG_1', arg))
-                self.doReportCancelItems(arg)
                 self.doPopItems(arg)
+                self.doReportCancelItems(arg)
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
             elif event == 'item-cancelled' and not self.isMoreItems(arg) :
