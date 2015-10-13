@@ -444,7 +444,7 @@ class ProxyRouter(automat.Automat):
         if not RemoteID in self.routes.keys():
             return False
         for ack in self.acks:
-            if PacketID == ack.outpacket.PacketID:
+            if PacketID == ack.PacketID:
                 self.automat('request-ack-success', (RemoteID, pkt_out, item, status, size, error_message))
         return True
                     

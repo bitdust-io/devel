@@ -427,7 +427,6 @@ class PacketOut(automat.Automat):
         Action method.
         """
         self._pop(arg)
-
             
     def doPopItems(self, arg):
         """
