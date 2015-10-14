@@ -289,27 +289,26 @@ def buildProtoContacts(id_obj):
                         new_order.remove(cproto)
                     new_order.insert(0, cproto)
             else:
-                current_order = []
+#                 current_order = []
                 for contact in clist: 
                     cproto, cdata = contact.split('://')
                     cdict[cproto] = contact
-                    current_order.append(cproto)
-                new_order = current_order     
-#                    new_index = -1
-#                    if cproto in new_order:
-#                        new_index = new_order.index(cproto)
-#                    old_index = -1
-#                    if cproto in current_order:
-#                        old_index =  current_order.index(cproto)
-#                    if new_index < 0:
-#                        new_order.insert(0, cproto)
-#                    else:
-#                        if old_index < new_index: 
-#                            new_order.remove(cproto)
-#                            new_order.insert(0, cproto)
-#                        else:
-#                            new_order.remove(cproto)
-#                            new_order.append(cproto)
+#                     current_order.append(cproto)
+                    new_index = -1
+                    if cproto in new_order:
+                        new_index = new_order.index(cproto)
+                    old_index = -1
+                    if cproto in current_order:
+                        old_index =  current_order.index(cproto)
+                    if new_index < 0:
+                        new_order.insert(0, cproto)
+                    else:
+                        if old_index < new_index: 
+                            new_order.remove(cproto)
+                            new_order.insert(0, cproto)
+                        else:
+                            new_order.remove(cproto)
+                            new_order.append(cproto)
             new_contacts.update(cdict)
     lg.out(4, '    new contacts: %s' % str(new_contacts))
     lg.out(4, '    new order: %s' % str(new_order))
