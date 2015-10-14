@@ -329,7 +329,8 @@ def RequestService(request, info):
     return driver.request(service_name, request, info)
     
 def SendRequestService(remote_idurl, service_info, wide=False, callbacks={}):
-    lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (nameurl.GetName(remote_idurl), service_info))
+    lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (
+        nameurl.GetName(remote_idurl), service_info.replace('\n',' ')[:20]))
     result = signed.Packet(
         commands.RequestService(), 
         my_id.getLocalID(), 

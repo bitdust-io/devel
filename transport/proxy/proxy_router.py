@@ -203,38 +203,50 @@ class ProxyRouter(automat.Automat):
         target = request.CreatorID
         if request.Command == commands.RequestService():
             if len(self.routes) < _MaxRoutesNumber:
+                try:
+                    service_info = request.Payload
+                    idsrc = service_info.lstrip('service_proxy_server').strip()
+                    cached_id = identity.identity(xmlsrc=idsrc)
+                except:
+                    lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
+                    lg.exc()
+                    return
                 oldnew = ''
                 if target not in self.routes.keys():
                     # accept new route
                     oldnew = 'NEW'
                     self.routes[target] = {}
-                    cached_id = identitycache.FromCache(target)
-                    idsrc = cached_id.serialize()
+                    # cached_id = identitycache.FromCache(target)
+                    # idsrc = cached_id.serialize()
                 else:
                     oldnew = 'OLD'
-                    try:
-                        idsrc = self.routes[target]['identity']
-                        cached_id = identity.identity(xmlsrc=idsrc)
-                    except:
-                        lg.exc()
-                        cached_id = identitycache.FromCache(target)
-                        idsrc = cached_id.serialize()
+#                    try:
+#                        idsrc = self.routes[target]['identity']
+#                        cached_id = identity.identity(xmlsrc=idsrc)
+#                    except:
+#                        lg.exc()
+#                        cached_id = identitycache.FromCache(target)
+#                        idsrc = cached_id.serialize()
                     # lg.warn('route with %s already exist' % target)
-                identitycache.OverrideIdentity(target, idsrc)
-                hosts = []
-                try:
-                    service_info = request.Payload.split(' ')[1:]
-                    for word in service_info:
-                        p, h = word.split('://')
-                        hosts.append((p,h))
-                except:
-                    lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
-                    lg.exc()
+                if not self._is_my_contacts_present_in_identity(cached_id): 
+                    identitycache.OverrideIdentity(target, idsrc)
+                else:
+                    if _Debug:
+                        lg.out(_DebugLevel, '        skip overriding %s' % target)
+#                hosts = []
+#                try:
+#                    service_info = request.Payload.split(' ')[1:]
+#                    for word in service_info:
+#                        p, h = word.split('://')
+#                        hosts.append((p,h))
+#                except:
+#                    lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
+#                    lg.exc()
                 self.routes[target]['time'] = time.time()
                 self.routes[target]['identity'] = idsrc
                 self.routes[target]['publickey'] = cached_id.publickey
                 self.routes[target]['contacts'] = cached_id.getContactsAsTuples()
-                self.routes[target]['hosts'] = hosts
+                # self.routes[target]['hosts'] = hosts
                 self.routes[target]['address'] = []
                 self._write_route(target)
                 self.acks.append(
@@ -244,7 +256,7 @@ class ProxyRouter(automat.Automat):
                         wide=True, 
                         packetid=request.PacketID)) 
                 if _Debug:
-                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s, hosts=%s' % (oldnew, target, hosts))
+                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s' % (oldnew, target))
             else:
                 if _Debug:
                     lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
@@ -471,7 +483,16 @@ class ProxyRouter(automat.Automat):
             if PacketID == ack.PacketID:
                 self.automat('request-ack-success', (RemoteID, pkt_out, item, status, size, error_message))
         return True
-                    
+        
+    def _is_my_contacts_present_in_identity(self, ident):
+        for my_contact in my_id.getLocalIdentity().getContacts():
+            if ident.getContactIndex(contact=my_contact) >= 0:
+                if _Debug:
+                    lg.out(_DebugLevel, '        found %s in identity : %s' % (
+                        my_contact, ident.getIDURL()))
+                return True
+        return False
+                
     def _load_routes(self):
         src = config.conf().getData('services/proxy-server/current-routes')
         if src is None:
@@ -480,7 +501,12 @@ class ProxyRouter(automat.Automat):
         dct = json.loads(src)
         for k,v in dct.items():
             self.routes[k] = v
-            identitycache.OverrideIdentity(k, v['identity'])
+            ident = identity.identity(xmlsrc=v['identity'])
+            if not self._is_my_contacts_present_in_identity(ident): 
+                identitycache.OverrideIdentity(k, v['identity'])
+            else:
+                if _Debug:
+                    lg.out(_DebugLevel, '        skip overriding %s' % k)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._load_routes %d routes total' % len(self.routes))
 

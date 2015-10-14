@@ -296,9 +296,10 @@ class ProxyReceiver(automat.Automat):
             self.automat('service-refused', arg)
             return
         from transport import gateway
-        service_info = 'service_proxy_server'
-        for t in gateway.transports().values():
-            service_info += ' %s://%s' % (t.proto, t.host)
+        service_info = 'service_proxy_server \n'
+        service_info += my_id.getLocalIdentity().serialize()
+        # for t in gateway.transports().values():
+        #     service_info += '%s://%s' % (t.proto, t.host)
         # service_info += ' '
         request = p2p_service.SendRequestService(
             self.router_idurl, service_info,
