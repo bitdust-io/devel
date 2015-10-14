@@ -38,6 +38,7 @@ import sys
 import time
 import cStringIO
 import json
+import pprint
 
 from twisted.internet import reactor
 
@@ -234,7 +235,7 @@ class ProxyRouter(automat.Automat):
                 self.routes[target]['publickey'] = cached_id.publickey
                 self.routes[target]['contacts'] = cached_id.getContactsAsTuples()
                 self.routes[target]['hosts'] = hosts
-                self.routes[target]['active'] = []
+                self.routes[target]['address'] = []
                 self._write_route(target)
                 self.acks.append(
                     p2p_service.SendAck(
@@ -273,7 +274,8 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl, pkt_out, item, status, size, error_message = arg
-        self.routes[idurl]['active'].append((item.proto, item.host))
+        self.routes[idurl]['address'].append((item.proto, item.host))
+        self._write_route(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : active address %s:%s added for %s' % (
                 item.proto, item.host, nameurl.GetName(idurl)))
@@ -346,7 +348,7 @@ class ProxyRouter(automat.Automat):
         if not route_info:
             lg.warn('route with %s not exist' % receiver_idurl)
             return
-        hosts = route_info['hosts']
+        hosts = route_info['address']
         if len(hosts) == 0:
             lg.warn('route with %s do not have actual info about his host, use his identity contacts' % receiver_idurl)
             hosts = route_info['contacts'] 
@@ -478,6 +480,7 @@ class ProxyRouter(automat.Automat):
         dct = json.loads(src)
         for k,v in dct.items():
             self.routes[k] = v
+            identitycache.OverrideIdentity(k, v['identity'])
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._load_routes %d routes total' % len(self.routes))
 
@@ -492,7 +495,7 @@ class ProxyRouter(automat.Automat):
             src = '{}'
         dct = json.loads(src)
         dct[target] = self.routes[target]
-        newsrc = json.dumps(dct)
+        newsrc = json.dumps(dct, indent=0)
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc)) 
