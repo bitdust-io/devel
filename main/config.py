@@ -436,6 +436,7 @@ class FixedTypesConfig(NotifiableConfig):
         'services/proxy-transport/sending-enabled':     TYPE_BOOLEAN,
         'services/proxy-transport/receiving-enabled':   TYPE_BOOLEAN,
         'services/proxy-transport/priority':            TYPE_POSITIVE_INTEGER,
+        'services/proxy-transport/my-original-identity':  TYPE_TEXT,
         'services/proxy-transport/current-router':      TYPE_STRING,
         'services/proxy-transport/preferred-routers':   TYPE_TEXT,
         'services/proxy-transport/router-lifetime-seconds':     TYPE_POSITIVE_INTEGER,

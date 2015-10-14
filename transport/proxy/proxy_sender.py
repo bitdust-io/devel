@@ -211,57 +211,27 @@ class ProxySender(automat.Automat):
     def _on_outbox_packet(self, outpacket, wide, callbacks):
         """
         """
-        # if _Debug:
-            # lg.out(8, 'proxy_sender._on_outbox_packet filtering %s' % (outpacket))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet filtering %s' % (outpacket))
         import proxy_receiver
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
         router_proto_host = proxy_receiver.GetRouterProtoHost()
-        if not router_idurl or not router_identity_obj or not router_proto_host:
-            # if _Debug:
-                # lg.out(8, '        proxy_receiver() is not yet found a router')
+        my_original_identity_src = proxy_receiver.GetMyOriginalIdentitySource()
+        if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
+            if _Debug:
+                lg.out(_DebugLevel, '        proxy_receiver() is not yet found a router')
             return None
         if outpacket.RemoteID == router_idurl:
-            # if _Debug:
-                # lg.out(8, '        outpacket is addressed for router and must be sent in a usual way')
+            # if outpacket.Command == commands.Identity():
+            #     return True
+            if _Debug:
+                lg.out(_DebugLevel, '        outpacket is addressed for router and must be sent in a usual way')
             return None
         if _Debug:
             lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet   %s were redirected for %s' % (outpacket, router_idurl))
         self.automat('outbox-packet', (outpacket, wide, callbacks))
         return True
-        # return packet_out.create(outpacket, wide, callbacks, target=router_idurl)
-
-
-
-#    def _on_outbox_file_registered(self, remote_idurl, filename, host, description):
-#        """
-#        """
-#        lg.out(12, 'proxy_sender._on_outbox_file_registered')
-        
-#    def _on_outbox_packet_acked(self, newpacket, info):
-#        """
-#        """
-#        lg.out(12, 'proxy_sender._on_outbox_packet_acked')
-        
-#    def _on_outbox_packet_failed(self, remote_id, packet_id, why):
-#        """
-#        """
-#        lg.out(12, 'proxy_sender._on_outbox_packet_failed')
-
-
-
-        
-#    def doRegisterOutboxFile(self, arg):
-#        """
-#        Action method.
-#        """
-#        remote_idurl, filename, host, description, single = arg
-#        if not single:
-#            d = proxy_interface.interface_register_file_sending(
-#                host, remote_idurl, filename, description)
-#            d.addCallback(self._on_outbox_file_registered, remote_idurl, filename, host, description)
-#            d.addErrback(self._on_outbox_file_register_failed, remote_idurl, filename, host, description)
-        
 
     
 #------------------------------------------------------------------------------ 

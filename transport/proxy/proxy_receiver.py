@@ -103,6 +103,9 @@ def GetRouterProtoHost():
         return None
     return _ProxyReceiver.router_proto_host
 
+def GetMyOriginalIdentitySource():
+    return config.conf().getData('services/proxy-transport/my-original-identity') 
+
 #------------------------------------------------------------------------------ 
 
 class ProxyReceiver(automat.Automat):
@@ -167,12 +170,14 @@ class ProxyReceiver(automat.Automat):
                 self.state = 'CLOSED'
                 self.doSendCancelService(arg)
                 self.doStopListening(arg)
+                self.doRestoreMyIdentity(arg)
                 self.doReportDisconnected(arg)
                 self.doDestroyMe(arg)
             elif event == 'stop' :
                 self.state = 'STOPPED'
                 self.doSendCancelService(arg)
                 self.doStopListening(arg)
+                self.doRestoreMyIdentity(arg)
                 self.doReportDisconnected(arg)
             elif event == 'inbox-packet' :
                 self.doProcessInboxPacket(arg)
@@ -181,6 +186,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'service-refused' :
                 self.state = 'FIND_NODE?'
                 self.doStopListening(arg)
+                self.doRestoreMyIdentity(arg)
                 self.doReportDisconnected(arg)
                 self.doDHTFindRandomNode(arg)
         #---SERVICE?---
@@ -188,6 +194,7 @@ class ProxyReceiver(automat.Automat):
             if event == 'service-accepted' :
                 self.state = 'LISTEN'
                 self.doStartListening(arg)
+                self.doModifyMyIdentity(arg)
                 self.doReportConnected(arg)
             elif event == 'shutdown' :
                 self.state = 'CLOSED'
@@ -288,8 +295,13 @@ class ProxyReceiver(automat.Automat):
                 lg.warn('too many service requests to %s' % self.router_idurl)
             self.automat('service-refused', arg)
             return
+        from transport import gateway
+        service_info = 'service_proxy_server'
+        for t in gateway.transports().values():
+            service_info += ' %s://%s' % (t.proto, t.host)
+        # service_info += ' '
         request = p2p_service.SendRequestService(
-            self.router_idurl, 'service_proxy_server',
+            self.router_idurl, service_info,
                 callbacks={
                     commands.Ack(): self._request_service_ack,
                     commands.Fail(): self._request_service_fail})
@@ -307,6 +319,25 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         self.router_idurl = arg        
+
+    def doModifyMyIdentity(self, arg):
+        """
+        Action method.
+        """
+        config.conf().setData('services/proxy-transport/my-original-identity', 
+                              my_id.getLocalIdentity().serialize())
+        modified = my_id.rebuildLocalIdentity()
+        if not modified:
+            lg.warn('my identity was not modified')
+
+    def doRestoreMyIdentity(self, arg):
+        """
+        Action method.
+        """
+        modified = my_id.rebuildLocalIdentity()
+        if not modified:
+            lg.warn('my identity was not modified')
+        config.conf().setData('services/proxy-transport/my-original-identity', '') 
 
     def doStartListening(self, arg):
         """
@@ -401,12 +432,12 @@ class ProxyReceiver(automat.Automat):
         proxy_interface.interface_receiving_started(self.router_idurl,
             {'router_idurl': self.router_idurl,})
         
-    def doReportNotReady(self, arg):
-        """
-        Action method.
-        """
-        import proxy_interface
-        proxy_interface.interface_receiving_failed('router not ready yet')
+#    def doReportNotReady(self, arg):
+#        """
+#        Action method.
+#        """
+#        import proxy_interface
+#        proxy_interface.interface_receiving_failed('router not ready yet')
 
     def doReportDisconnected(self, arg):
         """

@@ -2060,10 +2060,16 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/priority', 20)
     config.conf().setDefaultValue('services/proxy-server/enabled', 'true')
+    config.conf().setDefaultValue('services/proxy-server/routes-limit', 10)
+    config.conf().setDefaultValue('services/proxy-server/current-routes', '{}')
     config.conf().setDefaultValue('services/proxy-transport/enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/sending-enabled', 'true')
     config.conf().setDefaultValue('services/proxy-transport/receiving-enabled', 'false')
     config.conf().setDefaultValue('services/proxy-transport/priority', 30)
+    config.conf().setDefaultValue('services/proxy-transport/my-original-identity', '')
+    config.conf().setDefaultValue('services/proxy-transport/current-router', '')
+    config.conf().setDefaultValue('services/proxy-transport/preferred-routers', '')
+    config.conf().setDefaultValue('services/proxy-transport/router-lifetime-seconds', 600)
 
 def _createNotExisingSettings():
     """

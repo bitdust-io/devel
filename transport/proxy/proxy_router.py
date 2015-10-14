@@ -64,6 +64,7 @@ from crypt import key
 from crypt import signed
 from crypt import encrypted
 
+from userid import identity
 from userid import my_id
 
 from contacts import identitycache
@@ -201,18 +202,35 @@ class ProxyRouter(automat.Automat):
         target = request.CreatorID
         if request.Command == commands.RequestService():
             if len(self.routes) < _MaxRoutesNumber:
-                # accept new route
+                oldnew = ''
                 if target not in self.routes.keys():
+                    # accept new route
+                    oldnew = 'NEW'
                     self.routes[target] = {}
+                    cached_id = identitycache.FromCache(target)
+                    idsrc = cached_id.serialize()
                 else:
-                    lg.warn('route with %s already exist' % target)
-                cached_id = identitycache.FromCache(target)
-                idsrc = cached_id.serialize()
+                    oldnew = 'OLD'
+                    try:
+                        idsrc = self.routes[target]['identity']
+                        cached_id = identity.identity(xmlsrc=idsrc)
+                    except:
+                        lg.exc()
+                        cached_id = identitycache.FromCache(target)
+                        idsrc = cached_id.serialize()
+                    # lg.warn('route with %s already exist' % target)
                 identitycache.OverrideIdentity(target, idsrc)
+                hosts = []
+                service_info = request.Payload.split(' ')[1:]
+                for word in service_info:
+                    p, h = word.split('://')
+                    hosts.append((p,h))
                 self.routes[target]['time'] = time.time()
+                self.routes[target]['identity'] = idsrc
                 self.routes[target]['publickey'] = cached_id.publickey
                 self.routes[target]['contacts'] = cached_id.getContactsAsTuples()
-                self.routes[target]['hosts'] = []
+                self.routes[target]['hosts'] = hosts
+                self.routes[target]['active'] = []
                 self._write_route(target)
                 self.acks.append(
                     p2p_service.SendAck(
@@ -221,7 +239,7 @@ class ProxyRouter(automat.Automat):
                         wide=True, 
                         packetid=request.PacketID)) 
                 if _Debug:
-                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED ROUTE for %s' % target)
+                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s, hosts=%s' % (oldnew, target, hosts))
             else:
                 if _Debug:
                     lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
@@ -251,9 +269,9 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         idurl, pkt_out, item, status, size, error_message = arg
-        self.routes[idurl]['hosts'].append((item.proto, item.host))
+        self.routes[idurl]['active'].append((item.proto, item.host))
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : %s:%s added for %s' % (
+            lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : active address %s:%s added for %s' % (
                 item.proto, item.host, nameurl.GetName(idurl)))
 
     def doUnregisterAllRouts(self, arg):
@@ -486,6 +504,7 @@ class ProxyRouter(automat.Automat):
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._remove_route %d bytes wrote' % len(newsrc)) 
+
 
 #------------------------------------------------------------------------------ 
 
