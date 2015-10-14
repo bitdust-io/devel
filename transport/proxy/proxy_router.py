@@ -221,10 +221,14 @@ class ProxyRouter(automat.Automat):
                     # lg.warn('route with %s already exist' % target)
                 identitycache.OverrideIdentity(target, idsrc)
                 hosts = []
-                service_info = request.Payload.split(' ')[1:]
-                for word in service_info:
-                    p, h = word.split('://')
-                    hosts.append((p,h))
+                try:
+                    service_info = request.Payload.split(' ')[1:]
+                    for word in service_info:
+                        p, h = word.split('://')
+                        hosts.append((p,h))
+                except:
+                    lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
+                    lg.exc()
                 self.routes[target]['time'] = time.time()
                 self.routes[target]['identity'] = idsrc
                 self.routes[target]['publickey'] = cached_id.publickey

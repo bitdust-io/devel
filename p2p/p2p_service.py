@@ -310,12 +310,12 @@ def SendIdentity(remote_idurl, wide=False, callbacks={}):
 #------------------------------------------------------------------------------ 
 
 def RequestService(request, info):
-    lg.out(8, "p2p_service.RequestService %s" % request.OwnerID)
     words = request.Payload.split(' ')
     if len(words) < 1:
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
     service_name = words[0]
+    lg.out(8, "p2p_service.RequestService %s : %s" % (request.OwnerID, service_name))
     # TODO: - temporary keep that for backward compatibility
     if service_name == 'storage':
         if not driver.is_started('service_supplier'):

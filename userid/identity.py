@@ -622,7 +622,7 @@ class identity:
         """
         result = []
         for c in self.contacts:
-            proto,host,port,filename = nameurl.UrlParse(c)
+            proto,host = c.split('://')
             result.append((proto, host))
         return result
 

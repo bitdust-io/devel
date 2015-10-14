@@ -288,7 +288,7 @@ class P2PConnector(automat.Automat):
                 lg.out(4, '    my contacts were changed, erase active_protos() flags')
             active_protos().clear()
         if _Debug:
-            lg.out(4, '    identity has %sbeen changed' % ('' if identity_changed else 'not '))
+            lg.out(4, '    identity HAS %sBEEN CHANGED' % ('' if identity_changed else 'NOT '))
         self.automat('my-id-updated', (contacts_changed, identity_changed))
         
     def doPropagateMyIdentity(self, arg):
