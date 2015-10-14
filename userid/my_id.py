@@ -333,6 +333,11 @@ def buildProtoContacts(id_obj):
 
     lg.out(4, '    new contacts: %s' % str(new_contacts))
     lg.out(4, '    new order: %s' % str(new_order_correct))
+    
+#    new_list = []
+#    for nproto in new_order_correct:
+#        new_list.append(new_contacts[nproto])
+    
     return new_contacts, new_order_correct
 
 
@@ -417,24 +422,30 @@ def rebuildLocalIdentity():
     # erase current contacts from my identity
     lid.clearContacts()
     # add contacts data to the local identity
-    for proto in new_order:
-        contact = new_contacts.get(proto, None)
-        if contact is None:
-            lg.warn('proto %s was not found in contacts' % proto)
-            continue
-        lid.setProtoContact(proto, contact)
+    lid.setContactsFromDict(new_contacts, new_order)
+#    for proto in new_order:
+#        contact = new_contacts.get(proto, None)
+#        if contact is None:
+#            lg.warn('proto %s was not found in contacts' % proto)
+#            continue
+#        lid.setProtoContact(proto, contact)
     # update software version number
     vernum = bpio.ReadTextFile(settings.VersionNumberFile())
     repo, location = misc.ReadRepoLocation()
     lid.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
     # generate signature with changed content
     lid.sign()
+    new_xmlsrc = lid.serialize()
     changed = False
-    if lid.serialize() == current_identity_xmlsrc:
+    if new_xmlsrc == current_identity_xmlsrc:
         # no modifications in my identity - cool !!!
         lg.out(4, '    same revision: %s' % lid.revision)
     else:
-        lid.revision = str(int(lid.revision)+1)   
+        try:
+            lid.revision = str(int(lid.revision)+1)
+        except:
+            lg.exc()
+            return False   
         # generate signature again because revision were changed !!!
         lid.sign()
         lg.out(4, '    add revision: %s' % lid.revision)
@@ -444,11 +455,12 @@ def rebuildLocalIdentity():
     lg.out(4, '    version: %s' % str(lid.version))
     lg.out(4, '    contacts: %s' % str(lid.contacts))
     lg.out(4, '    sources: %s' % str(lid.sources))
-    lg.out(4, '    my identity has %sbeen changed' % (('' if changed else 'not ')))
-
     if changed:
+        lg.out(4, '    SAVING new identity #%s' % lid.revision)
         # finally saving modified local identity
         saveLocalIdentity()
+    lg.out(4, '    my identity HAS %sBEEN changed !!!' % (('' if changed else 'NOT ')))
+    lg.out(4, '\n' + new_xmlsrc + '\n')
     return changed
 
 

@@ -666,11 +666,27 @@ class identity:
 
     #------------------------------------------------------------------------------ 
 
+    def setContacts(self, contacts_list):
+        """
+        """
+        self.contacts = contacts_list
+
+    def setContactsFromDict(self, contacts_dict, contacts_order=None):
+        """
+        """
+        if contacts_order is None:
+            contacts_order = contacts_dict.keys()
+        for proto in contacts_order:
+            self.contacts.append(contacts_dict[proto])
+
     def setContact(self, contact, index):
         """
         Set a string value ``contact`` at given ``index`` position in the list.
         """
-        self.contacts[index] = contact
+        try:
+            self.contacts[index] = contact
+        except:
+            lg.exc()
         
     def setProtoContact(self, proto, contact):
         """
@@ -697,8 +713,6 @@ class identity:
         protocol, host_, port, filename = nameurl.UrlParse(self.contacts[index])
         url = nameurl.UrlMake(protocol, host, port, filename)
         self.contacts[index] = url.encode("ascii").strip()
-
-
 
     def setContactPort(self, index, newport):
         """
