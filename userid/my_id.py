@@ -257,7 +257,7 @@ def buildProtoContacts(id_obj):
     lg.out(4, '    current contacts: %s' % str(current_contats))
     lg.out(4, '    current order: %s' % str(current_order))
     new_contacts = {}
-    new_order = []
+    new_order_correct = []
     # prepare list of active transports 
     active_transports = []
     for proto in getValidTransports():
@@ -273,46 +273,67 @@ def buildProtoContacts(id_obj):
     lg.out(4, '    active transports: %s' % str(active_transports))
     if not driver.is_started('service_gateway'):
         new_contacts = current_contats
-        new_order = current_order
+        new_order_correct = current_order
     else:
         from transport import gateway
         # build contacts data according transports priorities
+        new_order = current_order
         for proto in active_transports:
             clist = gateway.transport(proto).interface.build_contacts(id_obj)
             cdict = {}
-            if len(clist) > 1:
-                # clist.reverse()
-                for contact in clist: 
-                    cproto, cdata = contact.split('://')
-                    cdict[cproto] = contact
-                    if cproto in new_order:
-                        new_order.remove(cproto)
-                    new_order.insert(0, cproto)
-            else:
-#                 current_order = []
-                for contact in clist: 
-                    cproto, cdata = contact.split('://')
-                    cdict[cproto] = contact
-#                     current_order.append(cproto)
-                    new_index = -1
-                    if cproto in new_order:
-                        new_index = new_order.index(cproto)
-                    old_index = -1
-                    if cproto in current_order:
-                        old_index =  current_order.index(cproto)
-                    if new_index < 0:
-                        new_order.insert(0, cproto)
-                    else:
-                        if old_index < new_index: 
-                            new_order.remove(cproto)
-                            new_order.insert(0, cproto)
-                        else:
-                            new_order.remove(cproto)
-                            new_order.append(cproto)
+            corder = []
+            for contact in clist: 
+                cproto, cdata = contact.split('://')
+                cdict[cproto] = contact
+                corder.append(cproto)
             new_contacts.update(cdict)
+            for cproto in corder:
+                if cproto not in new_order:
+                    new_order.append(cproto)
+        new_order_correct = list(new_order)
+        for nproto in new_order: 
+            if nproto not in new_contacts.keys():
+                new_order_correct.remove(nproto)
+                    
+#            cset = set(corder)
+#            cdiff = cset.intersection(current_set)
+#            if cset.isdisjoint()
+#            
+#            
+#            if len(clist) > 1:
+#                # clist.reverse()
+#                for contact in clist: 
+#                    cproto, cdata = contact.split('://')
+#                    cdict[cproto] = contact
+#                    if cproto in new_order:
+#                        new_order.remove(cproto)
+#                    new_order.insert(0, cproto)
+#            else:
+##                 current_order = []
+#                for contact in clist: 
+#                    cproto, cdata = contact.split('://')
+#                    cdict[cproto] = contact
+##                     current_order.append(cproto)
+#                    new_index = -1
+#                    if cproto in new_order:
+#                        new_index = new_order.index(cproto)
+#                    old_index = -1
+#                    if cproto in current_order:
+#                        old_index =  current_order.index(cproto)
+#                    if new_index < 0:
+#                        new_order.insert(0, cproto)
+#                    else:
+#                        if old_index < new_index: 
+#                            new_order.remove(cproto)
+#                            new_order.insert(0, cproto)
+#                        else:
+#                            new_order.remove(cproto)
+#                            new_order.append(cproto)
+#            new_contacts.update(cdict)
+
     lg.out(4, '    new contacts: %s' % str(new_contacts))
-    lg.out(4, '    new order: %s' % str(new_order))
-    return new_contacts, new_order
+    lg.out(4, '    new order: %s' % str(new_order_correct))
+    return new_contacts, new_order_correct
 
 
 def buildDefaultIdentity(name='', ip='', idurls=[]):
