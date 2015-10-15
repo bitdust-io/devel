@@ -526,9 +526,10 @@ class ProxyRouter(automat.Automat):
     
     def _write_route(self, target):
         src = config.conf().getData('services/proxy-server/current-routes')
-        if src is None:
-            src = '{}'
-        dct = json.loads(src)
+        try:
+            dct = json.loads(src)
+        except:
+            dct = {}
         dct[target] = self.routes[target]
         newsrc = pprint.pformat(json.dumps(dct, indent=0))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
@@ -537,9 +538,10 @@ class ProxyRouter(automat.Automat):
     
     def _remove_route(self, target):
         src = config.conf().getData('services/proxy-server/current-routes')
-        if src is None:
-            src = '{}'
-        dct = json.loads(src)
+        try:
+            dct = json.loads(src)
+        except:
+            dct = {}
         if target in dct:
             dct.pop(target)
         newsrc = json.dumps(dct)
