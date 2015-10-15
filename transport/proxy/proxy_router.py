@@ -389,12 +389,13 @@ class ProxyRouter(automat.Automat):
         packet_out.create(
             newpacket, 
             wide=False,
+            callbacks={},
             route={
                 'packet': routed_packet,
                 'proto': receiver_proto,
                 'host': receiver_host,
                 'remoteid': receiver_idurl,
-                'description': 'Routed_%s' % nameurl.GetName(receiver_idurl)})
+                'description': ('Routed_%s' % nameurl.GetName(receiver_idurl))})
 #        fileno, filename = tmpfile.make('proxy-in')
 #        packetdata = routed_packet.Serialize()
 #        os.write(fileno, packetdata)

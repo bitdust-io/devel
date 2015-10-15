@@ -183,8 +183,8 @@ class ProxySender(automat.Automat):
             router_idurl)
         self.result_outbox = packet_out.create(
             outpacket, 
-            wide, 
-            callbacks, 
+            wide=wide, 
+            callbacks=callbacks, 
             # target=router_idurl,
             route={
                 'packet': newpacket,
