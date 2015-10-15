@@ -181,14 +181,17 @@ class ProxySender(automat.Automat):
             'routed_out_'+outpacket.PacketID, 
             block_encrypted, 
             router_idurl)
-        packet_out.create(outpacket, wide, callbacks, 
-                          target=router_idurl,
-                          route={
-                              'packet': newpacket,
-                              'proto': router_proto,
-                              'host': router_host,
-                              'remoteid': router_idurl,
-                              'description': 'Routed packet for %s' % outpacket.RemoteID})
+        self.result_outbox = packet_out.create(
+            outpacket, 
+            wide, 
+            callbacks, 
+            # target=router_idurl,
+            route={
+                'packet': newpacket,
+                'proto': router_proto,
+                'host': router_host,
+                'remoteid': router_idurl,
+                'description': 'Routed for %s' % outpacket.RemoteID})
 #        fileno, filename = tmpfile.make('proxy-out')
 #        packetdata = newpacket.Serialize()
 #        os.write(fileno, packetdata)
@@ -241,8 +244,11 @@ class ProxySender(automat.Automat):
             return None
         if _Debug:
             lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet   %s were redirected for %s' % (outpacket, router_idurl))
-        self.automat('outbox-packet', (outpacket, wide, callbacks))
-        return True
+        self.result_outbox = None
+        self.event('outbox-packet', (outpacket, wide, callbacks))
+        ret = self.result_outbox
+        del self.result_outbox
+        return ret
 
     
 #------------------------------------------------------------------------------ 

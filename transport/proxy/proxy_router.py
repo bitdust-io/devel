@@ -72,6 +72,7 @@ from contacts import identitycache
 
 from transport import gateway
 from transport import callback
+from transport import packet_out
 
 from p2p import p2p_service
 from p2p import commands
@@ -385,19 +386,27 @@ class ProxyRouter(automat.Automat):
             'routed_in_'+newpacket.PacketID, 
             block.Serialize(), 
             receiver_idurl)
-        fileno, filename = tmpfile.make('proxy-in')
-        packetdata = routed_packet.Serialize()
-        os.write(fileno, packetdata)
-        os.close(fileno)
-        gateway.send_file(
-            receiver_idurl, 
-            receiver_proto, 
-            receiver_host, filename,
-            'Routed packet for %s' % receiver_idurl)
+        packet_out.create(
+            newpacket, 
+            route={
+                'packet': routed_packet,
+                'proto': receiver_proto,
+                'host': receiver_host,
+                'remoteid': receiver_idurl,
+                'description': 'Routed for %s' % receiver_idurl})
+#        fileno, filename = tmpfile.make('proxy-in')
+#        packetdata = routed_packet.Serialize()
+#        os.write(fileno, packetdata)
+#        os.close(fileno)
+#        gateway.send_file(
+#            receiver_idurl, 
+#            receiver_proto, 
+#            receiver_host, filename,
+#            'Routed packet for %s' % receiver_idurl)
         if _Debug:
             lg.out(_DebugLevel-8, '>>> ROUTED-IN >>> %s' % str(routed_packet))
             lg.out(_DebugLevel-8, '                   sent on %s://%s with %d bytes' % (
-                receiver_proto, receiver_host, len(packetdata)))
+                receiver_proto, receiver_host, len(src)))
         # gateway.outbox(routed_packet)
 #        if _Debug:
 #            lg.out(_DebugLevel, 'proxy_router.doForwardInboxPacket %d bytes from %s sent to %s' % (
