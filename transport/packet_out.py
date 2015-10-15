@@ -189,13 +189,13 @@ class PacketOut(automat.Automat):
         self.remote_idurl = target
         self.caching_deferred = None
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
-        self.label = 'out_%d_%s (%d callbacks%s)' % (
-            get_packets_counter(), self.description, len(self.callbacks),
-            (', routed' if self.route else ''))
         self.route = route
         if self.route:
             self.description = self.route['description']
             self.remote_idurl = self.route['remoteid']
+        self.label = 'out_%d_%s (%d callbacks%s)' % (
+            get_packets_counter(), self.description, len(self.callbacks),
+            (', routed' if self.route else ''))
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 
