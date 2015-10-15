@@ -193,9 +193,8 @@ class PacketOut(automat.Automat):
         if self.route:
             self.description = self.route['description']
             self.remote_idurl = self.route['remoteid']
-        self.label = 'out_%d_%s (%d callbacks%s)' % (
-            get_packets_counter(), self.description, len(self.callbacks),
-            (', routed' if self.route else ''))
+        self.label = 'out_%d_%s (%d callbacks)' % (
+            get_packets_counter(), self.description, len(self.callbacks))
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 

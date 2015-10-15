@@ -191,7 +191,7 @@ class ProxySender(automat.Automat):
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,
-                'description': 'Routed for %s' % outpacket.RemoteID})
+                'description': 'Routed_%s' % nameurl.GetName(outpacket.RemoteID)})
 #        fileno, filename = tmpfile.make('proxy-out')
 #        packetdata = newpacket.Serialize()
 #        os.write(fileno, packetdata)

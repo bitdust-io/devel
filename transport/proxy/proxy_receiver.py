@@ -242,6 +242,7 @@ class ProxyReceiver(automat.Automat):
         """
         Condition method.
         """
+        return False
         return config.conf().getString('services/proxy-transport/current-router', '').strip() != ''
 
     def doInit(self, arg):
@@ -253,7 +254,6 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        return
         s = config.conf().getString('services/proxy-transport/current-router').strip()
         try:
             self.router_idurl, proto, host = s.split(' ')
