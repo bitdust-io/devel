@@ -191,7 +191,7 @@ class PacketOut(automat.Automat):
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.label = 'out_%d_%s (%d callbacks%s)' % (
             get_packets_counter(), self.description, len(self.callbacks),
-            ' routed' if self.route else '')
+            (', routed' if self.route else ''))
         self.route = route
         if self.route:
             self.description = self.route['description']
