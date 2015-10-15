@@ -383,7 +383,8 @@ class ProxyRouter(automat.Automat):
             commands.Data(), 
             newpacket.OwnerID,
             my_id.getLocalID(), 
-            'routed_in_'+newpacket.PacketID, 
+            # 'routed_in_'+newpacket.PacketID, 
+            newpacket.PacketID, 
             block.Serialize(), 
             receiver_idurl)
         packet_out.create(

@@ -535,8 +535,8 @@ class ProxyReceiver(automat.Automat):
                 return True
         if newpacket.Command != commands.Data():
             return False
-        if not newpacket.PacketID.startswith('routed_in_'):
-            return False
+        # if not newpacket.PacketID.startswith('routed_in_'):
+            # return False
         if newpacket.RemoteID != my_id.getLocalID():
             return False
         if newpacket.CreatorID != self.router_idurl:

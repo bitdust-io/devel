@@ -59,6 +59,7 @@ def init():
     P2PCommandAcks[Correspondent()] = Correspondent()
     P2PCommandAcks[RequestService()] = Ack()
     P2PCommandAcks[CancelService()] = Ack()
+    P2PCommandAcks[Routed()] = None
 
 def IsCommand(s):                 
     """
@@ -70,6 +71,11 @@ def IsCommand(s):
     return s in P2PCommandAcks
 
 #------------------------------------------------------------------------------ 
+
+def Routed():
+    """
+    """
+    return "Routed"
 
 def Data():
     """
