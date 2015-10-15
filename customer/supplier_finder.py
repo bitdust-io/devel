@@ -266,8 +266,8 @@ class SupplierFinder(automat.Automat):
     def _found_nodes(self, nodes):
         lg.out(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
         # DEBUG
-        # self._got_target_idurl({'idurl':'http://p2p-id.ru/bitdust_j_vps1002.xml'})
-        # return
+        self._got_target_idurl({'idurl':'http://p2p-machines.net/bitdust_j_vps1011.xml'})
+        return
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')

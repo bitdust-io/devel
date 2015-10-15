@@ -26,7 +26,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------ 
 
@@ -245,8 +245,10 @@ class SupplierConnector(automat.Automat):
         service_info = 'service_supplier %d' % bytes_per_supplier
         request = p2p_service.SendRequestService(
             self.idurl, service_info, callbacks={
-                commands.Ack(): lambda response, info: self.automat('ack', response),
-                commands.Fail(): lambda response, info: self.automat('fail', response)})
+                commands.Ack():  self._supplier_acked,
+                commands.Fail(): self._supplier_failed})
+                # commands.Ack(): lambda response, info: self.automat('ack', response),
+                # commands.Fail(): lambda response, info: self.automat('fail', response)})
         self.request_packet_id = request.PacketID
 
     def doCancelService(self, arg):
@@ -296,7 +298,7 @@ class SupplierConnector(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(14, 'supplier_connector.doReportDisconnect')
+            lg.out(_DebugLevel, 'supplier_connector.doReportDisconnect')
         for cb in self.callbacks.values():
             cb(self.idurl, 'DISCONNECTED')
 

@@ -297,7 +297,10 @@ class ProxyReceiver(automat.Automat):
             return
         from transport import gateway
         service_info = 'service_proxy_server \n'
-        service_info += my_id.getLocalIdentity().serialize()
+        orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
+        if not orig_identity:
+            orig_identity = my_id.getLocalIdentity().serialize()
+        service_info += orig_identity
         # for t in gateway.transports().values():
         #     service_info += '%s://%s' % (t.proto, t.host)
         # service_info += ' '

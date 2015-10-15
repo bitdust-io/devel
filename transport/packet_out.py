@@ -28,8 +28,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
-_DebugLevel = 18
+_Debug = True
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------ 
 
@@ -83,12 +83,12 @@ def queue():
     return _OutboxQueue
 
 
-def create(outpacket, wide, callbacks, target=None):
+def create(outpacket, wide, callbacks, target=None, route=None):
     """
     """
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
-    p = PacketOut(outpacket, wide, callbacks, target)
+    p = PacketOut(outpacket, wide, callbacks, target, route)
     queue().append(p)
     p.automat('run')
     return p
@@ -182,7 +182,7 @@ class PacketOut(automat.Automat):
         'MSG_5': 'pushing outgoing packet was cancelled',
         }
     
-    def __init__(self, outpacket, wide, callbacks={}, target=None):
+    def __init__(self, outpacket, wide, callbacks={}, target=None, route=None):
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = callbacks
@@ -190,6 +190,7 @@ class PacketOut(automat.Automat):
         self.caching_deferred = None
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.label = 'out_%d_%s (%d callbacks)' % (get_packets_counter(), self.description, len(self.callbacks))
+        self.route = route
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 
@@ -403,9 +404,12 @@ class PacketOut(automat.Automat):
         Action method.
         """
         # serialize and write packet on disk
+        a_packet = self.outpacket
+        if self.route:
+            a_packet = self.route['packet']
         try:
             fileno, self.filename = tmpfile.make('outbox')
-            self.packetdata = self.outpacket.Serialize()
+            self.packetdata = a_packet.Serialize()
             os.write(fileno, self.packetdata)
             os.close(fileno)
             self.filesize = len(self.packetdata)
@@ -563,6 +567,17 @@ class PacketOut(automat.Automat):
             self.automat('remote-identity-on-hand')
 
     def _push(self):
+        if self.route:
+            # if this packet is routed - send directly to route host
+            d = gateway.send_file(
+                self.route['remoteid'], 
+                self.route['proto'], 
+                self.route['host'], 
+                self.filename, 
+                self.description)
+            self.items.append(WorkItem(self.route['proto'], self.route['host']))
+            self.automat('items-sent')
+            return
         # get info about his local IP
         localIP = identitycache.GetLocalIP(self.remote_idurl)
         workitem_sent = False

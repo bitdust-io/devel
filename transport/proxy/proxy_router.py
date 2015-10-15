@@ -289,7 +289,7 @@ class ProxyRouter(automat.Automat):
         self.routes[idurl]['address'].append((item.proto, item.host))
         self._write_route(idurl)
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : active address %s:%s added for %s' % (
+            lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : active address %s://%s added for %s' % (
                 item.proto, item.host, nameurl.GetName(idurl)))
 
     def doUnregisterAllRouts(self, arg):
@@ -521,7 +521,7 @@ class ProxyRouter(automat.Automat):
             src = '{}'
         dct = json.loads(src)
         dct[target] = self.routes[target]
-        newsrc = json.dumps(dct, indent=0)
+        newsrc = pprint.pformat(json.dumps(dct, indent=0))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc)) 

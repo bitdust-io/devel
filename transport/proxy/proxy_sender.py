@@ -49,6 +49,8 @@ from userid import my_id
 
 from transport import gateway 
 from transport import callback
+from transport import packet_out
+from transport import packet_in
 
 #------------------------------------------------------------------------------ 
 
@@ -171,26 +173,35 @@ class ProxySender(automat.Automat):
             True,
             src,
             EncryptFunc=lambda inp: key.EncryptStringPK(publickey, inp))
+        block_encrypted = block.Serialize()
         newpacket = signed.Packet(
             commands.Data(), 
             outpacket.OwnerID,
             my_id.getLocalID(), 
             'routed_out_'+outpacket.PacketID, 
-            block.Serialize(), 
+            block_encrypted, 
             router_idurl)
-        fileno, filename = tmpfile.make('proxy-out')
-        packetdata = newpacket.Serialize()
-        os.write(fileno, packetdata)
-        os.close(fileno)
-        gateway.send_file(router_idurl, 
-                          router_proto, 
-                          router_host, 
-                          filename, 
-                          'Routed packet for %s' % outpacket.RemoteID)
+        packet_out.create(outpacket, wide, callbacks, 
+                          target=router_idurl,
+                          route={
+                              'packet': newpacket,
+                              'proto': router_proto,
+                              'host': router_host,
+                              'remoteid': router_idurl,
+                              'description': 'Routed packet for %s' % outpacket.RemoteID})
+#        fileno, filename = tmpfile.make('proxy-out')
+#        packetdata = newpacket.Serialize()
+#        os.write(fileno, packetdata)
+#        os.close(fileno)
+#        gateway.send_file(router_idurl, 
+#                          router_proto, 
+#                          router_host, 
+#                          filename, 
+#                          'Routed packet for %s' % outpacket.RemoteID)
         if _Debug:
             lg.out(_DebugLevel-8, '<<< ROUTED-OUT <<< %s' % str(outpacket))
             lg.out(_DebugLevel-8, '                   sent on %s://%s with %d bytes' % (
-                router_proto, router_host, len(packetdata)))
+                router_proto, router_host, len(block_encrypted)))
         del src
         del block
         del newpacket
