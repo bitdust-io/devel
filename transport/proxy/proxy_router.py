@@ -507,7 +507,10 @@ class ProxyRouter(automat.Automat):
         if src is None:
             lg.warn('setting [services/proxy-server/current-routes] not exist')
             return
-        dct = json.loads(src)
+        try:
+            dct = json.loads(src)
+        except:
+            dct = {}
         for k,v in dct.items():
             self.routes[k] = v
             ident = identity.identity(xmlsrc=v['identity'])
