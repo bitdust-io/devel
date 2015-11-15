@@ -56,7 +56,7 @@
     /**
      * jQuery inits
      */
-    var menuSelectors = '.main-navigation .table-files td a, .iconset a.thumbnail';
+    var menuSelectors = '.main-navigation .file-item td a, .iconset .thumbnail, .active-tasks-panel .active-task';
 
     $(window.document).on('shown.bs.modal', '.modal', function() {
         var self = this;
@@ -71,9 +71,10 @@
     });
 
     $(window.document).on('contextmenu', menuSelectors, function(e) {
+    	//debug.log(e.pageX, e.pageY);
         $("#context-menu").hide().css({
-            left: e.pageX,
-            top: e.pageY
+            left: e.pageX - 95,
+            top: e.pageY - 60,
         }).show();
         e.preventDefault();
     });

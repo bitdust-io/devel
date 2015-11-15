@@ -16,6 +16,13 @@ The "Jobs" dictionary keeps already started backups ( by backupID ) objects, see
 "Tasks" is a list of path IDs to start backups in the future, as soon as some "Jobs" gets finished.
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 14
+
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 import time
@@ -385,9 +392,10 @@ class Task():
     A class to represent a ``Task`` - a path to be backed up as soon as other backups will be finished.
     All tasks are stored in the list, see ``tasks()`` method. 
     """
-    def __init__(self, pathID):
+    def __init__(self, pathID, localPath=None):
         self.number = NewTaskNumber()                   # index number for the task
-        self.pathID = pathID                            # source path to backup 
+        self.pathID = pathID                            # source path to backup
+        self.localPath = localPath 
         self.created = time.time()
         
     def __repr__(self):
@@ -417,6 +425,9 @@ class Task():
             except:
                 lg.exc()
                 return
+        if self.localPath and self.localPath != sourcePath:
+            lg.warn('local path were changed: %s -> %s' % (self.localPath, sourcePath))
+        self.localPath = sourcePath
         if not bpio.pathExist(sourcePath):
             lg.warn('path not exist: %s' % sourcePath)
             reactor.callLater(0, OnTaskFailed, self.pathID, 'not exist')
@@ -443,22 +454,29 @@ class Task():
         else:    
             backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)
         backupPipe.make_nonblocking()
-        job = backup.backup(backupID, backupPipe, OnJobDone, OnBackupBlockReport, settings.getBackupBlockSize())
+        job = backup.backup(
+            backupID, backupPipe, 
+            OnJobDone, OnBackupBlockReport, 
+            settings.getBackupBlockSize(),
+            sourcePath)
         jobs()[backupID] = job
         itemInfo.add_version(dataID)
         if itemInfo.type in [ backup_fs.PARENT, backup_fs.DIR ]:
-            dirsize.ask(sourcePath, FoundFolderSize, (self.pathID, dataID))
+            dirsize.ask(sourcePath, OnFoundFolderSize, (self.pathID, dataID))
+        else:
+            jobs()[backupID].totalSize = os.path.getsize(sourcePath)
         jobs()[backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
-        lg.out(4, 'backup_control.Task.run %s [%s], size=%d' % (self.pathID, dataID, itemInfo.size))
+        lg.out(4, 'backup_control.Task.run %s [%s], size=%d, %s' % (
+            self.pathID, dataID, itemInfo.size, sourcePath))
     
 #------------------------------------------------------------------------------ 
         
-def PutTask(pathID):
+def PutTask(pathID, localPath=None):
     """
     Creates a new ``Task`` and append it to the list of tasks.  
     """
-    t = Task(pathID)
+    t = Task(pathID, localPath)
     tasks().append(t)
     return t.number
 
@@ -489,15 +507,23 @@ def RunTasks():
     T = tasks().pop(0)
     T.run()
 
-def FoundFolderSize(pth, sz, arg):
+#------------------------------------------------------------------------------ 
+
+def OnFoundFolderSize(pth, sz, arg):
     """
     This is a callback, fired from ``lib.dirsize.ask()`` method after finish calculating of folder size. 
     """
     try:
         pathID, version = arg
+        backupID = pathID + '/' + version
         item = backup_fs.GetByID(pathID)
         if item:
             item.set_size(sz)
+        job = GetRunningBackupObject(backupID)
+        if job:
+            job.totalSize = sz
+        if _Debug:
+            lg.out(_DebugLevel, 'backup_control.OnFoundFolderSize %s %d' % (backupID, sz))
     except:
         lg.exc()
         
@@ -607,16 +633,16 @@ def FireTaskFinishedCallbacks(pathID, version, result):
 
 #------------------------------------------------------------------------------ 
 
-def StartSingle(pathID):
+def StartSingle(pathID, localPath=None):
     """
     A high level method to start a backup of single file or folder.    
     """
     import backup_monitor
-    PutTask(pathID)
+    PutTask(pathID, localPath)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.A, 'restart')
 
-def StartRecursive(pathID):
+def StartRecursive(pathID, localPath=None):
     """
     A high level method to start recursive backup of given path.
     This is will traverse all paths below this ID in the 'tree' and add tasks for them.  
@@ -626,13 +652,33 @@ def StartRecursive(pathID):
     def visitor(path_id, path, info):
         if info.type == backup_fs.FILE:
             if path_id.startswith(pathID):
-                PutTask(path_id)
+                PutTask(path_id, path)
                 startedtasks.add(path_id)
     backup_fs.TraverseByID(visitor)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.A, 'restart')
     lg.out(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
     return startedtasks
+
+#------------------------------------------------------------------------------ 
+
+def IsTaskScheduled(pathID):
+    """
+    """
+    return pathID in tasks()
+
+def GetPendingTask(pathID):
+    """
+    """
+    for t in tasks():
+        if t.pathID == pathID:
+            return t
+    return None
+
+def ListPendingTasks():
+    """
+    """
+    return tasks()
 
 #------------------------------------------------------------------------------ 
 

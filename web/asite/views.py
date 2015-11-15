@@ -97,6 +97,7 @@ def LoginPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
     lg.out(4, '    redirecting to %s' % redirect_to)
     return HttpResponseRedirect(redirect_to)
 
+#------------------------------------------------------------------------------ 
 
 @never_cache
 def LogoutPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
@@ -111,11 +112,19 @@ def LogoutPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
 
 #------------------------------------------------------------------------------ 
 
-class RepaintFlagView(View):
-    def get(self, request):
-        result = control.get_update_flag()
-        if result is True:
-            control.set_updated()
-        return HttpResponse('%s' % str(result))
+@never_cache
+def RepaintFlag(request):
+    result = control.get_update_flag()
+    if result is True:
+        control.set_updated()
+    return HttpResponse('%s' % str(result))
+
+
+#class RepaintFlagView(View):
+#    def get(self, request):
+#        result = control.get_update_flag()
+#        if result is True:
+#            control.set_updated()
+#        return HttpResponse('%s' % str(result))
     
     

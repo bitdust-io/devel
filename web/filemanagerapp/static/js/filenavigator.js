@@ -1,7 +1,8 @@
 (function(angular) {
     "use strict";
     angular.module('FileManagerApp').service('fileNavigator', [
-        '$http', 'fileManagerConfig', 'item', function ($http, fileManagerConfig, Item) {
+        '$http', 'fileManagerConfig', 'item', '$cookies',  
+        function ($http, fileManagerConfig, Item, $cookies) {
 
         $http.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
@@ -13,6 +14,25 @@
             this.error = '';
             this.targetItem = null;
             this.mode = 'default';
+            this.treeView = false;
+            if ($cookies.treeView == 'true') {
+            	this.treeView = true;
+            }
+            if ($cookies.currentPath) {
+            	this.currentPath = $cookies.currentPath.split('/');
+            }
+        };
+        
+        FileNavigator.prototype.switchTreeView = function() {
+            //debug.log($cookies.treeView);
+        	this.treeView = !this.treeView;
+        	if (this.treeView) {
+        		$cookies.treeView = 'true';
+        	} else {
+        		$cookies.treeView = 'false';
+        	}
+            //debug.log(this.treeView);
+            this.goTo(-1);
         };
 
         FileNavigator.prototype.refresh = function(success, error) {
@@ -22,11 +42,15 @@
             var path = self.currentPath.join('/');
             if (self.mode != 'default') {
             	needed_mode = "listlocal";
+            } else {
+	            if (!self.treeView) {
+	            	needed_mode = "listall";
+	            }
             }
             if (self.mode == 'select_download_path') {
             	need_only_Folders = true;
             }
-            var data = {params: {
+            var data = { params: {
                 mode: needed_mode,
                 onlyFolders: need_only_Folders,
                 path: path
@@ -39,7 +63,7 @@
             $http.post(fileManagerConfig.listUrl, data).success(function(data) {
                 self.fileList = [];
                 angular.forEach(data.result, function(file) {
-                    self.fileList.push(new Item(file, self.currentPath));
+                    self.fileList.push(new Item(file));
                 });
                 self.requesting = false;
                 self.buildTree(path);
@@ -62,6 +86,10 @@
             var path = self.currentPath.join('/');
             if (self.mode != 'default') {
             	needed_mode = "listlocal";
+            } else {
+	            if (!self.treeView) {
+	            	needed_mode = "listall";
+	            }
             }
             if (self.mode == 'select_download_path') {
             	need_only_Folders = true;
@@ -90,10 +118,10 @@
                         var item = self.fileList[o];
                         if (item.model.id == file.id) {
                         	// debug.log('				', item);
-                        	item.model.size = file.size;
-                        	item.model.status = file.status;
-                        	item.model.date = file.date;
-                        	// item.update();
+                        	// item.model.size = file.size;
+                        	// item.model.date = file.date;
+                        	// item.model.status = file.status;
+                        	item.update_model(file);
                         	break;
                         }
                     }
@@ -144,15 +172,18 @@
 
         FileNavigator.prototype.folderClickByName = function(fullPath) {
             var self = this;
-            fullPath = fullPath.replace(/^\/*/g, '').split('/');
-            self.currentPath = fullPath && fullPath[0] === "" ? [] : fullPath;
+            fullPath = fullPath.replace(/^\/*/g, '');
+            var splitPath = fullPath.split('/');
+            self.currentPath = fullPath && splitPath[0] === "" ? [] : splitPath;
+            $cookies.currentPath = fullPath;
             self.refresh();
         };
 
         FileNavigator.prototype.folderClick = function(item) {
             var self = this;
-            if (item && item.model.type === 'dir') {
+            if (item && item.model.type === 'dir' && (item.hasChilds() || item.isLocal())) {
                 self.currentPath.push(item.model.name);
+                $cookies.currentPath = self.currentPath.join('/');
                 self.refresh();
             }
         };
@@ -161,6 +192,7 @@
             var self = this;
             if (self.currentPath[0]) {
                 self.currentPath = self.currentPath.slice(0, -1);
+                $cookies.currentPath = self.currentPath.join('/');
                 self.refresh();
             }
         };
@@ -168,6 +200,7 @@
         FileNavigator.prototype.goTo = function(index) {
             var self = this;
             self.currentPath = self.currentPath.slice(0, index + 1);
+            $cookies.currentPath = self.currentPath.join('/');
             self.refresh();
         };
 

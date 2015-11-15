@@ -64,7 +64,7 @@ a:hover * {
 input,
 select,
 textarea {
-    border-radius: 0!important
+    border-radius: 5px!important
 }
 #filemanager 
 .bold {
@@ -99,8 +99,8 @@ textarea {
         padding: 5px 0;
         /* overflow-x: hidden; */
         /* overflow-y: auto; */
-        background-color: #f5f5f5;
-        border-right: 1px solid #eee
+        /* background-color: #f5f5f5; */
+        border-right: 1px solid #fff
     }
 }
 @media (max-width: 768px) {
@@ -157,7 +157,7 @@ textarea {
 }
 #filemanager 
 .file-tree ul.nav.nav-sidebar>li {
-    border-left: 1px solid #ddd;
+    border-left: 1px solid #fff;
     padding-left: 4px
     
 }
@@ -200,11 +200,12 @@ textarea {
 }
 #filemanager 
 .col-120 {
-    width: 100px;
-    max-height: 100px;
+    width: 150px;
+    height: 150px;
+    max-height: 150px;
     float: left;
-    margin-bottom: 9px;
-    margin-right: 9px
+    margin-bottom: 12px;
+    margin-right: 12px
 }
 #filemanager 
 .col-120:last-child {
@@ -212,10 +213,11 @@ textarea {
 }
 #filemanager 
 .iconset .thumbnail {
-    border-radius: 0;
+    height: 150px;
+	border-radius: 5px;
     overflow: hidden;
     margin: 0;
-    padding: 10px 0
+    padding: 35px 0;
 }
 #filemanager 
 .iconset .thumbnail .item-icon {
@@ -403,7 +405,7 @@ textarea {
 }
 #local-table-modal {
 	overflow: auto;
-	height: 200px;
+	max-height: 300px;
 }
 #local-table-modal .file-item td {
 	padding-left: 0px!important;	
@@ -427,4 +429,22 @@ textarea {
 }
 .upload-from-button {
 	margin-right: 5px;
+}
+.active-tasks-panel {
+	/* background-color: #ddf; */
+	border-top: 1px solid #eee;
+	/* bottom: 30px;
+	position: fixed;
+	border-radius: 5px; */
+	/* height: 35px; */
+	width: 100%;
+	overflow: hidden;
+	/* padding: 5px; */
+	/* right: 0px; */
+	/* left: 0px; */
+}
+.active-task {
+	float: left;
+	margin: 4px;
+	padding: 2px 4px;
 }

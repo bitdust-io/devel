@@ -6,19 +6,24 @@ Date.prototype.isValid = function () {
 
 (function(window, angular, $) {
     "use strict";
-    angular.module('FileManagerApp').factory('item', ['$http', '$translate', 'fileManagerConfig', 'chmod', function($http, $translate, fileManagerConfig, Chmod) {
+    angular.module('FileManagerApp').factory('item', [
+        '$http', '$translate', 'fileManagerConfig', 'chmod', 
+	    function($http, $translate, fileManagerConfig, Chmod) {
 
-        var Item = function(model, path) {
+        var Item = function(model) {
+        	debug.log(model);
             var rawModel = {
                 name: model && model.name || '',
-                path: path || [],
+                path: model && model.dirpath.split('/') || [],
                 id: model && model.id || '',
                 type: model && model.type || 'file',
                 size: model && model.size || 0,
-                date: convertDate(model && model.date),
+                date: model && model.date || '',
                 perms: new Chmod(model && model.rights),
                 content: model && model.content || '',
                 status: model && model.status || '',
+                has_childs: model && model.has_childs || false,
+                versions: model && model.versions || [],
                 recursive: false,
                 sizeKb: function() {
                     return Math.round(this.size / 1024, 1);
@@ -26,7 +31,6 @@ Date.prototype.isValid = function () {
                 fullPath: function() {
                     return ('/' + this.path.join('/') + '/' + this.name).trimLeft('/').replace(/\/\//, '/');
                 }
-                
             };
 
             this.error = '';
@@ -35,25 +39,18 @@ Date.prototype.isValid = function () {
             this.model = angular.copy(rawModel);
             this.tempModel = angular.copy(rawModel);
 
-            function convertDate(d) {
-            	/*debug.log("convertDate", d);*/
-            	return d;
-            	/*
-            	if (!d)
-        			return "";
-                var result = new Date(d[0], d[1] - 1, d[2], d[3], d[4], d[5]);
-                if (!result.isValid())
-                	return "";
-            	return result.format('yyyy-mm-dd HH:mm:ss');
-            	*/
-            	/*
-                var d = (mysqlDate || '').toString().split(/[- :]/);
-                var result = new Date(d[0], d[1] - 1, d[2], d[3], d[4], d[5]);
-                if (!result.isValid()) result = '';
-            	debug.log('convertDate: ', mysqlDate, result);
-                return result;
-                */
-            }
+            //debug.log(this.model.id, this.model.name, this.model.path, this.model.fullPath);
+        };
+        
+        Item.prototype.update_model = function(model) {
+        	this.model.name = model.name || '',
+        	this.model.path = model.dirpath.split('/') || [],
+        	this.model.id = model.id || '',
+        	this.model.type = model.type || 'file',
+        	this.model.size = model.size || 0,
+        	this.model.date = model.date || '',
+        	this.model.has_childs = model.has_childs || false,
+        	this.model.versions = model.versions || [],
         };
 
         Item.prototype.update = function() {
@@ -109,7 +106,7 @@ Date.prototype.isValid = function () {
 
         Item.prototype.upload = function(success, error) {
             var self = this;
-            var data = {params: {
+            var data = { params: {
                 mode: "upload",
                 path: self.tempModel.fullPath()
                 // path: self.tempModel.path.join('/') + '/' + self.tempModel.name
@@ -136,11 +133,12 @@ Date.prototype.isValid = function () {
             var data = {params: {
                 mode: "download",
                 dest_path: dest_path,
-                id: self.model.id,
+                //id: self.model.id,
+                backupid: self.model.versions[0].backupid, 
                 name: self.model.name,
                 overwrite: true,
             }};
-            debug.log('item.downloadTo', self, dest_path);
+            debug.log('item.downloadTo', self, data);
             if (dest_path) {
                 self.inprocess = true;
                 self.error = '';
@@ -254,12 +252,13 @@ Date.prototype.isValid = function () {
             var data = {
                 mode: "download",
                 preview: preview,
-                path: self.model.fullPath()
+                path: self.model.fullPath(),
+                backupid: self.model.versions[0].backupid, 
             };
             var url = [fileManagerConfig.downloadFileUrl, $.param(data)].join('?');
-            if (self.model.type !== 'dir') {
-                window.open(url, '_blank', '');
-            }
+            //if (self.model.type !== 'dir') {
+            window.open(url, '_blank', '');
+            //}
         };
 
         Item.prototype.preview = function() {
@@ -378,6 +377,18 @@ Date.prototype.isValid = function () {
 
         Item.prototype.isExtractable = function() {
             return !this.isFolder() && fileManagerConfig.isExtractableFilePattern.test(this.model.name);
+        };
+        
+        Item.prototype.hasChilds = function() {
+            return this.model.has_childs;
+        };
+        
+        Item.prototype.hasVersions = function() {
+            return this.model.versions.length > 0;
+        };
+
+        Item.prototype.isLocal = function() {
+            return this.model.id == '';
         };
 
         return Item;

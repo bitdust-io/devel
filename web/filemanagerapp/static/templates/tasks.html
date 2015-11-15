@@ -1,0 +1,8 @@
+<div class="active-task" data-ng-repeat="item in activeTasks.tasksList">
+    <button class="btn btn-default" 
+            data-ng-click="navigateTo(item.path)"
+            title="{{item.name}}">
+        <i style="color: gray;" class="glyphicon glyphicon-hourglass"></i>
+        {{item.name}} : {{item.progress}}
+    </button>
+</div>

@@ -58,6 +58,13 @@ EVENTS:
 
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 14
+
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 import time
@@ -104,24 +111,16 @@ class backup(automat.Automat):
     A class to run the backup process, data is read from pipe. 
     """
 
-    def abort(self):
-        """
-        This method should stop this backup by killing the pipe process.
-        """
-        lg.out(4, 'backup.abort id='+str(self.backupID))
-        self.ask4abort = True
-        try:
-            self.pipe.kill()
-        except:
-            pass
-        
     timers = {
         'timer-01sec': (0.1, ['RAID']),
         'timer-001sec': (0.01, ['READ']),
         }
     
-    def __init__(self, backupID, pipe, finishCallback=None, blockResultCallback=None, blockSize=None,): #  resultDeferred=None
+    def __init__(self, backupID, pipe, 
+                 finishCallback=None, blockResultCallback=None, 
+                 blockSize=None, sourcePath=None): 
         self.backupID = backupID
+        self.sourcePath = sourcePath
         self.eccmap = eccmap.Current()
         self.pipe = pipe
         self.blockSize = blockSize
@@ -137,6 +136,7 @@ class backup(automat.Automat):
         self.blockNumber = 0
         self.dataSent = 0
         self.blocksSent = 0
+        self.totalSize = -1
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
         automat.Automat.__init__(self, 'backup_%s' % self.backupID, 'AT_STARTUP', 14)
@@ -383,6 +383,26 @@ class backup(automat.Automat):
             lg.out(12, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
                 blockNumber, result, str(self.stateEOF), str(time.time()-dt)))
             self.automat('block-raid-done', (blockNumber, result))
+
+    def abort(self):
+        """
+        This method should stop this backup by killing the pipe process.
+        """
+        lg.out(4, 'backup.abort id='+str(self.backupID))
+        self.ask4abort = True
+        try:
+            self.pipe.kill()
+        except:
+            pass
+        
+    def progress(self):
+        """
+        """
+        if self.totalSize <= 0:
+            return 0.0 
+        percent = min(100.0, 100.0 * self.dataSent / self.totalSize)
+        return percent
+        
 
 #------------------------------------------------------------------------------ 
 

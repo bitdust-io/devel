@@ -1,6 +1,6 @@
 <table class="table table-striped table-hover mb0 table-files">
     <thead>
-        <tr>
+        <tr data-ng-show="fileNavigator.fileList.length >= 1">
             <th width="100%">{{"name" | translate}}</th>
             <th>{{"status" | translate}}</th> <!-- class="hidden-xs" -->
             <th>{{"size" | translate}}</th> <!-- class="hidden-xs" -->
@@ -10,16 +10,20 @@
         </tr>
     </thead>
     <tbody class="file-item">
+        <!--  
         <tr data-ng-show="fileNavigator.requesting">
             <td colspan="5">
                 {{"loading" | translate}}...
             </td>
         </tr>
+        -->
+        <!-- 
         <tr data-ng-show="!fileNavigator.requesting && fileNavigator.fileList.length < 1 && !fileNavigator.error">
             <td colspan="5">
                 {{"no_files_in_folder" | translate}}...
             </td>
         </tr>
+        -->
         <tr data-ng-show="!fileNavigator.requesting && fileNavigator.error">
             <td colspan="5">
                 {{ fileNavigator.error }}
@@ -48,7 +52,8 @@
             </td>
             -->
             <td class="text-right" style="white-space: nowrap">
-                <div ng-include="config.tplPath + '/item-toolbar.html'"></div>
+                <div ng-include="config.tplPath + '/item-toolbar.html'">
+                </div>
             </td>
         </tr>
     </tbody>

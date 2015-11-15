@@ -464,8 +464,12 @@ class eccmap:
                 Parity = self.ParityToData[paritynum]
                 missing = 0                     # We will see how many of the datas are missing
                 for DataNum in Parity:          # look at all datas that went into this parity
-                    if DataSegs[DataNum] != 1:  # if this data is missing
-                        missing += 1            #     increase count of those missing in this parity
+                    try:
+                        if DataSegs[DataNum] != 1:  # if this data is missing
+                            missing += 1            #     increase count of those missing in this parity
+                    except:
+                        lg.exc()
+                        return False
                                                 #     keep track of the last missing in case only one is missing
                 if missing == 1:                # if missing exactly 1 of datas in parity, we can fix the data, have work to do
                     return True
@@ -473,8 +477,12 @@ class eccmap:
                 Parity = self.ParityToData[paritynum]
                 missing = 0                     # We will see how many of the datas are missing
                 for DataNum in Parity:          # look at all datas that went into this parity
-                    if DataSegs[DataNum] != 1:  # if this data is missing
-                        missing += 1            #     increase count of those missing in this parity
+                    try:
+                        if DataSegs[DataNum] != 1:  # if this data is missing
+                            missing += 1            #     increase count of those missing in this parity
+                    except:
+                        lg.exc()
+                        return False                            
                                                 #     keep track of the last missing in case only one is missing
                 if missing == 0:                # if missing none of the data for this parity, we have work to do
                     return True

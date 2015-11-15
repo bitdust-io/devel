@@ -24,8 +24,14 @@ class ProxyTransportService(LocalService):
     proto = 'proxy'
     
     def dependent_on(self):
-        return ['service_p2p_hookups',
-                ]
+        from main import settings
+        depends = ['service_identity_propagate', 
+                   'service_entangled_dht',]
+        if settings.enableTCP():
+            depends.append('service_tcp_transport')
+        if settings.enableUDP():
+            depends.append('service_udp_transport')
+        return depends
 
     def start(self):
         from twisted.internet import reactor

@@ -15,8 +15,6 @@
 #------------------------------------------------------------------------------ 
 
 import os
-import time
-import pprint
 import traceback
 
 from logs import lg
@@ -56,12 +54,16 @@ def process(json_request):
             result = _list(json_request['params'])
         elif mode == 'listlocal':
             result = _list_local(json_request['params'])
+        elif mode == 'listall':
+            result = _list_all(json_request['params'])
         elif mode == 'upload':
             result = _upload(json_request['params'])
         elif mode == 'delete':
             result = _delete(json_request['params'])
         elif mode == 'download':
             result = _download(json_request['params'])
+        elif mode == 'tasks':
+            result = _list_active_tasks(json_request['params'])
         # lg.out(14, '    %s' % pprint.pformat(result))
         return result
     except:
@@ -89,11 +91,34 @@ def _list(params):
             "rights": "",
             "size": item[3],
             "date": item[4],
-            "status": item[5],
+            # "status": item[5],
+            "dirpath": item[5],
+            "has_childs": item[6],
+            "versions": item[7],
         })
     return { 'result': result, }
 
-#------------------------------------------------------------------------------ 
+
+def _list_all(params):
+    result = []
+    lst = backup_fs.ListAllBackupIDsAdvanced()
+    for item in lst:
+        if item[2] == 'index':
+            continue
+        result.append({
+            "type": 'file', 
+            "name": item[1],
+            "id": item[2],
+            "rights": "",
+            "size": item[3],
+            "date": item[4],
+            # "status": item[5],
+            "dirpath": item[5],
+            "has_childs": item[6],
+            "versions": item[7],
+        })
+    return { 'result': result, }
+
 
 def _list_local(params):
     result = []
@@ -107,6 +132,7 @@ def _list_local(params):
                 "size": "",
                 "date": "",
                 "type": "dir",
+                "dirpath": path,
             })
     else:
         if bpio.Windows() and len(path) == 2 and path[1] == ':':
@@ -122,10 +148,10 @@ def _list_local(params):
                 "size": str(os.path.getsize(itempath)),
                 "date": str(os.path.getmtime(itempath)),
                 "type": "dir" if os.path.isdir(itempath) else "file", 
+                "dirpath": apath,
             })
     return { 'result': result, }
   
-#------------------------------------------------------------------------------ 
 
 def _upload(params):
     path = params['path'].lstrip('/')
@@ -141,18 +167,40 @@ def _upload(params):
         else:
             pathID, iter, iterID = backup_fs.AddFile(localPath, True)
             result.append('new file was added: %s' % localPath)
-    print '_add_file_folder', pathID, localPath
-    backup_control.StartSingle(pathID)
+    backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update()
     result.append('backup started: %s' % pathID)
     return { 'result': result, }
 
-#------------------------------------------------------------------------------ 
+
+def _download(params):
+    # localName = params['name']
+    backupID = params['backupid']
+    restorePath = bpio.portablePath(params['dest_path'])
+    # overwrite = params['overwrite']
+    if not packetid.Valid(backupID):
+        return { 'result': { "success": False, "error": "path %s is not valid" % backupID} }
+    pathID, version = packetid.SplitBackupID(backupID)
+    if not pathID:
+        return { 'result': { "success": False, "error": "path %s is not valid" % backupID} }
+    if backup_control.IsBackupInProcess(backupID):
+        return { 'result': { "success": True, "error": None } }
+    if backup_control.HasTask(pathID):
+        return { 'result': { "success": True, "error": None } }
+    localPath = backup_fs.ToPath(pathID)
+    if localPath == restorePath:
+        restorePath = os.path.dirname(restorePath)
+    def _itemRestored(backupID, result): 
+        backup_fs.ScanID(packetid.SplitBackupID(backupID)[0])
+        backup_fs.Calculate()
+    restore_monitor.Start(backupID, restorePath, _itemRestored) 
+    return { 'result': { "success": True, "error": None } }
+
 
 def _delete(params):
-    localPath = params['path'].lstrip('/')
+    # localPath = params['path'].lstrip('/')
     localName = params['name']
     pathID = params['id']
     if not packetid.Valid(pathID):
@@ -176,37 +224,34 @@ def _delete(params):
     control.request_update()
     backup_monitor.A('restart')
     return { 'result': { "success": True, "error": None } }
-
     
-    
-#------------------------------------------------------------------------------ 
-
-def _download(params):
-    localName = params['name']
-    backupID = params['id']
-    restorePath = bpio.portablePath(params['dest_path'])
-    overwrite = params['overwrite']
-    if not packetid.Valid(backupID):
-        return { 'result': { "success": False, "error": "path %s is not valid" % backupID} }
-    pathID, version = packetid.SplitBackupID(backupID)
-    if not pathID:
-        return { 'result': { "success": False, "error": "path %s is not valid" % backupID} }
-    if backup_control.IsBackupInProcess(backupID):
-        return { 'result': { "success": True, "error": None } }
-    if backup_control.HasTask(pathID):
-        return { 'result': { "success": True, "error": None } }
-    localPath = backup_fs.ToPath(pathID)
-    if localPath == restorePath:
-        restorePath = os.path.dirname(restorePath)
-    def _itemRestored(backupID, result): 
-        backup_fs.ScanID(packetid.SplitBackupID(backupID)[0])
-        backup_fs.Calculate()
-    restore_monitor.Start(backupID, restorePath, _itemRestored) 
-    return { 'result': { "success": True, "error": None } }
-
-#------------------------------------------------------------------------------ 
 
 def _rename(params):
     return { 'result': { "success": False, "error": "not done yet" } }
+
+
+def _list_active_tasks(params):
+    result = []
+    for tsk in backup_control.ListPendingTasks():
+        result.append({
+            'name': os.path.basename(tsk.localPath),
+            'path': os.path.dirname(tsk.localPath),
+            'id': tsk.pathID,
+            'version': '',
+            'mode': 'up',
+            'progress': '0%' })
+    for backupID in backup_control.ListRunningBackups():
+        backup_obj = backup_control.GetRunningBackupObject(backupID)
+        pathID, versionName = packetid.SplitBackupID(backupID)
+        result.append({
+            'name': os.path.basename(backup_obj.sourcePath),
+            'path': os.path.dirname(backup_obj.sourcePath),
+            'id': pathID,
+            'version': versionName,
+            'mode': 'up',
+            'progress': misc.percent2string(backup_obj.progress()) })
+    # for backupID in restore_monitor.GetWorkingIDs():
+    #     result.append(backupID)
+    return { 'result': result, }
 
 

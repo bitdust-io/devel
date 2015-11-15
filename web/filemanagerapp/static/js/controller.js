@@ -1,8 +1,8 @@
 (function(window, angular, $) {
     "use strict";
     angular.module('FileManagerApp').controller('FileManagerCtrl', [
-    '$scope', '$translate', '$cookies', '$interval', '$http', 'fileManagerConfig', 'item', 'fileNavigator', 'fileUploader',
-    function($scope, $translate, $cookies, $interval, $http, fileManagerConfig, Item, FileNavigator, FileUploader) {
+    '$scope', '$translate', '$cookies', '$interval', '$http', 'fileManagerConfig', 'item', 'fileNavigator', 'fileUploader', 'activeTasks', 
+    function($scope, $translate, $cookies, $interval, $http, fileManagerConfig, Item, FileNavigator, FileUploader, ActiveTasks) {
 
         $scope.config = fileManagerConfig;
         $scope.appName = fileManagerConfig.appName;
@@ -11,9 +11,11 @@
         $scope.temp = new Item();
         $scope.fileNavigator = new FileNavigator();
         $scope.fileUploader = FileUploader;
+        $scope.activeTasks = new ActiveTasks();
         $scope.uploadFileList = [];
         $scope.viewTemplate = $cookies.viewTemplate || 'main-table.html';
         $scope.refresher_task = null;
+        $scope.refresh_interval = 1000;
 
         $scope.setTemplate = function(name) {
             $scope.viewTemplate = $cookies.viewTemplate = name;
@@ -40,15 +42,15 @@
             if (item.isFolder()) {
                 return $scope.fileNavigator.folderClick(item);
             };
-            if (item.isImage()) {
+            /*if (item.isImage()) {
                 return item.preview();
-            }
-            if (item.isEditable()) {
+            }*/
+            /*if (item.isEditable()) {
                 item.getContent();
                 $scope.touch(item);
                 $('#edit').modal('show');
                 return;
-            }
+            }*/
         };
 
         $scope.edit = function(item) {
@@ -142,7 +144,7 @@
         };
         
         $scope.downloadTo = function(item, dest_path) {
-        	debug.log('controller.downloadTo', item, dest_path);
+        	//debug.log('controller.downloadTo', item, dest_path);
         	item.downloadTo(dest_path, function(data) {
             	$scope.fileNavigator.refresh();
                 $('#downloadselector').modal('hide');
@@ -152,6 +154,18 @@
         	});
         };
 
+        $scope.synchronizeItem = function(item) {
+            // temp.tempModel.path = item.model.fullPath().replace(/^\/*/g, '').split('/');
+            item.upload(function(data) {
+            	//var fullPath = temp.tempModel.path;
+            	//$scope.fileNavigator.currentPath = fullPath && fullPath[0] === "" ? [] : fullPath.slice(0, fullPath.length-1);
+            	//debug.log('controller.upload.success', temp.tempModel.path, $scope.fileNavigator.currentPath);
+                $scope.fileNavigator.refresh();
+            }, function() {
+            	$scope.fileNavigator.refresh();
+        	});
+        };
+        
         $scope.uploadFiles = function() {
             $scope.fileUploader.upload($scope.uploadFileList, $scope.fileNavigator.currentPath).success(function() {
                 $scope.fileNavigator.refresh();
@@ -203,6 +217,7 @@
                 if (data == 'True') {
                 	// debug.log('need to update !!!');
                 	$scope.fileNavigator.refresh_soft();
+                	$scope.activeTasks.refresh();
                 } else if (data == 'False') {
                 	//debug.log('not need to update'); 
                 } else if (data == 'None') {
@@ -221,7 +236,7 @@
         	$scope.refresher_task = $interval(function() {
         		$scope.readRepaintFlag();
         	},	
-        	250);
+        	$scope.refresh_interval);
         };
         
         $scope.stopRefresherTask = function () {
@@ -229,13 +244,20 @@
                 $interval.cancel($scope.refresher_task);
                 $scope.refresher_task = null;
             }
-        };    	
+        };
+        
+        $scope.navigateTo = function (itemPath) {
+        	$scope.fileNavigator.currentPath = itemPath.split('/'); 
+        	$scope.fileNavigator.refresh();
+        };
 
         $scope.changeLanguage($scope.getQueryParam('lang'));
         $scope.isWindows = $scope.getQueryParam('server') === 'Windows';
 
         $scope.fileNavigator.refresh();
-        $scope.startRefresherTask();
+    	$scope.activeTasks.refresh();
+
+    	$scope.startRefresherTask();
         
     }]);
 })(window, angular, jQuery);

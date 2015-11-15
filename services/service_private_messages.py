@@ -23,7 +23,7 @@ class PrivateMessagesService(LocalService):
     config_path = 'services/private-messages/enabled'
     
     def dependent_on(self):
-        return ['service_gateway',
+        return ['service_p2p_hookups',
                 'service_entangled_dht',
                 ]
     

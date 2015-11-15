@@ -12,12 +12,12 @@
         removeUrl: "/filemanager/bridge",
         editUrl: "/filemanager/bridge",
         getContentUrl: "/filemanager/bridge",
-        //addFileFolderUrl: "/filemanager/bridge",
         createFolderUrl: "/filemanager/bridge",
         downloadFileUrl: "/filemanager/bridge",
         compressUrl: "/filemanager/bridge",
         extractUrl: "/filemanager/bridge",
         permissionsUrl: "/filemanager/bridge",
+        tasksUrl: "/filemanager/bridge",
         
         allowedActions: {
             rename: true,
@@ -28,8 +28,10 @@
             compressChooseName: true,
             extract: true,
             download: true,
+            synchronize: true,
             preview: true,
-            remove: true
+            remove: true,
+            tasks: true,
         },
 
         enablePermissionsRecursive: true,

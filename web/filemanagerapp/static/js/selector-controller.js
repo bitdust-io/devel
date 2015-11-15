@@ -55,7 +55,7 @@
         $scope.fileNavigator = new FileNavigator();
 
         $rootScope.openDownloadToNavigator = function(temp) {
-        	debug.log('openDownloadToNavigator', temp);
+        	//debug.log('openDownloadToNavigator', temp);
             $scope.fileNavigator.mode = 'select_download_path';
             $scope.fileNavigator.targetItem = temp;
             $scope.fileNavigator.currentPath = temp.tempModel.path.slice(); // item.model.path.slice();

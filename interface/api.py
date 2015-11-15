@@ -185,7 +185,7 @@ def backup_start_id(pathID):
     local_path = backup_fs.ToPath(pathID)
     if local_path is not None:
         if bpio.pathExist(local_path):
-            backup_control.StartSingle(pathID)
+            backup_control.StartSingle(pathID, local_path)
             backup_fs.Calculate()
             backup_control.Save()
             control.request_update()
@@ -212,7 +212,7 @@ def backup_start_path(path):
         else:
             pathID, iter, iterID = backup_fs.AddFile(localPath, True)
             result.append('new file was added: %s' % localPath)
-    backup_control.StartSingle(pathID)
+    backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update()

@@ -14,7 +14,7 @@ mkdir build\icons
 
 @echo.
 @echo [ copy python files from bitdust.environment ]
-xcopy ..\..\..\bitdust.environment\python279\* build\python /E /R /H /Y /Q
+xcopy ..\..\..\bitdust.environment\python279_win32\* build\python /E /R /H /Y /Q
 
 
 @echo.
