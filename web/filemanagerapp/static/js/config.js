@@ -32,6 +32,8 @@
             preview: true,
             remove: true,
             tasks: true,
+            cancel: true,
+            eraseversion: true,
         },
 
         enablePermissionsRecursive: true,

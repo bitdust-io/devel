@@ -1,11 +1,4 @@
 <table class="table table-striped table-hover mb0 table-files">
-    <thead>
-        <tr>
-            <th>{{"name" | translate}}</th>
-            <!-- <th class="hidden-sm hidden-xs">{{"date" | translate}}</th> -->
-            <th class="text-right">{{"actions" | translate}}</th>
-        </tr>
-    </thead>
     <tbody class="file-item">
         <tr data-ng-show="fileNavigator.requesting">
             <td colspan="2">
@@ -30,23 +23,37 @@
         <tr data-ng-show="!fileNavigator.requesting" data-ng-repeat="item in fileNavigator.fileList | orderBy: orderProp">
             <td class="text-left">
                 <div class="local-table-item-name">
-                    <a href="" data-ng-click="fileNavigator.folderClick(item)" title="{{item.model.name}}">
-                        <i class="glyphicon glyphicon-folder-close"></i>
+                    <a href="" 
+                        data-ng-click="fileNavigator.folderClick(item)" 
+                        title="{{item.model.name}}">
+                        <i data-ng-show="item.isFolder() && !item.isDrive()" class="glyphicon glyphicon-folder-open"></i>
+                        <i data-ng-show="item.isFolder() && item.isDrive()" class="glyphicon glyphicon-hdd"></i>
+                        <i data-ng-show="!item.isFolder()" class="glyphicon glyphicon-file"></i>
                         {{item.model.name}}
                     </a>
                 </div>
             </td>
-            <td data-ng-show="!item.isFolder()" width="1%" class="text-right">
-                <button class="btn btn-sm btn-success upload-from-button" data-ng-click="uploadFrom(item, temp)">
-                    <i class="glyphicon glyphicon-hand-up"></i>
-                    {{"upload_file_item" | translate}}
-                </button>
-            </td>
-            <td data-ng-show="item.isFolder()" width="1%" class="text-right">
-                <button data-ng-show="!item.isDrive()" class="btn btn-sm btn-success upload-from-button" data-ng-click="uploadFrom(item, temp)">
-                    <i class="glyphicon glyphicon-hand-up"></i>
-                    {{"upload_folder_item" | translate}}
-                </button>
+            <td width="1%" class="local-table-item-button text-right">
+                <div data-ng-show="!item.isFolder()">
+                    <button class="btn btn-sm btn-success upload-from-button" 
+                            data-ng-click="uploadFrom(item, temp)"
+                            title="{{'upload_file_item' | translate}}">
+                        <i class="glyphicon glyphicon-upload"></i>
+                    </button>
+                </div>
+                <div data-ng-show="item.isFolder() && !item.isDrive()" >
+                    <button class="btn btn-sm btn-success upload-from-button" 
+                            data-ng-click="uploadFrom(item, temp)"
+                            title="{{'upload_folder_item' | translate}}">
+                        <i class="glyphicon glyphicon-upload"></i>
+                    </button>
+                </div>
+                <div data-ng-show="item.isFolder() && item.isDrive()">
+                    <button class="btn btn-sm btn-default upload-from-button" 
+                            data-ng-click="fileNavigator.folderClick(item)">
+                        <i class="glyphicon glyphicon-open"></i>
+                    </button>
+                </div>
             </td>
         </tr>
     </tbody>

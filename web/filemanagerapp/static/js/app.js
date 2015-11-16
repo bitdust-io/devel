@@ -33,6 +33,7 @@
 
     app.directive('ngRightClick', ['$parse', function($parse) {
         return function(scope, element, attrs) {
+        	debug.log(scope, element, attrs);
             var fn = $parse(attrs.ngRightClick);
             element.bind('contextmenu', function(event) {
                 scope.$apply(function() {
@@ -56,7 +57,9 @@
     /**
      * jQuery inits
      */
-    var menuSelectors = '.main-navigation .file-item td a, .iconset .thumbnail, .active-tasks-panel .active-task';
+    var itemSelectors = '.main-navigation .file-item td a, .iconset .thumbnail';
+    var activeTaskSelectors = '.active-tasks-panel .active-task';
+    var versionSelectors = '.version';
 
     $(window.document).on('shown.bs.modal', '.modal', function() {
         var self = this;
@@ -67,16 +70,32 @@
     });
 
     $(window.document).on('click', function() {
-        $("#context-menu").hide();
+        $(".context-menu").hide();
     });
 
-    $(window.document).on('contextmenu', menuSelectors, function(e) {
+    $(window.document).on('contextmenu', itemSelectors, function(e) {
     	//debug.log(e.pageX, e.pageY);
-        $("#context-menu").hide().css({
-            left: e.pageX - 95,
-            top: e.pageY - 60,
+        $("#context-menu-item").hide().css({
+            left: e.pageX - 30,
+            top: e.pageY - 50,
         }).show();
         e.preventDefault();
     });
 
+    $(window.document).on('contextmenu', activeTaskSelectors, function(e) {
+        $("#context-menu-active-task").hide().css({
+            left: e.pageX - 30,
+            top: e.pageY - 50,
+        }).show();
+        e.preventDefault();
+    });
+
+    $(window.document).on('contextmenu', versionSelectors, function(e) {
+        $("#context-menu-version").hide().css({
+            left: e.pageX - 30,
+            top: e.pageY - 50,
+        }).show();
+        e.preventDefault();
+    });
+    
 })(window, angular, jQuery);

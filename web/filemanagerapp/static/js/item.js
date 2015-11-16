@@ -11,10 +11,10 @@ Date.prototype.isValid = function () {
 	    function($http, $translate, fileManagerConfig, Chmod) {
 
         var Item = function(model) {
-        	debug.log(model);
+        	// debug.log(model);
             var rawModel = {
                 name: model && model.name || '',
-                path: model && model.dirpath.split('/') || [],
+                path: model && model.dirpath && model.dirpath.split('/') || [],
                 id: model && model.id || '',
                 type: model && model.type || 'file',
                 size: model && model.size || 0,
@@ -25,9 +25,6 @@ Date.prototype.isValid = function () {
                 has_childs: model && model.has_childs || false,
                 versions: model && model.versions || [],
                 recursive: false,
-                sizeKb: function() {
-                    return Math.round(this.size / 1024, 1);
-                },
                 fullPath: function() {
                     return ('/' + this.path.join('/') + '/' + this.name).trimLeft('/').replace(/\/\//, '/');
                 }
@@ -43,14 +40,14 @@ Date.prototype.isValid = function () {
         };
         
         Item.prototype.update_model = function(model) {
-        	this.model.name = model.name || '',
-        	this.model.path = model.dirpath.split('/') || [],
-        	this.model.id = model.id || '',
-        	this.model.type = model.type || 'file',
-        	this.model.size = model.size || 0,
-        	this.model.date = model.date || '',
-        	this.model.has_childs = model.has_childs || false,
-        	this.model.versions = model.versions || [],
+        	this.model.name = model.name || '';
+        	this.model.path = model.dirpath.split('/') || [];
+        	this.model.id = model.id || '';
+        	this.model.type = model.type || 'file';
+        	this.model.size = model.size || 0;
+        	this.model.date = model.date || '';
+        	this.model.has_childs = model.has_childs || false;
+        	this.model.versions = model.versions || [];
         };
 
         Item.prototype.update = function() {
@@ -390,6 +387,11 @@ Date.prototype.isValid = function () {
         Item.prototype.isLocal = function() {
             return this.model.id == '';
         };
+        
+        Item.prototype.sizeKB = function() {
+            return Math.round(this.model.size / 1024, 1);
+        };
+        
 
         return Item;
     }]);

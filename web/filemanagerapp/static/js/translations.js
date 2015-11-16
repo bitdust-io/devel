@@ -66,6 +66,7 @@
             remove: "Delete",
             edit: "Edit",
             copy: "Copy",
+            copies: "Copies",
             rename: "Rename",
             extract: "Extract",
             compress: "Compress",

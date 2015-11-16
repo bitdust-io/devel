@@ -165,7 +165,7 @@ def backups_id_list():
     from contacts import contactsdb
     from lib import diskspace
     result = []
-    for backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
+    for itemName, backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
         if versionInfo[1] >= 0 and contactsdb.num_suppliers() > 0:
             szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1]/contactsdb.num_suppliers()) 
         else:

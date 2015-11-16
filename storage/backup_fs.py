@@ -1086,24 +1086,10 @@ def GetBackupStatus(backupID, item_info, item_name, parent_path_existed=None):
     from storage import backup_control
     from storage import restore_monitor
     from storage import backup_matrix
-    from system import dirsize
     if backup_control.IsBackupInProcess(backupID):
         backupObj = backup_control.GetRunningBackupObject(backupID)
         if backupObj:
-#            if parent_path_existed and ( item_info.type == PARENT or item_info.size <= 0 ): 
-#                dir_size = dirsize.getInBytes(parent_path_existed+'/'+item_name, 0)
-#            else:
-#                dir_size = max(item_info.size, 0)
-#            dataSent = backupObj.dataSent
-#            # blockNumber = backupObj.blockNumber + 1
-#            percent = 0.0
-#            if dir_size > 0: 
-#                if dataSent > dir_size:
-#                    dataSent = dir_size
-#                percent = 100.0 * dataSent / dir_size
-#            # blocks, percent_remote, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
-#            # return '%s / %s ' % (misc.percent2string(percent), misc.percent2string(weakPercent))
-            return misc.percent2string(backupObj.progress())
+            return 'up', misc.percent2string(backupObj.progress())
     elif restore_monitor.IsWorking(backupID):
         restoreObj = restore_monitor.GetWorkingRestoreObject(backupID)
         if restoreObj:
@@ -1114,11 +1100,11 @@ def GetBackupStatus(backupID, item_info, item_name, parent_path_existed=None):
                 percent = 100.0 * currentBlock / maxBlockNum
             # blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
             # return '%s / %s' % (misc.percent2string(percent), misc.percent2string(weakPercent))
-            return misc.percent2string(percent)
+            return 'down', misc.percent2string(percent)
     blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
     # localPercent, localFiles, totalSize, maxBlockNum, localStats = backup_matrix.GetBackupLocalStats(backupID)
     # return '%s / %s' % (misc.percent2string(localPercent), misc.percent2string(weakPercent))
-    return misc.percent2string(weakPercent)
+    return 'ready', misc.percent2string(weakPercent)
 
 def ExtractVersions(item_id, item_info, path_exist=None):
     item_size = 0
@@ -1133,12 +1119,13 @@ def ExtractVersions(item_id, item_info, path_exist=None):
         version_size = version_info[1]
         if version_size > 0:
             item_size += version_size
-        version_status = GetBackupStatus(backupID, item_info, item_info.name(), path_exist)
+        version_state, version_status = GetBackupStatus(backupID, item_info, item_info.name(), path_exist)
         # item_status += version_status + ' ' 
         versions.append({'backupid': backupID,
                          'time': version_time,
                          'size': version_size,
-                         'status': version_status, }) 
+                         'status': version_status,
+                         'state': version_state, }) 
     # if not item_status:
         # item_status = '-'
     item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''
@@ -1265,8 +1252,7 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
     def visitor(path_id, path, info):
         for version in info.list_versions(sorted, reverse):
             backupID = (path_id+'/'+version).lstrip('/')
-            GetBackupStatus(backupID, info, info.name())
-            lst.append(('file',  info.name(), backupID, info.get_version_info(version), path))
+            lst.append((info.name(), backupID, info.get_version_info(version), path))
     TraverseByID(visitor)
     return lst
 

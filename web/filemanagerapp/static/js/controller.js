@@ -160,9 +160,9 @@
             	//var fullPath = temp.tempModel.path;
             	//$scope.fileNavigator.currentPath = fullPath && fullPath[0] === "" ? [] : fullPath.slice(0, fullPath.length-1);
             	//debug.log('controller.upload.success', temp.tempModel.path, $scope.fileNavigator.currentPath);
-                $scope.fileNavigator.refresh();
+                $scope.fileNavigator.refresh_soft();
             }, function() {
-            	$scope.fileNavigator.refresh();
+            	$scope.fileNavigator.refresh_soft();
         	});
         };
         
@@ -212,7 +212,11 @@
         
         $scope.readRepaintFlag = function() { 
             // debug.log('read_flag');
-            $http.get('/repaintflag').success(function(data) {
+            $http({
+                url: '/repaintflag',
+                method: "GET",
+                cache: false,   
+            }).success(function(data) {
                 // debug.log('    ', data);
                 if (data == 'True') {
                 	// debug.log('need to update !!!');

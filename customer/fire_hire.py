@@ -237,7 +237,6 @@ class FireHire(automat.Automat):
             elif event == 'search-failed' and not self.isSomeoneToDismiss(arg) :
                 self.state = 'READY'
                 self.doScheduleNextRestart(arg)
-                self.doNotifySuppliersChanged(arg)
             elif event == 'search-failed' and self.isSomeoneToDismiss(arg) :
                 self.state = 'FIRE_MANY'
                 self.doDisconnectSuppliers(arg)
@@ -537,7 +536,7 @@ class FireHire(automat.Automat):
         if driver.is_started('service_backups'):
             from storage import backup_monitor
             backup_monitor.A('suppliers-changed')
-    
+
     def doNotifyFinished(self, arg):
         if driver.is_started('service_backups'):
             from storage import backup_monitor

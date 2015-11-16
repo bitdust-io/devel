@@ -1,29 +1,19 @@
-<div id="context-menu" class="dropdown clearfix animated fast fadeIn">
+<div id="context-menu-item" class="context-menu dropdown clearfix animated fast fadeIn">
     <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
-        <!--  <li data-ng-show="config.allowedActions.rename"><a href="" tabindex="-1" data-toggle="modal" data-target="#rename"><i class="glyphicon glyphicon-edit"></i> {{'rename' | translate}}</a></li>  -->
-        <!-- <li data-ng-show="config.allowedActions.copy && !temp.isFolder()"><a href="" tabindex="-1" data-toggle="modal" data-target="#copy"><i class="glyphicon glyphicon-log-out"></i> {{'copy' | translate}}</a></li> -->
-        <!-- <li data-ng-show="config.allowedActions.edit && temp.isEditable()"><a href="" tabindex="-1" data-toggle="modal" data-target="#edit" data-ng-click="temp.getContent();"><i class="glyphicon glyphicon-pencil"></i> {{'edit' | translate}}</a></li> -->
-        <!-- <li data-ng-show="config.allowedActions.changePermissions"><a href="" tabindex="-1" data-toggle="modal" data-target="#changepermissions"><i class="glyphicon glyphicon-lock"></i> {{'permissions' | translate}}</a></li> -->
-        <!-- <li data-ng-show="config.allowedActions.compress && temp.isCompressible()"><a href="" tabindex="-1" data-toggle="modal" data-target="#compress"><i class="glyphicon glyphicon-compressed"></i> {{'compress' | translate}}</a></li> -->
-        <!-- <li data-ng-show="config.allowedActions.extract && temp.isExtractable()"><a href="" tabindex="-1" data-toggle="modal" data-target="#extract" data-ng-click="temp.tempModel.name=''"><i class="glyphicon glyphicon-export"></i> {{'extract' | translate}}</a></li> -->
 
         <li data-ng-show="config.allowedActions.synchronize">
             <a href="" tabindex="-1" data-ng-click="synchronizeItem(temp)">
-                <i style="color: blue;" class="glyphicon glyphicon-upload"></i>
+                <i style="color: blue;" class="glyphicon glyphicon-refresh"></i>
                 {{'synchronize' | translate}}
             </a>
         </li>
 
-        <!-- || temp.isLocal() --> 
         <li data-ng-show="config.allowedActions.download && temp.hasVersions()">
             <a href="" tabindex="-1" data-ng-click="openDownloadToNavigator(temp)">
                 <i style="color: green;" class="glyphicon glyphicon-download"></i>
                 {{'download' | translate}}
             </a>
         </li>
-
-        <!-- <li data-ng-show="config.allowedActions.preview && temp.isImage()"><a href="" tabindex="-1" data-ng-click="temp.preview()"><i class="glyphicon glyphicon-picture"></i> {{'view_item' | translate}}</a></li> -->
-        <!-- <li class="divider"></li> -->
 
         <li data-ng-show="config.allowedActions.remove">
             <a href="" tabindex="-1" 
@@ -35,3 +25,33 @@
 
     </ul>
 </div>
+
+
+<div id="context-menu-active-task" class="context-menu dropdown clearfix animated fast fadeIn">
+    <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
+
+        <li data-ng-show="config.allowedActions.cancel">
+            <a href="" tabindex="-1" data-ng-click="cancelTask(temp)">
+                <i style="color: red;" class="glyphicon glyphicon-refresh"></i>
+                {{'cancel' | translate}}
+            </a>
+        </li>
+    
+    </ul>
+</div>
+
+
+<div id="context-menu-version" class="context-menu dropdown clearfix animated fast fadeIn">
+    <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
+
+        <li data-ng-show="config.allowedActions.eraseversion">
+            <a href="" tabindex="-1" 
+                data-toggle="modal" data-ng-click="eraseVersion(temp)">
+                <i style="color:red;" class="glyphicon glyphicon-trash"></i>
+                {{'remove' | translate}}
+            </a>
+        </li>
+    
+    </ul>
+</div>
+        

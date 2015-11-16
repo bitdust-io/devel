@@ -5,12 +5,21 @@
                 <i class="glyphicon glyphicon-folder-open" data-ng-show="item.model.type === 'dir'"></i>
                 <i class="glyphicon glyphicon-file" data-ng-show="item.model.type === 'file'"></i>
             </div>
-            {{item.model.name | strLimit : 18 }}
+            <div class="item-icon-name">
+                {{item.model.name | strLimit : 18 }}
+            </div>                
             <div class="item-icon-size" data-ng-show="item.model.size > 0">
-                {{item.model.sizeKb()}}kb
+                {{item.sizeKB()}}kb
             </div>
-            <div class="item-icon-size" data-ng-show="item.model.status != '-'">
-                {{item.model.status}}
+            <div class="item-icon-versions">
+                <button class="version btn btn-sm btn-success"
+                        data-ng-repeat="version in item.model.versions"
+                        title="{{version.status}}">
+                    <i class="fa fa-spinner fa-pulse"
+                       data-ng-show="{{version.state!='ready'}}"></i>
+                    <i class="fa fa-cube"
+                       data-ng-show="{{version.state=='ready'}}"></i>
+                </button>
             </div>
         </a>
     </div>
