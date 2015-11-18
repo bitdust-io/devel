@@ -59,12 +59,27 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_filemanager(self, json_request):
         return api.filemanager(json_request)
 
+    def jsonrpc_backups_update(self):
+        return api.backups_update()
+
     def jsonrpc_backups_list(self):
         return api.backups_list()
+
+    def jsonrpc_backups_id_list(self):
+        return api.backups_id_list()
         
     def jsonrpc_backup_start_path(self, path):
         return api.backup_start_path(path)
-        
+
+    def jsonrpc_backup_delete_local(self, path):
+        return api.backup_delete_local(path)
+
+    def jsonrpc_backup_delete_id(self, pathID):
+        return api.backup_delete_id(pathID)
+
+    def jsonrpc_backup_delete_path(self, path):
+        return api.backup_delete_path(path)
+
     def jsonrpc_config_list(self, sort=False):
         return api.config_list(sort)
 

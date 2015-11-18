@@ -50,7 +50,7 @@ def A(event=None, arg=None):
     global _NicknameHolder
     if _NicknameHolder is None:
         # set automat name and starting state here
-        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 6)
+        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 8, False)
     if event is not None:
         _NicknameHolder.automat(event, arg)
     return _NicknameHolder

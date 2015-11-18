@@ -390,10 +390,10 @@ class Initializer(automat.Automat):
         Finish initialization part, run delayed methods.
         """
         lg.out(2,"initializer._init_modules")
-        from updates import os_windows_update
+        # from updates import os_windows_update
         from web import webcontrol
-        os_windows_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
-        reactor.callLater(0, os_windows_update.init)
+        # os_windows_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
+        # reactor.callLater(0, os_windows_update.init)
         reactor.callLater(0, webcontrol.OnInitFinalDone)
     
 #------------------------------------------------------------------------------ 

@@ -342,7 +342,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     # get the working item
     item = backup_fs.GetByID(pathID)
     if item is None:
-        return
+        return None
     # this is a list of all known backups of this path 
     versions = item.list_versions()
     for version in versions:
@@ -375,6 +375,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     if saveDB:
         Save()
         control.request_update()
+    return True
 
 #------------------------------------------------------------------------------ 
 

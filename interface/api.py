@@ -137,22 +137,27 @@ def filemanager(json_request):
 def backups_update():
     from storage import backup_monitor
     backup_monitor.A('restart') 
-    from storage import backup_fs
-    result = []
-    for pathID, localPath, item in backup_fs.IterateIDs():
-        result.append((pathID, localPath, item.type, item.size, item.versions))
-        # if len(result) > 20:
-        #     break
     from logs import lg
-    lg.out(4, 'api.backups_update %s' % result)
-    return { 'result': result, }
+    lg.out(4, 'api.backups_update')
+    return { 'result': 'the main loop has been restarted', }
 
 
 def backups_list():
     from storage import backup_fs
+    from lib import diskspace
     result = []
     for pathID, localPath, item in backup_fs.IterateIDs():
-        result.append((pathID, localPath, item.type, item.size, item.versions))
+        result.append({
+            'id': pathID,
+            'path': localPath,
+            'type': backup_fs.TYPES.get(item.type, '').lower(),
+            'size': item.size,
+            'versions': map(
+                lambda v: {
+                   'version': v,
+                   'blocks': max(0, item.versions[v][0]),
+                   'size': diskspace.MakeStringFromBytes(max(0, item.versions[v][1])),},
+                item.versions.keys())})
         # if len(result) > 20:
         #     break
     from logs import lg
@@ -171,9 +176,12 @@ def backups_id_list():
         else:
             szver = '?'
         szver = diskspace.MakeStringFromBytes(versionInfo[1]) if versionInfo[1] >= 0 else '?'
-        result.append((backupID, szver, localPath))
-        if len(result) > 20:
-            break
+        result.append({
+            'backupid': backupID,
+            'size': szver,
+            'path': localPath, })
+        # if len(result) > 20:
+        #     break
     return { 'result': result, }
 
 
@@ -200,23 +208,23 @@ def backup_start_path(path):
     from storage import backup_fs
     from storage import backup_control
     from web import control
-    localPath = unicode(path)
+    localPath = bpio.portablePath(unicode(path))
     if not bpio.pathExist(localPath):
         return {'result': 'local path %s not found' % path, }
-    result = []
+    result = ''
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
         if bpio.pathIsDir(localPath):
             pathID, iter, iterID = backup_fs.AddDir(localPath, True)
-            result.append('new folder was added: %s' % localPath)
+            result += 'new folder was added: %s, ' % localPath
         else:
             pathID, iter, iterID = backup_fs.AddFile(localPath, True)
-            result.append('new file was added: %s' % localPath)
+            result += 'new file was added: %s, ' % localPath
     backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update()
-    result.append('backup started: %s' % pathID)
+    result += 'backup started: %s' % pathID
     return { 'result': result, }
 
         
@@ -248,7 +256,6 @@ def backup_tree_add(dirpath):
     from storage import backup_fs
     from storage import backup_control
     from web import control
-    from lib import packetid
     newPathID, iter, iterID, num = backup_fs.AddLocalPath(dirpath, True)
     backup_fs.Calculate()
     backup_control.Save()
@@ -257,6 +264,67 @@ def backup_tree_add(dirpath):
         return { 'result': 'nothing was added to catalog', }
     return { 'result': '%d items were added to catalog, parent path ID is: %s  %s' % (
         num, newPathID, dirpath), }
+
+
+def backup_delete_local(backupID):
+    from storage import backup_fs
+    from storage import backup_matrix
+    from main import settings
+    from logs import lg
+    lg.out(4, 'api.backup_delete_local %s' % backupID)
+    num, sz = backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
+    backup_matrix.EraseBackupLocalInfo(backupID)
+    backup_fs.Scan()
+    backup_fs.Calculate()
+    return { 'result': "%d files were removed with total size of %s" % (num,sz) }
+
+
+def backup_delete_id(pathID):
+    from storage import backup_fs
+    from storage import backup_control
+    from storage import backup_monitor
+    from main import settings
+    from web import control
+    from logs import lg
+    lg.out(4, 'api.backup_delete_id %s' % pathID)
+    result = backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+    if not result:
+        return { 'result': 'item %s is not found in catalog' % pathID }
+    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+    backup_fs.DeleteByID(pathID)
+    backup_fs.Scan()
+    backup_fs.Calculate()
+    backup_control.Save()
+    control.request_update()
+    backup_monitor.A('restart')
+    return { 'result': 'item %s were deleted' % pathID }
+
+
+def backup_delete_path(localPath):
+    from storage import backup_fs
+    from storage import backup_control
+    from storage import backup_monitor
+    from main import settings
+    from web import control
+    from lib import packetid
+    from system import bpio
+    from logs import lg
+    localPath = bpio.portablePath(unicode(localPath))
+    lg.out(4, 'api.backup_delete_path %s' % localPath)
+    pathID = backup_fs.ToID(localPath)
+    if not pathID:
+        return { 'result': 'path %s is not found in catalog' % localPath }
+    if not packetid.Valid(pathID):
+        return { 'result': 'invalid pathID found %s' % pathID }
+    backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+    backup_fs.DeleteByID(pathID)
+    backup_fs.Scan()
+    backup_fs.Calculate()
+    backup_control.Save()
+    backup_monitor.A('restart')
+    return { 'result': 'item %s were deleted' % pathID }
+        
 
 #------------------------------------------------------------------------------ 
 

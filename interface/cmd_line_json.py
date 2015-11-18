@@ -20,6 +20,8 @@ from twisted.internet import reactor
 from lib.fastjsonrpc.client import Proxy as jsonProxy  
 from lib import jsontemplate
 
+from cmd_line_template import *
+
 #------------------------------------------------------------------------------ 
 
 def parser():
@@ -115,6 +117,8 @@ def print_template(result, template):
     """
     """
     sys.stdout.write(template.expand(result))
+    # import pprint
+    # sys.stdout.write(pprint.pformat(result, 4, 80))
 
 
 def print_template_and_stop(result, template):
@@ -341,21 +345,42 @@ def cmd_identity(opts, args, overDict, running):
 #------------------------------------------------------------------------------ 
 
 def cmd_api(opts, args, overDict):
-    tpl = jsontemplate.Template("""{.section result}
-    {@}
-{.end}""")
+    tpl = jsontemplate.Template(TPL_RAW)
     return call_jsonrpc_method_template_and_stop(args[1], tpl, *args[2:])
 
 #------------------------------------------------------------------------------ 
 
 def cmd_backups(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
-        tpl = jsontemplate.Template("""{.section result}
-    {@}
-{.end}""")
+        tpl = jsontemplate.Template(TPL_BACKUPS_LIST)
         return call_jsonrpc_method_template_and_stop('backups_list', tpl)
 
-    # TODO: do finish that!
+    if len(args) < 2 or args[1] == 'idlist':
+        tpl = jsontemplate.Template(TPL_BACKUPS_LIST_IDS)
+        return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
+
+    tpl = jsontemplate.Template(TPL_RAW)
+    if args[1] == 'start' and len(args) >= 3:
+        from lib import packetid
+        if packetid.Valid(args[2]):
+            return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[2])
+        if not os.path.exists(os.path.abspath(args[2])):
+            print_text('path %s not exist\n' % args[2])
+            return 1
+        return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[2])
+
+    if args[1] == 'delete' and len(args) >= 3:
+        if args[2] == 'local':
+            if len(args) < 4:
+                return 2
+            return call_jsonrpc_method_template_and_stop('backup_delete_local', tpl, args[3])
+        from lib import packetid
+        if packetid.Valid(args[2]):
+            return call_jsonrpc_method_template_and_stop('backup_delete_id', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('backup_delete_path', tpl, args[2])
+    
+    elif args[1] == 'update':
+        return call_jsonrpc_method_template_and_stop('backups_update', tpl)
     
     return 2
 
@@ -469,11 +494,7 @@ def cmd_set(opts, args, overDict):
         settings.init()
         sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
         result = api.config_list(sort)
-        tpl = jsontemplate.Template("""{.section result}
-{.repeated section @}
-    {key} ({type}) : {value}
-{.end}
-{.end}""")
+        tpl = jsontemplate.Template(TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         print_template(result, tpl)
         return 0 
     path = '' if len(args) < 2 else args[1]
@@ -485,17 +506,7 @@ def cmd_set(opts, args, overDict):
             result = api.config_set(path, unicode(value))
         else:
             result = api.config_get(path)
-        tpl = jsontemplate.Template("""{.section result}
-{.section error}
-    {@}
-{.or}
-    {key} ({type}) : {value}
-{.section old_value}
-    previous value : {@}
-{.or}
-{.end}    
-{.end}
-{.end}""")
+        tpl = jsontemplate.Template(TPL_OPTION_MODIFIED_WITH_ERROR)
         print_template(result, tpl)
         return 0
     return 2
@@ -505,68 +516,35 @@ def cmd_set_request(opts, args, overDict):
     name = args[1].lower()
     if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
         sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
-        tpl = jsontemplate.Template("""{.section result}
-{.repeated section @}
-    {key} ({type}) = {value}
-{.end}
-{.end}""")
+        tpl = jsontemplate.Template(TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         return call_jsonrpc_method_template_and_stop('config_list', tpl, sort)
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)    
     if len(args) == 2:
-        tpl = jsontemplate.Template("""{.section result}
-{.section error}
-    {@}
-{.or}
-    {key} ({type}) : {value}
-{.end}
-{.end}""")
+        tpl = jsontemplate.Template(TPL_OPTION_SINGLE)
         return call_jsonrpc_method_template_and_stop('config_get', tpl, path)
     value = ' '.join(args[2:])
-    tpl = jsontemplate.Template("""{.section result}
-    {key} ({type}) : {value}
-{.section old_value}
-    previous value : {@}
-{.or}
-{.end}
-{.end}""")
+    tpl = jsontemplate.Template(TPL_OPTION_MODIFIED)
     return call_jsonrpc_method_template_and_stop('config_set', tpl, path, value)
 
 #------------------------------------------------------------------------------ 
 
 def cmd_message(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
-        tpl = jsontemplate.Template("""{.section result}
-    {@}        
-{.end}""")
+        tpl = jsontemplate.Template(TPL_RAW)
         return call_jsonrpc_method_template_and_stop('list_messages', tpl)
     if len(args) >= 4 and args[1] in [ 'send', ]:
-        tpl = jsontemplate.Template("""{.section result}
-    {@}
-{.end}""")
+        tpl = jsontemplate.Template(TPL_RAW)
         return call_jsonrpc_method_template_and_stop('send_message', tpl, args[2], args[3]) 
     return 2
 
 #------------------------------------------------------------------------------ 
 
 def cmd_friend(opts, args, overDict):
-    tpl_lookup = jsontemplate.Template(
-"""{.section result}
-    {result}
-    {nickname}
-    {position}
-    {idurl}
-{.end}""")
-    tpl_add = jsontemplate.Template(
-"""{.section result}
-    {@}
-{.end}""")
+    tpl_lookup = jsontemplate.Template(TPL_FRIEND_LOOKUP)
+    tpl_add = jsontemplate.Template(TPL_RAW)
     if len(args) < 2:
-        tpl = jsontemplate.Template("""{.section result}
-{.repeated section @}
-    {idurl} : {nickname}
-{.end}
-{.end}""")
+        tpl = jsontemplate.Template(TPL_FRIEND_LOOKUP_REPEATED_SECTION)
         return call_jsonrpc_method_template_and_stop('list_correspondents', tpl)
     elif len(args) > 2 and args[1] in [ 'check', 'nick', 'nickname', 'test', ]:
         return call_jsonrpc_method_template_and_stop('find_peer_by_nickname', tpl_lookup, unicode(args[2]))
@@ -777,9 +755,7 @@ def run(opts, args, pars=None, overDict=None):
     if cmd == 'ping' or cmd == 'call' or cmd == 'sendid':
         if len(args) < 1:
             return 2
-        tpl = jsontemplate.Template("""{.section result}
-    {@}        
-{.end}""")
+        tpl = jsontemplate.Template(TPL_RAW)
         return call_jsonrpc_method_template_and_stop('ping', tpl, args[1])            
                 
     #---set---
