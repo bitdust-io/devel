@@ -10,7 +10,7 @@
         <h4 class="modal-title">{{"confirm" | translate}}</h4>
       </div>
       <div class="modal-body">
-        {{'sure_to_delete' | translate}} <b>{{temp.model.name}}</b> ?
+        {{'sure_to_delete' | translate}} <b>{{temp.model.fullPath()}}</b> ?
         <div data-ng-include data-src="'error-bar'" class="clearfix"></div>
       </div>
       <div class="modal-footer">
@@ -232,91 +232,6 @@
               <div data-ng-show="fileUploader.requesting">
                   <span class="label label-warning">{{"uploading" | translate}} ...</span>
               </div>
-            </div>
-        </form>
-    </div>
-  </div>
-</div>
-
-<div class="modal animated fadeIn" id="selectpath">
-  <div class="modal-dialog">
-    <div class="modal-content">
-        <form data-ng-submit="selectPath()">
-            <div class="modal-header">
-              <button type="button" class="close" data-dismiss="modal">
-                  <span aria-hidden="true">&times;</span>
-                  <span class="sr-only">{{"close" | translate}}</span>
-              </button>
-              <h4 class="modal-title">{{"upload_file" | translate}}</h4>
-            </div>
-            <div class="modal-body">
-              <label class="radio">{{"files_will_uploaded_to" | translate}} <b>{{fileNavigator.currentPath.join('/')}}</b></label>
-              
-            </div>
-            <div class="modal-footer">
-              <div data-ng-show="!fileUploader.requesting">
-                  <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">{{"cancel" | translate}}</button>
-                  <button type="submit" class="btn btn-sm btn-primary" data-ng-disabled="!uploadFileList.length || fileUploader.requesting">{{'upload' | translate}}</button>
-              </div>
-              <div data-ng-show="fileUploader.requesting">
-                  <span class="label label-warning">{{"uploading" | translate}} ...</span>
-              </div>
-            </div>
-        </form>
-    </div>
-  </div>
-</div>
-
-<div class="modal animated fadeIn" id="changepermissions">
-  <div class="modal-dialog">
-    <div class="modal-content">
-        <form data-ng-submit="changePermissions(temp)">
-            <div class="modal-header">
-              <button type="button" class="close" data-dismiss="modal">
-                  <span aria-hidden="true">&times;</span>
-                  <span class="sr-only">{{"close" | translate}}</span>
-              </button>
-              <h4 class="modal-title">{{'change_permissions' | translate}}</h4>
-            </div>
-            <div class="modal-body">
-              <table class="table table-striped table-bordered table-hover mb0">
-                  <thead>
-                      <tr>
-                          <th>{{'permissions' | translate}}</th>
-                          <th class="col-xs-1 text-center">{{'exec' | translate}}</th>
-                          <th class="col-xs-1 text-center">{{'read' | translate}}</th>
-                          <th class="col-xs-1 text-center">{{'write' | translate}}</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <tr data-ng-repeat="(permTypeKey, permTypeValue) in temp.tempModel.perms">
-                          <td>{{permTypeKey | translate}}</td>
-                          <td data-ng-repeat="(permKey, permValue) in permTypeValue" class="col-xs-1 text-center" ng-click="main()">
-                              <label class="col-xs-12">
-                                <input type="checkbox" ng-model="temp.tempModel.perms[permTypeKey][permKey]">
-                              </label>
-                          </td>
-                      </tr>
-                </tbody>
-              </table>
-              <div class="checkbox" ng-show="config.enablePermissionsRecursive && temp.model.type === 'dir'">
-                <label>
-                  <input type="checkbox" ng-model="temp.tempModel.recursive"> {{'recursive' | translate}}
-                </label>
-              </div>
-              <div class="clearfix mt10">
-                  <span class="badge pull-left">
-                    {{'original' | translate}}: {{temp.model.perms.toCode(temp.model.type === 'dir'?'d':'-')}} ({{temp.model.perms.toOctal()}})
-                  </span>
-                  <span class="badge pull-right">
-                    {{'changes' | translate}}: {{temp.tempModel.perms.toCode(temp.model.type === 'dir'?'d':'-')}} ({{temp.tempModel.perms.toOctal()}})
-                  </span>
-              </div>
-              <div data-ng-include data-src="'error-bar'" class="clearfix"></div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">{{"cancel" | translate}}</button>
-              <button type="submit" class="btn btn-sm btn-primary" data-ng-disabled="">{{'change' | translate}}</button>
             </div>
         </form>
     </div>

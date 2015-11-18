@@ -1,21 +1,24 @@
 (function(window, angular, $) {
     "use strict";
     angular.module('FileManagerApp').controller('FileManagerCtrl', [
-    '$scope', '$translate', '$cookies', '$interval', '$http', 'fileManagerConfig', 'item', 'fileNavigator', 'fileUploader', 'activeTasks', 
-    function($scope, $translate, $cookies, $interval, $http, fileManagerConfig, Item, FileNavigator, FileUploader, ActiveTasks) {
+    '$scope', '$rootScope', '$translate', '$cookies', '$interval', '$http', 
+	'fileManagerConfig', 'item', 'fileNavigator', 'fileUploader', 'ActiveTasks',  
+    function($scope, $rootScope, $translate, $cookies, $interval, $http, 
+    		fileManagerConfig, Item, FileNavigator, FileUploader, ActiveTasks) {
 
         $scope.config = fileManagerConfig;
         $scope.appName = fileManagerConfig.appName;
         $scope.orderProp = ['model.type', 'model.name'];
         $scope.query = '';
         $scope.temp = new Item();
+        $scope.tempVersion = null;
         $scope.fileNavigator = new FileNavigator();
         $scope.fileUploader = FileUploader;
         $scope.activeTasks = new ActiveTasks();
         $scope.uploadFileList = [];
         $scope.viewTemplate = $cookies.viewTemplate || 'main-table.html';
         $scope.refresher_task = null;
-        $scope.refresh_interval = 1000;
+        $scope.refresh_interval = 500;
 
         $scope.setTemplate = function(name) {
             $scope.viewTemplate = $cookies.viewTemplate = name;
@@ -34,25 +37,34 @@
             $scope.temp = item;
         };
 
-        $scope.smartRightClick = function(item) {
-            $scope.touch(item);
-        };
-
-        $scope.smartClick = function(item) {
+        $scope.smartClick = function(item, $event) {
             if (item.isFolder()) {
                 return $scope.fileNavigator.folderClick(item);
             };
-            /*if (item.isImage()) {
-                return item.preview();
-            }*/
-            /*if (item.isEditable()) {
-                item.getContent();
-                $scope.touch(item);
-                $('#edit').modal('show');
-                return;
-            }*/
+    		$scope.touch(item);
+        	$rootScope.openContextMenu('#context-menu-item', $event);
         };
 
+        $scope.smartRightClick = function(item, $event) {
+    		$scope.touch(item);
+        	$rootScope.openContextMenu('#context-menu-item', $event);
+        };
+
+        $scope.smartClickVersion = function(item, version, $event) {
+    		$scope.touch(item);
+            $scope.tempVersion = version;
+        	$event.stopPropagation();
+        	$rootScope.openContextMenu('#context-menu-version', $event);
+        };
+
+        $scope.smartRightClickVersion = function(item, version, $event) {
+        	debug.log('smartRightClickVersion', item, version);
+    		$scope.touch(item);
+            $scope.tempVersion = version;
+        	$event.stopPropagation();
+        	$rootScope.openContextMenu('#context-menu-version', $event);
+    	};
+    	
         $scope.edit = function(item) {
             item.edit(function() {
                 $('#edit').modal('hide');
@@ -130,11 +142,17 @@
         };
         
         $scope.uploadFrom = function(item, temp) {
-            temp.tempModel.path = item.model.fullPath().replace(/^\/*/g, '').split('/');
+        	debug.log(item.model.path);
+            temp.tempModel.path = item.model.fullPath().split('/');
+            debug.log(temp.tempModel.path);
             item.upload(function(data) {
             	var fullPath = temp.tempModel.path;
-            	$scope.fileNavigator.currentPath = fullPath && fullPath[0] === "" ? [] : fullPath.slice(0, fullPath.length-1);
-            	//debug.log('controller.upload.success', temp.tempModel.path, $scope.fileNavigator.currentPath);
+            	$scope.fileNavigator.currentPath = 
+            		fullPath && 
+					fullPath[0] === "" ? [] : fullPath.slice(
+						0, fullPath.length-1);
+            	debug.log('controller.upload.success', 
+            		fullPath, $scope.fileNavigator.currentPath);
                 $scope.fileNavigator.refresh();
                 $('#localselector').modal('hide');
             }, function() {
@@ -155,11 +173,7 @@
         };
 
         $scope.synchronizeItem = function(item) {
-            // temp.tempModel.path = item.model.fullPath().replace(/^\/*/g, '').split('/');
             item.upload(function(data) {
-            	//var fullPath = temp.tempModel.path;
-            	//$scope.fileNavigator.currentPath = fullPath && fullPath[0] === "" ? [] : fullPath.slice(0, fullPath.length-1);
-            	//debug.log('controller.upload.success', temp.tempModel.path, $scope.fileNavigator.currentPath);
                 $scope.fileNavigator.refresh_soft();
             }, function() {
             	$scope.fileNavigator.refresh_soft();
@@ -167,38 +181,26 @@
         };
         
         $scope.uploadFiles = function() {
-            $scope.fileUploader.upload($scope.uploadFileList, $scope.fileNavigator.currentPath).success(function() {
+            $scope.fileUploader.upload(
+            	$scope.uploadFileList, 
+				$scope.fileNavigator.currentPath).success(function() {
                 $scope.fileNavigator.refresh();
                 $('#uploadfile').modal('hide');
             }).error(function(data) {
-                var errorMsg = data.result && data.result.error || $translate.instant('error_uploading_files');
+                var errorMsg = data.result && data.result.error || 
+                	$translate.instant('error_uploading_files');
                 $scope.temp.error = errorMsg;
             });
         };
 
-        $scope.selectPath = function() {
-            var name = item.tempModel.name && item.tempModel.name.trim();
-            item.tempModel.type = 'dir';
-            item.tempModel.path = $scope.fileNavigator.currentPath;
-            if (name && !$scope.fileNavigator.fileNameExists(name)) {
-                item.createFolder(function() {
-                    $scope.fileNavigator.refresh();
-                    $('#newfolder').modal('hide');
-                });
-            } else {
-                $scope.temp.error = $translate.instant('error_invalid_filename');
-                return false;
-            }
-            /*
-            $scope.fileUploader.upload($scope.uploadFileList, $scope.fileNavigator.currentPath).success(function() {
-                $scope.fileNavigator.refresh();
-                $('#uploadfile').modal('hide');
-            }).error(function(data) {
-                var errorMsg = data.result && data.result.error || $translate.instant('error_uploading_files');
-                $scope.temp.error = errorMsg;
-            });
-            */
-        };
+        $scope.eraseVersion = function(item, version) {
+        	debug.log('eraseVersion', item, version);
+        	item.removeVersion(version, function(data) {
+                $scope.fileNavigator.refresh_soft();
+            }, function() {
+            	$scope.fileNavigator.refresh_soft();
+        	});
+        };        
         
         $scope.getQueryParam = function(param) {
             var found;

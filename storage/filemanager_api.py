@@ -60,6 +60,8 @@ def process(json_request):
             result = _upload(json_request['params'])
         elif mode == 'delete':
             result = _delete(json_request['params'])
+        elif mode == 'deleteversion':
+            result = _delete_version(json_request['params'])
         elif mode == 'download':
             result = _download(json_request['params'])
         elif mode == 'tasks':
@@ -120,7 +122,7 @@ def _list_all(params):
 
 def _list_local(params):
     result = []
-    path = params['path'].lstrip('/')
+    path = bpio.portablePath(params['path'].lstrip('/'))
     only_folders = params['onlyFolders']
     if ( path == '' or path == '/' ) and bpio.Windows():
         for itemname in bpio.listLocalDrivesWindows():
@@ -135,7 +137,7 @@ def _list_local(params):
     else:
         if bpio.Windows() and len(path) == 2 and path[1] == ':':
             path += '/' 
-        apath = os.path.abspath(path)
+        apath = path
         for itemname in bpio.list_dir_safe(apath):
             itempath = os.path.join(apath, itemname)
             if only_folders and not os.path.isdir(itempath):
@@ -199,23 +201,31 @@ def _download(params):
 
 def _delete(params):
     # localPath = params['path'].lstrip('/')
-    localName = params['name']
     pathID = params['id']
     if not packetid.Valid(pathID):
         return { 'result': { "success": False, "error": "path %s is not valid" % pathID} }
-    version = None
-    pathID_, version_ = packetid.SplitBackupID(pathID)
-    if packetid.IsCanonicalVersion(version_) and version_ == localName:
-        version = version_
-        pathID = pathID_
+    if not backup_fs.ExistsID(pathID):
+        return { 'result': { "success": False, "error": "path %s not found" % pathID} }
+    backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+    backup_fs.DeleteByID(pathID)
+    backup_fs.Scan()
+    backup_fs.Calculate()
+    backup_control.Save()
+    control.request_update()
+    backup_monitor.A('restart')
+    return { 'result': { "success": True, "error": None } }
+    
+
+def _delete_version(params):
+    backupID = params['backupid']
+    if not packetid.Valid(backupID):
+        return { 'result': { "success": False, "error": "backupID %s is not valid" % backupID} }
+    pathID, version = packetid.SplitBackupID(backupID)
     if not backup_fs.ExistsID(pathID):
         return { 'result': { "success": False, "error": "path %s not found" % pathID} }
     if version:
-        backup_control.DeleteBackup(pathID+'/'+version, saveDB=False, calculate=False)
-    else:
-        backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
-        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
-        backup_fs.DeleteByID(pathID)
+        backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
     backup_fs.Scan()
     backup_fs.Calculate()
     backup_control.Save()

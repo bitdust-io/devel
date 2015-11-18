@@ -1,23 +1,30 @@
 <div id="context-menu-item" class="context-menu dropdown clearfix animated fast fadeIn">
     <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
 
-        <li data-ng-show="config.allowedActions.synchronize">
-            <a href="" tabindex="-1" data-ng-click="synchronizeItem(temp)">
+        <li data-ng-show="config.allowedActions.synchronize && temp.hasVersions()">
+            <a href="" 
+                tabindex="-1" 
+                data-ng-click="synchronizeItem(temp)">
                 <i style="color: blue;" class="glyphicon glyphicon-refresh"></i>
                 {{'synchronize' | translate}}
             </a>
         </li>
 
         <li data-ng-show="config.allowedActions.download && temp.hasVersions()">
-            <a href="" tabindex="-1" data-ng-click="openDownloadToNavigator(temp)">
+            <a href="" 
+                tabindex="-1" 
+                data-toggle="modal" 
+                data-ng-click="openDownloadToNavigator(temp)">
                 <i style="color: green;" class="glyphicon glyphicon-download"></i>
                 {{'download' | translate}}
             </a>
         </li>
 
-        <li data-ng-show="config.allowedActions.remove">
-            <a href="" tabindex="-1" 
-                data-toggle="modal" data-target="#delete">
+        <li data-ng-show="config.allowedActions.remove && temp">
+            <a href="" 
+                tabindex="-1" 
+                data-toggle="modal" 
+                data-target="#delete">
                 <i style="color:red;" class="glyphicon glyphicon-trash"></i>
                 {{'remove' | translate}}
             </a>
@@ -31,7 +38,10 @@
     <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
 
         <li data-ng-show="config.allowedActions.cancel">
-            <a href="" tabindex="-1" data-ng-click="cancelTask(temp)">
+            <a href="" 
+                tabindex="-1" 
+                data-toggle="modal" 
+                data-ng-click="cancelTask()">
                 <i style="color: red;" class="glyphicon glyphicon-refresh"></i>
                 {{'cancel' | translate}}
             </a>
@@ -44,9 +54,11 @@
 <div id="context-menu-version" class="context-menu dropdown clearfix animated fast fadeIn">
     <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
 
-        <li data-ng-show="config.allowedActions.eraseversion">
-            <a href="" tabindex="-1" 
-                data-toggle="modal" data-ng-click="eraseVersion(temp)">
+        <li data-ng-show="config.allowedActions.eraseversion && temp && tempVersion">
+            <a href="" 
+                tabindex="-1" 
+                data-toggle="modal" 
+                data-ng-click="eraseVersion(temp, tempVersion)">
                 <i style="color:red;" class="glyphicon glyphicon-trash"></i>
                 {{'remove' | translate}}
             </a>

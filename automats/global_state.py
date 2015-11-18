@@ -71,7 +71,7 @@ def set_global_state(st):
     global _GlobalStateNotifyFunc
     oldstate = _GlobalState
     _GlobalState = st
-    lg.out(6, (' ' * 40) + '{%s}->{%s}' % (oldstate, _GlobalState))
+    # lg.out(6, (' ' * 40) + '{%s}->{%s}' % (oldstate, _GlobalState))
     if _GlobalStateNotifyFunc is not None and oldstate != _GlobalState:
         try:
             _GlobalStateNotifyFunc(_GlobalState)
@@ -85,7 +85,7 @@ def get_global_state():
         P2P CONNECTED
     """
     global _GlobalState
-    lg.out(6, 'global_state.get_global_state return [%s]' % _GlobalState)
+    # lg.out(6, 'global_state.get_global_state return [%s]' % _GlobalState)
     return _GlobalState
 
 

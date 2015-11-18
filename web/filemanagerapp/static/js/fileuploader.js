@@ -1,7 +1,8 @@
 (function(window, angular) {
     "use strict";
     angular.module('FileManagerApp').service('fileUploader', [
-        '$http', 'fileManagerConfig', function ($http, fileManagerConfig) {
+        '$http', 'fileManagerConfig', 
+		function ($http, fileManagerConfig) {
 
         var self = this;
         self.requesting = false; 

@@ -1,6 +1,12 @@
-<div class="iconset">
-    <div class="col-120" data-ng-repeat="item in fileNavigator.fileList | filter: query | orderBy: orderProp" data-ng-show="!fileNavigator.requesting && !fileNavigator.error">
-        <a href="" class="thumbnail text-center" data-ng-click="smartClick(item)" ng-right-click="smartRightClick(item)" title="{{item.model.name}}">
+<div id="mainiconset" class="iconset">
+    <div class="col-120" 
+        data-ng-repeat="item in fileNavigator.fileList | filter: query | orderBy: orderProp" 
+        data-ng-show="!fileNavigator.requesting && !fileNavigator.error">
+        <a href="" 
+            class="thumbnail text-center" 
+            data-ng-click="smartClick(item, $event)" 
+            ng-right-click="smartRightClick(item, $event)" 
+            title="{{item.model.name}}">
             <div class="item-icon">
                 <i class="glyphicon glyphicon-folder-open" data-ng-show="item.model.type === 'dir'"></i>
                 <i class="glyphicon glyphicon-file" data-ng-show="item.model.type === 'file'"></i>
@@ -14,6 +20,8 @@
             <div class="item-icon-versions">
                 <button class="version btn btn-sm btn-success"
                         data-ng-repeat="version in item.model.versions"
+                        data-ng-click="smartClickVersion(item, version, $event)" 
+                        ng-right-click="smartRightClickVersion(item, version, $event)" 
                         title="{{version.status}}">
                     <i class="fa fa-spinner fa-pulse"
                        data-ng-show="{{version.state!='ready'}}"></i>

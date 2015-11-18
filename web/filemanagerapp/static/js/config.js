@@ -10,6 +10,7 @@
         renameUrl: "/filemanager/bridge",
         copyUrl: "/filemanager/bridge",
         removeUrl: "/filemanager/bridge",
+        removeVersionUrl: "/filemanager/bridge",
         editUrl: "/filemanager/bridge",
         getContentUrl: "/filemanager/bridge",
         createFolderUrl: "/filemanager/bridge",
@@ -34,6 +35,7 @@
             tasks: true,
             cancel: true,
             eraseversion: true,
+			explore: true,
         },
 
         enablePermissionsRecursive: true,

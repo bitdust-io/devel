@@ -4,6 +4,9 @@ Date.prototype.isValid = function () {
     return this.getTime() === this.getTime();
 }; 
 
+var trimLeftRegExp = new RegExp("^[/]+");
+var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
+
 (function(window, angular, $) {
     "use strict";
     angular.module('FileManagerApp').factory('item', [
@@ -11,10 +14,9 @@ Date.prototype.isValid = function () {
 	    function($http, $translate, fileManagerConfig, Chmod) {
 
         var Item = function(model) {
-        	// debug.log(model);
             var rawModel = {
                 name: model && model.name || '',
-                path: model && model.dirpath && model.dirpath.split('/') || [],
+                path: model && model.dirpath && model.dirpath.replace(slashReplaceRegExp,"$1//$2").split('/') || [],
                 id: model && model.id || '',
                 type: model && model.type || 'file',
                 size: model && model.size || 0,
@@ -26,7 +28,7 @@ Date.prototype.isValid = function () {
                 versions: model && model.versions || [],
                 recursive: false,
                 fullPath: function() {
-                    return ('/' + this.path.join('/') + '/' + this.name).trimLeft('/').replace(/\/\//, '/');
+                	return (this.path.join('/') + '/' + this.name).replace(trimLeftRegExp, "");
                 }
             };
 
@@ -36,12 +38,12 @@ Date.prototype.isValid = function () {
             this.model = angular.copy(rawModel);
             this.tempModel = angular.copy(rawModel);
 
-            //debug.log(this.model.id, this.model.name, this.model.path, this.model.fullPath);
+            //debug.log('Item', model && model.dirpath, this.model.id, this.model.name, this.model.path, this.model.fullPath());
         };
         
         Item.prototype.update_model = function(model) {
         	this.model.name = model.name || '';
-        	this.model.path = model.dirpath.split('/') || [];
+        	this.model.path = model.dirpath.replace(slashReplaceRegExp,"$1//$2").split('/') || [];
         	this.model.id = model.id || '';
         	this.model.type = model.type || 'file';
         	this.model.size = model.size || 0;
@@ -289,8 +291,6 @@ Date.prototype.isValid = function () {
             var data = {params: {
                 mode: "delete",
                 id: self.tempModel.id,
-                path: self.tempModel.fullPath(),
-                name: self.tempModel.name,
             }};
             self.inprocess = true;
             self.error = '';
@@ -306,6 +306,26 @@ Date.prototype.isValid = function () {
                 self.inprocess = false;
             });
         };
+        
+        Item.prototype.removeVersion = function(version, success, error) {
+            var self = this;
+            var data = { params: {
+                mode: "deleteversion",
+                backupid: version.backupid,
+            }};
+            self.inprocess = true;
+            self.error = '';
+            return $http.post(fileManagerConfig.removeVersionUrl, data).success(function(data) {
+                self.defineCallback(data, success, error);
+            }).error(function(data) {
+                self.error = data.result && data.result.error ?
+                    data.result.error:
+                    $translate.instant('error_deleting_version');
+                typeof error === 'function' && error(data);
+            })['finally'](function() {
+                self.inprocess = false;
+            });
+        };        
 
         Item.prototype.edit = function(success, error) {
             var self = this;

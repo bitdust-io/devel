@@ -1,6 +1,6 @@
 (function(angular) {
     "use strict";
-    angular.module('FileManagerApp').service('activeTasks', [
+    angular.module('FileManagerApp').service('ActiveTasks', [
         '$http', 'fileManagerConfig', '$cookies',  
         function ($http, fileManagerConfig, $cookies) {
 
