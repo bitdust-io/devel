@@ -107,7 +107,7 @@ def _list_all(params):
         if item[2] == 'index':
             continue
         result.append({
-            "type": 'file', 
+            "type": item[0], 
             "name": item[1],
             "id": item[2],
             "rights": "",

@@ -100,34 +100,44 @@
                 path: path
             }};
             // debug.log('refresh_soft', needed_mode, path);
-
             //self.requesting = true;
-            // self.fileList = [];
             self.error = '';
             $http.post(fileManagerConfig.listUrl, data).success(function(data) {
-                //self.fileList = [];
-                //angular.forEach(data.result, function(file) {
-                //    self.fileList.push(new Item(file, self.currentPath));
-                //});
-                //self.requesting = false;
-                // self.buildTree(path);
                 // debug.log('refresh_soft now');
                 angular.forEach(data.result, function(file) {
-                	// debug.log('		', file);
+                	//debug.log('		', file);
+                	var foundOld = false; 
                     for (var o in self.fileList) {
                         var item = self.fileList[o];
                         if (item.model.id == file.id) {
-                        	// debug.log('				', item);
-                        	// item.model.size = file.size;
-                        	// item.model.date = file.date;
-                        	// item.model.status = file.status;
-                        	item.update_model(file);
+                        	item.update_soft(file);
+                        	foundOld = true;
                         	break;
                         }
                     }
-                	
+                    if (!foundOld) {
+                        self.fileList.push(new Item(file));
+                    }
                 });
-
+                var to_remove = [];
+                for (var o in self.fileList) {
+                    var item = self.fileList[o];
+                    var foundNew = false;
+                    for (var n in data.result) {
+                    	var nfile = data.result[n];
+                    	if (item.model.id == nfile.id) {
+                    		foundNew = true;
+                    		break;
+                    	}
+                    }
+                    if (!foundNew) {
+                    	to_remove.push(o)
+                    }
+                }
+                for (var o in to_remove) {
+                	self.fileList.splice(o, 1);
+                }
+                //self.requesting = false;
                 if (data.error) {
                     self.error = data.error;
                     return typeof error === 'function' && error(data);

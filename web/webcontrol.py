@@ -12,7 +12,6 @@ import os
 import sys
 import time
 import locale
-import pprint
 import random
 import webbrowser
 import math

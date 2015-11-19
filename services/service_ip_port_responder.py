@@ -20,7 +20,7 @@ def create_service():
 class IPPortResponderService(LocalService):
     
     service_name = 'service_ip_port_responder'
-    config_path = 'services/stun-server/enabled'
+    config_path = 'services/ip-port-responder/enabled'
     
     def dependent_on(self):
         return ['service_udp_datagrams',

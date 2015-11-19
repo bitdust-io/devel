@@ -221,8 +221,9 @@
             }).success(function(data) {
                 // debug.log('    ', data);
                 if (data == 'True') {
-                	// debug.log('need to update !!!');
+                	//debug.log('need to update !!!');
                 	$scope.fileNavigator.refresh_soft();
+                	//$scope.fileNavigator.refresh();
                 	$scope.activeTasks.refresh();
                 } else if (data == 'False') {
                 	//debug.log('not need to update'); 

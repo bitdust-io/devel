@@ -41,7 +41,7 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
             //debug.log('Item', model && model.dirpath, this.model.id, this.model.name, this.model.path, this.model.fullPath());
         };
         
-        Item.prototype.update_model = function(model) {
+        Item.prototype.update_soft = function(model) {
         	this.model.name = model.name || '';
         	this.model.path = model.dirpath.replace(slashReplaceRegExp,"$1//$2").split('/') || [];
         	this.model.id = model.id || '';
@@ -50,6 +50,8 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
         	this.model.date = model.date || '';
         	this.model.has_childs = model.has_childs || false;
         	this.model.versions = model.versions || [];
+            //this.model = angular.copy(this.tempModel);
+        	//debug.log('update_model', this.model);
         };
 
         Item.prototype.update = function() {
@@ -412,6 +414,12 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
             return Math.round(this.model.size / 1024, 1);
         };
         
+        Item.prototype.versionClassSelector = function(version) {
+        	var status = parseInt(version.status.replace('%', ''));
+        	if (status < 75) return 'btn-danger';
+        	if (status < 95) return 'btn-warning';
+        	return 'btn-success';
+        };
 
         return Item;
     }]);

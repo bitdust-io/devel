@@ -171,6 +171,17 @@ def IsPathIDCorrect(pathID):
     """
     return pathID.replace('/', '').isdigit()
 
+def IsBackupIDCorrect(backupID):
+    """
+    Validate a given ``backupID``, must have such format: 0/0/1/0/F20131120053803PM.
+    """
+    pathID, x, version = backupID.rpartition('/')
+    if not IsCanonicalVersion(version):
+        return False
+    if not IsPathIDCorrect(pathID):
+        return False
+    return True
+
 def BidBnSnDp(packetID):
     """
     A wrapper for ``Split()`` method.

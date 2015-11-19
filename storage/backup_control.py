@@ -312,7 +312,8 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     # remove interests in transport_control
     callback.delete_backup_interest(backupID)
     # mark it as being deleted in the db, well... just remove it from the index now
-    backup_fs.DeleteBackupID(backupID)
+    if not backup_fs.DeleteBackupID(backupID):
+        return False
     # finally remove local files for this backupID
     if removeLocalFilesToo:
         backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
@@ -331,6 +332,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     if saveDB:
         Save()
         control.request_update()
+    return True
     
 def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=True):
     """
@@ -342,7 +344,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
     # get the working item
     item = backup_fs.GetByID(pathID)
     if item is None:
-        return None
+        return False
     # this is a list of all known backups of this path 
     versions = item.list_versions()
     for version in versions:
@@ -363,7 +365,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
         backup_matrix.EraseBackupLocalInfo(backupID)
         # finally remove this backup from the index
         item.delete_version(version)
-        lg.out(8, 'backup_control.DeletePathBackups ' + backupID)
+        # lg.out(8, 'backup_control.DeletePathBackups ' + backupID)
     # stop any rebuilding, we will restart it soon
     backup_rebuilder.RemoveAllBackupsToWork()
     backup_rebuilder.SetStoppedFlag()
@@ -710,6 +712,8 @@ def AbortRunningBackup(backupID):
     """
     if IsBackupInProcess(backupID):
         jobs()[backupID].abort()
+        return True
+    return False
         
 def AbortAllRunningBackups():
     """

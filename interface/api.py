@@ -279,24 +279,41 @@ def backup_delete_local(backupID):
     return { 'result': "%d files were removed with total size of %s" % (num,sz) }
 
 
-def backup_delete_id(pathID):
+def backup_delete_id(pathID_or_backupID):
     from storage import backup_fs
     from storage import backup_control
     from storage import backup_monitor
     from main import settings
     from web import control
+    from lib import packetid
     from logs import lg
-    lg.out(4, 'api.backup_delete_id %s' % pathID)
+    lg.out(4, 'api.backup_delete_id %s' % pathID_or_backupID)
+    if not packetid.Valid(pathID_or_backupID):
+        return { 'result': 'invalid item id: %s' % pathID_or_backupID }
+    if packetid.IsBackupIDCorrect(pathID_or_backupID):
+        pathID, version = packetid.SplitBackupID(pathID_or_backupID)
+        backupID = pathID + '/' + version
+    if version:
+        result = backup_control.DeleteBackup(backupID, saveDB=False)
+        if result:
+            backup_control.Save()
+            backup_monitor.A('restart')
+            control.request_update()
+        if not result:
+            return { 'result': 'item %s is not found in catalog' % backupID }
+        return { 'result': 'item %s were deleted' % pathID }
+    pathID = pathID_or_backupID
     result = backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+    if result:
+        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+        backup_fs.DeleteByID(pathID)
+        backup_fs.Scan()
+        backup_fs.Calculate()
+        backup_control.Save()
+        backup_monitor.A('restart')
+        control.request_update()
     if not result:
         return { 'result': 'item %s is not found in catalog' % pathID }
-    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
-    backup_fs.DeleteByID(pathID)
-    backup_fs.Scan()
-    backup_fs.Calculate()
-    backup_control.Save()
-    control.request_update()
-    backup_monitor.A('restart')
     return { 'result': 'item %s were deleted' % pathID }
 
 
@@ -316,13 +333,16 @@ def backup_delete_path(localPath):
         return { 'result': 'path %s is not found in catalog' % localPath }
     if not packetid.Valid(pathID):
         return { 'result': 'invalid pathID found %s' % pathID }
-    backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
-    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
-    backup_fs.DeleteByID(pathID)
-    backup_fs.Scan()
-    backup_fs.Calculate()
-    backup_control.Save()
-    backup_monitor.A('restart')
+    result = backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+    if result:
+        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
+        backup_fs.DeleteByID(pathID)
+        backup_fs.Scan()
+        backup_fs.Calculate()
+        backup_control.Save()
+        backup_monitor.A('restart')
+    if not result:
+        return { 'result': 'item %s is not found in catalog' % pathID }
     return { 'result': 'item %s were deleted' % pathID }
         
 
