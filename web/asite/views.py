@@ -13,6 +13,8 @@ from django.contrib.auth import logout
 from django.contrib.auth import authenticate
 from django.contrib.auth import REDIRECT_FIELD_NAME
 
+import json
+
 #------------------------------------------------------------------------------ 
 
 from logs import lg
@@ -47,13 +49,30 @@ def call_api_method(request, method):
         args = '{}'
     if not args:
         return HttpResponseBadRequest('wrong arguments format')
-     
     if method == 'stop':
-        pth = '/'
         reactor.callLater(1, api.stop)
+        return HttpResponse("""<!doctype html>
+<html lang=en>
+<head>
+<meta charset=utf-8>
+<title>BitDust</title>
+</head>
+<body>
+<h1>BitDust process stopped.</h1>
+</body>
+</html>""")
     elif method == 'restart':
-        pth = '/'
         reactor.callLater(1, api.restart, True)
+        return HttpResponse("""<!doctype html>
+<html lang=en>
+<head>
+<meta charset=utf-8>
+<title>BitDust</title>
+</head>
+<body>
+<h1>BitDust process will be restarted now.</h1>
+</body>
+</html>""")        
     return HttpResponseRedirect(pth) 
 
 #------------------------------------------------------------------------------ 
@@ -113,18 +132,12 @@ def LogoutPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
 #------------------------------------------------------------------------------ 
 
 @never_cache
-def RepaintFlag(request):
-    result = control.get_update_flag()
-    if result is True:
+def RepaintState(request):
+    data = dict(control.get_update_items())
+    if len(data) > 0:
         control.set_updated()
-    return HttpResponse('%s' % str(result))
-
-
-#class RepaintFlagView(View):
-#    def get(self, request):
-#        result = control.get_update_flag()
-#        if result is True:
-#            control.set_updated()
-#        return HttpResponse('%s' % str(result))
+    return HttpResponse(json.dumps(data),
+                        content_type='application/json')
     
+  
     

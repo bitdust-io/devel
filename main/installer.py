@@ -275,7 +275,7 @@ class Installer(automat.Automat):
             reactor.callLater(0, webcontrol.OnUpdateInstallPage)
         else:
             from web import control
-            control.request_update()
+            control.request_update([{'state': self.state},])
             
     def doClearOutput(self, arg):
         # lg.out(4, 'installer.doClearOutput')

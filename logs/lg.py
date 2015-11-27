@@ -89,14 +89,6 @@ def out(_DebugLevel, msg, nl='\n'):
             _LogFile.write(s + nl)
             _LogFile.flush()
         if not _RedirectStdOut and not _NoOutput:
-#            if nl == '\n':
-#                try:
-#                    print s
-#                except:
-#                    open('1', 'wb').write(s)
-#                    sys.exit()
-#                    # pass
-#            else:
             try:
                 s = str(s) + nl
                 sys.stdout.write(s)
@@ -221,6 +213,20 @@ def set_debug_level(level):
     if _GlobalDebugLevel > level:
         out(level, 'lg.SetDebug _GlobalDebugLevel=' + str(level))
     _GlobalDebugLevel = level
+
+
+def get_debug_level():
+    """
+    """
+    global _GlobalDebugLevel
+    return _GlobalDebugLevel
+    
+    
+def get_loging_level():
+    """
+    """
+    global _GlobalDebugLevel
+    return max(0, (30 - _GlobalDebugLevel) * 2)
 
 
 def life_begins():

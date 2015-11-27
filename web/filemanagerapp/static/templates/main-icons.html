@@ -18,7 +18,8 @@
                 {{item.sizeKB()}}kb
             </div>
             <div class="item-icon-versions">
-                <button class="version btn btn-sm btn-success"
+                <button class="version btn btn-sm"
+                        ng-class="item.versionClassSelector(version)"
                         data-ng-repeat="version in item.model.versions"
                         data-ng-click="smartClickVersion(item, version, $event)" 
                         ng-right-click="smartRightClickVersion(item, version, $event)" 

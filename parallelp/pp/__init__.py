@@ -93,12 +93,17 @@ class _Task(object):
         self.group = group
         self.finished = False
         self.unpickled = False
+        self.worker_pid = -1
+        self.cancelled = False
 
     def finalize(self, sresult):
         """Finalizes the task.
 
            For internal use only"""
-        self.sresult = sresult
+        if self.cancelled:
+            self.sresult = None
+        else:
+            self.sresult = sresult
         if self.callback:
             self.__unpickle()
         self.lock.release()
@@ -124,10 +129,13 @@ class _Task(object):
 
     def __unpickle(self):
         """Unpickles the result of the task"""
-        self.result, sout = pickle.loads(self.sresult)
+        if self.sresult is not None:
+            self.result, sout = pickle.loads(self.sresult)
+            if len(sout) > 0:
+                print sout,
+        else:
+            self.result = None
         self.unpickled = True
-        if len(sout) > 0:
-            print sout,
         if self.callback:
             args = self.callbackargs + (self.result, )
             self.callback(*args)
@@ -209,7 +217,7 @@ class _RWorker(pptransport.CSocketTransport):
         self.secret = secret
         self.address = (host, port)
         self.id = host + ":" + str(port)
-        logging.debug("Creating Rworker id=%s persistent=%s"
+        logging.info("Creating Rworker id=%s persistent=%s"
                 % (self.id, persistent))
         self.connect(message)
         self.is_free = True
@@ -234,11 +242,11 @@ class _RWorker(pptransport.CSocketTransport):
                 return True
             except:
                 if not self.persistent:
-                    logging.debug("Deleting from queue Rworker %s"
+                    logging.info("Deleting from queue Rworker %s"
                             % (self.id, ))
                     return False
 #                print sys.excepthook(*sys.exc_info())
-                logging.debug("Failed to reconnect with " \
+                logging.info("Failed to reconnect with " \
                         "(host=%s, port=%i), will try again in %i s"
                         % (self.host, self.port, _RECONNECT_WAIT_TIME))
                 time.sleep(_RECONNECT_WAIT_TIME)
@@ -327,7 +335,7 @@ class Server(object):
             raise TypeError("ppservers argument must be a tuple")
 
         self.__initlog(loglevel, logstream)
-        logging.debug("Creating server instance (pp-" + version+")")
+        logging.info("Creating server instance (pp-" + version+")")
         self.__tid = 0
         self.__active_tasks = 0
         self.__active_tasks_lock = thread.allocate_lock()
@@ -438,7 +446,7 @@ class Server(object):
         if globals:
             modules += tuple(self.__find_modules("", globals))
             modules = tuple(set(modules))
-            self.__logger.debug("Task %i will autoimport next modules: %s" %
+            self.__logger.info("Task %i will autoimport next modules: %s" %
                     (tid, str(modules)))
             for object1 in globals.values():
                 if isinstance(object1, types.FunctionType) \
@@ -476,10 +484,69 @@ class Server(object):
         self.__queue.append((task, sfunc, sargs))
         self.__queue_lock.release()
 
-        self.__logger.debug("Task %i submited, function='%s'" %
+        self.__logger.info("Task %i submited, function='%s'" %
                 (tid, func.func_name))
         self.__scheduler()
         return task
+    
+    
+    def cancel(self, taskID):
+        """Cancel a task
+        """
+
+        wtask = None
+        self.__waittasks_lock.acquire()
+        for i in xrange(len(self.__waittasks)):
+            wtask = self.__waittasks[i]
+            if wtask.tid == taskID:
+                self.__waittasks[i].cancelled = True
+                break
+        self.__waittasks_lock.release()
+        
+        if not wtask:
+            return
+        
+        if wtask.worker_pid:
+            for worker in self.__workers:
+                if worker.pid == wtask.worker_pid:
+
+                    nworker = _Worker(self.__restart_on_free, self.__pickle_proto)
+                    self.__workers.append(nworker)
+                    self.__logger.info("Started new worker, new process %i created" % (nworker.pid))
+
+                    worker.t.exiting = True
+                    if sys.platform.startswith("win"):
+                        os.popen('TASKKILL /PID '+str(worker.pid)+' /F')
+                    else:
+                        try:
+                            os.kill(worker.pid, 9)
+                            os.waitpid(worker.pid, 0)
+                        except:
+                            pass
+
+                    self.__workers.remove(worker)
+                    self.__logger.info("Running task %i cancelled, process %i killed" % (taskID, wtask.worker_pid))
+                    break
+                
+        else:
+            
+            self.__queue_lock.acquire()
+            for i in xrange(len(self.__queue)):
+                if self.__queue[i][0].tid == taskID:
+                    self.__queue.pop(i)
+            self.__queue_lock.release()
+            
+            self.__waittasks_lock.acquire()
+            for i in xrange(len(self.__waittasks)):
+                if self.__waittasks[i].tid == taskID:
+                    self.__waittasks.pop(i)
+                    break
+            self.__waittasks_lock.release() 
+                       
+            self.__logger.info("Scheduled task %i cancelled" % taskID)
+            
+        self.__scheduler()
+
 
     def wait(self, group=None):
         """Waits for all jobs in a given group to finish.
@@ -577,7 +644,7 @@ class Server(object):
         self.__queue.append((task, sfunc, sargs))
         self.__queue_lock.release()
 
-        self.__logger.debug("Task %i inserted" % (task.tid, ))
+        self.__logger.info("Task %i inserted" % (task.tid, ))
         self.__scheduler()
         return task
 
@@ -604,7 +671,7 @@ class Server(object):
                 rworker = _RWorker(host, port, self.secret, "EXEC", persistent)
 #                    self.__update_active_rworkers(rworker.id, 1)
                 self.__rworkers_reserved4.append(rworker)
-            logging.debug("Connected to ppserver (host=%s, port=%i) \
+            logging.info("Connected to ppserver (host=%s, port=%i) \
                     with %i workers" % (host, port, ncpus))
             self.__scheduler()
         except:
@@ -644,7 +711,7 @@ class Server(object):
         """Initializes logging facility"""
         log_handler = logging.StreamHandler(logstream)
         log_handler.setLevel(loglevel)
-        LOG_FORMAT = '%(asctime)s %(levelname)s %(message)s'
+        LOG_FORMAT = '        %(levelname)s %(message)s'
         log_handler.setFormatter(logging.Formatter(LOG_FORMAT))
         self.__logger = logging.getLogger('')
         self.__logger.addHandler(log_handler)
@@ -692,6 +759,10 @@ class Server(object):
                     thread.start_new_thread(self.__run, task+(worker, ))
                 except:
                     pass
+                for i in xrange(len(self.__waittasks)):
+                    if self.__waittasks[i].tid == task[0].tid:
+                        self.__waittasks[i].worker_pid = worker.pid
+                        break
             else:
                 for rworker in self.__rworkers:
                     if rworker.is_free:
@@ -741,7 +812,7 @@ class Server(object):
 
     def __rrun(self, job, sfunc, sargs, rworker):
         """Runs a job remotelly"""
-        self.__logger.debug("Task (remote) %i started" % (job.tid, ))
+        self.__logger.info("Task (remote) %i started" % (job.tid, ))
 
         try:
             rworker.csend(sfunc)
@@ -749,7 +820,7 @@ class Server(object):
             sresult = rworker.receive()
             rworker.is_free = True
         except:
-            self.__logger.debug("Task %i failed due to broken network " \
+            self.__logger.info("Task %i failed due to broken network " \
                     "connection - rescheduling" % (job.tid, ))
             self.insert(sfunc, sargs, job)
             self.__scheduler()
@@ -767,7 +838,7 @@ class Server(object):
             self.__waittasks.remove(job)
             self.__waittasks_lock.release()
 
-        self.__logger.debug("Task (remote) %i ended" % (job.tid, ))
+        self.__logger.info("Task (remote) %i ended" % (job.tid, ))
         self.__scheduler()
 
     def __run(self, job, sfunc, sargs, worker):
@@ -775,10 +846,11 @@ class Server(object):
 
         if self.__exiting:
             return
-        self.__logger.debug("Task %i started" % (job.tid, ))
+        self.__logger.info("Task %i started" % (job.tid, ))
 
         start_time = time.time()
 
+        sresult = None
         try:
             worker.t.csend(sfunc)
             worker.t.send(sargs)
@@ -787,7 +859,8 @@ class Server(object):
             if self.__exiting:
                 return
             else:
-                sys.excepthook(*sys.exc_info())
+                if not job.cancelled:
+                    sys.excepthook(*sys.exc_info())
 
         worker.free()
 
@@ -802,7 +875,7 @@ class Server(object):
         self.__add_to_active_tasks(-1)
         if not self.__exiting:
             self.__stat_add_time("local", time.time()-start_time)
-        self.__logger.debug("Task %i ended" % (job.tid, ))
+        self.__logger.info("Task %i ended" % (job.tid, ))
         self.__scheduler()
 
     def __add_to_active_tasks(self, num):

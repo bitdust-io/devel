@@ -170,7 +170,7 @@ def _upload(params):
     backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()
     backup_control.Save()
-    control.request_update()
+    control.request_update([('pathID', pathID),])
     result.append('backup started: %s' % pathID)
     return { 'result': result, }
 
@@ -212,12 +212,13 @@ def _delete(params):
     backup_fs.Scan()
     backup_fs.Calculate()
     backup_control.Save()
-    control.request_update()
+    control.request_update([('pathID', pathID),])
     backup_monitor.A('restart')
     return { 'result': { "success": True, "error": None } }
     
 
 def _delete_version(params):
+    lg.out(6, '_delete_version %s' % str(params))
     backupID = params['backupid']
     if not packetid.Valid(backupID):
         return { 'result': { "success": False, "error": "backupID %s is not valid" % backupID} }
@@ -229,8 +230,8 @@ def _delete_version(params):
     backup_fs.Scan()
     backup_fs.Calculate()
     backup_control.Save()
-    control.request_update()
     backup_monitor.A('restart')
+    control.request_update([('backupID', backupID),])
     return { 'result': { "success": True, "error": None } }
     
 

@@ -36,7 +36,9 @@
         };        
 
         ActiveTasks.prototype.hasTasks = function() {
-        	return this.tasksList.length > 0;
+        	// TODO
+        	return false;
+        	//return this.tasksList.length > 0;
         };
         
         return ActiveTasks;

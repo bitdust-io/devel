@@ -1,0 +1,10 @@
+
+.next-prev-buttons {
+    overflow: hidden;
+    display: inline-block;
+}
+
+.next-prev-buttons input {
+    float: right;
+    margin: 0px 10px;
+}

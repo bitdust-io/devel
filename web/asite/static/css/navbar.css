@@ -1,3 +1,12 @@
+
+#navbar-top-menu.navbar-collapse.in,
+#navbar-top-menu.collapsing {
+  border-bottom: 1px solid #ddd;
+}
+#navbar-top-menu .navbar-right {
+	padding-right: 15px;
+}
+
 .navbar-default {
   background-color: #ffffff;
   border-color: #ffffff;

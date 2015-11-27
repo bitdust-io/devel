@@ -160,7 +160,8 @@ class SetupController:
         template = 'pages/input_name.html'
         context = {'username': self.data['username'],
                    'pksize': self.data['pksize'], 
-                   'output': '', }
+                   'output': '', 
+                   'usernameplaceholder': bpio.getUserName(),}
         try:
             text, color = installer.A().getOutput().get('data', [('', '')])[-1]
             context['output'] = '<font color="%s">%s</font><br />\n' % (color, text)
@@ -171,7 +172,7 @@ class SetupController:
         action = request.REQUEST.get('action', None)
         if action == 'next':
             self.data['pksize'] = int(request.REQUEST.get('pksize', self.data['pksize']))
-            self.data['username'] = request.REQUEST.get('username', self.data['username'])
+            self.data['username'] = request.REQUEST.get('username', self.data['username']).lower()
             installer.A('register-start', self.data)
             return None
         if action == 'back':

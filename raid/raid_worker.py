@@ -87,7 +87,41 @@ _RaidWorker = None
 def add_task(cmd, params, callback):
     lg.out(10, 'raid_worker.add_task [%s] %s' % (cmd, str(params)[:80]))
     A('new-task', (cmd, params, callback))
-     
+    
+def cancel_task(cmd, first_parameter):
+    if not A():
+        lg.out(10, 'raid_worker.cancel_task SKIP _RaidWorker is not started')
+        return False
+    task_id = None
+    found = False
+    for t_id, t_cmd, t_params in A().tasks:
+        if cmd == t_cmd and first_parameter == t_params[0]:
+            try:
+                A().tasks.remove(t_id, t_cmd, t_params)
+                lg.out(10, 'raid_worker.cancel_task found pending task %d, canceling %s' % (t_id, first_parameter))
+            except:
+                lg.warn('failed removing pending task %d, %s' % (t_id, first_parameter))
+            found = True
+            break
+#    for i in xrange(len(A().tasks)):
+#        t_id, t_cmd, t_params = A().tasks[i] 
+#        if cmd == t_cmd and first_parameter == t_params[0]:
+#            lg.out(10, 'raid_worker.cancel_task found pending task %d, canceling' % t_id)
+#            A().tasks.pop(i)
+#            found = True
+#            break
+    for task_id, task_data in A().activetasks.items():
+        t_proc, t_cmd, t_params = task_data
+        if cmd == t_cmd and first_parameter == t_params[0]:
+            lg.out(10, 'raid_worker.cancel_task found started task %d, aborting process %d' % (task_id, t_proc.tid))
+            A().processor.cancel(t_proc.tid)
+            found = True
+            break
+    if not found:
+        lg.warn('task not found: %s %s' % (cmd, first_parameter))
+        return False
+    return True
+        
 #------------------------------------------------------------------------------ 
 
 def A(event=None, arg=None):
@@ -216,12 +250,15 @@ class RaidWorker(automat.Automat):
         Action method.
         """
         os.environ['PYTHONUNBUFFERED'] = '1'
-        self.processor = pp.Server(secret='bitdust')
-        # do not use all cpus at once 
-        # need to keep at least one for all other operations
-        ncpus = self.processor.get_ncpus()
+        ncpus = bpio.detect_number_of_cpu_cores()
         if ncpus > 1:
-            self.processor.set_ncpus(ncpus-1)
+            # do not use all CPU cors at once 
+            # need to keep at least one for all other operations
+            # even decided to use only half of CPUs at the moment
+            # TODO: make an option in the software settings
+            ncpus = int(ncpus / 2.0)
+        self.processor = pp.Server(secret='bitdust', ncpus=ncpus, 
+                                   loglevel=lg.get_loging_level())
         self.automat('process-started')
 
     def doKillProcess(self, arg):
@@ -257,10 +294,10 @@ class RaidWorker(automat.Automat):
         except:
             lg.exc()
             return
-        self.activetasks[task_id] = self.processor.submit(func, params,
-            modules=_MODULES,
-            depfuncs=depfuncs,
+        proc = self.processor.submit(func, params,
+            modules=_MODULES, depfuncs=depfuncs,
             callback=lambda result: self._job_done(task_id, cmd, params, result))
+        self.activetasks[task_id] = (proc, cmd, params)
         lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
             task_id, len(self.activetasks), self.processor.get_ncpus()))
         reactor.callLater(0.01, self.automat, 'task-started', task_id)
@@ -273,8 +310,12 @@ class RaidWorker(automat.Automat):
             task_id, cmd, params, result = arg
             cb = self.callbacks.pop(task_id)
             reactor.callLater(0, cb, cmd, params, result)
-            lg.out(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
-                len(self.callbacks), len(self.tasks), len(self.activetasks)))
+            if result is not None:
+                lg.out(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
+                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
+            else:
+                lg.out(12, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' % (
+                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
         except:
             lg.exc()
 

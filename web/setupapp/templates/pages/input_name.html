@@ -1,37 +1,33 @@
 {% extends "setup.html" %}
+
 {% block page %}
-<h1>enter your preferred user name</h1>
-<form action="{{ request.path }}" method="post">
+<h1>enter your nickname</h1>
+
+<form id="input-name-form" action="{{ request.path }}" method="post">
 <table align=center>
  <tr>
   <td align=left>
    <ul>
-    <li>you can use <b>lower</b> case letters (a-z)
-    <li>also digits (0-9), underscore (_) and dash (-)
-    <li>the name must be from 3 to 20 characters
-    <li>it must begin from a letter
+    <li>use lower case letters <b>(a-z)</b>, digits <b>(0-9)</b>, underscore <b>(_)</b> and dash <b>(-)</b></li>
+    <li>the nickname must be <b>from 3 to 20</b> characters and <b>begin</b> from a <b>letter</b></li>
+    <li>see, it's just a nickname, nothing more</li>
    </ul>
   </td>
  </tr>
 </table>
 <table width="80%" align=center>
  <tr>
-  <td>
-   {% autoescape off %}
-    {{ output }}
-   {% endautoescape %}
-  </td> 
- </tr>
- <tr>
-  <td>
-   <input type="text" name="username" value="{{ username }}" size=20 />
-   <br />
-   <h3 align=center>select your private key size</h3>
-   <p align=justify>
-Big key harder to crack, but it costs more resources. 
-If your computer is fast enough or you want more secure storage select 2048 or 4096 bits length. 
-If you plan to do a lot of backups regularly choose 1024 bits.
-   </p>
+  <td align="center">
+  <div class="form-group">
+   <input type="text" 
+       id="username"
+       name="username" 
+       class="form-control input-lg" 
+       value="{{ username }}" 
+       style="max-width: 250px;" 
+       placeholder="{{ usernameplaceholder }}" />
+  </div>
+   <h3 align=center>private key size</h3>
   </td>
  </tr>
  <tr>
@@ -46,11 +42,35 @@ If you plan to do a lot of backups regularly choose 1024 bits.
    4096
    <br/>
    <br/>
-   <input type="submit" name="action" value="back" />
-   <input type="submit" name="action" value="next" />
+   <div class="next-prev-buttons">
+     <input type="submit" class="btn btn-lg btn-success" 
+            name="action" value="next" />
+     <input type="submit" class="btn btn-lg btn-default" 
+            name="action" value="back" />
+   </div>
+   <br/>
+   <br/>
+  </td>
+ </tr>
+ <tr>
+  <td nowrap>
+   <div style="height: 150px; overflow: auto;">
+    <div id="progress">
+     {% autoescape off %}
+     {{ output }}
+     {% endautoescape %}
+    </div>
+   </div>
   </td>
  </tr>
 </table>
 </form>
 <br/>
+
+<script>
+    $( document ).ready(function() {
+        $("#username").focus();
+    }); 
+</script>
+
 {% endblock page %}

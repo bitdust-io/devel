@@ -196,7 +196,7 @@ def backup_start_id(pathID):
             backup_control.StartSingle(pathID, local_path)
             backup_fs.Calculate()
             backup_control.Save()
-            control.request_update()
+            control.request_update([('pathID', pathID),])
             return { 'result': 'backup started : %s' % pathID,
                      'local_path': local_path, }
     else:
@@ -223,7 +223,7 @@ def backup_start_path(path):
     backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()
     backup_control.Save()
-    control.request_update()
+    control.request_update([('pathID', pathID),])
     result += 'backup started: %s' % pathID
     return { 'result': result, }
 
@@ -237,7 +237,7 @@ def backup_dir_add(dirpath):
     dirsize.ask(dirpath, backup_control.FoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
     backup_control.Save()
-    control.request_update()
+    control.request_update([('pathID', newPathID),])
     return { 'result': 'new folder was added: %s %s' % (newPathID, dirpath), }
 
 
@@ -248,7 +248,7 @@ def backup_file_add(filepath):
     newPathID, iter, iterID = backup_fs.AddFile(filepath, True)
     backup_fs.Calculate()
     backup_control.Save()
-    control.request_update()
+    control.request_update([('pathID', newPathID),])
     return { 'result': 'new file was added: %s %s' % (newPathID, filepath), }
 
 
@@ -259,7 +259,7 @@ def backup_tree_add(dirpath):
     newPathID, iter, iterID, num = backup_fs.AddLocalPath(dirpath, True)
     backup_fs.Calculate()
     backup_control.Save()
-    control.request_update()
+    control.request_update([('pathID', newPathID),])
     if not newPathID:
         return { 'result': 'nothing was added to catalog', }
     return { 'result': '%d items were added to catalog, parent path ID is: %s  %s' % (
@@ -270,12 +270,14 @@ def backup_delete_local(backupID):
     from storage import backup_fs
     from storage import backup_matrix
     from main import settings
+    from web import control
     from logs import lg
-    lg.out(4, 'api.backup_delete_local %s' % backupID)
     num, sz = backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
+    lg.out(4, 'api.backup_delete_local %s : %d, %s' % (backupID, num, sz))
     backup_matrix.EraseBackupLocalInfo(backupID)
     backup_fs.Scan()
     backup_fs.Calculate()
+    control.request_update([('backupID', backupID),])
     return { 'result': "%d files were removed with total size of %s" % (num,sz) }
 
 
@@ -298,7 +300,7 @@ def backup_delete_id(pathID_or_backupID):
         if result:
             backup_control.Save()
             backup_monitor.A('restart')
-            control.request_update()
+            control.request_update([('backupID', backupID),])
         if not result:
             return { 'result': 'item %s is not found in catalog' % backupID }
         return { 'result': 'item %s were deleted' % pathID }
@@ -311,7 +313,7 @@ def backup_delete_id(pathID_or_backupID):
         backup_fs.Calculate()
         backup_control.Save()
         backup_monitor.A('restart')
-        control.request_update()
+        control.request_update([('pathID', pathID),])
     if not result:
         return { 'result': 'item %s is not found in catalog' % pathID }
     return { 'result': 'item %s were deleted' % pathID }
@@ -341,6 +343,7 @@ def backup_delete_path(localPath):
         backup_fs.Calculate()
         backup_control.Save()
         backup_monitor.A('restart')
+        control.request_update([('pathID', pathID),])
     if not result:
         return { 'result': 'item %s is not found in catalog' % pathID }
     return { 'result': 'item %s were deleted' % pathID }

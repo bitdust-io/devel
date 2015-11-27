@@ -36,6 +36,7 @@ class BackupsService(LocalService):
         from storage import backup_matrix
         from main import settings
         from main.config import conf
+        from p2p import p2p_connector
         backup_fs.init()
         backup_control.init()
         backup_matrix.init()
@@ -53,6 +54,8 @@ class BackupsService(LocalService):
             self._on_keep_local_copies_modified)
         conf().addCallback('services/backups/wait-suppliers-enabled',
             self._on_wait_suppliers_modified)
+        p2p_connector.A().addStateChangedCallback(self._on_p2p_connector_state_changed,
+            None, 'CONNECTED')
         return True
     
     def stop(self):
@@ -74,3 +77,8 @@ class BackupsService(LocalService):
         from storage import backup_monitor
         backup_monitor.A('restart')
     
+    def _on_p2p_connector_state_changed(self, oldstate, newstate, event_string, args):
+        from storage import backup_monitor
+        backup_monitor.A('restart')
+
+        

@@ -14,6 +14,7 @@
 
 import os
 import sys
+import time
 import pprint
 import random
 import webbrowser
@@ -22,9 +23,6 @@ import webbrowser
 
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
-from twisted.internet.endpoints import TCP4ServerEndpoint
-from twisted.application import internet
-from twisted.application import service
 from twisted.web import wsgi
 from twisted.web import server
 from twisted.web import resource
@@ -48,12 +46,15 @@ from main import settings
 
 # from web import sqlio
 from web import dbwrite
+# from web import shortpool
 
 #------------------------------------------------------------------------------
 
 _WSGIListener = None
 _WSGIPort = None
+_ShortPoolPort = None
 _UpdateFlag = None
+_UpdateItems = {}
 
 #------------------------------------------------------------------------------
 
@@ -111,7 +112,7 @@ def init():
             node.putChild('admin', static.File(admin_path))
             lg.out(4, '        added ADMIN static dir: admin->%s' % admin_path)
     site = server.Site(root)
-    _WSGIPort = 8080
+    _WSGIPort = 8080 # TODO: read port num from settings 
     lg.out(4, '        %s' % my_wsgi_handler)
     lg.out(4, '        %s' % resource)
     lg.out(4, '        %s' % site)
@@ -136,8 +137,12 @@ def init():
     # command.execute("admin")
 
     lg.out(4, '    running django "syncdb" command')
-    management.call_command('syncdb', stdout=sys.stdout,
+    management.call_command('syncdb', 
+        stdout=open(os.path.join(settings.LogsDir(), 'django-syncdb.log'), 'w'),
         interactive=False, verbosity=verbosity)
+
+    _ShortPoolPort = 8081 # TODO: read port num from settings
+    # shortpool.init(get_update_items, set_updated, _ShortPoolPort)
 
     lg.out(4, '    starting listener: %s' % site)
     result = start_listener(site)
@@ -164,7 +169,7 @@ def shutdown():
     global _WSGIPort
     lg.out(4, 'control.shutdown')
     # sqlio.shutdown()
-    result = Deferred()
+    # shortpool.shutdown()
     if _WSGIListener:
         lg.out(4, '    close listener %s' % _WSGIListener)
         result = _WSGIListener.stopListening()
@@ -172,6 +177,7 @@ def shutdown():
         del _WSGIListener
     else:
         lg.out(4, '    listener is None')
+        result = Deferred()
         result.callback(1)
     _WSGIListener = None
     _WSGIPort = None
@@ -201,7 +207,6 @@ def start_listener(site):
         result.callback(_WSGIPort)
 
     result = Deferred()
-    # wsgiport = 8080
     _try(site, result, 0)
     return result
 
@@ -212,10 +217,7 @@ def show():
     if _WSGIPort is not None:
         lg.out(4, 'control.show on port %d' % _WSGIPort)
         webbrowser.open('http://localhost:%d' % _WSGIPort)
-        # webbrowser.open_new('http://127.0.0.1:%d' % _WSGIPort)
-        # webbrowser.open_new('http://localhost/:%d' % _WSGIPort)
-        # webbrowser.open_new('http://localhost:8080')
-        # webbrowser.open('http://localhost:8080')
+
     else:
         try:
             local_port = int(bpio.ReadBinaryFile(settings.LocalWSGIPortFilename()))
@@ -231,21 +233,44 @@ def show():
 
 def stop_updating():
     global _UpdateFlag
+    global _UpdateItems
     _UpdateFlag = None
-
-def request_update():
-    global _UpdateFlag
-    if not _UpdateFlag:
-        lg.out(18, 'control.request_update  _UpdateFlag were set to True')
-    _UpdateFlag = True
+    _UpdateItems.clear()
+    _UpdateItems['stop'] = int(time.time())
 
 def set_updated():
     global _UpdateFlag
+    global _UpdateItems
+    if _UpdateFlag:
+        lg.out(2, 'control.set_updated  _UpdateFlag were set to False, current items: %s' % str(_UpdateItems))
     _UpdateFlag = False
-    
+    _UpdateItems.clear()
+   
 def get_update_flag():
     global _UpdateFlag
     return _UpdateFlag
+
+def get_update_items():
+    global _UpdateItems
+    return _UpdateItems
+
+def request_update(items=None):
+    global _UpdateFlag
+    global _UpdateItems
+    if not _UpdateFlag:
+        lg.out(2, 'control.request_update  _UpdateFlag were set to True, items=%s' % str(items) )
+    _UpdateFlag = True
+    _UpdateItems['refresh'] = int(time.time())
+    if items is not None:
+        for item in items:
+            if isinstance(item, tuple) and len(item) == 2:
+                key, value = item
+                if key not in _UpdateItems:
+                    _UpdateItems[key] = []
+                _UpdateItems[key].append(value)
+            else:
+                for item in items:
+                    _UpdateItems.update(item)
 
 #------------------------------------------------------------------------------ 
 
@@ -285,7 +310,7 @@ def on_tray_icon_command(cmd):
         lg.warn('wrong command: ' + str(cmd))    
 
 def on_backup_stats(backupID):
-    request_update()
+    request_update([('backupID', backupID),])
     
 def on_read_local_files():
     request_update()
@@ -297,7 +322,6 @@ class MyFakedWSGIHandler:
         self.orig_handler = original_handler
         
     def __call__(self, environ, start_response):
-        # print 'MyFakedWSGIHandler', environ['PATH_INFO']
         return self.orig_handler(environ, start_response)   
 
 

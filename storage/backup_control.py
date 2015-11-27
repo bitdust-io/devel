@@ -300,12 +300,14 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
         9) check and calculate used space
         10) save the modified index data base, soon it will be synchronized with "backup_db_keeper()" state machine  
     """
+    # if the user deletes a backup, make sure we remove any work we're doing on it
+    # abort backup if it just started and is running at the moment
+    if AbortRunningBackup(backupID):
+        lg.out(8, 'backup_control.DeleteBackup %s is in process, stopping' % backupID)
+        return True
     from customer import io_throttle
     import backup_rebuilder
     lg.out(8, 'backup_control.DeleteBackup ' + backupID)
-    # if the user deletes a backup, make sure we remove any work we're doing on it
-    # abort backup if it just started and is running at the moment
-    AbortRunningBackup(backupID)
     # if we requested for files for this backup - we do not need it anymore
     io_throttle.DeleteBackupRequests(backupID)
     io_throttle.DeleteBackupSendings(backupID)
@@ -331,7 +333,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     # in some cases we want to save the DB later 
     if saveDB:
         Save()
-        control.request_update()
+        control.request_update([('backupID', backupID),])
     return True
     
 def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=True):
@@ -563,7 +565,7 @@ def OnJobDone(backupID, result):
         backup_fs.ScanID(pathID)
         backup_fs.Calculate()
         Save()
-        control.request_update()
+        control.request_update([('pathID', pathID),])
         #TODO: check used space, if we have over use - stop all tasks immediately
         backup_matrix.RepaintBackup(backupID)
     elif result == 'abort':

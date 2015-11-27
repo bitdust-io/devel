@@ -975,6 +975,21 @@ def getUserName():
     """
     Return current user name in unicode string.
     """
+    try:
+        import pwd
+    except ImportError:
+        try:
+            import getpass
+        except:
+            pass
+        pwd = None
+    try:
+        if pwd:
+            return pwd.getpwuid(os.geteuid()).pw_name
+        else:
+            return getpass.getuser()
+    except:
+        pass
     return os.path.basename(unicode(os.path.expanduser('~')))
 
 #------------------------------------------------------------------------------
@@ -1227,7 +1242,25 @@ def kill_process_win32(pid):
         return False
     return True
 
+#------------------------------------------------------------------------------ 
 
-
-    
+def detect_number_of_cpu_cores():
+    """Detects the number of effective CPUs in the system"""
+    #for Linux, Unix and MacOS
+    if hasattr(os, "sysconf"):
+        if "SC_NPROCESSORS_ONLN" in os.sysconf_names:
+            #Linux and Unix
+            ncpus = os.sysconf("SC_NPROCESSORS_ONLN")
+            if isinstance(ncpus, int) and ncpus > 0:
+                return ncpus
+        else:
+            #MacOS X
+            return int(os.popen2("sysctl -n hw.ncpu")[1].read())
+    #for Windows
+    if "NUMBER_OF_PROCESSORS" in os.environ:
+        ncpus = int(os.environ["NUMBER_OF_PROCESSORS"])
+        if ncpus > 0:
+            return ncpus
+    #return the default value
+    return 1    
 

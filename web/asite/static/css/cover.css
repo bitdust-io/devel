@@ -44,11 +44,15 @@ body {
 .cover-container {
   margin-right: auto;
   margin-left: auto;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 /* Padding for spacing */
 .inner {
-  padding: 30px;
+  /* padding: 30px; */
+  margin-top: 51px;
+  margin-bottom: 22px;
 }
 
 
@@ -103,11 +107,12 @@ body {
  */
 
 .cover {
-  padding: 0 20px;
+  /* padding: 0 20px; */
 }
 .cover .btn-lg {
-  padding: 10px 20px;
-  font-weight: bold;
+  /* padding: 10px 20px;
+  font-weight: bold; */
+  /* border-radius: 20px; */
 }
 
 
@@ -116,8 +121,10 @@ body {
  */
 
 .mastfoot {
-  color: #999; /* IE8 proofing */
-  color: rgba(255,255,255,.5);
+  /* color: #999; IE8 proofing
+  color: rgba(255,255,255,.5); */
+    background-color: #fff;
+    border-top: 1px solid #f0f0f0;  
 }
 
 
@@ -125,7 +132,7 @@ body {
  * Affix and center
  */
 
-@media (min-width: 768px) {
+@media (min-width: 1px) {
   /* Pull out the header and footer */
   .masthead {
     position: fixed;

@@ -1,6 +1,8 @@
 {% extends "setup.html" %}
 {% block page %}
-<h1>configure BitDust software now?</h1>
+<h1>configure BitDust now?</h1>
+<div class="container-fluid">
+<div class="row">
 <table align=center>
  <tr>
   <td>
@@ -16,11 +18,14 @@
    <br />     
    <br />     
    <form action="{{ request.path }}" method="post">
-    <input type="submit" name="action" value="skip" />
-    <input type="submit" name="action" value="next" />
+      <div class="next-prev-buttons">
+       <input type="submit" class="btn btn-lg btn-success" name="action" value="next" />
+       <input type="submit" class="btn btn-lg btn-default" name="action" value="skip" />
+      </div>
    </form>
   </td>
  </tr>
 </table>
-<br />
+</div>
+</div>
 {% endblock page %}
