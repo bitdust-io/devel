@@ -93,13 +93,13 @@ class IdRestorer(automat.Automat):
     """
     
     MESSAGES = {
-        'MSG_01':   [''], 
-        'MSG_02':   ['network connection failed', 'red'],
-        'MSG_03':   ['download user identity'],
-        'MSG_04':   ['user identity not exist', 'red'],
+        'MSG_01':   ['download user identity from remote host'], 
+        'MSG_02':   ['key verification failed!', 'red'],
+        'MSG_03':   ['download user identity from remote host'],
+        'MSG_04':   ['incorrect IDURL or user identity not exist', 'red'],
         'MSG_05':   ['verifying user identity and private key'],
-        'MSG_06':   ['your account were restored!', 'green'], }
-
+        'MSG_06':   ['your identity were restored!', 'green'], }
+    
     def msg(self, msgid, arg=None): 
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0]
@@ -197,16 +197,29 @@ class IdRestorer(automat.Automat):
             local_ident = identity.identity(xmlsrc = remote_identity_src)
         except:
             # lg.exc()
-            reactor.callLater(0.5, self.automat, 'restore-failed', ('remote identity have incorrect format', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity have incorrect format', 'red'))
             return
-    
+
+        lg.out(4, 'identity_restorer.doVerifyAndRestore checking remote identity')
         try:
-            res = remote_ident.Valid()
+            res = remote_ident.isCorrect() 
         except:
             lg.exc()
             res = False
         if not res:
-            reactor.callLater(0.5, self.automat, 'restore-failed', ('remote identity is not valid', 'red'))
+            lg.out(4, 'identity_restorer.doVerifyAndRestore remote identity is not correct FAILED!!!!')
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity format is not correct', 'red'))
+            return
+    
+        lg.out(4, 'identity_restorer.doVerifyAndRestore validate remote identity')
+        try:
+            res = remote_ident.Valid() 
+        except:
+            lg.exc()
+            res = False
+        if not res:
+            lg.out(4, 'identity_restorer.doVerifyAndRestore validate remote identity FAILED!!!!')
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity is not valid', 'red'))
             return
     
         key.ForgetMyKey()
@@ -220,18 +233,18 @@ class IdRestorer(automat.Automat):
                 os.remove(settings.KeyFileName())
             except:
                 pass
-            reactor.callLater(0.5, self.automat, 'restore-failed', ('private key is not valid', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('private key is not valid', 'red'))
             return
     
         try:
             local_ident.sign()
         except:
             # lg.exc()
-            reactor.callLater(0.5, self.automat, 'restore-failed', ('error while signing identity', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('error while signing identity', 'red'))
             return
     
         if remote_ident.signature != local_ident.signature:
-            reactor.callLater(0.5, self.automat, 'restore-failed', ('signature did not match', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('signature did not match, key verification failed!', 'red'))
             return
     
         my_id.setLocalIdentity(local_ident)
@@ -247,7 +260,7 @@ class IdRestorer(automat.Automat):
             lg.out(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.LocalIdentityFilename())
             bpio.remove_backuped_file(settings.LocalIdentityFilename())
 
-        reactor.callLater(0.5, self.automat, 'restore-success')
+        reactor.callLater(0.1, self.automat, 'restore-success')
         
     def doRestoreSave(self, arg):
         """

@@ -799,6 +799,7 @@ def run(opts, args, pars=None, overDict=None):
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:
         from main import settings
+        from lib import misc
         ver = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         chksum = bpio.ReadTextFile(settings.CheckSumFile()).strip()
         repo, location = misc.ReadRepoLocation()

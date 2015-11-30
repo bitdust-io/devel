@@ -250,6 +250,12 @@ class identity:
             return False
         if self.signature == '':
             return False
+        if self.revision == '':
+            return False
+        try:
+            int(self.revision)
+        except:
+            return False
         return True
 
     def makehash(self):

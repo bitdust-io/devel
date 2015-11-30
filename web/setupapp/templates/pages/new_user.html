@@ -11,7 +11,7 @@
  <div class="row">
    <div class="col-lg-12">
  
-   <p align=center>
+   <p align=justify>
 File identity - is a publicly accessible file, 
 so that every user may download your identity file 
 and find out your contact information.
@@ -26,10 +26,12 @@ reliable identification for any user in the BitDust Network.
 </div>
 
 <div class="col-lg-12">
+   <div id="progress_wrap">
    <div id="progress">
     {% autoescape off %}
     {{ output }}
     {% endautoescape %}
+   </div>
    </div>
 </div>
 
@@ -55,9 +57,9 @@ reliable identification for any user in the BitDust Network.
             //debug.log('reload', data, data.length);
             if (data['state']) {
                 if (data['state'] == 'REGISTER') {
-                    $('#progress').load(location.href + " #progress");
+                    $('#progress_wrap').load(location.href + " #progress");
                 } else if (data['state'] == 'AUTHORIZED') {
-                    $('#progress').load(location.href + " #progress");
+                    $('#progress_wrap').load(location.href + " #progress");
                     location.reload();
                 } else if (data['state'] == 'INPUT_NAME') {
                     location.reload();

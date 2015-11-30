@@ -77,8 +77,16 @@ class InstallWizard(automat.Automat):
     
     def init(self):
         self.log_events = True
+        # TODO: we do not need 'READY' state now
+        # because only have one page "STORAGE"
+        self.state = 'STORAGE'
 
     def state_changed(self, oldstate, newstate, event, arg):
+        if newstate == 'CONTACTS' and oldstate == 'STORAGE':
+            self.event('next', {}) 
+            # TODO:
+            # here just skip Contacts page!
+            # we do not need that now, but can back to that soon when add chat
         if not settings.NewWebGUI():
             from web import webcontrol
             reactor.callLater(0, webcontrol.OnUpdateInstallPage)

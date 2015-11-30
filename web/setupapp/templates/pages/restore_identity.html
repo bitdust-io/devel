@@ -12,23 +12,26 @@
  <div class="row">
  
   <div class="col-lg-12">
-   <p align=center>
+   <p align=justify>
     BitDust software need to verify remote Identity file
-     with your Private Key.
-     <br />
-    If the signature match - your identity will be restored. 
+    with your Private Key.
+    If the <a href="http://bitdust.io/security.html#digital-signature" target="_blank">signature match</a>
+    - your identity will be restored 
+    and you will be able to communicate with other nodes. 
    </p>
   </div>
-  
+ 
+  {% if output != "" %}
   <div class="col-lg-12" style="height: 150px; overflow: auto;">
+   <div id="progress_wrap" style="margin: 0px auto;">
    <div id="progress">
-    {% if output != "" %}
      {% autoescape off %}
      {{ output }}
      {% endautoescape %}
-    {% endif %} 
+   </div>
    </div>
   </div>
+  {% endif %} 
   
   <div class="col-lg-12">
    {% if idurl != '' %}
@@ -53,10 +56,10 @@
             //debug.log('reload', data, data.length);
             if (data['state']) {
                 if (data['state'] == 'RESTORED') {
-                    $('#progress').load(location.href + " #progress");
+                    $('#progress_wrap').load(location.href + " #progress");
                     location.reload();
                 } else if (data['state'] == 'RECOVER') {
-                    $('#progress').load(location.href + " #progress");
+                    $('#progress_wrap').load(location.href + " #progress");
                 } else if (data['state'] == 'LOAD_KEY') {
                     location.reload();
                 }

@@ -225,9 +225,18 @@ class IdRegistrator(automat.Automat):
         Condition method.
         """
         id_from_server = identity.identity(xmlsrc=arg)
-        if not id_from_server.Valid():
+        if not id_from_server.isCorrect():
+            # print 'isCorrect - False'
             return False
-        return self.new_identity.serialize() == id_from_server.serialize()
+        if not id_from_server.Valid():
+            # print 'Valid - False'
+            return False
+        equal = self.new_identity.serialize() == id_from_server.serialize()
+        # if not equal:
+            # print 'not equal'
+            # print self.new_identity.serialize()
+            # print id_from_server.serialize()
+        return equal
     
     def isSomeAlive(self, arg):
         """
@@ -371,6 +380,10 @@ class IdRegistrator(automat.Automat):
         """
         Action method.
         """
+        # TODO: just to debug - skip sending to ID servers and go further
+        # self.state = 'REQUEST_ID'
+        # self.event('my-id-exist', self.new_identity.serialize())
+        # return
         mycurrentidentity = None
         if my_id.isLocalIdentityReady():
             mycurrentidentity = my_id.getLocalIdentity()

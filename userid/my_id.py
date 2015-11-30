@@ -138,6 +138,9 @@ def loadLocalIdentity():
         lg.out(2, "my_id.loadLocalIdentity ERROR reading local identity from " + filename)
         return
     lid = identity.identity(xmlsrc=xmlid)
+    if not lid.isCorrect():
+        lg.out(2, "my_id.loadLocalIdentity ERROR loaded identity is not Correct")
+        return
     if not lid.Valid():
         lg.out(2, "my_id.loadLocalIdentity ERROR loaded identity is not Valid")
         return

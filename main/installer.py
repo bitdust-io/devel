@@ -231,7 +231,10 @@ class Installer(automat.Automat):
             elif ( event == 'id_restorer.state' and arg == 'FAILED' ) and not self.flagCmdLine :
                 self.state = 'LOAD_KEY'
                 self.doUpdate(arg)
-            elif ( event == 'id_restorer.state' and arg == 'RESTORED!' ) or ( ( event == 'id_restorer.state' and arg == 'FAILED' ) and self.flagCmdLine ) :
+            elif ( event == 'id_restorer.state' and arg == 'FAILED' ) and self.flagCmdLine :
+                self.state = 'DONE'
+                self.doUpdate(arg)
+            elif event == 'id_restorer.state' and arg == 'RESTORED!' :
                 self.state = 'RESTORED'
                 self.doRestoreSettings(arg)
                 self.doUpdate(arg)
@@ -336,8 +339,15 @@ class Installer(automat.Automat):
             keysrc = src
         if not self.output.has_key(self.state):
             self.output[self.state] = {'data': [('', 'black')]}
+        self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['idurl'] = idurl
         self.output[self.state]['keysrc'] = keysrc
+        if not self.output.has_key('RECOVER'):
+            self.output['RECOVER'] = {'data': [('', 'black')]}
+        if keysrc and idurl:
+            self.output['RECOVER']['data'].append(('private key and IDURL was loaded', 'green'))
+        elif not idurl and keysrc:
+            self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
         
     def doPasteKey(self, arg):
         src = misc.getClipboardText()
@@ -356,6 +366,12 @@ class Installer(automat.Automat):
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['idurl'] = idurl
         self.output[self.state]['keysrc'] = keysrc
+        if not self.output.has_key('RECOVER'):
+            self.output['RECOVER'] = {'data': [('', 'black')]}
+        if keysrc and idurl:
+            self.output['RECOVER']['data'].append(('private key and IDURL was loaded', 'green'))
+        elif not idurl and keysrc:
+            self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
 
     def doPrepareSettings(self, arg):
         """

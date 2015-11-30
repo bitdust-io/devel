@@ -13,7 +13,7 @@
 A methods to just store text constants, used to print command-line instructions.
 """
 
-def usage():
+def usage0():
     return '''usage: bitdust [options] [command] [arguments]
     
 Commands:
@@ -60,6 +60,28 @@ Commands:
   help
 '''    
   
+def usage():
+    return '''usage: bitdust [options] [command] [arguments]
+    
+Commands:
+  start
+  detach
+  restart
+  stop
+  show
+  identity create <username> [private key size]
+  identity restore <private key source file> [IDURL]
+  backup list
+  backup idlist
+  backup start <local path or ID>
+  backup delete <local path, ID or full backup ID>
+  backup delete local <full backup ID>
+  backup update
+  set <option> [value]
+  version
+  help
+'''      
+  
 #  recover <private key filename> [idurl or username]
 #  schedule <folder> [schedule in compact format]
 #  money
@@ -68,7 +90,7 @@ Commands:
 #  money receipt <receipt ID>
 
 
-def help():
+def help0():
     return '''usage: bitdust [options] [command] [arguments]
 
 Commands:
@@ -181,6 +203,57 @@ Commands:
   help                  print this message
   
   help backups          print more info about catalog and backup IDs  
+  
+  help settings         print settings list
+
+'''
+
+
+
+def help():
+    return '''usage: bitdust [options] [command] [arguments]
+
+Commands:
+  [start]               start BitDust
+  
+  detach                start BitDust in a child process
+  
+  restart               restart BitDust 
+
+  stop                  stop BitDust
+
+  show                  start BitDust and show the main window
+
+  identity create <username> [private key size]
+                        generate a new private key and new identity file for you
+                        key size can be 1024, 2048 or 4096
+
+  identity restore <private key source file> [IDURL]
+                        recover existing identity file with your private key file
+
+  backup list           show a catalog of files and folders
+
+  backup idlist         show a list of backups
+
+  backup start <local path or ID>
+                        start a new backup of the local file or folder 
+                        or existing ID from catalog
+                        
+  backup delete <local path, ID or full backup ID>
+                        remove a file or folder (with all subfolders) from catalog
+                        or just delete a given backup
+
+  backup delete local <full backup ID>
+                        remove only local copy of given backup,
+                        keep remote copy on suppliers HDD
+                        
+  backup update         request all suppliers to update info for all backups 
+
+  set <option> [value]  to modify program setting
+
+  version               display current software version
+
+  help                  print this message
   
   help settings         print settings list
 

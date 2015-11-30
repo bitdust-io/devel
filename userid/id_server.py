@@ -216,8 +216,11 @@ class IdServer(automat.Automat):
             # os.remove(inputfilename)
             return
         tmpfile.erase('idsrv', inputfilename, 'id received')
+        if not newidentity.isCorrect():
+            lg.warn("has non-Correct identity")
+            return
         if not newidentity.Valid():
-            lg.warn("has non-Valid packet")
+            lg.warn("has non-Valid identity")
             return
         matchid = ""
         for idurl in newidentity.sources:

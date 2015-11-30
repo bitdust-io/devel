@@ -333,7 +333,7 @@ class Initializer(automat.Automat):
             lg.out(2, 'initializer._check_install fail init local identity ')
             return False
         try:
-            res = ident.Valid()
+            res = ident.Valid() and ident.isCorrect()
         except:
             lg.out(2, 'initializer._check_install wrong data in local identity   ')
             return False

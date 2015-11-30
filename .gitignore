@@ -3,6 +3,7 @@
 *.pyd
 *.~vsd
 *.orig
+.identities/
 web/*.db
 docs.teamlab/
 docs/area
