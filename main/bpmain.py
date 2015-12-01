@@ -44,7 +44,7 @@ def run(UI='', options=None, args=None, overDict=None):
     """
     
     from logs import lg
-    lg.out(6, 'bpmain.run UI="%s"' % UI)
+    lg.out(4, 'bpmain.run UI="%s"' % UI)
     
     from system import bpio
     
@@ -62,18 +62,21 @@ def run(UI='', options=None, args=None, overDict=None):
     #---USE_TRAY_ICON---
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
         try:
-            from tray_icon import USE_TRAY_ICON
+            from system.tray_icon import USE_TRAY_ICON
             if not bpio.isGUIpossible():
+                lg.out(4, '    GUI is not possible')
                 USE_TRAY_ICON = False
             if USE_TRAY_ICON:
                 from twisted.internet import wxreactor
                 wxreactor.install()
+                lg.out(4, '    wxreactor installed')
         except:
             USE_TRAY_ICON = False
             lg.exc()
     else:
+        lg.out(4, '    local identity or key file is not ready')
         USE_TRAY_ICON = False
-    lg.out(4, 'bpmain.run USE_TRAY_ICON='+str(USE_TRAY_ICON))
+    lg.out(4, '    USE_TRAY_ICON='+str(USE_TRAY_ICON))
     if USE_TRAY_ICON:
         if bpio.Linux():
             icons_dict = {
@@ -87,7 +90,7 @@ def run(UI='', options=None, args=None, overDict=None):
                 'yellow':   'icon-yellow-16x16.png',
                 'green':    'icon-green-16x16.png',
                 'gray':     'icon-gray-16x16.png', }
-        import tray_icon
+        from system import tray_icon
         icons_path = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), 'icons')))
         lg.out(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)
         tray_icon.init(icons_path, icons_dict)
@@ -97,6 +100,7 @@ def run(UI='', options=None, args=None, overDict=None):
                 shutdowner.A('stop', 'exit')
         tray_icon.SetControlFunc(_tray_control_func)
 
+    #---twisted reactor---    
     lg.out(4, 'bpmain.run want to import twisted.internet.reactor')
     try:
         from twisted.internet import reactor
@@ -138,6 +142,11 @@ def run(UI='', options=None, args=None, overDict=None):
 #    if lg.is_debug(12):
 #        patchReactorCallLater(reactor)
 #        monitorDelayedCalls(reactor)
+
+#    #---plugins---
+#    from plugins import plug
+#    plug.init()
+#    reactor.addSystemEventTrigger('before', 'shutdown', plug.shutdown)
 
     lg.out(2,"bpmain.run UI=[%s]" % UI)
 

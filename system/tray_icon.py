@@ -16,10 +16,14 @@ Uses wxPython to show tray icon for BitDust.
 This is working inside ``bpmain`` process, uses wxreactor to connect with main Twisted loop.
 """
 
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 
-USE_TRAY_ICON = False # True
+#------------------------------------------------------------------------------ 
+
+USE_TRAY_ICON = True
 LABEL = 'BitDust'
     
 _IconObject = None
@@ -89,9 +93,9 @@ def init(icons_path, icons_files=None):
             menu = wx.Menu()
             icons = self.items_dict()
             create_menu_item(menu, 'show', self.on_show, icons.get('show', None))
-            create_menu_item(menu, 'hide', self.on_hide, icons.get('hide', None))
-            create_menu_item(menu, 'toolbar', self.on_toolbar, icons.get('toolbar', None))
-            menu.AppendSeparator()
+            # create_menu_item(menu, 'hide', self.on_hide, icons.get('hide', None))
+            # create_menu_item(menu, 'toolbar', self.on_toolbar, icons.get('toolbar', None))
+            # menu.AppendSeparator()
             create_menu_item(menu, 'reconnect', self.on_reconnect, icons.get('reconnect', None))
             create_menu_item(menu, 'restart', self.on_restart, icons.get('restart', None))
             create_menu_item(menu, 'shutdown', self.on_exit, icons.get('shutdown', None))

@@ -4,6 +4,7 @@
 *.~vsd
 *.orig
 .identities/
+plugins/
 web/*.db
 docs.teamlab/
 docs/area

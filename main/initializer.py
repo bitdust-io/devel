@@ -260,12 +260,12 @@ class Initializer(automat.Automat):
             from web import webcontrol
             d = webcontrol.init()
         try:
-            from main.tray_icon import USE_TRAY_ICON
+            from system.tray_icon import USE_TRAY_ICON
         except:
             USE_TRAY_ICON = False
             lg.exc()
         if USE_TRAY_ICON:
-            from main import tray_icon
+            from system import tray_icon
             if settings.NewWebGUI():
                 tray_icon.SetControlFunc(control.on_tray_icon_command)
             else:

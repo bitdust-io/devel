@@ -74,7 +74,6 @@ from automats import automat
 from automats import global_state
 
 from system import bpio
-from system import run_upnpc
 
 from lib import net_misc
 from lib import misc
@@ -83,7 +82,6 @@ from services import driver
 
 from main import settings
 from main import shutdowner
-from main import tray_icon
 
 #------------------------------------------------------------------------------ 
 
@@ -138,10 +136,11 @@ class NetworkConnector(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('NETWORK ' + newstate)
-        # if driver.is_started('service_p2p_hookups'):
-        #     import p2p_connector
-        #     p2p_connector.A('network_connector.state', newstate)
-        #     tray_icon.state_changed(self.state, p2p_connector.A().state)
+        if driver.is_started('service_p2p_hookups'):
+            import p2p_connector
+            from system import tray_icon
+            p2p_connector.A('network_connector.state', newstate)
+            tray_icon.state_changed(self.state, p2p_connector.A().state)
 
     def A(self, event, arg):
         #---AT_STARTUP---
@@ -504,6 +503,7 @@ def UpdateUPNP():
         # start messing with upnp settings
         # success can be false if you're behind a router that doesn't support upnp
         # or if you are not behind a router at all and have an external ip address
+        from system import run_upnpc
         shutdowner.A('block')
         success, port = run_upnpc.update(port)
         shutdowner.A('unblock')
