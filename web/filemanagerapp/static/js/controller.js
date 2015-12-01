@@ -211,53 +211,20 @@
             });
             return found;
         };
-        
-        $scope.readRepaintFlag = function() { 
-            // debug.log('read_flag');
-            $http({
-                url: '/repaintflag',
-                method: "GET",
-                cache: false,   
-            }).success(function(data) {
-                // debug.log('    ', data);
-                if (data == 'True') {
-                	//debug.log('need to update !!!');
-                	$scope.fileNavigator.refresh_soft();
-                	//$scope.fileNavigator.refresh();
-                	$scope.activeTasks.refresh();
-                } else if (data == 'False') {
-                	//debug.log('not need to update'); 
-                } else if (data == 'None') {
-                	debug.log('repaintflag is None, stop refreshing');
-                	$scope.stopRefresherTask();
-                } else {
-                	debug.log('WARNING, wrong value: ', data);
-                }
-            }).error(function(data) {
-            	debug.log('FAIL, stop refreshing', data);
-            	$scope.stopRefresherTask();
-            });
-        };
-        
-        $scope.startRefresherTask = function () {
-        	$scope.refresher_task = $interval(function() {
-        		$scope.readRepaintFlag();
-        	},	
-        	$scope.refresh_interval);
-        };
-        
-        $scope.stopRefresherTask = function () {
-            if (angular.isDefined($scope.refresher_task)) {
-                $interval.cancel($scope.refresher_task);
-                $scope.refresher_task = null;
-            }
-        };
-        
+                
         $scope.navigateTo = function (itemPath) {
         	$scope.fileNavigator.currentPath = itemPath.split('/'); 
         	$scope.fileNavigator.refresh();
         };
-
+        
+        $scope.startRefresherTask = function () {
+        	setRefreshCallback(function(data) {
+            	$scope.fileNavigator.refresh_soft();
+            	$scope.activeTasks.refresh();
+        	});
+        	startUpdater();
+        };
+        
         $scope.changeLanguage($scope.getQueryParam('lang'));
         $scope.isWindows = $scope.getQueryParam('server') === 'Windows';
 
