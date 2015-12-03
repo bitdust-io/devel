@@ -1,36 +1,53 @@
 <div id="filemanager-content" data-ng-controller="FileManagerCtrl">
-    <div ng-include="config.tplPath + '/navbar.html'"></div>
+
+    <div data-ng-show="fileNavigator.requesting"> </div>
     
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <div ng-include="config.tplPath + '/current-folder-breadcrumb.html'"
-                     data-ng-show="fileNavigator.treeView">
+    <div data-ng-show="fileNavigator.fileList.length > 0 && !fileNavigator.requesting">
+    
+        <div ng-include="config.tplPath + '/navbar.html'"></div>
+        
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div ng-include="config.tplPath + '/current-folder-breadcrumb.html'"
+                         data-ng-show="fileNavigator.treeView">
+                    </div>
                 </div>
-            </div>
-            
-            <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12 sidebar file-tree"
-                data-ng-show="0" 
-                ng-include="config.tplPath + '/sidebar.html'">
-            </div>
-            
-            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 main">
-                <div class="main-navigation"
-                    ng-include="config.tplPath + '/' + viewTemplate">
+                
+                <!-- 
+                <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12 sidebar file-tree"
+                    ng-include="config.tplPath + '/sidebar.html'">
+                </div>
+                -->
+                 
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 main">
+                    <div class="main-navigation"
+                        ng-include="config.tplPath + '/' + viewTemplate">
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="active-tasks-panel" data-ng-show="activeTasks.hasTasks()">
-        <div class="row">
-            <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                <div ng-include="config.tplPath + '/tasks.html'">
+    
+        <div class="active-tasks-panel" data-ng-show="activeTasks.hasTasks()">
+            <div class="row">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div ng-include="config.tplPath + '/tasks.html'">
+                    </div>
                 </div>
-            </div>
-        </div>  
+            </div>  
+        </div>
+    
+        <div ng-include="config.tplPath + '/modals.html'"></div>
+        <div ng-include="config.tplPath + '/item-context-menu.html'"></div>
+    
     </div>
+    
+    <div data-ng-show="fileNavigator.fileList.length == 0 && !fileNavigator.requesting">
 
-    <div ng-include="config.tplPath + '/modals.html'"></div>
-    <div ng-include="config.tplPath + '/item-context-menu.html'"></div>
+        <div class="centered">
+            <h3>Drop files here or click to upload.</h3>
+        </div>
+
+    </div>
+    
 </div>

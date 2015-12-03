@@ -1,10 +1,11 @@
 (function(window, angular, $) {
     "use strict";
-    angular.module('FileManagerApp').controller('FileManagerCtrl', [
+    angular.module('FileManagerApp')
+	.controller('FileManagerCtrl', [
     '$scope', '$rootScope', '$translate', '$cookies', '$interval', '$http', 
-	'fileManagerConfig', 'item', 'fileNavigator', 'fileUploader', 'ActiveTasks',  
+	'fileManagerConfig', 'item', 'fileNavigator', /*'FileUploader',*/ 'ActiveTasks',  
     function($scope, $rootScope, $translate, $cookies, $interval, $http, 
-    		fileManagerConfig, Item, FileNavigator, FileUploader, ActiveTasks) {
+    		fileManagerConfig, Item, FileNavigator, /*FileUploader,*/ ActiveTasks) {
 
         $scope.config = fileManagerConfig;
         $scope.appName = fileManagerConfig.appName;
@@ -13,12 +14,10 @@
         $scope.temp = new Item();
         $scope.tempVersion = null;
         $scope.fileNavigator = new FileNavigator();
-        $scope.fileUploader = FileUploader;
+        //$scope.fileUploader = FileUploader;
         $scope.activeTasks = new ActiveTasks();
         $scope.uploadFileList = [];
         $scope.viewTemplate = $cookies.viewTemplate || 'main-table.html';
-        $scope.refresher_task = null;
-        $scope.refresh_interval = 500;
 
         $scope.setTemplate = function(name) {
             $scope.viewTemplate = $cookies.viewTemplate = name;
@@ -181,6 +180,7 @@
         };
         
         $scope.uploadFiles = function() {
+        	/*
             $scope.fileUploader.upload(
             	$scope.uploadFileList, 
 				$scope.fileNavigator.currentPath).success(function() {
@@ -191,6 +191,7 @@
                 	$translate.instant('error_uploading_files');
                 $scope.temp.error = errorMsg;
             });
+            */
         };
 
         $scope.eraseVersion = function(item, version) {

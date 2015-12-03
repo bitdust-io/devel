@@ -1,6 +1,6 @@
 {% extends "page.html" %}
 
-{% block extra_html_args %}data-ng-app="FileManagerApp" {{ block.super }}{% endblock extra_html_args %}
+{% block extra_html_args %} ng-app="FileManagerApp" data-ng-app="FileManagerApp" {{ block.super }}{% endblock extra_html_args %}
 
 {% block extra_head_before %}
 <script src="/asite/js/angular.min.js" type="text/javascript"></script>
@@ -11,7 +11,8 @@
 
 {% block extra_head %}
 {{ block.super }}
-<script src="/asite/js/autoupdater.js"></script> 
+<script src="/asite/js/autoupdater.js" type="text/javascript"></script>
+
 <script src="/filemanagerapp/js/app.js" type="text/javascript"></script>
 <script src="/filemanagerapp/js/config.js" type="text/javascript"></script>
 <script src="/filemanagerapp/js/item.js" type="text/javascript"></script>
@@ -32,5 +33,6 @@
 <div id="filemanager">
     <angular-file-manager></angular-file-manager>
 </div>    
+
 
 {% endblock page %}

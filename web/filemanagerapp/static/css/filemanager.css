@@ -491,3 +491,14 @@ textarea {
 	width: 24px;
 	font-size: 14px;
 }
+.dropzone {
+    cursor: pointer!important;
+    border: 2px dashed #0087F7;
+    border-radius: 5px;
+    background: #FFF none repeat scroll 0% 0%;	
+    /* min-height: 180px; */
+    padding: 54px;
+    box-sizing: border-box;
+    vertical-align: baseline;
+    text-align: center;
+}

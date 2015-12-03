@@ -241,8 +241,8 @@ def stop_updating():
 def set_updated():
     global _UpdateFlag
     global _UpdateItems
-    if _UpdateFlag:
-        lg.out(2, 'control.set_updated  _UpdateFlag were set to False, current items: %s' % str(_UpdateItems))
+    # if _UpdateFlag:
+        # lg.out(2, 'control.set_updated  _UpdateFlag were set to False, current items: %s' % str(_UpdateItems))
     _UpdateFlag = False
     _UpdateItems.clear()
    
@@ -257,8 +257,8 @@ def get_update_items():
 def request_update(items=None):
     global _UpdateFlag
     global _UpdateItems
-    if not _UpdateFlag:
-        lg.out(2, 'control.request_update  _UpdateFlag were set to True, items=%s' % str(items) )
+    # if not _UpdateFlag:
+        # lg.out(2, 'control.request_update  _UpdateFlag were set to True, items=%s' % str(items) )
     _UpdateFlag = True
     _UpdateItems['refresh'] = int(time.time())
     if items is not None:
