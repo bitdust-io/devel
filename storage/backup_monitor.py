@@ -91,7 +91,7 @@ def A(event=None, arg=None):
     """
     global _BackupMonitor
     if _BackupMonitor is None:
-        _BackupMonitor = BackupMonitor('backup_monitor', 'AT_STARTUP', 6, False)
+        _BackupMonitor = BackupMonitor('backup_monitor', 'AT_STARTUP', 6, True)
     if event is not None:
         _BackupMonitor.automat(event, arg)
     return _BackupMonitor
@@ -163,9 +163,6 @@ class BackupMonitor(automat.Automat):
             if event == 'list-backups-done' :
                 self.state = 'REBUILDING'
                 backup_rebuilder.A('start')
-            elif event == 'restart' :
-                self.state = 'FIRE_HIRE'
-                fire_hire.A('restart')
             elif event == 'restart' :
                 self.RestartAgain=True
             elif event == 'suppliers-changed' :

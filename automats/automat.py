@@ -523,7 +523,6 @@ class Automat(object):
                     self._state_callbacks[key].remove(cb)
                     if len(self._state_callbacks[key]) == 0:
                         self._state_callbacks.pop(key)
-                    break
     
     def removeStateChangedCallbackByState(self, oldstate=None, newstate=None):
         """

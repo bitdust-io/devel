@@ -29,7 +29,6 @@ class BackupsService(LocalService):
                 ]
     
     def start(self):
-        from twisted.internet import reactor
         from storage import backup_fs
         from storage import backup_monitor
         from storage import backup_control
@@ -54,15 +53,19 @@ class BackupsService(LocalService):
             self._on_keep_local_copies_modified)
         conf().addCallback('services/backups/wait-suppliers-enabled',
             self._on_wait_suppliers_modified)
-        p2p_connector.A().addStateChangedCallback(self._on_p2p_connector_state_changed,
-            None, 'CONNECTED')
+        p2p_connector.A().addStateChangedCallback(
+            self._on_p2p_connector_state_changed, 'INCOMMING?', 'CONNECTED')
+        p2p_connector.A().addStateChangedCallback(
+            self._on_p2p_connector_state_changed, 'MY_IDENTITY', 'CONNECTED')
         return True
     
     def stop(self):
         from storage import backup_fs
         from storage import backup_monitor
         from storage import backup_control
+        from p2p import p2p_connector
         from main.config import conf
+        p2p_connector.A().removeStateChangedCallback(self._on_p2p_connector_state_changed)
         backup_monitor.Destroy()
         backup_fs.shutdown()
         backup_control.shutdown()

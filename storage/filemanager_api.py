@@ -80,7 +80,14 @@ def process(json_request):
 
 def _config(params):
     result = []
-    result.append({'key': 'homepath', 'value': bpio.portablePath(os.path.expanduser('~')), })
+    homepath = bpio.portablePath(os.path.expanduser('~'))
+    if bpio.Windows():
+        # set "c:" as a starting point when pick files for Windows
+        # probably should be MyDocuments folder or something else,
+        # but lets take that for now
+        homepath = homepath[:2]
+    result.append({'key': 'homepath', 
+                   'value': homepath})
     return { 'result': result, }
 
 

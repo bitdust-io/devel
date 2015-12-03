@@ -574,7 +574,7 @@ def OnJobDone(backupID, result):
         # do we really need to restart backup_monitor after each backup?
         # if we have a lot tasks started this will produce a lot unneeded actions
         # will be smarter to restart it once we finish all tasks
-        # because user will probable leave BitDust working after starting a long running operation
+        # because user will probably leave BitDust working after starting a long running operations
         import backup_monitor
         backup_monitor.A('restart') 
     RunTasks()
