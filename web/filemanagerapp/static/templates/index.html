@@ -37,17 +37,25 @@
             </div>  
         </div>
     
-        <div ng-include="config.tplPath + '/modals.html'"></div>
-        <div ng-include="config.tplPath + '/item-context-menu.html'"></div>
-    
     </div>
     
-    <div data-ng-show="fileNavigator.fileList.length == 0 && !fileNavigator.requesting">
-
-        <div class="centered">
-            <h3>Drop files here or click to upload.</h3>
-        </div>
-
+    <div id="filemanager-intro" data-ng-show="fileNavigator.fileList.length == 0 && !fileNavigator.requesting">
+        <button class="btn btn-lg btn-success" 
+            data-ng-click="openUploadFromNavigator(temp)">
+          divide, encrypt and upload
+        </button>
+        <br/><br/>
+        <p>
+        Pick a file or folder on your local HDD and start uploading into BitDust Network.
+        <br/> 
+        Your data will be read, processed and <a href="http://bitdust.io/storage.html#upload-in-the-network">distributed</a>
+        on a set of remote machines to be safely stored as encrypted fragments.
+        <br/>
+        Be sure to make a copy of your Private Key in a safe place to be able to restore your uploaded files in bad situation.
+        </p>
     </div>
+    
+    <div ng-include="config.tplPath + '/modals.html'"></div>
+    <div ng-include="config.tplPath + '/item-context-menu.html'"></div>
     
 </div>

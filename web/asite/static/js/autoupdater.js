@@ -22,8 +22,8 @@ function readData() {
         	if (data['refresh']) {
             	intervalUp();
             	nextUpdate();
+       		    //debug.log('REFRESHING', updater_task, refresh_interval);
             	if (refresh_callback) {
-            		//debug.log('calling', refresh_callback, data);
             		refresh_callback(data);
             	};
         	} else if (data['stop']) {
@@ -36,6 +36,7 @@ function readData() {
             }
         },
         fail: function(XMLHttpRequest, textStatus, errorThrown) {
+    		debug.log('REFRESHING FAILED', updater_task, refresh_interval);
         	intervalDown();
         	nextUpdate();
         }
@@ -60,6 +61,7 @@ function intervalDown() {
 	refresh_interval = refresh_interval * 2;
 	if (refresh_interval > refresh_interval_max) {
 		refresh_interval = refresh_interval_max
+		debug.log('SLOW REFRESHING');
 	}
 };
 
