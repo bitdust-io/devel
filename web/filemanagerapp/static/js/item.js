@@ -112,7 +112,7 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
                 path: self.tempModel.fullPath()
                 // path: self.tempModel.path.join('/') + '/' + self.tempModel.name
             }};
-            //debug.log('item.upload', self.tempModel.name, self.tempModel.fullPath());
+            debug.log('item.upload', self.tempModel.name, self.tempModel.fullPath());
             if (self.tempModel.name.trim()) {
                 self.inprocess = true;
                 self.error = '';

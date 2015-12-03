@@ -27,6 +27,7 @@ which fragments are distributed to remote machines on the network.
  -->
  
 {% if mounts %}
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
  <table align=center cellspacing=2>
   <tr>
    {% for mount in mounts %}
@@ -45,10 +46,11 @@ which fragments are distributed to remote machines on the network.
   </tr>
  </table>
  <br />
+</div>
 {% endif %}
 
 
-<div class="col-lg-3 col-md-1">
+<div class="col-lg-3 col-md-1 col-sm-12 col-xs-12">
     &nbsp;
 </div>
 
@@ -87,12 +89,12 @@ which fragments are distributed to remote machines on the network.
    </select>
 </div>
     
-<div class="col-lg-3 col-md-1">
+<div class="col-lg-3 col-md-1 col-sm-12 col-xs-12">
     &nbsp;
 </div>
 
 
-<div class="form-group col-lg-12">
+<div class="form-group col-lg-12 col-md-12 col-sm-12 col-xs-12">
    <label for="customersdir">
        location for encrypted files stored for other users:
    </label>
@@ -101,7 +103,7 @@ which fragments are distributed to remote machines on the network.
           style="max-width:600px; margin: 0 auto;" />
 </div>
 
-<div class="form-group col-lg-12">
+<div class="form-group col-lg-12 col-md-12 col-sm-12 col-xs-12">
    <label for="localbackupsdir">
        temporary files folder:
    </label>
@@ -122,7 +124,7 @@ which fragments are distributed to remote machines on the network.
 </div>
 -->
 
-<div id="message" class="col-lg-12">
+<div id="message" class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
    {% if output != "" %}
     {% autoescape off %}
     {{ output }}
@@ -131,7 +133,7 @@ which fragments are distributed to remote machines on the network.
 <br />
 </div>
 
-<div class="col-lg-12">
+<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
    <div class="next-prev-buttons">
      <input type="submit" class="btn btn-lg btn-success" 
             name="action" value="next" />

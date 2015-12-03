@@ -50,7 +50,9 @@ def process(json_request):
             import json
             json_request = json.loads(json_request)
         mode = json_request['params']['mode']
-        if mode == 'list':
+        if mode == 'config':
+            result = _config(json_request['params'])
+        elif mode == 'list':
             result = _list(json_request['params'])
         elif mode == 'listlocal':
             result = _list_local(json_request['params'])
@@ -76,9 +78,17 @@ def process(json_request):
 
 #------------------------------------------------------------------------------ 
 
+def _config(params):
+    result = []
+    result.append({'key': 'homepath', 'value': bpio.portablePath(os.path.expanduser('~')), })
+    return { 'result': result, }
+
+
 def _list(params):
     result = []
-    path = params['path'].lstrip('/')
+    path = params['path']
+    if bpio.Linux():
+        path = '/' + path.lstrip('/')
     lst = backup_fs.ListByPathAdvanced(path)
     if not isinstance(lst, list):
         lg.warn('backup_fs.ListByPathAdvanced returned: %s' % lst)
@@ -122,7 +132,10 @@ def _list_all(params):
 
 def _list_local(params):
     result = []
-    path = bpio.portablePath(params['path'].lstrip('/'))
+    path = params['path']
+    if bpio.Linux():
+        path = '/' + path.lstrip('/')
+    path = bpio.portablePath(path)
     only_folders = params['onlyFolders']
     if ( path == '' or path == '/' ) and bpio.Windows():
         for itemname in bpio.listLocalDrivesWindows():
@@ -136,7 +149,7 @@ def _list_local(params):
             })
     else:
         if bpio.Windows() and len(path) == 2 and path[1] == ':':
-            path += '/' 
+            path += '/'
         apath = path
         for itemname in bpio.list_dir_safe(apath):
             itempath = os.path.join(apath, itemname)
@@ -154,7 +167,9 @@ def _list_local(params):
   
 
 def _upload(params):
-    path = params['path'].lstrip('/')
+    path = params['path']
+    if bpio.Linux():
+        path = '/' + path.lstrip('/')
     localPath = unicode(path)
     if not bpio.pathExist(localPath):
         return { 'result': { "success": False, "error": 'local path %s was not found' % path } } 
@@ -178,7 +193,10 @@ def _upload(params):
 def _download(params):
     # localName = params['name']
     backupID = params['backupid']
-    restorePath = bpio.portablePath(params['dest_path'])
+    destpath = params['dest_path']
+    if bpio.Linux():
+        destpath = '/' + destpath.lstrip('/')
+    restorePath = bpio.portablePath(destpath)
     # overwrite = params['overwrite']
     if not packetid.Valid(backupID):
         return { 'result': { "success": False, "error": "path %s is not valid" % backupID} }

@@ -34,6 +34,32 @@
             //debug.log(this.treeView);
             this.goTo(-1);
         };
+        
+        FileNavigator.prototype.request_configs = function(success, error) {
+            var self = this;
+            var data = { params: {
+                mode: 'config'
+            }};
+            self.requesting = true;
+            fileManagerConfig.localConfig = {};
+            self.error = '';
+            $http.post(fileManagerConfig.configUrl, data).success(function(data) {
+                self.config = {};
+                angular.forEach(data.result, function(conf) {
+                    fileManagerConfig.localConfig[conf.key] = conf.value;
+                });
+                debug.log('request_configs', fileManagerConfig.localConfig);
+                self.requesting = false;
+                if (data.error) {
+                    self.error = data.error;
+                    return typeof error === 'function' && error(data);
+                }
+                typeof success === 'function' && success(data);
+            }).error(function(data) {
+                self.requesting = false;
+                typeof error === 'function' && error(data);
+            });
+        };
 
         FileNavigator.prototype.refresh = function(success, error) {
             var self = this;

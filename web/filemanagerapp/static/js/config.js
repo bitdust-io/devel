@@ -19,6 +19,9 @@
         extractUrl: "/filemanager/bridge",
         permissionsUrl: "/filemanager/bridge",
         tasksUrl: "/filemanager/bridge",
+        configUrl: "/filemanager/bridge",
+        
+        localConfig: {},
         
         allowedActions: {
             rename: true,

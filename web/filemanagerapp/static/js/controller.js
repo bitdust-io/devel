@@ -142,9 +142,9 @@
         };
         
         $scope.uploadFrom = function(item, temp) {
-        	debug.log(item.model.path);
+        	//debug.log('uploadFrom', item.model.path);
             temp.tempModel.path = item.model.fullPath().split('/');
-            debug.log(temp.tempModel.path);
+            debug.log('uploadFrom', temp.tempModel.path);
             item.upload(function(data) {
             	var fullPath = temp.tempModel.path;
             	$scope.fileNavigator.currentPath = 
@@ -228,6 +228,7 @@
         $scope.changeLanguage($scope.getQueryParam('lang'));
         $scope.isWindows = $scope.getQueryParam('server') === 'Windows';
 
+        $scope.fileNavigator.request_configs();
         $scope.fileNavigator.refresh();
     	$scope.activeTasks.refresh();
 
