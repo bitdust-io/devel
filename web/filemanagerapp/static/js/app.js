@@ -7,7 +7,7 @@
 (function(window, angular, $) {
     "use strict";
     var app = angular.module('FileManagerApp', 
-    	['pascalprecht.translate', 'ngCookies']);
+    	['pascalprecht.translate', 'ngCookies', 'angularFileUpload']);
 
     app.directive('angularFileManager', ['$parse', 'fileManagerConfig', function($parse, fileManagerConfig) {
         return {

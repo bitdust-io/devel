@@ -334,7 +334,11 @@ class SupplierQueue:
         packetsSent = 0
         # let's check all packets in the queue        
         for i in xrange(len(self.fileSendQueue)):
-            packetID = self.fileSendQueue[i]
+            try:
+                packetID = self.fileSendQueue[i]
+            except:
+                lg.warn("item at position %d not exist in send queue" % i)
+                continue
             fileToSend = self.fileSendDict[packetID]
             # we got notify that this packet was failed to send
             if packetID in self.sendFailedPacketIDs:
