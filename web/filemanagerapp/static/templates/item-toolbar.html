@@ -1,5 +1,11 @@
 <div data-ng-show="!item.inprocess">
 
+    <button class="btn btn-sm btn-default" 
+            data-ng-click="smartRightClick(item, $event)" >
+        <i class="glyphicon glyphicon-th-list"></i>
+    </button>
+
+<!--
     <button class="btn btn-sm btn-primary" 
             data-ng-show="config.allowedActions.synchronize" 
             data-ng-click="synchronizeItem(item)" 
@@ -22,6 +28,7 @@
             title="{{'remove' | translate}}">
         <i class="glyphicon glyphicon-trash"></i>
     </button>
+-->    
     
 </div>
 <div data-ng-show="item.inprocess">

@@ -1,5 +1,8 @@
 <div id="filemanager-content" data-ng-controller="FileManagerCtrl">
 
+    <div ng-include="config.tplPath + '/modals.html'"></div>
+    <div ng-include="config.tplPath + '/item-context-menu.html'"></div>
+    
     <div data-ng-show="fileNavigator.requesting"> </div>
     
     <div data-ng-show="fileNavigator.fileList.length > 0 && !fileNavigator.requesting">
@@ -54,8 +57,5 @@
         Be sure to make a copy of your Private Key in a safe place to be able to restore your uploaded files in bad situation.
         </p>
     </div>
-    
-    <div ng-include="config.tplPath + '/modals.html'"></div>
-    <div ng-include="config.tplPath + '/item-context-menu.html'"></div>
     
 </div>

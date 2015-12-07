@@ -3,7 +3,7 @@
     angular.module('FileManagerApp').run( function($rootScope) {
 
 		$rootScope.openContextMenu = function(menuselector, event) {
-	    	//debug.log('openContextMenu', menuselector);
+	    	debug.log('openContextMenu', menuselector, event.pageX - $('#filemanager').offset().left + 10, event.pageY - $('#filemanager').offset().top - 10);
 	        $(".context-menu").hide();
 	        $(menuselector).css({
 	            left: event.pageX - $('#filemanager').offset().left + 10,

@@ -1,6 +1,9 @@
 <table class="table table-striped table-hover mb0 table-files">
     <thead>
         <tr data-ng-show="fileNavigator.fileList.length >= 1">
+            <th class="text-right">
+                &nbsp;
+            </th>
             <th width="100%">
                 {{"name" | translate}}
             </th>
@@ -13,9 +16,6 @@
             <th class="hidden-sm hidden-xs">
                 {{"date" | translate}}
             </th>
-            <th class="text-right">
-                {{"actions" | translate}}
-            </th>
         </tr>
     </thead>
     <tbody class="file-item">
@@ -25,6 +25,10 @@
             </td>
         </tr>
         <tr data-ng-repeat="item in fileNavigator.fileList | filter: query | orderBy: orderProp" data-ng-show="!fileNavigator.requesting">
+            <td class="main-table-item-toolbar text-right">
+                <div ng-include="config.tplPath + '/item-toolbar.html'">
+                </div>
+            </td>
             <td width="100%" class="main-table-item">
                 <a href="" 
                     data-ng-click="smartClick(item, $event)" 
@@ -54,10 +58,6 @@
             <td style="white-space: nowrap;" 
                 class="hidden-sm hidden-xs">
                 {{item.model.date}} 
-            </td>
-            <td class="main-table-item-toolbar text-right">
-                <div ng-include="config.tplPath + '/item-toolbar.html'">
-                </div>
             </td>
         </tr>
     </tbody>
