@@ -356,7 +356,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
     """
     if not os.path.isfile(path):
         raise Exception('File not exist')
-    parts = bpio.portablePath(path).split('/')
+    parts = bpio.portablePath(path).lstrip('/').split('/')
     if not iter:
         iter = fs()
     if not iterID:
@@ -368,6 +368,8 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
         if not name:
             continue
         p = '/'.join(parts[:i+1])
+        if bpio.Linux():
+            p = '/' + p
         if not bpio.pathIsDir(p):
             raise Exception('Directory not exist: %s' % str(p))
         if not iter.has_key(name):
@@ -423,7 +425,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
         
     Parameter ``path`` must be in "portable" form.  
     """
-    parts = bpio.portablePath(path).split('/')
+    parts = bpio.portablePath(path).lstrip('/').split('/')
     if not iter:
         iter = fs()
     if not iterID:
@@ -434,6 +436,8 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
         if not name:
             continue
         p = '/'.join(parts[:i+1])
+        if bpio.Linux():
+            p = '/' + p
         if not bpio.pathIsDir(p):
             raise Exception('Directory not exist: %s' % str(p))
         if not iter.has_key(name):
@@ -533,7 +537,7 @@ def SetFile(item, iter=None, iterID=None):
         iter = fs()
     if iterID is None:
         iterID = fsID()
-    parts = item.path.split('/')
+    parts = item.path.lstrip('/').split('/')
     for j in range(len(parts)):
         part = parts[j]
         id = misc.ToInt(part, part)
@@ -565,7 +569,7 @@ def SetDir(item, iter=None, iterID=None):
         iter = fs()
     if iterID is None:
         iterID = fsID()
-    parts = item.path.split('/')
+    parts = item.path.lstrip('/').split('/')
     itemname = item.name()
     for j in range(len(parts)):
         part = parts[j]
@@ -615,7 +619,7 @@ def WalkByPath(path, iter=None):
     if ppath == '' or ppath == '/':
         return iter, iter[0] if iter.has_key(0) else ''
     path_id = ''
-    parts = ppath.split('/')
+    parts = ppath.lstrip('/').split('/')
     for j in range(len(parts)):
         name = parts[j]
         if not iter.has_key(name):
@@ -726,7 +730,7 @@ def DeleteByPath(path, iter=None, iterID=None):
     if iterID is None:
         iterID = fsID()
     path_id = ''
-    parts = bpio.portablePath(path).split('/')
+    parts = bpio.portablePath(path).lstrip('/').split('/')
     for j in range(len(parts)):
         name = parts[j]  # .encode('utf-8') # parts[j]
         if not iter.has_key(name):

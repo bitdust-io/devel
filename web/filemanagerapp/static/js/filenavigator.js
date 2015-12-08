@@ -103,14 +103,14 @@
                 onlyFolders: need_only_Folders,
                 path: path
             }};
-            // debug.log('refresh', needed_mode, path);
-
+            //debug.log('refresh', needed_mode, path);
             self.requesting = true;
             self.fileList = [];
             self.error = '';
             $http.post(fileManagerConfig.listUrl, data).success(function(data) {
                 self.fileList = [];
                 angular.forEach(data.result, function(file) {
+                	//debug.log('		refresh', file.id, file.name, file.dirpath);
                     self.fileList.push(new Item(file));
                 });
                 self.requesting = false;
@@ -147,13 +147,13 @@
                 onlyFolders: need_only_Folders,
                 path: path
             }};
-            // debug.log('refresh_soft', needed_mode, path);
+            //debug.log('refresh_soft', needed_mode, path);
             //self.requesting = true;
             self.error = '';
             $http.post(fileManagerConfig.listUrl, data).success(function(data) {
                 // debug.log('refresh_soft now');
                 angular.forEach(data.result, function(file) {
-                	//debug.log('		', file);
+                	// debug.log('		', file.id, file.name, file.dirpath);
                 	var foundOld = false; 
                     for (var o in self.fileList) {
                         var item = self.fileList[o];

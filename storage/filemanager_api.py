@@ -195,12 +195,13 @@ def _list_local(params):
 def _upload(params):
     path = params['path']
     if bpio.Linux():
-        path = '/' + path.lstrip('/')
+        path = '/' + (path.lstrip('/'))
     localPath = unicode(path)
     if not bpio.pathExist(localPath):
         return { 'result': { "success": False, "error": 'local path %s was not found' % path } } 
     result = []
     pathID = backup_fs.ToID(localPath)
+    print localPath, pathID
     if pathID is None:
         if bpio.pathIsDir(localPath):
             pathID, iter, iterID = backup_fs.AddDir(localPath, True)
