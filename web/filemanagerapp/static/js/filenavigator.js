@@ -44,7 +44,6 @@
             fileManagerConfig.localConfig = {};
             self.error = '';
             $http.post(fileManagerConfig.configUrl, data).success(function(data) {
-                self.config = {};
                 angular.forEach(data.result, function(conf) {
                     fileManagerConfig.localConfig[conf.key] = conf.value;
                 });
@@ -61,6 +60,29 @@
             });
         };
 
+        FileNavigator.prototype.request_stats = function(success, error) {
+            var self = this;
+            var data = { params: {
+                mode: 'stats'
+            }};
+            self.requesting = true;
+            fileManagerConfig.stats = {};
+            self.error = '';
+            $http.post(fileManagerConfig.statsUrl, data).success(function(data) {
+            	fileManagerConfig.stats = data.result;
+                debug.log('stats:', fileManagerConfig.stats);
+                self.requesting = false;
+                if (data.error) {
+                    self.error = data.error;
+                    return typeof error === 'function' && error(data);
+                }
+                typeof success === 'function' && success(data);
+            }).error(function(data) {
+                self.requesting = false;
+                typeof error === 'function' && error(data);
+            });
+        };
+        
         FileNavigator.prototype.refresh = function(success, error) {
             var self = this;
             var needed_mode = "list";
@@ -221,6 +243,9 @@
                 self.currentPath.push(item.model.name);
                 $cookies.currentPath = self.currentPath.join('/');
                 self.refresh();
+                return true;
+            } else {
+            	return false;
             }
         };
 

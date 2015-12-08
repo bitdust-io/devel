@@ -20,8 +20,11 @@
         permissionsUrl: "/filemanager/bridge",
         tasksUrl: "/filemanager/bridge",
         configUrl: "/filemanager/bridge",
+        statsUrl: "/filemanager/bridge",
         
         localConfig: {},
+		
+		stats: {},
         
         allowedActions: {
             rename: true,
@@ -39,6 +42,7 @@
             cancel: true,
             eraseversion: true,
 			explore: true,
+			restore: true,
         },
 
         enablePermissionsRecursive: true,
@@ -48,5 +52,6 @@
         isExtractableFilePattern: /\.(gz|tar|rar|g?zip)$/i,
         
         tplPath: '/filemanagerapp/templates'
+
     });
 })(angular);

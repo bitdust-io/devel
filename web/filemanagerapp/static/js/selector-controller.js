@@ -37,7 +37,7 @@
             $scope.fileNavigator.mode = 'select_upload_path';
             //$scope.fileNavigator.currentPath = []; // temp.tempModel.path.slice(); // item.model.path.slice();
             $scope.fileNavigator.currentPath = fileManagerConfig.localConfig['homepath'].split('/');
-            debug.log('openUploadFromNavigator', $scope.fileNavigator.currentPath);
+            //debug.log('openUploadFromNavigator', $scope.fileNavigator.currentPath);
             $scope.fileNavigator.refresh();
             $('#localselector').modal('show');
         };

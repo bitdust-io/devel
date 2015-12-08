@@ -10,7 +10,9 @@
         <h4 class="modal-title">{{"confirm" | translate}}</h4>
       </div>
       <div class="modal-body">
-        {{'sure_to_delete' | translate}} <b>{{temp.model.fullPath()}}</b> ?
+        {{'sure_to_delete' | translate}} 
+        <b>{{temp.model.fullPath()}}</b> 
+        {{'sure_to_delete_end' | translate}}
         <div data-ng-include data-src="'error-bar'" class="clearfix"></div>
       </div>
       <div class="modal-footer">

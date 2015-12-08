@@ -11,7 +11,8 @@
                     {{"no_items_in_folder" | translate}}...
                 </div>
                 <div class="pull-right">
-                    <button class="btn btn-sm btn-default" data-ng-click="fileNavigator.upDir()">{{"go_back" | translate}}</button>
+                    <button class="btn btn-sm btn-default" 
+                        data-ng-click="fileNavigator.upDir()">{{"go_back" | translate}}</button>
                 </div>
             </td>
         </tr>
@@ -20,7 +21,8 @@
                 {{ fileNavigator.error }}
             </td>
         </tr>
-        <tr data-ng-show="!fileNavigator.requesting" data-ng-repeat="item in fileNavigator.fileList | orderBy: orderProp">
+        <tr data-ng-show="!fileNavigator.requesting" 
+            data-ng-repeat="item in fileNavigator.fileList | orderBy: orderProp">
             <td class="text-left">
                 <div class="local-table-item-name">
                     <a href="" 

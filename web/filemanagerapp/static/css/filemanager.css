@@ -66,7 +66,6 @@ a:hover * {
     text-decoration: none
 }
 #filemanager 
-.btn,
 .dropdown-menu,
 .input-sm,
 .modal .modal-content,
@@ -140,7 +139,11 @@ textarea {
 }
 #filemanager 
 .main {
-    padding: 0
+    padding: 0;
+}
+#filemanager
+.main-breadcrumb {
+    padding: 0;
 }
 @media (min-width: 768px) {
 	#filemanager 
@@ -227,16 +230,16 @@ textarea {
     height: 150px;
 	border-radius: 5px;
     overflow: hidden;
-    margin: 0;
-    padding: 20px 0;
+    margin: 0px;
+    padding: 0px;
 }
 #filemanager 
 .iconset .thumbnail .item-icon {
     font-size: 20px
 }
 #filemanager 
-.iconset .thumbnail .item-icon-name {
-    white-space: nowrap;
+.iconset .thumbnail {
+    /* white-space: nowrap; */
 }
 #filemanager 
 .modal-fullscreen .modal-content,
@@ -425,10 +428,13 @@ textarea {
 .main-table-item {
     white-space: nowrap;
 }
-.main-table-item i {
+#mainitemstable td.main-table-item i {
     font-size: 16px;
     margin-right: 5px;	
     line-height: 12px;
+}
+#mainiconset .panel-heading i {
+	margin-right: 5px;
 }
 .main-table-item-toolbar {
     white-space: nowrap;
@@ -508,4 +514,8 @@ textarea {
     box-sizing: border-box;
     vertical-align: baseline;
     text-align: center;
+}
+.startup-upload-button {
+	width: 110px;
+	margin: 0px 5px;
 }

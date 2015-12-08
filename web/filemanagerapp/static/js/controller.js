@@ -37,30 +37,41 @@
         };
 
         $scope.smartClick = function(item, $event) {
-            if (item.isFolder()) {
-                return $scope.fileNavigator.folderClick(item);
+        	//debug.log('smartClick', item.isFolder());
+        	$event.stopPropagation();
+            if (item.isFolder() && $scope.fileNavigator.treeView) {
+                if (! $scope.fileNavigator.folderClick(item)) {
+            		//$scope.touch(item);
+                	//$rootScope.openContextMenu('#context-menu-folder', $event);
+                }
+                return;
             };
-    		$scope.touch(item);
-        	$rootScope.openContextMenu('#context-menu-item', $event);
+    		//$scope.touch(item);
+        	//$rootScope.openContextMenu('#context-menu-item', $event);
         };
 
         $scope.smartRightClick = function(item, $event) {
+        	$event.stopPropagation();
     		$scope.touch(item);
-        	$rootScope.openContextMenu('#context-menu-item', $event);
+        	if (item.isFolder()) {
+            	$rootScope.openContextMenu('#context-menu-folder', $event);
+        	} else {
+        		$rootScope.openContextMenu('#context-menu-item', $event);
+        	}
         };
 
         $scope.smartClickVersion = function(item, version, $event) {
+        	$event.stopPropagation();
     		$scope.touch(item);
             $scope.tempVersion = version;
-        	$event.stopPropagation();
         	$rootScope.openContextMenu('#context-menu-version', $event);
         };
 
         $scope.smartRightClickVersion = function(item, version, $event) {
-        	debug.log('smartRightClickVersion', item, version);
+        	//debug.log('smartRightClickVersion', item, version);
+        	$event.stopPropagation();
     		$scope.touch(item);
             $scope.tempVersion = version;
-        	$event.stopPropagation();
         	$rootScope.openContextMenu('#context-menu-version', $event);
     	};
     	
@@ -152,9 +163,13 @@
 						0, fullPath.length-1);
             	debug.log('controller.upload.success', 
             		fullPath, $scope.fileNavigator.currentPath);
+                $scope.fileNavigator.request_stats();
+            	$scope.activeTasks.refresh();
                 $scope.fileNavigator.refresh();
                 $('#localselector').modal('hide');
             }, function() {
+                $scope.fileNavigator.request_stats();
+            	$scope.activeTasks.refresh();
             	$scope.fileNavigator.refresh();
             	$('#localselector').modal('hide');
         	});
@@ -177,6 +192,9 @@
             }, function() {
             	$scope.fileNavigator.refresh_soft();
         	});
+        };
+        
+        $scope.exploreItem = function(item) {
         };
         
         $scope.uploadFiles = function() {
@@ -212,6 +230,24 @@
             });
             return found;
         };
+        
+        $scope.stat = function(key) {
+        	if (fileManagerConfig.stats && fileManagerConfig.stats[key]) {
+        		return fileManagerConfig.stats[key];
+        	}
+        	return undefined;
+        };
+        
+        $scope.hasIndexedItems = function() {
+        	if (!fileManagerConfig.stats)
+        		return false;
+        	var bytes_indexed = fileManagerConfig.stats.bytes_indexed;
+        	var items_count = fileManagerConfig.stats.items_count;
+        	if (bytes_indexed == undefined || items_count == undefined) 
+        		return false;
+        	//debug.log('hasIndexedItems', bytes_indexed, items_count);
+        	return parseInt(bytes_indexed) > 0 || parseInt(items_count) > 1;
+        };
                 
         $scope.navigateTo = function (itemPath) {
         	$scope.fileNavigator.currentPath = itemPath.split('/'); 
@@ -230,6 +266,7 @@
         $scope.isWindows = $scope.getQueryParam('server') === 'Windows';
 
         $scope.fileNavigator.request_configs();
+        $scope.fileNavigator.request_stats();
         $scope.fileNavigator.refresh();
     	$scope.activeTasks.refresh();
 

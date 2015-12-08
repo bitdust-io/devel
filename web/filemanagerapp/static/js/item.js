@@ -405,9 +405,17 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
         Item.prototype.hasVersions = function() {
             return this.model.versions.length > 0;
         };
+        
+        Item.prototype.hasShares = function() {
+        	return this.perms.groupid != this.perms.ownerid; 
+        };
 
         Item.prototype.isLocal = function() {
             return this.model.id == '';
+        };
+        
+        Item.prototype.isContentExists = function() {
+            return this.model.content == '1';
         };
         
         Item.prototype.sizeKB = function() {
@@ -421,6 +429,23 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
         	return 'btn-success';
         };
 
+        Item.prototype.itemClassSelector = function(item) {
+        	var self = item || this;
+    		if (self.hasVersions()) {
+	        	if (self.isContentExists()) {
+	        		return 'btn-success';
+	        	} else {
+	        		return 'btn-warning';
+	        	}
+    		} else {
+    			if (self.isFolder()) {
+    				return 'btn-default';
+    			} else {
+    				return 'btn-info';
+    			}
+    		}
+        };
+        
         return Item;
     }]);
 })(window, angular, jQuery);

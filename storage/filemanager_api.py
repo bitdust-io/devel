@@ -52,6 +52,8 @@ def process(json_request):
         mode = json_request['params']['mode']
         if mode == 'config':
             result = _config(json_request['params'])
+        elif mode == 'stats':
+            result = _stats(json_request['params'])
         elif mode == 'list':
             result = _list(json_request['params'])
         elif mode == 'listlocal':
@@ -90,6 +92,21 @@ def _config(params):
                    'value': homepath})
     return { 'result': result, }
 
+def _stats(params):
+    from contacts import contactsdb
+    result = {}
+    result['suppliers'] = contactsdb.num_suppliers()
+    result['max_suppliers'] = settings.getSuppliersNumberDesired()
+    result['customers'] = contactsdb.num_customers()
+    result['bytes_donated'] = settings.getDonatedBytes()
+    result['bytes_needed'] = settings.getNeededBytes()
+    result['bytes_used_total'] = backup_fs.sizebackups()
+    result['bytes_used_supplier'] = int(backup_fs.sizebackups() / contactsdb.num_suppliers())
+    result['bytes_indexed'] = backup_fs.sizefiles() + backup_fs.sizefolders()
+    result['files_count'] = backup_fs.numberfiles()  
+    result['folders_count'] = backup_fs.numberfolders()  
+    result['items_count'] = backup_fs.counter() 
+    return { 'result': result, }
 
 def _list(params):
     result = []
@@ -112,7 +129,8 @@ def _list(params):
             "date": item[4],
             "dirpath": item[5],
             "has_childs": item[6],
-            "versions": item[7],
+            "content": '1' if item[7] else '',
+            "versions": item[8],
         })
     return { 'result': result, }
 
@@ -132,7 +150,8 @@ def _list_all(params):
             "date": item[4],
             "dirpath": item[5],
             "has_childs": item[6],
-            "versions": item[7],
+            "content": '1' if item[7] else '',
+            "versions": item[8],
         })
     return { 'result': result, }
 

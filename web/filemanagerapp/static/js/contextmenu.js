@@ -12,6 +12,7 @@
 		};
 		
 	    $(window.document).on('click', function() {
+	    	//debug.log('.context-menu - hide()');
 	        $(".context-menu").hide();
 	    });
 	

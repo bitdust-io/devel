@@ -21,11 +21,22 @@
             </button>
             -->
                     
-            <button class="btn btn-success btn-sm" 
-                    data-toggle="modal" 
-                    data-target="#addfilefolder" 
+            <button class="btn btn-success btn" 
                     data-ng-click="openUploadFromNavigator(temp)">
-                <i class="glyphicon glyphicon-upload"></i> {{"upload_file" | translate}}
+                <i class="fa fa-upload"></i>
+                {{'upload' | translate}}
+            </button>
+
+            <button class="disabled btn btn-info btn" 
+                    data-ng-click="openUploadFromNavigator(temp)">
+                <i class="fa fa-share-square-o"></i>
+                {{'share' | translate}}
+            </button>
+
+            <button class="disabled btn btn-warning btn" 
+                data-ng-click="openUploadFromNavigator(temp)">
+                <i class="fa fa-eye-slash"></i>
+                {{'hide' | translate}}
             </button>
 
             <!--             
@@ -72,6 +83,7 @@
                     title="{{'tree' | translate}}">
                 <i class="glyphicon glyphicon-floppy-disk"></i>
             </button>    
+            <!-- 
             <button class="btn btn-sm" 
                     data-ng-click="$parent.setTemplate('main-icons.html')"  
                     data-ng-show="$parent.viewTemplate != 'main-icons.html'" 
@@ -84,7 +96,7 @@
                     title="{{'list' | translate}}">
                 <i class="glyphicon glyphicon-th-list"></i>
             </button>
-    
+            -->
           </div>
         </div>
     </div>

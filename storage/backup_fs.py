@@ -80,7 +80,9 @@ _FileSystemIndexByName = {}
 _FileSystemIndexByID = {}
 _ItemsCount = 0
 _FilesCount = 0
+_DirsCount = 0
 _SizeFiles = 0
+_SizeFolders = 0
 _SizeBackups = 0
 
 #------------------------------------------------------------------------------ 
@@ -113,12 +115,27 @@ def numberfiles():
     global _FilesCount
     return _FilesCount
 
+def numberfolders():
+    """
+    Number of indexed files.
+    """
+    global _DirsCount
+    return _DirsCount
+
 def sizefiles():
     """
     Total size of all indexed files.
     """
     global _SizeFiles
     return _SizeFiles
+
+def sizefolders():
+    """
+    Total size of all indexed folders.
+    May be incorrect, because folder size is not calculated regular yet.
+    """
+    global _SizeFolders
+    return _SizeFolders
 
 def sizebackups():
     """
@@ -1119,9 +1136,18 @@ def ExtractVersions(item_id, item_info, path_exist=None):
         version_size = version_info[1]
         if version_size > 0:
             item_size += version_size
+        if packetid.IsCanonicalVersion(version):
+            # 0 1234 56 78 9 11 13 15   
+            # F 2013 11 20 05 38 03 PM
+            b = version
+            version_label = '%s-%s-%s %s:%s:%s %s' % (
+               b[1:5], b[5:7], b[7:9], b[9:11], b[11:13], b[13:15], b[15:17])
+        else:
+            version_label = backupID
         version_state, version_status = GetBackupStatus(backupID, item_info, item_info.name(), path_exist)
         # item_status += version_status + ' ' 
         versions.append({'backupid': backupID,
+                         'label': version_label,
                          'time': version_time,
                          'size': version_size,
                          'status': version_status,
@@ -1325,12 +1351,12 @@ def ListByPathAdvanced(path, iter=None):
             item_id = (pathID + '/' + item_path_id).strip('/')
             (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)
             result.append(('dir', item_info.name(), item_id, 
-                item_size, item_time, path, has_childs, versions))
+                item_size, item_time, path, has_childs, item_info.exist(), versions))
         elif item_type == FILE:
             item_id = (pathID+'/'+item_path_id).strip('/')
             (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)
             result.append(('file', item_info.name(), item_id, 
-                item_size, item_time, path, False, versions))
+                item_size, item_time, path, False, item_info.exist(), versions))
     TraverseChildsByID(visitor, iterID)
     return result
  
@@ -1346,10 +1372,10 @@ def ListAllBackupIDsAdvanced(sorted=False, reverse=False, iterID=None):
         (item_size, item_time, versions) = ExtractVersions(path_id, info, dirpath)
         if info.type == DIR:
             result.append(('dir', info.name(), path_id,
-                item_size, item_time, dirpath, has_childs, versions,))
+                item_size, item_time, dirpath, has_childs, info.exist(), versions,))
         elif info.type == FILE:
             result.append(('file', info.name(), path_id,
-                item_size, item_time, dirpath, has_childs, versions,))
+                item_size, item_time, dirpath, has_childs, info.exist(), versions,))
     TraverseByIDSorted(visitor)
     return result
 
@@ -1458,18 +1484,23 @@ def Calculate():
     Scan all items in the index and calculate folder and backups sizes.
     """
     global _SizeFiles
+    global _SizeFolders
     global _SizeBackups
     global _ItemsCount
     global _FilesCount
     _ItemsCount = 0
     _FilesCount = 0
+    _DirsCount = 0
     _SizeFiles = 0
+    _SizeFolders = 0
     _SizeBackups = 0
     def recursive_calculate(i):
         global _SizeFiles
+        global _SizeFolders
         global _SizeBackups
         global _ItemsCount
         global _FilesCount
+        global _DirsCount
         folder_size = 0
         for id in i.keys():
             if id == INFO_KEY:
@@ -1481,6 +1512,11 @@ def Calculate():
                     _FilesCount += 1
                     if i[id].exist():
                         _SizeFiles += i[id].size
+                        # lg.out(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
+                if i[id].type == DIR:
+                    _DirsCount += 1
+                    if i[id].exist():
+                        _SizeFolders += i[id].size
                         # lg.out(16, '        [file] %s : %d bytes' % (i[id].path, i[id].size))
                 for version in i[id].list_versions():
                     versionSize = i[id].get_version_info(version)[1]
@@ -1500,6 +1536,11 @@ def Calculate():
                 _FilesCount += 1
                 if i[INFO_KEY].exist():
                     _SizeFiles += i[INFO_KEY].size
+                    # lg.out(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
+            if i[INFO_KEY].type == DIR:
+                _DirsCount += 1
+                if i[INFO_KEY].exist():
+                    _SizeFolders += i[INFO_KEY].size
                     # lg.out(16, '        [file] %s : %d bytes' % (i[INFO_KEY].path, i[INFO_KEY].size))
             for version in i[INFO_KEY].list_versions():
                 versionSize = i[INFO_KEY].get_version_info(version)[1]

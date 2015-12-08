@@ -2,11 +2,18 @@
     "use strict";
     angular.module('FileManagerApp').service('chmod', function () {
 
-        var Chmod = function(initValue) {
+        var Chmod = function(initValue, ownerid, groupid) {
+        	this.ownerid = '';
+        	this.groupid = '';
             this.owner = this.getRwxObj();
             this.group = this.getRwxObj();
             this.others = this.getRwxObj();
-
+            if (ownerid) {
+            	this.ownerid = ownerid;
+            }
+            if (groupid) {
+            	this.groupid = groupid;
+            }
             if (initValue) {
                 var codes = isNaN(initValue) ?
                     this.convertfromCode(initValue):
