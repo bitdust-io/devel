@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -e
+
+INSTALLATOR=""
+if [ -f /usr/share/bitdust/user ]; then
+    INSTALLATOR=`cat /usr/share/bitdust/user`
+fi    
+
+if [ "$1" = remove ] ; then
+
+    if [ -n "$INSTALLATOR" ]; then
+        nohup su $INSTALLATOR -c "/usr/bin/bitdust stop" > /dev/null 2>&1 &
+    fi
+
+    rm -f /usr/share/bitdust/user
+
+    rm -f /usr/share/bitdust/installdir
+    
+    find /usr/share/bitdust -type f -name '*.pyc' -exec rm -f {} \;
+    
+    if [ -n "$SUDO_USER" ]; then
+        if [ -d "/home/$SUDO_USER/.config/autostart/" ] ; then
+            rm -rf /home/$SUDO_USER/.config/autostart/bitdust.desktop
+        fi
+    fi
+    
+    rm -f /home/$SUDO_USER/.icons/bitdust.png
+fi
+
+if [ "$1" = "purge" -a -e /usr/share/debconf/confmodule ]; then
+    . /usr/share/debconf/confmodule
+    db_purge
+fi
+
+#DEBHELPER#
+
+exit 0

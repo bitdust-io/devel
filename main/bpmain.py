@@ -21,6 +21,10 @@ import time
 
 #-------------------------------------------------------------------------------
 
+_AppDataDir = ''
+
+#-------------------------------------------------------------------------------
+
 def show():
     """
     Just calls ``p2p.webcontrol.show()`` to open the GUI. 
@@ -42,6 +46,7 @@ def run(UI='', options=None, args=None, overDict=None):
     This initialize some low level modules and finally create 
     an instance of ``initializer()`` state machine and send it an event "run".
     """
+    global AppDataDir
     
     from logs import lg
     lg.out(4, 'bpmain.run UI="%s"' % UI)
@@ -52,7 +57,7 @@ def run(UI='', options=None, args=None, overDict=None):
     from main import settings
     if overDict:
         settings.override_dict(overDict)
-    settings.init()
+    settings.init(AppDataDir)
     if not options or options.debug is None:
         lg.set_debug_level(settings.getDebugLevel())
     from main import config
@@ -226,6 +231,10 @@ def parser():
                         dest='output',
                         type='string',
                         help='print log messages to the file',)
+    group.add_option('-a', '--appdir',
+                        dest='appdir',
+                        type='string',
+                        help='set alternative location for application data files, default is ~/.bitdust/',)
 #    group.add_option('-t', '--tempdir',
 #                        dest='tempdir',
 #                        type='string',
@@ -423,6 +432,8 @@ def main():
     """
     THIS IS THE ENTRY POINT OF THE PROGRAM!
     """
+    global AppDataDir
+
     import warnings
     warnings.filterwarnings("ignore", message="You do not have a working installation of the service_identity module")
     
@@ -454,6 +465,24 @@ def main():
     pars = parser()
     (opts, args) = pars.parse_args()
 
+    if opts.appdir:
+        appdata = opts.appdir
+        AppDataDir = appdata
+        
+    else:
+        curdir = os.path.dirname(os.path.abspath(sys.executable))
+        appdatafile = os.path.join(curdir, 'appdata')
+        defaultappdata = os.path.join(os.path.expanduser('~'), '.bitdust')
+        appdata = defaultappdata
+        if os.path.isfile(appdatafile):
+            try:
+                appdata = os.path.abspath(open(appdatafile, 'rb').read()) 
+            except:
+                appdata = defaultappdata
+            if not os.path.isdir(appdata):
+                appdata = defaultappdata
+        AppDataDir = appdata
+
     cmd = ''
     if len(args) > 0:
         cmd = args[0].lower()
@@ -466,9 +495,7 @@ def main():
             lg.set_debug_level(int(
                 bpio._read_data(
                     os.path.abspath(
-                        os.path.join(
-                            os.path.expanduser('~'),
-                                '.bitdust', 'config', 'logs', 'debug-level')))))
+                        os.path.join(appdata, 'config', 'logs', 'debug-level')))))
     except:
         pass
     
@@ -476,7 +503,7 @@ def main():
         lg.disable_logs()
 
     #---logpath---
-    logpath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs', 'start.log')
+    logpath = os.path.join(appdata, 'logs', 'start.log')
     if opts.output:
         logpath = opts.output
 
@@ -496,7 +523,7 @@ def main():
         lg.out(2, 'bpmain.main redirecting started')
 
     try:
-        os.remove(os.path.join(os.path.expanduser('~'), '.bitdust', 'logs', 'exception.log'))
+        os.remove(os.path.join(appdata, 'logs', 'exception.log'))
     except:
         pass
 
@@ -530,7 +557,7 @@ def main():
 #                _data_path = os.path.join(os.environ.get('APPDATA', os.path.join(os.path.expanduser('~'), 'Application Data')), 'BitDust')
 #                pid_path = os.path.join(_data_path, 'metadata', 'processid')
 #            else:
-#                pid_path = os.path.join(os.path.expanduser('~'), '.bitdust', 'metadata', 'processid')
+#                pid_path = os.path.join(appdata, 'metadata', 'processid')
 #            if os.path.isfile(pid_path):
 #                pid = int(bpio.ReadBinaryFile(pid_path).strip())
 #        except:

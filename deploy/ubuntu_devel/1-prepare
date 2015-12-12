@@ -2,7 +2,7 @@
 
 set -e
 
-cd ~/bitdust/release/ubuntu_devel
+# cd ~/bitdust/deploy/ubuntu_devel
 
 version=`cat ../version`
 dirname="bitdust-$version.orig"
@@ -39,6 +39,8 @@ echo "prepare debian files"
 echo "3.0 (native)" > workspace/debian/source/format
 cp debian/compat workspace/debian/
 cp debian/control workspace/debian/
+cp debian/config workspace/debian/
+cp debian/templates workspace/debian/
 cp debian/rules workspace/debian/
 cp debian/install workspace/debian/
 python -c "import sys;src=open(sys.argv[1]).read();src=src.replace('{version}',sys.argv[2]);open(sys.argv[1],'w').write(src);" workspace/debian/control $version

@@ -1886,7 +1886,7 @@ def _initBaseDir(base_dir=None):
     global _BaseDirPath
     
     # if we already know the place - we are done
-    if base_dir is not None:
+    if base_dir:
         _BaseDirPath = base_dir
         if not os.path.exists(_BaseDirPath):
             bpio._dirs_make(_BaseDirPath)

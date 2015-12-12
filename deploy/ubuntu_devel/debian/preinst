@@ -1,0 +1,19 @@
+#!/bin/sh
+
+#echo "starting bitdust.preinst"
+
+set -e
+
+if [ "$1" = install ] ; then
+    if [ -n "$SUDO_USER" ]; then
+        mkdir -p /usr/share/bitdust
+        echo "$SUDO_USER" > /usr/share/bitdust/user
+    fi
+fi
+
+#DEBHELPER#
+
+exit 0
+
+
+

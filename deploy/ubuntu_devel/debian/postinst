@@ -1,25 +1,31 @@
-#!/bin/sh
+#!/bin/bash
 
 #echo "starting bitdust.postinst"
 
 set -e
 
-INSTALLATOR=""
-BD_DIR="~/.bitdust"
-if [ -f /usr/share/bitdust/user.txt ]; then
-    INSTALLATOR=`cat /usr/share/bitdust/user.txt`
-    BD_DIR=`cat /usr/share/bitdust/path.txt`
-fi
+. /usr/share/debconf/confmodule
 
 if [ "$1" = configure ] ; then
 
-    if [ -n "$INSTALLATOR" ]; then
-        #TODO test if user set and needed folders exists - must be created in preints part
+    INSTALLATOR=""
+    if [ -f /usr/share/bitdust/user ]; then
+        INSTALLATOR=`cat /usr/share/bitdust/user`
     fi
 
-    cd $BD_DIR/src
-    git clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git .
-    echo ""
+    db_get bitdust/installdir && BITDUST_DIR=$RET
+
+    BITDUST_DIR="./bitdust"
+    if [ -f /usr/share/bitdust/installdir ]; then
+        BITDUST_DIR=`cat /usr/share/bitdust/installdir`
+    fi
+
+    mkdir -p $BITDUST_DIR
+    mkdir -p $BITDUST_DIR/src
+    git clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src
+    echo "$BITDUST_DIR" > $BITDUST_DIR/src/appdata
+    chown $INSTALLATOR:$INSTALLATOR -R $BITDUST_DIR
+    
     # TODO stop if error else print OK!!!
 
     APT_KEY="`which apt-key 2> /dev/null`"
@@ -63,8 +69,7 @@ KEYDATA
         update-menus
     fi
 
-    # find /usr/share/bitdust -type f -name '*.pyc' -exec rm -f {} \;
-    find $BD_DIR/src -type f -name '*.pyc' -exec rm -f {} \;
+    find $BITDUST_DIR/src -type f -name '*.pyc' -exec rm -f {} \;
 
     if [ -d "/home/$INSTALLATOR/.config/autostart/" ] ; then
         mkdir -p /home/$INSTALLATOR/.config/autostart/
@@ -77,12 +82,9 @@ KEYDATA
     chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.icons/bitdust.png
     
     if [ -n "$INSTALLATOR" ]; then
-        echo "restarting BitDust by user $INSTALLATOR"
-        nohup su $INSTALLATOR -c "/usr/bin/bitdust restart" >/dev/null &
+        nohup su $INSTALLATOR -c "/usr/bin/bitdust" > /dev/null 2>&1 & 
     fi
 fi
-
-#echo "bitdust.postinst done"
 
 #DEBHELPER#
 

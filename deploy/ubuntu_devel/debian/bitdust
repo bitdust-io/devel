@@ -1,0 +1,9 @@
+#!/bin/bash
+INSTALLATOR=""
+BITDUST_DIR="~/.bitdust"
+if [ -f /usr/share/bitdust/user ]; then
+    INSTALLATOR=`cat /usr/share/bitdust/user`
+    BITDUST_DIR=`cat /usr/share/bitdust/installdir`
+fi
+cd $BITDUST_DIR/src
+/usr/bin/python bitdust.py

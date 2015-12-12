@@ -6,9 +6,21 @@ set -e
 
 if [ "$1" = install ] ; then
     if [ -n "$SUDO_USER" ]; then
-        echo "bitdust is installed from user $SUDO_USER, remember this"
-        mkdir -p /usr/share/bitdust/
+        BD_DIR="/home/$SUDO_USER/.bitdust"
+        # TODO prompt user to enter destination location for sources and data files?
+        # i think default should be ".bitdust" in home folder: 
+        # ~/.bitdust
+        #           /src - repo
+        #           /metadata 
+        #           /backups
+        #           ...
+        echo "BitDust will be installed in $BD_DIR by user $SUDO_USER, remember this in /usr/share/bitdust"
+        mkdir -p /usr/share/bitdust
         echo "$SUDO_USER" > /usr/share/bitdust/user.txt
+        echo "$BD_DIR" > /usr/share/bitdust/path.txt
+        mkdir -p $BD_DIR
+        mkdir -p $BD_DIR/src
+        chown $SUDO_USER:$SUDO_USER -R $BD_DIR
     fi
 fi
 
