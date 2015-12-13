@@ -2,15 +2,20 @@
 
 set -e
 
-INSTALLATOR=""
-if [ -f /usr/share/bitdust/user ]; then
-    INSTALLATOR=`cat /usr/share/bitdust/user`
-fi    
-
 if [ "$1" = remove ] ; then
 
+    INSTALLATOR=""
+    if [ -f /usr/share/bitdust/user ]; then
+        INSTALLATOR=`cat /usr/share/bitdust/user`
+    fi    
+
+    BITDUST_DIR="./bitdust"
+    if [ -f /usr/share/bitdust/installdir ]; then
+        BITDUST_DIR=`cat /usr/share/bitdust/installdir`
+    fi
+
     if [ -n "$INSTALLATOR" ]; then
-        nohup su $INSTALLATOR -c "/usr/bin/bitdust stop" > /dev/null 2>&1 &
+        su $INSTALLATOR -c "bitdust stop" > /dev/null 2>&1 &
     fi
 
     rm -f /usr/share/bitdust/user
@@ -21,11 +26,13 @@ if [ "$1" = remove ] ; then
     
     if [ -n "$SUDO_USER" ]; then
         if [ -d "/home/$SUDO_USER/.config/autostart/" ] ; then
-            rm -rf /home/$SUDO_USER/.config/autostart/bitdust.desktop
+            rm -rf /home/$SUDO_USER/.config/autostart/bitdust-dev.desktop
         fi
     fi
     
     rm -f /home/$SUDO_USER/.icons/bitdust.png
+    
+    rm -rf $BITDUST_DIR
 fi
 
 if [ "$1" = "purge" -a -e /usr/share/debconf/confmodule ]; then

@@ -1,7 +1,5 @@
 #!/bin/sh
 
-#echo "starting bitdust.preinst"
-
 set -e
 
 if [ "$1" = install ] ; then

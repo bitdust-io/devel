@@ -2,7 +2,7 @@
 #
 
 
-DEFAULTS_FILE="/etc/default/bitdust-update"
+DEFAULTS_FILE="/etc/default/bitdust-dev-update"
 
 REPOCONFIG="deb http://bitdust.io/deb/devel devel main"
 
@@ -72,7 +72,7 @@ update_bad_sources() {
 
   find_apt_sources
 
-  SOURCELIST="$APT_SOURCESDIR/bitdust.list"
+  SOURCELIST="$APT_SOURCESDIR/bitdust-dev.list"
   if [ ! -r "$SOURCELIST" ]; then
     return 0
   fi
@@ -117,7 +117,7 @@ create_sources_lists() {
 
   find_apt_sources
 
-  SOURCELIST="$APT_SOURCESDIR/bitdust.list"
+  SOURCELIST="$APT_SOURCESDIR/bitdust-dev.list"
   if [ -d "$APT_SOURCESDIR" ]; then
     printf "$SOURCES_PREAMBLE" > "$SOURCELIST"
     printf "$REPOCONFIG\n" >> "$SOURCELIST"
@@ -135,7 +135,7 @@ clean_sources_lists() {
 
   find_apt_sources
 
-  rm -f "$APT_SOURCESDIR/bitdust.list" 
+  rm -f "$APT_SOURCESDIR/bitdust-dev.list" 
 }
 
 handle_distro_upgrade() {
@@ -144,7 +144,7 @@ handle_distro_upgrade() {
   fi
 
   find_apt_sources
-  SOURCELIST="$APT_SOURCESDIR/bitdust.list"
+  SOURCELIST="$APT_SOURCESDIR/bitdust-dev.list"
   if [ -r "$SOURCELIST" ]; then
     REPOLINE=$(grep -E "^[[:space:]]*#[[:space:]]*$REPOCONFIG[[:space:]]*# disabled on upgrade to .*" "$SOURCELIST")
     if [ $? -eq 0 ]; then
@@ -160,7 +160,7 @@ handle_distro_upgrade() {
 
 
 ## MAIN ##
-DEFAULTS_FILE="/etc/default/bitdust-update"
+DEFAULTS_FILE="/etc/default/bitdust-dev-update"
 if [ -r "$DEFAULTS_FILE" ]; then
   . "$DEFAULTS_FILE"
 fi
@@ -180,7 +180,7 @@ if [ "$repo_reenable_on_distupgrade" = "true" ]; then
   handle_distro_upgrade
 fi
 
-apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitdust.list" -o Dir::Etc::sourceparts="-" 
-apt-get install bitdust
+apt-get update -o Dir::Etc::sourcelist="sources.list.d/bitdust-dev.list" -o Dir::Etc::sourceparts="-" 
+apt-get install bitdust-dev
 
 exit 0

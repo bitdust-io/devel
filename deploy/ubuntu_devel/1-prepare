@@ -5,16 +5,16 @@ set -e
 # cd ~/bitdust/deploy/ubuntu_devel
 
 version=`cat ../version`
-dirname="bitdust-$version.orig"
-packagename="bitdust_${version}_all.deb"
+dirname="bitdust-dev-$version.orig"
+packagename="bitdust-dev_${version}_all.deb"
 
 echo "remove old files"
-rm -f bitdust*.deb 
-rm -f bitdust*.changes 
-rm -f bitdust*.dsc 
-rm -f bitdust*.gz 
-rm -f bitdust*.upload
-rm -f bitdust*.build
+rm -f bitdust-dev*.deb 
+rm -f bitdust-dev*.changes 
+rm -f bitdust-dev*.dsc 
+rm -f bitdust-dev*.gz 
+rm -f bitdust-dev*.upload
+rm -f bitdust-dev*.build
 
 echo "prepare workspace folders"
 rm -rf workspace
@@ -51,18 +51,20 @@ cp debian/postinst workspace/debian
 cp debian/prerm workspace/debian
 cp debian/copyright workspace/debian
 # cp debian/bitdust.cron.daily workspace/debian 
-cp debian/bitdust.cron.hourly workspace/debian 
-cp debian/bitdust.menu workspace/shortcuts 
+cp debian/bitdust-dev.cron.hourly workspace/debian 
+cp debian/bitdust-dev.menu workspace/shortcuts 
 
 echo "prepare project files"
-cp debian/bitdust.1 workspace/doc
 cp debian/bitdust workspace/bin
+cp debian/bitdustd workspace/bin
+cp debian/bitdustb workspace/bin
+cp debian/bitdust-dev.1 workspace/doc
 cp debian/bitdust.xpm workspace/pixmaps
 cp debian/bitdust.png workspace/pixmaps
-cp debian/bitdust.list workspace/apt 
+cp debian/bitdust-dev.list workspace/apt 
 cp debian/bitdust.desktop workspace/shortcuts
-cp -T debian/bitdust-autostart.desktop workspace/autostart/bitdust.desktop
-cp -T debian/bitdust.default workspace/default/bitdust-update 
+cp -T debian/bitdust-dev-autostart.desktop workspace/autostart/bitdust-dev.desktop
+cp -T debian/bitdust-dev.default workspace/default/bitdust-dev-update 
 
 # echo "build sources"
 # ../sources/0-build
@@ -81,11 +83,13 @@ echo "setting permissions"
 find workspace/debian -type d | xargs chmod 0755
 find workspace/debian -type f | xargs chmod 0644
 chmod 0755 workspace/bin/bitdust
+chmod 0755 workspace/bin/bitdustb
+chmod 0755 workspace/bin/bitdustd
 chmod 0755 workspace/debian/rules
 chmod 0755 workspace/debian/postinst
 chmod 0755 workspace/debian/preinst
 chmod 0755 workspace/debian/prerm
-chmod 0755 workspace/debian/bitdust.cron.hourly
+chmod 0755 workspace/debian/bitdust-dev.cron.hourly
 # chmod 0755 workspace/debian/bitdust.cron.daily
 
 echo "DONE!"

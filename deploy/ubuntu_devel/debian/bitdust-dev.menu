@@ -1,4 +1,4 @@
-?package(bitdust):needs="x11" \
+?package(bitdust-dev):needs="x11" \
   section="Applications/File Management" \
   hints="Backup" \
   title="BitDust" \

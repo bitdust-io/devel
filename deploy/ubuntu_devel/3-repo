@@ -2,14 +2,14 @@
 
 set -e
 
-cd ~/bitdust/release/ubuntu_devel
+# cd ~/bitdust/release/ubuntu_devel
 
 version=`cat ../version`
-debfile="bitdust_${version}_all.deb"
-changesfile="bitdust_${version}_amd64.changes"
+debfile="bitdust-dev_${version}_all.deb"
+changesfile="bitdust-dev_${version}_amd64.changes"
 
 echo "copy .deb file into public location"
-rm -f /var/www/bitdust-ubuntu-devel.deb
+rm -f /var/www/download/bitdust-ubuntu-devel.deb
 cp $debfile /var/www/download/bitdust-ubuntu-devel.deb
 
 echo "doing reprepro"
@@ -17,7 +17,7 @@ reprepro -V -b /var/www/deb/devel include devel $changesfile
 reprepro -V -b /var/www/deb/devel includedeb devel $debfile
 reprepro -V -b /var/www/deb/devel list devel
 
-rm -f bitdust_*
+rm -f bitdust-dev_*
 
 echo "DONE!!! apt repo updated!"
 

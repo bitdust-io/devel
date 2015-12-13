@@ -1,4 +1,4 @@
-Source: bitdust
+Source: bitdust-dev
 Section: python
 Priority: optional
 Maintainer: Veselin Penev <veselin@bitdust.io>
@@ -6,7 +6,7 @@ Build-Depends: debconf, debhelper (>= 7), python-support, python (>=2.6)
 Standards-Version: 3.8.4
 Homepage: http://bitdust.io
 
-Package: bitdust
+Package: bitdust-dev
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, python, python-twisted, python-pyasn1, python-openssl, python-crypto, python-wxgtk2.8
 Description: Distributed on-line storage.

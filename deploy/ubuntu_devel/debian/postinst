@@ -1,8 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-#echo "starting bitdust.postinst"
-
-set -e
+# set -e
 
 . /usr/share/debconf/confmodule
 
@@ -21,12 +19,17 @@ if [ "$1" = configure ] ; then
     fi
 
     mkdir -p $BITDUST_DIR
-    mkdir -p $BITDUST_DIR/src
-    git clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src
-    echo "$BITDUST_DIR" > $BITDUST_DIR/src/appdata
+
+    rm -rf $BITDUST_DIR/src
+    git clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.devel.git $BITDUST_DIR/src
+    if [ ! -d $BITDUST_DIR/src ]; then
+        echo "downloading sources failed, execute command: git clone http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src"
+    else
+        touch $BITDUST_DIR/src/appdata
+        echo "$BITDUST_DIR" > $BITDUST_DIR/src/appdata
+    fi
+
     chown $INSTALLATOR:$INSTALLATOR -R $BITDUST_DIR
-    
-    # TODO stop if error else print OK!!!
 
     APT_KEY="`which apt-key 2> /dev/null`"
     if [ -x "$APT_KEY" ]; then
@@ -73,8 +76,8 @@ KEYDATA
 
     if [ -d "/home/$INSTALLATOR/.config/autostart/" ] ; then
         mkdir -p /home/$INSTALLATOR/.config/autostart/
-        cp /usr/share/bitdust/bitdust.desktop /home/$INSTALLATOR/.config/autostart/
-        chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.config/autostart/bitdust.desktop
+        cp /usr/share/bitdust/bitdust-dev.desktop /home/$INSTALLATOR/.config/autostart/
+        chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.config/autostart/bitdust-dev.desktop
     fi    
 
     mkdir -p /home/$INSTALLATOR/.icons/
@@ -82,8 +85,10 @@ KEYDATA
     chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.icons/bitdust.png
     
     if [ -n "$INSTALLATOR" ]; then
-        nohup su $INSTALLATOR -c "/usr/bin/bitdust" > /dev/null 2>&1 & 
+        su $INSTALLATOR -c "bitdustb" >/dev/null 2>/dev/null 
     fi
+    
+    exit 0
 fi
 
 #DEBHELPER#
