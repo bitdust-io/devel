@@ -38,6 +38,20 @@ _IconsDict = {
 
 #------------------------------------------------------------------------------ 
 
+def shutdown():
+    global _IconObject
+    global USE_TRAY_ICON
+    if not USE_TRAY_ICON:
+        return
+    if _IconObject:
+        try:
+            _IconObject.Destroy()
+        except:
+            pass
+        del _IconObject
+        _IconObject = None    
+    
+
 def init(icons_path, icons_files=None):
     global _IconObject
     global _IconsDict
@@ -127,7 +141,11 @@ def init(icons_path, icons_files=None):
             if icon_name in self.icons.keys():
                 self.current = icon_name
                 self.SetIcon(self.icons.get(self.current, self.icons.values()[0]), LABEL)
-                    
+        
+        def clear_icon(self):
+            self.RemoveIcon()
+
+        
     class MyApp(wx.App):
         def __init__(self, icons_path):
             self.icons_path = icons_path
@@ -145,21 +163,26 @@ def init(icons_path, icons_files=None):
         def SetIcon(self, name):
             # if self.trayicon.IsAvailable():
             self.trayicon.select_icon(name)
+            
+        def Stop(self):
+            self.trayicon.clear_icon()
+            self.trayicon.Destroy() 
+            
         
     _IconObject = MyApp(icons_path) 
     reactor.registerWxApp(_IconObject)
-    # reactor.addSystemEventTrigger('after', 'shutdown', main_porcess_stopped)
+    reactor.addSystemEventTrigger('before', 'shutdown', main_porcess_stopped)
 
-# def main_porcess_stopped():
-#     global _IconObject
-#     print 'main_porcess_stopped', _IconObject
-#    if _IconObject:
-#        try:
-#            _IconObject.Destroy()
-#        except:
-#            pass
-#        del _IconObject
-#        _IconObject = None
+def main_porcess_stopped():
+    global _IconObject
+    # print 'main_porcess_stopped', _IconObject
+    if _IconObject:
+        try:
+            _IconObject.Stop()
+        except:
+            pass
+        del _IconObject
+        _IconObject = None
 
 #------------------------------------------------------------------------------ 
 
