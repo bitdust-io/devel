@@ -55,7 +55,7 @@ Name: "{commondesktop}\{#Name}"; Filename: "{app}\python\pythonw.exe"; WorkingDi
 ;Name: "{userstartup}\{#Name}"; Filename: ""
 
 [Run]
-Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.devel.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources from Git repository at http://gitlab.bitdust.io/devel/bitdust"; Flags: runhidden;
+Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources from Git repository at http://gitlab.bitdust.io/devel/bitdust"; Flags: runhidden;
 ; Flags: runhidden postinstall unchecked;
 ; Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources from Git repository at http://gitlab.bitdust.io/devel/bitdust"; Flags: hidewizard postinstall;
 Filename: "{app}\python\pythonw.exe"; Parameters: "bitdust.py stop"; WorkingDir: "{app}\src"; Description: "Prepare to start the program"; StatusMsg: "Prepare to start the program ..."; Flags: runhidden;
