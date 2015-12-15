@@ -76,6 +76,8 @@
             rename: "Rename",
             extract: "Extract",
             compress: "Compress",
+            open: "Open",
+            info: "Info",
             error_invalid_filename: "Invalid filename or already exists, specify another name",
             error_modifying: "An error occurred modifying the file",
             error_deleting: "An error occurred deleting the file or folder",

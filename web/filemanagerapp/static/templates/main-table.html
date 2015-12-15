@@ -36,7 +36,7 @@
                     data-ng-click="smartClick(item, $event)" 
                     ng-right-click="smartRightClick(item, $event)" 
                     ng-class="item.itemClassSelector(item)"
-                    title="{{item.model.name}} ({{item.sizeKB()}}kb)">
+                    title="{{item.model.name}} {{item.sizeLabel()}}">
                     <i class="glyphicon glyphicon-folder-close" data-ng-show="item.model.type === 'dir'"></i>
                     <i class="glyphicon glyphicon-file" data-ng-show="item.model.type === 'file'"></i>
                     {{item.model.name}} <!-- | strLimit : 64 --> 
@@ -65,7 +65,7 @@
                 </button>
             </td>
             <td class="hidden-xs"> 
-                {{item.sizeKB()}}kb
+                {{item.sizeLabel()}}
             </td>
             <td style="white-space: nowrap;" 
                 class="hidden-sm hidden-xs">

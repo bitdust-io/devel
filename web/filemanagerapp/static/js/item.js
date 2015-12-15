@@ -422,6 +422,23 @@ var slashReplaceRegExp = new RegExp("/([^\/])\/([^\/])/g");
             return Math.round(this.model.size / 1024, 1);
         };
         
+        Item.prototype.sizeLabel = function() {
+        	var sz = this.model.size;
+        	if (!sz) {
+        		return '';
+        	}
+        	var suf = 'b';
+        	if (sz > 1024) {
+        		sz = sz / 1024.0;
+        		suf = 'kb';
+        	}
+        	if (sz > 1024) {
+        		sz = sz / 1024.0;
+        		suf = 'mb';
+        	}
+            return Math.round(sz) + suf;
+        };
+        
         Item.prototype.versionClassSelector = function(version) {
         	var status = parseInt(version.status.replace('%', ''));
         	if (status < 75) return 'btn-danger';

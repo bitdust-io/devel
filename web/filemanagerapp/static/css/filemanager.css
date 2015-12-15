@@ -422,6 +422,10 @@ textarea {
 .table > thead > tr > th {
     border-bottom: 1px solid #E5E5E5;
 }
+#filemanager
+.dropdown-menu li a i {
+	width: 15px;
+}
 #navbar-filemanager .navbar-toggle {
 	background-color: #178ACC; 
 }

@@ -60,7 +60,9 @@
 {% endblock wrappedbody %}
 
 <div class="footer">
-  <div class="pull-right">  
+  {% block extra_footer %}
+  {% endblock extra_footer %}
+  <div class="pull-right copyright-text">  
     &copy; BitDust, 2015&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   </div>
 </div>

@@ -29,7 +29,7 @@ xcopy aliases\* build\bin /E /R /H /Y /Q
 
 @echo.
 @echo [ copy icons ]
-xcopy icons\* build\icons /E /R /H /Y /Q 
+xcopy ..\..\icons\* build\icons /E /R /H /Y /Q 
 
 
 @echo.

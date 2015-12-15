@@ -5,12 +5,12 @@
         <div class="thumbnail text-center alert alert-info" 
                 data-ng-click="smartClick(item, $event)" 
                 ng-right-click="smartRightClick(item, $event)" 
-                title="{{item.model.name}} ({{item.sizeKB()}}kb)" >
+                title="{{item.model.name}} {{item.sizeLabel()}}" >
             <i class="glyphicon glyphicon-folder-open" data-ng-show="item.model.type === 'dir'"></i>
             <i class="glyphicon glyphicon-file" data-ng-show="item.model.type === 'file'"></i>
             {{item.model.name | strLimit : 18 }}
             <div class="item-icon-size" data-ng-show="item.model.size > 0">
-                {{item.sizeKB()}}kb
+                {{item.sizeLabel()}}
             </div>
             <div class="item-icon-versions">
                 <button class="version btn btn-sm"

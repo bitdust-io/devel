@@ -36,9 +36,9 @@ function readData() {
             }
         },
         fail: function(XMLHttpRequest, textStatus, errorThrown) {
-    		debug.log('REFRESHING FAILED', updater_task, refresh_interval);
         	intervalDown();
         	nextUpdate();
+    		debug.log('REFRESHING FAILED, UPDATE', updater_task, refresh_interval);
         }
     });	
 };
@@ -61,7 +61,7 @@ function intervalDown() {
 	refresh_interval = refresh_interval * 2;
 	if (refresh_interval > refresh_interval_max) {
 		refresh_interval = refresh_interval_max
-		debug.log('SLOW REFRESHING');
+		//debug.log('SLOW REFRESHING');
 	}
 };
 

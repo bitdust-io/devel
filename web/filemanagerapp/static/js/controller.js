@@ -38,12 +38,12 @@
 
         $scope.smartClick = function(item, $event) {
         	//debug.log('smartClick', item.isFolder());
-        	$event.stopPropagation();
             if (item.isFolder() && $scope.fileNavigator.treeView) {
                 if (! $scope.fileNavigator.folderClick(item)) {
             		//$scope.touch(item);
                 	//$rootScope.openContextMenu('#context-menu-folder', $event);
                 }
+            	$event.stopPropagation();
                 return;
             };
     		//$scope.touch(item);
@@ -229,6 +229,10 @@
                 }
             });
             return found;
+        };
+        
+        $scope.initialized = function() {
+        	return fileManagerConfig.stats && fileManagerConfig.stats['timestamp'];
         };
         
         $scope.stat = function(key) {

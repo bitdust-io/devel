@@ -15,6 +15,7 @@
 #------------------------------------------------------------------------------ 
 
 import os
+import time
 import traceback
 
 from logs import lg
@@ -106,6 +107,7 @@ def _stats(params):
     result['files_count'] = backup_fs.numberfiles()  
     result['folders_count'] = backup_fs.numberfolders()  
     result['items_count'] = backup_fs.counter() 
+    result['timestamp'] = time.time()
     return { 'result': result, }
 
 def _list(params):

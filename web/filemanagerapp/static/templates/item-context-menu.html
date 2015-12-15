@@ -39,6 +39,15 @@
                 {{'explore' | translate}}
             </a>
         </li>
+
+        <li data-ng-show="config.allowedActions.open">
+            <a href="" 
+                tabindex="-1" 
+                data-ng-click="openItem(temp)">
+                <i class="fa fa-file-o"></i>
+                {{'open' | translate}}
+            </a>
+        </li>
         
         <li data-ng-show="config.allowedActions.explore">
             <a href="" 
@@ -128,10 +137,27 @@
     class="context-menu dropdown clearfix animated fast fadeIn">
     <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
 
+        <li data-ng-show="config.allowedActions.restoreversion && temp && tempVersion">
+            <a href="" 
+                tabindex="-1" 
+                data-ng-click="restoreVersion(temp, tempVersion)">
+                <i class="fa fa-history"></i>
+                {{'restore' | translate}}
+            </a>
+        </li>
+
+        <li data-ng-show="config.allowedActions.watchversion && temp && tempVersion">
+            <a href="" 
+                tabindex="-1" 
+                data-ng-click="watchVersion(temp, tempVersion)">
+                <i class="fa fa-info-circle"></i>
+                {{'info' | translate}}
+            </a>
+        </li>
+
         <li data-ng-show="config.allowedActions.eraseversion && temp && tempVersion">
             <a href="" 
                 tabindex="-1" 
-                data-toggle="modal" 
                 data-ng-click="eraseVersion(temp, tempVersion)">
                 <i class="glyphicon glyphicon-trash"></i>
                 {{'remove' | translate}}

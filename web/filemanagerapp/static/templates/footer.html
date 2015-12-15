@@ -1,0 +1,16 @@
+<div id="filemanager-footer" data-ng-controller="FileManagerFooterCtrl">
+  <div data-ng-show="initialized()">
+    <div id="info-space-used">
+        {{usedSpaceInfo()}}
+    </div>
+    <div id="info-space-donated">
+        {{donatedSpaceInfo()}}
+    </div>
+    <div id="info-suppliers">
+        {{suppliersInfo()}}
+    </div>
+    <div id="info-customers">
+        {{customersInfo()}}
+    </div>
+  </div>
+</div>
