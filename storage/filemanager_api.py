@@ -102,7 +102,7 @@ def _stats(params):
     result['bytes_donated'] = settings.getDonatedBytes()
     result['bytes_needed'] = settings.getNeededBytes()
     result['bytes_used_total'] = backup_fs.sizebackups()
-    result['bytes_used_supplier'] = int(backup_fs.sizebackups() / contactsdb.num_suppliers())
+    result['bytes_used_supplier'] = 0 if (contactsdb.num_suppliers() == 0) else (int(backup_fs.sizebackups() / contactsdb.num_suppliers()))
     result['bytes_indexed'] = backup_fs.sizefiles() + backup_fs.sizefolders()
     result['files_count'] = backup_fs.numberfiles()  
     result['folders_count'] = backup_fs.numberfolders()  

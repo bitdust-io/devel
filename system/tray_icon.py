@@ -158,7 +158,10 @@ def init(icons_path, icons_files=None):
         
         def OnExit(self):
             # print 'OnExit'
-            self.trayicon.Destroy() 
+            try:
+                self.trayicon.Destroy() 
+            except:
+                pass
             
         def SetIcon(self, name):
             # if self.trayicon.IsAvailable():
@@ -166,7 +169,10 @@ def init(icons_path, icons_files=None):
             
         def Stop(self):
             self.trayicon.clear_icon()
-            self.trayicon.Destroy() 
+            try:
+                self.trayicon.Destroy() 
+            except:
+                pass
             
         
     _IconObject = MyApp(icons_path) 
