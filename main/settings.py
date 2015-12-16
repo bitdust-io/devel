@@ -1127,7 +1127,7 @@ def IconFilename():
     """
     Application icon file name.
     """
-    return 'tray_icon.ico'
+    return 'desktop.ico'
 
 def StyleSheetsFilename():
     """

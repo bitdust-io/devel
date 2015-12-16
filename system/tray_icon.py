@@ -106,7 +106,8 @@ def init(icons_path, icons_files=None):
         def CreatePopupMenu(self):
             menu = wx.Menu()
             icons = self.items_dict()
-            create_menu_item(menu, 'show', self.on_show, icons.get('show', None))
+            create_menu_item(menu, 'open', self.on_show, icons.get('show', None))
+            create_menu_item(menu, 'synchronize', self.on_sync, icons.get('sync', None))
             # create_menu_item(menu, 'hide', self.on_hide, icons.get('hide', None))
             # create_menu_item(menu, 'toolbar', self.on_toolbar, icons.get('toolbar', None))
             # menu.AppendSeparator()

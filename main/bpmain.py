@@ -96,7 +96,7 @@ def run(UI='', options=None, args=None, overDict=None):
                 'green':    'icon-green-16x16.png',
                 'gray':     'icon-gray-16x16.png', }
         from system import tray_icon
-        icons_path = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), 'icons')))
+        icons_path = bpio.portablePath(os.path.join(bpio.getExecutableDir(), 'icons'))
         lg.out(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)
         tray_icon.init(icons_path, icons_dict)
         def _tray_control_func(cmd):
