@@ -281,16 +281,15 @@ def on_tray_icon_command(cmd):
     from main import shutdowner
     from p2p import network_connector
     if cmd == 'exit':
-        # SendCommandToGUI('exit')
         shutdowner.A('stop', 'exit')
 
     elif cmd == 'restart':
-        # SendCommandToGUI('exit')
-        appList = bpio.find_process(['bpgui.',])
-        if len(appList) > 0:
-            shutdowner.A('stop', 'restartnshow') # ('restart', 'show'))
-        else:
-            shutdowner.A('stop', 'restart') # ('restart', ''))
+        # appList = bpio.find_process(['bpgui.',])
+        # if len(appList) > 0:
+        #     shutdowner.A('stop', 'restartnshow') # ('restart', 'show'))
+        # else:
+        #     shutdowner.A('stop', 'restart') # ('restart', ''))
+        shutdowner.A('stop', 'restart')
         
     elif cmd == 'reconnect':
         network_connector.A('reconnect')
@@ -300,11 +299,18 @@ def on_tray_icon_command(cmd):
 
     elif cmd == 'hide':
         pass
-        # SendCommandToGUI('exit')
         
     elif cmd == 'toolbar':
         pass
-        # SendCommandToGUI('toolbar')
+
+    elif cmd == 'sync':
+        try:
+            from updates import git_update
+            if git_update.sync():
+                # TODO: show message notification to restart the process
+                pass
+        except:
+            lg.exc()
 
     else:
         lg.warn('wrong command: ' + str(cmd))    

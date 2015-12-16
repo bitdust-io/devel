@@ -94,19 +94,18 @@ def init(icons_path, icons_files=None):
             self.Bind(wx.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
             self.select_icon(self.current)
 
-        def items_dict(self):
-            return {
+        def CreatePopupMenu(self):
+            menu = wx.Menu()
+            icons = {
                 'show':     os.path.join(self.icons_path, 'expand24x24.png'),
+                'sync':     os.path.join(self.icons_path, 'synchronize24x24.png'),
                 'hide':     os.path.join(self.icons_path, 'collapse24x24.png'),
                 'toolbar':  os.path.join(self.icons_path, 'tools24x24.png'),
                 'restart':  os.path.join(self.icons_path, 'restart24x24.png'),
                 'reconnect':os.path.join(self.icons_path, 'network24x24.png'),
-                'shutdown': os.path.join(self.icons_path, 'shutdown24x24.png'),}
-        
-        def CreatePopupMenu(self):
-            menu = wx.Menu()
-            icons = self.items_dict()
-            create_menu_item(menu, 'open', self.on_show, icons.get('show', None))
+                'shutdown': os.path.join(self.icons_path, 'shutdown24x24.png'),
+            }
+             create_menu_item(menu, 'open', self.on_show, icons.get('show', None))
             create_menu_item(menu, 'synchronize', self.on_sync, icons.get('sync', None))
             # create_menu_item(menu, 'hide', self.on_hide, icons.get('hide', None))
             # create_menu_item(menu, 'toolbar', self.on_toolbar, icons.get('toolbar', None))
@@ -122,6 +121,9 @@ def init(icons_path, icons_files=None):
             
         def on_show(self, event):
             control('show')
+
+        def on_sync(self, event):
+            control('sync')
             
         def on_hide(self, event):
             control('hide')
