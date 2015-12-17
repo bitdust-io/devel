@@ -944,7 +944,6 @@ def getExecutableDir():
         path = os.path.dirname(os.path.abspath(sys.executable))
     else:
         try:
-            # one level up from "lib"
             path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         except:
             path = os.path.dirname(os.path.abspath(sys.argv[0]))

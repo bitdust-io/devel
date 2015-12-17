@@ -4,6 +4,8 @@
 *.~vsd
 *.orig
 .identities/
+release/
+screenshots/
 plugins/
 web/*.db
 docs.teamlab/

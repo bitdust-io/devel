@@ -267,7 +267,8 @@ class Initializer(automat.Automat):
         if USE_TRAY_ICON:
             from system import tray_icon
             if settings.NewWebGUI():
-                tray_icon.SetControlFunc(control.on_tray_icon_command)
+                # tray_icon.SetControlFunc(control.on_tray_icon_command)
+                tray_icon.SetControlFunc(self._on_tray_icon_command)
             else:
                 tray_icon.SetControlFunc(webcontrol.OnTrayIconCommand)
         if not settings.NewWebGUI():
@@ -290,6 +291,13 @@ class Initializer(automat.Automat):
 
     def doDestroyMe(self, arg):
         global _Initializer
+        try:
+            from system.tray_icon import USE_TRAY_ICON
+        except:
+            USE_TRAY_ICON = False
+        if USE_TRAY_ICON:
+            from system import tray_icon
+            tray_icon.SetControlFunc(None)
         del _Initializer
         _Initializer = None
         self.destroy()
@@ -395,7 +403,60 @@ class Initializer(automat.Automat):
         # os_windows_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
         # reactor.callLater(0, os_windows_update.init)
         reactor.callLater(0, webcontrol.OnInitFinalDone)
-    
+        
+
+    def _on_tray_icon_command(self, cmd):
+        lg.out(2,"initializer._on_tray_icon_command : [%s]" % cmd)
+        try:
+            if cmd == 'exit':
+                shutdowner.A('stop', 'exit')
+        
+            elif cmd == 'restart':
+                # appList = bpio.find_process(['bpgui.',])
+                # if len(appList) > 0:
+                #     shutdowner.A('stop', 'restartnshow') # ('restart', 'show'))
+                # else:
+                #     shutdowner.A('stop', 'restart') # ('restart', ''))
+                shutdowner.A('stop', 'restart')
+                
+            elif cmd == 'reconnect':
+                from p2p import network_connector
+                network_connector.A('reconnect')
+        
+            elif cmd == 'show':
+                from web import control
+                control.show()
+
+            elif cmd == 'sync':
+                try:
+                    from updates import git_proc
+                    from system import tray_icon
+                    def _sync_callback(result):
+                        if result == 'error':
+                            tray_icon.draw_icon('error')
+                            reactor.callLater(5, tray_icon.restore_icon)
+                            return
+                        elif result == 'new-data':
+                            tray_icon.draw_icon('updated')
+                            reactor.callLater(5, tray_icon.restore_icon)
+                            return
+                        tray_icon.restore_icon()
+                    tray_icon.draw_icon('sync')
+                    git_proc.sync(_sync_callback)
+                except:
+                    lg.exc()
+        
+            elif cmd == 'hide':
+                pass
+                
+            elif cmd == 'toolbar':
+                pass
+        
+            else:
+                lg.warn('wrong command: ' + str(cmd))     
+        except:
+            lg.exc()
+            
 #------------------------------------------------------------------------------ 
 
 class MyTwistedOutputLog:

@@ -49,6 +49,7 @@ class ChildProcessProtocol(protocol.ProcessProtocol):
     def processEnded(self, reason):
         lg.out(2, 'child process [%s] FINISHED' % self.name)
         
+#------------------------------------------------------------------------------ 
 
 def run(child_name, params=[], base_dir='.', process_protocol=None):
     """
@@ -125,6 +126,7 @@ def kill_child(child_name):
         killed = True
     return killed
 
+#------------------------------------------------------------------------------ 
 
 def pipe(cmdargs):
     """
@@ -159,6 +161,8 @@ def pipe(cmdargs):
 
 
 def detach(cmdargs):
+    """
+    """
     lg.out(2, "child_process.detach %s" % str(cmdargs))
     try:
         if bpio.Windows():

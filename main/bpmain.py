@@ -83,22 +83,10 @@ def run(UI='', options=None, args=None, overDict=None):
         USE_TRAY_ICON = False
     lg.out(4, '    USE_TRAY_ICON='+str(USE_TRAY_ICON))
     if USE_TRAY_ICON:
-        if bpio.Linux():
-            icons_dict = {
-                'red':      'icon-red-24x24.png',
-                'yellow':   'icon-yellow-24x24.png',
-                'green':    'icon-green-24x24.png',
-                'gray':     'icon-gray-24x24.png', }
-        else:
-            icons_dict = {
-                'red':      'icon-red-16x16.png',
-                'yellow':   'icon-yellow-16x16.png',
-                'green':    'icon-green-16x16.png',
-                'gray':     'icon-gray-16x16.png', }
         from system import tray_icon
         icons_path = bpio.portablePath(os.path.join(bpio.getExecutableDir(), 'icons'))
         lg.out(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)
-        tray_icon.init(icons_path, icons_dict)
+        tray_icon.init(icons_path)
         def _tray_control_func(cmd):
             if cmd == 'exit':
                 import shutdowner

@@ -20,6 +20,7 @@ This is working inside ``bpmain`` process, uses wxreactor to connect with main T
 
 import os
 import sys
+import platform
 
 #------------------------------------------------------------------------------ 
 
@@ -28,13 +29,43 @@ LABEL = 'BitDust'
     
 _IconObject = None
 _ControlFunc = None
+_CurrentIcon = 'off'
 
-_IconsDict = {
-    'red':      'icon-red-24x24.png',
-    'green':    'icon-green-24x24.png',
-    'gray':     'icon-gray-24x24.png',
-    'yellow':   'icon-yellow-24x24.png',
+_IconsDict = {}
+
+_LinuxIcons = {
+    'off':          'off24x24.png',
+    'connected':    'connected24x24.png',
+    'sync':         'sync24x24.png',
+    'error':        'error24x24.png',
+    'updated':      'updated24x24.png',
 }
+
+_WindowsIcons = {
+    'off':          'off16x16.png',
+    'connected':    'connected16x16.png',
+    'sync':         'sync16x16.png',
+    'error':        'error16x16.png',
+    'updated':      'updated16x16.png',
+}
+
+_PopUpIconsDict = {
+    'open':         'expand24x24.png',
+    'sync':         'synchronize24x24.png',
+    'restart':      'restart24x24.png',
+    'reconnect':    'network24x24.png',
+    'shutdown':     'shutdown24x24.png',
+}
+
+#------------------------------------------------------------------------------ 
+
+def icons_dict():
+    global _IconsDict
+    return _IconsDict
+
+def popup_icons_dict():
+    global _PopUpIconsDict
+    return _PopUpIconsDict
 
 #------------------------------------------------------------------------------ 
 
@@ -61,6 +92,11 @@ def init(icons_path, icons_files=None):
     
     if icons_files:
         _IconsDict = icons_files
+    else:
+        if platform.uname()[0] == 'Linux':
+            _IconsDict = _LinuxIcons
+        else:
+            _IconsDict = _WindowsIcons
 
     import wx
     
@@ -70,21 +106,20 @@ def init(icons_path, icons_files=None):
         item = wx.MenuItem(menu, -1, label)
         menu.Bind(wx.EVT_MENU, func, id=item.GetId())
         if icon is not None:
-            item.SetBitmap(wx.Bitmap(icon))
+            item.SetBitmap(icon)
         menu.AppendItem(item)
         return item
-    
-    def icons_dict():
-        global _IconsDict
-        return _IconsDict
     
     class MyTaskBarIcon(wx.TaskBarIcon):
         def __init__(self, icons_path, current_icon_name=None):
             super(MyTaskBarIcon, self).__init__()
             self.icons_path = icons_path
             self.icons = {}
+            self.popup_icons = {}
             for name, filename in icons_dict().items():
                 self.icons[name] = wx.IconFromBitmap(wx.Bitmap(os.path.join(icons_path, filename)))
+            for name, filename in popup_icons_dict().items():
+                self.popup_icons[name] = wx.Bitmap(os.path.join(icons_path, filename))                
             if len(self.icons) == 0:
                 self.icons['default'] = ''
             if current_icon_name is not None and current_icon_name in self.icons.keys():
@@ -96,23 +131,11 @@ def init(icons_path, icons_files=None):
 
         def CreatePopupMenu(self):
             menu = wx.Menu()
-            icons = {
-                'show':     os.path.join(self.icons_path, 'expand24x24.png'),
-                'sync':     os.path.join(self.icons_path, 'synchronize24x24.png'),
-                'hide':     os.path.join(self.icons_path, 'collapse24x24.png'),
-                'toolbar':  os.path.join(self.icons_path, 'tools24x24.png'),
-                'restart':  os.path.join(self.icons_path, 'restart24x24.png'),
-                'reconnect':os.path.join(self.icons_path, 'network24x24.png'),
-                'shutdown': os.path.join(self.icons_path, 'shutdown24x24.png'),
-            }
-             create_menu_item(menu, 'open', self.on_show, icons.get('show', None))
-            create_menu_item(menu, 'synchronize', self.on_sync, icons.get('sync', None))
-            # create_menu_item(menu, 'hide', self.on_hide, icons.get('hide', None))
-            # create_menu_item(menu, 'toolbar', self.on_toolbar, icons.get('toolbar', None))
-            # menu.AppendSeparator()
-            create_menu_item(menu, 'reconnect', self.on_reconnect, icons.get('reconnect', None))
-            create_menu_item(menu, 'restart', self.on_restart, icons.get('restart', None))
-            create_menu_item(menu, 'shutdown', self.on_exit, icons.get('shutdown', None))
+            create_menu_item(menu, 'open', self.on_show, self.popup_icons.get('open', None))
+            create_menu_item(menu, 'synchronize', self.on_sync, self.popup_icons.get('sync', None))
+            create_menu_item(menu, 'reconnect', self.on_reconnect, self.popup_icons.get('reconnect', None))
+            create_menu_item(menu, 'restart', self.on_restart, self.popup_icons.get('restart', None))
+            create_menu_item(menu, 'exit', self.on_exit, self.popup_icons.get('shutdown', None))
             self.menu = menu
             return menu
 
@@ -141,6 +164,7 @@ def init(icons_path, icons_files=None):
             control('toolbar')
         
         def select_icon(self, icon_name):
+            # print 'select_icon', icon_name, self.icons
             if icon_name in self.icons.keys():
                 self.current = icon_name
                 self.SetIcon(self.icons.get(self.current, self.icons.values()[0]), LABEL)
@@ -201,26 +225,38 @@ def control(cmd):
         _ControlFunc(cmd)
 
 
-def set_icon(name):
+def draw_icon(name):
     global _IconObject
     if _IconObject is not None:
         _IconObject.SetIcon(name)
-      
+
+
+def set_icon(name):
+    global _CurrentIcon
+    _CurrentIcon = name
+    draw_icon(name)
+    
+        
+def restore_icon():
+    global _CurrentIcon
+    draw_icon(_CurrentIcon)
+    
       
 def state_changed(network, p2p):
-    if network == 'DISCONNECTED':
-        set_icon('gray')
-        return
+    # print 'state_changed', network, p2p
     if [ network, p2p, ].count('CONNECTED') == 2:
-        set_icon('green')
+        set_icon('connected')
         return
-    if network == 'CONECTED' and p2p == 'DISCONNECTED':
-        set_icon('red')
-        return
-    if [ network, p2p ].count('CONNECTED') == 1:
-        set_icon('yellow')
-        return
-    set_icon('gray')
+    # if network == 'DISCONNECTED':
+    #     set_icon('off')
+    #     return
+    # if network == 'CONECTED' and p2p == 'DISCONNECTED':
+    #     set_icon('red')
+    #     return
+    # if [ network, p2p ].count('CONNECTED') == 1:
+    #     set_icon('yellow')
+    #     return
+    set_icon('off')
 
 
 def SetControlFunc(f):

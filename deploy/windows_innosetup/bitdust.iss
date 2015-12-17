@@ -28,6 +28,11 @@ DisableDirPage=yes
 DisableProgramGroupPage=yes
 SetupIconFile=.\build\icons\desktop.ico
 UsePreviousAppDir=no
+WizardImageStretch=no
+WizardImageFile=bitdust128.bmp
+WizardSmallImageFile=bitdust48.bmp
+WizardImageBackColor=$ffffff
+
 
 [Files]
 Source: ".\build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
