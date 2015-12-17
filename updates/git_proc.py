@@ -73,9 +73,9 @@ class GitProcessProtocol(protocol.ProcessProtocol):
             
     def processEnded(self, reason):
         if _Debug:
-            lg.out(_DebugLevel, 'git process FINISHED : %s' % reason)
+            lg.out(_DebugLevel, 'git process FINISHED : %s' % reason.value.exitCode)
         if self.callback:
-            self.callback(self.out, reason)
+            self.callback(self.out, reason.value.exitCode)
 
 #------------------------------------------------------------------------------ 
 
@@ -116,7 +116,7 @@ def sync(callback_func=None):
         cmdargs = [git_exe, 'pull',]
     else:
         cmdargs = ['/usr/bin/git', 'pull',]
-    execute(cmdargs, callback=callback_func)
+    execute(cmdargs, callback=_run_callback)
     
 #------------------------------------------------------------------------------ 
 
