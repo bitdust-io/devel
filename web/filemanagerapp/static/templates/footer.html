@@ -1,15 +1,15 @@
 <div id="filemanager-footer" data-ng-controller="FileManagerFooterCtrl">
   <div data-ng-show="initialized()">
-    <div id="info-space-used">
+    <div id="info-space-used" class="filemanager-footer-item">
         {{usedSpaceInfo()}}
     </div>
-    <div id="info-space-donated">
+    <div id="info-space-donated" class="filemanager-footer-item">
         {{donatedSpaceInfo()}}
     </div>
-    <div id="info-suppliers">
+    <div id="info-suppliers" class="filemanager-footer-item">
         {{suppliersInfo()}}
     </div>
-    <div id="info-customers">
+    <div id="info-customers" class="filemanager-footer-item">
         {{customersInfo()}}
     </div>
   </div>
