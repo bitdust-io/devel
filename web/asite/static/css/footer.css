@@ -11,10 +11,10 @@ body {
     right: 0px;
     left: 0px;
 	/* position: absolute; */
-	bottom: 0;
+	bottom: 0px;
 	/* width: 100%; */
 	/* Set the fixed height of the footer here */
-	height: 30px;
+	/* height: 30px; */
 	line-height: 30px;   
     background-color: #fff;
     color: #888;

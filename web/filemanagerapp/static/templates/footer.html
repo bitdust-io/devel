@@ -1,16 +1,16 @@
-<div id="filemanager-footer" data-ng-controller="FileManagerFooterCtrl">
+<div id="filemanager-footer" class="pull-left" data-ng-controller="FileManagerFooterCtrl">
   <div data-ng-show="initialized()">
-    <div id="info-space-used" class="filemanager-footer-item">
+    <button class="btn btn-default btn-xs" id="info-space-used" class="filemanager-footer-item">
         {{usedSpaceInfo()}}
-    </div>
-    <div id="info-space-donated" class="filemanager-footer-item">
-        {{donatedSpaceInfo()}}
-    </div>
-    <div id="info-suppliers" class="filemanager-footer-item">
+    </button>
+    <button class="btn btn-default btn-xs" id="info-suppliers" class="filemanager-footer-item">
         {{suppliersInfo()}}
-    </div>
-    <div id="info-customers" class="filemanager-footer-item">
+    </button>
+    <button class="btn btn-default btn-xs" id="info-space-donated" class="filemanager-footer-item">
+        {{donatedSpaceInfo()}}
+    </button>
+    <button class="btn btn-default btn-xs" id="info-customers" class="filemanager-footer-item">
         {{customersInfo()}}
-    </div>
+    </button>
   </div>
 </div>

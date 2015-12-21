@@ -13,6 +13,7 @@
 
 <nav class="navbar navbar-default navbar-fixed-top">
   <div class="container">
+  <!-- 
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-top-menu" aria-expanded="false" aria-controls="navbar">
         <span class="sr-only">Toggle</span>
@@ -21,14 +22,48 @@
         <span class="icon-bar"></span>
       </button>
     </div>
-    <div id="navbar-top-menu" class="navbar-collapse collapse">
-      <ul class="nav navbar-nav navbar-left">
-        <!-- TODO -->
+     -->
+    <div id="navbar-top-menu">
+      <!--  class="navbar-collapse collapse"  --> 
+      <ul class="nav navbar-nav navbar-left pull-left">
+        <li class="dropdown pull-left">
+            <a href="#" class="dropdown-toggle" role="button">
+                <button class="btn btn-sm btn-default pull-right" 
+                    data-toggle="tooltip" data-placement="bottom" title="Global Search">
+                    <i class="fa fa-search-plus"></i>
+                </button>
+            </a> 
+        </li>        
+        <li class="dropdown pull-left">
+            <a href="#" class="dropdown-toggle" role="button">
+                <button class="btn btn-sm btn-default pull-right" 
+                    data-toggle="tooltip" data-placement="bottom" title="My Files">
+                    <i class="fa fa-floppy-o"></i>
+                </button>
+            </a> 
+        </li>
+        <li class="dropdown pull-left">
+            <a href="#" class="dropdown-toggle" role="button">
+                <button class="btn btn-sm btn-default pull-right" 
+                    data-toggle="tooltip" data-placement="bottom" title="My Key">
+                    <i class="fa fa-key"></i>
+                </button>
+            </a> 
+        </li>        
+        <li class="dropdown pull-left">
+            <a href="#" class="dropdown-toggle" role="button">
+                <button class="btn btn-sm btn-default pull-right" 
+                    data-toggle="tooltip" data-placement="bottom" title="My Balance">
+                    <i class="fa fa-line-chart"></i>
+                </button>
+            </a> 
+        </li>        
       </ul>
       <ul class="nav navbar-nav navbar-right pull-right">
-        <li class="dropdown">
+        <li class="dropdown pull-right">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                <button class="btn btn-sm btn-default pull-right" title="Shutdown">
+                <button class="btn btn-sm btn-default pull-right" 
+                    data-toggle="tooltip" data-placement="bottom" title="Shutdown">
                     <i class="glyphicon glyphicon-off"></i>
                 </button>
             </a> 
@@ -41,20 +76,93 @@
                 </li>
             </ul> 
         </li>
+        <li class="dropdown pull-right">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                <button class="btn btn-sm btn-default pull-right" 
+                    data-toggle="tooltip" data-placement="bottom" title="Settings">
+                    <i class="fa fa-cogs"></i>
+                </button>
+            </a> 
+            <ul class="dropdown-menu pull-right" role="menu">
+                <li class="pull-right">
+                    <a href="#">Storage quotas</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">Configuration</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">Network Services</a>
+                </li>
+            </ul> 
+        </li>        
+        <li class="dropdown pull-right">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                <button class="btn btn-sm btn-default pull-right" 
+                    data-toggle="tooltip" data-placement="bottom" title="User roles">
+                    <i class="fa fa-users"></i>
+                </button>
+            </a> 
+            <ul class="dropdown-menu pull-right" role="menu">
+                <li class="pull-right">
+                    <a href="#">Friends</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">Suppliers</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">Customers</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">Workers</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">Accountants</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">ID-servers</a>
+                </li>
+            </ul> 
+        </li>
+        <li class="dropdown pull-right">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                <button class="btn btn-sm btn-default pull-right" 
+                    data-toggle="tooltip" data-placement="bottom" title="Reputation">
+                    <i class="fa fa-balance-scale"></i>
+                </button>
+            </a> 
+            <ul class="dropdown-menu pull-right" role="menu">
+                <li class="pull-right">
+                    <a href="#">Top Suppliers</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">Top Workers</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">ID-servers List</a>
+                </li>
+                <li class="pull-right">
+                    <a href="#">Accountants List</a>
+                </li>
+            </ul>
+        </li>
       </ul> 
     </div>
   </div>
 </nav>
+<script>
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip({delay: 100, });
+});
+</script>
 
     
 {% block bottombody %}
 {% endblock bottombody %}
 
-<!-- 
 <div class="container debug_info">
-  <pre><code>{{ debug }}</code></pre>  
+    {% block debug_info %}
+    {% endblock debug_info %}
 </div>
--->
 
 {% block wrappedbody %}
 {% endblock wrappedbody %}

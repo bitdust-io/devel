@@ -260,8 +260,15 @@
         
         $scope.startRefresherTask = function () {
         	setRefreshCallback(function(data) {
-            	$scope.fileNavigator.refresh_soft();
-            	$scope.activeTasks.refresh();
+        		// debug.log('refresh', data);
+        		if (data.backupID || data.pathID) {
+        			$scope.fileNavigator.refresh_soft();
+                	$scope.activeTasks.refresh();
+            	} else if (data.automat) {
+            		$scope.fileNavigator.request_debug_info();
+            	} else if (data.contact || data.supplier || data.customer) {
+            		$scope.fileNavigator.request_stats_soft();
+            	}
         	});
         	startUpdater();
         };
@@ -273,6 +280,7 @@
         $scope.fileNavigator.request_stats();
         $scope.fileNavigator.refresh();
     	$scope.activeTasks.refresh();
+        $scope.fileNavigator.request_debug_info();
 
     	$scope.startRefresherTask();
         

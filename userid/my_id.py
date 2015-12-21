@@ -272,8 +272,9 @@ def buildProtoContacts(id_obj):
             continue
         active_transports.append(proto)
     # sort active transports by priority
-    active_transports.sort(key=settings.getTransportPriority)
     lg.out(4, '    active transports: %s' % str(active_transports))
+    active_transports.sort(key=settings.getTransportPriority)
+    lg.out(4, '    sorted transports: %s' % str(active_transports))
     if not driver.is_started('service_gateway'):
         new_contacts = current_contats
         new_order_correct = current_order

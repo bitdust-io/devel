@@ -345,6 +345,9 @@ class ContactStatus(automat.Automat):
         if not settings.NewWebGUI():
             from web import webcontrol
             webcontrol.OnAliveStateChanged(self.idurl)
+        else:
+            from web import control
+            control.request_update([('contact', self.idurl)])  
  
 #------------------------------------------------------------------------------ 
 

@@ -90,7 +90,7 @@ def sync(callback_func=None):
             return
         if response.count('Already up-to-date.'):
             callback_func('up-to-date')
-        elif response.count('Unpacking objects:') or response.count('file changed'):
+        elif response.count('Unpacking objects:') or response.count('Fast-forward') or response.count('Updating'):
             callback_func('new-data')
         else:
             if retcode == 0: 

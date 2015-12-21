@@ -82,6 +82,52 @@
                 typeof error === 'function' && error(data);
             });
         };
+
+        FileNavigator.prototype.request_stats_soft = function(success, error) {
+            var self = this;
+            var data = { params: {
+                mode: 'stats'
+            }};
+            //self.requesting = true;
+            //fileManagerConfig.stats = {};
+            self.error = '';
+            $http.post(fileManagerConfig.statsUrl, data).success(function(data) {
+            	fileManagerConfig.stats = data.result;
+                //debug.log('stats:', fileManagerConfig.stats);
+                //self.requesting = false;
+                if (data.error) {
+                    self.error = data.error;
+                    return typeof error === 'function' && error(data);
+                }
+                typeof success === 'function' && success(data);
+            }).error(function(data) {
+                self.requesting = false;
+                typeof error === 'function' && error(data);
+            });
+        };
+        
+        FileNavigator.prototype.request_debug_info = function(success, error) {
+            var self = this;
+            var data = { params: {
+                mode: 'debuginfo'
+            }};
+            // self.requesting = true;
+            fileManagerConfig.debugInfo = {};
+            //self.error = '';
+            $http.post(fileManagerConfig.debugUrl, data).success(function(data) {
+            	fileManagerConfig.debugInfo = data.result;
+                debug.log('request_debug_info', fileManagerConfig.debugInfo);
+                //self.requesting = false;
+                if (data.error) {
+                    self.error = data.error;
+                    return typeof error === 'function' && error(data);
+                }
+                typeof success === 'function' && success(data);
+            }).error(function(data) {
+                self.requesting = false;
+                typeof error === 'function' && error(data);
+            });
+        };
         
         FileNavigator.prototype.refresh = function(success, error) {
             var self = this;

@@ -432,6 +432,9 @@ textarea {
 .main-table-item {
     white-space: nowrap;
 }
+.main-table-item div.btn-group {
+	display: flex!important;
+}
 #mainitemstable td.main-table-item i {
     font-size: 14px;
     margin-right: 5px;	
@@ -522,4 +525,14 @@ textarea {
 .startup-upload-button {
 	width: 110px;
 	margin: 0px 5px;
+}
+#filemanager-footer {
+	display: inline-block;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+.filemanager-footer-item {
+    margin-left: 10px;
+    font-size: 0.75em;
+    float: left;    
 }

@@ -393,7 +393,7 @@ class BackupRebuilder(automat.Automat):
                         self.missingPackets += 1
                         # self.missingSuppliers.add(supplierNum)
             total_requests_count += requests_count
-        lg.out(8, 'backup_rebuilder._request_files : %d chunks requested')
+        lg.out(8, 'backup_rebuilder._request_files : %d chunks requested' % total_requests_count)
         self.automat('requests-sent', total_requests_count)
         
     def _file_received(self, newpacket, state):

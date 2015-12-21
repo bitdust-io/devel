@@ -21,8 +21,11 @@
         tasksUrl: "/filemanager/bridge",
         configUrl: "/filemanager/bridge",
         statsUrl: "/filemanager/bridge",
+        debugUrl: "/filemanager/bridge",
         
         localConfig: {},
+		
+        debugInfo: {},
 		
 		stats: {},
         

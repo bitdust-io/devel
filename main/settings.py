@@ -338,10 +338,10 @@ def SendingSpeedLimit():
     If sending below this speed - we count this supplier as failed.
     If we sending too slow to all nodes - it's our problems, not suppliers.
     """
-    return 5 * 1024 
+    return 3 * 1024 
 
 def ReceivingSpeedLimit():
-    return 5 * 1024
+    return 3 * 1024
 
 def DefaultBandwidthInLimit():
     """

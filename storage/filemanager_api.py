@@ -71,6 +71,9 @@ def process(json_request):
             result = _download(json_request['params'])
         elif mode == 'tasks':
             result = _list_active_tasks(json_request['params'])
+        elif mode == 'debuginfo':
+            result = _debuginfo(json_request['params'])
+            
         # lg.out(14, '    %s' % pprint.pformat(result))
         return result
     except:
@@ -95,13 +98,19 @@ def _config(params):
 
 def _stats(params):
     from contacts import contactsdb
+    from p2p import contact_status
+    from lib import diskspace
     result = {}
     result['suppliers'] = contactsdb.num_suppliers()
     result['max_suppliers'] = settings.getSuppliersNumberDesired()
+    result['online_suppliers'] = contact_status.countOnlineAmong(contactsdb.suppliers())
     result['customers'] = contactsdb.num_customers()
     result['bytes_donated'] = settings.getDonatedBytes()
+    result['value_donated'] = diskspace.MakeStringFromBytes(settings.getDonatedBytes())
     result['bytes_needed'] = settings.getNeededBytes()
+    result['value_needed'] = diskspace.MakeStringFromBytes(settings.getNeededBytes())
     result['bytes_used_total'] = backup_fs.sizebackups()
+    result['value_used_total'] = diskspace.MakeStringFromBytes(backup_fs.sizebackups())
     result['bytes_used_supplier'] = 0 if (contactsdb.num_suppliers() == 0) else (int(backup_fs.sizebackups() / contactsdb.num_suppliers()))
     result['bytes_indexed'] = backup_fs.sizefiles() + backup_fs.sizefolders()
     result['files_count'] = backup_fs.numberfiles()  
@@ -203,7 +212,7 @@ def _upload(params):
         return { 'result': { "success": False, "error": 'local path %s was not found' % path } } 
     result = []
     pathID = backup_fs.ToID(localPath)
-    print localPath, pathID
+    # print localPath, pathID
     if pathID is None:
         if bpio.pathIsDir(localPath):
             pathID, iter, iterID = backup_fs.AddDir(localPath, True)
@@ -310,4 +319,17 @@ def _list_active_tasks(params):
     #     result.append(backupID)
     return { 'result': result, }
 
+def _debuginfo(params):
+    result = {}
+    result['debug'] = lg.get_debug_level()
+    result['automats'] = []
+    from automats import automat 
+    for index, A in automat.objects().items():
+        result['automats'].append({
+            'index': index,
+            'id': A.id,
+            'name': A.name,
+            'state': A.state, })
+    return { 'result': result, }
+    
 

@@ -1,12 +1,18 @@
-
 #navbar-top-menu.navbar-collapse.in,
 #navbar-top-menu.collapsing {
   border-bottom: 1px solid #ddd;
 }
 #navbar-top-menu .navbar-right {
-	padding-right: 15px;
+  padding-right: 15px;
 }
-
+#navbar-top-menu ul li a button i {
+  font-size: 16px;
+  line-height: 16px;
+  
+}
+#navbar-top-menu ul li a button {
+	height: 32px;
+}
 .navbar-default {
   background-color: #ffffff;
   border-color: #ffffff;
@@ -23,6 +29,8 @@
 .navbar-default .navbar-nav > li > a {
   color: #000000;
 }
+
+
 .navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:focus {
   color: #4078c0;
 }

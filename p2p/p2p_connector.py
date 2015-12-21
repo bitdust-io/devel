@@ -382,6 +382,10 @@ class P2PConnector(automat.Automat):
             return False
         #if we are using udp and it is working - this is fantastic!
         if first == 'udp' and 'udp' in active_protos():
+            # but let's check if TCP is also working
+            # in that case we want to switch to TCP
+            if 'tcp' in active_protos():
+                return False
             return True
         #udp seems to be working and first contact is not working - so switch to udp
         if first != 'udp' and 'udp' in active_protos():

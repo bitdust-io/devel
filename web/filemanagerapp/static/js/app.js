@@ -22,6 +22,13 @@
             templateUrl: fileManagerConfig.tplPath + '/footer.html'
         };
     }]);
+
+    app.directive('angularFileManagerDebug', ['$parse', 'fileManagerConfig', function($parse, fileManagerConfig) {
+        return {
+            restrict: 'EA',
+            templateUrl: fileManagerConfig.tplPath + '/debug.html'
+        };
+    }]);
     
     app.directive('ngFile', ['$parse', function($parse) {
         return {
