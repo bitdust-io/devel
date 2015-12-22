@@ -13,7 +13,7 @@
 
 <nav class="navbar navbar-default navbar-fixed-top">
   <div class="container">
-  <!-- 
+    <!-- 
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-top-menu" aria-expanded="false" aria-controls="navbar">
         <span class="sr-only">Toggle</span>
@@ -22,7 +22,7 @@
         <span class="icon-bar"></span>
       </button>
     </div>
-     -->
+    -->
     <div id="navbar-top-menu">
       <!--  class="navbar-collapse collapse"  --> 
       <ul class="nav navbar-nav navbar-left pull-left">
@@ -98,7 +98,9 @@
         <li class="dropdown pull-right">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
                 <button class="btn btn-sm btn-default pull-right" 
-                    data-toggle="tooltip" data-placement="bottom" title="User roles">
+                    data-toggle="tooltip" 
+                    data-placement="bottom" 
+                    title="User roles">
                     <i class="fa fa-users"></i>
                 </button>
             </a> 
@@ -149,12 +151,6 @@
     </div>
   </div>
 </nav>
-<script>
-$(document).ready(function(){
-    $('[data-toggle="tooltip"]').tooltip({delay: 100, });
-});
-</script>
-
     
 {% block bottombody %}
 {% endblock bottombody %}
@@ -175,6 +171,10 @@ $(document).ready(function(){
   </div>
 </div>
 
+<script>
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip({delay: 50,});
+});
+</script>
+
 {% endblock body %}
-
-

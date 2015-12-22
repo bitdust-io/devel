@@ -7,22 +7,35 @@
 #filemanager {
     position: absolute;
     top: 51px;
-    bottom: 30px;
+    bottom: 53px;
     left: 0px;
     right: 0px;	
     overflow: auto;
     padding: 10px;
 }
+@media (max-width: 540px) {
+	#filemanager {
+        top: 101px;
+        bottom: 80px;
+    }
+}
+@media (max-width: 540px) {
+    #filemanager {
+        bottom: 100px;
+	}
+}
 #filemanager-content {
+	height: 100%;
 }
 #filemanager-intro {
-    position: absolute;
+    /* position: absolute;
     top: 50%;
     left: 0px;
     right: 0px;
-    transform: translateY(-50%);
+    transform: translateY(-50%); */ 
     text-align: center;
     padding: 20px;
+    height: 100%;
 }
 #filemanager
 .detail-sources,
@@ -527,9 +540,15 @@ textarea {
 	margin: 0px 5px;
 }
 #filemanager-footer {
-	display: inline-block;
-	padding-left: 5px;
-	padding-right: 5px;
+	/* display: inline-block; */
+	/* padding-left: 5px; */
+	/* padding-right: 5px; */
+	/* width: 100%; */
+	left: 0px;
+	right: 0px;
+	text-align: center;
+	position: absolute;
+	bottom: 31px;
 }
 .filemanager-footer-item {
     margin-left: 10px;

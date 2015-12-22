@@ -48,6 +48,7 @@
 			restore: true,
             eraseversion: true,
             restoreversion: true,
+            downloadversion: true,
 			watchversion: true,
         },
 

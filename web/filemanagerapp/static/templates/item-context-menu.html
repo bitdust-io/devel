@@ -3,7 +3,8 @@
     <ul class="dropdown-menu dropdown-right-click" 
             role="menu" aria-labelledby="dropdownMenu">
 
-        <li data-ng-show="config.allowedActions.restore && temp.hasVersions()">
+        <li class="disabled"
+            data-ng-show="config.allowedActions.restore && temp.hasVersions()">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="restoreItem(temp)">
@@ -31,7 +32,8 @@
             </a>
         </li>
 
-        <li data-ng-show="config.allowedActions.explore">
+        <li class="disabled"
+            data-ng-show="config.allowedActions.explore">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="exploreItem(temp)">
@@ -40,7 +42,8 @@
             </a>
         </li>
 
-        <li data-ng-show="config.allowedActions.open">
+        <li  class="disabled"
+            data-ng-show="config.allowedActions.open">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="openItem(temp)">
@@ -49,7 +52,8 @@
             </a>
         </li>
         
-        <li data-ng-show="config.allowedActions.explore">
+        <li class="disabled"
+            data-ng-show="config.allowedActions.explore">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="hideItem(temp)">
@@ -75,7 +79,8 @@
     class="context-menu dropdown clearfix animated fast fadeIn">
     <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
 
-        <li data-ng-show="config.allowedActions.restore && temp.hasVersions()">
+        <li  class="disabled"
+            data-ng-show="config.allowedActions.restore && temp.hasVersions()">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="restoreItem(temp)">
@@ -103,7 +108,8 @@
             </a>
         </li>
 
-        <li data-ng-show="config.allowedActions.explore">
+        <li class="disabled"
+            data-ng-show="config.allowedActions.explore">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="exploreItem(temp)">
@@ -112,7 +118,8 @@
             </a>
         </li>
 
-        <li data-ng-show="config.allowedActions.explore">
+        <li class="disabled"
+            data-ng-show="config.allowedActions.explore">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="hideItem(temp)">
@@ -121,7 +128,8 @@
             </a>
         </li>
 
-        <li data-ng-show="config.allowedActions.remove && temp">
+        <li 
+            data-ng-show="config.allowedActions.remove && temp">
             <a href="" 
                 tabindex="-1" 
                 data-toggle="modal" 
@@ -137,7 +145,8 @@
     class="context-menu dropdown clearfix animated fast fadeIn">
     <ul class="dropdown-menu dropdown-right-click" role="menu" aria-labelledby="dropdownMenu">
 
-        <li data-ng-show="config.allowedActions.restoreversion && temp && tempVersion">
+        <li class="disabled"
+            data-ng-show="config.allowedActions.restoreversion && temp && tempVersion">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="restoreVersion(temp, tempVersion)">
@@ -146,7 +155,18 @@
             </a>
         </li>
 
-        <li data-ng-show="config.allowedActions.watchversion && temp && tempVersion">
+        <li class="disabled"
+            data-ng-show="config.allowedActions.downloadversion && temp && tempVersion">
+            <a href="" 
+                tabindex="-1" 
+                data-ng-click="downloadVersion(temp, tempVersion)">
+                <i class="glyphicon glyphicon-download"></i>
+                {{'download' | translate}}
+            </a>
+        </li>
+
+        <li class="disabled"
+            data-ng-show="config.allowedActions.watchversion && temp && tempVersion">
             <a href="" 
                 tabindex="-1" 
                 data-ng-click="watchVersion(temp, tempVersion)">
