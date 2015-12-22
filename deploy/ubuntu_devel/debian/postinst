@@ -21,7 +21,7 @@ if [ "$1" = configure ] ; then
     mkdir -p $BITDUST_DIR
 
     rm -rf $BITDUST_DIR/src
-    git clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.devel.git $BITDUST_DIR/src
+    git clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src
     if [ ! -d $BITDUST_DIR/src ]; then
         echo "downloading sources failed, execute command: git clone http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src"
     else
