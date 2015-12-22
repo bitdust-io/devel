@@ -6,8 +6,8 @@ set -e
 
 echo "building .deb file"
 cd workspace
-debuild -k12E49B66 > ../build.log
-# B3A000A9
+# debuild -k12E49B66 > ../build.log
+debuild -kB3A000A9 > ../build.log
 cd ..
 
 tail -13 build.log

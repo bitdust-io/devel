@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# read more : https://wiki.debian.org/SettingUpSignedAptRepositoryWithReprepro
+
 set -e
 
 # cd ~/bitdust/deploy/ubuntu_devel
