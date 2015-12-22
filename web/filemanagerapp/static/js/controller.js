@@ -243,7 +243,7 @@
         };
         
         $scope.hasIndexedItems = function() {
-        	return false;
+        	//return false;
         	if (!fileManagerConfig.stats)
         		return false;
         	var bytes_indexed = fileManagerConfig.stats.bytes_indexed;
