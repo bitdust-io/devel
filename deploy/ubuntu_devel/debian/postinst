@@ -1,35 +1,10 @@
 #!/bin/sh
 
-# set -e
+set -e
 
 . /usr/share/debconf/confmodule
 
 if [ "$1" = configure ] ; then
-
-    INSTALLATOR=""
-    if [ -f /usr/share/bitdust/user ]; then
-        INSTALLATOR=`cat /usr/share/bitdust/user`
-    fi
-
-    db_get bitdust/installdir && BITDUST_DIR=$RET
-
-    BITDUST_DIR="./bitdust"
-    if [ -f /usr/share/bitdust/installdir ]; then
-        BITDUST_DIR=`cat /usr/share/bitdust/installdir`
-    fi
-
-    mkdir -p $BITDUST_DIR
-
-    rm -rf $BITDUST_DIR/src
-    git clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src
-    if [ ! -d $BITDUST_DIR/src ]; then
-        echo "downloading sources failed, execute command: git clone http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src"
-    else
-        touch $BITDUST_DIR/src/appdata
-        echo "$BITDUST_DIR" > $BITDUST_DIR/src/appdata
-    fi
-
-    chown $INSTALLATOR:$INSTALLATOR -R $BITDUST_DIR
 
     APT_KEY="`which apt-key 2> /dev/null`"
     if [ -x "$APT_KEY" ]; then
@@ -71,6 +46,31 @@ KEYDATA
     if [ -x "`which update-menus 2>/dev/null`" ] ; then
         update-menus
     fi
+
+    INSTALLATOR=""
+    if [ -f /usr/share/bitdust/user ]; then
+        INSTALLATOR=`cat /usr/share/bitdust/user`
+    fi
+
+    db_get bitdust/installdir && BITDUST_DIR=$RET
+
+    BITDUST_DIR="./bitdust"
+    if [ -f /usr/share/bitdust/installdir ]; then
+        BITDUST_DIR=`cat /usr/share/bitdust/installdir`
+    fi
+
+    mkdir -p $BITDUST_DIR
+
+    rm -rf $BITDUST_DIR/src
+    git clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src
+    if [ ! -d $BITDUST_DIR/src ]; then
+        echo "downloading sources failed, execute command: git clone http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src"
+    else
+        touch $BITDUST_DIR/src/appdata
+        echo "$BITDUST_DIR" > $BITDUST_DIR/src/appdata
+    fi
+
+    chown $INSTALLATOR:$INSTALLATOR -R $BITDUST_DIR
 
     find $BITDUST_DIR/src -type f -name '*.pyc' -exec rm -f {} \;
 

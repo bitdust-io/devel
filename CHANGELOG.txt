@@ -1,4 +1,9 @@
   2014-08-20 Veselin Penev <veselin@bitdust.io>
+    
+    * prepared a Demo version with GUI interface 
+    
+
+  2014-08-20 Veselin Penev <veselin@bitdust.io>
 
     * new tray icons for Microsoft Windows
     
