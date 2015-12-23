@@ -458,13 +458,13 @@ def main():
         AppDataDir = appdata
         
     else:
-        curdir = os.path.dirname(os.path.abspath(sys.executable))
+        curdir = os.getcwd() # os.path.dirname(os.path.abspath(sys.executable))
         appdatafile = os.path.join(curdir, 'appdata')
         defaultappdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         appdata = defaultappdata
         if os.path.isfile(appdatafile):
             try:
-                appdata = os.path.abspath(open(appdatafile, 'rb').read()) 
+                appdata = os.path.abspath(open(appdatafile, 'rb').read().strip()) 
             except:
                 appdata = defaultappdata
             if not os.path.isdir(appdata):

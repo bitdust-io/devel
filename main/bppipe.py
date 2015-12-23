@@ -45,10 +45,10 @@ AppData = ''
 def sharedPath(filename, subdir='logs'):
     global AppData
     if AppData == '':
-        curdir = os.path.dirname(os.path.abspath(sys.executable))
+        curdir = os.getcwd() # os.path.dirname(os.path.abspath(sys.executable))
         if os.path.isfile(os.path.join(curdir, 'appdata')):
             try:
-                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read()) 
+                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip()) 
             except:
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
             if not os.path.isdir(appdata):
