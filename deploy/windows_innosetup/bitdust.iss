@@ -33,7 +33,6 @@ WizardImageFile=bitdust128.bmp
 WizardSmallImageFile=bitdust48.bmp
 WizardImageBackColor=$ffffff
 
-
 [Files]
 Source: ".\build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ".\build\bin\{#ProcName}.bat"; DestDir: "{app}\bin"; Flags: ignoreversion
@@ -54,13 +53,12 @@ end;
 
 [Icons]
 Name: "{commondesktop}\{#Name}"; Filename: "{app}\python\pythonw.exe"; WorkingDir: "{app}\src"; Parameters: "bitdust.py show"; Comment: "Launch BitDust software"; IconFilename: "{app}\icons\desktop.ico"
-;Name: "{commondesktop}\Start {#Name} in debug mode"; Filename: "{app}\bin\{#ProcName}d.bat"; WorkingDir: "{app}\src"; Parameters: "-d20 show"; Comment: "Launch BitDust software in debug mode"; IconFilename: "{app}\icons\desktop-debug.ico"
-;Name: "{commondesktop}\Stop {#Name}"; Filename: "{app}\python\pythonw.exe"; WorkingDir: "{app}\src"; Parameters: "bitdust.py stop"; Comment: "Completely stop BitDust software"; IconFilename: "{app}\icons\desktop-stop.ico"
-;Name: "{commondesktop}\Synchronize {#Name} sources"; Filename: "{app}\bin\{#ProcName}sync.bat"; WorkingDir: "{app}\src"; Parameters: ""; Comment: "Synchronize BitDust sources from public repository at http://gitlab.bitdust.io/devel/bitdust/"; IconFilename: "{app}\icons\desktop-sync.ico"
-;Name: "{userstartup}\{#Name}"; Filename: ""
+
+[Registry]
+Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#Name}"; ValueData: "{app}\python\pythonw.exe {app}\src\bitdust.py"; Flags: uninsdeletevalue
 
 [Run]
-Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources with Git: http://gitlab.bitdust.io/devel/bitdust"; Flags: runhidden;
+Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/stable/bitdust.latest.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources with Git: http://gitlab.bitdust.io/stable/bitdust.latest"; Flags: runhidden;
 ; Flags: runhidden postinstall unchecked;
 ; Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources from Git repository at http://gitlab.bitdust.io/devel/bitdust"; Flags: hidewizard postinstall;
 Filename: "{app}\python\pythonw.exe"; Parameters: "bitdust.py stop"; WorkingDir: "{app}\src"; Description: "Prepare to start the program"; StatusMsg: "Prepare to start the program ..."; Flags: runhidden;

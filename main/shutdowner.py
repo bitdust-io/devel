@@ -188,11 +188,13 @@ class Shutdowner(automat.Automat):
         from system import run_upnpc
         from raid import eccmap
         from lib import net_misc
+        from updates import git_proc
         dl = []
         driver.shutdown()
         eccmap.shutdown()
         run_upnpc.shutdown()
         net_misc.shutdown()
+        git_proc.shutdown()
         if settings.NewWebGUI():
             from web import control
             dl.append(control.shutdown())

@@ -221,6 +221,9 @@ class Initializer(automat.Automat):
         if not settings.NewWebGUI():
             from web import webcontrol
             reactor.callLater(0, webcontrol.OnUpdateStartingPage)
+        else:
+            from web import control
+            control.request_update()
 
     def doInitLocal(self, arg):
         """
@@ -398,11 +401,13 @@ class Initializer(automat.Automat):
         Finish initialization part, run delayed methods.
         """
         lg.out(2,"initializer._init_modules")
+        from updates import git_proc
+        git_proc.init()
         # from updates import os_windows_update
-        from web import webcontrol
+        # from web import webcontrol
         # os_windows_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
         # reactor.callLater(0, os_windows_update.init)
-        reactor.callLater(0, webcontrol.OnInitFinalDone)
+        # reactor.callLater(0, webcontrol.OnInitFinalDone)
         
 
     def _on_tray_icon_command(self, cmd):

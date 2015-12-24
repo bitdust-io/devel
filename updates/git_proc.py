@@ -27,6 +27,7 @@ _DebugLevel = 6
 
 import os
 import sys
+import time
 
 try:
     from twisted.internet import reactor
@@ -45,11 +46,74 @@ if __name__ == '__main__':
 
 from logs import lg
 
+from lib import schedule
+from lib import maths
+
 from system import bpio
+
+from main import settings
 
 #------------------------------------------------------------------------------ 
 
 _CurrentProcess = None
+_FirstRunDelay = 3600
+_LoopInterval = 3600 * 6
+_ShedulerTask = None
+
+#------------------------------------------------------------------------------ 
+
+def init():
+    lg.out(4, 'git_proc.init')
+    reactor.callLater(0, loop, True)
+
+def shutdown():
+    lg.out(4, 'git_proc.shutdown')
+    global _ShedulerTask
+    if _ShedulerTask is not None:
+        if _ShedulerTask.active():
+            _ShedulerTask.cancel()
+            lg.out(4, '    loop stopped')
+        _ShedulerTask = None
+
+#------------------------------------------------------------------------------ 
+
+def update_callback():
+    lg.out(6, 'git_proc.update_callback')
+
+def sync_callback(result):
+    lg.out(6, 'git_proc.sync_callback: %s' % result)
+    try:
+        from system import tray_icon
+        if result == 'error':
+            # tray_icon.draw_icon('error')
+            # reactor.callLater(5, tray_icon.restore_icon)
+            return
+        elif result == 'new-data':
+            tray_icon.set_icon('updated')
+            return
+    except:
+        pass
+
+def run_sync():
+    lg.out(6, 'git_proc.run_sync')
+    reactor.callLater(0, sync, sync_callback)
+    reactor.callLater(0, loop)
+    
+def loop(first_start=False):
+    global _ShedulerTask
+    lg.out(4, 'git_proc.loop')
+    if first_start:
+        nexttime = time.time() + _FirstRunDelay
+    else:
+        nexttime = time.time() + _LoopInterval
+    # DEBUG
+    # nexttime = time.time() + 10.0
+    delay = nexttime - time.time()
+    if delay < 0:
+        lg.warn('delay=%s %s %s' % (str(delay), nexttime, time.time()))
+        delay = 0
+    lg.out(6, 'git_proc.loop run_sync will start after %s minutes' % str(delay/60.0))
+    _ShedulerTask = reactor.callLater(delay, run_sync)
 
 #------------------------------------------------------------------------------ 
 
@@ -161,7 +225,7 @@ def execute_in_shell(cmdargs, base_dir=None, process_protocol=None):
     from system import nonblocking
     import subprocess
     if _Debug:
-        lg.out(_DebugLevel, 'git_proc.execute_2: "%s"' % (' '.join(cmdargs)))
+        lg.out(_DebugLevel, 'git_proc.execute_in_shell: "%s"' % (' '.join(cmdargs)))
     _CurrentProcess = nonblocking.Popen(
         cmdargs,
         shell=True,
@@ -171,7 +235,7 @@ def execute_in_shell(cmdargs, base_dir=None, process_protocol=None):
     out_data = _CurrentProcess.communicate()[0]
     returncode = _CurrentProcess.returncode
     if _Debug:
-        lg.out(_DebugLevel, 'git_proc.execute_2 returned: %s\n%s' % (returncode, out_data))
+        lg.out(_DebugLevel, 'git_proc.execute_in_shell returned: %s\n%s' % (returncode, out_data))
     return (out_data, returncode) # _CurrentProcess
 
 #------------------------------------------------------------------------------ 

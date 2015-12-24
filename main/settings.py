@@ -2003,7 +2003,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('personal/nickname', '')
     config.conf().setDefaultValue('personal/surname', '')
     config.conf().setDefaultValue('updates/mode', getUpdatesModeValues()[0])
-    config.conf().setDefaultValue('updates/shedule', '1\n12:00:00\n6\n')
+    config.conf().setDefaultValue('updates/shedule', '5\n\n3600\n' ) # '1\n12:00:00\n6\n')
     config.conf().setDefaultValue('services/backups/block-size', 
                                   diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
     config.conf().setDefaultValue('services/backups/max-block-size', 

@@ -36,9 +36,9 @@ if __name__ == '__main__':
 from logs import lg
 
 from system import bpio
-from lib import misc
 from system import tmpfile
 
+from lib import misc
 from lib import net_misc
 from lib import maths
 from lib import schedule
