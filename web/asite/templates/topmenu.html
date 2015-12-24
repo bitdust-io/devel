@@ -27,15 +27,7 @@
       <!--  class="navbar-collapse collapse"  --> 
       <ul class="nav navbar-nav navbar-left pull-left">
         <li class="dropdown pull-left">
-            <a href="#" class="dropdown-toggle" role="button">
-                <button class="btn btn-sm btn-default pull-right" 
-                    data-toggle="tooltip" data-placement="bottom" title="Global Search">
-                    <i class="fa fa-search-plus"></i>
-                </button>
-            </a> 
-        </li>        
-        <li class="dropdown pull-left">
-            <a href="#" class="dropdown-toggle" role="button">
+            <a href="/" class="dropdown-toggle" role="button">
                 <button class="btn btn-sm btn-default pull-right" 
                     data-toggle="tooltip" data-placement="bottom" title="My Files">
                     <i class="fa fa-floppy-o"></i>
@@ -43,107 +35,156 @@
             </a> 
         </li>
         <li class="dropdown pull-left">
-            <a href="#" class="dropdown-toggle" role="button">
-                <button class="btn btn-sm btn-default pull-right" 
-                    data-toggle="tooltip" data-placement="bottom" title="My Key">
-                    <i class="fa fa-key"></i>
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                role="button" aria-expanded="false">
+                <button class="btn btn-sm btn-default pull-right"
+                    data-toggle="tooltip" data-placement="bottom" title="Global Search">
+                    <i class="fa fa-search-plus"></i>
                 </button>
             </a> 
+            <ul class="dropdown-menu pull-left" role="menu" aria-disabled="true">
+                <li class="disabled text-left">
+                    <a href="#">Files</a>
+                </li>
+                <li class="disabled text-left">
+                    <a href="#">Users</a>
+                </li>
+                <li class="disabled text-left">
+                    <a href="#">Groups</a>
+                </li>
+            </ul>            
+        </li> 
+        <li class="dropdown pull-left">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" 
+                role="button" aria-expanded="false">
+                <button class="btn btn-sm btn-default pull-right"
+                    data-toggle="tooltip" data-placement="bottom" title="My protection">
+                    <i class="fa fa-shield"></i>
+                </button>
+            </a> 
+            <ul class="dropdown-menu pull-left" role="menu">
+                <li class="disabled text-left">
+                    <a href="#">Private Key</a>
+                </li>
+                <li class="disabled text-left">
+                    <a href="#">Incognito mode</a>
+                </li>
+                <li class="disabled text-left">
+                    <a href="#">Portable USB-stick</a>
+                </li>
+            </ul>
         </li>        
         <li class="dropdown pull-left">
-            <a href="#" class="dropdown-toggle" role="button">
-                <button class="btn btn-sm btn-default pull-right" 
-                    data-toggle="tooltip" data-placement="bottom" title="My Balance">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" 
+                role="button" aria-expanded="false">
+                <button class="btn btn-sm btn-default pull-right"
+                    data-toggle="tooltip" data-placement="bottom" title="My Costs / Income">
                     <i class="fa fa-line-chart"></i>
                 </button>
             </a> 
-        </li>        
-      </ul>
-      <ul class="nav navbar-nav navbar-right pull-right">
-        <li class="dropdown pull-right">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                <button class="btn btn-sm btn-default pull-right" 
-                    data-toggle="tooltip" data-placement="bottom" title="Shutdown">
-                    <i class="glyphicon glyphicon-off"></i>
-                </button>
-            </a> 
-            <ul class="dropdown-menu pull-right" role="menu">
-                <li class="pull-right">
-                    <a href="/api/stop">Exit</a>
+            <ul class="dropdown-menu pull-left" role="menu">
+                <li class="disabled text-left">
+                    <a href="#">Buy/Sell resources</a>
                 </li>
-                <li class="pull-right">
-                    <a href="/api/restart">Restart</a>
+                <li class="disabled text-left">
+                    <a href="#">Monthly report</a>
+                </li>
+                <li class="disabled text-left">
+                    <a href="#">Archived reports</a>
                 </li>
             </ul> 
-        </li>
-        <li class="dropdown pull-right">
+        </li>  
+        <li class="dropdown pull-left">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                <button class="btn btn-sm btn-default pull-right" 
-                    data-toggle="tooltip" data-placement="bottom" title="Settings">
-                    <i class="fa fa-cogs"></i>
-                </button>
-            </a> 
-            <ul class="dropdown-menu pull-right" role="menu">
-                <li class="pull-right">
-                    <a href="#">Storage quotas</a>
-                </li>
-                <li class="pull-right">
-                    <a href="#">Configuration</a>
-                </li>
-                <li class="pull-right">
-                    <a href="#">Network Services</a>
-                </li>
-            </ul> 
-        </li>        
-        <li class="dropdown pull-right">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                <button class="btn btn-sm btn-default pull-right" 
-                    data-toggle="tooltip" 
-                    data-placement="bottom" 
-                    title="User roles">
+                <button class="btn btn-sm btn-default pull-right"
+                    data-toggle="tooltip" data-placement="bottom" title="My connections">
                     <i class="fa fa-users"></i>
                 </button>
             </a> 
-            <ul class="dropdown-menu pull-right" role="menu">
-                <li class="pull-right">
+            <ul class="dropdown-menu pull-left" role="menu">
+                <li class="disabled text-left">
                     <a href="#">Friends</a>
                 </li>
-                <li class="pull-right">
+                <li class="disabled text-left">
                     <a href="#">Suppliers</a>
                 </li>
-                <li class="pull-right">
+                <li class="disabled text-left">
                     <a href="#">Customers</a>
                 </li>
-                <li class="pull-right">
+                <li class="disabled text-left">
                     <a href="#">Workers</a>
                 </li>
-                <li class="pull-right">
+                <li class="disabled text-left">
                     <a href="#">Accountants</a>
                 </li>
-                <li class="pull-right">
+                <li class="disabled text-left">
                     <a href="#">ID-servers</a>
                 </li>
             </ul> 
         </li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right pull-right">
+        <li class="dropdown pull-right">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" 
+                role="button" aria-expanded="false">
+                <button class="btn btn-sm btn-default pull-right"
+                    data-toggle="tooltip" data-placement="bottom" title="Exit">
+                    <i class="glyphicon glyphicon-off"></i>
+                </button>
+            </a> 
+            <ul class="dropdown-menu pull-right" role="menu">
+                <li class="text-right">
+                    <a href="/api/restart">Restart</a>
+                </li>
+                <li class="text-right">
+                    <a href="/api/stop">Shutdown</a>
+                </li>
+            </ul> 
+        </li>
         <li class="dropdown pull-right">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                <button class="btn btn-sm btn-default pull-right" 
+                <button class="btn btn-sm btn-default pull-right"
+                    data-toggle="tooltip" data-placement="bottom" title="Configuration">
+                    <i class="fa fa-cogs"></i>
+                </button>
+            </a> 
+            <ul class="dropdown-menu pull-right" role="menu">
+                <li class="disabled text-right">
+                    <a href="#">Storage quotas</a>
+                </li>
+                <li class="disabled text-right">
+                    <a href="#">Network services</a>
+                </li>
+                <li class="disabled text-right">
+                    <a href="#">Transport protocols</a>
+                </li>
+                <li class="disabled text-right">
+                    <a href="#">Program settings</a>
+                </li>
+            </ul> 
+        </li>        
+        <li class="dropdown pull-right">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+                <button class="btn btn-sm btn-default pull-right"
                     data-toggle="tooltip" data-placement="bottom" title="Reputation">
                     <i class="fa fa-balance-scale"></i>
                 </button>
             </a> 
             <ul class="dropdown-menu pull-right" role="menu">
-                <li class="pull-right">
-                    <a href="#">Top Suppliers</a>
+                <li class="disabled text-right">
+                    <a href="#">Top suppliers</a>
                 </li>
-                <li class="pull-right">
-                    <a href="#">Top Workers</a>
+                <li class="disabled text-right">
+                    <a href="#">Top workers</a>
                 </li>
-                <li class="pull-right">
-                    <a href="#">ID-servers List</a>
+                <li class="disabled text-right">
+                    <a href="#">ID-servers list</a>
                 </li>
-                <li class="pull-right">
-                    <a href="#">Accountants List</a>
+                <li class="disabled text-right">
+                    <a href="#">Accountants list</a>
+                </li>
+                <li class="disabled text-right">
+                    <a href="#">Git repositories</a>
                 </li>
             </ul>
         </li>
@@ -173,7 +214,10 @@
 
 <script>
 $(document).ready(function(){
-    $('[data-toggle="tooltip"]').tooltip({delay: 50,});
+    $('[data-toggle="tooltip"]').tooltip({
+        animation: false, 
+        delay: {show: 100, hide: 0},
+    });
 });
 </script>
 

@@ -13,6 +13,13 @@
 #navbar-top-menu ul li a button {
 	height: 32px;
 }
+#navbar-top-menu .tooltip-inner {
+	max-width: none;
+	white-space: nowrap;
+}
+#navbar-top-menu .dropdown-menu {
+	min-width: 80px;
+}
 .navbar-default {
   background-color: #ffffff;
   border-color: #ffffff;
@@ -77,14 +84,69 @@
 }
 
 @media (max-width: 767px) {
-  .navbar-default .navbar-nav .open .dropdown-menu > li > a {
-    color: #000000;
-  }
-  .navbar-default .navbar-nav .open .dropdown-menu > li > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
-    color: #4078c0;
-  }
-  .navbar-default .navbar-nav .open .dropdown-menu > .active > a, .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus {
-    color: #4078c0;
-    background-color: #ffffff;
-  }
+	/*
+	.navbar-default .navbar-nav .open .dropdown-menu > li > a {
+	  color: #000000;
+	}
+	.navbar-default .navbar-nav .open .dropdown-menu > li > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
+	  color: #4078c0;
+	}
+	.navbar-default .navbar-nav .open .dropdown-menu > .active > a, .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus {
+	  color: #4078c0;
+	  background-color: #ffffff;
+	}
+	*/
+    .navbar-nav .open .dropdown-menu {
+        position: absolute;
+    }  
+    .navbar-default .navbar-nav .open .dropdown-menu > li.disabled > a {
+        color: #000000;
+    }    
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+        color: #000000;
+    }    
+    .navbar-nav .open .dropdown-menu {
+		position: absolute;
+		float: left;
+		margin-top: 0px;
+		background-color: #fff;
+		border: 1px solid rgba(0, 0, 0, 0.15);
+		-webkit-box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.176);
+                box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.176);
+    }
+}
+
+@media (max-width: 580px) {
+	#navbar-top-menu .nav > li > a {
+	   padding: 10px 10px;
+	}
+}
+
+@media (max-width: 480px) {
+    #navbar-top-menu .nav > li > a {
+       padding: 10px 5px;
+    }
+}
+
+@media (max-width: 400px) {
+    #navbar-top-menu .nav > li > a {
+       padding: 10px 2px;
+    }
+    #navbar-top-menu ul li a button i {
+        font-size: 12px;
+        line-height: 12px;
+    }
+}
+
+@media (max-width: 340px) {
+    #navbar-top-menu .nav > li > a {
+       padding: 10px 1px;
+    }
+    #navbar-top-menu ul li a button i {
+        font-size: 10px;
+        line-height: 12px;
+    }
+    #navbar-top-menu ul li a button {
+        
+    }
 }

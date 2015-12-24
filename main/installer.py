@@ -279,7 +279,6 @@ class Installer(automat.Automat):
         else:
             from web import control
             control.request_update([{'state': self.state},])
-            # control.request_update([('automat', self.id),])
             
     def doClearOutput(self, arg):
         # lg.out(4, 'installer.doClearOutput')

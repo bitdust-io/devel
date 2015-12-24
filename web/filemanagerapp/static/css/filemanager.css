@@ -15,7 +15,6 @@
 }
 @media (max-width: 540px) {
 	#filemanager {
-        top: 101px;
         bottom: 80px;
     }
 }
