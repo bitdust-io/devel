@@ -54,7 +54,7 @@ reliable identification for any user in the BitDust Network.
 <script>
     $(document).ready(function() {
         setRefreshCallback(function(data) {
-            //debug.log('reload', data, data.length);
+            debug.log('reload', data, data.length);
             if (data['state']) {
                 if (data['state'] == 'REGISTER') {
                     $('#progress_wrap').load(location.href + " #progress");

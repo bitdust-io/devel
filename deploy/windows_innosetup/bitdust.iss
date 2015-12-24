@@ -40,7 +40,7 @@ Source: ".\build\bin\{#ProcName}.bat"; DestDir: "{app}\bin"; Flags: ignoreversio
 [Messages]
 WelcomeLabel1=Welcome to the [name] Setup
 WelcomeLabel2=BitDust - is decentralized, secure and anonymous on-line storage, where only the owner has access and absolute control over its data.%n%nOn your computer you store the data that other users uploaded to you via Internet, and you in turn can use the free space on lots remote machines to save your files.%n%nThis creates redundancy, but allows storing important data in a much safer and independent way.%n%nDuring first start of the main program you will be asked to provide an initial storage distribution: your needed and donated storage quotas.%n%nThis will install [name/ver] on your computer.
-ReadyLabel2b=Python Interpretator and Git binaries will be installed on your local drive.%n%nBitDust sources will be downloaded from official public repository at http://gitlab.bitdust.io/devel/bitdust.%n%nBitDust program is written in Python using Twisted Framework and is distributed in open source code - we are still deciding about the license type.%n%nClick Install to continue with the installation.
+ReadyLabel2b=Python Interpretator and Git binaries will be installed on your local drive.%n%nBitDust sources will be downloaded from official public repository at http://gitlab.bitdust.io/stable/bitdust.latest%n%nBitDust program is written in Python using Twisted Framework and is distributed in open source code - we are still deciding about the license type.%n%nClick Install to continue with the installation.
 
 [Code]
 procedure CurPageChanged(CurPageID: Integer);
@@ -59,7 +59,5 @@ Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType
 
 [Run]
 Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/stable/bitdust.latest.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources with Git: http://gitlab.bitdust.io/stable/bitdust.latest"; Flags: runhidden;
-; Flags: runhidden postinstall unchecked;
-; Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/devel/bitdust.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources from Git repository at http://gitlab.bitdust.io/devel/bitdust"; Flags: hidewizard postinstall;
 Filename: "{app}\python\pythonw.exe"; Parameters: "bitdust.py stop"; WorkingDir: "{app}\src"; Description: "Prepare to start the program"; StatusMsg: "Prepare to start the program ..."; Flags: runhidden;
 Filename: "{app}\python\pythonw.exe"; Parameters: "bitdust.py show"; WorkingDir: "{app}\src"; Description: "Starting the main BitDust process"; StatusMsg: "Starting the main BitDust process ..."; Flags: runhidden nowait;

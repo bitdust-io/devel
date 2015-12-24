@@ -263,7 +263,9 @@ def request_update(items=None):
     _UpdateItems['refresh'] = int(time.time())
     if items is not None:
         for item in items:
-            if isinstance(item, tuple) and len(item) == 2:
+            if isinstance(item, str):
+                _UpdateItems[item] = int(time.time())
+            elif isinstance(item, tuple) and len(item) == 2:
                 key, value = item
                 if key not in _UpdateItems:
                     _UpdateItems[key] = []
