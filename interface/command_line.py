@@ -75,7 +75,7 @@ def run(opts, args, overDict, pars):
         'bitdust.exe',
         'bpmain.py',
         'bitdust.py',
-        'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+        'regexp:^/usr/bin/python.*bitdust.*$',
         ])
     running = len(appList) > 0
    
@@ -864,7 +864,7 @@ def cmd_uninstall(opts, args, overDict):
                 'bitdust.exe',
                 'bpmain.py',
                 'bitdust.py',
-                'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+                'regexp:^/usr/bin/python.*bitdust.*$',
                 'bpgui.exe',
                 'bpgui.py',
                 'bppipe.exe',

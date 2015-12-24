@@ -41,7 +41,7 @@ A4ugWxAvW9Tt0sLmBj/W2pQmIyPLCm1SzDBPMlao+9+0EIwJkOr4VVUgC8DMIpuH
 =PUmG
 -----END PGP PUBLIC KEY BLOCK-----
 KEYDATA
-    fi    
+    fi
 
     if [ -x "`which update-menus 2>/dev/null`" ] ; then
         update-menus
@@ -60,38 +60,36 @@ KEYDATA
     fi
 
     mkdir -p $BITDUST_DIR
-
     rm -rf $BITDUST_DIR/src
-    git clone http://gitlab.bitdust.io/stable/bitdust.latest.git $BITDUST_DIR/src 2>&1
+    git clone http://gitlab.bitdust.io/stable/bitdust.latest.git $BITDUST_DIR/src
     if [ ! -d $BITDUST_DIR/src ]; then
         echo "downloading sources failed !!!"
-        # echo "execute command: git clone http://gitlab.bitdust.io/devel/bitdust.git $BITDUST_DIR/src"
-        exit 0
+        exit 1
     fi
 
     touch $BITDUST_DIR/src/appdata
     echo "$BITDUST_DIR" > $BITDUST_DIR/src/appdata
 
-    chown $INSTALLATOR:$INSTALLATOR -R $BITDUST_DIR
-
-    if [ -d "/home/$INSTALLATOR/.config/autostart/" ] ; then
-        mkdir -p /home/$INSTALLATOR/.config/autostart/
-        cp /usr/share/bitdust/bitdust-dev.desktop /home/$INSTALLATOR/.config/autostart/
-        chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.config/autostart/bitdust-dev.desktop
-    fi    
-
-    mkdir -p /home/$INSTALLATOR/.icons/
-    cp /usr/share/icons/bitdust.png /home/$INSTALLATOR/.icons/
-    chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.icons/bitdust.png
-    
     if [ -n "$INSTALLATOR" ]; then
-        /usr/bin/nohup su $INSTALLATOR -c "bitdust restart" >/dev/null 2>/dev/null &
+        chown $INSTALLATOR:$INSTALLATOR -R $BITDUST_DIR
+
+        if [ -d "/home/$INSTALLATOR/.config/autostart/" ] ; then
+            mkdir -p /home/$INSTALLATOR/.config/autostart/
+            cp /usr/share/bitdust/bitdust-dev.desktop /home/$INSTALLATOR/.config/autostart/
+            chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.config/autostart/bitdust-dev.desktop
+        fi
+
+        mkdir -p /home/$INSTALLATOR/.icons/
+        cp /usr/share/icons/bitdust.png /home/$INSTALLATOR/.icons/
+        chown $INSTALLATOR:$INSTALLATOR /home/$INSTALLATOR/.icons/bitdust.png
+
+        nohup su $INSTALLATOR -c "/usr/bin/bitdustb restart" > /dev/null 2> /dev/null < /dev/null &
     fi
-    
-    exit 0
+
 fi
 
 #DEBHELPER#
 
-exit 0
+db_stop
 
+exit 0

@@ -187,7 +187,7 @@ def kill():
             'bitdust.exe',
             'bpmain.py',
             'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+            'regexp:^/usr/bin/python.*bitdust.*$',
             'bpgui.exe',
             'bpgui.py',
             'bppipe.exe',
@@ -233,7 +233,7 @@ def wait_then_kill(x):
             'bitdust.exe',
             'bpmain.py',
             'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+            'regexp:^/usr/bin/python.*bitdust.*$',
             'bpgui.exe',
             'bpgui.py',
             'bppipe.exe',
@@ -589,7 +589,7 @@ def run(opts, args, pars=None, overDict=None):
             'bitdust.exe',
             'bpmain.py',
             'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+            'regexp:^/usr/bin/python.*bitdust.*$',
             ])
         if len(appList) > 0:
             print_text('BitDust already started, found another process: %s' % str(appList))
@@ -602,7 +602,7 @@ def run(opts, args, pars=None, overDict=None):
             'bitdust.exe',
             'bpmain.py',
             'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+            'regexp:^/usr/bin/python.*bitdust.*$',
             ])
         if len(appList) > 0:
             print_text('main BitDust process already started: %s' % str(appList))
@@ -623,7 +623,7 @@ def run(opts, args, pars=None, overDict=None):
             'bitdust.exe',
             'bpmain.py',
             'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+            'regexp:^/usr/bin/python.*bitdust.*$',
             ])
         if len(appList) == 0:
             return run_now(opts, args)
@@ -665,7 +665,7 @@ def run(opts, args, pars=None, overDict=None):
             'bitdust.exe',
             'bpmain.py',
             'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+            'regexp:^/usr/bin/python.*bitdust.*$',
             ])
         if len(appList_bpgui) > 0:
             if len(appList) == 0:
@@ -694,7 +694,7 @@ def run(opts, args, pars=None, overDict=None):
             'bitdust.exe',
             'bpmain.py',
             'bitdust.py',
-            'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+            'regexp:^/usr/bin/python.*bitdust.*$',
             ])
         if len(appList) > 0:
             print_text('found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
@@ -731,7 +731,7 @@ def run(opts, args, pars=None, overDict=None):
         'bitdust.exe',
         'bpmain.py',
         'bitdust.py',
-        'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
+        'regexp:^/usr/bin/python.*bitdust.*$',
         ])
     running = len(appList) > 0
     overDict = override_options(opts, args)
