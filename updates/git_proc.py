@@ -159,7 +159,7 @@ def sync(callback_func=None):
             response.count('Updating') or \
             response.count('Receiving objects') or \
             response.count('Counting objects') or \
-            response.count('Fetching'):
+            response.count('From'):
             result = 'new-data'
         else:
             if retcode != 0: 
