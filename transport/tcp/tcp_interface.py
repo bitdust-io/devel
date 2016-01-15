@@ -120,7 +120,11 @@ class GateInterface():
         if id_obj.getContactIndex(contact=tcp_contact) < 0:
             if _Debug:
                 lg.out(4, 'tcp_interface.verify_contacts returning False: tcp contact not found or changed')
-            return False        
+            return False
+        if tcp_node.get_internal_port() != settings.getTCPPort():
+            if _Debug:
+                lg.out(4, 'tcp_interface.verify_contacts returning False: tcp port has been changed')
+            return False       
         if _Debug:
             lg.out(4, 'tcp_interface.verify_contacts returning True')
         return True

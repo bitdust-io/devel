@@ -43,7 +43,6 @@ EVENTS:
     * :red:`reconnect`
     * :red:`timer-1hour`
     * :red:`timer-5sec`
-    * :red:`upnp-done`
     
 """
 
@@ -151,13 +150,6 @@ class NetworkConnector(automat.Automat):
                 self.Reset=False
                 self.ColdStart=True
                 self.doCheckNetworkInterfaces(arg)
-        #---UPNP---
-        elif self.state == 'UPNP':
-            if event == 'upnp-done' :
-                self.state = 'TRANSPORTS?'
-                self.doStartNetworkTransports(arg)
-            elif event == 'reconnect' or event == 'check-reconnect' :
-                self.Reset=True
         #---CONNECTED---
         elif self.state == 'CONNECTED':
             if event == 'reconnect' or ( event == 'timer-5sec' and ( self.Reset or not self.isConnectionAlive(arg) ) ) :
@@ -198,13 +190,19 @@ class NetworkConnector(automat.Automat):
             if not self.ColdStart and event == 'network-up' and not self.isNeedUPNP(arg) :
                 self.state = 'TRANSPORTS?'
                 self.doStartNetworkTransports(arg)
-            elif not self.ColdStart and event == 'network-up' and self.isNeedUPNP(arg) :
-                self.state = 'UPNP'
-                self.doUPNP(arg)
             elif event == 'reconnect' or event == 'check-reconnect' :
                 self.Reset=True
-            elif self.ColdStart and event == 'network-up' :
+            elif self.ColdStart and event == 'network-up' and not self.isNeedUPNP(arg) :
                 self.state = 'TRANSPORTS?'
+                self.doColdStartNetworkTransports(arg)
+                self.ColdStart=False
+            elif not self.ColdStart and event == 'network-up' and self.isNeedUPNP(arg) :
+                self.state = 'TRANSPORTS?'
+                self.doUPNP(arg)
+                self.doStartNetworkTransports(arg)
+            elif self.ColdStart and event == 'network-up' and self.isNeedUPNP(arg) :
+                self.state = 'TRANSPORTS?'
+                self.doUPNP(arg)
                 self.doColdStartNetworkTransports(arg)
                 self.ColdStart=False
         #---DOWN---
@@ -231,7 +229,15 @@ class NetworkConnector(automat.Automat):
         return None
 
     def isNeedUPNP(self, arg):
-        return settings.enableUPNP() and time.time() - self.last_upnp_time < 60*60
+        if not settings.enableUPNP():
+            return False
+        try:
+            from transport.tcp import tcp_node
+            if int(tcp_node.get_internal_port()) != int(settings.getTCPPort()):
+                return True
+        except:
+            return False
+        return time.time() - self.last_upnp_time > 60*60
 
     def isConnectionAlive(self, arg):
         # miss = 0
@@ -466,25 +472,17 @@ def UpdateUPNP():
     """
     Use ``lib.run_upnpc`` to configure UPnP device to create a port forwarding.
     """
-    #global _UpnpResult
     if _Debug:
         lg.out(6, 'network_connector.UpdateUPNP ')
-
-#    protos_need_upnp = set(['tcp', 'ssh', 'http'])
     protos_need_upnp = set(['tcp',])
-
-    #we want to update only enabled protocols
     if not settings.enableTCP():
+        # need to update only enabled protocols
         protos_need_upnp.discard('tcp')
-    # if not settings.enableSSH() or not transport_control._TransportSSHEnable:
-    #     protos_need_upnp.discard('ssh')
-    # if not settings.enableHTTPServer() or not transport_control._TransportHTTPEnable:
-    #     protos_need_upnp.discard('http')
 
     def _update_next_proto():
         if len(protos_need_upnp) == 0:
             #out(4, 'network_connector.update_upnp done: ' + str(_UpnpResult))
-            A('upnp-done')
+            A('check-reconnect')
             return
         if _Debug:
             lg.out(6, 'network_connector.UpdateUPNP._update_next_proto ' + str(protos_need_upnp))
@@ -492,10 +490,6 @@ def UpdateUPNP():
         protos_need_upnp.add(proto)
         if proto == 'tcp':
             port = settings.getTCPPort()
-        # elif proto == 'ssh':
-        #     port = settings.getSSHPort()
-        # elif proto == 'http':
-        #     port = settings.getHTTPPort()
         d = threads.deferToThread(_call_upnp, port)
         d.addCallback(_upnp_proto_done, proto)
 
@@ -512,15 +506,12 @@ def UpdateUPNP():
     def _upnp_proto_done(result, proto):
         if _Debug:
             lg.out(6, 'network_connector.UpdateUPNP._upnp_proto_done %s: %s' % (proto, str(result)))
-        #_UpnpResult[proto] = result[0]
-        #if _UpnpResult[proto] == 'upnp-done':
         if result[0] == 'upnp-done':
             if proto == 'tcp':
+                if str(settings.getTCPPort()) != str(result[1]).strip():
+                    lg.out(6, '    !!!!!!!!!! created a new port mapping, TCP port were changed: %s -> %s' % (
+                        settings.getTCPPort(), str(result[1])))
                 settings.setTCPPort(result[1])
-            # elif proto == 'ssh':
-            #     settings.setSSHPort(result[1])
-            # elif proto == 'http':
-            #     settings.setHTTPPort(result[1])
         protos_need_upnp.discard(proto)
         reactor.callLater(0, _update_next_proto)
 

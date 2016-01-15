@@ -85,10 +85,10 @@ def override_options(opts, args):
     This method return a dictionary where is stored a key-value pairs for new options.   
     """
     overDict = {}
-    # if opts.tcp_port:
-    #     overDict['transport.transport-tcp.transport-tcp-port'] = str(opts.tcp_port)
-    # if opts.no_upnp:
-    #     overDict['services/tcp-connections/upnp-enabled'] = 'false'
+    if opts.tcp_port:
+        overDict['transport.transport-tcp.transport-tcp-port'] = str(opts.tcp_port)
+    if opts.no_upnp:
+        overDict['services/tcp-connections/upnp-enabled'] = 'false'
     # if opts.tempdir:
     #     overDict['folder.folder-temp'] = opts.tempdir
     if opts.debug or str(opts.debug) == '0':

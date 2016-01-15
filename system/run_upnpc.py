@@ -68,7 +68,7 @@ def run(args_list):
         return None
 
     if bpio.Windows():
-        cmdargs = ['upnpc.exe']
+        cmdargs = ['upnpc-static.exe']
     elif bpio.Linux():
         cmdargs = ['upnpc']
     else:
@@ -79,13 +79,13 @@ def run(args_list):
     if bpio.Windows():
         # if we run from svn - upnpc.exe is in the p2p folder
         if not os.path.isfile(cmdargs[0]):
-            if os.path.isfile(os.path.join('p2p', cmdargs[0])):
-                cmdargs[0] = os.path.join('p2p', cmdargs[0])
+            if os.path.isfile(os.path.join('system', cmdargs[0])):
+                cmdargs[0] = os.path.join('system', cmdargs[0])
             else:
                 lg.out(1, 'run_upnpc.run ERROR can not find executable file ' + cmdargs[0])
                 return None
 
-    lg.out(6, 'run_upnpc.run is going to execute: %s' % cmdargs)
+    lg.out(8, 'run_upnpc.run is going to execute: %s' % cmdargs)
 
     try:
         if bpio.Windows() and bpio.isFrozen():
@@ -114,7 +114,7 @@ def run(args_list):
         lg.exc()
         return None
 
-    lg.out(6, 'run_upnpc.run %s finished with return code: %s' % (str(_CurrentProcess), str(returncode)))
+    lg.out(8, '    %s finished with return code: %s' % (str(_CurrentProcess), str(returncode)))
     _CurrentProcess = None
 
     return out_data
@@ -169,8 +169,8 @@ def lst():
 
 def add(port, proto):
     global _MyPortMapping
-    cmd_out = run(('-r', str(port), str(proto)))
-    # cmd_out = run(('-e', 'BitDust', '-r', str(port), str(proto)))
+    # cmd_out = run(('-r', str(port), str(proto)))
+    cmd_out = run(('-e', 'BitDust TCP on port %s' % (port), '-r', str(port), str(proto)))
     if cmd_out is None:
         return None
     _MyPortMapping[str(port)] = str(proto)
@@ -194,9 +194,11 @@ def clear():
     return s
 
 
-def update(port, attempt=0, new_port= -1):
+def update(requested_port, attempt=0, new_port= -1):
     global _MyPortMapping
     global _LastUpdateResultDict
+    port = requested_port
+    requested_port_busy = False
     lg.out(4, 'run_upnpc.update %s attempt=%s new_port=%s' % (str(port), str(attempt), str(new_port)))
 
     local_ip, external_ip, port_map = info()
@@ -207,10 +209,13 @@ def update(port, attempt=0, new_port= -1):
 
     local_ports = {}
     for i in port_map:
-        if i[1] == local_ip and str(i[3]).find('libminiupnpc') >= 0:
+        if str(i[0]).strip() == str(requested_port):
+            requested_port_busy = True
+        if i[1] == local_ip and (str(i[3]).find('libminiupnpc') >= 0 or str(i[3]).find('BitDust') >= 0):
             local_ports[i[0]] = (i[2], i[3])
 
-    lg.out(6, 'run_upnpc.update local_ports=%s' % str(local_ports.keys()))
+    lg.out(6, 'run_upnpc.update requested_port_busy=%s local_ports=%s' % (
+        requested_port_busy, str(local_ports.keys())))
 
     if int(port) in local_ports.keys():
         _MyPortMapping[str(port)] = 'TCP'
@@ -218,7 +223,7 @@ def update(port, attempt=0, new_port= -1):
         _LastUpdateResultDict[port] = 'upnp-done'
         return 'upnp-done', port
 
-    if int(new_port) in local_ports.keys():
+    if int(new_port) > 0 and int(new_port) in local_ports.keys():
         _MyPortMapping[str(new_port)] = 'TCP'
         lg.out(6, 'run_upnpc.update new port %s mapped. all port maps: %s' % (str(port), str(_MyPortMapping.keys())))
         _LastUpdateResultDict[new_port] = 'upnp-done'
@@ -237,10 +242,18 @@ def update(port, attempt=0, new_port= -1):
                 closest_port = p
         if closest_port >= 0:
             dlt(closest_port, 'TCP')
-            add(port, 'TCP')
+            if requested_port_busy:
+                new_port = int(port) + random.randint(1, 100)
+                add(new_port, 'TCP')
+                port = new_port
+                new_port = -1
+            else:
+                add(port, 'TCP')
         else:
             new_port = int(port) + random.randint(1, 100)
             add(new_port, 'TCP')
+            port = new_port
+            new_port = -1
 
     else:
         _LastUpdateResultDict[port] = 'upnp-error'
@@ -262,9 +275,15 @@ def main():
     import pprint
     lg.set_debug_level(14)
     if sys.argv.count('list'):
-        pprint.pprint(lst())
+        maps = lst()
+        for itm in maps:
+            pprint.pprint(itm)
     elif sys.argv.count('info'):
-        pprint.pprint(info())
+        locip, extip, maps = info()
+        pprint.pprint(locip)
+        pprint.pprint(extip)
+        for itm in maps:
+            pprint.pprint(itm)
     elif sys.argv.count('add'):
         print add(sys.argv[2], 'TCP')
     elif sys.argv.count('del'):

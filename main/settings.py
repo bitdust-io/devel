@@ -2049,6 +2049,7 @@ def _setUpDefaultSettings():
                                   diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
     config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())
+    config.conf().setDefaultValue('services/tcp-connections/upnp-enabled', 'true')
     config.conf().setDefaultValue('services/tcp-transport/enabled', 'true')
     config.conf().setDefaultValue('services/tcp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/tcp-transport/sending-enabled', 'true')
