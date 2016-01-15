@@ -265,6 +265,6 @@ if __name__ == "__main__":
     def _result(res):
         print 'RESULT:', res
         reactor.stop()
-    sync(_result)
+    reactor.callWhenRunning(sync, _result)
     reactor.run()
     
