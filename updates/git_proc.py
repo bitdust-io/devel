@@ -161,15 +161,16 @@ def sync(callback_func=None):
                 callback_func('unknown-state')
             else:
                 callback_func('sync-error')
+    cmdargs = ['fetch',]
     if bpio.Windows():
-        cmdargs = ['git', 'pull',]
+        cmd = ['git',] + cmdargs
         exec_dir = bpio.getExecutableDir()
         git_exe = bpio.portablePath(os.path.join(exec_dir, '..', 'git', 'bin', 'git.exe'))
         if not os.path.isfile(git_exe):
             if _Debug:
                 lg.out(_DebugLevel, '    not found git.exe, try to run from shell')
             try:
-                response, retcode = execute_in_shell(cmdargs)
+                response, retcode = execute_in_shell(cmd)
             except:
                 response = ''
                 retcode = 1
@@ -177,10 +178,10 @@ def sync(callback_func=None):
             return
         if _Debug:
             lg.out(_DebugLevel, '    found git in %s' % git_exe)
-        cmdargs = [git_exe, 'pull',]
+        cmd = [git_exe,] + cmdargs
     else:
-        cmdargs = ['/usr/bin/git', 'pull',]
-    execute(cmdargs, callback=_run_callback)
+        cmd = ['/usr/bin/git',] + cmdargs
+    execute(cmd, callback=_run_callback)
     
 #------------------------------------------------------------------------------ 
 
