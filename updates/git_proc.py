@@ -151,26 +151,25 @@ def sync(callback_func=None):
             return
         callback_func(result)
     def _fetch_done(response, retcode):
-        result = 'unknown-state'
-        if response.strip() == '':
-            result = 'up-to-date'
-        elif response.count('Unpacking objects') or \
-            response.count('Fast-forward') or \
+        result = 'up-to-date'
+        if response.count('Unpacking') or \
+            (response.count('master') and response.count('->')) or \
             response.count('Updating') or \
-            response.count('Receiving objects') or \
-            response.count('Counting objects') or \
-            response.count('From'):
+            response.count('Receiving') or \
+            response.count('Counting'):
             result = 'new-data'
         else:
             if retcode != 0: 
                 result = 'sync-error'
+            else:
+                result = 'unknown-state'
         if retcode == 0:
             run(['reset', '--hard', 'origin/master',], 
                 lambda resp, ret: _reset_done(resp, ret, result))
         else:
             if callback_func:
                 callback_func(result) 
-    run(['fetch', '--all'], _fetch_done)
+    run(['fetch', '--all', '-v'], _fetch_done)
 
 #------------------------------------------------------------------------------ 
 
