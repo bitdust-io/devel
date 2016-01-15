@@ -262,6 +262,9 @@ def execute_in_shell(cmdargs, base_dir=None, process_protocol=None):
 if __name__ == "__main__":
     bpio.init()
     lg.set_debug_level(18)
-    sync()
+    def _result(res):
+        print 'RESULT:', res
+        reactor.stop()
+    sync(_result)
     reactor.run()
     
