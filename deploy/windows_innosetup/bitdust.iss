@@ -18,13 +18,13 @@ AppPublisher={#Publisher}
 AppPublisherURL={#URL}
 AppSupportURL={#URL}
 AppUpdatesURL={#URL}
+AppMutex=BitDust
 DefaultDirName={#DestDir}\.{#ProcName}
 OutputDir=.\dist
 OutputBaseFileName={#ProcName}-setup
 Compression=lzma
 SolidCompression=yes
 DisableDirPage=yes
-;DisableReadyPage=yes
 DisableProgramGroupPage=yes
 SetupIconFile=.\build\icons\desktop.ico
 UsePreviousAppDir=no
@@ -47,17 +47,18 @@ procedure CurPageChanged(CurPageID: Integer);
 begin
   if CurPageID = wpReady then
     WizardForm.NextButton.Caption := SetupMessage(msgButtonInstall)
+  else if CurPageID = wpFinished then
+    WizardForm.NextButton.Caption := '&Finish'
   else
     WizardForm.NextButton.Caption := SetupMessage(msgButtonNext);
 end;
 
 [Icons]
-Name: "{commondesktop}\{#Name}"; Filename: "{app}\python\pythonw.exe"; WorkingDir: "{app}\src"; Parameters: "bitdust.py show"; Comment: "Launch BitDust software"; IconFilename: "{app}\icons\desktop.ico"
+Name: "{commondesktop}\{#Name}"; Filename: "{app}\bin\bitdust.vbs"; WorkingDir: "{app}\src"; Parameters: "show"; Comment: "Start BitDust"; IconFilename: "{app}\icons\desktop.ico"
 
 [Registry]
-Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#Name}"; ValueData: "{app}\python\pythonw.exe {app}\src\bitdust.py"; Flags: uninsdeletevalue
+Root: "HKCU"; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#Name}"; ValueData: "{app}\bin\bitdust.vbs"; Flags: uninsdeletevalue
 
 [Run]
 Filename: "{app}\git\bin\git.exe"; Parameters: "clone --depth=1 http://gitlab.bitdust.io/stable/bitdust.latest.git ."; WorkingDir: "{app}\src"; Description: "Downloading BitDust sources"; StatusMsg: "Downloading BitDust sources with Git: http://gitlab.bitdust.io/stable/bitdust.latest"; Flags: runhidden;
-Filename: "{app}\python\pythonw.exe"; Parameters: "bitdust.py stop"; WorkingDir: "{app}\src"; Description: "Prepare to start the program"; StatusMsg: "Prepare to start the program ..."; Flags: runhidden;
-Filename: "{app}\python\pythonw.exe"; Parameters: "bitdust.py show"; WorkingDir: "{app}\src"; Description: "Starting the main BitDust process"; StatusMsg: "Starting the main BitDust process ..."; Flags: runhidden nowait;
+Filename: "{app}\bin\bitdust.vbs"; Parameters: "show"; WorkingDir: "{app}\src"; Description: "Start BitDust"; StatusMsg: "Start BitDust"; Flags: postinstall runhidden nowait shellexec;

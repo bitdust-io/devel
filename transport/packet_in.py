@@ -119,7 +119,7 @@ def process(newpacket, info):
     for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
         p.automat('inbox-packet', (newpacket, info))
         handled = True
-    handled = handled or callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message)
+    handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
     if not handled and newpacket.Command not in [ commands.Ack(), commands.Fail() ]:
         if _Debug:
             lg.out(_DebugLevel-8, '    incoming %s from [%s://%s]' % (

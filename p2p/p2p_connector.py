@@ -94,6 +94,8 @@ def active_protos():
 
 
 def inbox(newpacket, info, status, message):
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_connector.inbox %s %s' % (status, newpacket))
     # here need to mark this protocol as working
     if info.proto in ['tcp',]:
         if not net_misc.IpIsLocal(str(info.host).split(':')[0]):
@@ -101,19 +103,19 @@ def inbox(newpacket, info, status, message):
             # because we do not want to use this proto as first method if it is not working for all
             if info.proto not in active_protos():
                 if _Debug:
-                    lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                    lg.out(2, 'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
                     lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
                 active_protos().add(info.proto)
     elif info.proto in ['udp',]:
         if info.proto not in active_protos():
             if _Debug:
-                lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                lg.out(2, 'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
                 lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     elif info.proto in ['proxy',]:
         if info.proto not in active_protos():
             if _Debug:
-                lg.out(2, 'p2p_connector.Inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                lg.out(2, 'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
                 lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     A('inbox-packet', (newpacket, info, status, message))
@@ -262,7 +264,7 @@ class P2PConnector(automat.Automat):
         version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         if _Debug:
             lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
-        callback.insert_inbox_callback(-1, inbox)
+        callback.insert_inbox_callback(0, inbox)
         
     def doUpdateMyIdentity(self, arg):
         if _Debug:

@@ -66,7 +66,7 @@ def A(event=None, arg=None):
     """
     global _ListFilesOrator
     if _ListFilesOrator is None:
-        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 8)
+        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 4, True)
     if event is not None:
         _ListFilesOrator.automat(event, arg)
     return _ListFilesOrator
@@ -151,7 +151,7 @@ class ListFilesOrator(automat.Automat):
                     p2p_service.RequestListFiles(idurl)
                     _RequestedListFilesPacketIDs.add(idurl)
 
-
+#------------------------------------------------------------------------------ 
 
 def IncomingListFiles(newpacket):
     """

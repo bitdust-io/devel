@@ -92,6 +92,15 @@ def run(UI='', options=None, args=None, overDict=None):
                 import shutdowner
                 shutdowner.A('stop', 'exit')
         tray_icon.SetControlFunc(_tray_control_func)
+        
+    #---OS Windows init---
+    if bpio.Windows():
+        try:
+            from win32event import CreateMutex
+            mutex = CreateMutex(None, False, "BitDust")
+            lg.out(4, 'bpmain.run created a Mutex: %s' % str(mutex))
+        except:
+            lg.exc()
 
     #---twisted reactor---    
     lg.out(4, 'bpmain.run want to import twisted.internet.reactor')
