@@ -146,22 +146,39 @@ class GitProcessProtocol(protocol.ProcessProtocol):
 def sync(callback_func=None):
     """
     """
-    if _Debug:
-        lg.out(_DebugLevel, 'git_proc.sync')
-    def _run_callback(response, retcode):
-        # print '_run_callback', response, retcode
+    def _reset_done(response, retcode, result):
         if callback_func is None:
             return
-        if response.count('Already up-to-date.'):
-            callback_func('up-to-date')
-        elif response.count('Unpacking objects') or response.count('Fast-forward') or response.count('Updating'):
-            callback_func('new-data')
+        callback_func(result)
+    def _fetch_done(response, retcode):
+        result = 'unknown-state'
+        if response.strip() == '':
+            result = 'up-to-date'
+        elif response.count('Unpacking objects') or \
+            response.count('Fast-forward') or \
+            response.count('Updating') or \
+            response.count('Receiving objects') or \
+            response.count('Counting objects') or \
+            response.count('Fetching'):
+            result = 'new-data'
         else:
-            if retcode == 0: 
-                callback_func('unknown-state')
-            else:
-                callback_func('sync-error')
-    cmdargs = ['fetch',]
+            if retcode != 0: 
+                result = 'sync-error'
+        if retcode == 0:
+            run(['reset' '--hard' 'origin/master',], 
+                lambda resp, ret: _reset_done(resp, ret, result))
+        else:
+            if callback_func:
+                callback_func(result) 
+    run(['fetch', '--all'], _fetch_done)
+
+#------------------------------------------------------------------------------ 
+
+def run(cmdargs, callback_func=None):
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.run')
     if bpio.Windows():
         cmd = ['git',] + cmdargs
         exec_dir = bpio.getExecutableDir()
@@ -174,14 +191,15 @@ def sync(callback_func=None):
             except:
                 response = ''
                 retcode = 1
-            _run_callback(response, retcode)
+            if callback_func:
+                callback_func(response, retcode)
             return
         if _Debug:
             lg.out(_DebugLevel, '    found git in %s' % git_exe)
         cmd = [git_exe,] + cmdargs
     else:
         cmd = ['/usr/bin/git',] + cmdargs
-    execute(cmd, callback=_run_callback)
+    execute(cmd, callback=callback_func)
     
 #------------------------------------------------------------------------------ 
 
