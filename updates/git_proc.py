@@ -161,8 +161,6 @@ def sync(callback_func=None):
         else:
             if retcode != 0: 
                 result = 'sync-error'
-            else:
-                result = 'unknown-state'
         if retcode == 0:
             run(['reset', '--hard', 'origin/master',], 
                 lambda resp, ret: _reset_done(resp, ret, result))
