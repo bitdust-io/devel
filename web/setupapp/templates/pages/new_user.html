@@ -2,7 +2,7 @@
 
 {% block extra_head %}
   {{ block.super }}
-  <script src="/asite/js/autoupdater.js"></script> 
+  <meta http-equiv="refresh" content="10" />
 {% endblock extra_head %}
 
 {% block page %}
@@ -54,7 +54,7 @@ reliable identification for any user in the BitDust Network.
 <script>
     $(document).ready(function() {
         setRefreshCallback(function(data) {
-            debug.log('reload', data, data.length);
+            debug.log('reload', data, data.length, data['state']);
             if (data['state']) {
                 if (data['state'] == 'REGISTER') {
                     $('#progress_wrap').load(location.href + " #progress");

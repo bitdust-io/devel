@@ -22,7 +22,7 @@ function readData() {
         	if (data['refresh']) {
             	intervalUp();
             	nextUpdate();
-       		    //debug.log('REFRESHING', updater_task, refresh_interval);
+       		    debug.log('REFRESH!', updater_task, refresh_interval);
             	if (refresh_callback) {
             		refresh_callback(data);
             	};
@@ -66,6 +66,7 @@ function intervalDown() {
 };
 
 function startUpdater() {
+	debug.log('startUpdater');
 	readData();
 };
 

@@ -50,10 +50,6 @@ def init():
     This method must be called firstly, before any logs will be printed.
     This installs a system locale, so all output messages will have a correct encoding. 
     """
-    # global Original_isdir
-    # Original_isdir = os.path.isdir
-    # os.path.isdir = pathIsDir
-
     InstallLocale()
     if Linux():
         lg.setup_unbuffered_stdout()
@@ -828,11 +824,6 @@ def pathIsDir(localpath):
     """
     Assume localpath is exist and return True if this is a folder.
     """
-    # print 'pathIsDir', type(localpath), str(localpath)
-    # try to use the original path
-#    global Original_isdir
-#    if Original_isdir is None:
-#        Original_isdir = os.path.isdir
     if os.path.isdir(localpath):
         return True
     if os.path.exists(localpath) and os.path.isfile(localpath):
@@ -1040,8 +1031,6 @@ def listRemovableDrivesWindows():
                 # here if the drive is at least there
                 drname='%c:\\' % chr(ord('A')+d)
                 t = win32file.GetDriveType(drname)
-                # print drname, t
-                # drive_type = ctypes.windll.kernel32.GetDriveTypeA(drname)                    
                 if t == win32file.DRIVE_REMOVABLE:
                     l.append(drname)
     except:

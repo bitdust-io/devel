@@ -2,7 +2,7 @@
 
 {% block extra_head %}
   {{ block.super }}
-  <script src="/asite/js/autoupdater.js"></script> 
+  <meta http-equiv="refresh" content="10" />
 {% endblock extra_head %}
 
 {% block page %}
@@ -53,7 +53,7 @@
 <script>
     $(document).ready(function() {
         setRefreshCallback(function(data) {
-            //debug.log('reload', data, data.length);
+            debug.log('reload', data, data.length);
             if (data['state']) {
                 if (data['state'] == 'RESTORED') {
                     $('#progress_wrap').load(location.href + " #progress");

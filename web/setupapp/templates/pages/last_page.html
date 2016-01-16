@@ -2,11 +2,19 @@
 {% block page %}
 <div class="container">
  <div class="row">
-  <div class="col-lg-12">
-   <h1><font color=green>BitDust<br>is now configured!</font></h1>
-   <p align=center>
+  <div class="col-lg-12 text-center">
+    <script language="javascript" type="text/javascript">
+        function closeWindow() {
+            window.open('','_parent','');
+            window.close();
+        }
+    </script>
+    <h1><font color=green>BitDust<br>is now configured!</font></h1>
     <h3>Now the program will be restarted.</h3>
-In the new window you will see the main page of the user interface, and this window can be closed.
+    <p>
+       In the new tab you will see the main page of the user interface. 
+       You can <a href="javascript:closeWindow();">close</a> current page 
+       or <a href="http://bitdust.io/toc.html">read more</a> about the project.
    </p>
   </div>
  </div>

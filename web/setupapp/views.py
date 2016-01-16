@@ -43,13 +43,6 @@ class SetupView(TemplateView):
         global _SetupControllerObject
         global _FinishedState
         
-#        print 'dispatch', (request.method,
-#            request.user.is_authenticated(),  
-#            _FinishedState, 
-#            _SetupControllerObject is not None,  
-#            installer.IsExist(), 
-#            request.REQUEST.keys())
-         
         if _SetupControllerObject is None:
             if not installer.IsExist():
                 return HttpResponseRedirect(_ALREADY_CONFIGURED_REDIRECT_URL)
@@ -58,25 +51,19 @@ class SetupView(TemplateView):
         result = _SetupControllerObject.render(request)
         
         if result is None:
-            # print '    redirect'
             return HttpResponseRedirect(request.path)
         
         template, context, new_request = result
-        # print '    result', template, id(new_request), id(request)
         
         context['context_instance'] = RequestContext(new_request)
         
         if _FinishedState:
-            # print '    logout'
             logout(new_request)
 
         response = TemplateResponse(new_request, template, context)
 
         if _FinishedState:
-            # print '    delete cookie [sessionid]'
             response.delete_cookie('sessionid')
-
-        # print '    cookie [sessionid]:', new_request.COOKIES.get('sessionid', 'not exist')
 
         return response
         
@@ -143,8 +130,7 @@ class SetupController:
             raise Exception('incorrect state in install_wizard(): %s' % current_state)
         result = current_page(request)
         return result
-    
-    
+
     def renderSelectPage(self, request):
         template = 'pages/select_action.html'
         context = { }
@@ -155,13 +141,18 @@ class SetupController:
             installer.A(request.REQUEST.get('mode', 'register-selected'))
             return None
         return template, context, request
-    
+
     def renderInputNamePage(self, request):
         template = 'pages/input_name.html'
+        possible_name = bpio.getUserName().lower()
+        if misc.isEnglishString(possible_name):
+            possible_name = 'e.g.: ' + possible_name
+        else:
+            possible_name = ''
         context = {'username': self.data['username'],
                    'pksize': self.data['pksize'], 
                    'output': '', 
-                   'usernameplaceholder': bpio.getUserName(),}
+                   'usernameplaceholder': possible_name, }
         try:
             text, color = installer.A().getOutput().get('data', [('', '')])[-1]
             context['output'] = '<font color="%s">%s</font><br />\n' % (color, text)

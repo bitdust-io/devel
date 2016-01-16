@@ -117,32 +117,6 @@ def loop(first_start=False):
 
 #------------------------------------------------------------------------------ 
 
-class GitProcessProtocol(protocol.ProcessProtocol):
-    def __init__(self, callback):
-        self.callback = callback
-        self.out = ''
-        self.err = ''
-    
-    def errReceived(self, inp):
-        self.err += inp
-        for line in inp.splitlines():
-            if _Debug:
-                lg.out(_DebugLevel, '[git:err]: %s' % line)
-
-    def outReceived(self, inp):
-        self.out += inp
-        for line in inp.splitlines():
-            if _Debug:
-                lg.out(_DebugLevel, '[git:out]: %s' % line)
-            
-    def processEnded(self, reason):
-        if _Debug:
-            lg.out(_DebugLevel, 'git process FINISHED : %s' % reason.value.exitCode)
-        if self.callback:
-            self.callback(self.out, reason.value.exitCode)
-
-#------------------------------------------------------------------------------ 
-
 def sync(callback_func=None):
     """
     """
@@ -200,6 +174,50 @@ def run(cmdargs, callback_func=None):
     
 #------------------------------------------------------------------------------ 
 
+def execute_in_shell(cmdargs, base_dir=None):
+    global _CurrentProcess
+    from system import nonblocking
+    import subprocess
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.execute_in_shell: "%s"' % (' '.join(cmdargs)))
+    _CurrentProcess = nonblocking.Popen(
+        cmdargs,
+        shell=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,)    
+    out_data = _CurrentProcess.communicate()[0]
+    returncode = _CurrentProcess.returncode
+    if _Debug:
+        lg.out(_DebugLevel, 'git_proc.execute_in_shell returned: %s\n%s' % (returncode, out_data))
+    return (out_data, returncode) # _CurrentProcess
+
+#------------------------------------------------------------------------------ 
+
+class GitProcessProtocol(protocol.ProcessProtocol):
+    def __init__(self, callback):
+        self.callback = callback
+        self.out = ''
+        self.err = ''
+    
+    def errReceived(self, inp):
+        self.err += inp
+        for line in inp.splitlines():
+            if _Debug:
+                lg.out(_DebugLevel, '[git:err]: %s' % line)
+
+    def outReceived(self, inp):
+        self.out += inp
+        for line in inp.splitlines():
+            if _Debug:
+                lg.out(_DebugLevel, '[git:out]: %s' % line)
+            
+    def processEnded(self, reason):
+        if _Debug:
+            lg.out(_DebugLevel, 'git process FINISHED : %s' % reason.value.exitCode)
+        if self.callback:
+            self.callback(self.out, reason.value.exitCode)
+
 def execute(cmdargs, base_dir=None, process_protocol=None, callback=None):
     global _CurrentProcess
     if _Debug:
@@ -233,26 +251,6 @@ def execute(cmdargs, base_dir=None, process_protocol=None, callback=None):
     if bpio.Windows():
         setattr(_dumbwin32proc.win32process, 'CreateProcess', real_CreateProcess)
     return _CurrentProcess
-
-#------------------------------------------------------------------------------ 
-
-def execute_in_shell(cmdargs, base_dir=None, process_protocol=None):
-    global _CurrentProcess
-    from system import nonblocking
-    import subprocess
-    if _Debug:
-        lg.out(_DebugLevel, 'git_proc.execute_in_shell: "%s"' % (' '.join(cmdargs)))
-    _CurrentProcess = nonblocking.Popen(
-        cmdargs,
-        shell=True,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,)    
-    out_data = _CurrentProcess.communicate()[0]
-    returncode = _CurrentProcess.returncode
-    if _Debug:
-        lg.out(_DebugLevel, 'git_proc.execute_in_shell returned: %s\n%s' % (returncode, out_data))
-    return (out_data, returncode) # _CurrentProcess
 
 #------------------------------------------------------------------------------ 
 

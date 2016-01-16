@@ -872,6 +872,14 @@ def cut_long_string(longstring, length=40, suffix=''):
         return longstring
     return longstring[:length] + suffix
 
+def isEnglishString(s):
+    try:
+        s.decode('ascii')
+    except UnicodeDecodeError:
+        return False
+    else:
+        return True
+
 #------------------------------------------------------------------------------
 
 def getClipboardText():
