@@ -8,7 +8,7 @@ Homepage: http://bitdust.io
 
 Package: bitdust-dev
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python, python-twisted, python-pyasn1, python-openssl, python-crypto, python-wxgtk2.8
+Depends: ${misc:Depends}, ${python:Depends}, python, python-twisted, python-pyasn1, python-openssl, python-crypto, python-wxgtk3.0
 Description: Distributed on-line storage.
  BitDust is a distributed on-line storage, in which only data owner 
  has an access to his data.

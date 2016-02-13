@@ -10,7 +10,7 @@ Sub SplashScreen(pth)
     tempFile.Writeline "SCROLL=""NO"" SYSMENU=""NO"" SELECTION=""NO"" SINGLEINSTANCE=""YES""></HEAD>"
     tempFile.Writeline "<BODY style=""border: 1px solid black; margin: 0px; padding: 0px;""><CENTER>"
     tempFile.Writeline "<img src=""" & pth & "icons\bitdust128.png"">"
-    tempFile.Writeline "<span style=""color: #888; font-size: 12px; font-family: Arial;"">&copy; BitDust, 2015</span>"
+    tempFile.Writeline "<span style=""color: #888; font-size: 12px; font-family: Arial;"">&copy; BitDust, 2016</span>"
     tempFile.Writeline "</CENTER></BODY></HTML>"
     tempFile.Writeline "<SCRIPT LANGUAGE=""VBScript"">"
     tempFile.Writeline "Sub window_onload()"
