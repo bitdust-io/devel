@@ -1030,7 +1030,7 @@ def ReadRepoLocation():
     """
     This method reutrn a tuple of two strings: "name of the current repo" and "repository location".
     """
-    if bpio.Linux():
+    if bpio.Linux() or bpio.Mac():
         repo_file = os.path.join(bpio.getExecutableDir(), 'repo')
         if os.path.isfile(repo_file):
             src = bpio.ReadTextFile(repo_file)
@@ -1338,9 +1338,9 @@ def ExplorePathInOS(filepath):
 
         elif bpio.Linux():
             subprocess.Popen(['`which xdg-open`', filepath])
-
+            
         elif bpio.Mac():
-            subprocess.Popen(['open', filepath])
+            subprocess.Popen(["open", "-R", filepath])
 
     except:
         try:
@@ -1390,6 +1390,10 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
                 if RunShellCommand(cmdstr2) is None:
                     return 'error'
             return 'ok'
+        
+        if bpio.Mac():
+            # TODO
+            return 'error'
         
     except:
         lg.exc()
@@ -1575,6 +1579,9 @@ def GetUserProfilePicturePath():
             return ''
     elif bpio.Linux():
         return os.path.join(os.path.expanduser('~'), '.face')
+    elif bpio.Mac():
+        # TODO
+        return ''
     return ''
 
 def UpdateRegistryUninstall(uninstall=False):

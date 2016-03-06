@@ -312,7 +312,7 @@ class SetupController:
                                diskspace.MakeStringFromBytes(free), 
                                diskspace.MakeStringFromBytes(total),
                                color,))
-        elif bpio.Linux():
+        elif bpio.Linux() or bpio.Mac():
             for mnt in bpio.listMountPointsLinux():
                 free, total = diskusage.GetLinuxDriveSpace(mnt)
                 if free is None or total is None:

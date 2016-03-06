@@ -169,7 +169,7 @@ def run(cmdargs, callback_func=None):
             lg.out(_DebugLevel, '    found git in %s' % git_exe)
         cmd = [git_exe,] + cmdargs
     else:
-        cmd = ['/usr/bin/git',] + cmdargs
+        cmd = ['git',] + cmdargs
     execute(cmd, callback=callback_func)
     
 #------------------------------------------------------------------------------ 

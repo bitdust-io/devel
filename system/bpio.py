@@ -1066,8 +1066,13 @@ def listMountPointsLinux():
     """
     mounts = os.popen('mount')
     result = []
+    if Linux():
+        mch = re.compile('^(.+?) on (.+?) type .+?$')
+    else: # Mac
+        mch = re.compile('^(.+?) on (.+?).*?$')
+    # mo = re.match('^(.+?) on (.+?) type .+?$', line)
     for line in mounts.readlines():
-        mo = re.match('^(.+?) on (.+?) type .+?$', line)
+        mo = mch.match(line)
         if mo:
             device = mo.group(1)
             mount_point = mo.group(2)

@@ -833,6 +833,31 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     return request
     
 #------------------------------------------------------------------------------ 
+
+def getIfconfig(iface='en0'):
+    import subprocess
+    try:
+        result = subprocess.check_output('ifconfig %s |grep -w inet' % (iface), shell=True) 
+    except:
+        return None
+    # you may need to use eth0 instead of en0 here!!!
+    # print 'output = %s' % result.strip()
+    # result = None
+    ip = ''
+    if result:
+        strs = result.split('\n')
+        for line in strs:
+            # remove \t, space...
+            line = line.strip()
+            if line.startswith('inet '):
+                a = line.find(' ')
+                ipStart = a+1
+                ipEnd = line.find(' ', ipStart)
+                if a != -1 and ipEnd != -1:
+                    ip = line[ipStart:ipEnd]
+                    break
+    return ip # 'ip = %s' % ip           
+   
  
 def getNetworkInterfaces():
     """
@@ -885,7 +910,16 @@ def getNetworkInterfaces():
                 ips.add(str(ipaddress))
         return list(ips)
     
-    else:
-        return []
+    elif plat == 'Darwin':
+        try:
+            import socket
+            return [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] 
+                if not ip.startswith("127.")][:1], 
+                    [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) 
+                        for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0]
+        except:
+            eth0 = getIfconfig('eth0')
+            en0 = getIfconfig('en0')              
+            return [en0 or eth0,]
 
 

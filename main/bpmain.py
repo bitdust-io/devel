@@ -678,7 +678,7 @@ def main():
     #---show---
     elif cmd == 'show' or cmd == 'open':
         from main import settings
-        if not bpio.isGUIpossible():
+        if not bpio.isGUIpossible() and not settings.NewWebGUI():
             lg.out(0, 'BitDust GUI is turned OFF')
             bpio.shutdown()
             return 0

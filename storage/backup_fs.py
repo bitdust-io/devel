@@ -368,7 +368,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
         if not name:
             continue
         p = '/'.join(parts[:i+1])
-        if bpio.Linux():
+        if bpio.Linux() or bpio.Mac():
             p = '/' + p
         if not bpio.pathIsDir(p):
             raise Exception('Directory not exist: %s' % str(p))
@@ -436,7 +436,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
         if not name:
             continue
         p = '/'.join(parts[:i+1])
-        if bpio.Linux():
+        if bpio.Linux() or bpio.Mac():
             p = '/' + p
         if not bpio.pathIsDir(p):
             raise Exception('Directory not exist: %s' % str(p))

@@ -17,6 +17,7 @@
 import os
 import time
 import traceback
+import pprint
 
 from logs import lg
 
@@ -38,7 +39,7 @@ from services import driver
 #------------------------------------------------------------------------------ 
 
 def process(json_request):
-    # lg.out(4, 'filemanager_api.process %s' % json_request)
+    lg.out(4, 'filemanager_api.process %s' % json_request)
     if not driver.is_started('service_backups'):
         return { 'result': {
             "success": False,
@@ -74,7 +75,7 @@ def process(json_request):
         elif mode == 'debuginfo':
             result = _debuginfo(json_request['params'])
             
-        # lg.out(14, '    %s' % pprint.pformat(result))
+        lg.out(14, '    %s' % pprint.pformat(result))
         return result
     except:
         lg.exc()
@@ -122,7 +123,7 @@ def _stats(params):
 def _list(params):
     result = []
     path = params['path']
-    if bpio.Linux():
+    if bpio.Linux() or bpio.Mac():
         path = '/' + path.lstrip('/')
     lst = backup_fs.ListByPathAdvanced(path)
     if not isinstance(lst, list):
@@ -170,7 +171,7 @@ def _list_all(params):
 def _list_local(params):
     result = []
     path = params['path']
-    if bpio.Linux():
+    if bpio.Linux() or bpio.Mac():
         path = '/' + path.lstrip('/')
     path = bpio.portablePath(path)
     only_folders = params['onlyFolders']
@@ -205,14 +206,13 @@ def _list_local(params):
 
 def _upload(params):
     path = params['path']
-    if bpio.Linux():
+    if bpio.Linux() or bpio.Mac():
         path = '/' + (path.lstrip('/'))
     localPath = unicode(path)
     if not bpio.pathExist(localPath):
         return { 'result': { "success": False, "error": 'local path %s was not found' % path } } 
     result = []
     pathID = backup_fs.ToID(localPath)
-    # print localPath, pathID
     if pathID is None:
         if bpio.pathIsDir(localPath):
             pathID, iter, iterID = backup_fs.AddDir(localPath, True)
@@ -232,7 +232,7 @@ def _download(params):
     # localName = params['name']
     backupID = params['backupid']
     destpath = params['dest_path']
-    if bpio.Linux():
+    if bpio.Linux() or bpio.Mac():
         destpath = '/' + destpath.lstrip('/')
     restorePath = bpio.portablePath(destpath)
     # overwrite = params['overwrite']

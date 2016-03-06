@@ -101,6 +101,9 @@ def run(args_list, base_dir=None, callback=None):
         cmdargs = ['upnpc-static.exe',]
     elif bpio.Linux():
         cmdargs = ['upnpc',]
+    elif bpio.Mac():
+        # TODO
+        return None
     else:
         return None
 
