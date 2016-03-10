@@ -1096,6 +1096,26 @@ def find_process(applist):
     A portable method to search executed processes.
     You can provide a name or regexp to scan.
     """
+    try: 
+        import psutil
+        pidsL = []
+        for p in psutil.process_iter():
+            if p.pid == os.getpid():
+                continue
+            for app in applist:
+                try:
+                    cmdline = ' '.join(p.cmdline())
+                except:
+                    continue
+                if app.startswith('regexp:'):
+                    if re.match(app[7:], cmdline) is not None:
+                        pidsL.append(p.pid)
+                else:
+                    if cmdline.count(app):
+                        pidsL.append(p.pid)
+        return pidsL
+    except:
+        pass
     pidsL = []
     ostype = platform.uname()[0]
     if ostype == "Windows":
