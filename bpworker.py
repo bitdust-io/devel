@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #bpworker.py
 #
 # <<<COPYRIGHT>>>
@@ -14,5 +14,3 @@ if __name__ == "__main__":
     from parallelp.pp.ppworker import _WorkerProcess
     wp = _WorkerProcess()
     wp.run() 
-
- 

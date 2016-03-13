@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #bptester.py
 #
 # <<<COPYRIGHT>>>-2011
