@@ -369,7 +369,7 @@ def cmd_backups(opts, args, overDict):
             return 1
         return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[2])
 
-    if args[1] == 'delete' and len(args) >= 3:
+    if args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ] and len(args) >= 3:
         if args[2] == 'local':
             if len(args) < 4:
                 return 2
@@ -383,6 +383,23 @@ def cmd_backups(opts, args, overDict):
         return call_jsonrpc_method_template_and_stop('backups_update', tpl)
     
     return 2
+
+#------------------------------------------------------------------------------ 
+
+def cmd_restore(opts, args, overDict):
+    if len(args) < 2 or args[1] == 'list':
+        tpl = jsontemplate.Template(TPL_BACKUPS_LIST)
+        return call_jsonrpc_method_template_and_stop('backups_list', tpl)
+    
+    if len(args) == 2:
+        tpl = jsontemplate.Template(TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1])
+    
+    elif len(args) == 3:
+        tpl = jsontemplate.Template(TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1], args[2])
+    
+    return 2    
 
 #------------------------------------------------------------------------------ 
 
@@ -790,11 +807,18 @@ def run(opts, args, pars=None, overDict=None):
         return cmd_friend(opts, args, overDict)
     
     #---backup---
-    elif cmd in ['backup', 'backups', 'bk']:
+    elif cmd in ['backup', 'backups', 'bk', 'up', 'upload', 'uploads',]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_backups(opts, args, overDict)
+
+    #---restore---
+    elif cmd in ['restore', 'rest', 'download', 'down',]:
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_restore(opts, args, overDict)
 
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:

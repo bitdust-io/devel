@@ -169,6 +169,7 @@ def IsPathIDCorrect(pathID):
     """
     Validate a given ``pathID``, should have only digits and '/' symbol.
     """
+    #TODO more strict validation
     return pathID.replace('/', '').isdigit()
 
 def IsBackupIDCorrect(backupID):

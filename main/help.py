@@ -77,6 +77,8 @@ Commands:
   backup delete <local path, ID or full backup ID>
   backup delete local <full backup ID>
   backup update
+  restore <backup ID> 
+  restore <backup ID> <destination folder> 
   set <option> [value]
   version
   help
@@ -224,16 +226,16 @@ Commands:
 
   show                  start BitDust and show the main window
 
-  identity create <username> [private key size]
+  identity create <nickname> [private key size]
                         generate a new private key and new identity file for you
                         key size can be 1024, 2048 or 4096
 
   identity restore <private key source file> [IDURL]
                         recover existing identity file with your private key file
 
-  backup list           show a catalog of files and folders
+  backup list           show a full catalog of registered files and folders
 
-  backup idlist         show a list of backups
+  backup idlist         show a list of items already uploaded on remote peers 
 
   backup start <local path or ID>
                         start a new backup of the local file or folder 
@@ -248,6 +250,12 @@ Commands:
                         keep remote copy on suppliers HDD
                         
   backup update         request all suppliers to update info for all backups 
+  
+  restore <local path or ID> [destination path]
+                        download personal data back to local machine from remote peers
+                        you can specify the destination path on your local drive,
+                        WARNING! source path is default location
+                        it will overwrite existing files
 
   set <option> [value]  to modify program setting
 

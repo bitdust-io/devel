@@ -58,6 +58,7 @@ TPL_OPTION_SINGLE = """{.section result}
 
 
 TPL_FRIEND_LOOKUP = """{.section result}
+friend lookup:
     {result}
     {nickname}
     {position}
@@ -66,6 +67,7 @@ TPL_FRIEND_LOOKUP = """{.section result}
 
 
 TPL_FRIEND_LOOKUP_REPEATED_SECTION = """{.section result}
+friends:
 {.repeated section @}
     {idurl} : {nickname}
 {.end}

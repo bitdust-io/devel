@@ -19,6 +19,8 @@ _Debug = True
 
 #------------------------------------------------------------------------------ 
 
+import os
+
 from twisted.internet.defer import Deferred
 
 from services import driver
@@ -82,7 +84,7 @@ def config_get(key, default=None):
         
 def config_set(key, value, typ=None):
     from logs import lg
-    lg.out(4, 'api.config_set [%s]' % key)
+    lg.out(4, 'api.config_set [%s]=%s' % (key, value))
     from main import config
     v = {}
     if config.conf().exist(key):
@@ -145,6 +147,7 @@ def backups_update():
 def backups_list():
     from storage import backup_fs
     from lib import diskspace
+    from logs import lg
     result = []
     for pathID, localPath, item in backup_fs.IterateIDs():
         result.append({
@@ -158,9 +161,6 @@ def backups_list():
                    'blocks': max(0, item.versions[v][0]),
                    'size': diskspace.MakeStringFromBytes(max(0, item.versions[v][1])),},
                 item.versions.keys())})
-        # if len(result) > 20:
-        #     break
-    from logs import lg
     lg.out(4, 'api.backups_list %s' % result)
     return { 'result': result, }
 
@@ -169,6 +169,7 @@ def backups_id_list():
     from storage import backup_fs
     from contacts import contactsdb
     from lib import diskspace
+    from logs import lg
     result = []
     for itemName, backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
         if versionInfo[1] >= 0 and contactsdb.num_suppliers() > 0:
@@ -180,8 +181,7 @@ def backups_id_list():
             'backupid': backupID,
             'size': szver,
             'path': localPath, })
-        # if len(result) > 20:
-        #     break
+    lg.out(4, 'api.backups_id_list %s' % result)
     return { 'result': result, }
 
 
@@ -190,6 +190,7 @@ def backup_start_id(pathID):
     from storage import backup_fs
     from storage import backup_control
     from web import control
+    from logs import lg
     local_path = backup_fs.ToPath(pathID)
     if local_path is not None:
         if bpio.pathExist(local_path):
@@ -197,10 +198,11 @@ def backup_start_id(pathID):
             backup_fs.Calculate()
             backup_control.Save()
             control.request_update([('pathID', pathID),])
-            return { 'result': 'backup started : %s' % pathID,
+            lg.out(4, 'api.backup_start_id %s OK!' % pathID)
+            return { 'result': 'uploading started : %s' % pathID,
                      'local_path': local_path, }
-    else:
-        return { 'result': 'item %s not found' % pathID, }
+    lg.out(4, 'api.backup_start_id %s not found' % pathID)
+    return { 'result': 'item %s not found' % pathID, }
 
     
 def backup_start_path(path):
@@ -208,24 +210,27 @@ def backup_start_path(path):
     from storage import backup_fs
     from storage import backup_control
     from web import control
+    from logs import lg
     localPath = bpio.portablePath(unicode(path))
     if not bpio.pathExist(localPath):
-        return {'result': 'local path %s not found' % path, }
+        lg.out(4, 'api.backup_start_path local path %s not found' % path)
+        return { 'result': 'local path %s not found' % path }
     result = ''
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
         if bpio.pathIsDir(localPath):
             pathID, iter, iterID = backup_fs.AddDir(localPath, True)
-            result += 'new folder was added: %s, ' % localPath
+            result += 'new folder was added to catalog: %s, ' % localPath
         else:
             pathID, iter, iterID = backup_fs.AddFile(localPath, True)
-            result += 'new file was added: %s, ' % localPath
+            result += 'new file was added to atalog: %s, ' % localPath
     backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathID),])
-    result += 'backup started: %s' % pathID
-    return { 'result': result, }
+    result += 'uploading started: %s' % pathID
+    lg.out(4, 'api.backup_start_path %s OK!' % path)
+    return { 'result': result }
 
         
 def backup_dir_add(dirpath):
@@ -234,7 +239,7 @@ def backup_dir_add(dirpath):
     from system import dirsize
     from web import control
     newPathID, iter, iterID = backup_fs.AddDir(dirpath, True)
-    dirsize.ask(dirpath, backup_control.FoundFolderSize, (newPathID, None))
+    dirsize.ask(dirpath, backup_control.OnFoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID),])
@@ -289,9 +294,10 @@ def backup_delete_id(pathID_or_backupID):
     from web import control
     from lib import packetid
     from logs import lg
-    lg.out(4, 'api.backup_delete_id %s' % pathID_or_backupID)
     if not packetid.Valid(pathID_or_backupID):
+        lg.out(4, 'api.backup_delete_id invalid item %s' % pathID_or_backupID)
         return { 'result': 'invalid item id: %s' % pathID_or_backupID }
+    version = None
     if packetid.IsBackupIDCorrect(pathID_or_backupID):
         pathID, version = packetid.SplitBackupID(pathID_or_backupID)
         backupID = pathID + '/' + version
@@ -302,8 +308,10 @@ def backup_delete_id(pathID_or_backupID):
             backup_monitor.A('restart')
             control.request_update([('backupID', backupID),])
         if not result:
+            lg.out(4, 'api.backup_delete_id not found %s' % backupID)
             return { 'result': 'item %s is not found in catalog' % backupID }
-        return { 'result': 'item %s were deleted' % pathID }
+        lg.out(4, 'api.backup_delete_id %s was deleted' % pathID)
+        return { 'result': 'item %s was deleted' % pathID }
     pathID = pathID_or_backupID
     result = backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
     if result:
@@ -315,8 +323,10 @@ def backup_delete_id(pathID_or_backupID):
         backup_monitor.A('restart')
         control.request_update([('pathID', pathID),])
     if not result:
+        lg.out(4, 'api.backup_delete_id not found %s' % pathID)
         return { 'result': 'item %s is not found in catalog' % pathID }
-    return { 'result': 'item %s were deleted' % pathID }
+    lg.out(4, 'api.backup_delete_id %s was deleted' % pathID)
+    return { 'result': 'item %s was deleted' % pathID }
 
 
 def backup_delete_path(localPath):
@@ -332,8 +342,10 @@ def backup_delete_path(localPath):
     lg.out(4, 'api.backup_delete_path %s' % localPath)
     pathID = backup_fs.ToID(localPath)
     if not pathID:
+        lg.out(4, 'api.backup_delete_path %s not found' % localPath)
         return { 'result': 'path %s is not found in catalog' % localPath }
     if not packetid.Valid(pathID):
+        lg.out(4, 'api.backup_delete_path invalid %s' % pathID)
         return { 'result': 'invalid pathID found %s' % pathID }
     result = backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
     if result:
@@ -345,9 +357,76 @@ def backup_delete_path(localPath):
         backup_monitor.A('restart')
         control.request_update([('pathID', pathID),])
     if not result:
+        lg.out(4, 'api.backup_delete_path %s not found' % pathID)
         return { 'result': 'item %s is not found in catalog' % pathID }
-    return { 'result': 'item %s were deleted' % pathID }
+    lg.out(4, 'api.backup_delete_path %s was deleted' % pathID)
+    return { 'result': 'item %s was deleted' % pathID }
         
+
+def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
+    from storage import backup_fs
+    from storage import backup_control
+    from storage import restore_monitor
+    from web import control
+    from system import bpio
+    from lib import packetid
+    from logs import lg
+    print pathID_or_backupID_or_localPath, destinationPath
+    if not packetid.Valid(pathID_or_backupID_or_localPath):
+        localPath = bpio.portablePath(unicode(pathID_or_backupID_or_localPath))
+        pathID = backup_fs.ToID(localPath)
+        if not pathID:
+            lg.out(4, 'api.restore_single path %s not found' % localPath)
+            return { 'result': 'path %s is not found in catalog' % localPath }
+        item = backup_fs.GetByID(pathID)
+        if not item:
+            lg.out(4, 'api.restore_single item %s not found' % pathID)
+            return { 'result': 'item %s is not found in catalog' % pathID }
+        version = item.get_latest_version()
+        backupID = pathID + '/' + version
+    else:
+        if packetid.IsBackupIDCorrect(pathID_or_backupID_or_localPath):
+            pathID, version = packetid.SplitBackupID(pathID_or_backupID_or_localPath)
+            backupID = pathID + '/' + version
+        elif packetid.IsPathIDCorrect(pathID_or_backupID_or_localPath):
+            pathID = pathID_or_backupID_or_localPath
+            item = backup_fs.GetByID(pathID)
+            if not item:
+                lg.out(4, 'api.restore_single item %s not found' % pathID)
+                return { 'result': 'path %s is not found in catalog' % pathID }
+            version = item.get_latest_version()
+            if not version:
+                lg.out(4, 'api.restore_single not found versions %s' % pathID)
+                return { 'result': 'not found any versions for %s' % pathID }
+            backupID = pathID + '/' + version
+        else:
+            lg.out(4, 'api.restore_single %s not valid location' % pathID_or_backupID_or_localPath)
+            return { 'result': 'not valid location' }
+    if backup_control.IsBackupInProcess(backupID):
+        lg.out(4, 'api.restore_single %s in process' % backupID)
+        return { 'result': 'download not possible, upload %s in process' % backupID }
+    pathID, version = packetid.SplitBackupID(backupID)
+    if backup_control.HasTask(pathID):
+        lg.out(4, 'api.restore_single %s scheduled already' % pathID)
+        return { 'result': 'downloading task for %s already scheduled' % pathID }
+    localPath = backup_fs.ToPath(pathID)
+    if not localPath:
+        lg.out(4, 'api.restore_single %s not found' % pathID)
+        return { 'result': 'location %s not found in catalog' % pathID }
+    if destinationPath:
+        if len(localPath) > 3 and localPath[1] == ':' and localPath[2] == '/':
+            # TODO: - also may need to check other options like network drive (//) or so 
+            localPath = localPath[3:]
+        localDir = os.path.dirname(localPath.lstrip('/'))
+        restoreDir = os.path.join(destinationPath, localDir)
+        restore_monitor.Start(backupID, restoreDir)
+        control.request_update([('pathID', pathID),])
+    else:
+        restoreDir = os.path.dirname(localPath)
+        restore_monitor.Start(backupID, restoreDir) 
+        control.request_update([('pathID', pathID),])
+    lg.out(4, 'api.restore_single %s OK!' % backupID)
+    return { 'result': 'downloading of version %s has been started to %s' % (backupID, restoreDir)}
 
 #------------------------------------------------------------------------------ 
 
@@ -401,7 +480,7 @@ def remove_correspondent(idurl):
     result = contactsdb.remove_correspondent(idurl)
     contactsdb.save_correspondents()
     if result:
-        result = 'correspondent %s were removed'
+        result = 'correspondent %s was removed'
     else:
         result = 'correspondent %s was not found'
     return { 'result': result, }

@@ -79,6 +79,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_backup_delete_path(self, path):
         return api.backup_delete_path(path)
+    
+    def jsonrpc_restore_single(self, pathID_or_backupID_or_localPath, destinationPath=None):
+        return api.restore_single(pathID_or_backupID_or_localPath, destinationPath)
 
     def jsonrpc_config_list(self, sort=False):
         return api.config_list(sort)
