@@ -1333,18 +1333,18 @@ def update_proxy_settings():
     if enableLocalProxy():
         if getProxyHost() == '' or getProxyPort() == '':
             d = net_misc.detect_proxy_settings()
-            net_misc.set_proxy_settings(d)
-            setProxySettings(d)
-            enableLocalProxy(d.get('host', '') != '')
-            lg.out(2, 'settings.update_proxy_settings UPDATED!!!')
+            # setProxySettings(d)
+            # enableLocalProxy(d.get('host', '') != '')
+            lg.out(2, 'settings.update_proxy_settings : loaded from ENVIRONMENT')
         else:
-            net_misc.set_proxy_settings(getProxySettingsDict())
-        lg.out(4, 'settings.update_proxy_settings')
-        lg.out(4, 'HOST:      ' + net_misc.get_proxy_host())
-        lg.out(4, 'PORT:      ' + str(net_misc.get_proxy_port()))
-        lg.out(4, 'USERNAME:  ' + net_misc.get_proxy_username())
-        lg.out(4, 'PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
-        lg.out(4, 'SSL:       ' + net_misc.get_proxy_ssl())
+            d = getProxySettingsDict()
+            lg.out(2, 'settings.update_proxy_settings : loaded from settings')
+        net_misc.set_proxy_settings(d)
+        lg.out(2, '    HOST:      ' + net_misc.get_proxy_host())
+        lg.out(2, '    PORT:      ' + str(net_misc.get_proxy_port()))
+        lg.out(2, '    USERNAME:  ' + net_misc.get_proxy_username())
+        lg.out(2, '    PASSWORD:  ' + ('*' * len(net_misc.get_proxy_password())))
+        lg.out(2, '    SSL:       ' + net_misc.get_proxy_ssl())
 
 #------------------------------------------------------------------------------ 
 #---OTHER USER CONFIGURATIONS--------------------------------------------------

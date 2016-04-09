@@ -58,6 +58,39 @@ _Shutdowner = None
 
 #------------------------------------------------------------------------------
 
+def shutdown(x=None):
+    """
+    This is a top level method which control the process of finishing the program.
+    Calls method ``shutdown()`` in other modules.
+    """
+    lg.out(2, "shutdowner.shutdown " + str(x))
+    from services import driver
+    from main import settings
+    from logs import weblog
+    from logs import webtraffic
+    from system import tmpfile
+    from system import run_upnpc
+    from raid import eccmap
+    from lib import net_misc
+    from updates import git_proc
+    dl = []
+    driver.shutdown()
+    eccmap.shutdown()
+    run_upnpc.shutdown()
+    net_misc.shutdown()
+    git_proc.shutdown()
+    if settings.NewWebGUI():
+        from web import control
+        dl.append(control.shutdown())
+    else:
+        from web import webcontrol
+        dl.append(webcontrol.shutdown())
+    weblog.shutdown()
+    webtraffic.shutdown()
+    return DeferredList(dl)        
+    
+#------------------------------------------------------------------------------ 
+
 def A(event=None, arg=None):
     global _Shutdowner
     if _Shutdowner is None:
@@ -174,37 +207,6 @@ class Shutdowner(automat.Automat):
 
     #------------------------------------------------------------------------------ 
     
-    def _shutdown(self, x=None):
-        """
-        This is a top level method which control the process of finishing the program.
-        Calls method ``shutdown()`` in other modules.
-        """
-        lg.out(2, "shutdowner.shutdown " + str(x))
-        from services import driver
-        from main import settings
-        from logs import weblog
-        from logs import webtraffic
-        from system import tmpfile
-        from system import run_upnpc
-        from raid import eccmap
-        from lib import net_misc
-        from updates import git_proc
-        dl = []
-        driver.shutdown()
-        eccmap.shutdown()
-        run_upnpc.shutdown()
-        net_misc.shutdown()
-        git_proc.shutdown()
-        if settings.NewWebGUI():
-            from web import control
-            dl.append(control.shutdown())
-        else:
-            from web import webcontrol
-            dl.append(webcontrol.shutdown())
-        weblog.shutdown()
-        webtraffic.shutdown()
-        return DeferredList(dl)        
-
     def _shutdown_restart(self, param=''):
         """
         Calls ``shutdown()`` method and stop the main reactor, then restart the program. 
@@ -221,7 +223,7 @@ class Shutdowner(automat.Automat):
             lg.out(2, "shutdowner.shutdown_finished want to stop the reactor")
             reactor.addSystemEventTrigger('after','shutdown', do_restart, param)
             reactor.stop()
-        d = self._shutdown('restart')
+        d = shutdown('restart')
         d.addBoth(shutdown_finished, param)
     
     def _shutdown_exit(self, x=None):
@@ -232,7 +234,7 @@ class Shutdowner(automat.Automat):
         def shutdown_reactor_stop(x=None):
             lg.out(2, "shutdowner.shutdown_reactor_stop want to stop the reactor")
             reactor.stop()
-        d = self._shutdown(x)
+        d = shutdown(x)
         d.addBoth(shutdown_reactor_stop)
 
         

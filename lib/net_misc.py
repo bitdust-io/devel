@@ -107,7 +107,7 @@ def ConnectionFailed(param=None, proto=None, info=None):
 
 #------------------------------------------------------------------------------ 
 
-def parseurl(url, defaultPort=None):
+def parse_url(url, defaultPort=None):
     """
     Split the given URL into the scheme, host, port, and path.
     """
@@ -122,7 +122,7 @@ def parseurl(url, defaultPort=None):
             defaultPort = 80
     host, port = parsed[1], defaultPort
     if ':' in host:
-        host, port = host.split(':')
+        host, port = host.rsplit(':', 1)
         try:
             port = int(port)
         except ValueError:
@@ -130,6 +130,19 @@ def parseurl(url, defaultPort=None):
     if path == '':
         path = '/'
     return scheme, host, port, path
+
+def parse_credentials(host):
+    """
+    Test host name (network location) for credentials and split by parts:
+        host, username, password
+    """
+    if not host.count('@'):
+        return host, '', ''
+    credentials, host = host.rsplit('@', 1)
+    if not credentials.count(':'):
+        return host, credentials, ''
+    username, password = credentials.split(':', 1)
+    return host, username, password
 
 #------------------------------------------------------------------------------ 
 
@@ -148,21 +161,27 @@ def detect_proxy_settings():
 
     if httpproxy is not None:
         try:
-            scheme, host, port, path = parseurl(httpproxy)
+            scheme, host, port, path = parse_url(httpproxy)
+            host, username, password = parse_credentials(host)
         except:
             return d
         d['ssl'] = 'False'
         d['host'] = host
         d['port'] = port
+        d['username'] = username
+        d['password'] = password
 
     if httpsproxy is not None:
         try:
-            scheme, host, port, path = parseurl(httpsproxy)
+            scheme, host, port, path = parse_url(httpsproxy)
+            host, username, password = parse_credentials(host)
         except:
             return d
         d['ssl'] = 'True'
         d['host'] = host
         d['port'] = port
+        d['username'] = username
+        d['password'] = password
 
     return d
 
@@ -284,7 +303,7 @@ def downloadWithProgressTwisted(url, file, progress_func):
     This method can keep track of the progress.
     """
     global _UserAgentString
-    scheme, host, port, path = parseurl(url)
+    scheme, host, port, path = parse_url(url)
     factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
     if scheme == 'https':
         contextFactory = ssl.ClientContextFactory()
@@ -301,7 +320,7 @@ def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName,
     Can download from HTTPS sites.
     """
     global _UserAgentString
-    scheme, host, port, path = parseurl(url)
+    scheme, host, port, path = parse_url(url)
     factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
     if scheme != 'https':
         return None
@@ -336,7 +355,7 @@ def downloadSSL(url, fileOrName, progress_func, certificates_filenames):
     Another method to download from HTTPS.
     """
     global _UserAgentString
-    scheme, host, port, path = parseurl(url)
+    scheme, host, port, path = parse_url(url)
     if not isinstance(certificates_filenames, types.ListType):
         certificates_filenames = [certificates_filenames, ]
     cert_found = False
@@ -362,18 +381,31 @@ def getPageTwisted(url, timeout=0):
     """
     A smart way to download pages from HTTP hosts. 
     """
+#     def getPageTwistedTimeout(_d):
+#         _d.cancel()
+#     def getPageTwistedTimeoutDisconnect(_tcpcall):
+#         _tcpcall.disconnect()
+#     def getPageTwistedCancelTimeout(x, _t):
+#         if _t.active():
+#             _t.cancel()
+#         return x
     global _UserAgentString
     if proxy_is_on():
         factory = ProxyClientFactory(url, agent=_UserAgentString, timeout=timeout)
-        reactor.connectTCP(get_proxy_host(), get_proxy_port(), factory)
+        tcp_call = reactor.connectTCP(get_proxy_host(), get_proxy_port(), factory)
+#         if timeout:
+#             timeout_call = reactor.callLater(timeout, getPageTwistedTimeoutDisconnect, tcp_call)
+#             factory.deferred.addBoth(getPageTwistedCancelTimeout, timeout_call)
         factory.deferred.addCallback(ConnectionDone, 'http', 'getPageTwisted proxy %s' % (url))
         factory.deferred.addErrback(ConnectionFailed, 'http', 'getPageTwisted proxy %s' % (url))
         return factory.deferred
-    else:
-        d = getPage(url, agent=_UserAgentString, timeout=timeout)
-        d.addCallback(ConnectionDone, 'http', 'getPageTwisted %s' % url)
-        d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %s' % url)
-        return d
+    d = getPage(url, agent=_UserAgentString, timeout=timeout)
+#     if timeout:
+#         timeout_call = reactor.callLater(timeout, getPageTwistedTimeout, d)
+#         d.addBoth(getPageTwistedCancelTimeout, timeout_call)
+    d.addCallback(ConnectionDone, 'http', 'getPageTwisted %s' % url)
+    d.addErrback(ConnectionFailed, 'http', 'getPageTwisted %s' % url)
+    return d
 
 #------------------------------------------------------------------------------
 
@@ -382,7 +414,7 @@ def downloadHTTP(url, fileOrName):
     Another method to download from HTTP host.
     """
     global _UserAgentString
-    scheme, host, port, path = parseurl(url)
+    scheme, host, port, path = parse_url(url)
     factory = HTTPDownloader(url, fileOrName, agent=_UserAgentString)
     if proxy_is_on():
         host = get_proxy_host()

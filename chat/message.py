@@ -122,26 +122,28 @@ def Message(request):
 
 def SendMessage(remote_idurl, messagebody, packet_id=None):
     """
+    Send command.Message() packet to remote peer.
     """
     global _OutgoingMessageCallback
     if not packet_id:
         packet_id = packetid.UniqueID()
     remote_identity = identitycache.FromCache(remote_idurl)
     if remote_identity is None:
-        d = identitycache.immediatelyCaching(remote_idurl)
+        d = identitycache.immediatelyCaching(remote_idurl, 20)
         d.addCallback(lambda src: SendMessage(
             remote_idurl, messagebody, packet_id))
         d.addErrback(lambda err: lg.warn('failed to retrieve ' + remote_idurl))
-        return
+        return d
     Amessage = MessageClass(remote_identity, messagebody)
     Payload = misc.ObjectToString(Amessage)
     lg.out(6, "message.SendMessage to %s with %d bytes" % (remote_idurl, len(Payload)))
-    outpacket = signed.Packet(commands.Message(),
-                           my_id.getLocalID(),
-                           my_id.getLocalID(),
-                           packet_id,
-                           Payload,
-                           remote_idurl)
+    outpacket = signed.Packet(
+        commands.Message(),
+        my_id.getLocalID(),
+        my_id.getLocalID(),
+        packet_id,
+        Payload,
+        remote_idurl)
     result = gateway.outbox(outpacket)
     if _OutgoingMessageCallback:
         _OutgoingMessageCallback(result, messagebody, remote_identity, packet_id)

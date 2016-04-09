@@ -93,7 +93,7 @@ def init(icons_path, icons_files=None):
     if icons_files:
         _IconsDict = icons_files
     else:
-        if platform.uname()[0] == 'Linux':
+        if platform.uname()[0] == 'Linux' or platform.uname()[0] == 'Darwin':
             _IconsDict = _LinuxIcons
         else:
             _IconsDict = _WindowsIcons
@@ -179,8 +179,8 @@ def init(icons_path, icons_files=None):
             wx.App.__init__(self, False)
             
         def OnInit(self):
-            # print 'OnInit'
             self.trayicon = MyTaskBarIcon(self.icons_path)
+            print 'OnInit'
             return True
         
         def OnExit(self):
@@ -192,7 +192,9 @@ def init(icons_path, icons_files=None):
             
         def SetIcon(self, name):
             # if self.trayicon.IsAvailable():
+            print 'try'
             self.trayicon.select_icon(name)
+            print 'ok'
             
         def Stop(self):
             self.trayicon.clear_icon()
@@ -208,7 +210,7 @@ def init(icons_path, icons_files=None):
 
 def main_porcess_stopped():
     global _IconObject
-    # print 'main_porcess_stopped', _IconObject
+    print 'main_porcess_stopped', _IconObject
     if _IconObject:
         try:
             _IconObject.Stop()
@@ -267,7 +269,7 @@ def SetControlFunc(f):
 
 if __name__ == "__main__":
     def test_control(cmd):
-        print cmd
+        print 'test_control', cmd
         if cmd == 'exit':
             reactor.stop()
             print 'reactor stopped'

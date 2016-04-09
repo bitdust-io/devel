@@ -271,6 +271,7 @@ def Identity(newpacket):
     if not newpacket.Valid():
         # If not valid do nothing
         lg.warn("not Valid packet from %s" % idurl)
+        # TODO: send Fail ?
         return False
     if newpacket.OwnerID == idurl:
         # wide=True : a small trick to respond to all contacts if we receive pings  

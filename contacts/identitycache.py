@@ -225,25 +225,25 @@ def getPageFail(x, idurl):
     return x
 
 
-def pageRequestTwisted(idurl):
+def pageRequestTwisted(idurl, timeout=0):
     """
     Request an HTML page - this can be an user identity.
     """
-    d = net_misc.getPageTwisted(idurl)
+    d = net_misc.getPageTwisted(idurl, timeout)
     d.addCallback(getPageSuccess, idurl)
     d.addErrback(getPageFail, idurl)
     return d
 
 
-def scheduleForCaching(idurl):
+def scheduleForCaching(idurl, timeout=0):
     """
     Even if we have a copy in cache we are to try and read another one.
     """
-    return pageRequestTwisted(idurl)
+    return pageRequestTwisted(idurl, timeout)
 
 #------------------------------------------------------------------------------ 
 
-def immediatelyCaching(idurl):
+def immediatelyCaching(idurl, timeout=0):
     """
     A smart method to start caching some identity and get results in callbacks.
     """
@@ -270,7 +270,7 @@ def immediatelyCaching(idurl):
             lg.out(14, '    [cache failed] %s' % idurl)
         return None
     result = Deferred()
-    d = net_misc.getPageTwisted(idurl)
+    d = net_misc.getPageTwisted(idurl, timeout)
     d.addCallback(_getPageSuccess, idurl, result)
     d.addErrback(_getPageFail, idurl, result)
     _CachingTasks[idurl] = result

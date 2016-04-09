@@ -11,16 +11,20 @@
 .. module:: jsonrpc_server
 """
 
+import time
 import pprint
+import traceback
 
 from twisted.internet import reactor
+from twisted.internet.defer import Deferred
 from twisted.web import server
 
 if __name__ == '__main__':
     import sys, os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-from lib.fastjsonrpc.server import JSONRPCServer 
+from lib.fastjsonrpc.server import JSONRPCServer
+from lib.fastjsonrpc.jsonrpc import JSONRPCError
 
 #------------------------------------------------------------------------------ 
 
@@ -43,10 +47,69 @@ def init():
 #------------------------------------------------------------------------------ 
 
 class BitDustJsonRPCServer(JSONRPCServer):
+    
+    def _register_execution(self, request_dict, result):
+        result['execution'] = '%3.6f' % (time.time() - request_dict['_executed'])
+        lg.out(4, "jsontpc_server._register_execution : %s sec. ,  started at %d" % (result['execution'], request_dict['_executed']))
+        return result
+
+    def _convert_filemanager_response(self, result):
+        if 'status' not in result:
+            result['status'] = 'OK'
+        if 'result' in result and isinstance(result['result'], dict):
+            if 'success' in result['result'] and not result['result']['success']:
+                result['status'] = 'ERROR'
+                result['errors'] = [result['result']['error'],]
+                del result['result']
+            else:
+                result['result'] = [result['result'],]
+        return result
+    
+    def _catch_filemanager_methods(self, request_dict):
+        if not request_dict['method'].startswith('filemanager_'):
+            return None
+        try:
+            fm_method = request_dict['method'].replace('filemanager_', '')
+            fm_request = {}
+            params = [] if 'params' not in request_dict else request_dict['params']
+            fm_request['params'] = {
+                i[0]:i[1] for i in map(lambda p: p.split("=", 1), params)}
+            fm_request['params']['mode'] = fm_method
+            request_dict = {'_executed': time.time(),}
+        except Exception as exc:
+            lg.exc()
+            return api.ERROR(exc.message)
+        try:
+            fm_result = api.filemanager(fm_request)
+            if isinstance(fm_result, Deferred):
+                fm_result.addCallback(self._convert_filemanager_response)
+            else:
+                fm_result = self._convert_filemanager_response(fm_result)
+        except Exception as exc:
+            lg.exc()
+            fm_result = api.ERROR(exc.message)
+        return fm_result
+    
     def _callMethod(self, request_dict):
         lg.out(12, 'jsontpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
-        return JSONRPCServer._callMethod(self, request_dict)
-    
+        request_dict['_executed'] = time.time()
+        try:
+            fm_result = self._catch_filemanager_methods(request_dict)
+            if fm_result is None:
+                result = fm_result or JSONRPCServer._callMethod(self, request_dict)
+            else:
+                result = fm_result
+        except JSONRPCError as exc:
+            result = api.ERROR(exc.strerror)
+        except Exception as exc:
+            result = api.ERROR(traceback.format_exc(), message=exc.message)
+        if isinstance(result, Deferred):
+            result.addCallback(
+               lambda result: self._register_execution(request_dict, result))
+        else:
+            result = self._register_execution(request_dict, result)
+        return result
+        
     def jsonrpc_stop(self):
         return api.stop()
 
@@ -71,8 +134,20 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backup_start_path(self, path):
         return api.backup_start_path(path)
 
-    def jsonrpc_backup_delete_local(self, path):
-        return api.backup_delete_local(path)
+    def jsonrpc_backup_start_id(self, pathID):
+        return api.backup_start_id(pathID)
+    
+    def jsonrpc_backup_dir_add(self, dirpath):
+        return api.backup_dir_add(dirpath)
+    
+    def jsonrpc_backup_file_add(self, filepath):
+        return api.backup_file_add(filepath)
+
+    def jsonrpc_backup_tree_add(self, dirpath):
+        return api.backup_tree_add(dirpath)
+
+    def jsonrpc_backup_delete_local(self, backupID):
+        return api.backup_delete_local(backupID)
 
     def jsonrpc_backup_delete_id(self, pathID):
         return api.backup_delete_id(pathID)
@@ -110,8 +185,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_find_peer_by_nickname(self, nickname):
         return api.find_peer_by_nickname(nickname)
     
-    def jsonrpc_ping(self, idurl):
-        return api.ping(str(idurl))
+    def jsonrpc_ping(self, idurl, timeout=10):
+        return api.ping(str(idurl), timeout)
 
     # def jsonrpc_:
     #     return api.

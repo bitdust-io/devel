@@ -25,6 +25,7 @@ from system import bpio
 #------------------------------------------------------------------------------ 
 
 _Debug = True
+_DebugLevel = 24
 
 #------------------------------------------------------------------------------ 
 
@@ -262,7 +263,7 @@ class CommandsProtocol(BasicProtocol):
             lg.warn('- different software version: %s' % version)
             return
         if _Debug:
-            lg.out(18, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
+            lg.out(_DebugLevel, '>>> [%s] (%d bytes) from %s, total %d bytes received' % (
                 command, datagramsz, str(address), self.bytes_in))
         # self.bytes_in += datagramsz
         handled = False
@@ -290,7 +291,7 @@ class CommandsProtocol(BasicProtocol):
             #     command,
             #     data))
             if _Debug:
-                lg.out(18, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
+                lg.out(_DebugLevel, '<<< [%s] (%d bytes) to %s, total %d bytes sent' % (
                     command, payloadsz + 2, address, self.bytes_out))
             result = self.sendDatagram(outp.getvalue(), address)
         except:

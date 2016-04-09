@@ -15,8 +15,8 @@
 #------------------------------------------------------------------------------ 
 
 import os
+import sys
 import time
-import traceback
 import pprint
 
 from logs import lg
@@ -46,7 +46,7 @@ def process(json_request):
             "error": "network [service_backups] is not started: %s" % (
                driver.services().get('service_backups', '!!! not found !!!')) }}
     mode = ''
-    result = []
+    result = {}
     try:
         if isinstance(json_request, str) or isinstance(json_request, unicode):
             import json
@@ -74,14 +74,17 @@ def process(json_request):
             result = _list_active_tasks(json_request['params'])
         elif mode == 'debuginfo':
             result = _debuginfo(json_request['params'])
-            
-        lg.out(14, '    %s' % pprint.pformat(result))
-        return result
-    except:
+        else:
+            result = {"result":{"success": False, 
+                                "error": 'filemanager method %s not found' % mode }}
+    except Exception as exc:
         lg.exc()
-        return { "result": { "success": False, "error": traceback.format_exc() }} 
-    lg.out(4, '    ERROR unknown mode: %s' % mode)
-    return { "result": { "success": False, "error": 'mode %s not supported' % mode }}
+        descr = str(sys.exc_info()[0].__name__) + ': ' + str(sys.exc_info()[1])
+        result = { "result": {"success": False,
+                              "error": descr}} 
+    # lg.out(4, '    ERROR unknown mode: %s' % mode)
+    lg.out(14, '    %s' % pprint.pformat(result))
+    return result
 
 #------------------------------------------------------------------------------ 
 

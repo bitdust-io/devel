@@ -974,7 +974,7 @@ def cmd_integrate(opts, args, overDict):
         This will create an executable file /usr/local/bin/bitdust with such content:
             #!/bin/sh
             cd [path to `bitdust` folder]
-            python bitdust.py $*
+            python bitdust.py "$@"
             
     If this is sterted without root permissions, it should create a file ~/bin/bitdust.
     """
@@ -990,7 +990,7 @@ def cmd_integrate(opts, args, overDict):
     cmdpath = '/usr/local/bin/bitdust'
     src = "#!/bin/sh\n"
     src += "cd %s\n" % curpath
-    src += "python bitdust.py $*\n"
+    src += 'python bitdust.py "$@"\n'
     print_text('creating a command script : %s ... ' % cmdpath, nl='')
     result = False
     try:

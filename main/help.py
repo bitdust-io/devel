@@ -73,8 +73,10 @@ Commands:
   identity restore <private key source file> [IDURL]
   backup list
   backup idlist
+  backup add <local file or folder>
+  backup addtree <folder path>
   backup start <local path or ID>
-  backup delete <local path, ID or full backup ID>
+  backup delete <local path, ID or full version ID>
   backup delete local <full backup ID>
   backup update
   restore <backup ID> 

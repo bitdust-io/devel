@@ -23,6 +23,14 @@ able to contact them in 2 or 3 hours then fetch copy of identity from
 their server.
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 8
+
+#------------------------------------------------------------------------------ 
+
+
 import os
 import sys
 
@@ -31,7 +39,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in propagate.py')
 
-from twisted.internet.defer import DeferredList, Deferred
+from twisted.internet.defer import DeferredList, Deferred, TimeoutError
 
 #------------------------------------------------------------------------------ 
 
@@ -150,7 +158,11 @@ def single(idurl, ack_handler=None, wide=False):
     """
     Do "propagate" for a single contact.
     """
-    return FetchSingle(idurl).addBoth(lambda x: SendToIDs([idurl], ack_handler, wide))
+    d = FetchSingle(idurl)
+    d.addCallback(lambda x: SendToIDs([idurl], ack_handler, wide))
+    if ack_handler:
+        d.addErrback(lambda err: ack_handler(err))
+    return d 
     
 
 def update():
@@ -403,12 +415,44 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
     del alreadysent
 
 
-def PingContact(idurl, ack_handler=None):
+def PingContact(idurl, timeout=30):
     """
     Called from outside when need to "ping" some user, this will just send my Identity to that guy, 
-    he will need to respond.
+    he will need to respond. Previously it request his identity from ID server.
     """
-    # SendToID(idurl, ack_handler=ack_handler, NeedAck=True, wide=True)
-    single(idurl, ack_handler=ack_handler, wide=True)
-
+    if _Debug:
+        lg.out(_DebugLevel, "propagate.PingContact")
+    ping_result = Deferred()
+    def _cancel_ack_timeout(x, tmcall):
+        lg.out(_DebugLevel, "propagate.PingContact._cancel_ack_timeout")
+        if tmcall.active():
+            tmcall.cancel()
+        return x
+    def _ack_handler(response, info, tmcall, res):
+        lg.out(_DebugLevel, "propagate.PingContact._ack_handler %s" % str((response, info)))
+        if tmcall:
+            _cancel_ack_timeout((response, info), tmcall)
+        if not res.called:
+            res.callback((response, info))
+    def _ack_timed_out(tm, cache_request):
+        lg.out(_DebugLevel, "propagate.PingContact._ack_timed_out")
+        if not cache_request.called:
+            cache_request.cancel()
+        ping_result.errback(TimeoutError('response was not received within %d seconds' % tm))
+    def _identity_cached(x, idsrc, timeout_call, result):
+        lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes" % len(idsrc))
+        # TODO Verify()
+        SendToIDs(  [idurl], 
+                    lambda response, info:
+                        _ack_handler(response, info, timeout_call, result), 
+                    wide=True,)
+    idcache_defer = identitycache.scheduleForCaching(idurl, timeout)
+    if timeout:
+        timeout_call = reactor.callLater(timeout, _ack_timed_out, timeout, idcache_defer)
+        idcache_defer.addErrback(_cancel_ack_timeout, timeout_call)
+    else:
+        timeout_call = None
+    idcache_defer.addCallback(_identity_cached, idurl, timeout_call, ping_result)
+    idcache_defer.addErrback(ping_result.errback)
+    return ping_result
 

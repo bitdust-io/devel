@@ -20,7 +20,7 @@ from twisted.internet import reactor
 from lib.fastjsonrpc.client import Proxy as jsonProxy  
 from lib import jsontemplate
 
-from cmd_line_template import *
+from interface.cmd_line_json_templates import *
 
 #------------------------------------------------------------------------------ 
 
@@ -360,6 +360,20 @@ def cmd_backups(opts, args, overDict):
         return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
 
     tpl = jsontemplate.Template(TPL_RAW)
+    if len(args) >= 2 and args[1] == 'add':
+        if os.path.isdir(args[2]):
+            return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2])
+        elif os.path.isfile(args[2]):
+            return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2])
+        print_text('path %s not exist\n' % args[2])
+        return 1
+    
+    if len(args) >= 2 and args[1] == 'addtree':
+        if not os.path.isdir(args[2]):
+            print_text('path %s not exist\n' % args[2])
+            return 1
+        return call_jsonrpc_method_template_and_stop('backup_tree_add', tpl, args[2])        
+        
     if args[1] == 'start' and len(args) >= 3:
         from lib import packetid
         if packetid.Valid(args[2]):
@@ -415,7 +429,7 @@ def cmd_integrate(opts, args, overDict):
         This will create an executable file /usr/local/bin/bitdust with such content:
             #!/bin/sh
             cd [path to `bitdust` folder]
-            python bitdust.py $*
+            python bitdust.py "$@"
     If this is sterted without root permissions, it should create a file ~/bin/bitdust.
     """
     def print_text(msg, nl='\n'):
@@ -430,7 +444,7 @@ def cmd_integrate(opts, args, overDict):
     cmdpath = '/usr/local/bin/bitdust'
     src = "#!/bin/sh\n"
     src += "cd %s\n" % curpath
-    src += "python bitdust.py $*\n"
+    src += 'python bitdust.py "$@"\n'
     print_text('creating a command script : %s ... ' % cmdpath, nl='')
     result = False
     try:
@@ -551,7 +565,7 @@ def cmd_message(opts, args, overDict):
         tpl = jsontemplate.Template(TPL_RAW)
         return call_jsonrpc_method_template_and_stop('list_messages', tpl)
     if len(args) >= 4 and args[1] in [ 'send', ]:
-        tpl = jsontemplate.Template(TPL_RAW)
+        tpl = jsontemplate.Template(TPL_MESSAGE_SENDING)
         return call_jsonrpc_method_template_and_stop('send_message', tpl, args[2], args[3]) 
     return 2
 
@@ -661,7 +675,7 @@ def run(opts, args, pars=None, overDict=None):
                 print_exception()
             from twisted.internet import reactor
             from lib import misc
-            reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param=ui, detach=True)
+            reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
             reactor.stop()
         try:
             from twisted.internet import reactor

@@ -113,6 +113,8 @@ def nickname_observer_result(sessionkey, target_username, result, nik, pos, idur
                 propagate.single(idurl, 
                     ack_handler=lambda ackpacket, info: 
                         contact_acked(sessionkey, target_username, ackpacket, info),
+                    fail_handler=lambda failpacket, info:
+                        contact_failed(sessionkey, target_username, failpacket, info),
                     wide=True)
                 status = 'checking'
             _SearchLookups[sessionkey][target_username].append({
@@ -141,3 +143,7 @@ def contact_acked(sessionkey, target_username, ackpacket, info):
     except:
         lg.exc()
             
+def contact_failed(sessionkey, target_username, ackpacket, info):
+    """
+    TODO:
+    """

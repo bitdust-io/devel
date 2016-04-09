@@ -21,7 +21,7 @@ import time
 
 #-------------------------------------------------------------------------------
 
-_AppDataDir = ''
+AppDataDir = ''
 
 #-------------------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ def show():
     return 0
 
 
-def run(UI='', options=None, args=None, overDict=None):
+def init(UI='', options=None, args=None, overDict=None):
     """
     In the method ``main()`` program firstly checks the command line arguments 
     and then calls this method to start the whole process.
@@ -163,18 +163,22 @@ def run(UI='', options=None, args=None, overDict=None):
     # automat.OpenLogFile(settings.AutomatsLog())
     
     import initializer
-    import shutdowner
-
+    I = initializer.A()
     lg.out(4, 'bpmain.run send event "run" to initializer()')
-    
-    reactor.callWhenRunning(initializer.A, 'run', UI)
+    reactor.callWhenRunning(I.automat, 'run', UI)
+    return I
 
-    lg.out(2, 'bpmain.run calling reactor.run()')
-    reactor.run()
-    lg.out(2, 'bpmain.run reactor stopped')
-    
+#------------------------------------------------------------------------------ 
+
+def shutdown():
+    from logs import lg
+    from main import config
+    from system import bpio
+
+    import shutdowner    
     shutdowner.A('reactor-stopped')
 
+    from automats import automat
     automat.objects().clear()
     if len(automat.objects()) > 0:
         lg.warn('%d automats stay uncleared')
@@ -200,6 +204,26 @@ def run(UI='', options=None, args=None, overDict=None):
     return 0
 
 #------------------------------------------------------------------------------
+
+def run_twisted_reactor():
+    from logs import lg
+    try:
+        from twisted.internet import reactor
+    except:
+        lg.exc()
+        sys.exit('Error initializing reactor in bpmain.py\n')
+    lg.out(2, 'bpmain.run_twisted_reactor calling Twisted reactor.run()')
+    reactor.run()
+    lg.out(2, 'bpmain.run_twisted_reactor Twisted reactor stopped')
+
+
+def run(UI='', options=None, args=None, overDict=None):
+    init(UI, options, args, overDict)
+    run_twisted_reactor()
+    result = shutdown()
+    return result
+    
+#------------------------------------------------------------------------------ 
 
 def parser():
     """
@@ -520,7 +544,8 @@ def main():
         lg.out(2, 'bpmain.main redirecting started')
 
     try:
-        os.remove(os.path.join(appdata, 'logs', 'exception.log'))
+        if os.path.isfile(os.path.join(appdata, 'logs', 'exception.log')):
+            os.remove(os.path.join(appdata, 'logs', 'exception.log'))
     except:
         pass
 
@@ -627,8 +652,8 @@ def main():
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         ui = False
-        if cmd == 'restart':
-            ui = True
+        # if cmd == 'restart':
+        # ui = True
         if len(appList) > 0:
             lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
             def done(x):
@@ -637,14 +662,19 @@ def main():
                 if reactor.running and not reactor._stopped:
                     reactor.stop()
             def failed(x):
+                ok = str(x).count('Connection was closed cleanly') > 0
+                from twisted.internet import reactor
+                if ok and reactor.running and not reactor._stopped:
+                    lg.out(0, 'DONE\n', '')
+                    reactor.stop()
+                    return
                 lg.out(0, 'FAILED while killing previous process - do HARD restart\n', '')
                 try:
                     kill()
                 except:
                     lg.exc()
-                from twisted.internet import reactor
                 from lib import misc
-                reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart, param=ui, detach=True)
+                reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
                 reactor.stop()
             try:
                 from twisted.internet import reactor
