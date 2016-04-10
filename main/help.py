@@ -13,6 +13,187 @@
 A methods to just store text constants, used to print command-line instructions.
 """
 
+def usage():
+    return '''usage: bitdust [options] [command] [arguments]
+    
+Commands:
+  start
+  detach
+  restart
+  stop
+  show
+  integrate
+  identity create <username> [private key size]
+  identity restore <private key source file> [IDURL]
+  identity erase
+  key copy
+  key backup <destination filename to write your private key>
+  key print  
+  backup list
+  backup idlist
+  backup add <local file or folder>
+  backup addtree <folder path>
+  backup start <local path or ID>
+  backup delete <local path, ID or full version ID>
+  backup delete local <full backup ID>
+  backup update
+  restore <backup ID> 
+  restore <backup ID> <destination folder> 
+  set <option> [value]
+  set list
+  api <method> [params]
+  version
+  help
+  usage
+'''      
+
+#------------------------------------------------------------------------------ 
+
+def help():
+    return '''usage: bitdust [options] [command] [arguments]
+
+Commands:
+  [start]               start main BitDust process
+  
+  detach                start BitDust in as a daemon process
+  
+  restart               restart BitDust 
+
+  stop                  stop BitDust
+
+  show                  start BitDust and show the main window
+  
+  integrate             creates a `bitdust` alias in OS in that location:
+                            /usr/local/bin/bitdust
+                            ~/bin/bitdust   (if no access to /usr/local/) 
+
+  identity create <nickname> [private key size]
+                        generate a new private key and 
+                        new identity file for you
+                        key size can be 1024, 2048 or 4096
+
+  identity restore <private key source file> [IDURL]
+                        recover existing identity file
+                        with your private key file
+                        
+  identity erase        delete local identity from this machine 
+
+  key copy              copy private key to clipboard, use Ctrl+V to paste it
+  
+  key backup <a filename for copy of private key>
+                        copy private key into file
+                        
+  key print             print private key to console
+                        WARNING!!! do not publish your key  
+
+  backup list           show a full catalog of registered files and folders
+
+  backup idlist         show a list of items already uploaded on remote peers 
+
+  backup start <local path or ID>
+                        start a new backup of the local file or folder 
+                        or existing ID from catalog
+                        
+  backup delete <local path, ID or full backup ID>
+                        remove a file or folder (with all sub folders)
+                        from catalog or just delete a given backup
+
+  backup delete local <full backup ID>
+                        remove only local copy of given backup,
+                        keep remote copy on suppliers HDD
+                        
+  backup update         request all suppliers to update info for all backups 
+  
+  restore <local path or ID> [destination path]
+                        download personal data back to local machine
+                        from remote peers, you can specify 
+                        the destination path on your local drive,
+                        WARNING! source path is default location,
+                        so it will overwrite existing files by default
+
+  set <option> [value]  to get/set program setting
+  
+  set list              print all available settings and its values
+  
+  api <method> [params] execute API method and return JSON response
+
+  version               display current software version
+
+  help                  print a detailed info about command line usage
+  
+  usage                 print a brief list of available commands
+
+'''
+
+
+# recover <private key filename> [idurl or username]
+#                       recover existing account with your private key file
+#                       
+#  schedule <folder> [schedule in compact format]
+#                        set or get a schedule for a folder to start backups automatically
+#   help schedule         print format description to set scheduled backup
+#  money                 show the financial status 
+#
+#  money transfer <username or idurl> <amount>
+#                        transfer money to another user 
+#
+#  money receipts        show receipts history
+#
+#  money receipt <receipt ID>
+#                        show single receipt info
+#  
+  
+
+#------------------------------------------------------------------------------ 
+
+def schedule_format():
+    return '''
+Schedule compact format:
+[mode].[interval].[time].[details]
+
+mode:
+  n-none, h-hourly, d-daily, w-weekly, m-monthly, c-continuously
+  
+interval:
+  just a number - how often to restart the task, default is 1
+    
+time:
+  [hour]:[minute]
+  
+details:
+  for weeks: Mon Tue Wed Thu Fri Sat Sun
+  for months: Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+  
+some examples:
+  none                    no schedule
+  hourly.3                each 3 hours
+  daily.4.10:15.          every 4th day at 10:15
+  w.1.3:00.MonSat         every Monday and Saturday at 3:00 in the night
+  weekly.4.18:45.MonTueWedThuFriSatSun
+                          every day in each 4th week in 18:45
+  m.5.12:34.JanJul        5th Jan and 5th July at 12:34
+  c.300                   every 300 seconds (10 minutes)
+'''
+    
+def settings_help():
+    return '''set [option] [value]          
+
+examples:
+  set donated 4GB                          set donated space
+  set needed                               print your needed space size
+  set services/backups/max-copies 4        set number of backup copies for every folder
+  set services/customer/suppliers-number   print number of your suppliers
+  set logs/stream-enabled False            turn off web server for program logs
+  set list                                 list all available options
+
+'''
+    
+    
+    
+    
+    
+#------------------------------------------------------------------------------ 
+    
 def usage0():
     return '''usage: bitdust [options] [command] [arguments]
     
@@ -60,31 +241,10 @@ Commands:
   help
 '''    
   
-def usage():
-    return '''usage: bitdust [options] [command] [arguments]
-    
-Commands:
-  start
-  detach
-  restart
-  stop
-  show
-  identity create <username> [private key size]
-  identity restore <private key source file> [IDURL]
-  backup list
-  backup idlist
-  backup add <local file or folder>
-  backup addtree <folder path>
-  backup start <local path or ID>
-  backup delete <local path, ID or full version ID>
-  backup delete local <full backup ID>
-  backup update
-  restore <backup ID> 
-  restore <backup ID> <destination folder> 
-  set <option> [value]
-  version
-  help
-'''      
+
+
+
+
   
 #  recover <private key filename> [idurl or username]
 #  schedule <folder> [schedule in compact format]
@@ -204,130 +364,13 @@ Commands:
 
   version               display current software version
 
-  help                  print this message
+  help                  print a detailed info about command line usage
   
   help backups          print more info about catalog and backup IDs  
   
   help settings         print settings list
+  
+  usage                 print a brief list of available commands
 
 '''
 
-
-
-def help():
-    return '''usage: bitdust [options] [command] [arguments]
-
-Commands:
-  [start]               start BitDust
-  
-  detach                start BitDust in a child process
-  
-  restart               restart BitDust 
-
-  stop                  stop BitDust
-
-  show                  start BitDust and show the main window
-
-  identity create <nickname> [private key size]
-                        generate a new private key and new identity file for you
-                        key size can be 1024, 2048 or 4096
-
-  identity restore <private key source file> [IDURL]
-                        recover existing identity file with your private key file
-
-  backup list           show a full catalog of registered files and folders
-
-  backup idlist         show a list of items already uploaded on remote peers 
-
-  backup start <local path or ID>
-                        start a new backup of the local file or folder 
-                        or existing ID from catalog
-                        
-  backup delete <local path, ID or full backup ID>
-                        remove a file or folder (with all subfolders) from catalog
-                        or just delete a given backup
-
-  backup delete local <full backup ID>
-                        remove only local copy of given backup,
-                        keep remote copy on suppliers HDD
-                        
-  backup update         request all suppliers to update info for all backups 
-  
-  restore <local path or ID> [destination path]
-                        download personal data back to local machine from remote peers
-                        you can specify the destination path on your local drive,
-                        WARNING! source path is default location
-                        it will overwrite existing files
-
-  set <option> [value]  to modify program setting
-
-  version               display current software version
-
-  help                  print this message
-  
-  help settings         print settings list
-
-'''
-
-
-# recover <private key filename> [idurl or username]
-#                       recover existing account with your private key file
-#                       
-#  schedule <folder> [schedule in compact format]
-#                        set or get a schedule for a folder to start backups automatically
-#   help schedule         print format description to set scheduled backup
-#  money                 show the financial status 
-#
-#  money transfer <username or idurl> <amount>
-#                        transfer money to another user 
-#
-#  money receipts        show receipts history
-#
-#  money receipt <receipt ID>
-#                        show single receipt info
-#  
-  
-
-
-
-def schedule_format():
-    return '''
-Schedule compact format:
-[mode].[interval].[time].[details]
-
-mode:
-  n-none, h-hourly, d-daily, w-weekly, m-monthly, c-continuously
-  
-interval:
-  just a number - how often to restart the task, default is 1
-    
-time:
-  [hour]:[minute]
-  
-details:
-  for weeks: Mon Tue Wed Thu Fri Sat Sun
-  for months: Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
-  
-some examples:
-  none                    no schedule
-  hourly.3                each 3 hours
-  daily.4.10:15.          every 4th day at 10:15
-  w.1.3:00.MonSat         every Monday and Saturday at 3:00 in the night
-  weekly.4.18:45.MonTueWedThuFriSatSun
-                          every day in each 4th week in 18:45
-  m.5.12:34.JanJul        5th Jan and 5th July at 12:34
-  c.300                   every 300 seconds (10 minutes)
-'''
-    
-def settings_help():
-    return '''set [option] [value]          
-
-examples:
-  set donated 4GB                          set donated space
-  set needed                               print your needed space size
-  set services/backups/max-copies 4        set number of backup copies for every folder
-  set services/customer/suppliers-number   print number of your suppliers
-  set logs/stream-enabled False            turn off web server for program logs
-  set list                                 list all available options
-
-'''

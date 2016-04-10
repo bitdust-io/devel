@@ -175,6 +175,16 @@ def forgetLocalIdentity():
     lg.out(6, "my_id.saveLocalIdentity")
     _LocalIdentity = None
 
+def eraseLocalIdentity():
+    filename = bpio.portablePath(settings.LocalIdentityFilename())
+    try:
+        os.remove(filename)
+    except:
+        lg.exc()
+        return False
+    lg.out(6, "my_id.eraseLocalIdentity file %s was deleted" % filename)
+    return True
+    
 #------------------------------------------------------------------------------ 
 
 def getValidTransports():

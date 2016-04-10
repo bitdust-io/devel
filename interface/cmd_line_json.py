@@ -81,6 +81,7 @@ def print_copyright():
 
 def print_text(msg, nl='\n'):
     """
+    Send some output to the console.
     """
     sys.stdout.write(msg+nl)
 
@@ -107,6 +108,7 @@ def print_exception():
 
 def print_and_stop(result):
     """
+    Print text to console and stop the reactor.
     """
     import pprint
     pprint.pprint(result, indent=2,)
@@ -115,6 +117,7 @@ def print_and_stop(result):
 
 def print_template(result, template):
     """
+    Use json template to format the text and print to STDOUT.
     """
     sys.stdout.write(template.expand(result))
     # import pprint
@@ -123,6 +126,7 @@ def print_template(result, template):
 
 def print_template_and_stop(result, template):
     """
+    Print text with json template formatting and stop the reactor.
     """
     print_template(result, template)
     reactor.stop()
@@ -130,6 +134,7 @@ def print_template_and_stop(result, template):
 
 def fail_and_stop(err):
     """
+    Send error message to STDOUT and stop the reactor.
     """
     try:
         print_text(err.getErrorMessage())
@@ -277,6 +282,14 @@ def cmd_identity(opts, args, overDict, running):
     from userid import my_id
     from main import settings
     settings.init()
+    my_id.init()    
+
+    if len(args) == 1 or args[1].lower() in [ 'info', '?', 'show', 'print' ]:
+        if my_id.isLocalIdentityReady():
+            print_text(my_id.getLocalIdentity().serialize())
+        else:
+            print_text('local identity is not exist')
+        return 0
     
     def _register():
         if len(args) <= 2:
@@ -335,22 +348,94 @@ def cmd_identity(opts, args, overDict, running):
         else:
             print_text('identity recovery FAILED')
         return 0
-    
+
     if args[1].lower() in ['create', 'new', 'register', 'generate', ]:
+        if my_id.isLocalIdentityReady():
+            print_text('local identity [%s] already exist\n' % my_id.getIDName())
+            return 1
+        if running:
+            print_text('BitDust is running at the moment, need to stop the software at first\n')
+            return 0
         return _register()
+
     if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
+        if running:
+            print_text('BitDust is running at the moment, need to stop the software at first\n')
+            return 0
         return _recover()
+
+    if args[1].lower() in ['delete', 'remove', 'erase', 'del', 'rm', 'kill']:
+        if running:
+            print_text('BitDust is running at the moment, need to stop the software at first\n')
+            return 0
+        oldname = my_id.getIDName()
+        my_id.forgetLocalIdentity()
+        my_id.eraseLocalIdentity()
+        print_text('local identity [%s] is no longer exist\n' % oldname)
+        return 0
+
     return 2
 
 #------------------------------------------------------------------------------ 
 
-def cmd_api(opts, args, overDict):
+def cmd_key(opts, args, overDict, running, executablePath):
+    from main import settings
+    from lib import misc
+    from system import bpio
+    from userid import my_id
+    from crypt import key
+    settings.init()
+    my_id.init()
+    
+    if not key.LoadMyKey():
+        print_text('private key not exist or is not valid\n')
+        return 0
+    if not my_id.isLocalIdentityReady():
+        print_text('local identity not exist, your key worth nothing\n')
+        return 0
+    
+    if len(args) == 2:
+        if args[1] == 'copy':
+            TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
+            misc.setClipboardText(TextToSave)
+            del TextToSave
+            print_text('now you can "paste" with Ctr+V your private key where you want')
+            print_text('WARNING! keep your key in safe place, do not publish it!\n')
+            return 0
+        elif args[1] == 'print':
+            TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
+            print_text('\n' + TextToSave + '\n')
+            del TextToSave
+            print_text('WARNING! keep your key in safe place, do not publish it!\n')
+            return 0        
+    elif len(args) == 3:
+        if args[1] == 'copy' or args[1] == 'save' or args[1] == 'backup':
+            from system import bpio
+            curpath = os.getcwd()
+            os.chdir(executablePath)
+            filenameto = bpio.portablePath(args[2])
+            os.chdir(curpath)
+            TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
+            if not bpio.AtomicWriteFile(filenameto, TextToSave):
+                del TextToSave
+                print_text('error writing to %s\n' % filenameto)
+                return 1
+            del TextToSave
+            print_text('your private key were copied to file %s' % filenameto)
+            print_text('WARNING! keep your key in safe place, do not publish it!\n')
+            return 0
+
+    return 2
+ 
+#------------------------------------------------------------------------------ 
+
+def cmd_api(opts, args, overDict, executablePath):
     tpl = jsontemplate.Template(TPL_RAW)
     return call_jsonrpc_method_template_and_stop(args[1], tpl, *args[2:])
 
 #------------------------------------------------------------------------------ 
 
-def cmd_backups(opts, args, overDict):
+def cmd_backups(opts, args, overDict, executablePath):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(TPL_BACKUPS_LIST)
         return call_jsonrpc_method_template_and_stop('backups_list', tpl)
@@ -400,7 +485,7 @@ def cmd_backups(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
-def cmd_restore(opts, args, overDict):
+def cmd_restore(opts, args, overDict, executablePath):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(TPL_BACKUPS_LIST)
         return call_jsonrpc_method_template_and_stop('backups_list', tpl)
@@ -433,8 +518,6 @@ def cmd_integrate(opts, args, overDict):
     If this is sterted without root permissions, it should create a file ~/bin/bitdust.
     """
     def print_text(msg, nl='\n'):
-        """
-        """
         sys.stdout.write(msg+nl)
     from system import bpio
     if bpio.Windows():
@@ -443,8 +526,8 @@ def cmd_integrate(opts, args, overDict):
     curpath = bpio.getExecutableDir()
     cmdpath = '/usr/local/bin/bitdust'
     src = "#!/bin/sh\n"
-    src += "cd %s\n" % curpath
-    src += 'python bitdust.py "$@"\n'
+    # src += "cd %s\n" % curpath
+    src += 'python %s/bitdust.py "$@"\n' % curpath
     print_text('creating a command script : %s ... ' % cmdpath, nl='')
     result = False
     try:
@@ -537,7 +620,7 @@ def cmd_set(opts, args, overDict):
             result = api.config_set(path, unicode(value))
         else:
             result = api.config_get(path)
-        tpl = jsontemplate.Template(TPL_OPTION_MODIFIED_WITH_ERROR)
+        tpl = jsontemplate.Template(TPL_OPTION_MODIFIED)
         print_template(result, tpl)
         return 0
     return 2
@@ -606,7 +689,7 @@ def cmd_friend(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
-def run(opts, args, pars=None, overDict=None):
+def run(opts, args, pars=None, overDict=None, executablePath=None):
     cmd = ''
     if len(args) > 0:
         cmd = args[0].lower()
@@ -769,19 +852,12 @@ def run(opts, args, pars=None, overDict=None):
             
     #---identity---
     if cmd == 'identity' or cmd == 'id':
-        if len(args) == 1 or args[1].lower() in [ 'info', '?', 'show', 'print' ]:
-            from userid import my_id
-            my_id.loadLocalIdentity()
-            if my_id.isLocalIdentityReady():
-                print_text(my_id.getLocalIdentity().serialize())
-            else:
-                print_text('local identity is not ready')
-            return 0
-        if running:
-            print_text('BitDust is running at the moment, need to stop the software at first\n')
-            return 0
         return cmd_identity(opts, args, overDict, running)
-    
+
+    #---key---
+    elif cmd == 'key':
+        return cmd_key(opts, args, overDict, running, executablePath)
+
     #---ping---
     if cmd == 'ping' or cmd == 'call' or cmd == 'sendid':
         if len(args) < 1:
@@ -804,7 +880,7 @@ def run(opts, args, pars=None, overDict=None):
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
-        return cmd_api(opts, args, overDict)
+        return cmd_api(opts, args, overDict, executablePath)
     
     #---messages---
     elif cmd == 'msg' or cmd == 'message' or cmd == 'messages':
@@ -825,14 +901,14 @@ def run(opts, args, pars=None, overDict=None):
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
-        return cmd_backups(opts, args, overDict)
+        return cmd_backups(opts, args, overDict, executablePath)
 
     #---restore---
     elif cmd in ['restore', 'rest', 'download', 'down',]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
-        return cmd_restore(opts, args, overDict)
+        return cmd_restore(opts, args, overDict, executablePath)
 
     #---version---
     elif cmd in [ 'version', 'v', 'ver' ]:
@@ -848,7 +924,7 @@ def run(opts, args, pars=None, overDict=None):
         return 0
 
     #---integrate---
-    elif cmd == 'integrate':
+    elif cmd == 'integrate' or cmd == 'alias':
         return cmd_integrate(opts, args, overDict)
     
     return 2

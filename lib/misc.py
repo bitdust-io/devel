@@ -943,7 +943,13 @@ def setClipboardText(txt):
                 wx.TheClipboard.Close()
         except:
             lg.exc()
-    else:
+    elif bpio.Mac():
+#         import tempfile
+#         fd, fname = tempfile.mkstemp()
+#         fd.write(txt)
+#         fd.close()
+#         subprocess.Popen('')
+#         os.system('cat %s | pbcopy')
         #TODO
         return
 

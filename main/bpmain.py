@@ -39,7 +39,7 @@ def show():
     return 0
 
 
-def init(UI='', options=None, args=None, overDict=None):
+def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     """
     In the method ``main()`` program firstly checks the command line arguments 
     and then calls this method to start the whole process.
@@ -217,8 +217,8 @@ def run_twisted_reactor():
     lg.out(2, 'bpmain.run_twisted_reactor Twisted reactor stopped')
 
 
-def run(UI='', options=None, args=None, overDict=None):
-    init(UI, options, args, overDict)
+def run(UI='', options=None, args=None, overDict=None, executablePath=None):
+    init(UI, options, args, overDict, executablePath)
     run_twisted_reactor()
     result = shutdown()
     return result
@@ -230,7 +230,7 @@ def parser():
     Create an ``optparse.OptionParser`` object to read command line arguments.
     """
     from optparse import OptionParser, OptionGroup
-    parser = OptionParser(usage = usage())
+    parser = OptionParser(usage = usage(), prog='BitDust')
     group = OptionGroup(parser, "Logs")
     group.add_option('-d', '--debug',
                         dest='debug',
@@ -449,7 +449,7 @@ def monitorDelayedCalls(r):
 
 #------------------------------------------------------------------------------ 
 
-def main():
+def main(executable_path=None):
     """
     THIS IS THE ENTRY POINT OF THE PROGRAM!
     """
@@ -597,14 +597,14 @@ def main():
 #        if len(appList) > 0 and ( ( pid != -1 and pid in appList ) or ( pid == -1 ) ):
 
         if len(appList) > 0:
-            lg.out(0, 'BitDust already started, found another process: %s' % str(appList))
+            lg.out(0, 'BitDust already started, found another process: %s\n' % str(appList))
             bpio.shutdown()
             return 0
         UI = ''
         # if cmd == 'show' or cmd == 'open':
             # UI = 'show'
         try:
-            ret = run(UI, opts, args, overDict)
+            ret = run(UI, opts, args, overDict, executable_path)
         except:
             lg.exc()
             ret = 1
@@ -612,7 +612,7 @@ def main():
         return ret
 
     #---detach---
-    elif cmd == 'detach':
+    elif cmd == 'detach' or cmd == 'daemon' or cmd == 'background':
         # lg.set_debug_level(20)
         appList = bpio.find_process([
             'bitdust.exe',
@@ -621,7 +621,7 @@ def main():
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         if len(appList) > 0:
-            lg.out(0, 'main BitDust process already started: %s' % str(appList))
+            lg.out(0, 'main BitDust process already started: %s\n' % str(appList))
             bpio.shutdown()
             return 0
         from lib import misc
@@ -633,14 +633,13 @@ def main():
         # reactor.addSystemEventTrigger('after','shutdown', misc.DoRestart, detach=True)
         # reactor.callLater(0.01, _detach)
         # reactor.run()
-        lg.out(0, 'run and detach main BitDust process')
+        lg.out(0, 'main BitDust process started in daemon mode\n')
         bpio.shutdown()
         result = misc.DoRestart(detach=True)
         try:
             result = result.pid
         except:
             pass
-        # print result
         return 0
 
     #---restart---
@@ -698,7 +697,7 @@ def main():
             if cmd == 'restart':
                 ui = 'show'
             try:
-                ret = run(ui, opts, args, overDict)
+                ret = run(ui, opts, args, overDict, executable_path)
             except:
                 lg.exc()
                 ret = 1
@@ -709,11 +708,11 @@ def main():
     elif cmd == 'show' or cmd == 'open':
         from main import settings
         if not bpio.isGUIpossible() and not settings.NewWebGUI():
-            lg.out(0, 'BitDust GUI is turned OFF')
+            lg.out(0, 'BitDust GUI is turned OFF\n')
             bpio.shutdown()
             return 0
         if bpio.Linux() and not bpio.X11_is_running(): 
-            lg.out(0, 'this operating system not supported X11 interface')
+            lg.out(0, 'this operating system not supported X11 interface\n')
             bpio.shutdown()
             return 0
         appList = bpio.find_process([
@@ -732,12 +731,12 @@ def main():
                     for pid in appList_bpgui:
                         bpio.kill_process(pid)
                 else:
-                    lg.out(0, 'BitDust GUI already opened, found another process: %s' % str(appList))
+                    lg.out(0, 'BitDust GUI already opened, found another process: %s\n' % str(appList))
                     bpio.shutdown()
                     return 0
         if len(appList) == 0:
             try:
-                ret = run('show', opts, args, overDict)
+                ret = run('show', opts, args, overDict, executable_path)
             except:
                 lg.exc()
                 ret = 1
@@ -781,7 +780,7 @@ def main():
                 bpio.shutdown()
                 return ret
         else:
-            lg.out(0, 'BitDust is not running at the moment')
+            lg.out(0, 'BitDust is not running at the moment\n')
             bpio.shutdown()
             return 0
 
@@ -792,7 +791,7 @@ def main():
             starter_filepath = os.path.join(bpio.getExecutableDir(), WindowsStarterFileName())
             lg.out(0, "bpmain.main bitstarter.exe path: %s " % starter_filepath)
             if not os.path.isfile(starter_filepath):
-                lg.out(0, "bpmain.main ERROR %s not found" % starter_filepath)
+                lg.out(0, "ERROR: %s not found\n" % starter_filepath)
                 bpio.shutdown()
                 return 1
             cmdargs = [os.path.basename(starter_filepath), 'uninstall']
@@ -808,11 +807,11 @@ def main():
             return ret
         lg.out(0, 'bpmain.main UNINSTALL!')
         if not bpio.Windows():
-            lg.out(0, 'This command can be used only under OS Windows.')
+            lg.out(0, 'This command can be used only under OS Windows.\n')
             bpio.shutdown()
             return 0
         if not bpio.isFrozen():
-            lg.out(0, 'You are running BitDust from sources, uninstall command is available only for binary version.')
+            lg.out(0, 'You are running BitDust from sources, uninstall command is available only for installable version.\n')
             bpio.shutdown()
             return 0
         appList = bpio.find_process(['bitdust.exe',])
@@ -842,7 +841,7 @@ def main():
     # from interface import command_line as cmdln
     # from interface import cmd_line as cmdln
     from interface import cmd_line_json as cmdln
-    ret = cmdln.run(opts, args, pars, overDict)
+    ret = cmdln.run(opts, args, pars, overDict, executable_path)
     if ret == 2:
         print usage()
     bpio.shutdown()

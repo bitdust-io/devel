@@ -50,7 +50,7 @@ class IdentityPropagateService(LocalService):
         from contacts import identitycache
         identitycache.shutdown()
         from userid import my_id
-        my_id.forgetLocalIdentity()
+        my_id.shutdown()
         return True
     
     

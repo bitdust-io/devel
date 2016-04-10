@@ -82,6 +82,12 @@ def InitMyKey(keyfilename=None):
         return
     if _MyRsaKey is not None:
         return
+    if not LoadMyKey(keyfilename):
+        GenerateNewKey(keyfilename)
+
+def LoadMyKey(keyfilename=None):
+    global _MyRsaKey
+    global _MyPubKey
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
     if os.path.exists(keyfilename+'_location'):
@@ -92,13 +98,30 @@ def InitMyKey(keyfilename=None):
         _MyPubKey = keys.Key.fromFile(keyfilename)
         _MyRsaKey = _MyPubKey.keyObject
         lg.out(4, 'key.InitMyKey loaded private key from %s' % (keyfilename))
-    else:
-        lg.out(4, 'key.InitMyKey generate new private key')
-        _MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)       
-        _MyPubKey = keys.Key(_MyRsaKey)
-        keystring = _MyPubKey.toString('openssh')
-        bpio.WriteFile(keyfilename, keystring)
-        lg.out(4, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
+        return ValidateKey()
+    return False
+
+def GenerateNewKey(keyfilename=None):
+    global _MyPubKey
+    global _MyRsaKey
+    if keyfilename is None:
+        keyfilename = settings.KeyFileName()
+    if os.path.exists(keyfilename+'_location'):
+        newkeyfilename = bpio.ReadTextFile(keyfilename+'_location').strip()
+        if os.path.exists(newkeyfilename):
+            keyfilename = newkeyfilename
+    lg.out(4, 'key.InitMyKey generate new private key')
+    _MyRsaKey = RSA.generate(settings.getPrivateKeySize(), os.urandom)
+    _MyPubKey = keys.Key(_MyRsaKey)
+    keystring = _MyPubKey.toString('openssh')
+    bpio.WriteFile(keyfilename, keystring)
+    lg.out(4, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
+
+def ValidateKey():
+    curkey = MyPrivateKeyObject()
+    data256 = os.urandom(256)
+    signature256 = curkey.sign(data256)
+    return curkey.verify(signature256, data256)
 
 def ForgetMyKey():
     """
@@ -179,8 +202,6 @@ def VerifySignature(keystring, hashcode, signature):
     sig_long = long(signature),
     Result = bool(keyobj.verify(hashcode, sig_long))
     return Result
-
-#------------------------------------------------------------------------------ 
 
 def Verify(ConIdentity, hashcode, signature):
     """

@@ -289,8 +289,8 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
-        lg.out(0, 'You must register first, run command:')
-        lg.out(0, '   bitdust register <your name>')
+        lg.out(0, 'You must create an identity first, run command:')
+        lg.out(0, '   bitdust identity create <nickname>')
 
     def doDestroyMe(self, arg):
         global _Initializer
