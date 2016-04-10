@@ -157,6 +157,12 @@ class BitDustJsonRPCServer(JSONRPCServer):
     
     def jsonrpc_restore_single(self, pathID_or_backupID_or_localPath, destinationPath=None):
         return api.restore_single(pathID_or_backupID_or_localPath, destinationPath)
+    
+    def jsonrpc_suppliers_list(self):
+        return api.suppliers_list()
+
+    def jsonrpc_ping(self, idurl, timeout=10):
+        return api.ping(str(idurl), timeout)
 
     def jsonrpc_config_list(self, sort=False):
         return api.config_list(sort)
@@ -184,9 +190,6 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_find_peer_by_nickname(self, nickname):
         return api.find_peer_by_nickname(nickname)
-    
-    def jsonrpc_ping(self, idurl, timeout=10):
-        return api.ping(str(idurl), timeout)
 
     # def jsonrpc_:
     #     return api.

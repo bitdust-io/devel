@@ -34,7 +34,7 @@ def on_api_result_prepared(result):
 #------------------------------------------------------------------------------ 
 
 def OK(result='', message=None, status='OK',):
-    o = {'status': status, 'result': result,}
+    o = {'status': status, 'result': [result,],}
     if message is not None:
         o['message'] = message
     o = on_api_result_prepared(o)
@@ -403,6 +403,9 @@ def backup_dir_add(dirpath):
     from storage import backup_control
     from system import dirsize
     from web import control
+    pathID = backup_fs.ToID(dirpath)
+    if pathID:
+        return ERROR('path already exist in catalog: %s' % pathID)
     newPathID, iter, iterID = backup_fs.AddDir(dirpath, True)
     dirsize.ask(dirpath, backup_control.OnFoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
@@ -420,6 +423,9 @@ def backup_file_add(filepath):
     from storage import backup_fs
     from storage import backup_control
     from web import control
+    pathID = backup_fs.ToID(filepath)
+    if pathID:
+        return ERROR('path already exist in catalog: %s' % pathID)
     newPathID, iter, iterID = backup_fs.AddFile(filepath, True)
     backup_fs.Calculate()
     backup_control.Save()
@@ -559,6 +565,7 @@ def backup_delete_path(localPath):
     lg.out(4, 'api.backup_delete_path %s was deleted' % pathID)
     return OK('item %s was deleted from remote peers' % pathID)
         
+#------------------------------------------------------------------------------ 
 
 def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
     """
@@ -637,6 +644,49 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
         control.request_update([('pathID', pathID),])
     lg.out(4, 'api.restore_single %s OK!' % backupID)
     return OK('downloading of version %s has been started to %s' % (backupID, restoreDir))
+
+#------------------------------------------------------------------------------ 
+
+def suppliers_list():
+    """
+    List of suppliers - nodes who stores my data on own machines.
+    """
+    from contacts import contactsdb
+    from lib import misc
+    return RESULT([{
+        'position': s[0],
+        'idurl': s[1],
+        'connected': misc.readSupplierData(s[1], 'connected'),
+        'numfiles': len(misc.readSupplierData(s[1], 'listfiles').split('\n'))-1,
+        } for s in enumerate(contactsdb.suppliers())])
+
+#------------------------------------------------------------------------------ 
+
+def ping(idurl, timeout=10):
+    """
+    The "ping" command performs following actions:
+    1. Request remote identity source by idurl,
+    2. Send my Identity to remote contact addresses, taken from identity,
+    3. Wait first Ack packet from remote peer,
+    4. Failed by timeout or identity fetching error.
+    Return:
+        "{'status': 'OK', 
+          'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}"
+    """
+    if not driver.is_started('service_identity_propagate'):
+        return succeed(ERROR('service_identity_propagate() is not started'))
+    from p2p import propagate
+    result = Deferred()
+    d = propagate.PingContact(idurl, int(timeout)) 
+    d.addCallback(
+        lambda resp: result.callback(
+            OK([str(resp),])))
+    d.addErrback(
+        lambda err: result.callback(
+            ERROR(err.getErrorMessage())))
+    return result
+    
+#------------------------------------------------------------------------------ 
 
 #------------------------------------------------------------------------------ 
 
@@ -746,32 +796,6 @@ def find_peer_by_nickname(nickname):
         # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
     return d
 
-#------------------------------------------------------------------------------ 
-
-def ping(idurl, timeout=10):
-    """
-    The "ping" command performs following actions:
-    1. Request remote identity source by idurl,
-    2. Send my Identity to remote contact addresses, taken from identity,
-    3. Wait first Ack packet from remote peer,
-    4. Failed by timeout or identity fetching error.
-    Return:
-        "{'status': 'OK', 
-          'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}"
-    """
-    if not driver.is_started('service_identity_propagate'):
-        return succeed(ERROR('service_identity_propagate() is not started'))
-    from p2p import propagate
-    result = Deferred()
-    d = propagate.PingContact(idurl, int(timeout)) 
-    d.addCallback(
-        lambda resp: result.callback(
-            OK([str(resp),])))
-    d.addErrback(
-        lambda err: result.callback(
-            ERROR(err.getErrorMessage())))
-    return result
-    
 #------------------------------------------------------------------------------ 
 
 

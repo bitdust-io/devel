@@ -432,7 +432,7 @@ class FireHire(automat.Automat):
             current_suppliers[position] = new_idurl
         contactsdb.update_suppliers(current_suppliers)
         contactsdb.save_suppliers()
-        misc.writeSupplierData(new_idurl, 'connected', time.strftime('%d%m%y %H:%M:%S'))
+        misc.writeSupplierData(new_idurl, 'connected', time.strftime('%d-%m-%Y %H:%M:%S'))
         if settings.NewWebGUI():
             from web import control
             # control.on_suppliers_changed(current_suppliers)
@@ -464,7 +464,7 @@ class FireHire(automat.Automat):
             pos = current_suppliers.index(supplier_idurl)
             # current_suppliers.remove(supplier_idurl)
             current_suppliers[pos] = ''
-            misc.writeSupplierData(supplier_idurl, 'disconnected', time.strftime('%d%m%y %H:%M:%S'))
+            misc.writeSupplierData(supplier_idurl, 'disconnected', time.strftime('%d-%m-%Y %H:%M:%S'))
         current_suppliers = current_suppliers[:desired_suppliers]
         contactsdb.update_suppliers(current_suppliers)
         contactsdb.save_suppliers()

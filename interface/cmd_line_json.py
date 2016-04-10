@@ -119,6 +119,8 @@ def print_template(result, template):
     """
     Use json template to format the text and print to STDOUT.
     """
+    # print result
+    # print template
     sys.stdout.write(template.expand(result))
     # import pprint
     # sys.stdout.write(pprint.pformat(result, 4, 80))
@@ -643,6 +645,77 @@ def cmd_set_request(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
+
+def cmd_suppliers(opts, args, overDict):
+#     def _wait_replace_supplier_and_stop(src, supplier_name, count=0):
+#         suppliers = []
+#         for s in find_comments(src):
+#             if s.count('[online ]') or s.count('[offline]'):
+#                 suppliers.append(s[18:38].strip())
+#         if supplier_name not in suppliers:
+#             print '  supplier %s is fired !' % supplier_name
+#             print_and_stop(src)
+#             return
+#         if count >= 60:
+#             print ' time is out\n'
+#             reactor.stop()
+#             return
+#         else:
+#             def _check_again(supplier_name, count):
+#                 sys.stdout.write('.')
+#                 run_url_command(webcontrol._PAGE_SUPPLIERS).addCallback(_wait_replace_supplier_and_stop, supplier_name, count)
+#             reactor.callLater(1, _check_again, supplier_name, count+1)
+
+    if len(args) < 2 or args[1] in [ 'list', 'ls' ]:
+        tpl = jsontemplate.Template(TPL_SUPPLIERS)
+        return call_jsonrpc_method_template_and_stop('suppliers_list', tpl)
+
+#     elif args[1] in [ 'call', 'cl' ]:
+#         url = webcontrol._PAGE_SUPPLIERS + '?action=call'
+#         run_url_command(url).addCallback(print_and_stop)
+#         reactor.run()
+#         return 0
+# 
+#     elif args[1] in [ 'replace', 'rep', 'rp' ] and len(args) >= 3:
+#         contactsdb.init()
+#         idurl = args[2].strip()
+#         if not idurl.startswith('http://'):
+#             try:
+#                 idurl = contactsdb.supplier(int(idurl))
+#             except:
+#                 idurl = ''
+#         if not idurl:
+#             print 'supplier IDURL is unknown\n'
+#             return 0
+#         name = nameurl.GetName(idurl)
+#         url = webcontrol._PAGE_SUPPLIERS + '?action=replace&idurl=%s' % misc.pack_url_param(idurl)
+#         run_url_command(url).addCallback(_wait_replace_supplier_and_stop, name, 0)
+#         reactor.run()
+#         return 0
+#     
+#     elif args[1] in [ 'change', 'ch' ] and len(args) >= 4:
+#         contactsdb.init()
+#         idurl = args[2].strip()
+#         if not idurl.startswith('http://'):
+#             try:
+#                 idurl = contactsdb.supplier(int(idurl))
+#             except:
+#                 idurl = ''
+#         if not idurl:
+#             print 'supplier IDURL is unknown\n'
+#             return 0
+#         newidurl = args[3].strip()
+#         name = nameurl.GetName(idurl)
+#         newname = nameurl.GetName(newidurl)
+#         url = webcontrol._PAGE_SUPPLIERS + '?action=change&idurl=%s&newidurl=%s' % (misc.pack_url_param(idurl), misc.pack_url_param(newidurl))
+#         run_url_command(url).addCallback(_wait_replace_supplier_and_stop, name, 0)
+#         reactor.run()
+#         return 0
+    
+    return 2
+
+#------------------------------------------------------------------------------ 
+
 def cmd_message(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(TPL_RAW)
@@ -888,6 +961,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_message(opts, args, overDict)
+
+    #---suppliers---
+    elif cmd in [ 'suppliers', 'supplier', 'sup', 'supp', 'sp']:
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_suppliers(opts, args, overDict)
     
     #---friends---
     elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy' or cmd == 'correspondent' or cmd == 'contact' or cmd == 'peer':

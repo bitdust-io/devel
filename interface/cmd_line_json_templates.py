@@ -46,6 +46,13 @@ TPL_OPTION_SINGLE = """{0}{1}
 
 #------------------------------------------------------------------------------ 
 
+tpl_suppliers = "{.section result}{.repeated section @} {position}: {idurl}, since {connected}, keeps {numfiles} files\n{.end}{.end}"
+
+TPL_SUPPLIERS = """{0}{1}
+{2}{3}""".format(tpl_status, tpl_execution, tpl_suppliers, tpl_errors)
+
+#------------------------------------------------------------------------------ 
+
 TPL_FRIEND_LOOKUP = """{.section result}
 friend lookup:
     {result}
