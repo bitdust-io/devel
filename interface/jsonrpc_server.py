@@ -158,9 +158,39 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_restore_single(self, pathID_or_backupID_or_localPath, destinationPath=None):
         return api.restore_single(pathID_or_backupID_or_localPath, destinationPath)
     
+    def jsonrpc_backups_queue(self):
+        return api.backups_queue()
+    
+    def jsonrpc_backups_running(self):
+        return api.backups_running()
+    
+    def jsonrpc_backup_cancel_pending(self, path_id):
+        return api.backup_cancel_pending(path_id)
+
+    def jsonrpc_backup_abort_running(self, backup_id):
+        return api.backup_abort_running(backup_id)
+
+    def jsonrpc_restores_running(self):
+        return api.restores_running()
+    
+    def jsonrpc_restore_abort(self, backup_id):
+        return api.restore_abort(backup_id)
+
     def jsonrpc_suppliers_list(self):
         return api.suppliers_list()
 
+    def jsonrpc_supplier_replace(self, index_or_idurl):
+        return api.supplier_replace(index_or_idurl)
+
+    def jsonrpc_supplier_change(self, index_or_idurl, new_idurl):
+        return api.supplier_change(index_or_idurl, new_idurl)
+
+    def jsonrpc_suppliers_ping(self):
+        return api.suppliers_ping()
+ 
+    def jsonrpc_space_donated(self):
+        return api.space_donated()
+ 
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)
 

@@ -3,6 +3,7 @@ cd ~
 chmod +x grepnkill
 ./grepnkill loop
 ./grepnkill dhn.py
+./grepnkill bitpie.py
 ./grepnkill bitdust.py
 ./grepnkill sleep
 # sleep 1

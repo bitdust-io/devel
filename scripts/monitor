@@ -1,19 +1,23 @@
 #!/bin/bash
 
-echo "suppliers:"
-cat .bitdust/metadata/supplierids
-echo
+# echo "suppliers:"
+# cat .bitdust/metadata/supplierids
+# echo
 
-echo "customers:"
-cat .bitdust/metadata/customerids
-echo
+# echo "customers:"
+# cat .bitdust/metadata/customerids
+# echo
 
-echo "space:"
-cat .bitdust/metadata/space
-echo
+# echo "space:"
+# cat .bitdust/metadata/space
+# echo
 
-echo "used:"
-cat .bitdust/metadata/spaceused
-echo
+# echo "used:"
+# cat .bitdust/metadata/spaceused
+# echo
+
+# tail -10 log
+
+./bd backups
 
 exit 0

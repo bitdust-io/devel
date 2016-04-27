@@ -1,33 +1,30 @@
 #!/bin/bash
 
 ./stop
-
 # ./reset
-
 ./up
 
-if [ '0' == '1' ]; 
+# ./idcreate "$1"
+
+if [ '1' == '1' ]; 
 then
+  # rm -rf ~/.bitpie
+  # ./bd set services/supplier/enabled true
+  # ./bd set services/proxy-transport/enabled false
+  # ./bd set services/proxy-server/enabled false
+  # ./bd set services/udp-transport/enabled true
+  ./bd set tcp true
+  ./bd set udp true
+  # ./bd set donated 10GB
+  ./bd set debug 8
   rm -rf ~/.bitdust/temp/*
-  rm -rf ~/.bitdust/logs/*
-  rm -rf ~/.bitdust/identitycache/*
-
-  # python bitdust/bitdust.py set suppliers 2
-  # python bitdust/bitdust.py set needed 64 MB
-  # python bitdust/bitdust.py set donated 10 GB
-  # python bitdust/bitdust.py set limit-send 12500000
-  # python bitdust/bitdust.py set limit-receive 12500000
-  # python bitdust/bitdust.py set udp True
-  # python bitdust/bitdust.py set tcp True
-  # python bitdust/bitdust.py set debug 14
-
+  # rm -rf ~/.bitdust/logs/*
+  # rm -rf ~/.bitdust/identitycache/*
+  # rm -rf ~/.bitdust/customers/*
+  # rm ~/.bitdust/metadata/supplierids
+  # rm ~/.bitdust/metadata/customerids
+  # rm ~/.bitdust/metadata/space
 fi
-
-# ps aux | grep -v grep | grep bitdust.py
-# ping megafaq.ru -c 2
-# rm -f ~/.bitdust/metadata/localidentity
-# rm -f ~/.bitdust/metadata/mykeyfile
-# python bitdust/bitdust.py register "f_$1"
 
 ./go
 

@@ -706,7 +706,7 @@ def RequestListFilesAll():
 
 
 def RequestListFiles(supplierNumORidurl):
-    if isinstance(supplierNumORidurl, str):
+    if not str(supplierNumORidurl).isdigit():
         RemoteID = supplierNumORidurl
     else:
         RemoteID = contactsdb.supplier(supplierNumORidurl)

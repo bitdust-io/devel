@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cd ~/bitdust
+
+python bitdust.py id create "bitdust_j_$1"
+
+
+
+

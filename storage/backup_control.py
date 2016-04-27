@@ -670,7 +670,10 @@ def StartRecursive(pathID, localPath=None):
 def IsTaskScheduled(pathID):
     """
     """
-    return pathID in tasks()
+    for t in tasks():
+        if t.pathID == pathID:
+            return True
+    return False
 
 def GetPendingTask(pathID):
     """
@@ -684,6 +687,15 @@ def ListPendingTasks():
     """
     """
     return tasks()
+
+def AbortPendingTask(pathID):
+    """
+    """
+    for t in tasks():
+        if t.pathID == pathID:
+            tasks().remove(t)
+            return True
+    return False
 
 #------------------------------------------------------------------------------ 
 

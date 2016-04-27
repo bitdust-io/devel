@@ -20,6 +20,7 @@ _Debug = True
 #------------------------------------------------------------------------------ 
 
 import os
+import time
 
 from twisted.internet.defer import Deferred, succeed
 
@@ -40,10 +41,12 @@ def OK(result='', message=None, status='OK',):
     o = on_api_result_prepared(o)
     return o
 
-def RESULT(result=[], message=None, status='OK'):
+def RESULT(result=[], message=None, status='OK', errors=None):
     o = {'status': status, 'result': result,}
     if message is not None:
         o['message'] = message
+    if errors is not None:
+        o['errors'] = errors
     o = on_api_result_prepared(o)
     return o
             
@@ -294,7 +297,7 @@ def backups_list():
                    'blocks': max(0, item.versions[v][0]+1),
                    'size': diskspace.MakeStringFromBytes(max(0, item.versions[v][1])),},
                 item.versions.keys())})
-    lg.out(4, 'api.backups_list %s' % result)
+    lg.out(4, 'api.backups_list %d items returned' % len(result))
     return RESULT(result)
 
 
@@ -325,7 +328,7 @@ def backups_id_list():
             'backupid': backupID,
             'size': szver,
             'path': localPath, })
-    lg.out(4, 'api.backups_id_list %s' % result)
+    lg.out(4, 'api.backups_id_list %d items returned' % len(result))
     return RESULT(result)
 
 
@@ -564,7 +567,97 @@ def backup_delete_path(localPath):
     control.request_update([('pathID', pathID),])
     lg.out(4, 'api.backup_delete_path %s was deleted' % pathID)
     return OK('item %s was deleted from remote peers' % pathID)
-        
+
+def backups_queue():
+    """
+    Return a list of paths to be backed up as soon as
+    currently running backups will be finished.
+        "{'status': 'OK',
+          'result': [    
+            {'created': 'Wed Apr 27 15:11:13 2016',
+             'id': 3,
+             'local_path': '/Users/veselin/Downloads/some-ZIP-file.zip',
+             'path_id': '0/0/3/1'}]}"
+    """
+    from storage import backup_control
+    from logs import lg
+    lg.out(4, 'api.backups_queue %d tasks in the queue' % len(backup_control.tasks()))
+    if not backup_control.tasks():
+        return RESULT([], message='there are no tasks in the queue at the moment')
+    return RESULT([{
+        'id': t.number,
+        'path_id': t.pathID,
+        'local_path': t.localPath,
+        'created': time.asctime(time.localtime(t.created)),
+        } for t in backup_control.tasks()])
+
+def backups_running():
+    """
+    Return a list of currently running uploads:
+        "{'status': 'OK',
+          'result': [    
+            {'aborting': False,
+             'backup_id': '0/0/3/1/F20160424013912PM',
+             'block_number': 4,
+             'block_size': 16777216,
+             'bytes_processed': 67108864,
+             'closed': False,
+             'eccmap': 'ecc/4x4',
+             'eof_state': False,
+             'pipe': 0,
+             'progress': 75.0142815704418,
+             'reading': False,
+             'source_path': '/Users/veselin/Downloads/some-ZIP-file.zip',
+             'terminating': False,
+             'total_size': 89461450,
+             'work_blocks': 4}
+        ]}"    
+    """
+    from storage import backup_control
+    from logs import lg
+    lg.out(4, 'api.backups_running %d items running at the moment' % len(backup_control.jobs()))
+    if not backup_control.jobs():
+        return RESULT([], message='there are no jobs running at the moment')
+    return RESULT([{
+        'backup_id': j.backupID,
+        'source_path': j.sourcePath,
+        'eccmap': j.eccmap.name,
+        'pipe': 'closed' if not j.pipe else j.pipe.state(),
+        'block_size': j.blockSize,
+        'aborting': j.ask4abort,
+        'terminating': j.terminating,
+        'eof_state': j.stateEOF,
+        'reading': j.stateReading,
+        'closed': j.closed,
+        'work_blocks': len(j.workBlocks),
+        'block_number': j.blockNumber,
+        'bytes_processed': j.dataSent,
+        'progress': j.progress(),
+        'total_size': j.totalSize,
+        } for j in backup_control.jobs().values()])
+
+def backup_cancel_pending(path_id):
+    """
+    Cancel pending task to backup given item from catalog. 
+    """
+    from storage import backup_control
+    from logs import lg
+    lg.out(4, 'api.backup_cancel_pending %s' % path_id)
+    if not backup_control.AbortPendingTask(path_id):
+        return ERROR(path_id, message='item %s is present in pending queue' % path_id)
+    return OK(path_id, message='item %s cancelled' % path_id)
+
+def backup_abort_running(backup_id):
+    """
+    Abort currently running backup.
+    """
+    from storage import backup_control
+    from logs import lg
+    lg.out(4, 'api.backup_abort_running %s' % backup_id)
+    if not backup_control.AbortRunningBackup(backup_id):
+        return ERROR(backup_id, message='backup %s is not running at the moment' % backup_id)
+    return OK(backup_id, message='backup %s aborted' % backup_id)
+
 #------------------------------------------------------------------------------ 
 
 def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
@@ -645,6 +738,51 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
     lg.out(4, 'api.restore_single %s OK!' % backupID)
     return OK('downloading of version %s has been started to %s' % (backupID, restoreDir))
 
+def restores_running():
+    """
+    Return a list of currently running downloads:
+    Return:
+        { u'result': [ { 'aborted': False,
+                         'backup_id': '0/0/3/1/F20160427011209PM',
+                         'block_number': 0,
+                         'bytes_processed': 0,
+                         'creator_id': 'http://veselin-p2p.ru/veselin.xml',
+                         'done': False,
+                         'created': 'Wed Apr 27 15:11:13 2016',
+                         'eccmap': 'ecc/4x4',
+                         'path_id': '0/0/3/1',
+                         'version': 'F20160427011209PM'}],
+          u'status': u'OK'}    
+    """
+    from storage import restore_monitor
+    from logs import lg
+    lg.out(4, 'api.restores_running %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
+    if not restore_monitor.GetWorkingObjects():
+        return RESULT([], message='there are no downloads running at the moment')
+    return RESULT([{
+        'backup_id': r.BackupID,
+        'creator_id': r.CreatorID,
+        'path_id': r.PathID,
+        'version': r.Version,
+        'block_number': r.BlockNumber,
+        'bytes_processed': r.BytesWritten,
+        'created': time.asctime(time.localtime(r.Started)),
+        'aborted': r.AbortState,
+        'done': r.Done,
+        'eccmap': '' if not r.EccMap else r.EccMap.name,
+        } for r in restore_monitor.GetWorkingObjects()])
+
+def restore_abort(backup_id):
+    """
+    Abort currently running restore process.
+    """
+    from storage import restore_monitor
+    from logs import lg
+    lg.out(4, 'api.restore_abort %s' % backup_id)
+    if not restore_monitor.Abort(backup_id):
+        return ERROR(backup_id, 'item %s is not restoring at the moment' % backup_id)
+    return OK(backup_id, 'restoring of %s were aborted' % backup_id)
+    
 #------------------------------------------------------------------------------ 
 
 def suppliers_list():
@@ -652,13 +790,148 @@ def suppliers_list():
     List of suppliers - nodes who stores my data on own machines.
     """
     from contacts import contactsdb
+    from p2p import contact_status
     from lib import misc
     return RESULT([{
         'position': s[0],
         'idurl': s[1],
         'connected': misc.readSupplierData(s[1], 'connected'),
         'numfiles': len(misc.readSupplierData(s[1], 'listfiles').split('\n'))-1,
+        'status': contact_status.getStatusLabel(s[1]) 
         } for s in enumerate(contactsdb.suppliers())])
+
+def supplier_replace(index_or_idurl):
+    """
+    Execute a fire/hire process of one supplier,
+    another random node will replace this supplier.
+    As soon as new supplier will be found and connected,
+    rebuilding of all uploaded data will be started and
+    the new node will start getting a reconstructed fragments.
+    """
+    from contacts import contactsdb
+    idurl = index_or_idurl
+    if idurl.isdigit():
+        idurl = contactsdb.supplier(int(idurl))
+    if idurl and contactsdb.is_supplier(idurl):
+        from customer import fire_hire
+        fire_hire.AddSupplierToFire(idurl)
+        fire_hire.A('restart')
+        return OK('supplier %s will be replaced by new peer' % idurl)
+    return ERROR('supplier not found')
+
+def supplier_change(index_or_idurl, new_idurl):
+    """
+    Doing same as supplier_replace() but new node is provided directly.
+    """
+    from contacts import contactsdb
+    idurl = index_or_idurl
+    if idurl.isdigit():
+        idurl = contactsdb.supplier(int(idurl))
+    if not idurl or not contactsdb.is_supplier(idurl):
+        return ERROR('supplier not found')
+    if contactsdb.is_supplier(new_idurl):
+        return ERROR('peer %s is your supplier already' % new_idurl)
+    from customer import fire_hire
+    from customer import supplier_finder
+    supplier_finder.AddSupplierToHire(new_idurl)
+    fire_hire.AddSupplierToFire(idurl)
+    fire_hire.A('restart')
+    return OK('supplier %s will be replaced by %s' % (idurl, new_idurl))
+
+def suppliers_ping():
+    """
+    Send short requests to all suppliers to get their their current statuses.
+    """
+    from p2p import propagate
+    propagate.SlowSendSuppliers(0.1)
+    return OK('requests to all suppliers was sent')
+    
+#------------------------------------------------------------------------------ 
+
+def customers_list():
+    """
+    List of customers - nodes who stores own data on your machine.
+    """
+    from contacts import contactsdb
+    from p2p import contact_status
+    return RESULT([{
+        'position': s[0],
+        'idurl': s[1],
+#         'connected': misc.readSupplierData(s[1], 'connected'),
+#         'numfiles': len(misc.readSupplierData(s[1], 'listfiles').split('\n'))-1,
+        'status': contact_status.getStatusLabel(s[1]) 
+        } for s in enumerate(contactsdb.customers())])
+
+#------------------------------------------------------------------------------
+
+def space_donated():
+    """
+    Return detailed statistics about your donated space usage.
+    """
+    from logs import lg
+    from system import bpio
+    from main import settings
+    from contacts import contactsdb
+    space_dict = bpio._read_dict(settings.CustomersSpaceFile(), {})
+    used_space_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
+    result = []
+    errors = []
+    consumed = 0
+    used = 0
+    try:
+        free = int(space_dict.pop('free'))
+    except:
+        free = 0
+    donated = settings.getDonatedBytes()
+    for idurl in contactsdb.customers():
+        consumed_by_customer = 0
+        used_by_customer = 0
+        if idurl not in space_dict.keys():
+            errors.append('space consumed by customer %s is unknown' % idurl)
+        else:
+            try:
+                consumed_by_customer = int(space_dict.pop(idurl))
+                consumed += consumed_by_customer
+            except:
+                errors.append('incorrect value of consumed space for customer %s' % idurl)
+        if idurl in used_space_dict.keys():
+            try:
+                used_by_customer = int(used_space_dict.pop(idurl))
+                used += used_by_customer
+            except:
+                errors.append('incorrect value of used space for customer %s' % idurl)
+        if consumed_by_customer < used_by_customer:
+            errors.append('customer %s currently using more space than requested' % idurl)
+        result.append({
+            'idurl': idurl,
+            'used': used_by_customer,
+            'consumed': consumed_by_customer,
+            })
+    if donated < free + consumed:
+        errors.append('total consumed %d bytes and known free %d bytes greater than donated %d bytes' % (
+            consumed, free, donated))
+    if used > donated:
+        errors.append('total space used by customers exceed the donated limit')
+    if len(space_dict) > 0:
+        errors.append('found %d incorrect records of consumed space' % len(space_dict))
+    if len(used_space_dict) > 0:
+        errors.append('found %d incorrect records of used space' % len(used_space_dict))
+    msg = "donated=%d, consumed=%d, free=%d, used=%d, customers=%d" % (
+        donated, consumed, free, used, len(contactsdb.customers()))
+    lg.out(4, 'api.space_donated finished with %d results and %d errors, %s' % (
+        len(result), len(errors), msg))
+    response = RESULT(result, message=msg, errors=errors)
+    response['donated'] = donated
+    response['consumed'] = consumed
+    response['free'] = free
+    response['used'] = used
+    response['customers'] = len(contactsdb.customers())
+    return response
+
+def space_consumed():
+    """
+    """
+    return RESULT([])
 
 #------------------------------------------------------------------------------ 
 
@@ -685,8 +958,6 @@ def ping(idurl, timeout=10):
         lambda err: result.callback(
             ERROR(err.getErrorMessage())))
     return result
-    
-#------------------------------------------------------------------------------ 
 
 #------------------------------------------------------------------------------ 
 

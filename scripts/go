@@ -4,6 +4,7 @@ cd ~
 chmod +x grepnkill
 ./grepnkill loop
 # sleep 1
+./grepnkill bitpie.py
 ./grepnkill bitdust.py
 # sleep 1
 chmod +x loop

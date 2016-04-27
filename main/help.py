@@ -36,9 +36,15 @@ Commands:
   backup start <local path or ID>
   backup delete <local path, ID or full version ID>
   backup delete local <full backup ID>
+  backup abort <path ID or full backup ID>
+  backup queue
+  backup running
   backup update
-  restore <backup ID> 
-  restore <backup ID> <destination folder> 
+  restore list
+  restore start <backup ID> 
+  restore start <backup ID> <destination folder>
+  restore abort <backup ID>
+  restore running 
   set <option> [value]
   set list
   api <method> [params]
@@ -104,12 +110,19 @@ Commands:
                         
   backup update         request all suppliers to update info for all backups 
   
-  restore <local path or ID> [destination path]
+  restore list          show a list of items already uploaded on remote peers
+  
+  restore start <local path or ID> [destination path]
                         download personal data back to local machine
                         from remote peers, you can specify 
                         the destination path on your local drive,
                         WARNING! source path is default location,
-                        so it will overwrite existing files by default
+                        so it will overwrite existing files by default                        
+                        
+  restore abort <backup ID>
+                        abort currently running restore process of given item
+                        
+  restore progress      show currently running restores 
 
   set <option> [value]  to get/set program setting
   

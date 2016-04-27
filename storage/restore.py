@@ -133,12 +133,14 @@ class restore(automat.Automat):
         self.PathID, self.Version = packetid.SplitBackupID(self.BackupID)
         self.File = OutputFile
         # is current active block - so when add 1 we get to first, which is 0
-        self.BlockNumber = -1              
+        self.BlockNumber = -1
+        self.BytesWritten = 0          
         self.OnHandData = []
         self.OnHandParity = []
         self.AbortState = False
         self.Done = False
         self.EccMap = eccmap.Current()
+        self.Started = time.time()
         self.LastAction = time.time()
         self.InboxPacketsQueue = []
         self.InboxQueueWorker = None
@@ -384,8 +386,11 @@ class restore(automat.Automat):
         # Add to the file where all the data is going
         try:
             os.write(self.File, data)
+            self.BytesWritten += len(data)
         except:
             lg.exc()
+            #TODO Error handling...
+            return
         if self.blockRestoredCallback is not None:
             self.blockRestoredCallback(self.BackupID, NewBlock)
     
@@ -443,7 +448,7 @@ class restore(automat.Automat):
     def doReportFailed(self, arg):
         lg.out(6, "restore.doReportFailed ERROR %s : the block does not look good" % str(arg))
         self.Done = True
-        self.MyDeferred.errback(Exception(self.BackupID+' failed'))
+        self.MyDeferred.errback(self.BackupID+' failed')
         events.notify('restore', '%s failed to restore block number %d' % (self.BackupID, self.BlockNumber))
     
     def doReportDone(self, arg):

@@ -1,9 +1,10 @@
 #!/bin/bash
 
 rm -rf bitdust
-git clone http://gitlab.bitdust.io/devel/bitdust.git
+git clone http://gitlab.bitdust.io/devel/bitdust.devel.git
+mv bitdust.devel bitdust
 cd bitdust
-git config --global user.email "veselin@vps"
+git config --global user.email "vesellov@gmail.com"
 git config --global user.name "Veselin VPS"
 git status
 cd ..

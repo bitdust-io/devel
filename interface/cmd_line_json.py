@@ -20,7 +20,7 @@ from twisted.internet import reactor
 from lib.fastjsonrpc.client import Proxy as jsonProxy  
 from lib import jsontemplate
 
-from interface.cmd_line_json_templates import *
+from interface import cmd_line_json_templates as templ
 
 #------------------------------------------------------------------------------ 
 
@@ -432,21 +432,31 @@ def cmd_key(opts, args, overDict, running, executablePath):
 #------------------------------------------------------------------------------ 
 
 def cmd_api(opts, args, overDict, executablePath):
-    tpl = jsontemplate.Template(TPL_RAW)
-    return call_jsonrpc_method_template_and_stop(args[1], tpl, *args[2:])
+    return call_jsonrpc_method_and_stop(args[1], *args[2:])
 
 #------------------------------------------------------------------------------ 
 
-def cmd_backups(opts, args, overDict, executablePath):
-    if len(args) < 2 or args[1] == 'list':
-        tpl = jsontemplate.Template(TPL_BACKUPS_LIST)
+def cmd_backup(opts, args, overDict, executablePath):
+    if len(args) < 2 or args[1] in ['list', 'ls']:
+        tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
         return call_jsonrpc_method_template_and_stop('backups_list', tpl)
 
-    if len(args) < 2 or args[1] == 'idlist':
-        tpl = jsontemplate.Template(TPL_BACKUPS_LIST_IDS)
+    if len(args) == 1 and args[1] in ['idlist', 'ids']:
+        tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
         return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
 
-    tpl = jsontemplate.Template(TPL_RAW)
+    if len(args) == 1 and args[1] in ['update', 'upd', 'refresh', 'sync']:
+        return call_jsonrpc_method_template_and_stop('backups_update', tpl)
+    
+    if len(args) >= 2 and args[1] in ['running', 'progress', 'status']:
+        tpl = jsontemplate.Template(templ.TPL_BACKUPS_RUNNING_LIST)
+        return call_jsonrpc_method_template_and_stop('backups_running', tpl)
+
+    if len(args) >= 2 and args[1] in ['queue', 'pending', 'qu', 'tasks']:
+        tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
+        return call_jsonrpc_method_template_and_stop('backups_queue', tpl)
+
+    tpl = jsontemplate.Template(templ.TPL_RAW)
     if len(args) >= 2 and args[1] == 'add':
         if os.path.isdir(args[2]):
             return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2])
@@ -461,8 +471,25 @@ def cmd_backups(opts, args, overDict, executablePath):
             return 1
         return call_jsonrpc_method_template_and_stop('backup_tree_add', tpl, args[2])        
         
-    if args[1] == 'start' and len(args) >= 3:
-        from lib import packetid
+    from lib import packetid
+    if len(args) >= 3 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ]:
+        if args[2] == 'local':
+            if len(args) < 4:
+                return 2
+            return call_jsonrpc_method_template_and_stop('backup_delete_local', tpl, args[3])
+        if packetid.Valid(args[2]):
+            return call_jsonrpc_method_template_and_stop('backup_delete_id', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('backup_delete_path', tpl, args[2])
+
+    if len(args) > 2 and args[1] in ['cancel', 'abort']:
+        if packetid.IsBackupIDCorrect(args[2]):
+            return call_jsonrpc_method_template_and_stop('backup_abort_running', tpl, args[2])
+        if packetid.IsPathIDCorrect(args[2]):
+            return call_jsonrpc_method_template_and_stop('backup_cancel_pending', tpl, args[2])
+        print_text('path %s not exist\n' % args[2])
+        return 1
+
+    if len(args) > 2 and args[1] == 'start':
         if packetid.Valid(args[2]):
             return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[2])
         if not os.path.exists(os.path.abspath(args[2])):
@@ -470,34 +497,38 @@ def cmd_backups(opts, args, overDict, executablePath):
             return 1
         return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[2])
 
-    if args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ] and len(args) >= 3:
-        if args[2] == 'local':
-            if len(args) < 4:
-                return 2
-            return call_jsonrpc_method_template_and_stop('backup_delete_local', tpl, args[3])
-        from lib import packetid
-        if packetid.Valid(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_delete_id', tpl, args[2])
-        return call_jsonrpc_method_template_and_stop('backup_delete_path', tpl, args[2])
-    
-    elif args[1] == 'update':
-        return call_jsonrpc_method_template_and_stop('backups_update', tpl)
-    
+    if len(args) == 2:
+        if packetid.Valid(args[1]):
+            return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[1])
+        if not os.path.exists(os.path.abspath(args[1])):
+            print_text('path %s not exist\n' % args[1])
+            return 1
+        return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[1])
+
     return 2
 
 #------------------------------------------------------------------------------ 
 
 def cmd_restore(opts, args, overDict, executablePath):
-    if len(args) < 2 or args[1] == 'list':
-        tpl = jsontemplate.Template(TPL_BACKUPS_LIST)
-        return call_jsonrpc_method_template_and_stop('backups_list', tpl)
+    if len(args) < 2 or args[1] in ['list', 'ls']:
+        tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
+        return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
+
+    if len(args) >= 2 and args[1] in ['running', 'progress', 'status']:
+        tpl = jsontemplate.Template(templ.TPL_RESTORES_RUNNING_LIST)
+        return call_jsonrpc_method_template_and_stop('restores_running', tpl)
     
+    tpl = jsontemplate.Template(templ.TPL_RAW)
+    if len(args) > 2 and args[1] in ['cancel', 'abort']:
+        return call_jsonrpc_method_template_and_stop('restore_abort', tpl, args[2])
+
+    if len(args) > 2 and args[1] in ['start',]:
+        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[2])
+
     if len(args) == 2:
-        tpl = jsontemplate.Template(TPL_RAW)
         return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1])
     
-    elif len(args) == 3:
-        tpl = jsontemplate.Template(TPL_RAW)
+    if len(args) == 3:
         return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1], args[2])
     
     return 2    
@@ -610,7 +641,7 @@ def cmd_set(opts, args, overDict):
         settings.init()
         sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
         result = api.config_list(sort)
-        tpl = jsontemplate.Template(TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
+        tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         print_template(result, tpl)
         return 0 
     path = '' if len(args) < 2 else args[1]
@@ -622,7 +653,7 @@ def cmd_set(opts, args, overDict):
             result = api.config_set(path, unicode(value))
         else:
             result = api.config_get(path)
-        tpl = jsontemplate.Template(TPL_OPTION_MODIFIED)
+        tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
         print_template(result, tpl)
         return 0
     return 2
@@ -632,106 +663,55 @@ def cmd_set_request(opts, args, overDict):
     name = args[1].lower()
     if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
         sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
-        tpl = jsontemplate.Template(TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
+        tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         return call_jsonrpc_method_template_and_stop('config_list', tpl, sort)
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)    
     if len(args) == 2:
-        tpl = jsontemplate.Template(TPL_OPTION_SINGLE)
+        tpl = jsontemplate.Template(templ.TPL_OPTION_SINGLE)
         return call_jsonrpc_method_template_and_stop('config_get', tpl, path)
     value = ' '.join(args[2:])
-    tpl = jsontemplate.Template(TPL_OPTION_MODIFIED)
+    tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
     return call_jsonrpc_method_template_and_stop('config_set', tpl, path, value)
 
 #------------------------------------------------------------------------------ 
 
-
 def cmd_suppliers(opts, args, overDict):
-#     def _wait_replace_supplier_and_stop(src, supplier_name, count=0):
-#         suppliers = []
-#         for s in find_comments(src):
-#             if s.count('[online ]') or s.count('[offline]'):
-#                 suppliers.append(s[18:38].strip())
-#         if supplier_name not in suppliers:
-#             print '  supplier %s is fired !' % supplier_name
-#             print_and_stop(src)
-#             return
-#         if count >= 60:
-#             print ' time is out\n'
-#             reactor.stop()
-#             return
-#         else:
-#             def _check_again(supplier_name, count):
-#                 sys.stdout.write('.')
-#                 run_url_command(webcontrol._PAGE_SUPPLIERS).addCallback(_wait_replace_supplier_and_stop, supplier_name, count)
-#             reactor.callLater(1, _check_again, supplier_name, count+1)
-
     if len(args) < 2 or args[1] in [ 'list', 'ls' ]:
-        tpl = jsontemplate.Template(TPL_SUPPLIERS)
+        tpl = jsontemplate.Template(templ.TPL_SUPPLIERS)
         return call_jsonrpc_method_template_and_stop('suppliers_list', tpl)
 
-#     elif args[1] in [ 'call', 'cl' ]:
-#         url = webcontrol._PAGE_SUPPLIERS + '?action=call'
-#         run_url_command(url).addCallback(print_and_stop)
-#         reactor.run()
-#         return 0
-# 
-#     elif args[1] in [ 'replace', 'rep', 'rp' ] and len(args) >= 3:
-#         contactsdb.init()
-#         idurl = args[2].strip()
-#         if not idurl.startswith('http://'):
-#             try:
-#                 idurl = contactsdb.supplier(int(idurl))
-#             except:
-#                 idurl = ''
-#         if not idurl:
-#             print 'supplier IDURL is unknown\n'
-#             return 0
-#         name = nameurl.GetName(idurl)
-#         url = webcontrol._PAGE_SUPPLIERS + '?action=replace&idurl=%s' % misc.pack_url_param(idurl)
-#         run_url_command(url).addCallback(_wait_replace_supplier_and_stop, name, 0)
-#         reactor.run()
-#         return 0
-#     
-#     elif args[1] in [ 'change', 'ch' ] and len(args) >= 4:
-#         contactsdb.init()
-#         idurl = args[2].strip()
-#         if not idurl.startswith('http://'):
-#             try:
-#                 idurl = contactsdb.supplier(int(idurl))
-#             except:
-#                 idurl = ''
-#         if not idurl:
-#             print 'supplier IDURL is unknown\n'
-#             return 0
-#         newidurl = args[3].strip()
-#         name = nameurl.GetName(idurl)
-#         newname = nameurl.GetName(newidurl)
-#         url = webcontrol._PAGE_SUPPLIERS + '?action=change&idurl=%s&newidurl=%s' % (misc.pack_url_param(idurl), misc.pack_url_param(newidurl))
-#         run_url_command(url).addCallback(_wait_replace_supplier_and_stop, name, 0)
-#         reactor.run()
-#         return 0
-    
+    elif args[1] in [ 'ping', 'test', 'call', 'cl' ]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('suppliers_ping', tpl)
+ 
+    elif args[1] in [ 'fire', 'replace', 'rep', 'rp' ] and len(args) >= 3:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('supplier_replace', tpl, args[2])
+
+    elif args[1] in [ 'hire', 'change', 'ch', ] and len(args) >= 4:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('supplier_change', tpl, args[2], args[3])
     return 2
 
 #------------------------------------------------------------------------------ 
 
 def cmd_message(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
-        tpl = jsontemplate.Template(TPL_RAW)
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('list_messages', tpl)
     if len(args) >= 4 and args[1] in [ 'send', ]:
-        tpl = jsontemplate.Template(TPL_MESSAGE_SENDING)
+        tpl = jsontemplate.Template(templ.TPL_MESSAGE_SENDING)
         return call_jsonrpc_method_template_and_stop('send_message', tpl, args[2], args[3]) 
     return 2
 
 #------------------------------------------------------------------------------ 
 
 def cmd_friend(opts, args, overDict):
-    tpl_lookup = jsontemplate.Template(TPL_FRIEND_LOOKUP)
-    tpl_add = jsontemplate.Template(TPL_RAW)
+    tpl_lookup = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP)
+    tpl_add = jsontemplate.Template(templ.TPL_RAW)
     if len(args) < 2:
-        tpl = jsontemplate.Template(TPL_FRIEND_LOOKUP_REPEATED_SECTION)
+        tpl = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
         return call_jsonrpc_method_template_and_stop('list_correspondents', tpl)
     elif len(args) > 2 and args[1] in [ 'check', 'nick', 'nickname', 'test', ]:
         return call_jsonrpc_method_template_and_stop('find_peer_by_nickname', tpl_lookup, unicode(args[2]))
@@ -935,7 +915,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     if cmd == 'ping' or cmd == 'call' or cmd == 'sendid':
         if len(args) < 1:
             return 2
-        tpl = jsontemplate.Template(TPL_RAW)
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('ping', tpl, args[1])            
                 
     #---set---
@@ -981,7 +961,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0
-        return cmd_backups(opts, args, overDict, executablePath)
+        return cmd_backup(opts, args, overDict, executablePath)
 
     #---restore---
     elif cmd in ['restore', 'rest', 'download', 'down',]:

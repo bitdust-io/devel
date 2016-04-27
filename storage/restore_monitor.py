@@ -163,6 +163,11 @@ def GetWorkingIDs():
     return _WorkingBackupIDs.keys()
 
 
+def GetWorkingObjects():
+    global _WorkingBackupIDs
+    return _WorkingBackupIDs.values()
+
+
 def IsWorking(backupID):
     global _WorkingBackupIDs
     return backupID in _WorkingBackupIDs.keys()
