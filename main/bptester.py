@@ -124,12 +124,12 @@ def SpaceTime():
         timedict = {}
         sizedict = {}
         def cb(path, subpath, name):
-            if not os.access(path, os.R_OK | os.W_OK):
-                return False
+#             if not os.access(path, os.R_OK | os.W_OK):
+#                 return False
             if not os.path.isfile(path):
                 return True
-            if name in [settings.BackupIndexFileName(),]:
-                return False
+#             if name in [settings.BackupIndexFileName(),]:
+#                 return False
             stats = os.stat(path)
             timedict[path] = stats.st_ctime
             sizedict[path] = stats.st_size
@@ -159,8 +159,11 @@ def SpaceTime():
             except:
                 printlog('SpaceTime ERROR removing ' + path)
             continue
-        if not os.access(path, os.W_OK):
-            os.chmod(path, 0600)
+        try:
+            if not os.access(path, os.W_OK):
+                os.chmod(path, 0600)
+        except:
+            pass
         try:
             os.remove(path)
             printlog('SpaceTime ' + path + ' file removed (%s)' % (remove_list[path]))
@@ -207,8 +210,11 @@ def UpdateCustomers():
             except:
                 printlog('UpdateCustomers ERROR removing ' + path)
             continue
-        if not os.access(path, os.W_OK):
-            os.chmod(path, 0600)
+        try:
+            if not os.access(path, os.W_OK):
+                os.chmod(path, 0600)
+        except:
+            pass
         try:
             os.remove(path)
             printlog('UpdateCustomers ' + path + ' file removed (%s)' % (remove_list[path]))
@@ -233,12 +239,12 @@ def Validate():
         if not os.path.isdir(onecustdir):
             continue
         def cb(path, subpath, name):
-            if not os.access(path, os.R_OK | os.W_OK):
-                return False
+#             if not os.access(path, os.R_OK | os.W_OK):
+#                 return False
             if not os.path.isfile(path):
                 return True
-            if name in [settings.BackupIndexFileName(),]:
-                return False
+#             if name in [settings.BackupIndexFileName(),]:
+#                 return False
             packetsrc = bpio.ReadBinaryFile(path)
             if not packetsrc:
                 try:
