@@ -876,6 +876,9 @@ def customer_reject(idurl):
     from lib import packetid
     if not contactsdb.is_customer(idurl):
         return ERROR('customer not found')
+    # send packet to notify about service from us was rejected
+    # TODO - this is not yet handled on other side
+    p2p_service.SendFailNoRequest(idurl, packetid.UniqueID(), 'service rejected')
     # remove from customers list
     current_customers = contactsdb.customers()
     current_customers.remove(idurl)
@@ -887,12 +890,9 @@ def customer_reject(idurl):
     consumed_space = accounting.count_consumed_space(space_dict)
     space_dict['free'] = settings.getDonatedBytes() - int(consumed_space)
     accounting.write_customers_quotas(space_dict)
-    # send packet to notify about service from us was rejected
-    # TODO - this is not yet handled on other side
-    p2p_service.SendFailNoRequest(idurl, packetid.UniqueID(), 'service rejected')
     # restart local tester    
     local_tester.TestUpdateCustomers()
-    return OK('customer %s rejected, %d bytes were freed' % (idurl, consumed_by_cutomer))
+    return OK('customer %s rejected, %s bytes were freed' % (idurl, consumed_by_cutomer))
 
 def customers_ping():
     """
