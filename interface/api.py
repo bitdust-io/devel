@@ -800,7 +800,7 @@ def suppliers_list():
         'idurl': s[1],
         'connected': misc.readSupplierData(s[1], 'connected'),
         'numfiles': len(misc.readSupplierData(s[1], 'listfiles').split('\n'))-1,
-        'status': contact_status.getStatusLabel(s[1]) 
+        'status': contact_status.getStatusLabel(s[1]),
         } for s in enumerate(contactsdb.suppliers())])
 
 def supplier_replace(index_or_idurl):
@@ -843,7 +843,7 @@ def supplier_change(index_or_idurl, new_idurl):
 
 def suppliers_ping():
     """
-    Send short requests to all suppliers to get their their current statuses.
+    Send short requests to all suppliers to get their current statuses.
     """
     from p2p import propagate
     propagate.SlowSendSuppliers(0.1)
@@ -893,6 +893,16 @@ def customer_reject(idurl):
     # restart local tester    
     local_tester.TestUpdateCustomers()
     return OK('customer %s rejected, %d bytes were freed' % (idurl, consumed_by_cutomer))
+
+def customers_ping():
+    """
+    Send Identity packet to all customers to check their current statuses.
+    Every node will reply with Ack packet on any valid incoming Identiy packet.  
+    """
+    from p2p import propagate
+    propagate.SlowSendCustomers(0.1)
+    return OK('requests to all customers was sent')
+    
 
 #------------------------------------------------------------------------------
 

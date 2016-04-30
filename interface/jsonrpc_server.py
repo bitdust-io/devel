@@ -191,8 +191,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_customers_list(self):
         return api.customers_list()
 
-    def jsonrpc_customer_remove(self, index_or_idurl):
-        return api.supplier_replace(index_or_idurl)
+    def jsonrpc_customer_reject(self, idurl):
+        return api.customer_reject(idurl)
+
+    def jsonrpc_customers_ping(self):
+        return api.customers_ping()
  
     def jsonrpc_space_donated(self):
         return api.space_donated()

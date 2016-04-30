@@ -171,7 +171,7 @@ def report_donated_storage():
     if len(space_dict) > 0:
         result['errors'].append('found %d incorrect records of consumed space' % len(space_dict))
     if result['real'] != result['used']:
-        result['errors'].append('current info is not correct, known size is %d bytes but real is %d bytes' % (
+        result['errors'].append('current info needs update, known size is %d bytes but real is %d bytes' % (
             result['used'], result['real']))
     for idurl in used_space_dict.keys():
         result['oldcustomers'].append({
