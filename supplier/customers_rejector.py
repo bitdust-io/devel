@@ -37,6 +37,8 @@ from lib import packetid
 
 from p2p import p2p_service
 
+from storage import accounting
+
 #------------------------------------------------------------------------------ 
 
 _CustomersRejector = None
@@ -108,7 +110,59 @@ class CustomersRejector(automat.Automat):
 
     def doTestMyCapacity(self, arg):
         """
-        Action method.
+        Here are some values.
+            + donated_bytes : you set this in the configs
+            + consumed_bytes : how many space was taken from you by other users
+            + free_bytes = donated_bytes - consumed_bytes : not yet allocated space
+            + used_bytes : size of all files, which you store on your disk for your customers
+            + ratio : currently used space compared to consumed space    
+        """
+        lg.out(8, 'customers_rejector.doTestMyCapacity')
+        failed_customers = set()
+        current_customers = contactsdb.customers()
+        donated_bytes = settings.getDonatedBytes()
+        space_dict = accounting.read_customers_quotas()
+        used_dict = accounting.read_customers_usage()        
+        unknown_customers, unused_quotas = accounting.validate_customers_quotas(space_dict)
+        failed_customers.update(unknown_customers)
+        for idurl in unknown_customers:
+            space_dict.pop(idurl)
+        for idurl in unused_quotas:
+            space_dict.pop(idurl)
+        consumed_bytes = accounting.count_consumed_space(space_dict)
+        space_dict['free'] = donated_bytes - consumed_bytes
+        if consumed_bytes < donated_bytes and len(failed_customers) == 0:
+            accounting.write_customers_quotas(space_dict)
+            lg.out(8, '        space is OK !!!!!!!!')
+            self.automat('space-enough')
+            return
+        if failed_customers:
+            lg.out(8, '        found FAILED Customers:\n%s' % (
+                '            \n'.join(failed_customers)))
+            for idurl in failed_customers:
+                current_customers.remove(idurl)
+            self.automat('space-overflow', (
+                space_dict, consumed_bytes, current_customers, failed_customers))
+            return
+        used_space_ratio_dict = accounting.calculate_customers_usage_ratio(space_dict, used_dict)
+        customers_sorted = sorted(current_customers, 
+            key=lambda idurl: used_space_ratio_dict[idurl],)
+        while len(customers_sorted) > 0 and consumed_bytes > donated_bytes:
+            idurl = customers_sorted.pop()
+            allocated_bytes = int(space_dict[idurl])
+            consumed_bytes -= allocated_bytes
+            space_dict.pop(idurl)
+            failed_customers.add(idurl)
+            current_customers.remove(idurl)
+            lg.out(8, '        customer %s will be REMOVED' % idurl)
+        space_dict['free'] = donated_bytes - consumed_bytes
+        lg.out(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
+        self.automat('space-overflow', (
+            space_dict, consumed_bytes, current_customers, failed_customers))
+        
+    def doTestMyCapacity2(self, arg):
+        """
+        Here are some values.
             - donated_bytes : you set this in the config
             - spent_bytes : how many space is taken from you by other users right now
             - free_bytes = donated_bytes - spent_bytes : not yet allocated space
@@ -209,7 +263,7 @@ class CustomersRejector(automat.Automat):
         space_dict, spent_bytes, current_customers, removed_customers = arg
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
-        bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
+        accounting.write_customers_quotas(space_dict)
         
     def doSendRejectService(self, arg):
         """
@@ -218,6 +272,7 @@ class CustomersRejector(automat.Automat):
         space_dict, spent_bytes, current_customers, removed_customers = arg
         for customer_idurl in removed_customers:
             p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
+        self.automat('packets-sent')
         
     def doRestartLocalTester(self, arg):
         """

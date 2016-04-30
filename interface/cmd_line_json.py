@@ -696,6 +696,23 @@ def cmd_suppliers(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
+def cmd_customers(opts, args, overDict):
+    if len(args) < 2 or args[1] in [ 'list', 'ls' ]:
+        tpl = jsontemplate.Template(templ.TPL_CUSTOMERS)
+        return call_jsonrpc_method_template_and_stop('customers_list', tpl)
+
+    elif args[1] in [ 'ping', 'test', 'call', 'cl' ]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('customers_ping', tpl)
+ 
+    elif args[1] in [ 'reject', 'refuse', 'remove', 'delete', 'rm', 'free', 'del', ] and len(args) >= 3:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('customer_reject', tpl, args[2])
+
+    return 2
+
+#------------------------------------------------------------------------------ 
+
 def cmd_message(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -949,6 +966,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             return 0
         return cmd_suppliers(opts, args, overDict)
     
+    #---customers---
+    elif cmd in [ 'customers', 'customer', 'cus', 'cust', 'cu']:
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_customers(opts, args, overDict)
+
     #---friends---
     elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy' or cmd == 'correspondent' or cmd == 'contact' or cmd == 'peer':
         if not running:

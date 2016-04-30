@@ -12,21 +12,17 @@
 
 """
 
-import os
-
 from twisted.internet import reactor
 
 #------------------------------------------------------------------------------ 
 
 from logs import lg
 
-from system import bpio
-
-from main import settings
-
 from services.local_service import LocalService
 
 from contacts import contactsdb
+
+from storage import accounting
 
 #------------------------------------------------------------------------------ 
 
@@ -60,11 +56,9 @@ class SupplierService(LocalService):
             lg.warn("wrong storage value : %s" % request.Payload)
             return p2p_service.SendFail(request, 'wrong storage value')
         current_customers = contactsdb.customers()
-        donated_bytes = settings.getDonatedBytes()
-        if not os.path.isfile(settings.CustomersSpaceFile()):
-            bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
+        if accounting.check_create_customers_quotas():
             lg.out(6, 'service_supplier.request created a new space file')
-        space_dict = bpio._read_dict(settings.CustomersSpaceFile())
+        space_dict = accounting.read_customers_quotas()
         try:
             free_bytes = int(space_dict['free'])
         except:
@@ -88,7 +82,7 @@ class SupplierService(LocalService):
         if free_bytes <= bytes_for_customer:
             contactsdb.update_customers(current_customers)
             contactsdb.save_customers()
-            bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
+            accounting.write_customers_quotas(space_dict)
             reactor.callLater(0, local_tester.TestUpdateCustomers)
             if new_customer:
                 lg.out(8, "    NEW CUSTOMER - DENIED !!!!!!!!!!!    not enough space")
@@ -100,7 +94,7 @@ class SupplierService(LocalService):
         space_dict[request.OwnerID] = bytes_for_customer
         contactsdb.update_customers(current_customers)
         contactsdb.save_customers()
-        bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
+        accounting.write_customers_quotas(space_dict)
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         if new_customer:
             lg.out(8, "    NEW CUSTOMER ACCEPTED !!!!!!!!!!!!!!")
@@ -113,11 +107,9 @@ class SupplierService(LocalService):
         if not contactsdb.is_customer(request.OwnerID):
             lg.warn("got packet from %s, but he is not a customer" % request.OwnerID)
             return p2p_service.SendFail(request, 'not a customer')
-        donated_bytes = settings.getDonatedBytes()
-        if not os.path.isfile(settings.CustomersSpaceFile()):
-            bpio._write_dict(settings.CustomersSpaceFile(), {'free': donated_bytes})
+        if accounting.check_create_customers_quotas():
             lg.out(6, 'service_supplier.cancel created a new space file')
-        space_dict = bpio._read_dict(settings.CustomersSpaceFile())
+        space_dict = accounting.read_customers_quotas()
         if request.OwnerID not in space_dict.keys():
             lg.warn("got packet from %s, but not found him in space dictionary" % request.OwnerID)
             return p2p_service.SendFail(request, 'not a customer')
@@ -132,7 +124,7 @@ class SupplierService(LocalService):
         contactsdb.update_customers(new_customers)
         contactsdb.save_customers()
         space_dict.pop(request.OwnerID)
-        bpio._write_dict(settings.CustomersSpaceFile(), space_dict)
+        accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         return p2p_service.SendAck(request, 'accepted')

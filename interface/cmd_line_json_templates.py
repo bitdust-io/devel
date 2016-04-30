@@ -10,6 +10,12 @@ tpl_result = repeated_section("{@}\n")
 tpl_message = "{.section message}{@}{.end}"
 tpl_errors = repeated_section("{@}\n", tag="errors")
 tpl_execution = "{.section execution}: {@} sec.{.end}"
+tpl_4_items = """{0}{1}
+{2}{3}
+"""
+tpl_5_items = """{0}{1}
+{2}{3}{4}
+"""
 
 #------------------------------------------------------------------------------ 
 
@@ -17,15 +23,12 @@ TPL_JSON = "{@}"
 
 #------------------------------------------------------------------------------ 
 
-TPL_RAW = """{0}{1}
-{2}{3}{4}
-""".format(tpl_status, tpl_execution, tpl_result, tpl_message, tpl_errors)
+TPL_RAW = tpl_5_items.format(
+    tpl_status, tpl_execution, tpl_result, tpl_message, tpl_errors)
 
 #------------------------------------------------------------------------------ 
 
-TPL_BACKUPS_LIST = """{0}{1}
-{2}{3}
-""".format(
+TPL_BACKUPS_LIST = tpl_4_items.format(
     tpl_status,
     tpl_execution,
     repeated_section(
@@ -33,17 +36,13 @@ TPL_BACKUPS_LIST = """{0}{1}
     ),
     tpl_errors)
 
-TPL_BACKUPS_LIST_IDS = """{0}{1}
-{2}{3}
-""".format(
+TPL_BACKUPS_LIST_IDS = tpl_4_items.format(
     tpl_status,
     tpl_execution,
     repeated_section("{backupid} {size} {path}\n"),
     tpl_errors)
 
-TPL_BACKUPS_RUNNING_LIST = """{0}{1}
-{2}{3}{4}
-""".format(
+TPL_BACKUPS_RUNNING_LIST = tpl_5_items.format(
     tpl_status,
     tpl_execution,
     repeated_section(
@@ -52,9 +51,7 @@ TPL_BACKUPS_RUNNING_LIST = """{0}{1}
     tpl_message,
     tpl_errors)
 
-TPL_BACKUPS_TASKS_LIST = """{0}{1}
-{2}{3}{4}
-""".format(
+TPL_BACKUPS_TASKS_LIST = tpl_5_items.format(
     tpl_status,
     tpl_execution,
     repeated_section("{id}: {path_id} from {local_path} created at {created}\n"),
@@ -63,9 +60,7 @@ TPL_BACKUPS_TASKS_LIST = """{0}{1}
 
 #------------------------------------------------------------------------------ 
 
-TPL_RESTORES_RUNNING_LIST = """{0}{1}
-{2}{3}{4}
-""".format(
+TPL_RESTORES_RUNNING_LIST = tpl_5_items.format(
     tpl_status,
     tpl_execution,
     repeated_section("{backup_id}, currently {bytes_processed} bytes processed\n"),
@@ -74,9 +69,7 @@ TPL_RESTORES_RUNNING_LIST = """{0}{1}
 
 #------------------------------------------------------------------------------ 
 
-TPL_OPTIONS_LIST_KEY_TYPE_VALUE = """{0}{1}
-{2}{3}
-""".format(
+TPL_OPTIONS_LIST_KEY_TYPE_VALUE = tpl_4_items.format(
     tpl_status,
     tpl_execution,
     repeated_section("{key} ({type}) : {value}\n"),
@@ -84,27 +77,32 @@ TPL_OPTIONS_LIST_KEY_TYPE_VALUE = """{0}{1}
 
 #------------------------------------------------------------------------------ 
 
-TPL_OPTION_MODIFIED = """{0}{1}
-{2}{3}
-""".format(
+TPL_OPTION_MODIFIED = tpl_4_items.format(
     tpl_status,
     tpl_execution,
     repeated_section("{key} ({type}) : {value}{.section old_value}, previous : {@}{.or}{.end}\n"),
     tpl_errors)
 
-TPL_OPTION_SINGLE = """{0}{1}
-{2}{3}
-""".format(tpl_status, tpl_execution,
+TPL_OPTION_SINGLE = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
     repeated_section("{key} ({type}) : {value}{.section old_value}, previous : {@}{.or}{.end}\n"),
     tpl_errors)
 
 #------------------------------------------------------------------------------ 
 
-TPL_SUPPLIERS = """{0}{1}
-{2}{3}""".format(
+TPL_SUPPLIERS = tpl_4_items.format(
     tpl_status,
     tpl_execution,
     repeated_section("{position}: {idurl}, since {connected}, keeps {numfiles} files, {status}\n"),
+    tpl_errors)
+
+#------------------------------------------------------------------------------ 
+
+TPL_CUSTOMERS = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    repeated_section("{position}: {idurl}, {status}\n"),
     tpl_errors)
 
 #------------------------------------------------------------------------------ 

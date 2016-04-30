@@ -45,6 +45,14 @@ Commands:
   restore start <backup ID> <destination folder>
   restore abort <backup ID>
   restore running 
+  supplier list
+  supplier replace <IDURL or position>
+  supplier change <IDURL or position> <new IDURL>
+  supplier ping
+  customer list
+  customer remove <IDURL>
+  customer ping
+  ping <IDURL>
   set <option> [value]
   set list
   api <method> [params]
@@ -123,6 +131,32 @@ Commands:
                         abort currently running restore process of given item
                         
   restore progress      show currently running restores 
+
+  supplier list         show list of your suppliers
+                        nodes who stores your data on own machines
+
+  supplier replace <IDURL or position>
+                        execute a fire/hire process for given supplier,
+                        another random node will replace him
+
+  supplier change <IDURL or position> <new IDURL>
+                        replace a supplier by given node
+  
+  supplier ping         send Identity packet to all suppliers
+                        and wait Ack packets to check their statuses
+                         
+  customer list         show list of your customers
+                        nodes who stores own data on your machine
+                        
+  customer remove <IDURL> 
+                        reject supporting given customer and
+                        remove all local files stored for him
+                        
+  customer ping         send Identity packet to all customers
+                        and wait Ack packets to check their statuses
+
+  ping <IDURL>          send Identity packet to this node
+                        and wait Ack packet to check his status
 
   set <option> [value]  to get/set program setting
   
