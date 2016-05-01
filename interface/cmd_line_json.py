@@ -713,6 +713,32 @@ def cmd_customers(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
+def cmd_storage(opts, args, overDict):
+    if len(args) < 2:
+        def _got_needed(result2, result1):
+            result = {
+                'status': 'OK',
+                'execution': float(result1['execution'])+float(result2['execution']),
+                'result': [{
+                    'donated': result1['result'][0],
+                    'consumed': result2['result'][0],}
+                    ]
+                }
+            print_template(result, jsontemplate.Template(templ.TPL_STORAGE))
+            reactor.stop()
+        def _got_donated(result1):
+            d2 = call_jsonrpc_method('space_consumed')
+            d2.addCallback(_got_needed, result1)
+            d2.addErrback(fail_and_stop) 
+        d1 = call_jsonrpc_method('space_donated')
+        d1.addCallback(_got_donated)
+        d1.addErrback(fail_and_stop) 
+        reactor.run()
+        return 0
+    return 2
+
+#------------------------------------------------------------------------------ 
+
 def cmd_message(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -973,6 +999,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             return 0
         return cmd_customers(opts, args, overDict)
 
+    #---storage---
+    elif cmd in [ 'storage', 'space']:
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_storage(opts, args, overDict)
+    
     #---friends---
     elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy' or cmd == 'correspondent' or cmd == 'contact' or cmd == 'peer':
         if not running:

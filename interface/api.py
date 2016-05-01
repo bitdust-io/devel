@@ -911,28 +911,32 @@ def space_donated():
     Return detailed statistics about your donated space usage.
     """
     from logs import lg
+    from lib import misc
     from storage import accounting
     result = accounting.report_donated_storage()
     lg.out(4, 'api.space_donated finished with %d customers and %d errors' % (
         len(result['customers']), len(result['errors']),))
     for err in result['errors']:
         lg.out(4, '    %s' % err)
-    return RESULT([{
-        'customers': result['customers'],
-        'oldcustomers': result['oldcustomers'],
-        'consumed': result['consumed'],
-        'used': result['used'],
-        'real': result['real'],
-        'donated': result['donated'], 
-        }],
-        errors=result['errors'],)
+    errors = result.pop('errors')
+    try:
+        result['used_percent'] = misc.percent2string(result['used'] / result['donated'])
+    except:
+        result['used_percent'] = '0%'
+    return RESULT([result, ], errors=errors,)
 
 def space_consumed():
     """
+    Return some info about your current usage of BitDust resources.
     """
     from logs import lg
+    from lib import misc
     from storage import accounting
     result = accounting.report_consumed_storage()
+    try:
+        result['used_percent'] = misc.percent2string(result['used'] / result['needed'])
+    except:
+        result['used_percent'] = '0%'
     lg.out(4, 'api.space_consumed : %r' % result)
     return RESULT([result, ])
 

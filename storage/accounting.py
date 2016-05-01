@@ -33,6 +33,8 @@ from logs import lg
 
 from system import bpio
 
+from lib import diskspace
+
 from main import settings
 
 from contacts import contactsdb
@@ -125,75 +127,92 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
 def report_donated_storage():
     space_dict = read_customers_quotas()
     used_space_dict = read_customers_usage()
-    result = {
-        'customers': [],
-        'oldcustomers': [],
-        'errors': [],
-        'consumed': 0,
-        'used': 0,
-        'real': bpio.getDirectorySize(settings.getCustomersFilesDir()),
-        'donated': settings.getDonatedBytes()
-        }
+    r = {}
+    r['customers_num'] = contactsdb.num_customers()
+    r['customers'] = []
+    r['oldcustomers'] = []
+    r['errors'] = []
+    r['consumed'] = 0
+    r['used'] = 0
+    r['real'] = bpio.getDirectorySize(settings.getCustomersFilesDir())
+    r['real_str'] = diskspace.MakeStringFromBytes(r['real'])
+    r['donated'] = settings.getDonatedBytes()
+    r['donated_str'] = diskspace.MakeStringFromBytes(r['donated'])
     try:
-        result['free'] = int(space_dict.pop('free'))
+        r['free'] = int(space_dict.pop('free'))
     except:
-        result['free'] = 0
+        r['free'] = 0
     for idurl in contactsdb.customers():
         consumed_by_customer = 0
         used_by_customer = 0
         if idurl not in space_dict.keys():
-            result['errors'].append('space consumed by customer %s is unknown' % idurl)
+            r['errors'].append('space consumed by customer %s is unknown' % idurl)
         else:
             try:
                 consumed_by_customer = int(space_dict.pop(idurl))
-                result['consumed'] += consumed_by_customer
+                r['consumed'] += consumed_by_customer
             except:
-                result['errors'].append('incorrect value of consumed space for customer %s' % idurl)
+                r['errors'].append('incorrect value of consumed space for customer %s' % idurl)
         if idurl in used_space_dict.keys():
             try:
                 used_by_customer = int(used_space_dict.pop(idurl))
-                result['used'] += used_by_customer
+                r['used'] += used_by_customer
             except:
-                result['errors'].append('incorrect value of used space for customer %s' % idurl)
+                r['errors'].append('incorrect value of used space for customer %s' % idurl)
         if consumed_by_customer < used_by_customer:
-            result['errors'].append('customer %s currently using more space than requested' % idurl)
-        result['customers'].append({
-            'idurl': idurl,
-            'used': used_by_customer,
-            'consumed': consumed_by_customer,
-            })
-    if result['donated'] != result['free'] + result['consumed']:
-        result['errors'].append('total consumed %d and known free %d (%d total) bytes not match with donated %d bytes' % (
-            result['consumed'], result['free'], 
-            result['consumed'] + result['free'], result['donated']))
-    if result['used'] > result['donated']:
-        result['errors'].append('total space used by customers exceed the donated limit')
+            r['errors'].append('customer %s currently using more space than requested' % idurl)
+        c = {}
+        c['idurl'] = idurl
+        c['used'] = used_by_customer
+        c['used_str'] = diskspace.MakeStringFromBytes(c['used'])
+        c['consumed'] = consumed_by_customer
+        c['consumed_str'] = diskspace.MakeStringFromBytes(c['consumed'])
+        c['real'] = bpio.getDirectorySize(settings.getCustomerFilesDir(idurl))
+        c['real_str'] = diskspace.MakeStringFromBytes(c['real'])
+        r['customers'].append(c)
+    r['used_str'] = diskspace.MakeStringFromBytes(r['used'])
+    r['consumed_str'] = diskspace.MakeStringFromBytes(r['consumed'])
+    if r['donated'] != r['free'] + r['consumed']:
+        r['errors'].append('total consumed %d and known free %d (%d total) bytes not match with donated %d bytes' % (
+            r['consumed'], r['free'], 
+            r['consumed'] + r['free'], r['donated']))
+    if r['used'] > r['donated']:
+        r['errors'].append('total space used by customers exceed the donated limit')
     if len(space_dict) > 0:
-        result['errors'].append('found %d incorrect records of consumed space' % len(space_dict))
-    if result['real'] != result['used']:
-        result['errors'].append('current info needs update, known size is %d bytes but real is %d bytes' % (
-            result['used'], result['real']))
+        r['errors'].append('found %d incorrect records of consumed space' % len(space_dict))
+    if r['real'] != r['used']:
+        r['errors'].append('current info needs update, known size is %d bytes but real is %d bytes' % (
+            r['used'], r['real']))
     for idurl in used_space_dict.keys():
-        result['oldcustomers'].append({
+        real = bpio.getDirectorySize(settings.getCustomerFilesDir(idurl))
+        r['oldcustomers'].append({
             'idurl': idurl,
             'used': used_space_dict['idurl'],
+            'used_str': diskspace.MakeStringFromBytes(used_space_dict['idurl']),
+            'real': real,
+            'real_str': diskspace.MakeStringFromBytes(real),
             })
-    return result
+    return r
 
 
 def report_consumed_storage():
-    result = {
-        'needed': settings.getNeededBytes(),
-        'used': int(backup_fs.sizebackups() / 2),
-        'suppliers': contactsdb.num_suppliers(),
-        'needed_per_supplier': 0,
-        'used_per_supplier': 0,
-        'available_per_supplier': 0,
-        }
-    result['free'] = result['needed'] - result['used']
-    if result['suppliers'] > 0: 
-        result['needed_per_supplier'] = int(math.ceil(2.0 * result['needed'] / result['suppliers'])) 
-        result['used_per_supplier'] = int(math.ceil(2.0 * result['used'] / result['suppliers']))
+    result = {}
+    result['suppliers_num'] = contactsdb.num_suppliers()
+    result['needed'] = settings.getNeededBytes()
+    result['needed_str'] = diskspace.MakeStringFromBytes(result['needed'])
+    result['used'] = int(backup_fs.sizebackups() / 2)
+    result['used_str'] = diskspace.MakeStringFromBytes(result['used'])
+    result['available'] = result['needed'] - result['used']
+    result['available_str'] = diskspace.MakeStringFromBytes(result['available'])
+    result['needed_per_supplier'] = 0
+    result['used_per_supplier'] = 0
+    result['available_per_supplier'] = 0
+    if result['suppliers_num'] > 0: 
+        result['needed_per_supplier'] = int(math.ceil(2.0 * result['needed'] / result['suppliers_num'])) 
+        result['used_per_supplier'] = int(math.ceil(2.0 * result['used'] / result['suppliers_num']))
         result['available_per_supplier'] = result['needed_per_supplier'] - result['used_per_supplier']
+    result['needed_per_supplier_str'] = diskspace.MakeStringFromBytes(result['needed_per_supplier'])
+    result['used_per_supplier_str'] = diskspace.MakeStringFromBytes(result['used_per_supplier'])
+    result['available_per_supplier_str'] = diskspace.MakeStringFromBytes(result['available_per_supplier'])
     return result
 
