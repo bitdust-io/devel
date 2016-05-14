@@ -67,7 +67,7 @@ def stop():
     """
     Stop the main process immediately.
     Return:
-        "{'status': 'OK', 'result': 'stopped'}"
+        {'status': 'OK', 'result': 'stopped'}
     """
     from logs import lg
     lg.out(2, 'api.stop sending event "stop" to the shutdowner() machine')
@@ -80,7 +80,7 @@ def restart(showgui=False):
     """
     Restart the main process, if flag show=True the GUI will be opened after restart.
     Return:
-        "{'status': 'OK', 'result': 'restarted'}"
+        {'status': 'OK', 'result': 'restarted'}
     """
     from logs import lg
     from main import shutdowner
@@ -97,8 +97,8 @@ def show():
     """
     Opens a default web browser to show the BitDust GUI.
     Return:
-        "{'status': 'OK', 
-          'result': '`show` event has been sent to the main process'}"
+        {'status': 'OK', 
+          'result': '`show` event has been sent to the main process'}
     """
     from logs import lg
     lg.out(4, 'api.show')
@@ -117,7 +117,7 @@ def config_get(key, default=None):
     """
     Return current value for specific option.
     Return: 
-        "{'status': 'OK',
+        {'status': 'OK',
           'result': [
              {'type': 'positive integer',
               'value': '8', 
@@ -141,7 +141,7 @@ def config_set(key, value, typ=None):
     """
     Set a value for given option.
     Return: 
-        "{'status': 'OK',
+        {'status': 'OK',
           'result': [
              {'type': 'positive integer',
               'old_value': '8',
@@ -184,7 +184,7 @@ def config_list(sort=False):
     """
     Monitor all options and values.
     Return:
-        "{'status': 'OK',
+        {'status': 'OK',
           'result': [
              {'type': 'boolean',
               'value': 'true',
@@ -250,7 +250,7 @@ def backups_update():
     A method to restart backup_monitor() Automat and 
     fire "synchronize" process with remote nodes.
     Return:
-        "{'status': 'OK', 'result': 'the main loop has been restarted'}"
+        {'status': 'OK', 'result': 'the main loop has been restarted'}
     """
     from storage import backup_monitor
     backup_monitor.A('restart') 
@@ -263,7 +263,7 @@ def backups_list():
     """
     Return a whole tree of files and folders in the catalog.
     Return:
-        "{'status': 'OK', 
+        {'status': 'OK', 
           'result': [
              {'path': '/Users/veselin/Documents', 
               'versions': [], 
@@ -308,13 +308,13 @@ def backups_id_list():
     """
     Return only list of items uploaded on remote machines.
     Return:
-        "{'status': 'OK', 
+        {'status': 'OK', 
           'result': [{'backupid': '0/0/1/0/0/F20160313043757PM', 
                       'path': '/Users/veselin/Documents/python/python27.chm', 
                       'size': '11 MB'}, 
                      {'backupid': '0/0/0/0/0/0/F20160315052257PM', 
                       'path': '/Users/veselin/Music/Bob Marley/01-Soul Rebels (1970)/01-Put It On.mp3', 
-                      'size': '8.27 MB'}]}"        
+                      'size': '8.27 MB'}]}        
     """
     from storage import backup_fs
     from contacts import contactsdb
@@ -339,8 +339,8 @@ def backup_start_id(pathID):
     """
     Start uploading a given item already existed in the catalog by its path ID.
     Return:
-        "{'status': 'OK', 
-          'result': 'uploading 0/0/1/0/0 started, local path is: /Users/veselin/Documents/python/python27.chm'}"
+        {'status': 'OK', 
+          'result': 'uploading 0/0/1/0/0 started, local path is: /Users/veselin/Documents/python/python27.chm'}
     """
     from system import bpio
     from storage import backup_fs
@@ -364,8 +364,8 @@ def backup_start_path(path):
     """
     Start uploading file or folder to remote nodes, assign a new path ID and add it to the catalog.
     Return:
-        "{'status': 'OK',
-          'result': 'uploading 0/0/1/0/0 started, local path is: /Users/veselin/Documents/python/python27.chm'}"
+        {'status': 'OK',
+          'result': 'uploading 0/0/1/0/0 started, local path is: /Users/veselin/Documents/python/python27.chm'}
     """
     from system import bpio
     from storage import backup_fs
@@ -402,8 +402,8 @@ def backup_dir_add(dirpath):
     """
     Add given folder to the catalog but do not start uploading process.
     Return:
-        "{'status': 'OK',
-          'result': 'new folder was added: 0/0/2, local path is /Users/veselin/Movies/'}" 
+        {'status': 'OK',
+          'result': 'new folder was added: 0/0/2, local path is /Users/veselin/Movies/'} 
     """
     from storage import backup_fs
     from storage import backup_control
@@ -424,7 +424,7 @@ def backup_file_add(filepath):
     """  
     Add a single file to the catalog, skip uploading.
     Return:
-        "{'status': 'OK', 'result': 'new file was added: 0/0/3/0, local path is /Users/veselin/Downloads/pytest-2.9.0.tar.gz'}"
+        {'status': 'OK', 'result': 'new file was added: 0/0/3/0, local path is /Users/veselin/Downloads/pytest-2.9.0.tar.gz'}
     """ 
     from storage import backup_fs
     from storage import backup_control
@@ -444,8 +444,8 @@ def backup_tree_add(dirpath):
     Recursively reads the entire folder and put files and folders items into the catalog,
     but did not start any uploads.
     Results:
-        "{'status': 'OK',
-          'result': '21 items were added to catalog, parent path ID is 0/0/1/2, root folder is /Users/veselin/Documents/reports'}"
+        {'status': 'OK',
+          'result': '21 items were added to catalog, parent path ID is 0/0/1/2, root folder is /Users/veselin/Documents/reports'}
     """
     from storage import backup_fs
     from storage import backup_control
@@ -465,8 +465,8 @@ def backup_delete_local(backupID):
     Remove only local files belongs to this particular backup.
     All remote data stored on suppliers machines remains unchanged.
     Return:
-        "{'status': 'OK',
-          'result': '8 files were removed with total size of 16 Mb'}"
+        {'status': 'OK',
+          'result': '8 files were removed with total size of 16 Mb'}
     """
     from storage import backup_fs
     from storage import backup_matrix
@@ -488,8 +488,8 @@ def backup_delete_id(pathID_or_backupID):
     This will completely remove your data from BitDust network.
     You can specify either path ID of that location or specific version.
     Return:
-        "{'status': 'OK',
-          'result': 'version 0/0/1/1/0/F20160313043419PM was deleted from remote peers'}"
+        {'status': 'OK',
+          'result': 'version 0/0/1/1/0/F20160313043419PM was deleted from remote peers'}
     """
     from storage import backup_fs
     from storage import backup_control
@@ -537,8 +537,8 @@ def backup_delete_path(localPath):
     All data for given item will be removed from remote peers.
     Any local files related to this path will be removed as well.
     Return:
-        "{'status': 'OK',
-          'result': 'item 0/1/2 was deleted from remote peers'}"
+        {'status': 'OK',
+          'result': 'item 0/1/2 was deleted from remote peers'}
     """
     from storage import backup_fs
     from storage import backup_control
@@ -575,12 +575,13 @@ def backups_queue():
     """
     Return a list of paths to be backed up as soon as
     currently running backups will be finished.
-        "{'status': 'OK',
+    Return:
+        {'status': 'OK',
           'result': [    
             {'created': 'Wed Apr 27 15:11:13 2016',
              'id': 3,
              'local_path': '/Users/veselin/Downloads/some-ZIP-file.zip',
-             'path_id': '0/0/3/1'}]}"
+             'path_id': '0/0/3/1'}]}
     """
     from storage import backup_control
     from logs import lg
@@ -596,8 +597,9 @@ def backups_queue():
 
 def backups_running():
     """
-    Return a list of currently running uploads:
-        "{'status': 'OK',
+    Return a list of currently running uploads.
+    Return:
+        {'status': 'OK',
           'result': [    
             {'aborting': False,
              'backup_id': '0/0/3/1/F20160424013912PM',
@@ -614,7 +616,7 @@ def backups_running():
              'terminating': False,
              'total_size': 89461450,
              'work_blocks': 4}
-        ]}"    
+        ]}
     """
     from storage import backup_control
     from logs import lg
@@ -674,8 +676,8 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
     By default this method uses known location from catalog for given item.
     WARNING: Your existing local data will be overwritten.
     Return:
-        "{'status': 'OK',
-          'result': 'downloading of version 0/0/1/1/0/F20160313043419PM has been started to /Users/veselin/Downloads/restore/'}"
+        {'status': 'OK',
+          'result': 'downloading of version 0/0/1/1/0/F20160313043419PM has been started to /Users/veselin/Downloads/restore/'}
     """
     from storage import backup_fs
     from storage import backup_control
@@ -939,9 +941,10 @@ def ping(idurl, timeout=10):
     2. Send my Identity to remote contact addresses, taken from identity,
     3. Wait first Ack packet from remote peer,
     4. Failed by timeout or identity fetching error.
+    
     Return:
-        "{'status': 'OK', 
-          'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}"
+        {'status': 'OK', 
+          'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
     """
     if not driver.is_started('service_identity_propagate'):
         return succeed(ERROR('service_identity_propagate() is not started'))
