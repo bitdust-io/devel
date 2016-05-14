@@ -38,13 +38,13 @@ Commands:
   backup delete local <full backup ID>
   backup abort <path ID or full backup ID>
   backup queue
-  backup running
+  backup progress
   backup update
   restore list
   restore start <backup ID> 
   restore start <backup ID> <destination folder>
   restore abort <backup ID>
-  restore running 
+  restore progress 
   supplier list
   supplier replace <IDURL or position>
   supplier change <IDURL or position> <new IDURL>
@@ -52,6 +52,7 @@ Commands:
   customer list
   customer remove <IDURL>
   customer ping
+  storage
   ping <IDURL>
   set <option> [value]
   set list
@@ -77,9 +78,9 @@ Commands:
 
   show                  start BitDust and show the main window
   
-  integrate             creates a `bitdust` alias in OS in that location:
-                            /usr/local/bin/bitdust
-                            ~/bin/bitdust   (if no access to /usr/local/) 
+  integrate             creates a `bitdust` alias in OS in
+                        /usr/local/bin/bitdust or in 
+                        ~/bin/bitdust if no access to /usr/local/ 
 
   identity create <nickname> [private key size]
                         generate a new private key and 
@@ -104,6 +105,12 @@ Commands:
 
   backup idlist         show a list of items already uploaded on remote peers 
 
+  backup add <local path>
+                        add given path to the catalog
+  
+  backup addtree <local folder path>
+                        add given folder (with all sub folders) to the catalog
+
   backup start <local path or ID>
                         start a new backup of the local file or folder 
                         or existing ID from catalog
@@ -118,6 +125,10 @@ Commands:
                         
   backup update         request all suppliers to update info for all backups 
   
+  backup queue          show a list of paths to be uploaded
+  
+  backup progress       show a list of currently running uploads
+  
   restore list          show a list of items already uploaded on remote peers
   
   restore start <local path or ID> [destination path]
@@ -130,7 +141,7 @@ Commands:
   restore abort <backup ID>
                         abort currently running restore process of given item
                         
-  restore progress      show currently running restores 
+  restore progress      show currently running downloads 
 
   supplier list         show list of your suppliers
                         nodes who stores your data on own machines
@@ -154,6 +165,8 @@ Commands:
                         
   customer ping         send Identity packet to all customers
                         and wait Ack packets to check their statuses
+
+  storage               show donated/needed storage statistic 
 
   ping <IDURL>          send Identity packet to this node
                         and wait Ack packet to check his status

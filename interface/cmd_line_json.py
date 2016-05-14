@@ -441,7 +441,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST)
         return call_jsonrpc_method_template_and_stop('backups_list', tpl)
 
-    if len(args) == 1 and args[1] in ['idlist', 'ids']:
+    if len(args) == 2 and args[1] in ['idlist', 'ids']:
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
         return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
 
