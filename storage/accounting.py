@@ -34,6 +34,7 @@ from logs import lg
 from system import bpio
 
 from lib import diskspace
+from lib import misc 
 
 from main import settings
 
@@ -192,6 +193,18 @@ def report_donated_storage():
             'real': real,
             'real_str': diskspace.MakeStringFromBytes(real),
             })
+    try:
+        r['used_percent'] = misc.percent2string(r['used'] / r['donated'])
+    except:
+        r['used_percent'] = '0%'
+    try:
+        r['real_percent'] = misc.percent2string(r['real'] / r['donated'])
+    except:
+        r['real_percent'] = '0%'
+    try:
+        r['consumed_percent'] = misc.percent2string(r['consumed'] / r['donated'])
+    except:
+        r['consumed_percent'] = '0%'        
     return r
 
 
@@ -214,5 +227,9 @@ def report_consumed_storage():
     result['needed_per_supplier_str'] = diskspace.MakeStringFromBytes(result['needed_per_supplier'])
     result['used_per_supplier_str'] = diskspace.MakeStringFromBytes(result['used_per_supplier'])
     result['available_per_supplier_str'] = diskspace.MakeStringFromBytes(result['available_per_supplier'])
+    try:
+        result['used_percent'] = misc.percent2string(result['used'] / result['needed'])
+    except:
+        result['used_percent'] = '0%'
     return result
 
