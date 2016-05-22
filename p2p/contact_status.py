@@ -139,7 +139,8 @@ def isOnline(idurl):
         return False
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        lg.out(6, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'CONNECTED'
 
 
@@ -154,7 +155,8 @@ def isOffline(idurl):
         return True
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        lg.out(6, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'OFFLINE'
 
 
@@ -169,7 +171,8 @@ def isCheckingNow(idurl):
         return False
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        lg.out(6, 'contact_status.isCheckingNow contact %s is not found, made a new instance' % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'contact_status.isCheckingNow contact %s is not found, made a new instance' % idurl)
     st = A(idurl).state
     return st == 'PING' or st == 'ACK?' 
 
@@ -185,7 +188,8 @@ def getStatusLabel(idurl):
         return '?'
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        lg.out(6, 'contact_status.getStatusLabel contact %s is not found, made a new instance' % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'contact_status.getStatusLabel contact %s is not found, made a new instance' % idurl)
     global _StatusLabels
     return _StatusLabels.get(A(idurl).state, '?')
 
@@ -201,7 +205,8 @@ def getStatusIcon(idurl):
         return '?'
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
-        lg.out(6, 'contact_status.getStatusIcon contact %s is not found, made a new instance' % idurl)
+        if _Debug:
+            lg.out(_DebugLevel, 'contact_status.getStatusIcon contact %s is not found, made a new instance' % idurl)
     global _StatusIcons
     return _StatusIcons.get(A(idurl).state, '?')
 
@@ -272,10 +277,12 @@ class ContactStatus(automat.Automat):
         self.idurl = idurl
         self.time_connected = None
         automat.Automat.__init__(self, name, state, debug_level)
-        lg.out(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
+        if _Debug:
+            lg.out(_DebugLevel+2, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
         
     def state_changed(self, oldstate, newstate, event, arg):
-        lg.out(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
+        if _Debug:
+            lg.out(_DebugLevel-2, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
         
     def A(self, event, arg):
         #---CONNECTED---
@@ -347,7 +354,8 @@ class ContactStatus(automat.Automat):
         Condition method.
         """
         pkt_out, status, error = arg
-        lg.out(8, 'contact: %s, packet: %s, arg: %s' % (self.state, pkt_out.state, str(arg)))
+        if _Debug:
+            lg.out(_DebugLevel, 'contact: %s, packet: %s, arg: %s' % (self.state, pkt_out.state, str(arg)))
         return pkt_out.state == 'SENT'
     
     def doRememberTime(self, arg):
