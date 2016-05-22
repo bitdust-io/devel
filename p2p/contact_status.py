@@ -38,6 +38,13 @@ EVENTS:
 
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 6
+
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 import time
@@ -243,7 +250,8 @@ def A(idurl, event=None, arg=None):
     if not _ContactsStatusDict.has_key(idurl):
         if _ShutdownFlag:
             return None
-        _ContactsStatusDict[idurl] = ContactStatus(idurl, 'status_%s' % nameurl.GetName(idurl), 'OFFLINE', 10)
+        _ContactsStatusDict[idurl] = ContactStatus(
+            idurl, 'status_%s' % nameurl.GetName(idurl), 'OFFLINE', 8)
     if event is not None:
         _ContactsStatusDict[idurl].automat(event, arg)
     return _ContactsStatusDict[idurl]
@@ -264,7 +272,7 @@ class ContactStatus(automat.Automat):
         self.idurl = idurl
         self.time_connected = None
         automat.Automat.__init__(self, name, state, debug_level)
-        # lg.out(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
+        lg.out(10, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
         
     def state_changed(self, oldstate, newstate, event, arg):
         lg.out(6, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
@@ -276,7 +284,7 @@ class ContactStatus(automat.Automat):
                 self.state = 'PING'
                 self.AckCounter=0
                 self.doRepaint(arg)
-            elif event == 'sent-failed' and self.isDataPacket(arg) :
+            elif event == 'sent-failed' and self.isDataPacket(arg) and not self.isPacketSent(arg) :
                 self.state = 'OFFLINE'
                 self.doRepaint(arg)
         #---OFFLINE---
@@ -317,6 +325,7 @@ class ContactStatus(automat.Automat):
                 self.state = 'PING'
                 self.AckCounter=0
                 self.doRepaint(arg)
+        return None
 
     def isPingPacket(self, arg):
         """
@@ -329,9 +338,18 @@ class ContactStatus(automat.Automat):
         """
         Condition method.
         """
-        outpacket, status, error = arg
-        return outpacket.Command not in [commands.Identity(), commands.Ack()]
+        # pkt_out, status, error = arg
+        # return pkt_out.outpacket.Command not in [commands.Identity(), commands.Ack()]
+        return True
 
+    def isPacketSent(self, arg):
+        """
+        Condition method.
+        """
+        pkt_out, status, error = arg
+        lg.out(8, 'contact: %s, packet: %s, arg: %s' % (self.state, pkt_out.state, str(arg)))
+        return pkt_out.state == 'SENT'
+    
     def doRememberTime(self, arg):
         """
         Action method.
@@ -357,9 +375,11 @@ def OutboxStatus(pkt_out, status, error=''):
     sending a packet to remote peer. If packet sent was failed - user seems to be OFFLINE.   
     """
     if status == 'finished':
-        A(pkt_out.remote_idurl, 'sent-done', (pkt_out.outpacket, status, error))
+        A(pkt_out.remote_idurl, 'sent-done', (pkt_out, status, error))
     else:
-        A(pkt_out.remote_idurl, 'sent-failed', (pkt_out.outpacket, status, error))
+        if _Debug:
+            lg.out(_DebugLevel, 'contact_status.OutboxStatus %s: [%s] with %s' % (status, pkt_out, pkt_out.outpacket))
+        A(pkt_out.remote_idurl, 'sent-failed', (pkt_out, status, error))
     return False
 
 
