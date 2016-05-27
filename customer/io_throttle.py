@@ -405,8 +405,8 @@ class SupplierQueue:
             #     fileToSend.remoteID, 
             #     fileToSend.packetID)
             # callback.register_interest(self.FileSendAck, fileToSend.remoteID, fileToSend.packetID)
-            lg.out(12, 'io_throttle.RunSend %s to %s, dt=%s' % (
-                str(newpacket), nameurl.GetName(fileToSend.remoteID), str(time.time()-dt)))
+            # lg.out(12, 'io_throttle.RunSend %s to %s, dt=%s' % (
+            #     str(newpacket), nameurl.GetName(fileToSend.remoteID), str(time.time()-dt)))
             # mark file as been sent
             fileToSend.sendTime = time.time()
             packetsSent += 1

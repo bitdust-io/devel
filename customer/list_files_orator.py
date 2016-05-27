@@ -150,6 +150,8 @@ class ListFilesOrator(automat.Automat):
                 if contact_status.isOnline(idurl):
                     p2p_service.RequestListFiles(idurl)
                     _RequestedListFilesPacketIDs.add(idurl)
+                else:
+                    lg.out(6, 'list_files_orator.doRequestRemoteFiles SKIP %s is not online' % idurl)
 
 #------------------------------------------------------------------------------ 
 

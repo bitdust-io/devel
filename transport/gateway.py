@@ -525,15 +525,15 @@ def shutdown_all_inbox_packets():
 def packets_timeout_loop():
     global _PacketsTimeOutTask
     # lg.out(18, 'gateway.packets_timeout_loop')
-#    _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
-#    for pkt_in in packet_in.items().values():
-#        if pkt_in.is_timed_out():
-#            lg.out(18, 'gateway.packets_timeout_loop %r is timed out' % pkt_in)
-#            pkt_in.automat('cancel', 'timeout')
-#    for pkt_out in packet_out.queue():
-#        if pkt_out.is_timed_out():
-#            lg.out(18, 'gateway.packets_timeout_loop %r is timed out' % pkt_out)
-#            pkt_out.automat('cancel', 'timeout')
+    _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
+    for pkt_in in packet_in.items().values():
+        if pkt_in.is_timed_out():
+            lg.out(8, 'gateway.packets_timeout_loop %r is timed out' % pkt_in)
+            pkt_in.automat('cancel', 'timeout')
+    for pkt_out in packet_out.queue():
+        if pkt_out.is_timed_out():
+            lg.out(8, 'gateway.packets_timeout_loop %r is timed out' % pkt_out)
+            pkt_out.automat('cancel', 'timeout')
 
 def stop_packets_timeout_loop():
     global _PacketsTimeOutTask

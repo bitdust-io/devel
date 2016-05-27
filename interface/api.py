@@ -93,6 +93,14 @@ def restart(showgui=False):
     return OK('restarted')
 
 
+def  reconnect():
+    if not driver.is_started('service_network'):
+        return ERROR('service_network() is not started')
+    from p2p import network_connector
+    network_connector.A('reconnect')
+    return OK('reconnected')
+
+
 def show():
     """
     Opens a default web browser to show the BitDust GUI.
@@ -240,6 +248,8 @@ def filemanager(json_request):
         filemanager_{method name}()
     More info will be added soon.
     """
+    if not driver.is_started('service_restores'):
+        return ERROR('service_restores() is not started')
     from storage import filemanager_api
     return filemanager_api.process(json_request) 
 
@@ -906,7 +916,6 @@ def customers_ping():
     propagate.SlowSendCustomers(0.1)
     return OK('requests to all customers was sent')
     
-
 #------------------------------------------------------------------------------
 
 def space_donated():
@@ -932,6 +941,23 @@ def space_consumed():
     result = accounting.report_consumed_storage()
     lg.out(4, 'api.space_consumed : %r' % result)
     return RESULT([result, ])
+
+#------------------------------------------------------------------------------ 
+
+def automats_list():
+    """
+    Return a list of all currently running state machines.
+    """
+    from logs import lg
+    from automats import automat    
+    result = [{
+        'index': a.index,
+        'name': a.name,
+        'state': a.state,
+        'timers': (','.join(a.getTimers().keys())),
+    } for i, a in automat.objects().items()]
+    lg.out(4, 'api.automats_list responded with %d items' % len(result))
+    return RESULT(result)
 
 #------------------------------------------------------------------------------ 
 

@@ -160,7 +160,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     #---START!---
     from automats import automat
     automat.LifeBegins(lg.when_life_begins())
-    # automat.OpenLogFile(settings.AutomatsLog())
+    automat.OpenLogFile(settings.AutomatsLog())
     
     import initializer
     I = initializer.A()

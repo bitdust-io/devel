@@ -60,6 +60,7 @@ from twisted.internet.defer import Deferred, fail
 #------------------------------------------------------------------------------ 
 
 _Debug = True
+_DebugLevel = 8
 # _Debug = False
 _LogEvents = False
 
@@ -270,7 +271,10 @@ class Automat(object):
         self._state_callbacks = {}
         self.init()
         self.startTimers()
-        self.log(self.debug_level,  'CREATED AUTOMAT %s with index %d' % (str(self), self.index))
+        if _Debug:
+            self.log(max(_DebugLevel, self.debug_level), 
+                'CREATED AUTOMAT %s with index %d, %d running' % (
+                    str(self), self.index, len(objects())))
         set_object(self.index, self)
 
     def __del__(self):
@@ -281,16 +285,21 @@ class Automat(object):
         o = self
         automatid = self.id
         name = self.name
-        debug_level = self.debug_level
+        debug_level = max(_DebugLevel, self.debug_level)
         if _Index is None:
-            self.log(debug_level, 'automat.__del__ WARNING Index is None: %r %r' % (automatid, name))
+            if _Debug:
+                self.log(debug_level, 'automat.__del__ WARNING Index is None: %r %r' % (automatid, name))
             return
         index = _Index.get(automatid, None)
         if index is None:
-            self.log(debug_level, 'automat.__del__ WARNING %s not found' % automatid)
+            if _Debug:
+                self.log(debug_level, 'automat.__del__ WARNING %s not found' % automatid)
             return
         del _Index[automatid]
-        self.log(debug_level, 'DESTROYED AUTOMAT %s with index %d' % (str(o), index))
+        if _Debug:    
+            self.log(debug_level,
+                'DESTROYED AUTOMAT %s with index %d, %d running' % (
+                    str(o), index, len(objects())))
         del o
         if _StateChangedCallback is not None:
             _StateChangedCallback(index, automatid, name, '')
@@ -320,7 +329,7 @@ class Automat(object):
         and delete that instance. Be sure to not have any existing references on 
         that instance so destructor will be called immediately.
         """
-        self.log(self.debug_level, 'destroying %r, refs=%d' % (self, sys.getrefcount(self)))
+        # self.log(self.debug_level, 'destroying %r, refs=%d' % (self, sys.getrefcount(self)))
         self._state_callbacks.clear()
         self.stopTimers()
         # self.state = 'NOT_EXIST'
@@ -378,31 +387,35 @@ class Automat(object):
         Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).   
         """
         global _StateChangedCallback
-        if _LogEvents:
-            self.log(self.debug_level * 4, '%s fired with event "%s", refs=%d' % (
-                self, event_string, sys.getrefcount(self)))
-        elif self.log_events:
-            if not event_string.startswith('timer-'):
-                self.log(self.debug_level, '%s fired with event "%s", refs=%d' % (
-                    self, event_string, sys.getrefcount(self)))
+        if (_LogEvents and self.log_events) and _Debug:
+            if self.log_events or not event_string.startswith('timer-'):
+                self.log(
+                    max(self.debug_level * 4, _DebugLevel),
+                    '%s fired with event "%s", refs=%d' % (
+                        self, event_string, sys.getrefcount(self)))
         old_state = self.state
         if self.post:
             try:
                 new_state = self.A(event_string, arg)
             except:
-                self.log(self.debug_level, traceback.format_exc())
+                if _Debug:
+                    self.log(max(_DebugLevel, self.debug_level), traceback.format_exc())
                 # return
             self.state = new_state
         else:
             try:
                 self.A(event_string, arg)
             except:
-                self.log(self.debug_level, traceback.format_exc())
+                if _Debug:
+                    self.log(max(_DebugLevel, self.debug_level), traceback.format_exc())
                 # return
             new_state = self.state
         if old_state != new_state:
-            self.log(self.debug_level, '%s(%s): (%s)->(%s)' % (
-                self.id, event_string, old_state, new_state))
+            if _Debug:
+                self.log(
+                    max(_DebugLevel, self.debug_level),
+                    '%s(%s): (%s)->(%s)' % (
+                        self.id, event_string, old_state, new_state))
             self.stopTimers()
             self.state_changed(old_state, new_state, event_string, arg)
             self.startTimers()
@@ -419,7 +432,9 @@ class Automat(object):
         if self.timers.has_key(name) and self.state in self.timers[name][1]:
             self.automat(name)
         else:
-            self.log(self.debug_level, '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
+            self.log(
+                max(_DebugLevel, self.debug_level),
+                '%s.timerEvent ERROR timer %s not found in self.timers' % (str(self), name))
 
     def stopTimers(self):
         """
@@ -454,6 +469,12 @@ class Automat(object):
         self.stopTimers()
         self.startTimers()
 
+    def getTimers(self):
+        """
+        Get internal timers dictionary.
+        """
+        return self._timers
+
     def log(self, level, text):
         """
         Print log message. See ``OpenLogFile()`` and ``CloseLogFile()`` methods.
@@ -462,9 +483,6 @@ class Automat(object):
         global _LogFilename
         global _LogsCount
         global _LifeBeginsTime
-        global _Debug
-        if not _Debug:
-            return
         if _LogFile is not None:
             if _LogsCount > 100000 and _LogFilename:
                 _LogFile.close()

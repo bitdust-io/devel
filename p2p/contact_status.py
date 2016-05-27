@@ -72,6 +72,8 @@ from transport import callback
 
 import ratings
 
+from userid import my_id
+
 #------------------------------------------------------------------------------ 
 
 _StatusLabels = {
@@ -291,9 +293,11 @@ class ContactStatus(automat.Automat):
                 self.state = 'PING'
                 self.AckCounter=0
                 self.doRepaint(arg)
-            elif event == 'sent-failed' and self.isDataPacket(arg) and not self.isPacketSent(arg) :
+            elif event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(arg) :
                 self.state = 'OFFLINE'
                 self.doRepaint(arg)
+            elif event == 'sent-failed' and self.isDataPacket(arg) and self.Fails<3 :
+                pass
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'outbox-packet' and self.isPingPacket(arg) :
@@ -302,6 +306,7 @@ class ContactStatus(automat.Automat):
                 self.doRepaint(arg)
             elif event == 'inbox-packet' :
                 self.state = 'CONNECTED'
+                self.Fails=0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
         #---PING---
@@ -311,6 +316,7 @@ class ContactStatus(automat.Automat):
                 self.AckCounter=0
             elif event == 'inbox-packet' :
                 self.state = 'CONNECTED'
+                self.Fails=0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
             elif event == 'file-sent' :
@@ -324,6 +330,7 @@ class ContactStatus(automat.Automat):
         elif self.state == 'ACK?':
             if event == 'inbox-packet' :
                 self.state = 'CONNECTED'
+                self.Fails=0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
             elif event == 'timer-20sec' :
@@ -345,9 +352,8 @@ class ContactStatus(automat.Automat):
         """
         Condition method.
         """
-        # pkt_out, status, error = arg
-        # return pkt_out.outpacket.Command not in [commands.Identity(), commands.Ack()]
-        return True
+        pkt_out, status, error = arg
+        return pkt_out.outpacket.Command not in [commands.Identity(), commands.Ack()]
 
     def isPacketSent(self, arg):
         """
@@ -355,7 +361,8 @@ class ContactStatus(automat.Automat):
         """
         pkt_out, status, error = arg
         if _Debug:
-            lg.out(_DebugLevel, 'contact: %s, packet: %s, arg: %s' % (self.state, pkt_out.state, str(arg)))
+            lg.out(_DebugLevel, 'contact: %s, packet: %s, arg: %s' % (
+                self.state, pkt_out.state, str(arg)))
         return pkt_out.state == 'SENT'
     
     def doRememberTime(self, arg):
@@ -382,6 +389,8 @@ def OutboxStatus(pkt_out, status, error=''):
     This method is called from ``lib.transport_control`` when got a status report after 
     sending a packet to remote peer. If packet sent was failed - user seems to be OFFLINE.   
     """
+    if pkt_out.remote_idurl == my_id.getLocalID():
+        return False
     if status == 'finished':
         A(pkt_out.remote_idurl, 'sent-done', (pkt_out, status, error))
     else:
@@ -395,6 +404,8 @@ def Inbox(newpacket, info, status, message):
     """
     This is called when some ``packet`` was received from remote peer - user seems to be ONLINE.
     """
+    if newpacket.OwnerID == my_id.getLocalID():
+        return False    
     A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
     ratings.remember_connected_time(newpacket.OwnerID)
     return False
@@ -406,6 +417,8 @@ def Outbox(pkt_out):
     This packet can be our Identity packet - this is a sort of PING operation 
     to try to connect with that man.    
     """
+    if pkt_out.outpacket.RemoteID == my_id.getLocalID():
+        return False    
     A(pkt_out.outpacket.RemoteID, 'outbox-packet', pkt_out)
     return False
 
@@ -415,6 +428,8 @@ def FileSent(workitem, args):
     This is called when transport_control starts the file transfer to some peer.
     Used to count how many times you PING him.
     """
+    if workitem.remoteid == my_id.getLocalID():
+        return 
     A(workitem.remoteid, 'file-sent', (workitem, args))
 
 
@@ -423,5 +438,7 @@ def PacketSendingTimeout(remoteID, packetID):
     Called from ``p2p.io_throttle`` when some packet is timed out.
     Right now this do nothing, state machine ignores that event.
     """
+    if remoteID == my_id.getLocalID():
+        return 
     A(remoteID, 'sent-timeout', packetID)
 

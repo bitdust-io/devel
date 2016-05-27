@@ -127,6 +127,14 @@ TPL_STORAGE = tpl_4_items.format(
 
 #------------------------------------------------------------------------------ 
 
+TPL_AUTOMATS = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{index}: {name}({state}) {.section timers}   timers: {@}{.end}\n'),
+    tpl_errors)
+
+#------------------------------------------------------------------------------ 
+
 TPL_FRIEND_LOOKUP = """{.section result}
 friend lookup:
     {result}

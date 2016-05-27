@@ -84,7 +84,7 @@ def print_text(msg, nl='\n'):
     Send some output to the console.
     """
     sys.stdout.write(msg+nl)
-
+    sys.stdout.flush()
 
 def print_exception():
     """
@@ -104,6 +104,7 @@ def print_exception():
     for l in excTb:
         s += l + '\n'
     sys.stdout.write(s)
+    sys.stdout.flush()
 
 
 def print_and_stop(result):
@@ -122,6 +123,7 @@ def print_template(result, template):
     # print result
     # print template
     sys.stdout.write(template.expand(result))
+    sys.stdout.flush()
     # import pprint
     # sys.stdout.write(pprint.pformat(result, 4, 80))
 
@@ -445,7 +447,8 @@ def cmd_backup(opts, args, overDict, executablePath):
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
         return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
 
-    if len(args) == 1 and args[1] in ['update', 'upd', 'refresh', 'sync']:
+    if len(args) == 2 and args[1] in ['update', 'upd', 'refresh', 'sync']:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('backups_update', tpl)
     
     if len(args) >= 2 and args[1] in ['running', 'progress', 'status']:
@@ -456,7 +459,6 @@ def cmd_backup(opts, args, overDict, executablePath):
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
         return call_jsonrpc_method_template_and_stop('backups_queue', tpl)
 
-    tpl = jsontemplate.Template(templ.TPL_RAW)
     if len(args) >= 2 and args[1] == 'add':
         if os.path.isdir(args[2]):
             return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2])
@@ -552,6 +554,7 @@ def cmd_integrate(opts, args, overDict):
     """
     def print_text(msg, nl='\n'):
         sys.stdout.write(msg+nl)
+        sys.stdout.flush()
     from system import bpio
     if bpio.Windows():
         print_text('this feature is not yet available in OS Windows.')
@@ -736,6 +739,18 @@ def cmd_storage(opts, args, overDict):
         reactor.run()
         return 0
     return 2
+
+#------------------------------------------------------------------------------ 
+
+def cmd_automats(opts, args, overDict):
+    if len(args) < 2 or args[1] == 'list':
+        tpl = jsontemplate.Template(templ.TPL_AUTOMATS)
+        return call_jsonrpc_method_template_and_stop('automats_list', tpl)
+#     if len(args) == 2 and args[1] in ['log', 'monitor', 'watch',]:\
+#         
+#         reactor.
+#         reactor.run()
+    return 2 
 
 #------------------------------------------------------------------------------ 
 
@@ -1005,6 +1020,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_storage(opts, args, overDict)
+    
+    #---automats---
+    elif cmd in [ 'automats', 'aut', 'states', 'machines',]:
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_automats(opts, args, overDict)
     
     #---friends---
     elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy' or cmd == 'correspondent' or cmd == 'contact' or cmd == 'peer':

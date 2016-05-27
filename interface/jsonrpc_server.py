@@ -119,6 +119,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_restart(self, show=False):
         return api.restart(show)
     
+    def jsonrpc_reconnect(self):
+        return api.reconnect()
+
     def jsonrpc_filemanager(self, json_request):
         return api.filemanager(json_request)
 
@@ -202,6 +205,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
  
     def jsonrpc_space_consumed(self):
         return api.space_consumed()
+
+    def jsonrpc_automats_list(self):
+        return api.automats_list()
 
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)
