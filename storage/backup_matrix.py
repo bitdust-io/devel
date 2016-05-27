@@ -801,12 +801,18 @@ def ClearSupplierRemoteInfo(supplierNum):
     files = 0
     for backupID in remote_files().keys():
         for blockNum in remote_files()[backupID].keys():
-            if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
-                files += 1 
-            if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
-                files += 1
-            remote_files()[backupID][blockNum]['D'][supplierNum] = 0
-            remote_files()[backupID][blockNum]['P'][supplierNum] = 0
+            try:
+                if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
+                    files += 1
+                    remote_files()[backupID][blockNum]['D'][supplierNum] = 0
+            except:
+                pass
+            try: 
+                if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
+                    files += 1
+                    remote_files()[backupID][blockNum]['P'][supplierNum] = 0
+            except:
+                pass
     return files
 
 #------------------------------------------------------------------------------ 

@@ -460,6 +460,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         return call_jsonrpc_method_template_and_stop('backups_queue', tpl)
 
     if len(args) >= 2 and args[1] == 'add':
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         if os.path.isdir(args[2]):
             return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2])
         elif os.path.isfile(args[2]):
@@ -468,6 +469,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         return 1
     
     if len(args) >= 2 and args[1] == 'addtree':
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         if not os.path.isdir(args[2]):
             print_text('path %s not exist\n' % args[2])
             return 1
@@ -475,6 +477,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         
     from lib import packetid
     if len(args) >= 3 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         if args[2] == 'local':
             if len(args) < 4:
                 return 2
@@ -484,6 +487,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         return call_jsonrpc_method_template_and_stop('backup_delete_path', tpl, args[2])
 
     if len(args) > 2 and args[1] in ['cancel', 'abort']:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         if packetid.IsBackupIDCorrect(args[2]):
             return call_jsonrpc_method_template_and_stop('backup_abort_running', tpl, args[2])
         if packetid.IsPathIDCorrect(args[2]):
@@ -492,6 +496,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         return 1
 
     if len(args) > 2 and args[1] == 'start':
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         if packetid.Valid(args[2]):
             return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[2])
         if not os.path.exists(os.path.abspath(args[2])):
@@ -500,6 +505,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[2])
 
     if len(args) == 2:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         if packetid.Valid(args[1]):
             return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[1])
         if not os.path.exists(os.path.abspath(args[1])):
