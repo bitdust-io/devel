@@ -214,8 +214,8 @@ class FileQueue:
         if stream_id not in self.streams.keys():
             if stream_id in self.dead_streams:
                 inp.close()
-                if udp_stream._Debug:
-                    lg.warn('SEND ZERO ACK, got old block %s' % stream_id)
+                # if udp_stream._Debug:
+                    # lg.warn('SEND ZERO ACK, got old block %s' % stream_id)
                 self.do_send_ack(stream_id, None, '')
                 return
             if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
