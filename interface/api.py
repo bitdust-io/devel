@@ -629,6 +629,7 @@ def backups_running():
              'work_blocks': 4}
         ]}
     """
+    from lib import misc
     from storage import backup_control
     from logs import lg
     lg.out(4, 'api.backups_running %d items running at the moment' % len(backup_control.jobs()))
@@ -648,7 +649,7 @@ def backups_running():
         'work_blocks': len(j.workBlocks),
         'block_number': j.blockNumber,
         'bytes_processed': j.dataSent,
-        'progress': j.progress(),
+        'progress': misc.percent2string(j.progress()),
         'total_size': j.totalSize,
         } for j in backup_control.jobs().values()])
 
@@ -929,7 +930,7 @@ def space_donated():
         len(result['customers']), len(result['errors']),))
     for err in result['errors']:
         lg.out(4, '    %s' % err)
-    errors = result.pop('errors')
+    errors = result.pop('errors', [])
     return RESULT([result, ], errors=errors,)
 
 def space_consumed():
@@ -939,8 +940,18 @@ def space_consumed():
     from logs import lg
     from storage import accounting
     result = accounting.report_consumed_storage()
-    lg.out(4, 'api.space_consumed : %r' % result)
+    lg.out(4, 'api.space_consumed finished')
     return RESULT([result, ])
+
+def space_local():
+    """
+    Return detailed statistics about current usage of your local disk.
+    """
+    from logs import lg
+    from storage import accounting
+    result = accounting.report_local_storage()
+    lg.out(4, 'api.space_local finished')
+    return RESULT([result, ],)
 
 #------------------------------------------------------------------------------ 
 

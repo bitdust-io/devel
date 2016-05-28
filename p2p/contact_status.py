@@ -289,15 +289,11 @@ class ContactStatus(automat.Automat):
     def A(self, event, arg):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'outbox-packet' and self.isPingPacket(arg) :
-                self.state = 'PING'
-                self.AckCounter=0
-                self.doRepaint(arg)
-            elif event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(arg) :
+            if event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(arg) :
                 self.state = 'OFFLINE'
                 self.doRepaint(arg)
             elif event == 'sent-failed' and self.isDataPacket(arg) and self.Fails<3 :
-                pass
+                self.Fails+=1
         #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'outbox-packet' and self.isPingPacket(arg) :
@@ -354,16 +350,6 @@ class ContactStatus(automat.Automat):
         """
         pkt_out, status, error = arg
         return pkt_out.outpacket.Command not in [commands.Identity(), commands.Ack()]
-
-    def isPacketSent(self, arg):
-        """
-        Condition method.
-        """
-        pkt_out, status, error = arg
-        if _Debug:
-            lg.out(_DebugLevel, 'contact: %s, packet: %s, arg: %s' % (
-                self.state, pkt_out.state, str(arg)))
-        return pkt_out.state == 'SENT'
     
     def doRememberTime(self, arg):
         """

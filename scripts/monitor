@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ls -la .bitdust/customers/
+# ls -la .bitdust/customers/
 # cd ~/bitdust
 # git remote -vv
 
@@ -22,6 +22,8 @@ ls -la .bitdust/customers/
 
 # tail -10 log
 
-# ./bd backups
+./bd storage
+
+df -h
 
 exit 0

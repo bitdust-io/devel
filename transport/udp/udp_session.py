@@ -19,8 +19,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
-_DebugLevel = 18
+_Debug = True
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------ 
 
@@ -102,9 +102,9 @@ def create(node, peer_address, peer_id=None):
 def get(peer_address):
     """
     """
-    if _Debug:
-        lg.out(_DebugLevel, 'udp_session.get %s %s' % (str(peer_address), 
-            str(map(lambda s:s.peer_address, sessions().values()))))
+#     if _Debug:
+#         lg.out(_DebugLevel, 'udp_session.get %s %s' % (str(peer_address), 
+#             str(map(lambda s:s.peer_address, sessions().values()))))
     for s in sessions_by_peer_address().get(peer_address, []):
         return s
     # for id, s in sessions().items():

@@ -108,20 +108,24 @@ TPL_STORAGE = tpl_4_items.format(
     tpl_execution,
     ls("""{.section consumed}consumed:
     suppliers: {suppliers_num}
-    total needed: {needed} ({needed_str})
-    total used: {used} ({used_str})
-    total available: {available} ({available_str})
+    needed: {needed} ({needed_str})
+    used: {used} ({used_str}) {used_percent}
+    available: {available} ({available_str})
     donated from each supplier: {needed_per_supplier} ({needed_per_supplier_str})
     used on each supplier: {used_per_supplier} ({used_per_supplier_str})
     available on every supplier: {available_per_supplier} ({available_per_supplier_str})
-    consumption: {used_percent}
 {.end}{.section donated}donated:
     customers: {customers_num} 
-    total donated: {donated} ({donated_str})
-    total allocated: {consumed} ({consumed_str})
-    total used: {used} ({used_str})
-    total stored on local HDD: {real} ({real_str})
-    consumption: {used_percent}
+    donated: {donated} ({donated_str})
+    allocated: {consumed} ({consumed_str}) {consumed_percent}
+    uploaded: {used} ({used_str}) {used_percent}
+{.section customers}{.repeated section @}      {idurl} uploaded {real_str} from {consumed_str}\n{.end}{.end}{.end}{.section local}local:
+    disk size: {disktotal} ({disktotal_str})
+    disk free: {diskfree} ({diskfree_str}) {diskfree_percent}
+    disk consumed: {total} ({total_str}) {total_percent}
+      buffered files: {backups} ({backups_str}) 
+      temporary files: {temp} ({temp_str})
+      customers files: {customers} ({customers_str})
 {.end}"""),
     tpl_errors)
 

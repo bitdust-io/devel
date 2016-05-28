@@ -288,6 +288,13 @@ def cmd_identity(opts, args, overDict, running):
     settings.init()
     my_id.init()    
 
+    if args[0] == 'idurl':
+        if my_id.isLocalIdentityReady():
+            print_text(my_id.getLocalID())
+        else:
+            print_text('local identity is not exist')
+        return 0
+
     if len(args) == 1 or args[1].lower() in [ 'info', '?', 'show', 'print' ]:
         if my_id.isLocalIdentityReady():
             print_text(my_id.getLocalIdentity().serialize())
@@ -724,17 +731,22 @@ def cmd_customers(opts, args, overDict):
 
 def cmd_storage(opts, args, overDict):
     if len(args) < 2:
-        def _got_needed(result2, result1):
+        def _got_local(result3, result2, result1):
             result = {
                 'status': 'OK',
-                'execution': float(result1['execution'])+float(result2['execution']),
+                'execution': float(result1['execution'])+float(result2['execution'])+float(result3['execution']),
                 'result': [{
                     'donated': result1['result'][0],
-                    'consumed': result2['result'][0],}
-                    ]
-                }
+                    'consumed': result2['result'][0],
+                    'local': result3['result'][0],
+                }]
+            }
             print_template(result, jsontemplate.Template(templ.TPL_STORAGE))
             reactor.stop()
+        def _got_needed(result2, result1):
+            d2 = call_jsonrpc_method('space_local')
+            d2.addCallback(_got_local, result2, result1)
+            d2.addErrback(fail_and_stop) 
         def _got_donated(result1):
             d2 = call_jsonrpc_method('space_consumed')
             d2.addCallback(_got_needed, result1)
@@ -968,7 +980,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     overDict = override_options(opts, args)
             
     #---identity---
-    if cmd == 'identity' or cmd == 'id':
+    if cmd in ['identity', 'id', 'idurl', ]:
         return cmd_identity(opts, args, overDict, running)
 
     #---key---

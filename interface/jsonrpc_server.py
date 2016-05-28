@@ -102,7 +102,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
         except JSONRPCError as exc:
             result = api.ERROR(exc.strerror)
         except Exception as exc:
-            result = api.ERROR(traceback.format_exc(), message=exc.message)
+            result = api.ERROR(str(traceback.format_exc()), message=exc.message)
         if isinstance(result, Deferred):
             result.addCallback(
                lambda result: self._register_execution(request_dict, result))
@@ -205,6 +205,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
  
     def jsonrpc_space_consumed(self):
         return api.space_consumed()
+
+    def jsonrpc_space_local(self):
+        return api.space_local()
 
     def jsonrpc_automats_list(self):
         return api.automats_list()
