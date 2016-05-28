@@ -26,7 +26,7 @@ import udp_stream
 
 #------------------------------------------------------------------------------ 
 
-MAX_SIMULTANEOUS_STREAMS_PER_SESSION = 4
+MAX_SIMULTANEOUS_STREAMS_PER_SESSION = 16
 NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS_PER_SESSION * 4
 
 #------------------------------------------------------------------------------ 
@@ -136,7 +136,7 @@ class FileQueue:
     def start_outbox_file(self, filename, filesize, description, result_defer, single):
         stream_id = self.make_unique_stream_id()
         if udp_stream._Debug:
-            lg.out(18, 'udp_file_queue.start_outbox_file %d %s %s %d %s' % (
+            lg.out(12, 'udp_file_queue.start_outbox_file %d %s %s %d %s' % (
                 stream_id, description, os.path.basename(filename), filesize, self.session.peer_id))
         self.outboxFiles[stream_id] = OutboxFile(self, stream_id, filename, filesize, description, result_defer, single)
         self.streams[stream_id] = udp_stream.create(stream_id, self.outboxFiles[stream_id], self)
@@ -149,7 +149,7 @@ class FileQueue:
 
     def start_inbox_file(self, stream_id, data_size):
         if udp_stream._Debug:
-            lg.out(18, 'udp_file_queue.start_inbox_file %d %d %s' % (stream_id, data_size, self.session.peer_id))
+            lg.out(12, 'udp_file_queue.start_inbox_file %d %d %s' % (stream_id, data_size, self.session.peer_id))
         self.inboxFiles[stream_id] = InboxFile(self, stream_id, data_size)
         self.streams[stream_id] = udp_stream.create(stream_id, self.inboxFiles[stream_id], self)
         d = udp_interface.interface_register_file_receiving(

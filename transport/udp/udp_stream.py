@@ -57,6 +57,12 @@ Datagrams format:
       
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+# _Debug = True
+
+#------------------------------------------------------------------------------ 
 
 import sys
 import time
@@ -73,22 +79,17 @@ from automats import automat
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
-# _Debug = True
-
-#------------------------------------------------------------------------------ 
-
-UDP_DATAGRAM_SIZE = 508
+UDP_DATAGRAM_SIZE = 500
 BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14 
 
-BLOCKS_PER_ACK = 16
+BLOCKS_PER_ACK = 4
 
 OUTPUT_BUFFER_SIZE = 16*1024
 CHUNK_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK 
 # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
-RTT_MIN_LIMIT = 0.002
-RTT_MAX_LIMIT = 3
+RTT_MIN_LIMIT = 0.004
+RTT_MAX_LIMIT = 4
 
 MAX_BLOCKS_INTERVAL = 5     
 MAX_ACK_TIMEOUTS = 3
@@ -390,7 +391,7 @@ class UDPStream(automat.Automat):
             self.output_buffer_size += len(piece)
         outp.close()
         if _Debug:
-            lg.out(24, 'PUSH %r' % self.output_blocks_ids)
+            lg.out(20, 'PUSH %r' % self.output_blocks_ids)
 
 #    def doPopBlocks(self, arg):
 #        """
@@ -614,7 +615,8 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        lg.out(18, 'udp_stream.doReportSendDone %r %r' % (self.consumer, self.consumer.is_done()))
+        if _Debug:
+            lg.out(18, 'udp_stream.doReportSendDone %r %r' % (self.consumer, self.consumer.is_done()))
         if self.consumer.is_done():
             self.consumer.status = 'finished'
         else:
@@ -675,13 +677,14 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        lg.out(2, 'udp_stream.doReportError')
+        if _Debug:
+            lg.out(2, 'udp_stream.doReportError')
 
     def doCloseStream(self, arg):
         """
         Action method.
         """
-        if _Debug or True:
+        if _Debug:
             pir_id = self.producer.session.peer_id
             dt = time.time() - self.creation_time
             if dt == 0:
