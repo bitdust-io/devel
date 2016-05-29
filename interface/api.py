@@ -966,10 +966,46 @@ def automats_list():
         'name': a.name,
         'state': a.state,
         'timers': (','.join(a.getTimers().keys())),
-    } for i, a in automat.objects().items()]
+    } for a in automat.objects().values()]
     lg.out(4, 'api.automats_list responded with %d items' % len(result))
     return RESULT(result)
 
+#------------------------------------------------------------------------------ 
+
+def services_list():
+    """
+    Return a list of all services.
+    """
+    from logs import lg
+    result = [{
+        'index': svc.index,
+        'name': name,
+        'state': svc.state,
+        'enabled': svc.enabled(),
+        'installed': svc.installed(),
+        'config_path': svc.config_path,
+        'depends': svc.dependent_on()
+    } for name, svc in sorted(driver.services().items(), key=lambda i:i[0])]
+    lg.out(4, 'api.services_list responded with %d items' % len(result))
+    return RESULT(result)
+
+def service_info(service_name):
+    """
+    Return detailed info for a single service.
+    """
+    svc = driver.services().get(service_name, None)
+    if svc is None:
+        return ERROR('service %s not found' % service_name)
+    return RESULT([{
+        'index': svc.index,
+        'name': svc.service_name,
+        'state': svc.state,
+        'enabled': svc.enabled(),
+        'installed': svc.installed(),
+        'config_path': svc.config_path,
+        'depends': svc.dependent_on()
+    }])
+    
 #------------------------------------------------------------------------------ 
 
 def ping(idurl, timeout=10):

@@ -53,6 +53,9 @@ Commands:
   customer remove <IDURL>
   customer ping
   storage
+  automat list
+  service list
+  service <service name>
   ping <IDURL>
   set <option> [value]
   set list
@@ -167,6 +170,13 @@ Commands:
                         and wait Ack packets to check their statuses
 
   storage               show donated/needed storage statistic 
+
+  automat list          list all running state machines and current states
+  
+  service list          list all registered services
+  
+  service <service name>
+                        print detailed info for given service
 
   ping <IDURL>          send Identity packet to this node
                         and wait Ack packet to check his status
@@ -388,9 +398,9 @@ Commands:
   stats local <backup ID>
                         show local files stats for this backup
 
-  suppliers             show list of your suppliers
+  supplier list         show list of your suppliers
 
-  suppliers call        send a request packets to check out suppliers status
+  supplier call         send a request packets to check out suppliers status
 
   supplier replace <username, number or idurl>
                         replace a single supplier with new one

@@ -181,6 +181,15 @@ def call_jsonrpc_method_template_and_stop(method, template, *args):
     reactor.run()
     return 0
 
+def call_jsonrpc_method_transform_template_and_stop(method, template, transform, *args):
+    """
+    """
+    d = call_jsonrpc_method(method, *args)
+    d.addCallback(lambda result: print_template_and_stop(transform(result), template))
+    d.addErrback(fail_and_stop) 
+    reactor.run()
+    return 0
+
 #------------------------------------------------------------------------------ 
 
 def kill():
@@ -772,6 +781,24 @@ def cmd_automats(opts, args, overDict):
 
 #------------------------------------------------------------------------------ 
 
+def cmd_services(opts, args, overDict):
+    if len(args) < 2 or args[1] == 'list':
+        def _services_update(result):
+            for i in xrange(len(result['result'])):
+                r = result['result'][i]
+                r['enabled_label'] = 'ENABLED' if r['enabled'] else 'DISABLED'
+                r['num_depends'] = len(r['depends'])
+                result['result'][i] = r
+            return result
+        tpl = jsontemplate.Template(templ.TPL_SERVICES)
+        return call_jsonrpc_method_transform_template_and_stop('services_list', tpl, _services_update)
+    if len(args) >= 2 and args[1].startswith('service_'):
+        tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
+        return call_jsonrpc_method_template_and_stop('service_info', tpl, args[1])
+    return 2 
+
+#------------------------------------------------------------------------------ 
+
 def cmd_message(opts, args, overDict):
     if len(args) < 2 or args[1] == 'list':
         tpl = jsontemplate.Template(templ.TPL_RAW)
@@ -1045,6 +1072,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             print_text('BitDust is not running at the moment\n')
             return 0
         return cmd_automats(opts, args, overDict)
+    
+    #---services---
+    elif cmd in [ 'services', 'service', 'svc', 'serv', 'srv', ]:
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_services(opts, args, overDict)
     
     #---friends---
     elif cmd == 'friend' or cmd == 'friends' or cmd == 'buddy' or cmd == 'correspondent' or cmd == 'contact' or cmd == 'peer':

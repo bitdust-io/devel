@@ -139,6 +139,26 @@ TPL_AUTOMATS = tpl_4_items.format(
 
 #------------------------------------------------------------------------------ 
 
+TPL_SERVICES = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls('{index}: {name}({state}) {enabled_label}, {num_depends} depends\n'),
+    tpl_errors)
+
+TPL_SERVICE_INFO = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls("""ID: {index}
+name: {name}
+state: {state}
+enabled: {enabled}
+dependent on: {.section depends}{.repeated section @}{@}{.alternates with}, {.end}{.end}
+config path: /config/{config_path}
+"""),
+    tpl_errors)
+
+#------------------------------------------------------------------------------ 
+
 TPL_FRIEND_LOOKUP = """{.section result}
 friend lookup:
     {result}
