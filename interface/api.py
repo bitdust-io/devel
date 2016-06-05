@@ -34,10 +34,12 @@ def on_api_result_prepared(result):
 
 #------------------------------------------------------------------------------ 
 
-def OK(result='', message=None, status='OK',):
+def OK(result='', message=None, status='OK', extra_fields=None):
     o = {'status': status, 'result': [result,],}
     if message is not None:
         o['message'] = message
+    if extra_fields is not None:
+        o.update(extra_fields)
     o = on_api_result_prepared(o)
     return o
 
@@ -370,14 +372,26 @@ def backup_start_id(pathID):
     return ERROR('item %s not found' % pathID)
 
     
-def backup_start_path(path):
+def backup_start_path(path, bind_local_path=True):
     """
-    Start uploading file or folder to remote nodes, assign a new path ID and add it to the catalog.
+    Start uploading file or folder to remote nodes,
+    assign a new path ID and add it to the catalog.
+    If bind_local_path is False all parent sub folders:
+        ["Users", "veselin", "Documents", "python",]
+    will be also added to catalog
+    and so final ID will be combination of several IDs.
+    Otherwise item will be created in the top level of the catalog
+    and final ID will be just a single unique number.
+    So if bind_local_path is True it will act like backup_map_path()
+    and start the backup process after that.
     Return:
-        {'status': 'OK',
-          'result': 'uploading 0/0/1/0/0 started, local path is: /Users/veselin/Documents/python/python27.chm'}
+        { 'status': 'OK',
+          'result': 'uploading of item 0/0/1/0/0 started, local path is: /Users/veselin/Documents/python/python27.chm',
+          'id': '0/0/1/0/0',
+          'type': 'file', }
     """
     from system import bpio
+    from system import dirsize
     from storage import backup_fs
     from storage import backup_control
     from web import control
@@ -389,28 +403,76 @@ def backup_start_path(path):
     result = ''
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
-        if bpio.pathIsDir(localPath):
-            pathID, iter, iterID = backup_fs.AddDir(localPath, True)
-            result += 'uploading %s started, ' % pathID
-            result += 'new folder was added to catalog: %s, ' % localPath
+        if bind_local_path:
+            fileorfolder = 'folder' if bpio.pathIsDir(localPath) else 'file'
+            pathID, iter, iterID = backup_fs.MapPath(localPath, read_stats=True)
+            if fileorfolder == 'folder':
+                dirsize.ask(localPath, backup_control.OnFoundFolderSize, (pathID, None))
         else:
-            pathID, iter, iterID = backup_fs.AddFile(localPath, True)
-            result += 'uploading %s started, ' % pathID
-            result += 'new file was added to catalog: %s, ' % localPath
+            if bpio.pathIsDir(localPath):
+                fileorfolder = 'folder'
+                pathID, iter, iterID = backup_fs.AddDir(localPath, read_stats=True)
+                result += 'new folder was added to catalog: %s, ' % localPath
+            else:
+                fileorfolder = 'file'
+                pathID, iter, iterID = backup_fs.AddFile(localPath, read_stats=True)
+        result += 'uploading of item %s started, ' % pathID
+        result += 'new %s was added to catalog: %s, ' % (fileorfolder, localPath)
     else:
-        result += 'uploading %s started, ' % pathID
-        result += 'local path is: %s' % localPath
+        if backup_fs.IsDirID(pathID):
+            fileorfolder = 'folder'
+        elif backup_fs.IsFileID(pathID):
+            fileorfolder = 'file'
+        else:
+            lg.out(4, 'api.backup_start_path ERROR %s OK!' % path)
+            return ERROR('existing item has wrong type')
+        result += 'uploading of item %s started, ' % pathID
+        result += 'local %s path is: %s' % (fileorfolder, localPath)
     backup_control.StartSingle(pathID, localPath)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathID),])
     lg.out(4, 'api.backup_start_path %s OK!' % path)
-    return OK(result)
+    return OK(result, extra_fields={'id': pathID, 'type': fileorfolder})
+
+
+def backup_map_path(path):
+    """
+    Create a new top level item in the catalog and point it to given local path.
+    This is the simplest way to upload a file and get an ID for that remote copy.
+    Return:
+    { 'status': u'OK',
+      'result': [ 'new file was added: 1, local path is /Users/veselin/Pictures/bitdust.png'],
+      'id': '1',
+      'type': 'file'}
+    """
+    from storage import backup_fs
+    from storage import backup_control
+    from system import dirsize
+    from web import control
+    pathID = backup_fs.ToID(path)
+    if pathID:
+        return ERROR('path already exist in catalog: %s' % pathID)
+    newPathID, iter, iterID = backup_fs.MapPath(path, True)
+    if os.path.isdir(path):
+        fileorfolder = 'folder'
+        dirsize.ask(path, backup_control.OnFoundFolderSize, (newPathID, None))
+    else:
+        fileorfolder = 'file'
+    backup_fs.Calculate()
+    backup_control.Save()
+    control.request_update([('pathID', newPathID),])
+    return OK(
+        'new %s was added: %s, local path is %s' % (fileorfolder, newPathID, path),
+        extra_fields={'id': newPathID, 'type': fileorfolder})
 
         
 def backup_dir_add(dirpath):
     """
     Add given folder to the catalog but do not start uploading process.
+    This method will create all sub folders in the catalog
+    and keeps the same structure as your local folders structure.
+    So the final ID will be combination of all parent IDs, separated with "/".
     Return:
         {'status': 'OK',
           'result': 'new folder was added: 0/0/2, local path is /Users/veselin/Movies/'} 
@@ -427,12 +489,17 @@ def backup_dir_add(dirpath):
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID),])
-    return OK('new folder was added: %s, local path is %s' % (newPathID, dirpath))
+    return OK('new folder was added: %s, local path is %s' % (newPathID, dirpath),
+              extra_fields={'id': newPathID, 'type': 'folder'})
 
 
 def backup_file_add(filepath):
     """  
     Add a single file to the catalog, skip uploading.
+    This method will create all sub folders in the catalog
+    and keeps the same structure as your local file path structure.
+    So the final ID of that file in the catalog will be combination
+    of all parent IDs, separated with "/".
     Return:
         {'status': 'OK', 'result': 'new file was added: 0/0/3/0, local path is /Users/veselin/Downloads/pytest-2.9.0.tar.gz'}
     """ 
@@ -446,15 +513,15 @@ def backup_file_add(filepath):
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID),])
-    return OK('new file was added: %s, local path is %s' % (newPathID, filepath))
+    return OK('new file was added: %s, local path is %s' % (newPathID, filepath),
+              extra_fields={'id': newPathID, 'type': 'file'})
 
 
 def backup_tree_add(dirpath):
     """
-    Recursively reads the entire folder and put files and folders items into the catalog,
-    but did not start any uploads.
-    
-    Results:
+    Recursively reads the entire folder and create items for all files and folders
+    keeping the same structure. Do not start any uploads.
+    Return:
         {'status': 'OK',
           'result': '21 items were added to catalog, parent path ID is 0/0/1/2, root folder is /Users/veselin/Documents/reports'}
     """
@@ -468,13 +535,14 @@ def backup_tree_add(dirpath):
     if not newPathID:
         return ERROR('nothing was added to catalog')
     return OK('%d items were added to catalog, parent path ID is %s, root folder is %s' % (
-        num, newPathID, dirpath))
+                num, newPathID, dirpath),
+                extra_fields={'parent_id': newPathID, 'new_items': num})
 
 
 def backup_delete_local(backupID):
     """
     Remove only local files belongs to this particular backup.
-    All remote data stored on suppliers machines remains unchanged.
+    All remote data stored on suppliers' machines remain unchanged.
     Return:
         {'status': 'OK',
           'result': '8 files were removed with total size of 16 Mb'}
@@ -544,7 +612,7 @@ def backup_delete_id(pathID_or_backupID):
 
 def backup_delete_path(localPath):
     """
-    Completely remove any data stored for given location from BitDust network.
+    Completely remove any data stored on given location from BitDust network.
     All data for given item will be removed from remote peers.
     Any local files related to this path will be removed as well.
     Return:
@@ -585,7 +653,7 @@ def backup_delete_path(localPath):
 def backups_queue():
     """
     Return a list of paths to be backed up as soon as
-    currently running backups will be finished.
+    currently running backups finish.
     Return:
         {'status': 'OK',
           'result': [    
@@ -679,7 +747,7 @@ def backup_abort_running(backup_id):
 
 def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
     """
-    Download data from remote peers to you local machine.
+    Download data from remote peers to your local machine.
     You can use different methods to select the target data:
         + item ID in the catalog
         + full version identifier
@@ -821,7 +889,7 @@ def supplier_replace(index_or_idurl):
     """
     Execute a fire/hire process of one supplier,
     another random node will replace this supplier.
-    As soon as new supplier will be found and connected,
+    As soon as new supplier is found and connected,
     rebuilding of all uploaded data will be started and
     the new node will start getting a reconstructed fragments.
     """

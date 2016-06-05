@@ -463,7 +463,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_LIST_IDS)
         return call_jsonrpc_method_template_and_stop('backups_id_list', tpl)
 
-    if len(args) == 2 and args[1] in ['update', 'upd', 'refresh', 'sync']:
+    if len(args) == 2 and args[1] in ['update', 'upd', 'refresh', 'sync', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('backups_update', tpl)
     
@@ -475,7 +475,14 @@ def cmd_backup(opts, args, overDict, executablePath):
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
         return call_jsonrpc_method_template_and_stop('backups_queue', tpl)
 
-    if len(args) >= 2 and args[1] == 'add':
+    if len(args) >= 2 and args[1] in ['bind', 'map',]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        if os.path.exists(args[2]):
+            return call_jsonrpc_method_template_and_stop('backup_map_path', tpl, args[2])
+        print_text('path %s not exist\n' % args[2])
+        return 1
+
+    if len(args) >= 2 and args[1] in ['add', 'append', 'insert', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if os.path.isdir(args[2]):
             return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2])
@@ -484,7 +491,7 @@ def cmd_backup(opts, args, overDict, executablePath):
         print_text('path %s not exist\n' % args[2])
         return 1
     
-    if len(args) >= 2 and args[1] == 'addtree':
+    if len(args) >= 2 and args[1] in ['tree', 'addtree', 'buildtree', 'replicate', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if not os.path.isdir(args[2]):
             print_text('path %s not exist\n' % args[2])
@@ -1088,7 +1095,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_friend(opts, args, overDict)
     
     #---backup---
-    elif cmd in ['backup', 'backups', 'bk', 'up', 'upload', 'uploads',]:
+    elif cmd in ['file', 'files', 'fi', 'fs', 'backup', 'backups', 'bk', 'up', 'upload', 'uploads',]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0

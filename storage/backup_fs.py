@@ -525,6 +525,29 @@ def AddLocalPath(localpath, read_stats=False):
         return path_id, iter, iterID, 1
     return None, None, None, 0
 
+def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1):
+    """
+    Acts like AddFile() but do not follow the directory structure.
+    This just "map" some local path (file or dir) to one item
+    in the catalog - by default as a top level item.
+    The name of new item will be equal to the local path.
+    """
+    path = bpio.portablePath(path)
+    if not os.path.exists(path):
+        raise Exception('File or folder not exist')
+    if not iter:
+        iter = fs()
+    if not iterID:
+        iterID = fsID()
+    # make an ID for the filename
+    resultID = MakeID(iter)
+    ii = FSItemInfo(path, resultID, FILE)
+    if read_stats:
+        ii.read_stats(path)
+    iter[ii.name()] = resultID
+    iterID[resultID] = ii
+    return str(resultID), iter, iterID
+
 #------------------------------------------------------------------------------ 
 
 def SetFile(item, iter=None, iterID=None):
@@ -616,6 +639,8 @@ def WalkByPath(path, iter=None):
     if iter is None:
         iter = fs()
     ppath = bpio.portablePath(path)
+    if iter.has_key(ppath):
+        return iter, str(iter[ppath])
     if ppath == '' or ppath == '/':
         return iter, iter[0] if iter.has_key(0) else ''
     path_id = ''
@@ -671,7 +696,7 @@ def WalkByID(pathID, iterID=None):
         elif isinstance(iterID[id], FSItemInfo):
             if j != len(parts) - 1:
                 return None
-            path += '/' + iterID[id].name()
+            path += (('/' + iterID[id].name()) if ('/' in pathID) else iterID[id].name()) 
         else:
             raise Exception('Wrong data type in the index')
         if j == len(parts) - 1:
@@ -730,7 +755,13 @@ def DeleteByPath(path, iter=None, iterID=None):
     if iterID is None:
         iterID = fsID()
     path_id = ''
-    parts = bpio.portablePath(path).lstrip('/').split('/')
+    ppath = bpio.portablePath(path)
+    parts = ppath.lstrip('/').split('/')
+    if iter.has_key(ppath):
+        path_id = iter[ppath]
+        iter.pop(ppath)
+        iterID.pop(path_id)
+        return str(path_id)
     for j in range(len(parts)):
         name = parts[j]  # .encode('utf-8') # parts[j]
         if not iter.has_key(name):
@@ -939,6 +970,17 @@ def HasChildsID(pathID):
     
 #------------------------------------------------------------------------------ 
 
+def ResolvePath(head, tail):
+    """
+    Smart join of path locations when read items from catalog. 
+    """
+    if tail.startswith('/'):
+        return tail
+    if head in ['', '/']:
+        return '/' + tail
+    return head + '/' + tail
+
+
 def TraverseByID(callback, iterID=None): 
     """     
     Calls method ``callback(path_id, path, info)`` for every item in the index.
@@ -961,8 +1003,8 @@ def TraverseByID(callback, iterID=None):
                 recursive_traverse(i[id], path_id+'/'+str(id) if path_id else str(id), path, cb)
             elif isinstance(i[id], FSItemInfo):
                 cb((path_id+'/'+str(id)).lstrip('/') if path_id else str(id), 
-                   path+'/'+i[id].name() if path not in ['', '/'] else '/'+i[id].name(), 
-                   i[id])
+                    ResolvePath(path, i[id].name()), 
+                    i[id])
             else:
                 raise Exception('Error, wrong item type in the index')
     if iterID is None:
@@ -991,11 +1033,9 @@ def TraverseByIDSorted(callback, iterID=None):
             if id == INFO_KEY:
                 continue
             if isinstance(i[id], dict):
-                dirs.append((id, 
-                    path+'/'+i[id][INFO_KEY].name() if path else i[id][INFO_KEY].name()))
+                dirs.append((id, ResolvePath(path, i[id][INFO_KEY].name()),))
             elif isinstance(i[id], FSItemInfo):
-                files.append((id, 
-                    path+'/'+i[id].name() if path not in ['', '/'] else '/'+i[id].name()))
+                files.append((id, ResolvePath(path, i[id].name()),))
             else:
                 raise Exception('Error, wrong item type in the index')   
         dirs.sort(key=lambda e: e[1])
@@ -1042,9 +1082,17 @@ def TraverseChildsByID(callback, iterID=None):
         dirs.sort(key=lambda e: e[1])
         files.sort(key=lambda e: e[1])
         for id, pth, has_childs in dirs:
-            cb(DIR, pth, (path_id+'/'+str(id)).lstrip('/') if path_id else str(id), i[id][INFO_KEY], has_childs)
+            cb(DIR,
+               pth,
+               (path_id+'/'+str(id)).lstrip('/') if path_id else str(id),
+               i[id][INFO_KEY],
+               has_childs)
         for id, pth in files:
-            cb(FILE, pth, (path_id+'/'+str(id)).lstrip('/') if path_id else str(id), i[id], False)
+            cb(FILE,
+               pth,
+               (path_id+'/'+str(id)).lstrip('/') if path_id else str(id), 
+               i[id],
+               False)
         del dirs
         del files
     if iterID is None:
@@ -1094,8 +1142,9 @@ def IterateIDs(iterID=None):
                     yield t
             elif isinstance(i[id], FSItemInfo):
                 yield ( (path_id+'/'+str(id)).lstrip('/') if path_id else str(id),   
-                        path+'/'+i[id].name() if path not in ['', '/'] else '/'+i[id].name(), 
-                        i[id] )
+                        ResolvePath(path, i[id].name()),
+                        # path+'/'+i[id].name() if path not in ['', '/'] else ('/'+i[id].name()).replace('//', '/'),
+                        i[id])
             else:
                 raise Exception('Error, wrong item type in the index')        
     startpth = '' if bpio.Windows() else '/'
@@ -1169,9 +1218,9 @@ def ListRootItems(iter=None):
     result = []
     root_items = WalkByPath('', iter)
     for item_dict in root_items[0].values():
-        item = GetByID(str(item_dict[0]))
+        item = GetByID(str(item_dict))
         if item:
-            result.append((str(item_dict[0]), item.name(), item))
+            result.append((str(item_dict), item.name(), item))
     return result
 
 def ListChilds(iterID):
@@ -1621,36 +1670,52 @@ def Unserialize(inpt, iter=None, iterID=None):
         if item.type == FILE:
             if not SetFile(item, iter, iterID):
                 raise Exception('Can not put item into the tree: %s' % str(item))
+            count += 1
         elif item.type == DIR or item.type == PARENT:
             if not SetDir(item, iter, iterID):
                 raise Exception('Can not put item into the tree: %s' % str(item))
+            count += 1
         else:
             raise Exception('Incorrect entry type')
-        count += 1
     lg.out(6, 'backup_fs.Unserialize done with %d indexed files' % count)
     return count
 
 #------------------------------------------------------------------------------ 
 
-def main():
+def test():
     """
     For tests.
     """
+    import pprint
+    settings.init()
     filepath = settings.BackupIndexFilePath()
+    print filepath
     src = bpio.ReadTextFile(filepath)
     inpt = cStringIO.StringIO(src)
     inpt.readline()
     count = Unserialize(inpt)
     inpt.close()
+    print count
     Scan()
     Calculate()
+    # MapPath("/Users/veselin/Pictures/fotosess/Thumbs.db")
+    # pprint.pprint(fs())
+    # pprint.pprint(fsID())
     # for pathID, localPath, item in IterateIDs():
     #     sz = diskspace.MakeStringFromBytes(item.size) if item.exist() else '' 
     #     print '  %s %s %s' % (pathID.ljust(27), localPath.ljust(70), sz.ljust(9))
 
-    import pprint
+    # import pdb
+    # pdb.set_trace()
+    pprint.pprint(ListRootItems())
     # pprint.pprint(ListAllBackupIDsAdvanced())
-    pprint.pprint(ListByPathAdvanced(sys.argv[1]))
+    # pprint.pprint(ListByPathAdvanced(sys.argv[1]))
+    
+    print ListByPathAdvanced("")
+    pth = '~/Downloads/test/asd'
+    ppth = bpio.portablePath(unicode(pth))
+    print ppth
+    print ToID(ppth)
     
 #    bpio.init()
 #    for path in sys.argv[1:]:
@@ -1697,6 +1762,6 @@ def main():
     # print ListLocalFolder(sys.argv[1])
 
 if __name__ == '__main__':
-    main()
+    test()
 
     

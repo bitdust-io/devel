@@ -29,17 +29,18 @@ Commands:
   key copy
   key backup <destination filename to write your private key>
   key print  
-  backup list
-  backup idlist
-  backup add <local file or folder>
-  backup addtree <folder path>
-  backup start <local path or ID>
-  backup delete <local path, ID or full version ID>
-  backup delete local <full backup ID>
-  backup abort <path ID or full backup ID>
-  backup queue
-  backup progress
-  backup update
+  file list
+  file idlist
+  file bind <local file or folder>
+  file add <local file or folder>
+  file addtree <folder path>
+  file start <local path or ID>
+  file delete <local path, ID or full version ID>
+  file delete local <full backup ID>
+  file abort <path ID or full backup ID>
+  file queue
+  file progress
+  file sync
   restore list
   restore start <backup ID> 
   restore start <backup ID> <destination folder>
@@ -104,33 +105,40 @@ Commands:
   key print             print private key to console
                         WARNING!!! do not publish your key  
 
-  backup list           show a full catalog of registered files and folders
+  file list             show a full catalog of registered files and folders
 
-  backup idlist         show a list of items already uploaded on remote peers 
+  file idlist           show a list of items already uploaded on remote peers 
 
-  backup add <local path>
-                        add given path to the catalog
+  file bind <local path>
+                        add given path as a top level item in the catalog
+
+  file add <local path>
+                        replicate given path into the catalog,
+                        this will add to catalog all parent folders too
   
-  backup addtree <local folder path>
-                        add given folder (with all sub folders) to the catalog
+  file addtree <local folder path>
+                        replicate given folder with all sub folders to the catalog,
+                        be aware if you add too much items to catalog
+                        the software may operate inefficient
 
-  backup start <local path or ID>
-                        start a new backup of the local file or folder 
-                        or existing ID from catalog
+  file start <local path or ID>
+                        start uploading a catalog item on to remote peers,
+                        bind a new local file/folder if path is not yet
+                        existing in the catalog
                         
-  backup delete <local path, ID or full backup ID>
+  file delete <local path, ID or full backup ID>
                         remove a file or folder (with all sub folders)
-                        from catalog or just delete a given backup
+                        from catalog or only erase a given remote copy
 
-  backup delete local <full backup ID>
+  file delete local <full backup ID>
                         remove only local copy of given backup,
                         keep remote copy on suppliers HDD
+  
+  file queue            show a list of paths to be uploaded
+  
+  file progress         show a list of currently running uploads
                         
-  backup update         request all suppliers to update info for all backups 
-  
-  backup queue          show a list of paths to be uploaded
-  
-  backup progress       show a list of currently running uploads
+  file sync             request all suppliers to check/restart uploads 
   
   restore list          show a list of items already uploaded on remote peers
   
