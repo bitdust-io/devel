@@ -402,12 +402,14 @@ class Task():
         self.pathID = pathID                            # source path to backup
         self.localPath = localPath 
         self.created = time.time()
+        if _Debug:
+            lg.out(_DebugLevel, 'new Task created: %r' % self)
         
     def __repr__(self):
         """
-        Return a string like "Task-5: 0/1/2/3".
+        Return a string like "Task-5: 0/1/2/3 from /home/veselin/Documents/myfile.txt".
         """
-        return 'Task-%d: %s' % (self.number, self.pathID)
+        return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
        
     #--- !!! STARTING BACKUP HERE !!! --- 
     def run(self):
@@ -472,8 +474,8 @@ class Task():
             jobs()[backupID].totalSize = os.path.getsize(sourcePath)
         jobs()[backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
-        lg.out(4, 'backup_control.Task.run %s [%s], size=%d, %s' % (
-            self.pathID, dataID, itemInfo.size, sourcePath))
+        lg.out(4, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (
+            self.number, self.pathID, dataID, itemInfo.size, sourcePath))
     
 #------------------------------------------------------------------------------ 
         

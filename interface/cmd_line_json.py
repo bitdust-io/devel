@@ -789,7 +789,7 @@ def cmd_automats(opts, args, overDict):
 #------------------------------------------------------------------------------ 
 
 def cmd_services(opts, args, overDict):
-    if len(args) < 2 or args[1] == 'list':
+    if len(args) < 2 or args[1] in ['list', 'ls',]:
         def _services_update(result):
             for i in xrange(len(result['result'])):
                 r = result['result'][i]
@@ -799,7 +799,13 @@ def cmd_services(opts, args, overDict):
             return result
         tpl = jsontemplate.Template(templ.TPL_SERVICES)
         return call_jsonrpc_method_transform_template_and_stop('services_list', tpl, _services_update)
-    if len(args) >= 2 and args[1].startswith('service_'):
+    if len(args) >= 3 and args[1] in ['start', 'enable', 'on',]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('service_start', tpl, args[2])
+    if len(args) >= 3 and args[1] in ['stop', 'disable', 'off',]:
+        tpl = jsontemplate.Template(templ.TPL_RAW)
+        return call_jsonrpc_method_template_and_stop('service_stop', tpl, args[2])
+    if len(args) >= 2:
         tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
         return call_jsonrpc_method_template_and_stop('service_info', tpl, args[1])
     return 2 

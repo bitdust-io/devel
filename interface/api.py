@@ -134,6 +134,7 @@ def config_get(key, default=None):
               'key': 'logs/debug-level'}]}"    
     """
     from logs import lg
+    key = str(key)
     lg.out(4, 'api.config_get [%s]' % key)
     from main import config
     if not config.conf().exist(key):
@@ -159,6 +160,7 @@ def config_set(key, value, typ=None):
               'key': 'logs/debug-level'}]}"
     """
     from logs import lg
+    key = str(key)
     lg.out(4, 'api.config_set [%s]=%s' % (key, value))
     from main import config
     v = {}
@@ -359,6 +361,7 @@ def backup_start_id(pathID):
     from storage import backup_control
     from web import control
     from logs import lg
+    pathID = str(pathID)
     local_path = backup_fs.ToPath(pathID)
     if local_path is not None:
         if bpio.pathExist(local_path):
@@ -449,7 +452,9 @@ def backup_map_path(path):
     from storage import backup_fs
     from storage import backup_control
     from system import dirsize
+    from system import bpio
     from web import control
+    path = bpio.portablePath(unicode(path))
     pathID = backup_fs.ToID(path)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
@@ -480,7 +485,9 @@ def backup_dir_add(dirpath):
     from storage import backup_fs
     from storage import backup_control
     from system import dirsize
+    from system import bpio
     from web import control
+    dirpath = bpio.portablePath(unicode(dirpath))
     pathID = backup_fs.ToID(dirpath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
@@ -505,7 +512,9 @@ def backup_file_add(filepath):
     """ 
     from storage import backup_fs
     from storage import backup_control
+    from system import bpio
     from web import control
+    filepath = bpio.portablePath(unicode(filepath))
     pathID = backup_fs.ToID(filepath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
@@ -527,7 +536,9 @@ def backup_tree_add(dirpath):
     """
     from storage import backup_fs
     from storage import backup_control
+    from system import bpio
     from web import control
+    dirpath = bpio.portablePath(unicode(dirpath))
     newPathID, iter, iterID, num = backup_fs.AddLocalPath(dirpath, True)
     backup_fs.Calculate()
     backup_control.Save()
@@ -1063,6 +1074,9 @@ def service_info(service_name):
     """
     svc = driver.services().get(service_name, None)
     if svc is None:
+        service_name = 'service_' + service_name
+        svc = driver.services().get(service_name, None)
+    if svc is None:
         return ERROR('service %s not found' % service_name)
     return RESULT([{
         'index': svc.index,
@@ -1074,6 +1088,58 @@ def service_info(service_name):
         'depends': svc.dependent_on()
     }])
     
+def service_start(service_name):
+    """
+    Start given service immediately.
+    This will set correspondent value to `True` in the settings:
+        .bitdust/config/services/<service>/enabled
+    """
+    from logs import lg
+    from main import config 
+    svc = driver.services().get(service_name, None)
+    if svc is None:
+        service_name = 'service_' + service_name
+        svc = driver.services().get(service_name, None)
+    if svc is None:
+        lg.out(4, 'api.service_start %s not found' % service_name)
+        return ERROR('service %s was not found' % service_name)
+    if svc.state == 'ON':
+        lg.out(4, 'api.service_start %s already started' % service_name)
+        return ERROR('service %s already started' % service_name)
+    current_config = config.conf().getBool(svc.config_path)
+    if current_config:
+        lg.out(4, 'api.service_start %s already enabled' % service_name)
+        return ERROR('service %s already enabled' % service_name)
+    config.conf().setBool(svc.config_path, True)
+    lg.out(4, 'api.service_start (%s)' % service_name)
+    return OK('%s was switched on' % service_name)
+
+def service_stop(service_name):
+    """
+    Stop given service by putting `False` in
+    the correspondent value in the settings:
+        .bitdust/config/services/<service>/enabled
+    """
+    from logs import lg
+    from main import config 
+    svc = driver.services().get(service_name, None)
+    if svc is None:
+        service_name = 'service_' + service_name
+        svc = driver.services().get(service_name, None)
+    if svc is None:
+        lg.out(4, 'api.service_stop %s not found' % service_name)
+        return ERROR('service %s not found' % service_name)
+    current_config = config.conf().getBool(svc.config_path)
+    if current_config is None:
+        lg.out(4, 'api.service_stop config item %s was not found' % svc.config_path)
+        return ERROR('config item %s was not found' % svc.config_path)
+    if current_config is False:
+        lg.out(4, 'api.service_stop %s already disabled' % service_name)
+        return ERROR('service %s already disabled' % service_name)
+    config.conf().setBool(svc.config_path, False)
+    lg.out(4, 'api.service_stop (%s)' % service_name)
+    return OK('%s was switched off' % service_name)
+
 #------------------------------------------------------------------------------ 
 
 def ping(idurl, timeout=10):

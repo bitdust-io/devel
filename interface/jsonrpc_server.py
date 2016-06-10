@@ -221,6 +221,12 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_service_info(self, service_name):
         return api.service_info(service_name)
 
+    def jsonrpc_service_start(self, service_name):
+        return api.service_start(service_name)
+
+    def jsonrpc_service_stop(self, service_name):
+        return api.service_stop(service_name)
+
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)
 
