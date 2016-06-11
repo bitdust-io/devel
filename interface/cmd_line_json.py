@@ -817,18 +817,17 @@ def cmd_message(opts, args, overDict):
 #         tpl = jsontemplate.Template(templ.TPL_RAW)
 #         return call_jsonrpc_method_template_and_stop('list_messages', tpl)
     if len(args) >= 4 and args[1] in ['send', 'to', ]:
-        tpl = jsontemplate.Template(templ.TPL_MESSAGE_SENDING)
+        tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('send_message', tpl, args[2], args[3]) 
     if len(args) < 2 or args[1] in ['listen', 'read', ]:
         def _process_inbox(result):
-            print result
             out = '[%s] %s' % (result['from'], result['text'])
             print_text(out)
             return result
         def _next_message():
             d = call_jsonrpc_method('receive_one_message')
             d.addCallback(_process_inbox)
-            d.addCallback(lambda result: _next_message)
+            d.addCallback(lambda packet, result: _next_message)
             d.addErrback(fail_and_stop) 
         _next_message()
         reactor.run()
