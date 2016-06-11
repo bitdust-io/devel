@@ -176,7 +176,7 @@ def post_init(portnum):
     from contacts import identitydb
     identitydb.AddCacheUpdatedCallback(dbwrite.update_identities)
     from chat import message
-    message.SetIncomingMessageCallback(dbwrite.incoming_message)
+    message.AddIncomingMessageCallback(dbwrite.incoming_message)
     # sqlio.init(database_info)
 #    contactsdb.SetSuppliersChangedCallback(sqlio.update_suppliers)
 #    contactsdb.SetCustomersChangedCallback(sqlio.update_customers)
@@ -188,6 +188,8 @@ def shutdown():
     global _WSGIPort
     if _Debug:
         lg.out(_DebugLevel, 'control.shutdown')
+    from chat import message
+    message.RemoveIncomingMessageCallback(dbwrite.incoming_message)
     # sqlio.shutdown()
     # shortpool.shutdown()
     if _WSGIListener:

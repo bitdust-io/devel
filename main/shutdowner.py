@@ -203,7 +203,8 @@ class Shutdowner(automat.Automat):
         del _Shutdowner
         _Shutdowner = None
         self.destroy()
-        lg.out(2, 'shutdowner.doDestroyMe %d machines left in memory' % len(automat.objects()))
+        lg.out(2, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (
+            len(automat.objects()), '\n        '.join(automat.objects().keys())))
 
     #------------------------------------------------------------------------------ 
     

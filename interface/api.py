@@ -95,7 +95,7 @@ def restart(showgui=False):
     return OK('restarted')
 
 
-def  reconnect():
+def reconnect():
     if not driver.is_started('service_network'):
         return ERROR('service_network() is not started')
     from p2p import network_connector
@@ -163,23 +163,24 @@ def config_set(key, value, typ=None):
     key = str(key)
     lg.out(4, 'api.config_set [%s]=%s' % (key, value))
     from main import config
+    from main import config_types
     v = {}
     if config.conf().exist(key):
         v['old_value'] = config.conf().getData(key)
-    if type in [ config.TYPE_STRING, 
-                 config.TYPE_TEXT,
-                 config.TYPE_UNDEFINED, ] or typ is None: 
+    if type in [ config_types.TYPE_STRING, 
+                 config_types.TYPE_TEXT,
+                 config_types.TYPE_UNDEFINED, ] or typ is None: 
         config.conf().setData(key, value)
-    elif typ in [config.TYPE_BOOLEAN, ]:
+    elif typ in [config_types.TYPE_BOOLEAN, ]:
         config.conf().setBool(key, value)
-    elif typ in [config.TYPE_INTEGER, 
-                 config.TYPE_POSITIVE_INTEGER, 
-                 config.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
+    elif typ in [config_types.TYPE_INTEGER, 
+                 config_types.TYPE_POSITIVE_INTEGER, 
+                 config_types.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
         config.conf().setInt(key, value)
-    elif typ in [config.TYPE_FOLDER_PATH,
-                 config.TYPE_FILE_PATH, 
-                 config.TYPE_COMBO_BOX,
-                 config.TYPE_PASSWORD,]:
+    elif typ in [config_types.TYPE_FOLDER_PATH,
+                 config_types.TYPE_FILE_PATH, 
+                 config_types.TYPE_COMBO_BOX,
+                 config_types.TYPE_PASSWORD,]:
         config.conf().setString(key, value)
     else:
         config.conf().setData(key, str(value))
@@ -266,6 +267,8 @@ def backups_update():
     Return:
         {'status': 'OK', 'result': 'the main loop has been restarted'}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_monitor
     backup_monitor.A('restart') 
     from logs import lg
@@ -298,6 +301,8 @@ def backups_list():
               'id': '0/0/1/0/0', 
               'size': 5754439}]}"    
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from lib import diskspace
     from logs import lg
@@ -330,6 +335,8 @@ def backups_id_list():
                       'path': '/Users/veselin/Music/Bob Marley/01-Soul Rebels (1970)/01-Put It On.mp3', 
                       'size': '8.27 MB'}]}        
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from contacts import contactsdb
     from lib import diskspace
@@ -356,6 +363,8 @@ def backup_start_id(pathID):
         {'status': 'OK', 
           'result': 'uploading 0/0/1/0/0 started, local path is: /Users/veselin/Documents/python/python27.chm'}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from system import bpio
     from storage import backup_fs
     from storage import backup_control
@@ -393,6 +402,8 @@ def backup_start_path(path, bind_local_path=True):
           'id': '0/0/1/0/0',
           'type': 'file', }
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from system import bpio
     from system import dirsize
     from storage import backup_fs
@@ -449,6 +460,8 @@ def backup_map_path(path):
       'id': '1',
       'type': 'file'}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_control
     from system import dirsize
@@ -482,6 +495,8 @@ def backup_dir_add(dirpath):
         {'status': 'OK',
           'result': 'new folder was added: 0/0/2, local path is /Users/veselin/Movies/'} 
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_control
     from system import dirsize
@@ -510,6 +525,8 @@ def backup_file_add(filepath):
     Return:
         {'status': 'OK', 'result': 'new file was added: 0/0/3/0, local path is /Users/veselin/Downloads/pytest-2.9.0.tar.gz'}
     """ 
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_control
     from system import bpio
@@ -534,6 +551,8 @@ def backup_tree_add(dirpath):
         {'status': 'OK',
           'result': '21 items were added to catalog, parent path ID is 0/0/1/2, root folder is /Users/veselin/Documents/reports'}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_control
     from system import bpio
@@ -558,6 +577,8 @@ def backup_delete_local(backupID):
         {'status': 'OK',
           'result': '8 files were removed with total size of 16 Mb'}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_matrix
     from main import settings
@@ -581,6 +602,8 @@ def backup_delete_id(pathID_or_backupID):
         {'status': 'OK',
           'result': 'version 0/0/1/1/0/F20160313043419PM was deleted from remote peers'}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_control
     from storage import backup_monitor
@@ -630,6 +653,8 @@ def backup_delete_path(localPath):
         {'status': 'OK',
           'result': 'item 0/1/2 was deleted from remote peers'}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_fs
     from storage import backup_control
     from storage import backup_monitor
@@ -673,6 +698,8 @@ def backups_queue():
              'local_path': '/Users/veselin/Downloads/some-ZIP-file.zip',
              'path_id': '0/0/3/1'}]}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_control
     from logs import lg
     lg.out(4, 'api.backups_queue %d tasks in the queue' % len(backup_control.tasks()))
@@ -708,6 +735,8 @@ def backups_running():
              'work_blocks': 4}
         ]}
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from lib import misc
     from storage import backup_control
     from logs import lg
@@ -736,6 +765,8 @@ def backup_cancel_pending(path_id):
     """
     Cancel pending task to backup given item from catalog. 
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_control
     from logs import lg
     lg.out(4, 'api.backup_cancel_pending %s' % path_id)
@@ -747,6 +778,8 @@ def backup_abort_running(backup_id):
     """
     Abort currently running backup.
     """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
     from storage import backup_control
     from logs import lg
     lg.out(4, 'api.backup_abort_running %s' % backup_id)
@@ -770,6 +803,8 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
         {'status': 'OK',
           'result': 'downloading of version 0/0/1/1/0/F20160313043419PM has been started to /Users/veselin/Downloads/restore/'}
     """
+    if not driver.is_started('service_restores'):
+        return ERROR('service_restores() is not started')
     from storage import backup_fs
     from storage import backup_control
     from storage import restore_monitor
@@ -850,6 +885,8 @@ def restores_running():
                          'version': 'F20160427011209PM'}],
           'status': 'OK'}    
     """
+    if not driver.is_started('service_restores'):
+        return ERROR('service_restores() is not started')
     from storage import restore_monitor
     from logs import lg
     lg.out(4, 'api.restores_running %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
@@ -872,6 +909,8 @@ def restore_abort(backup_id):
     """
     Abort currently running restore process.
     """
+    if not driver.is_started('service_restores'):
+        return ERROR('service_restores() is not started')
     from storage import restore_monitor
     from logs import lg
     lg.out(4, 'api.restore_abort %s' % backup_id)
@@ -885,6 +924,8 @@ def suppliers_list():
     """
     List of suppliers - nodes who stores my data on own machines.
     """
+    if not driver.is_started('service_customer'):
+        return ERROR('service_customer() is not started')
     from contacts import contactsdb
     from p2p import contact_status
     from lib import misc
@@ -904,6 +945,8 @@ def supplier_replace(index_or_idurl):
     rebuilding of all uploaded data will be started and
     the new node will start getting a reconstructed fragments.
     """
+    if not driver.is_started('service_customer'):
+        return ERROR('service_customer() is not started')
     from contacts import contactsdb
     idurl = index_or_idurl
     if idurl.isdigit():
@@ -919,6 +962,8 @@ def supplier_change(index_or_idurl, new_idurl):
     """
     Doing same as supplier_replace() but new node is provided directly.
     """
+    if not driver.is_started('service_customer'):
+        return ERROR('service_customer() is not started')
     from contacts import contactsdb
     idurl = index_or_idurl
     if idurl.isdigit():
@@ -938,6 +983,8 @@ def suppliers_ping():
     """
     Send short requests to all suppliers to get their current statuses.
     """
+    if not driver.is_started('service_customer'):
+        return ERROR('service_customer() is not started')
     from p2p import propagate
     propagate.SlowSendSuppliers(0.1)
     return OK('requests to all suppliers was sent')
@@ -948,6 +995,8 @@ def customers_list():
     """
     List of customers - nodes who stores own data on your machine.
     """
+    if not driver.is_started('service_supplier'):
+        return ERROR('service_supplier() is not started')
     from contacts import contactsdb
     from p2p import contact_status
     return RESULT([{
@@ -961,6 +1010,8 @@ def customer_reject(idurl):
     Stop supporting given customer, remove all his files from local disc,
     close connections with that node.
     """
+    if not driver.is_started('service_supplier'):
+        return ERROR('service_supplier() is not started')
     from contacts import contactsdb
     from storage import accounting
     from main import settings
@@ -992,6 +1043,8 @@ def customers_ping():
     Send Identity packet to all customers to check their current statuses.
     Every node will reply with Ack packet on any valid incoming Identiy packet.  
     """
+    if not driver.is_started('service_supplier'):
+        return ERROR('service_supplier() is not started')
     from p2p import propagate
     propagate.SlowSendCustomers(0.1)
     return OK('requests to all customers was sent')
@@ -1074,7 +1127,7 @@ def service_info(service_name):
     """
     svc = driver.services().get(service_name, None)
     if svc is None:
-        service_name = 'service_' + service_name
+        service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
         return ERROR('service %s not found' % service_name)
@@ -1098,7 +1151,7 @@ def service_start(service_name):
     from main import config 
     svc = driver.services().get(service_name, None)
     if svc is None:
-        service_name = 'service_' + service_name
+        service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
         lg.out(4, 'api.service_start %s not found' % service_name)
@@ -1124,7 +1177,7 @@ def service_stop(service_name):
     from main import config 
     svc = driver.services().get(service_name, None)
     if svc is None:
-        service_name = 'service_' + service_name
+        service_name = 'service_' + service_name.replace('-', '_')
         svc = driver.services().get(service_name, None)
     if svc is None:
         lg.out(4, 'api.service_stop %s not found' % service_name)
@@ -1139,6 +1192,17 @@ def service_stop(service_name):
     config.conf().setBool(svc.config_path, False)
     lg.out(4, 'api.service_stop (%s)' % service_name)
     return OK('%s was switched off' % service_name)
+
+#------------------------------------------------------------------------------ 
+
+def packets_stats():
+    if not driver.is_started('service_gateway'):
+        return ERROR('service_gateway() is not started')
+    from transport import stats
+    return RESULT([{
+        'in': stats.counters_in(),
+        'out': stats.counters_out(),
+    }])
 
 #------------------------------------------------------------------------------ 
 
@@ -1177,23 +1241,13 @@ def list_messages():
     from chat import message
     mlist = [{},] #TODO: just need some good idea to keep messages synchronized!!!
     return RESULT(mlist)
-    
-    
+
 def send_message(recipient, message_body):
     """
-    Send a message to remote peer.
-    Return: 
-        {'result': 'message to http://p2p-id.ru/alice.xml was sent', 
-         'packet': ... , 
-         'recipient': http://p2p-id.ru/alice.xml,
-         'message': 'Hi Alice!!!',
-         'error': '',}
+    Send a text message to remote peer.
     """
     if not driver.is_started('service_private_messages'):
-        return { 'result': 'failed sending message to %s' % recipient,
-                 'recipient': recipient,
-                 'message': message_body,
-                 'error': 'service_private_messages() is not started', }
+        return ERROR('service_private_messages() is not started')
     from chat import message
     recipient = str(recipient)
     if not recipient.startswith('http://'):
@@ -1202,24 +1256,36 @@ def send_message(recipient, message_body):
     result = message.SendMessage(recipient, message_body)
     if isinstance(result, Deferred):
         ret = Deferred()
-        result.addCallback(lambda packet: ret.callback({
-            'result': 'message to %s was sent' % recipient,
-            'packet': packet.outpacket,
-            'recipient': recipient,
-            'message': message_body,
-            'error': '',}))
-        result.addErrback(lambda err: ret.callback({
-            'result': 'failed sending message to %s' % recipient,
-            'recipient': recipient,
-            'message': message_body,
-            'error': err}))
+        result.addCallback(
+            lambda packet: ret.callback(
+                OK([str(packet.outpacket),])))
+        result.addErrback(
+            lambda err: ret.callback(
+                ERROR(err.getErrorMessage())))
         return ret
-    return {'result': 'message to %s was sent' % recipient, 
-            'packet': result.outpacket, 
-            'recipient': recipient,
-            'message': message_body,
-            'error': '', }
-    
+    return OK([str(result.outpacket),])
+
+def receive_one_message():
+    """
+    This method can be used to listen and process of incoming chat messages:
+        + creates a callback to receive all incoming messages,
+        + wait until one incoming message get received,
+        + remove the callback after receiving the message.
+    """
+    if not driver.is_started('service_private_messages'):
+        return ERROR('service_private_messages() is not started')
+    from chat import message
+    ret = Deferred()
+    def _message_received(packet, text):
+        ret.callback(RESULT([{
+            'message': text,
+            'from': packet.OwnerID,
+        },]))
+        return True
+    message.AddIncomingMessageCallback(_message_received)
+    ret.addCallback(lambda packet, text: message.RemoveIncomingMessageCallback(_message_received))
+    return ret
+
 #------------------------------------------------------------------------------ 
 
 def list_correspondents():
@@ -1232,48 +1298,41 @@ def list_correspondents():
            'nickname': 'bob'},]
     """
     from contacts import contactsdb
-    return { 'result': map(lambda v: {
-                'idurl': v[0],
-                'nickname': v[1],},
-              contactsdb.correspondents()), } 
-    
-    
+    return RESULT(map(lambda v: {
+        'idurl': v[0],
+        'nickname': v[1],
+    }, contactsdb.correspondents()))
+        
 def add_correspondent(idurl, nickname=''):
     from contacts import contactsdb
     contactsdb.add_correspondent(idurl, nickname)
     contactsdb.save_correspondents()
-    return { 'result': 'new correspondent was added',
-             'nickname': nickname,
-             'idurl': idurl, }
-    
+    return OK('new %s correspondent was added with nickname %s' % (idurl, nickname))
 
 def remove_correspondent(idurl):
     from contacts import contactsdb
     result = contactsdb.remove_correspondent(idurl)
     contactsdb.save_correspondents()
-    if result:
-        result = 'correspondent %s was removed'
-    else:
-        result = 'correspondent %s was not found'
-    return { 'result': result, }
-
+    if not result:
+        return ERROR('correspondent %s was not found' % idurl)
+    return OK('correspondent %s was removed' % idurl)
 
 def find_peer_by_nickname(nickname):
-    from twisted.internet.defer import Deferred
     from chat import nickname_observer
     nickname_observer.stop_all()
-    d = Deferred()
+    ret = Deferred()
     def _result(result, nik, pos, idurl):
-        return d.callback({'result':
-            { 'result': result,
-              'nickname': nik,
-              'position': pos,
-              'idurl': idurl,}})        
+        return ret.callback(RESULT[{
+            'result': result,
+            'nickname': nik,
+            'position': pos,
+            'idurl': idurl,
+        }])
     nickname_observer.find_one(nickname, 
         results_callback=_result)
     # nickname_observer.observe_many(nickname, 
         # results_callback=lambda result, nik, idurl: d.callback((result, nik, idurl)))
-    return d
+    return ret
 
 #------------------------------------------------------------------------------ 
 

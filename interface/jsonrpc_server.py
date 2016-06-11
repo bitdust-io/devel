@@ -50,7 +50,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
     
     def _register_execution(self, request_dict, result):
         result['execution'] = '%3.6f' % (time.time() - request_dict['_executed'])
-        lg.out(4, "jsontpc_server._register_execution : %s sec. ,  started at %d" % (result['execution'], request_dict['_executed']))
+        lg.out(4, "jsonrpc_server._register_execution : %s sec. ,  started at %d" % (result['execution'], request_dict['_executed']))
         return result
 
     def _convert_filemanager_response(self, result):
@@ -91,7 +91,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return fm_result
     
     def _callMethod(self, request_dict):
-        lg.out(12, 'jsontpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
+        lg.out(12, 'jsonrpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
         request_dict['_executed'] = time.time()
         try:
             fm_result = self._catch_filemanager_methods(request_dict)
@@ -227,6 +227,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_service_stop(self, service_name):
         return api.service_stop(service_name)
 
+    def jsonrpc_packets_stats(self):
+        return api.packets_stats()
+
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)
 
@@ -244,6 +247,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     
     def jsonrpc_send_message(self, recipient, message_body):
         return api.send_message(recipient, message_body)
+    
+    def jsonrpc_receive_one_message(self):
+        return api.receive_one_message()
     
     def jsonrpc_list_correspondents(self):
         return api.list_correspondents()

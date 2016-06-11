@@ -37,9 +37,9 @@ class GatewayService(LocalService):
         return True
     
     def stop(self):
-        from transport import bandwidth
         from transport import gateway
         from transport import callback
+        from transport import bandwidth
         callback.remove_inbox_callback(bandwidth.INfile)
         callback.remove_finish_file_sending_callback(bandwidth.OUTfile)
         d = gateway.stop()

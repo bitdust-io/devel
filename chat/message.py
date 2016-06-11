@@ -47,7 +47,7 @@ from transport import gateway
 
 #------------------------------------------------------------------------------ 
 
-_IncomingMessageCallback = None
+_IncomingMessageCallbacks = []
 _OutgoingMessageCallback = None
 
 #------------------------------------------------------------------------------ 
@@ -79,8 +79,8 @@ class MessageClass:
     def __init__(self, destinationidentity, messagebody):
         lg.out(8, "message.MessageClass making message of %d bytes" % len(messagebody))
         sessionkey = key.NewSessionKey()
-        keystring = destinationidentity.publickey
-        self.encryptedKey = key.EncryptStringPK(keystring, sessionkey)
+        self.encryptedKey = key.EncryptStringPK(
+            destinationidentity.publickey, sessionkey)
         self.encryptedMessage = key.EncryptWithSessionKey(sessionkey, messagebody)
         
     def ClearBody(self):
@@ -99,7 +99,7 @@ def Message(request):
         4) call the GUI
         5) send an "Ack" back to sender
     """
-    global _IncomingMessageCallback
+    global _IncomingMessageCallbacks
     lg.out(6, "message.Message from " + str(request.OwnerID))
 #    senderidentity = contactsdb.get_correspondent_identity(request.OwnerID)
 #    if not senderidentity:
@@ -107,16 +107,16 @@ def Message(request):
 #        # return
 #        contactsdb.add_correspondent(request.OwnerID, nameurl.GetName(request.OwnerID))
 #        contactsdb.save_correspondents()
-    Amessage = misc.StringToObject(request.Payload)
-    if Amessage is None:
+    new_message = misc.StringToObject(request.Payload)
+    if new_message is None:
         lg.warn("wrong Payload, can not extract message from request")
         return
-    clearmessage = Amessage.ClearBody()
+    clear_message = new_message.ClearBody()
     # SaveMessage(clearmessage)
     from p2p import p2p_service
     p2p_service.SendAck(request)
-    if _IncomingMessageCallback is not None:
-        _IncomingMessageCallback(request, clearmessage)
+    for cb in _IncomingMessageCallbacks:
+        cb(request, clear_message)
 
 #------------------------------------------------------------------------------ 
 
@@ -166,9 +166,13 @@ def SortMessagesList(mlist, sort_by_column):
 
 #------------------------------------------------------------------------------ 
 
-def SetIncomingMessageCallback(cb):
-    global _IncomingMessageCallback
-    _IncomingMessageCallback = cb
+def AddIncomingMessageCallback(cb):
+    global _IncomingMessageCallbacks
+    _IncomingMessageCallbacks.append(cb)
+    
+def RemoveIncomingMessageCallback(cb):
+    global _IncomingMessageCallbacks
+    _IncomingMessageCallbacks.remove(cb)
 
 #------------------------------------------------------------------------------ 
 

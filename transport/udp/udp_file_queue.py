@@ -218,7 +218,7 @@ class FileQueue:
                     # lg.warn('SEND ZERO ACK, got old block %s' % stream_id)
                 self.do_send_ack(stream_id, None, '')
                 return
-            if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
+            if len(self.streams) >= 2*MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
                 # too many incoming streams, seems remote side is cheating - drop that session!
                 # TODO: need to add some protection - keep a list of bad guys?  
                 inp.close()

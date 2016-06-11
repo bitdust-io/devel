@@ -18,6 +18,7 @@ This is the entry point of the program, see method ``main()`` bellow.
 import os
 import sys
 import time
+import threading
 
 #-------------------------------------------------------------------------------
 
@@ -181,20 +182,21 @@ def shutdown():
     from automats import automat
     automat.objects().clear()
     if len(automat.objects()) > 0:
-        lg.warn('%d automats stay uncleared')
+        lg.warn('%d automats was not cleaned')
         for a in automat.objects().values():
             lg.out(2, '    %r' % a)
+    else:
+        lg.out(2, 'bpmain.shutdown all automats cleaned successfully')
 
     config.conf().removeCallback('logs/debug-level')
 
-    lg.out(2, 'bpmain.run finished, EXIT')
+    lg.out(2, 'bpmain.shutdown currently %d threads running:' % len(threading.enumerate()))
+    for t in threading.enumerate():
+        lg.out(2, '    '+str(t))
+
+    lg.out(2, 'bpmain.shutdown finishing and closing log file, EXIT')
 
     automat.CloseLogFile()
-
-##    import threading
-##    lg.out(0, 'threads:')
-##    for t in threading.enumerate():
-##        lg.out(0, '  '+str(t))
 
     lg.close_log_file()
 

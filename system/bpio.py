@@ -59,7 +59,6 @@ def shutdown():
     """
     This is the last method to be invoked by the program before main process will stop.
     """
-    lg.out(2, 'bpio.shutdown')
     lg.restore_original_stdout()
     lg.close_log_file()
     lg.disable_logs()

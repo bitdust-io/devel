@@ -13,7 +13,8 @@
 .. role:: red
 
 Here are counted incoming and outgoing traffic. 
-Statistics are saved on the user's disk in the folders /bandin and /bandout in the BitDust local data dir.
+Statistics are saved on the user's disk in the 
+folders /bandin and /bandout in the BitDust local data dir.
 This is a daily stats - a single file for every day. 
 """
 
