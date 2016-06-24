@@ -820,17 +820,19 @@ def cmd_message(opts, args, overDict):
         tpl = jsontemplate.Template(templ.TPL_RAW)
         return call_jsonrpc_method_template_and_stop('send_message', tpl, args[2], args[3]) 
     if len(args) < 2 or args[1] in ['listen', 'read', ]:
-        def _process_inbox(result):
-            out = '[%s] %s' % (result['from'], result['text'])
-            print_text(out)
-            return result
-        def _next_message():
+        from chat import terminal_chat
+        def _send_message(to, msg):
+            call_jsonrpc_method('send_message', to, msg)
+        terminal_chat.init(do_send_message_func=_send_message)
+        def _next_message(x=None):
             d = call_jsonrpc_method('receive_one_message')
-            d.addCallback(_process_inbox)
-            d.addCallback(lambda packet, result: _next_message)
-            d.addErrback(fail_and_stop) 
+            d.addCallback(terminal_chat.on_incoming_message)
+            d.addCallback(_next_message)
+            d.addErrback(lambda x: reactor.stop())
         _next_message()
+        reactor.callInThread(terminal_chat.run)
         reactor.run()
+        terminal_chat.shutdown()
         return 0
     return 2
 

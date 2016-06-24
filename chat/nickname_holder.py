@@ -50,7 +50,7 @@ def A(event=None, arg=None):
     global _NicknameHolder
     if _NicknameHolder is None:
         # set automat name and starting state here
-        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 8, False)
+        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 4, True)
     if event is not None:
         _NicknameHolder.automat(event, arg)
     return _NicknameHolder
@@ -219,7 +219,9 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        dht_service.delete_key(self.key)
+        d = dht_service.delete_key(self.key)
+        d.addCallback(self._dht_erase_result)
+        d.addErrback(lambda x: self.automat('dht-erase-failed'))
         
     def doReportNicknameOwn(self, arg):
         """
@@ -277,6 +279,12 @@ class NicknameHolder(automat.Automat):
         else:
             self.automat('dht-write-failed')        
 
+    def _dht_erase_result(self, result):
+        if result is None:
+            self.automat('dht-erase-failed')
+        else:
+            self.automat('dht-erase-success')
+            
 #------------------------------------------------------------------------------ 
 
 

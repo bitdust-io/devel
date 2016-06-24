@@ -51,7 +51,7 @@ def init():
     This installs a system locale, so all output messages will have a correct encoding. 
     """
     InstallLocale()
-    if Linux():
+    if Linux() or Mac():
         lg.setup_unbuffered_stdout()
     # StartCountingOpenedFiles()
         

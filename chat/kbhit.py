@@ -29,6 +29,8 @@ else:
     import atexit
     from select import select
 
+import curses
+
 
 class KBHit:
     
@@ -52,6 +54,10 @@ class KBHit:
     
             # Support normal-terminal reset at exit
             atexit.register(self.set_normal_term)
+            
+        # curses.initscr()
+        # curses.delay_output(1000)
+        # curses.raw()
     
     
     def set_normal_term(self):
@@ -68,10 +74,7 @@ class KBHit:
     def getch(self):
         ''' Returns a keyboard character after kbhit() has been called.
             Should not be called in the same program as getarrow().
-        '''
-        
-        s = ''
-        
+        '''        
         if os.name == 'nt':
             return msvcrt.getch().decode('utf-8')
         
@@ -111,6 +114,28 @@ class KBHit:
             return dr != []
     
     
+    def getkeypress(self):
+        """ A smart method to catch key press combinations.
+        """
+        c = self.getch()
+        o = ord(c)
+        if o == 27:
+            if not self.kbhit():
+                return (None, c)
+            # return (None, c) 
+        if o >= 32:
+            return (None, c)
+        if os.name == 'nt':
+            c2 = msvcrt.getch()
+        else:
+            c2 = sys.stdin.read(1)
+            if ord(c2) == 91:
+                c2 = sys.stdin.read(1)
+        c2 = c2.decode('utf-8')
+        print ord(c2)
+        return (c, c2)
+    
+    
 # Test    
 if __name__ == "__main__":
     
@@ -121,10 +146,14 @@ if __name__ == "__main__":
     while True:
 
         if kb.kbhit():
-            c = kb.getch()
-            if ord(c) == 27: # ESC
+            mod, c = kb.getkeypress()
+            # print ord(c), mod
+            # if mod is None:
+            #     print (c)
+            #     continue
+            if ord(c) == 27 and mod is None: # ESC
                 break
-            print(c)
+            # print(c)
              
     kb.set_normal_term()
         

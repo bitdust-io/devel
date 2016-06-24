@@ -12,7 +12,6 @@
 
 """
 
-import os
 import sys
 import hashlib
 import random
@@ -20,13 +19,11 @@ import base64
 import optparse
 
 from twisted.internet import reactor
-from twisted.internet import task
 from twisted.internet.defer import Deferred, fail
 
 from entangled.dtuple import DistributedTupleSpacePeer
 from entangled.kademlia.datastore import SQLiteDataStore
 from entangled.kademlia.node import rpcmethod
-from entangled.kademlia.contact import Contact
 from entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
 
 #------------------------------------------------------------------------------ 
@@ -47,7 +44,7 @@ import known_nodes
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------ 
 
@@ -139,8 +136,8 @@ def okay(result, method, key, arg=None):
         v = str(result.values())
     else:
         v = 'None'
-    if _Debug:
-        lg.out(18, 'dht_service.okay   %s(%s)   result=%s' % (method, key, v[:20]))
+    # if _Debug:
+    #     lg.out(18, 'dht_service.okay   %s(%s)   result=%s ...' % (method, key, v[:20]))
     return result
 
 
@@ -151,8 +148,8 @@ def error(err, method, key):
 
 
 def get_value(key):
-    if _Debug:
-        lg.out(18, 'dht_service.get_value key=[%s]' % key)
+    # if _Debug:
+    #     lg.out(18, 'dht_service.get_value key=[%s]' % key)
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeFindValue(key_to_hash(key))
@@ -267,8 +264,8 @@ class KademliaProtocolConveyor(KademliaProtocol):
         if len(self.datagrams_queue) == 0:
             self.worker = None
             return
-        if _Debug:
-            print '                dht._process, queue length:', len(self.datagrams_queue)
+        # if _Debug:
+        #     print '                dht._process, queue length:', len(self.datagrams_queue)
         datagram, address = self.datagrams_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
         self.worker = reactor.callLater(0.005, self._process)

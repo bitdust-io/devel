@@ -158,7 +158,7 @@ def report_donated_storage():
     r = {}
     r['customers_num'] = contactsdb.num_customers()
     r['customers'] = []
-    r['oldcustomers'] = []
+    r['old_customers'] = []
     r['errors'] = []
     r['consumed'] = 0
     r['donated'] = settings.getDonatedBytes()
@@ -213,7 +213,7 @@ def report_donated_storage():
             r['used'], r['real']))
     for idurl in used_space_dict.keys():
         real = bpio.getDirectorySize(settings.getCustomerFilesDir(idurl))
-        r['oldcustomers'].append({
+        r['old_customers'].append({
             'idurl': idurl,
             'used': used_space_dict['idurl'],
             'used_str': diskspace.MakeStringFromBytes(used_space_dict['idurl']),

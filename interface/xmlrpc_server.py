@@ -41,7 +41,6 @@ class XMLRPCServer(xmlrpc.XMLRPC):
             'stop':                     api.stop,
             'restart':                  api.restart,
             # 'show':                     api.show,
-            
             'backups_list':             api.backups_list,
             'backups_id_list':          api.backups_id_list,
             'backup_start_id':          api.backup_start_id,
@@ -52,15 +51,12 @@ class XMLRPCServer(xmlrpc.XMLRPC):
 #            'backup_delete_local':      api.backup_delete_local,
 #            'backup_delete_id':         api.backup_delete_id,
 #            'backup_delete_path':       api.backup_delete_path,
-#            'backups_update':           api.backups_update,
-#            
+#            'backups_update':           api.backups_update,    
 #            'restore_single':           api.restore_single,
-
-            'list_messages':            api.list_messages,
+            # 'list_messages':            api.list_messages,
             'send_message':             api.send_message,
-            
             'find_peer_by_nickname':    api.find_peer_by_nickname,
-            'list_correspondents':      api.list_correspondents,
+            # 'list_correspondents':      api.list_correspondents,
         }
 
     def lookupProcedure(self, procedurePath):

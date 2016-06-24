@@ -431,7 +431,9 @@ def restore_original_stdout():
         _std_out = sys.stdout
         sys.stdout = _OriginalStdOut
         _std_out.close()
-    except:
+    except Exception as exc:
+        import pdb
+        pdb.set_trace()
         traceback.print_last(file=open('bitdust.error', 'w'))
 
 

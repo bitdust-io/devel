@@ -29,6 +29,9 @@ Commands:
   key copy
   key backup <destination filename to write your private key>
   key print  
+  get <option>
+  set <option> [value]
+  set list
   file list
   file idlist
   file bind <local file or folder>
@@ -58,8 +61,8 @@ Commands:
   service list
   service <service name>
   ping <IDURL>
-  set <option> [value]
-  set list
+  chat
+  chat send <IDURL> <"text message">
   api <method> [params]
   version
   help
@@ -104,6 +107,12 @@ Commands:
                         
   key print             print private key to console
                         WARNING!!! do not publish your key  
+
+  get <option>          print current value for given program setting
+
+  set <option> [value]  assign a new value for program setting
+  
+  set list              print all available settings and values
 
   file list             show a full catalog of registered files and folders
 
@@ -188,11 +197,13 @@ Commands:
 
   ping <IDURL>          send Identity packet to this node
                         and wait Ack packet to check his status
-
-  set <option> [value]  to get/set program setting
   
-  set list              print all available settings and its values
+  chat                  start a chat session, send/listen text
+                        messages from other users
   
+  chat send <IDURL> <"text message">
+                        send a single text message to remote user
+ 
   api <method> [params] execute API method and return JSON response
 
   version               display current software version
@@ -263,192 +274,6 @@ examples:
   set services/customer/suppliers-number   print number of your suppliers
   set logs/stream-enabled False            turn off web server for program logs
   set list                                 list all available options
-
-'''
-    
-    
-    
-    
-    
-#------------------------------------------------------------------------------ 
-    
-def usage0():
-    return '''usage: bitdust [options] [command] [arguments]
-    
-Commands:
-  start
-  detach
-  restart
-  stop
-  show
-  identity create <username> [private key size]
-  identity restore <private key source file> [IDURL]
-  key copy
-  key copy <destination filename to write your private key>
-  key print
-  backup list
-  backup idlist
-  backup add <local path>
-  backup addtree <local folder>
-  backup start <local path or ID>
-  backup starttree <local folder or ID>
-  backup delete <local path, ID or full backup ID>
-  backup delete local <full backup ID>
-  backup update
-  restore <backup ID> 
-  restore <backup ID> <destination folder> 
-  stats <backup ID>
-  stats remote <backup ID>
-  stats local <backup ID>
-  suppliers 
-  suppliers call
-  supplier replace <username, number or idurl>
-  supplier change <username, number or idurl> <username or idurl>
-  customers  
-  customers call     
-  customer remove <username or idurl>
-  storage                                                         
-  reconnect
-  states
-  cache
-  cache clear
-  messages list
-  message send <username or idurl> <subject> <body>
-  set <option> [value]
-  version
-  help
-'''    
-  
-
-
-
-
-  
-#  recover <private key filename> [idurl or username]
-#  schedule <folder> [schedule in compact format]
-#  money
-#  money transfer <username or idurl> <amount>
-#  money receipts 
-#  money receipt <receipt ID>
-
-
-def help0():
-    return '''usage: bitdust [options] [command] [arguments]
-
-Commands:
-  [start]               start BitDust
-  
-  detach                start BitDust in a child process
-  
-  restart               restart BitDust 
-
-  stop                  stop BitDust
-
-  show                  start BitDust and show the main window
-
-  identity create <username> [private key size]
-                        generate a new private key and new identity file for you
-                        key size can be 1024, 2048 or 4096
-
-  identity restore <private key source file> [IDURL]
-                        recover existing identity file with your private key file
-
-  register <account name> [private key size] [preferred id server]
-
-  key copy              copy private key to clipboard to paste with Ctrl+V somewhere 
-  
-  key copy <a filename for copy of private key>
-                        copy private key into file to save it in a safe place
-                        
-  key print             print private key  
-
-  backup list           show a catalog of files and folders
-
-  backup idlist         show a list of backups
-
-  backup add <local path>
-                        add file or folder to the catalog, not start the backup
-                        
-  backup addtree <local path>
-                        recursive add folder with all sub folders and files to the catalog,
-                        not start the backup 
-
-  backup start <local path or ID>
-                        start a new backup of the local file or folder 
-                        or existing ID from catalog
-                        
-  backup starttree <local folder or ID>
-                        start a multiple backups of all files and sub folders 
-                        of given local folder or using existing ID from catalog  
-
-  backup delete <local path, ID or full backup ID>
-                        remove a file or folder (with all subfolders) from catalog
-                        or just delete a given backup
-
-  backup delete local <full backup ID>
-                        remove only local copy of given backup,
-                        keep remote copy on suppliers HDD
-                        
-  backup update         request all suppliers to update info for all backups 
-
-  restore <backup ID>   restore a backup into its original location
-                        WARNING! this will overwrite existing files,
-                        current files will be replaced with backed up copy
-                        
-  restore <backup ID> <destination folder>
-                        restore a backed up data into given local folder
-                        
-  stats <backup ID>     show condition of given backup
-  
-  stats remote <backup ID>
-                        show remote files stats for this backup
-
-  stats local <backup ID>
-                        show local files stats for this backup
-
-  supplier list         show list of your suppliers
-
-  supplier call         send a request packets to check out suppliers status
-
-  supplier replace <username, number or idurl>
-                        replace a single supplier with new one
-
-  supplier change <username, number or idurl> <username or idurl>
-                        ask to change one supplier to another, by your choice
-                        
-  customers             show list of your customers
-  
-  customers call        send a request packets to check out customers status
-  
-  customer remove <username or idurl>
-                        remove a single customer
-                        
-  storage               print detailed info about needed and donated space
-
-  reconnect             restart network connection
-
-  states                print state machines info
-  
-  cache                 show list of cached identities
-  
-  cache clear           erase all identities from the cache 
-
-  messages list         list all messages
-
-  message send <username or idurl> <subject> <body>
-                        send a message to given user
-  
-  set <option> [value]  to modify program setting
-
-  version               display current software version
-
-  help                  print a detailed info about command line usage
-  
-  help backups          print more info about catalog and backup IDs  
-  
-  help settings         print settings list
-  
-  usage                 print a brief list of available commands
 
 '''
 

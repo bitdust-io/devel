@@ -49,6 +49,8 @@ def init():
 class BitDustJsonRPCServer(JSONRPCServer):
     
     def _register_execution(self, request_dict, result):
+        if result is None:
+            result = dict()
         result['execution'] = '%3.6f' % (time.time() - request_dict['_executed'])
         lg.out(4, "jsonrpc_server._register_execution : %s sec. ,  started at %d" % (result['execution'], request_dict['_executed']))
         return result
@@ -242,8 +244,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_config_set(self, key, value, typ=None):
         return api.config_set(key, value, typ)
     
-    def jsonrpc_list_messages(self):
-        return api.list_messages()
+#     def jsonrpc_list_messages(self):
+#         return api.list_messages()
     
     def jsonrpc_send_message(self, recipient, message_body):
         return api.send_message(recipient, message_body)
@@ -251,17 +253,21 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_receive_one_message(self):
         return api.receive_one_message()
     
-    def jsonrpc_list_correspondents(self):
-        return api.list_correspondents()
+#     def jsonrpc_list_correspondents(self):
+#         return api.list_correspondents()
     
-    def jsonrpc_add_correspondent(self, idurl, nickname=''):
-        return api.add_correspondent(idurl, nickname)
+#     def jsonrpc_add_correspondent(self, idurl, nickname=''):
+#         return api.add_correspondent(idurl, nickname)
 
-    def jsonrpc_remove_correspondent(self, idurl):
-        return api.remove_correspondent(idurl)
+#     def jsonrpc_remove_correspondent(self, idurl):
+#         return api.remove_correspondent(idurl)
 
     def jsonrpc_find_peer_by_nickname(self, nickname):
         return api.find_peer_by_nickname(nickname)
+
+    def jsonrpc_set_my_nickname(self, nickname):
+        return api.set_my_nickname(nickname)
+
 
     # def jsonrpc_:
     #     return api.

@@ -83,7 +83,7 @@ def A(event=None, arg=None, use_reactor=True):
     """
     global _Initializer
     if _Initializer is None:
-        _Initializer = Initializer('initializer', 'AT_STARTUP', 2)
+        _Initializer = Initializer('initializer', 'AT_STARTUP', 2, True)
     if event is not None:
         if use_reactor:
             _Initializer.automat(event, arg)
@@ -120,93 +120,83 @@ class Initializer(automat.Automat):
         global_state.set_global_state('INIT ' + newstate)
 
     def A(self, event, arg):
-        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'run' :
+            if event == 'run':
                 self.state = 'LOCAL'
                 shutdowner.A('init')
                 self.doInitLocal(arg)
                 self.flagCmdLine=False
-            elif event == 'run-cmd-line-register' :
+            elif event == 'run-cmd-line-register':
                 self.state = 'INSTALL'
                 shutdowner.A('init')
                 self.flagCmdLine=True
                 installer.A('register-cmd-line', arg)
                 shutdowner.A('ready')
-            elif event == 'run-cmd-line-recover' :
+            elif event == 'run-cmd-line-recover':
                 self.state = 'INSTALL'
                 shutdowner.A('init')
                 self.flagCmdLine=True
                 installer.A('recover-cmd-line', arg)
                 shutdowner.A('ready')
-        #---LOCAL---
         elif self.state == 'LOCAL':
-            if event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg) :
+            if event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg):
                 self.state = 'INSTALL'
                 installer.A('init')
                 shutdowner.A('ready')
                 self.doShowGUI(arg)
                 self.doUpdate(arg)
-            elif event == 'init-local-done' and not self.isInstalled(arg) and not self.isGUIPossible(arg) :
+            elif event == 'init-local-done' and not self.isInstalled(arg) and not self.isGUIPossible(arg):
                 self.state = 'STOPPING'
                 self.doPrintMessage(arg)
                 shutdowner.A('ready')
                 shutdowner.A('stop', "exit")
-            elif event == 'init-local-done' and self.isInstalled(arg) :
-                self.state = 'SERVICES'
-                self.doShowGUI(arg)
-                self.doInitServices(arg)
-        #---MODULES---
-        elif self.state == 'MODULES':
-            if event == 'init-modules-done' :
-                self.state = 'READY'
-                self.doUpdate(arg)
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
-                self.state = 'EXIT'
-                self.doDestroyMe(arg)
-        #---INSTALL---
-        elif self.state == 'INSTALL':
-            if not self.flagCmdLine and ( event == 'installer.state' and arg == 'DONE' ) :
-                self.state = 'STOPPING'
-                shutdowner.A('stop', "restartnshow")
-            elif self.flagCmdLine and ( event == 'installer.state' and arg == 'DONE' ) :
-                self.state = 'STOPPING'
-                shutdowner.A('stop', "exit")
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
-                self.state = 'EXIT'
-                self.doDestroyMe(arg)
-        #---READY---
-        elif self.state == 'READY':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
-                self.state = 'EXIT'
-                self.doDestroyMe(arg)
-        #---STOPPING---
-        elif self.state == 'STOPPING':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
-                self.state = 'EXIT'
-                self.doUpdate(arg)
-                self.doDestroyMe(arg)
-        #---EXIT---
-        elif self.state == 'EXIT':
-            pass
-        #---SERVICES---
-        elif self.state == 'SERVICES':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
-                self.state = 'EXIT'
-                self.doDestroyMe(arg)
-            elif event == 'init-services-done' :
+            elif event == 'init-local-done' and self.isInstalled(arg):
                 self.state = 'INTERFACES'
                 self.doInitInterfaces(arg)
-        #---INTERFACES---
-        elif self.state == 'INTERFACES':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ) :
+        elif self.state == 'MODULES':
+            if event == 'init-modules-done':
+                self.state = 'READY'
+                self.doUpdate(arg)
+                self.doShowGUI(arg)
+            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
-            elif event == 'init-interfaces-done' :
+        elif self.state == 'INSTALL':
+            if not self.flagCmdLine and ( event == 'installer.state' and arg == 'DONE' ):
+                self.state = 'STOPPING'
+                shutdowner.A('stop', "restartnshow")
+            elif self.flagCmdLine and ( event == 'installer.state' and arg == 'DONE' ):
+                self.state = 'STOPPING'
+                shutdowner.A('stop', "exit")
+            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+                self.state = 'EXIT'
+                self.doDestroyMe(arg)
+        elif self.state == 'READY':
+            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+                self.state = 'EXIT'
+                self.doDestroyMe(arg)
+        elif self.state == 'STOPPING':
+            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+                self.state = 'EXIT'
+                self.doUpdate(arg)
+                self.doDestroyMe(arg)
+        elif self.state == 'EXIT':
+            pass
+        elif self.state == 'SERVICES':
+            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+                self.state = 'EXIT'
+                self.doDestroyMe(arg)
+            elif event == 'init-services-done':
                 self.state = 'MODULES'
                 self.doInitModules(arg)
-                self.doUpdate(arg)
                 shutdowner.A('ready')
+        elif self.state == 'INTERFACES':
+            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+                self.state = 'EXIT'
+                self.doDestroyMe(arg)
+            elif event == 'init-interfaces-done':
+                self.state = 'SERVICES'
+                self.doInitServices(arg)
         return None
 
     def isInstalled(self, arg):
@@ -243,7 +233,7 @@ class Initializer(automat.Automat):
         d.addBoth(lambda x: self.automat('init-services-done'))
 
     def doInitInterfaces(self, arg):
-        lg.out(2, 'initializer.doInitConnection')
+        lg.out(2, 'initializer.doInitInterfaces')
         from interface import xmlrpc_server 
         xmlrpc_server.init()
         from interface import jsonrpc_server
