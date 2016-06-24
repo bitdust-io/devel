@@ -160,7 +160,9 @@ class SimpleTerminalChat(object):
                     break
                 if not kb.kbhit():
                     continue
-                mod, c = kb.getkeypress()  # kb.getch() # .decode('utf-8')
+                # mod, c = kb.getkeypress()
+                mod = None
+                c = kb.getch() # .decode('utf-8')
                 o = ord(c)
 #                 import pdb
 #                 pdb.set_trace()
@@ -224,8 +226,8 @@ class SimpleTerminalChat(object):
 
     def run(self):
         self.welcome()
-        bot = threading.Thread(target=self.bot)
-        bot.start()
+        # bot = threading.Thread(target=self.bot)
+        # bot.start()
         out = threading.Thread(target=self.collect_output)
         out.start()
         inp = threading.Thread(target=self.collect_input)
