@@ -1281,11 +1281,12 @@ def service_info(service_name):
 def service_start(service_name):
     """
     Start given service immediately.
-    If some other services depend on that service were already enabled,
-    they will be started as well.
     This method also set `True` for correspondent option in the program settings:
 
         .bitdust/config/services/[service name]/enabled
+
+    If some other services, which is dependent on that service,
+    were already enabled, they will be started also.
 
     Return:
         {'status': 'OK', 'result': 'service_tcp_connections was switched on',}
@@ -1315,9 +1316,10 @@ def service_stop(service_name):
     Stop given service and set `False` for
     correspondent option in the settings:
  
-        .bitdust/config/services/<service>/enabled
+        .bitdust/config/services/[service name]/enabled
  
     Dependent services will be stopped as well.
+    
     Return:
         {'status': 'OK', 'result': 'service_tcp_connections was switched off',}
     """
@@ -1348,18 +1350,18 @@ def packets_stats():
     Return detailed info about
         Return:
         {'status': 'OK',
-     u'result': [ { u'in': { u'failed_packets': 0,
-                          u'total_bytes': 0,
-                          u'total_packets': 0,
-                          u'unknown_bytes': 0,
-                          u'unknown_packets': 0},
-                 u'out': { u'failed_packets': 8,
-                           u'http://p2p-id.ru/bitdust_j_vps1014.xml': 0,
-                           u'http://veselin-p2p.ru/bitdust_j_vps1001.xml': 0,
-                           u'total_bytes': 0,
-                           u'total_packets': 0,
-                           u'unknown_bytes': 0,
-                           u'unknown_packets': 0}}],
+         'result': [ {'in': { 'failed_packets': 0,
+                              'total_bytes': 0,
+                              'total_packets': 0,
+                              'unknown_bytes': 0,
+                              'unknown_packets': 0},
+                     'out': { 'failed_packets': 8,
+                              'http://p2p-id.ru/bitdust_j_vps1014.xml': 0,
+                              'http://veselin-p2p.ru/bitdust_j_vps1001.xml': 0,
+                              'total_bytes': 0,
+                              'total_packets': 0,
+                              'unknown_bytes': 0,
+                              'unknown_packets': 0}}], }
     """
     if not driver.is_started('service_gateway'):
         return ERROR('service_gateway() is not started')
@@ -1374,10 +1376,11 @@ def packets_stats():
 def ping(idurl, timeout=10):
     """
     The "ping" command performs following actions:
-        1. Request remote identity source by idurl,
-        2. Send my Identity to remote contact addresses, taken from identity,
-        3. Wait first Ack packet from remote peer,
-        4. Failed by timeout or identity fetching error.
+    
+      1. Request remote identity source by idurl,
+      2. Send my Identity to remote contact addresses, taken from identity,
+      3. Wait first Ack packet from remote peer,
+      4. Failed by timeout or identity fetching error.
 
     Return:
         {'status': 'OK', 
@@ -1453,6 +1456,9 @@ def find_peer_by_nickname(nickname):
 def send_message(recipient, message_body):
     """
     Send a text message to remote peer.
+    Return:
+        {'status': 'OK', 
+         'result': ['signed.Packet[Message(146681300413)]'],}
     """
     if not driver.is_started('service_private_messages'):
         return ERROR('service_private_messages() is not started')
@@ -1475,10 +1481,16 @@ def send_message(recipient, message_body):
 
 def receive_one_message():
     """
-    This method can be used to listen and process of incoming chat messages:
-        + creates a callback to receive all incoming messages,
-        + wait until one incoming message get received,
-        + remove the callback after receiving the message.
+    This method can be used to listen and process incoming chat messages:
+    
+      + creates a callback to receive all incoming messages,
+      + wait until one incoming message get received,
+      + remove the callback after receiving the message.
+
+    Return:
+        {'status': 'OK', 
+         'result': [ { 'from': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml',
+                       'message': 'Hello my dear Friend!'}],}
     """
     if not driver.is_started('service_private_messages'):
         return ERROR('service_private_messages() is not started')

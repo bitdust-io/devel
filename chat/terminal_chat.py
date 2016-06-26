@@ -103,6 +103,7 @@ class SimpleTerminalChat(object):
                 name = nameurl.GetName(idurl)
                 self.history.append({
                     'text': 'user %s was added' % name,
+                    
                     'time': time.time(),
                 })
             return
@@ -127,12 +128,14 @@ class SimpleTerminalChat(object):
                 )
 
     def collect_output(self):
+        last_line = ''
         while True:
             if self.quitnow:
                 break
             time.sleep(0.1)
             if self.printed < len(self.history):
-                sys.stdout.write('\b' * (len(self.chars)+2))
+                sys.stdout.write('\b' * (len(last_line)+2))
+                # sys.stdout.write('\n\r')
                 sys.stdout.flush()
                 for h in self.history[self.printed:]:
                     out = ''
@@ -141,6 +144,7 @@ class SimpleTerminalChat(object):
                     if h.get('name'):
                         out += h['name'] + ': '
                     out += h.get('text', '')
+                    last_line = out
                     sys.stdout.write(out + '\n\r')
                     sys.stdout.flush()
                 sys.stdout.write('> ' + (''.join(self.chars)))
@@ -159,6 +163,7 @@ class SimpleTerminalChat(object):
                 if self.quitnow:
                     break
                 if not kb.kbhit():
+                    time.sleep(0.1)
                     continue
                 # mod, c = kb.getkeypress()
                 mod = None
@@ -176,8 +181,8 @@ class SimpleTerminalChat(object):
                     self.quitnow = True
                     break
                 # UP
-                if c == 'A' and mod is not None:
-                    continue
+                # if c == 'A' and mod is not None:
+                #     continue
                 # BACKSPACE
                 if c == '\x7f' and mod is None:
                     if self.chars:

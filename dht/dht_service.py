@@ -44,7 +44,7 @@ import known_nodes
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
 
 #------------------------------------------------------------------------------ 
 
@@ -136,8 +136,8 @@ def okay(result, method, key, arg=None):
         v = str(result.values())
     else:
         v = 'None'
-    # if _Debug:
-    #     lg.out(18, 'dht_service.okay   %s(%s)   result=%s ...' % (method, key, v[:20]))
+    if _Debug:
+        lg.out(18, 'dht_service.okay   %s(%s)   result=%s ...' % (method, key, v[:20]))
     return result
 
 
@@ -148,8 +148,8 @@ def error(err, method, key):
 
 
 def get_value(key):
-    # if _Debug:
-    #     lg.out(18, 'dht_service.get_value key=[%s]' % key)
+    if _Debug:
+        lg.out(18, 'dht_service.get_value key=[%s]' % key)
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeFindValue(key_to_hash(key))

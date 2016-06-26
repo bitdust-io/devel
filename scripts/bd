@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python bitdust/bitdust.py $@
+python bitdust/bitdust.py "$@"
