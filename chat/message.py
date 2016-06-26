@@ -49,6 +49,7 @@ from transport import gateway
 
 _IncomingMessageCallbacks = []
 _OutgoingMessageCallback = None
+_InboxHistory = []
 
 #------------------------------------------------------------------------------ 
 
@@ -68,6 +69,10 @@ def ConnectCorrespondent(idurl):
 
 def UniqueID():
     return str(int(time.time()*100.0))
+
+def inbox_history():
+    global _InboxHistory
+    return _InboxHistory
 
 #------------------------------------------------------------------------------ 
 
@@ -111,6 +116,11 @@ def Message(request):
     if new_message is None:
         lg.warn("wrong Payload, can not extract message from request")
         return
+    for old_id, old_message in inbox_history():
+        if old_id == request.PacketID:
+            lg.out(6, "message.Message SKIP, message %s found in history" % old_message)
+            return
+    inbox_history().append((request.PacketID, new_message))
     clear_message = new_message.ClearBody()
     # SaveMessage(clearmessage)
     from p2p import p2p_service
@@ -144,7 +154,7 @@ def SendMessage(remote_idurl, messagebody, packet_id=None):
         packet_id,
         Payload,
         remote_idurl)
-    result = gateway.outbox(outpacket)
+    result = gateway.outbox(outpacket, wide=True)
     if _OutgoingMessageCallback:
         _OutgoingMessageCallback(result, messagebody, remote_identity, packet_id)
     return result

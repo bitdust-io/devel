@@ -98,7 +98,7 @@ class SimpleTerminalChat(object):
     def on_my_message(self, message):
         if message.startswith('!add '):
             idurl = message[5:]
-            if idurl not in self.users:
+            if idurl.strip() and idurl not in self.users:
                 self.users.append(idurl)
                 name = nameurl.GetName(idurl)
                 self.history.append({
