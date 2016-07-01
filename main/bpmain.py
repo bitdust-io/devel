@@ -449,7 +449,48 @@ def monitorDelayedCalls(r):
     lg.out(8, '    delayed calls: %d\n%s' % (len(_DelayedCallsIndex), s))
     r.callLater(10, monitorDelayedCalls, r)
 
-#------------------------------------------------------------------------------ 
+#-------------------------------------------------------------------------------
+
+def usage():
+    """
+    Calls ``p2p.help.usage()`` method to print out how to run BitDust software from command line.
+    """
+    try:
+        import help
+        return help.usage()
+    except:
+        return ''
+    
+
+def help():
+    """
+    Same thing, calls ``p2p.help.help()`` to show detailed instructions.
+    """
+    try:
+        import help
+        return help.help()
+    except:
+        return ''
+
+
+def backup_schedule_format():
+    """
+    See ``p2p.help.schedule_format()`` method.
+    """
+    try:
+        import help
+        return help.schedule_format()
+    except:
+        return ''
+
+
+def copyright():
+    """
+    Prints the copyright string.
+    """
+    print 'Copyright BitDust, 2014. All rights reserved.'
+
+#--- THIS IS THE ENTRY POINT OF THE PROGRAM! --------------------------------------------------------- 
 
 def main(executable_path=None):
     """
@@ -575,6 +616,11 @@ def main(executable_path=None):
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
             ])
         
+        # this is extra protection for Debian release
+        # I am not sure how process name can looks on different systems
+        # check the process ID from previous start 
+        # it file exists and we found this PID in the currently running apps - BitDust is working
+        # if file not exists we don't want to start if found some other jobs with same name 
 #        pid = -1
 #        try:
 #            if bpio.Windows():
@@ -586,17 +632,6 @@ def main(executable_path=None):
 #                pid = int(bpio.ReadBinaryFile(pid_path).strip())
 #        except:
 #            lg.exc()
-        # this is extra protection for Debian release
-        # I am not sure how process name can looks on different systems
-        # check the process ID from previous start 
-        # it file exists and we found this PID in the currently running apps - BitDust is working
-        # if file not exists we don't want to start if found some other jobs with same name 
-        # PREPRO probably in future we can switch to this line:
-        # if len(appList) > 0 and pid != -1 and pid in appList
-        # because if we do not have pid - the process is not working
-        # but old versions do not have pid file so we need to wait till 
-        # all users be updated to this version - revision 7520+
-#        if len(appList) > 0 and ( ( pid != -1 and pid in appList ) or ( pid == -1 ) ):
 
         if len(appList) > 0:
             lg.out(0, 'BitDust already started, found another process: %s\n' % str(appList))
@@ -849,50 +884,7 @@ def main(executable_path=None):
     bpio.shutdown()
     return ret 
 
-#-------------------------------------------------------------------------------
-
-
-def usage():
-    """
-    Calls ``p2p.help.usage()`` method to print out how to run BitDust software from command line.
-    """
-    try:
-        import help
-        return help.usage()
-    except:
-        return ''
-    
-
-def help():
-    """
-    Same thing, calls ``p2p.help.help()`` to show detailed instructions.
-    """
-    try:
-        import help
-        return help.help()
-    except:
-        return ''
-
-
-def backup_schedule_format():
-    """
-    See ``p2p.help.schedule_format()`` method.
-    """
-    try:
-        import help
-        return help.schedule_format()
-    except:
-        return ''
-
-
-def copyright():
-    """
-    Prints the copyright string.
-    """
-    print 'Copyright BitDust, 2014. All rights reserved.'
-
 #------------------------------------------------------------------------------ 
-
 
 if __name__ == "__main__":
     ret = main()

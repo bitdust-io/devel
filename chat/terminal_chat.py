@@ -20,6 +20,14 @@ import threading
 
 from twisted.internet import reactor
 
+#------------------------------------------------------------------------------ 
+
+if __name__ == '__main__':
+    import os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+#------------------------------------------------------------------------------ 
+
 from lib import nameurl
 
 from chat import kbhit
@@ -54,6 +62,13 @@ def run():
     reactor.callFromThread(reactor.stop)
 
 
+def stop():
+    """
+    """
+    global _SimpleTerminalChat
+    _SimpleTerminalChat.stop()
+    
+
 def process_message(sender, message):
     """
     """
@@ -74,6 +89,7 @@ def on_incoming_message(result):
 class SimpleTerminalChat(object):
     def __init__(self, send_message_func=None):
         self.chars = []
+        self.input = []
         self.history = []
         self.printed = 0
         self.quitnow = 0
@@ -103,7 +119,6 @@ class SimpleTerminalChat(object):
                 name = nameurl.GetName(idurl)
                 self.history.append({
                     'text': 'user %s was added' % name,
-                    
                     'time': time.time(),
                 })
             return
@@ -121,7 +136,7 @@ class SimpleTerminalChat(object):
             if self.quitnow:
                 break
             time.sleep(0.1)
-            if random.randint(1, 100) == 1:
+            if random.randint(1, 500) == 1:
                 self.on_inbox_message(
                     'http://p2p-id.ru/bot.xml',
                     'HI man!    ' + time.asctime(),
@@ -129,10 +144,12 @@ class SimpleTerminalChat(object):
 
     def collect_output(self):
         last_line = ''
+        sys.stdout.write('> ')
+        sys.stdout.flush()
         while True:
             if self.quitnow:
                 break
-            time.sleep(0.1)
+            time.sleep(0.05)
             if self.printed < len(self.history):
                 sys.stdout.write('\b' * (len(last_line)+2))
                 # sys.stdout.write('\n\r')
@@ -152,84 +169,79 @@ class SimpleTerminalChat(object):
                 self.printed = len(self.history)
 
     def collect_input(self):
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        kb = kbhit.KBHit()
         try:
-            tty.setraw(sys.stdin.fileno())
-            sys.stdout.write('> ')
-            sys.stdout.flush()
-            while 1:
+            while True:
                 if self.quitnow:
                     break
-                if not kb.kbhit():
-                    time.sleep(0.1)
-                    continue
-                # mod, c = kb.getkeypress()
-                mod = None
-                c = kb.getch() # .decode('utf-8')
-                o = ord(c)
-#                 import pdb
-#                 pdb.set_trace()
-    #             if o <= 31:
-    #                 c = kb.getch().decode('utf-8')
-    #                 o = ord(c)
+                ch = self.kb.getch()
+                self.input.append(ch)
+        except KeyboardInterrupt:
+            self.quitnow = True
+        return None
+
+    def process_input(self):
+        while True:
+            if self.quitnow:
+                break
+            if len(self.input) == 0:
+                time.sleep(0.05)
+                continue
+            inp = list(self.input)
+            self.input = []
+            # COMBINATION OR SPECIAL KEY PRESSED
+            if len(inp) == 3 and ord(inp[0]) == 27:
+                continue
+            for c in inp:
                 # ESC
-                if ord(c) == 27 and mod is None: 
+                if ord(c) == 27: 
                     sys.stdout.write('\n\r')
                     sys.stdout.flush()
                     self.quitnow = True
                     break
-                # UP
-                # if c == 'A' and mod is not None:
-                #     continue
                 # BACKSPACE
-                if c == '\x7f' and mod is None:
+                if c == '\x7f':
                     if self.chars:
                         del self.chars[-1]
                         sys.stdout.write('\b \b')
                         sys.stdout.flush()
                         continue
                 # ENTER
-                if c in '\n\r' and mod is None:
+                if c in '\n\r':
+                    if len(self.chars) == 0:
+                        continue
                     msg = ''.join(self.chars)
                     self.chars = []
                     if msg.strip() in ['!q', '!quit', '!exit', ]:
                         sys.stdout.write('\n\r')
                         sys.stdout.flush()
                         self.quitnow = True
-                        break
+                        return
                     sys.stdout.write('\b' * (len(msg)))
                     sys.stdout.flush()
                     self.on_my_message(msg)
                     continue
                 # some printable char
-                if o >= 32 and o <= 126:
+                if ord(c) >= 32 and ord(c) <= 126:
                     sys.stdout.write(c)
                     sys.stdout.flush()
                     self.chars.append(c)
-        except KeyboardInterrupt:
-            self.quitnow = True
-        except Exception as exc:
-            import traceback
-            traceback.print_exc()
-            raise exc
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        kb.set_normal_term()
-        return None
 
     def welcome(self):
         sys.stdout.write('type your message and press Enter to send on channel\n\r')
         sys.stdout.write('use "!add <idurl>" command to invite people here\n\r')
-        sys.stdout.write('press ESC or send "!quit" to exit, type "!help" for help\n\r')
+        sys.stdout.write('press ESC or send "!q" to quit, type "!help" to get help\n\r')
         sys.stdout.flush()
 
     def goodbye(self):
-        sys.stdout.write('Good bye!\n\r')
+        sys.stdout.write('Press any key to exit. Good luck to you!\n\r')
         sys.stdout.flush()
 
     def run(self):
+        self.fd = sys.stdin.fileno()
+        self.old_settings = termios.tcgetattr(self.fd)
+        self.kb = kbhit.KBHit()
+        tty.setraw(sys.stdin.fileno())
+        
         self.welcome()
         # bot = threading.Thread(target=self.bot)
         # bot.start()
@@ -237,5 +249,23 @@ class SimpleTerminalChat(object):
         out.start()
         inp = threading.Thread(target=self.collect_input)
         inp.start()
-        inp.join()
+        proc = threading.Thread(target=self.process_input)
+        proc.start()
+        proc.join()
         self.goodbye()
+        
+        termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
+        self.kb.set_normal_term()
+        
+        
+    def stop(self):
+        self.quitnow = 1
+    
+#------------------------------------------------------------------------------ 
+        
+if __name__ == '__main__':
+    init()
+    reactor.callInThread(run)
+    reactor.run()
+    shutdown()
+    

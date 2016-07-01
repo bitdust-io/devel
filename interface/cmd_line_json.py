@@ -828,7 +828,7 @@ def cmd_message(opts, args, overDict):
             d = call_jsonrpc_method('receive_one_message')
             d.addCallback(terminal_chat.on_incoming_message)
             d.addCallback(_next_message)
-            d.addErrback(lambda x: reactor.stop())
+            d.addErrback(lambda x: reactor.callInThread(terminal_chat.stop))
         _next_message()
         reactor.callInThread(terminal_chat.run)
         reactor.run()
