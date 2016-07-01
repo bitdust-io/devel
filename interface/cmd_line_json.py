@@ -829,6 +829,7 @@ def cmd_message(opts, args, overDict):
             d.addCallback(terminal_chat.on_incoming_message)
             d.addCallback(_next_message)
             d.addErrback(lambda x: reactor.callInThread(terminal_chat.stop))
+            return x
         _next_message()
         reactor.callInThread(terminal_chat.run)
         reactor.run()

@@ -233,7 +233,7 @@ class SimpleTerminalChat(object):
         sys.stdout.flush()
 
     def goodbye(self):
-        sys.stdout.write('Press any key to exit. Good luck to you!\n\r')
+        sys.stdout.write('Good luck to you!\n\r')
         sys.stdout.flush()
 
     def run(self):
