@@ -102,6 +102,7 @@ class SimpleTerminalChat(object):
             self.users.append(sender)
             self.history.append({
                 'text': 'user %s was joined' % name,
+                'name': '',
                 'time': time.time(),
             })
         self.history.append({
@@ -118,7 +119,8 @@ class SimpleTerminalChat(object):
                 self.users.append(idurl)
                 name = nameurl.GetName(idurl)
                 self.history.append({
-                    'text': 'user %s was added' % name,
+                    'text': 'user "%s" was added to the channel' % name,
+                    'name': '',
                     'time': time.time(),
                 })
             return
@@ -229,7 +231,7 @@ class SimpleTerminalChat(object):
     def welcome(self):
         sys.stdout.write('type your message and press Enter to send on channel\n\r')
         sys.stdout.write('use "!add <idurl>" command to invite people here\n\r')
-        sys.stdout.write('press ESC or send "!q" to quit, type "!help" to get help\n\r')
+        sys.stdout.write('press ESC or send "!q" to quit\n\r')
         sys.stdout.flush()
 
     def goodbye(self):
