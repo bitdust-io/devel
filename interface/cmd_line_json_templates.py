@@ -153,7 +153,7 @@ name: {name}
 state: {state}
 enabled: {enabled}
 dependent on: {.section depends}{.repeated section @}{@}{.alternates with}, {.end}{.end}
-config path: /config/{config_path}
+config path: {config_path}
 """),
     tpl_errors)
 

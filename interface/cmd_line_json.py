@@ -824,16 +824,32 @@ def cmd_message(opts, args, overDict):
         def _send_message(to, msg):
             call_jsonrpc_method('send_message', to, msg)
         terminal_chat.init(do_send_message_func=_send_message)
+        errors = []
+        def _error(x):
+            if str(x).count('ResponseNeverReceived'):
+                return x
+            errors.append(str(x))
+            reactor.callInThread(terminal_chat.stop)
+            return x
         def _next_message(x=None):
+            if x:
+                if x['status'] != 'OK':
+                    if 'errors' in x: 
+                        errors.extend(x['errors'])
+                    reactor.callInThread(terminal_chat.stop)
+                    return x
+                else:
+                    terminal_chat.on_incoming_message(x)
             d = call_jsonrpc_method('receive_one_message')
-            d.addCallback(terminal_chat.on_incoming_message)
             d.addCallback(_next_message)
-            d.addErrback(lambda x: reactor.callInThread(terminal_chat.stop))
+            d.addErrback(_error)
             return x
         _next_message()
         reactor.callInThread(terminal_chat.run)
         reactor.run()
         terminal_chat.shutdown()
+        if len(errors):
+            print '\n'.join(errors)
         return 0
     return 2
 
