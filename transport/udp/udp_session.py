@@ -672,7 +672,7 @@ class UDPSession(automat.Automat):
                     oldest_rtt_moment = rtt_data[1]
                     oldest_rtt_id = rtt_id
             if oldest_rtt_id:
-                rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
+                # rtt = self.rtts[oldest_rtt_id][1] - self.rtts[oldest_rtt_id][0]
                 del self.rtts[oldest_rtt_id]
                 #     lg.out(_DebugLevel, 'udp_session._rtt_start removed oldest RTT %s  %r' % (
                 #     oldest_rtt_id, rtt))
@@ -701,6 +701,3 @@ class UDPSession(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'udp_session._rtt_finish registered RTT %s  %r' % (
                 rtt_id_in, rtt))
-        
-        
-        
