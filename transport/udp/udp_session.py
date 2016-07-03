@@ -239,7 +239,8 @@ class UDPSession(automat.Automat):
         self.peer_id = peer_id
         self.peer_idurl = None
         self.file_queue = udp_file_queue.FileQueue(self) 
-        name = 'udp_session[%s:%d]' % (self.peer_address[0], self.peer_address[1])
+        name = 'udp_session[%s:%d:%s]' % (
+            self.peer_address[0], self.peer_address[1], str(self.peer_id))
         automat.Automat.__init__(self, name, 'AT_STARTUP', 18)
 
     def msg(self, msgid, arg=None):
@@ -469,6 +470,8 @@ class UDPSession(automat.Automat):
         else:
             lg.out(_DebugLevel, 'udp_session.doAcceptGreeting detected peer id : %s for session %s' % (new_peer_id, self.peer_address))
             self.peer_id = new_peer_id
+            self.name = 'udp_session[%s:%d:%s]' % (
+                self.peer_address[0], self.peer_address[1], str(self.peer_id))
             first_greeting = True
             try:
                 sessions_by_peer_id()[self.peer_id].append(self)
