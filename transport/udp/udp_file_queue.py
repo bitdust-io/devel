@@ -98,18 +98,18 @@ class FileQueue:
 
     def append_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.append((filename, description, result_defer, single))
-        # udp_session.process_sessions()
         lg.out(18, 'udp_file_queue.append_outbox_file %s for %s : %s, streams=%d, queue=%d' % (
             os.path.basename(filename), self.session.peer_id, description,
             len(self.streams), len(self.outboxQueue)))
+        udp_session.process_sessions()
         # reactor.callLater(0, self.process_outbox_queue)
 
     def insert_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.insert(0, (filename, description, result_defer, single))
-        # udp_session.process_sessions()
         lg.out(18, 'udp_file_queue.insert_outbox_file %s for %s : %s, streams=%d, queue=%d' % (
             os.path.basename(filename), self.session.peer_id, description,
             len(self.streams), len(self.outboxQueue)))
+        udp_session.process_sessions()
         # reactor.callLater(0, self.process_outbox_queue)
 
     def process_outbox_queue(self):
