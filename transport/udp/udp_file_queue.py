@@ -76,10 +76,10 @@ class FileQueue:
         self.outboxQueue = []
 
     def do_send_data(self, stream_id, outfile, output):
-        if udp_stream._Debug:
-            import random
-            if random.randint(1, 100) > 90:
-                return True
+#         if udp_stream._Debug:
+#             import random
+#             if random.randint(1, 100) > 90:
+#                 return True
         newoutput = ''.join((
             struct.pack('i', stream_id),
             struct.pack('i', outfile.size),
@@ -87,10 +87,10 @@ class FileQueue:
         return self.session.send_packet(udp.CMD_DATA, newoutput)
 
     def do_send_ack(self, stream_id, infile, ack_data):
-        if udp_stream._Debug:
-            import random
-            if random.randint(1, 100) > 90:
-                return True
+#         if udp_stream._Debug:
+#             import random
+#             if random.randint(1, 100) > 90:
+#                 return True
         newoutput = ''.join((
             struct.pack('i', stream_id),
             ack_data))
@@ -102,7 +102,6 @@ class FileQueue:
             os.path.basename(filename), self.session.peer_id, description,
             len(self.streams), len(self.outboxQueue)))
         udp_session.process_sessions()
-        # reactor.callLater(0, self.process_outbox_queue)
 
     def insert_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.insert(0, (filename, description, result_defer, single))
@@ -110,7 +109,6 @@ class FileQueue:
             os.path.basename(filename), self.session.peer_id, description,
             len(self.streams), len(self.outboxQueue)))
         udp_session.process_sessions()
-        # reactor.callLater(0, self.process_outbox_queue)
 
     def process_outbox_queue(self):
         has_reads = False
