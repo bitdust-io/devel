@@ -811,23 +811,37 @@ class UDPStream(automat.Automat):
                 raw_bytes = inpt.read(1)
                 if len(raw_bytes) > 0:
                     eof_flag = struct.unpack('?', raw_bytes)[0]
-                while True:
-                    raw_bytes = inpt.read(4)
-                    if len(raw_bytes) == 0:
-                        break
-                    block_id = struct.unpack('i', raw_bytes)[0]
-                    if block_id >= 0:
-                        acks.append(block_id)
-                    else:
+                else:
+                    eof_flag = True
+                if not eof_flag:
+                    while True:
                         raw_bytes = inpt.read(4)
-                        if not raw_bytes:
-                            lg.warn('wrong ack: not found pause time')
+                        if len(raw_bytes) == 0:
                             break
-                        pause_time = struct.unpack('f', raw_bytes)[0]
-                        # lg.out(24, 'in-> ACK %d' % (self.stream_id))
-                        # self.sending_speed_factor *= 0.9
-                        # lg.out(18, 'SPEED DOWN: %r' % self.sending_speed_factor)
-                        # reactor.callLater(0, self.automat, 'iterate')
+                        block_id = struct.unpack('i', raw_bytes)[0]
+                        if block_id >= 0:
+                            acks.append(block_id)
+                        else:
+                            raw_bytes = inpt.read(4)
+                            if not raw_bytes:
+                                lg.warn('wrong ack: not found pause time')
+                                break
+                            pause_time = struct.unpack('f', raw_bytes)[0]
+                            # lg.out(24, 'in-> ACK %d' % (self.stream_id))
+                            # self.sending_speed_factor *= 0.9
+                            # lg.out(18, 'SPEED DOWN: %r' % self.sending_speed_factor)
+                            # reactor.callLater(0, self.automat, 'iterate')
+                if len(acks) > 0:
+                    self.input_acks_counter += 1
+                else:
+                    if pause_time == 0.0 and eof_flag is not None and eof_flag:
+                        sum_not_acked_blocks = sum(map(lambda block: len(block[0]),
+                                                       self.output_blocks.values()))
+                        self.bytes_acked += sum_not_acked_blocks
+                        eof = self.consumer.on_sent_raw_data(sum_not_acked_blocks)
+                        if _Debug:
+                            lg.out(18, '    ZERO FINISH %d eof:%r acked:%d tail:%d' % (
+                                self.stream_id, eof, self.bytes_acked, sum_not_acked_blocks))
                 for block_id in acks:                
                     try:
                         self.output_blocks_ids.remove(block_id)
@@ -850,17 +864,6 @@ class UDPStream(automat.Automat):
                     eof = self.consumer.on_sent_raw_data(block_size)
                 for block_id in self.output_blocks_ids:
                     self.output_blocks[block_id][2] += 1
-                if len(acks) > 0:
-                    self.input_acks_counter += 1
-                else:
-                    if pause_time == 0.0 and eof_flag is not None and eof_flag:
-                        sum_not_acked_blocks = sum(map(lambda block: len(block[0]),
-                                                       self.output_blocks.values()))
-                        self.bytes_acked += sum_not_acked_blocks
-                        eof = self.consumer.on_sent_raw_data(sum_not_acked_blocks)
-                        if _Debug:
-                            lg.out(18, '    ZERO FINISH %d eof:%r acked:%d tail:%d' % (
-                                self.stream_id, eof, self.bytes_acked, sum_not_acked_blocks))
                 if eof_flag is not None:
                     eof = eof and eof_flag
                 if self.eof != eof:

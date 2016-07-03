@@ -59,9 +59,15 @@ import optparse
 
 from twisted.web import xmlrpc
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, DeferredList, succeed 
+from twisted.internet.defer import Deferred, succeed 
 from twisted.internet.defer import maybeDeferred 
 from twisted.internet.defer import fail
+
+#------------------------------------------------------------------------------ 
+
+if __name__ == '__main__':
+    import sys, os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------ 
 

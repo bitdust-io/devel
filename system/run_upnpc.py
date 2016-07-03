@@ -75,9 +75,12 @@ def execute_in_shell(cmdargs, base_dir=None):
     import subprocess
     if _Debug:
         lg.out(_DebugLevel, 'run_upnpc.execute_in_shell: "%s"' % (' '.join(cmdargs)))
+    in_shell = True
+    if bpio.Mac():
+        in_shell = False
     _CurrentProcess = nonblocking.Popen(
         cmdargs,
-        shell=True,
+        shell=in_shell,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,)    
@@ -85,6 +88,9 @@ def execute_in_shell(cmdargs, base_dir=None):
     returncode = _CurrentProcess.returncode
     if _Debug:
         lg.out(_DebugLevel, 'run_upnpc.execute_in_shell returned: %s and %d bytes output' % (returncode, len(out_data)))
+    if returncode > 0:
+        if _Debug:
+            lg.out(_DebugLevel, '\n' + out_data)    
     return (out_data, returncode) # _CurrentProcess
 
 #------------------------------------------------------------------------------ 
