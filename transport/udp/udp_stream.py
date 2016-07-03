@@ -184,7 +184,7 @@ class UDPStream(automat.Automat):
             lg.out(18, 'udp_stream.__init__ %d peer_id:%s session:%s' % (
                 self.stream_id, self.producer.session.peer_id, self.producer.session))
         name = 'udp_stream[%s]' % (self.stream_id)
-        automat.Automat.__init__(self, name, 'AT_STARTUP', 18)
+        automat.Automat.__init__(self, name, 'AT_STARTUP', 18, _Debug)
         
 #    def __del__(self):
 #        """

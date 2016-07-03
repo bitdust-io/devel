@@ -193,14 +193,14 @@ def process_sessions():
             has_activity = True
     if _ProcessSessionsTask is None or _ProcessSessionsTask.called:
         if has_activity:
-            _ProcessSessionsTask = reactor.callLater(0, process_sessions)        
+            _ProcessSessionsDelay = MIN_PROCESS_SESSIONS_DELAY
         else:
             _ProcessSessionsDelay = misc.LoopAttenuation(
                 _ProcessSessionsDelay, has_activity, 
                 MIN_PROCESS_SESSIONS_DELAY, MAX_PROCESS_SESSIONS_DELAY,)
-            # attenuation
-            _ProcessSessionsTask = reactor.callLater(_ProcessSessionsDelay, 
-                                                     process_sessions)        
+        # attenuation
+        _ProcessSessionsTask = reactor.callLater(
+            _ProcessSessionsDelay, process_sessions)        
 
 
 def stop_process_sessions():
