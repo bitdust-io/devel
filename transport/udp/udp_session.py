@@ -176,11 +176,13 @@ def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
             i += 1
 
 
-def process_sessions():
+def process_sessions(sessions_to_process=None):
     global _ProcessSessionsTask
     global _ProcessSessionsDelay
     has_activity = False
-    for s in sessions().values():
+    if not sessions_to_process:
+        sessions_to_process = sessions().values()
+    for s in sessions_to_process:
         if not s.peer_id:
             continue
         if not s.file_queue:

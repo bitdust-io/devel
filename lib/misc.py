@@ -755,8 +755,6 @@ def percent2string(percent, precis=3):
     """
     s = float2str(round(percent, precis),
                   mask=("%%3.%df" % (precis+2)))
-    # if s[-2:] == '.0':
-    #     s = s[:-2]
     return s + '%'
 
 def float2str(float_value, mask='%6.8f', no_trailing_zeros=True):
