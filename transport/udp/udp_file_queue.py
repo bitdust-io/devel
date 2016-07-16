@@ -4,7 +4,6 @@
 """
 
 import os
-import sys
 import time
 import struct
 import cStringIO
@@ -16,8 +15,6 @@ from logs import lg
 
 from lib import udp
 from system import tmpfile
-from main import settings
-from lib import misc
 from contacts import contactsdb
 
 import udp_interface

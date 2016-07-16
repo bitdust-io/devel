@@ -2,6 +2,8 @@
 
 ./stop
 ./up
+./bd set debug 18
+./bd set udp false
 ./go
 
 exit 0
