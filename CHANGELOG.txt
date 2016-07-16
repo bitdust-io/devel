@@ -1,3 +1,11 @@
+2016-07-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added text chat via command line
+* bug fix in UDP transport
+* added scripts to build commits history
+* lots new API methods
+* made port to Mac OS
+* updates in ubuntu package
 
 
 2016-05-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
