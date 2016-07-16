@@ -15,7 +15,6 @@ EVENTS:
     * :red:`start`
 """
 
-import sys
 import time
 
 from logs import lg
@@ -28,7 +27,7 @@ import udp_session
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------ 
@@ -49,10 +48,9 @@ def create(node, peer_id):
     """
     if _Debug:
         lg.out(_DebugLevel, 'udp_connector.create peer_id=%s' % peer_id)
-
     c = DHTUDPConnector(node, peer_id)
     connectors()[c.id] = c
-    lg.out(12, 'udp_connector.create peer_id=%s, refs=%d' % (peer_id, sys.getrefcount(c)))
+    # lg.out(12, 'udp_connector.create peer_id=%s, refs=%d' % (peer_id, sys.getrefcount(c)))
     return c
 
 

@@ -553,8 +553,8 @@ def cmd_restore(opts, args, overDict, executablePath):
     if len(args) > 2 and args[1] in ['cancel', 'abort']:
         return call_jsonrpc_method_template_and_stop('restore_abort', tpl, args[2])
 
-    if len(args) > 2 and args[1] in ['start',]:
-        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[2])
+    if len(args) > 3 and args[1] in ['start', 'go', 'run',]:
+        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[2], args[3])
 
     if len(args) == 2:
         return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1])
