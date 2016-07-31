@@ -258,6 +258,7 @@ def on_suppliers_changed(current_suppliers):
 def on_tray_icon_command(cmd):
     from main import shutdowner
     from p2p import network_connector
+    lg.out(2, 'on_tray_icon_command %s' % cmd)
     if cmd == 'exit':
         # SendCommandToGUI('exit')
         shutdowner.A('stop', 'exit')

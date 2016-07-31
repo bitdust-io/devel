@@ -98,7 +98,9 @@ def restart(showgui=False):
 def reconnect():
     if not driver.is_started('service_network'):
         return ERROR('service_network() is not started')
+    from logs import lg
     from p2p import network_connector
+    lg.out(2, 'api.reconnect')
     network_connector.A('reconnect')
     return OK('reconnected')
 

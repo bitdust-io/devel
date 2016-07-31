@@ -52,6 +52,9 @@ class UDPDatagramsService(LocalService):
     
     def _on_udp_port_modified(self, path, value, oldvalue, result):
         from p2p import network_connector
+        from logs import lg
+        lg.out(2, 'service_udp_datagrams._on_udp_port_modified : %s->%s : %s' % (
+            oldvalue, value, path))
         network_connector.A('reconnect')
 
     

@@ -83,10 +83,16 @@ class UDPTransportService(LocalService):
         
     def _on_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
+        from logs import lg
+        lg.out(2, 'service_udp_transport._on_enabled_disabled : %s->%s : %s' % (
+            oldvalue, value, path))
         network_connector.A('reconnect')
         
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
+        from logs import lg
+        lg.out(2, 'service_udp_transport._on_receiving_enabled_disabled : %s->%s : %s' % (
+            oldvalue, value, path))
         network_connector.A('reconnect')
         
     def _on_network_receive_limit_modified(self, path, value, oldvalue, result):

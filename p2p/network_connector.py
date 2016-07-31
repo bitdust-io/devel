@@ -52,7 +52,6 @@ _Debug = True
 
 #------------------------------------------------------------------------------ 
 
-import os
 import sys
 import time
 
@@ -61,8 +60,6 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in network_connector.py')
 
-from twisted.internet.defer import Deferred, DeferredList
-from twisted.internet.task import LoopingCall
 from twisted.internet import threads
 
 #------------------------------------------------------------------------------ 
@@ -481,7 +478,7 @@ def UpdateUPNP():
 
     def _update_next_proto():
         if len(protos_need_upnp) == 0:
-            #out(4, 'network_connector.update_upnp done: ' + str(_UpnpResult))
+            lg.out(4, 'network_connector.update_upnp done, sending "check-reconnect" event')
             A('check-reconnect')
             return
         if _Debug:

@@ -17,6 +17,8 @@ _DebugLevel = 4
 
 #------------------------------------------------------------------------------ 
 
+import datetime
+import dateutil.relativedelta
 import random
 import string
 
@@ -29,35 +31,75 @@ from blockchain import zcoin as zc
 
 #------------------------------------------------------------------------------ 
 
-def namespaces():
-    return {
-        'this':
-        'last',
-    }
+_BlockchainServices = {}
+
+#------------------------------------------------------------------------------ 
+
+def services():
+    global _BlockchainServices
+    return _BlockchainServices
+
+#------------------------------------------------------------------------------ 
+
+def namespaces(now=None):
+    if not now:
+        now = datetime.datetime.utcnow()
+    last = now - dateutil.relativedelta.relativedelta(months=1)
+    return [
+        now.strftime('%Y%b'), 
+        last.strftime('%Y%b'),
+    ]
+
+def namespace_current():
+    return datetime.datetime.utcnow().strftime('%Y%b')
+
+def namespace_last():
+    now = datetime.datetime.utcnow()
+    last = now - dateutil.relativedelta.relativedelta(months=1)
+    return last.strftime('%Y%b')
 
 #------------------------------------------------------------------------------ 
 
 def init():
     zc.namespace.set_base_dir(settings.BlockChainDir())
-    zc.namespace.new('')
+    for ns in namespaces():
+        zc.namespace.new(ns)
 
 
 def shutdown():
     pass
 
 
-def db():
-    return zc.config.db
+def db(ns=None):
+    if not ns:
+        ns = namespace_current()
+    return zc.namespace.ns(ns).db
 
 
-def wallet():
-    return zc.config.wallet
+def wallet(ns=None):
+    if not ns:
+        ns = namespace_current()
+    return zc.namespace.ns(ns).wallet
 
 
-def nodes():
-    return zc.config.nodes
+def nodes(ns=None):
+    if not ns:
+        ns = namespace_current()
+    return zc.namespace.ns(ns).nodes
 
 #------------------------------------------------------------------------------ 
+
+def start_services():
+    port_num = 6800 # TODO: take from settings
+    for ns in namespaces():
+        zservice = zc.zcoin.run(ns, port_num)
+        port_num += 10
+        services()[ns] = zservice
+
+
+def stop_services():
+    for svc in services():
+        pass
 
 class BitDustCoins(zc.zcoin.zCoin):
 

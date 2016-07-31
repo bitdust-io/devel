@@ -860,11 +860,13 @@ def option_name_to_path(name, default=''):
 
 def cmd_integrate(opts, args, overDict):
     """
-    A platform-dependent method to make a "system" command called "bitdust".
+    A platform-dependent method to make an alias in OS for fast run : "bitdust".
     Than you can 
     
-    Run: 
-        sudo python bitdust.py integrate
+    Run:
+        cd bitdust
+        python bitdust.py integrate > /usr/local/bin/bitdust
+        chmod
     
     Ubuntu: 
         This will create an executable file /usr/local/bin/bitdust with such content:
@@ -873,48 +875,50 @@ def cmd_integrate(opts, args, overDict):
             python bitdust.py "$@"
     If this is sterted without root permissions, it should create a file ~/bin/bitdust.
     """
-    def print_text(msg, nl='\n'):
-        """
-        """
-        sys.stdout.write(msg+nl)
+#     def print_text(msg, nl='\n'):
+#         """
+#         """
+#         sys.stdout.write(msg+nl)
     from system import bpio
     if bpio.Windows():
         print_text('this feature is not yet available in OS Windows.')
         return 0
     curpath = bpio.getExecutableDir()
-    cmdpath = '/usr/local/bin/bitdust'
+    # cmdpath = '/usr/local/bin/bitdust'
     src = "#!/bin/sh\n"
     src += "cd %s\n" % curpath
     src += 'python bitdust.py "$@"\n'
-    print_text('creating a command script : %s ... ' % cmdpath, nl='')
-    result = False
-    try:
-        f = open(cmdpath, 'w')
-        f.write(src)
-        f.close()
-        os.chmod(cmdpath, 0755)
-        result = True
-        print_text('SUCCESS')
-    except:
-        print_text('FAILED')
-    if not result:
-        cmdpath = os.path.join(os.path.expanduser('~'), 'bin', 'bitdust')
-        print_text('try to create a command script in user home folder : %s ... ' % cmdpath, nl='')
-        try:
-            if not os.path.isdir(os.path.join(os.path.expanduser('~'), 'bin')):
-                os.mkdir(os.path.join(os.path.expanduser('~'), 'bin'))
-            f = open(cmdpath, 'w')
-            f.write(src)
-            f.close()
-            os.chmod(cmdpath, 0755)
-            result = True
-            print_text('SUCCESS')
-        except:
-            print_text('FAILED')
-            return 0
-    if result:
-        print_text('now use "bitdust" command to access the BitDust software.\n')
+    print_text(src)
     return 0
+#     print_text('creating a command script : %s ... ' % cmdpath, nl='')
+#     result = False
+#     try:
+#         f = open(cmdpath, 'w')
+#         f.write(src)
+#         f.close()
+#         os.chmod(cmdpath, 0755)
+#         result = True
+#         print_text('SUCCESS')
+#     except:
+#         print_text('FAILED')
+#     if not result:
+#         cmdpath = os.path.join(os.path.expanduser('~'), 'bin', 'bitdust')
+#         print_text('try to create a command script in user home folder : %s ... ' % cmdpath, nl='')
+#         try:
+#             if not os.path.isdir(os.path.join(os.path.expanduser('~'), 'bin')):
+#                 os.mkdir(os.path.join(os.path.expanduser('~'), 'bin'))
+#             f = open(cmdpath, 'w')
+#             f.write(src)
+#             f.close()
+#             os.chmod(cmdpath, 0755)
+#             result = True
+#             print_text('SUCCESS')
+#         except:
+#             print_text('FAILED')
+#             return 0
+#     if result:
+#         print_text('now use "bitdust" command to access the BitDust software.\n')
+#     return 0
 
 #------------------------------------------------------------------------------ 
 
