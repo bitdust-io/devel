@@ -6,7 +6,7 @@ import time
 
 
 from namespace import ns
-from zlog import exc
+from zlog import exc, exc_short
 
 
 def get_db(obj, data, name_space):
@@ -37,7 +37,7 @@ def send(name_space, god=False):
             s.connect((x['ip'], x['port']))
         except:
             s.close()
-            exc()
+            exc_short((x['ip'], x['port']))
             continue
         else:
             s.send(json.dumps({"cmd":"get_version"}))
@@ -50,7 +50,7 @@ def send(name_space, god=False):
                     s.connect((x['ip'], x['port']))
                 except:
                     s.close()
-                    exc()
+                    exc_short((x['ip'], x['port']))
                     continue
                 else:
                     s.send(json.dumps({"cmd":"get_db"}))

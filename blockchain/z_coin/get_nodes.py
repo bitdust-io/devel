@@ -7,7 +7,7 @@ import time
 import send_command
 
 from namespace import ns
-from zlog import out, exc
+from zlog import out, exc, exc_short
 
 
 def count_send(name_space):
@@ -62,7 +62,7 @@ def send(name_space, god=False):
             s.connect((x['ip'], x['port']))
         except:
             s.close()
-            exc()
+            exc_short((x['ip'], x['port']))
             continue
         else:
             s.send(json.dumps({"cmd":"get_version"}))
@@ -75,7 +75,7 @@ def send(name_space, god=False):
                     s.connect((x['ip'], x['port']))
                 except:
                     s.close()
-                    exc()
+                    exc_short((x['ip'], x['port']))
                     continue
                 else:
                     s.send(json.dumps({"cmd":"get_nodes"}))

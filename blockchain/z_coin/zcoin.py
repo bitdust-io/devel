@@ -106,9 +106,17 @@ class zCoin:
 
     def relay_non_bocking(self):        
         out("zCoin[%s] relay thread started" % self.name_space)
+        if self.stopped:
+            return
         get_nodes.send(self.name_space)
+        if self.stopped:
+            return
         register.send(self.name_space)
+        if self.stopped:
+            return
         get_db.send(self.name_space)
+        if self.stopped:
+            return
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind((ns(self.name_space).host, ns(self.name_space).port))
@@ -178,7 +186,9 @@ class zCoin:
     
     def mine_one_coin(self, json_data):
         return miner.mine(self.name_space, json_data)
-            
+          
+    def socket_connect(self, ip_addr, port, callback):
+        pass  
 
 def run(name_space, ip=None):
     zc = zCoin(name_space)

@@ -3,7 +3,7 @@ import json
 import random
 
 from namespace import ns
-from zlog import exc
+from zlog import exc, exc_short
 
 
 def send(cmd, name_space, out=False, god=False):
@@ -24,7 +24,7 @@ def send(cmd, name_space, out=False, god=False):
             s.connect((x['ip'], x['port']))
         except:
             s.close()
-            exc()
+            exc_short((x['ip'], x['port']))
             continue
         else:
             s.send(json.dumps({"cmd":"get_version"}))
@@ -37,7 +37,7 @@ def send(cmd, name_space, out=False, god=False):
                     s.connect((x['ip'], x['port']))
                 except:
                     s.close()
-                    exc()
+                    exc_short((x['ip'], x['port']))
                     continue
                 else:
                     s.send(json.dumps(cmd))

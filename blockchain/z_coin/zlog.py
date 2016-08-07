@@ -7,7 +7,7 @@ _Debug = True
 _DebugLevel = 10
 
 
-def out(msg, debug_level=_DebugLevel):
+def out(msg, debug_level=_DebugLevel, getframe_depth=0):
     """
     The core method, most useful thing in any project :-)))
     Print a text line to the log file or console.  
@@ -65,8 +65,12 @@ def exc(exc_info=None, maxTBlevel=100):
     except KeyError:
         excArgs = ''
     excTb = traceback.format_tb(trbk, maxTBlevel)    
-    out('Exception: <' + exception_name(value) + '>')
+    out('Exception: <' + exception_name(value) + '>', getframe_depth=1)
     if excArgs:
-        out('  args:' + excArgs)
+        out('  args:' + excArgs, getframe_depth=1)
     for l in excTb:
-        out(l.rstrip())
+        out(l.rstrip(), getframe_depth=1)
+
+def exc_short(info=''):
+    _, value, _ = sys.exc_info()
+    out(exception_name(value) + ': ' + str(info), getframe_depth=2)
