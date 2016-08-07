@@ -87,7 +87,32 @@ class zCoin:
     def stop(self):
         out("zCoin[%s] stopping now" % self.name_space)
         self.stopped = True
-            
+
+    def normal(self):
+        out("zCoin[%s] normal thread started" % self.name_space)
+        if not ns(self.name_space).relay:
+            get_db.send(self.name_space)
+            if self.stopped:
+                return
+            register.send(self.name_space)
+            if self.stopped:
+                return
+        while True:
+            if self.stopped:
+                break
+            coin_count.send(self.name_space)
+            if self.stopped:
+                break
+            get_nodes.count_send(self.name_space)
+            if self.stopped:
+                return
+            # out('zCoin[%s] normal thread loop' % self.name_space)
+            for _ in xrange(60):
+                if self.stopped:
+                    break
+                time.sleep(0.5)
+        out("zCoin[%s] normal thread stopped" % self.name_space)
+      
     def relay(self):
         get_nodes.send(self.name_space)
         register.send(self.name_space)
@@ -106,8 +131,6 @@ class zCoin:
 
     def relay_non_bocking(self):        
         out("zCoin[%s] relay thread started" % self.name_space)
-        if self.stopped:
-            return
         get_nodes.send(self.name_space)
         if self.stopped:
             return
@@ -164,25 +187,6 @@ class zCoin:
                         out('%s: %s' % (data['cmd'].upper(), data))
                         self.cmds[data['cmd']](obj, data, self.name_space)
                         obj.close()
-
-    def normal(self):
-        out("zCoin[%s] normal thread started" % self.name_space)
-        if not ns(self.name_space).relay:
-            get_db.send(self.name_space)
-            register.send(self.name_space)
-        while True:
-            if self.stopped:
-                break
-            coin_count.send(self.name_space)
-            if self.stopped:
-                break
-            get_nodes.count_send(self.name_space)
-            # out('zCoin[%s] normal thread loop' % self.name_space)
-            for _ in xrange(60):
-                if self.stopped:
-                    break
-                time.sleep(0.5)
-        out("zCoin[%s] normal thread stopped" % self.name_space)
     
     def mine_one_coin(self, json_data):
         return miner.mine(self.name_space, json_data)
