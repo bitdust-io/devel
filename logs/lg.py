@@ -41,12 +41,14 @@ _TimeCountsDict = {}
 
 def out(_DebugLevel, msg, nl='\n'):
     """
-    The core method, most used thing in the whole project.
-    Print a line to the log file or console.  
+    The core method, most useful thing in any project :-)))
+    Print a text line to the log file or console.  
     
-    :param _DebugLevel: lower values is count as more important messages. I am using only even values from 0 to 18. 
+    :param _DebugLevel: lower values is count as more important messages. 
+                        Usually I am using only even values from 0 to 18. 
     :param msg: message string to be printed
-    :param nl: this string is added at the end, set to empty string to avoid new line.     
+    :param nl: this string is added at the end, 
+               set to empty string to avoid new line.     
     """
     global _WebStreamFunc
     global _LogFile
@@ -130,8 +132,8 @@ def exc(msg='', level=0, maxTBlevel=100):
 
 def exception(level, maxTBlevel, exc_info):
     """
-    This is second most common method in the project.
-    Print detailed info about last exception to the logs.
+    This is second most common method in good error handling Python project :-)
+    Print detailed info about last/given exception to the logs.
     """
     global _LogFileName
     if exc_info is None:

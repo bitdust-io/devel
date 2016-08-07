@@ -166,12 +166,14 @@ class zCoin:
             if self.stopped:
                 break
             coin_count.send(self.name_space)
+            if self.stopped:
+                break
             get_nodes.count_send(self.name_space)
             # out('zCoin[%s] normal thread loop' % self.name_space)
-            for _ in xrange(600):
-                time.sleep(0.05)
+            for _ in xrange(60):
                 if self.stopped:
                     break
+                time.sleep(0.5)
         out("zCoin[%s] normal thread stopped" % self.name_space)
     
     def mine_one_coin(self, json_data):

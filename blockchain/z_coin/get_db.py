@@ -6,6 +6,7 @@ import time
 
 
 from namespace import ns
+from zlog import exc
 
 
 def get_db(obj, data, name_space):
@@ -31,10 +32,12 @@ def send(name_space, god=False):
         if x['address'] == my_address:
             continue
         s = socket.socket()
+        s.settimeout(5)
         try:
             s.connect((x['ip'], x['port']))
         except:
             s.close()
+            exc()
             continue
         else:
             s.send(json.dumps({"cmd":"get_version"}))
@@ -42,10 +45,12 @@ def send(name_space, god=False):
             if data == ns(name_space).version:
                 s.close()
                 s = socket.socket()
+                s.settimeout(5)
                 try:
                     s.connect((x['ip'], x['port']))
                 except:
                     s.close()
+                    exc()
                     continue
                 else:
                     s.send(json.dumps({"cmd":"get_db"}))

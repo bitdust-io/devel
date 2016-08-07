@@ -7,7 +7,7 @@ import time
 import send_command
 
 from namespace import ns
-from zlog import out
+from zlog import out, exc
 
 
 def count_send(name_space):
@@ -57,10 +57,12 @@ def send(name_space, god=False):
         if x['address'] == my_address:
             continue
         s = socket.socket()
+        s.settimeout(5)
         try:
             s.connect((x['ip'], x['port']))
         except:
             s.close()
+            exc()
             continue
         else:
             s.send(json.dumps({"cmd":"get_version"}))
@@ -68,10 +70,12 @@ def send(name_space, god=False):
             if data == ns(name_space).version:
                 s.close()
                 s = socket.socket()
+                s.settimeout(5)
                 try:
                     s.connect((x['ip'], x['port']))
                 except:
                     s.close()
+                    exc()
                     continue
                 else:
                     s.send(json.dumps({"cmd":"get_nodes"}))
