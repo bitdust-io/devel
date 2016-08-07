@@ -6,9 +6,6 @@ _DebugLevel = 10
 
 
 def out(msg, debug_level=_DebugLevel):
-    print msg
-    return 
-
     global _Debug
     if not _Debug:
         return
