@@ -52,7 +52,10 @@ def send(name_space, god=False):
     else:
         nodes = ns(name_space).nodes.find("nodes", {"relay":1})
         random.shuffle(nodes)
+    my_address = ns(name_space).wallet.find("data", "all")[0]['address']
     for x in nodes:
+        if x['address'] == my_address:
+            continue
         s = socket.socket()
         try:
             s.connect((x['ip'], x['port']))

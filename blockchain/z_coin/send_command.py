@@ -13,7 +13,10 @@ def send(cmd, name_space, out=False, god=False):
         random.shuffle(nodes)
     if not nodes:
         nodes = ns(name_space).brokers
+    my_address = ns(name_space).wallet.find("data", "all")[0]['address']
     for x in nodes:
+        if x['address'] == my_address:
+            continue
         s = socket.socket()
         try:
             s.connect((x['ip'], x['port']))

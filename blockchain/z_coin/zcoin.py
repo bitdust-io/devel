@@ -34,6 +34,7 @@ class zCoin:
         self.name_space = name_space
         self.stopped = False
         self.sock = None
+        self.my_ip_address = None
         self.cmds = {
             "get_db":get_db.get_db,
             "get_nodes":get_nodes.get_nodes,
@@ -58,6 +59,7 @@ class zCoin:
             out("It looks like you are the first node on this network.")
             if ip is None:
                 ip = raw_input("What is your IP address? ")
+            self.my_ip_address = ip
             ns(self.name_space).nodes.insert("nodes", {
                 "public":str(pub),
                 "address":address,
