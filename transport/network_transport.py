@@ -211,7 +211,7 @@ class NetworkTransport(automat.Automat):
             id_contact = id_contact.strip(self.proto+'://')
         if self.proto == 'tcp':
             if not id_contact:
-                default_host = bpio.ReadTextFile(settings.ExternalIPFilename())+':'+str(settings.getTCPPort())
+                default_host = misc.readExternalIP()+':'+str(settings.getTCPPort())
             options['host'] = id_contact or default_host
             options['tcp_port'] = settings.getTCPPort()
         elif self.proto == 'udp':

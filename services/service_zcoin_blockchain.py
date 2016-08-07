@@ -27,7 +27,11 @@ class ZCoinBlockChainService(LocalService):
                 ]
     
     def start(self):
+        from blockchain import zcoin_service
+        zcoin_service.init()
         return True
     
     def stop(self):
+        from blockchain import zcoin_service
+        zcoin_service.shutdown()
         return True

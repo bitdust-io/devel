@@ -38,11 +38,15 @@ except:
 from logs import lg
 
 from system import bpio
-from automats import automat
-from lib import nameurl
-from main import settings
 from system import tmpfile
+
+from automats import automat
+
+from lib import nameurl
+from lib import misc
 from lib import net_misc
+
+from main import settings
 
 import identity
 
@@ -135,7 +139,7 @@ class IdServer(automat.Automat):
         """
         self.hostname = settings.getIdServerHost()
         if self.hostname == '':
-            self.hostname = bpio.ReadTextFile(settings.ExternalIPFilename())
+            self.hostname = misc.readExternalIP() # bpio.ReadTextFile(settings.ExternalIPFilename())
         if self.hostname == '':
             self.hostname = net_misc.getLocalIp()
         lg.out(4, 'id_server.doSetUp hostname=%s' % self.hostname)

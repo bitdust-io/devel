@@ -361,7 +361,7 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
     Nice to provide a user name or it will have a form like: [ip address]_[date].     
     """
     if ip == '':
-        ip = bpio.ReadTextFile(settings.ExternalIPFilename())
+        ip = misc.readExternalIP() # bpio.ReadTextFile(settings.ExternalIPFilename())
     if name == '':
         name = ip.replace('.', '-') + '_' + time.strftime('%M%S')
     lg.out(4, 'my_id.buildDefaultIdentity: %s %s' % (name, ip))
