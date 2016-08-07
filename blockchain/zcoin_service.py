@@ -129,6 +129,6 @@ if __name__ == "__main__":
     lg.set_debug_level(20)
     init()
     reactor.addSystemEventTrigger('before', 'shutdown', shutdown)
-    reactor.callLater(1, create_new_record, dict(ok=dict(idurl='isurl1'), test='seems working', num=2))
+    # reactor.callLater(1, create_new_record, dict(ok=dict(idurl='isurl1'), test='seems working', num=2))
     reactor.run()
     
