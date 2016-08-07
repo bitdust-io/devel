@@ -51,6 +51,7 @@ class Namespace(object):
         self.version = "0.2.2"
         self.host = "0.0.0.0"
         self.port = port
+        self.timeout_connect = 3
         base_path = os.path.join(base_dir(), self.name)
         if not os.path.exists(base_path):
             os.makedirs(base_path)

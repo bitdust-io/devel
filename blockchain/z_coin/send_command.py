@@ -3,7 +3,7 @@ import json
 import random
 
 from namespace import ns
-from zlog import exc, exc_short
+from zlog import exc_short
 
 
 def send(cmd, name_space, out=False, god=False):
@@ -19,7 +19,7 @@ def send(cmd, name_space, out=False, god=False):
         if x['address'] == my_address:
             continue
         s = socket.socket()
-        s.settimeout(5)
+        s.settimeout(ns(name_space).timeout_connect)
         try:
             s.connect((x['ip'], x['port']))
         except:
@@ -32,7 +32,7 @@ def send(cmd, name_space, out=False, god=False):
             if data == ns(name_space).version:
                 s.close()
                 s = socket.socket()
-                s.settimeout(5)
+                s.settimeout(ns(name_space).timeout_connect)
                 try:
                     s.connect((x['ip'], x['port']))
                 except:

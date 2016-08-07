@@ -7,7 +7,7 @@ import time
 import send_command
 
 from namespace import ns
-from zlog import out, exc, exc_short
+from zlog import out, exc_short
 
 
 def count_send(name_space):
@@ -57,7 +57,7 @@ def send(name_space, god=False):
         if x['address'] == my_address:
             continue
         s = socket.socket()
-        s.settimeout(5)
+        s.settimeout(ns(name_space).timeout_connect)
         try:
             s.connect((x['ip'], x['port']))
         except:
@@ -70,7 +70,7 @@ def send(name_space, god=False):
             if data == ns(name_space).version:
                 s.close()
                 s = socket.socket()
-                s.settimeout(5)
+                s.settimeout(ns(name_space).timeout_connect)
                 try:
                     s.connect((x['ip'], x['port']))
                 except:
