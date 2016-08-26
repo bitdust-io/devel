@@ -155,6 +155,8 @@ class BroadcasterNode(automat.Automat):
                 self.state = 'BROADCASTERS?'
                 self.doConnect(arg)
                 self.doConnectBroadcasters(arg)
+            elif event == 'new-broadcaster-connected':
+                self.doConnectNewBroadcaster(arg)
         elif self.state == 'CLOSED':
             pass
         elif self.state == 'BROADCASTING':
@@ -174,7 +176,7 @@ class BroadcasterNode(automat.Automat):
                 self.doDisconnectBroadcasters(arg)
                 self.doDisconnect(arg)
             elif event == 'ack-received':
-                self.doCheckAndReplyBack(arg)
+                self.doCheckAndAckBack(arg)
             elif event == 'new-outbound-message':
                 self.doBroadcastMessage(arg)
         return None
