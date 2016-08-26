@@ -215,7 +215,7 @@ class SupplierFinder(automat.Automat):
             d.addCallback(self._found_nodes)
             d.addErrback(self._search_nodes_failed)
         d = dht_service.reconnect()
-        d.addCallback(_find)        
+        d.addCallback(_find)     
 
     def doCleanPrevUser(self, arg):
         """
@@ -258,8 +258,6 @@ class SupplierFinder(automat.Automat):
     #------------------------------------------------------------------------------ 
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
-        """
-        """
         self.automat('inbox-packet', (newpacket, info, status, error_message))
         return False
         
@@ -291,10 +289,8 @@ class SupplierFinder(automat.Automat):
         if contactsdb.is_supplier(idurl):
             lg.out(14, '    %s is supplier already' % idurl)
             self.automat('users-not-found')
-            # self.automat('user-already-supplier')
             return response
         d = identitycache.immediatelyCaching(idurl)
-        # d.addCallback(lambda x: self.automat('found-one-user', idurl))
         d.addCallback(lambda src: self._got_target_identity(src, idurl))
         d.addErrback(lambda x: self.automat('users-not-found'))
         return response

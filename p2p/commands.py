@@ -21,12 +21,9 @@ These are the valid values for the command field of a packet:
     - Data/Ack/                 (if customer sends you data you store it) (could be parity packet too)
     - Retrieve/Data|Fail        (data packets returned exactly as is with our signature)
     - ListFiles/Files           (ask supplier to list backup IDs he knows about for us)
-    
-To BitDust:
-    ListContacts/Contacts
-        
-From BitDust:
-    NearnessCheck/Nearness
+    - Identity/Ack              (ping/pong packets)
+    - Message/Ack               (chat)
+    - Coin/Ack                  (for contracts publishing/management)
 """
 
 #------------------------------------------------------------------------------ 
@@ -59,7 +56,6 @@ def init():
     P2PCommandAcks[Correspondent()] = Correspondent()
     P2PCommandAcks[RequestService()] = Ack()
     P2PCommandAcks[CancelService()] = Ack()
-    P2PCommandAcks[Routed()] = None
 
 def IsCommand(s):                 
     """
@@ -71,11 +67,6 @@ def IsCommand(s):
     return s in P2PCommandAcks
 
 #------------------------------------------------------------------------------ 
-
-def Routed():
-    """
-    """
-    return "Routed"
 
 def Data():
     """
@@ -198,9 +189,24 @@ def Message():
 
 def Correspondent():
     """
-    Remote user should send you this to be included in your correspondents list.
+    Remote user should send you this to be included
+    in your correspondents (friends) list.
     """
     return "Correspondent"
+
+def Coin():
+    """
+    This is used to broadcast crypto "coins" between peers.
+    Every coin keeps a list of "contracts" to store in a global DB.
+    This is very similar to well-known "blockchain" technology. 
+    """    
+    return "Coin"
+
+def Broadcast():
+    """
+    This message is used to deliver some piece of data to all peers in the network.
+    """
+    return "Broadcast"
 
 #------------------------------------------------------------------------------ 
 

@@ -60,6 +60,7 @@ import os
 import sys
 import cStringIO
 import zlib
+import json
 
 try:
     from twisted.internet import reactor
@@ -203,6 +204,9 @@ def makeFilename(customerID, packetID):
 
 #------------------------------------------------------------------------------
 
+def Ack(newpacket):
+    lg.out(8, "p2p_service.Ack %s from [%s] : %s" % (newpacket.PacketID, newpacket.CreatorID, newpacket.Payload))
+
 def SendAck(packettoack, response='', wide=False, callbacks={}, packetid=None):
     result = signed.Packet(
         commands.Ack(), 
@@ -214,12 +218,24 @@ def SendAck(packettoack, response='', wide=False, callbacks={}, packetid=None):
     lg.out(8, "p2p_service.SendAck %s to %s    response: %s ..." % (result.PacketID, result.RemoteID, str(response)[:15]))
     gateway.outbox(result, wide=wide, callbacks=callbacks)
     return result
-    
 
-def Ack(newpacket):
-    lg.out(8, "p2p_service.Ack %s from [%s] : %s" % (newpacket.PacketID, newpacket.CreatorID, newpacket.Payload))
-     
-    
+def SendAckNoRequest(remoteID, packetid, response='', wide=False, callbacks={}):
+    result = signed.Packet(
+        commands.Ack(), 
+        my_id.getLocalID(), 
+        my_id.getLocalID(), 
+        packetid,
+        response, 
+        remoteID)
+    lg.out(8, "p2p_service.SendAckNoRequest %s to %s    response: %s ..." % (result.PacketID, result.RemoteID, str(response)[:15]))
+    gateway.outbox(result, wide=wide, callbacks=callbacks)
+   
+#------------------------------------------------------------------------------ 
+
+def Fail(newpacket):
+    lg.out(8, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
+ 
+
 def SendFail(request, response='', remote_idurl=None):
     if remote_idurl is None:
         remote_idurl = request.OwnerID 
@@ -229,7 +245,7 @@ def SendFail(request, response='', remote_idurl=None):
     gateway.outbox(result)
     return result
     
-    
+
 def SendFailNoRequest(remoteID, packetID, response):
     result = signed.Packet(commands.Fail(), my_id.getLocalID(), my_id.getLocalID(), 
         packetID, response, remoteID)
@@ -237,10 +253,6 @@ def SendFailNoRequest(remoteID, packetID, response):
     gateway.outbox(result)
     return result
 
-
-def Fail(newpacket):
-    lg.out(8, "p2p_service.Fail from [%s]: %s" % (newpacket.CreatorID, newpacket.Payload))
- 
 #------------------------------------------------------------------------------ 
 
 def Identity(newpacket):
@@ -281,19 +293,17 @@ def Identity(newpacket):
         lg.out(8, "p2p_service.Identity from [%s]" % nameurl.GetName(idurl))
     return True
 
-
 def RequestIdentity(request):
     """
     Someone is requesting a copy of our current identity.
     Already verified that they are a contact.
     Can also be used as a sort of "ping" test to make sure we are alive.
     """
-    lg.out(6, "p2p_service.RequestIdentity starting")
+    lg.out(6, "p2p_service.RequestIdentity from %s" % request.OwnerID)
     MyID = my_id.getLocalID()
     RemoteID = request.OwnerID
     PacketID = request.PacketID
     identitystr = my_id.getLocalIdentity().serialize()
-    lg.out(8, "p2p_service.RequestIdentity returning ")
     result = signed.Packet(commands.Identity(), MyID, MyID, PacketID, identitystr, RemoteID)
     gateway.outbox(result, False)
        
@@ -913,6 +923,19 @@ def CheckWholeBackup(BackupID):
     lg.out(8, "p2p_service.CheckWholeBackup with BackupID=" + BackupID)
 
 #-------------------------------------------------------------------------------
+
+def SendBroadcastMessage(broadcaster_idurl, json_data):
+    lg.out(8, "p2p_service.SendBroadcastMessage to %s" % broadcaster_idurl)
+    OwnerID = json_data['creator']
+    MyID = my_id.getLocalID()
+    PacketID = packetid.UniqueID()
+    RemoteID = broadcaster_idurl
+    Payload = json.dumps(json_data)
+    result = signed.Packet(commands.Broadcast(), OwnerID, MyID, PacketID, Payload, RemoteID)
+    gateway.outbox(result)
+    return result
+
+#------------------------------------------------------------------------------ 
 
 def message2gui(proto, text):
     pass

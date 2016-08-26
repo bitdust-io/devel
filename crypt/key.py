@@ -215,31 +215,37 @@ def Verify(ConIdentity, hashcode, signature):
 
 #------------------------------------------------------------------------------ 
 
-def HashMD5(inp):
+def HashMD5(inp, hexdigest=False):
     """
     Use MD5 method to calculate the hash of ``inp`` string. 
     However it seems it is not so safe anymore:
     http://natmchugh.blogspot.co.uk/2014/10/how-i-created-two-images-with-same-md5.html
     """
+    if hexdigest:
+        return hashlib.md5(inp).hexdigest()
     return hashlib.md5(inp).digest()
 
-def HashSHA(inp):
+def HashSHA(inp, hexdigest=False):
     """
     Use SHA1 method to calculate the hash of ``inp`` string. 
     """
+    if hexdigest:
+        return hashlib.sha1(inp).hexdigest()
     return hashlib.sha1(inp).digest()
 
-def HashSHA512(inp):
+def HashSHA512(inp, hexdigest=False):
     """
     """
+    if hexdigest:
+        return hashlib.sha512(inp).hexdigest()
     return hashlib.sha512(inp).digest()
     
-def Hash(inp):
+def Hash(inp, hexdigest=False):
     """
     Core function to calculate hash of ``inp`` string, right now it uses MD5 method.
     """
     # return HashMD5(inp)
-    return HashSHA(inp)
+    return HashSHA(inp, hexdigest=hexdigest)
 
 #------------------------------------------------------------------------------ 
 

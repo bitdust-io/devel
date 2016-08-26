@@ -1,11 +1,10 @@
-#
 # <<<COPYRIGHT>>>
 #
 #
 #
-#
 
 """
-.. module:: blockchain
+.. module:: broadcast
 
 """
+

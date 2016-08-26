@@ -3,7 +3,7 @@
 ./stop
 ./up
 ./bd set debug 8
-./bd set udp true
+# ./bd set udp true
 ./go
 
 exit 0
