@@ -2070,7 +2070,6 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/proxy-transport/current-router', '')
     config.conf().setDefaultValue('services/proxy-transport/preferred-routers', '')
     config.conf().setDefaultValue('services/proxy-transport/router-lifetime-seconds', 600)
-    config.conf().setDefaultValue('services/zcoin-blockchain/enabled', 'false')
     config.conf().setDefaultValue('services/broadcasting/enabled', 'false')
 
 def _createNotExisingSettings():

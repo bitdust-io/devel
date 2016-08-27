@@ -135,7 +135,6 @@ def defaults():
         'services/proxy-transport/current-router':      TYPE_STRING,
         'services/proxy-transport/preferred-routers':   TYPE_TEXT,
         'services/proxy-transport/router-lifetime-seconds':     TYPE_POSITIVE_INTEGER,
-        'services/zcoin-blockchain/enabled':            TYPE_BOOLEAN,
         'updates/mode':                                 TYPE_COMBO_BOX,
         'updates/shedule':                              TYPE_TEXT,
     }
