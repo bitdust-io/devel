@@ -2,8 +2,9 @@
 
 ./stop
 ./up
-./bd set debug 8
+# ./bd set debug 10
 # ./bd set udp true
+./bd set services/broadcasting/enabled true
 ./go
 
 exit 0

@@ -104,15 +104,21 @@ class BroadcasterNode(automat.Automat):
         elif self.state == 'BROADCASTERS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doStopBroadcastersLookup(arg)
+                self.doStopLookup(arg)
+                self.doCloseLookup(arg)
                 self.doDisconnectBroadcasters(arg)
                 self.doDestroyMe(arg)
             elif event == 'broadcasters-connected':
                 self.state = 'BROADCASTING'
+                self.doCloseLookup(arg)
                 self.doNotifyConnected(arg)
             elif event == 'broadcasters-failed':
                 self.state = 'OFFLINE'
+                self.doCloseLookup(arg)
                 self.doDisconnectBroadcasters(arg)
+            elif event == 'new-broadcaster-connected':
+                self.doConnectNewBroadcaster(arg)
+                self.doAdjustLookup(arg)
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -171,11 +177,22 @@ class BroadcasterNode(automat.Automat):
         self.broadcasters_finder = broadcasters_finder.create()
         self.broadcasters_finder.automat('start', (self.max_broadcasters, result))
 
-    def doStopBroadcastersLookup(self, arg):
+    def doStopLookup(self, arg):
         """
         Action method.
         """
         self.broadcasters_finder.automat('stop')
+
+    def doAdjustLookup(self, arg):
+        """
+        Action method.
+        """
+        self.broadcasters_finder.need_broadcasters -= 1
+
+    def doCloseLookup(self, arg):
+        """
+        Action method.
+        """
         del self.broadcasters_finder
         self.broadcasters_finder = None
 

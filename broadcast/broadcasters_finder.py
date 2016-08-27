@@ -63,6 +63,7 @@ class BroadcastersFinder(automat.Automat):
 
     def init(self):
         self.connected_broadcasters = []
+        self.need_broadcasters = 1
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -151,13 +152,13 @@ class BroadcastersFinder(automat.Automat):
         """
         Condition method.
         """
-        return len(self.connected_broadcasters) < self.max_broadcasters
+        return len(self.connected_broadcasters) < self.need_broadcasters
 
     def doInit(self, arg):
         """
         Action method.
         """
-        self.max_broadcasters, self.result_defer = arg
+        self.need_broadcasters, self.result_defer = arg
         callback.insert_inbox_callback(0, self._inbox_packet_received)
 
     def doDHTReconnect(self, arg):

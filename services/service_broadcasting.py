@@ -58,7 +58,7 @@ class BroadcastingService(LocalService):
             lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
             return p2p_service.SendFail(request, 'broadcast routing disabled')
         from broadcast import broadcaster_node
-        if broadcaster_node.A().state not in ['BROADCASTING', 'OFFLINE',]:
+        if broadcaster_node.A().state not in ['BROADCASTING', 'OFFLINE', 'BROADCASTERS?',]:
             lg.out(8, "service_broadcasting.request DENIED, current state is : %s" % broadcaster_node.A().state)
             return p2p_service.SendFail(request, 'currently not broadcasting')
         broadcaster_node.A('new-broadcaster-connected', request)
