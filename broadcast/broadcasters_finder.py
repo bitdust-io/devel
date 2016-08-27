@@ -235,11 +235,11 @@ class BroadcastersFinder(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'broadcasters_finder._found_nodes %d nodes' % len(nodes))
         # DEBUG
-        if _Debug:
-            if _DebugLevel >= 8:
-                if my_id.getLocalID().count('veselin_kpn'):
-                    self._got_target_idurl({'idurl':'http://veselin-p2p.ru/bitdust_j_vps1005.xml'})
-                    return
+#         if _Debug:
+#             if _DebugLevel >= 8:
+#                 if my_id.getLocalID().count('veselin_kpn'):
+#                     self._got_target_idurl({'idurl':'http://veselin-p2p.ru/bitdust_j_vps1005.xml'})
+#                     return
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')
