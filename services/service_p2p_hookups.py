@@ -48,8 +48,6 @@ class P2PHookupsService(LocalService):
         network_connector.A().addStateChangedCallback(
             self._on_network_connector_switched)
         p2p_connector.A('init')
-        # # self._starting_defer.callback(p2p_connector.A().state)
-        # return self._starting_defer
         return True
     
     def stop(self):

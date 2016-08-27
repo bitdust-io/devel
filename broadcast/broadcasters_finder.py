@@ -14,6 +14,7 @@ EVENTS:
     * :red:`inbox-packet`
     * :red:`no-service`
     * :red:`start`
+    * :red:`stop`
     * :red:`timer-10sec`
     * :red:`users-not-found`
 """
@@ -88,20 +89,20 @@ class BroadcastersFinder(automat.Automat):
             if event == 'inbox-packet' and self.isAckFromUser(arg):
                 self.state = 'SERVICE?'
                 self.doBroadcasterConnect(arg)
-            elif self.Attempts==5 and event == 'timer-10sec':
-                self.state = 'FAILED'
-                self.doNotifyFailed(arg)
-                self.doDestroyMe(arg)
             elif event == 'timer-10sec' and self.Attempts<5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
+            elif event == 'stop' or ( self.Attempts==5 and event == 'timer-10sec' ):
+                self.state = 'FAILED'
+                self.doNotifyFailed(arg)
+                self.doDestroyMe(arg)
         elif self.state == 'RANDOM_USER':
             if event == 'found-one-user':
                 self.state = 'ACK?'
                 self.doRememberUser(arg)
                 self.Attempts+=1
                 self.doSendMyIdentity(arg)
-            elif event == 'users-not-found':
+            elif event == 'stop' or event == 'users-not-found':
                 self.state = 'FAILED'
                 self.doNotifyFailed(arg)
                 self.doDestroyMe(arg)
@@ -112,10 +113,6 @@ class BroadcastersFinder(automat.Automat):
                 self.state = 'RANDOM_USER'
                 self.doSaveBroadcaster(arg)
                 self.doDHTFindRandomUser(arg)
-            elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'no-service' ):
-                self.state = 'FAILED'
-                self.doNotifyFailed(arg)
-                self.doDestroyMe(arg)
             elif event == 'broadcaster-connected' and not self.isMoreNeeded(arg):
                 self.state = 'DONE'
                 self.doSaveBroadcaster(arg)
@@ -124,13 +121,17 @@ class BroadcastersFinder(automat.Automat):
             elif ( event == 'timer-10sec' or event == 'no-service' ) and self.Attempts<5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
+            elif event == 'stop' or ( self.Attempts==5 and ( event == 'timer-10sec' or event == 'no-service' ) ):
+                self.state = 'FAILED'
+                self.doNotifyFailed(arg)
+                self.doDestroyMe(arg)
         elif self.state == 'DONE':
             pass
         elif self.state == 'DHT_REFRESH':
             if event == 'dht-reconnected':
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
-            elif event == 'dht-failed':
+            elif event == 'stop' or event == 'dht-failed':
                 self.state = 'FAILED'
                 self.doNotifyFailed(arg)
                 self.doDestroyMe(arg)

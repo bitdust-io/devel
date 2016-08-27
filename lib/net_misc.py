@@ -14,14 +14,18 @@ Some network routines
 """ 
 
 import os
+import re
 import sys
-import subprocess
 import types
 import socket
 import urllib
 import urllib2
 import urlparse
+import platform
 import mimetypes
+import subprocess
+# fun mountain from imports :-)))
+
 
 try:
     from twisted.internet import reactor
@@ -32,14 +36,11 @@ from twisted.internet.defer import Deferred, DeferredList, succeed, fail
 from twisted.internet import ssl
 from twisted.internet import protocol
 # from twisted.internet.utils import getProcessOutput
-from twisted.protocols import basic
 from twisted.web import iweb
 from twisted.web import client
 from twisted.web import http_headers
-from twisted.web import http
 from twisted.web.client import getPage
 from twisted.web.client import downloadPage
-from twisted.web.client import HTTPClientFactory
 from twisted.web.client import HTTPDownloader
 
 from zope.interface import implements
@@ -460,7 +461,6 @@ def getLocalIp():
         3. Use OS specific command
         4. Return 127.0.0.1 in unknown situation
     """
-    import socket
     # 1: Use the gethostname method
 
     try:
@@ -489,7 +489,6 @@ def getLocalIp():
 
 
     # 3: Use OS specific command
-    import subprocess , platform
     ipaddr=''
     os_str=platform.system().upper()
 
@@ -867,14 +866,13 @@ def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
 #------------------------------------------------------------------------------ 
 
 def getIfconfig(iface='en0'):
-    import subprocess
     try:
-        result = subprocess.check_output('ifconfig %s |grep -w inet' % (iface), shell=True) 
+        result = subprocess.check_output(
+            'ifconfig %s | grep -w inet' % (iface),
+            shell=True, stderr=subprocess.STDOUT
+        ) 
     except:
         return None
-    # you may need to use eth0 instead of en0 here!!!
-    # print 'output = %s' % result.strip()
-    # result = None
     ip = ''
     if result:
         strs = result.split('\n')
@@ -888,18 +886,16 @@ def getIfconfig(iface='en0'):
                 if a != -1 and ipEnd != -1:
                     ip = line[ipStart:ipEnd]
                     break
-    return ip # 'ip = %s' % ip           
+    return ip         
    
  
 def getNetworkInterfaces():
     """
     Return a list of IPs for current active network interfaces.
     """
-    import platform
     plat = platform.uname()[0]
     
     if plat == 'Windows':
-        import re
         dirs = ['', r'c:\windows\system32', r'c:\winnt\system32']
         try:
             import ctypes
@@ -908,9 +904,9 @@ def getNetworkInterfaces():
             dirs.insert(0, buffer.value.decode('mbcs'))
         except:
             pass
-        for dir in dirs:
+        for sysdir in dirs:
             try:
-                pipe = os.popen(os.path.join(dir, 'ipconfig') + ' /all')
+                pipe = os.popen(os.path.join(sysdir, 'ipconfig') + ' /all')
             except IOError:
                 return []
             rawtxt = unicode(pipe.read())
@@ -944,7 +940,6 @@ def getNetworkInterfaces():
     
     elif plat == 'Darwin':
         try:
-            import socket
             return [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] 
                 if not ip.startswith("127.")][:1], 
                     [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) 

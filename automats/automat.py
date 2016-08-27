@@ -60,12 +60,8 @@ from twisted.internet.defer import Deferred, fail
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 8
-# _Debug = False
-_LogEvents = False
-
-# _Debug = False
-# _LogEvents = True
+_DebugLevel = 12
+_LogEvents = True
 
 #------------------------------------------------------------------------------ 
 
@@ -261,7 +257,7 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
           
-    def __init__(self, name, state, debug_level=18, log_events=False):
+    def __init__(self, name, state, debug_level=_DebugLevel*2, log_events=False):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
@@ -387,10 +383,10 @@ class Automat(object):
         Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).   
         """
         global _StateChangedCallback
-        if (_LogEvents and self.log_events) and _Debug:
+        if _LogEvents and self.log_events and _Debug:
             if self.log_events or not event_string.startswith('timer-'):
                 self.log(
-                    max(self.debug_level * 4, _DebugLevel),
+                    max(self.debug_level, _DebugLevel),
                     '%s fired with event "%s", refs=%d' % (
                         self, event_string, sys.getrefcount(self)))
         old_state = self.state
