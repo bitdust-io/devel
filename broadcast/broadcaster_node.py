@@ -8,10 +8,10 @@ BitDust broadcaster_node() Automat
 
 EVENTS:
     * :red:`broadcast-message-received`
+    * :red:`broadcaster-connected`
     * :red:`broadcaster-disconnected`
-    * :red:`broadcasters-connected`
-    * :red:`broadcasters-failed`
     * :red:`init`
+    * :red:`lookup-failed`
     * :red:`new-broadcaster-connected`
     * :red:`new-outbound-message`
     * :red:`shutdown`
@@ -40,8 +40,6 @@ from p2p import contact_status
 from p2p import commands
 
 from transport import callback
-
-from broadcast import broadcasters_finder
 
 from p2p import p2p_service
 
@@ -96,57 +94,57 @@ class BroadcasterNode(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
+        from broadcast import broadcasters_finder
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'BROADCASTERS?'
                 self.doInit(arg)
-                self.doLookupBroadcasters(arg)
+                broadcasters_finder.A('start')
         elif self.state == 'BROADCASTERS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doStopLookup(arg)
-                self.doCloseLookup(arg)
-                self.doDisconnectBroadcasters(arg)
+                self.doEraseBroadcasters(arg)
                 self.doDestroyMe(arg)
-            elif event == 'broadcasters-connected':
+            elif event == 'broadcaster-connected' and not self.isMoreNeeded(arg):
                 self.state = 'BROADCASTING'
-                self.doCloseLookup(arg)
                 self.doNotifyConnected(arg)
-            elif event == 'broadcasters-failed':
+            elif event == 'lookup-failed' and not self.isAnyBroadcasters(arg):
                 self.state = 'OFFLINE'
-                self.doCloseLookup(arg)
-                self.doDisconnectBroadcasters(arg)
-            elif event == 'new-broadcaster-connected':
-                self.doConnectNewBroadcaster(arg)
-                self.doAdjustLookup(arg)
+                self.doNotifyOffline(arg)
+            elif event == 'lookup-failed' and self.isAnyBroadcasters(arg):
+                broadcasters_finder.A('start')
+            elif event == 'broadcaster-connected' and self.isMoreNeeded(arg):
+                self.doAddBroadcaster(arg)
+                broadcasters_finder.A('start')
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'new-broadcaster-connected':
                 self.state = 'BROADCASTERS?'
-                self.doConnectNewBroadcaster(arg)
-                self.doLookupBroadcasters(arg)
+                self.doAddBroadcaster(arg)
+                broadcasters_finder.A('start')
         elif self.state == 'CLOSED':
             pass
         elif self.state == 'BROADCASTING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doDisconnectBroadcasters(arg)
+                self.doEraseBroadcasters(arg)
                 self.doDestroyMe(arg)
             elif event == 'new-broadcaster-connected':
-                self.doConnectNewBroadcaster(arg)
+                self.doAddBroadcaster(arg)
             elif event == 'broadcast-message-received':
                 self.doCheckAndSendForward(arg)
             elif event == 'broadcaster-disconnected':
-                self.doDisconnectOneBroadcaster(arg)
+                self.doRemoveBroadcaster(arg)
             elif event == 'new-outbound-message':
                 self.doBroadcastMessage(arg)
             elif event == 'timer-1min' and self.isLineActive(arg):
                 self.doTestReconnectBroadcasters(arg)
             elif event == 'timer-1min' and not self.isLineActive(arg):
                 self.state = 'OFFLINE'
-                self.doDisconnectBroadcasters(arg)
+                self.doEraseBroadcasters(arg)
+                self.doNotifyOffline(arg)
         return None
 
     def isLineActive(self, arg):
@@ -162,64 +160,48 @@ class BroadcasterNode(automat.Automat):
             return False
         return time.time() - self.last_success_action_time > 5*60
 
+    def isAnyBroadcasters(self, arg):
+        """
+        Condition method.
+        """
+        return len(self.connected_broadcasters) > 0
+
+    def isMoreNeeded(self, arg):
+        """
+        Condition method.
+        """
+        return len(self.connected_broadcasters) < self.max_broadcasters
+
     def doInit(self, arg):
         """
         Action method.
         """
         callback.append_inbox_callback(self._on_inbox_packet)
 
-    def doLookupBroadcasters(self, arg):
+    def doAddBroadcaster(self, arg):
         """
         Action method.
         """
-        result = Deferred()
-        result.addCallback(self.automat)
-        self.broadcasters_finder = broadcasters_finder.create()
-        self.broadcasters_finder.automat('start', (self.max_broadcasters, result))
+        if arg in self.connected_broadcasters:
+            lg.warn('%s already connected as broadcaster' % arg)
+            return
+        self.connected_broadcasters.append(arg)
+        self.last_success_action_time = time.time()
 
-    def doStopLookup(self, arg):
+    def doRemoveBroadcaster(self, arg):
         """
         Action method.
         """
-        self.broadcasters_finder.automat('stop')
+        if arg not in self.connected_broadcasters:
+            lg.warn('%s is not connected' % arg)
+            return
+        self.connected_broadcasters.remove(arg)
 
-    def doAdjustLookup(self, arg):
-        """
-        Action method.
-        """
-        self.broadcasters_finder.need_broadcasters -= 1
-
-    def doCloseLookup(self, arg):
-        """
-        Action method.
-        """
-        del self.broadcasters_finder
-        self.broadcasters_finder = None
-
-    def doDisconnectBroadcasters(self, arg):
+    def doEraseBroadcasters(self, arg):
         """
         Action method.
         """
         self.connected_broadcasters = []
-
-    def doConnectNewBroadcaster(self, arg):
-        """
-        Action method.
-        """
-        if arg.CreatorID in self.connected_broadcasters:
-            lg.warn('%s already connected as broadcaster' % arg.CreatorID)
-            return
-        self.connected_broadcasters.append(arg.CreatorID)
-        self.last_success_action_time = time.time()
-
-    def doDisconnectOneBroadcaster(self, arg):
-        """
-        Action method.
-        """
-        if arg.CreatorID not in self.connected_broadcasters:
-            lg.warn('%s is not connected' % arg.CreatorID)
-            return
-        self.connected_broadcasters.remove(arg.CreatorID)
 
     def doCheckAndSendForward(self, arg):
         """
@@ -254,6 +236,11 @@ class BroadcasterNode(automat.Automat):
         """
         self.last_success_action_time = time.time()
 
+    def doNotifyOffline(self, arg):
+        """
+        Action method.
+        """
+
     def doTestReconnectBroadcasters(self, arg):
         """
         Action method.
@@ -265,9 +252,9 @@ class BroadcasterNode(automat.Automat):
         """
         callback.remove_inbox_callback(self._on_inbox_packet)
         automat.objects().pop(self.index)
-        global _Broadcaster
-        del _Broadcaster
-        _Broadcaster = None
+        global _BroadcasterNode
+        del _BroadcasterNode
+        _BroadcasterNode = None
     
     #------------------------------------------------------------------------------ 
 

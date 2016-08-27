@@ -239,16 +239,29 @@ def Fail(newpacket):
 def SendFail(request, response='', remote_idurl=None):
     if remote_idurl is None:
         remote_idurl = request.OwnerID 
-    result = signed.Packet(commands.Fail(), my_id.getLocalID(), my_id.getLocalID(), 
-                                 request.PacketID, response, remote_idurl)
-    lg.out(8, "p2p_service.SendFail %s to %s    response: %s ..." % (result.PacketID, result.RemoteID, str(response)[:15]))
+    result = signed.Packet(
+        commands.Fail(),
+        my_id.getLocalID(),
+        my_id.getLocalID(), 
+        request.PacketID,
+        response,
+        remote_idurl,
+    )
+    lg.out(8, "p2p_service.SendFail %s to %s    response: %s ..." % (
+        result.PacketID, result.RemoteID, str(response)[:15]))
     gateway.outbox(result)
     return result
     
 
 def SendFailNoRequest(remoteID, packetID, response):
-    result = signed.Packet(commands.Fail(), my_id.getLocalID(), my_id.getLocalID(), 
-        packetID, response, remoteID)
+    result = signed.Packet(
+        commands.Fail(),
+        my_id.getLocalID(),
+        my_id.getLocalID(), 
+        packetID,
+        response,
+        remoteID,
+    )
     lg.out(8, "p2p_service.SendFailNoRequest %s to %s" % (result.PacketID, result.RemoteID))
     gateway.outbox(result)
     return result

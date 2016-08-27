@@ -7,15 +7,14 @@
 BitDust broadcasters_finder() Automat
 
 EVENTS:
-    * :red:`broadcaster-connected`
-    * :red:`dht-failed`
-    * :red:`dht-reconnected`
+    * :red:`ack-received`
     * :red:`found-one-user`
-    * :red:`inbox-packet`
-    * :red:`no-service`
+    * :red:`init`
+    * :red:`service-accepted`
+    * :red:`service-denied`
+    * :red:`shutdown`
     * :red:`start`
-    * :red:`stop`
-    * :red:`timer-10sec`
+    * :red:`timer-3sec`
     * :red:`users-not-found`
 """
 
@@ -47,9 +46,22 @@ from dht import dht_service
 
 #------------------------------------------------------------------------------ 
 
-def create():
-    return BroadcastersFinder('broadcasters_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+_BroadcastersFinder = None
 
+#------------------------------------------------------------------------------ 
+
+def A(event=None, arg=None):
+    """
+    Access method to interact with the state machine.
+    """
+    global _BroadcastersFinder
+    if _BroadcastersFinder is None:
+        # set automat name and starting state here
+        _BroadcastersFinder = BroadcastersFinder('broadcasters_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+    if event is not None:
+        _BroadcastersFinder.automat(event, arg)
+    return _BroadcastersFinder
+    
 #------------------------------------------------------------------------------ 
 
 class BroadcastersFinder(automat.Automat):
@@ -58,12 +70,14 @@ class BroadcastersFinder(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['ACK?','SERVICE?']),
+        'timer-3sec': (3.0, ['ACK?','SERVICE?']),
         }
 
     def init(self):
         self.connected_broadcasters = []
         self.need_broadcasters = 1
+        self.target_idurl = None
+        self.requested_packet_id = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -80,94 +94,60 @@ class BroadcastersFinder(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
+        from broadcast import broadcaster_node
         if self.state == 'AT_STARTUP':
-            if event == 'start':
-                self.state = 'DHT_REFRESH'
-                self.Attempts=0
+            if event == 'init':
+                self.state = 'READY'
                 self.doInit(arg)
-                self.doDHTReconnect(arg)
         elif self.state == 'ACK?':
-            if event == 'inbox-packet' and self.isAckFromUser(arg):
-                self.state = 'SERVICE?'
-                self.doBroadcasterConnect(arg)
-            elif event == 'timer-10sec' and self.Attempts<5:
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'timer-3sec' and self.Attempts<5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
-            elif event == 'stop' or ( self.Attempts==5 and event == 'timer-10sec' ):
-                self.state = 'FAILED'
-                self.doNotifyFailed(arg)
-                self.doDestroyMe(arg)
+            elif event == 'ack-received':
+                self.state = 'SERVICE?'
+                self.doSendRequestService(arg)
         elif self.state == 'RANDOM_USER':
             if event == 'found-one-user':
                 self.state = 'ACK?'
                 self.doRememberUser(arg)
                 self.Attempts+=1
                 self.doSendMyIdentity(arg)
-            elif event == 'stop' or event == 'users-not-found':
-                self.state = 'FAILED'
-                self.doNotifyFailed(arg)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-        elif self.state == 'FAILED':
-            pass
+            elif event == 'users-not-found':
+                self.state = 'READY'
+                broadcaster_node.A('lookup-failed')
         elif self.state == 'SERVICE?':
-            if event == 'broadcaster-connected' and self.isMoreNeeded(arg):
-                self.state = 'RANDOM_USER'
-                self.doSaveBroadcaster(arg)
-                self.doDHTFindRandomUser(arg)
-            elif event == 'broadcaster-connected' and not self.isMoreNeeded(arg):
-                self.state = 'DONE'
-                self.doSaveBroadcaster(arg)
-                self.doNotifySuccess(arg)
+            if event == 'shutdown':
+                self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif ( event == 'timer-10sec' or event == 'no-service' ) and self.Attempts<5:
+            elif self.Attempts==5 and ( event == 'timer-3sec' or event == 'service-denied' ):
+                self.state = 'READY'
+                broadcaster_node.A('lookup-failed')
+            elif event == 'service-accepted':
+                self.state = 'READY'
+                broadcaster_node.A('broadcaster-connected', arg)
+            elif ( event == 'timer-3sec' or event == 'service-denied' ) and self.Attempts<5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
-            elif event == 'stop' or ( self.Attempts==5 and ( event == 'timer-10sec' or event == 'no-service' ) ):
-                self.state = 'FAILED'
-                self.doNotifyFailed(arg)
-                self.doDestroyMe(arg)
-        elif self.state == 'DONE':
+        elif self.state == 'READY':
+            if event == 'start':
+                self.state = 'RANDOM_USER'
+                self.Attempts=0
+                self.doDHTFindRandomUser(arg)
+        elif self.state == 'CLOSED':
             pass
-        elif self.state == 'DHT_REFRESH':
-            if event == 'dht-reconnected':
-                self.state = 'RANDOM_USER'
-                self.doDHTFindRandomUser(arg)
-            elif event == 'stop' or event == 'dht-failed':
-                self.state = 'FAILED'
-                self.doNotifyFailed(arg)
-                self.doDestroyMe(arg)
         return None
-
-    def isAckFromUser(self, arg):
-        """
-        Condition method.
-        """
-        newpacket, info, status, error_message = arg
-        if newpacket.Command == commands.Ack():
-            if newpacket.OwnerID == self.target_idurl:
-                return True
-        return False
-
-    def isMoreNeeded(self, arg):
-        """
-        Condition method.
-        """
-        return len(self.connected_broadcasters) < self.need_broadcasters
 
     def doInit(self, arg):
         """
         Action method.
         """
-        self.need_broadcasters, self.result_defer = arg
         callback.insert_inbox_callback(0, self._inbox_packet_received)
-
-    def doDHTReconnect(self, arg):
-        """
-        Action method.
-        """
-        d = dht_service.reconnect()
-        d.addCallback(lambda x: self.automat('dht-reconnected'))
-        d.addErrback(lambda x: self.automat('dht-failed'))
 
     def doDHTFindRandomUser(self, arg):
         """
@@ -189,35 +169,18 @@ class BroadcastersFinder(automat.Automat):
         """
         p2p_service.SendIdentity(self.target_idurl, wide=True)
 
-    def doBroadcasterConnect(self, arg):
+    def doSendRequestService(self, arg):
         """
         Action method.
         """
         service_info = 'service_broadcasting route'
-        p2p_service.SendRequestService(
+        out_packet = p2p_service.SendRequestService(
             self.target_idurl, service_info, callbacks={
                 commands.Ack():  self._node_acked,
                 commands.Fail(): self._node_failed,
             }
         )
-
-    def doSaveBroadcaster(self, arg):
-        """
-        Action method.
-        """
-        self.connected_broadcasters.append(arg)
-
-    def doNotifySuccess(self, arg):
-        """
-        Action method.
-        """
-        self.result_defer.callback('broadcasters-connected', self.connected_broadcasters)
-
-    def doNotifyFailed(self, arg):
-        """
-        Action method.
-        """
-        self.result_defer.callback('broadcasters-failed')
+        self.requested_packet_id = out_packet.PacketID
 
     def doDestroyMe(self, arg):
         """
@@ -225,22 +188,23 @@ class BroadcastersFinder(automat.Automat):
         """
         callback.remove_inbox_callback(self._inbox_packet_received)
         automat.objects().pop(self.index)
+        global _BroadcastersFinder
+        del _BroadcastersFinder
+        _BroadcastersFinder = None
 
     #------------------------------------------------------------------------------ 
-    
+
     def _inbox_packet_received(self, newpacket, info, status, error_message):
-        self.automat('inbox-packet', (newpacket, info, status, error_message))
+        if  newpacket.Command == commands.Ack() and \
+            newpacket.OwnerID == self.target_idurl and \
+            newpacket.PacketID == 'identity':
+            self.automat('ack-received', self.target_idurl)
+            return True
         return False
     
     def _found_nodes(self, nodes):
         if _Debug:
             lg.out(_DebugLevel, 'broadcasters_finder._found_nodes %d nodes' % len(nodes))
-        # DEBUG
-#         if _Debug:
-#             if _DebugLevel >= 8:
-#                 if my_id.getLocalID().count('veselin_kpn'):
-#                     self._got_target_idurl({'idurl':'http://veselin-p2p.ru/bitdust_j_vps1005.xml'})
-#                     return
         if len(nodes) > 0:
             node = random.choice(nodes)
             d = node.request('idurl')
@@ -261,7 +225,7 @@ class BroadcastersFinder(automat.Automat):
             return response
         if idurl in self.connected_broadcasters:
             if _Debug:
-                lg.out(_DebugLevel, '    %s is already a connected broadcaster' % idurl)
+                lg.out(_DebugLevel, 'broadcasters_finder._got_target_idurl %s is already a connected broadcaster' % idurl)
             self.automat('users-not-found')
             return response
         d = identitycache.immediatelyCaching(idurl)
@@ -276,7 +240,11 @@ class BroadcastersFinder(automat.Automat):
         ident = identitycache.FromCache(idurl)
         remoteprotos = set(ident.getProtoOrder())
         myprotos = set(my_id.getLocalIdentity().getProtoOrder())
-        if len(myprotos.intersection(remoteprotos)) > 0:
+        available_protos = myprotos.intersection(remoteprotos)
+        if _Debug:
+            lg.out(_DebugLevel, 'broadcasters_finder._got_target_identity %s, available_protos=%s' % (
+                idurl, available_protos))
+        if len(available_protos) > 0:
             self.automat('found-one-user', idurl)
         else:
             self.automat('users-not-found')
@@ -287,14 +255,14 @@ class BroadcastersFinder(automat.Automat):
         if not response.Payload.startswith('accepted'):
             if _Debug:
                 lg.out(_DebugLevel, 'broadcasters_finder._node_failed %r %r' % (response, info))
-            self.automat('no-service')
+            self.automat('service-denied')
             return
         if _Debug:
             lg.out(_DebugLevel, 'broadcasters_finder._node_acked !!!! broadcaster %s connected' % response.CreatorID)
-        self.automat('broadcaster-connected', response.CreatorID)
+        self.automat('service-accepted', response.CreatorID)
 
     def _node_failed(self, response, info):
         if _Debug:
             lg.out(_DebugLevel, 'broadcasters_finder._node_failed %r %r' % (response, info))
-        self.automat('no-service')
+        self.automat('service-denied')
 
