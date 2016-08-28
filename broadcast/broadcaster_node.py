@@ -36,6 +36,8 @@ from logs import lg
 
 from automats import automat
 
+from main import config
+
 from p2p import contact_status
 from p2p import commands
 
@@ -54,6 +56,8 @@ def A(event=None, arg=None):
     Access method to interact with the state machine.
     """
     global _BroadcasterNode
+    if event is None and arg is None:
+        return _BroadcasterNode
     if _BroadcasterNode is None:
         # set automat name and starting state here
         _BroadcasterNode = BroadcasterNode('broadcaster_node', 'AT_STARTUP', _DebugLevel, _Debug)
@@ -73,33 +77,22 @@ class BroadcasterNode(automat.Automat):
         }
     
     def init(self):
-        self.max_broadcasters = 4 # TODO - read from settings
+        self.max_broadcasters = 1 + int(round(float(config.conf().getInt(
+            'services/broadcasting/max-broadcast-connections')) / 3.0))
         self.connected_broadcasters = []
         self.messages_sent = {}
         self.broadcasters_finder = None
         self.last_success_action_time = None
 
-    def state_changed(self, oldstate, newstate, event, arg):
-        """
-        Method to catch the moment when broadcaster_node() state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, arg):
-        """
-        This method intended to catch the moment when some event was fired in the broadcaster_node()
-        but its state was not changed.
-        """
-
     def A(self, event, arg):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        from broadcast import broadcasters_finder
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'BROADCASTERS?'
                 self.doInit(arg)
-                broadcasters_finder.A('start')
+                self.doStartBroadcastersLookup(arg)
         elif self.state == 'BROADCASTERS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -112,10 +105,10 @@ class BroadcasterNode(automat.Automat):
                 self.state = 'OFFLINE'
                 self.doNotifyOffline(arg)
             elif event == 'lookup-failed' and self.isAnyBroadcasters(arg):
-                broadcasters_finder.A('start')
+                self.doStartBroadcastersLookup(arg)
             elif event == 'broadcaster-connected' and self.isMoreNeeded(arg):
                 self.doAddBroadcaster(arg)
-                broadcasters_finder.A('start')
+                self.doStartBroadcastersLookup(arg)
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -123,7 +116,7 @@ class BroadcasterNode(automat.Automat):
             elif event == 'new-broadcaster-connected':
                 self.state = 'BROADCASTERS?'
                 self.doAddBroadcaster(arg)
-                broadcasters_finder.A('start')
+                self.doStartBroadcastersLookup(arg)
         elif self.state == 'CLOSED':
             pass
         elif self.state == 'BROADCASTING':
@@ -178,6 +171,13 @@ class BroadcasterNode(automat.Automat):
         """
         callback.append_inbox_callback(self._on_inbox_packet)
 
+    def doStartBroadcastersLookup(self, arg):
+        """
+        Action method.
+        """
+        from broadcast import broadcasters_finder
+        broadcasters_finder.A('start', self.automat, 'route')
+        
     def doAddBroadcaster(self, arg):
         """
         Action method.
@@ -257,7 +257,7 @@ class BroadcasterNode(automat.Automat):
         _BroadcasterNode = None
     
     #------------------------------------------------------------------------------ 
-
+        
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
             return False

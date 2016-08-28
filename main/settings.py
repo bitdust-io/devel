@@ -1844,6 +1844,11 @@ def enableService(svc_name, enable=None):
         return config.conf().getBool('services/%s/enabled' % svc_name)    
     config.conf().setBool('services/%s/enabled' % svc_name, enable)
     
+def enableBroadcastRouting(enable=None):
+    if enable is None:
+        return config.conf().getBool('services/broadcasting/routing-enabled')
+    config.conf().setBool('services/broadcasting/routing-enabled', enable)
+   
 #------------------------------------------------------------------------------ 
 #--- INITIALIZE BASE DIR ------------------------------------------------------
 #------------------------------------------------------------------------------ 
@@ -2003,6 +2008,8 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('personal/surname', '')
     config.conf().setDefaultValue('updates/mode', getUpdatesModeValues()[0])
     config.conf().setDefaultValue('updates/shedule', '5\n\n3600\n' ) # '1\n12:00:00\n6\n')
+    config.conf().setDefaultValue('services/backup-db/enabled', 'true')
+    config.conf().setDefaultValue('services/backups/enabled', 'true')
     config.conf().setDefaultValue('services/backups/block-size', 
                                   diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
     config.conf().setDefaultValue('services/backups/max-block-size', 
@@ -2010,11 +2017,24 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/backups/max-copies', '2')
     config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
+    config.conf().setDefaultValue('services/broadcasting/enabled', 'true')
+    config.conf().setDefaultValue('services/broadcasting/routing-enabled', 'false')
+    config.conf().setDefaultValue('services/broadcasting/max-broadcast-connections', '10')
+    config.conf().setDefaultValue('services/customer/enabled', 'true')
+    config.conf().setDefaultValue('services/customer/needed-space', 
+                                  diskspace.MakeStringFromBytes(DefaultNeededBytes()))
+    config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
+    config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
+    config.conf().setDefaultValue('services/data-motion/enabled', 'true')
+    config.conf().setDefaultValue('services/gateway/enabled', 'true')
     config.conf().setDefaultValue('services/id-server/enabled', 'false')
     config.conf().setDefaultValue('services/id-server/host', '')
     config.conf().setDefaultValue('services/id-server/tcp-port', IdentityServerPort())
     config.conf().setDefaultValue('services/id-server/web-port', IdentityWebPort())
     config.conf().setDefaultValue('services/identity-propagate/enabled', 'true')
+    config.conf().setDefaultValue('services/ip-port-responder/enabled', 'true')
+    config.conf().setDefaultValue('services/list-files/enabled', 'true')
+    config.conf().setDefaultValue('services/my-ip-port/enabled', 'true')
     config.conf().setDefaultValue('services/network/enabled', 'true')
     config.conf().setDefaultValue('services/network/proxy/enabled', 'false')
     config.conf().setDefaultValue('services/network/proxy/host', '')
@@ -2024,25 +2044,21 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/network/proxy/username', '')
     config.conf().setDefaultValue('services/network/receive-limit', DefaultBandwidthInLimit())
     config.conf().setDefaultValue('services/network/send-limit', DefaultBandwidthOutLimit())
-    config.conf().setDefaultValue('services/backup-db/enabled', 'true')
-    config.conf().setDefaultValue('services/backups/enabled', 'true')
-    config.conf().setDefaultValue('services/customer/enabled', 'true')
-    config.conf().setDefaultValue('services/customer/needed-space', 
-                                  diskspace.MakeStringFromBytes(DefaultNeededBytes()))
-    config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
-    config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
-    config.conf().setDefaultValue('services/data-motion/enabled', 'true')
-    config.conf().setDefaultValue('services/entangled-dht/enabled', 'true')
-    config.conf().setDefaultValue('services/entangled-dht/udp-port', DefaultDHTPort())
-    config.conf().setDefaultValue('services/employer/enabled', 'true')
-    config.conf().setDefaultValue('services/gateway/enabled', 'true')
-    config.conf().setDefaultValue('services/list-files/enabled', 'true')
     config.conf().setDefaultValue('services/p2p-hookups/enabled', 'true')
     config.conf().setDefaultValue('services/private-messages/enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-server/enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-server/routes-limit', 10)
+    config.conf().setDefaultValue('services/proxy-server/current-routes', '{}')
+    config.conf().setDefaultValue('services/proxy-transport/enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-transport/sending-enabled', 'true')
+    config.conf().setDefaultValue('services/proxy-transport/receiving-enabled', 'false')
+    config.conf().setDefaultValue('services/proxy-transport/priority', 30)
+    config.conf().setDefaultValue('services/proxy-transport/my-original-identity', '')
+    config.conf().setDefaultValue('services/proxy-transport/current-router', '')
+    config.conf().setDefaultValue('services/proxy-transport/preferred-routers', '')
+    config.conf().setDefaultValue('services/proxy-transport/router-lifetime-seconds', 600)
     config.conf().setDefaultValue('services/rebuilding/enabled', 'true')
     config.conf().setDefaultValue('services/restores/enabled', 'true')
-    config.conf().setDefaultValue('services/my-ip-port/enabled', 'true')
-    config.conf().setDefaultValue('services/ip-port-responder/enabled', 'true')
     config.conf().setDefaultValue('services/supplier/enabled', 'true')
     config.conf().setDefaultValue('services/supplier/donated-space', 
                                   diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
@@ -2059,18 +2075,6 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/udp-transport/receiving-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/sending-enabled', 'true')
     config.conf().setDefaultValue('services/udp-transport/priority', 20)
-    config.conf().setDefaultValue('services/proxy-server/enabled', 'false')
-    config.conf().setDefaultValue('services/proxy-server/routes-limit', 10)
-    config.conf().setDefaultValue('services/proxy-server/current-routes', '{}')
-    config.conf().setDefaultValue('services/proxy-transport/enabled', 'false')
-    config.conf().setDefaultValue('services/proxy-transport/sending-enabled', 'true')
-    config.conf().setDefaultValue('services/proxy-transport/receiving-enabled', 'false')
-    config.conf().setDefaultValue('services/proxy-transport/priority', 30)
-    config.conf().setDefaultValue('services/proxy-transport/my-original-identity', '')
-    config.conf().setDefaultValue('services/proxy-transport/current-router', '')
-    config.conf().setDefaultValue('services/proxy-transport/preferred-routers', '')
-    config.conf().setDefaultValue('services/proxy-transport/router-lifetime-seconds', 600)
-    config.conf().setDefaultValue('services/broadcasting/enabled', 'false')
 
 def _createNotExisingSettings():
     """

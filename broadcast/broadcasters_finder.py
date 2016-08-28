@@ -55,6 +55,8 @@ def A(event=None, arg=None):
     Access method to interact with the state machine.
     """
     global _BroadcastersFinder
+    if event is None and arg is None:
+        return _BroadcastersFinder 
     if _BroadcastersFinder is None:
         # set automat name and starting state here
         _BroadcastersFinder = BroadcastersFinder('broadcasters_finder', 'AT_STARTUP', _DebugLevel, _Debug)
@@ -78,23 +80,12 @@ class BroadcastersFinder(automat.Automat):
         self.need_broadcasters = 1
         self.target_idurl = None
         self.requested_packet_id = None
-
-    def state_changed(self, oldstate, newstate, event, arg):
-        """
-        Method to catch the moment when broadcasters_finder() state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, arg):
-        """
-        This method intended to catch the moment when some event was fired in the broadcasters_finder()
-        but its state was not changed.
-        """
+        self.request_service_params = None
 
     def A(self, event, arg):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        from broadcast import broadcaster_node
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
@@ -120,23 +111,24 @@ class BroadcastersFinder(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'users-not-found':
                 self.state = 'READY'
-                broadcaster_node.A('lookup-failed')
+                self.doNotifyLookupFailed(arg)
         elif self.state == 'SERVICE?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif self.Attempts==5 and ( event == 'timer-3sec' or event == 'service-denied' ):
                 self.state = 'READY'
-                broadcaster_node.A('lookup-failed')
+                self.doNotifyLookupFailed(arg)
             elif event == 'service-accepted':
                 self.state = 'READY'
-                broadcaster_node.A('broadcaster-connected', arg)
+                self.doNotifyLookupSuccess(arg)
             elif ( event == 'timer-3sec' or event == 'service-denied' ) and self.Attempts<5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
         elif self.state == 'READY':
             if event == 'start':
                 self.state = 'RANDOM_USER'
+                self.doSetNotifyCallback(arg)
                 self.Attempts=0
                 self.doDHTFindRandomUser(arg)
         elif self.state == 'CLOSED':
@@ -148,6 +140,12 @@ class BroadcastersFinder(automat.Automat):
         Action method.
         """
         callback.insert_inbox_callback(0, self._inbox_packet_received)
+
+    def doSetNotifyCallback(self, arg):
+        """
+        Action method.
+        """
+        self.result_callback, self.request_service_params = arg
 
     def doDHTFindRandomUser(self, arg):
         """
@@ -173,7 +171,7 @@ class BroadcastersFinder(automat.Automat):
         """
         Action method.
         """
-        service_info = 'service_broadcasting route'
+        service_info = 'service_broadcasting ' + self.request_service_params
         out_packet = p2p_service.SendRequestService(
             self.target_idurl, service_info, callbacks={
                 commands.Ack():  self._node_acked,
@@ -182,6 +180,24 @@ class BroadcastersFinder(automat.Automat):
         )
         self.requested_packet_id = out_packet.PacketID
 
+    def doNotifyLookupSuccess(self, arg):
+        """
+        Action method.
+        """
+        if self.result_callback:
+            self.result_callback('broadcaster-connected', arg)
+        self.result_callback = None
+        self.request_service_params = None
+
+    def doNotifyLookupFailed(self, arg):
+        """
+        Action method.
+        """
+        if self.result_callback:
+            self.result_callback('lookup-failed', arg)
+        self.result_callback = None
+        self.request_service_params = None
+        
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.

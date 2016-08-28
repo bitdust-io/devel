@@ -28,46 +28,69 @@ class BroadcastingService(LocalService):
                 ]
     
     def start(self):
-        from broadcast import broadcaster_node
         from broadcast import broadcasters_finder
+        from broadcast import broadcaster_node
+        from broadcast import broadcast_listener
+        from main.config import conf
+        from main import settings
         broadcasters_finder.A('init')
-        broadcaster_node.A('init')
+        if settings.enableBroadcastRouting():
+            broadcaster_node.A('init')
+        else:
+            broadcast_listener.A('init')
+            broadcast_listener.A('connect')
+        conf().addCallback('services/broadcasting/routing-enabled',
+            self._on_broadcast_routing_enabled_disabled)
         return True
     
     def stop(self):
         from broadcast import broadcaster_node
         from broadcast import broadcasters_finder
-        broadcaster_node.A('shutdown')
+        from broadcast import broadcast_listener
+        from main.config import conf
+        if broadcaster_node.A() is not None:
+            broadcaster_node.A('shutdown')
+        if broadcast_listener.A() is not None:
+            broadcast_listener.A('shutdown')
         broadcasters_finder.A('shutdown')
+        conf().removeCallback('services/broadcasting/routing-enabled')
         return True
     
     def request(self, request, info):
         from logs import lg
         from p2p import p2p_service
+        from main import settings
         words = request.Payload.split(' ')
+        if len(request.Payload) > 255:
+            return None
         try:
             mode = words[1][:20]
         except:
             lg.exc()
-            return p2p_service.SendFail(request, 'wrong mode provided')
+            return None
         if mode != 'route' and mode != 'listen':
             lg.out(8, "service_broadcasting.request DENIED, wrong mode provided : %s" % mode)
-            return p2p_service.SendFail(request, 'wrong mode provided')
-        if mode == 'listen':
-            lg.out(8, "service_broadcasting.request DENIED, wrong mode provided : %s" % mode)
-            return p2p_service.SendFail(request, 'listening is not supported yet')
-        if mode == 'route' and False: # and not settings.getBroadcastRoutingEnabled():
-            # TODO check if this is enabled in settings
-            # so broadcaster_node should be existing
+            return None
+        if not settings.enableBroadcastRouting():
             lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
             return p2p_service.SendFail(request, 'broadcast routing disabled')
         from broadcast import broadcaster_node
+        if not broadcaster_node.A():
+            lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
+            return p2p_service.SendFail(request, 'broadcast routing disabled')
         if broadcaster_node.A().state not in ['BROADCASTING', 'OFFLINE', 'BROADCASTERS?',]:
             lg.out(8, "service_broadcasting.request DENIED, current state is : %s" % broadcaster_node.A().state)
             return p2p_service.SendFail(request, 'currently not broadcasting')
-        broadcaster_node.A('new-broadcaster-connected', request)
-        return p2p_service.SendAck(request, 'accepted')
-    
+        if mode == 'route':
+            broadcaster_node.A('new-broadcaster-connected', request)
+            lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words)
+            return p2p_service.SendAck(request, 'accepted')
+        if mode == 'listen':
+            broadcaster_node.A('new-listener-connected', request)
+            lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words)
+            return p2p_service.SendAck(request, 'accepted')
+        return None
+
 #     def cancel(self, request, info):
 #         from logs import lg
 #         from p2p import p2p_service
@@ -88,3 +111,19 @@ class BroadcastingService(LocalService):
 #             return p2p_service.SendFail(request, 'currently not broadcasting')        
 #         broadcaster_node.A('broadcaster-disconnected', request)
 #         return p2p_service.SendAck(request, 'accepted')
+
+    def _on_broadcast_routing_enabled_disabled(self, path, value, oldvalue, result):
+        from logs import lg
+        from broadcast import broadcaster_node
+        from broadcast import broadcast_listener
+        lg.out(2, 'service_udp_transport._on_broadcast_routing_enabled_disabled : %s->%s : %s' % (
+            oldvalue, value, path))
+        if not value:
+            if broadcaster_node.A() is not None:
+                broadcaster_node.A('shutdown')
+            broadcast_listener.A('init')
+            broadcast_listener.A('connect')
+        else:
+            if broadcast_listener.A() is not None:
+                broadcast_listener.A('shutdown')
+            broadcaster_node.A('init')
