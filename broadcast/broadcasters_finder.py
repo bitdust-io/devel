@@ -218,7 +218,8 @@ class BroadcastersFinder(automat.Automat):
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         if  newpacket.Command == commands.Ack() and \
             newpacket.OwnerID == self.target_idurl and \
-            newpacket.PacketID == 'identity':
+            newpacket.PacketID == 'identity' and \
+            self.state == 'ACK?':
             self.automat('ack-received', self.target_idurl)
             return True
         return False

@@ -97,6 +97,8 @@ def on_incoming_broadcast_message(json_msg):
 
 def prepare_broadcast_packet(broadcaster_idurl, json_data):
     json_data['creator'] = my_id.getLocalID()
+    if 'broadcaster' not in json_data:
+        json_data['broadcaster'] = broadcaster_idurl
     return signed.Packet(commands.Broadcast(),
                          json_data['owner'],
                          json_data['creator'], 

@@ -2,11 +2,11 @@
 
 ./stop
 ./up
-# ./bd set debug 8
+./bd set debug 10
 # ./bd set udp true
 # ./bd set services/broadcasting/routing-enabled true
-./bd set services/broadcasting/max-broadcast-connections 3
-rm -rf ~/.bitdust/logs/*
+# ./bd set services/broadcasting/max-broadcast-connections 3
+# rm -rf ~/.bitdust/logs/*
 ./go
 
 exit 0
