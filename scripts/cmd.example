@@ -1,0 +1,8 @@
+#!/bin/bash
+
+./stop
+./up
+./go
+
+exit 0
+

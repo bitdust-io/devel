@@ -29,9 +29,9 @@ import json
 
 #------------------------------------------------------------------------------ 
 
-from automats import automat
+from logs import lg
 
-from userid import my_id
+from automats import automat
 
 from transport import callback
 
@@ -176,11 +176,15 @@ class BroadcastListener(automat.Automat):
             from broadcast import broadcast_service
             msg = broadcast_service.read_message_from_packet(newpacket)
             if not msg:
+                lg.warn('not valid message in payload')
                 return False
             if newpacket.CreatorID == self.broadcaster_idurl:
                 # message from broadcaster - process incoming broadcast
                 self.automat('incoming-message', (msg, newpacket))
                 return True
+            else:
+                lg.warn('received broadcast message from another broadcaster? : %s != %s' % (
+                    newpacket.CreatorID, self.broadcaster_idurl))
         return False
         
         

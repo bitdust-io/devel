@@ -942,7 +942,7 @@ def CheckWholeBackup(BackupID):
 #-------------------------------------------------------------------------------
 
 def Broadcast(request, info):
-    lg.out(8, "p2p_service.Broadcast   %r from %s" % (request, info.host))
+    lg.out(8, "p2p_service.Broadcast   %r from %s" % (request, info.sender_idurl))
     
 
 def SendBroadcastMessage(broadcaster_idurl, json_data):
