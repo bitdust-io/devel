@@ -76,8 +76,8 @@ class BroadcasterNode(automat.Automat):
         }
     
     def init(self):
-        self.max_broadcasters = 1 + int(round(float(config.conf().getInt(
-            'services/broadcasting/max-broadcast-connections')) / 4.0))
+        self.max_broadcasters = config.conf().getInt(
+            'services/broadcasting/max-broadcast-connections', 3)
         self.connected_broadcasters = []
         self.messages_sent = {}
         # self.messages_acked = {}
