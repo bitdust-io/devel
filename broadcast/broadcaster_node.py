@@ -192,6 +192,8 @@ class BroadcasterNode(automat.Automat):
             lg.warn('%s already connected as listener' % arg)
         self.connected_broadcasters.append(arg)
         self.last_success_action_time = time.time()
+        if _Debug:
+            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster %s !!!!!!!!' % arg)
 
     def doRemoveBroadcaster(self, arg):
         """
@@ -243,11 +245,16 @@ class BroadcasterNode(automat.Automat):
         """
         Action method.
         """
-        msgid = arg['id']
+        try:
+            msg = json.loads(arg.Payload)
+        except:
+            lg.exc()
+            return False
+        msgid = msg['id']
         assert msgid in self.messages_sent
         self.messages_sent[msgid] = int(time.time())
         for idurl in self.connected_broadcasters:
-            p2p_service.SendBroadcastMessage(idurl, arg)
+            p2p_service.SendBroadcastMessage(idurl, msg)
 
     def doTestReconnectBroadcasters(self, arg):
         """
