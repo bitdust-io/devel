@@ -29,7 +29,10 @@ from automats import automat
 
 from userid import my_id
 
+from transport import callback
+
 from p2p import p2p_service
+from p2p import commands
 
 #------------------------------------------------------------------------------ 
 
@@ -111,6 +114,7 @@ class BroadcastListener(automat.Automat):
         Action method.
         """
         self.incoming_broadcast_message_callback = arg
+        callback.append_inbox_callback(self._on_inbox_packet)
 
     def doStartBroadcasterLookup(self, arg):
         """
@@ -150,9 +154,28 @@ class BroadcastListener(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         self.incoming_broadcast_message_callback = None
+        callback.remove_inbox_callback(self._on_inbox_packet)
         automat.objects().pop(self.index)
         global _BroadcastListener
         del _BroadcastListener
         _BroadcastListener = None
 
+    #-----------------------------------------------------------------------------
 
+    def _on_inbox_packet(self, newpacket, info, status, error_message):
+        if status != 'finished':
+            return False
+        if newpacket.Command == commands.Broadcast():
+            from broadcast import broadcast_service
+            msg = broadcast_service.read_message_from_packet(newpacket)
+            if not msg:
+                return False
+            if newpacket.CreatorID == self.broadcaster_idurl:
+                self.automat('incoming-message', (msg, newpacket))
+                return True
+        return False
+        
+        
+        
+        
+        
