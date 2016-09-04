@@ -77,7 +77,7 @@ class BroadcasterNode(automat.Automat):
     
     def init(self):
         self.max_broadcasters = 1 + int(round(float(config.conf().getInt(
-            'services/broadcasting/max-broadcast-connections')) / 3.0))
+            'services/broadcasting/max-broadcast-connections')) / 4.0))
         self.connected_broadcasters = []
         self.messages_sent = {}
         # self.messages_acked = {}
@@ -219,12 +219,14 @@ class BroadcasterNode(automat.Automat):
         """
         msg, newpacket = arg
         msgid = msg['id']
+        if _Debug:
+            lg.out(_DebugLevel, 'broadcaster_node.doCheckAndSendForward %s' % msgid)
         self.last_success_action_time = time.time()
         # skip broadcasting if this message was already sent
         if msgid in self.messages_sent:
             if _Debug:
                 lg.out(_DebugLevel,
-                    'broadcaster_node.doCheckAndSendForward resent skipped, %s was already sent to my broadcasters' % msgid)
+                    '        resent skipped, %s was already sent to my broadcasters' % msgid)
 #             if msgid not in self.messages_acked:
 #                 p2p_service.SendAck(newpacket, '0')
 #             else:
@@ -243,6 +245,7 @@ class BroadcasterNode(automat.Automat):
         # finally broadcast further
         for idurl in self.connected_broadcasters:
             p2p_service.SendBroadcastMessage(idurl, msg)
+        self.messages_sent[msgid] = int(time.time())
 
     def doBroadcastMessage(self, arg):
         """
@@ -250,12 +253,14 @@ class BroadcasterNode(automat.Automat):
         """
         msg, newpacket = arg
         msgid = msg['id']
+        if _Debug:
+            lg.out(_DebugLevel, 'broadcaster_node.doBroadcastMessage %s' % msgid)
         if msgid in self.messages_sent:
             lg.warn('CRITICAL, found same message already broadcasted !!!')
             return
-        self.messages_sent[msgid] = int(time.time())
         for idurl in self.connected_broadcasters:
             p2p_service.SendBroadcastMessage(idurl, msg)
+        self.messages_sent[msgid] = int(time.time())
 
     def doTestReconnectBroadcasters(self, arg):
         """

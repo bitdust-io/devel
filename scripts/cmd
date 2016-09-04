@@ -5,7 +5,7 @@
 # ./bd set debug 10
 # ./bd set udp true
 # ./bd set services/broadcasting/routing-enabled true
-./go
+# ./go
 
 exit 0
 
