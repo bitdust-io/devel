@@ -215,7 +215,7 @@ def config_list(sort=False):
     r = config.conf().cache()
     r = map(lambda key: {
         'key': key,
-        'value': r[key].replace('\n','\\n'),
+        'value': str(r[key]).replace('\n','\\n'),
         'type': config.conf().getTypeLabel(key)}, sorted(r.keys()))
     if sort:
         r = sorted(r, key=lambda i: i['key'])
