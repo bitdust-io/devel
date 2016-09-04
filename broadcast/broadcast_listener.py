@@ -171,6 +171,7 @@ class BroadcastListener(automat.Automat):
             if not msg:
                 return False
             if newpacket.CreatorID == self.broadcaster_idurl:
+                # message from broadcaster - process incoming broadcast
                 self.automat('incoming-message', (msg, newpacket))
                 return True
         return False

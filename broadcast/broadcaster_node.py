@@ -234,6 +234,7 @@ class BroadcasterNode(automat.Automat):
             return
         # if some listeners connected - send to them
         for listener_idurl, scope in self.listeners.items():
+            lg.out(4, '           test %s:%s for %s' % (listener_idurl, scope, msg['owner']))
             # but check if they really need that message
             # listener can set a scope, so he will get this broadcasting
             # only if creator of that message is listed in scope 
@@ -308,6 +309,7 @@ class BroadcasterNode(automat.Automat):
                         'broadcaster_node._on_inbox_packet SKIPPED, %s already broadcasted' % msg['id'])
                 return True
             if newpacket.OwnerID in self.listeners:
+                # message from listener - start broadcasting
                 self.automat('new-outbound-message', (msg, newpacket))
             else:
                 self.automat('broadcast-message-received', (msg, newpacket))
