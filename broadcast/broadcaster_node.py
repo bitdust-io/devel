@@ -336,8 +336,8 @@ class BroadcasterNode(automat.Automat):
                         'broadcaster_node._on_inbox_packet SKIPPED, %s already broadcasted' % msg['id'])
                 return True
             if msg['owner'] in self.listeners:
-                if msg['onwer'] in self.connected_broadcasters:
-                    lg.warn('%s present in both lists: listeners and broadcasters!!!' % msg['onwer'])
+                if msg['owner'] in self.connected_broadcasters:
+                    lg.warn('%s present in both lists: listeners and broadcasters!!!' % msg['owner'])
                     return True
                 # message from listener - start broadcasting
                 self.automat('new-outbound-message', (msg, newpacket))
