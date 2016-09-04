@@ -79,7 +79,7 @@ def send_broadcast_message(payload):
     from broadcast import broadcast_listener
     msg = prepare_broadcast_message(my_id.getLocalID(), payload)
     if broadcaster_node.A():
-        broadcaster_node.A('new-outbound-message', msg)
+        broadcaster_node.A('new-outbound-message', (msg, None))
     elif broadcast_listener.A():
         if broadcast_listener.A().state == 'OFFLINE':
             broadcast_listener.A('connect')

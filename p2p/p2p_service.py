@@ -167,7 +167,7 @@ def inbox(newpacket, info, status, error_message):
         commandhandled = True
     elif newpacket.Command == commands.Broadcast():
         # handled by broadcasting_service
-        Broadcast(newpacket)
+        Broadcast(newpacket, info)
         commandhandled = False
     
     return commandhandled
@@ -941,8 +941,8 @@ def CheckWholeBackup(BackupID):
 
 #-------------------------------------------------------------------------------
 
-def Broadcast(request):
-    lg.out(8, "p2p_service.Broadcast   %r" % request)
+def Broadcast(request, info):
+    lg.out(8, "p2p_service.Broadcast   %r from %s" % (request, info))
     
 
 def SendBroadcastMessage(broadcaster_idurl, json_data):

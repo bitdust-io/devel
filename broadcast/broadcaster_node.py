@@ -80,6 +80,7 @@ class BroadcasterNode(automat.Automat):
             'services/broadcasting/max-broadcast-connections')) / 3.0))
         self.connected_broadcasters = []
         self.messages_sent = {}
+        # self.messages_acked = {}
         self.broadcasters_finder = None
         self.last_success_action_time = None
         self.listeners = {}
@@ -216,7 +217,7 @@ class BroadcasterNode(automat.Automat):
         """
         Action method.
         """
-        msg = arg
+        msg, newpacket = arg
         msgid = msg['id']
         self.last_success_action_time = time.time()
         # skip broadcasting if this message was already sent
@@ -224,6 +225,10 @@ class BroadcasterNode(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel,
                     'broadcaster_node.doCheckAndSendForward resent skipped, %s was already sent to my broadcasters' % msgid)
+#             if msgid not in self.messages_acked:
+#                 p2p_service.SendAck(newpacket, '0')
+#             else:
+#                 p2p_service.SendAck(newpacket, str(self.messages_acked[msgid]))
             return
         # if some listeners connected - send to them
         for listener_idurl, scope in self.listeners.items():
@@ -243,7 +248,7 @@ class BroadcasterNode(automat.Automat):
         """
         Action method.
         """
-        msg = arg
+        msg, newpacket = arg
         msgid = msg['id']
         if msgid in self.messages_sent:
             lg.warn('CRITICAL, found same message already broadcasted !!!')
@@ -292,8 +297,8 @@ class BroadcasterNode(automat.Automat):
             msg = broadcast_service.read_message_from_packet(newpacket)
             if msg:
                 if newpacket.OwnerID in self.listeners:
-                    self.automat('new-outbound-message', msg)
+                    self.automat('new-outbound-message', (msg, newpacket))
                 else:
-                    self.automat('broadcast-message-received', msg)
+                    self.automat('broadcast-message-received', (msg, newpacket))
                 return True
         return False
