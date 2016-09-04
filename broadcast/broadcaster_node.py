@@ -177,7 +177,7 @@ class BroadcasterNode(automat.Automat):
         """
         from broadcast import broadcasters_finder
         broadcasters_finder.A('start', 
-            (self.automat, 'route', self.connected_broadcasters))
+            (self.automat, 'route', list(self.connected_broadcasters)))
         
     def doAddBroadcaster(self, arg):
         """
@@ -193,7 +193,7 @@ class BroadcasterNode(automat.Automat):
         self.connected_broadcasters.append(arg)
         self.last_success_action_time = time.time()
         if _Debug:
-            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster %s !!!!!!!!' % arg)
+            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster %s joined !!!!!!!!' % arg)
 
     def doRemoveBroadcaster(self, arg):
         """
@@ -203,6 +203,8 @@ class BroadcasterNode(automat.Automat):
             lg.warn('%s is not connected' % arg)
             return
         self.connected_broadcasters.remove(arg)
+        if _Debug:
+            lg.out(_DebugLevel, 'broadcaster_node.doRemoveBroadcaster %s now disconnected' % arg)
 
     def doEraseBroadcasters(self, arg):
         """

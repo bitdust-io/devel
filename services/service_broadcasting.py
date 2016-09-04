@@ -93,7 +93,7 @@ class BroadcastingService(LocalService):
             lg.out(8, "service_broadcasting.request DENIED, current state is : %s" % broadcaster_node.A().state)
             return p2p_service.SendFail(request, 'currently not broadcasting')
         if mode == 'route':
-            broadcaster_node.A('new-broadcaster-connected', request)
+            broadcaster_node.A('new-broadcaster-connected', request.OwnerID)
             lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words)
             return p2p_service.SendAck(request, 'accepted')
         if mode == 'listen':

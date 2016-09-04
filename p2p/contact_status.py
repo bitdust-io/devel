@@ -141,6 +141,7 @@ def isOnline(idurl):
         return False
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
+        A(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.isOnline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'CONNECTED'
@@ -157,6 +158,7 @@ def isOffline(idurl):
         return True
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
+        A(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.isOffline contact %s is not found, made a new instance' % idurl)
     return A(idurl).state == 'OFFLINE'
@@ -173,6 +175,7 @@ def isCheckingNow(idurl):
         return False
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
+        A(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.isCheckingNow contact %s is not found, made a new instance' % idurl)
     st = A(idurl).state
@@ -190,6 +193,7 @@ def getStatusLabel(idurl):
         return '?'
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
+        A(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.getStatusLabel contact %s is not found, made a new instance' % idurl)
     global _StatusLabels
@@ -207,6 +211,7 @@ def getStatusIcon(idurl):
         return '?'
     global _ContactsStatusDict
     if idurl not in _ContactsStatusDict.keys():
+        A(idurl)
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.getStatusIcon contact %s is not found, made a new instance' % idurl)
     global _StatusIcons
