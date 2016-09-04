@@ -58,9 +58,9 @@ def prepare_broadcast_message(owner, payload):
         ('id', msgid),
         ('payload', payload),
     ]
-    owner_sign = key.Sign(key.Hash(str(msg)))
+    # owner_sign = key.Sign(key.Hash(str(msg)))
     msg = {k:v for k, v in msg}
-    msg['owner_sign'] = owner_sign
+    # msg['owner_sign'] = owner_sign
     return msg
 
 
@@ -73,6 +73,29 @@ def read_message_from_packet(newpacket):
     # TODO verify owner signature and creator ID
     return msg
 
+
+def packet_for_broadcaster(broadcaster_idurl, json_data):
+    if 'broadcaster' not in json_data:
+        json_data['broadcaster'] = broadcaster_idurl
+    return signed.Packet(commands.Broadcast(),
+                         json_data['owner'],
+                         json_data['owner'], 
+                         json_data['id'],
+                         json.dumps(json_data),
+                         broadcaster_idurl,)
+
+
+def packet_for_listener(listener_idurl, json_data):
+    if 'broadcaster' not in json_data:
+        json_data['broadcaster'] = my_id.getLocalID()
+    return signed.Packet(commands.Broadcast(),
+                         json_data['owner'],
+                         my_id.getLocalID(), 
+                         json_data['id'],
+                         json.dumps(json_data),
+                         listener_idurl,)
+
+#------------------------------------------------------------------------------ 
 
 def send_broadcast_message(payload):
     from broadcast import broadcaster_node
@@ -89,22 +112,10 @@ def send_broadcast_message(payload):
         return None
     return msg
 
+#------------------------------------------------------------------------------ 
 
 def on_incoming_broadcast_message(json_msg):
     lg.out(2, 'service_broadcasting._on_incoming_broadcast_message : %r' % json_msg)
-
-#------------------------------------------------------------------------------ 
-
-def prepare_broadcast_packet(broadcaster_idurl, json_data):
-    json_data['creator'] = my_id.getLocalID()
-    if 'broadcaster' not in json_data:
-        json_data['broadcaster'] = broadcaster_idurl
-    return signed.Packet(commands.Broadcast(),
-                         json_data['owner'],
-                         json_data['creator'], 
-                         json_data['id'],
-                         json.dumps(json_data),
-                         broadcaster_idurl,)
 
 #------------------------------------------------------------------------------ 
 

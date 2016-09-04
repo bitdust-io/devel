@@ -217,6 +217,7 @@ class BroadcasterNode(automat.Automat):
         """
         Action method.
         """
+        from broadcast import broadcast_service
         msg, newpacket = arg
         msgid = msg['id']
         if _Debug:
@@ -239,19 +240,22 @@ class BroadcasterNode(automat.Automat):
             # listener can set a scope, so he will get this broadcasting
             # only if creator of that message is listed in scope 
             if not scope or msg['owner'] in scope:
-                p2p_service.SendBroadcastMessage(listener_idurl, msg)
+                outpacket = broadcast_service.packet_for_listener(listener_idurl, msg)
+                p2p_service.SendBroadcastMessage(outpacket)
         # fire broadcast listening callback
         if self.incoming_broadcast_message_callback is not None:
             self.incoming_broadcast_message_callback(msg)
         # finally broadcast further
-        for idurl in self.connected_broadcasters:
-            p2p_service.SendBroadcastMessage(idurl, msg)
+        for broadcaster_idurl in self.connected_broadcasters:
+            outpacket = broadcast_service.packet_for_broadcaster(broadcaster_idurl, msg)
+            p2p_service.SendBroadcastMessage(outpacket)
         self.messages_sent[msgid] = int(time.time())
 
     def doBroadcastMessage(self, arg):
         """
         Action method.
         """
+        from broadcast import broadcast_service
         msg, newpacket = arg
         msgid = msg['id']
         if _Debug:
@@ -269,12 +273,16 @@ class BroadcasterNode(automat.Automat):
             # listener can set a scope, so he will get this broadcasting
             # only if creator of that message is listed in scope 
             if not scope or msg['owner'] in scope:
-                p2p_service.SendBroadcastMessage(listener_idurl, msg)
+                outpacket = broadcast_service.packet_for_listener(
+                    listener_idurl, msg)
+                p2p_service.SendBroadcastMessage(outpacket)
         # fire broadcast listening callback
         if self.incoming_broadcast_message_callback is not None:
             self.incoming_broadcast_message_callback(msg)
-        for idurl in self.connected_broadcasters:
-            p2p_service.SendBroadcastMessage(idurl, msg)
+        for broadcaster_idurl in self.connected_broadcasters:
+            outpacket = broadcast_service.packet_for_broadcaster(
+                broadcaster_idurl, msg)
+            p2p_service.SendBroadcastMessage(outpacket)
         self.messages_sent[msgid] = int(time.time())
 
     def doTestReconnectBroadcasters(self, arg):
@@ -327,7 +335,10 @@ class BroadcasterNode(automat.Automat):
                     lg.out(_DebugLevel,
                         'broadcaster_node._on_inbox_packet SKIPPED, %s already broadcasted' % msg['id'])
                 return True
-            if newpacket.OwnerID in self.listeners:
+            if msg['owner'] in self.listeners:
+                if msg['onwer'] in self.connected_broadcasters:
+                    lg.warn('%s present in both lists: listeners and broadcasters!!!' % msg['onwer'])
+                    return True
                 # message from listener - start broadcasting
                 self.automat('new-outbound-message', (msg, newpacket))
             else:

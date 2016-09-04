@@ -147,7 +147,10 @@ class BroadcastListener(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendBroadcastMessage(self.broadcaster_idurl, arg)
+        from broadcast import broadcast_service
+        outpacket = broadcast_service.packet_for_broadcaster(
+            self.broadcaster_idurl, arg)
+        p2p_service.SendBroadcastMessage(outpacket)
 
     def doNotifyInputMessage(self, arg):
         """

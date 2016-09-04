@@ -945,12 +945,10 @@ def Broadcast(request, info):
     lg.out(8, "p2p_service.Broadcast   %r from %s" % (request, info.sender_idurl))
     
 
-def SendBroadcastMessage(broadcaster_idurl, json_data):
-    lg.out(8, "p2p_service.SendBroadcastMessage to %s" % broadcaster_idurl)
-    from broadcast import broadcast_service
-    result = broadcast_service.prepare_broadcast_packet(broadcaster_idurl, json_data)
-    gateway.outbox(result)
-    return result
+def SendBroadcastMessage(outpacket):
+    lg.out(8, "p2p_service.SendBroadcastMessage to %s" % outpacket.RemoteID)
+    gateway.outbox(outpacket)
+    return outpacket
 
 #------------------------------------------------------------------------------ 
 
