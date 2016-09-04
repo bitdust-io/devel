@@ -153,8 +153,9 @@ class BroadcastListener(automat.Automat):
         """
         Action method.
         """
+        msg, newpacket = arg
         if self.incoming_broadcast_message_callback is not None:
-            self.incoming_broadcast_message_callback(arg)
+            self.incoming_broadcast_message_callback(msg)
 
     def doDestroyMe(self, arg):
         """
