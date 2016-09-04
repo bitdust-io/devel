@@ -61,6 +61,7 @@ import key
 
 class Packet:
     """
+    Init with: Command, OwnerID, CreatorID, PacketID, Payload, RemoteID 
     The core class.
     Represents a data packet in the network. 
     Payload can be encrypted using bitdust.key.encrypted.Block.

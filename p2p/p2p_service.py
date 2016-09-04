@@ -165,6 +165,9 @@ def inbox(newpacket, info, status, error_message):
         # contact asking for our current identity
         Correspondent(newpacket) 
         commandhandled = True
+    elif newpacket.Command == commands.Broadcast():
+        Broadcast(newpacket)
+        commandhandled = True
     
     return commandhandled
 
@@ -937,14 +940,14 @@ def CheckWholeBackup(BackupID):
 
 #-------------------------------------------------------------------------------
 
+def Broadcast(request):
+    lg.out(8, "p2p_service.Broadcast   %r" % request)
+    
+
 def SendBroadcastMessage(broadcaster_idurl, json_data):
     lg.out(8, "p2p_service.SendBroadcastMessage to %s" % broadcaster_idurl)
-    OwnerID = json_data['creator']
-    MyID = my_id.getLocalID()
-    PacketID = packetid.UniqueID()
-    RemoteID = broadcaster_idurl
-    Payload = json.dumps(json_data)
-    result = signed.Packet(commands.Broadcast(), OwnerID, MyID, PacketID, Payload, RemoteID)
+    from broadcast import broadcast_service
+    result = broadcast_service.prepare_broadcast_packet(broadcaster_idurl, json_data)
     gateway.outbox(result)
     return result
 

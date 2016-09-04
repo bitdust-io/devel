@@ -30,32 +30,53 @@ if __name__ == '__main__':
 
 import datetime
 import random
-import string        
+import string      
+import json  
 
 #------------------------------------------------------------------------------ 
 
 from logs import lg
 
-from userid import my_id
+from lib import packetid
 
-from broadcast import broadcaster_node
-from broadcast import broadcast_listener
+from crypt import signed
+from crypt import key
+
+from p2p import commands
+
+from userid import my_id
 
 #------------------------------------------------------------------------------ 
 
-def prepare_broadcast_message(creator, payload):
+def prepare_broadcast_message(owner, payload):
     tm = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
     rnd = ''.join(random.choice(string.ascii_uppercase) for _ in range(4))
-    msgid = '%s:%s:%s' % (tm, rnd, creator) 
-    return {
-        'creator': creator,
-        'started': tm,
-        'id': msgid,
-        'payload': payload,
-    }
+    msgid = '%s:%s:%s' % (tm, rnd, owner)
+    msg = [
+        ('owner', owner),
+        ('started', tm),
+        ('id', msgid),
+        ('payload', payload),
+    ]
+    owner_sign = key.Sign(key.Hash(str(msg)))
+    msg = {k:v for k, v in msg}
+    msg['owner_sign'] = owner_sign
+    return msg
+
+
+def read_message_from_packet(newpacket):
+    try:
+        msg = json.loads(newpacket.Payload)
+    except:
+        lg.exc()
+        return None
+    # TODO verify owner signature and creator ID
+    return msg
 
 
 def send_broadcast_message(payload):
+    from broadcast import broadcaster_node
+    from broadcast import broadcast_listener
     msg = prepare_broadcast_message(my_id.getLocalID(), payload)
     if broadcaster_node.A():
         broadcaster_node.A('new-outbound-message', msg)
@@ -71,6 +92,17 @@ def send_broadcast_message(payload):
 
 def on_incoming_broadcast_message(self, json_msg):
     lg.out(2, 'service_broadcasting._on_incoming_broadcast_message : %r' % json_msg)
+
+#------------------------------------------------------------------------------ 
+
+def prepare_broadcast_packet(broadcaster_idurl, json_data):
+    json_data['creator'] = my_id.getLocalID()
+    return signed.Packet(commands.Broadcast(),
+                         json_data['owner'],
+                         json_data['creator'], 
+                         json_data['id'],
+                         json.dumps(json_data),
+                         broadcaster_idurl,)
 
 #------------------------------------------------------------------------------ 
 

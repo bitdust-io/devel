@@ -216,13 +216,9 @@ class BroadcasterNode(automat.Automat):
         """
         Action method.
         """
-        try:
-            msg = json.loads(arg.Payload)
-        except:
-            lg.exc()
-            return False
-        self.last_success_action_time = time.time()
+        msg = arg
         msgid = msg['id']
+        self.last_success_action_time = time.time()
         # skip broadcasting if this message was already sent
         if msgid in self.messages_sent:
             if _Debug:
@@ -234,7 +230,7 @@ class BroadcasterNode(automat.Automat):
             # but check if they really need that message
             # listener can set a scope, so he will get this broadcasting
             # only if creator of that message is listed in scope 
-            if not scope or msg['creator'] in scope:
+            if not scope or msg['owner'] in scope:
                 p2p_service.SendBroadcastMessage(listener_idurl, msg)
         # fire broadcast listening callback
         if self.incoming_broadcast_message_callback is not None:
@@ -247,13 +243,11 @@ class BroadcasterNode(automat.Automat):
         """
         Action method.
         """
-        try:
-            msg = json.loads(arg.Payload)
-        except:
-            lg.exc()
-            return False
+        msg = arg
         msgid = msg['id']
-        assert msgid in self.messages_sent
+        if msgid in self.messages_sent:
+            lg.warn('CRITICAL, found same message already broadcasted !!!')
+            return
         self.messages_sent[msgid] = int(time.time())
         for idurl in self.connected_broadcasters:
             p2p_service.SendBroadcastMessage(idurl, msg)
@@ -294,9 +288,12 @@ class BroadcasterNode(automat.Automat):
         if status != 'finished':
             return False
         if newpacket.Command == commands.Broadcast():
-            if newpacket.OwnerID in self.listeners:
-                self.automat('new-outbound-message', newpacket)
-            else:
-                self.automat('broadcast-message-received', newpacket)
-            return True
+            from broadcast import broadcast_service
+            msg = broadcast_service.read_message_from_packet(newpacket)
+            if msg:
+                if newpacket.OwnerID in self.listeners:
+                    self.automat('new-outbound-message', msg)
+                else:
+                    self.automat('broadcast-message-received', msg)
+                return True
         return False
