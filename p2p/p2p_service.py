@@ -166,8 +166,9 @@ def inbox(newpacket, info, status, error_message):
         Correspondent(newpacket) 
         commandhandled = True
     elif newpacket.Command == commands.Broadcast():
+        # handled by broadcasting_service
         Broadcast(newpacket)
-        commandhandled = True
+        commandhandled = False
     
     return commandhandled
 
