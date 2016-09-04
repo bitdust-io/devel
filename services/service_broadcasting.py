@@ -22,6 +22,8 @@ class BroadcastingService(LocalService):
     service_name = 'service_broadcasting'
     config_path = 'services/broadcasting/enabled'
     
+    scope = [] # set to [idurl1,idurl2,...] to receive only messages from certain nodes
+    
     def dependent_on(self):
         return ['service_p2p_hookups', 
                 'service_entangled_dht',
@@ -43,7 +45,7 @@ class BroadcastingService(LocalService):
             broadcast_listener.A('init', broadcast_service.on_incoming_broadcast_message)
             broadcast_listener.A().addStateChangedCallback(
                 self._on_broadcast_listener_switched)
-            broadcast_listener.A('connect')
+            broadcast_listener.A('connect', self.scope)
         conf().addCallback(
             'services/broadcasting/routing-enabled',
             self._on_broadcast_routing_enabled_disabled
@@ -97,7 +99,7 @@ class BroadcastingService(LocalService):
             lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words)
             return p2p_service.SendAck(request, 'accepted')
         if mode == 'listen':
-            broadcaster_node.A().add_listener(request.OwnerID, words[2:])
+            broadcaster_node.A().add_listener(request.OwnerID, ' '.join(words[2:]))
             lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words[1])
             return p2p_service.SendAck(request, 'accepted')
         return None
@@ -117,7 +119,7 @@ class BroadcastingService(LocalService):
             broadcast_listener.A('init', broadcast_service.on_incoming_broadcast_message)
             broadcast_listener.A().addStateChangedCallback(
                 self._on_broadcast_listener_switched)
-            broadcast_listener.A('connect')
+            broadcast_listener.A('connect', self.scope)
         else:
             if broadcast_listener.A() is not None:
                 broadcast_listener.A().removeStateChangedCallback(
@@ -132,7 +134,7 @@ class BroadcastingService(LocalService):
         from twisted.internet import reactor
         from broadcast import broadcast_listener
         if newstate == 'OFFLINE':
-            reactor.callLater(60, broadcast_listener.A, 'connect')
+            reactor.callLater(60, broadcast_listener.A, 'connect', self.scope)
             lg.out(8, 'service_broadcasting._on_broadcast_listener_switched will try to connect again after 1 minute')
  
     def _on_broadcaster_node_switched(self, oldstate, newstate, evt, args):

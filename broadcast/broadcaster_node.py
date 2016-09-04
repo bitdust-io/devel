@@ -259,6 +259,20 @@ class BroadcasterNode(automat.Automat):
         if msgid in self.messages_sent:
             lg.warn('CRITICAL, found same message already broadcasted !!!')
             return
+        # if some listeners connected - send to them
+        for listener_idurl, scope in self.listeners.items():
+            if listener_idurl == newpacket.OwnerID:
+                # skip this listener
+                continue
+            lg.out(4, '           test %s:%s for %s' % (listener_idurl, scope, msg['owner']))
+            # but check if they really need that message
+            # listener can set a scope, so he will get this broadcasting
+            # only if creator of that message is listed in scope 
+            if not scope or msg['owner'] in scope:
+                p2p_service.SendBroadcastMessage(listener_idurl, msg)
+        # fire broadcast listening callback
+        if self.incoming_broadcast_message_callback is not None:
+            self.incoming_broadcast_message_callback(msg)
         for idurl in self.connected_broadcasters:
             p2p_service.SendBroadcastMessage(idurl, msg)
         self.messages_sent[msgid] = int(time.time())
@@ -281,7 +295,12 @@ class BroadcasterNode(automat.Automat):
     
     #------------------------------------------------------------------------------ 
     
-    def add_listener(self, listener_idurl, scope):
+    def add_listener(self, listener_idurl, scope_as_string):
+        try:
+            scope = json.loads(scope_as_string)
+        except:
+            lg.exc(scope_as_string)
+            return
         if listener_idurl in self.connected_broadcasters:
             lg.warn('%s already connected as broadcaster, can not set it as listener' % listener_idurl)
             return

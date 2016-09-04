@@ -25,6 +25,10 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------ 
 
+import json
+
+#------------------------------------------------------------------------------ 
+
 from automats import automat
 
 from userid import my_id
@@ -121,8 +125,11 @@ class BroadcastListener(automat.Automat):
         Action method.
         """
         from broadcast import broadcasters_finder
+        scope = arg
+        if not scope:
+            scope = []
         broadcasters_finder.A('start',
-            (self.automat, 'listen ' + my_id.getLocalID(), []))
+            (self.automat, 'listen %s' % json.dumps(scope), []))
 
     def doSetBroadcaster(self, arg):
         """
