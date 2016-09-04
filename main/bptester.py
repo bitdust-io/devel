@@ -271,7 +271,7 @@ def Validate():
                 except:
                     printlog('Validate ERROR removing ' + path)
                     return False
-            # time.sleep(0.1)
+            time.sleep(0.1)
             return False
         bpio.traverse_dir_recursive(cb, onecustdir)
 

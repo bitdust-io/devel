@@ -300,10 +300,16 @@ class BroadcasterNode(automat.Automat):
         if newpacket.Command == commands.Broadcast():
             from broadcast import broadcast_service
             msg = broadcast_service.read_message_from_packet(newpacket)
-            if msg:
-                if newpacket.OwnerID in self.listeners:
-                    self.automat('new-outbound-message', (msg, newpacket))
-                else:
-                    self.automat('broadcast-message-received', (msg, newpacket))
+            if not msg:
+                return False
+            if msg['id'] in self.messages_sent:
+                if _Debug:
+                    lg.out(_DebugLevel,
+                        'broadcaster_node._on_inbox_packet SKIPPED, %s already broadcasted' % msg['id'])
                 return True
+            if newpacket.OwnerID in self.listeners:
+                self.automat('new-outbound-message', (msg, newpacket))
+            else:
+                self.automat('broadcast-message-received', (msg, newpacket))
+            return True
         return False
