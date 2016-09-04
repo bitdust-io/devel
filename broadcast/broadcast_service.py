@@ -90,7 +90,7 @@ def send_broadcast_message(payload):
     return msg
 
 
-def on_incoming_broadcast_message(self, json_msg):
+def on_incoming_broadcast_message(json_msg):
     lg.out(2, 'service_broadcasting._on_incoming_broadcast_message : %r' % json_msg)
 
 #------------------------------------------------------------------------------ 
