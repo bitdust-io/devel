@@ -563,7 +563,8 @@ def on_transport_state_changed(transport, oldstate, newstate):
         lg.out(_DebugLevel-8, 'gateway.on_transport_state_changed in %r : %s->%s' % (
             transport, oldstate, newstate))
     from p2p import network_connector
-    network_connector.A('network-transport-state-changed', transport)
+    if network_connector.A():
+        network_connector.A('network-transport-state-changed', transport)
     for cb in _TransportStateChangedCallbacksList:
         cb(transport, oldstate, newstate)
    

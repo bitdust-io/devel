@@ -127,6 +127,14 @@ def objects():
     return _Objects
 
 
+def index():
+    """
+    Get all indexed state machines - should match with objects()
+    """
+    global _Index
+    return _Index
+
+
 def communicate(index, event, arg=None):
     """
     You can pass an event to any state machine - select by its ``index``.

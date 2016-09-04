@@ -38,7 +38,7 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------ 
 
-from twisted.internet.defer import Deferred, DeferredList
+from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------ 
 
@@ -233,16 +233,6 @@ class LocalService(automat.Automat):
                     svc.state != 'NOT_INSTALLED':
                     return False
         return True
-#        for depend_name in self.dependent_on():
-#            depend_svc = services().get(depend_name, None)
-#            if depend_svc is None:
-#                lg.warn('%s not exist' % depend_name)
-#                continue
-#            if  depend_svc.state != 'OFF' and \
-#                depend_svc.state != 'DEPENDS_OFF' and \
-#                depend_svc.state != 'NOT_INSTALLED':
-#                return False
-#        return True
 
     def doStartService(self, arg):
         """
@@ -309,17 +299,12 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
-        # dl = []
         count = 0
         for svc in services().values():
             if self.service_name in svc.dependent_on():
                 lg.out(6, '%r sends "stop" to %r' % (self, svc))
-                # d = Deferred()
-                svc.automat('stop') # , d)
+                svc.automat('stop')
                 count += 1
-                # dl.append(d)
-        # DeferredList(dl).addBoth(lambda x: self.automat('services-stopped'))
-        # self.automat('services-stopped')
         if count == 0:
             self.automat('depend-service-stopped')
         

@@ -169,20 +169,22 @@ def SortMessagesList(mlist, sort_by_column):
         i += 1
     keys = order.keys()
     keys.sort()
-    sorted = []
+    msorted = []
     for key in keys:
-        sorted.append(order[key])
-    return sorted
+        msorted.append(order[key])
+    return msorted
 
 #------------------------------------------------------------------------------ 
 
 def AddIncomingMessageCallback(cb):
     global _IncomingMessageCallbacks
-    _IncomingMessageCallbacks.append(cb)
+    if cb not in _IncomingMessageCallbacks:
+        _IncomingMessageCallbacks.append(cb)
     
 def RemoveIncomingMessageCallback(cb):
     global _IncomingMessageCallbacks
-    _IncomingMessageCallbacks.remove(cb)
+    if cb in _IncomingMessageCallbacks:
+        _IncomingMessageCallbacks.remove(cb)
 
 #------------------------------------------------------------------------------ 
 

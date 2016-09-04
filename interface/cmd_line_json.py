@@ -450,6 +450,35 @@ def cmd_key(opts, args, overDict, running, executablePath):
 #------------------------------------------------------------------------------ 
 
 def cmd_api(opts, args, overDict, executablePath):
+    if len(args) < 2:
+        try:
+            import inspect
+            from interface import api
+        except:
+            print_text('you need to provide not of api method to execute') 
+            return 2
+        for item in dir(api):
+            if item.startswith('_'):
+                continue
+            if item in ['Deferred', 'ERROR', 'OK', 'RESULT', 'driver', 'lg', \
+                        'os', 'time', 'on_api_result_prepared', 'succeed', ]:
+                continue
+            method = getattr(api, item, None)
+            if not method:
+                continue
+            try:
+                params = inspect.getargspec(method)
+            except:
+                print_text('    %s()' % item)
+                continue
+            doc_line = method.__doc__
+            if not doc_line:
+                doc_line = ''
+            else:
+                doc_line = doc_line.strip().split('\n')[0]
+            print_text('    %s(%s)' % (item, ', '.join(params.args),))
+            print_text('        %s' % doc_line)
+        return 0
     return call_jsonrpc_method_and_stop(args[1], *args[2:])
 
 #------------------------------------------------------------------------------ 

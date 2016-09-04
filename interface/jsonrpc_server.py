@@ -268,6 +268,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_set_my_nickname(self, nickname):
         return api.set_my_nickname(nickname)
 
+    def jsonrpc_broadcast_send_message(self, payload):
+        return api.broadcast_send_message(payload)
 
     # def jsonrpc_:
     #     return api.

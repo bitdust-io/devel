@@ -73,6 +73,7 @@ def shutdown(x=None):
     from raid import eccmap
     from lib import net_misc
     from updates import git_proc
+    from automats import automat
     dl = []
     driver.shutdown()
     eccmap.shutdown()
@@ -87,6 +88,9 @@ def shutdown(x=None):
         dl.append(webcontrol.shutdown())
     weblog.shutdown()
     webtraffic.shutdown()
+    for a in automat.objects().values():
+        if a.name != 'shutdowner':
+            a.event('shutdown')
     return DeferredList(dl)        
     
 #------------------------------------------------------------------------------ 
@@ -94,7 +98,7 @@ def shutdown(x=None):
 def A(event=None, arg=None):
     global _Shutdowner
     if _Shutdowner is None:
-        _Shutdowner = Shutdowner('shutdowner', 'AT_STARTUP', 2)
+        _Shutdowner = Shutdowner('shutdowner', 'AT_STARTUP', 2, True)
     if event is not None:
         _Shutdowner.event(event, arg)
     return _Shutdowner
@@ -204,7 +208,8 @@ class Shutdowner(automat.Automat):
         _Shutdowner = None
         self.destroy()
         lg.out(2, 'shutdowner.doDestroyMe %d machines left in memory:\n        %s' % (
-            len(automat.objects()), '\n        '.join(automat.objects().keys())))
+            len(automat.objects()), '\n        '.join(
+                ['%d: %r' % (k, automat.objects()[k]) for k in automat.objects().keys()])))
 
     #------------------------------------------------------------------------------ 
     

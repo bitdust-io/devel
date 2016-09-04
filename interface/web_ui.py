@@ -257,6 +257,7 @@ def on_suppliers_changed(current_suppliers):
 
 def on_tray_icon_command(cmd):
     from main import shutdowner
+    from services import driver
     from p2p import network_connector
     lg.out(2, 'on_tray_icon_command %s' % cmd)
     if cmd == 'exit':
@@ -272,7 +273,8 @@ def on_tray_icon_command(cmd):
             shutdowner.A('stop', 'restart') # ('restart', ''))
         
     elif cmd == 'reconnect':
-        network_connector.A('reconnect')
+        if driver.is_started('service_network'):
+            network_connector.A('reconnect')
 
     elif cmd == 'show':
         show()

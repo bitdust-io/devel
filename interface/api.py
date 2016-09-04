@@ -24,6 +24,8 @@ import time
 
 from twisted.internet.defer import Deferred, succeed
 
+from logs import lg
+
 from services import driver
 
 #------------------------------------------------------------------------------ 
@@ -71,7 +73,6 @@ def stop():
     Return:
         {'status': 'OK', 'result': 'stopped'}
     """
-    from logs import lg
     lg.out(2, 'api.stop sending event "stop" to the shutdowner() machine')
     from main import shutdowner
     shutdowner.A('stop', 'exit')
@@ -84,7 +85,6 @@ def restart(showgui=False):
     Return:
         {'status': 'OK', 'result': 'restarted'}
     """
-    from logs import lg
     from main import shutdowner
     if showgui: 
         lg.out(2, 'api.restart forced for GUI, added param "show", sending event "stop" to the shutdowner() machine')
@@ -96,9 +96,11 @@ def restart(showgui=False):
 
 
 def reconnect():
+    """
+    Sends "reconnect" event to network_connector() Automat in order to refresh network connection.
+    """
     if not driver.is_started('service_network'):
         return ERROR('service_network() is not started')
-    from logs import lg
     from p2p import network_connector
     lg.out(2, 'api.reconnect')
     network_connector.A('reconnect')
@@ -112,7 +114,6 @@ def show():
         {'status': 'OK', 
           'result': '`show` event has been sent to the main process'}
     """
-    from logs import lg
     lg.out(4, 'api.show')
     from main import settings
     if settings.NewWebGUI():
@@ -127,7 +128,7 @@ def show():
 
 def config_get(key, default=None):
     """
-    Return current value for specific option.
+    Returns current value for specific option from program settings.
     Return: 
         {'status': 'OK',
           'result': [
@@ -135,7 +136,6 @@ def config_get(key, default=None):
               'value': '8', 
               'key': 'logs/debug-level'}]}"    
     """
-    from logs import lg
     key = str(key)
     lg.out(4, 'api.config_get [%s]' % key)
     from main import config
@@ -161,7 +161,6 @@ def config_set(key, value, typ=None):
               'value': '10',
               'key': 'logs/debug-level'}]}"
     """
-    from logs import lg
     key = str(key)
     lg.out(4, 'api.config_set [%s]=%s' % (key, value))
     from main import config
@@ -197,7 +196,7 @@ def config_set(key, value, typ=None):
 
 def config_list(sort=False):
     """
-    Monitor all options and values.
+    Provide detailed info about all options and values from settings.
     Return:
         {'status': 'OK',
          'result': [
@@ -211,7 +210,6 @@ def config_list(sort=False):
               'value': '128 MB',
               'key': 'services/backups/max-block-size'}]}"
     """
-    from logs import lg
     lg.out(4, 'api.config_list')
     from main import config
     r = config.conf().cache()
@@ -227,9 +225,9 @@ def config_list(sort=False):
 
 def filemanager(json_request):
     """
-    A method to execute calls from GUI front-end and interact with web browser.
-    This is a special "gates" created only for Ajax calls from GUI - for 
-    for specific file system io operations.
+    A service method to execute calls from GUI front-end and interact with web browser.
+    This is a special "gates" created only for Ajax calls from GUI. 
+    It provides same methods as other functions here, but just in a different way.  
     
         request:
             {"params":{"mode":"stats"}}
@@ -252,8 +250,7 @@ def filemanager(json_request):
              'value_used_total': '82.93 MB'}
 
     You can also access those methods with API alias:
-        filemanager_{method name}()
-    More info will be added soon.
+        filemanager_{mode}()
     """
     if not driver.is_started('service_restores'):
         return ERROR('service_restores() is not started')
@@ -264,8 +261,7 @@ def filemanager(json_request):
 
 def backups_update():
     """
-    A method to restart backup_monitor() Automat and 
-    fire "synchronize" process with remote nodes.
+    Sends "restart" event to backup_monitor() Automat, this should start "data synchronization" process with remote nodes.
     Return:
         {'status': 'OK', 'result': 'the main loop has been restarted'}
     """
@@ -273,14 +269,13 @@ def backups_update():
         return ERROR('service_backups() is not started')
     from storage import backup_monitor
     backup_monitor.A('restart') 
-    from logs import lg
     lg.out(4, 'api.backups_update')
     return OK('the main loop has been restarted')
 
 
 def backups_list():
     """
-    Return a whole tree of files and folders in the catalog.
+    Returns a whole tree of files and folders in the catalog.
     Return:
         {'status': 'OK', 
           'result': [
@@ -307,7 +302,6 @@ def backups_list():
         return ERROR('service_backups() is not started')
     from storage import backup_fs
     from lib import diskspace
-    from logs import lg
     result = []
     for pathID, localPath, item in backup_fs.IterateIDs():
         result.append({
@@ -327,7 +321,7 @@ def backups_list():
 
 def backups_id_list():
     """
-    Return only list of items uploaded on remote machines.
+    Returns only list of items uploaded on remote machines.
     Return:
         {'status': 'OK', 
           'result': [{'backupid': '0/0/1/0/0/F20160313043757PM', 
@@ -342,9 +336,8 @@ def backups_id_list():
     from storage import backup_fs
     from contacts import contactsdb
     from lib import diskspace
-    from logs import lg
     result = []
-    for itemName, backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
+    for _, backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
         if versionInfo[1] >= 0 and contactsdb.num_suppliers() > 0:
             szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1]/contactsdb.num_suppliers()) 
         else:
@@ -371,7 +364,6 @@ def backup_start_id(pathID):
     from storage import backup_fs
     from storage import backup_control
     from web import control
-    from logs import lg
     pathID = str(pathID)
     local_path = backup_fs.ToPath(pathID)
     if local_path is not None:
@@ -388,8 +380,8 @@ def backup_start_id(pathID):
     
 def backup_start_path(path, bind_local_path=True):
     """
-    Start uploading file or folder to remote nodes,
-    assign a new path ID and add it to the catalog.
+    Start uploading file or folder to remote nodes.
+    It will assign a new path ID to that path and add it to the catalog.
     If bind_local_path is False all parent sub folders:
         
         ["Users", "veselin", "Documents", "python",]
@@ -416,7 +408,6 @@ def backup_start_path(path, bind_local_path=True):
     from storage import backup_fs
     from storage import backup_control
     from web import control
-    from logs import lg
     localPath = bpio.portablePath(unicode(path))
     if not bpio.pathExist(localPath):
         lg.out(4, 'api.backup_start_path local path %s not found' % path)
@@ -426,17 +417,17 @@ def backup_start_path(path, bind_local_path=True):
     if pathID is None:
         if bind_local_path:
             fileorfolder = 'folder' if bpio.pathIsDir(localPath) else 'file'
-            pathID, iter, iterID = backup_fs.MapPath(localPath, read_stats=True)
+            pathID, _, _ = backup_fs.MapPath(localPath, read_stats=True)
             if fileorfolder == 'folder':
                 dirsize.ask(localPath, backup_control.OnFoundFolderSize, (pathID, None))
         else:
             if bpio.pathIsDir(localPath):
                 fileorfolder = 'folder'
-                pathID, iter, iterID = backup_fs.AddDir(localPath, read_stats=True)
+                pathID, _, _ = backup_fs.AddDir(localPath, read_stats=True)
                 result += 'new folder was added to catalog: %s, ' % localPath
             else:
                 fileorfolder = 'file'
-                pathID, iter, iterID = backup_fs.AddFile(localPath, read_stats=True)
+                pathID, _, _ = backup_fs.AddFile(localPath, read_stats=True)
         result += 'uploading of item %s started, ' % pathID
         result += 'new %s was added to catalog: %s, ' % (fileorfolder, localPath)
     else:
@@ -478,7 +469,7 @@ def backup_map_path(path):
     pathID = backup_fs.ToID(path)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, iter, iterID = backup_fs.MapPath(path, True)
+    newPathID, _, _ = backup_fs.MapPath(path, True)
     if os.path.isdir(path):
         fileorfolder = 'folder'
         dirsize.ask(path, backup_control.OnFoundFolderSize, (newPathID, None))
@@ -513,7 +504,7 @@ def backup_dir_add(dirpath):
     pathID = backup_fs.ToID(dirpath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, iter, iterID = backup_fs.AddDir(dirpath, True)
+    newPathID, _, _ = backup_fs.AddDir(dirpath, True)
     dirsize.ask(dirpath, backup_control.OnFoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
     backup_control.Save()
@@ -542,7 +533,7 @@ def backup_file_add(filepath):
     pathID = backup_fs.ToID(filepath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, iter, iterID = backup_fs.AddFile(filepath, True)
+    newPathID, _, _ = backup_fs.AddFile(filepath, True)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID),])
@@ -552,8 +543,9 @@ def backup_file_add(filepath):
 
 def backup_tree_add(dirpath):
     """
-    Recursively reads the entire folder and create items for all files and folders
-    keeping the same structure. Do not start any uploads.
+    Recursively reads the entire folder and create items in the catalog.
+    For all files and folders it will keeping the same files/folders structure.
+    This method will not start any uploads, just append items to the catalog.
     Return:
         {'status': 'OK',
           'result': '21 items were added to catalog, parent path ID is 0/0/1/2, root folder is /Users/veselin/Documents/reports'}
@@ -565,7 +557,7 @@ def backup_tree_add(dirpath):
     from system import bpio
     from web import control
     dirpath = bpio.portablePath(unicode(dirpath))
-    newPathID, iter, iterID, num = backup_fs.AddLocalPath(dirpath, True)
+    newPathID, _, _, num = backup_fs.AddLocalPath(dirpath, True)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID),])
@@ -590,7 +582,6 @@ def backup_delete_local(backupID):
     from storage import backup_matrix
     from main import settings
     from web import control
-    from logs import lg
     num, sz = backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
     lg.out(4, 'api.backup_delete_local %s : %d, %s' % (backupID, num, sz))
     backup_matrix.EraseBackupLocalInfo(backupID)
@@ -617,7 +608,6 @@ def backup_delete_id(pathID_or_backupID):
     from main import settings
     from web import control
     from lib import packetid
-    from logs import lg
     if not packetid.Valid(pathID_or_backupID):
         lg.out(4, 'api.backup_delete_id invalid item %s' % pathID_or_backupID)
         return OK('invalid item id: %s' % pathID_or_backupID)
@@ -669,7 +659,6 @@ def backup_delete_path(localPath):
     from web import control
     from lib import packetid
     from system import bpio
-    from logs import lg
     localPath = bpio.portablePath(unicode(localPath))
     lg.out(4, 'api.backup_delete_path %s' % localPath)
     pathID = backup_fs.ToID(localPath)
@@ -695,8 +684,7 @@ def backup_delete_path(localPath):
 
 def backups_queue():
     """
-    Return a list of paths to be backed up as soon as
-    currently running backups finish.
+    Returns a list of paths to be backed up as soon as currently running backups finish.
     Return:
         {'status': 'OK',
           'result': [    
@@ -708,7 +696,6 @@ def backups_queue():
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_control
-    from logs import lg
     lg.out(4, 'api.backups_queue %d tasks in the queue' % len(backup_control.tasks()))
     if not backup_control.tasks():
         return RESULT([], message='there are no tasks in the queue at the moment')
@@ -721,7 +708,7 @@ def backups_queue():
 
 def backups_running():
     """
-    Return a list of currently running uploads.
+    Returns a list of currently running uploads.
     Return:
         {'status': 'OK',
           'result': [    
@@ -746,7 +733,6 @@ def backups_running():
         return ERROR('service_backups() is not started')
     from lib import misc
     from storage import backup_control
-    from logs import lg
     lg.out(4, 'api.backups_running %d items running at the moment' % len(backup_control.jobs()))
     if not backup_control.jobs():
         return RESULT([], message='there are no jobs running at the moment')
@@ -777,7 +763,6 @@ def backup_cancel_pending(path_id):
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_control
-    from logs import lg
     lg.out(4, 'api.backup_cancel_pending %s' % path_id)
     if not backup_control.AbortPendingTask(path_id):
         return ERROR(path_id, message='item %s is present in pending queue' % path_id)
@@ -792,7 +777,6 @@ def backup_abort_running(backup_id):
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')
     from storage import backup_control
-    from logs import lg
     lg.out(4, 'api.backup_abort_running %s' % backup_id)
     if not backup_control.AbortRunningBackup(backup_id):
         return ERROR(backup_id, message='backup %s is not running at the moment' % backup_id)
@@ -826,7 +810,6 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
     from web import control
     from system import bpio
     from lib import packetid
-    from logs import lg
     print pathID_or_backupID_or_localPath, destinationPath
     if not packetid.Valid(pathID_or_backupID_or_localPath):
         localPath = bpio.portablePath(unicode(pathID_or_backupID_or_localPath))
@@ -886,7 +869,7 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
 
 def restores_running():
     """
-    Return a list of currently running downloads:
+    Returns a list of currently running downloads.
     Return:
         {'status': 'OK',
          'result':   [ { 'aborted': False,
@@ -903,7 +886,6 @@ def restores_running():
     if not driver.is_started('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import restore_monitor
-    from logs import lg
     lg.out(4, 'api.restores_running %d items downloading at the moment' % len(restore_monitor.GetWorkingObjects()))
     if not restore_monitor.GetWorkingObjects():
         return RESULT([], message='there are no downloads running at the moment')
@@ -930,7 +912,6 @@ def restore_abort(backup_id):
     if not driver.is_started('service_restores'):
         return ERROR('service_restores() is not started')
     from storage import restore_monitor
-    from logs import lg
     lg.out(4, 'api.restore_abort %s' % backup_id)
     if not restore_monitor.Abort(backup_id):
         return ERROR(backup_id, 'item %s is not restoring at the moment' % backup_id)
@@ -940,8 +921,7 @@ def restore_abort(backup_id):
 
 def suppliers_list():
     """
-    This method returns a list of suppliers, 
-    those nodes stores my data on own machines.
+    This method returns a list of suppliers - nodes which stores your encrypted data on own machines.
     Return:
         {'status': 'OK',
          'result':  [ {  'connected': '05-06-2016 13:06:05',
@@ -970,8 +950,7 @@ def suppliers_list():
 
 def supplier_replace(index_or_idurl):
     """
-    Execute a fire/hire process for given supplier,
-    another random node will replace this node.
+    Execute a fire/hire process for given supplier, another random node will replace this supplier.
     As soon as new supplier is found and connected,
     rebuilding of all uploaded data will be started and
     the new node will start getting a reconstructed fragments.
@@ -994,7 +973,7 @@ def supplier_replace(index_or_idurl):
 
 def supplier_change(index_or_idurl, new_idurl):
     """
-    Doing same as supplier_replace() but new node must be provided by you.
+    Doing same as supplier_replace() but new node must be provided by you - you can manually assign a supplier.
     Return:
         {'status': 'OK',
          'result': 'supplier http://p2p-id.ru/alice.xml will be replaced by http://p2p-id.ru/bob.xml',}
@@ -1018,7 +997,7 @@ def supplier_change(index_or_idurl, new_idurl):
 
 def suppliers_ping():
     """
-    Send short requests to all suppliers to get their current statuses.
+    Sends short requests to all suppliers to get their current statuses.
     Return:
         {'status': 'OK', 
          'result': 'requests to all suppliers was sent',}
@@ -1052,8 +1031,7 @@ def customers_list():
 
 def customer_reject(idurl):
     """
-    Stop supporting given customer, remove all his files from local disc,
-    close connections with that node.
+    Stop supporting given customer, remove all his files from local disc, close connections with that node.
     Return:
         {'status': 'OK', 
          'result': ['customer http://p2p-id.ru/bob.xml rejected, 536870912 bytes were freed'],}
@@ -1088,7 +1066,7 @@ def customer_reject(idurl):
 
 def customers_ping():
     """
-    Send Identity packet to all customers to check their current statuses.
+    Sends Identity packet to all customers to check their current statuses.
     Every node will reply with Ack packet on any valid incoming Identiy packet.  
     Return:
         {'status': 'OK', 
@@ -1104,7 +1082,7 @@ def customers_ping():
 
 def space_donated():
     """
-    Return detailed statistics about your donated space usage.
+    Returns detailed statistics about your donated space usage.
     Return:
         {'status': 'OK', 
          'result':  [  { 'consumed': 0,
@@ -1121,7 +1099,6 @@ def space_donated():
                          'used_percent': '0%',
                          'used_str': '0 bytes'}],}
     """
-    from logs import lg
     from storage import accounting
     result = accounting.report_donated_storage()
     lg.out(4, 'api.space_donated finished with %d customers and %d errors' % (
@@ -1133,7 +1110,7 @@ def space_donated():
 
 def space_consumed():
     """
-    Return some info about your current usage of BitDust resources.
+    Returns some info about your current usage of BitDust resources.
     Return:
         {'status': 'OK', 
          'result':  [  { 'available': 907163720,
@@ -1151,7 +1128,6 @@ def space_consumed():
                          'used_percent': '0.155%',
                          'used_str': '158.86 MB'}],}    
     """
-    from logs import lg
     from storage import accounting
     result = accounting.report_consumed_storage()
     lg.out(4, 'api.space_consumed finished')
@@ -1159,7 +1135,7 @@ def space_consumed():
 
 def space_local():
     """
-    Return detailed statistics about current usage of your local disk.
+    Returns detailed statistics about current usage of your local disk.
     Return:
         {'status': 'OK', 
          'result':  [  { 'backups': 0,
@@ -1177,7 +1153,6 @@ def space_local():
                          'total_percent': '0%',
                          'total_str': '43.14 MB'}],}
     """
-    from logs import lg
     from storage import accounting
     result = accounting.report_local_storage()
     lg.out(4, 'api.space_local finished')
@@ -1187,7 +1162,7 @@ def space_local():
 
 def automats_list():
     """
-    Return a list of all currently running state machines.
+    Returns a list of all currently running state machines.
     Return:
         {'status': 'OK', 
          'result':  [  { 'index': 1,
@@ -1201,7 +1176,6 @@ def automats_list():
                     ...
                     ],}    
     """
-    from logs import lg
     from automats import automat    
     result = [{
         'index': a.index,
@@ -1216,7 +1190,7 @@ def automats_list():
 
 def services_list():
     """
-    Return detailed info about all currently running network services.
+    Returns detailed info about all currently running network services.
     Return:
         {'status': 'OK', 
          'result':  [  { 'config_path': 'services/backup-db/enabled',
@@ -1238,7 +1212,6 @@ def services_list():
                     ...
                     ],}
     """
-    from logs import lg
     result = [{
         'index': svc.index,
         'name': name,
@@ -1253,7 +1226,7 @@ def services_list():
 
 def service_info(service_name):
     """
-    Return detailed info for single service.
+    Returns detailed info for single service.
     Return:
         {'status': 'OK', 
          'result':  [  { 'config_path': 'services/tcp-connections/enabled',
@@ -1293,7 +1266,6 @@ def service_start(service_name):
     Return:
         {'status': 'OK', 'result': 'service_tcp_connections was switched on',}
     """
-    from logs import lg
     from main import config 
     svc = driver.services().get(service_name, None)
     if svc is None:
@@ -1315,8 +1287,8 @@ def service_start(service_name):
 
 def service_stop(service_name):
     """
-    Stop given service and set `False` for
-    correspondent option in the settings:
+    Stop given service immediately.
+    It will also set `False` for correspondent option in the settings.
  
         .bitdust/config/services/[service name]/enabled
  
@@ -1325,7 +1297,6 @@ def service_stop(service_name):
     Return:
         {'status': 'OK', 'result': 'service_tcp_connections was switched off',}
     """
-    from logs import lg
     from main import config 
     svc = driver.services().get(service_name, None)
     if svc is None:
@@ -1349,8 +1320,8 @@ def service_stop(service_name):
 
 def packets_stats():
     """
-    Return detailed info about
-        Return:
+    Returns detailed info about current network usage.
+    Return:
         {'status': 'OK',
          'result': [ {'in': { 'failed_packets': 0,
                               'total_bytes': 0,
@@ -1377,13 +1348,12 @@ def packets_stats():
 
 def ping(idurl, timeout=10):
     """
+    Sends Identity packet to remote peer and wait for Ack packet to check connection status.
     The "ping" command performs following actions:
-    
       1. Request remote identity source by idurl,
-      2. Send my Identity to remote contact addresses, taken from identity,
+      2. Sends my Identity to remote contact addresses, taken from identity,
       3. Wait first Ack packet from remote peer,
       4. Failed by timeout or identity fetching error.
-
     Return:
         {'status': 'OK', 
          'result': '(signed.Packet[Ack(Identity) bob|bob for alice], in_70_19828906(DONE))'}
@@ -1405,6 +1375,7 @@ def ping(idurl, timeout=10):
 
 def set_my_nickname(nickname):
     """
+    Starts nickname_holder() machine to register and keep your nickname in DHT network.
     """
     if not driver.is_started('service_private_messages'):
         return ERROR('service_private_messages() is not started')
@@ -1425,6 +1396,7 @@ def set_my_nickname(nickname):
 
 def find_peer_by_nickname(nickname):
     """
+    Starts nickname_observer() Automat to lookup existing nickname registered in DHT network.
     """
     if not driver.is_started('service_private_messages'):
         return ERROR('service_private_messages() is not started')
@@ -1457,7 +1429,7 @@ def find_peer_by_nickname(nickname):
 
 def send_message(recipient, message_body):
     """
-    Send a text message to remote peer.
+    Sends a text message to remote peer.
     Return:
         {'status': 'OK', 
          'result': ['signed.Packet[Message(146681300413)]'],}
@@ -1483,12 +1455,10 @@ def send_message(recipient, message_body):
 
 def receive_one_message():
     """
-    This method can be used to listen and process incoming chat messages:
-    
+    This method can be used to listen and process incoming chat messages.
       + creates a callback to receive all incoming messages,
       + wait until one incoming message get received,
       + remove the callback after receiving the message.
-
     Return:
         {'status': 'OK', 
          'result': [ { 'from': 'http://veselin-p2p.ru/bitdust_j_vps1001.xml',
@@ -1541,4 +1511,22 @@ def receive_one_message():
 
 #------------------------------------------------------------------------------ 
 
-
+def broadcast_send_message(payload):
+    """
+    Sends broadcast message to all peers in the network.
+    Message must be provided in `payload` argument is a Json object.
+    WARNING! Please, do not send too often and do not send more then several kilobytes per message.  
+    """
+    if not driver.is_started('service_broadcasting'):
+        return ERROR('service_broadcasting() is not started')
+    from broadcast import broadcast_service
+    from broadcast import broadcast_listener
+    from broadcast import broadcaster_node
+    msg = broadcast_service.send_broadcast_message(payload)
+    current_states = dict()
+    if broadcaster_node.A():
+        current_states[broadcaster_node.A().name] = broadcaster_node.A().state
+    if broadcast_listener.A():
+        current_states[broadcast_listener.A().name] = broadcast_listener.A().state
+    lg.out(4, 'api.broadcast_send_message : %s, %s' % (msg, current_states))
+    return RESULT([msg, current_states,])

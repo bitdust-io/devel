@@ -56,6 +56,7 @@ def init():
     P2PCommandAcks[Correspondent()] = Correspondent()
     P2PCommandAcks[RequestService()] = Ack()
     P2PCommandAcks[CancelService()] = Ack()
+    P2PCommandAcks[Broadcast()] = None
 
 def IsCommand(s):                 
     """

@@ -415,8 +415,10 @@ class Initializer(automat.Automat):
                 shutdowner.A('stop', 'restart')
                 
             elif cmd == 'reconnect':
+                from services import driver
                 from p2p import network_connector
-                network_connector.A('reconnect')
+                if driver.is_started('service_network'):
+                    network_connector.A('reconnect')
         
             elif cmd == 'show':
                 from web import control

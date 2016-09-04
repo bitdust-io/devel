@@ -29,6 +29,8 @@ from automats import automat
 
 from userid import my_id
 
+from p2p import p2p_service
+
 #------------------------------------------------------------------------------ 
 
 _BroadcastListener = None
@@ -62,34 +64,29 @@ class BroadcastListener(automat.Automat):
         at creation phase of broadcast_listener() machine.
         """
         self.broadcaster_idurl = None
+        self.incoming_broadcast_message_callback = None
 
     def A(self, event, arg):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
                 self.doInit(arg)
-        #---BROADCASTER?---
         elif self.state == 'BROADCASTER?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doClose(arg)
+                self.doDestroyMe(arg)
             elif event == 'disconnect' or event == 'lookup-failed':
                 self.state = 'OFFLINE'
-                self.doNotifyOffline(arg)
             elif event == 'broadcaster-connected':
                 self.state = 'LISTENING'
                 self.doSetBroadcaster(arg)
-                self.doNotifyListeningStarted(arg)
-        #---LISTENING---
         elif self.state == 'LISTENING':
             if event == 'disconnect' or event == 'message-failed':
                 self.state = 'OFFLINE'
                 self.doRemoveBroadcaster(arg)
-                self.doNotifyOffline(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doRemoveBroadcaster(arg)
@@ -98,7 +95,6 @@ class BroadcastListener(automat.Automat):
                 self.doSendMessageToBroadcaster(arg)
             elif event == 'incoming-message':
                 self.doNotifyInputMessage(arg)
-        #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'connect':
                 self.state = 'BROADCASTER?'
@@ -106,58 +102,57 @@ class BroadcastListener(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-
+        return None
 
     def doInit(self, arg):
         """
         Action method.
         """
+        self.incoming_broadcast_message_callback = arg
 
     def doStartBroadcasterLookup(self, arg):
         """
         Action method.
         """
         from broadcast import broadcasters_finder
-        broadcasters_finder.A('start', (self.automat, 'listen ' + my_id.getLocalID()))
+        broadcasters_finder.A('start',
+            (self.automat, 'listen ' + my_id.getLocalID(), []))
 
     def doSetBroadcaster(self, arg):
         """
         Action method.
         """
+        self.broadcaster_idurl = arg
 
     def doRemoveBroadcaster(self, arg):
         """
         Action method.
         """
+        self.broadcaster_idurl = None
 
     def doSendMessageToBroadcaster(self, arg):
         """
         Action method.
         """
-
-    def doNotifyConnected(self, arg):
-        """
-        Action method.
-        """
-
-    def doNotifyOffline(self, arg):
-        """
-        Action method.
-        """
+        p2p_service.SendBroadcastMessage(self.broadcaster_idurl, arg)
 
     def doNotifyInputMessage(self, arg):
         """
         Action method.
         """
+        if self.incoming_broadcast_message_callback is not None:
+            self.incoming_broadcast_message_callback(arg)
 
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.incoming_broadcast_message_callback = None
         automat.objects().pop(self.index)
         global _BroadcastListener
         del _BroadcastListener
         _BroadcastListener = None
+
+

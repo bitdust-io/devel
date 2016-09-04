@@ -181,12 +181,12 @@ def shutdown():
 
     from automats import automat
     automat.objects().clear()
-    if len(automat.objects()) > 0:
-        lg.warn('%d automats was not cleaned')
-        for a in automat.objects().values():
+    if len(automat.index()) > 0:
+        lg.warn('%d automats was not cleaned' % len(automat.index()))
+        for a in automat.index().keys():
             lg.out(2, '    %r' % a)
     else:
-        lg.out(2, 'bpmain.shutdown all automats cleaned successfully')
+        lg.out(2, 'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
 
     config.conf().removeCallback('logs/debug-level')
 

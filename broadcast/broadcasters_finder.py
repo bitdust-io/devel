@@ -15,6 +15,7 @@ EVENTS:
     * :red:`shutdown`
     * :red:`start`
     * :red:`timer-3sec`
+    * :red:`timer-5sec`
     * :red:`users-not-found`
 """
 
@@ -72,15 +73,15 @@ class BroadcastersFinder(automat.Automat):
     """
 
     timers = {
-        'timer-3sec': (3.0, ['ACK?','SERVICE?']),
+        'timer-3sec': (3.0, ['SERVICE?']),
+        'timer-5sec': (5.0, ['ACK?']),
         }
 
     def init(self):
-        self.connected_broadcasters = []
-        self.need_broadcasters = 1
         self.target_idurl = None
         self.requested_packet_id = None
         self.request_service_params = None
+        self.current_broadcasters = []
 
     def A(self, event, arg):
         """
@@ -94,12 +95,12 @@ class BroadcastersFinder(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'timer-3sec' and self.Attempts<5:
-                self.state = 'RANDOM_USER'
-                self.doDHTFindRandomUser(arg)
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
                 self.doSendRequestService(arg)
+            elif event == 'timer-5sec' and self.Attempts<5:
+                self.state = 'RANDOM_USER'
+                self.doDHTFindRandomUser(arg)
         elif self.state == 'RANDOM_USER':
             if event == 'found-one-user':
                 self.state = 'ACK?'
@@ -145,7 +146,7 @@ class BroadcastersFinder(automat.Automat):
         """
         Action method.
         """
-        self.result_callback, self.request_service_params = arg
+        self.result_callback, self.request_service_params, self.current_broadcasters = arg
 
     def doDHTFindRandomUser(self, arg):
         """
@@ -188,15 +189,19 @@ class BroadcastersFinder(automat.Automat):
             self.result_callback('broadcaster-connected', arg)
         self.result_callback = None
         self.request_service_params = None
+        self.current_broadcasters = []
 
     def doNotifyLookupFailed(self, arg):
         """
         Action method.
         """
+        if _Debug:
+            lg.out(_DebugLevel, 'broadcasters_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
         if self.result_callback:
             self.result_callback('lookup-failed', arg)
         self.result_callback = None
         self.request_service_params = None
+        self.current_broadcasters = []
         
     def doDestroyMe(self, arg):
         """
@@ -239,7 +244,7 @@ class BroadcastersFinder(automat.Automat):
         if not idurl or idurl == 'None':
             self.automat('users-not-found')
             return response
-        if idurl in self.connected_broadcasters:
+        if idurl in self.current_broadcasters:
             if _Debug:
                 lg.out(_DebugLevel, 'broadcasters_finder._got_target_idurl %s is already a connected broadcaster' % idurl)
             self.automat('users-not-found')
