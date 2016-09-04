@@ -79,7 +79,7 @@ def packet_for_broadcaster(broadcaster_idurl, json_data):
         json_data['broadcaster'] = broadcaster_idurl
     return signed.Packet(commands.Broadcast(),
                          json_data['owner'],
-                         json_data['owner'], 
+                         my_id.getLocalID(), 
                          json_data['id'],
                          json.dumps(json_data),
                          broadcaster_idurl,)
