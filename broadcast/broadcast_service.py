@@ -86,8 +86,8 @@ def packet_for_broadcaster(broadcaster_idurl, json_data):
 
 
 def packet_for_listener(listener_idurl, json_data):
-    if 'broadcaster' not in json_data:
-        json_data['broadcaster'] = my_id.getLocalID()
+    # if 'broadcaster' not in json_data:
+    json_data['broadcaster'] = my_id.getLocalID()
     return signed.Packet(commands.Broadcast(),
                          json_data['owner'],
                          my_id.getLocalID(), 

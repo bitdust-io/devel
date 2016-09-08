@@ -12,6 +12,13 @@
 
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------ 
+
 import sys
 import hashlib
 import random
@@ -44,10 +51,6 @@ import known_nodes
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
-
-#------------------------------------------------------------------------------ 
-
 _MyNode = None
 _UDPListener = None
 
@@ -57,10 +60,10 @@ def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
         if _Debug:
-            lg.out(', already created a DHTNode')
+            lg.out(_DebugLevel, 'dht_service.init SKIP, already created a DHTNode')
         return
     if _Debug:
-        lg.out(4, 'dht_service.init UDP port is %d' % udp_port)
+        lg.out(_DebugLevel, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)
@@ -81,7 +84,7 @@ def shutdown():
         del _MyNode
         _MyNode = None
         if _Debug:
-            lg.out(4, 'dht_service.shutdown')
+            lg.out(_DebugLevel, 'dht_service.shutdown')
     else:
         lg.warn('DHTNode not exist')
 
@@ -98,11 +101,11 @@ def connect():
     if node().refresher and node().refresher.active():
         node().refresher.reset(0)
         if _Debug:
-            lg.out(6, 'dht_service.connect did RESET refresher task')
+            lg.out(_DebugLevel, 'dht_service.connect did RESET refresher task')
     else:
         node().joinNetwork(known_nodes.nodes())
         if _Debug:
-            lg.out(6, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
+            lg.out(_DebugLevel, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
     return True
 
 
@@ -121,7 +124,7 @@ def disconnect():
 
 def reconnect():
     if _Debug:
-        lg.out(16, 'dht_service.reconnect')
+        lg.out(_DebugLevel + 10, 'dht_service.reconnect')
     return node().reconnect()
 
 
@@ -137,19 +140,19 @@ def okay(result, method, key, arg=None):
     else:
         v = 'None'
     if _Debug:
-        lg.out(18, 'dht_service.okay   %s(%s)   result=%s ...' % (method, key, v[:20]))
+        lg.out(_DebugLevel + 10, 'dht_service.okay   %s(%s)   result=%s ...' % (method, key, v[:20]))
     return result
 
 
 def error(err, method, key):
     if _Debug:
-        lg.out(6, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
+        lg.out(_DebugLevel, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
     return err  
 
 
 def get_value(key):
     if _Debug:
-        lg.out(18, 'dht_service.get_value key=[%s]' % key)
+        lg.out(_DebugLevel + 10, 'dht_service.get_value key=[%s]' % key)
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeFindValue(key_to_hash(key))
@@ -160,7 +163,7 @@ def get_value(key):
 
 def set_value(key, value, age=0):
     if _Debug:
-        lg.out(18, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
+        lg.out(_DebugLevel + 10, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeStore(key_to_hash(key), value, age=age)
@@ -171,24 +174,12 @@ def set_value(key, value, age=0):
 
 def delete_key(key):
     if _Debug:
-        lg.out(16, 'dht_service.delete_key [%s]' % key)
+        lg.out(_DebugLevel + 10, 'dht_service.delete_key [%s]' % key)
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeDelete(key_to_hash(key))
     d.addCallback(okay, 'delete_value', key)
     d.addErrback(error, 'delete_key', key)
-    return d
-
-
-def find_node(node_id):
-    node_id64 = base64.b64encode(node_id)
-    if _Debug:
-        lg.out(16, 'dht_service.find_node   node_id=[%s]' % node_id64)
-    if not node():
-        return fail(Exception('DHT service is off'))
-    d = node().iterativeFindNode(node_id)
-    d.addCallback(okay, 'find_node', node_id64)
-    d.addErrback(error, 'find_node', node_id64)
     return d
     
 
@@ -200,9 +191,21 @@ def set_node_data(key, value):
     if not node():
         return
     if _Debug:
-        lg.out(18, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
+        lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
     node().data[key] = value    
-  
+
+
+def find_node(node_id):
+    node_id64 = base64.b64encode(node_id)
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]' % node_id64)
+    if not node():
+        return fail(Exception('DHT service is off'))
+    d = node().iterativeFindNode(node_id)
+    d.addCallback(okay, 'find_node', node_id64)
+    d.addErrback(error, 'find_node', node_id64)
+    return d
+
 #------------------------------------------------------------------------------ 
 
 class DHTNode(DistributedTupleSpacePeer):
@@ -214,7 +217,7 @@ class DHTNode(DistributedTupleSpacePeer):
         @rpcmethod
         def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
             if _Debug:
-                lg.out(18, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+                lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
                     base64.b32encode(key), str(value)[:10]))
             return DistributedTupleSpacePeer.store(self, key, value, 
                 originalPublisherID=originalPublisherID, age=age, **kwargs)
@@ -223,7 +226,7 @@ class DHTNode(DistributedTupleSpacePeer):
     def request(self, key):
         value = str(self.data.get(key, None))
         if _Debug:
-            lg.out(18, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
+            lg.out(_DebugLevel + 10, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
                 base64.b32encode(key), str(value)[:10]))
         return {str(key): value}
 

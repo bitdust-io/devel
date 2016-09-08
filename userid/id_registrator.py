@@ -479,8 +479,8 @@ class IdRegistrator(automat.Automat):
         dlist = []
         for idurl in self.new_identity.sources:
             self.free_idurls.remove(idurl)
-            protocol, host, port, filename = nameurl.UrlParse(idurl)
-            webport, tcpport = known_servers.by_host().get(
+            _, host, _, _ = nameurl.UrlParse(idurl)
+            _, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             srvhost = '%s:%d' % (host, tcpport)
             dlist.append(gateway.send_file_single(

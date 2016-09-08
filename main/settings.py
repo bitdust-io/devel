@@ -2044,6 +2044,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/network/proxy/username', '')
     config.conf().setDefaultValue('services/network/receive-limit', DefaultBandwidthInLimit())
     config.conf().setDefaultValue('services/network/send-limit', DefaultBandwidthOutLimit())
+    config.conf().setDefaultValue('services/nodes-lookup/enabled', 'false')
     config.conf().setDefaultValue('services/p2p-hookups/enabled', 'true')
     config.conf().setDefaultValue('services/private-messages/enabled', 'false')
     config.conf().setDefaultValue('services/proxy-server/enabled', 'false')

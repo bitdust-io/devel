@@ -105,6 +105,7 @@ def defaults():
         'services/network/proxy/username':              TYPE_STRING,
         'services/network/receive-limit':               TYPE_POSITIVE_INTEGER,
         'services/network/send-limit':                  TYPE_POSITIVE_INTEGER,
+        'services/nodes-lookup/enabled':                TYPE_BOOLEAN,
         'services/p2p-hookups/enabled':                 TYPE_BOOLEAN,
         'services/private-messages/enabled':            TYPE_BOOLEAN,
         'services/rebuilding/enabled':                  TYPE_BOOLEAN,
