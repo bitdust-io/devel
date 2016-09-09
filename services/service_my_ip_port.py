@@ -48,7 +48,7 @@ class MyIPPortService(LocalService):
         stun_client.A('shutdown')
         return True
     
-    def _on_stun_client_finished(self, result, typ, ip, details, result_defer):
-        from stun import stun_client
-        result_defer.callback(stun_client.A().getMyExternalAddress()) 
+#     def _on_stun_client_finished(self, result, typ, ip, details, result_defer):
+#         from stun import stun_client
+#         result_defer.callback(stun_client.A().getMyExternalAddress()) 
 

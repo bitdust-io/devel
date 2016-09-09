@@ -28,8 +28,6 @@ class NetworkService(LocalService):
     def start(self):
         from p2p import network_connector
         network_connector.A('init')
-        # from twisted.internet import reactor
-        # reactor.callLater(0.01, network_connector.A, 'reconnect')
         return True
     
     def stop(self):

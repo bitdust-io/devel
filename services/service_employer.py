@@ -24,6 +24,7 @@ class EmployerService(LocalService):
     
     def dependent_on(self):
         return ['service_customer',
+                'service_nodes_lookup',
                 ]
     
     def start(self):

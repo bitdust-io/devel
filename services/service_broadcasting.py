@@ -26,7 +26,7 @@ class BroadcastingService(LocalService):
     
     def dependent_on(self):
         return ['service_p2p_hookups', 
-                'service_entangled_dht',
+                'service_nodes_lookup',
                 ]
     
     def start(self):

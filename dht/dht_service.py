@@ -218,7 +218,7 @@ class DHTNode(DistributedTupleSpacePeer):
         def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
             if _Debug:
                 lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-                    base64.b32encode(key), str(value)[:10]))
+                    base64.b32encode(key), str(value)[:20]))
             return DistributedTupleSpacePeer.store(self, key, value, 
                 originalPublisherID=originalPublisherID, age=age, **kwargs)
 
@@ -227,7 +227,7 @@ class DHTNode(DistributedTupleSpacePeer):
         value = str(self.data.get(key, None))
         if _Debug:
             lg.out(_DebugLevel + 10, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
-                base64.b32encode(key), str(value)[:10]))
+                base64.b32encode(key), str(value)[:20]))
         return {str(key): value}
 
     def reconnect(self, knownNodeAddresses=None):
@@ -296,7 +296,7 @@ def main():
     elif len(args) > 0:
         def _r(x):
             print x
-            # reactor.stop()
+            reactor.stop()
         cmd = args[0] 
         if cmd == 'get':
             get_value(args[1]).addBoth(_r)

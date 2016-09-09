@@ -27,23 +27,18 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------ 
 
-import random
-
-#------------------------------------------------------------------------------ 
-
 from logs import lg
 
 from automats import automat
 
 from p2p import commands
 from p2p import p2p_service
+from p2p import lookup
 
 from contacts import identitycache
 from userid import my_id
 
 from transport import callback
-
-from dht import dht_service
 
 #------------------------------------------------------------------------------ 
 
@@ -152,8 +147,8 @@ class BroadcastersFinder(automat.Automat):
         """
         Action method.
         """
-        d = dht_service.find_node(dht_service.random_key())
-        d.addCallback(self._found_nodes)
+        d = lookup.start()
+        d.addCallback(self._nodes_lookup_finished)
         d.addErrback(lambda err: self.automat('users-not-found'))
 
     def doRememberUser(self, arg):
@@ -223,53 +218,6 @@ class BroadcastersFinder(automat.Automat):
             self.automat('ack-received', self.target_idurl)
             return True
         return False
-    
-    def _found_nodes(self, nodes):
-        if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._found_nodes %d nodes' % len(nodes))
-        if len(nodes) > 0:
-            node = random.choice(nodes)
-            d = node.request('idurl')
-            d.addCallback(self._got_target_idurl)
-            d.addErrback(lambda err:  self.automat('users-not-found'))
-        else:
-            self.automat('users-not-found')
-
-    def _got_target_idurl(self, response):
-        if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._got_target_idurl response=%s' % str(response) )
-        try:
-            idurl = response['idurl']
-        except:
-            idurl = None
-        if not idurl or idurl == 'None':
-            self.automat('users-not-found')
-            return response
-        if idurl in self.current_broadcasters:
-            if _Debug:
-                lg.out(_DebugLevel, 'broadcasters_finder._got_target_idurl %s is already a connected broadcaster' % idurl)
-            self.automat('users-not-found')
-            return response
-        d = identitycache.immediatelyCaching(idurl)
-        d.addCallback(lambda src: self._got_target_identity(src, idurl))
-        d.addErrback(lambda x: self.automat('users-not-found'))
-        return response
-
-    def _got_target_identity(self, src, idurl):
-        """
-        Need to check that remote user is supported at least one of our protocols.
-        """
-        ident = identitycache.FromCache(idurl)
-        remoteprotos = set(ident.getProtoOrder())
-        myprotos = set(my_id.getLocalIdentity().getProtoOrder())
-        available_protos = myprotos.intersection(remoteprotos)
-        if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._got_target_identity %s, available_protos=%s' % (
-                idurl, available_protos))
-        if len(available_protos) > 0:
-            self.automat('found-one-user', idurl)
-        else:
-            self.automat('users-not-found')
 
     def _node_acked(self, response, info):
         if _Debug:
@@ -288,3 +236,14 @@ class BroadcastersFinder(automat.Automat):
             lg.out(_DebugLevel, 'broadcasters_finder._node_failed %r %r' % (response, info))
         self.automat('service-denied')
 
+    def _nodes_lookup_finished(self, idurls):
+        if _Debug:
+            lg.out(_DebugLevel, 'broadcasters_finder._nodes_lookup_finished : %r' % idurls)
+        for idurl in idurls:
+            ident = identitycache.FromCache(idurl)
+            remoteprotos = set(ident.getProtoOrder())
+            myprotos = set(my_id.getLocalIdentity().getProtoOrder())
+            if len(myprotos.intersection(remoteprotos)) > 0:
+                self.automat('found-one-user', idurl)
+                return
+        self.automat('users-not-found')

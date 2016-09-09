@@ -113,7 +113,7 @@ def run(args_list, base_dir=None, callback=None):
         return None
 
     if bpio.Windows():
-        # if we run from git - upnpc-static.exe is in the system folder
+        # if we run windows binaries - upnpc-static.exe can be in the system sub folder
         if not os.path.isfile(cmdargs[0]):
             if os.path.isfile(os.path.join('system', cmdargs[0])):
                 cmdargs[0] = os.path.join('system', cmdargs[0])

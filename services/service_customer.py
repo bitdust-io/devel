@@ -30,10 +30,8 @@ class CustomerService(LocalService):
         from customer import supplier_connector
         from contacts import contactsdb 
         for supplier_idurl in contactsdb.suppliers():
-            if supplier_idurl:
-                sc = supplier_connector.by_idurl(supplier_idurl)
-                if sc is None:
-                    sc = supplier_connector.create(supplier_idurl)
+            if supplier_idurl and not supplier_connector.by_idurl(supplier_idurl):
+                supplier_connector.create(supplier_idurl)
         return True
     
     def stop(self):

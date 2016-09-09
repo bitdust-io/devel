@@ -158,7 +158,7 @@ def run(cmdargs, callback_func=None):
             if _Debug:
                 lg.out(_DebugLevel, '    not found git.exe, try to run from shell')
             try:
-                response, retcode = execute_in_shell(cmd)
+                response, retcode = execute_in_shell(cmd, base_dir=bpio.getExecutableDir())
             except:
                 response = ''
                 retcode = 1
@@ -170,7 +170,7 @@ def run(cmdargs, callback_func=None):
         cmd = [git_exe,] + cmdargs
     else:
         cmd = ['git',] + cmdargs
-    execute(cmd, callback=callback_func)
+    execute(cmd, callback=callback_func, base_dir=bpio.getExecutableDir())
     
 #------------------------------------------------------------------------------ 
 
@@ -183,6 +183,7 @@ def execute_in_shell(cmdargs, base_dir=None):
     _CurrentProcess = nonblocking.Popen(
         cmdargs,
         shell=True,
+        cwd=bpio.portablePath(base_dir),
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,)    
@@ -221,7 +222,7 @@ class GitProcessProtocol(protocol.ProcessProtocol):
 def execute(cmdargs, base_dir=None, process_protocol=None, callback=None):
     global _CurrentProcess
     if _Debug:
-        lg.out(_DebugLevel, 'git_proc.execute: "%s"' % (' '.join(cmdargs)))
+        lg.out(_DebugLevel, 'git_proc.execute: "%s" in %s' % (' '.join(cmdargs), base_dir))
     executable = cmdargs[0]
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
