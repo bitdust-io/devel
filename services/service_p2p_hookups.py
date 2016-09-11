@@ -43,19 +43,20 @@ class P2PHookupsService(LocalService):
         p2p_service.init()
         contact_status.init()
         self._starting_defer = Deferred()
+        p2p_connector.A('init')
         p2p_connector.A().addStateChangedCallback(
             self._on_p2p_connector_switched)
         network_connector.A().addStateChangedCallback(
             self._on_network_connector_switched)
-        p2p_connector.A('init')
         return True
     
     def stop(self):
         from p2p import contact_status
         from p2p import p2p_connector
         from p2p import network_connector
-        network_connector.A().removeStateChangedCallback(
-            self._on_network_connector_switched)
+        if network_connector.A():
+            network_connector.A().removeStateChangedCallback(
+                self._on_network_connector_switched)
         p2p_connector.A().removeStateChangedCallback(
             self._on_p2p_connector_switched)
         contact_status.shutdown()

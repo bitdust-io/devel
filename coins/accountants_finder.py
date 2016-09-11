@@ -1,10 +1,10 @@
 
 
 """
-.. module:: broadcasters_finder
+.. module:: accountants_finder
 .. role:: red
 
-BitDust broadcasters_finder() Automat
+BitDust accountants_finder() Automat
 
 EVENTS:
     * :red:`ack-received`
@@ -19,11 +19,10 @@ EVENTS:
     * :red:`users-not-found`
 """
 
-
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 6
 
 #------------------------------------------------------------------------------ 
 
@@ -42,7 +41,7 @@ from transport import callback
 
 #------------------------------------------------------------------------------ 
 
-_BroadcastersFinder = None
+_AccountantsFinder = None
 
 #------------------------------------------------------------------------------ 
 
@@ -50,21 +49,21 @@ def A(event=None, arg=None):
     """
     Access method to interact with the state machine.
     """
-    global _BroadcastersFinder
+    global _AccountantsFinder
     if event is None and arg is None:
-        return _BroadcastersFinder 
-    if _BroadcastersFinder is None:
+        return _AccountantsFinder 
+    if _AccountantsFinder is None:
         # set automat name and starting state here
-        _BroadcastersFinder = BroadcastersFinder('broadcasters_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+        _AccountantsFinder = AccountantsFinder('accountants_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _BroadcastersFinder.automat(event, arg)
-    return _BroadcastersFinder
+        _AccountantsFinder.automat(event, arg)
+    return _AccountantsFinder
     
 #------------------------------------------------------------------------------ 
 
-class BroadcastersFinder(automat.Automat):
+class AccountantsFinder(automat.Automat):
     """
-    This class implements all the functionality of the ``broadcasters_finder()`` state machine.
+    This class implements all the functionality of the ``accountants_finder()`` state machine.
     """
 
     timers = {
@@ -73,10 +72,24 @@ class BroadcastersFinder(automat.Automat):
         }
 
     def init(self):
+        """
+        Method to initialize additional variables and flags
+        at creation phase of accountants_finder() machine.
+        """
         self.target_idurl = None
         self.requested_packet_id = None
         self.request_service_params = None
-        self.current_broadcasters = []
+
+    def state_changed(self, oldstate, newstate, event, arg):
+        """
+        Method to catch the moment when accountants_finder() state were changed.
+        """
+
+    def state_not_changed(self, curstate, event, arg):
+        """
+        This method intended to catch the moment when some event was fired in the accountants_finder()
+        but its state was not changed.
+        """
 
     def A(self, event, arg):
         """
@@ -86,6 +99,18 @@ class BroadcastersFinder(automat.Automat):
             if event == 'init':
                 self.state = 'READY'
                 self.doInit(arg)
+        elif self.state == 'RANDOM_USER':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'found-one-user':
+                self.state = 'ACK?'
+                self.doRememberUser(arg)
+                self.Attempts+=1
+                self.doSendMyIdentity(arg)
+            elif event == 'users-not-found':
+                self.state = 'READY'
+                self.doNotifyLookupFailed(arg)
         elif self.state == 'ACK?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -98,18 +123,6 @@ class BroadcastersFinder(automat.Automat):
                 self.doLookupRandomUser(arg)
             elif event == 'timer-3sec':
                 self.doSendMyIdentity(arg)
-        elif self.state == 'RANDOM_USER':
-            if event == 'found-one-user':
-                self.state = 'ACK?'
-                self.doRememberUser(arg)
-                self.Attempts+=1
-                self.doSendMyIdentity(arg)
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'users-not-found':
-                self.state = 'READY'
-                self.doNotifyLookupFailed(arg)
         elif self.state == 'SERVICE?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -129,6 +142,9 @@ class BroadcastersFinder(automat.Automat):
                 self.doSetNotifyCallback(arg)
                 self.Attempts=0
                 self.doLookupRandomUser(arg)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
         elif self.state == 'CLOSED':
             pass
         return None
@@ -143,7 +159,7 @@ class BroadcastersFinder(automat.Automat):
         """
         Action method.
         """
-        self.result_callback, self.request_service_params, self.current_broadcasters = arg
+        self.result_callback, self.request_service_params = arg
 
     def doLookupRandomUser(self, arg):
         """
@@ -169,7 +185,7 @@ class BroadcastersFinder(automat.Automat):
         """
         Action method.
         """
-        service_info = 'service_broadcasting ' + self.request_service_params
+        service_info = 'service_accountant ' + self.request_service_params
         out_packet = p2p_service.SendRequestService(
             self.target_idurl, service_info, callbacks={
                 commands.Ack():  self._node_acked,
@@ -183,32 +199,30 @@ class BroadcastersFinder(automat.Automat):
         Action method.
         """
         if self.result_callback:
-            self.result_callback('broadcaster-connected', arg)
+            self.result_callback('accountant-connected', arg)
         self.result_callback = None
         self.request_service_params = None
-        self.current_broadcasters = []
 
     def doNotifyLookupFailed(self, arg):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
+            lg.out(_DebugLevel, 'accountants_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
         if self.result_callback:
             self.result_callback('lookup-failed', arg)
         self.result_callback = None
         self.request_service_params = None
-        self.current_broadcasters = []
-        
+
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
         """
         callback.remove_inbox_callback(self._inbox_packet_received)
         automat.objects().pop(self.index)
-        global _BroadcastersFinder
-        del _BroadcastersFinder
-        _BroadcastersFinder = None
+        global _AccountantsFinder
+        del _AccountantsFinder
+        _AccountantsFinder = None
 
     #------------------------------------------------------------------------------ 
 
@@ -223,24 +237,25 @@ class BroadcastersFinder(automat.Automat):
 
     def _node_acked(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._node_acked %r %r' % (response, info))
+            lg.out(_DebugLevel, 'accountants_finder._node_acked %r %r' % (response, info))
         if not response.Payload.startswith('accepted'):
             if _Debug:
-                lg.out(_DebugLevel, 'broadcasters_finder._node_acked with service denied %r %r' % (response, info))
+                lg.out(_DebugLevel, 'accountants_finder._node_acked with service denied %r %r' % (response, info))
             self.automat('service-denied')
             return
         if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._node_acked !!!! broadcaster %s connected' % response.CreatorID)
+            lg.out(_DebugLevel, 'accountants_finder._node_acked !!!! accountant %s connected' % response.CreatorID)
         self.automat('service-accepted', response.CreatorID)
 
     def _node_failed(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._node_failed %r %r' % (response, info))
+            lg.out(_DebugLevel, 'accountants_finder._node_failed %r %r' % (response, info))
         self.automat('service-denied')
 
     def _nodes_lookup_finished(self, idurls):
+        # idurls = ['http://veselin-p2p.ru/bitdust_vps1000_k.xml',]
         if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._nodes_lookup_finished : %r' % idurls)
+            lg.out(_DebugLevel, 'accountants_finder._nodes_lookup_finished : %r' % idurls)
         for idurl in idurls:
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())

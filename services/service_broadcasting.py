@@ -57,6 +57,7 @@ class BroadcastingService(LocalService):
         from broadcast import broadcasters_finder
         from broadcast import broadcast_listener
         from main.config import conf
+        broadcasters_finder.A('shutdown')
         if broadcaster_node.A() is not None:
             broadcaster_node.A().removeStateChangedCallback(
                 self._on_broadcaster_node_switched)
@@ -65,7 +66,6 @@ class BroadcastingService(LocalService):
             broadcast_listener.A().removeStateChangedCallback(
                 self._on_broadcast_listener_switched)
             broadcast_listener.A('shutdown')
-        broadcasters_finder.A('shutdown')
         conf().removeCallback('services/broadcasting/routing-enabled')
         return True
     
@@ -139,7 +139,7 @@ class BroadcastingService(LocalService):
         from logs import lg
         from twisted.internet import reactor
         from broadcast import broadcaster_node
-        if newstate == 'OFFLINE':
+        if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             reactor.callLater(60, broadcaster_node.A, 'reconnect')
             lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')
  

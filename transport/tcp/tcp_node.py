@@ -179,6 +179,7 @@ def close_connections():
     for oclist in opened_connections().values():
         for oc in oclist:
             oc.automat('disconnect')
+            oc.automat('connection-lost')
 
 
 def send(filename, remoteaddress, description=None, single=False):

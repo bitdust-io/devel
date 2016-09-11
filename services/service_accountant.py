@@ -28,12 +28,18 @@ class CoinsAccountantService(LocalService):
     
     def start(self):
         from coins import accountant_node
+        from coins import accountants_finder
+        accountants_finder.A('init')
         accountant_node.A('init')
         accountant_node.A('start')
+        accountant_node.A().addStateChangedCallback(
+            self._on_accountant_node_switched)
         return True
     
     def stop(self):
         from coins import accountant_node
+        accountant_node.A().removeStateChangedCallback(
+            self._on_accountant_node_switched)
         accountant_node.A('stop')
         accountant_node.A('shutdown')
         return True
@@ -58,6 +64,13 @@ class CoinsAccountantService(LocalService):
             lg.out(8, "service_accountant.request DENIED, accountant_node() state is : %s" % accountant_node.A().state)
             return p2p_service.SendFail(request, "accountant_node service currently unavailable")
         if mode == 'join':
-            accountant_node.A().join_accountant(request.OwnerID)
+            accountant_node.A('accountant-connected', request.OwnerID)
         return p2p_service.SendAck(request, 'accepted')
-    
+
+    def _on_accountant_node_switched(self, oldstate, newstate, evt, args):
+        from logs import lg
+        from twisted.internet import reactor
+        from coins import accountant_node
+        if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
+            # reactor.callLater(60, accountant_node.A, 'start')
+            lg.out(8, 'service_broadcasting._on_accountant_node_switched will try to reconnect again after 1 minute')

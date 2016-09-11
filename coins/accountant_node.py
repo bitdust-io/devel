@@ -7,7 +7,7 @@
 BitDust accountant_node() Automat
 
 EVENTS:
-    * :red:`accountants-connected`
+    * :red:`accountant-connected`
     * :red:`all-coins-received`
     * :red:`coin-broadcasted`
     * :red:`coin-not-valid`
@@ -20,6 +20,7 @@ EVENTS:
     * :red:`shutdown`
     * :red:`start`
     * :red:`stop`
+    * :red:`timer-2min`
 """
 
 #------------------------------------------------------------------------------ 
@@ -36,10 +37,6 @@ from twisted.internet.defer import Deferred
 from logs import lg
 
 from automats import automat
-
-from p2p import lookup
-from p2p import p2p_service
-from p2p import commands
 
 #------------------------------------------------------------------------------ 
 
@@ -67,15 +64,18 @@ class AccountantNode(automat.Automat):
     """
     This class implements all the functionality of the ``accountant_node()`` state machine.
     """
-
+    timers = {
+        'timer-2min': (120, ['ACCOUNTANTS?']),
+        }
+    
     def init(self):
         """
         Method to initialize additional variables and flags
         at creation phase of accountant_node() machine.
         """
         self.connected_accountants = []
-        self.max_accountants_connected = 3 # TODO: read from settings
-        self.accountatnts_lookup_task = None
+        self.max_accountants_connected = 1 # TODO: read from settings
+        self.lookup_task = None
         self.download_coins_task = None
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -102,6 +102,8 @@ class AccountantNode(automat.Automat):
                 self.doVerifyCoin(arg)
             elif event == 'connection-lost' or event == 'stop':
                 self.state = 'OFFLINE'
+            elif event == 'accountant-connected':
+                self.doAddAccountant(arg)
         elif self.state == 'READ_COINS':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -113,6 +115,8 @@ class AccountantNode(automat.Automat):
             elif event == 'all-coins-received':
                 self.state = 'READY'
                 self.doCheckNewCoins(arg)
+            elif event == 'accountant-connected':
+                self.doAddAccountant(arg)
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
@@ -129,6 +133,8 @@ class AccountantNode(automat.Automat):
             elif event == 'coin-not-valid':
                 self.state = 'READY'
                 self.doCheckNewCoins(arg)
+            elif event == 'accountant-connected':
+                self.doAddAccountant(arg)
         elif self.state == 'WRITE_COIN!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -138,45 +144,65 @@ class AccountantNode(automat.Automat):
             elif event == 'coin-broadcasted':
                 self.state = 'READY'
                 self.doCheckNewCoins(arg)
+            elif event == 'accountant-connected':
+                self.doAddAccountant(arg)
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'start':
                 self.state = 'ACCOUNTANTS?'
-                self.doLookupAccountatns(arg)
+                self.doLookupAccountants(arg)
         elif self.state == 'CLOSED':
             pass
         elif self.state == 'ACCOUNTANTS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doStopLookupAccountants(arg)
                 self.doDestroyMe(arg)
-            elif event == 'accountants-connected':
+            elif event == 'accountant-connected' and self.isMoreNeeded(arg):
+                self.doAddAccountant(arg)
+                self.doLookupAccountants(arg)
+            elif ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ) or event == 'timer-2min':
+                self.state = 'OFFLINE'
+            elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READ_COINS'
                 self.doDownloadCoins(arg)
-            elif event == 'lookup-failed':
-                self.state = 'OFFLINE'
+            elif event == 'lookup-failed' and self.isAnyAccountants(arg):
+                self.doLookupAccountants(arg)
         return None
+
+    def isAnyAccountants(self, arg):
+        """
+        Condition method.
+        """
+        return len(self.connected_accountants) > 0
+
+    def isMoreNeeded(self, arg):
+        """
+        Condition method.
+        """
+        return len(self.connected_accountants) < self.max_accountants_connected
 
     def doInit(self, arg):
         """
         Action method.
         """
 
-    def doLookupAccountatns(self, arg):
+    def doLookupAccountants(self, arg):
         """
         Action method.
         """
-        self.connected_accountants = []
-        self.accountatnts_lookup_task = None
-        self._lookup_accountants()
+        from coins import accountants_finder
+        accountants_finder.A('start', (self.automat, 'join'))
 
-    def doStopLookupAccountants(self, arg):
+    def doAddAccountant(self, arg):
         """
         Action method.
         """
-        self.accountatnts_lookup_task.cancel()
+        if arg in self.connected_accountants:
+            lg.warn('%s already connected, skip' % arg)
+            return
+        self.connected_accountants.append(arg)
 
     def doDownloadCoins(self, arg):
         """
@@ -210,61 +236,12 @@ class AccountantNode(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         automat.objects().pop(self.index)
-        global _Accountant
-        del _Accountant
-        _Accountant = None
-
-    #------------------------------------------------------------------------------ 
+        global _AccountantNode
+        del _AccountantNode
+        _AccountantNode = None
     
-    def join_accountant(self, idurl):
-        self.connected_accountants.append(idurl)
-
     #------------------------------------------------------------------------------ 
-    
-    def _lookup_accountants(self):
-        if self.accountatnts_lookup_task and self.accountatnts_lookup_task.cancelled:
-            self.accountatnts_lookup_task = None
-            return
-        d = lookup.start(count=1)
-        d.addCallback(self._node_observed)
-        d.addErrback(lambda err: self.automat('lookup-failed'))
-        self.accountatnts_lookup_task = d
-
-    def _node_observed(self, idurls):
-        for idurl in idurls:
-            service_info = 'service_accountant join'
-            p2p_service.SendRequestService(
-                idurl, service_info, callbacks={
-                    commands.Ack():  self._node_acked,
-                    commands.Fail(): self._node_failed,
-                }
-            )
-            
-    def _node_acked(self, response, info):
-        if _Debug:
-            lg.out(_DebugLevel, 'accountant._node_acked %r %r' % (response, info))
-        if not response.Payload.startswith('accepted'):
-            if _Debug:
-                lg.out(_DebugLevel, 'accountant._node_acked %r %r' % (response, info))
-            self._lookup_accountants()
-            return
-        if _Debug:
-            lg.out(_DebugLevel, 'accountant._node_acked !!!! accountant %s now connected' % response.CreatorID)
-        self.join_accountant(response.CreatorID)
-        if len(self.connected_accountants) < self.max_accountants_connected:
-            self._lookup_accountants()
-        else:
-            self.automat('accountants-connected')
-
-    def _node_failed(self, response, info):
-        if _Debug:
-            lg.out(_DebugLevel, 'accountant._node_failed %r %r' % (response, info))
-        self._lookup_accountants()
 
     def _download_coins(self):
-        if self.download_coins_task and self.download_coins_task.cancelled:
-            self.download_coins_task = None
-            return
         self.download_coins_task = Deferred()
-        # 
         

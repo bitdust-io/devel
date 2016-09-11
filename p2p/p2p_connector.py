@@ -128,6 +128,8 @@ def A(event=None, arg=None):
     Access method to interact with the state machine.
     """    
     global _P2PConnector
+    if event is None and arg is None:
+        return _P2PConnector
     if _P2PConnector is None:
         _P2PConnector = P2PConnector(
             'p2p_connector', 'AT_STARTUP', _DebugLevel, _Debug)

@@ -15,22 +15,17 @@ EVENTS:
 
 """
 
+#------------------------------------------------------------------------------ 
 
 import os
-import sys
 import time
 
-try:
-    from twisted.internet import reactor
-except:
-    sys.exit('Error initializing twisted.internet.reactor in tcp_node.py')
-
-from twisted.internet import protocol
 from twisted.protocols import basic
+
+#------------------------------------------------------------------------------ 
 
 from logs import lg
 
-from system import bpio
 from automats import automat
 
 import tcp_node
@@ -314,7 +309,11 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             tcp_node.decrease_connections_counter()
         else:
             raise Exception('not found %s in the opened connections' % self.peer_address)
-
+        self.stream = None
+        self.peer_address = None
+        self.peer_external_address = None
+        self.peer_idurl = None
+        self.outboxQueue = []
 
     def getTransportAddress(self):
         peer = self.transport.getPeer()
