@@ -60,9 +60,9 @@ class CoinsAccountantService(LocalService):
         if not accountant_node.A():
             lg.out(8, "service_accountant.request DENIED, accountant_node() state machine not exist")
             return p2p_service.SendFail(request, "accountant_node service not started")
-        if accountant_node.A().state not in ['ACCOUNTANTS?', "READY", "VALID_COIN?", "WRITE_COIN!", ]:
-            lg.out(8, "service_accountant.request DENIED, accountant_node() state is : %s" % accountant_node.A().state)
-            return p2p_service.SendFail(request, "accountant_node service currently unavailable")
+        # if accountant_node.A().state not in ['ACCOUNTANTS?', "READY", "VALID_COIN?", "WRITE_COIN!", ]:
+        #     lg.out(8, "service_accountant.request DENIED, accountant_node() state is : %s" % accountant_node.A().state)
+        #     return p2p_service.SendFail(request, "accountant_node service currently unavailable")
         if mode == 'join':
             accountant_node.A('accountant-connected', request.OwnerID)
         return p2p_service.SendAck(request, 'accepted')
