@@ -74,8 +74,6 @@ class BroadcastingService(LocalService):
         from p2p import p2p_service
         from main import settings
         words = request.Payload.split(' ')
-        if len(request.Payload) > 1024 * 10:
-            return None
         try:
             mode = words[1][:10]
         except:

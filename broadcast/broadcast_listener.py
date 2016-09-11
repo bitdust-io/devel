@@ -77,10 +77,12 @@ class BroadcastListener(automat.Automat):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
+        #--- AT_STARTUP
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
                 self.doInit(arg)
+        #--- BROADCASTER?
         elif self.state == 'BROADCASTER?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -90,6 +92,7 @@ class BroadcastListener(automat.Automat):
             elif event == 'broadcaster-connected':
                 self.state = 'LISTENING'
                 self.doSetBroadcaster(arg)
+        #--- LISTENING
         elif self.state == 'LISTENING':
             if event == 'disconnect' or event == 'message-failed':
                 self.state = 'OFFLINE'
@@ -102,6 +105,7 @@ class BroadcastListener(automat.Automat):
                 self.doSendMessageToBroadcaster(arg)
             elif event == 'incoming-message':
                 self.doNotifyInputMessage(arg)
+        #--- OFFLINE
         elif self.state == 'OFFLINE':
             if event == 'connect':
                 self.state = 'BROADCASTER?'
@@ -109,6 +113,7 @@ class BroadcastListener(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+        #--- CLOSED
         elif self.state == 'CLOSED':
             pass
         return None

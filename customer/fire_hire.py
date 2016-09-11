@@ -159,6 +159,7 @@ def Destroy():
     del _FireHire
     _FireHire = None
     
+#------------------------------------------------------------------------------ 
 
 class FireHire(automat.Automat):
     """

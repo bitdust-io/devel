@@ -36,6 +36,7 @@ from Crypto.Cipher import Blowfish
 
 import warnings
 warnings.filterwarnings('ignore',category=DeprecationWarning)
+
 from twisted.conch.ssh import keys
 
 #------------------------------------------------------------------------------ 
@@ -54,9 +55,7 @@ from main import settings
 
 #------------------------------------------------------------------------------ 
 
-# Global for this file
 _MyRsaKey = None 
-# This will be an object
 _MyPubKey = None
 
 #------------------------------------------------------------------------------ 
@@ -69,7 +68,7 @@ def InitMyKey(keyfilename=None):
     If file "[BitDust data dir]/metadata/mykeyfile_location" exists - 
     it should contain the location of the mykeyfile. Useful to store Private Key on the USB flash.
     BitDust data dir is platform dependent:
-        - Linux: ~/.bitdust
+        - Linux and Mac: ~/.bitdust
         - Windows XP: C:/Documents and Settings/[user]/.bitdust
         - Windows Vista, 7, 8: C:/Users/[user]/.bitdust
     Finally if target file exist - the Private Key will be loaded into memory.

@@ -338,19 +338,16 @@ def SendIdentity(remote_idurl, wide=False, callbacks={}):
 #------------------------------------------------------------------------------ 
 
 def RequestService(request, info):
+    if len(request.Payload) > 1024 * 10:
+        return SendFail(request, 'too long payload')
     words = request.Payload.split(' ')
     if len(words) < 1:
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
     service_name = words[0]
     lg.out(8, "p2p_service.RequestService %s : %s" % (request.OwnerID, service_name))
-    # TODO: - temporary keep that for backward compatibility
-    if service_name == 'storage':
-        if not driver.is_started('service_supplier'):
-            return SendFail(request, 'supplier service is off')
-        return driver.request('service_supplier', request, info)
     if not driver.is_exist(service_name):
-        lg.warn("got wrong payload in %s" % request)
+        lg.warn("got wrong payload in %s" % service_name)
         return SendFail(request, 'service %s not exist' % service_name)
     if not driver.is_started(service_name):
         return SendFail(request, 'service %s is off' % service_name)
@@ -358,7 +355,7 @@ def RequestService(request, info):
     
 def SendRequestService(remote_idurl, service_info, wide=False, callbacks={}):
     lg.out(8, "p2p_service.SendRequestService to %s [%s]" % (
-        nameurl.GetName(remote_idurl), service_info.replace('\n',' ')[:20]))
+        nameurl.GetName(remote_idurl), service_info.replace('\n',' ')[:40]))
     result = signed.Packet(
         commands.RequestService(), 
         my_id.getLocalID(), 
@@ -389,7 +386,7 @@ def CancelService(request, info):
     return driver.cancel(service_name, request, info)
 
 def SendCancelService(remote_idurl, service_info, callbacks={}):
-    lg.out(8, "p2p_service.SendCancelService [%s]" % service_info)
+    lg.out(8, "p2p_service.SendCancelService [%s]" % service_info.replace('\n',' ')[:40])
     result = signed.Packet(commands.CancelService(), my_id.getLocalID(), my_id.getLocalID(), 
                                   packetid.UniqueID(), service_info, remote_idurl)
     gateway.outbox(result, callbacks=callbacks)

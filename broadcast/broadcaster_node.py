@@ -81,7 +81,6 @@ class BroadcasterNode(automat.Automat):
         self.connected_broadcasters = []
         self.messages_sent = {}
         # self.messages_acked = {}
-        self.broadcasters_finder = None
         self.last_success_action_time = None
         self.listeners = {}
         self.incoming_broadcast_message_callback = None
