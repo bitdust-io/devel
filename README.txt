@@ -18,9 +18,38 @@ http://bitdust.io
 Install
 =======
 
-Seems like in Ubuntu you just need to install all dependencies at first step:
+Seems like in Ubuntu (probably most other distros) you just need to install all dependencies at first step:
 
-    sudo apt-get install python python-twisted python-pyasn1 python-openssl python-crypto python-wxgtk2.8 python-imaging
+        sudo apt-get install git python-twisted python-setuptools python-pip
+        pip install Django==1.7 pycrypto psutil 
+    
+Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:
+
+        sudo apt-get install miniupnpc
+
+
+2. Get Sources
+
+        git clone http://gitlab.bitdust.io/devel/bitdust.git
+
+
+3. Create an alias in OS
+
+        cd bitdust
+        python bitdust.py integrate > /usr/local/bin/bitdust
+        chmod +x /usr/local/bin/bitdust
+        
+
+4. Create an identity for you
+       
+        bitdust id create alice
+       
+
+5. Get started
+
+    Read more about [BitDust Commands](commands.md) to start with the software.
+
+
 
 
 Windows ussers can use links bellow and install packages by hands.
@@ -79,3 +108,5 @@ PIL:
 wxgtk2.8: 
     http://wiki.wxpython.org/InstallingOnUbuntuOrDebian
 
+miniupnpc:
+    http://miniupnp.tuxfamily.org/

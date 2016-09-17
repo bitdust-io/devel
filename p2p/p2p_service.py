@@ -1,7 +1,24 @@
 #!/usr/bin/python
 #p2p_service.py
 #
-# <<<COPYRIGHT>>>
+# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+#
+# This file (p2p_service.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
 #
 #
 #
@@ -166,8 +183,16 @@ def inbox(newpacket, info, status, error_message):
         Correspondent(newpacket) 
         commandhandled = True
     elif newpacket.Command == commands.Broadcast():
-        # handled by broadcasting_service
+        # handled by service_broadcasting()
         Broadcast(newpacket, info)
+        commandhandled = False
+    elif newpacket.Command == commands.Coin():
+        # handled by service_accountant()
+        Coin(newpacket, info)
+        commandhandled = False
+    elif newpacket.Command == commands.RetreiveCoin():
+        # handled by service_accountant()
+        RetreiveCoin(newpacket, info)
         commandhandled = False
     
     return commandhandled
@@ -526,6 +551,7 @@ def Retrieve(request):
     Customer is asking us for data he previously stored with us.
     We send with ``outboxNoAck()`` method because he will ask again if he does not get it
     """
+    # TODO: rename to RetreiveData()
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if not contactsdb.is_customer(request.OwnerID):
@@ -684,10 +710,10 @@ def SendDeleteListBackups(SupplierID, ListBackupIDs):
 
 def Correspondent(request):
     lg.out(8, "p2p_service.Correspondent")
-    MyID = my_id.getLocalID()
-    RemoteID = request.OwnerID
-    PacketID = request.PacketID
-    Msg = misc.decode64(request.Payload)
+#     MyID = my_id.getLocalID()
+#     RemoteID = request.OwnerID
+#     PacketID = request.PacketID
+#     Msg = misc.decode64(request.Payload)
     # TODO: need to connect users here
 
 #------------------------------------------------------------------------------ 
@@ -945,6 +971,32 @@ def Broadcast(request, info):
 def SendBroadcastMessage(outpacket):
     lg.out(8, "p2p_service.SendBroadcastMessage to %s" % outpacket.RemoteID)
     gateway.outbox(outpacket)
+    return outpacket
+
+#------------------------------------------------------------------------------ 
+
+def Coin(request, info):
+    lg.out(8, "p2p_service.Coin   %r from %s" % (request, info.sender_idurl))
+
+def SendCoin(remote_idurl, coin, wide=False, callbacks={}):
+    lg.out(8, "p2p_service.SendCoin to %s" % remote_idurl)
+    outpacket = signed.Packet(
+        commands.Coin(), my_id.getLocalID(), 
+        my_id.getLocalID(), coin['id'], 
+        json.dumps(coin), remote_idurl)
+    gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
+    return outpacket
+
+def RetreiveCoin(request, info):
+    lg.out(8, "p2p_service.RetreiveCoin   %r from %s" % (request, info.sender_idurl))
+
+def SendRetreiveCoin(remote_idurl, query, wide=False, callbacks={}):
+    lg.out(8, "p2p_service.SendRetreiveCoin to %s" % remote_idurl)
+    outpacket = signed.Packet(
+        commands.Coin(), my_id.getLocalID(), 
+        my_id.getLocalID(), packetid.UniqueID(), 
+        json.dumps(query), remote_idurl)
+    gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
 
 #------------------------------------------------------------------------------ 

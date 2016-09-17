@@ -1,12 +1,10 @@
 #!/usr/bin/python
-#stun_client_RFC3489.py
-#
-#
-# <<<COPYRIGHT>>>
-#
-#
-#
-#
+
+__doc__ = """
+This code comes from Shtoom: http://divmod.org/projects/shtoom
+Copyright (C) 2004 Anthony Baxter
+Licensed under the GNU LGPL.
+"""
 
 """
 .. module:: stun_client_RFC3489

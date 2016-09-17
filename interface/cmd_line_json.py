@@ -1,7 +1,24 @@
 #!/usr/bin/python
 #cmd_line_json.py
 #
-# <<<COPYRIGHT>>>
+# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+#
+# This file (cmd_line_json.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
 #
 #
 #
@@ -323,6 +340,9 @@ def cmd_identity(opts, args, overDict, running):
                 return 0
         from automats import automat
         from main import initializer
+        from lib import misc
+        if not misc.ValidUserName(args[2]):
+            return 0
         initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
         reactor.run()
         automat.objects().clear()
@@ -597,11 +617,10 @@ def cmd_restore(opts, args, overDict, executablePath):
 
 def cmd_integrate(opts, args, overDict):
     """
-    A platform-dependent method to make a "system" command called "bitdust".
-    Than you can 
-    
+    This is a helper to make a "system-wide" command called for fast access BitDust.
+
     Run: 
-        python bitdust.py integrate > /usr/local/bin/bitdust
+        python bitdust.py alias > /usr/local/bin/bitdust
         chmod +x /usr/local/bin/bitdust
     
     This will create an executable file /usr/local/bin/bitdust with such content:
@@ -618,10 +637,10 @@ def cmd_integrate(opts, args, overDict):
     curpath = bpio.getExecutableDir()
     # cmdpath = '/usr/local/bin/bitdust'
     src = "#!/bin/sh\n"
-    src += '# This script creates a short alias "bitdust" to fast access BitDust software.'
-    src += '# NOTICE: BitDust software do not need root permissions to run, expected a normal user permissions.'
+    src += '# This is a short shell script to fast access BitDust software.\n'
+    src += '# NOTICE: BitDust software do not need root permissions to run, expected a normal user permissions.\n\n'
     # src += "cd %s\n" % curpath
-    src += 'python %s/bitdust.py "$@"\n' % curpath
+    src += 'python %s/bitdust.py "$@"\n\n' % curpath
     print_text(src)
     return 0
 #     print_text('creating a command script : %s ... ' % cmdpath, nl='')
@@ -1191,7 +1210,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return 0
 
     #---integrate---
-    elif cmd == 'integrate' or cmd == 'alias':
+    elif cmd == 'integrate' or cmd == 'alias' or cmd == 'shell':
         return cmd_integrate(opts, args, overDict)
     
     return 2

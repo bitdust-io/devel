@@ -1,7 +1,24 @@
 #!/usr/bin/python
 #log.py
 #
-# <<<COPYRIGHT>>>
+# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+#
+# This file (lg.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
 #
 #
 #
@@ -112,7 +129,8 @@ def warn(message, level=2):
     modul = os.path.basename(cod.co_filename).replace('.py', '') 
     caller = cod.co_name
     out(level, '%s.%s WARNING %s' % (modul, caller, message))
-    
+
+
 def err(message, level=0):
     cod = sys._getframe().f_back.f_code
     modul = os.path.basename(cod.co_filename).replace('.py', '') 
@@ -123,6 +141,7 @@ def err(message, level=0):
     if not message.count(funcname):
         message = funcname + ' ' + message
     out(level, message)
+
 
 def exc(msg='', level=0, maxTBlevel=100):
     if msg:

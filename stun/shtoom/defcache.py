@@ -1,8 +1,15 @@
+#!/usr/bin/env python
 
 from __future__ import nested_scopes
 
 from twisted.internet import defer
 import sys
+
+__doc__ = """
+This code comes from Shtoom: http://divmod.org/projects/shtoom
+Copyright (C) 2004 Anthony Baxter
+Licensed under the GNU LGPL.
+"""
 
 class _DeferredCache:
     """ Wraps a call that returns a deferred in a cache. Any subsequent

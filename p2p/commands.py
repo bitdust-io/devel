@@ -1,6 +1,23 @@
 #!/usr/bin/python
 #
-# <<<COPYRIGHT>>>
+# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+#
+# This file (commands.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
 #
 #
 #
@@ -95,6 +112,7 @@ def Retrieve():
     """
     Used to request some data from supplier for example.
     """
+    # TODO: rename to RetreiveData
     return "Retrieve"
 
 def Fail():
@@ -195,19 +213,24 @@ def Correspondent():
     """
     return "Correspondent"
 
+def Broadcast():
+    """
+    This message type is for delivering some piece of data to all peers in the network.
+    It is used to broadcast "crypto-coins" between peers.
+    """
+    return "Broadcast"
+
 def Coin():
     """
-    This is used to broadcast crypto "coins" between peers.
-    Every coin keeps a list of "contracts" to store in a global DB.
-    This is very similar to well-known "blockchain" technology. 
+    Every "contract" store a list of "coin" as a separate chain in global DB.
+    This is similar to well-known "blockchain" technology. 
     """    
     return "Coin"
 
-def Broadcast():
+def RetreiveCoin():
     """
-    This message is used to deliver some piece of data to all peers in the network.
     """
-    return "Broadcast"
+    return "RetreiveCoin"
 
 #------------------------------------------------------------------------------ 
 
@@ -235,19 +258,6 @@ def RequestCustomers():
     """
     return "RequestCustomers"
 
-def Customers():
-    """
-    Not used right now.
-    """
-    return "Customers"
-
-def FireContact():
-    """
-    Request to replace on of my suppliers, 
-    it will respond with ListContacts.
-    """
-    return "FireContact"
-
 def Settings():
     """
     Used to save my local settings.
@@ -259,23 +269,5 @@ def BandwidthReport():
     Used to daily reports of users bandwidh stats.
     """
     return 'BandwidthReport'
-
-def RequestSpace():
-    """
-    Not used right now.
-    """
-    return 'RequestSpace'
-
-def RequestSettings():
-    """
-    Request my settings.
-    """
-    return 'RequestSettings'
-
-def RequestReceipt():
-    """
-    Request a billing reports.
-    """
-    return "RequestReceipt"
 
 

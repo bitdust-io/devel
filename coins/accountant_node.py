@@ -1,3 +1,24 @@
+#!/usr/bin/env python
+#accountant_node.py
+#
+# Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
+#
+# This file (accountant_node.py) is part of BitDust Software.
+#
+# BitDust is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# BitDust Software is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Please contact us if you have any questions at bitdust.io@gmail.com
 
 
 """
@@ -30,6 +51,8 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------ 
 
+import datetime
+
 from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------ 
@@ -37,6 +60,9 @@ from twisted.internet.defer import Deferred
 from logs import lg
 
 from automats import automat
+
+from p2p import p2p_service
+from p2p import commands
 
 #------------------------------------------------------------------------------ 
 
@@ -77,6 +103,7 @@ class AccountantNode(automat.Automat):
         self.max_accountants_connected = 1 # TODO: read from settings
         self.lookup_task = None
         self.download_coins_task = None
+        self.last_known_hash = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -244,4 +271,11 @@ class AccountantNode(automat.Automat):
 
     def _download_coins(self):
         self.download_coins_task = Deferred()
+        query = {'datetime': datetime.datetime.utcnow(),
+                 '':'',}
+        for idurl in self.connected_accountants:
+            p2p_service.SendRetreiveCoin(idurl, query, callbacks={
+                commands.Coin():  self._coin_received,
+                commands.Fail(): self._coin_failed,
+            })
         

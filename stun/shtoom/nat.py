@@ -1,4 +1,9 @@
-
+#!/usr/bin/env python
+__doc__ = """
+This code comes from Shtoom: http://divmod.org/projects/shtoom
+Copyright (C) 2004 Anthony Baxter
+Licensed under the GNU LGPL.
+"""
 # Code for NATs and the like. Also includes code for determining local IP
 # address (suprisingly tricky, in the presence of STUPID STUPID STUPID
 # networking stacks)

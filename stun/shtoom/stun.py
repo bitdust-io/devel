@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#shtoom/stun.py
-
 # This code comes from Shtoom: http://divmod.org/projects/shtoom
 # Licensed under the GNU LGPL.
 # Copyright (C) 2004 Anthony Baxter
