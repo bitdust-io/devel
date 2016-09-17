@@ -25,7 +25,7 @@ The redundancy in backup makes it so if someone loses your data, you can rebuild
 
 All your data is encrypted before it leaves your computer with a private key your computer generates. No one else can read your data, even BitDust Team! Recover data is only one way - download the necessary pieces from computers of other peers and decrypt them with your private key.
 
-BitDust is written in Python using pure Twisted framework.
+BitDust is written in Python using pure Twisted framework and published under GNU AGPLv3.
 
 http://bitdust.io
 
@@ -72,7 +72,7 @@ Type this command to read more info about BitDust commands:
         bitdust help
 
 
-To get started, please read more about [BitDust Commands](commands.md) to start playing with software.
+Please read more about [BitDust Commands](commands.md) to start playing with software.
 
 
 ## Dependencies
