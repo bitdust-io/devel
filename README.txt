@@ -78,10 +78,7 @@ pyOpenSSL:
     
 pycrypto: 
     https://www.dlitz.net/software/pycrypto/
-    
-PIL: 
-    http://www.pythonware.com/products/pil
-    
+
 wxgtk2.8: 
     http://wiki.wxpython.org/InstallingOnUbuntuOrDebian
 

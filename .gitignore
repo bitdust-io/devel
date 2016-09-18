@@ -3,6 +3,8 @@
 *.pyd
 *.~vsd
 *.orig
+COMMITS.txt
+HISTORY.txt
 .identities/
 release/
 screenshots/

@@ -1,3 +1,25 @@
+2016-09-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* publish Ptyhon sources under GNU AGPL v3!
+
+
+2016-09-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* added nodes_lookup() service
+* added broadcasting() service
+* added broadcast_listener() state machine
+* added broadcaster_node() automat
+* added broadcasters_finder() state machine
+* fixes in git update procedures
+* updated employer() service dependencies
+* slow down bptester process a little bit
+* more clean shutdown of all state machines
+* `bitdust api` will print all api methods in cmd line
+* fix loging in network_connector()
+* fix service_udp_transport() - now it should finish stun process firstly and then go further
+* modified "integrate" command, it should not create a file but print to stdout
+
+
 2016-07-16 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * added text chat via command line
