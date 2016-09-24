@@ -27,8 +27,6 @@ All your data is encrypted before it leaves your computer with a private key you
 
 BitDust is written in Python using pure Twisted framework and published under GNU AGPLv3.
 
-http://bitdust.io
-
 
 
 ## Install
