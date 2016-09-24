@@ -17,7 +17,7 @@
 
 ## About
 
-BitDust is a peer to peer online backup utility.
+#### BitDust is a peer-to-peer online backup utility.
 
 This is a distributed network for backup data storage. Each participant of the network provides a portion of his hard drive for other users. In exchange, he is able to store his data on other peers.
 
