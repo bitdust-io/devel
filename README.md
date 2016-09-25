@@ -17,7 +17,7 @@
 
 ## About
 
-BitDust is a peer to peer online backup utility.
+#### BitDust is a peer-to-peer online backup utility.
 
 This is a distributed network for backup data storage. Each participant of the network provides a portion of his hard drive for other users. In exchange, he is able to store his data on other peers.
 
@@ -26,8 +26,6 @@ The redundancy in backup makes it so if someone loses your data, you can rebuild
 All your data is encrypted before it leaves your computer with a private key your computer generates. No one else can read your data, even BitDust Team! Recover data is only one way - download the necessary pieces from computers of other peers and decrypt them with your private key.
 
 BitDust is written in Python using pure Twisted framework and published under GNU AGPLv3.
-
-http://bitdust.io
 
 
 
