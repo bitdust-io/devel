@@ -143,10 +143,12 @@ def err(message, level=0):
     out(level, message)
 
 
-def exc(msg='', level=0, maxTBlevel=100):
+def exc(msg='', level=0, maxTBlevel=100, exc_info=None, exc_value=None):
     if msg:
         out(level, msg)
-    return exception(level, maxTBlevel, None)
+    if exc_value:
+        return exception(level, maxTBlevel, exc_info=('', exc_value, []))
+    return exception(level, maxTBlevel, exc_info)
 
 
 def exception(level, maxTBlevel, exc_info):
@@ -163,7 +165,10 @@ def exception(level, maxTBlevel, exc_info):
         excArgs = value.__dict__["args"]
     except KeyError:
         excArgs = ''
-    excTb = traceback.format_tb(trbk, maxTBlevel)    
+    if trbk:
+        excTb = traceback.format_tb(trbk, maxTBlevel)
+    else:
+        excTb = []
     s = 'Exception: <' + exception_name(value) + '>\n'
     out(level, s.strip())
     if excArgs:

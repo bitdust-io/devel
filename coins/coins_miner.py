@@ -58,6 +58,12 @@ from twisted.internet import threads
 
 #------------------------------------------------------------------------------ 
 
+if __name__ == '__main__':
+    import sys, os.path as _p
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 from automats import automat
@@ -120,6 +126,7 @@ class CoinsMiner(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of coins_miner() machine.
         """
+        self.offline_mode = False # only for Debug purposes
         self.connected_accountants = []
         self.min_accountants_connected = 3 # TODO: read from settings
         self.max_accountants_connected = 5 # TODO: read from settings
@@ -129,7 +136,7 @@ class CoinsMiner(automat.Automat):
         self.simplification = 2
         self.starter_length = 10 
         self.starter_limit = 99999  
-        self.mining_started = None
+        self.mining_started = -1
         self.mining_counts = 0
 
     def A(self, event, arg):
@@ -177,13 +184,14 @@ class CoinsMiner(automat.Automat):
             elif event == 'coin-confirmed' and self.isAllConfirmed(arg):
                 self.state = 'READY'
                 self.doSendAck(arg)
-                self.doCheckInputData(arg)
+                self.doPullInputData(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'coin-rejected' and not self.isDecideOK(arg):
                 self.state = 'READY'
                 self.doSendFail(arg)
+                self.doPullInputData(arg)
             elif event == 'coin-rejected' and self.isDecideOK(arg):
                 self.state = 'MINING'
                 self.doContinueMining(arg)
@@ -195,7 +203,7 @@ class CoinsMiner(automat.Automat):
             elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READY'
                 self.doAddAccountant(arg)
-                self.doLookupAccountants(arg)
+                self.doPullInputData(arg)
             elif event == 'accountant-connected' and self.isMoreNeeded(arg):
                 self.doAddAccountant(arg)
                 self.doLookupAccountants(arg)
@@ -212,13 +220,17 @@ class CoinsMiner(automat.Automat):
         """
         Condition method.
         """
+        if self.offline_mode:
+            return True
         return len(self.connected_accountants) > 0
 
     def isMoreNeeded(self, arg):
         """
         Condition method.
         """
-        return len(self.connected_accountants) < self.max_accountants_connected
+        if self.offline_mode:
+            return False
+        return len(self.connected_accountants) < self.min_accountants_connected
 
     def isDecideOK(self, arg):
         """
@@ -231,8 +243,10 @@ class CoinsMiner(automat.Automat):
         """
         Condition method.
         """
+        if self.offline_mode:
+            return True
         # TODO:
-        return True
+        return False
 
     def doInit(self, arg):
         """
@@ -240,12 +254,22 @@ class CoinsMiner(automat.Automat):
         """
         callback.append_inbox_callback(self._on_inbox_packet)
 
+    def doAddAccountant(self, arg):
+        """
+        Action method.
+        """
+        if arg:
+            if arg not in self.connected_accountants:
+                self.connected_accountants.append(arg)
+            else:
+                lg.warn('%s already connected as accountant' % arg)
+
     def doLookupAccountants(self, arg):
         """
         Action method.
         """
-        if len(self.connected_accountants) >= self.max_accountants_connected:
-            self.automat('accountant-connected', self.connected_accountants[0])
+        if self.offline_mode or len(self.connected_accountants) >= self.min_accountants_connected:
+            self.automat('accountant-connected', '')
             return
         from coins import accountants_finder
         accountants_finder.A('start', (self.automat, 'read'))
@@ -268,22 +292,29 @@ class CoinsMiner(automat.Automat):
         Action method.
         """
         self.mining_started = utime.get_sec1970()
-        self._start(arg, '')
-
+        d = self._start(arg, '')
+        d.addCallback(lambda result: self.automat('coin-mined', result))
+        d.addErrback(lambda err: self.automat('stop'))
+        d.addErrback(lambda err: lg.exc(exc_value=err))
+    
     def doStopMining(self, arg):
         """
         Action method.
         """
+        self.mining_started = -1
 
     def doSendCoinToAccountants(self, arg):
         """
         Action method.
         """
-
-    def doAddAccountant(self, arg):
-        """
-        Action method.
-        """
+        if _Debug:
+            lg.out(_DebugLevel, 'coins_miner.doSendCoinToAccountants: %s' % arg)
+        if self.offline_mode:
+            self.automat('coin-confirmed')
+            return
+        coins = [arg,]
+        for idurl in self.connected_accountants:
+            p2p_service.SendCoin(idurl, coins)
 
     def doContinueMining(self, arg):
         """
@@ -329,16 +360,16 @@ class CoinsMiner(automat.Automat):
                 # p2p_service.SendFail(newpacket, 'did not received any coins to mine')
                 return False
             for coin in new_coins:
-                self.automat('new-coin-received', coin)
+                self.automat('new-data-received', coin)
             return True
         return False        
 
     def _stop_marker(self):
-        if self.state != 'MINING':
+        if self.mining_started < 0:
             return True
         if self.mining_counts >= self.max_mining_counts:
             return True
-        if utime.get_sec1970() - self.mining_started > self.max_seconds:
+        if utime.get_sec1970() - self.mining_started > self.max_mining_seconds:
             return True
         self.mining_counts += 1
         return False
@@ -401,11 +432,33 @@ class CoinsMiner(automat.Automat):
     def _start(self, data, prev_hash):
         data['prev'] = prev_hash
         data['miner'] = my_id.getLocalID()
-        difficulty = self._get_hash_difficulty(prev_hash)
-        complexity = self._get_hash_complexity(prev_hash)
+        difficulty = self._get_hash_difficulty(prev_hash, self.simplification)
+        complexity = self._get_hash_complexity(prev_hash, self.simplification)
         if difficulty == complexity:
             complexity += 1
             if _Debug:
                 lg.out(_DebugLevel, 'coins_miner.found golden coin, step up complexity: %s' % complexity)
         return threads.deferToThread(self._run, data, difficulty,
                                      self.simplification, self.starter_length, self.starter_limit)
+
+#------------------------------------------------------------------------------ 
+
+def _test():
+    from crypt import signed
+    from lib import packetid
+    lg.set_debug_level(24)
+    A('init')
+    A().offline_mode = True
+    A('start')
+    coins = [{'a':'b'}, {'c':'d'}, {'e':'f'},]
+    outpacket = signed.Packet(
+        commands.Coin(), my_id.getLocalID(), 
+        my_id.getLocalID(), packetid.UniqueID(), 
+        json.dumps(coins), 'http://server.com/id.xml')
+    reactor.callLater(0.2, callback.run_inbox_callbacks, outpacket, None, 'finished', '')
+    # reactor.callLater(0.2, A, 'new-data-received', )
+    reactor.run()
+
+
+if __name__ == "__main__":
+    _test()
