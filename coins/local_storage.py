@@ -34,13 +34,13 @@ _Debug = True
 #------------------------------------------------------------------------------ 
 
 import os
-import random
+import json
 from hashlib import md5
 
-from CodernityDB.database import Database
+from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
 from CodernityDB.hash_index import HashIndex
-from CodernityDB.hash_index import UniqueHashIndex
 from CodernityDB.tree_index import TreeBasedIndex
+from CodernityDB.index import IndexNotFoundException
 
 #------------------------------------------------------------------------------ 
 
@@ -60,6 +60,25 @@ _LocalStorage = None
 
 #------------------------------------------------------------------------------ 
 
+def indexes():
+    return {
+        'owner': IndexByOwnerIDURL,
+        'hash': IndexByHash,
+        'prev': IndexByPrevHash,
+        'time': IndexByTime,
+        'miner': IndexByMinerIDURL,
+    }
+
+def refresh_indexes():
+    for ind, ind_class in indexes().items():
+        ind_obj = ind_class(db().path, ind)
+        if ind not in db().indexes_names:
+            db().add_index(ind_obj, create=True)
+        else:
+            db().edit_index(ind_obj, reindex=True)
+
+#------------------------------------------------------------------------------ 
+
 def init():
     global _LocalStorage
     if _LocalStorage is not None:
@@ -69,13 +88,10 @@ def init():
     if db().exists():
         db().open()
     else:
-        id_index = UniqueHashIndex(db().path, 'id')
-        nodes_index = IndexByIDURL(db().path, 'idurl')
-        coins_index = IndexByHash(db().path, 'hash')
-        db().set_indexes([id_index, nodes_index, coins_index])
         db().create()
-    
-    
+    refresh_indexes()
+
+
 def shutdown():
     global _LocalStorage
     if _LocalStorage is None:
@@ -90,20 +106,68 @@ def db():
     global _LocalStorage
     return _LocalStorage
 
-#------------------------------------------------------------------------------ 
-
 def get(index_name, key, with_doc=True, with_storage=True):
-    return db().get(index_name, key, with_doc, with_storage)
-
-def get_many(index_name, key, limit=-1, offset=0, start=None, end=None, with_doc=True, with_storage=True, **kwargs):
-    return db().get_many(index_name, key, limit, offset, with_doc, with_storage, start, end, **kwargs)
+    try:
+        res = db().get(index_name, key, with_doc, with_storage)
+    except (RecordNotFound, RecordDeleted, ):
+        return iter(())
+    except (IndexNotFoundException, DatabaseIsNotOpened, ):
+        return iter(())
+    return (r for r in [res,])
+        
+def get_many(index_name, key=None, limit=-1, offset=0,
+             start=None, end=None,
+             with_doc=True, with_storage=True, **kwargs):
+    try:
+        for r in db().get_many(index_name, key, limit, offset,
+                              with_doc, with_storage,
+                              start, end, **kwargs):
+            yield r
+    except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened, ):
+        pass
 
 def get_all(index_name, limit=-1, offset=0, with_doc=True, with_storage=True):
-    return db().all(index_name, limit, offset, with_doc, with_storage)
+    try:
+        for r in db().all(index_name, limit, offset, with_doc, with_storage):
+            yield r
+    except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened):
+        pass        
+
+def insert(acoin):
+    return db().insert(acoin)
+
+def exist(acoin):
+    if 'tm' in acoin:
+        if not list(get('time', key=acoin['tm'])):
+            return False
+    if 'idurl' in acoin:
+        if not list(get('idurl', key=acoin['idurl'])):
+            return False
+    if 'hash' in acoin:
+        if not list(get('hash', key=acoin['hash'])):
+            return False
+    return True
 
 #------------------------------------------------------------------------------ 
 
-def query_from_json(jdata):
+def _clean_doc(doc):
+    doc.pop('_id')
+    doc.pop('_rev')
+    return doc
+
+def query_json(jdata):
+    """
+    Input keys:
+        method: 'get', 'get_many' or 'get_all'
+        index: 'id', 'idurl', etc.
+        key: key to read single record from db (optional)
+        start: low key limit to search records in range
+        end: high key limit to search records in range
+    Returns tuple:
+        generator object or None, error message
+    """
+    if not db().opened:
+        return None, 'database is closed'
     method = jdata.pop('method', None)
     if method not in ['get', 'get_many', 'get_all',]:
         return None, 'unknown method'
@@ -121,39 +185,91 @@ def query_from_json(jdata):
         result = callmethod(index_name, **jdata)
     except:
         return None, lg.format_exception()
-    def _clean_doc(doc):
-        doc.pop('_id')
-        doc.pop('_rev')
-        return doc
     if jdata['with_doc'] and index_name != 'id':
-        if method in ['get_many', 'get_all',]:
-            return (_clean_doc(r['doc']) for r in result), ''
-        else:
-            return (_clean_doc(r['doc']) for r in [result,]), ''
+        return (_clean_doc(r['doc']) for r in result), ''
     return result, ''
 
 #------------------------------------------------------------------------------ 
 
-class IndexByIDURL(HashIndex):
+def read_query_from_packet(newpacket):
+    try:
+        query_j = json.loads(newpacket.Payload)
+    except:
+        lg.exc()
+        return None
+    # TODO: verify query fields
+    return query_j
+
+def read_coins_from_packet(newpacket):
+    try:
+        coins_list = json.loads(newpacket.Payload)
+    except:
+        lg.exc()
+        return None
+    # TODO: verify coins
+    return coins_list
+
+#------------------------------------------------------------------------------ 
+
+def validate_coin(acoin):
+    # TODO: validate fields, hashes, query on DB, etc.
+    return True
+
+#------------------------------------------------------------------------------ 
+
+class IndexByTime(TreeBasedIndex):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['key_format'] = 'I'
+        kwargs['node_capacity'] = 128
+        super(IndexByTime, self).__init__(*args, **kwargs)
+
+    def make_key(self, key):
+        return key
+
+    def make_key_value(self, data):
+        tm = data.get('tm')
+        if tm:
+            return tm, None
+        return None
+    
+
+class IndexByOwnerIDURL(HashIndex):
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '16s'
-        super(IndexByIDURL, self).__init__(*args, **kwargs)
+        super(IndexByOwnerIDURL, self).__init__(*args, **kwargs)
 
     def make_key(self, key):
         return md5(key).digest()
 
     def make_key_value(self, data):
-        idurl = data.get('idurl')
+        idurl = data.get('data', dict()).get('owner')
         if idurl:
             return md5(idurl).digest(), None
+        return None
+
+
+class IndexByMinerIDURL(HashIndex):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['key_format'] = '16s'
+        super(IndexByMinerIDURL, self).__init__(*args, **kwargs)
+
+    def make_key(self, key):
+        return md5(key).digest()
+
+    def make_key_value(self, data):
+        miner_idurl = data.get('data', dict()).get('miner')
+        if miner_idurl:
+            return md5(miner_idurl).digest(), None
         return None
     
 
 class IndexByHash(HashIndex):
 
     def __init__(self, *args, **kwargs):
-        kwargs['key_format'] = '16s'
+        kwargs['key_format'] = '40s'
         super(IndexByHash, self).__init__(*args, **kwargs)
 
     def make_key(self, key):
@@ -162,15 +278,56 @@ class IndexByHash(HashIndex):
     def make_key_value(self, data):
         hashval = data.get('hash')
         if hashval:
-            return hashval, None
+            return hashval
+        return None
+
+
+class IndexByPrevHash(HashIndex):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['key_format'] = '40s'
+        super(IndexByHash, self).__init__(*args, **kwargs)
+
+    def make_key(self, key):
+        return key
+
+    def make_key_value(self, data):
+        hashval = data.get('prev')
+        if hashval:
+            return hashval
         return None
 
 #------------------------------------------------------------------------------ 
 
 def _test():
+    from lib import utime
+    import time
+    import datetime
 
-#     print db().insert({'idurl': 'http://idurl1234', 'time': '12345678'})
-#     print db().insert({'hash': '1234567812345678' + random.choice(['a,b,c']), 'data': {'a':'b', 'c': 'd', 'time': 123456,}})
+    def _p(ret):
+        if ret and ret[0]:
+            print '\n'.join(map(str,list(ret[0])))
+        else:
+            print ret[1]
+
+#     print insert({'idurl': 'http://idurl1234', 'time': '12345678'})
+#     print insert({'hash': '1234567812345678' + random.choice(['a,b,c']), 'data': {'a':'b', 'c': 'd', 'time': 123456,}})
+    
+#     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn.xml',
+#                   'hash': 'abcdef',
+#                   'tm': utime.since1970(datetime.datetime.utcnow())})
+#       
+#     time.sleep(3)
+#       
+#     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml',
+#                   'hash': 'abcdef123',
+#                   'tm': utime.since1970(datetime.datetime.utcnow())})
+#   
+#     time.sleep(4)
+#   
+#     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn567.xml',
+#                   'hash': 'abcdef567',
+#                   'tm': utime.since1970(datetime.datetime.utcnow())})
     
 #     print 'query all from "id"'
 #     for x in query_from_json({'method': 'get_all', 'index': 'id'})[0]:
@@ -180,13 +337,36 @@ def _test():
 #     for x in query_from_json({'method': 'get_all', 'index': 'idurl'})[0]:
 #         print x
 
-    print 'query one from "idurl"'
-    ret = query_from_json({'method': 'get', 'index': 'idurl', 'key': 'http://idurl1234'})
-    for x in ret[0]:
-        print x
+    print 'query one from "hash"'
+    _p(query_json({'method': 'get', 'index': 'hash', 'key': 'abcdef123', }))
 
-#     print db().get('idurl', 'http://idurl1234')
+    print 'query many from "hash"'
+    _p(query_json({'method': 'get_many', 'index': 'hash', 'key': 'abcdef123', }))
+
+    print 'query one from "time"'
+    _p(query_json({'method': 'get', 'index': 'time', 'key': 1474380456, }))
     
+    print 'query one from "idurl"'
+    _p(query_json({'method': 'get', 'index': 'idurl', 'key': 'http://veselin-p2p.ru/veselin_kpn123.xml'}))
+
+    print 'query some from "time"'
+    _p(query_json({'method': 'get_many', 'index': 'time', 'limit': 3, 'offset': 2, 'start': 0, 'end': None, }))
+
+    print 'query all from "hash"'
+    _p(query_json({'method': 'get_all', 'index': 'hash'}))
+
+    print 'query some from "time"'
+    _p(query_json({'method': 'get_many', 'index': 'time', 'key': 1474380456, }))
+
+    print 'query one from "id"'
+    _p(query_json({'method': 'get', 'index': 'id', 'key': '5d909de518db44329183d187927cabc9', }))
+
+    print 'query all from "id"'
+    _p(query_json({'method': 'get_all', 'index': 'id'}))
+    
+    print 'test item exists:', exist({'tm': 1474380456,
+                                      'hash': 'abcdef123',
+                                      'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml'})
 
 
 if __name__ == "__main__":

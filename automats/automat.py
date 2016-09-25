@@ -420,16 +420,16 @@ class Automat(object):
                 new_state = self.A(event_string, arg)
             except:
                 if _Debug:
-                    self.log(max(_DebugLevel, self.debug_level), traceback.format_exc())
-                # return
+                    self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
+                        self.id, self.name, self.state, event_string, arg))
             self.state = new_state
         else:
             try:
                 self.A(event_string, arg)
             except:
                 if _Debug:
-                    self.log(max(_DebugLevel, self.debug_level), traceback.format_exc())
-                # return
+                    self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
+                        self.id, self.name, self.state, event_string, arg))
             new_state = self.state
         if old_state != new_state:
             if _Debug:
@@ -495,6 +495,25 @@ class Automat(object):
         Get internal timers dictionary.
         """
         return self._timers
+
+    def exc(self, msg='', to_logfile=False):
+        """
+        Print exception in stdout, optionally to log file.
+        """
+        global _LogFile
+        e = traceback.format_exc()
+        if to_logfile and _LogFile is not None:
+            if msg:
+                self.log(0, msg)
+            self.log(0, e)
+        try:
+            from logs import lg
+            lg.exc(msg)
+#             if msg:
+#                 lg.out(0, msg)
+#             lg.out(0, e)
+        except:
+            pass
 
     def log(self, level, text):
         """

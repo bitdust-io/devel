@@ -68,6 +68,7 @@ class P2PHookupsService(LocalService):
         return True
     
     def stop(self):
+        from p2p import p2p_service
         from p2p import contact_status
         from p2p import p2p_connector
         from p2p import network_connector
@@ -78,6 +79,7 @@ class P2PHookupsService(LocalService):
             self._on_p2p_connector_switched)
         contact_status.shutdown()
         p2p_connector.Destroy()
+        p2p_service.shutdown()
         return True
     
     def _on_p2p_connector_switched(self, oldstate, newstate, evt, args ):

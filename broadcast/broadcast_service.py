@@ -54,7 +54,7 @@ import json
 
 from logs import lg
 
-from lib import packetid
+from lib import utime
 
 from crypt import signed
 from crypt import key
@@ -66,7 +66,7 @@ from userid import my_id
 #------------------------------------------------------------------------------ 
 
 def prepare_broadcast_message(owner, payload):
-    tm = datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    tm = utime.utcnow_to_sec1970()
     rnd = ''.join(random.choice(string.ascii_uppercase) for _ in range(4))
     msgid = '%s:%s:%s' % (tm, rnd, owner)
     msg = [
@@ -75,10 +75,18 @@ def prepare_broadcast_message(owner, payload):
         ('id', msgid),
         ('payload', payload),
     ]
-    # owner_sign = key.Sign(key.Hash(str(msg)))
+    owner_sign = key.Sign(key.Hash(str(msg)))
     msg = {k:v for k, v in msg}
-    # msg['owner_sign'] = owner_sign
+    msg['owner_sign'] = owner_sign
     return msg
+
+
+def verfify_broadcast_message(jmsg):
+    s = set(jmsg.keys())
+    s = s.intersection(['owner', 'started', 'id', 'payload',])
+    if len(s) != 4:
+        return False
+    return True
 
 
 def read_message_from_packet(newpacket):
@@ -87,7 +95,7 @@ def read_message_from_packet(newpacket):
     except:
         lg.exc()
         return None
-    # TODO verify owner signature and creator ID
+    # TODO: verify owner signature and creator ID
     return msg
 
 
@@ -136,10 +144,11 @@ def on_incoming_broadcast_message(json_msg):
 
 #------------------------------------------------------------------------------ 
 
-def main():
-    pass
+def _test():
+    from coins import mine
+    print prepare_broadcast_message(my_id.getLocalID(), {'test':'okidoki'})
 
 #------------------------------------------------------------------------------ 
 
 if __name__ == '__main__':
-    main()
+    _test()

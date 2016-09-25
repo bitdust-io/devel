@@ -35,7 +35,7 @@ http://bitdust.io
 
 Seems like in Ubuntu (probably most other distros) you just need to install all dependencies at first step:
 
-        sudo apt-get install git python-twisted python-setuptools python-pip
+        sudo apt-get install git python-dev python-twisted python-setuptools python-pip
         pip install Django==1.7 pycrypto psutil 
     
 Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:
@@ -51,8 +51,8 @@ Get Sources:
 Create an alias in OS so you can easily run the program from any location:
 
         cd bitdust
-        python bitdust.py alias > /usr/local/bin/bitdust
-        chmod +x /usr/local/bin/bitdust
+        python bitdust.py alias | sudo tee /usr/local/bin/bitdust
+        sudo chmod +x /usr/local/bin/bitdust
         
 
 Create an identity for you in the BitDust network:

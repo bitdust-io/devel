@@ -35,6 +35,10 @@ EVENTS:
     * :red:`timer-10sec`
 
 """
+#------------------------------------------------------------------------------ 
+
+_Debug = False
+_DebugLevel = 24
 
 #------------------------------------------------------------------------------ 
 
@@ -231,7 +235,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             if self.peer_address not in tcp_node.opened_connections():
                 tcp_node.opened_connections()[self.peer_address] = []
             tcp_node.opened_connections()[self.peer_address].append(self)
-            lg.out(12, '%s : external peer address changed to %s' % (
+            lg.out(6, '%s : external peer address changed to %s' % (
                 self, self.peer_address))
         # lg.out(18, 'tcp_connection.doReadHello from %s' % (self.peer_idurl))
 
@@ -353,7 +357,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         # lg.out(18, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
         address = self.getAddress()
         name = 'tcp_connection[%s:%d]' % (address[0], address[1])  
-        automat.Automat.__init__(self, name, 'AT_STARTUP')
+        automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel, _Debug)
         self.automat('connection-made')
     
     def connectionLost(self, reason):

@@ -126,7 +126,6 @@ class TCPFileStream():
             inp.close()
             lg.exc()
             return
-        # lg.out(6, 'data_received %s' % str(( file_id, file_size)))
         inp_data = inp.read()
         inp.close()
         if not self.inboxFiles.has_key(file_id):
@@ -188,11 +187,7 @@ class TCPFileStream():
         if self.inboxFiles[file_id].is_done():
             infile = self.inboxFiles[file_id]
             self.close_inbox_file(file_id)
-            # self.receivedFiles[file_id] = time.time()
-            # self.erase_old_file_ids()
             self.report_inbox_file(infile.transfer_id, 'finished', infile.get_bytes_received())
-#                tcp_interface.interface_unregister_file_receiving(
-#                    infile.transfer_id, 'finished', infile.get_bytes_received())
             
     def on_inbox_file_register_failed(self, err, file_id):
         lg.out(2, 'tcp_stream.on_inbox_file_register_failed ERROR failed to register, file_id=%s err:\n%s' % (str(file_id), str(err)))
@@ -202,7 +197,6 @@ class TCPFileStream():
     def create_outbox_file(self, filename, filesize, description, result_defer, single):
         file_id = int(str(int(time.time() * 100.0))[4:])
         outfile = OutboxFile(self, filename, file_id, filesize, description, result_defer, single)
-        # outfile.read_blocks()
         if not single:
             d = tcp_interface.interface_register_file_sending(
                 self.connection.getAddress(), self.connection.peer_idurl, filename, description)
@@ -236,7 +230,7 @@ class TCPFileStream():
         del self.inboxFiles[file_id]   
         
     def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
-        lg.out(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
+        # lg.out(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         tcp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
@@ -259,12 +253,10 @@ class TCPFileStream():
         else:
             lg.warn('transfer_id is None, file_id=%s' % (str(file_id)))
         del infile
-        # self.receivedFiles[file_id] = time.time()
         
     def outbox_file_done(self, file_id, status, error_message=None):
         """
         """ 
-        # lg.out(18, 'tcp_stream.outbox_file_done %s %s %s' % (file_id, status, error_message))
         try:
             outfile = self.outboxFiles[file_id]
         except:
@@ -278,10 +270,7 @@ class TCPFileStream():
         self.close_outbox_file(file_id)
         if outfile.transfer_id:
             self.report_outbox_file(outfile.transfer_id, status, outfile.get_bytes_sent(), error_message)
-        # else:
-        #     lg.warn('transfer_id is None, file_id=%s' % (str(file_id)))
         if outfile.single:
-            # lg.out(18, 'tcp_stream.outbox_file_done close single connection %s' % str(self.connection))
             self.connection.automat('disconnect') 
         del outfile
 
@@ -299,7 +288,6 @@ class InboxFile():
         self.started = time.time()
         self.last_block_time = time.time()
         self.timeout = max(int(self.file_size/settings.SendingSpeedLimit()), 3)
-        # lg.out(6, 'tcp_stream.InboxFile {%s} [%d] from %s' % (self.transfer_id, self.file_id, str(self.stream.remote_address)))
 
     def close(self):
         try:
@@ -362,10 +350,7 @@ class OutboxFile():
             return
         if self.sender.deferred.called:
             return
-        # self.sender.close()
         self.sender.stopProducing()
-        # del self.sender
-        # self.sender = None
 
     def cancel(self):
         lg.out(6, 'tcp_stream.OutboxFile.cancel timeout=%d' % self.timeout)
@@ -407,25 +392,12 @@ class OutboxFile():
 
 class FileSender(basic.FileSender):
     def __init__(self, parent):
-        # global _RegisterTransferFunc
-        # global _ByTransferID
         self.parent = parent
-        
-        
-        # self.peer = self.protocol.remoteaddress # self.protocol.transport.getPeer()
-        # self.transfer_id = _RegisterTransferFunc(
-        #     'send', self.peer, self.getSentBytes, filename, sz, description)
-        # _ByTransferID[self.transfer_id] = self.protocol
-        # lg.out(14, 'transport_tcp.TCPFileSender.init length=%d transfer_id=%s' % (self.sz, self.transfer_id))
-
-    # def __del__(self):
-    #     lg.out(14, 'transport_tcp.TCPFileSender.del length=%d transfer_id=%s' % (self.sz, self.transfer_id))
 
     def close(self):
         self.parent = None
 
     def transform_data(self, data):
-        # lg.out(24, 'transform_data')
         datalength = len(data)
         datagram = ''
         datagram += struct.pack('i', self.parent.file_id)
@@ -456,7 +428,5 @@ class FileSender(basic.FileSender):
             return
         if self.transform:
             chunk = self.transform(chunk)
-        # self.consumer.write(chunk)
         self.parent.stream.connection.sendData(tcp_connection.CMD_DATA, chunk)
         self.lastSent = chunk[-1:]
-        
