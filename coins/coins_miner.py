@@ -48,6 +48,7 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------ 
 
+import time
 import random
 import string
 import hashlib
@@ -55,6 +56,7 @@ import json
 
 from twisted.internet import reactor
 from twisted.internet import threads
+from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------ 
 
@@ -72,12 +74,15 @@ from userid import my_id
 
 from lib import utime
 
+from crypt import key
+
 from p2p import commands
 from p2p import p2p_service
 
 from transport import callback
 
-from coins import local_storage
+from coins import coins_db
+from coins import coins_io
 
 #------------------------------------------------------------------------------ 
 
@@ -135,7 +140,7 @@ class CoinsMiner(automat.Automat):
         self.max_mining_seconds = 60*3 # TODO: read from settings
         self.simplification = 2
         self.starter_length = 10 
-        self.starter_limit = 99999  
+        self.starter_limit = 9999  
         self.mining_started = -1
         self.mining_counts = 0
 
@@ -292,7 +297,7 @@ class CoinsMiner(automat.Automat):
         Action method.
         """
         self.mining_started = utime.get_sec1970()
-        d = self._start(arg, '')
+        d = self._start(arg, '1111242458feb550512fb19bb6127bd4cd8ef2cb')
         d.addCallback(lambda result: self.automat('coin-mined', result))
         d.addErrback(lambda err: self.automat('stop'))
         d.addErrback(lambda err: lg.exc(exc_value=err))
@@ -325,6 +330,7 @@ class CoinsMiner(automat.Automat):
         """
         Action method.
         """
+        print arg
 
     def doSendFail(self, arg):
         """
@@ -347,13 +353,16 @@ class CoinsMiner(automat.Automat):
         if status != 'finished':
             return False
         if newpacket.Command == commands.Coin():
-            coins_list = local_storage.read_coins_from_packet(newpacket)
+            coins_list = coins_io.read_coins_from_packet(newpacket)
             if not coins_list:
                 # p2p_service.SendFail(newpacket, 'failed to read coins from packet')
                 return False
             new_coins = []
             for acoin in coins_list:
-                if local_storage.validate_coin(acoin):
+                if not coins_io.verify_coin_signature(acoin):
+                    lg.warn('signature verification failed')
+                    continue
+                if coins_io.validate_coin(acoin):
                     continue
                 new_coins.append(acoin)
             if not new_coins:
@@ -405,16 +414,18 @@ class CoinsMiner(automat.Automat):
                 break
         return difficulty - 1 
     
-    def _run(self, data, difficulty, simplification, starter_length, starter_limit):
-        data_dump = json.dumps(data)
+    def _run(self, signed_coin, difficulty, simplification, starter_length, starter_limit):
+        acoin = coins_io.get_coin_base(signed_coin)
+        data_dump = coins_io.coin_to_string(acoin)
         starter = self._build_starter(starter_length)
         on = 0
         while True:
             if self._stop_marker():
+                if _Debug:
+                    lg.out(_DebugLevel, 'coins_miner._run STOPPED, stop marker returned True')
                 return None
             check = starter + str(on)
-            if data is not None:
-                check += data_dump
+            check += data_dump
             hexdigest = self._build_hash(check)
             if difficulty != self._get_hash_complexity(hexdigest, simplification):
                 on += 1
@@ -422,23 +433,24 @@ class CoinsMiner(automat.Automat):
                     starter = self._build_starter(starter_length)
                     on = 0
                 continue
-            return {
+            result = {
                 "starter": starter+str(on), 
                 "hash": hexdigest,
-                "tm": utime.utcnow_to_sec1970(),
-                "data": data,
+                "mined": utime.utcnow_to_sec1970(),
             }
+            result.update(signed_coin)
+            return result
         
-    def _start(self, data, prev_hash):
-        data['prev'] = prev_hash
-        data['miner'] = my_id.getLocalID()
+    def _start(self, signed_coin, prev_hash):
+        signed_coin['prev'] = prev_hash
+        signed_coin['miner'] = my_id.getLocalID()
         difficulty = self._get_hash_difficulty(prev_hash, self.simplification)
         complexity = self._get_hash_complexity(prev_hash, self.simplification)
         if difficulty == complexity:
             complexity += 1
             if _Debug:
                 lg.out(_DebugLevel, 'coins_miner.found golden coin, step up complexity: %s' % complexity)
-        return threads.deferToThread(self._run, data, difficulty,
+        return threads.deferToThread(self._run, signed_coin, complexity,
                                      self.simplification, self.starter_length, self.starter_limit)
 
 #------------------------------------------------------------------------------ 
@@ -450,13 +462,24 @@ def _test():
     A('init')
     A().offline_mode = True
     A('start')
-    coins = [{'a':'b'}, {'c':'d'}, {'e':'f'},]
+    coins = []
+    for _ in xrange(5):
+        coin = coins_io.storage_contract_open(
+            "http://some.id-host.org/alice_customer.xml",
+            3600,
+            4096
+        )
+        if coins_io.verify_coin_signature(coin):
+            coins.append(coin)
+        else:
+            print coin
+            sys.exit()
     outpacket = signed.Packet(
         commands.Coin(), my_id.getLocalID(), 
         my_id.getLocalID(), packetid.UniqueID(), 
         json.dumps(coins), 'http://server.com/id.xml')
-    reactor.callLater(0.2, callback.run_inbox_callbacks, outpacket, None, 'finished', '')
-    # reactor.callLater(0.2, A, 'new-data-received', )
+    reactor.callLater(0.1, callback.run_inbox_callbacks, outpacket, None, 'finished', '')
+    # reactor.callLater(5.1, A, 'shutdown')
     reactor.run()
 
 

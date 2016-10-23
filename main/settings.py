@@ -2056,6 +2056,10 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/data-motion/enabled', 'true')
 
+    config.conf().setDefaultValue('services/entangled-dht/enabled', 'true')
+
+    config.conf().setDefaultValue('services/employer/enabled', 'true')
+
     config.conf().setDefaultValue('services/gateway/enabled', 'true')
 
     config.conf().setDefaultValue('services/id-server/enabled', 'false')

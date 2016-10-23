@@ -1,9 +1,9 @@
 #!/usr/bin/python
-#local_storage.py
+#coins_db.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
-# This file (local_storage.py) is part of BitDust Software.
+# This file (coins_db.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -25,9 +25,11 @@
 #
 
 """
-.. module:: local_storage
+.. module:: coins_db
 
 """
+
+#------------------------------------------------------------------------------ 
 
 _Debug = True
 
@@ -53,6 +55,8 @@ if __name__ == '__main__':
 from logs import lg
 
 from main import settings
+
+from crypt import key
 
 #------------------------------------------------------------------------------ 
 
@@ -188,34 +192,6 @@ def query_json(jdata):
     if jdata['with_doc'] and index_name != 'id':
         return (_clean_doc(r['doc']) for r in result), ''
     return result, ''
-
-#------------------------------------------------------------------------------ 
-
-def read_query_from_packet(newpacket):
-    try:
-        query_j = json.loads(newpacket.Payload)
-    except:
-        lg.exc()
-        return None
-    # TODO: verify query fields
-    return query_j
-
-def read_coins_from_packet(newpacket):
-    try:
-        coins_list = json.loads(newpacket.Payload)
-    except:
-        lg.exc()
-        return None
-    # TODO: verify coins
-    return coins_list
-
-#------------------------------------------------------------------------------ 
-
-def validate_coin(acoin):
-    # TODO: validate fields, hashes, query on DB, etc.
-    if 'hash' not in acoin.keys():
-        return False
-    return True
 
 #------------------------------------------------------------------------------ 
 

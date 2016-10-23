@@ -339,14 +339,17 @@ class FireHire(automat.Automat):
         """
         Condition method.
         """
+        supplier_idurl = arg
         current_suppliers = contactsdb.suppliers()
+        if supplier_idurl in current_suppliers:
+            # this guy is already a supplier, we still need more then 
+            return True
         desired_number = settings.getSuppliersNumberDesired()
         needed_suppliers = current_suppliers[:desired_number]
         empty_suppliers = needed_suppliers.count('')
         # if '' in needed_suppliers:
             # lg.warn('found empty suppliers!!!')
             # return True
-        supplier_idurl = arg
         s = set(needed_suppliers)
         s.add(supplier_idurl)
         s.difference_update(set(self.dismiss_list))

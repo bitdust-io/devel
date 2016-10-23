@@ -202,7 +202,7 @@ def Sign(inp):
     result = str(Signature[0]) 
     return result
 
-def VerifySignature(keystring, hashcode, signature):
+def VerifySignature(pubkeystring, hashcode, signature):
     """
     Verify signature, this calls function ``Crypto.PublicKey.RSA.verify`` to verify.
     
@@ -213,7 +213,7 @@ def VerifySignature(keystring, hashcode, signature):
     Return True if signature is correct, otherwise False. 
     """
     # key is public key in string format 
-    keyobj = keys.Key.fromString(keystring).keyObject
+    keyobj = keys.Key.fromString(pubkeystring).keyObject
     # needs to be a long in a list
     sig_long = long(signature),
     Result = bool(keyobj.verify(hashcode, sig_long))
@@ -225,8 +225,8 @@ def Verify(ConIdentity, hashcode, signature):
      
     :param ConIdentity: user's identity object'.
     """
-    key = ConIdentity.publickey
-    Result = VerifySignature(key, hashcode, signature)
+    pubkey = ConIdentity.publickey
+    Result = VerifySignature(pubkey, hashcode, signature)
     return Result
 
 #------------------------------------------------------------------------------ 
