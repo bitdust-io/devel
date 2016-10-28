@@ -182,7 +182,6 @@ class ProxyRouter(automat.Automat):
         elif self.state == 'STOPPED':
             if event == 'start':
                 self.state = 'TRANSPORTS?'
-                self.doWaitOtherTransports(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
@@ -202,10 +201,10 @@ class ProxyRouter(automat.Automat):
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
 
-    def doWaitOtherTransports(self, arg):
-        """
-        Action method.
-        """
+#     def doWaitOtherTransports(self, arg):
+#         """
+#         Action method.
+#         """
 #         self.starting_transports = []
 #         for t in gateway.transports().values():
 #             if t.proto == 'proxy':
