@@ -56,7 +56,7 @@ from automats import automat
 from main import config
 
 import proxy_connector
-import proxy_receiver
+from transport.proxy import proxy_receiver
 import proxy_sender
 
 #------------------------------------------------------------------------------
@@ -195,7 +195,6 @@ class ProxyNode(automat.Automat):
         _ProxyNode = None
         
 #------------------------------------------------------------------------------
-
 
 def GetRouterIDURL():
     global _ProxyReceiver

@@ -201,7 +201,7 @@ def init(icons_path, icons_files=None):
             return True
         
         def OnExit(self):
-            # print 'OnExit'
+            print 'OnExit'
             try:
                 self.trayicon.Destroy() 
             except:
@@ -239,6 +239,7 @@ def main_porcess_stopped():
 #------------------------------------------------------------------------------ 
 
 def control(cmd):
+    print 'control', cmd
     global _ControlFunc
     if _ControlFunc is not None:
         _ControlFunc(cmd)

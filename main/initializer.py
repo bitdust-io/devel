@@ -258,11 +258,12 @@ class Initializer(automat.Automat):
         reactor.callLater(0, self.automat, 'init-interfaces-done')
 
     def doInitModules(self, arg):
+        lg.out(2, 'initializer.doInitModules')
         self._init_modules()
         reactor.callLater(0, self.automat, 'init-modules-done')
 
     def doShowGUI(self, arg):
-        from main import settings
+        lg.out(2, 'initializer.doShowGUI')
         if settings.NewWebGUI():
             from web import control
             d = control.init()
@@ -296,8 +297,10 @@ class Initializer(automat.Automat):
         """
         Action method.
         """
+        lg.out(0, '')
         lg.out(0, 'You must create an identity first, run command:')
         lg.out(0, '   bitdust identity create <nickname>')
+        lg.out(0, '')
 
     def doDestroyMe(self, arg):
         global _Initializer
@@ -319,7 +322,6 @@ class Initializer(automat.Automat):
         Return True if Private Key and local identity files exists and both is valid.
         """
         lg.out(2, 'initializer._check_install')
-        from main import settings
         from userid import identity
         from crypt import key
         keyfilename = settings.KeyFileName()
@@ -365,7 +367,6 @@ class Initializer(automat.Automat):
         from p2p import commands 
         from lib import net_misc
         from lib import misc
-        from main import settings
         from system import tmpfile
         from system import run_upnpc
         from raid import eccmap
@@ -432,7 +433,6 @@ class Initializer(automat.Automat):
                 shutdowner.A('stop', 'restart')
                 
             elif cmd == 'reconnect':
-                from services import driver
                 from p2p import network_connector
                 if driver.is_started('service_network'):
                     network_connector.A('reconnect')

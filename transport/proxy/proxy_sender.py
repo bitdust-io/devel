@@ -43,8 +43,8 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
-_DebugLevel = 18
+_Debug = False
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------ 
 
@@ -169,7 +169,7 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
-        import proxy_receiver
+        from transport.proxy import proxy_receiver
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
         router_proto_host = proxy_receiver.GetRouterProtoHost()
@@ -249,7 +249,11 @@ class ProxySender(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet filtering %s' % (outpacket))
-        import proxy_receiver
+        from transport.proxy import proxy_receiver
+        if proxy_receiver.A().state != 'LISTEN':
+            if _Debug:
+                lg.out(_DebugLevel, '        proxy_receiver() is not listening yet')
+            return None
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
         router_proto_host = proxy_receiver.GetRouterProtoHost()
@@ -265,7 +269,7 @@ class ProxySender(automat.Automat):
                 lg.out(_DebugLevel, '        outpacket is addressed for router and must be sent in a usual way')
             return None
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet   %s were redirected for %s' % (outpacket, router_idurl))
+            lg.out(_DebugLevel, '        %s were redirected for %s' % (outpacket, router_idurl))
         self.result_outbox = None
         self.event('outbox-packet', (outpacket, wide, callbacks))
         ret = self.result_outbox

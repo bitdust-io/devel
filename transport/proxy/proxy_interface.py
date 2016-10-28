@@ -67,7 +67,7 @@ class GateInterface():
         global _GateProxy
         if _Debug:
             lg.out(4, 'proxy_interface.init')
-        import proxy_receiver
+        from transport.proxy import proxy_receiver
         import proxy_sender
         if type(xml_rpc_url_or_object) == str:
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
@@ -83,7 +83,7 @@ class GateInterface():
         """
         if _Debug:
             lg.out(4, 'proxy_interface.shutdown')
-        import proxy_receiver
+        from transport.proxy import proxy_receiver
         import proxy_sender
         ret = self.disconnect()
         proxy_receiver.A('shutdown')
@@ -98,7 +98,7 @@ class GateInterface():
         """
         if _Debug:
             lg.out(4, 'proxy_interface.connect %s' % str(options))
-        import proxy_receiver
+        from transport.proxy import proxy_receiver
         import proxy_sender
         if settings.enablePROXYreceiving():
             proxy_receiver.A('start', options)
@@ -111,7 +111,7 @@ class GateInterface():
         """
         if _Debug:
             lg.out(4, 'proxy_interface.disconnect')
-        import proxy_receiver
+        from transport.proxy import proxy_receiver
         import proxy_sender
         proxy_receiver.A('stop')
         proxy_sender.A('stop')
@@ -120,14 +120,14 @@ class GateInterface():
     def build_contacts(self, id_obj):
         """
         """
-        import proxy_receiver
+        from transport.proxy import proxy_receiver
         if not proxy_receiver.GetRouterIdentity():
             # if not yet found one node to route your traffic - do nothing
             if _Debug:
                 lg.out(4, 'proxy_interface.build_contacts SKIP, router not yet found')
             return []
         # switch contacts - use router contacts instead of my 
-        # he will get all packets sent to my and redirect to my
+        # he will receive all packets addressed to me and redirect to me
         result = proxy_receiver.GetRouterIdentity().getContacts()
         if _Debug:
             lg.out(4, 'proxy_interface.build_contacts %s : %s' % (
@@ -138,7 +138,7 @@ class GateInterface():
         """
         Check if router is ready and his contacts exists in that identity. 
         """
-        import proxy_receiver
+        from transport.proxy import proxy_receiver
         if not proxy_receiver.GetRouterIDURL() or not proxy_receiver.GetRouterIdentity():
             # if not yet found one node to route your traffic - do nothing
             if _Debug:

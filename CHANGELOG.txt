@@ -1,3 +1,11 @@
+
+2016-10-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* bug fixes in settings and fire_hire machine
+* updated README
+* start working on crypto coins
+
+
 2016-09-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * publish Ptyhon sources under GNU AGPL v3!

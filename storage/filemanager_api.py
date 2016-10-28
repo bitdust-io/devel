@@ -56,7 +56,7 @@ from services import driver
 #------------------------------------------------------------------------------ 
 
 def process(json_request):
-    lg.out(4, 'filemanager_api.process %s' % json_request)
+    lg.out(20, 'filemanager_api.process %s' % json_request)
     if not driver.is_started('service_backups'):
         return { 'result': {
             "success": False,
@@ -100,7 +100,7 @@ def process(json_request):
         result = { "result": {"success": False,
                               "error": descr}} 
     # lg.out(4, '    ERROR unknown mode: %s' % mode)
-    lg.out(14, '    %s' % pprint.pformat(result))
+    lg.out(20, '    %s' % pprint.pformat(result))
     return result
 
 #------------------------------------------------------------------------------ 

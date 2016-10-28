@@ -918,6 +918,8 @@ def isGUIpossible():
     # return False # TODO
     if Windows():
         return True
+    if Mac():
+        return True
     if Linux():
         return X11_is_running()
     return False

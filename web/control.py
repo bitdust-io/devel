@@ -97,12 +97,12 @@ def init():
     
     try:
         import django
-        ver = django.get_version()
-        if not ver.startswith('1.7'):
-            if _Debug:
-                lg.out(_DebugLevel, '    Django version must be 1.7, skip!')
-            result.callback(0)
-            return result
+#         ver = django.get_version()
+#         if not ver.startswith('1.7'):
+#             if _Debug:
+#                 lg.out(_DebugLevel, '    Django version must be 1.7, skip!')
+#             result.callback(0)
+#             return result
     except:
         lg.exc()
         result.callback(0)

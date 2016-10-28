@@ -86,7 +86,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
         try:
             from system.tray_icon import USE_TRAY_ICON
-            if not bpio.isGUIpossible():
+            if bpio.Mac() or not bpio.isGUIpossible():
                 lg.out(4, '    GUI is not possible')
                 USE_TRAY_ICON = False
             if USE_TRAY_ICON:
@@ -192,6 +192,7 @@ def shutdown():
     from logs import lg
     from main import config
     from system import bpio
+    lg.out(2, 'bpmain.shutdown')
 
     import shutdowner    
     shutdowner.A('reactor-stopped')
