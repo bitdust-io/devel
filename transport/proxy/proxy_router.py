@@ -34,23 +34,22 @@ BitDust proxy_router() Automat
     </a>
 
 EVENTS:
-    * :red:`all-transports-ready`
     * :red:`cancel-route`
     * :red:`init`
-    * :red:`request-ack-success`
+    * :red:`network-connected`
+    * :red:`network-disconnected`
     * :red:`request-route`
     * :red:`routed-inbox-packet-received`
     * :red:`routed-outbox-packet-received`
     * :red:`shutdown`
     * :red:`start`
     * :red:`stop`
-    * :red:`timeout`
 """
 
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 12
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------ 
 
@@ -97,6 +96,7 @@ from transport import packet_out
 
 from p2p import p2p_service
 from p2p import commands
+from p2p import network_connector
 
 #------------------------------------------------------------------------------ 
 
@@ -149,43 +149,41 @@ class ProxyRouter(automat.Automat):
         """
         #---LISTEN---
         if self.state == 'LISTEN':
-            if event == 'routed-inbox-packet-received' :
+            if event == 'routed-inbox-packet-received':
                 self.doForwardInboxPacket(arg)
                 self.doCountIncomingTraffic(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doUnregisterAllRouts(arg)
                 self.doDestroyMe(arg)
-            elif event == 'stop' :
-                self.state = 'STOPPED'
-                self.doUnregisterAllRouts(arg)
-            elif event == 'request-route' or event == 'cancel-route' :
-                self.doProcessRequestAndAck(arg)
-            elif event == 'routed-outbox-packet-received' :
+            elif event == 'request-route' or event == 'cancel-route':
+                self.doProcessRequest(arg)
+            elif event == 'routed-outbox-packet-received':
                 self.doForwardOutboxPacket(arg)
                 self.doCountOutgoingTraffic(arg)
-            elif event == 'request-ack-success' :
-                self.doSaveRouteHost(arg)
+            elif event == 'stop' or event == 'network-disconnected':
+                self.state = 'STOPPED'
+                self.doUnregisterAllRouts(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(arg)
         #---TRANSPORTS?---
         elif self.state == 'TRANSPORTS?':
-            if event == 'shutdown' :
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'stop' or event == 'timeout' :
+            elif event == 'stop' or event == 'network-disconnected':
                 self.state = 'STOPPED'
-            elif event == 'all-transports-ready' :
+            elif event == 'network-connected':
                 self.state = 'LISTEN'
         #---STOPPED---
         elif self.state == 'STOPPED':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'TRANSPORTS?'
                 self.doWaitOtherTransports(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
         #---CLOSED---
@@ -197,9 +195,10 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        self.starting_transports = []
+#         self.starting_transports = []
         self._load_routes()
-        gateway.add_transport_state_changed_callback(self._on_transport_state_changed)
+        network_connector.A().addStateChangedCallback(self._on_network_connector_state_changed)
+        # gateway.add_transport_state_changed_callback(self._on_transport_state_changed)
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         callback.add_finish_file_sending_callback(self._on_finish_file_sending)
 
@@ -207,112 +206,112 @@ class ProxyRouter(automat.Automat):
         """
         Action method.
         """
-        self.starting_transports = []
-        for t in gateway.transports().values():
-            if t.proto == 'proxy':
-                continue
-            if t.state == 'STARTING':
-                self.starting_transports.append(t.proto)
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doWaitOtherTransports : %s' % str(self.starting_transports))
+#         self.starting_transports = []
+#         for t in gateway.transports().values():
+#             if t.proto == 'proxy':
+#                 continue
+#             if t.state == 'STARTING':
+#                 self.starting_transports.append(t.proto)
+#         if _Debug:
+#             lg.out(_DebugLevel, 'proxy_router.doWaitOtherTransports : %s' % str(self.starting_transports))
 
-    def doProcessRequestAndAck(self, arg):
-        """
-        Action method.
-        """
-        global _MaxRoutesNumber
-        request, info = arg
-        target = request.CreatorID
-        if request.Command == commands.RequestService():
-            if len(self.routes) < _MaxRoutesNumber:
-                try:
-                    service_info = request.Payload
-                    idsrc = service_info.lstrip('service_proxy_server').strip()
-                    cached_id = identity.identity(xmlsrc=idsrc)
-                except:
-                    lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
-                    lg.exc()
-                    return
-                oldnew = ''
-                if target not in self.routes.keys():
-                    # accept new route
-                    oldnew = 'NEW'
-                    self.routes[target] = {}
-                    # cached_id = identitycache.FromCache(target)
-                    # idsrc = cached_id.serialize()
-                else:
-                    oldnew = 'OLD'
-#                    try:
-#                        idsrc = self.routes[target]['identity']
-#                        cached_id = identity.identity(xmlsrc=idsrc)
-#                    except:
-#                        lg.exc()
-#                        cached_id = identitycache.FromCache(target)
-#                        idsrc = cached_id.serialize()
-                    # lg.warn('route with %s already exist' % target)
-                if not self._is_my_contacts_present_in_identity(cached_id): 
-                    identitycache.OverrideIdentity(target, idsrc)
-                else:
-                    if _Debug:
-                        lg.out(_DebugLevel, '        skip overriding %s' % target)
-#                hosts = []
-#                try:
-#                    service_info = request.Payload.split(' ')[1:]
-#                    for word in service_info:
-#                        p, h = word.split('://')
-#                        hosts.append((p,h))
-#                except:
-#                    lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
-#                    lg.exc()
-                self.routes[target]['time'] = time.time()
-                self.routes[target]['identity'] = idsrc
-                self.routes[target]['publickey'] = cached_id.publickey
-                self.routes[target]['contacts'] = cached_id.getContactsAsTuples()
-                # self.routes[target]['hosts'] = hosts
-                self.routes[target]['address'] = []
-                self._write_route(target)
-                self.acks.append(
-                    p2p_service.SendAck(
-                        request, 
-                        'accepted', 
-                        wide=True, 
-                        packetid=request.PacketID)) 
-                if _Debug:
-                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s' % (oldnew, target))
-            else:
-                if _Debug:
-                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
-                    import pprint
-                    lg.out(_DebugLevel-10, '    %s' % pprint.pformat(self.routes))
-                p2p_service.SendAck(request, 'rejected', wide=True)
-        elif request.Command == commands.CancelService():
-            if self.routes.has_key(target):
-                # cancel existing route
-                self._remove_route(target)
-                self.routes.pop(target)
-                identitycache.StopOverridingIdentity(target)
-                p2p_service.SendAck(request, 'accepted', wide=True)
-                if _Debug:
-                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % target)
-            else:
-                p2p_service.SendAck(request, 'rejected', wide=True)
-                if _Debug:
-                    lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
-                    import pprint
-                    lg.out(_DebugLevel-10, '    %s' % pprint.pformat(self.routes))
-        else:
-            p2p_service.SendFail(request, 'wrong command or payload') # , wide=True)
+#     def doProcessRequestAndAck(self, arg):
+#         """
+#         Action method.
+#         """
+#         global _MaxRoutesNumber
+#         request, info = arg
+#         target = request.CreatorID
+#         if request.Command == commands.RequestService():
+#             if len(self.routes) < _MaxRoutesNumber:
+#                 try:
+#                     service_info = request.Payload
+#                     idsrc = service_info.lstrip('service_proxy_server').strip()
+#                     cached_id = identity.identity(xmlsrc=idsrc)
+#                 except:
+#                     lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
+#                     lg.exc()
+#                     return
+#                 oldnew = ''
+#                 if target not in self.routes.keys():
+#                     # accept new route
+#                     oldnew = 'NEW'
+#                     self.routes[target] = {}
+#                     # cached_id = identitycache.FromCache(target)
+#                     # idsrc = cached_id.serialize()
+#                 else:
+#                     oldnew = 'OLD'
+# #                    try:
+# #                        idsrc = self.routes[target]['identity']
+# #                        cached_id = identity.identity(xmlsrc=idsrc)
+# #                    except:
+# #                        lg.exc()
+# #                        cached_id = identitycache.FromCache(target)
+# #                        idsrc = cached_id.serialize()
+#                     # lg.warn('route with %s already exist' % target)
+#                 if not self._is_my_contacts_present_in_identity(cached_id): 
+#                     identitycache.OverrideIdentity(target, idsrc)
+#                 else:
+#                     if _Debug:
+#                         lg.out(_DebugLevel, '        skip overriding %s' % target)
+# #                hosts = []
+# #                try:
+# #                    service_info = request.Payload.split(' ')[1:]
+# #                    for word in service_info:
+# #                        p, h = word.split('://')
+# #                        hosts.append((p,h))
+# #                except:
+# #                    lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
+# #                    lg.exc()
+#                 self.routes[target]['time'] = time.time()
+#                 self.routes[target]['identity'] = idsrc
+#                 self.routes[target]['publickey'] = cached_id.publickey
+#                 self.routes[target]['contacts'] = cached_id.getContactsAsTuples()
+#                 # self.routes[target]['hosts'] = hosts
+#                 self.routes[target]['address'] = []
+#                 self._write_route(target)
+#                 self.acks.append(
+#                     p2p_service.SendAck(
+#                         request, 
+#                         'accepted', 
+#                         wide=True, 
+#                         packetid=request.PacketID)) 
+#                 if _Debug:
+#                     lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s' % (oldnew, target))
+#             else:
+#                 if _Debug:
+#                     lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest RequestService rejected: too many routes')
+#                     import pprint
+#                     lg.out(_DebugLevel-10, '    %s' % pprint.pformat(self.routes))
+#                 p2p_service.SendAck(request, 'rejected', wide=True)
+#         elif request.Command == commands.CancelService():
+#             if self.routes.has_key(target):
+#                 # cancel existing route
+#                 self._remove_route(target)
+#                 self.routes.pop(target)
+#                 identitycache.StopOverridingIdentity(target)
+#                 p2p_service.SendAck(request, 'accepted', wide=True)
+#                 if _Debug:
+#                     lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest !!!!!!! CANCELLED ROUTE for %s' % target)
+#             else:
+#                 p2p_service.SendAck(request, 'rejected', wide=True)
+#                 if _Debug:
+#                     lg.out(_DebugLevel-10, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
+#                     import pprint
+#                     lg.out(_DebugLevel-10, '    %s' % pprint.pformat(self.routes))
+#         else:
+#             p2p_service.SendFail(request, 'wrong command or payload') # , wide=True)
 
-    def doSaveRouteHost(self, arg):
-        """
-        Action method.
-        """
-        idurl, pkt_out, item, status, size, error_message = arg
-        self.routes[idurl]['address'].append((item.proto, item.host))
-        self._write_route(idurl)
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : active address %s://%s added for %s' % (
-                item.proto, item.host, nameurl.GetName(idurl)))
+#     def doSaveRouteHost(self, arg):
+#         """
+#         Action method.
+#         """
+#         idurl, pkt_out, item, status, size, error_message = arg
+#         self.routes[idurl]['address'].append((item.proto, item.host))
+#         self._write_route(idurl)
+#         if _Debug:
+#             lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : active address %s://%s added for %s' % (
+#                 item.proto, item.host, nameurl.GetName(idurl)))
 
     def doUnregisterAllRouts(self, arg):
         """
@@ -455,7 +454,8 @@ class ProxyRouter(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
+        # gateway.remove_transport_state_changed_callback(self._on_transport_state_changed)
+        network_connector.A().removeStateChangedCallback(self._on_network_connector_state_changed)
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         callback.remove_finish_file_sending_callback(self._on_finish_file_sending)
         automat.objects().pop(self.index)
@@ -488,15 +488,11 @@ class ProxyRouter(automat.Automat):
 #                return True
         return False             
 
-    def _on_transport_state_changed(self, transport, oldstate, newstate):
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._on_transport_state_changed %s : %s, starting transports: %s' % (
-                transport.proto, newstate, self.starting_transports))
-        if transport.proto in self.starting_transports:
-            if newstate in ['LISTENING', 'OFFLINE',]:
-                self.starting_transports.remove(transport.proto)
-        if len(self.starting_transports) == 0:
-            self.automat('all-transports-ready')
+    def _on_network_connector_state_changed(self, oldstate, newstate, event, arg):
+        if oldstate != 'CONNECTED' and newstate == 'CONNECTED':
+            self.automat('network-connected')
+        if oldstate != 'DISCONNECTED' and newstate == 'DISCONNECTED':
+            self.automat('network-disconnected')
 
     def _on_finish_file_sending(self, pkt_out, item, status, size, error_message):
         if status != 'finished':
@@ -579,6 +575,11 @@ class ProxyRouter(automat.Automat):
 
 #------------------------------------------------------------------------------ 
 
+
+    def doProcessRequest(self, arg):
+        """
+        Action method.
+        """
 
 def main():
     from twisted.internet import reactor
