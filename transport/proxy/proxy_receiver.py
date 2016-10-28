@@ -120,7 +120,7 @@ def A(event=None, arg=None):
     global _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
-        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP')
+        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _ProxyReceiver.automat(event, arg)
     return _ProxyReceiver
@@ -142,6 +142,10 @@ class ProxyReceiver(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of proxy_receiver() machine.
         """
+        self.router_idurl = None
+        self.router_identity = None
+        self.router_proto_host = None
+        self.request_service_packet_id = []
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -158,12 +162,10 @@ class ProxyReceiver(automat.Automat):
         """
         The core proxy_receiver() code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
-        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(arg)
-        #---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -176,12 +178,9 @@ class ProxyReceiver(automat.Automat):
                 self.doReportConnected(arg)
             elif event == 'start' and not self.isCurrentRouterExist(arg):
                 self.state = 'FIND_NODE?'
-                self.doReportNotReady(arg)
-                self.doLookupRandomUser(arg)
-        #---CLOSED---
+                self.doLookupRandomNode(arg)
         elif self.state == 'CLOSED':
             pass
-        #---ACK?---
         elif self.state == 'ACK?':
             if event == 'timer-10sec':
                 self.doSendMyIdentity(arg)
@@ -190,14 +189,13 @@ class ProxyReceiver(automat.Automat):
                 self.doSendRequestService(arg)
             elif event == 'timer-30sec' or event == 'fail-received':
                 self.state = 'FIND_NODE?'
-                self.doLookupRandomUser(arg)
+                self.doLookupRandomNode(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'stop':
                 self.state = 'STOPPED'
                 self.doReportStopped(arg)
-        #---LISTEN---
         elif self.state == 'LISTEN':
             if event == 'router-id-received':
                 self.doUpdateRouterID(arg)
@@ -207,7 +205,7 @@ class ProxyReceiver(automat.Automat):
                 self.state = 'FIND_NODE?'
                 self.doStopListening(arg)
                 self.doReportDisconnected(arg)
-                self.doLookupRandomUser(arg)
+                self.doDHTFindRandomNode(arg)
             elif event == 'stop':
                 self.state = 'STOPPED'
                 self.doSendCancelService(arg)
@@ -219,7 +217,6 @@ class ProxyReceiver(automat.Automat):
                 self.doStopListening(arg)
                 self.doReportDisconnected(arg)
                 self.doDestroyMe(arg)
-        #---FIND_NODE?---
         elif self.state == 'FIND_NODE?':
             if event == 'nodes-not-found':
                 self.doWaitAndTryAgain(arg)
@@ -233,7 +230,6 @@ class ProxyReceiver(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-        #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'ack-received':
                 self.doSendRequestService(arg)
@@ -249,7 +245,7 @@ class ProxyReceiver(automat.Automat):
                 self.doReportStopped(arg)
             elif event == 'timer-30sec' or event == 'service-refused':
                 self.state = 'FIND_NODE?'
-                self.doLookupRandomUser(arg)
+                self.doLookupRandomNode(arg)
         return None
 
     def isCurrentRouterExist(self, arg):
@@ -274,14 +270,13 @@ class ProxyReceiver(automat.Automat):
         except:
             lg.exc()
 
-    def doLookupRandomUser(self, arg):
+    def doLookupRandomNode(self, arg):
         """
         Action method.
         """
-        # this is still under construction - so I am using this node for tests
-        # idurls = ['http://veselin-p2p.ru/bitdust_j_vps1001.xml',]
-        self.automat('found-one-user', 'http://veselin-p2p.ru/bitdust_j_vps1001.xml')
         # self._find_random_node()
+        # TODO: this is still under construction - so I am using this node for tests
+        self.automat('found-one-node', 'http://veselin-p2p.ru/bitdust_j2_vps1001.xml')
 
     def doWaitAndTryAgain(self, arg):
         """
@@ -417,11 +412,6 @@ class ProxyReceiver(automat.Automat):
             return
         self.router_identity = newidentity
 
-    def doReportNotReady(self, arg):
-        """
-        Action method.
-        """
-
     def doReportStopped(self, arg):
         """
         Action method.
@@ -551,6 +541,11 @@ class ProxyReceiver(automat.Automat):
         return True             
 
 #------------------------------------------------------------------------------ 
+
+    def doDHTFindRandomNode(self, arg):
+        """
+        Action method.
+        """
 
 def main():
     from twisted.internet import reactor

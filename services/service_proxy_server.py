@@ -60,11 +60,11 @@ class ProxyServerService(LocalService):
     def stop(self):
         from transport.proxy import proxy_router 
         proxy_router.A('stop')
-        proxy_router.Destroy()
+        proxy_router.A('shutdown')
         return True
     
     def request(self, request, info):
-        from transport.proxy import proxy_router 
+        from transport.proxy import proxy_router
         proxy_router.A('request-route', (request, info))
         return None
     

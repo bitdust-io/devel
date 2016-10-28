@@ -274,7 +274,7 @@ class AccountantsFinder(automat.Automat):
         self.automat('service-denied')
 
     def _nodes_lookup_finished(self, idurls):
-        # this is still under construction - so I am using this node for tests
+        # TODO: this is still under construction - so I am using this node for tests
         idurls = ['http://veselin-p2p.ru/bitdust_vps1000_k.xml',]
         if _Debug:
             lg.out(_DebugLevel, 'accountants_finder._nodes_lookup_finished : %r' % idurls)
