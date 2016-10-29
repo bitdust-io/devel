@@ -722,7 +722,9 @@ def cmd_set(opts, args, overDict):
     if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
         settings.init()
         sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
-        result = api.config_list(sort, 40)
+        result = api.config_list(sort)
+        for i in xrange(len(result['result'])):
+            result['result'][i]['value'] = result['result'][i]['value'][:60]
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         print_template(result, tpl)
         return 0 
@@ -734,7 +736,7 @@ def cmd_set(opts, args, overDict):
             value = ' '.join(args[2:])
             result = api.config_set(path, unicode(value))
         else:
-            result = api.config_get(path)
+            result = api.config_get(path)[:40]
         tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
         print_template(result, tpl)
         return 0
@@ -746,7 +748,11 @@ def cmd_set_request(opts, args, overDict):
     if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
         sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
-        return call_jsonrpc_method_template_and_stop('config_list', tpl, sort)
+        def _limit_length(result):
+            for i in xrange(len(result['result'])):
+                result['result'][i]['value'] = result['result'][i]['value'][:60]
+            return result
+        return call_jsonrpc_method_transform_template_and_stop('config_list', tpl, _limit_length, sort)
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)    
     if len(args) == 2:
