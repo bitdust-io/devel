@@ -68,7 +68,7 @@ class GateInterface():
         if _Debug:
             lg.out(4, 'proxy_interface.init')
         from transport.proxy import proxy_receiver
-        import proxy_sender
+        from transport.proxy import proxy_sender
         if type(xml_rpc_url_or_object) == str:
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
@@ -84,7 +84,7 @@ class GateInterface():
         if _Debug:
             lg.out(4, 'proxy_interface.shutdown')
         from transport.proxy import proxy_receiver
-        import proxy_sender
+        from transport.proxy import proxy_sender
         ret = self.disconnect()
         proxy_receiver.A('shutdown')
         proxy_sender.A('shutdown')
@@ -99,8 +99,10 @@ class GateInterface():
         if _Debug:
             lg.out(4, 'proxy_interface.connect %s' % str(options))
         from transport.proxy import proxy_receiver
-        import proxy_sender
+        from transport.proxy import proxy_sender
         if settings.enablePROXYreceiving():
+#             if not proxy_receiver.VerifyExistingRouter():
+#                 return fail(True)
             proxy_receiver.A('start', options)
         if settings.enablePROXYsending():
             proxy_sender.A('start', options)
@@ -112,7 +114,7 @@ class GateInterface():
         if _Debug:
             lg.out(4, 'proxy_interface.disconnect')
         from transport.proxy import proxy_receiver
-        import proxy_sender
+        from transport.proxy import proxy_sender
         proxy_receiver.A('stop')
         proxy_sender.A('stop')
         return succeed(True)
@@ -125,6 +127,11 @@ class GateInterface():
             # if not yet found one node to route your traffic - do nothing
             if _Debug:
                 lg.out(4, 'proxy_interface.build_contacts SKIP, router not yet found')
+            return []
+        if not proxy_receiver.ReadMyOriginalIdentitySource():
+            # if we did not save our original identity we will have troubles contacting remote node
+            if _Debug:
+                lg.out(4, 'proxy_interface.build_contacts SKIP, original identity was not saved')
             return []
         # switch contacts - use router contacts instead of my 
         # he will receive all packets addressed to me and redirect to me
@@ -144,6 +151,10 @@ class GateInterface():
             if _Debug:
                 lg.out(4, 'proxy_interface.verify_contacts returning True : router not yet found')
             return True
+        if not proxy_receiver.ReadMyOriginalIdentitySource():
+            if _Debug:
+                lg.out(4, 'proxy_interface.verify_contacts returning False : my original identity is empty')
+            return False
         result = Deferred()
         def _finish_verification(res):
             if _Debug:

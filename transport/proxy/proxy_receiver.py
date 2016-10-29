@@ -80,6 +80,7 @@ from contacts import identitycache
 
 from transport import callback
 from transport import packet_in
+from transport import gateway
 
 from userid import my_id
 from userid import identity
@@ -108,8 +109,20 @@ def GetRouterProtoHost():
         return None
     return _ProxyReceiver.router_proto_host
 
-def GetMyOriginalIdentitySource():
-    return config.conf().getData('services/proxy-transport/my-original-identity') 
+def ReadMyOriginalIdentitySource():
+    return config.conf().getData('services/proxy-transport/my-original-identity').strip()
+
+def ReadCurrentRouter():
+    return config.conf().getString('services/proxy-transport/current-router').strip()
+
+def VerifyExistingRouter():
+    if ReadCurrentRouter() and not ReadMyOriginalIdentitySource():
+        lg.warn('current router is set, but my original identity is empty')
+        return False
+    if not ReadCurrentRouter() and ReadMyOriginalIdentitySource():
+        lg.warn('current router is not set, but some wrong data found as original identity')
+        return False
+    return True
 
 #------------------------------------------------------------------------------ 
 
@@ -259,6 +272,8 @@ class ProxyReceiver(automat.Automat):
         """
         Condition method.
         """
+        if not ReadMyOriginalIdentitySource():
+            return False
         return config.conf().getString('services/proxy-transport/current-router', '').strip() != ''
 
     def doInit(self, arg):
@@ -294,12 +309,23 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        p2p_service.SendIdentity(
-            self.router_idurl, 
-            wide=True, 
-            callbacks={
-                commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
-                commands.Fail(): lambda x: self.automat('nodes-not-found')})
+        identity_source = config.conf().getData('services/proxy-transport/my-original-identity').strip()
+        if identity_source:
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity use my previously stored identity')
+        else:
+            identity_source = my_id.getLocalIdentity().serialize()
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity using my current identity')
+        result = signed.Packet(
+            commands.Identity(), my_id.getLocalID(), 
+            my_id.getLocalID(), 'identity', 
+            identity_source, self.router_idurl,
+        )
+        gateway.outbox(result, wide=True, callbacks={
+            commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
+            commands.Fail(): lambda x: self.automat('nodes-not-found')
+        })
 
     def doRememberNode(self, arg):
         """
@@ -392,6 +418,11 @@ class ProxyReceiver(automat.Automat):
         self.router_identity = identitycache.FromCache(self.router_idurl)
         config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
             self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
+        if ReadMyOriginalIdentitySource():
+            lg.warn('my original identity is not empty')
+        else:
+            config.conf().setData('services/proxy-transport/my-original-identity', 
+                                  my_id.getLocalIdentity().serialize())
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         if _Debug:
             lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
@@ -401,6 +432,10 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
+        if not ReadMyOriginalIdentitySource():
+            lg.warn('my original identity is not empty')
+        else:
+            config.conf().setData('services/proxy-transport/my-original-identity', '') 
         config.conf().setString('services/proxy-transport/current-router', '')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.router_identity = None

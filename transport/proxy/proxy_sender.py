@@ -48,16 +48,11 @@ _DebugLevel = 10
 
 #------------------------------------------------------------------------------ 
 
-import os
-
-
 from automats import automat
 
 from logs import lg
 
-from system import tmpfile
 
-from lib import packetid
 from lib import nameurl
 
 from crypt import encrypted
@@ -68,10 +63,8 @@ from p2p import commands
 
 from userid import my_id
 
-from transport import gateway 
 from transport import callback
 from transport import packet_out
-from transport import packet_in
 
 #------------------------------------------------------------------------------ 
 
@@ -259,7 +252,7 @@ class ProxySender(automat.Automat):
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
         router_proto_host = proxy_receiver.GetRouterProtoHost()
-        my_original_identity_src = proxy_receiver.GetMyOriginalIdentitySource()
+        my_original_identity_src = proxy_receiver.ReadMyOriginalIdentitySource()
         if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
             if _Debug:
                 lg.out(_DebugLevel, '        proxy_receiver() is not yet found a router')

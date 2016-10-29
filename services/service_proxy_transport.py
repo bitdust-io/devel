@@ -57,11 +57,13 @@ class ProxyTransportService(LocalService):
         from transport import network_transport
         from transport import gateway
         from main.config import conf
+        if not self._check_update_current_router():
+            return False
         self.starting_deferred = Deferred()
         self.interface = proxy_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
             'proxy', self.interface)
-        self.transport.automat('init', 
+        self.transport.automat('init',
             (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')
         conf().addCallback('services/proxy-transport/enabled', 
@@ -89,6 +91,19 @@ class ProxyTransportService(LocalService):
         except:
             from logs import lg
             lg.exc()
+            return False
+        return True
+
+    def _check_update_current_router(self):
+        from main.config import conf
+        from logs import lg
+        orig_ident = conf().getData('services/proxy-transport/my-original-identity').strip() != ''
+        current_router = conf().getString('services/proxy-transport/current-router').strip() != ''
+        if (current_router and not orig_ident) or (not current_router and orig_ident):
+            lg.warn('current-router: %s, my-original-identity: %s' % (
+                current_router, orig_ident, ))
+            conf().setData('services/proxy-transport/my-original-identity', '') 
+            conf().setString('services/proxy-transport/current-router', '')
             return False
         return True
 

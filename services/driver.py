@@ -30,11 +30,17 @@
 
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = False
+_DebugLevel = 8
+
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 import importlib
 
-from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList, succeed 
 
 #------------------------------------------------------------------------------ 
@@ -104,7 +110,8 @@ def cancel(name, request, info):
 def init():
     """
     """
-    lg.out(2, 'driver.init')
+    if _Debug:
+        lg.out(_DebugLevel-6, 'driver.init')
     available_services_dir = os.path.join(bpio.getExecutableDir(), 'services')
     loaded = set()
     for filename in os.listdir(available_services_dir):
@@ -116,26 +123,31 @@ def init():
         if name in loaded:
             continue
         if name in disabled_services():
-            lg.out(4, '%s is hard disabled' % name)
+            if _Debug:
+                lg.out(_DebugLevel-4, '%s is hard disabled' % name)
             continue
         try:
             py_mod = importlib.import_module('services.'+name)
         except:
-            lg.out(4, '%s exception during module import' % name)
+            if _Debug:
+                lg.out(_DebugLevel-4, '%s exception during module import' % name)
             lg.exc()
             continue
         try:
             services()[name] = py_mod.create_service()
         except:
-            lg.out(4, '%s exception while creating service instance' % name)
+            if _Debug:
+                lg.out(_DebugLevel-4, '%s exception while creating service instance' % name)
             lg.exc()
             continue 
         loaded.add(name)
         if not services()[name].enabled():
-            lg.out(4, '%s is switched off' % name)
+            if _Debug:
+                lg.out(_DebugLevel-4, '%s is switched off' % name)
             continue
         enabled_services().add(name)
-        lg.out(4, '%s initialized' % name)
+        if _Debug:
+            lg.out(_DebugLevel-4, '%s initialized' % name)
     build_order()
     config.conf().addCallback('services/', on_service_enabled_disabled)
 
@@ -143,12 +155,14 @@ def init():
 def shutdown():
     """
     """
-    lg.out(2, 'driver.shutdown')
+    if _Debug:
+        lg.out(_DebugLevel-6, 'driver.shutdown')
     config.conf().removeCallback('services/')
     while len(services()):
         name, svc = services().popitem()
         # print sys.getrefcount(svc) 
-        lg.out(2, '[%s] CLOSING' % name)
+        if _Debug:
+            lg.out(_DebugLevel-6, '[%s] CLOSING' % name)
         svc.automat('shutdown')
         del svc
         svc = None
@@ -202,7 +216,8 @@ def start():
     if _StartingDeferred:
         lg.warn('driver.start already called')
         return _StartingDeferred
-    lg.out(2, 'driver.start')
+    if _Debug:
+        lg.out(_DebugLevel-6, 'driver.start')
     dl = []
     for name in boot_up_order():
         svc = services().get(name, None)
@@ -229,7 +244,8 @@ def stop():
     if _StopingDeferred:
         lg.warn('driver.stop already called')
         return _StopingDeferred
-    lg.out(2, 'driver.stop')
+    if _Debug:
+        lg.out(_DebugLevel-6, 'driver.stop')
     dl = []
     for name in reversed(boot_up_order()):
         svc = services().get(name, None)
@@ -247,12 +263,14 @@ def stop():
 def on_service_callback(result, service_name):
     """
     """
-    lg.out(14, 'driver.on_service_callback %s : [%s]' % (service_name, result))
+    if _Debug:
+        lg.out(_DebugLevel+8, 'driver.on_service_callback %s : [%s]' % (service_name, result))
     svc = services().get(service_name, None)
     if not svc:
         raise ServiceNotFound(service_name)
     if result == 'started':
-        lg.out(2, '[%s] STARTED' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel-6, '[%s] STARTED' % service_name)
         relative_services = []
         for other_name in services().keys():
             if other_name == service_name:
@@ -275,7 +293,8 @@ def on_service_callback(result, service_name):
                     continue
                 relative_service.automat('start')
     elif result == 'stopped':
-        lg.out(2, '[%s] STOPPED' % service_name)
+        if _Debug:
+            lg.out(_DebugLevel-6, '[%s] STOPPED' % service_name)
         for depend_name in svc.dependent_on():
             depend_service = services().get(depend_name, None)
             if not depend_service:
@@ -284,13 +303,15 @@ def on_service_callback(result, service_name):
     return result
 
 def on_started_all_services(results):
-    lg.out(2, 'driver.on_started_all_services')
+    if _Debug:
+        lg.out(_DebugLevel-6, 'driver.on_started_all_services')
     global _StartingDeferred
     _StartingDeferred = None
     return results
     
 def on_stopped_all_services(results):
-    lg.out(2, 'driver.on_stopped_all_services')
+    if _Debug:
+        lg.out(_DebugLevel-6, 'driver.on_stopped_all_services')
     global _StopingDeferred
     _StopingDeferred = None
     return results

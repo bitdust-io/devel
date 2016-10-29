@@ -25,7 +25,9 @@
 
 """
 
-_Debug = False
+#------------------------------------------------------------------------------ 
+
+_Debug = True
 _DebugLevel = 18
 
 #------------------------------------------------------------------------------ 
@@ -289,6 +291,9 @@ def run_inbox_callbacks(newpacket, info, status, error_message):
     """
     """
     global _InboxPacketCallbacksList
+    if _Debug:
+        lg.out(_DebugLevel, 'callback.run_inbox_callbacks for %s from %s' % (newpacket, info))
+        lg.out(_DebugLevel, '    %s' % _InboxPacketCallbacksList)
     handled = False
     for cb in _InboxPacketCallbacksList:
         try:
@@ -297,6 +302,8 @@ def run_inbox_callbacks(newpacket, info, status, error_message):
         except:
             lg.exc()
         if handled:
+            if _Debug:
+                lg.out(_DebugLevel, '    handled by %s' % cb)
             break
     return handled
 
@@ -305,6 +312,9 @@ def run_outbox_callbacks(pkt_out):
     """
     """
     global _OutboxPacketCallbacksList
+    if _Debug:
+        lg.out(_DebugLevel, 'callback.run_outbox_callbacks for %s' % pkt_out)
+        lg.out(_DebugLevel, '    %s' % _OutboxPacketCallbacksList)
     handled = False
     for cb in _OutboxPacketCallbacksList:
         try:
@@ -313,6 +323,8 @@ def run_outbox_callbacks(pkt_out):
         except:
             lg.exc()
         if handled:
+            if _Debug:
+                lg.out(_DebugLevel, '    handled by %s' % cb)
             break
     return handled
 
