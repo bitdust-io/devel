@@ -470,9 +470,13 @@ class ProxyRouter(automat.Automat):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if newpacket.RemoteID == my_id.getLocalID():
-            if newpacket.Command == commands.Data() and newpacket.PacketID.startswith('routed_out_'):
-                # sent by proxy_sender() from node A : a man behind proxy_router() 
-                self.automat('routed-outbox-packet-received', (newpacket, info))
+#             if newpacket.Command == commands.Data() and newpacket.PacketID.startswith('routed_out_'):
+#                 # sent by proxy_sender() from node A : a man behind proxy_router() 
+#                 self.automat('routed-outbox-packet-received', (newpacket, info))
+#                 return True
+            if newpacket.Command == commands.Data() and newpacket.CreatorID in self.routes.keys():
+                # sent by proxy_sender() from node A : a man behind proxy_router()   
+                self.automat('routed-inbox-packet-received', (newpacket, info))
                 return True
             return False
         if newpacket.RemoteID in self.routes.keys():
