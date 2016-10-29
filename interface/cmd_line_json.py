@@ -109,7 +109,7 @@ def print_exception():
     Print detailed info about last exception to the logs.
     """
     import traceback
-    cla, value, trbk = sys.exc_info()
+    _, value, trbk = sys.exc_info()
     try:
         excArgs = value.__dict__["args"]
     except KeyError:
@@ -722,7 +722,7 @@ def cmd_set(opts, args, overDict):
     if name in [ 'list', 'ls', 'all', 'show', 'print', ]:
         settings.init()
         sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False 
-        result = api.config_list(sort)
+        result = api.config_list(sort, 40)
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
         print_template(result, tpl)
         return 0 

@@ -139,8 +139,8 @@ class GateInterface():
         Check if router is ready and his contacts exists in that identity. 
         """
         from transport.proxy import proxy_receiver
-        if not proxy_receiver.GetRouterIDURL() or not proxy_receiver.GetRouterIdentity():
-            # if not yet found one node to route your traffic - do nothing
+        if not proxy_receiver.A() or not proxy_receiver.GetRouterIDURL() or not proxy_receiver.GetRouterIdentity():
+            # if not yet found any node to route your traffic - do nothing
             if _Debug:
                 lg.out(4, 'proxy_interface.verify_contacts returning True : router not yet found')
             return True

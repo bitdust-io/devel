@@ -110,6 +110,8 @@ def A(event=None, arg=None):
     Access method to interact with proxy_router() machine.
     """
     global _ProxyRouter
+    if event is None and arg is None:
+        return _ProxyRouter
     if _ProxyRouter is None:
         # set automat name and starting state here
         _ProxyRouter = ProxyRouter('proxy_router', 'AT_STARTUP', _DebugLevel, _Debug)
@@ -312,11 +314,6 @@ class ProxyRouter(automat.Automat):
 #             lg.out(_DebugLevel, 'proxy_router.doSaveRouteHost : active address %s://%s added for %s' % (
 #                 item.proto, item.host, nameurl.GetName(idurl)))
 
-#     def doProcessRequest(self, arg):
-#         """
-#         Action method.
-#         """
-
     def doUnregisterAllRouts(self, arg):
         """
         Action method.
@@ -385,10 +382,14 @@ class ProxyRouter(automat.Automat):
         if not route_info:
             lg.warn('route with %s not exist' % receiver_idurl)
             return
-        hosts = route_info['address']
+        # hosts = route_info['address']
+        # if len(hosts) == 0:
+        #     lg.warn('route with %s do not have actual info about his host, use his identity contacts' % receiver_idurl)
+        #     hosts = route_info['contacts'] 
+        #     # return
+        hosts = route_info['contacts'] 
         if len(hosts) == 0:
-            lg.warn('route with %s do not have actual info about his host, use his identity contacts' % receiver_idurl)
-            hosts = route_info['contacts'] 
+            lg.warn('not known contacts for route with %s' % receiver_idurl)
             return
         receiver_proto, receiver_host = hosts[0]
         publickey = route_info['publickey']
@@ -478,10 +479,13 @@ class ProxyRouter(automat.Automat):
             # sent by node B : a man from outside world  
             self.automat('routed-inbox-packet-received', (newpacket, info))
             return True
-#        if  newpacket.Command == commands.Identity() and \
-#            newpacket.CreatorID in self.routes.keys() and \
-#            newpacket.CreatorID == newpacket.OwnerID and \
-#            newpacket.RemoteID == my_id.getLocalID():
+        if newpacket.Command == commands.Identity() and \
+            newpacket.CreatorID in self.routes.keys() and \
+            newpacket.CreatorID == newpacket.OwnerID and \
+            newpacket.RemoteID == my_id.getLocalID():
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received packet from known node: %s' % newpacket.OwnerID)
+                p2p_service.SendAck(newpacket, wide=True)
 #                self.automat('', arg)
 #                # this is a "propagate" packet from node A
 #                # need to remember his identity
@@ -489,7 +493,7 @@ class ProxyRouter(automat.Automat):
 #                # but he probably already patched his own contacts so this is not needed 
 #                # identitycache.OverrideIdentity(newpacket.CreatorID, newpacket.Payload)
 #                # so just mark that packet as handled - no need to send Ack back to him
-#                return True
+                return True
         return False             
 
     def _on_network_connector_state_changed(self, oldstate, newstate, event, arg):

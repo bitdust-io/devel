@@ -118,6 +118,8 @@ def A(event=None, arg=None):
     Access method to interact with proxy_receiver machine.
     """
     global _ProxyReceiver
+    if event is None and arg is None:
+        return _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
         _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', _DebugLevel, _Debug)
@@ -252,7 +254,6 @@ class ProxyReceiver(automat.Automat):
         """
         Condition method.
         """
-        return False
         return config.conf().getString('services/proxy-transport/current-router', '').strip() != ''
 
     def doInit(self, arg):
@@ -373,8 +374,16 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        _, info = arg
-        self.router_proto_host = (info.proto, info.host)
+        try:
+            _, info = arg
+            self.router_proto_host = (info.proto, info.host)
+        except:
+            try:
+                s = config.conf().getString('services/proxy-transport/current-router').strip()
+                _, router_proto, router_host = s.split(' ')
+                self.router_proto_host = (router_proto, router_host)
+            except:
+                lg.exc()
         self.router_identity = identitycache.FromCache(self.router_idurl)
         config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
             self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))

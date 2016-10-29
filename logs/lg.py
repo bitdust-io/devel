@@ -459,7 +459,8 @@ def restore_original_stdout():
     try:
         _std_out.close()
     except Exception as exc:
-        traceback.print_last(file=open('bitdust.error', 'w'))
+        pass
+        # traceback.print_last(file=open('bitdust.error', 'w'))
 
 
 def set_weblog_func(webstreamfunc):

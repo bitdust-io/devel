@@ -3,6 +3,7 @@
 *.pyd
 *.~vsd
 *.orig
+*_off.py
 COMMITS.txt
 HISTORY.txt
 .identities/

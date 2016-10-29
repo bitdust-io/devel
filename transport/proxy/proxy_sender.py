@@ -84,6 +84,8 @@ def A(event=None, arg=None):
     Access method to interact with proxy_sender machine.
     """
     global _ProxySender
+    if event is None and arg is None:
+        return _ProxySender
     if _ProxySender is None:
         # set automat name and starting state here
         _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP', _DebugLevel, _Debug)

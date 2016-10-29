@@ -211,7 +211,7 @@ def config_set(key, value, typ=None):
                 })
     return RESULT([v,])
 
-def config_list(sort=False):
+def config_list(sort=False, max_value_length=-1):
     """
     Provide detailed info about all options and values from settings.
     Return:
@@ -232,7 +232,7 @@ def config_list(sort=False):
     r = config.conf().cache()
     r = map(lambda key: {
         'key': key,
-        'value': str(r[key]).replace('\n','\\n'),
+        'value': str(r[key]).replace('\n','\\n')[:max_value_length],
         'type': config.conf().getTypeLabel(key)}, sorted(r.keys()))
     if sort:
         r = sorted(r, key=lambda i: i['key'])

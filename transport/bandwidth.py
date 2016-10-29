@@ -127,7 +127,7 @@ def saveIN(basename=None):
     if not ret:
         lg.out(4, 'bandwidth.saveIN to new file ' + basename)
     else:
-        lg.out(18, 'bandwidth.saveIN to ' + basename)
+        lg.out(22, 'bandwidth.saveIN to ' + basename)
     return ret
 
 
@@ -142,7 +142,7 @@ def saveOUT(basename=None):
     if not ret:
         lg.out(4, 'bandwidth.saveOUT to new file ' + basename)
     else:
-        lg.out(18, 'bandwidth.saveOUT to ' + basename)
+        lg.out(22, 'bandwidth.saveOUT to ' + basename)
     return ret
 
 
@@ -152,8 +152,8 @@ def read_bandwidthIN():
     """
     global BandInDict
     lg.out(6, 'bandwidth.read_bandwidthIN ')
-    for idurl, bytes in bpio._read_dict(filenameIN(), {}).items():
-        BandInDict[idurl] = int(bytes)
+    for idurl, bytesin in bpio._read_dict(filenameIN(), {}).items():
+        BandInDict[idurl] = int(bytesin)
 
 
 def read_bandwidthOUT():
@@ -162,8 +162,8 @@ def read_bandwidthOUT():
     """
     global BandOutDict
     lg.out(6, 'bandwidth.read_bandwidthOUT ')
-    for idurl, bytes in bpio._read_dict(filenameOUT(), {}).items():
-        BandOutDict[idurl] = int(bytes)
+    for idurl, bytesout in bpio._read_dict(filenameOUT(), {}).items():
+        BandOutDict[idurl] = int(bytesout)
 
 
 def clear_bandwidthIN():
