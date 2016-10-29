@@ -62,12 +62,6 @@ def labels():
 
 def defaults():
     return {
-        'emergency/email':                              TYPE_STRING,
-        'emergency/fax':                                TYPE_STRING,
-        'emergency/first':                              TYPE_COMBO_BOX,
-        'emergency/phone':                              TYPE_STRING,
-        'emergency/second':                             TYPE_COMBO_BOX,
-        'emergency/text':                               TYPE_STRING,
         'logs/debug-level':                             TYPE_POSITIVE_INTEGER,
         'logs/memdebug-enabled':                        TYPE_BOOLEAN,
         'logs/memdebug-port':                           TYPE_POSITIVE_INTEGER,
@@ -83,6 +77,7 @@ def defaults():
         'paths/receipts':                               TYPE_FOLDER_PATH,
         'paths/restore':                                TYPE_FOLDER_PATH,
         'personal/betatester':                          TYPE_BOOLEAN,
+        'personal/email':                               TYPE_STRING,
         'personal/name':                                TYPE_STRING,
         'personal/nickname':                            TYPE_STRING,
         'personal/private-key-size':                    TYPE_STRING,
@@ -157,6 +152,4 @@ def defaults():
         'services/udp-transport/receiving-enabled':     TYPE_BOOLEAN,
         'services/udp-transport/sending-enabled':       TYPE_BOOLEAN,
         'services/udp-transport/priority':              TYPE_POSITIVE_INTEGER,
-        'updates/mode':                                 TYPE_COMBO_BOX,
-        'updates/shedule':                              TYPE_TEXT,
     }

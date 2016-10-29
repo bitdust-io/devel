@@ -232,7 +232,7 @@ def config_list(sort=False, max_value_length=-1):
     r = config.conf().cache()
     r = map(lambda key: {
         'key': key,
-        'value': str(r[key]).replace('\n','\\n')[:max_value_length],
+        'value': (str(r[key]).replace('\n','\\n'))[:max_value_length],
         'type': config.conf().getTypeLabel(key)}, sorted(r.keys()))
     if sort:
         r = sorted(r, key=lambda i: i['key'])

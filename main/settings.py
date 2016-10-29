@@ -1692,50 +1692,65 @@ def getEmergencyEmail():
     Get a user email address from settings. 
     User can set that to be able to receive email notification in case of some troubles with his backups.
     """
-    return config.conf().getData('emergency/email')
+    # return config.conf().getData('emergency/email')
+    # TODO: remove this after get rid of webcontrol.py
+    return ''
 
 def getEmergencyPhone():
     """
     Get a user phone number from settings. 
     """
-    return config.conf().getData('emergency/phone')
+    # return config.conf().getData('emergency/phone')
+    # TODO: remove this after get rid of webcontrol.py
+    return ''
 
 def getEmergencyFax():
     """
     Get a user fax number from settings. 
     """
-    return config.conf().getData('emergency/fax')
+    # return config.conf().getData('emergency/fax')
+    # TODO: remove this after get rid of webcontrol.py
+    return ''
 
 def getEmergencyOther():
     """
     Get a other address info from settings. 
     """
-    return config.conf().getData('emergency/text')
+    # return config.conf().getData('emergency/text')
+    # TODO: remove this after get rid of webcontrol.py
+    return ''
 
 def getEmergency(method):
     """
     Get a given user emergensy method from settings. 
     """
-    if method not in getEmergencyMethods():
-        return ''
-    return config.conf().getData('emergency/' + method)
+    # if method not in getEmergencyMethods():
+    #     return ''
+    # return config.conf().getData('emergency/' + method)
+    # TODO: remove this after get rid of webcontrol.py
+    return ''
 
 def getEmergencyFirstMethod():
     """
     Get a first method to use when need to contact with user. 
     """
-    return config.conf().getData('emergency/first')
+    # return config.conf().getData('emergency/first')
+    # TODO: remove this after get rid of webcontrol.py
+    return ''
 
 def getEmergencySecondMethod():
     """
     Get a second method to use when need to contact with user. 
     """
-    return config.conf().getData('emergency/second')
+    # return config.conf().getData('emergency/second')
+    # TODO: remove this after get rid of webcontrol.py
+    return ''
 
 def getEmergencyMethods():
     """
     Return a list of available methods to contact with user.
     """
+    # TODO: remove this after get rid of webcontrol.py
     return (
         'email',
         'phone',
@@ -1751,20 +1766,34 @@ def setNickName(nickname):
     """
     """
     config.conf().setData('personal/nickname', nickname.strip())
+
+def getEmail():
+    """
+    """
+    return config.conf().getData('personal/email')
+
+def setEmail(nickname):
+    """
+    """
+    config.conf().setData('personal/email', nickname.strip())
     
 def getUpdatesMode():
     """
     User can set different modes to update the BitDust software.
     """
-    return config.conf().getData('updates/mode')
+    # TODO: remove this after get rid of webcontrol.py
+    return 'turn off updates'
 
 def setUpdatesMode(mode):
-    config.conf().setData('updates/mode', mode)
+    """
+    """
+    # TODO: remove this after get rid of webcontrol.py
     
 def getUpdatesModeValues():
     """
     List of available update modes.
     """
+    # TODO: remove this after get rid of webcontrol.py
     return (
         'install automatically',
         'only notify',
@@ -2008,13 +2037,6 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('logs/traffic-enabled', 'false')
     config.conf().setDefaultValue('logs/traffic-port', DefaultWebTrafficPort())
 
-    config.conf().setDefaultValue('emergency/email', '')
-    config.conf().setDefaultValue('emergency/fax', '')
-    config.conf().setDefaultValue('emergency/first', 'email')
-    config.conf().setDefaultValue('emergency/phone', '')
-    config.conf().setDefaultValue('emergency/second', 'phone')
-    config.conf().setDefaultValue('emergency/text', '')
-
     config.conf().setDefaultValue('paths/backups', '')
     config.conf().setDefaultValue('paths/customers', '')
     config.conf().setDefaultValue('paths/messages', '')
@@ -2023,13 +2045,11 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('personal/private-key-size', DefaultPrivateKeySize())
     config.conf().setDefaultValue('personal/betatester', 'false')
+    config.conf().setDefaultValue('personal/email', '')
     config.conf().setDefaultValue('personal/name', '')
     config.conf().setDefaultValue('personal/nickname', '')
     config.conf().setDefaultValue('personal/surname', '')
 
-    config.conf().setDefaultValue('updates/mode', getUpdatesModeValues()[0])
-    config.conf().setDefaultValue('updates/shedule', '5\n\n3600\n' ) # '1\n12:00:00\n6\n')
-    
     config.conf().setDefaultValue('services/accountant/enabled', 'false')
 
     config.conf().setDefaultValue('services/backup-db/enabled', 'true')

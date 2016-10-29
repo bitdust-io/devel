@@ -164,25 +164,27 @@ class ProxyReceiver(automat.Automat):
         """
         The core proxy_receiver() code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
         """
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(arg)
+        #---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'start' and self.isCurrentRouterExist(arg):
-                self.state = 'LISTEN'
-                self.doLoadRouterInfo(arg)
-                self.doSendRequestService(arg)
-                self.doStartListening(arg)
-                self.doReportConnected(arg)
             elif event == 'start' and not self.isCurrentRouterExist(arg):
                 self.state = 'FIND_NODE?'
                 self.doLookupRandomNode(arg)
+            elif event == 'start' and self.isCurrentRouterExist(arg):
+                self.state = 'ACK?'
+                self.doLoadRouterInfo(arg)
+                self.doSendMyIdentity(arg)
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
+        #---ACK?---
         elif self.state == 'ACK?':
             if event == 'timer-10sec':
                 self.doSendMyIdentity(arg)
@@ -198,6 +200,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'stop':
                 self.state = 'STOPPED'
                 self.doReportStopped(arg)
+        #---LISTEN---
         elif self.state == 'LISTEN':
             if event == 'router-id-received':
                 self.doUpdateRouterID(arg)
@@ -219,6 +222,7 @@ class ProxyReceiver(automat.Automat):
                 self.doStopListening(arg)
                 self.doReportDisconnected(arg)
                 self.doDestroyMe(arg)
+        #---FIND_NODE?---
         elif self.state == 'FIND_NODE?':
             if event == 'nodes-not-found':
                 self.doWaitAndTryAgain(arg)
@@ -232,6 +236,7 @@ class ProxyReceiver(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+        #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'ack-received':
                 self.doSendRequestService(arg)

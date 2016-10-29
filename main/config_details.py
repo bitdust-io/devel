@@ -69,17 +69,6 @@ def raw():
     Folder to store financial receipts.
 {paths/restore} restored files location
     Location where your restored files should be placed by default.
-
-{updates} software updates
-    Software updates options.
-{updates/mode} software updates mode
-    To be able to communicate with other users you must keep your software up to date.
-    You can choose one of the updating modes:
-        * install automatically
-        * ask before install
-        * only notify
-{services/updates/shedule} software updates schedule
-    You can set up a schedule to perform periodical checking for latest version.
     
 {services} network services
     Network services settings.

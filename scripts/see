@@ -1,2 +1,3 @@
 #!/bin/bash
-tail -f log
+LATEST_LOG_FILE="`ls -Art ~/.bitdust/logs/bitdust-* | tail -n 1`"
+tail -f "$LATEST_LOG_FILE"

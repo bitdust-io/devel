@@ -7340,7 +7340,6 @@ class SoftwareUpdateShedulePage(ShedulePage):
         from updates import os_windows_update
         current = self.read_from_html(request)
         d = current.to_dict()
-        # d['mode'] = settings.getUpdatesMode()
         os_windows_update.write_shedule_dict(d)
         # settings.setUpdatesSheduleData(current.to_string())
         # bpupdate.update_shedule_file(settings.getUpdatesSheduleData())
@@ -7843,17 +7842,8 @@ def InitSettingsTreePages():
     global _SettingsTreeNodesDict
     lg.out(4, 'webcontrol.init.options')
     SettingsTreeAddComboboxList('services/customer/suppliers-number', settings.getECCSuppliersNumbers())
-    SettingsTreeAddComboboxList('updates/mode', settings.getUpdatesModeValues())
-    SettingsTreeAddComboboxList('emergency/first', settings.getEmergencyMethods())
-    SettingsTreeAddComboboxList('emergency/second', settings.getEmergencyMethods())
 
     _SettingsTreeNodesDict = {
-    'emergency/email':                              SettingsTreeUStringNode,
-    'emergency/fax':                                SettingsTreeUStringNode,
-    'emergency/first':                              SettingsTreeComboboxNode,
-    'emergency/phone':                              SettingsTreeUStringNode,
-    'emergency/second':                             SettingsTreeComboboxNode,
-    'emergency/text':                               SettingsTreeUStringNode,
     'logs/debug-level':                             SettingsTreeNumericPositiveNode,
     'logs/memdebug-enabled':                        SettingsTreeYesNoNode,
     'logs/memdebug-port':                           SettingsTreeNumericPositiveNode,
@@ -7868,6 +7858,7 @@ def InitSettingsTreePages():
     'paths/receipts':                               SettingsTreeDirPathNode,
     'paths/restore':                                SettingsTreeDirPathNode,
     'personal/betatester':                          SettingsTreeYesNoNode,
+    'personal/email':                               SettingsTreeUStringNode,
     'personal/name':                                SettingsTreeUStringNode,
     'personal/nickname':                            SettingsTreeUStringNode,
     'personal/private-key-size':                    SettingsTreeUStringNode,
@@ -7922,8 +7913,6 @@ def InitSettingsTreePages():
     'services/udp-transport/enabled':               SettingsTreeYesNoNode,
     'services/udp-transport/receiving-enabled':     SettingsTreeYesNoNode,
     'services/udp-transport/sending-enabled':       SettingsTreeYesNoNode,
-    'updates/mode':                                 SettingsTreeComboboxNode,
-    'updates/shedule':                              SettingsTreeTextNode,
     }
 
 class SettingsTreeNode(Page):
