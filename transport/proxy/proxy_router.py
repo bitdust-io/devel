@@ -323,7 +323,7 @@ class ProxyRouter(automat.Automat):
             return
         gateway.outbox(routed_packet, wide=wide)
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doForwardOutboxPacket %d bytes from %s at %s://%s :' % (
+            lg.out(_DebugLevel, '>>> Relay-OUT >>> %d bytes from %s at %s://%s :' % (
                 len(data), nameurl.GetName(sender_idurl), info.proto, info.host,))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), str(routed_packet)))
         del block
@@ -385,9 +385,9 @@ class ProxyRouter(automat.Automat):
                     newpacket.Command, newpacket.PacketID,
                     nameurl.GetName(receiver_idurl)))})
         if _Debug:
-            lg.out(_DebugLevel-8, '>>> Relay-IN >>> %s from %s://%s' % (
+            lg.out(_DebugLevel, '<<< Relay-IN <<< %s from %s://%s' % (
                 str(routed_packet), info.proto, info.host,))
-            lg.out(_DebugLevel-8, '           sent to %s://%s with %d bytes' % (
+            lg.out(_DebugLevel, '           sent to %s://%s with %d bytes' % (
                 receiver_proto, receiver_host, len(src)))
         del src
         del block
