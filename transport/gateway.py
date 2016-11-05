@@ -676,7 +676,8 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
         lg.out(_DebugLevel, 'gateway.on_unregister_file_sending %s %s' % (transfer_id, status))
     pkt_out, work_item = packet_out.search_by_transfer_id(transfer_id)
     if pkt_out is None:
-        lg.warn('%s is not found' % str(transfer_id))
+        if _Debug:
+            lg.out(_DebugLevel, '        %s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
     if status == 'finished':

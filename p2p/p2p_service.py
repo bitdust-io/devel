@@ -142,7 +142,7 @@ def inbox(newpacket, info, status, error_message):
     commandhandled = False
     if newpacket.Command == commands.Ack():
         # a response from remote node, typically handled in other places
-        Ack(newpacket)   
+        Ack(newpacket, info)   
         commandhandled = False 
     elif newpacket.Command == commands.Fail():
         # some operation was failed on other side
@@ -170,7 +170,7 @@ def inbox(newpacket, info, status, error_message):
         commandhandled = True
     elif newpacket.Command == commands.Files():
         # supplier sent us list of files
-        Files(newpacket) 
+        Files(newpacket, info) 
         commandhandled = True
     elif newpacket.Command == commands.DeleteFile():
         # will Delete a customer file for them
@@ -246,9 +246,11 @@ def makeFilename(customerID, packetID):
 
 #------------------------------------------------------------------------------
 
-def Ack(newpacket):
+def Ack(newpacket, info):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Ack %s from [%s] : %s" % (newpacket.PacketID, newpacket.CreatorID, newpacket.Payload))
+        lg.out(_DebugLevel, "p2p_service.Ack %s from [%s] at %s://%s : %s" % (
+            newpacket.PacketID, nameurl.GetName(newpacket.CreatorID),
+            info.proto, info.host, newpacket.Payload))
 
 def SendAck(packettoack, response='', wide=False, callbacks={}, packetid=None):
     result = signed.Packet(
@@ -478,12 +480,13 @@ def ListFiles(request):
     return result       
 
 
-def Files(newpacket):
+def Files(newpacket, info):
     """
     A directory list came in from some supplier.
     """
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Files from [%s]" % nameurl.GetName(newpacket.OwnerID))
+        lg.out(_DebugLevel, "p2p_service.Files from [%s] at %s://%s" % (
+            nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
     from storage import backup_control
     backup_control.IncomingSupplierListFiles(newpacket)
    
