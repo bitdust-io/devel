@@ -394,10 +394,13 @@ class ContactStatus(automat.Automat):
 
 def OutboxStatus(pkt_out, status, error=''):
     """
-    This method is called from ``lib.transport_control`` when got a status report after 
-    sending a packet to remote peer. If packet sent was failed - user seems to be OFFLINE.   
+    This method is called when raised a status report after 
+    sending a packet to remote peer.
+    If packet sending was failed - user seems to be OFFLINE.   
     """
     if pkt_out.remote_idurl == my_id.getLocalID():
+        return False
+    if pkt_out.outpacket.CreatorID != my_id.getLocalID():
         return False
     if status == 'finished':
         A(pkt_out.remote_idurl, 'sent-done', (pkt_out, status, error))
@@ -413,7 +416,9 @@ def Inbox(newpacket, info, status, message):
     This is called when some ``packet`` was received from remote peer - user seems to be ONLINE.
     """
     if newpacket.OwnerID == my_id.getLocalID():
-        return False    
+        return False
+    if newpacket.RemoteID != my_id.getLocalID():
+        return False
     A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
     ratings.remember_connected_time(newpacket.OwnerID)
     return False
@@ -426,7 +431,9 @@ def Outbox(pkt_out):
     to try to connect with that man.    
     """
     if pkt_out.outpacket.RemoteID == my_id.getLocalID():
-        return False    
+        return False
+    if pkt_out.outpacket.CreatorID != my_id.getLocalID():
+        return False
     A(pkt_out.outpacket.RemoteID, 'outbox-packet', pkt_out)
     return False
 

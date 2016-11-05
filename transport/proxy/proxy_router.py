@@ -318,6 +318,9 @@ class ProxyRouter(automat.Automat):
         data = inpt.read()
         inpt.close()
         routed_packet = signed.Unserialize(data)
+        if not routed_packet:
+            lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
+            return
         gateway.outbox(routed_packet, wide=wide)
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router.doForwardOutboxPacket %d bytes from %s routed to %s : %s' % (
