@@ -267,59 +267,61 @@ class PacketOut(automat.Automat):
     def A(self, event, arg):
         #---SENDING---
         if self.state == 'SENDING':
-            if event == 'register-item' :
+            if event == 'register-item':
                 self.doSetTransferID(arg)
-            elif ( event == 'unregister-item' or event == 'item-cancelled' ) and self.isMoreItems(arg) :
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-            elif event == 'inbox-packet' and self.isResponse(arg) :
-                self.Acked=True
-                self.doSaveResponse(arg)
-                self.doReportResponse(arg)
-            elif event == 'unregister-item' and not self.isMoreItems(arg) and self.isAckNeeded(arg) and not self.Acked :
-                self.state = 'RESPONSE?'
-                self.doPopItem(arg)
-                self.doReportItem(arg)
-            elif event == 'cancel' :
+            elif event == 'cancel':
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
                 self.doErrMsg(event,self.msg('MSG_2', arg))
-                self.doPopItems(arg)
                 self.doReportCancelItems(arg)
+                self.doPopItems(arg)
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
-            elif ( event == 'unregister-item' or event == 'item-cancelled' ) and not self.isMoreItems(arg) and ( self.Acked or not self.isAckNeeded(arg) ) :
+            elif event == 'unregister-item' and self.isAckNeeded(arg):
+                self.state = 'RESPONSE?'
+                self.doPopItem(arg)
+                self.doReportItem(arg)
+            elif event == 'item-cancelled' and self.isMoreItems(arg):
+                self.doPopItem(arg)
+                self.doReportItem(arg)
+            elif event == 'unregister-item' and not self.isAckNeeded(arg):
                 self.state = 'SENT'
                 self.doPopItem(arg)
                 self.doReportItem(arg)
                 self.doReportDoneNoAck(arg)
                 self.doDestroyMe(arg)
+            elif event == 'item-cancelled' and not self.isMoreItems(arg):
+                self.state = 'FAILED'
+                self.doPopItem(arg)
+                self.doReportItem(arg)
+                self.doReportFailed(arg)
+                self.doDestroyMe(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'run' and self.isRemoteIdentityKnown(arg) :
+            if event == 'run' and self.isRemoteIdentityKnown(arg):
                 self.state = 'ITEMS?'
                 self.doInit(arg)
                 self.Cancelled=False
                 self.doReportStarted(arg)
                 self.doSerializeAndWrite(arg)
                 self.doPushItems(arg)
-            elif event == 'run' and not self.isRemoteIdentityKnown(arg) :
+            elif event == 'run' and not self.isRemoteIdentityKnown(arg):
                 self.state = 'CACHING'
                 self.doInit(arg)
                 self.doCacheRemoteIdentity(arg)
         #---CACHING---
         elif self.state == 'CACHING':
-            if event == 'remote-identity-on-hand' :
+            if event == 'remote-identity-on-hand':
                 self.state = 'ITEMS?'
                 self.Cancelled=False
                 self.doReportStarted(arg)
                 self.doSerializeAndWrite(arg)
                 self.doPushItems(arg)
-            elif event == 'failed' :
+            elif event == 'failed':
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'cancel' :
+            elif event == 'cancel':
                 self.state = 'CANCEL'
                 self.doErrMsg(event,self.msg('MSG_4', arg))
                 self.doReportCancelled(arg)
@@ -329,40 +331,38 @@ class PacketOut(automat.Automat):
             pass
         #---ITEMS?---
         elif self.state == 'ITEMS?':
-            if event == 'nothing-to-send' or event == 'write-error' :
+            if event == 'nothing-to-send' or event == 'write-error':
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'items-sent' and not self.Cancelled :
+            elif event == 'items-sent' and not self.Cancelled:
                 self.state = 'IN_QUEUE'
-            elif event == 'cancel' :
+            elif event == 'cancel':
                 self.Cancelled=True
-            elif event == 'items-sent' and self.Cancelled :
+            elif event == 'items-sent' and self.Cancelled:
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
                 self.doErrMsg(event,self.msg('MSG_5', arg))
-                self.doPopItems(arg)
                 self.doReportCancelItems(arg)
+                self.doPopItems(arg)
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
         #---IN_QUEUE---
         elif self.state == 'IN_QUEUE':
-            if event == 'item-cancelled' and self.isMoreItems(arg) :
+            if event == 'item-cancelled' and self.isMoreItems(arg):
                 self.doPopItem(arg)
-                self.doReportItem(arg)
-            elif event == 'register-item' :
+            elif event == 'register-item':
                 self.state = 'SENDING'
-                self.Acked=False
                 self.doSetTransferID(arg)
-            elif event == 'cancel' :
+            elif event == 'cancel':
                 self.state = 'CANCEL'
                 self.doCancelItems(arg)
                 self.doErrMsg(event,self.msg('MSG_1', arg))
-                self.doPopItems(arg)
                 self.doReportCancelItems(arg)
+                self.doPopItems(arg)
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
-            elif event == 'item-cancelled' and not self.isMoreItems(arg) :
+            elif event == 'item-cancelled' and not self.isMoreItems(arg):
                 self.state = 'FAILED'
                 self.doPopItem(arg)
                 self.doReportItem(arg)
@@ -376,18 +376,21 @@ class PacketOut(automat.Automat):
             pass
         #---RESPONSE?---
         elif self.state == 'RESPONSE?':
-            if event == 'cancel' :
+            if event == 'cancel':
                 self.state = 'CANCEL'
                 self.doErrMsg(event,self.msg('MSG_3', arg))
                 self.doReportCancelItems(arg)
                 self.doReportCancelled(arg)
                 self.doDestroyMe(arg)
-            elif event == 'inbox-packet' and self.isResponse(arg) :
+            elif event == 'inbox-packet' and self.isResponse(arg):
                 self.state = 'SENT'
                 self.doSaveResponse(arg)
                 self.doReportResponse(arg)
                 self.doReportDoneWithAck(arg)
                 self.doDestroyMe(arg)
+            elif event == 'unregister-item' or event == 'item-cancelled':
+                self.doPopItem(arg)
+                self.doReportItem(arg)
         return None
 
     def isRemoteIdentityKnown(self, arg):

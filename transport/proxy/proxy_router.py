@@ -303,7 +303,6 @@ class ProxyRouter(automat.Automat):
             wide = wide == 'wide'
         except:
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
-            lg.out(2, '\n' + padded_data)
             lg.exc()
             try:
                 inpt.close()
