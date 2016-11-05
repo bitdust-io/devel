@@ -317,6 +317,7 @@ def INfile(newpacket, pkt_in, status, error_message):
         return False
     packet_from = newpacket.OwnerID
     if newpacket.OwnerID == my_id.getLocalID() and newpacket.Command == commands.Data():
+        # someone giving our data back
         packet_from = newpacket.RemoteID
     if pkt_in.size:
         IN(packet_from, pkt_in.size)

@@ -268,7 +268,7 @@ class ProxySender(automat.Automat):
             EncryptFunc=lambda inp: key.EncryptStringPK(publickey, inp))
         block_encrypted = block.Serialize()
         newpacket = signed.Packet(
-            commands.Data(), 
+            commands.Relay(), 
             outpacket.OwnerID,
             my_id.getLocalID(), 
             outpacket.PacketID,
@@ -283,12 +283,12 @@ class ProxySender(automat.Automat):
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,
-                'description': 'Routed_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
+                'description': 'Relay_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
             })
         self.event('outbox-packet-sent', (outpacket, newpacket, result_packet))
         if _Debug:
-            lg.out(_DebugLevel-8, '<<< ROUTED-OUT <<< %s' % str(outpacket))
-            lg.out(_DebugLevel-8, '        sent on %s://%s with %d bytes' % (
+            lg.out(_DebugLevel-8, '<<< Relay-OUT <<< %s' % str(outpacket))
+            lg.out(_DebugLevel-8, '        sent to %s://%s with %d bytes' % (
                 router_proto, router_host, len(block_encrypted)))
         del src
         del block

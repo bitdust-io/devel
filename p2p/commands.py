@@ -122,6 +122,12 @@ def Fail():
     """
     return "Fail"
 
+def Relay():
+    """
+    Used by proxy transport to route packets in/out via third node.
+    """
+    return "Relay"
+
 # for case when local scrubber has detected some bitrot and asks customer to resend
 # def Resend():
 #    return("Resend")

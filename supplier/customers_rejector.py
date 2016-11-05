@@ -147,9 +147,9 @@ class CustomersRejector(automat.Automat):
         unknown_customers, unused_quotas = accounting.validate_customers_quotas(space_dict)
         failed_customers.update(unknown_customers)
         for idurl in unknown_customers:
-            space_dict.pop(idurl)
+            space_dict.pop(idurl, None)
         for idurl in unused_quotas:
-            space_dict.pop(idurl)
+            space_dict.pop(idurl, None)
         consumed_bytes = accounting.count_consumed_space(space_dict)
         space_dict['free'] = donated_bytes - consumed_bytes
         if consumed_bytes < donated_bytes and len(failed_customers) == 0:

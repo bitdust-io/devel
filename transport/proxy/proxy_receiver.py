@@ -362,15 +362,9 @@ class ProxyReceiver(automat.Automat):
             service_info,
             self.router_idurl,)
         packet_out.create(newpacket, wide=False, callbacks={
-            commands.Ack(): self._request_service_ack,
-            commands.Fail(): self._request_service_fail},)
+            commands.Ack(): self._on_request_service_ack,
+            commands.Fail(): self._on_request_service_fail},)
         self.request_service_packet_id.append(newpacket.PacketID)
-#         request = p2p_service.SendRequestService(
-#             self.router_idurl, service_info,
-#                 callbacks={
-#                     commands.Ack(): self._request_service_ack,
-#                     commands.Fail(): self._request_service_fail})
-#         self.request_service_packet_id.append(request.PacketID)
 
     def doSendCancelService(self, arg):
         """
@@ -384,10 +378,8 @@ class ProxyReceiver(automat.Automat):
             'service_proxy_server',
             self.router_idurl,)
         packet_out.create(newpacket, wide=True, callbacks={
-            commands.Ack(): self._request_service_ack,
-            commands.Fail(): self._request_service_fail},)
-#         p2p_service.SendCancelService(
-#             self.router_idurl, 'service_proxy_server') 
+            commands.Ack(): self._on_request_service_ack,
+            commands.Fail(): self._on_request_service_fail},)
 
     def doProcessInboxPacket(self, arg):
         """
@@ -396,7 +388,7 @@ class ProxyReceiver(automat.Automat):
         newpacket, info, _, _ = arg
         block = encrypted.Unserialize(newpacket.Payload)
         if block is None:
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.RemoteID)
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
             return
         try:
             session_key = key.DecryptLocalPK(block.EncryptedSessionKey)
@@ -404,8 +396,7 @@ class ProxyReceiver(automat.Automat):
             inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
             data = inpt.read()
         except:
-            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.RemoteID)
-            lg.out(2, '\n' + padded_data)
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
             lg.exc()
             try:
                 inpt.close()
@@ -414,10 +405,9 @@ class ProxyReceiver(automat.Automat):
             return
         inpt.close()
         routed_packet = signed.Unserialize(data)
-#        transfer_id = gateway.make_transfer_ID()
-#        pkt_in = packet_in.create(transfer_id)
-#        pkt_in.setup(pkt_in)
-#        pkt_in.automat('valid-inbox-packet', routed_packet)
+        if not routed_packet:
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' % newpacket.CreatorID)
+            return
         packet_in.process(routed_packet, info)
         del block
         del data
@@ -515,9 +505,9 @@ class ProxyReceiver(automat.Automat):
         del _ProxyReceiver
         _ProxyReceiver = None
 
-    def _nodes_lookup_finished(self, idurls):
+    def _on_nodes_lookup_finished(self, idurls):
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver._nodes_lookup_finished : %r' % idurls)
+            lg.out(_DebugLevel, 'proxy_receiver._on_nodes_lookup_finished : %r' % idurls)
         for idurl in idurls:
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
@@ -529,7 +519,7 @@ class ProxyReceiver(automat.Automat):
 
     def _find_random_node(self):
         d = lookup.start()
-        d.addCallback(self._nodes_lookup_finished)
+        d.addCallback(self._on_nodes_lookup_finished)
         d.addErrback(lambda err: self.automat('users-not-found'))
 #         if _Debug:
 #             lg.out(_DebugLevel, 'proxy_receiver._find_random_node')
@@ -569,7 +559,7 @@ class ProxyReceiver(automat.Automat):
 #         d.addErrback(lambda x: self.automat('nodes-not-found'))
 #         return response
 
-    def _request_service_ack(self, response, info):
+    def _on_request_service_ack(self, response, info):
         if response.PacketID not in self.request_service_packet_id:
             lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
                 response.PacketID, str(self.request_service_packet_id)))
@@ -580,13 +570,13 @@ class ProxyReceiver(automat.Automat):
         else:
             lg.warn('%s was not found in pending requests: %s' % (response.PacketID, self.request_service_packet_id))
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_receiver._request_service_ack : %s' % str(response.Payload))
+            lg.out(_DebugLevel, 'proxy_receiver._on_request_service_ack : %s' % str(response.Payload))
         if response.Payload.startswith('accepted'):
             self.automat('service-accepted', (response, info))
         else:
             self.automat('service-refused', (response, info))
             
-    def _request_service_fail(self, response, info):
+    def _on_request_service_fail(self, response, info):
         if response.PacketID not in self.request_service_packet_id:
             lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
                 response.PacketID, str(self.request_service_packet_id)))
@@ -606,14 +596,14 @@ class ProxyReceiver(automat.Automat):
             # newpacket.Payload == 'route not exist':
                 self.automat('service-refused', (newpacket, info))
                 return True
-        if newpacket.Command != commands.Data():
+        if newpacket.Command != commands.Relay():
             return False
         # if not newpacket.PacketID.startswith('routed_in_'):
             # return False
-        if newpacket.RemoteID != my_id.getLocalID():
-            return False
-        if newpacket.CreatorID != self.router_idurl:
-            return False
+#         if newpacket.RemoteID != my_id.getLocalID():
+#             return False
+#         if newpacket.CreatorID != self.router_idurl:
+#             return False
         self.automat('inbox-packet', (newpacket, info, status, error_message))
         return True             
 

@@ -288,7 +288,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         # decrypt with my key and send to outside world
-        newpacket, _ = arg
+        newpacket, info = arg
         block = encrypted.Unserialize(newpacket.Payload)
         if block is None:
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR reading data from %s' % newpacket.RemoteID)
@@ -323,9 +323,9 @@ class ProxyRouter(automat.Automat):
             return
         gateway.outbox(routed_packet, wide=wide)
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doForwardOutboxPacket %d bytes from %s routed to %s :' % (
-                len(data), nameurl.GetName(sender_idurl), nameurl.GetName(receiver_idurl), ))
-            lg.out(_DebugLevel, '    %s' % (str(routed_packet)))
+            lg.out(_DebugLevel, 'proxy_router.doForwardOutboxPacket %d bytes from %s at %s://%s :' % (
+                len(data), nameurl.GetName(sender_idurl), info.proto, info.host,))
+            lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), str(routed_packet)))
         del block
         del data
         del padded_data
@@ -339,7 +339,7 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         # encrypt with proxy_receiver()'s key and sent to man behind my proxy
-        newpacket, _ = arg
+        newpacket, info = arg
         receiver_idurl = newpacket.RemoteID
         route_info = self.routes.get(receiver_idurl, None)
         if not route_info:
@@ -366,10 +366,9 @@ class ProxyRouter(automat.Automat):
             src,
             EncryptFunc=lambda inp: key.EncryptStringPK(publickey, inp))
         routed_packet = signed.Packet(
-            commands.Data(), 
+            commands.Relay(),
             newpacket.OwnerID,
-            my_id.getLocalID(), 
-            # 'routed_in_'+newpacket.PacketID, 
+            my_id.getLocalID(),
             newpacket.PacketID, 
             block.Serialize(), 
             receiver_idurl)
@@ -382,28 +381,17 @@ class ProxyRouter(automat.Automat):
                 'proto': receiver_proto,
                 'host': receiver_host,
                 'remoteid': receiver_idurl,
-                'description': ('Routed_%s' % nameurl.GetName(receiver_idurl))})
-#        fileno, filename = tmpfile.make('proxy-in')
-#        packetdata = routed_packet.Serialize()
-#        os.write(fileno, packetdata)
-#        os.close(fileno)
-#        gateway.send_file(
-#            receiver_idurl, 
-#            receiver_proto, 
-#            receiver_host, filename,
-#            'Routed packet for %s' % receiver_idurl)
+                'description': ('Relay_%s[%s]_%s' % (
+                    newpacket.Command, newpacket.PacketID,
+                    nameurl.GetName(receiver_idurl)))})
         if _Debug:
-            lg.out(_DebugLevel-8, '>>> ROUTED-IN >>> %s' % str(routed_packet))
-            lg.out(_DebugLevel-8, '                   sent on %s://%s with %d bytes' % (
+            lg.out(_DebugLevel-8, '>>> Relay-IN >>> %s from %s://%s' % (
+                str(routed_packet), info.proto, info.host,))
+            lg.out(_DebugLevel-8, '           sent to %s://%s with %d bytes' % (
                 receiver_proto, receiver_host, len(src)))
-        # gateway.outbox(routed_packet)
-#        if _Debug:
-#            lg.out(_DebugLevel, 'proxy_router.doForwardInboxPacket %d bytes from %s sent to %s' % (
-#                len(src),  nameurl.GetName(newpacket.CreatorID), nameurl.GetName(receiver_idurl)))
         del src
         del block
         del newpacket
-        # del receiver_ident_obj
         del routed_packet
                 
     def doCountOutgoingTraffic(self, arg):
@@ -481,7 +469,7 @@ class ProxyRouter(automat.Automat):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if newpacket.RemoteID == my_id.getLocalID():
-            if newpacket.Command == commands.Data() and newpacket.CreatorID in self.routes.keys():
+            if newpacket.Command == commands.Relay() and newpacket.CreatorID in self.routes.keys():
                 # sent by proxy_sender() from node A : a man behind proxy_router()
                 # addressed to some third node - need to route
                 self.automat('routed-outbox-packet-received', (newpacket, info))
