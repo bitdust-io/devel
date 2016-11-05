@@ -4178,7 +4178,7 @@ class SupplierRemoteFilesPage(Page):
         
         if action == 'files':
             from p2p import p2p_service
-            packetID = p2p_service.RequestListFiles(self.supplierNum)
+            packetID = p2p_service.SendRequestListFiles(self.supplierNum)
             src += html_message('list of your files were requested', 'notify')
 
         list_files_src = bpio.ReadTextFile(settings.SupplierListFilesFilename(self.idurl))

@@ -50,6 +50,7 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------ 
 
 from twisted.internet.defer import Deferred, fail
+from twisted.internet import reactor
 
 #------------------------------------------------------------------------------ 
 
@@ -63,6 +64,8 @@ from lib import nameurl
 from crypt import encrypted
 from crypt import key
 from crypt import signed
+
+from services import driver
 
 from p2p import commands
 
@@ -197,14 +200,16 @@ class ProxySender(automat.Automat):
         """
         Action method.
         """
-        while len(self.pending_packets):
-            outpacket, wide, callbacks, pending_result = self.pending_packets.pop(0)
-            result_packet = self._on_outbox_packet(outpacket, wide, callbacks)
-            if not isinstance(result_packet, packet_out.PacketOut):
-                lg.warn('failed sending pending packet %s, skip all pending packets' % outpacket)
-                self.pending_packets = []
-                break
-            pending_result.callback(result_packet)
+        def _do_send():
+            while len(self.pending_packets):
+                outpacket, wide, callbacks, pending_result = self.pending_packets.pop(0)
+                result_packet = self._on_outbox_packet(outpacket, wide, callbacks)
+                if not isinstance(result_packet, packet_out.PacketOut):
+                    lg.warn('failed sending pending packet %s, skip all pending packets' % outpacket)
+                    self.pending_packets = []
+                    break
+                pending_result.callback(result_packet)
+        reactor.callLater(0.2, _do_send)
 
     def doDestroyMe(self, arg):
         """
@@ -229,7 +234,11 @@ class ProxySender(automat.Automat):
     def _on_outbox_packet(self, outpacket, wide, callbacks):
         """
         """
-        if proxy_receiver.A().state != 'LISTEN':
+        if not driver.is_started('service_proxy_transport'):
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet skip because service_proxy_transport is not started')
+            return None
+        if proxy_receiver.A() and proxy_receiver.A().state != 'LISTEN':
             return self._add_pending_packet(outpacket, wide, callbacks)
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
@@ -274,11 +283,12 @@ class ProxySender(automat.Automat):
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,
-                'description': 'Routed_%s' % nameurl.GetName(router_idurl)})
+                'description': 'Routed_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
+            })
         self.event('outbox-packet-sent', (outpacket, newpacket, result_packet))
         if _Debug:
             lg.out(_DebugLevel-8, '<<< ROUTED-OUT <<< %s' % str(outpacket))
-            lg.out(_DebugLevel-8, '                   sent on %s://%s with %d bytes' % (
+            lg.out(_DebugLevel-8, '        sent on %s://%s with %d bytes' % (
                 router_proto, router_host, len(block_encrypted)))
         del src
         del block

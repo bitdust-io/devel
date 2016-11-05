@@ -54,6 +54,8 @@ from p2p import p2p_service
 from p2p import lookup
 
 from contacts import identitycache
+from contacts import contactsdb
+
 from userid import my_id
 
 from transport import callback
@@ -342,7 +344,8 @@ class SupplierFinder(automat.Automat):
         if supplier_idurl != self.target_idurl:
             return
         if newstate is 'CONNECTED':
-            self.automat('supplier-connected', self.target_idurl)
+            if not contactsdb.is_supplier(self.target_idurl):
+                self.automat('supplier-connected', self.target_idurl)
         elif newstate in ['DISCONNECTED', 'NO_SERVICE', ]:
             self.automat('supplier-not-connected')
 

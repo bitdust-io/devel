@@ -80,6 +80,7 @@ import packet_out
 
 _InboxItems = {}
 _PacketsCounter = 0
+_History = []
 
 #------------------------------------------------------------------------------ 
 
@@ -110,6 +111,11 @@ def create(transfer_id):
 
 def get(transfer_id):
     return items().get(transfer_id, None)
+
+
+def history():
+    global _History
+    return _History
 
 #------------------------------------------------------------------------------ 
 
@@ -146,6 +152,18 @@ def process(newpacket, info):
             lg.out(_DebugLevel-8, '    incoming %s from [%s://%s]' % (
                 newpacket, info.proto, info.host))
             lg.out(_DebugLevel-8, '        NOT HANDLED !!!')
+    else:
+        if _Debug:
+            history().append({
+                'time': newpacket.Date,
+                'command': newpacket.Command,
+                'packet_id': newpacket.PacketID,
+                'creator_id': newpacket.CreatorID,
+                'owner_id': newpacket.OwnerID,
+                'remote_id': newpacket.RemoteID,
+                'payload': len(newpacket.Payload),
+                'address': '%s://%s' % (info.proto, info.host),
+            })
 
 #------------------------------------------------------------------------------ 
 

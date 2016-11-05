@@ -598,8 +598,8 @@ def Retrieve(request):
         SendFail(request, 'empty filename')
         return
     if not os.path.exists(filename):
-        lg.warn("did not find requested packet " + filename)
-        SendFail(request, 'did not find requested packet')
+        lg.warn("did not find requested file locally " + filename)
+        SendFail(request, 'did not find requested file locally')
         return
     if not os.access(filename, os.R_OK):
         lg.warn("no read access to requested packet " + filename)
@@ -793,11 +793,11 @@ def ListCustomerFiles1(customerNumber):
 def RequestListFilesAll():
     r = []
     for supi in range(contactsdb.num_suppliers()):
-        r.append(RequestListFiles(supi))
+        r.append(SendRequestListFiles(supi))
     return r
 
 
-def RequestListFiles(supplierNumORidurl):
+def SendRequestListFiles(supplierNumORidurl):
     if not str(supplierNumORidurl).isdigit():
         RemoteID = supplierNumORidurl
     else:
@@ -806,7 +806,7 @@ def RequestListFiles(supplierNumORidurl):
         lg.warn("RemoteID is empty supplierNumORidurl=%s" % str(supplierNumORidurl))
         return None
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.RequestListFiles [%s]" % nameurl.GetName(RemoteID))
+        lg.out(_DebugLevel, "p2p_service.SendRequestListFiles [%s]" % nameurl.GetName(RemoteID))
     MyID = my_id.getLocalID()
     PacketID = packetid.UniqueID()
     Payload = settings.ListFilesFormat()

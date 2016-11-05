@@ -49,7 +49,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-_Debug = True
+_Debug = False
 _DebugLevel = 12
 
 #------------------------------------------------------------------------------ 
@@ -66,7 +66,6 @@ from automats import automat
 from p2p import commands
 
 from lib import nameurl
-from lib import misc
 
 from system import tmpfile
 
@@ -143,10 +142,10 @@ def search_by_transfer_id(transfer_id):
 
 
 def search_by_response_packet(newpacket, proto=None, host=None):
-    if _Debug:
-        lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
-            nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
-            nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
+#     if _Debug:
+#         lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
+#             nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
+#             nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
     target_idurl = newpacket.CreatorID
     if newpacket.OwnerID == my_id.getLocalID():
@@ -164,15 +163,18 @@ def search_by_response_packet(newpacket, proto=None, host=None):
             continue
         result.append(p)
         if _Debug:
-            lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s cb:%s' % (
+            lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s(%s) from [%s://%s] cb:%s' % (
                 nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID), 
-                 nameurl.GetName(p.outpacket.RemoteID), p.outpacket.PacketID, 
+                 nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
+                 proto, host,
                  p.callbacks.keys()))
     if len(result) == 0:
         if _Debug:
-            lg.warn('- not found [%s/%s/%s]:%s %s' % (
+            lg.out(_DebugLevel, 'packet_out.search_by_response_packet NOT FOUND pending packets in outbox queue for')
+            lg.out(_DebugLevel, '        [%s/%s/%s]:%s:%s from [%s://%s]' % (
                 nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID), 
-                nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
+                nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command,
+                proto, host))
     return result
 
 #------------------------------------------------------------------------------ 

@@ -57,6 +57,11 @@ RAIDREAD:
 
 #------------------------------------------------------------------------------ 
 
+_Debug = False
+_DebugLevel = 12
+
+#------------------------------------------------------------------------------ 
+
 from logs import lg
 
 from lib import misc
@@ -107,7 +112,8 @@ class Block:
         self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data) # DataLonger
         self.Signature = None
         self.Sign()
-        lg.out(8, 'new data in %s' % self)
+        if _Debug:
+            lg.out(_DebugLevel, 'new data in %s' % self)
 
     def __repr__(self):
         return 'encrypted_block (BackupID=%s BlockNumber=%s Length=%s LastBlock=%s)' % (str(self.BackupID), str(self.BlockNumber), str(self.Length), self.LastBlock)

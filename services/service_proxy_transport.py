@@ -40,14 +40,8 @@ class ProxyTransportService(LocalService):
     config_path = 'services/proxy-transport/enabled'
     proto = 'proxy'
     
-    def _available_transports(self):
-        from main import settings
-        atransports = []
-        if settings.enableTCP() and settings.enableTCPreceiving() and settings.enableTCPsending():
-            atransports.append('service_tcp_transport')
-        if settings.enableUDP() and settings.enableUDPreceiving() and settings.enableUDPsending():
-            atransports.append('service_udp_transport')
-        return atransports
+    def init(self):
+        self.starting_deferred = None
     
     def dependent_on(self):
         depends = ['service_identity_propagate', 
@@ -56,9 +50,9 @@ class ProxyTransportService(LocalService):
         return depends
 
     def start(self):
-        from logs import lg
         from twisted.internet import reactor
         from twisted.internet.defer import Deferred
+        from logs import lg
         from transport.proxy import proxy_interface
         from transport import network_transport
         from transport import gateway
@@ -83,15 +77,16 @@ class ProxyTransportService(LocalService):
         return self.starting_deferred
     
     def stop(self):
+        from twisted.internet.defer import succeed
         from main.config import conf
         conf().removeCallback('services/proxy-transport/enabled') 
         conf().removeCallback('services/proxy-transport/sending-enabled') 
-        conf().removeCallback('services/proxy-transport/receiving-enabled') 
+        conf().removeCallback('services/proxy-transport/receiving-enabled')
         t = self.transport
         self.transport = None
         self.interface = None
         t.automat('shutdown')
-        return True
+        return succeed(True)
     
     def installed(self):
         try:
@@ -101,6 +96,15 @@ class ProxyTransportService(LocalService):
             lg.exc()
             return False
         return True
+    
+    def _available_transports(self):
+        from main import settings
+        atransports = []
+        if settings.enableTCP() and settings.enableTCPreceiving() and settings.enableTCPsending():
+            atransports.append('service_tcp_transport')
+        if settings.enableUDP() and settings.enableUDPreceiving() and settings.enableUDPsending():
+            atransports.append('service_udp_transport')
+        return atransports
 
     def _reset_my_original_identity(self):
         from userid import my_id
@@ -136,19 +140,16 @@ class ProxyTransportService(LocalService):
             self._reset_my_original_identity()
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
+        from p2p import p2p_connector
         if self.starting_deferred:
-#             if newstate == 'LISTENING' or newstate == 'OFFLINE':
-#                 self.starting_deferred.callback(newstate)
-#                 self.starting_deferred = None
             if newstate == 'LISTENING' and oldstate != 'LISTENING':
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
+                p2p_connector.A('check-synchronize')
             if newstate == 'OFFLINE' and oldstate in ['STARTING', 'STOPPING', ]:
                 self.starting_deferred.errback(newstate)
                 self.starting_deferred = None
-        if newstate == 'LISTENING':
-            from p2p import p2p_connector
-            p2p_connector.A('check-synchronize')
+                p2p_connector.A('check-synchronize')
             
     def _on_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import p2p_connector

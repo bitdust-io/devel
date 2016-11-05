@@ -736,7 +736,7 @@ def cmd_set(opts, args, overDict):
             value = ' '.join(args[2:])
             result = api.config_set(path, unicode(value))
         else:
-            result = api.config_get(path)[:40]
+            result = api.config_get(path)
         tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
         print_template(result, tpl)
         return 0

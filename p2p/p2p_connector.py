@@ -365,6 +365,7 @@ class P2PConnector(automat.Automat):
             if driver.is_started('service_proxy_transport'):
                 if settings.transportReceivingIsEnabled('proxy'):
                     try:
+                        # TODO: change here to receive the value directly from service_proxy_transport object
                         router_idurl = driver.services()['service_proxy_transport'].transport.options['router_idurl']
                     except:
                         router_idurl = None

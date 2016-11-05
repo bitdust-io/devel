@@ -814,7 +814,7 @@ class TransportGateXMLRPCServer(xmlrpc.XMLRPC):
             return self.methods[procedurePath]
         except KeyError, e:
             raise xmlrpc.NoSuchFunction(self.NOT_FOUND,
-                        "procedure %s not found" % procedurePath)
+                        "procedure %s not found: %s" % (procedurePath, e))
 
     def listProcedures(self):
         return self.methods.keys()

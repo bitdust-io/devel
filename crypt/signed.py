@@ -69,6 +69,7 @@ from p2p import commands
 from lib import misc
 from lib import packetid
 from lib import nameurl
+from lib import utime
 
 from contacts import contactsdb
 
@@ -103,7 +104,8 @@ class Packet:
         # on the local machine.  Can be used for filenames, and to prevent duplicates.   
         self.PacketID = PacketID
         # create a string to remember current world time              
-        self.Date = datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")
+        self.Date = utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p")
+        # datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")
         # main body of binary data
         self.Payload = Payload                
         # want full IDURL for other party so troublemaker could not

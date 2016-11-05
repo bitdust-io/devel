@@ -299,7 +299,7 @@ class AccountantNode(automat.Automat):
             if not coins_db.exist(coin):
                 coins_db.insert(coin)
             if coin['tm'] > utime.datetime_to_sec1970(self.download_offset):
-                self.download_offset = utime.sec1970_to_datetime(coin['tm'])
+                self.download_offset = utime.sec1970_to_datetime_utc(coin['tm'])
 
     def doPushCoin(self, arg):
         """

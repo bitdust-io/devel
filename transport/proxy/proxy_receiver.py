@@ -194,7 +194,6 @@ class ProxyReceiver(automat.Automat):
                 self.doSendRequestService(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doNotifyFailed(arg)
                 self.doDestroyMe(arg)
             elif event == 'stop':
                 self.state = 'OFFLINE'
@@ -218,13 +217,11 @@ class ProxyReceiver(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doStopListening(arg)
-                self.doNotifyDisconnected(arg)
                 self.doDestroyMe(arg)
             elif event == 'stop':
                 self.state = 'OFFLINE'
                 self.doSendCancelService(arg)
                 self.doStopListening(arg)
-                self.doNotifyDisconnected(arg)
         #---FIND_NODE?---
         elif self.state == 'FIND_NODE?':
             if event == 'found-one-node':
@@ -233,7 +230,6 @@ class ProxyReceiver(automat.Automat):
                 self.doSendMyIdentity(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doNotifyFailed(arg)
                 self.doDestroyMe(arg)
             elif event == 'stop' or event == 'nodes-not-found':
                 self.state = 'OFFLINE'
@@ -246,7 +242,6 @@ class ProxyReceiver(automat.Automat):
                 self.doNotifyConnected(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
-                self.doNotifyFailed(arg)
                 self.doDestroyMe(arg)
             elif event == 'stop':
                 self.state = 'OFFLINE'
@@ -454,7 +449,6 @@ class ProxyReceiver(automat.Automat):
             config.conf().setData('services/proxy-transport/my-original-identity', 
                                   my_id.getLocalIdentity().serialize())
         self.request_service_packet_id = []
-        my_id.rebuildLocalIdentity()
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         if _Debug:
             lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
@@ -474,7 +468,6 @@ class ProxyReceiver(automat.Automat):
         self.router_idurl = None
         self.router_proto_host = None
         self.request_service_packet_id = []
-        my_id.rebuildLocalIdentity()
         if _Debug:
             lg.out(2, 'proxy_receiver.doStopListening')
 
