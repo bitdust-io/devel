@@ -254,7 +254,7 @@ class PacketIn(automat.Automat):
         """
         Condition method.
         """
-        status, bytes_received, error_message = arg
+        status, bytes_received, _ = arg
         if status != 'finished':
             return False
         if self.size and self.size > 0 and self.size != bytes_received:
@@ -314,7 +314,7 @@ class PacketIn(automat.Automat):
                          self.host, os.path.basename(self.filename),))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
             try:
-                fd, fn = tmpfile.make('other', '.inbox.error')
+                fd, _ = tmpfile.make('other', '.inbox.error')
                 data = bpio.ReadBinaryFile(self.filename)
                 os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
                 os.write(fd, str(data))
@@ -338,14 +338,14 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        status, bytes_received, error_message = arg
+        status, bytes_received, _ = arg
         stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
 
     def doReportCacheFailed(self, arg):
         """
         Action method.
         """
-        status, bytes_received, error_message = arg
+        status, bytes_received, _ = arg
         stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
 

@@ -323,8 +323,9 @@ class ProxyRouter(automat.Automat):
             return
         gateway.outbox(routed_packet, wide=wide)
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router.doForwardOutboxPacket %d bytes from %s routed to %s : %s' % (
-                len(data), nameurl.GetName(sender_idurl), nameurl.GetName(receiver_idurl), str(routed_packet)))
+            lg.out(_DebugLevel, 'proxy_router.doForwardOutboxPacket %d bytes from %s routed to %s :' % (
+                len(data), nameurl.GetName(sender_idurl), nameurl.GetName(receiver_idurl), ))
+            lg.out(_DebugLevel, '    %s' % (str(routed_packet)))
         del block
         del data
         del padded_data
