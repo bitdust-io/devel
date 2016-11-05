@@ -671,21 +671,13 @@ class identity:
     def getIP(self, proto=None):
         """
         A smart way to get the IP address of the user.
-        Check TCP proto first, than UDP.
+        Check TCP proto if available and get host from contact.
         """
         if proto:
             host = self.getProtoHost(proto)
             if host:
                 return host
-        host = self.getProtoHost('tcp')
-        if host:
-            return host
-        host = self.getProtoHost('udp')
-#        if host is None:
-#            host = self.getProtoHost('ssh')
-#        if host is None:
-#            host = self.getProtoHost('http')
-        return host
+        return self.getProtoHost('tcp')
 
     #------------------------------------------------------------------------------ 
 

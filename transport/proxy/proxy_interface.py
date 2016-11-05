@@ -101,9 +101,11 @@ class GateInterface():
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
         if settings.enablePROXYreceiving():
-#             if not proxy_receiver.VerifyExistingRouter():
-#                 return fail(True)
             proxy_receiver.A('start', options)
+        else:
+            lg.warn(4, 'proxy transport receiving is disabled')
+            interface_receiving_failed()
+            return False 
         if settings.enablePROXYsending():
             proxy_sender.A('start', options)
         return succeed(True)
@@ -166,6 +168,10 @@ class GateInterface():
                         lg.out(4, '    returning False: router identity is not cached')
                     res.callback(False) 
                     return False
+                if not proxy_receiver.GetRouterIdentity():
+                    if _Debug:
+                        lg.out(4, '    returning False : router identity is None or router is not ready yet')
+                    return True
                 if cached_id.serialize() != proxy_receiver.GetRouterIdentity().serialize():
                     if _Debug:
                         lg.out(4, 'proxy_interface.verify_contacts return False: cached copy is different')

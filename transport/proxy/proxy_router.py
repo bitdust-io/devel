@@ -36,6 +36,7 @@ BitDust proxy_router() Automat
 EVENTS:
     * :red:`cancel-route`
     * :red:`init`
+    * :red:`known-identity-received`
     * :red:`network-connected`
     * :red:`network-disconnected`
     * :red:`request-route`
@@ -164,6 +165,9 @@ class ProxyRouter(automat.Automat):
                 self.doUnregisterAllRouts(arg)
             elif event == 'request-route-ack-sent':
                 self.doSaveRouteProtoHost(arg)
+            elif event == 'known-identity-received':
+                self.doCheckOverride(arg)
+                self.doSendAck(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
@@ -223,23 +227,17 @@ class ProxyRouter(automat.Automat):
                     lg.out(_DebugLevel, 'payload: [%s]' % request.Payload)
                     lg.exc()
                     return
+                if not cached_id.isCorrect() or not cached_id.Valid():
+                    lg.warn('incoming identity is not valid')
+                    return
                 oldnew = ''
                 if target not in self.routes.keys():
                     # accept new route
                     oldnew = 'NEW'
                     self.routes[target] = {}
-                    # cached_id = identitycache.FromCache(target)
-                    # idsrc = cached_id.serialize()
                 else:
+                    # accept existing router
                     oldnew = 'OLD'
-#                    try:
-#                        idsrc = self.routes[target]['identity']
-#                        cached_id = identity.identity(xmlsrc=idsrc)
-#                    except:
-#                        lg.exc()
-#                        cached_id = identitycache.FromCache(target)
-#                        idsrc = cached_id.serialize()
-                    # lg.warn('route with %s already exist' % target)
                 if not self._is_my_contacts_present_in_identity(cached_id): 
                     identitycache.OverrideIdentity(target, idsrc)
                 else:
@@ -426,6 +424,45 @@ class ProxyRouter(automat.Automat):
             lg.out(_DebugLevel, 'proxy_router.doSaveRouteProtoHost : active address %s://%s added for %s' % (
                 item.proto, item.host, nameurl.GetName(idurl)))
 
+    def doCheckOverride(self, arg):
+        """
+        Action method.
+        """
+        target = arg.CreatorID
+        idsrc = arg.Payload
+        try:
+            new_ident = identity.identity(xmlsrc=idsrc)
+        except:
+            lg.out(_DebugLevel, 'payload: [%s]' % idsrc)
+            lg.exc()
+            return
+        if not new_ident.isCorrect() or not new_ident.Valid():
+            lg.warn('incoming identity is not valid')
+            return
+        if not self._is_my_contacts_present_in_identity(new_ident):
+            cur_contacts = []
+            try:
+                cur_contacts = identity.identity(
+                    xmlsrc=identitycache.ReadOverriddenIdentityXMLSource(target)
+                ).getContacts()
+            except:
+                lg.exc()
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_router.doCheckOverride override identity for %s' % arg.CreatorID)
+                lg.out(_DebugLevel, '    current override contacts is : %s' % cur_contacts)
+                lg.out(_DebugLevel, '    new contacts is : %s' % new_ident.getContacts())
+            identitycache.OverrideIdentity(arg.CreatorID, idsrc)
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_router.doCheckOverride skip override, found my contacts in identity from %s' % arg.CreatorID)
+                lg.out(_DebugLevel, '    known contacts is : %s' % new_ident.getContacts())
+
+    def doSendAck(self, arg):
+        """
+        Action method.
+        """
+        p2p_service.SendAck(arg, wide=True)
+
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
@@ -452,9 +489,7 @@ class ProxyRouter(automat.Automat):
                 # this is a "propagate" packet from node A addressed to this proxy
                 # mark that packet as handled and send Ack
                 # otherwise it will be wrongly handled in p2p_service
-                p2p_service.SendAck(newpacket, wide=True)
-                if _Debug:
-                    lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received packet from known node: %s' % newpacket.OwnerID)
+                self.automat('known-identity-received', newpacket)
                 return True
             return False
         if newpacket.RemoteID in self.routes.keys():

@@ -338,8 +338,16 @@ def run_outbox_filter_callbacks(outpacket, wide, callbacks):
             result = cb(outpacket, wide, callbacks)
         except:
             lg.exc()
-        if result:
+        if result is None:
+            # sending was skipped in this filter, use next one
+            continue
+        if isinstance(result, Deferred):
+            # filter was applied to outgoing data, but sending was delayed
             return result
+        if result:
+            # filter was applied, data was sent, return instance of packet_out.PacketOut
+            return result
+    lg.warn('no outbox filter was applied to : %s' % outpacket)
     return None
 
 

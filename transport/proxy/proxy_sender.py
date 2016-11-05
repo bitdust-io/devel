@@ -25,7 +25,7 @@
 .. module:: proxy_sender
 .. role:: red
 
-BitDust proxy_sender(at_startup) Automat
+BitDust proxy_sender() Automat
 
 .. raw:: html
 
@@ -35,7 +35,8 @@ BitDust proxy_sender(at_startup) Automat
 
 EVENTS:
     * :red:`init`
-    * :red:`outbox-packet`
+    * :red:`outbox-packet-sent`
+    * :red:`proxy_receiver.state`
     * :red:`shutdown`
     * :red:`start`
     * :red:`stop`
@@ -45,6 +46,10 @@ EVENTS:
 
 _Debug = True
 _DebugLevel = 10
+
+#------------------------------------------------------------------------------ 
+
+from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------ 
 
@@ -65,6 +70,8 @@ from userid import my_id
 
 from transport import callback
 from transport import packet_out
+
+from transport.proxy import proxy_receiver
 
 #------------------------------------------------------------------------------ 
 
@@ -116,65 +123,126 @@ class ProxySender(automat.Automat):
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
-        #---REDIRECTING---
-        elif self.state == 'REDIRECTING':
-            if event == 'outbox-packet' :
-                self.doEncryptAndSendToProxyRouter(arg)
-            elif event == 'stop' :
-                self.state = 'STOPPED'
-                self.doStop(arg)
-            elif event == 'shutdown' :
-                self.state = 'CLOSED'
-                self.doStop(arg)
-                self.doDestroyMe(arg)
         #---STOPPED---
         elif self.state == 'STOPPED':
-            if event == 'start' :
-                self.state = 'REDIRECTING'
-                self.doStart(arg)
-            elif event == 'shutdown' :
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+            elif event == 'start' and proxy_receiver.A().state is not 'LISTEN':
+                self.state = 'ROUTER?'
+                self.doStartFilterOutgoingTraffic(arg)
+            elif event == 'start' and proxy_receiver.A().state is 'LISTEN':
+                self.state = 'REDIRECTING'
+                self.doStartFilterOutgoingTraffic(arg)
+        #---ROUTER?---
+        elif self.state == 'ROUTER?':
+            if event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doStopFilterOutgoingTraffic(arg)
+                self.doDestroyMe(arg)
+            elif ( event == 'proxy_receiver.state' and arg == 'OFFLINE' ):
+                self.state = 'STOPPED'
+            elif ( event == 'proxy_receiver.state' and arg == 'LISTEN' ):
+                self.state = 'REDIRECTING'
+                self.doSendAllPendingPackets(arg)
+        #---REDIRECTING---
+        elif self.state == 'REDIRECTING':
+            if event == 'outbox-packet-sent':
+                self.doCountTraffic(arg)
+            elif event == 'stop':
+                self.state = 'STOPPED'
+                self.doStopFilterOutgoingTraffic(arg)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doStopFilterOutgoingTraffic(arg)
+                self.doDestroyMe(arg)
+            elif event == 'proxy_receiver.state' is not 'LISTEN':
+                self.state = 'ROUTER?'
         return None
 
     def doInit(self, arg):
         """
         Action method.
         """
+        self.traffic_out = 0
+        self.pending_packets = []
+        self.max_pending_packets = 100 # TODO: read from settings
 
-    def doStart(self, arg):
+    def doStartFilterOutgoingTraffic(self, arg):
         """
         Action method.
         """
-        callback.insert_outbox_filter_callback(-1, self._on_outbox_packet)
+        callback.insert_outbox_filter_callback(0, self._on_outbox_packet)
 
-    def doStop(self, arg):
+    def doStopFilterOutgoingTraffic(self, arg):
         """
         Action method.
         """
         callback.remove_finish_file_sending_callback(self._on_outbox_packet)
 
-    def doEncryptAndSendToProxyRouter(self, arg):
+    def doCountTraffic(self, arg):
         """
         Action method.
         """
-        from transport.proxy import proxy_receiver
+        _, newpacket, _ = arg
+        self.traffic_out += len(newpacket.Payload)
+
+    def doSendAllPendingPackets(self, arg):
+        """
+        Action method.
+        """
+        while len(self.pending_packets):
+            outpacket, wide, callbacks, pending_result = self.pending_packets.pop(0)
+            result_packet = self._on_outbox_packet(outpacket, wide, callbacks)
+            if not isinstance(result_packet, packet_out.PacketOut):
+                lg.warn('failed sending pending packet %s, skip all pending packets' % outpacket)
+                self.pending_packets = []
+                break
+            pending_result.callback(result_packet)
+
+    def doDestroyMe(self, arg):
+        """
+        Remove all references to the state machine object to destroy it.
+        """
+        automat.objects().pop(self.index)
+        global _ProxySender
+        del _ProxySender
+        _ProxySender = None
+
+    def _add_pending_packet(self, outpacket, wide, callbacks):
+        if len(self.pending_packets) > self.max_pending_packets:
+            if _Debug:
+                lg.warn('pending packets queue is full, skip sending outgoing packet')
+            return fail((outpacket, wide, callbacks))
+        pending_result = Deferred()
+        self.pending_packets.append((outpacket, wide, callbacks, pending_result))
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
+        return pending_result
+
+    def _on_outbox_packet(self, outpacket, wide, callbacks):
+        """
+        """
+        if proxy_receiver.A().state != 'LISTEN':
+            return self._add_pending_packet(outpacket, wide, callbacks)
         router_idurl = proxy_receiver.GetRouterIDURL()
         router_identity_obj = proxy_receiver.GetRouterIdentity()
         router_proto_host = proxy_receiver.GetRouterProtoHost()
-        if not router_idurl or not router_proto_host or not router_identity_obj:
-            if _Debug:
-                lg.warn('proxy router is not configured yet')
-            return
-        outpacket, wide, callbacks = arg
         router_proto, router_host = router_proto_host
         publickey = router_identity_obj.publickey
+        my_original_identity_src = proxy_receiver.ReadMyOriginalIdentitySource()
+        if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
+            return self._add_pending_packet(outpacket, wide, callbacks)
+        if outpacket.RemoteID == router_idurl:
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet skip, packet addressed to router and must be sent in a usual way')
+            return None
         src = ''
         src += my_id.getLocalID() + '\n'
         src += outpacket.RemoteID + '\n'
@@ -194,30 +262,20 @@ class ProxySender(automat.Automat):
             commands.Data(), 
             outpacket.OwnerID,
             my_id.getLocalID(), 
-            # 'routed_out_'+outpacket.PacketID, 
             outpacket.PacketID,
             block_encrypted, 
             router_idurl)
-        self.result_outbox = packet_out.create(
+        result_packet = packet_out.create(
             outpacket, 
             wide=wide, 
             callbacks=callbacks, 
-            # target=router_idurl,
             route={
                 'packet': newpacket,
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,
                 'description': 'Routed_%s' % nameurl.GetName(router_idurl)})
-#        fileno, filename = tmpfile.make('proxy-out')
-#        packetdata = newpacket.Serialize()
-#        os.write(fileno, packetdata)
-#        os.close(fileno)
-#        gateway.send_file(router_idurl, 
-#                          router_proto, 
-#                          router_host, 
-#                          filename, 
-#                          'Routed packet for %s' % outpacket.RemoteID)
+        self.event('outbox-packet-sent', (outpacket, newpacket, result_packet))
         if _Debug:
             lg.out(_DebugLevel-8, '<<< ROUTED-OUT <<< %s' % str(outpacket))
             lg.out(_DebugLevel-8, '                   sent on %s://%s with %d bytes' % (
@@ -229,51 +287,9 @@ class ProxySender(automat.Automat):
         del router_identity_obj
         del router_idurl
         del router_proto_host
-
-    def doDestroyMe(self, arg):
-        """
-        Remove all references to the state machine object to destroy it.
-        """
-        automat.objects().pop(self.index)
-        global _ProxySender
-        del _ProxySender
-        _ProxySender = None
-        
-    def _on_outbox_packet(self, outpacket, wide, callbacks):
-        """
-        """
-        if _Debug:
-            lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet filtering %s' % (outpacket))
-        from transport.proxy import proxy_receiver
-        if proxy_receiver.A().state != 'LISTEN':
-            if _Debug:
-                lg.out(_DebugLevel, '        proxy_receiver() is not listening yet')
-            return None
-        router_idurl = proxy_receiver.GetRouterIDURL()
-        router_identity_obj = proxy_receiver.GetRouterIdentity()
-        router_proto_host = proxy_receiver.GetRouterProtoHost()
-        my_original_identity_src = proxy_receiver.ReadMyOriginalIdentitySource()
-        if not router_idurl or not router_identity_obj or not router_proto_host or not my_original_identity_src:
-            if _Debug:
-                lg.out(_DebugLevel, '        proxy_receiver() is not yet found a router')
-            return None
-        if outpacket.RemoteID == router_idurl:
-            # if outpacket.Command == commands.Identity():
-            #     return True
-            if _Debug:
-                lg.out(_DebugLevel, '        outpacket is addressed for router and must be sent in a usual way')
-            return None
-        if _Debug:
-            lg.out(_DebugLevel, '        %s were redirected for %s' % (outpacket, router_idurl))
-        self.result_outbox = None
-        self.event('outbox-packet', (outpacket, wide, callbacks))
-        ret = self.result_outbox
-        del self.result_outbox
-        return ret
-
-    
+        return result_packet
+ 
 #------------------------------------------------------------------------------ 
-
 
 def main():
     from twisted.internet import reactor

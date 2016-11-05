@@ -47,8 +47,8 @@ class P2PHookupsService(LocalService):
             depends.append('service_tcp_transport')
         if settings.enableUDP():
             depends.append('service_udp_transport')
-        if settings.enablePROXY():
-            depends.append('service_proxy_transport')
+#         if settings.enablePROXY():
+#             depends.append('service_proxy_transport')
         return depends
     
     def start(self):

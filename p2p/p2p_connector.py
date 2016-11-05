@@ -352,7 +352,7 @@ class P2PConnector(automat.Automat):
 
     def _check_to_use_best_proto(self):
         #out(4, 'p2p_connector._check_to_use_best_proto active_protos()=%s' % str(active_protos()))
-        #if no incomming traffic - do nothing
+        #if no incoming traffic - do nothing
         if len(active_protos()) == 0:
             return True
         lid = my_id.getLocalIdentity()

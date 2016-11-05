@@ -45,7 +45,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------ 
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------ 
 
@@ -58,8 +58,6 @@ from twisted.internet.defer import fail
 from logs import lg
 
 from automats import automat
-
-from system import bpio
 
 from lib import misc
 from lib import nameurl
@@ -217,7 +215,7 @@ class NetworkTransport(automat.Automat):
         """
         Action method.
         """
-        options = { 'idurl': my_id.getLocalID(),}
+        options = { 'idurl': my_id.getLocalID(), }
         id_contact = ''
         default_host = ''
         ident = my_id.getLocalIdentity()
@@ -239,9 +237,6 @@ class NetworkTransport(automat.Automat):
             options['udp_port'] = settings.getUDPPort()
         elif self.proto == 'proxy':
             pass
-#            if not id_contact:
-#                default_host = nameurl.GetName(my_id.getLocalID())+'@'+platform.node()
-#            options['host'] = id_contact or default_host
         if _Debug:
             lg.out(8, 'network_transport.doStart connecting %s transport : %s' % (self.proto.upper(), options))
         self.interface.connect(options) 

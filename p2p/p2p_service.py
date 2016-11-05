@@ -440,7 +440,7 @@ def SendCancelService(remote_idurl, service_info, callbacks={}):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendCancelService [%s]" % service_info.replace('\n',' ')[:40])
     result = signed.Packet(commands.CancelService(), my_id.getLocalID(), my_id.getLocalID(), 
-                                  packetid.UniqueID(), service_info, remote_idurl)
+        packetid.UniqueID(), service_info, remote_idurl)
     gateway.outbox(result, callbacks=callbacks)
     return result   
 

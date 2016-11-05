@@ -40,25 +40,33 @@ class ProxyTransportService(LocalService):
     config_path = 'services/proxy-transport/enabled'
     proto = 'proxy'
     
-    def dependent_on(self):
+    def _available_transports(self):
         from main import settings
+        atransports = []
+        if settings.enableTCP() and settings.enableTCPreceiving() and settings.enableTCPsending():
+            atransports.append('service_tcp_transport')
+        if settings.enableUDP() and settings.enableUDPreceiving() and settings.enableUDPsending():
+            atransports.append('service_udp_transport')
+        return atransports
+    
+    def dependent_on(self):
         depends = ['service_identity_propagate', 
-                   'service_entangled_dht',]
-        if settings.enableTCP():
-            depends.append('service_tcp_transport')
-        if settings.enableUDP():
-            depends.append('service_udp_transport')
+                   'service_nodes_lookup',]
+        depends.extend(self._available_transports())
         return depends
 
     def start(self):
+        from logs import lg
         from twisted.internet import reactor
         from twisted.internet.defer import Deferred
         from transport.proxy import proxy_interface
         from transport import network_transport
         from transport import gateway
         from main.config import conf
-        if not self._check_update_current_router():
+        if len(self._available_transports()) == 0:
+            lg.warn('no transports available')
             return False
+        self._check_update_original_identity()
         self.starting_deferred = Deferred()
         self.interface = proxy_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
@@ -94,23 +102,49 @@ class ProxyTransportService(LocalService):
             return False
         return True
 
-    def _check_update_current_router(self):
+    def _reset_my_original_identity(self):
+        from userid import my_id
         from main.config import conf
+        conf().setData('services/proxy-transport/my-original-identity', '') 
+        conf().setString('services/proxy-transport/current-router', '')
+        my_id.rebuildLocalIdentity()
+
+    def _check_update_original_identity(self):
         from logs import lg
-        orig_ident = conf().getData('services/proxy-transport/my-original-identity').strip() != ''
-        current_router = conf().getString('services/proxy-transport/current-router').strip() != ''
-        if (current_router and not orig_ident) or (not current_router and orig_ident):
-            lg.warn('current-router: %s, my-original-identity: %s' % (
-                current_router, orig_ident, ))
-            conf().setData('services/proxy-transport/my-original-identity', '') 
-            conf().setString('services/proxy-transport/current-router', '')
-            return False
-        return True
+        from lib import misc
+        from main.config import conf
+        from userid import identity
+        orig_ident_xmlsrc = conf().getData('services/proxy-transport/my-original-identity').strip()
+        current_router_idurl = conf().getString('services/proxy-transport/current-router').strip()
+        if not orig_ident_xmlsrc:
+            if current_router_idurl:
+                lg.warn('current-router is %s, but my-original-identity is empty' % current_router_idurl)
+                self._reset_my_original_identity()
+            return
+        orig_ident = identity.identity(xmlsrc=orig_ident_xmlsrc)
+        if not orig_ident.isCorrect() or not orig_ident.Valid():
+            lg.warn('my original identity is not valid')
+            self._reset_my_original_identity()
+            return
+        externalIP = misc.readExternalIP()
+        if externalIP and orig_ident.getIP() != externalIP:
+            lg.warn('external IP was changed : restore my original identity')
+            self._reset_my_original_identity()
+            return
+        if not current_router_idurl:
+            lg.warn('original identity is correct, but current router is empty')
+            self._reset_my_original_identity()
 
     def _on_transport_state_changed(self, transport, oldstate, newstate):
         if self.starting_deferred:
-            if newstate in ['LISTENING', 'OFFLINE',]:
+#             if newstate == 'LISTENING' or newstate == 'OFFLINE':
+#                 self.starting_deferred.callback(newstate)
+#                 self.starting_deferred = None
+            if newstate == 'LISTENING' and oldstate != 'LISTENING':
                 self.starting_deferred.callback(newstate)
+                self.starting_deferred = None
+            if newstate == 'OFFLINE' and oldstate in ['STARTING', 'STOPPING', ]:
+                self.starting_deferred.errback(newstate)
                 self.starting_deferred = None
         if newstate == 'LISTENING':
             from p2p import p2p_connector

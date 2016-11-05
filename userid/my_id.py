@@ -293,9 +293,9 @@ def buildProtoContacts(id_obj):
     for proto in getValidTransports():
         if not settings.transportIsEnabled(proto):
             continue
-        # if not driver.is_started('service_%s_transport' % proto):
-        #     continue
         if not settings.transportReceivingIsEnabled(proto):
+            continue
+        if not driver.is_started('service_%s_transport' % proto):
             continue
         active_transports.append(proto)
     # sort active transports by priority
@@ -462,7 +462,7 @@ def rebuildLocalIdentity():
 #        lid.setProtoContact(proto, contact)
     # update software version number
     vernum = bpio.ReadTextFile(settings.VersionNumberFile())
-    repo, location = misc.ReadRepoLocation()
+    repo, _ = misc.ReadRepoLocation()
     lid.version = (vernum.strip() + ' ' + repo.strip() + ' ' + bpio.osinfo().strip()).strip()
     # generate signature with changed content
     lid.sign()

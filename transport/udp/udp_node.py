@@ -432,7 +432,7 @@ class UDPNode(automat.Automat):
     def _datagram_received(self, datagram, address):
         """
         """
-        command, payload = datagram
+        # command, payload = datagram
         # lg.out(18, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
         s = udp_session.get(address)
         if s:

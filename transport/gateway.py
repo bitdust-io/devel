@@ -426,6 +426,10 @@ def outbox(outpacket, wide=False, callbacks={}):
         
             callback arguments are: (response_packet, info)
             
+    Returns:
+        `None` if data was not sent, no filter was applied
+        `Deferred` object if filter was applied but sending was delayed
+        `packet_out.PacketOut` object if packet was sent
     """
     if _Debug:
         lg.out(_DebugLevel, "gateway.outbox [%s] signed by %s|%s to %s, wide=%s" % (
