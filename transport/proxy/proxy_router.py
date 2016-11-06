@@ -51,7 +51,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------ 
 
@@ -323,7 +323,7 @@ class ProxyRouter(automat.Automat):
             return
         gateway.outbox(routed_packet, wide=wide)
         if _Debug:
-            lg.out(_DebugLevel, '>>> Relay-OUT >>> %d bytes from %s at %s://%s :' % (
+            lg.out(_DebugLevel, '>>>Relay-OUT %d bytes from %s at %s://%s :' % (
                 len(data), nameurl.GetName(sender_idurl), info.proto, info.host,))
             lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), str(routed_packet)))
         del block
@@ -372,7 +372,7 @@ class ProxyRouter(automat.Automat):
             newpacket.PacketID, 
             block.Serialize(), 
             receiver_idurl)
-        packet_out.create(
+        pout = packet_out.create(
             newpacket, 
             wide=False,
             callbacks={},
@@ -385,10 +385,10 @@ class ProxyRouter(automat.Automat):
                     newpacket.Command, newpacket.PacketID,
                     nameurl.GetName(receiver_idurl)))})
         if _Debug:
-            lg.out(_DebugLevel, '<<< Relay-IN <<< %s from %s://%s' % (
-                str(routed_packet), info.proto, info.host,))
-            lg.out(_DebugLevel, '           sent to %s://%s with %d bytes' % (
-                receiver_proto, receiver_host, len(src)))
+            lg.out(_DebugLevel, '<<<Relay-IN %s %s:%s' % (
+                str(newpacket), info.proto, info.host,))
+            lg.out(_DebugLevel, '           sent to %s://%s with %d bytes in %s' % (
+                receiver_proto, receiver_host, len(src), pout))
         del src
         del block
         del newpacket

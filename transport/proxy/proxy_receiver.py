@@ -54,7 +54,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------ 
 
@@ -409,7 +409,7 @@ class ProxyReceiver(automat.Automat):
             lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' % newpacket.CreatorID)
             return
         if _Debug:
-            lg.out(_DebugLevel, '<<< Relay-IN <<< %s from %s://%s' % (
+            lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s' % (
                 str(routed_packet), info.proto, info.host,))
         packet_in.process(routed_packet, info)
         del block

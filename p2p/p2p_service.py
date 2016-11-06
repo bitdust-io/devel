@@ -422,7 +422,7 @@ def CancelService(request, info):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.CancelService")
     words = request.Payload.split(' ')
-    if len(words) <= 1:
+    if len(words) < 1:
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
     service_name = words[0]

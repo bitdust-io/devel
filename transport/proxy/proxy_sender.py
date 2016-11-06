@@ -45,7 +45,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 10
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------ 
 
@@ -287,7 +287,7 @@ class ProxySender(automat.Automat):
             })
         self.event('outbox-packet-sent', (outpacket, newpacket, result_packet))
         if _Debug:
-            lg.out(_DebugLevel, '>>> Relay-OUT >>> %s' % str(outpacket))
+            lg.out(_DebugLevel, '>>>Relay-OUT %s' % str(outpacket))
             lg.out(_DebugLevel, '        sent to %s://%s with %d bytes' % (
                 router_proto, router_host, len(block_encrypted)))
         del src

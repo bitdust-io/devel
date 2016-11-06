@@ -249,9 +249,9 @@ def stop_streams():
 def cancel_file_receiving(transferID):
     """
     """
-    for connections in opened_connections().vaues():
+    for connections in opened_connections().values():
         for connection in connections:
-            for in_file in connection.inboxFiles.vaues():
+            for in_file in connection.inboxFiles.values():
                 if in_file.transfer_id and in_file.transfer_id == transferID:
                     connection.automat('disconnect')
                     return True
