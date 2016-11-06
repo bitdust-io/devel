@@ -67,8 +67,8 @@ def UniqueID():
 def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity):
     """
     Create a full packet ID from backup ID and other parts.
-        >>> import packetid
-        >>> packetid.MakePacketID('0/0/1/0/F20131120053803PM', 1234, 63, 'Data')
+        import packetid
+        packetid.MakePacketID('0/0/1/0/F20131120053803PM', 1234, 63, 'Data')
         '0/0/1/0/F20131120053803PM/1234-63-Data'    
     """
     return backupID + '/' + str(blockNumber) + '-' + str(supplierNumber) + '-' + dataORparity
@@ -117,7 +117,7 @@ def Valid(packetID):
 def Split(packetID):
     """
     Split a full packet ID into tuple of 4 parts.
-        >>> packetid.Split("0/0/1/0/F20131120053803PM/0-1-Data")
+        packetid.Split("0/0/1/0/F20131120053803PM/0-1-Data")
         ('0/0/1/0/F20131120053803PM', 0, 1, 'Data')    
     """
     try:
@@ -132,7 +132,7 @@ def Split(packetID):
 def SplitFull(packetID):
     """
     Almost the same but return 5 parts:
-        >>> packetid.SplitFull("0/0/1/0/F20131120053803PM/0-1-Data")
+        packetid.SplitFull("0/0/1/0/F20131120053803PM/0-1-Data")
         ('0/0/1/0', 'F20131120053803PM', 0, 1, 'Data')
     """
     try:
@@ -148,7 +148,7 @@ def SplitFull(packetID):
 def SplitVersionFilename(packetID):
     """
     Return 3 parts:
-        >>> packetid.SplitVersionFilename("0/0/1/0/F20131120053803PM/0-1-Data")
+        packetid.SplitVersionFilename("0/0/1/0/F20131120053803PM/0-1-Data")
         ('0/0/1/0', 'F20131120053803PM', '0-1-Data')    
     """ 
     try:
@@ -161,7 +161,7 @@ def SplitVersionFilename(packetID):
 def SplitBackupID(backupID):
     """
     This takes a short string, only backup ID:
-        >>> packetid.SplitBackupID('0/0/1/0/F20131120053803PM')
+        packetid.SplitBackupID('0/0/1/0/F20131120053803PM')
         ('0/0/1/0', 'F20131120053803PM')    
     """
     try:
@@ -233,7 +233,7 @@ def DataOrParity(packetID):
 def parentPathsList(ID):
     """
     Return an iterator to go thru all parent paths of the given path ``ID``:
-        >>> list(packetid.parentPathsList('0/0/1/0/F20131120053803PM/0-1-Data'))
+        list(packetid.parentPathsList('0/0/1/0/F20131120053803PM/0-1-Data'))
         ['0', '0/0', '0/0/1', '0/0/1/0', '0/0/1/0/F20131120053803PM', '0/0/1/0/F20131120053803PM/0-1-Data']
     """
     path = '' 

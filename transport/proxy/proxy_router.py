@@ -321,11 +321,13 @@ class ProxyRouter(automat.Automat):
         if not routed_packet:
             lg.out(2, 'proxy_router.doForwardOutboxPacket ERROR unserialize packet from %s' % newpacket.RemoteID)
             return
-        gateway.outbox(routed_packet, wide=wide)
+        # send the packet directly to target
+        pout = packet_out.create(routed_packet, wide=wide, callbacks={}, target=receiver_idurl,)
+        # gateway.outbox(routed_packet, wide=wide)
         if _Debug:
             lg.out(_DebugLevel, '>>>Relay-OUT %d bytes from %s at %s://%s :' % (
                 len(data), nameurl.GetName(sender_idurl), info.proto, info.host,))
-            lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), str(routed_packet)))
+            lg.out(_DebugLevel, '    routed to %s : %s' % (nameurl.GetName(receiver_idurl), pout))
         del block
         del data
         del padded_data

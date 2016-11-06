@@ -54,8 +54,8 @@ legalset= set(legalchars)
 def UrlParse(url):
     """
     Return a tuple of strings from url address : ( proto, host, port, filename )
-        >>> import nameurl
-        >>> nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
+        import nameurl
+        nameurl.UrlParse('http://id.bitdust.io/veselin.xml')
         ('http', 'id.bitdust.io', '', 'veselin.xml')
     """
     o = urlparse.urlparse(url)
@@ -103,7 +103,7 @@ def UrlFilename(url):
     """
     Generate a 'safe' filename from URL address.
     This is useful when need to store identity files on disk.
-        >>> nameurl.UrlFilename('http://id.bitdust.io/veselin.xml')
+        nameurl.UrlFilename('http://id.bitdust.io/veselin.xml')
         'http###id.bitdust.io#veselin.xml'     
     """
     if url is None:
@@ -135,7 +135,7 @@ def FilenameUrl(filename):
 def UrlFilenameHTML(url):
     """
     Another method to simplify URL, so you can create a filename from URL string.
-        >>> nameurl.UrlFilenameHTML('http://id.bitdust.io/veselin.xml')
+        nameurl.UrlFilenameHTML('http://id.bitdust.io/veselin.xml')
         'id_bitdust_net_veselin_xml'     
     """
     global legalset
@@ -152,7 +152,7 @@ def UrlFilenameHTML(url):
 def GetName(url):
     """
     Deal with the identities, return a filename (without extension) from URL address. 
-        >>> nameurl.GetName('http://id.bitdust.io/kinggeorge.xml')
+        nameurl.GetName('http://id.bitdust.io/kinggeorge.xml')
         'kinggeorge'    
     """
     if url in [None, 'None', '',]:

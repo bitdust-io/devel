@@ -413,7 +413,7 @@ class Automat(object):
                 self.log(
                     max(self.debug_level, _DebugLevel),
                     '%s fired with event "%s", refs=%d' % (
-                        self, event_string, sys.getrefcount(self)))
+                        repr(self), event_string, sys.getrefcount(self)))
         old_state = self.state
         if self.post:
             try:
@@ -436,7 +436,7 @@ class Automat(object):
                 self.log(
                     max(_DebugLevel, self.debug_level),
                     '%s(%s): (%s)->(%s)' % (
-                        self.id, event_string, old_state, new_state))
+                        repr(self), event_string, old_state, new_state))
             self.stopTimers()
             self.state_changed(old_state, new_state, event_string, arg)
             self.startTimers()

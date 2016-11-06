@@ -187,7 +187,10 @@ class PacketIn(automat.Automat):
         self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
-        
+
+    def __repr__(self):
+        return self.label
+
     def is_timed_out(self):
         if self.time is None or self.timeout is None:
             return False
@@ -309,7 +312,8 @@ class PacketIn(automat.Automat):
         # DO UNSERIALIZE HERE , no exceptions
         newpacket = gateway.inbox(self)
         if newpacket is None:
-            lg.out(14, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
+            if _Debug:
+                lg.out(_DebugLevel, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
                          self.proto.upper().ljust(5), self.status.ljust(8), 
                          self.host, os.path.basename(self.filename),))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
@@ -324,6 +328,7 @@ class PacketIn(automat.Automat):
                 lg.exc()
             self.automat('unserialize-failed', None)
             return
+        self.label += '_%s[%s]' % (newpacket.Command, newpacket.PacketID)
         self.automat('valid-inbox-packet', newpacket)
 
     def doReportReceived(self, arg):

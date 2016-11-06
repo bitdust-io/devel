@@ -682,11 +682,11 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
     if status == 'finished':
         if _Debug:
-            lg.out(_DebugLevel-8, '<<< OUT <<< %s (%d) [%s://%s] %s with %d bytes' % (
+            lg.out(_DebugLevel-8, '>>> OUT >>> %s (%d) [%s://%s] %s with %d bytes' % (
                 pkt_out.description, transfer_id, work_item.proto, work_item.host, status.upper(), bytes_sent))
     else:
         if _Debug:
-            lg.out(_DebugLevel-8, '<<< OUT <<< %s (%d) [%s://%s] %s : %s' % (
+            lg.out(_DebugLevel-8, '>>> OUT >>> %s (%d) [%s://%s] %s : %s' % (
                 pkt_out.description, transfer_id, work_item.proto, work_item.host, str(status).upper(), error_message))
     return True
 
@@ -702,7 +702,7 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
     if _Debug:
-        lg.out(_DebugLevel-8, '<<< OUT <<<  {%s} CANCELLED via [%s] to %s : %s' % (
+        lg.out(_DebugLevel-8, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
             os.path.basename(filename), proto, host, error_message))
     return True
 
@@ -728,11 +728,11 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
     assert pkt_in != None
     if status == 'finished':
         if _Debug:
-            lg.out(_DebugLevel-8, '>>> IN >>> (%d) [%s://%s] %s with %d bytes' % (
+            lg.out(_DebugLevel-8, '<<< IN <<< (%d) [%s://%s] %s with %d bytes' % (
                 transfer_id, pkt_in.proto, pkt_in.host, status.upper(), bytes_received))
     else:
         if _Debug:
-            lg.out(_DebugLevel-8, '>>> IN >>> (%d) [%s://%s] %s : %s' % (
+            lg.out(_DebugLevel-8, '<<< IN <<< (%d) [%s://%s] %s : %s' % (
                 transfer_id, pkt_in.proto, pkt_in.host, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
     return True

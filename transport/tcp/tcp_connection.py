@@ -365,7 +365,6 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.automat('connection-lost')
 
     def sendData(self, command, payload):
-        # print '<<<<<< [%s], %d bytes' % (command, len(payload))
         try:
             data = self.SoftwareVersion + str(command.lower())[0] + payload
             self.sendString(data)

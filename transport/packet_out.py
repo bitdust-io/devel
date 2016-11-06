@@ -213,7 +213,7 @@ class PacketOut(automat.Automat):
         self.callbacks = callbacks
         self.remote_idurl = target
         self.caching_deferred = None
-        self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
+        self.description = self.outpacket.Command+'['+self.outpacket.PacketID+']'
         self.route = route
         if self.route:
             self.description = self.route['description']
