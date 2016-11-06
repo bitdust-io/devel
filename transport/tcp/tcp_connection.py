@@ -38,7 +38,7 @@ EVENTS:
 #------------------------------------------------------------------------------ 
 
 _Debug = False
-_DebugLevel = 24
+_DebugLevel = 18
 
 #------------------------------------------------------------------------------ 
 
@@ -84,6 +84,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.total_bytes_received = 0
         self.total_bytes_sent = 0
         self.outboxQueue = []
+        self.keep_alive = True
 
     def init(self):
         """
@@ -315,7 +316,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
-        # lg.out(18, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
         try:
             self.transport.abortConnection()
         except:
@@ -354,14 +356,16 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         return addr
     
     def connectionMade(self):
-        # lg.out(18, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
         address = self.getAddress()
         name = 'tcp_connection[%s:%d]' % (address[0], address[1])  
         automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel, _Debug)
         self.automat('connection-made')
     
     def connectionLost(self, reason):
-        # lg.out(18, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
+        if _Debug:
+            lg.out(_DebugLevel, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
         self.automat('connection-lost')
 
     def sendData(self, command, payload):

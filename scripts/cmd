@@ -7,7 +7,7 @@
 # ./bd set services/broadcasting/routing-enabled true
 # ./bd set services/broadcasting/max-broadcast-connections 3
 # rm -rf ~/.bitdust/logs/*
-rm -rf ~/bitdust/services/*.pyc
+# rm -rf ~/bitdust/services/*.pyc
 ./go
 
 exit 0

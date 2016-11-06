@@ -25,6 +25,12 @@
 ..module:: tcp_stream
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = False
+_DebugLevel = 18
+
+#------------------------------------------------------------------------------ 
 
 import os
 import time
@@ -190,8 +196,9 @@ class TCPFileStream():
             self.report_inbox_file(infile.transfer_id, 'finished', infile.get_bytes_received())
             
     def on_inbox_file_register_failed(self, err, file_id):
-        lg.out(2, 'tcp_stream.on_inbox_file_register_failed ERROR failed to register, file_id=%s err:\n%s' % (str(file_id), str(err)))
-        lg.out(6, 'tcp_stream.on_inbox_file_register_failed close session %s' % self.session)
+        if _Debug:
+            lg.warn('failed to register, file_id=%s err:\n%s' % (str(file_id), str(err)))
+            lg.out(_DebugLevel-8, '        close session %s' % self.session)
         self.connection.automat('disconnect')
               
     def create_outbox_file(self, filename, filesize, description, result_defer, single):
@@ -217,8 +224,9 @@ class TCPFileStream():
             self.outbox_file_done(file_id, 'finished')
 
     def on_outbox_file_register_failed(self, err, file_id):
-        lg.out(2, 'tcp_stream.on_outbox_file_register_failed ERROR failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
-        lg.out(6, 'tcp_stream.on_outbox_file_register_failed close session %s' % self.connection)
+        if _Debug:
+            lg.warn('failed to register, file_id=%s :\n%s' % (str(file_id), str(err)))
+            lg.out(_DebugLevel-8, '        close session %s' % self.connection)
         self.connection.automat('disconnect')
         
     def close_outbox_file(self, file_id):
@@ -270,7 +278,7 @@ class TCPFileStream():
         self.close_outbox_file(file_id)
         if outfile.transfer_id:
             self.report_outbox_file(outfile.transfer_id, status, outfile.get_bytes_sent(), error_message)
-        if outfile.single:
+        if outfile.single and not self.connection.keep_alive:
             self.connection.automat('disconnect') 
         del outfile
 
@@ -288,8 +296,13 @@ class InboxFile():
         self.started = time.time()
         self.last_block_time = time.time()
         self.timeout = max(int(self.file_size/settings.SendingSpeedLimit()), 3)
+        if _Debug:
+            lg.out(_DebugLevel, '<<<TCP-IN %s with %d bytes write to %s' % (
+                self.file_id, self.file_size, self.filename))
 
     def close(self):
+        if _Debug:
+            lg.out(_DebugLevel, '<<<TCP-IN %s CLOSED' % (self.file_id))
         try:
             os.close(self.fd)
         except:
@@ -329,8 +342,13 @@ class OutboxFile():
         self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 6)
         self.fin = open(self.filename, 'rb')
         self.sender = None
+        if _Debug:
+            lg.out(_DebugLevel, '>>>TCP-OUT %s with %d bytes reading from %s' % (
+                self.file_id, self.size, self.filename))
 
     def close(self):
+        if _Debug:
+            lg.out(_DebugLevel, '>>>TCP-OUT %s CLOSED' % (self.file_id))
         self.stop()
         try:
             self.fin.close()
