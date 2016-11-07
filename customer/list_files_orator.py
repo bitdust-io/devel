@@ -44,7 +44,7 @@ EVENTS:
     * :red:`init`
     * :red:`local-files-done`
     * :red:`need-files`
-    * :red:`timer-15sec`
+    * :red:`timer-10sec`
     
 """
 
@@ -107,7 +107,7 @@ class ListFilesOrator(automat.Automat):
     """
     
     timers = {
-        'timer-15sec': (15.0, ['REMOTE_FILES']),
+        'timer-10sec': (10.0, ['REMOTE_FILES']),
         }
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -118,29 +118,30 @@ class ListFilesOrator(automat.Automat):
     def A(self, event, arg):
         #---NO_FILES---
         if self.state == 'NO_FILES':
-            if event == 'need-files' :
+            if event == 'need-files':
                 self.state = 'LOCAL_FILES'
                 self.doReadLocalFiles(arg)
-            elif event == 'init' :
+            elif event == 'init':
                 pass
         #---LOCAL_FILES---
         elif self.state == 'LOCAL_FILES':
-            if event == 'local-files-done' and p2p_connector.A().state is 'CONNECTED' :
+            if event == 'local-files-done' and p2p_connector.A().state is 'CONNECTED':
                 self.state = 'REMOTE_FILES'
                 self.doRequestRemoteFiles(arg)
-            elif event == 'local-files-done' and p2p_connector.A().state is not 'CONNECTED' :
+            elif event == 'local-files-done' and p2p_connector.A().state is not 'CONNECTED':
                 self.state = 'NO_FILES'
         #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':
-            if ( event == 'timer-15sec' and self.isSomeListFilesReceived(arg) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(arg) ) :
+            if ( event == 'timer-10sec' and self.isSomeListFilesReceived(arg) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(arg) ):
                 self.state = 'SAW_FILES'
-            elif event == 'timer-15sec' and not self.isSomeListFilesReceived(arg) :
+            elif event == 'timer-10sec' and not self.isSomeListFilesReceived(arg):
                 self.state = 'NO_FILES'
         #---SAW_FILES---
         elif self.state == 'SAW_FILES':
-            if event == 'need-files' :
+            if event == 'need-files':
                 self.state = 'LOCAL_FILES'
                 self.doReadLocalFiles(arg)
+        return None
 
     def isAllListFilesReceived(self, arg):
         global _RequestedListFilesPacketIDs

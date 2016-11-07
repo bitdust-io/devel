@@ -374,6 +374,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             self.sendString(data)
         except:
             return False
+        self.automat('data-sent', data)
         return True
     
     def stringReceived(self, data):

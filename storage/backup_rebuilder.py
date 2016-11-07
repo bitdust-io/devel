@@ -55,8 +55,7 @@ EVENTS:
     * :red:`rebuilding-finished`
     * :red:`requests-sent`
     * :red:`start`
-    * :red:`timer-10sec`
-    * :red:`timer-1min`
+    * :red:`timer-15sec`
     * :red:`timer-1sec`
 
 """
@@ -129,9 +128,8 @@ class BackupRebuilder(automat.Automat):
     """
 
     timers = {
-        'timer-1min': (60, ['REQUEST']),
         'timer-1sec': (1.0, ['REQUEST']),
-        'timer-10sec': (10.0, ['REQUEST']),
+        'timer-15sec': (15.0, ['REQUEST']),
         }
     
     def init(self):
@@ -157,61 +155,61 @@ class BackupRebuilder(automat.Automat):
     def A(self, event, arg):
         #---REQUEST---
         if self.state == 'REQUEST':
-            if ( event == 'timer-10sec' or event == 'inbox-data-packet' or event == 'requests-sent' ) and self.isChanceToRebuild(arg) :
+            if ( event == 'timer-1sec' or event == 'inbox-data-packet' or event == 'requests-sent' ) and self.isChanceToRebuild(arg):
                 self.state = 'REBUILDING'
                 self.doAttemptRebuild(arg)
-            elif event == 'timer-1min' or ( event == 'requests-sent' and self.isRequestQueueEmpty(arg) and not self.isMissingPackets(arg) ) :
-                self.state = 'DONE'
-                self.doCloseThisBackup(arg)
-            elif ( event == 'instant' or event == 'timer-1sec' ) and self.isStopped(arg) :
+            elif ( event == 'instant' or event == 'timer-1sec' or event == 'requests-sent' ) and self.isStopped(arg):
                 self.state = 'STOPPED'
+                self.doCloseThisBackup(arg)
+            elif event == 'timer-15sec' or ( event == 'requests-sent' and not self.isAnyRequestsSent(arg) ) or ( ( event == 'timer-1sec' or event == 'inbox-data-packet' ) and self.isRequestQueueEmpty(arg) and not self.isMissingPackets(arg) ):
+                self.state = 'DONE'
                 self.doCloseThisBackup(arg)
         #---STOPPED---
         elif self.state == 'STOPPED':
-            if event == 'init' :
+            if event == 'init':
                 self.doClearStoppedFlag(arg)
-            elif event == 'start' :
+            elif event == 'start':
                 self.state = 'NEXT_BACKUP'
                 self.doClearStoppedFlag(arg)
         #---NEXT_BACKUP---
         elif self.state == 'NEXT_BACKUP':
-            if event == 'instant' and not self.isStopped(arg) and self.isMoreBackups(arg) :
+            if event == 'instant' and not self.isStopped(arg) and self.isMoreBackups(arg):
                 self.state = 'PREPARE'
                 self.doOpenNextBackup(arg)
                 self.doScanBrokenBlocks(arg)
-            elif event == 'instant' and not self.isMoreBackups(arg) and not self.isStopped(arg) :
+            elif event == 'instant' and not self.isMoreBackups(arg) and not self.isStopped(arg):
                 self.state = 'DONE'
-            elif event == 'instant' and self.isStopped(arg) :
+            elif event == 'instant' and self.isStopped(arg):
                 self.state = 'STOPPED'
         #---DONE---
         elif self.state == 'DONE':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'NEXT_BACKUP'
                 self.doClearStoppedFlag(arg)
         #---PREPARE---
         elif self.state == 'PREPARE':
-            if event == 'backup-ready' and not self.isStopped(arg) and self.isMoreBlocks(arg) :
+            if event == 'backup-ready' and not self.isStopped(arg) and self.isMoreBlocks(arg):
                 self.state = 'REQUEST'
                 self.doRequestAvailablePieces(arg)
-            elif event == 'backup-ready' and not self.isStopped(arg) and not self.isMoreBlocks(arg) and self.isMoreBackups(arg) :
+            elif event == 'backup-ready' and not self.isStopped(arg) and not self.isMoreBlocks(arg) and self.isMoreBackups(arg):
                 self.state = 'NEXT_BACKUP'
                 self.doCloseThisBackup(arg)
-            elif event == 'backup-ready' and ( not self.isMoreBackups(arg) and not self.isMoreBlocks(arg) ) :
+            elif event == 'backup-ready' and ( not self.isMoreBackups(arg) and not self.isMoreBlocks(arg) ):
                 self.state = 'DONE'
                 self.doCloseThisBackup(arg)
-            elif ( event == 'instant' or event == 'backup-ready' ) and self.isStopped(arg) :
+            elif ( event == 'instant' or event == 'backup-ready' ) and self.isStopped(arg):
                 self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
         #---REBUILDING---
         elif self.state == 'REBUILDING':
-            if event == 'rebuilding-finished' and not self.isStopped(arg) and self.isMoreBlocks(arg) :
+            if event == 'rebuilding-finished' and not self.isStopped(arg) and self.isMoreBlocks(arg):
                 self.state = 'REQUEST'
                 self.doRequestAvailablePieces(arg)
-            elif ( event == 'instant' or event == 'rebuilding-finished' ) and self.isStopped(arg) :
+            elif ( event == 'instant' or event == 'rebuilding-finished' ) and self.isStopped(arg):
                 self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
                 self.doKillRebuilders(arg)
-            elif event == 'rebuilding-finished' and not self.isStopped(arg) and not self.isMoreBlocks(arg) :
+            elif event == 'rebuilding-finished' and not self.isStopped(arg) and not self.isMoreBlocks(arg):
                 self.state = 'PREPARE'
                 self.doScanBrokenBlocks(arg)
         return None
@@ -219,6 +217,14 @@ class BackupRebuilder(automat.Automat):
     def isMoreBackups(self, arg):
         global _BackupIDsQueue
         return len(_BackupIDsQueue) > 0
+    
+    def isAnyRequestsSent(self, arg):
+        """
+        Condition method.
+        """
+        if arg and isinstance(arg, int):
+            return arg > 0  
+        return False
     
     def isMoreBlocks(self, arg):
         # because started from 0,  -1 means not found

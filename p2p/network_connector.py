@@ -260,6 +260,7 @@ class NetworkConnector(automat.Automat):
             if int(tcp_node.get_internal_port()) != int(settings.getTCPPort()):
                 return True
         except:
+            lg.exc()
             return False
         return time.time() - self.last_upnp_time > 60*60
 

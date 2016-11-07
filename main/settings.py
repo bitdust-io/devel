@@ -1034,6 +1034,12 @@ def AutomatsLog():
     """
     return os.path.join(LogsDir(), 'automats.log')
 
+def TransportLog():
+    """
+    Every x seconds will log stats about current transfers.
+    """
+    return os.path.join(LogsDir(), 'transport.log')
+
 def RepoFile():
     """
     A file to store info about currently used repository. 

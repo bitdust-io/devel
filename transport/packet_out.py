@@ -195,9 +195,9 @@ class PacketOut(automat.Automat):
     This class implements all the functionality of the ``packet_out()`` state machine.
     """
 
-    timers = {
-        'timer-20sec': (20.0, ['RESPONSE?']),
-        }
+#     timers = {
+#         'timer-20sec': (20.0, ['RESPONSE?']),
+#         }
 
     MESSAGES = {
         'MSG_1': 'file in queue was cancelled',
@@ -218,8 +218,8 @@ class PacketOut(automat.Automat):
         if self.route:
             self.description = self.route['description']
             self.remote_idurl = self.route['remoteid']
-        self.label = 'out_%d_%s (%d callbacks)' % (
-            get_packets_counter(), self.description, len(self.callbacks))
+        self.label = 'out_%d_%s' % (
+            get_packets_counter(), self.description)
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 
@@ -244,7 +244,7 @@ class PacketOut(automat.Automat):
                     if _Debug:
                         lg.out(_DebugLevel, 'packet_out.init sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
-        self.timeout = None
+        self.timeout = settings.SendTimeOut() * 3
         self.packetdata = None
         self.filename = None
         self.filesize = None
@@ -258,7 +258,7 @@ class PacketOut(automat.Automat):
             
     def is_timed_out(self):
         if self.time is None or self.timeout is None:
-            return False
+            return True
         return time.time() - self.time > self.timeout
         
     def set_callback(self, command, cb):
@@ -445,8 +445,10 @@ class PacketOut(automat.Automat):
             os.write(fileno, self.packetdata)
             os.close(fileno)
             self.filesize = len(self.packetdata)
-            self.timeout = max(int(self.filesize/(settings.SendingSpeedLimit()/len(queue()))), 
-                               settings.SendTimeOut())
+            self.timeout = min(
+                settings.SendTimeOut() * 3,               
+                max(int(self.filesize/(settings.SendingSpeedLimit()/len(queue()))), 
+                    settings.SendTimeOut()))
         except:
             lg.exc()
             self.packetdata = None

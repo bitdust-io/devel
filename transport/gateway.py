@@ -66,7 +66,7 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 18
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------ 
 
@@ -123,6 +123,8 @@ _LastTransferID = None
 _LastInboxPacketTime = 0
 _PacketsTimeOutTask = None
 _TransportStateChangedCallbacksList = []
+_TransportLogFile = None
+_TransportLogFilename = None
                 
 #------------------------------------------------------------------------------ 
 
@@ -171,6 +173,7 @@ def init():
         lg.out(4, 'gateway.init')
     if _DoingShutdown:
         return
+    open_transport_log(settings.TransportLog())
     _LocalListener = TransportGateLocalProxy()
 
 
@@ -190,6 +193,8 @@ def shutdown():
     _DoingShutdown = True
     if _LocalListener:
         _LocalListener = None
+    close_transport_log()
+
 
 def start():
     """
@@ -552,7 +557,10 @@ def shutdown_all_inbox_packets():
 def packets_timeout_loop():
     global _PacketsTimeOutTask
     # lg.out(18, 'gateway.packets_timeout_loop')
-    _PacketsTimeOutTask = reactor.callLater(5, packets_timeout_loop)
+    delay = 5
+    if _Debug:
+        delay = 1
+    _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)
     for pkt_in in packet_in.items().values():
         if pkt_in.is_timed_out():
             lg.out(8, 'gateway.packets_timeout_loop %r is timed out' % pkt_in)
@@ -561,6 +569,8 @@ def packets_timeout_loop():
         if pkt_out.is_timed_out():
             lg.out(8, 'gateway.packets_timeout_loop %r is timed out' % pkt_out)
             pkt_out.automat('cancel', 'timeout')
+    if _Debug and lg.is_debug(_DebugLevel):
+        monitoring()
 
 def stop_packets_timeout_loop():
     global _PacketsTimeOutTask
@@ -568,6 +578,17 @@ def stop_packets_timeout_loop():
         if _PacketsTimeOutTask.active():
             _PacketsTimeOutTask.cancel()
         _PacketsTimeOutTask = None
+
+def monitoring():
+    list_pkt_in = []
+    for pkt_in in packet_in.items().values():
+        list_pkt_in.append(pkt_in.label)
+    list_pkt_out = []
+    for pkt_out in packet_out.queue():
+        list_pkt_out.append(pkt_out.label)
+    if transport_log():
+        transport_log().write('in: %s   out: %s\n' % (list_pkt_in, list_pkt_out))
+        transport_log().flush()
 
 #------------------------------------------------------------------------------ 
 
@@ -748,6 +769,33 @@ def remove_transport_state_changed_callback(cb):
     global _TransportStateChangedCallbacksList
     if cb in _TransportStateChangedCallbacksList:
         _TransportStateChangedCallbacksList.remove(cb)
+
+#------------------------------------------------------------------------------ 
+
+def open_transport_log(filename):
+    global _TransportLogFile
+    global _TransportLogFilename
+    if _TransportLogFile:
+        return
+    _TransportLogFilename = filename
+    try:
+        _TransportLogFile = open(_TransportLogFilename, 'w')
+    except:
+        _TransportLogFile = None
+
+
+def close_transport_log():
+    global _TransportLogFile
+    if not _TransportLogFile:
+        return
+    _TransportLogFile.flush()
+    _TransportLogFile.close()
+    _TransportLogFile = None
+    _TransportLogFilename = None
+    
+def transport_log():
+    global _TransportLogFile
+    return _TransportLogFile
 
 #------------------------------------------------------------------------------ 
 
