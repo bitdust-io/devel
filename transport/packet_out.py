@@ -244,7 +244,7 @@ class PacketOut(automat.Automat):
                     if _Debug:
                         lg.out(_DebugLevel, 'packet_out.init sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
-        self.timeout = settings.SendTimeOut() * 3
+        self.timeout = 300 # settings.SendTimeOut() * 3
         self.packetdata = None
         self.filename = None
         self.filesize = None
@@ -445,10 +445,10 @@ class PacketOut(automat.Automat):
             os.write(fileno, self.packetdata)
             os.close(fileno)
             self.filesize = len(self.packetdata)
-            self.timeout = min(
-                settings.SendTimeOut() * 3,               
-                max(int(self.filesize/(settings.SendingSpeedLimit()/len(queue()))), 
-                    settings.SendTimeOut()))
+#             self.timeout = min(
+#                 settings.SendTimeOut() * 3,               
+#                 max(int(self.filesize/(settings.SendingSpeedLimit()/len(queue()))), 
+#                     settings.SendTimeOut()))
         except:
             lg.exc()
             self.packetdata = None
