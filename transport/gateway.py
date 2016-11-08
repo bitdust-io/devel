@@ -586,8 +586,12 @@ def monitoring():
     list_pkt_out = []
     for pkt_out in packet_out.queue():
         list_pkt_out.append(pkt_out.label)
-    if transport_log():
-        transport_log().write('in: %s   out: %s\n' % (list_pkt_in, list_pkt_out))
+    if transport_log() and list_pkt_out and list_pkt_in:
+        dt = time.time() - lg.when_life_begins()
+        mn = dt // 60
+        sc = dt - mn * 60
+        transport_log().write('%02d:%02d    in: %s   out: %s\n' % (
+            mn, sc, list_pkt_in, list_pkt_out))
         transport_log().flush()
 
 #------------------------------------------------------------------------------ 
