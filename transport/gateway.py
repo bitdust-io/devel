@@ -421,7 +421,7 @@ def inbox(info):
         monitoring()
     return newpacket
 
-def outbox(outpacket, wide=False, callbacks={}): 
+def outbox(outpacket, wide=False, callbacks={}, target=None, route=None): 
     """
     Sends `packet` to the network.
     
@@ -430,9 +430,15 @@ def outbox(outpacket, wide=False, callbacks={}):
                       to all contacts of Remote Identity
         :param callbacks: provide a callback methods to get response
                           here need to provide a callback for given command
-        
-            callback arguments are: (response_packet, info)
-            
+                          callback arguments are: (response_packet, info)
+        :param target:  if your recipient is not equal to outpacket.RemoteID
+        :param route:   dict with parameters, you can manage how to process this packet:
+                'packet': <another packet to be send>,
+                'proto': <receiver proto>,
+                'host': <receiver host>,
+                'remoteid': <receiver idurl>,
+                'description': <description on the packet>,
+
     Returns:
         `None` if data was not sent, no filter was applied
         `Deferred` object if filter was applied but sending was delayed
@@ -598,10 +604,10 @@ def monitoring():
 
 #------------------------------------------------------------------------------ 
 
-def on_outbox_packet(outpacket, wide, callbacks):
+def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
     """
     """
-    pkt_out = packet_out.create(outpacket, wide, callbacks)
+    pkt_out = packet_out.create(outpacket, wide, callbacks, target, route)
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
     return pkt_out

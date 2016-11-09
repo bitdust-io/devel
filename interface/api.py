@@ -179,30 +179,35 @@ def config_set(key, value):
               'key': 'logs/debug-level'}]}"
     """
     key = str(key)
-    lg.out(4, 'api.config_set [%s]=%s' % (key, value))
     from main import config
     from main import config_types
     v = {}
     if config.conf().exist(key):
         v['old_value'] = config.conf().getData(key)
     typ = config.conf().getType(key)
+    typ_label = config.conf().getTypeLabel(key) 
+    lg.out(4, 'api.config_set [%s]=%s type is %s' % (key, value, typ_label))
     if not typ or typ in [config_types.TYPE_STRING, 
                           config_types.TYPE_TEXT,
                           config_types.TYPE_UNDEFINED, ]: 
-        config.conf().setData(key, value)
+        config.conf().setData(key, unicode(value))
     elif typ in [config_types.TYPE_BOOLEAN, ]:
-        config.conf().setBool(key, value)
+        if (isinstance(value, str) or isinstance(value, unicode)):
+            vl = value.strip().lower() == 'true'
+        else:
+            vl = bool(value)
+        config.conf().setBool(key, vl)
     elif typ in [config_types.TYPE_INTEGER, 
                  config_types.TYPE_POSITIVE_INTEGER, 
                  config_types.TYPE_NON_ZERO_POSITIVE_INTEGER, ]:
-        config.conf().setInt(key, value)
+        config.conf().setInt(key, int(value))
     elif typ in [config_types.TYPE_FOLDER_PATH,
                  config_types.TYPE_FILE_PATH, 
                  config_types.TYPE_COMBO_BOX,
                  config_types.TYPE_PASSWORD,]:
         config.conf().setString(key, value)
     else:
-        config.conf().setData(key, str(value))
+        config.conf().setData(key, unicode(value))
     v.update({  'key': key, 
                 'value': config.conf().getData(key), 
                 'type': config.conf().getTypeLabel(key)

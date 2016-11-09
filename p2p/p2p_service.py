@@ -625,7 +625,7 @@ def Retrieve(request):
         return
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.Retrieve sending %r back to %s" % (outpacket, nameurl.GetName(outpacket.CreatorID)))
-    gateway.outbox(outpacket)
+    gateway.outbox(outpacket, target=outpacket.CreatorID)
 
 #------------------------------------------------------------------------------ 
 
