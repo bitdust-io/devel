@@ -236,6 +236,7 @@ def set_debug_level(level):
     Can set ``level`` to 0 for no debug messages at all.
     """
     global _GlobalDebugLevel
+    level = int(level)
     if _GlobalDebugLevel > level:
         out(level, 'lg.SetDebug _GlobalDebugLevel=' + str(level))
     _GlobalDebugLevel = level
