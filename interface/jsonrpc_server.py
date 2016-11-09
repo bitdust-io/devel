@@ -258,8 +258,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_config_get(self, key, default=None):
         return api.config_get(key, default)
 
-    def jsonrpc_config_set(self, key, value, typ=None):
-        return api.config_set(key, value, typ)
+    def jsonrpc_config_set(self, key, value):
+        return api.config_set(key, value)
     
 #     def jsonrpc_list_messages(self):
 #         return api.list_messages()
