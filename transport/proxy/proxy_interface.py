@@ -103,7 +103,7 @@ class GateInterface():
         if settings.enablePROXYreceiving():
             proxy_receiver.A('start', options)
         else:
-            lg.warn(4, 'proxy transport receiving is disabled')
+            lg.warn('proxy transport receiving is disabled')
             interface_receiving_failed()
             return False 
         if settings.enablePROXYsending():
@@ -117,7 +117,14 @@ class GateInterface():
             lg.out(4, 'proxy_interface.disconnect')
         from transport.proxy import proxy_receiver
         from transport.proxy import proxy_sender
-        proxy_receiver.A('stop')
+        if not proxy_receiver.A():
+            lg.warn('proxy_receiver is not ready')
+            interface_disconnected()
+        elif proxy_receiver.A().state != 'LISTEN':
+            lg.warn('proxy_receiver is not listening now')
+            interface_disconnected()
+        else:
+            proxy_receiver.A('stop')
         proxy_sender.A('stop')
         return succeed(True)
     

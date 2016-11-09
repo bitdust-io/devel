@@ -308,6 +308,12 @@ def run_now(opts, args):
 
 #------------------------------------------------------------------------------ 
 
+def cmd_reconnect(opts, args, overDict):
+    tpl = jsontemplate.Template(templ.TPL_RAW)
+    return call_jsonrpc_method_template_and_stop('reconnect', tpl)
+    
+#------------------------------------------------------------------------------ 
+
 def cmd_identity(opts, args, overDict, running):
     from userid import my_id
     from main import settings
@@ -475,7 +481,7 @@ def cmd_api(opts, args, overDict, executablePath):
             import inspect
             from interface import api
         except:
-            print_text('you need to provide not of api method to execute') 
+            print_text('failed to import "interface.api" module') 
             return 2
         for item in dir(api):
             if item.startswith('_'):
@@ -1131,6 +1137,13 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         if not running:
             return cmd_set(opts, args, overDict)
         return cmd_set_request(opts, args, overDict)    
+
+    #---reconnect---
+    if cmd in ['reconnect', 'rejoin', 'connect', ]:
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        return cmd_reconnect(opts, args, overDict)
     
     #---api---
     elif cmd in ['api', 'call', ]:

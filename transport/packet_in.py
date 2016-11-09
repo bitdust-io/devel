@@ -57,12 +57,12 @@ from twisted.internet import reactor
 
 from logs import lg
 
+from lib import misc
+
 from automats import automat
 
 from system import bpio
 from system import tmpfile
-
-from main import settings
 
 from userid import my_id
 
@@ -195,6 +195,11 @@ class PacketIn(automat.Automat):
         if self.time is None or self.timeout is None:
             return False
         return time.time() - self.time > self.timeout
+
+    def percent_received(self):
+        if not self.size or not self.bytes_received:
+            return 0.0
+        return misc.percent2string(self.bytes_received / self.size)
 
     def init(self):
         """

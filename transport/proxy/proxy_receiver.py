@@ -222,6 +222,7 @@ class ProxyReceiver(automat.Automat):
                 self.state = 'OFFLINE'
                 self.doSendCancelService(arg)
                 self.doStopListening(arg)
+                self.doNotifyDisconnected(arg)
         #---FIND_NODE?---
         elif self.state == 'FIND_NODE?':
             if event == 'found-one-node':

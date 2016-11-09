@@ -417,6 +417,8 @@ def inbox(info):
             nameurl.GetName(CreatorID), 
             nameurl.GetName(RemoteID), 
             info.proto, info.host))
+    if _Debug and lg.is_debug(_DebugLevel):
+        monitoring()
     return newpacket
 
 def outbox(outpacket, wide=False, callbacks={}): 
@@ -599,7 +601,10 @@ def monitoring():
 def on_outbox_packet(outpacket, wide, callbacks):
     """
     """
-    return packet_out.create(outpacket, wide, callbacks)
+    pkt_out = packet_out.create(outpacket, wide, callbacks)
+    if _Debug and lg.is_debug(_DebugLevel):
+        monitoring()
+    return pkt_out
 
 def on_transport_state_changed(transport, oldstate, newstate):
     """

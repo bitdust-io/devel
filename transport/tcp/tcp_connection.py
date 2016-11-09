@@ -84,7 +84,6 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.total_bytes_received = 0
         self.total_bytes_sent = 0
         self.outboxQueue = []
-        self.keep_alive = True
 
     def init(self):
         """

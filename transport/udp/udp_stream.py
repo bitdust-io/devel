@@ -117,7 +117,7 @@ RTT_MAX_LIMIT = 4 # also affect pooling, but also set a time out for responses
 MAX_BLOCKS_INTERVAL = 5     
 MAX_ACK_TIMEOUTS = 3
 MAX_ACKS_INTERVAL = 5
-RECEIVING_TIMEOUT = 20
+RECEIVING_TIMEOUT = 25
 
 #------------------------------------------------------------------------------ 
 

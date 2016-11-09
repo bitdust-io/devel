@@ -66,6 +66,7 @@ from automats import automat
 from p2p import commands
 
 from lib import nameurl
+from lib import misc
 
 from system import tmpfile
 
@@ -222,6 +223,14 @@ class PacketOut(automat.Automat):
             get_packets_counter(), self.description)
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
+
+    def percent_sent(self):
+        if not self.filesize:
+            return 0.0
+        result = []
+        for itm in self.items:
+            result.append(misc.percent2string(itm.bytes_sent / self.filesize))
+        return '|'.join(result)
 
     def init(self):
         """

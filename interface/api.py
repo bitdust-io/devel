@@ -167,7 +167,7 @@ def config_get(key, default=None):
         # 'info': config.conf().getInfo(key)
         }])
         
-def config_set(key, value, typ=None):
+def config_set(key, value):
     """
     Set a value for given option.
     Return: 
@@ -185,9 +185,10 @@ def config_set(key, value, typ=None):
     v = {}
     if config.conf().exist(key):
         v['old_value'] = config.conf().getData(key)
-    if type in [ config_types.TYPE_STRING, 
-                 config_types.TYPE_TEXT,
-                 config_types.TYPE_UNDEFINED, ] or typ is None: 
+    typ = config.conf().getType(key)
+    if not typ or typ in [config_types.TYPE_STRING, 
+                          config_types.TYPE_TEXT,
+                          config_types.TYPE_UNDEFINED, ]: 
         config.conf().setData(key, value)
     elif typ in [config_types.TYPE_BOOLEAN, ]:
         config.conf().setBool(key, value)

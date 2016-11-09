@@ -278,7 +278,7 @@ class TCPFileStream():
         self.close_outbox_file(file_id)
         if outfile.transfer_id:
             self.report_outbox_file(outfile.transfer_id, status, outfile.get_bytes_sent(), error_message)
-        if outfile.single and not self.connection.keep_alive:
+        if outfile.single and not self.connection.factory.keep_alive:
             self.connection.automat('disconnect') 
         del outfile
 
@@ -431,12 +431,14 @@ class FileSender(basic.FileSender):
             try:
                 chunk = self.file.read(self.CHUNK_SIZE)
             except:
-                self.file = None
-                self.consumer.unregisterProducer()
-                if self.deferred:
-                    self.deferred.errback(self.lastSent)
-                    self.deferred = None
-                lg.exc()
+                pass
+#                 self.file = None
+#                 self.consumer.unregisterProducer()
+#                 if self.deferred:
+#                     self.deferred.errback(self.lastSent)
+#                     self.deferred = None
+#                 lg.exc()
+#                 return
         if not chunk:
             self.file = None
             self.consumer.unregisterProducer()

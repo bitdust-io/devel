@@ -122,7 +122,7 @@ def receive(options):
     try:
         _MyIDURL = options['idurl']
         _InternalPort = int(options['tcp_port'])
-        _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None))
+        _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None, keep_alive=True))
         _MyHost = options['host'].split(':')[0]+':'+str(_InternalPort)
         tcp_interface.interface_receiving_started(_MyHost, options)
     except CannotListenError, ex:
@@ -138,7 +138,7 @@ def receive(options):
     return _Listener
 
 
-def connect_to(host):
+def connect_to(host, keep_alive=True):
     """
     """
     if host in started_connections():
@@ -150,7 +150,7 @@ def connect_to(host):
             if connection.getConnectionAddress():
                 if connection.getConnectionAddress() == host:
                     return True
-    connection = TCPFactory(host)
+    connection = TCPFactory(host, keep_alive=keep_alive)
     connection.connector = reactor.connectTCP(host[0], host[1], connection)
     started_connections()[host] = connection
     return False
@@ -224,7 +224,7 @@ def send(filename, remoteaddress, description=None, single=False):
                         lg.out(6, 'tcp_node.send single, use opened(2) connection to %s, %d already started and %d opened' % (
                             str(remoteaddress), len(started_connections()), len(opened_connections())))
                     return result_defer
-    connection = TCPFactory(remoteaddress)
+    connection = TCPFactory(remoteaddress, keep_alive=not single)
     connection.add_outbox_file(filename, description, result_defer, single)
     connection.connector = reactor.connectTCP(remoteaddress[0], remoteaddress[1], connection)
     started_connections()[remoteaddress] = connection
@@ -311,8 +311,9 @@ def list_sessions():
 class TCPFactory(protocol.ClientFactory):
     protocol = tcp_connection.TCPConnection
 
-    def __init__(self, connection_address):
+    def __init__(self, connection_address, keep_alive=True):
         self.connection_address = connection_address
+        self.keep_alive = keep_alive
         self.pendingoutboxfiles = []
         self.connector = None
 

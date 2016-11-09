@@ -116,7 +116,7 @@ def A(event=None, arg=None):
         return _NetworkConnector
     if _NetworkConnector is None:
         _NetworkConnector = NetworkConnector(
-            'network_connector', 'AT_STARTUP', _DebugLevel)
+            'network_connector', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _NetworkConnector.automat(event, arg)
     return _NetworkConnector
@@ -506,8 +506,8 @@ def UpdateUPNP():
 
     def _update_next_proto():
         if len(protos_need_upnp) == 0:
-            lg.out(_DebugLevel, 'network_connector.update_upnp done, sending "check-reconnect" event')
-            A('check-reconnect')
+            lg.out(_DebugLevel, 'network_connector.update_upnp done, sending "upnp-done" event')
+            A('upnp-done')
             return
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.UpdateUPNP._update_next_proto ' + str(protos_need_upnp))

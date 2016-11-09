@@ -118,8 +118,8 @@ class ProxyTransportService(LocalService):
         from lib import misc
         from main.config import conf
         from userid import identity
-        orig_ident_xmlsrc = conf().getData('services/proxy-transport/my-original-identity').strip()
-        current_router_idurl = conf().getString('services/proxy-transport/current-router').strip()
+        orig_ident_xmlsrc = conf().getData('services/proxy-transport/my-original-identity', '').strip()
+        current_router_idurl = conf().getString('services/proxy-transport/current-router', '').strip()
         if not orig_ident_xmlsrc:
             if current_router_idurl:
                 lg.warn('current-router is %s, but my-original-identity is empty' % current_router_idurl)

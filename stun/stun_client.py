@@ -129,47 +129,48 @@ class StunClient(automat.Automat):
     def A(self, event, arg):
         #---STOPPED---
         if self.state == 'STOPPED':
-            if event == 'shutdown' :
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'start' :
+            elif event == 'start':
                 self.state = 'RANDOM_NODES'
                 self.doAddCallback(arg)
                 self.doDHTFindRandomNode(arg)
         #---REQUEST---
         elif self.state == 'REQUEST':
-            if event == 'shutdown' :
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'timer-2sec' :
+            elif event == 'timer-2sec':
                 self.doStun(arg)
-            elif event == 'timer-10sec' and not self.isSomeServersResponded(arg) :
+            elif event == 'timer-10sec' and not self.isSomeServersResponded(arg):
                 self.state = 'STOPPED'
                 self.doReportFailed(self.msg('MSG_03', arg))
                 self.doClearResults(arg)
-            elif event == 'start' :
+            elif event == 'start':
                 self.doAddCallback(arg)
-            elif event == 'datagram-received' and self.isMyIPPort(arg) and self.isNeedMoreResults(arg) :
+            elif event == 'datagram-received' and self.isMyIPPort(arg) and self.isNeedMoreResults(arg):
                 self.doRecordResult(arg)
-            elif ( event == 'timer-10sec' and self.isSomeServersResponded(arg) ) or ( event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg) ) :
+            elif ( event == 'timer-10sec' and self.isSomeServersResponded(arg) ) or ( event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg) ):
                 self.state = 'KNOW_MY_IP'
                 self.doRecordResult(arg)
                 self.doReportSuccess(arg)
                 self.doClearResults(arg)
-            elif event == 'port-number-received' :
+            elif event == 'port-number-received':
                 self.doAddStunServer(arg)
                 self.doStun(arg)
         #---KNOW_MY_IP---
         elif self.state == 'KNOW_MY_IP':
-            if event == 'shutdown' :
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'start' :
+            elif event == 'start':
                 self.state = 'RANDOM_NODES'
+                self.doAddCallback(arg)
                 self.doDHTFindRandomNode(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(arg)
         #---CLOSED---
@@ -177,34 +178,34 @@ class StunClient(automat.Automat):
             pass
         #---RANDOM_NODES---
         elif self.state == 'RANDOM_NODES':
-            if event == 'shutdown' :
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'dht-nodes-not-found' :
+            elif event == 'dht-nodes-not-found':
                 self.state = 'STOPPED'
                 self.doReportFailed(self.msg('MSG_01', arg))
-            elif event == 'start' :
+            elif event == 'start':
                 self.doAddCallback(arg)
-            elif event == 'found-some-nodes' and self.isNeedMoreNodes(arg) :
+            elif event == 'found-some-nodes' and self.isNeedMoreNodes(arg):
                 self.doRememberStunNodes(arg)
                 self.doDHTFindRandomNode(arg)
-            elif event == 'found-some-nodes' and not self.isNeedMoreNodes(arg) :
+            elif event == 'found-some-nodes' and not self.isNeedMoreNodes(arg):
                 self.state = 'PORT_NUM?'
                 self.doRememberStunNodes(arg)
                 self.doRequestStunPortNumbers(arg)
         #---PORT_NUM?---
         elif self.state == 'PORT_NUM?':
-            if event == 'start' :
+            if event == 'start':
                 self.doAddCallback(arg)
-            elif event == 'timer-10sec' :
+            elif event == 'timer-10sec':
                 self.state = 'STOPPED'
                 self.doReportFailed(self.msg('MSG_02', arg))
                 self.doClearResults(arg)
-            elif event == 'port-number-received' :
+            elif event == 'port-number-received':
                 self.state = 'REQUEST'
                 self.doAddStunServer(arg)
                 self.doStun(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
         return None
