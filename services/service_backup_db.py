@@ -45,13 +45,13 @@ class BackupDBService(LocalService):
                 ]
     
     def start(self):
-        from storage import backup_db_keeper
-        backup_db_keeper.A('init')
+        from storage import index_synchronizer
+        index_synchronizer.A('init')
         return True
     
     def stop(self):
-        from storage import backup_db_keeper
-        backup_db_keeper.Destroy()
+        from storage import index_synchronizer
+        index_synchronizer.A('shutdown')
         return True
     
     

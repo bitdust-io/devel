@@ -260,7 +260,7 @@ class SupplierQueue:
         # but will hold onto the next ones to be sent
         # self.fileSendQueueMaxLength = 32
         # active files 
-        self.fileSendMaxLength = 4  
+        self.fileSendMaxLength = 1  
         # an array of packetId, preserving first in first out, 
         # of which the first maxLength are the "active" sends      
         self.fileSendQueue = []
@@ -272,7 +272,7 @@ class SupplierQueue:
         # only several will be active, but will hold onto the next ones to be sent
         # self.fileRequestQueueMaxLength = 6
         # active requests 
-        self.fileRequestMaxLength = 4 
+        self.fileRequestMaxLength = 1 
         # an arry of PacketIDs, preserving first in first out
         self.fileRequestQueue = []      
         # FileToRequest's, indexed by PacketIDs

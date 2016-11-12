@@ -173,6 +173,8 @@ def ReadIndex(inpt):
         return False
     backup_fs.Clear()
     count = backup_fs.Unserialize(inpt)
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.ReadIndex %d items loaded' % count)
     # local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())
     commit(new_revision)
     _LoadingFlag = False
@@ -204,15 +206,15 @@ def Load(filepath=None):
 
 def Save(filepath=None):
     """
-    Save index data base to local file ( call ``WriteIndex()`` ) and restart "backup_db_keeper()" state machine.
+    Save index data base to local file ( call ``WriteIndex()`` ) and notify "index_synchronizer()" state machine.
     """
     global _LoadingFlag
     if _LoadingFlag:
         return False
     commit()
     WriteIndex(filepath)
-    import backup_db_keeper
-    backup_db_keeper.A('restart')
+    from storage import index_synchronizer
+    index_synchronizer.A('push')
 
 #------------------------------------------------------------------------------ 
 
@@ -253,32 +255,32 @@ def IncomingSupplierBackupIndex(newpacket):
     try:
         session_key = key.DecryptLocalPK(b.EncryptedSessionKey)
         padded_data = key.DecryptWithSessionKey(session_key, b.EncryptedData)
-        input = cStringIO.StringIO(padded_data[:int(b.Length)])
-        supplier_revision = input.readline().rstrip('\n')
+        inpt = cStringIO.StringIO(padded_data[:int(b.Length)])
+        supplier_revision = inpt.readline().rstrip('\n')
         if supplier_revision:
             supplier_revision = int(supplier_revision)
         else:
             supplier_revision = -1
-        input.seek(0)
+        inpt.seek(0)
     except:
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         lg.out(2, '\n' + padded_data)
         lg.exc()
         try:
-            input.close()
+            inpt.close()
         except:
             pass
         return
     if revision() < supplier_revision:
-        ReadIndex(input)
+        ReadIndex(inpt)
         backup_fs.Scan()
         backup_fs.Calculate()
         WriteIndex()
         control.request_update()
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
             revision(), newpacket.RemoteID))
-    input.close()
-    # backup_db_keeper.A('incoming-db-info', newpacket)
+    inpt.close()
+    # index_synchronizer.A('incoming-db-info', newpacket)
         
 #------------------------------------------------------------------------------ 
 
@@ -315,7 +317,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
         7) also remove local info from memory, see ``p2p.backup_matrix.EraseBackupLocalInfo()``
         8) stop any rebuilding, we will restart it soon 
         9) check and calculate used space
-        10) save the modified index data base, soon it will be synchronized with "backup_db_keeper()" state machine  
+        10) save the modified index data base, soon it will be synchronized with "index_synchronizer()" state machine  
     """
     # if the user deletes a backup, make sure we remove any work we're doing on it
     # abort backup if it just started and is running at the moment

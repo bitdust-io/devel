@@ -150,71 +150,74 @@ class BackupMonitor(automat.Automat):
         from customer import fire_hire
         from customer import data_sender
         from customer import list_files_orator 
-        import backup_rebuilder
-        import backup_db_keeper
+        from storage import backup_rebuilder
+        from storage import index_synchronizer
         #---READY---
         if self.state == 'READY':
-            if event == 'timer-5sec' :
+            if event == 'timer-5sec':
                 self.doOverallCheckUp(arg)
-            elif event == 'restart' or event == 'suppliers-changed' or ( event == 'instant' and self.RestartAgain ) :
+            elif event == 'restart' or event == 'suppliers-changed' or ( event == 'instant' and self.RestartAgain ):
                 self.state = 'FIRE_HIRE'
                 self.RestartAgain=False
                 self.doRememberSuppliers(arg)
                 fire_hire.A('restart')
         #---LIST_FILES---
         elif self.state == 'LIST_FILES':
-            if ( event == 'list_files_orator.state' and arg == 'NO_FILES' ) :
+            if ( event == 'list_files_orator.state' and arg == 'NO_FILES' ):
                 self.state = 'READY'
-            elif ( event == 'list_files_orator.state' and arg == 'SAW_FILES' ) :
+            elif ( event == 'list_files_orator.state' and arg == 'SAW_FILES' ):
                 self.state = 'LIST_BACKUPS'
-                backup_db_keeper.A('restart')
+                index_synchronizer.A('pull')
                 data_sender.A('restart')
                 self.doPrepareListBackups(arg)
-            elif event == 'restart' :
+            elif event == 'restart':
                 self.RestartAgain=True
-            elif event == 'suppliers-changed' :
+            elif event == 'suppliers-changed':
                 self.state = 'READY'
                 self.RestartAgain=True
         #---LIST_BACKUPS---
         elif self.state == 'LIST_BACKUPS':
-            if event == 'list-backups-done' :
+            if event == 'list-backups-done':
                 self.state = 'REBUILDING'
                 backup_rebuilder.A('start')
-            elif event == 'restart' :
+            elif event == 'restart':
                 self.RestartAgain=True
-            elif event == 'suppliers-changed' :
+            elif event == 'suppliers-changed':
                 self.state = 'READY'
                 self.RestartAgain=True
+            elif event == 'restart':
+                self.state = 'FIRE_HIRE'
+                fire_hire.A('restart')
         #---REBUILDING---
         elif self.state == 'REBUILDING':
-            if ( event == 'backup_rebuilder.state' and arg in [ 'DONE' , 'STOPPED' ] ) :
+            if ( event == 'backup_rebuilder.state' and arg in [ 'DONE' , 'STOPPED' ] ):
                 self.state = 'READY'
                 self.doCleanUpBackups(arg)
                 data_sender.A('restart')
-            elif event == 'restart' or event == 'suppliers-changed' :
+            elif event == 'restart' or event == 'suppliers-changed':
                 self.state = 'FIRE_HIRE'
                 backup_rebuilder.SetStoppedFlag()
                 fire_hire.A('restart')
         #---FIRE_HIRE---
         elif self.state == 'FIRE_HIRE':
-            if event == 'suppliers-changed' and self.isSuppliersNumberChanged(arg) :
+            if event == 'suppliers-changed' and self.isSuppliersNumberChanged(arg):
                 self.state = 'LIST_FILES'
                 self.doDeleteAllBackups(arg)
                 self.doRememberSuppliers(arg)
                 list_files_orator.A('need-files')
-            elif event == 'fire-hire-finished' :
+            elif event == 'fire-hire-finished':
                 self.state = 'LIST_FILES'
                 list_files_orator.A('need-files')
-            elif event == 'suppliers-changed' and not self.isSuppliersNumberChanged(arg) :
+            elif event == 'suppliers-changed' and not self.isSuppliersNumberChanged(arg):
                 self.state = 'LIST_FILES'
                 self.doUpdateSuppliers(arg)
                 self.doRememberSuppliers(arg)
                 list_files_orator.A('need-files')
-            elif event == 'restart' :
+            elif event == 'restart':
                 self.RestartAgain=True
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'init':
                 self.state = 'READY'
                 self.RestartAgain=False
         return None

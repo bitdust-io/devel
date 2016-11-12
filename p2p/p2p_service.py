@@ -76,7 +76,7 @@ Security:
 #------------------------------------------------------------------------------ 
 
 _Debug = True
-_DebugLevel = 6
+_DebugLevel = 4
 
 #------------------------------------------------------------------------------ 
 
@@ -965,14 +965,14 @@ def RequestDeleteBackup(BackupID):
     for supplier in contactsdb.suppliers():
         if not supplier:
             continue
-        prevItems = [] # transport_control.SendQueueSearch(BackupID)
-        found = False
-        for workitem in prevItems:
-            if workitem.remoteid == supplier:
-                found = True
-                break
-        if found:
-            continue
+#         prevItems = [] # transport_control.SendQueueSearch(BackupID)
+#         found = False
+#         for workitem in prevItems:
+#             if workitem.remoteid == supplier:
+#                 found = True
+#                 break
+#         if found:
+#             continue
         SendDeleteBackup(supplier, BackupID)
 
 
@@ -982,13 +982,13 @@ def RequestDeleteListBackups(backupIDs):
     for supplier in contactsdb.suppliers():
         if not supplier:
             continue
-        found = False
+        # found = False
         # for workitem in transport_control.SendQueue():
         #     if workitem.command == commands.DeleteBackup() and workitem.remoteid == supplier:
         #         found = True
         #         break
-        if found:
-            continue
+        # if found:
+        #     continue
         SendDeleteListBackups(supplier, backupIDs)
 
 
@@ -998,13 +998,13 @@ def RequestDeleteListPaths(pathIDs):
     for supplier in contactsdb.suppliers():
         if not supplier:
             continue
-        found = False
+        # found = False
         # for workitem in transport_control.SendQueue():
         #     if workitem.command == commands.DeleteFile() and workitem.remoteid == supplier:
         #         found = True
         #         break
-        if found:
-            continue
+        # if found:
+        #     continue
         SendDeleteListPaths(supplier, pathIDs)
 
 

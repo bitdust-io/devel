@@ -244,12 +244,14 @@ def ReadRawListFiles(supplierNum, listFileText):
       "D" for folders
       "V" for backed up data 
     """
-    import backup_db_keeper
+    from storage import index_synchronizer
     backups2remove = set()
     paths2remove = set()
     oldfiles = ClearSupplierRemoteInfo(supplierNum)
     newfiles = 0
-    lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read' % len(listFileText))
+    is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+    lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, %s, is_in_sync=%s' % (
+        len(listFileText), supplierNum, backup_control.revision(), index_synchronizer.A(), is_in_sync))
     inpt = cStringIO.StringIO(listFileText)
     while True:
         line = inpt.readline()
@@ -263,6 +265,7 @@ def ReadRawListFiles(supplierNum, listFileText):
         # also don't consider the identity a backup,
         if line.find('http://') != -1 or line.find('.xml') != -1:
             continue
+        lg.out(8, '    %s:{%s}' % (typ, line))
         if typ == 'F':
             # we don't have this path in the index
             # so we have several cases:
@@ -277,7 +280,7 @@ def ReadRawListFiles(supplierNum, listFileText):
             # how to recognize that? how to be sure we have the correct index?
             # because it should be empty right after we recover our account 
             # or we may loose it if the local index file were lost
-            # the first idea:  check backup_db_keeper state - READY means index is fine
+            # the first idea:  check index_synchronizer() state - IN_SYNC means index is fine
             # the second idea: check revision number of the local index - 0 means we have no index yet 
             try:
                 pth, filesz = line.split(' ')
@@ -293,10 +296,11 @@ def ReadRawListFiles(supplierNum, listFileText):
                     item.size = filesz
                     backup_fs.SetFile(item) 
                 else:
-                    if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():  
+                    if is_in_sync:  
                         # so we have some modifications in the index - it is not empty!
-                        # backup_db_keeper did its job - so we have the correct index
-                        paths2remove.add(pth) # now we are sure that this file is old and must be removed
+                        # index_synchronizer() did his job - so we have up to date index on hands
+                        # now we are sure that this file is old and must be removed from remote site
+                        paths2remove.add(pth) 
                         lg.out(8, '        F%s - remove, not found in the index' % pth)
                 # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
@@ -305,7 +309,7 @@ def ReadRawListFiles(supplierNum, listFileText):
             except:
                 pth = line
             if not backup_fs.ExistsID(pth):
-                if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():
+                if is_in_sync:
                     paths2remove.add(pth)
                     lg.out(8, '        D%s - remove, not found in the index' % pth)
         elif typ == 'V':
@@ -324,14 +328,14 @@ def ReadRawListFiles(supplierNum, listFileText):
                 lg.warn('incorrect line:[%s]' % line)
                 continue
             if lineSupplierNum != supplierNum:
-                # this mean supplier have old files and we do not need that 
-                # backups2remove.add(backupID)
+                # this mean supplier have old files and we do not need those files 
+                backups2remove.add(backupID)
                 lg.out(8, '        V%s - remove, different supplier number' % backupID)
                 continue
             iter_path = backup_fs.WalkByID(pathID)
             if iter_path is None:
                 # this version is not found in the index
-                if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():
+                if is_in_sync:
                     backups2remove.add(backupID)
                     paths2remove.add(pathID)
                     lg.out(8, '        V%s - remove, path not found in the index' % pathID)
@@ -343,7 +347,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                 except:
                     item = None
             if not item or not item.has_version(versionName):
-                if backup_control.revision() > 0 and backup_db_keeper.A().IsSynchronized():
+                if is_in_sync:
                     backups2remove.add(backupID)
                     lg.out(8, '        V%s - remove, version is not found in the index' % backupID)
                 continue
@@ -382,8 +386,8 @@ def ReadRawListFiles(supplierNum, listFileText):
             # mark this backup to be repainted
             RepaintBackup(backupID)
     inpt.close()
-    lg.out(8, 'backup_matrix.ReadRawListFiles for supplier %d, old/new files:%d/%d, backups2remove:%d, paths2remove:%d' % (
-        supplierNum, oldfiles, newfiles, len(backups2remove), len(paths2remove)))
+    lg.out(8, '            old:%d, new:%d, backups2remove:%d, paths2remove:%d' % (
+        oldfiles, newfiles, len(backups2remove), len(paths2remove)))
     # return list of backupID's which is too old but stored on suppliers machines 
     return backups2remove, paths2remove
             

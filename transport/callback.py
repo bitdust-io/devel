@@ -329,13 +329,13 @@ def run_outbox_callbacks(pkt_out):
     return handled
 
 
-def run_outbox_filter_callbacks(outpacket, wide, callbacks):
+def run_outbox_filter_callbacks(outpacket, wide, callbacks, target=None, route=None):
     """
     """
     global _OutboxPacketFilterCallbacksList 
     for cb in _OutboxPacketFilterCallbacksList:
         try:
-            result = cb(outpacket, wide, callbacks)
+            result = cb(outpacket, wide, callbacks, target, route)
         except:
             lg.exc()
         if result is None:
