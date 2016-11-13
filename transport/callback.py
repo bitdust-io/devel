@@ -337,6 +337,7 @@ def run_outbox_filter_callbacks(outpacket, wide, callbacks, target=None, route=N
         try:
             result = cb(outpacket, wide, callbacks, target, route)
         except:
+            result = None
             lg.exc()
         if result is None:
             # sending was skipped in this filter, use next one
