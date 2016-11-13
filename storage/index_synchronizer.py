@@ -207,6 +207,9 @@ class IndexSynchronizer(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+            elif event == 'pull':
+                self.state = 'REQUEST?'
+                self.doSuppliersRequestIndexFile(arg)
         #---NO_INFO---
         elif self.state == 'NO_INFO':
             if event == 'shutdown':
