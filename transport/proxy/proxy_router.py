@@ -341,14 +341,10 @@ class ProxyRouter(automat.Automat):
         Action method.
         """
         # encrypt with proxy_receiver()'s key and sent to man behind my proxy
-        newpacket, info = arg
-        if newpacket.Command == commands.Data():
-            receiver_idurl = newpacket.CreatorID
-        else:
-            receiver_idurl = newpacket.RemoteID
+        receiver_idurl, newpacket, info = arg
         route_info = self.routes.get(receiver_idurl, None)
         if not route_info:
-            lg.warn('route with %s not found, inbo packet: %s' % (receiver_idurl, newpacket))
+            lg.warn('route with %s not found for inbox packet: %s' % (receiver_idurl, newpacket))
             return
         hosts = route_info['address']
         if len(hosts) == 0:
@@ -472,13 +468,26 @@ class ProxyRouter(automat.Automat):
         del _ProxyRouter
         _ProxyRouter = None
 
+    def _on_outbox_packet(self):
+        # TODO: if node A is my supplier need to add special case here
+        # need to filter my own packets here addressed to node A but Relay packets
+        # in this case we need to send packet to the real address
+        # because contacts in his identity are same that my own contacts
+        return None
+
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if newpacket.RemoteID == my_id.getLocalID():
-            if newpacket.Command == commands.Relay() and newpacket.CreatorID in self.routes.keys():
-                # sent by proxy_sender() from node A : a man behind proxy_router()
-                # addressed to some third node B in outside world - need to route
-                self.automat('routed-outbox-packet-received', (newpacket, info))
-                return True
+            # this packet was addressed directly to me ... 
+            if newpacket.Command == commands.Relay():
+                # but this is a routed packet addressed to someone else
+                if newpacket.CreatorID in self.routes.keys():
+                    # sent by proxy_sender() from node A : a man behind proxy_router()
+                    # addressed to some third node B in outside world - need to route
+                    self.automat('routed-outbox-packet-received', (newpacket, info))
+                    return True
+                lg.warn('packet %s was SKIPPED, because no routes with %s' % (newpacket, newpacket.CreatorID))
+                return False
+            # and this is not a Relay packet
             if newpacket.Command == commands.Identity() and \
                 newpacket.CreatorID in self.routes.keys() and \
                 newpacket.CreatorID == newpacket.OwnerID:
@@ -487,18 +496,38 @@ class ProxyRouter(automat.Automat):
                 # otherwise it will be wrongly handled in p2p_service
                 self.automat('known-identity-received', newpacket)
                 return True
+            # so this packet may be of any kind, but addressed to me
+            # for example if I am a supplier for node A he will send me packets in usual way
+            # need to skip this packet here and process it as a normal inbox packet
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received SKIPPED %s' % newpacket)
             return False
-        if newpacket.RemoteID in self.routes.keys():
-            # sent by node B : a man from outside world
-            # addressed to a man behind this proxy - need to route to node A
-            self.automat('routed-inbox-packet-received', (newpacket, info))
-            return True
-        if newpacket.Command == commands.Data() and newpacket.CreatorID in self.routes.keys():
-            # a Data packet sent by node B : a man from outside world
-            # addressed to a man behind this proxy - need to route to node A
-            self.automat('routed-inbox-packet-received', (newpacket, info))
+        # this packet was addressed to someone else
+        receiver_idurl = None
+        if newpacket.Command == commands.Data():
+            # Data packets may have two cases: a new Data or response with existing Data
+            if info.sender_idurl == newpacket.CreatorID:
+                # incoming new Data created by node B addressed to node A
+                if newpacket.RemoteID in self.routes.keys():
+                    receiver_idurl = newpacket.RemoteID
+            elif info.sender_idurl == newpacket.RemoteID:
+                # response from node B addressed to node A, by request from A who own this Data
+                if newpacket.CreatorID in self.routes.keys():
+                    # a Data packet sent by node B : a man from outside world
+                    # addressed to a man behind this proxy_router() - need to route to node A
+                    receiver_idurl = newpacket.CreatorID
+            else:
+                # some wired packet received
+                lg.warn('unidentified Data packet received: %s from %s' % (newpacket, info.sender_idurl))
+                return False
+        else:
+            # other packets (not Data) always should be routed to node A by RemoteID
+            if newpacket.RemoteID in self.routes.keys():
+                # sent by node B : a man from outside world
+                # addressed to a man behind this proxy - need to route to node A
+                receiver_idurl = newpacket.RemoteID
+        if receiver_idurl is not None:
+            self.automat('routed-inbox-packet-received', (receiver_idurl, newpacket, info))
             return True
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received SKIPPED %s' % newpacket)
