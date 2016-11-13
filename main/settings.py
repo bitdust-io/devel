@@ -2080,6 +2080,8 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
 
+    config.conf().setDefaultValue('services/customer-support/enabled', 'true')
+
     config.conf().setDefaultValue('services/data-motion/enabled', 'true')
 
     config.conf().setDefaultValue('services/entangled-dht/enabled', 'true')

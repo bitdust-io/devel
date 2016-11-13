@@ -635,6 +635,13 @@ def SetDir(item, iter=None, iterID=None):
                     found = True
                     break
                 continue
+            if isinstance(iter[name], str):
+                if iter[name] == itemname:
+                    iter = iter[name]
+                    iterID = iterID[id]
+                    found = True
+                    break
+                continue
             raise Exception('Wrong data type in the index')
         if not found:
             return False

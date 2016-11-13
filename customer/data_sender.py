@@ -249,9 +249,9 @@ class DataSender(automat.Automat):
             return
         # ... user do not want to keep local backups
         if settings.getGeneralWaitSuppliers() is True:
-            import fire_hire
+            from customer import fire_hire
             # but he want to be sure - all suppliers are green for a long time
-            if contact_status.hasOfflineSuppliers() or time.time() - fire_hire.GetLastFireTime() < 24*60*60:
+            if len(contact_status.listOfflineSuppliers()) > 0 or time.time() - fire_hire.GetLastFireTime() < 24*60*60:
                 # some people are not there or we do not have stable team yet
                 # do not remove the files because we need it to rebuild
                 return

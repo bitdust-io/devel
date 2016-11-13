@@ -97,6 +97,7 @@ def defaults():
         'services/customer/needed-space':               TYPE_DISK_SPACE,
         'services/customer/suppliers-number':           TYPE_COMBO_BOX,
         'services/customer-patrol/enabled':             TYPE_BOOLEAN,
+        'services/customer-support/enabled':            TYPE_BOOLEAN,
         'services/data-motion/enabled':                 TYPE_BOOLEAN,
         'services/entangled-dht/enabled':               TYPE_BOOLEAN,
         'services/entangled-dht/udp-port':              TYPE_POSITIVE_INTEGER,
