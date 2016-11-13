@@ -39,7 +39,7 @@ class CustomerSupportService(LocalService):
     service_name = 'service_customer_support'
     config_path = 'services/customer-support/enabled'
     _jobs = {}
-    _PING_INTERVAL = 10
+    _PING_INTERVAL = 120
 
     def dependent_on(self):
         return ['service_customer_patrol',
