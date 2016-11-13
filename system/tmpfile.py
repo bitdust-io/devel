@@ -36,11 +36,9 @@ import os
 import tempfile
 import time
 
-from twisted.internet import reactor, task
+from twisted.internet import task
 
 from logs import lg
-
-from system import bpio
 
 #------------------------------------------------------------------------------ 
 

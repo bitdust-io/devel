@@ -46,6 +46,7 @@ _OriginalStdOut = None
 _StdOutPrev = None
 _LogFile = None
 _LogFileName = None
+_StoreExceptionsEnabled = False
 _WebStreamFunc = None
 _ShowTime = True
 _LifeBeginsTime = 0
@@ -157,6 +158,7 @@ def exception(level, maxTBlevel, exc_info):
     Print detailed info about last/given exception to the logs.
     """
     global _LogFileName
+    global _StoreExceptionsEnabled
     if exc_info is None:
         _, value, trbk = sys.exc_info()
     else:
@@ -179,12 +181,18 @@ def exception(level, maxTBlevel, exc_info):
     for l in excTb:
         out(level, l.replace('\n', ''))
         s += l + '\n'
-    try:
-        fo = open(os.path.join(os.path.dirname(_LogFileName), 'exception.log'), 'w')
-        fo.write(s)
-        fo.close()
-    except:
-        pass
+    if _StoreExceptionsEnabled:
+        import tempfile
+        fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
+        os.write(fd, s)
+        os.close(fd)
+        out(level, 'saved to: %s' % filename)
+#         try:
+#             fo = open(os.path.join(os.path.dirname(_LogFileName), 'exception.log'), 'w')
+#             fo.write(s)
+#             fo.close()
+#         except:
+#             pass
     return s
 
 

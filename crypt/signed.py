@@ -154,9 +154,9 @@ class Packet:
             stufftosum += self.Payload
             stufftosum += sep
             stufftosum += self.RemoteID
-        except:
-            import pdb
-            pdb.set_trace()
+        except Exception as exc:
+            lg.exc()
+            raise exc
         return stufftosum
 
     def GenerateHash(self):
