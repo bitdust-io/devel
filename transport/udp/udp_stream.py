@@ -100,30 +100,31 @@ from automats import automat
 
 #------------------------------------------------------------------------------ 
 
-UDP_DATAGRAM_SIZE = 500 # depend on device it can be 504 or bigger
+# depend on your network it can be 504 or bigger, 8K seems max.
+UDP_DATAGRAM_SIZE = 7900 
 BLOCK_SIZE = UDP_DATAGRAM_SIZE - 14 # 14 bytes - BitDust header
 
-BLOCKS_PER_ACK = 4  # need to verify delivery get success
+BLOCKS_PER_ACK = 10  # need to verify delivery get success
                     # ack packets will be sent as response,
                     # one output ack per every N data blocks received 
 
-OUTPUT_BUFFER_SIZE = 16*1024 # how many bytes to read from file at once
+OUTPUT_BUFFER_SIZE = 64*1024 # how many bytes to read from file at once
 CHUNK_SIZE = BLOCK_SIZE * BLOCKS_PER_ACK # so we know how much to read now
 # BLOCK_SIZE * int(float(BLOCKS_PER_ACK)*0.8) - 20% extra space in ack packet
 
-RTT_MIN_LIMIT = 0.004 # round trip time, this adjust how fast we try to send
+RTT_MIN_LIMIT = 0.002 # round trip time, this adjust how fast we try to send
 RTT_MAX_LIMIT = 4 # also affect pooling, but also set a time out for responses
 
-MAX_BLOCKS_INTERVAL = 5     
-MAX_ACK_TIMEOUTS = 3
-MAX_ACKS_INTERVAL = 5
-RECEIVING_TIMEOUT = 25
+MAX_BLOCKS_INTERVAL = 5 # resending blocks at lease every N seconds     
+MAX_ACK_TIMEOUTS = 5  # if we get too much errors - connection will be closed
+MAX_ACKS_INTERVAL = 5 # limit max delay between iterations in seconds.
+RECEIVING_TIMEOUT = 15
 
 #------------------------------------------------------------------------------ 
 
 _Streams = {}
-_GlobalLimitReceiveBytesPerSec = 100.0 * 125000
-_GlobalLimitSendBytesPerSec = 100.0 * 125000
+_GlobalLimitReceiveBytesPerSec = 1000.0 * 125000
+_GlobalLimitSendBytesPerSec = 1000.0 * 125000
 
 #------------------------------------------------------------------------------ 
 
