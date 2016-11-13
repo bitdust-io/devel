@@ -75,8 +75,10 @@ from crypt import key
 
 from web import control
 
-import backup_fs
-import backup_matrix
+from services import driver
+
+from storage import backup_fs
+from storage import backup_matrix
 
 #------------------------------------------------------------------------------ 
 
@@ -213,8 +215,9 @@ def Save(filepath=None):
         return False
     commit()
     WriteIndex(filepath)
-    from storage import index_synchronizer
-    index_synchronizer.A('push')
+    if driver.is_started('service_backup_db'):
+        from storage import index_synchronizer
+        index_synchronizer.A('push')
 
 #------------------------------------------------------------------------------ 
 
@@ -271,6 +274,9 @@ def IncomingSupplierBackupIndex(newpacket):
         except:
             pass
         return
+    if driver.is_started('service_backup_db'):
+        from storage import index_synchronizer
+        index_synchronizer.A('index-file-received', (newpacket, supplier_revision))
     if revision() < supplier_revision:
         ReadIndex(inpt)
         backup_fs.Scan()
@@ -280,7 +286,6 @@ def IncomingSupplierBackupIndex(newpacket):
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
             revision(), newpacket.RemoteID))
     inpt.close()
-    # index_synchronizer.A('incoming-db-info', newpacket)
         
 #------------------------------------------------------------------------------ 
 
@@ -289,11 +294,11 @@ def DeleteAllBackups():
     Remove all backup IDs from index data base, see ``DeleteBackup()`` method.
     """
     # prepare a list of all known backup IDs
-    all = set(backup_fs.ListAllBackupIDs())
-    all.update(backup_matrix.GetBackupIDs(remote=True, local=True))
-    lg.out(4, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all))
+    all_ids = set(backup_fs.ListAllBackupIDs())
+    all_ids.update(backup_matrix.GetBackupIDs(remote=True, local=True))
+    lg.out(4, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all_ids))
     # delete one by one
-    for backupID in all:
+    for backupID in all_ids:
         DeleteBackup(backupID, saveDB=False, calculate=False)
     # scan all files
     backup_fs.Scan()
@@ -468,7 +473,7 @@ class Task():
             dataID += str(i)
         backupID = self.pathID + '/' + dataID
         try:
-            backupPath = backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
+            backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
         except:
             lg.exc()
             lg.out(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
@@ -596,7 +601,7 @@ def OnJobDone(backupID, result):
         # if we have a lot tasks started this will produce a lot unneeded actions
         # will be smarter to restart it once we finish all tasks
         # because user will probably leave BitDust working after starting a long running operations
-        import backup_monitor
+        from storage import backup_monitor
         backup_monitor.A('restart') 
     RunTasks()
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, version, result)
@@ -663,7 +668,7 @@ def StartSingle(pathID, localPath=None):
     """
     A high level method to start a backup of single file or folder.    
     """
-    import backup_monitor
+    from storage import backup_monitor
     PutTask(pathID, localPath)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.A, 'restart')
@@ -673,7 +678,7 @@ def StartRecursive(pathID, localPath=None):
     A high level method to start recursive backup of given path.
     This is will traverse all paths below this ID in the 'tree' and add tasks for them.  
     """
-    import backup_monitor
+    from storage import backup_monitor
     startedtasks = set()
     def visitor(path_id, path, info):
         if info.type == backup_fs.FILE:

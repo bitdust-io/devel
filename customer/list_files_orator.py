@@ -69,6 +69,8 @@ from p2p import p2p_service
 from p2p import contact_status
 from p2p import p2p_connector
 
+from services import driver
+
 #------------------------------------------------------------------------------ 
 
 _ListFilesOrator = None
@@ -112,8 +114,9 @@ class ListFilesOrator(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         #global_state.set_global_state('ORATOR ' + newstate)
-        from storage import backup_monitor
-        backup_monitor.A('list_files_orator.state', newstate)
+        if driver.is_started('service_backups'):
+            from storage import backup_monitor
+            backup_monitor.A('list_files_orator.state', newstate)
 
     def A(self, event, arg):
         #---NO_FILES---

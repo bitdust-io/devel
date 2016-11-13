@@ -47,9 +47,9 @@ class BackupsService(LocalService):
     
     def start(self):
         from storage import backup_fs
-        from storage import backup_monitor
         from storage import backup_control
         from storage import backup_matrix
+        from storage import backup_monitor
         from main import settings
         from main.config import conf
         from p2p import p2p_connector

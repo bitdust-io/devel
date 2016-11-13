@@ -92,9 +92,9 @@ from main import settings
 
 from contacts import contactsdb
 
-import backup_matrix
-import backup_fs
-import backup_control
+from storage import backup_matrix
+from storage import backup_fs
+from storage import backup_control
 
 #------------------------------------------------------------------------------ 
 

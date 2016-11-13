@@ -73,8 +73,9 @@ from contacts import contactsdb
 
 from lib import packetid
 
-import backup_fs
-import backup_control
+from services import driver
+
+from storage import backup_fs
 
 #------------------------------------------------------------------------------ 
 
@@ -244,12 +245,16 @@ def ReadRawListFiles(supplierNum, listFileText):
       "D" for folders
       "V" for backed up data 
     """
-    from storage import index_synchronizer
+    from storage import backup_control
+    if driver.is_started('service_backup_db'):
+        from storage import index_synchronizer
+        is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
+    else:
+        is_in_sync = False
     backups2remove = set()
     paths2remove = set()
     oldfiles = ClearSupplierRemoteInfo(supplierNum)
     newfiles = 0
-    is_in_sync = index_synchronizer.is_synchronized() and backup_control.revision() > 0
     lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, %s, is_in_sync=%s' % (
         len(listFileText), supplierNum, backup_control.revision(), index_synchronizer.A(), is_in_sync))
     inpt = cStringIO.StringIO(listFileText)
@@ -770,6 +775,7 @@ def RepaintingProcess(on_off):
         if _BackupStatusNotifyCallback is not None:
             _BackupStatusNotifyCallback(backupID)
     minDelay = 2.0
+    from storage import backup_control
     if backup_control.HasRunningBackup():
         minDelay = 8.0
     _RepaintingTaskDelay = misc.LoopAttenuation(_RepaintingTaskDelay, len(_UpdatedBackupIDs) > 0, minDelay, 8.0)

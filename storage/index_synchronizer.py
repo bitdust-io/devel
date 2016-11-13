@@ -68,6 +68,7 @@ BitDust index_synchronizer() Automat
 EVENTS:
     * :red:`all-acked`
     * :red:`all-responded`
+    * :red:`index-file-received`
     * :red:`init`
     * :red:`pull`
     * :red:`push`
@@ -107,6 +108,8 @@ from transport import gateway
 from crypt import encrypted
 from crypt import signed
 from crypt import key
+
+from services import driver
 
 from customer import supplier_connector
 
@@ -154,8 +157,12 @@ class IndexSynchronizer(automat.Automat):
         Method to initialize additional variables and flags
         at creation phase of index_synchronizer() machine.
         """
-        self.requestedSuppliers = set()
-        self.sentSuppliers = set()
+        self.latest_supplier_revision = -1
+        self.current_local_revision = -1
+        self.requesting_suppliers = set()
+        self.requested_suppliers_number = 0
+        self.sending_suppliers = set()
+        self.sent_suppliers_number = 0
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -190,14 +197,18 @@ class IndexSynchronizer(automat.Automat):
                 self.doSuppliersRequestIndexFile(arg)
         #---REQUEST?---
         elif self.state == 'REQUEST?':
-            if event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ):
-                self.state = 'SENDING'
-                self.doSuppliersSendIndexFile(arg)
-            elif event == 'shutdown':
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'timer-15sec' and not self.isSomeResponded(arg):
                 self.state = 'NO_INFO'
+            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ) ) and self.isVersionChanged(arg):
+                self.state = 'SENDING'
+                self.doSuppliersSendIndexFile(arg)
+            elif event == 'index-file-received':
+                self.doCheckVersion(arg)
+            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ) ) and not self.isVersionChanged(arg):
+                self.state = 'IN_SYNC!'
         #---SENDING---
         elif self.state == 'SENDING':
             if event == 'timer-15sec' and not self.isSomeAcked(arg):
@@ -227,11 +238,22 @@ class IndexSynchronizer(automat.Automat):
         """
         Condition method.
         """
+        return len(self.sending_suppliers) < self.sent_suppliers_number
 
     def isSomeResponded(self, arg):
         """
         Condition method.
         """
+        return len(self.requesting_suppliers) < self.requested_suppliers_number
+
+    def isVersionChanged(self, arg):
+        """
+        Condition method.
+        """
+        if self.current_local_revision < 0:
+            # no info about current local version : assume version was changed
+            return True
+        return self.current_local_revision != self.latest_supplier_revision
 
     def doInit(self, arg):
         """
@@ -244,9 +266,15 @@ class IndexSynchronizer(automat.Automat):
         """
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer.doSuppliersRequestIndexFile')
+        if driver.is_started('service_backups'):
+            from storage import backup_control
+            self.current_local_revision = backup_control.revision()
+        else:
+            self.current_local_revision = -1
+        self.latest_supplier_revision = -1
+        self.requesting_suppliers.clear()
+        self.requested_suppliers_number = 0
         packetID = settings.BackupIndexFileName()
-        self.requestedSuppliers.clear()
-        Payload = ''
         localID = my_id.getLocalID()
         for supplierId in contactsdb.suppliers():
             if not supplierId:
@@ -258,13 +286,14 @@ class IndexSynchronizer(automat.Automat):
                 localID,
                 localID,
                 packetID,
-                Payload,
+                '',
                 supplierId)
             pkt_out = gateway.outbox(newpacket, callbacks={
                 commands.Data(): self._on_supplier_response,
                 commands.Fail(): self._on_supplier_response, })
             if pkt_out:
-                self.requestedSuppliers.add(supplierId)
+                self.requesting_suppliers.add(supplierId)
+                self.requested_suppliers_number += 1
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
                     (pkt_out, nameurl.GetName(supplierId)))
@@ -276,7 +305,8 @@ class IndexSynchronizer(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'index_synchronizer.doSuppliersSendIndexFile')
         packetID = settings.BackupIndexFileName()
-        self.sentSuppliers.clear()
+        self.sending_suppliers.clear()
+        self.sent_suppliers_number = 0
         src = bpio.ReadBinaryFile(settings.BackupIndexFilePath())
         localID = my_id.getLocalID()
         b = encrypted.Block(
@@ -300,7 +330,8 @@ class IndexSynchronizer(automat.Automat):
                 commands.Ack(): self._on_supplier_acked,
                 commands.Fail(): self._on_supplier_acked, })
             if pkt_out:
-                self.sentSuppliers.add(supplierId)
+                self.sending_suppliers.add(supplierId)
+                self.sent_suppliers_number += 1
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
                     (pkt_out, nameurl.GetName(supplierId)))
@@ -314,14 +345,19 @@ class IndexSynchronizer(automat.Automat):
         del _IndexSynchronizer
         _IndexSynchronizer = None
 
+    def doCheckVersion(self, arg):
+        """
+        Action method.
+        """
+        _, supplier_revision = arg
+        if supplier_revision > self.latest_supplier_revision:
+            self.latest_supplier_revision = supplier_revision
+
     def _on_supplier_response(self, newpacket, pkt_out):
-        if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s, pending: %d' % (
-                newpacket, len(self.requestedSuppliers)))
         if newpacket.Command == commands.Data():
-            self.requestedSuppliers.discard(newpacket.RemoteID)
+            self.requesting_suppliers.discard(newpacket.RemoteID)
         elif newpacket.Command == commands.Fail():
-            self.requestedSuppliers.discard(newpacket.OwnerID)
+            self.requesting_suppliers.discard(newpacket.OwnerID)
             sc = supplier_connector.by_idurl(newpacket.OwnerID)
             if sc:
                 sc.automat('fail', newpacket)
@@ -329,7 +365,10 @@ class IndexSynchronizer(automat.Automat):
                 raise Exception('supplier connector was not found')
         else:
             raise Exception('wrong type of response')
-        if len(self.requestedSuppliers) == 0:
+        if _Debug:
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s, pending: %d, total: %d' % (
+                newpacket, len(self.requesting_suppliers), self.requested_suppliers_number))
+        if len(self.requesting_suppliers) == 0:
             self.automat('all-responded')
 
     def _on_supplier_acked(self, newpacket, info):
@@ -338,10 +377,10 @@ class IndexSynchronizer(automat.Automat):
             sc.automat(newpacket.Command.lower(), newpacket)
         else:
             raise Exception('not found supplier connector')
+        self.sending_suppliers.discard(newpacket.OwnerID)
         if _Debug:
-            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d' % (
-                newpacket, len(self.sentSuppliers)))
-        self.sentSuppliers.discard(newpacket.OwnerID)
-        if len(self.sentSuppliers) == 0:
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (
+                newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
+        if len(self.sending_suppliers) == 0:
             self.automat('all-acked')
 

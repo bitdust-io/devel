@@ -139,7 +139,24 @@ class Packet:
         Just to be able to generate a hash of the whole packet .
         """
         sep = "-"
-        stufftosum = self.Command + sep + self.OwnerID + sep + self.CreatorID + sep + self.PacketID + sep + self.Date + sep + self.Payload + sep + self.RemoteID
+        stufftosum = ""
+        try:
+            stufftosum += str(self.Command)
+            stufftosum += sep
+            stufftosum += self.OwnerID
+            stufftosum += sep
+            stufftosum += self.CreatorID
+            stufftosum += sep
+            stufftosum += str(self.PacketID)
+            stufftosum += sep
+            stufftosum += self.Date
+            stufftosum += sep
+            stufftosum += self.Payload
+            stufftosum += sep
+            stufftosum += self.RemoteID
+        except:
+            import pdb
+            pdb.set_trace()
         return stufftosum
 
     def GenerateHash(self):

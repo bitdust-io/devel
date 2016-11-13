@@ -87,7 +87,7 @@ from userid import my_id
 from raid import eccmap
 from raid import raid_worker
 
-import backup_monitor
+from services import driver
 
 #------------------------------------------------------------------------------ 
 
@@ -150,7 +150,9 @@ class BackupRebuilder(automat.Automat):
         if newstate == 'NEXT_BACKUP':
             self.automat('instant')
         elif newstate == 'DONE' or newstate == 'STOPPED':
-            backup_monitor.A('backup_rebuilder.state', newstate)
+            if driver.is_started('service_backups'):
+                from storage import backup_monitor
+                backup_monitor.A('backup_rebuilder.state', newstate)
         
     def A(self, event, arg):
         #---REQUEST---

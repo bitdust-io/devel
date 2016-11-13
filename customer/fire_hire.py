@@ -209,7 +209,6 @@ class FireHire(automat.Automat):
             self.automat('instant')
 
     def A(self, event, arg):
-        from storage import backup_monitor
         #---READY---
         if self.state == 'READY':
             if ( event == 'restart' or ( event == 'instant' and self.NeedRestart ) ) and not ( self.isConfigChanged(arg) and self.isExistSomeSuppliers(arg) ) :
