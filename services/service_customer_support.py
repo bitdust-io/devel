@@ -66,8 +66,8 @@ class CustomerSupportService(LocalService):
         if driver.is_started('service_identity_propagate'):
             from p2p import contact_status
             from p2p import propagate
-            for supplier_idurl in contact_status.listOfflineSuppliers():
-                propagate.SendToID(supplier_idurl, wide=True)
+            for customer_idurl in contact_status.listOfflineCustomers():
+                propagate.SendToID(customer_idurl, wide=True)
 
     def _run_ping(self):
         from twisted.internet.task import LoopingCall

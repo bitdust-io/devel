@@ -237,7 +237,7 @@ def getStatusIcon(idurl):
     
 def listOfflineSuppliers():
     """
-    Loops all suppliers and check their state, return True if at least one is OFFLINE.
+    Loops all suppliers and check their state, return a list of those with state OFFLINE.
     """
     result = []
     for idurl in contactsdb.suppliers():
@@ -247,6 +247,19 @@ def listOfflineSuppliers():
             result.append(idurl)
     return result
 
+
+def listOfflineCustomers():
+    """
+    Loops all customers and check their state, return a list of those with state OFFLINE.
+    """
+    result = []
+    for idurl in contactsdb.customers():
+        if not idurl:
+            result.append(idurl)
+        elif isOffline(idurl):
+            result.append(idurl)
+    return result
+    
 
 def countOfflineAmong(idurls_list):
     """
