@@ -473,7 +473,7 @@ class ProxyRouter(automat.Automat):
         if newpacket.RemoteID == my_id.getLocalID():
             if newpacket.Command == commands.Relay() and newpacket.CreatorID in self.routes.keys():
                 # sent by proxy_sender() from node A : a man behind proxy_router()
-                # addressed to some third node - need to route
+                # addressed to some third node B in outside world - need to route
                 self.automat('routed-outbox-packet-received', (newpacket, info))
                 return True
             if newpacket.Command == commands.Identity() and \
@@ -484,12 +484,21 @@ class ProxyRouter(automat.Automat):
                 # otherwise it will be wrongly handled in p2p_service
                 self.automat('known-identity-received', newpacket)
                 return True
+            if _Debug:
+                lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received SKIPPED %s' % newpacket)
             return False
         if newpacket.RemoteID in self.routes.keys():
             # sent by node B : a man from outside world
-            # addressed to a man behind this proxy - need to route
+            # addressed to a man behind this proxy - need to route to node A
             self.automat('routed-inbox-packet-received', (newpacket, info))
             return True
+        if newpacket.Command == commands.Data() and newpacket.CreatorID in self.routes.keys():
+            # a Data packet sent by node B : a man from outside world
+            # addressed to a man behind this proxy - need to route to node A
+            self.automat('routed-inbox-packet-received', (newpacket, info))
+            return True
+        if _Debug:
+            lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received SKIPPED %s' % newpacket)
         return False             
 
     def _on_network_connector_state_changed(self, oldstate, newstate, event, arg):

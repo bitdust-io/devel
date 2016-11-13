@@ -212,9 +212,9 @@ class PacketOut(automat.Automat):
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = callbacks
-        self.remote_idurl = target
         self.caching_deferred = None
         self.description = self.outpacket.Command+'['+self.outpacket.PacketID+']'
+        self.remote_idurl = target
         self.route = route
         if self.route:
             self.description = self.route['description']
@@ -244,14 +244,13 @@ class PacketOut(automat.Automat):
         if not self.remote_idurl:
             if self.outpacket.CreatorID == my_id.getLocalID():
                 # our data will go to
-                self.remote_idurl = self.outpacket.RemoteID.strip()
+                self.remote_idurl = self.outpacket.RemoteID
             else:
                 if self.outpacket.Command == commands.Data():      
-                    self.remote_idurl = self.outpacket.CreatorID.strip()       
+                    self.remote_idurl = self.outpacket.CreatorID      
                 else:
-                    self.remote_idurl = self.outpacket.RemoteID.strip()
-                    if _Debug:
-                        lg.out(_DebugLevel, 'packet_out.init sending a packet we did not make, and that is not Data packet')
+                    self.remote_idurl = self.outpacket.RemoteID
+                    lg.warn('sending a packet we did not make, and that is not Data packet')
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         self.timeout = 300 # settings.SendTimeOut() * 3
         self.packetdata = None
