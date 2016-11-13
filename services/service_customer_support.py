@@ -39,7 +39,7 @@ class CustomerSupportService(LocalService):
     service_name = 'service_customer_support'
     config_path = 'services/customer-support/enabled'
     _jobs = {}
-    _PING_INTERVAL = 120
+    _PING_INTERVAL = 10
 
     def dependent_on(self):
         return ['service_customer_patrol',
@@ -60,16 +60,17 @@ class CustomerSupportService(LocalService):
             'ping': self._run_ping,
         }
 
+    def _ping(self):
+        from services import driver
+        if driver.is_started('service_identity_propagate'):
+            from p2p import contact_status
+            from p2p import propagate
+            for supplier_idurl in contact_status.listOfflineSuppliers():
+                propagate.PingContact(supplier_idurl, None) 
+
     def _run_ping(self):
         from twisted.internet.task import LoopingCall
-        def _ping():
-            from services import driver
-            if driver.is_started('service_identity_propagate'):
-                from p2p import contact_status
-                from p2p import propagate
-                for supplier_idurl in contact_status.listOfflineSuppliers():
-                    propagate.PingContact(supplier_idurl, None) 
-        self._jobs['ping'] = LoopingCall(_ping)
+        self._jobs['ping'] = LoopingCall(self._ping)
         self._jobs['ping'].start(self._PING_INTERVAL, now=False)
         return 'ping'
     
