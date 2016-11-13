@@ -53,6 +53,7 @@ class CustomerSupportService(LocalService):
     def stop(self):
         for job in self._jobs.values():
             job.stop()
+        self._jobs.clear()
         return True
     
     def _support_methods(self):
@@ -66,7 +67,7 @@ class CustomerSupportService(LocalService):
             from p2p import contact_status
             from p2p import propagate
             for supplier_idurl in contact_status.listOfflineSuppliers():
-                propagate.PingContact(supplier_idurl, None) 
+                propagate.SendToID(supplier_idurl, wide=True)
 
     def _run_ping(self):
         from twisted.internet.task import LoopingCall

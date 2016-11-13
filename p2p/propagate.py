@@ -346,7 +346,7 @@ def OnFileSent(pkt_out, item, status, size, error_message):
 
 def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     """
-    Create ``packet`` with my Identity file and calls ``lib.transport_control.outbox()`` to send it.
+    Create ``packet`` with my Identity file and calls ``transport.gateway.outbox()`` to send it.
     """
     lg.out(8, "propagate.SendToID [%s] wide=%s" % (nameurl.GetName(idurl), str(wide)))
     if ack_handler is None:
@@ -373,16 +373,16 @@ def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
 
 def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
     """
-    Same, but send to many IDs.
+    Same, but send to many IDs and also check previous packets to not re-send.
     """
     lg.out(8, "propagate.SendToIDs to %d users, wide=%s" % (len(idlist), wide))
     if ack_handler is None:
         ack_handler = HandleAck
-    MyID = my_id.getLocalID()
-    PacketID = MyID
+    # MyID = my_id.getLocalID()
+    # PacketID = MyID
     LocalIdentity = my_id.getLocalIdentity()
     Payload = LocalIdentity.serialize()
-    Hash = key.Hash(Payload)
+    # Hash = key.Hash(Payload)
     alreadysent = set()
     inqueue = {}
     found_previous_packets = 0
