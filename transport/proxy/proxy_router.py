@@ -342,14 +342,17 @@ class ProxyRouter(automat.Automat):
         """
         # encrypt with proxy_receiver()'s key and sent to man behind my proxy
         newpacket, info = arg
-        receiver_idurl = newpacket.RemoteID
+        if newpacket.Command == commands.Data():
+            receiver_idurl = newpacket.CreatorID
+        else:
+            receiver_idurl = newpacket.RemoteID
         route_info = self.routes.get(receiver_idurl, None)
         if not route_info:
-            lg.warn('route with %s not exist' % receiver_idurl)
+            lg.warn('route with %s not found, inbo packet: %s' % (receiver_idurl, newpacket))
             return
         hosts = route_info['address']
         if len(hosts) == 0:
-            lg.warn('route with %s do not have actual info about his host, use his identity contacts' % receiver_idurl)
+            lg.warn('route with %s do not have actual info about the host, use identity contacts instead' % receiver_idurl)
             hosts = route_info['contacts'] 
         if len(hosts) == 0:
             lg.warn('has no known contacts for route with %s' % receiver_idurl)
