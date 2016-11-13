@@ -123,8 +123,8 @@ RECEIVING_TIMEOUT = 15
 #------------------------------------------------------------------------------ 
 
 _Streams = {}
-_GlobalLimitReceiveBytesPerSec = 500.0 * 125000
-_GlobalLimitSendBytesPerSec = 500.0 * 125000
+_GlobalLimitReceiveBytesPerSec = 1000.0 * 125000
+_GlobalLimitSendBytesPerSec = 1000.0 * 125000
 
 #------------------------------------------------------------------------------ 
 
