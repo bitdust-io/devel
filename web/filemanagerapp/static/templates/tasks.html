@@ -1,8 +1,18 @@
-<div class="active-task" data-ng-repeat="item in activeTasks.tasksList">
-    <button class="btn btn-default" 
-            data-ng-click="navigateTo(item.path)"
-            title="{{item.name}}">
-        <i style="color: gray;" class="glyphicon glyphicon-hourglass"></i>
-        {{item.name}} : {{item.progress}}
-    </button>
+<div class="row active-tasks-transfers">
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+        <button class="btn btn-default active-task" data-ng-repeat="item in activeTasks.tasksList" 
+                data-ng-click="navigateTo(item.path)"
+                title="{{item.name}}">
+            <i style="color: gray;" class="glyphicon glyphicon-hourglass"></i>
+            {{item.name}} : {{item.progress}}
+        </button>
+    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+    </div>
+        <button class="btn btn-default active-transfer" data-ng-repeat="item in activeTasks.transfersList"
+                data-ng-click=""
+                title="{{item.name}}">
+            <i style="color: gray;" class="glyphicon glyphicon-hourglass"></i>
+            {{item.name}} : {{item.progress}}
+        </button>
+    </div>
 </div>

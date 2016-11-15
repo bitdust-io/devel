@@ -226,10 +226,12 @@ class PacketOut(automat.Automat):
 
     def percent_sent(self):
         if not self.filesize:
-            return 0.0
+            return '?'
+        if not self.items:
+            return '???'
         result = []
         for itm in self.items:
-            result.append(misc.percent2string(itm.bytes_sent / self.filesize))
+            result.append(misc.percent2string(itm.bytes_sent / self.filesize, precis=0))
         return '|'.join(result)
 
     def init(self):

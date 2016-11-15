@@ -45,13 +45,18 @@ from lib import misc
 
 from main import settings
 
+from services import driver
+
+from transport import packet_in
+from transport import packet_out
+
 from storage import backup_fs
 from storage import backup_control
 from storage import backup_monitor
 from storage import restore_monitor
+
 from web import control 
 
-from services import driver
 
 #------------------------------------------------------------------------------ 
 
@@ -89,6 +94,8 @@ def process(json_request):
             result = _download(json_request['params'])
         elif mode == 'tasks':
             result = _list_active_tasks(json_request['params'])
+        elif mode == 'transfers':
+            result = _list_packet_transfers(json_request['params'])
         elif mode == 'debuginfo':
             result = _debuginfo(json_request['params'])
         else:
@@ -334,9 +341,25 @@ def _list_active_tasks(params):
             'id': pathID,
             'version': versionName,
             'mode': 'up',
-            'progress': misc.percent2string(backup_obj.progress()) })
+            'progress': misc.percent2string(backup_obj.progress()), })
     # for backupID in restore_monitor.GetWorkingIDs():
     #     result.append(backupID)
+    return { 'result': result, }
+
+def _list_packet_transfers(params):
+    result = []
+    for pkt_out in packet_out.queue():
+        result.append({
+            'name': pkt_out.label,
+            'progress': pkt_out.percent_sent(),
+            'to': pkt_out.remote_idurl,
+            })
+    for pkt_in in packet_in.items().values():
+        result.append({
+            'name': pkt_in.label,
+            'progress': pkt_in.percent_received(),
+            'from': pkt_in.sender_idurl,
+            })
     return { 'result': result, }
 
 def _debuginfo(params):

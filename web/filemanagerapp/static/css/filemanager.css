@@ -505,16 +505,26 @@ textarea {
 	position: fixed;
 	border-radius: 5px; */
 	/* height: 35px; */
-	width: 100%;
-	overflow: hidden;
+	width: 95%;
+	/* overflow: hidden; */
 	/* padding: 5px; */
 	/* right: 0px; */
 	/* left: 0px; */
+}
+.active-tasks-transfers {
+    width: 90%;
+    position: relative;
 }
 .active-task {
 	float: left;
 	margin: 4px;
 	padding: 2px 4px;
+}
+.active-transfer {
+    font-size: 10px;
+    float: left;
+    margin: 4px;
+    padding: 2px 4px;
 }
 .version {
  	padding: 0px;

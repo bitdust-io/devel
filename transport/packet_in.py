@@ -198,8 +198,8 @@ class PacketIn(automat.Automat):
 
     def percent_received(self):
         if not self.size or not self.bytes_received:
-            return 0.0
-        return misc.percent2string(self.bytes_received / self.size)
+            return '?'
+        return misc.percent2string(self.bytes_received / self.size, precis=0)
 
     def init(self):
         """

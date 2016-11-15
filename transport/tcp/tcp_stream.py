@@ -54,7 +54,7 @@ import tcp_interface
 
 MIN_PROCESS_STREAMS_DELAY = 0.1
 MAX_PROCESS_STREAMS_DELAY = 1
-MAX_SIMULTANEOUS_OUTGOING_FILES = 1
+MAX_SIMULTANEOUS_OUTGOING_FILES = 4
 
 #------------------------------------------------------------------------------ 
 
