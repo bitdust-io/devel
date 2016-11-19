@@ -251,8 +251,8 @@ class Initializer(automat.Automat):
 
     def doInitInterfaces(self, arg):
         lg.out(2, 'initializer.doInitInterfaces')
-        from interface import xmlrpc_server 
-        xmlrpc_server.init()
+#         from interface import xmlrpc_server 
+#         xmlrpc_server.init()
         from interface import jsonrpc_server
         jsonrpc_server.init()
         reactor.callLater(0, self.automat, 'init-interfaces-done')

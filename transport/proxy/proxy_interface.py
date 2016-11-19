@@ -215,17 +215,16 @@ class GateInterface():
         d.addCallback(lambda src: _finish_verification(result))
         d.addErrback(lambda err: result.callback(False))
         return result
+
+    def list_sessions(self):
+        """
+        """
+        return []
     
-#    def send_file(self, remote_idurl, filename, host, description='', single=False):
-#        """
-#        """
-#        if _Debug:
-#            lg.out(4, 'proxy_interface.send_file')
-#        proxy_sender.A('send-file', (remote_idurl, filename, host, description, single))
-#        return succeed(True)
-#
-#    def send_file_single(self, remote_idurl, filename, host, description='', single=True):
-#        return self.send_file(remote_idurl, filename, host, description, single)
+    def list_streams(self, sorted_by_time=True):
+        """
+        """
+        return []
 
 #------------------------------------------------------------------------------ 
 

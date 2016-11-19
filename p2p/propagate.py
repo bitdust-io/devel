@@ -79,12 +79,10 @@ from main import settings
 from system import tmpfile
 
 from crypt import signed
-from crypt import key
 
 from transport import gateway
 from transport import stats
 from transport import packet_out
-from transport.tcp import tcp_node
 
 from dht import dht_service
 
@@ -234,6 +232,7 @@ def SendServers():
     So I can use different identity servers to store more secure.
     This method will send my identity file to all my identity servers via transport_tcp.
     """
+    from transport.tcp import tcp_node
     sendfile, sendfilename = tmpfile.make("propagate")
     os.close(sendfile)
     LocalIdentity = my_id.getLocalIdentity()

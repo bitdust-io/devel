@@ -76,9 +76,11 @@ class TCPTransportService(LocalService):
         return True
     
     def installed(self):
+        from logs import lg
         try:
             from transport.tcp import tcp_interface
         except:
+            lg.exc()
             return False
         return True
 

@@ -206,6 +206,7 @@ class UDPStream(automat.Automat):
         self.stream_id = stream_id
         self.consumer = consumer
         self.producer = producer
+        self.started = time.time()
         self.consumer.set_stream_callback(self.on_consume)
         if _Debug:
             lg.out(_DebugLevel, 'udp_stream.__init__ %d peer_id:%s session:%s' % (

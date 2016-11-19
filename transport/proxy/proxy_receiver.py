@@ -83,6 +83,7 @@ from contacts import identitycache
 from transport import callback
 from transport import packet_in
 from transport import packet_out
+
 from transport.proxy import proxy_interface
 
 from userid import my_id

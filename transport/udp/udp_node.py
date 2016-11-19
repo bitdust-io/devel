@@ -57,10 +57,8 @@ from dht import dht_service
 
 from services import driver
 
-import udp_connector
-import udp_session
-import udp_interface
-import udp_stream
+from transport.udp import udp_connector
+from transport.udp import udp_session
 
 #------------------------------------------------------------------------------ 
 
@@ -265,6 +263,8 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
+        from transport.udp import udp_interface
+        from transport.udp import udp_stream
         self.options = arg
         self.my_idurl = self.options['idurl']
         self.listen_port = int(self.options['udp_port']) 
@@ -409,6 +409,7 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
+        from transport.udp import udp_interface
         self.notified = False
         udp_interface.interface_disconnected(arg)
 
@@ -416,6 +417,7 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
+        from transport.udp import udp_interface
         if not self.notified:
             udp_interface.interface_receiving_started(self.my_id, self.options)
             self.notified = True
@@ -426,6 +428,7 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
+        from transport.udp import udp_interface
         udp_interface.interface_receiving_failed('state is %s' % self.state)
 
 

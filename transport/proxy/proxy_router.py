@@ -87,7 +87,6 @@ from userid import my_id
 
 from contacts import identitycache
 
-from transport import gateway
 from transport import callback
 from transport import packet_out
 

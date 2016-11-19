@@ -51,9 +51,6 @@ from logs import lg
 
 from lib import nameurl
 
-import udp_node
-import udp_session
-
 #------------------------------------------------------------------------------ 
 
 _GateProxy = None
@@ -104,6 +101,7 @@ class GateInterface():
     def shutdown(self):
         """
         """
+        from transport.udp import udp_node
         global _GateProxy
         if _Debug:
             lg.out(4, 'udp_interface.shutdown')
@@ -116,6 +114,7 @@ class GateInterface():
     def connect(self, options):
         """
         """
+        from transport.udp import udp_node
         if _Debug:
             lg.out(8, 'udp_interface.connect %s' % str(options))
         udp_node.A('go-online', options)
@@ -124,6 +123,7 @@ class GateInterface():
     def disconnect(self):
         """
         """
+        from transport.udp import udp_node
         if _Debug:
             lg.out(4, 'udp_interface.disconnect')
         udp_node.A('go-offline')
@@ -153,6 +153,8 @@ class GateInterface():
     def send_file(self, remote_idurl, filename, host, description='', single=False):
         """
         """
+        from transport.udp import udp_session
+        from transport.udp import udp_node
         # lg.out(20, 'udp_interface.send_file %s %s %s' % (filename, host, description))
         result_defer = Deferred()
 #        if udp_node.A().state not in ['LISTEN', 'DHT_READ',]:
@@ -191,6 +193,7 @@ class GateInterface():
     def cancel_outbox_file(self, host, filename):
         """
         """
+        from transport.udp import udp_session
         ok = False
         for sess in udp_session.sessions().values():
             if sess.peer_id != host:
@@ -216,6 +219,7 @@ class GateInterface():
     def cancel_file_sending(self, transferID):
         """
         """
+        from transport.udp import udp_session
         for sess in udp_session.sessions().values():
             for out_file in sess.file_queue.outboxFiles.values():
                 if out_file.transfer_id and out_file.transfer_id == transferID:
@@ -226,15 +230,32 @@ class GateInterface():
     def cancel_file_receiving(self, transferID):
         """
         """
+        # at the moment for UDP transport we can not stop particular file transfer
+        # we can only close the whole session which is not we really want
         return False
-        for sess in udp_session.sessions().values():
-            for in_file in sess.file_queue.inboxFiles.values():
-                if in_file.transfer_id and in_file.transfer_id == transferID:
-                    if _Debug:
-                        lg.out(6, 'udp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
-                    sess.automat('shutdown')
-                    return True
-        return False
+#         for sess in udp_session.sessions().values():
+#             for in_file in sess.file_queue.inboxFiles.values():
+#                 if in_file.transfer_id and in_file.transfer_id == transferID:
+#                     if _Debug:
+#                         lg.out(6, 'udp_interface.cancel_file_receiving transferID=%s   want to close session' % transferID)
+#                     sess.automat('shutdown')
+#                     return True
+#         return False
+
+    def list_sessions(self):
+        """
+        """
+        from transport.udp import udp_session
+        return udp_session.sessions().values()
+    
+    def list_streams(self, sorted_by_time=True):
+        """
+        """
+        from transport.udp import udp_stream
+        result = udp_stream.streams().values()
+        if sorted_by_time:
+            result.sort(key=lambda stream: stream.started)
+        return result
 
 #------------------------------------------------------------------------------ 
 

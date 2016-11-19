@@ -53,9 +53,7 @@ from logs import lg
 
 from automats import automat
 
-import tcp_node
-import tcp_interface
-import tcp_stream
+from transport.tcp import tcp_node
 
 #------------------------------------------------------------------------------ 
 
@@ -180,6 +178,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Condition method.
         """
+        from transport.tcp import tcp_node
         if self.getConnectionAddress() is not None:
             if self.getConnectionAddress() in tcp_node.started_connections().keys(): 
                 return True
@@ -301,6 +300,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
+        from transport.tcp import tcp_stream
         self.stream = tcp_stream.TCPFileStream(self)
                 
     def doCloseStream(self, arg):
@@ -394,6 +394,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
     def process_outbox_queue(self):
         if self.stream is None:
             return False
+        if not self.transport.producer:
+            return False
+        from transport.tcp import tcp_stream
         has_reads = False
         while len(self.outboxQueue) > 0 and len(self.stream.outboxFiles) < tcp_stream.MAX_SIMULTANEOUS_OUTGOING_FILES:        
             filename, description, result_defer, single = self.outboxQueue.pop(0)
@@ -417,6 +420,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         return has_reads
 
     def failed_outbox_queue_item(self, filename, description='', error_message=''):
+        from transport.tcp import tcp_interface
         lg.out(6, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
         tcp_interface.interface_cancelled_file_sending(
             self.getAddress(), filename, 0, description, error_message)        

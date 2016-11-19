@@ -113,7 +113,8 @@ def create(outpacket, wide, callbacks, target=None, route=None):
     queue().append(p)
     p.automat('run')
     return p
-    
+
+#------------------------------------------------------------------------------ 
     
 def search(proto, host, filename, remote_idurl=None):
     for p in queue():
@@ -132,6 +133,35 @@ def search(proto, host, filename, remote_idurl=None):
             lg.out(_DebugLevel, '%s [%s]' % (os.path.basename(p.filename), 
                 ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
     return None, None
+
+
+def search_many(proto=None,
+                host=None,
+                filename=None,
+                command=None,
+                remote_idurl=None,
+                packet_id=None):
+    result = []
+    for p in queue():
+        if remote_idurl and p.remote_idurl != remote_idurl:
+            continue
+        if filename and p.filename != filename:
+            continue
+        if command and p.outpacket.Command != command:
+            continue
+        if packet_id and p.outpacket.PacketID != packet_id:
+            continue
+        for i in p.items:
+            if proto and i.proto != proto:
+                continue
+            if host and i.host != host:
+                continue
+            result.append((p, i))
+    if _Debug:
+        lg.out(_DebugLevel, 'packet_out.search_many query: (%s, %s, %s, %s) :' % (
+            proto, host, filename, remote_idurl))
+        lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, result))))
+    return result
 
 
 def search_by_transfer_id(transfer_id):
@@ -178,10 +208,33 @@ def search_by_response_packet(newpacket, proto=None, host=None):
                 proto, host))
     return result
 
+def search_similar_packets(outpacket):
+    target = correct_packet_destination(outpacket)
+    return search_many(
+        command=outpacket.Command,
+        packet_id=outpacket.PacketID,
+        remote_idurl=target,
+    )
+
 #------------------------------------------------------------------------------ 
 
-class WorkItem:
-    def __init__(self, proto, host):
+def correct_packet_destination(outpacket):
+    """
+    """
+    if outpacket.CreatorID == my_id.getLocalID():
+        # our data will go where it should go 
+        return outpacket.RemoteID
+    if outpacket.Command == commands.Data(): 
+        # Data belongs to remote customers and stored locally
+        # must go to CreatorID, because RemoteID pointing to this device      
+        return outpacket.CreatorID
+    lg.warn('sending a packet we did not make, and that is not Data packet')
+    return outpacket.RemoteID
+
+#------------------------------------------------------------------------------ 
+
+class WorkItem(object):
+    def __init__(self, proto, host, size=0):
         self.proto = proto
         self.host = host
         self.time = time.time()
@@ -189,7 +242,12 @@ class WorkItem:
         self.status = None
         self.error_message = None
         self.bytes_sent = 0
+        self.size = size
+        
+    def __repr__(self):
+        return 'WorkItem(%s://%s|%d)' % (self.proto, self.host, self.size)
 
+#------------------------------------------------------------------------------ 
 
 class PacketOut(automat.Automat):
     """
@@ -211,7 +269,9 @@ class PacketOut(automat.Automat):
     def __init__(self, outpacket, wide, callbacks={}, target=None, route=None):
         self.outpacket = outpacket
         self.wide = wide
-        self.callbacks = callbacks
+        self.callbacks = {}
+        for command, cb in callbacks.items():
+            self.set_callback(command, cb)
         self.caching_deferred = None
         self.description = self.outpacket.Command+'['+self.outpacket.PacketID+']'
         self.remote_idurl = target
@@ -224,16 +284,6 @@ class PacketOut(automat.Automat):
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 
-    def percent_sent(self):
-        if not self.filesize:
-            return '?'
-        if not self.items:
-            return '???'
-        result = []
-        for itm in self.items:
-            result.append(misc.percent2string(itm.bytes_sent / self.filesize, precis=0))
-        return '|'.join(result)
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the state machine.
@@ -244,15 +294,7 @@ class PacketOut(automat.Automat):
         self.description = self.outpacket.Command+'('+self.outpacket.PacketID+')'
         self.payloadsize = len(self.outpacket.Payload)
         if not self.remote_idurl:
-            if self.outpacket.CreatorID == my_id.getLocalID():
-                # our data will go to
-                self.remote_idurl = self.outpacket.RemoteID
-            else:
-                if self.outpacket.Command == commands.Data():      
-                    self.remote_idurl = self.outpacket.CreatorID      
-                else:
-                    self.remote_idurl = self.outpacket.RemoteID
-                    lg.warn('sending a packet we did not make, and that is not Data packet')
+            self.remote_idurl = correct_packet_destination(self.outpacket)
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         self.timeout = 300 # settings.SendTimeOut() * 3
         self.packetdata = None
@@ -263,6 +305,16 @@ class PacketOut(automat.Automat):
         self.response_packet = None
         self.response_info = None
 
+    def percent_sent(self):
+        if not self.filesize:
+            return '?'
+        if not self.items:
+            return '???'
+        result = []
+        for itm in self.items:
+            result.append(misc.percent2string(itm.bytes_sent / self.filesize, precis=0))
+        return '|'.join(result)
+
     def msg(self, msgid, arg=None):
         return self.MESSAGES.get(msgid, '')
             
@@ -272,7 +324,9 @@ class PacketOut(automat.Automat):
         return time.time() - self.time > self.timeout
         
     def set_callback(self, command, cb):
-        self.callbacks[command] = cb
+        if command not in self.callbacks.keys():
+            self.callbacks[command] = []
+        self.callbacks[command].append(cb)
         
     def A(self, event, arg):
         #---SENDING---
@@ -547,7 +601,8 @@ class PacketOut(automat.Automat):
         Action method.
         """
         if self.response_packet.Command in self.callbacks:
-            self.callbacks[self.response_packet.Command](self.response_packet, self.response_info)
+            for cb in self.callbacks[self.response_packet.Command]:
+                cb(self.response_packet, self.response_info)
 
     def doReportDoneWithAck(self, arg):
         """
@@ -613,13 +668,16 @@ class PacketOut(automat.Automat):
     def _push(self):
         if self.route:
             # if this packet is routed - send directly to route host
-            d = gateway.send_file(
+            gateway.send_file(
                 self.route['remoteid'], 
                 self.route['proto'], 
                 self.route['host'], 
                 self.filename, 
                 self.description)
-            self.items.append(WorkItem(self.route['proto'], self.route['host']))
+            self.items.append(WorkItem(
+                self.route['proto'],
+                self.route['host'],
+                self.filesize))
             self.automat('items-sent')
             return
         # get info about his local IP
@@ -636,8 +694,8 @@ class PacketOut(automat.Automat):
                     gateway.is_installed(proto):
                         if proto == 'tcp' and localIP:
                             host = localIP
-                        d = gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
-                        self.items.append(WorkItem(proto, host))
+                        gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
+                        self.items.append(WorkItem(proto, host, self.filesize))
                         workitem_sent = True
             if not workitem_sent:
                 self.automat('nothing-to-send')
@@ -669,7 +727,7 @@ class PacketOut(automat.Automat):
                 if port:
                     host = localIP+':'+str(port)
                 gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
-                self.items.append(WorkItem(proto, host))
+                self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
         # tcp is the best proto - if it is working - this is the best case!!!
@@ -679,7 +737,7 @@ class PacketOut(automat.Automat):
                 if port:
                     host = host+':'+str(port)
                 gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
-                self.items.append(WorkItem(proto, host))
+                self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
         # udp contact
@@ -687,7 +745,7 @@ class PacketOut(automat.Automat):
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
                 gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
-                self.items.append(WorkItem(proto, host))
+                self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
         # proxy contact - he may use other node to receive and send packets
@@ -695,7 +753,7 @@ class PacketOut(automat.Automat):
             proto, host = nameurl.IdContactSplit(proxy_contact)
             if host.strip() and gateway.is_installed('proxy') and gateway.can_send(proto):
                 gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
-                self.items.append(WorkItem(proto, host))
+                self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
         # finally use the first proto we supported if we can not find the best preferable method
@@ -709,7 +767,7 @@ class PacketOut(automat.Automat):
                 if gateway.is_installed(proto) and gateway.can_send(proto):
                     if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
                         gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
-                        self.items.append(WorkItem(proto, host))
+                        self.items.append(WorkItem(proto, host, self.filesize))
                         self.automat('items-sent')
                         return
         self.automat('nothing-to-send')
@@ -743,3 +801,5 @@ class PacketOut(automat.Automat):
                     break
         else:
             raise Exception('Wrong argument!')        
+
+#------------------------------------------------------------------------------ 

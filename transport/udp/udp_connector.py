@@ -44,8 +44,6 @@ from automats import automat
 
 from dht import dht_service
 
-import udp_session
-
 #------------------------------------------------------------------------------ 
 
 _Debug = False
@@ -207,6 +205,7 @@ class DHTUDPConnector(automat.Automat):
         """
         Action method.
         """
+        from transport.udp import udp_session
         peer_address = arg
         if self.node.my_address is None:
             if _Debug:
@@ -238,6 +237,7 @@ class DHTUDPConnector(automat.Automat):
         """
         Action method.
         """
+        from transport.udp import udp_session
         udp_session.report_and_remove_pending_outbox_files_to_host(self.peer_id, 'unable to establish connection')
         
     def doDestroyMe(self, arg):

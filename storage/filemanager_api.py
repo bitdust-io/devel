@@ -94,8 +94,10 @@ def process(json_request):
             result = _download(json_request['params'])
         elif mode == 'tasks':
             result = _list_active_tasks(json_request['params'])
+        elif mode == 'packets':
+            result = _list_in_out_packets(json_request['params'])
         elif mode == 'transfers':
-            result = _list_packet_transfers(json_request['params'])
+            result = _list_active_transfers(json_request['params'])
         elif mode == 'debuginfo':
             result = _debuginfo(json_request['params'])
         else:
@@ -346,7 +348,7 @@ def _list_active_tasks(params):
     #     result.append(backupID)
     return { 'result': result, }
 
-def _list_packet_transfers(params):
+def _list_in_out_packet(params):
     result = []
     for pkt_out in packet_out.queue():
         result.append({
@@ -361,6 +363,12 @@ def _list_packet_transfers(params):
             'from': pkt_in.sender_idurl,
             })
     return { 'result': result, }
+
+def _list_active_transfers(params):
+    result = []
+    if driver.is_started('service_tcp_transport'):
+        from transport import 
+    return result
 
 def _debuginfo(params):
     result = {}

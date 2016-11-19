@@ -129,16 +129,22 @@ _TransportLogFilename = None
 #------------------------------------------------------------------------------ 
 
 def transport(proto):
+    """
+    """
     global _TransportsDict
     return _TransportsDict[proto]
 
 
 def transports():
+    """
+    """
     global _TransportsDict
     return _TransportsDict
 
 
 def listener():
+    """
+    """
     global _LocalListener
     return _LocalListener
 
@@ -455,18 +461,28 @@ def outbox(outpacket, wide=False, callbacks={}, target=None, route=None):
 
 #------------------------------------------------------------------------------ 
 
+def make_transfer_ID():
+    """
+    Generate a unique transfer ID.
+    """
+    global _LastTransferID
+    if _LastTransferID is None:
+        _LastTransferID = int(str(int(time.time() * 100.0))[4:])
+    _LastTransferID += 1
+    return _LastTransferID
+
 def send_work_item(proto, host, filename, description):
     """
     Send a file to remote peer by given transport.
     
     Args:
-        workitem (object): object to keep info about the file
         proto (str): identifier of the transport 
         host (str): remote peer's host comes from identity contact
-        port (int or str): remote peer's port number if present in the contact method
-        dest_filename (str): a last part of the contact method, mostly not used  
+        filename (str): local source file to be send
+        description (str): a label for this transfer
     """
-    send_file(proto, host, filename, description)
+    return send_file(proto, host, filename, description)
+
 
 def connect_to(proto, host):
     """
@@ -481,22 +497,39 @@ def disconnect_from(proto, host):
 
     
 def send_file(remote_idurl, proto, host, filename, description=''):
+    """
+    """
     return transport(proto).call('send_file', remote_idurl, filename, host, description)
 
 
 def send_file_single(remote_idurl, proto, host, filename, description=''):
+    """
+    """
     return transport(proto).call('send_file_single', remote_idurl, filename, host, description)
-  
-def make_transfer_ID():
+
+
+def list_active_transports():
     """
-    Generate a unique transfer ID.
     """
-    global _LastTransferID
-    if _LastTransferID is None:
-        _LastTransferID = int(str(int(time.time() * 100.0))[4:])
-    _LastTransferID += 1
-    return _LastTransferID
-    
+    result = []
+    for proto, transp in transports().items():
+        if settings.transportIsEnabled(proto): 
+            if transp.state != 'OFFLINE':
+                result.append(proto)
+    return result
+
+
+def list_active_sessions(proto):
+    """
+    """
+    return transport(proto).call('list_sessions')
+
+
+def list_active_streams(proto):
+    """
+    """
+    return transport(proto).call('list_streams')
+
 #------------------------------------------------------------------------------ 
 
 def cancel_output_file(transferID, why=None):
@@ -562,6 +595,8 @@ def shutdown_all_inbox_packets():
     for pkt_in in list(packet_in.items().values()):
         pkt_in.event('cancel', 'shutdown')
 
+#------------------------------------------------------------------------------ 
+
 def packets_timeout_loop():
     global _PacketsTimeOutTask
     # lg.out(18, 'gateway.packets_timeout_loop')
@@ -587,6 +622,8 @@ def stop_packets_timeout_loop():
             _PacketsTimeOutTask.cancel()
         _PacketsTimeOutTask = None
 
+#------------------------------------------------------------------------------ 
+
 def monitoring():
     list_pkt_in = []
     for pkt_in in packet_in.items().values():
@@ -607,6 +644,13 @@ def monitoring():
 def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
     """
     """
+    started_packets = packet_out.search_similar_packets(outpacket)
+    if started_packets:
+        for active_packet, active_item in started_packets:
+            if callbacks:
+                for command, cb in callbacks.items():
+                    active_packet.set_callback(command, cb)
+            return active_packet
     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route)
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
@@ -807,7 +851,8 @@ def close_transport_log():
     _TransportLogFile.close()
     _TransportLogFile = None
     _TransportLogFilename = None
-    
+
+
 def transport_log():
     global _TransportLogFile
     return _TransportLogFile

@@ -55,7 +55,7 @@ from main import settings
 
 from lib import misc
 
-import tcp_node
+from transport.tcp import tcp_node
 
 #------------------------------------------------------------------------------ 
 
@@ -184,6 +184,25 @@ class GateInterface():
         """
         """
         return tcp_node.cancel_outbox_file(host, filename)
+
+    def list_sessions(self):
+        """
+        """
+        result = []
+        for opened_connection in tcp_node.opened_connections().values():
+            for channel in opened_connection:
+                result.append(channel)
+        for started_connection in tcp_node.started_connections():
+            result.append(started_connection)
+        return result
+    
+    def list_streams(self, sorted_by_time=True):
+        """
+        """
+        result = []
+        result.extend(tcp_node.list_input_streams(sorted_by_time))
+        result.extend(tcp_node.list_output_streams(sorted_by_time))
+        return result
 
 #------------------------------------------------------------------------------ 
 

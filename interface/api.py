@@ -1366,6 +1366,58 @@ def packets_stats():
         'in': stats.counters_in(),
         'out': stats.counters_out(),
     }])
+    
+def connections_list(wanted_protos=None):
+    """
+    Returns list of opened/active network connections.
+    Argument `wanted_protos` can be used to select which protocols to list:
+        connections_list(wanted_protos=['tcp', 'udp',])
+    Return:
+        {}
+    """
+    if not driver.is_started('service_gateway'):
+        return ERROR('service_gateway() is not started')
+    from transport import gateway
+    result = []
+    if not wanted_protos:
+        wanted_protos = gateway.list_active_transports()
+    for proto in wanted_protos:
+        for connection in gateway.list_active_sessions(proto):
+            item = {
+                'status': 'unknown',
+                'state': 'unknown',
+                'proto': proto,
+                'host': 'unknown',
+                'idurl': 'unknown',
+                'bytes_sent': 0,
+                'bytes_received': 0,
+            }
+            if proto == 'tcp':
+                if hasattr(connection, 'stream'):
+                    item.update({
+                        'status': 'active',
+                        'state': connection.state,
+                        'host': connection.peer_address,
+                        'idurl': connection.peer_idurl or '',
+                        'bytes_sent': connection.total_bytes_sent,
+                        'bytes_received': connection.total_bytes_received,
+                    })
+                else:
+                    item.update({
+                        'status': 'connecting',
+                        'host': connection.connection_address,
+                    })
+            elif proto == 'udp':
+                item.update({
+                    'status': 'active',
+                    'state': connection.state,
+                    'host': connection.peer_address,
+                    'idurl': connection.peer_idurl or '',
+                    'bytes_sent': connection.total_bytes_sent,
+                    'bytes_received': connection.total_bytes_received,
+                })
+            result.append(item)
+    return RESULT(result)
 
 #------------------------------------------------------------------------------ 
 

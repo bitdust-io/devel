@@ -46,10 +46,6 @@ from system import tmpfile
 from main import settings
 from lib import misc
 
-import tcp_node
-import tcp_connection
-import tcp_interface
-
 #------------------------------------------------------------------------------ 
 
 MIN_PROCESS_STREAMS_DELAY = 0.1
@@ -77,11 +73,10 @@ def stop_process_streams():
     return False
     
 def process_streams():
+    from transport.tcp import tcp_node
     global _ProcessStreamsDelay
     global _ProcessStreamsTask
-    
     has_activity = False
-    
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
             has_timeouts = False # connection.stream.timeout_incoming_files()
@@ -89,14 +84,35 @@ def process_streams():
             has_outbox = connection.process_outbox_queue()
             if has_timeouts or has_sends or has_outbox:
                 has_activity = True
-    
-    _ProcessStreamsDelay = misc.LoopAttenuation(
+        _ProcessStreamsDelay = misc.LoopAttenuation(
         _ProcessStreamsDelay, has_activity, 
         MIN_PROCESS_STREAMS_DELAY, 
-        MAX_PROCESS_STREAMS_DELAY,)
-    
+        MAX_PROCESS_STREAMS_DELAY,)    
     # attenuation
     _ProcessStreamsTask = reactor.callLater(_ProcessStreamsDelay, process_streams)
+
+#------------------------------------------------------------------------------ 
+
+def list_input_streams(sorted_by_time=True):
+    from transport.tcp import tcp_node
+    streams = []
+    for connections in tcp_node.opened_connections().values():
+        for connection in connections:
+            streams.extend(connection.stream.inboxFiles.values())
+    if sorted_by_time:
+        streams.sort(key=lambda stream: stream.started)
+    return streams
+
+
+def list_output_streams(sorted_by_time=True):
+    from transport.tcp import tcp_node
+    streams = []
+    for connections in tcp_node.opened_connections().values():
+        for connection in connections:
+            streams.extend(connection.stream.outboxFiles.values())
+    if sorted_by_time:
+        streams.sort(key=lambda stream: stream.started)
+    return streams
 
 #------------------------------------------------------------------------------ 
 
@@ -105,13 +121,15 @@ class TCPFileStream():
         self.connection = connection
         self.outboxFiles = {}
         self.inboxFiles = {}
+        self.started = time.time()
         
     def close(self):
         """
         """ 
         self.connection = None   
 
-    def abort_files(self, reason='connection closed'):      
+    def abort_files(self, reason='connection closed'):
+        from transport.tcp import tcp_connection
         file_ids_to_remove = self.inboxFiles.keys()
         for file_id in file_ids_to_remove:
             # self.send_data(tcp_connection.CMD_ABORT, struct.pack('i', file_id)+' '+reason)
@@ -124,6 +142,7 @@ class TCPFileStream():
     def data_received(self, payload):
         """
         """
+        from transport.tcp import tcp_connection
         inp = cStringIO.StringIO(payload)
         try:
             file_id = struct.unpack('i', inp.read(4))[0]
@@ -175,6 +194,7 @@ class TCPFileStream():
         return self.connection.sendData(command, payload)
         
     def create_inbox_file(self, file_id, file_size):
+        from transport.tcp import tcp_interface
         infile = InboxFile(self, file_id, file_size)
         d = tcp_interface.interface_register_file_receiving(
             self.connection.getAddress(), self.connection.peer_idurl, infile.filename)
@@ -202,6 +222,7 @@ class TCPFileStream():
         self.connection.automat('disconnect')
               
     def create_outbox_file(self, filename, filesize, description, result_defer, single):
+        from transport.tcp import tcp_interface
         file_id = int(str(int(time.time() * 100.0))[4:])
         outfile = OutboxFile(self, filename, file_id, filesize, description, result_defer, single)
         if not single:
@@ -237,12 +258,14 @@ class TCPFileStream():
         self.inboxFiles[file_id].close()   
         del self.inboxFiles[file_id]   
         
-    def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):    
+    def report_outbox_file(self, transfer_id, status, bytes_sent, error_message=None):
+        from transport.tcp import tcp_interface
         # lg.out(18, 'tcp_stream.report_outbox_file %s %s %d' % (transfer_id, status, bytes_sent))
         tcp_interface.interface_unregister_file_sending(
             transfer_id, status, bytes_sent, error_message)
 
     def report_inbox_file(self, transfer_id, status, bytes_received, error_message=None):
+        from transport.tcp import tcp_interface
         # lg.out(18, 'tcp_stream.report_inbox_file %s %s %d' % (transfer_id, status, bytes_received))
         tcp_interface.interface_unregister_file_receiving(
             transfer_id, status, bytes_received, error_message)
@@ -314,6 +337,7 @@ class InboxFile():
     def input_data(self, data):
         os.write(self.fd, data)
         self.bytes_received += len(data)
+        self.stream.connection.total_bytes_received += len(data)
         self.last_block_time = time.time()
     
     def is_done(self):
@@ -426,6 +450,7 @@ class FileSender(basic.FileSender):
         return datagram
 
     def resumeProducing(self):
+        from transport.tcp import tcp_connection
         chunk = ''
         if self.file:
             try:

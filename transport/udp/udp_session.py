@@ -57,9 +57,6 @@ from lib import misc
 from automats import automat
 from lib import udp
 
-import udp_file_queue
-import udp_interface
-
 #------------------------------------------------------------------------------ 
 
 MIN_PROCESS_SESSIONS_DELAY = 0.001
@@ -183,6 +180,7 @@ def remove_pending_outbox_file(host, filename):
 def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
     """
     """
+    from transport.udp import udp_interface
     global _PendingOutboxFiles
     i = 0
     while i < len(_PendingOutboxFiles):
@@ -257,10 +255,13 @@ class UDPSession(automat.Automat):
         }
    
     def __init__(self, node, peer_address, peer_id=None):
+        from transport.udp import udp_file_queue
         self.node = node
         self.peer_address = peer_address
         self.peer_id = peer_id
         self.peer_idurl = None
+        self.bytes_sent = 0
+        self.bytes_received = 0
         self.file_queue = udp_file_queue.FileQueue(self) 
         name = 'udp_session[%s:%d:%s]' % (
             self.peer_address[0], self.peer_address[1], str(self.peer_id))
@@ -275,8 +276,6 @@ class UDPSession(automat.Automat):
         """
         self.log_events = False
         self.last_datagram_received_time = 0
-        self.bytes_sent = 0
-        self.bytes_received = 0
         self.my_rtt_id = '0' # out
         self.peer_rtt_id = '0' # in
         self.rtts = {}

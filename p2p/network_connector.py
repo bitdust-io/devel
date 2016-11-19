@@ -255,13 +255,14 @@ class NetworkConnector(automat.Automat):
     def isNeedUPNP(self, arg):
         if not settings.enableUPNP():
             return False
-        try:
-            from transport.tcp import tcp_node
-            if int(tcp_node.get_internal_port()) != int(settings.getTCPPort()):
-                return True
-        except:
-            lg.exc()
-            return False
+        if driver.is_started('service_tcp_transport'):
+            try:
+                from transport.tcp import tcp_node
+                if int(tcp_node.get_internal_port()) != int(settings.getTCPPort()):
+                    return True
+            except:
+                lg.exc()
+                return False
         return time.time() - self.last_upnp_time > 60*60
 
     def isConnectionAlive(self, arg):
