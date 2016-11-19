@@ -53,8 +53,6 @@ from logs import lg
 
 from automats import automat
 
-from transport.tcp import tcp_node
-
 #------------------------------------------------------------------------------ 
 
 MAX_SIMULTANEOUS_CONNECTIONS = 250
@@ -194,6 +192,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
+        from transport.tcp import tcp_node
         self.peer_address = self.getTransportAddress()
         self.peer_external_address = self.peer_address
         self.connected = time.time()
@@ -206,6 +205,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
+        from transport.tcp import tcp_node
         conn = tcp_node.started_connections().pop(self.getConnectionAddress())
         conn.connector = None
         # lg.out(18, 'tcp_connection.doCloseOutgoing    %s closed, %d more started' % (
@@ -215,6 +215,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
+        from transport.tcp import tcp_node
         try:
             command, payload = arg
             peeraddress, peeridurl = payload.split(' ')
@@ -270,6 +271,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
+        from transport.tcp import tcp_node
         host = tcp_node.my_host() or '127.0.0.1:7771'
         idurl = tcp_node.my_idurl() or 'None'
         payload = host + ' ' + idurl
@@ -279,6 +281,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
+        from transport.tcp import tcp_node
         payload = tcp_node.my_idurl() or 'None' 
         self.sendData(CMD_WAZAP, payload)
 
@@ -326,6 +329,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         """
         Action method.
         """
+        from transport.tcp import tcp_node
         # lg.out(18, 'tcp_connection.doDestroyMe %s' % str(self))
         self.destroy()
         if self.peer_address in tcp_node.opened_connections():
@@ -392,9 +396,9 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         self.outboxQueue.append((filename, description, result_defer, single))
      
     def process_outbox_queue(self):
+        if self.state != 'CONNECTED':
+            return False 
         if self.stream is None:
-            return False
-        if not self.transport.producer:
             return False
         from transport.tcp import tcp_stream
         has_reads = False

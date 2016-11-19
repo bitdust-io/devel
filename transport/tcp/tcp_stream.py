@@ -50,10 +50,11 @@ from lib import misc
 
 MIN_PROCESS_STREAMS_DELAY = 0.1
 MAX_PROCESS_STREAMS_DELAY = 1
-MAX_SIMULTANEOUS_OUTGOING_FILES = 4
+MAX_SIMULTANEOUS_OUTGOING_FILES = 1 # at the moment for TCP - only one file per connection
 
 #------------------------------------------------------------------------------ 
 
+_LastFileID = None
 _ProcessStreamsDelay = 0.01
 _ProcessStreamsTask = None
 
@@ -83,11 +84,10 @@ def process_streams():
             has_sends = False # connection.stream.process_sending_data()    
             has_outbox = connection.process_outbox_queue()
             if has_timeouts or has_sends or has_outbox:
-                has_activity = True
-        _ProcessStreamsDelay = misc.LoopAttenuation(
+                has_activity = True    _ProcessStreamsDelay = misc.LoopAttenuation(
         _ProcessStreamsDelay, has_activity, 
         MIN_PROCESS_STREAMS_DELAY, 
-        MAX_PROCESS_STREAMS_DELAY,)    
+        MAX_PROCESS_STREAMS_DELAY,)
     # attenuation
     _ProcessStreamsTask = reactor.callLater(_ProcessStreamsDelay, process_streams)
 
@@ -113,6 +113,20 @@ def list_output_streams(sorted_by_time=True):
     if sorted_by_time:
         streams.sort(key=lambda stream: stream.started)
     return streams
+
+#------------------------------------------------------------------------------ 
+
+def make_file_id():
+    """
+    Generate a unique file ID for OutboxFile.
+    """
+    global _LastFileID
+    newid = int(str(int(time.time() * 100.0))[4:])  
+    if _LastFileID is None:
+        _LastFileID = newid
+    elif _LastFileID >= newid:
+        _LastFileID += 1
+    return _LastFileID
 
 #------------------------------------------------------------------------------ 
 
@@ -223,7 +237,7 @@ class TCPFileStream():
               
     def create_outbox_file(self, filename, filesize, description, result_defer, single):
         from transport.tcp import tcp_interface
-        file_id = int(str(int(time.time() * 100.0))[4:])
+        file_id = make_file_id()
         outfile = OutboxFile(self, filename, file_id, filesize, description, result_defer, single)
         if not single:
             d = tcp_interface.interface_register_file_sending(
@@ -435,6 +449,8 @@ class OutboxFile():
 class FileSender(basic.FileSender):
     def __init__(self, parent):
         self.parent = parent
+        from transport.tcp import tcp_connection
+        self.CMD_DATA = tcp_connection.CMD_DATA
 
     def close(self):
         self.parent = None
@@ -450,13 +466,14 @@ class FileSender(basic.FileSender):
         return datagram
 
     def resumeProducing(self):
-        from transport.tcp import tcp_connection
         chunk = ''
         if self.file:
-            try:
+#             try:
                 chunk = self.file.read(self.CHUNK_SIZE)
-            except:
-                pass
+#             except:
+#                 lg.exc()
+#                 return
+#                 chunk = None
 #                 self.file = None
 #                 self.consumer.unregisterProducer()
 #                 if self.deferred:
@@ -473,5 +490,5 @@ class FileSender(basic.FileSender):
             return
         if self.transform:
             chunk = self.transform(chunk)
-        self.parent.stream.connection.sendData(tcp_connection.CMD_DATA, chunk)
+        self.parent.stream.connection.sendData(self.CMD_DATA, chunk)
         self.lastSent = chunk[-1:]
