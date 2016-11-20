@@ -50,7 +50,9 @@ from lib import misc
 
 MIN_PROCESS_STREAMS_DELAY = 0.1
 MAX_PROCESS_STREAMS_DELAY = 1
-MAX_SIMULTANEOUS_OUTGOING_FILES = 1 # at the moment for TCP - only one file per connection
+# TODO: at the moment for TCP - only one file per connection at once
+# need to switch from basic.FileSender to something more advanced 
+MAX_SIMULTANEOUS_OUTGOING_FILES = 1 
 
 #------------------------------------------------------------------------------ 
 
@@ -327,35 +329,37 @@ class InboxFile():
         self.registration = None
         self.stream = stream
         self.file_id = file_id
-        self.file_size = file_size
-        self.fd, self.filename = tmpfile.make("tcp-in")
+        self.size = file_size
+        self.fin, self.filename = tmpfile.make("tcp-in")
         self.bytes_received = 0
         self.started = time.time()
         self.last_block_time = time.time()
-        self.timeout = max(int(self.file_size/settings.SendingSpeedLimit()), 3)
+        self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 3)
         if _Debug:
             lg.out(_DebugLevel, '<<<TCP-IN %s with %d bytes write to %s' % (
-                self.file_id, self.file_size, self.filename))
+                self.file_id, self.size, self.filename))
 
     def close(self):
         if _Debug:
             lg.out(_DebugLevel, '<<<TCP-IN %s CLOSED' % (self.file_id))
         try:
-            os.close(self.fd)
+            os.close(self.fin)
         except:
             lg.exc()
+        self.fin = None
+        self.stream = None
 
     def get_bytes_received(self):
         return self.bytes_received
 
     def input_data(self, data):
-        os.write(self.fd, data)
+        os.write(self.fin, data)
         self.bytes_received += len(data)
         self.stream.connection.total_bytes_received += len(data)
         self.last_block_time = time.time()
     
     def is_done(self):
-        return self.bytes_received == self.file_size
+        return self.bytes_received == self.size
 
     def is_timed_out(self):
         return time.time() - self.started > self.timeout 
@@ -378,7 +382,7 @@ class OutboxFile():
         self.bytes_out = 0
         self.started = time.time()
         self.timeout = max(int(self.size/settings.SendingSpeedLimit()), 6)
-        self.fin = open(self.filename, 'rb')
+        self.fout = open(self.filename, 'rb')
         self.sender = None
         if _Debug:
             lg.out(_DebugLevel, '>>>TCP-OUT %s with %d bytes reading from %s' % (
@@ -389,13 +393,16 @@ class OutboxFile():
             lg.out(_DebugLevel, '>>>TCP-OUT %s CLOSED' % (self.file_id))
         self.stop()
         try:
-            self.fin.close()
+            self.fout.close()
         except:
             lg.exc()
+        self.fout = None
+        self.stream = None
+        self.result_defer = None
         
     def start(self):
         self.sender = FileSender(self)
-        d = self.sender.beginFileTransfer(self.fin, self.stream.connection.transport, self.sender.transform_data)
+        d = self.sender.beginFileTransfer(self.fout, self.stream.connection.transport, self.sender.transform_data)
         d.addCallback(self.transfer_finished)
         d.addErrback(self.transfer_failed)
         

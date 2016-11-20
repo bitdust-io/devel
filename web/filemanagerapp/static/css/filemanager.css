@@ -516,11 +516,24 @@ textarea {
     position: relative;
 }
 .active-task {
+    font-size: 10px;
 	float: left;
 	margin: 4px;
 	padding: 2px 4px;
 }
-.active-transfer {
+.active-packet {
+    font-size: 10px;
+    float: left;
+    margin: 4px;
+    padding: 2px 4px;
+}
+.active-connection {
+    font-size: 10px;
+    float: left;
+    margin: 4px;
+    padding: 2px 4px;
+}
+.active-stream {
     font-size: 10px;
     float: left;
     margin: 4px;

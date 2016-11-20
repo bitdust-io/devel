@@ -249,8 +249,14 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_packets_stats(self):
         return api.packets_stats()
     
+    def jsonrpc_packets_list(self):
+        return api.packets_list()
+    
     def jsonrpc_connections_list(self, wanted_protos=None):
         return api.connections_list(wanted_protos)
+    
+    def jsonrpc_streams_list(self, wanted_protos=None):
+        return api.streams_list(wanted_protos)
 
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)

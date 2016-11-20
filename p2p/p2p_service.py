@@ -162,8 +162,7 @@ def inbox(newpacket, info, status, error_message):
         commandhandled = True    
     elif newpacket.Command == commands.Data():
         # new packet to store for customer
-        Data(newpacket) 
-        commandhandled = True
+        commandhandled = Data(newpacket) 
     elif newpacket.Command == commands.ListFiles():
         # customer wants list of their files
         ListFiles(newpacket) 
@@ -507,12 +506,8 @@ def Data(request):
             if request.PacketID in [ settings.BackupIndexFileName(), ]:
                 from storage import backup_control
                 backup_control.IncomingSupplierBackupIndex(request)
-#        if driver.is_started('service_proxy_server'):
-#            # 3. we work as a proxy server and received a packet for third node
-#            if request.PacketID == 'routed_packet':
-#                from transport.proxy import proxy_router
-#                proxy_router.A('routed-inbox-packet-received', request) 
-        return
+                return True
+        return False
     # 2. this Data is not belong to us
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')

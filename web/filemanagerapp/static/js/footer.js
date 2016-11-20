@@ -11,6 +11,7 @@
                 
         $scope.usedSpaceInfo = function() {
         	var s = fileManagerConfig.stats;
+        	if (!s) return 'consumed: ?';
         	return "consumed: " +
 			    s.value_used_total + " of " + 
 				s.value_needed;
@@ -18,6 +19,7 @@
         
         $scope.suppliersInfo = function() {
         	var s = fileManagerConfig.stats;
+        	if (!s) return 'suppliers: ?';
         	return "suppliers: " + 
         		s.suppliers + " of " +
 				s.max_suppliers + ", " + 
@@ -26,12 +28,14 @@
 
         $scope.donatedSpaceInfo = function() {
         	var s = fileManagerConfig.stats;
+        	if (!s) return 'donated: ?';
         	return "donated: " +
         		s.value_donated; 
         };
 
         $scope.customersInfo = function() {
         	var s = fileManagerConfig.stats;
+        	if (!s) return 'customers: ?';
         	return "customers: " + 
         		s.customers;
         };

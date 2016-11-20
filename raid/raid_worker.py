@@ -344,8 +344,9 @@ class RaidWorker(automat.Automat):
             task_id, cmd, params = self.tasks[i]
             cb = self.callbacks.pop(task_id)
             reactor.callLater(0, cb, cmd, params, None)
-        for task_id in self.activetasks.keys():
+        for task_id, task_data in self.activetasks.items():
             cb = self.callbacks.pop(task_id)
+            _, cmd, params = task_data
             reactor.callLater(0, cb, cmd, params, None)
 
     def doDestroyMe(self, arg):

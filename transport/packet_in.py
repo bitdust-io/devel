@@ -196,11 +196,6 @@ class PacketIn(automat.Automat):
             return False
         return time.time() - self.time > self.timeout
 
-    def percent_received(self):
-        if not self.size or not self.bytes_received:
-            return '?'
-        return misc.percent2string(self.bytes_received / self.size, precis=0)
-
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the state machine.

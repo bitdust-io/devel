@@ -43,6 +43,7 @@ EVENTS:
     * :red:`register-item`
     * :red:`remote-identity-on-hand`
     * :red:`run`
+    * :red:`timer-10sec`
     * :red:`unregister-item`
     * :red:`write-error`
 """
@@ -254,9 +255,9 @@ class PacketOut(automat.Automat):
     This class implements all the functionality of the ``packet_out()`` state machine.
     """
 
-#     timers = {
-#         'timer-20sec': (20.0, ['RESPONSE?']),
-#         }
+    timers = {
+        'timer-10sec': (10.0, ['RESPONSE?']),
+        }
 
     MESSAGES = {
         'MSG_1': 'file in queue was cancelled',
@@ -304,16 +305,6 @@ class PacketOut(automat.Automat):
         self.results = []
         self.response_packet = None
         self.response_info = None
-
-    def percent_sent(self):
-        if not self.filesize:
-            return '?'
-        if not self.items:
-            return '???'
-        result = []
-        for itm in self.items:
-            result.append(misc.percent2string(itm.bytes_sent / self.filesize, precis=0))
-        return '|'.join(result)
 
     def msg(self, msgid, arg=None):
         return self.MESSAGES.get(msgid, '')
@@ -455,6 +446,10 @@ class PacketOut(automat.Automat):
             elif event == 'unregister-item' or event == 'item-cancelled':
                 self.doPopItem(arg)
                 self.doReportItem(arg)
+            elif event == 'timer-10sec' and not self.isDataExpected(arg):
+                self.state = 'SENT'
+                self.doReportDoneNoAck(arg)
+                self.doDestroyMe(arg)
         return None
 
     def isRemoteIdentityKnown(self, arg):
@@ -479,8 +474,14 @@ class PacketOut(automat.Automat):
         """
         Condition method.
         """
-        newpacket, info = arg
+        newpacket, _ = arg
         return newpacket.Command in self.callbacks.keys()
+
+    def isDataExpected(self, arg):
+        """
+        Condition method.
+        """
+        return commands.Data() in self.callbacks.keys()
 
     def doInit(self, arg):
         """

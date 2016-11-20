@@ -106,9 +106,11 @@ from userid import my_id
 
 from contacts import identitycache
 
-import callback
-import packet_in
-import packet_out
+from transport import callback
+from transport import packet_in
+from transport import packet_out
+
+from web import control
 
 #------------------------------------------------------------------------------ 
 
@@ -425,6 +427,7 @@ def inbox(info):
             info.proto, info.host))
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
+    control.request_update([('packet', newpacket.PacketID)])
     return newpacket
 
 def outbox(outpacket, wide=False, callbacks={}, target=None, route=None): 
@@ -654,6 +657,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
     pkt_out = packet_out.create(outpacket, wide, callbacks, target, route)
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()
+    control.request_update([('packet', outpacket.PacketID)])
     return pkt_out
 
 def on_transport_state_changed(transport, oldstate, newstate):
@@ -744,6 +748,7 @@ def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, desc
 #        if _Debug:
 #            lg.out(_DebugLevel, 'gateway.on_register_file_sending [%s] receiver idurl is different [%s]' % (pkt_out.remote_idurl, receiver_idurl))
     pkt_out.automat('register-item', (proto, host, filename, transfer_id))
+    control.request_update([('stream', transfer_id)])
     return transfer_id
 
 def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=None):
@@ -760,6 +765,7 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
             lg.out(_DebugLevel, '        %s is not found' % str(transfer_id))
         return False
     pkt_out.automat('unregister-item', (transfer_id, status, bytes_sent, error_message))
+    control.request_update([('stream', transfer_id)])
     if status == 'finished':
         if _Debug:
             lg.out(_DebugLevel, '>>> OUT >>> %s (%d) [%s://%s] %s with %d bytes' % (
@@ -781,6 +787,7 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
                 proto, host, os.path.basename(filename)))
         return True
     pkt_out.automat('item-cancelled', (proto, host, filename, size, description, error_message))
+    control.request_update([('packet', pkt_out.outpacket.PacketID)])
     if _Debug:
         lg.out(_DebugLevel, '>>> OUT >>>  {%s} CANCELLED via [%s] to %s : %s' % (
             os.path.basename(filename), proto, host, error_message))
@@ -798,6 +805,7 @@ def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
             transfer_id, os.path.basename(filename), proto, 
             nameurl.GetName(sender_idurl), host))
     packet_in.create(transfer_id).automat('register-item', (proto, host, sender_idurl, filename, size))
+    control.request_update([('stream', transfer_id)])
     return transfer_id
 
 def on_unregister_file_receiving(transfer_id, status, bytes_received, error_message=''):
@@ -815,6 +823,7 @@ def on_unregister_file_receiving(transfer_id, status, bytes_received, error_mess
             lg.out(_DebugLevel, '<<< IN <<< (%d) [%s://%s] %s : %s' % (
                 transfer_id, pkt_in.proto, pkt_in.host, status.upper(), error_message))
     pkt_in.automat('unregister-item', (status, bytes_received, error_message))
+    control.request_update([('stream', transfer_id)])
     return True
 
 #------------------------------------------------------------------------------ 

@@ -20,6 +20,8 @@
         permissionsUrl: "/filemanager/bridge",
         tasksUrl: "/filemanager/bridge",
         transfersUrl: "/filemanager/bridge",
+        connectionsUrl: "/filemanager/bridge",
+        streamsUrl: "/filemanager/bridge",
         configUrl: "/filemanager/bridge",
         statsUrl: "/filemanager/bridge",
         debugUrl: "/filemanager/bridge",

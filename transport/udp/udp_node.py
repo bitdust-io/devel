@@ -124,82 +124,84 @@ class UDPNode(automat.Automat):
     def A(self, event, arg):
         #---LISTEN---
         if self.state == 'LISTEN':
-            if event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg) :
+            if event == 'datagram-received' and self.isPacketValid(arg) and not self.isStun(arg) and not self.isKnownPeer(arg):
                 self.doStartNewSession(arg)
-            elif event == 'go-offline' :
+            elif event == 'go-offline':
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
-            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg) :
+            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg):
                 self.doStartNewConnector(arg)
-            elif event == 'timer-10sec' and not self.isKnowMyAddress(arg) :
+            elif event == 'timer-10sec' and not self.isKnowMyAddress(arg):
                 self.state = 'STUN'
                 self.doStartStunClient(arg)
-            elif event == 'timer-10sec' and self.isKnowMyAddress(arg) :
+            elif event == 'timer-10sec' and self.isKnowMyAddress(arg):
                 self.state = 'WRITE_MY_IP'
                 self.doDHTWtiteMyAddress(arg)
-            elif event == 'dht-read-result' :
+            elif event == 'dht-read-result':
                 self.doCheckAndStartNewSession(arg)
                 self.doDHTRemoveMyIncoming(arg)
                 self.doNotifyConnected(arg)
-            elif event == 'connect' and not self.isKnowMyAddress(arg) :
+            elif event == 'connect' and not self.isKnowMyAddress(arg):
                 self.state = 'STUN'
                 self.doStartStunClient(arg)
-            elif event == 'timer-1sec' :
+            elif event == 'timer-1sec':
                 self.doDHTReadNextIncoming(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'go-online' and not self.isKnowMyAddress(arg) :
+            if event == 'go-online' and not self.isKnowMyAddress(arg):
                 self.state = 'STUN'
                 self.GoOn=False
                 self.doInit(arg)
                 self.doStartStunClient(arg)
-            elif event == 'go-online' and self.isKnowMyAddress(arg) :
+            elif event == 'go-online' and self.isKnowMyAddress(arg):
                 self.state = 'WRITE_MY_IP'
                 self.GoOn=False
                 self.doInit(arg)
                 self.doDHTWtiteMyAddress(arg)
         #---STUN---
         elif self.state == 'STUN':
-            if event == 'stun-success' :
+            if event == 'stun-success':
                 self.state = 'WRITE_MY_IP'
                 self.doUpdateMyAddress(arg)
                 self.doDHTWtiteMyAddress(arg)
-            elif event == 'go-offline' :
+            elif event == 'go-offline':
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
-            elif event == 'stun-failed' :
+            elif event == 'stun-failed':
                 self.state = 'OFFLINE'
                 self.doUpdateMyAddress(arg)
                 self.doNotifyFailed(arg)
         #---OFFLINE---
         elif self.state == 'OFFLINE':
-            if event == 'go-online' :
+            if event == 'go-online':
                 self.state = 'STUN'
                 self.doStartStunClient(arg)
+            elif event == 'go-offline':
+                self.doNotifyDisconnected(arg)
         #---WRITE_MY_IP---
         elif self.state == 'WRITE_MY_IP':
-            if event == 'go-offline' :
+            if event == 'go-offline':
                 self.state = 'DISCONNECTING'
                 self.doDisconnect(arg)
-            elif event == 'connect' and not self.isKnowMyAddress(arg) :
+            elif event == 'connect' and not self.isKnowMyAddress(arg):
                 self.state = 'STUN'
                 self.doStartStunClient(arg)
-            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg) :
+            elif event == 'connect' and self.isKnowMyAddress(arg) and not self.isKnownUser(arg):
                 self.doStartNewConnector(arg)
-            elif event == 'dht-write-failed' :
+            elif event == 'dht-write-failed':
                 self.state = 'OFFLINE'
                 self.doNotifyFailed(arg)
-            elif event == 'dht-write-success' :
+            elif event == 'dht-write-success':
                 self.state = 'LISTEN'
                 self.doDHTReadNextIncoming(arg)
         #---DISCONNECTING---
         elif self.state == 'DISCONNECTING':
-            if event == 'go-online' :
+            if event == 'go-online':
                 self.GoOn=True
-            elif event == 'disconnected' and not self.GoOn :
+            elif event == 'disconnected' and not self.GoOn:
                 self.state = 'OFFLINE'
                 self.doNotifyDisconnected(arg)
-            elif event == 'disconnected' and self.GoOn :
+            elif event == 'disconnected' and self.GoOn:
                 self.state = 'STUN'
                 self.GoOn=False
                 self.doNotifyDisconnected(arg)

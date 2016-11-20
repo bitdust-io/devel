@@ -765,7 +765,6 @@ def split_geom_string(geomstr):
     except:
         return None, None, None, None
 
-
 def percent2string(percent, precis=3):
     """
     A tool to make a string (with % at the end) from given float, ``precis`` is precision to round the number. 
@@ -773,6 +772,13 @@ def percent2string(percent, precis=3):
     s = float2str(round(percent, precis),
                   mask=("%%3.%df" % (precis+2)))
     return s + '%'
+
+def value2percent(value, total, precis=3):
+    """
+    """
+    if not total:
+        return '0%'
+    return percent2string(100.0 * (float(value)/float(total)), precis)
 
 def float2str(float_value, mask='%6.8f', no_trailing_zeros=True):
     """

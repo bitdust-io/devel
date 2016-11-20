@@ -55,7 +55,6 @@ EVENTS:
     * :red:`rebuilding-finished`
     * :red:`requests-sent`
     * :red:`start`
-    * :red:`timer-15sec`
     * :red:`timer-1sec`
 
 """
@@ -129,7 +128,6 @@ class BackupRebuilder(automat.Automat):
 
     timers = {
         'timer-1sec': (1.0, ['REQUEST']),
-        'timer-15sec': (15.0, ['REQUEST']),
         }
     
     def init(self):
@@ -163,7 +161,7 @@ class BackupRebuilder(automat.Automat):
             elif ( event == 'instant' or event == 'timer-1sec' or event == 'requests-sent' ) and self.isStopped(arg):
                 self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
-            elif event == 'timer-15sec' or ( event == 'requests-sent' and not self.isAnyRequestsSent(arg) ) or ( ( event == 'timer-1sec' or event == 'inbox-data-packet' ) and self.isRequestQueueEmpty(arg) and not self.isMissingPackets(arg) ):
+            elif ( event == 'requests-sent' and not self.isAnyRequestsSent(arg) ) or ( ( event == 'timer-1sec' or event == 'inbox-data-packet' ) and self.isRequestQueueEmpty(arg) and not self.isMissingPackets(arg) ):
                 self.state = 'DONE'
                 self.doCloseThisBackup(arg)
         #---STOPPED---
@@ -190,10 +188,7 @@ class BackupRebuilder(automat.Automat):
                 self.doClearStoppedFlag(arg)
         #---PREPARE---
         elif self.state == 'PREPARE':
-            if event == 'backup-ready' and not self.isStopped(arg) and self.isMoreBlocks(arg):
-                self.state = 'REQUEST'
-                self.doRequestAvailablePieces(arg)
-            elif event == 'backup-ready' and not self.isStopped(arg) and not self.isMoreBlocks(arg) and self.isMoreBackups(arg):
+            if event == 'backup-ready' and not self.isStopped(arg) and not self.isMoreBlocks(arg) and self.isMoreBackups(arg):
                 self.state = 'NEXT_BACKUP'
                 self.doCloseThisBackup(arg)
             elif event == 'backup-ready' and ( not self.isMoreBackups(arg) and not self.isMoreBlocks(arg) ):
@@ -202,6 +197,9 @@ class BackupRebuilder(automat.Automat):
             elif ( event == 'instant' or event == 'backup-ready' ) and self.isStopped(arg):
                 self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
+            elif ( event == 'instant' or event == 'backup-ready' ) and not self.isStopped(arg) and self.isMoreBlocks(arg):
+                self.state = 'REQUEST'
+                self.doRequestAvailablePieces(arg)
         #---REBUILDING---
         elif self.state == 'REBUILDING':
             if event == 'rebuilding-finished' and not self.isStopped(arg) and self.isMoreBlocks(arg):
@@ -239,7 +237,7 @@ class BackupRebuilder(automat.Automat):
         return ReadStoppedFlag() == True # :-)
     
     def isChanceToRebuild(self, arg):
-        import backup_matrix
+        from storage import backup_matrix
 #         return len(self.missingSuppliers) <= eccmap.Current().CorrectableErrors
         # supplierSet = backup_matrix.suppliers_set()
         # start checking in reverse order, see below for explanation
@@ -259,6 +257,20 @@ class BackupRebuilder(automat.Automat):
             if io_throttle.HasBackupIDInRequestQueue(supplierID, self.currentBackupID):
                 return False
         return True
+
+#     def isAnyDataReceiving(self, arg):
+#         """
+#         Condition method.
+#         """
+#         from transport import gateway
+#         wanted_protos = gateway.list_active_transports()
+#         for proto in wanted_protos:
+#             for stream in gateway.list_active_streams(proto):
+#                 if proto == 'tcp' and hasattr(stream, 'bytes_received'):
+#                     return True
+#                 elif proto == 'udp' and hasattr(stream.consumer, 'bytes_received'):
+#                     return True
+#         return False
 
     def doOpenNextBackup(self, arg):
         """
@@ -288,7 +300,7 @@ class BackupRebuilder(automat.Automat):
         """
         # if remote data structure is not exist for this backup - create it
         # this mean this is only local backup!
-        import backup_matrix
+        from storage import backup_matrix
         if not backup_matrix.remote_files().has_key(self.currentBackupID):
             backup_matrix.remote_files()[self.currentBackupID] = {}
             # we create empty remote info for every local block
@@ -353,7 +365,7 @@ class BackupRebuilder(automat.Automat):
     #------------------------------------------------------------------------------ 
 
     def _request_files(self):
-        import backup_matrix
+        from storage import backup_matrix
         from customer import io_throttle
         self.missingPackets = 0
         # here we want to request some packets before we start working to rebuild the missed blocks
@@ -451,13 +463,13 @@ class BackupRebuilder(automat.Automat):
         if not bpio.WriteFile(filename, newpacket.Payload):
             lg.out(2, "backup_rebuilder._file_received ERROR writing " + filename)
             return
-        import backup_matrix
+        from storage import backup_matrix
         backup_matrix.LocalFileReport(packetID)
         lg.out(10, "backup_rebuilder._file_received and wrote to " + filename)
         self.automat('inbox-data-packet', packetID)
 
     def _start_one_block(self): 
-        import backup_matrix
+        from storage import backup_matrix
         if self.blockIndex < 0:
             lg.out(10, 'backup_rebuilder._start_one_block finish all blocks blockIndex=%d' % self.blockIndex)
             reactor.callLater(0, self._finish_rebuilding)
@@ -487,7 +499,7 @@ class BackupRebuilder(automat.Automat):
             reactor.callLater(0, self._finish_rebuilding)
             return
         if newData: 
-            import backup_matrix
+            from storage import backup_matrix
             count = 0
             for supplierNum in xrange(contactsdb.num_suppliers()):
                 if localData[supplierNum] == 1 and reconstructedData[supplierNum] == 1:

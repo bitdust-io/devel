@@ -165,13 +165,11 @@
             		fullPath, $scope.fileNavigator.currentPath);
                 $scope.fileNavigator.request_stats();
                 $scope.activeTasks.refresh();
-                $scope.activeTasks.refresh_transfers();
                 $scope.fileNavigator.refresh();
                 $('#localselector').modal('hide');
             }, function() {
                 $scope.fileNavigator.request_stats();
             	$scope.activeTasks.refresh();
-                $scope.activeTasks.refresh_transfers();
             	$scope.fileNavigator.refresh();
             	$('#localselector').modal('hide');
         	});
@@ -267,11 +265,12 @@
         		if (data.backupID || data.pathID) {
         			$scope.fileNavigator.refresh_soft();
                 	$scope.activeTasks.refresh();
-                    $scope.activeTasks.refresh_transfers();
             	} else if (data.automat) {
             		$scope.fileNavigator.request_debug_info();
             	} else if (data.contact || data.supplier || data.customer) {
             		$scope.fileNavigator.request_stats_soft();
+            	} else if (data.stream || data.packet || data.connection) {
+                	$scope.activeTasks.refresh();
             	}
         	});
         	startUpdater();
@@ -284,7 +283,6 @@
         $scope.fileNavigator.request_stats();
         $scope.fileNavigator.refresh();
     	$scope.activeTasks.refresh();
-        $scope.activeTasks.refresh_transfers();
         $scope.fileNavigator.request_debug_info();
 
     	$scope.startRefresherTask();

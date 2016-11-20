@@ -514,10 +514,14 @@ def UpdateUPNP():
             lg.out(_DebugLevel, 'network_connector.UpdateUPNP._update_next_proto ' + str(protos_need_upnp))
         proto = protos_need_upnp.pop()
         protos_need_upnp.add(proto)
+        port = -1
         if proto == 'tcp':
             port = settings.getTCPPort()
-        d = threads.deferToThread(_call_upnp, port)
-        d.addCallback(_upnp_proto_done, proto)
+        if port > 0:
+            d = threads.deferToThread(_call_upnp, port)
+            d.addCallback(_upnp_proto_done, proto)
+        else:
+            reactor.callLater(0, _upnp_proto_done, proto)
 
     def _call_upnp(port):
         # start messing with upnp settings

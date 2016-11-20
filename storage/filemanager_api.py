@@ -55,8 +55,7 @@ from storage import backup_control
 from storage import backup_monitor
 from storage import restore_monitor
 
-from web import control 
-
+from web import control
 
 #------------------------------------------------------------------------------ 
 
@@ -96,8 +95,10 @@ def process(json_request):
             result = _list_active_tasks(json_request['params'])
         elif mode == 'packets':
             result = _list_in_out_packets(json_request['params'])
-        elif mode == 'transfers':
-            result = _list_active_transfers(json_request['params'])
+        elif mode == 'connections':
+            result = _list_active_connections(json_request['params'])
+        elif mode == 'streams':
+            result = _list_active_streams(json_request['params'])
         elif mode == 'debuginfo':
             result = _debuginfo(json_request['params'])
         else:
@@ -348,27 +349,138 @@ def _list_active_tasks(params):
     #     result.append(backupID)
     return { 'result': result, }
 
-def _list_in_out_packet(params):
+def _list_in_out_packets(params):
     result = []
     for pkt_out in packet_out.queue():
         result.append({
-            'name': pkt_out.label,
-            'progress': pkt_out.percent_sent(),
-            'to': pkt_out.remote_idurl,
+            'name': pkt_out.outpacket.Command,
+            'label': pkt_out.label,
+            'from_to': 'to',
+            'target': pkt_out.remote_idurl,
             })
     for pkt_in in packet_in.items().values():
         result.append({
-            'name': pkt_in.label,
-            'progress': pkt_in.percent_received(),
-            'from': pkt_in.sender_idurl,
+            'name': pkt_in.transfer_id,
+            'label': pkt_in.label,
+            'from_to': 'from',
+            'target': pkt_in.sender_idurl,
             })
     return { 'result': result, }
 
-def _list_active_transfers(params):
+def _list_active_streams(params):
     result = []
-    if driver.is_started('service_tcp_transport'):
-        from transport import 
-    return result
+    if not driver.is_started('service_gateway'):
+        return { 'result': result, }
+    from transport import gateway
+    result = []
+    wanted_protos = params.get('protos', [])
+    if not wanted_protos:
+        wanted_protos = gateway.list_active_transports()
+    for proto in wanted_protos:
+        for stream in gateway.list_active_streams(proto):
+            item = {
+                'proto': proto,
+                'id': '',
+                'type': '',
+                'bytes_current': -1,
+                'bytes_total': -1,
+                'progress': '0%',
+            }
+            if proto == 'tcp':
+                if hasattr(stream, 'bytes_received'):
+                    item.update({
+                        'id': stream.file_id,
+                        'type': 'in',
+                        'bytes_current': stream.bytes_received,
+                        'bytes_total': stream.size,
+                        'progress': misc.value2percent(stream.bytes_received, stream.size, 0)
+                    })
+                elif hasattr(stream, 'bytes_sent'):
+                    item.update({
+                        'id': stream.file_id,
+                        'type': 'out',
+                        'bytes_current': stream.bytes_sent,
+                        'bytes_total': stream.size,
+                        'progress': misc.value2percent(stream.bytes_sent, stream.size, 0)
+                    })
+            elif proto == 'udp':
+                if hasattr(stream.consumer, 'bytes_received'):
+                    item.update({
+                        'id': stream.stream_id,
+                        'type': 'in',
+                        'bytes_current': stream.consumer.bytes_received,
+                        'bytes_total': stream.consumer.size,
+                        'progress': misc.value2percent(stream.consumer.bytes_received, stream.consumer.size, 0)
+                    })
+                elif hasattr(stream.consumer, 'bytes_sent'):
+                    item.update({
+                        'id': stream.stream_id,
+                        'type': 'out',
+                        'bytes_current': stream.consumer.bytes_sent,
+                        'bytes_total': stream.consumer.size,
+                        'progress': misc.value2percent(stream.consumer.bytes_sent, stream.consumer.size, 0)
+                    })
+            result.append(item)    
+    return { 'result': result, }
+
+def _list_active_connections(params):
+    result = []
+    if not driver.is_started('service_gateway'):
+        return { 'result': result, }
+    from transport import gateway
+    result = []
+    wanted_protos = params.get('protos', [])
+    if not wanted_protos:
+        wanted_protos = gateway.list_active_transports()
+    for proto in wanted_protos:
+        for connection in gateway.list_active_sessions(proto):
+            item = {
+                'status': 'unknown',
+                'state': 'unknown',
+                'proto': proto,
+                'host': 'unknown',
+                'idurl': 'unknown',
+                'bytes_sent': 0,
+                'bytes_received': 0,
+            }
+            if proto == 'tcp':
+                if hasattr(connection, 'stream'):
+                    try:
+                        host = '%s:%s' % (connection.peer_address[0], connection.peer_address[1])
+                    except:
+                        host = 'unknown'
+                    item.update({
+                        'status': 'active',
+                        'state': connection.state,
+                        'host': host,
+                        'idurl': connection.peer_idurl or '',
+                        'bytes_sent': connection.total_bytes_sent,
+                        'bytes_received': connection.total_bytes_received,
+                    })
+                else:
+                    try:
+                        host = '%s:%s' % (connection.connection_address[0], connection.connection_address[1])
+                    except:
+                        host = 'unknown'
+                    item.update({
+                        'status': 'connecting',
+                        'host': host,
+                    })
+            elif proto == 'udp':
+                try:
+                    host = '%s:%s' % (connection.peer_address[0], connection.peer_address[1])
+                except:
+                    host = 'unknown'
+                item.update({
+                    'status': 'active',
+                    'state': connection.state,
+                    'host': host,
+                    'idurl': connection.peer_idurl or '',
+                    'bytes_sent': connection.bytes_sent,
+                    'bytes_received': connection.bytes_received,
+                })
+            result.append(item)
+    return { 'result': result, }
 
 def _debuginfo(params):
     result = {}

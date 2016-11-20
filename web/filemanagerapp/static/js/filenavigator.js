@@ -116,7 +116,7 @@
             //self.error = '';
             $http.post(fileManagerConfig.debugUrl, data).success(function(data) {
             	fileManagerConfig.debugInfo = data.result;
-                debug.log('request_debug_info', fileManagerConfig.debugInfo);
+                //debug.log('request_debug_info', fileManagerConfig.debugInfo);
                 //self.requesting = false;
                 if (data.error) {
                     self.error = data.error;
