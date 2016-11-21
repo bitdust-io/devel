@@ -120,7 +120,7 @@ def HasKey(idurl):
     """
     Check for some user IDURL in the cache.
     """
-    return idurl in identitydb or IsOverridden(idurl)
+    return identitydb.has_idurl(idurl) or IsOverridden(idurl)
 
 
 def HasFile(idurl):

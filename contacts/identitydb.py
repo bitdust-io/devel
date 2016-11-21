@@ -133,7 +133,7 @@ def size():
     return len(_IdentityCache)
 
 
-def has_key(idurl):
+def has_idurl(idurl):
     """
     Return True if that IDURL already cached.
     """
@@ -163,7 +163,7 @@ def idset(idurl, id_obj):
     global _Contact2IDURL
     global _IDURL2Contacts
     global _IPPort2IDURL
-    if not has_key(idurl):
+    if not has_idurl(idurl):
         lg.out(6, 'identitydb.idset new identity: ' + idurl)
     _IdentityCache[idurl] = id_obj
     identid = _IdentityCacheIDs.get(idurl, None)
@@ -241,7 +241,7 @@ def get(url):
     A smart way to get identity from cache.
     If not cached in memory but found on disk - will cache from disk.
     """
-    if has_key(url):
+    if has_idurl(url):
         return idget(url)
     else:
         try:
@@ -407,7 +407,7 @@ def print_id(url):
     """
     For debug purposes.
     """
-    if has_key(url):
+    if has_idurl(url):
         idForKey = get(url)
         lg.out(6, str(idForKey.sources))
         lg.out(6, str(idForKey.contacts))
