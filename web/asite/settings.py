@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#settings.py
+# settings.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -36,18 +36,18 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level':'DEBUG',
-            'class':'logging.StreamHandler',
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
             'stream': sys.stdout,
-            'formatter':'simple'
+            'formatter': 'simple'
         },
     },
     'loggers': {
         'django': {
-            'handlers':['console'],
+            'handlers': ['console'],
             'propagate': True,
-            'level':'INFO',
-        }, 
+            'level': 'INFO',
+        },
     },
 }
 
@@ -68,11 +68,16 @@ if APP_DATA_PATH == '':
     except:
         pass
 
-    curdir = os.getcwd() # os.path.dirname(os.path.abspath(sys.executable))
+    curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
     appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
     if os.path.isfile(os.path.join(curdir, 'appdata')):
         try:
-            appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip()) 
+            appdata = os.path.abspath(
+                open(
+                    os.path.join(
+                        curdir,
+                        'appdata'),
+                    'rb').read().strip())
         except:
             pass
     if not os.path.exists(appdata):
@@ -80,7 +85,7 @@ if APP_DATA_PATH == '':
             os.makedirs(appdata)
         except:
             pass
-            
+
     APP_DATA_PATH = unicode(appdata)
 
 SQLITE_DB_FILENAME = os.path.join(APP_DATA_PATH, 'metadata', 'asite.db')
@@ -130,7 +135,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
 )
 
-STATICFILES_FINDERS = ( 
+STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 )
@@ -161,4 +166,3 @@ ADMIN_MEDIA_PREFIX = '/media/admin/'
 STATIC_ROOT = os.path.join(PROJECT_PATH, 'asite', 'static')
 
 STATIC_URL = '/asite/'
-

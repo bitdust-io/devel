@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_proxy_transport.py
+# service_proxy_transport.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,21 +31,23 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return ProxyTransportService()
-    
+
+
 class ProxyTransportService(LocalService):
-    
+
     service_name = 'service_proxy_transport'
     config_path = 'services/proxy-transport/enabled'
     proto = 'proxy'
-    
+
     def init(self):
         self.starting_deferred = None
-    
+
     def dependent_on(self):
-        depends = ['service_identity_propagate', 
-                   'service_nodes_lookup',]
+        depends = ['service_identity_propagate',
+                   'service_nodes_lookup', ]
         depends.extend(self._available_transports())
         return depends
 
@@ -65,29 +67,29 @@ class ProxyTransportService(LocalService):
         self.interface = proxy_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
             'proxy', self.interface)
-        self.transport.automat('init',
-            (gateway.listener(), self._on_transport_state_changed))
+        self.transport.automat(
+            'init', (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')
-        conf().addCallback('services/proxy-transport/enabled', 
+        conf().addCallback('services/proxy-transport/enabled',
                            self._on_enabled_disabled)
-        conf().addCallback('services/proxy-transport/sending-enabled', 
+        conf().addCallback('services/proxy-transport/sending-enabled',
                            self._on_sending_enabled_disabled)
-        conf().addCallback('services/proxy-transport/receiving-enabled', 
+        conf().addCallback('services/proxy-transport/receiving-enabled',
                            self._on_receiving_enabled_disabled)
         return self.starting_deferred
-    
+
     def stop(self):
         from twisted.internet.defer import succeed
         from main.config import conf
-        conf().removeCallback('services/proxy-transport/enabled') 
-        conf().removeCallback('services/proxy-transport/sending-enabled') 
+        conf().removeCallback('services/proxy-transport/enabled')
+        conf().removeCallback('services/proxy-transport/sending-enabled')
         conf().removeCallback('services/proxy-transport/receiving-enabled')
         t = self.transport
         self.transport = None
         self.interface = None
         t.automat('shutdown')
         return succeed(True)
-    
+
     def installed(self):
         try:
             from transport.proxy import proxy_interface
@@ -96,20 +98,22 @@ class ProxyTransportService(LocalService):
             lg.exc()
             return False
         return True
-    
+
     def _available_transports(self):
         from main import settings
         atransports = []
-        if settings.enableTCP() and settings.enableTCPreceiving() and settings.enableTCPsending():
+        if settings.enableTCP() and settings.enableTCPreceiving(
+        ) and settings.enableTCPsending():
             atransports.append('service_tcp_transport')
-        if settings.enableUDP() and settings.enableUDPreceiving() and settings.enableUDPsending():
+        if settings.enableUDP() and settings.enableUDPreceiving(
+        ) and settings.enableUDPsending():
             atransports.append('service_udp_transport')
         return atransports
 
     def _reset_my_original_identity(self):
         from userid import my_id
         from main.config import conf
-        conf().setData('services/proxy-transport/my-original-identity', '') 
+        conf().setData('services/proxy-transport/my-original-identity', '')
         conf().setString('services/proxy-transport/current-router', '')
         my_id.rebuildLocalIdentity()
 
@@ -118,11 +122,15 @@ class ProxyTransportService(LocalService):
         from lib import misc
         from main.config import conf
         from userid import identity
-        orig_ident_xmlsrc = conf().getData('services/proxy-transport/my-original-identity', '').strip()
-        current_router_idurl = conf().getString('services/proxy-transport/current-router', '').strip()
+        orig_ident_xmlsrc = conf().getData(
+            'services/proxy-transport/my-original-identity', '').strip()
+        current_router_idurl = conf().getString(
+            'services/proxy-transport/current-router', '').strip()
         if not orig_ident_xmlsrc:
             if current_router_idurl:
-                lg.warn('current-router is %s, but my-original-identity is empty' % current_router_idurl)
+                lg.warn(
+                    'current-router is %s, but my-original-identity is empty' %
+                    current_router_idurl)
                 self._reset_my_original_identity()
             return
         orig_ident = identity.identity(xmlsrc=orig_ident_xmlsrc)
@@ -146,20 +154,20 @@ class ProxyTransportService(LocalService):
                 self.starting_deferred.callback(newstate)
                 self.starting_deferred = None
                 p2p_connector.A('check-synchronize')
-            if newstate == 'OFFLINE' and oldstate in ['STARTING', 'STOPPING', ]:
+            if newstate == 'OFFLINE' and oldstate in [
+                    'STARTING', 'STOPPING', ]:
                 self.starting_deferred.errback(newstate)
                 self.starting_deferred = None
                 p2p_connector.A('check-synchronize')
-            
+
     def _on_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import p2p_connector
         p2p_connector.A('check-synchronize')
-        
+
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import p2p_connector
         p2p_connector.A('check-synchronize')
-        
+
     def _on_sending_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import p2p_connector
         p2p_connector.A('check-synchronize')
-

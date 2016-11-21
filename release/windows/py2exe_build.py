@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#py2exe_build.py
+# py2exe_build.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -23,17 +23,18 @@
 import os
 import sys
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 #--- win32com patch ---
 try:
     try:
         import py2exe.mf as modulefinder
     except ImportError:
         import modulefinder
-    import win32com, sys
+    import win32com
+    import sys
     for p in win32com.__path__[1:]:
         modulefinder.AddPackagePath("win32com", p)
-    for extra in ["win32com.shell"]: #,"win32com.mapi"
+    for extra in ["win32com.shell"]:  # ,"win32com.mapi"
         __import__(extra)
         m = sys.modules[extra]
         for p in m.__path__[1:]:
@@ -43,7 +44,7 @@ except ImportError:
 
 modulefinder.AddPackagePath('django', 'util')
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from distutils.core import setup
 import py2exe
@@ -56,7 +57,7 @@ import zope.interface.adapter
 import pprint
 pprint.pprint(sys.path)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 packages = [
     'encodings',
@@ -65,9 +66,9 @@ packages = [
     'email',
     'web',
     'unittest',
-    ]
+]
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 includes = [
     'django.*',
@@ -140,15 +141,15 @@ includes = [
     'web.myfilesapp.*',
     'web.setupapp.*',
     'web.supplierapp.*',
-    ]
-    
-#------------------------------------------------------------------------------ 
+]
 
-excludes =[
+#------------------------------------------------------------------------------
+
+excludes = [
     '__pypy__.builders',
     'ICCProfile',
-    '_imaging_gif', 
-    '_imagingagg',           
+    '_imaging_gif',
+    '_imagingagg',
     'DLFCN',
     'PAM',
     'PyQt4',
@@ -165,11 +166,11 @@ excludes =[
     # 'email.Generator',
     # 'email.Iterators',
     # 'email.Utils',
-    # 'email.Encoders', 
-    # 'email.MIMEBase', 
-    # 'email.MIMEMultipart', 
-    # 'email.MIMEText', 
-    # 'email.base64MIME',    
+    # 'email.Encoders',
+    # 'email.MIMEBase',
+    # 'email.MIMEMultipart',
+    # 'email.MIMEText',
+    # 'email.base64MIME',
     'guppy',
     'guppy.heapy.RM',
     'hotshot',
@@ -196,25 +197,25 @@ excludes =[
     'Carbon.Files',
     '_sysconfigdata',
     'queue',
-    ]
+]
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 ignores = [
-    ]
+]
 
-#------------------------------------------------------------------------------ 
-#--- SETUP -------------------------------------------------------------------- 
+#------------------------------------------------------------------------------
+#--- SETUP --------------------------------------------------------------------
 
 setup(
 
-    name = 'BitDust',
+    name='BitDust',
 
-    description = 'BitDust',
+    description='BitDust',
 
-    version = open('release/version').read().strip(), 
+    version=open('release/version').read().strip(),
 
-    console = [
+    console=[
         {
             'script': 'bitdust.py',
             'icon_resources': [(1, "icons/tray_icon.ico")],
@@ -244,24 +245,24 @@ setup(
 
     # windows = [
 
-        #{
-        #    'script': 'bitdust.py',
-        #    'icon_resources': [(1, "icons/tray_icon.ico")],
-        #},
+    #{
+    #    'script': 'bitdust.py',
+    #    'icon_resources': [(1, "icons/tray_icon.ico")],
+    #},
 
-        # {
-        #     'script': 'bpgui.py',
-        #     'icon_resources': [(1, "icons/tray_icon.ico")],
-        # },
+    # {
+    #     'script': 'bpgui.py',
+    #     'icon_resources': [(1, "icons/tray_icon.ico")],
+    # },
 
     # ],
 
-    options = {
+    options={
         'py2exe': {
             'packages': packages,
             'includes': includes,
             'excludes': excludes,
-            'ignores':  ignores,
+            'ignores': ignores,
             'ascii': 1,
             'optimize': 2,
             'skip_archive': 1,
@@ -270,4 +271,3 @@ setup(
     },
 
 )
-

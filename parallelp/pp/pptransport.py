@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pptransport.py
+# pptransport.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -73,22 +73,22 @@ except ImportError:
 class Transport(object):
 
     def send(self, msg):
-        raise NotImplemented("abstact function 'send' must be implemented "\
-                "in a subclass")
+        raise NotImplemented("abstact function 'send' must be implemented "
+                             "in a subclass")
 
     def receive(self, preprocess=None):
-        raise NotImplemented("abstact function 'receive' must be implemented "\
-                "in a subclass")
+        raise NotImplemented("abstact function 'receive' must be implemented "
+                             "in a subclass")
 
     def authenticate(self, secret):
         remote_version = self.receive()
         if version != remote_version:
             logging.error("PP version mismatch (local: pp-%s, remote: pp-%s)"
-                % (version, remote_version))
+                          % (version, remote_version))
             logging.error("Please install the same version of PP on all nodes")
             return False
         srandom = self.receive()
-        answer = sha_new(srandom+secret).hexdigest()
+        answer = sha_new(srandom + secret).hexdigest()
         self.send(answer)
         response = self.receive()
         if response == "OK":
@@ -139,8 +139,8 @@ class PipeTransport(Transport):
             self.r = r
             self.w = w
         else:
-            raise TypeError("Both arguments of PipeTransport constructor " \
-                    "must be file objects")
+            raise TypeError("Both arguments of PipeTransport constructor "
+                            "must be file objects")
 
     def send(self, msg):
         self.w.write(struct.pack("!Q", len(msg)))
@@ -171,7 +171,7 @@ class SocketTransport(Transport):
     def send(self, data):
         size = struct.pack("!Q", len(data))
         t_size = struct.calcsize("!Q")
-        s_size = 0L
+        s_size = 0
         while s_size < t_size:
             p_size = self.socket.send(size[s_size:])
             if p_size == 0:
@@ -179,7 +179,7 @@ class SocketTransport(Transport):
             s_size += p_size
 
         t_size = len(data)
-        s_size = 0L
+        s_size = 0
         while s_size < t_size:
             p_size = self.socket.send(data[s_size:])
             if p_size == 0:
@@ -191,7 +191,7 @@ class SocketTransport(Transport):
         r_size = 0
         data = ""
         while r_size < e_size:
-            msg = self.socket.recv(e_size-r_size)
+            msg = self.socket.recv(e_size - r_size)
             if msg == "":
                 raise RuntimeError("Socket connection is broken")
             r_size += len(msg)
@@ -201,7 +201,7 @@ class SocketTransport(Transport):
         r_size = 0
         data = ""
         while r_size < e_size:
-            msg = self.socket.recv(e_size-r_size)
+            msg = self.socket.recv(e_size - r_size)
             if msg == "":
                 raise RuntimeError("Socket connection is broken")
             r_size += len(msg)

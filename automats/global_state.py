@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#global_state.py
+# global_state.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -39,10 +39,10 @@ try:
     from twisted.internet import reactor
 except:
     sys.exit('Error initializing twisted.internet.reactor in global_state.py')
-    
+
 from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.internet.task import LoopingCall
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -51,31 +51,32 @@ import automat
 #------------------------------------------------------------------------------
 
 _StatesDict = {
-    'init at startup':           'beginning',
-    'init local':                'local settings initialization',
-    'init contacts':             'contacts initialization',
-    'init connection':           'initializing connections',
-    'init modules':              'starting modules',
-    'init install':              'preparing install section',
-    'network at startup':        'starting connection',
-    'network stun':              'detecting external IP address',
-    'network upnp':              'configuring UPnP',
-    'network connected':         'internet connection is fine',
-    'network disconnected':      'internet connection is not working',
-    'network network?':          'checking network interfaces',
-    'network google?':           'is www.google.com available?',
-    'p2p at startup':            'initial peer-to-peer state',
-    'p2p transports':            'starting network transports',
-    'p2p propagate':             'propagate my identity',
-    'p2p incomming?':            'waiting response from others',
-    'p2p connected':             'ready',
-    'p2p disconnected':          'starting disconnected',
-    }
+    'init at startup': 'beginning',
+    'init local': 'local settings initialization',
+    'init contacts': 'contacts initialization',
+    'init connection': 'initializing connections',
+    'init modules': 'starting modules',
+    'init install': 'preparing install section',
+    'network at startup': 'starting connection',
+    'network stun': 'detecting external IP address',
+    'network upnp': 'configuring UPnP',
+    'network connected': 'internet connection is fine',
+    'network disconnected': 'internet connection is not working',
+    'network network?': 'checking network interfaces',
+    'network google?': 'is www.google.com available?',
+    'p2p at startup': 'initial peer-to-peer state',
+    'p2p transports': 'starting network transports',
+    'p2p propagate': 'propagate my identity',
+    'p2p incomming?': 'waiting response from others',
+    'p2p connected': 'ready',
+    'p2p disconnected': 'starting disconnected',
+}
 
 _GlobalState = 'AT_STARTUP'
 _GlobalStateNotifyFunc = None
 
 #------------------------------------------------------------------------------
+
 
 def set_global_state(st):
     """
@@ -118,24 +119,16 @@ def get_global_state_label():
 
 def SetGlobalStateNotifyFunc(f):
     """
-    Set callback to catch a global state changed event. 
+    Set callback to catch a global state changed event.
     """
     global _GlobalStateNotifyFunc
     _GlobalStateNotifyFunc = f
 
-    
+
 def SetSingleStateNotifyFunc(f):
     """
-    Set callback to catch state change of any automat 
+    Set callback to catch state change of any automat
     """
     automat.SetStateChangedCallback(f)
 
 #------------------------------------------------------------------------------
-
-
-
-
-
-
-
-

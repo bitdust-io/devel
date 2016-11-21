@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#stun_server.py
+# stun_server.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -37,7 +37,12 @@ import sys
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    sys.path.insert(
+        0, _p.abspath(
+            _p.join(
+                _p.dirname(
+                    _p.abspath(
+                        sys.argv[0])), '..')))
 
 from logs import lg
 
@@ -49,10 +54,11 @@ from lib import udp
 from dht import dht_service
 
 #------------------------------------------------------------------------------
- 
+
 _StunServer = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -83,28 +89,28 @@ class StunServer(automat.Automat):
     """
     This class implements all the functionality of the ``stun_server()`` state machine.
     """
-    
+
     fast = True
 
     def init(self):
         self.listen_port = None
-        
+
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state is 'AT_STARTUP':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'LISTEN'
                 self.doInit(arg)
         #---LISTEN---
         elif self.state is 'LISTEN':
-            if event == 'stop' :
+            if event == 'stop':
                 self.state = 'STOPPED'
                 self.doStop(arg)
-            elif event == 'datagram-received' and self.isSTUN(arg) :
+            elif event == 'datagram-received' and self.isSTUN(arg):
                 self.doSendYourIPPort(arg)
         #---STOPPED---
         elif self.state is 'STOPPED':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'LISTEN'
                 self.doInit(arg)
 
@@ -155,7 +161,11 @@ class StunServer(automat.Automat):
         except:
             return False
         youripport = '%s:%d' % (address[0], address[1])
-        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
+        udp.send_command(
+            self.listen_port,
+            udp.CMD_MYIPPORT,
+            youripport,
+            address)
         lg.out(4, 'stun_server.doSendYourIPPort [%s] to %s' % (
             youripport, address))
 
@@ -164,7 +174,7 @@ class StunServer(automat.Automat):
         """
         self.automat('datagram-received', (datagram, address))
         return False
-        
+
 
 def main():
     from twisted.internet import reactor
@@ -179,7 +189,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
-    
-    
-    

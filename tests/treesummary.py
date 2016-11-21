@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#treesummary.py
+# treesummary.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -22,7 +22,12 @@
 import os
 import sys
 import os.path as _p
-sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+sys.path.insert(
+    0, _p.abspath(
+        _p.join(
+            _p.dirname(
+                _p.abspath(
+                    sys.argv[0])), '..')))
 from logs import lg
 from system import bpio
 from p2p import p2p_service
@@ -30,6 +35,7 @@ from main import settings
 from lib import nameurl
 
 custdir = settings.getCustomersFilesDir()
-ownerdir = os.path.join(custdir, nameurl.UrlFilename('http://megafaq.ru/e_vps1004.xml'))
+ownerdir = os.path.join(custdir, nameurl.UrlFilename(
+    'http://megafaq.ru/e_vps1004.xml'))
 plaintext = p2p_service.TreeSummary(ownerdir)
 print plaintext

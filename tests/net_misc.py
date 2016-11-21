@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#net_misc.py
+# net_misc.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -27,15 +27,22 @@ from twisted.internet.defer import Deferred
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    sys.path.insert(
+        0, _p.abspath(
+            _p.join(
+                _p.dirname(
+                    _p.abspath(
+                        sys.argv[0])), '..')))
+
 
 def main():
     def _ok(x):
         print 'ok', x
         reactor.stop()
+
     def _fail(x):
         print 'fail', x
-        reactor.stop()        
+        reactor.stop()
     from lib import net_misc
     from main import settings
     settings.init()

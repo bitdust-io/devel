@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#restore.py
+# restore.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -32,7 +32,7 @@
     <a href="http://bitdust.io/automats/restore/restore.png" target="_blank">
     <img src="http://bitdust.io/automats/restore/restore.png" style="max-width:100%;">
     </a>
-    
+
 
 At least for now we will work one block at a time, though packets in parallel.
 We ask transport_control for all the data packets for a block then see if we
@@ -62,7 +62,7 @@ Our ( public/private-key and eccmap) could be:
     1)  at BitDust  (encrypted with pass phrase)
     2)  on USB in safe or deposit box   (encrypted with passphrase or clear text)
     3)  with friends or scrubbers (encrypted with passphrase)
-                
+
 The other thing we need is the backupIDs which we can get from our suppliers with the ListFiles command.
 The ID is something like ``F200801161206`` or ``I200801170401`` indicating full or incremental.
 
@@ -93,13 +93,13 @@ except:
 
 from twisted.internet.defer import Deferred
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import os.path as _p
     sys.path.append(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..'))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -123,7 +123,8 @@ from crypt import encrypted
 
 from p2p import contact_status
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class restore(automat.Automat):
 
@@ -133,7 +134,7 @@ class restore(automat.Automat):
     def set_block_restored_callback(self, cb):
         self.blockRestoredCallback = cb
 
-    def abort(self): 
+    def abort(self):
         # for when user clicks the Abort restore button on the gui
         lg.out(4, "restore.Abort " + self.BackupID)
         self.AbortState = True
@@ -142,16 +143,16 @@ class restore(automat.Automat):
         'timer-1sec': (1.0, ['REQUEST']),
         'timer-01sec': (0.1, ['RUN']),
         'timer-5sec': (5.0, ['REQUEST']),
-        }
+    }
 
-    def __init__(self, BackupID, OutputFile): # OutputFileName 
+    def __init__(self, BackupID, OutputFile):  # OutputFileName
         self.CreatorID = my_id.getLocalID()
         self.BackupID = BackupID
         self.PathID, self.Version = packetid.SplitBackupID(self.BackupID)
         self.File = OutputFile
         # is current active block - so when add 1 we get to first, which is 0
         self.BlockNumber = -1
-        self.BytesWritten = 0          
+        self.BytesWritten = 0
         self.OnHandData = []
         self.OnHandParity = []
         self.AbortState = False
@@ -164,11 +165,13 @@ class restore(automat.Automat):
         self.RequestFails = []
         self.InboxQueueDelay = 1
         # For anyone who wants to know when we finish
-        self.MyDeferred = Deferred()       
+        self.MyDeferred = Deferred()
         self.packetInCallback = None
         self.blockRestoredCallback = None
-        
-        automat.Automat.__init__(self, 'restore_%s' % self.BackupID, 'AT_STARTUP', 4)
+
+        automat.Automat.__init__(
+            self, 'restore_%s' %
+            self.BackupID, 'AT_STARTUP', 4)
         events.info('restore', '%s start restoring' % self.BackupID)
         # lg.out(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 
@@ -179,17 +182,18 @@ class restore(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'init':
                 self.state = 'RUN'
         #---RUN---
         elif self.state == 'RUN':
-            if ( event == 'timer-01sec' or event == 'instant' ) and self.isAborted(arg) :
+            if (event == 'timer-01sec' or event ==
+                    'instant') and self.isAborted(arg):
                 self.state = 'ABORTED'
                 self.doDeleteAllRequests(arg)
                 self.doCloseFile(arg)
                 self.doReportAborted(arg)
                 self.doDestroyMe(arg)
-            elif ( event == 'timer-01sec' or event == 'instant' ) and not self.isAborted(arg) :
+            elif (event == 'timer-01sec' or event == 'instant') and not self.isAborted(arg):
                 self.state = 'REQUEST'
                 self.doStartNewBlock(arg)
                 self.doReadPacketsQueue(arg)
@@ -197,23 +201,24 @@ class restore(automat.Automat):
                 self.doRequestPackets(arg)
         #---REQUEST---
         elif self.state == 'REQUEST':
-            if event == 'packet-came-in' and self.isPacketValid(arg) and self.isCurrentBlock(arg) :
+            if event == 'packet-came-in' and self.isPacketValid(
+                    arg) and self.isCurrentBlock(arg):
                 self.doSavePacket(arg)
-            elif event == 'timer-1sec' and self.isAborted(arg) :
+            elif event == 'timer-1sec' and self.isAborted(arg):
                 self.state = 'ABORTED'
                 self.doPausePacketsQueue(arg)
                 self.doDeleteAllRequests(arg)
                 self.doCloseFile(arg)
                 self.doReportAborted(arg)
                 self.doDestroyMe(arg)
-            elif ( event == 'timer-1sec' or event == 'request-done' ) and not self.isAborted(arg) and self.isBlockFixable(arg) :
+            elif (event == 'timer-1sec' or event == 'request-done') and not self.isAborted(arg) and self.isBlockFixable(arg):
                 self.state = 'RAID'
                 self.doPausePacketsQueue(arg)
                 self.doReadRaid(arg)
-            elif event == 'timer-5sec' and not self.isAborted(arg) and self.isTimePassed(arg) :
+            elif event == 'timer-5sec' and not self.isAborted(arg) and self.isTimePassed(arg):
                 self.doScanExistingPackets(arg)
                 self.doRequestPackets(arg)
-            elif event == 'request-failed' and not self.isStillCorrectable(arg) :
+            elif event == 'request-failed' and not self.isStillCorrectable(arg):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(arg)
                 self.doRemoveTempFile(arg)
@@ -222,10 +227,10 @@ class restore(automat.Automat):
                 self.doDestroyMe(arg)
         #---RAID---
         elif self.state == 'RAID':
-            if event == 'raid-done' :
+            if event == 'raid-done':
                 self.state = 'BLOCK'
                 self.doRestoreBlock(arg)
-            elif event == 'raid-failed' :
+            elif event == 'raid-failed':
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(arg)
                 self.doRemoveTempFile(arg)
@@ -234,12 +239,13 @@ class restore(automat.Automat):
                 self.doDestroyMe(arg)
         #---BLOCK---
         elif self.state == 'BLOCK':
-            if event == 'block-restored' and self.isBlockValid(arg) and not self.isLastBlock(arg) :
+            if event == 'block-restored' and self.isBlockValid(
+                    arg) and not self.isLastBlock(arg):
                 self.state = 'RUN'
                 self.doWriteRestoredData(arg)
                 self.doDeleteBlockRequests(arg)
                 self.doRemoveTempFile(arg)
-            elif event == 'block-restored' and self.isBlockValid(arg) and self.isLastBlock(arg) :
+            elif event == 'block-restored' and self.isBlockValid(arg) and self.isLastBlock(arg):
                 self.state = 'DONE'
                 self.doWriteRestoredData(arg)
                 self.doDeleteAllRequests(arg)
@@ -247,7 +253,7 @@ class restore(automat.Automat):
                 self.doCloseFile(arg)
                 self.doReportDone(arg)
                 self.doDestroyMe(arg)
-            elif event == 'block-restored' and not self.isBlockValid(arg) :
+            elif event == 'block-restored' and not self.isBlockValid(arg):
                 self.state = 'FAILED'
                 self.doDeleteAllRequests(arg)
                 self.doRemoveTempFile(arg)
@@ -270,36 +276,38 @@ class restore(automat.Automat):
 
     def isTimePassed(self, arg):
         return time.time() - self.LastAction > 60
-    
+
     def isPacketValid(self, NewPacket):
         if not NewPacket.Valid():
             return False
         if NewPacket.DataOrParity() not in ['Data', 'Parity']:
             return False
         return True
-    
+
     def isCurrentBlock(self, NewPacket):
         return NewPacket.BlockNumber() == self.BlockNumber
-    
+
     def isBlockFixable(self, arg):
         return self.EccMap.Fixable(self.OnHandData, self.OnHandParity)
-    
+
     def isStillCorrectable(self, arg):
-        return len(self.RequestFails) <= eccmap.GetCorrectableErrors(self.EccMap.NumSuppliers())
-    
+        return len(
+            self.RequestFails) <= eccmap.GetCorrectableErrors(
+            self.EccMap.NumSuppliers())
+
     def isBlockValid(self, arg):
         NewBlock = arg[0]
         if NewBlock is None:
             return False
         return NewBlock.Valid()
-    
+
     def isLastBlock(self, arg):
         NewBlock = arg[0]
         return NewBlock.LastBlock
-    
+
     def doStartNewBlock(self, arg):
         self.LastAction = time.time()
-        self.BlockNumber += 1    
+        self.BlockNumber += 1
         lg.out(6, "restore.doStartNewBlock " + str(self.BlockNumber))
         self.OnHandData = [False] * self.EccMap.datasegments
         self.OnHandParity = [False] * self.EccMap.paritysegments
@@ -307,59 +315,92 @@ class restore(automat.Automat):
 
     def doScanExistingPackets(self, arg):
         for SupplierNumber in range(self.EccMap.datasegments):
-            PacketID = packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Data')
-            self.OnHandData[SupplierNumber] = os.path.exists(os.path.join(settings.getLocalBackupsDir(), PacketID))
+            PacketID = packetid.MakePacketID(
+                self.BackupID, self.BlockNumber, SupplierNumber, 'Data')
+            self.OnHandData[SupplierNumber] = os.path.exists(
+                os.path.join(settings.getLocalBackupsDir(), PacketID))
         for SupplierNumber in range(self.EccMap.paritysegments):
-            PacketID = packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Parity')
-            self.OnHandParity[SupplierNumber] = os.path.exists(os.path.join(settings.getLocalBackupsDir(), PacketID))
-        
+            PacketID = packetid.MakePacketID(
+                self.BackupID, self.BlockNumber, SupplierNumber, 'Parity')
+            self.OnHandParity[SupplierNumber] = os.path.exists(
+                os.path.join(settings.getLocalBackupsDir(), PacketID))
+
     def doRequestPackets(self, arg):
         from customer import io_throttle
         packetsToRequest = []
         for SupplierNumber in range(self.EccMap.datasegments):
-            SupplierID = contactsdb.supplier(SupplierNumber) 
+            SupplierID = contactsdb.supplier(SupplierNumber)
             if not SupplierID:
                 continue
-            if not self.OnHandData[SupplierNumber] and contact_status.isOnline(SupplierID):
-                packetsToRequest.append((SupplierID, packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Data')))
+            if not self.OnHandData[
+                    SupplierNumber] and contact_status.isOnline(SupplierID):
+                packetsToRequest.append(
+                    (SupplierID,
+                     packetid.MakePacketID(
+                         self.BackupID,
+                         self.BlockNumber,
+                         SupplierNumber,
+                         'Data')))
         for SupplierNumber in range(self.EccMap.paritysegments):
-            SupplierID = contactsdb.supplier(SupplierNumber) 
+            SupplierID = contactsdb.supplier(SupplierNumber)
             if not SupplierID:
                 continue
-            if not self.OnHandParity[SupplierNumber] and contact_status.isOnline(SupplierID):
-                packetsToRequest.append((SupplierID, packetid.MakePacketID(self.BackupID, self.BlockNumber, SupplierNumber, 'Parity')))
+            if not self.OnHandParity[
+                    SupplierNumber] and contact_status.isOnline(SupplierID):
+                packetsToRequest.append(
+                    (SupplierID,
+                     packetid.MakePacketID(
+                         self.BackupID,
+                         self.BlockNumber,
+                         SupplierNumber,
+                         'Parity')))
         for SupplierID, packetID in packetsToRequest:
             io_throttle.QueueRequestFile(
-                self._packet_came_in, 
-                self.CreatorID, 
-                packetID, 
-                self.CreatorID, 
+                self._packet_came_in,
+                self.CreatorID,
+                packetID,
+                self.CreatorID,
                 SupplierID)
-        lg.out(6, "restore.doRequestPackets requested %d packets for block %d" % (len(packetsToRequest), self.BlockNumber))
+        lg.out(
+            6, "restore.doRequestPackets requested %d packets for block %d" %
+            (len(packetsToRequest), self.BlockNumber))
         del packetsToRequest
         self.automat('request-done')
-    
+
     def doReadRaid(self, arg):
-        fd, filename = tmpfile.make('restore', 
-            prefix=self.BackupID.replace('/','_')+'_'+str(self.BlockNumber)+'_')
+        fd, filename = tmpfile.make('restore', prefix=self.BackupID.replace(
+            '/', '_') + '_' + str(self.BlockNumber) + '_')
         os.close(fd)
-        task_params = (filename, eccmap.CurrentName(), self.Version, self.BlockNumber, 
-            os.path.join(settings.getLocalBackupsDir(), self.PathID))
-        raid_worker.add_task('read', task_params,            
-            lambda cmd, params, result: self._blockRestoreResult(result, filename))
-         
+        task_params = (
+            filename,
+            eccmap.CurrentName(),
+            self.Version,
+            self.BlockNumber,
+            os.path.join(
+                settings.getLocalBackupsDir(),
+                self.PathID))
+        raid_worker.add_task(
+            'read',
+            task_params,
+            lambda cmd,
+            params,
+            result: self._blockRestoreResult(
+                result,
+                filename))
+
     def doReadPacketsQueue(self, arg):
         reactor.callLater(0, self._process_inbox_queue)
-    
+
     def doPausePacketsQueue(self, arg):
         if self.InboxQueueWorker is not None:
             if self.InboxQueueWorker.active():
                 self.InboxQueueWorker.cancel()
             self.InboxQueueWorker = None
-    
+
     def doSavePacket(self, NewPacket):
         packetID = NewPacket.PacketID
-        pathID, version, packetBlockNum, SupplierNumber, dataORparity = packetid.SplitFull(packetID)
+        pathID, version, packetBlockNum, SupplierNumber, dataORparity = packetid.SplitFull(
+            packetID)
         if dataORparity == 'Data':
             self.OnHandData[SupplierNumber] = True
         elif NewPacket.DataOrParity() == 'Parity':
@@ -378,25 +419,28 @@ class restore(automat.Automat):
         lg.out(6, "restore.doSavePacket %s saved" % packetID)
         if self.packetInCallback is not None:
             self.packetInCallback(self.BackupID, NewPacket)
-    
+
     def doRestoreBlock(self, arg):
         filename = arg
         blockbits = bpio.ReadBinaryFile(filename)
         if not blockbits:
             self.automat('block-restored', (None, filename))
-            return 
+            return
         splitindex = blockbits.index(":")
         lengthstring = blockbits[0:splitindex]
         try:
-            datalength = int(lengthstring)                                  # real length before raidmake/ECC
-            blockdata = blockbits[splitindex+1:splitindex+1+datalength]     # remove padding from raidmake/ECC
-            newblock = encrypted.Unserialize(blockdata)                      # convert to object
+            # real length before raidmake/ECC
+            datalength = int(lengthstring)
+            # remove padding from raidmake/ECC
+            blockdata = blockbits[splitindex + 1:splitindex + 1 + datalength]
+            newblock = encrypted.Unserialize(
+                blockdata)                      # convert to object
         except:
             datalength = 0
             blockdata = ''
             newblock = None
         self.automat('block-restored', (newblock, filename))
-    
+
     def doWriteRestoredData(self, arg):
         NewBlock = arg[0]
         data = NewBlock.Data()
@@ -406,24 +450,25 @@ class restore(automat.Automat):
             self.BytesWritten += len(data)
         except:
             lg.exc()
-            #TODO Error handling...
+            # TODO Error handling...
             return
         if self.blockRestoredCallback is not None:
             self.blockRestoredCallback(self.BackupID, NewBlock)
-    
+
     def doDeleteAllRequests(self, arg):
         from customer import io_throttle
         io_throttle.DeleteBackupRequests(self.BackupID)
-                                         
+
     def doDeleteBlockRequests(self, arg):
         from customer import io_throttle
-        io_throttle.DeleteBackupRequests(self.BackupID + "-" + str(self.BlockNumber))
+        io_throttle.DeleteBackupRequests(
+            self.BackupID + "-" + str(self.BlockNumber))
 
     def doRemoveTempFile(self, arg):
         try:
             filename = arg[1]
         except:
-            return 
+            return
         tmpfile.throw_out(filename, 'block restored')
         if settings.getBackupsKeepLocalCopies():
             return
@@ -432,7 +477,8 @@ class restore(automat.Automat):
         if not backup_rebuilder.ReadStoppedFlag():
             if backup_rebuilder.A().currentBackupID is not None:
                 if backup_rebuilder.A().currentBackupID == self.BackupID:
-                    lg.out(6, 'restore.doRemoveTempFile SKIP because rebuilding in process')
+                    lg.out(
+                        6, 'restore.doRemoveTempFile SKIP because rebuilding in process')
                     return
         count = 0
         for supplierNum in xrange(contactsdb.num_suppliers()):
@@ -440,9 +486,10 @@ class restore(automat.Automat):
             if not supplierIDURL:
                 continue
             for dataORparity in ['Data', 'Parity']:
-                packetID = packetid.MakePacketID(self.BackupID, self.BlockNumber, 
-                                                 supplierNum, dataORparity)
-                filename = os.path.join(settings.getLocalBackupsDir(), packetID)
+                packetID = packetid.MakePacketID(
+                    self.BackupID, self.BlockNumber, supplierNum, dataORparity)
+                filename = os.path.join(
+                    settings.getLocalBackupsDir(), packetID)
                 if os.path.isfile(filename):
                     try:
                         os.remove(filename)
@@ -455,25 +502,30 @@ class restore(automat.Automat):
 
     def doCloseFile(self, arg):
         os.close(self.File)
-    
+
     def doReportAborted(self, arg):
         lg.out(6, "restore.doReportAborted " + self.BackupID)
         self.Done = True
-        self.MyDeferred.callback(self.BackupID+' aborted')
+        self.MyDeferred.callback(self.BackupID + ' aborted')
         events.info('restore', '%s restoring were aborted' % self.BackupID)
-    
+
     def doReportFailed(self, arg):
-        lg.out(6, "restore.doReportFailed ERROR %s : the block does not look good" % str(arg))
+        lg.out(
+            6,
+            "restore.doReportFailed ERROR %s : the block does not look good" %
+            str(arg))
         self.Done = True
-        self.MyDeferred.errback(self.BackupID+' failed')
-        events.notify('restore', '%s failed to restore block number %d' % (self.BackupID, self.BlockNumber))
-    
+        self.MyDeferred.errback(self.BackupID + ' failed')
+        events.notify(
+            'restore', '%s failed to restore block number %d' %
+            (self.BackupID, self.BlockNumber))
+
     def doReportDone(self, arg):
         # lg.out(6, "restore.doReportDone - restore has finished. All is well that ends well !!!")
         self.Done = True
-        self.MyDeferred.callback(self.BackupID+' done')
+        self.MyDeferred.callback(self.BackupID + ' done')
         events.info('restore', '%s restored successfully' % self.BackupID)
-    
+
     def doDestroyMe(self, arg):
         if self.InboxQueueWorker is not None:
             if self.InboxQueueWorker.active():
@@ -491,7 +543,7 @@ class restore(automat.Automat):
         collected = gc.collect()
         # lg.out(6, 'restore.doDestroyMe collected %d objects' % collected)
 
-    #------------------------------------------------------------------------------ 
+    #-------------------------------------------------------------------------
 
     def _blockRestoreResult(self, restored_blocks, filename):
         if restored_blocks is None:
@@ -510,19 +562,23 @@ class restore(automat.Automat):
         if len(self.InboxPacketsQueue) > 0:
             NewPacket = self.InboxPacketsQueue.pop(0)
             self.automat('packet-came-in', NewPacket)
-        self.InboxQueueWorker = reactor.callLater(self.InboxQueueDelay, self._process_inbox_queue)
-    
-#------------------------------------------------------------------------------ 
+        self.InboxQueueWorker = reactor.callLater(
+            self.InboxQueueDelay, self._process_inbox_queue)
+
+#------------------------------------------------------------------------------
+
 
 def main():
     lg.set_debug_level(24)
     backupID = sys.argv[1]
     raid_worker.A('init')
-    outfd, outfilename = tmpfile.make('restore', '.tar.gz', backupID.replace('/','_')+'_')
+    outfd, outfilename = tmpfile.make(
+        'restore', '.tar.gz', backupID.replace(
+            '/', '_') + '_')
     r = restore(backupID, outfd)
     r.MyDeferred.addBoth(lambda x: reactor.stop())
     reactor.callLater(1, r.automat, 'init')
     reactor.run()
-    
+
 if __name__ == "__main__":
     main()

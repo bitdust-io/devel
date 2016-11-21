@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#proxy_node.py
+# proxy_node.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -44,12 +44,12 @@ EVENTS:
     * :red:`timer-60sec`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 14
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from automats import automat
 
@@ -65,6 +65,7 @@ _ProxyNode = None
 
 #------------------------------------------------------------------------------
 
+
 def A(event=None, arg=None):
     """
     Access method to interact with proxy_node machine.
@@ -79,6 +80,7 @@ def A(event=None, arg=None):
 
 #------------------------------------------------------------------------------
 
+
 class ProxyNode(automat.Automat):
     """
     This class implements all the functionality of the ``proxy_node()`` state machine.
@@ -86,7 +88,7 @@ class ProxyNode(automat.Automat):
 
     timers = {
         'timer-60sec': (60.0, ['TRANSPORTS?']),
-        }
+    }
 
     def init(self):
         """
@@ -115,52 +117,52 @@ class ProxyNode(automat.Automat):
         """
         #---TRANSPORTS?---
         if self.state == 'TRANSPORTS?':
-            if event == 'other-transports-ready' :
+            if event == 'other-transports-ready':
                 self.state = 'ROUTER?'
                 proxy_connector.A('start')
-            elif event == 'timer-60sec' :
+            elif event == 'timer-60sec':
                 self.state = 'STOPPED'
                 proxy_connector.A('shutdown')
                 self.doReportStopped(arg)
         #---LISTENING---
         elif self.state == 'LISTENING':
-            if event == 'stop' :
+            if event == 'stop':
                 self.state = 'STOPPED'
                 proxy_sender.A('stop')
                 proxy_receiver.A('stop')
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 proxy_sender.A('shutdown')
                 proxy_receiver.A('shutdown')
                 self.doDestroyMe(arg)
         #---ROUTER?---
         elif self.state == 'ROUTER?':
-            if event == 'shutdown' :
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 proxy_connector.A('shutdown')
                 proxy_sender.A('shutdown')
                 proxy_receiver.A('shutdown')
                 self.doDestroyMe(arg)
-            elif ( event == 'proxy_connector.state' and arg == 'CONNECTED!' ) :
+            elif (event == 'proxy_connector.state' and arg == 'CONNECTED!'):
                 self.state = 'LISTENING'
                 proxy_sender.A('start')
                 proxy_receiver.A('start')
-            elif ( event == 'proxy_connector.state' and arg == 'CLOSED' ) :
+            elif (event == 'proxy_connector.state' and arg == 'CLOSED'):
                 self.state = 'STOPPED'
                 self.doReportStopped(arg)
         #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(arg)
                 proxy_sender.A('init')
                 proxy_receiver.A('init')
         #---STOPPED---
         elif self.state == 'STOPPED':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'TRANSPORTS?'
                 self.doWaitOtherTransports(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 proxy_sender.A('shutdown')
                 proxy_receiver.A('shutdown')
@@ -193,8 +195,9 @@ class ProxyNode(automat.Automat):
         global _ProxyNode
         del _ProxyNode
         _ProxyNode = None
-        
+
 #------------------------------------------------------------------------------
+
 
 def GetRouterIDURL():
     global _ProxyReceiver
@@ -202,11 +205,13 @@ def GetRouterIDURL():
         return None
     return _ProxyReceiver.router_idurl
 
+
 def GetRouterIdentity():
     global _ProxyReceiver
     if not _ProxyReceiver:
         return None
     return _ProxyReceiver.router_identity
+
 
 def GetRouterProtoHost():
     global _ProxyReceiver
@@ -214,11 +219,13 @@ def GetRouterProtoHost():
         return None
     return _ProxyReceiver.router_proto_host
 
+
 def GetMyOriginalIdentitySource():
-    return config.conf().getData('services/proxy-transport/my-original-identity') 
+    return config.conf().getData('services/proxy-transport/my-original-identity')
 
 #------------------------------------------------------------------------------
- 
+
+
 def main():
     from twisted.internet import reactor
     reactor.callWhenRunning(A, 'init')
@@ -226,4 +233,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

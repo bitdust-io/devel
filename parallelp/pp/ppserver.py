@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#ppserver.py
+# ppserver.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -83,11 +83,11 @@ class _NetworkServer(Server):
     """
 
     def __init__(self, ncpus="autodetect", interface="0.0.0.0",
-                broadcast="255.255.255.255", port=None, secret=None,
-                timeout=None, loglevel=logging.WARNING, restart=False,
-                proto=0):
+                 broadcast="255.255.255.255", port=None, secret=None,
+                 timeout=None, loglevel=logging.WARNING, restart=False,
+                 proto=0):
         Server.__init__(self, ncpus, secret=secret, loglevel=loglevel,
-                restart=restart, proto=proto)
+                        restart=restart, proto=proto)
         self.host = interface
         self.bcast = broadcast
         if port is not None:
@@ -100,10 +100,10 @@ class _NetworkServer(Server):
         self.ncon_lock = thread.allocate_lock()
 
         logging.debug("Strarting network server interface=%s port=%i"
-                % (self.host, self.port))
+                      % (self.host, self.port))
         if self.timeout is not None:
-            logging.debug("ppserver will exit in %i seconds if no "\
-                    "connections with clients exist" % (self.timeout))
+            logging.debug("ppserver will exit in %i seconds if no "
+                          "connections with clients exist" % (self.timeout))
             thread.start_new_thread(self.check_timeout, ())
 
     def ncon_add(self, val):
@@ -121,8 +121,8 @@ class _NetworkServer(Server):
                 if idle_time < self.timeout:
                     time.sleep(self.timeout - idle_time)
                 else:
-                    logging.debug("exiting ppserver due to timeout (no client"\
-                            " connections in last %i sec)", self.timeout)
+                    logging.debug("exiting ppserver due to timeout (no client"
+                                  " connections in last %i sec)", self.timeout)
                     os._exit(0)
             else:
                 time.sleep(self.timeout)
@@ -137,14 +137,14 @@ class _NetworkServer(Server):
             ssocket.listen(5)
         except socket.error:
             logging.error("Cannot create socket with port " + str(self.port)
-                    + " (port is already in use)")
+                          + " (port is already in use)")
 
         try:
-            while 1:
-                #accept connections from outside
+            while True:
+                # accept connections from outside
                 (csocket, address) = ssocket.accept()
-                #now do something with the clientsocket
-                #in this case, we'll pretend this is a threaded server
+                # now do something with the clientsocket
+                # in this case, we'll pretend this is a threaded server
                 thread.start_new_thread(self.crun, (csocket, ))
         except:
             logging.debug("Closing server socket")
@@ -153,17 +153,17 @@ class _NetworkServer(Server):
     def crun(self, csocket):
         """Authenticates client and handles its jobs"""
         mysocket = pptransport.CSocketTransport(csocket)
-        #send PP version
+        # send PP version
         mysocket.send(version)
-        #generate a random string
+        # generate a random string
         srandom = "".join([random.choice(string.ascii_letters)
-                for i in xrange(16)])
+                           for i in xrange(16)])
         mysocket.send(srandom)
-        answer = sha_new(srandom+self.secret).hexdigest()
+        answer = sha_new(srandom + self.secret).hexdigest()
         cleintanswer = mysocket.receive()
         if answer != cleintanswer:
             logging.warning("Authentification failed, client host=%s, port=%i"
-                    % csocket.getpeername())
+                            % csocket.getpeername())
             mysocket.send("FAILED")
             csocket.close()
             return
@@ -175,21 +175,21 @@ class _NetworkServer(Server):
         self.ncon_add(1)
         try:
             if ctype == "STAT":
-                #reset time at each new connection
+                # reset time at each new connection
                 self.get_stats()["local"].time = 0.0
                 mysocket.send(str(self.get_ncpus()))
-                while 1:
+                while True:
                     mysocket.receive()
                     mysocket.send(str(self.get_stats()["local"].time))
-            elif ctype=="EXEC":
-                while 1:
+            elif ctype == "EXEC":
+                while True:
                     sfunc = mysocket.creceive()
                     sargs = mysocket.receive()
                     fun = self.insert(sfunc, sargs)
                     sresult = fun(True)
                     mysocket.send(sresult)
         except:
-            #print sys.excepthook(*sys.exc_info())
+            # print sys.excepthook(*sys.exc_info())
             logging.debug("Closing client socket")
             csocket.close()
             self.ncon_add(-1)
@@ -200,7 +200,7 @@ class _NetworkServer(Server):
         thread.start_new_thread(discover.run,
                                 ((self.host, self.port),
                                  (self.bcast, self.port)),
-                               )
+                                )
 
 
 def parse_config(file_loc):
@@ -210,7 +210,7 @@ def parse_config(file_loc):
     # If we don't have configobj installed then let the user know and exit
     try:
         from configobj import ConfigObj
-    except ImportError, ie:
+    except ImportError as ie:
         print >> sys.stderr, "ERROR: You must have configobj installed to use \
 configuration files. You can still use command line switches."
         sys.exit(1)
@@ -281,15 +281,15 @@ def print_usage():
     """Prints help"""
     print "Parallel Python Network Server (pp-" + version + ")"
     print "Usage: ppserver.py [-hdar] [-n proto] [-c config_path]"\
-            " [-i interface] [-b broadcast] [-p port] [-w nworkers]"\
-            " [-s secret] [-t seconds]"
+        " [-i interface] [-b broadcast] [-p port] [-w nworkers]"\
+        " [-s secret] [-t seconds]"
     print
     print "Options: "
     print "-h                 : this help message"
     print "-d                 : debug"
     print "-a                 : enable auto-discovery service"
     print "-r                 : restart worker process after each"\
-            " task completion"
+        " task completion"
     print "-n proto           : protocol number for pickle module"
     print "-c path            : path to config file"
     print "-i interface       : interface to listen"
@@ -298,7 +298,7 @@ def print_usage():
     print "-w nworkers        : number of workers to start"
     print "-s secret          : secret for authentication"
     print "-t seconds         : timeout to exit if no connections with "\
-            "clients exist"
+        "clients exist"
     print
     print "Due to the security concerns always use a non-trivial secret key."
     print "Secret key set by -s switch will override secret key assigned by"
@@ -310,8 +310,8 @@ def print_usage():
 
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 
-            "hdarn:c:b:i:p:w:s:t:", ["help"])
+        opts, args = getopt.getopt(sys.argv[1:],
+                                   "hdarn:c:b:i:p:w:s:t:", ["help"])
     except getopt.GetoptError:
         print_usage()
         sys.exit(1)
@@ -350,8 +350,8 @@ if __name__ == "__main__":
     if autodiscovery:
         server.broadcast()
     server.listen()
-    #have to destroy it here explicitelly otherwise an exception
-    #comes out in Python 2.4
+    # have to destroy it here explicitelly otherwise an exception
+    # comes out in Python 2.4
     del server
 
 # Parallel Python Software: http://www.parallelpython.com

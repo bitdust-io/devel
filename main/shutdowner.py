@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#shutdowner.py
+# shutdowner.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,7 +33,7 @@
     <a href="http://bitdust.io/automats/shutdowner/shutdowner.png" target="_blank">
     <img src="http://bitdust.io/automats/shutdowner/shutdowner.png" style="max-width:100%;">
     </a>
-    
+
 The state machine ``shutdowner()`` manages the completion of the program.
 
 Synchronized between the completion of the blocking code and stop of the main Twisted reactor.
@@ -60,7 +60,7 @@ except:
 
 from twisted.internet.defer import DeferredList
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -69,11 +69,12 @@ from automats import global_state
 
 import initializer
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Shutdowner = None
 
 #------------------------------------------------------------------------------
+
 
 def shutdown(x=None):
     """
@@ -108,9 +109,10 @@ def shutdown(x=None):
     for a in automat.objects().values():
         if a.name != 'shutdowner':
             a.event('shutdown')
-    return DeferredList(dl)        
-    
-#------------------------------------------------------------------------------ 
+    return DeferredList(dl)
+
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     global _Shutdowner
@@ -123,16 +125,16 @@ def A(event=None, arg=None):
 
 class Shutdowner(automat.Automat):
     """
-    This is a state machine to manage a process of correctly finishing the BitDust software. 
+    This is a state machine to manage a process of correctly finishing the BitDust software.
     """
-    
+
     fast = True
-    
+
     def init(self):
         self.flagApp = False
         self.flagReactor = False
         self.shutdown_param = None
-    
+
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('SHUTDOWN ' + newstate)
         initializer.A('shutdowner.state', newstate)
@@ -140,48 +142,48 @@ class Shutdowner(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'init':
                 self.state = 'INIT'
-                self.flagApp=False
-                self.flagReactor=False
+                self.flagApp = False
+                self.flagReactor = False
         #---INIT---
         elif self.state == 'INIT':
-            if event == 'stop' :
+            if event == 'stop':
                 self.doSaveParam(arg)
-                self.flagApp=True
-            elif event == 'reactor-stopped' :
-                self.flagReactor=True
-            elif event == 'ready' and self.flagReactor :
+                self.flagApp = True
+            elif event == 'reactor-stopped':
+                self.flagReactor = True
+            elif event == 'ready' and self.flagReactor:
                 self.state = 'FINISHED'
                 self.doDestroyMe(arg)
-            elif event == 'ready' and not self.flagReactor and self.flagApp :
+            elif event == 'ready' and not self.flagReactor and self.flagApp:
                 self.state = 'STOPPING'
                 self.doShutdown(arg)
-            elif event == 'ready' and not self.flagReactor and not self.flagApp :
+            elif event == 'ready' and not self.flagReactor and not self.flagApp:
                 self.state = 'READY'
         #---READY---
         elif self.state == 'READY':
-            if event == 'stop' :
+            if event == 'stop':
                 self.state = 'STOPPING'
                 self.doShutdown(arg)
-            elif event == 'reactor-stopped' :
+            elif event == 'reactor-stopped':
                 self.state = 'FINISHED'
                 self.doDestroyMe(arg)
-            elif event == 'block' :
+            elif event == 'block':
                 self.state = 'BLOCKED'
         #---BLOCKED---
         elif self.state == 'BLOCKED':
-            if event == 'stop' :
+            if event == 'stop':
                 self.doSaveParam(arg)
-                self.flagApp=True
-            elif event == 'reactor-stopped' :
-                self.flagReactor=True
-            elif event == 'unblock' and not self.flagReactor and not self.flagApp :
+                self.flagApp = True
+            elif event == 'reactor-stopped':
+                self.flagReactor = True
+            elif event == 'unblock' and not self.flagReactor and not self.flagApp:
                 self.state = 'READY'
-            elif event == 'unblock' and not self.flagReactor and self.flagApp :
+            elif event == 'unblock' and not self.flagReactor and self.flagApp:
                 self.state = 'STOPPING'
                 self.doShutdown(arg)
-            elif event == 'unblock' and self.flagReactor :
+            elif event == 'unblock' and self.flagReactor:
                 self.state = 'FINISHED'
                 self.doDestroyMe(arg)
         #---FINISHED---
@@ -189,7 +191,7 @@ class Shutdowner(automat.Automat):
             pass
         #---STOPPING---
         elif self.state == 'STOPPING':
-            if event == 'reactor-stopped' :
+            if event == 'reactor-stopped':
                 self.state = 'FINISHED'
                 self.doDestroyMe(arg)
         return None
@@ -199,12 +201,13 @@ class Shutdowner(automat.Automat):
         lg.out(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
 
     def doShutdown(self, arg):
-        lg.out(2, 'shutdowner.doShutdown %d machines currently' % len(automat.objects()))
+        lg.out(2, 'shutdowner.doShutdown %d machines currently' %
+               len(automat.objects()))
         param = arg
         if self.shutdown_param is not None:
             param = self.shutdown_param
         if arg is None:
-            param = 'exit' 
+            param = 'exit'
         elif isinstance(arg, str):
             param = arg
         if param not in ['exit', 'restart', 'restartnshow']:
@@ -228,13 +231,14 @@ class Shutdowner(automat.Automat):
             len(automat.objects()), '\n        '.join(
                 ['%d: %r' % (k, automat.objects()[k]) for k in automat.objects().keys()])))
 
-    #------------------------------------------------------------------------------ 
-    
+    #-------------------------------------------------------------------------
+
     def _shutdown_restart(self, param=''):
         """
-        Calls ``shutdown()`` method and stop the main reactor, then restart the program. 
+        Calls ``shutdown()`` method and stop the main reactor, then restart the program.
         """
         lg.out(2, "shutdowner.shutdown_restart param=%s" % param)
+
         def do_restart(param):
             from lib import misc
             from system import bpio
@@ -242,22 +246,23 @@ class Shutdowner(automat.Automat):
             if bpio.Windows():
                 detach = True
             misc.DoRestart(param, detach=detach)
+
         def shutdown_finished(x, param):
             lg.out(2, "shutdowner.shutdown_finished want to stop the reactor")
-            reactor.addSystemEventTrigger('after','shutdown', do_restart, param)
+            reactor.addSystemEventTrigger(
+                'after', 'shutdown', do_restart, param)
             reactor.stop()
         d = shutdown('restart')
         d.addBoth(shutdown_finished, param)
-    
+
     def _shutdown_exit(self, x=None):
         """
-        Calls ``shutdown()`` method and stop the main reactor, this will finish the program. 
+        Calls ``shutdown()`` method and stop the main reactor, this will finish the program.
         """
         lg.out(2, "shutdowner.shutdown_exit")
+
         def shutdown_reactor_stop(x=None):
             lg.out(2, "shutdowner.shutdown_reactor_stop want to stop the reactor")
             reactor.stop()
         d = shutdown(x)
         d.addBoth(shutdown_reactor_stop)
-
-        

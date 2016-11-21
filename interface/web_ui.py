@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -35,7 +35,7 @@ import pprint
 import random
 import webbrowser
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
@@ -48,14 +48,14 @@ from twisted.web import resource
 from twisted.web import static
 from twisted.python import threadpool
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(
         0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -74,6 +74,7 @@ _UpdateFlag = None
 
 #------------------------------------------------------------------------------
 
+
 def init():
     global _WSGIListener
     global _WSGIPort
@@ -84,7 +85,7 @@ def init():
         lg.out(4, '    SKIP listener already exist')
         result.callback(0)
         return result
-    
+
     try:
         import django
         ver = django.get_version()
@@ -106,21 +107,21 @@ def init():
     from django.conf import settings as django_settings
     from django.core import management
     from django.contrib.auth.management.commands import changepassword
-    
+
     lg.out(4, '    configuring WSGI bridge from Twisted to Django')
     wsgi_handler = get_wsgi_application()
-    my_wsgi_handler = MyFakedWSGIHandler(wsgi_handler) 
+    my_wsgi_handler = MyFakedWSGIHandler(wsgi_handler)
     pool = threadpool.ThreadPool()
     pool.start()
     reactor.addSystemEventTrigger('after', 'shutdown', pool.stop)
     resource = wsgi.WSGIResource(reactor, pool, my_wsgi_handler)
     root = DjangoRootResource(resource)
-    root_static_dir = os.path.join(bpio.getExecutableDir(), "web")  
+    root_static_dir = os.path.join(bpio.getExecutableDir(), "web")
     for sub in os.listdir(root_static_dir):
         static_path = os.path.join(root_static_dir, sub, 'static')
         if not os.path.isdir(static_path):
             continue
-        node = static.File(static_path) 
+        node = static.File(static_path)
         root.putChild(sub, node)
         lg.out(4, '        added static dir: %s->%s' % (sub, static_path))
         if sub == 'asite':
@@ -140,13 +141,13 @@ def init():
         verbosity = 2
     if lg.is_debug(8):
         verbosity = 1
-        
+
     # lg.out(4, '    running django "flush" command')
     # management.call_command('flush', interactive=False, verbosity=verbosity)
 
     # lg.out(4, '    running django "createsuperuser" command')
     # management.call_command('createsuperuser',
-    #     interactive=False, verbosity=verbosity, 
+    #     interactive=False, verbosity=verbosity,
     #     username="admin", email="admin@localhost")
     # command = changepassword.Command()
     # command._get_pass = lambda *args: 'admin'
@@ -154,13 +155,14 @@ def init():
 
     lg.out(4, '    running django "syncdb" command')
     management.call_command('syncdb', stdout=sys.stdout,
-        interactive=False, verbosity=verbosity)
+                            interactive=False, verbosity=verbosity)
 
     lg.out(4, '    starting listener: %s' % site)
     result = start_listener(site)
     result.addCallback(lambda portnum: post_init(portnum))
 
     return result
+
 
 def post_init(portnum):
     lg.out(4, 'control.post_init')
@@ -174,7 +176,7 @@ def post_init(portnum):
 #    contactsdb.SetSuppliersChangedCallback(sqlio.update_suppliers)
 #    contactsdb.SetCustomersChangedCallback(sqlio.update_customers)
     return portnum
-    
+
 
 def shutdown():
     global _WSGIListener
@@ -196,24 +198,30 @@ def shutdown():
     _WSGIPort = None
     return result
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def start_listener(site):
     lg.out(4, 'control.start_listener %s' % site)
-    
+
     def _try(site, result, counter):
         global _WSGIListener
         global _WSGIPort
         if counter > 10:
             _WSGIPort = random.randint(8001, 8999)
-        lg.out(4, '                _try port=%d counter=%d' % (_WSGIPort, counter))
+        lg.out(
+            4, '                _try port=%d counter=%d' %
+            (_WSGIPort, counter))
         try:
             _WSGIListener = reactor.listenTCP(_WSGIPort, site)
         except:
-            lg.out(4, '                _try it seems port %d is busy' % _WSGIPort)
+            lg.out(
+                4,
+                '                _try it seems port %d is busy' %
+                _WSGIPort)
             _WSGIListener = None
         if _WSGIListener is None:
-            reactor.callLater(0.5, _try, site, result, counter+1)
+            reactor.callLater(0.5, _try, site, result, counter + 1)
             return
         bpio.WriteFile(settings.LocalWSGIPortFilename(), str(_WSGIPort))
         lg.out(4, '                _try STARTED on port %d' % _WSGIPort)
@@ -224,7 +232,8 @@ def start_listener(site):
     _try(site, result, 0)
     return result
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def show():
     global _WSGIPort
@@ -237,35 +246,44 @@ def show():
         # webbrowser.open('http://localhost:8080')
     else:
         try:
-            local_port = int(bpio.ReadBinaryFile(settings.LocalWSGIPortFilename()))
+            local_port = int(
+                bpio.ReadBinaryFile(
+                    settings.LocalWSGIPortFilename()))
         except:
             local_port = None
         if not local_port:
-            lg.out(4, 'control.show SKIP, LocalWebPort is None, %s is empty' % settings.LocalWSGIPortFilename())
+            lg.out(
+                4, 'control.show SKIP, LocalWebPort is None, %s is empty' %
+                settings.LocalWSGIPortFilename())
         else:
             lg.out(4, 'control.show on port %d' % local_port)
             webbrowser.open('http://localhost:%d' % local_port)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def stop_updating():
     global _UpdateFlag
     _UpdateFlag = None
+
 
 def request_update():
     lg.out(2, 'request_update')
     global _UpdateFlag
     _UpdateFlag = True
 
+
 def set_updated():
     global _UpdateFlag
     _UpdateFlag = False
-    
+
+
 def get_update_flag():
     global _UpdateFlag
     return _UpdateFlag
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def on_suppliers_changed(current_suppliers):
     pass
@@ -283,12 +301,12 @@ def on_tray_icon_command(cmd):
 
     elif cmd == 'restart':
         # SendCommandToGUI('exit')
-        appList = bpio.find_process(['bpgui.',])
+        appList = bpio.find_process(['bpgui.', ])
         if len(appList) > 0:
-            shutdowner.A('stop', 'restartnshow') # ('restart', 'show'))
+            shutdowner.A('stop', 'restartnshow')  # ('restart', 'show'))
         else:
-            shutdowner.A('stop', 'restart') # ('restart', ''))
-        
+            shutdowner.A('stop', 'restart')  # ('restart', ''))
+
     elif cmd == 'reconnect':
         if driver.is_started('service_network'):
             network_connector.A('reconnect')
@@ -299,23 +317,25 @@ def on_tray_icon_command(cmd):
     elif cmd == 'hide':
         pass
         # SendCommandToGUI('exit')
-        
+
     elif cmd == 'toolbar':
         pass
         # SendCommandToGUI('toolbar')
 
     else:
-        lg.warn('wrong command: ' + str(cmd))    
+        lg.warn('wrong command: ' + str(cmd))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class MyFakedWSGIHandler:
+
     def __init__(self, original_handler):
         self.orig_handler = original_handler
-        
+
     def __call__(self, environ, start_response):
         # print 'MyFakedWSGIHandler', environ['PATH_INFO']
-        return self.orig_handler(environ, start_response)   
+        return self.orig_handler(environ, start_response)
 
 
 class DjangoRootResource(resource.Resource):
@@ -332,6 +352,7 @@ class DjangoRootResource(resource.Resource):
 
 
 class DebugMixin(object):
+
     def get_context_data(self, **kwargs):
         if 'debug' not in kwargs:
             try:
@@ -340,8 +361,8 @@ class DebugMixin(object):
             except:
                 lg.exc()
         return kwargs
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     bpio.init()

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#xmlrpc_client.py
+# xmlrpc_client.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,14 +34,16 @@ from twisted.web import xmlrpc
 
 from main import settings
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def output(result):
     print result
     reactor.stop()
 
-proxy = xmlrpc.Proxy('http://localhost:%d' % settings.DefaultXMLRPCPort(), allowNone=True)
+proxy = xmlrpc.Proxy(
+    'http://localhost:%d' %
+    settings.DefaultXMLRPCPort(),
+    allowNone=True)
 proxy.callRemote('backups_list').addBoth(output)
 reactor.run()
-
-

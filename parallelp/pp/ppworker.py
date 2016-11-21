@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#ppworker.py
+# ppworker.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -61,7 +61,7 @@ try:
     msvcrt.setmode(1, os.O_BINARY)
     msvcrt.setmode(2, os.O_BINARY)
 except:
-    pass        
+    pass
 
 copyright = "Copyright (c) 2005-2009 Vitalii Vanovschi. All rights reserved"
 version = "1.5.7"
@@ -97,14 +97,15 @@ class _WorkerProcess(object):
         origsout = sys.stdout
         sys.stdout = self.sout
         sys.stderr = self.sout
-        self.t = pptransport.CPipeTransport(sys.stdin, origsout) # sys.__stdout__)
+        self.t = pptransport.CPipeTransport(
+            sys.stdin, origsout)  # sys.__stdout__)
         self.t.send(str(os.getpid()))
         self.pickle_proto = int(self.t.receive())
 
     def run(self):
         try:
-            #execution cycle
-            while 1:
+            # execution cycle
+            while True:
 
                 __fname, __fobjs = self.t.creceive(preprocess)
 
@@ -130,7 +131,7 @@ class _WorkerProcess(object):
                     __result = None
 
                 __sresult = pickle.dumps((__result, self.sout.getvalue()),
-                        self.pickle_proto)
+                                         self.pickle_proto)
                 self.t.send(__sresult)
                 self.sout.truncate(0)
         except:
@@ -138,13 +139,13 @@ class _WorkerProcess(object):
             sys.excepthook(*sys.exc_info())
             __result = None
             __sresult = pickle.dumps((__result, self.sout.getvalue()),
-                    self.pickle_proto)
+                                     self.pickle_proto)
             self.t.send(__sresult)
 
 
 if __name__ == "__main__":
-        sys.path.append(os.path.dirname(__file__))
-        wp = _WorkerProcess()
-        wp.run()
+    sys.path.append(os.path.dirname(__file__))
+    wp = _WorkerProcess()
+    wp.run()
 
 # Parallel Python Software: http://www.parallelpython.com

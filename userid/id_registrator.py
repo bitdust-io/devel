@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#id_registrator.py
+# id_registrator.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -50,7 +50,7 @@ import random
 
 from twisted.internet.defer import DeferredList
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 try:
     from logs import lg
@@ -78,11 +78,12 @@ from userid import my_id
 import identity
 import known_servers
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _IdRegistrator = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -107,7 +108,7 @@ class IdRegistrator(automat.Automat):
         'timer-30sec': (30.0, ['NAME_FREE?']),
         'timer-5sec': (5.0, ['REQUEST_ID']),
         'timer-15sec': (15.0, ['REQUEST_ID']),
-        }
+    }
 
     MESSAGES = {
         'MSG_0': ['ping identity servers...'],
@@ -116,23 +117,24 @@ class IdRegistrator(automat.Automat):
         'MSG_3': ['detecting external IP...'],
         'MSG_4': ['registering on ID servers...'],
         'MSG_5': ['verifying my identity'],
-        'MSG_6': ['new user %(login)s registered successfully!', 'green'], 
+        'MSG_6': ['new user %(login)s registered successfully!', 'green'],
         'MSG_7': ['ID servers not responding', 'red'],
         'MSG_8': ['name %(login)s already taken', 'red'],
         'MSG_9': ['network connection error', 'red'],
-        'MSG_10':['connection error while sending my identity', 'red'],
-        'MSG_11':['identity verification failed', 'red'],
-        'MSG_12':['time out requesting from identity server', 'red'],
-        'MSG_13':['time out sending to identity server', 'red'],
-        'MSG_14':['generating your Private Key'],
-        }
+        'MSG_10': ['connection error while sending my identity', 'red'],
+        'MSG_11': ['identity verification failed', 'red'],
+        'MSG_12': ['time out requesting from identity server', 'red'],
+        'MSG_13': ['time out sending to identity server', 'red'],
+        'MSG_14': ['generating your Private Key'],
+    }
 
-    def msg(self, msgid, arg=None): 
+    def msg(self, msgid, arg=None):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0] % {
             'login': bpio.ReadTextFile(settings.UserNameFilename()),
-            'externalip': misc.readExternalIP(), # bpio.ReadTextFile(settings.ExternalIPFilename()),
-            'localip': bpio.ReadTextFile(settings.LocalIPFilename()),}
+            # bpio.ReadTextFile(settings.ExternalIPFilename()),
+            'externalip': misc.readExternalIP(),
+            'localip': bpio.ReadTextFile(settings.LocalIPFilename()), }
         color = 'black'
         if len(msg) == 2:
             color = msg[1]
@@ -159,7 +161,7 @@ class IdRegistrator(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'ID_SERVERS?'
                 self.doSaveMyName(arg)
                 self.doSelectRandomServers(arg)
@@ -173,70 +175,72 @@ class IdRegistrator(automat.Automat):
             pass
         #---ID_SERVERS?---
         elif self.state == 'ID_SERVERS?':
-            if ( event == 'id-server-response' or event == 'id-server-failed' ) and self.isAllTested(arg) and self.isSomeAlive(arg) :
+            if (event == 'id-server-response' or event ==
+                    'id-server-failed') and self.isAllTested(arg) and self.isSomeAlive(arg):
                 self.state = 'NAME_FREE?'
                 self.doRequestServers(arg)
                 self.doPrint(self.msg('MSG_1', arg))
-            elif ( event == 'id-server-response' or event == 'id-server-failed' ) and self.isAllTested(arg) and not self.isSomeAlive(arg) :
+            elif (event == 'id-server-response' or event == 'id-server-failed') and self.isAllTested(arg) and not self.isSomeAlive(arg):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_7', arg))
                 self.doDestroyMe(arg)
         #---NAME_FREE?---
         elif self.state == 'NAME_FREE?':
-            if event == 'id-not-exist' and self.isAllResponded(arg) and self.isFreeIDURLs(arg) :
+            if event == 'id-not-exist' and self.isAllResponded(
+                    arg) and self.isFreeIDURLs(arg):
                 self.state = 'LOCAL_IP'
                 self.doDetectLocalIP(arg)
                 self.doPrint(self.msg('MSG_2', arg))
-            elif event == 'timer-30sec' or ( event == 'id-exist' and self.isAllResponded(arg) and not self.isFreeIDURLs(arg) ) :
+            elif event == 'timer-30sec' or (event == 'id-exist' and self.isAllResponded(arg) and not self.isFreeIDURLs(arg)):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_8', arg))
                 self.doDestroyMe(arg)
         #---LOCAL_IP---
         elif self.state == 'LOCAL_IP':
-            if event == 'local-ip-detected' :
+            if event == 'local-ip-detected':
                 self.state = 'EXTERNAL_IP'
                 self.doStunExternalIP(arg)
                 self.doPrint(self.msg('MSG_3', arg))
         #---EXTERNAL_IP---
         elif self.state == 'EXTERNAL_IP':
-            if event == 'stun-success' :
+            if event == 'stun-success':
                 self.state = 'SEND_ID'
                 self.doPrint(self.msg('MSG_14', arg))
                 self.doCreateMyIdentity(arg)
                 self.doPrint(self.msg('MSG_4', arg))
                 self.doSendMyIdentity(arg)
-            elif event == 'stun-failed' :
+            elif event == 'stun-failed':
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_9', arg))
                 self.doDestroyMe(arg)
         #---SEND_ID---
         elif self.state == 'SEND_ID':
-            if event == 'my-id-sent' :
+            if event == 'my-id-sent':
                 self.state = 'REQUEST_ID'
                 self.doRequestMyIdentity(arg)
                 self.doPrint(self.msg('MSG_5', arg))
-            elif event == 'my-id-failed' :
+            elif event == 'my-id-failed':
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_10', arg))
                 self.doDestroyMe(arg)
-            elif event == 'timer-2min' :
+            elif event == 'timer-2min':
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_13', arg))
                 self.doDestroyMe(arg)
         #---REQUEST_ID---
         elif self.state == 'REQUEST_ID':
-            if event == 'my-id-exist' and self.isMyIdentityValid(arg) :
+            if event == 'my-id-exist' and self.isMyIdentityValid(arg):
                 self.state = 'DONE'
                 self.doSaveMyIdentity(arg)
                 self.doDestroyMe(arg)
                 self.doPrint(self.msg('MSG_6', arg))
-            elif event == 'timer-5sec' :
+            elif event == 'timer-5sec':
                 self.doRequestMyIdentity(arg)
-            elif event == 'my-id-exist' and not self.isMyIdentityValid(arg) :
+            elif event == 'my-id-exist' and not self.isMyIdentityValid(arg):
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_11', arg))
                 self.doDestroyMe(arg)
-            elif event == 'timer-15sec' :
+            elif event == 'timer-15sec':
                 self.state = 'FAILED'
                 self.doPrint(self.msg('MSG_12', arg))
                 self.doDestroyMe(arg)
@@ -255,24 +259,23 @@ class IdRegistrator(automat.Automat):
             return False
         equal = self.new_identity.serialize() == id_from_server.serialize()
         # if not equal:
-            # print 'not equal'
-            # print self.new_identity.serialize()
-            # print id_from_server.serialize()
+        # print 'not equal'
+        # print self.new_identity.serialize()
+        # print id_from_server.serialize()
         return equal
-    
+
     def isSomeAlive(self, arg):
         """
         Condition method.
         """
         return len(self.good_servers) > 0
-        
 
     def isAllResponded(self, arg):
         """
         Condition method.
         """
         return len(self.registrations) == 0
-        
+
     def isAllTested(self, arg):
         """
         Condition method.
@@ -297,13 +300,16 @@ class IdRegistrator(automat.Automat):
             s.difference_update(self.discovered_servers)
             if len(s) > 0:
                 self.discovered_servers.append(random.choice(list(s)))
-        lg.out(4, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))        
+        lg.out(4, 'id_registrator.doSelectRandomServers %s' %
+               str(self.discovered_servers))
 
     def doPingServers(self, arg):
         """
         Action method.
         """
-        lg.out(4, 'id_registrator.doPingServers    %d in list' % len(self.discovered_servers))
+        lg.out(4, 'id_registrator.doPingServers    %d in list' %
+               len(self.discovered_servers))
+
         def _cb(htmlsrc, id_server_host):
             lg.out(4, '            RESPONDED: %s' % id_server_host)
             if self.preferred_server and id_server_host == self.preferred_server:
@@ -312,13 +318,14 @@ class IdRegistrator(automat.Automat):
                 self.good_servers.append(id_server_host)
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-response', (id_server_host, htmlsrc))
+
         def _eb(err, id_server_host):
             lg.out(4, '               FAILED: %s' % id_server_host)
             self.discovered_servers.remove(id_server_host)
-            self.automat('id-server-failed', (id_server_host, err))            
+            self.automat('id-server-failed', (id_server_host, err))
         for host in self.discovered_servers:
-            webport, tcpport = known_servers.by_host().get(host, 
-                (settings.IdentityWebPort(), settings.IdentityServerPort()))
+            webport, tcpport = known_servers.by_host().get(
+                host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', host, webport, '')
@@ -331,10 +338,12 @@ class IdRegistrator(automat.Automat):
         Action method.
         """
         login = bpio.ReadTextFile(settings.UserNameFilename())
+
         def _cb(xmlsrc, idurl, host):
             lg.out(4, '                EXIST: %s' % idurl)
             self.registrations.remove(idurl)
             self.automat('id-exist', idurl)
+
         def _eb(err, idurl, host):
             lg.out(4, '            NOT EXIST: %s' % idurl)
             if self.preferred_server and self.preferred_server == host:
@@ -342,19 +351,22 @@ class IdRegistrator(automat.Automat):
             else:
                 self.free_idurls.append(idurl)
             self.registrations.remove(idurl)
-            self.automat('id-not-exist', idurl)        
+            self.automat('id-not-exist', idurl)
         for host in self.good_servers:
             webport, tcpport = known_servers.by_host().get(
                 host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
             if webport == 80:
                 webport = ''
-            idurl = nameurl.UrlMake('http', host, webport, login+'.xml')
+            idurl = nameurl.UrlMake('http', host, webport, login + '.xml')
             lg.out(4, '    %s' % idurl)
             d = net_misc.getPageTwisted(idurl, timeout=10)
             d.addCallback(_cb, idurl, host)
             d.addErrback(_eb, idurl, host)
             self.registrations.append(idurl)
-        lg.out(4, 'id_registrator.doRequestServers login=%s registrations=%d' % (login, len(self.registrations)))
+        lg.out(
+            4, 'id_registrator.doRequestServers login=%s registrations=%d' %
+            (login, len(
+                self.registrations)))
 
     def doDetectLocalIP(self, arg):
         """
@@ -363,19 +375,20 @@ class IdRegistrator(automat.Automat):
         localip = net_misc.getLocalIp()
         bpio.WriteFile(settings.LocalIPFilename(), localip)
         lg.out(4, 'id_registrator.doDetectLocalIP [%s]' % localip)
-        self.automat('local-ip-detected')        
+        self.automat('local-ip-detected')
 
     def doStunExternalIP(self, arg):
         """
         Action method.
         """
         lg.out(4, 'id_registrator.doStunExternalIP')
+
         def save(ip):
             lg.out(4, '            external IP is %s' % ip)
             bpio.WriteFile(settings.ExternalIPFilename(), ip)
             self.automat('stun-success', ip)
         stun_rfc_3489.stunExternalIP(
-            close_listener=True,  # False, 
+            close_listener=True,  # False,
             internal_port=settings.getUDPPort(),).addCallbacks(
                 save, lambda x: self.automat('stun-failed'))
 
@@ -410,9 +423,11 @@ class IdRegistrator(automat.Automat):
         if my_id.isLocalIdentityReady():
             mycurrentidentity = my_id.getLocalIdentity()
         my_id.setLocalIdentity(self.new_identity)
+
         def _cb(x):
             my_id.setLocalIdentity(mycurrentidentity)
             self.automat('my-id-sent')
+
         def _eb(x):
             my_id.setLocalIdentity(mycurrentidentity)
             self.automat('my-id-failed')
@@ -425,8 +440,10 @@ class IdRegistrator(automat.Automat):
         Action method.
         """
         lg.out(8, 'id_registrator.doRequestMyIdentity')
+
         def _cb(src):
             self.automat('my-id-exist', src)
+
         def _eb(err):
             self.automat('my-id-not-exist', err)
         for idurl in self.new_identity.sources:
@@ -442,7 +459,7 @@ class IdRegistrator(automat.Automat):
         lg.out(4, 'id_registrator.doSaveMyIdentity %s' % self.new_identity)
         my_id.setLocalIdentity(self.new_identity)
         my_id.saveLocalIdentity()
-        
+
     def doDestroyMe(self, arg):
         """
         Action method.
@@ -450,7 +467,7 @@ class IdRegistrator(automat.Automat):
         self.destroy()
         global _IdRegistrator
         _IdRegistrator = None
-    
+
     def doPrint(self, arg):
         """
         Action method.
@@ -464,31 +481,35 @@ class IdRegistrator(automat.Automat):
         Reads some extra info from config files.
         """
         login = bpio.ReadTextFile(settings.UserNameFilename())
-        externalIP = misc.readExternalIP() # bpio.ReadTextFile(settings.ExternalIPFilename())
+        # bpio.ReadTextFile(settings.ExternalIPFilename())
+        externalIP = misc.readExternalIP()
 
-        lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
+        lg.out(
+            4, 'id_registrator._create_new_identity %s %s ' %
+            (login, externalIP))
 
         key.InitMyKey()
-        
+
         lg.out(4, '    my key is ready')
 
         ident = my_id.buildDefaultIdentity(
             name=login, ip=externalIP, idurls=self.free_idurls)
         # localIP = bpio.ReadTextFile(settings.LocalIPFilename())
         my_identity_xmlsrc = ident.serialize()
-        newfilename = settings.LocalIdentityFilename()+'.new'
+        newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteFile(newfilename, my_identity_xmlsrc)
         self.new_identity = ident
-        lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
- 
+        lg.out(4, '    wrote %d bytes to %s' %
+               (len(my_identity_xmlsrc), newfilename))
+
     def _send_new_identity(self):
         """
-        Send created identity to the identity server to register it. 
+        Send created identity to the identity server to register it.
         TODO: need to close transport and gateway after that
         """
         lg.out(4, 'id_registrator._send_new_identity ')
         from transport import gateway
-        from transport import network_transport 
+        from transport import network_transport
         from transport.tcp import tcp_interface
         gateway.init()
         interface = tcp_interface.GateInterface()
@@ -496,7 +517,7 @@ class IdRegistrator(automat.Automat):
         transport.automat('init', gateway.listener())
         transport.automat('start')
         gateway.start()
-        sendfilename = settings.LocalIdentityFilename()+'.new'
+        sendfilename = settings.LocalIdentityFilename() + '.new'
         dlist = []
         for idurl in self.new_identity.sources:
             self.free_idurls.remove(idurl)
@@ -509,7 +530,8 @@ class IdRegistrator(automat.Automat):
         assert len(self.free_idurls) == 0
         return DeferredList(dlist)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def main():
     bpio.init()
@@ -525,4 +547,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

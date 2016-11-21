@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#log.py
+# log.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -35,7 +35,7 @@ import time
 import threading
 import traceback
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _GlobalDebugLevel = 0
 _LogLinesCounter = 0
@@ -55,18 +55,19 @@ _TimeTotalDict = {}
 _TimeDeltaDict = {}
 _TimeCountsDict = {}
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def out(_DebugLevel, msg, nl='\n'):
     """
     The core method, most useful thing in any project :-)))
-    Print a text line to the log file or console.  
-    
-    :param _DebugLevel: lower values is count as more important messages. 
-                        Usually I am using only even values from 0 to 18. 
+    Print a text line to the log file or console.
+
+    :param _DebugLevel: lower values is count as more important messages.
+                        Usually I am using only even values from 0 to 18.
     :param msg: message string to be printed
-    :param nl: this string is added at the end, 
-               set to empty string to avoid new line.     
+    :param nl: this string is added at the end,
+               set to empty string to avoid new line.
     """
     global _WebStreamFunc
     global _LogFile
@@ -117,7 +118,7 @@ def out(_DebugLevel, msg, nl='\n'):
                     sys.stdout.write(format_exception() + '\n\n' + s)
                 except:
                     pass
-                
+
     if _WebStreamFunc is not None:
         _WebStreamFunc(level, s_ + nl)
     _LogLinesCounter += 1
@@ -127,14 +128,14 @@ def out(_DebugLevel, msg, nl='\n'):
 
 def warn(message, level=2):
     cod = sys._getframe().f_back.f_code
-    modul = os.path.basename(cod.co_filename).replace('.py', '') 
+    modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
     out(level, '%s.%s WARNING %s' % (modul, caller, message))
 
 
 def err(message, level=0):
     cod = sys._getframe().f_back.f_code
-    modul = os.path.basename(cod.co_filename).replace('.py', '') 
+    modul = os.path.basename(cod.co_filename).replace('.py', '')
     caller = cod.co_name
     if not message.count('ERROR'):
         message = 'ERROR ' + message
@@ -183,7 +184,8 @@ def exception(level, maxTBlevel, exc_info):
         s += l + '\n'
     if _StoreExceptionsEnabled:
         import tempfile
-        fd, filename = tempfile.mkstemp('log', 'exception_', os.path.dirname(_LogFileName))
+        fd, filename = tempfile.mkstemp(
+            'log', 'exception_', os.path.dirname(_LogFileName))
         os.write(fd, s)
         os.close(fd)
         out(level, 'saved to: %s' % filename)
@@ -198,7 +200,7 @@ def exception(level, maxTBlevel, exc_info):
 
 def format_exception(maxTBlevel=100, exc_info=None):
     """
-    Return string with detailed info about last exception.  
+    Return string with detailed info about last exception.
     """
     if exc_info is None:
         _, value, trbk = sys.exc_info()
@@ -211,7 +213,7 @@ def format_exception(maxTBlevel=100, exc_info=None):
     excTb = traceback.format_tb(trbk, maxTBlevel)
     tbstring = 'Exception: <' + exception_name(value) + '>\n'
     if excArgs:
-        tbstring += '  args:' + excArgs + '\n' 
+        tbstring += '  args:' + excArgs + '\n'
     for s in excTb:
         tbstring += s + '\n'
     return tbstring
@@ -219,7 +221,7 @@ def format_exception(maxTBlevel=100, exc_info=None):
 
 def exception_name(value):
     """
-    Some tricks to extract the correct exception name from traceback string. 
+    Some tricks to extract the correct exception name from traceback string.
     """
     try:
         excStr = unicode(value)
@@ -239,7 +241,7 @@ def exception_name(value):
 
 def set_debug_level(level):
     """
-    Code will use ``level`` 2-4 for most important things and 10 for really minor stuff. 
+    Code will use ``level`` 2-4 for most important things and 10 for really minor stuff.
     Level 14 and higher is for things we don't think we want to see again.
     Can set ``level`` to 0 for no debug messages at all.
     """
@@ -255,8 +257,8 @@ def get_debug_level():
     """
     global _GlobalDebugLevel
     return _GlobalDebugLevel
-    
-    
+
+
 def get_loging_level():
     """
     """
@@ -271,8 +273,8 @@ def life_begins():
     """
     global _LifeBeginsTime
     _LifeBeginsTime = time.time()
-    
-    
+
+
 def when_life_begins():
     global _LifeBeginsTime
     return _LifeBeginsTime
@@ -288,13 +290,12 @@ def is_debug(level):
 
 def out_globals(level, glob_dict):
     """
-    Print all items from dictionary ``glob_dict`` to the logs if current _GlobalDebugLevel is higher than ``level``. 
+    Print all items from dictionary ``glob_dict`` to the logs if current _GlobalDebugLevel is higher than ``level``.
     """
     global _GlobalDebugLevel
     if level > _GlobalDebugLevel:
         return
-    keys = glob_dict.keys()
-    keys.sort()
+    keys = sorted(glob_dict.keys())
     for k in keys:
         if k != '__builtins__':
             out(level, "%s : %s" % (k, glob_dict[k]))
@@ -303,13 +304,13 @@ def out_globals(level, glob_dict):
 def time_push(t):
     """
     Remember current system time and set ``t`` marker to that.
-    Useful to count execution time of some parts of the code.  
+    Useful to count execution time of some parts of the code.
     """
     global _TimeTotalDict
     global _TimeDeltaDict
     global _TimeCountsDict
     tm = time.time()
-    if not _TimeTotalDict.has_key(t):
+    if t not in _TimeTotalDict:
         _TimeTotalDict[t] = 0.0
         _TimeCountsDict[t] = 0
     _TimeDeltaDict[t] = tm
@@ -323,7 +324,7 @@ def time_pop(t):
     global _TimeDeltaDict
     global _TimeCountsDict
     tm = time.time()
-    if not _TimeTotalDict.has_key(t):
+    if t not in _TimeTotalDict:
         return
     dt = tm - _TimeDeltaDict[t]
     _TimeTotalDict[t] += dt
@@ -340,7 +341,8 @@ def print_total_time():
     for t in _TimeTotalDict.keys():
         total = _TimeTotalDict[t]
         counts = _TimeCountsDict[t]
-        out(2, 'total=%f sec. count=%d, avarage=%f: %s' % (total, counts, total/counts, t))
+        out(2, 'total=%f sec. count=%d, avarage=%f: %s' %
+            (total, counts, total / counts, t))
 
 
 def exception_hook(typ, value, traceback):
@@ -433,11 +435,11 @@ def disable_logs():
     """
     Clear _LogsEnabled flag, so calls to ``log()`` and ``exc()`` will do nothing.
     Must be used in production release to increase performance.
-    However I plan to comment all lines with ``lg.log()`` at all.  
+    However I plan to comment all lines with ``lg.log()`` at all.
     """
     global _LogsEnabled
     _LogsEnabled = False
-    
+
 
 def logs_enabled():
     global _LogsEnabled
@@ -447,14 +449,14 @@ def logs_enabled():
 def setup_unbuffered_stdout():
     """
     This makes logs to be printed without delays in Linux - unbuffered output.
-    Great thanks, the idea is taken from here: 
+    Great thanks, the idea is taken from here:
         http://algorithmicallyrandom.blogspot.com/2009/10/python-tips-and-tricks-flushing-stdout.html
     """
     global _OriginalStdOut
     _OriginalStdOut = sys.stdout
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-    
-    
+
+
 def restore_original_stdout():
     """
     Restore original STDOUT, need to be called after ``setup_unbuffered_stdout`` to get back to default state.
@@ -475,22 +477,27 @@ def restore_original_stdout():
 def set_weblog_func(webstreamfunc):
     """
     Set callback method to be called in Dprint, used to show logs in the WEB browser.
-    See ``bitdust.lib.weblog`` module. 
+    See ``bitdust.lib.weblog`` module.
     """
     global _WebStreamFunc
     _WebStreamFunc = webstreamfunc
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class PATCHED_stdout:
     """
-    Emulate system STDOUT, useful to log any program output. 
+    Emulate system STDOUT, useful to log any program output.
     """
     softspace = 0
+
     def read(self): pass
+
     def write(self, s):
         out(0, unicode(s).rstrip())
+
     def flush(self): pass
+
     def close(self): pass
 
 
@@ -499,7 +506,11 @@ class STDOUT_black_hole:
     Useful to disable any output to STDOUT.
     """
     softspace = 0
+
     def read(self): pass
-    def write(self, s):  pass
+
+    def write(self, s): pass
+
     def flush(self): pass
+
     def close(self): pass

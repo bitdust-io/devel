@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#sqlio.py
+# sqlio.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,18 +34,18 @@ import sys
 
 import sqlite3
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from lib import nameurl
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _DBConnection = None
 _DBCursor = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Prefix = {'identity': 'identityapp_',
            'supplier': 'supplierapp_',
@@ -79,7 +79,7 @@ UPDATE %s SET idurl=?, src=? WHERE id=?;
 
 [create supplier]
 CREATE TABLE %s (
-id integer NOT NULL PRIMARY KEY, 
+id integer NOT NULL PRIMARY KEY,
 idurl text);
 
 [delete supplier]
@@ -93,7 +93,7 @@ UPDATE %s SET idurl=? WHERE id=?;
 
 [create customer]
 CREATE TABLE %s (
-id integer NOT NULL PRIMARY KEY, 
+id integer NOT NULL PRIMARY KEY,
 idurl text);
 
 [delete customer]
@@ -107,8 +107,8 @@ UPDATE %s SET idurl=? WHERE id=?;
 
 [create backupfsitem]
 CREATE TABLE %s (
-id integer NOT NULL PRIMARY KEY, 
-backupid text, 
+id integer NOT NULL PRIMARY KEY,
+backupid text,
 size integer,
 path text);
 
@@ -123,7 +123,7 @@ UPDATE %s SET size=? path=? WHERE backupid=?;
 
 [create friend]
 CREATE TABLE %s (
-id integer NOT NULL PRIMARY KEY, 
+id integer NOT NULL PRIMARY KEY,
 idurl text,
 name text);
 
@@ -138,7 +138,7 @@ UPDATE %s SET idurl=? name=? WHERE id=?;
 
 [create localfsitem]
 CREATE TABLE %s (
-id integer NOT NULL PRIMARY KEY, 
+id integer NOT NULL PRIMARY KEY,
 mask text,
 path text);
 
@@ -147,7 +147,7 @@ CREATE TABLE %s (
 id integer NOT NULL PRIMARY KEY,
 backupid text,
 blocknum integer,
-dataparity integer, 
+dataparity integer,
 suppliernum integer,
 value integer);
 
@@ -156,7 +156,7 @@ CREATE TABLE %s (
 id integer NOT NULL PRIMARY KEY,
 backupid text,
 blocknum integer,
-dataparity integer, 
+dataparity integer,
 suppliernum integer,
 value integer);
 
@@ -166,7 +166,7 @@ id integer NOT NULL PRIMARY KEY,
 path text,
 value text,
 type integer,
-label text, 
+label text,
 info text);
 
 [create automat]
@@ -191,7 +191,8 @@ idurl text,
 all integer,
 alive integer);"""
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def withprefix(table_name):
     global _Prefix
@@ -217,7 +218,8 @@ def dbcommit():
     db().commit()
     lg.out(8, '        OK')
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init(database_info):
     global _DBConnection
@@ -258,9 +260,9 @@ def init(database_info):
         dbcur().execute(_SQL['create friend'])
         lg.out(4, '    created table "friend"')
     dbcommit()
-    
 
-def shutdown():    
+
+def shutdown():
     global _DBCursor
     global _DBConnection
     lg.out(4, 'sqlio.shutdown')
@@ -269,12 +271,14 @@ def shutdown():
         _DBConnection.close()
     _DBCursor = None
     _DBConnection = None
-        
+
 #------------------------------------------------------------------------------
+
 
 def update_identities(ids, cache, updated_idurl):
     lg.out(6, 'sqlio.update_identities %d items' % len(cache))
-    l = map(lambda itm: (ids[itm[0]], itm[0], itm[1].serialize(),), cache.items())
+    l = map(lambda itm: (ids[itm[0]], itm[0],
+                         itm[1].serialize(),), cache.items())
     try:
         dbcur().execute(_SQL['delete identity'])
         dbcur().executemany(_SQL['insert identity'], l)
@@ -311,7 +315,10 @@ def update_customers(old_customers_list, customers_list):
 
 def update_friends(old_friends_list, friends_list):
     lg.out(6, 'sqlio.update_friends %d items' % len(friends_list))
-    l = map(lambda i: (i, friends_list[i][0], friends_list[i][1]), range(len(friends_list)))
+    l = map(
+        lambda i: (
+            i, friends_list[i][0], friends_list[i][1]), range(
+            len(friends_list)))
     try:
         dbcur().execute(_SQL['delete friend'])
         dbcur().executemany(_SQL['insert friend'], l)
@@ -332,4 +339,3 @@ def update_backup_fs(backup_fs_raw_list):
     # dbcur().executemany(_SQL['insert backupfsitem'], backup_fs_raw_list)
     # db().commit()
     # TODO: - need to repaint GUI here
-    

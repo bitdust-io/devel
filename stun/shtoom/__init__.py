@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import sys, os
+import sys
+import os
 
 __doc__ = """
 This code comes from Shtoom: http://divmod.org/projects/shtoom
@@ -12,4 +13,3 @@ if 1:
     _lib_path = os.path.split(os.path.dirname(__file__))[0]
     if _lib_path not in sys.path:
         sys.path.append(_lib_path)
-

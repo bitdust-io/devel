@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#views.py
+# views.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,32 +14,32 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 from django.views import generic
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from models import BackupFSItem
- 
+
 from lib import nameurl
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class BackupFSItemView(generic.DetailView):
     template_name = 'backupfsitem.html'
     model = BackupFSItem
 
+
 class BackupFSView(generic.ListView):
     template_name = 'backupfs.html'
     context_object_name = 'backup_fs_items_list'
-    
+
     def get_queryset(self):
         return BackupFSItem.objects.order_by('backupid')
 
-#------------------------------------------------------------------------------ 
-
-    
+#------------------------------------------------------------------------------

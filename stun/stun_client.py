@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#stun_client.py
+# stun_client.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -40,22 +40,27 @@ EVENTS:
     * :red:`timer-2sec`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 12
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import sys
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    sys.path.insert(
+        0, _p.abspath(
+            _p.join(
+                _p.dirname(
+                    _p.abspath(
+                        sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -69,11 +74,12 @@ from main import settings
 
 from dht import dht_service
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _StunClient = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -96,18 +102,18 @@ class StunClient(automat.Automat):
 
     timers = {
         'timer-2sec': (2.0, ['REQUEST']),
-        'timer-10sec': (10.0, ['PORT_NUM?','REQUEST']),
-        }
+        'timer-10sec': (10.0, ['PORT_NUM?', 'REQUEST']),
+    }
 
     MESSAGES = {
         'MSG_01': 'not found any DHT nodes',
         'MSG_02': 'not found any available stun servers',
         'MSG_03': 'timeout responding from stun servers',
-        }
+    }
 
     def msg(self, msgid, arg=None):
         return self.MESSAGES.get(msgid, '')
-    
+
     def init(self):
         self.listen_port = None
         self.callbacks = []
@@ -122,7 +128,7 @@ class StunClient(automat.Automat):
 
     def getMyExternalAddress(self):
         return self.my_address
-    
+
     def dropMyExternalAddress(self):
         self.my_address = None
 
@@ -151,7 +157,7 @@ class StunClient(automat.Automat):
                 self.doAddCallback(arg)
             elif event == 'datagram-received' and self.isMyIPPort(arg) and self.isNeedMoreResults(arg):
                 self.doRecordResult(arg)
-            elif ( event == 'timer-10sec' and self.isSomeServersResponded(arg) ) or ( event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg) ):
+            elif (event == 'timer-10sec' and self.isSomeServersResponded(arg)) or (event == 'datagram-received' and self.isMyIPPort(arg) and not self.isNeedMoreResults(arg)):
                 self.state = 'KNOW_MY_IP'
                 self.doRecordResult(arg)
                 self.doReportSuccess(arg)
@@ -237,7 +243,7 @@ class StunClient(automat.Automat):
         """
         Condition method.
         """
-        return len(self.stun_nodes) + len(arg) < self.minimum_needed_servers 
+        return len(self.stun_nodes) + len(arg) < self.minimum_needed_servers
 
     def doInit(self, arg):
         """
@@ -245,7 +251,10 @@ class StunClient(automat.Automat):
         """
         self.listen_port = arg
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doInit on port %d' % self.listen_port)
+            lg.out(
+                _DebugLevel,
+                'stun_client.doInit on port %d' %
+                self.listen_port)
         if udp.proto(self.listen_port):
             udp.proto(self.listen_port).add_callback(self._datagram_received)
         else:
@@ -272,17 +281,17 @@ class StunClient(automat.Automat):
         for node in nodes:
             if node not in self.stun_nodes:
                 self.stun_nodes.append(node)
-            
+
     def doRequestStunPortNumbers(self, arg):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel+10, 'stun_client.doRequestStunPortNumbers')
+            lg.out(_DebugLevel + 10, 'stun_client.doRequestStunPortNumbers')
         nodes = arg
         for node in nodes:
             if _Debug:
-                lg.out(_DebugLevel+10, '    %s' % node)
+                lg.out(_DebugLevel + 10, '    %s' % node)
             d = node.request('stun_port')
             d.addBoth(self._stun_port_received, node)
             self.deferreds[node] = d
@@ -292,21 +301,30 @@ class StunClient(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel+10, 'stun_client.doAddStunServer %s' % str(arg))
+            lg.out(
+                _DebugLevel +
+                10,
+                'stun_client.doAddStunServer %s' %
+                str(arg))
         self.stun_servers.append(arg)
-       
+
     def doStun(self, arg):
         """
         Action method.
         """
         if arg is not None:
             if _Debug:
-                lg.out(_DebugLevel+10, 'stun_client.doStun to one stun_server: %s' % str(arg))
+                lg.out(
+                    _DebugLevel +
+                    10,
+                    'stun_client.doStun to one stun_server: %s' %
+                    str(arg))
             udp.send_command(self.listen_port, udp.CMD_STUN, '', arg)
             return
         if _Debug:
-            lg.out(_DebugLevel+10, 'stun_client.doStun to %d stun_servers' % (
-                len(self.stun_servers))) # , self.stun_servers))
+            lg.out(_DebugLevel +
+                   10, 'stun_client.doStun to %d stun_servers' %
+                   (len(self.stun_servers)))  # , self.stun_servers))
         for address in self.stun_servers:
             if address is None:
                 continue
@@ -329,7 +347,7 @@ class StunClient(automat.Automat):
             lg.exc()
         self.stun_results[address] = (ip, port)
         # if len(self.stun_results) >= len(self.stun_servers):
-        #     self.automat('all-responded')        
+        #     self.automat('all-responded')
 
     def doClearResults(self, arg):
         """
@@ -344,13 +362,19 @@ class StunClient(automat.Automat):
         Action method.
         """
         try:
-            min_port = min(map(lambda addr: addr[1], self.stun_results.values()))
-            max_port = max(map(lambda addr: addr[1], self.stun_results.values()))
+            min_port = min(
+                map(lambda addr: addr[1], self.stun_results.values()))
+            max_port = max(
+                map(lambda addr: addr[1], self.stun_results.values()))
             my_ip = self.stun_results.values()[0][0]
             if min_port == max_port:
                 result = ('stun-success', 'non-symmetric', my_ip, min_port)
             else:
-                result = ('stun-success', 'symmetric', my_ip, self.stun_results)
+                result = (
+                    'stun-success',
+                    'symmetric',
+                    my_ip,
+                    self.stun_results)
             self.my_address = (my_ip, min_port)
         except:
             lg.exc()
@@ -358,12 +382,17 @@ class StunClient(automat.Automat):
             self.my_address = None
         if self.my_address:
             bpio.WriteFile(settings.ExternalIPFilename(), self.my_address[0])
-            bpio.WriteFile(settings.ExternalUDPPortFilename(), str(self.my_address[1]))
+            bpio.WriteFile(
+                settings.ExternalUDPPortFilename(), str(
+                    self.my_address[1]))
         if _Debug:
-            lg.out(_DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %s' % (
-                len(self.stun_results), str(self.my_address)))
+            lg.out(
+                _DebugLevel, 'stun_client.doReportSuccess based on %d nodes: %s' %
+                (len(
+                    self.stun_results), str(
+                    self.my_address)))
         if _Debug:
-            lg.out(_DebugLevel+10, '    %s' % str(result))
+            lg.out(_DebugLevel + 10, '    %s' % str(result))
         for cb in self.callbacks:
             cb(result[0], result[1], result[2], result[3])
         self.callbacks = []
@@ -389,7 +418,9 @@ class StunClient(automat.Automat):
             d.cancel()
         self.deferreds.clear()
         if udp.proto(self.listen_port):
-            udp.proto(self.listen_port).remove_callback(self._datagram_received)
+            udp.proto(
+                self.listen_port).remove_callback(
+                self._datagram_received)
         self.destroy()
 
     def _datagram_received(self, datagram, address):
@@ -397,10 +428,12 @@ class StunClient(automat.Automat):
         return False
 
     def _find_random_nodes(self, tries, result_list, prev_key=None):
-        if prev_key and self.deferreds.has_key(prev_key):
+        if prev_key and prev_key in self.deferreds:
             self.deferreds.pop(prev_key)
         if _Debug:
-            lg.out(_DebugLevel+10, 'stun_client._find_random_nodes tries=%d result_list=%d' % (tries, len(result_list)))
+            lg.out(
+                _DebugLevel + 10, 'stun_client._find_random_nodes tries=%d result_list=%d' %
+                (tries, len(result_list)))
         if tries <= 0 or len(result_list) >= self.minimum_needed_servers:
             if len(result_list) > 0:
                 self.automat('found-some-nodes', result_list)
@@ -409,32 +442,45 @@ class StunClient(automat.Automat):
             return
         new_key = dht_service.random_key()
         d = dht_service.find_node(new_key)
-        d.addCallback(lambda nodes: self._find_random_nodes(tries-1, list(set(result_list+nodes)), new_key))
-        d.addErrback(lambda x: self._find_random_nodes(tries-1, result_list, new_key))
+        d.addCallback(lambda nodes: self._find_random_nodes(
+            tries - 1, list(set(result_list + nodes)), new_key))
+        d.addErrback(
+            lambda x: self._find_random_nodes(
+                tries - 1,
+                result_list,
+                new_key))
         self.deferreds[new_key] = d
 
     def _find_random_node(self):
         if _Debug:
-            lg.out(_DebugLevel+10, 'stun_client._find_random_node')
+            lg.out(_DebugLevel + 10, 'stun_client._find_random_node')
         new_key = dht_service.random_key()
         d = dht_service.find_node(new_key)
         d.addCallback(self._some_nodes_found)
         d.addErrback(self._nodes_not_found)
         # self.deferreds[new_key] = d
-        
+
     def _some_nodes_found(self, nodes):
         if _Debug:
-            lg.out(_DebugLevel+10, 'stun_client._some_nodes_found : %d' % len(nodes))
+            lg.out(
+                _DebugLevel +
+                10,
+                'stun_client._some_nodes_found : %d' %
+                len(nodes))
         if len(nodes) > 0:
             self.automat('found-some-nodes', nodes)
         else:
             self.automat('dht-nodes-not-found')
-        
+
     def _nodes_not_found(self, err):
         if _Debug:
-            lg.out(_DebugLevel+10, 'stun_client._nodes_not_found err=%s' % str(err))
+            lg.out(
+                _DebugLevel +
+                10,
+                'stun_client._nodes_not_found err=%s' %
+                str(err))
         self.automat('dht-nodes-not-found')
-        
+
     def _stun_port_received(self, result, node):
         self.deferreds.pop(node)
         if not isinstance(result, dict):
@@ -444,12 +490,13 @@ class StunClient(automat.Automat):
             address = node.address
         except:
             if _Debug:
-                lg.out(_DebugLevel, 'stun_client._stun_port_received ERROR result=%s from node: %s' % (
-                    str(result), node))
+                lg.out(
+                    _DebugLevel, 'stun_client._stun_port_received ERROR result=%s from node: %s' %
+                    (str(result), node))
             return
         self.automat('port-number-received', (address, port))
-            
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
 
 
 def main():
@@ -465,6 +512,7 @@ def main():
     dht_service.init(dht_port)
     dht_service.connect()
     udp.listen(udp_port)
+
     def _cb(result, typ, ip, details):
         print result, typ, ip, details
         A('shutdown')
@@ -475,7 +523,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
-    
-    
-    

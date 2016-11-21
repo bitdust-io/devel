@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#broadcast_listener.py
+# broadcast_listener.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -39,16 +39,16 @@ EVENTS:
     * :red:`shutdown`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import json
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -59,11 +59,12 @@ from transport import callback
 from p2p import p2p_service
 from p2p import commands
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _BroadcastListener = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -74,12 +75,14 @@ def A(event=None, arg=None):
         return _BroadcastListener
     if _BroadcastListener is None:
         # set automat name and starting state here
-        _BroadcastListener = BroadcastListener('broadcast_listener', 'AT_STARTUP', _DebugLevel, _Debug)
+        _BroadcastListener = BroadcastListener(
+            'broadcast_listener', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _BroadcastListener.automat(event, arg)
     return _BroadcastListener
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class BroadcastListener(automat.Automat):
     """
@@ -154,8 +157,9 @@ class BroadcastListener(automat.Automat):
         scope = arg
         if not scope:
             scope = []
-        broadcasters_finder.A('start',
-            (self.automat, 'listen %s' % json.dumps(scope), []))
+        broadcasters_finder.A(
+            'start', (self.automat, 'listen %s' %
+                      json.dumps(scope), []))
 
     def doSetBroadcaster(self, arg):
         """
@@ -197,7 +201,7 @@ class BroadcastListener(automat.Automat):
         del _BroadcastListener
         _BroadcastListener = None
 
-    #-----------------------------------------------------------------------------
+    #-------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
@@ -213,11 +217,7 @@ class BroadcastListener(automat.Automat):
                 self.automat('incoming-message', (msg, newpacket))
                 return True
             else:
-                lg.warn('received broadcast message from another broadcaster? : %s != %s' % (
-                    newpacket.CreatorID, self.broadcaster_idurl))
+                lg.warn(
+                    'received broadcast message from another broadcaster? : %s != %s' %
+                    (newpacket.CreatorID, self.broadcaster_idurl))
         return False
-        
-        
-        
-        
-        

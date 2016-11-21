@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#misc.py
+# misc.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,8 +28,8 @@
 .. module:: misc
 
 A set of different methods across the code.
- 
-TODO: 
+
+TODO:
     Really need to do some refactoring here - too many things in one place.
 """
 
@@ -52,15 +52,20 @@ import cPickle
 
 from twisted.python.win32 import cmdLineQuote
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    sys.path.insert(
+        0, _p.abspath(
+            _p.join(
+                _p.dirname(
+                    _p.abspath(
+                        sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-from logs import lg 
+from logs import lg
 
 from userid import identity
 
@@ -71,7 +76,7 @@ from main import settings
 import net_misc
 import packetid
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _RemoveAfterSent = True
 
@@ -86,7 +91,8 @@ _RemoveAfterSent = True
 # more stable transports must be higher
 _AttenuationFactor = 2.0
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
 
 def init():
     """
@@ -95,7 +101,8 @@ def init():
     """
     lg.out(4, 'misc.init')
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def readLocalIP():
     """
@@ -103,21 +110,24 @@ def readLocalIP():
     """
     return bpio.ReadBinaryFile(settings.LocalIPFilename())
 
+
 def readExternalIP():
     """
     Read external IP stored in the file [BitDust data dir]/metadata/externalip.
     """
     return bpio.ReadBinaryFile(settings.ExternalIPFilename())
 
+
 def readSupplierData(idurl, filename):
     """
     Read a file from [BitDust data dir]/suppliers/[IDURL] folder.
-    The file names right now is ['connected', 'disconnected', 'listfiles']. 
+    The file names right now is ['connected', 'disconnected', 'listfiles'].
     """
     path = settings.SupplierPath(idurl, filename)
     if not os.path.isfile(path):
         return ''
     return bpio.ReadTextFile(path)
+
 
 def writeSupplierData(idurl, filename, data):
     """
@@ -129,13 +139,14 @@ def writeSupplierData(idurl, filename, data):
     path = settings.SupplierPath(idurl, filename)
     return bpio.WriteFile(path, data)
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
 
 def NewBackupID(time_st=None):
     """
     BackupID is just a string representing time and date.
     Symbol "F" is placed at the start to identify that this is a FULL backup.
-    We have a plans to provide INCREMENTAL backups also. 
+    We have a plans to provide INCREMENTAL backups also.
     """
     if time_st is None:
         time_st = time.localtime()
@@ -146,6 +157,7 @@ def NewBackupID(time_st=None):
     result = "F" + time.strftime("%Y%m%d%I%M%S", time_st) + ampm
     return result
 
+
 def TimeStructFromVersion(backupID):
     """
     """
@@ -155,14 +167,15 @@ def TimeStructFromVersion(backupID):
             st_time = list(time.strptime(backupID[1:-2], '%Y%m%d%I%M%S'))
         else:
             i = backupID.rfind('M')
-            ampm = backupID[i-1:i+1]
-            st_time = list(time.strptime(backupID[1:i-1], '%Y%m%d%I%M%S'))
+            ampm = backupID[i - 1:i + 1]
+            st_time = list(time.strptime(backupID[1:i - 1], '%Y%m%d%I%M%S'))
         if ampm == 'PM':
             st_time[3] += 12
         return st_time
     except:
         lg.exc()
         return None
+
 
 def TimeFromBackupID(backupID):
     """
@@ -172,6 +185,7 @@ def TimeFromBackupID(backupID):
         return time.mktime(TimeStructFromVersion(backupID))
     except:
         return None
+
 
 def modified_version(a):
     """
@@ -184,17 +198,18 @@ def modified_version(a):
             int_b = 0
         else:
             i = a.rfind('M')
-            int_a = int(a[1:i-1])
-            int_b = int(a[i+1:])
+            int_a = int(a[1:i - 1])
+            int_b = int(a[i + 1:])
     except:
         lg.exc()
-        return -1  
+        return -1
     hour = a[-8:-6]
     if a.endswith('PM') and hour != '12':
         int_a += 120000
     elif a.endswith('AM') and hour == '12':
         int_a -= 120000
     return int_a + int_b
+
 
 def version_compare(version1, version2):
     """
@@ -205,6 +220,7 @@ def version_compare(version1, version2):
     See ``lib.packetid`` module for more info.
     """
     return cmp(modified_version(version1), modified_version(version2))
+
 
 def backup_id_compare(backupID1, backupID2):
     """
@@ -221,12 +237,14 @@ def backup_id_compare(backupID1, backupID2):
         return cmp(pathID1, pathID2)
     return version_compare(version1, version2)
 
+
 def sorted_backup_ids(backupIds, reverse=False):
     """
     Sort a list of backupID's.
     """
     sorted_ids = sorted(backupIds, backup_id_compare, reverse=reverse)
     return sorted_ids
+
 
 def sorted_versions(versions, reverse=False):
     """
@@ -235,11 +253,12 @@ def sorted_versions(versions, reverse=False):
     sorted_versions_list = sorted(versions, version_compare, reverse=reverse)
     return sorted_versions_list
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-BASE_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!()+-#$^&_=@[]{}`~' 
+BASE_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!()+-#$^&_=@[]{}`~'
 BASE_LIST = BASE_ALPHABET
 BASE_DICT = dict((c, i) for i, c in enumerate(BASE_LIST))
+
 
 def base_decode(string, reverse_base=BASE_DICT):
     """
@@ -251,6 +270,7 @@ def base_decode(string, reverse_base=BASE_DICT):
 #    for i, c in enumerate(string[::-1]):
 #        ret += (length ** i) * reverse_base[c]
 #    return ret
+
 
 def base_encode(string, base=BASE_LIST):
     """
@@ -264,10 +284,11 @@ def base_encode(string, base=BASE_LIST):
 #        integer /= length
 #    return ret
 
+
 def FilePathToBackupID(filepath):
     """
     The idea was to hide the original file and folders names on suppliers machines but keep the directory structure.
-    Finally I came to index file wich is encrypted and all data is stored in the same directory tree, 
+    Finally I came to index file wich is encrypted and all data is stored in the same directory tree,
     but files and folders names are replaced with numbers.
     Not used at the moment.
     """
@@ -281,15 +302,15 @@ def FilePathToBackupID(filepath):
             continue
         if len(result) > 0:
             # skip first separator
-            # if this is Linux absolute path  
+            # if this is Linux absolute path
             result += '/'
         # switch from unicode if it was
-        part = str(part) # unicode(part).encode()
+        part = str(part)  # unicode(part).encode()
         # word = base64.b64encode(part).replace('+', '-').replace('/', '_')
         # word = base64.b64encode(hashlib.sha1(part+os.urandom(8)).digest()).replace('+', '-').replace('/', '_').replace('=', '')
         # word = hashlib.sha1(part+os.urandom(8)).hexdigest()
         print base64.b64encode(os.urandom(6))
-        word = hashlib.md5(part+os.urandom(4)).hexdigest()
+        word = hashlib.md5(part + os.urandom(4)).hexdigest()
         print len(word)
 #        # compress the string
 #        if compress:
@@ -302,8 +323,9 @@ def FilePathToBackupID(filepath):
 #                word += '%04d' % ord(c)
 #        word = word.strip()
         # print '[%s]' % word
-        result += word 
+        result += word
     return result
+
 
 def BackupIDToFilePath(backupID, decompress=False):
     """
@@ -316,7 +338,8 @@ def BackupIDToFilePath(backupID, decompress=False):
         if c == '/':
             if part != '':
                 # base64.b64encode(part).replace('+', '-').replace('/', '_')
-                result += base64.b64decode(part.replace('-', '+').replace('_', '/'))
+                result += base64.b64decode(part.replace('-',
+                                                        '+').replace('_', '/'))
 #                if decompress:
 #                    import zlib
 #                    # result += zlib.decompress(base_decode(part))
@@ -349,7 +372,8 @@ def BackupIDToFilePath(backupID, decompress=False):
     # we return string in unicode
     return unicode(result)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def DigitsOnly(input, includes=''):
     """
@@ -358,14 +382,16 @@ def DigitsOnly(input, includes=''):
     """
     return ''.join([c for c in input if c in '0123456789' + includes])
 
+
 def IsDigitsOnly(input):
     """
-    Return True if ``input`` string contains only digits. 
+    Return True if ``input`` string contains only digits.
     """
     for c in input:
         if c not in '0123456789':
             return False
     return True
+
 
 def ToInt(input, default=0):
     """
@@ -375,7 +401,8 @@ def ToInt(input, default=0):
         return int(input)
     except:
         return default
-    
+
+
 def ToFloat(input, default=0.0):
     """
     Convert a string to number using built-in float() method.
@@ -385,7 +412,8 @@ def ToFloat(input, default=0.0):
     except:
         return default
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def ValidUserName(username):
     """
@@ -402,6 +430,7 @@ def ValidUserName(username):
         return False
     return True
 
+
 def ValidNickName(username):
     """
     A method to validate account name entered by user.
@@ -415,12 +444,13 @@ def ValidNickName(username):
     #         return False
     return True
 
+
 def ValidEmail(email, full_check=True):
     """
     A method to validate typed email address.
     """
     regexp = '^[\w\-\.\@]*$'
-    if re.match(regexp,email) == None:
+    if re.match(regexp, email) is None:
         return False
     if email.startswith('.'):
         return False
@@ -438,31 +468,34 @@ def ValidEmail(email, full_check=True):
         return False
     if full_check:
         regexp2 = '^[\w\-\.]*\@[\w\-\.]*$'
-        if re.match(regexp2,email) == None:
+        if re.match(regexp2, email) is None:
             return False
     return True
+
 
 def ValidPhone(value):
     """
     A method to validate typed phone number.
     """
     regexp = '^[ \d\-\+]*$'
-    if re.match(regexp,value) == None:
+    if re.match(regexp, value) is None:
         return False
     if len(value) < 5:
         return False
     return True
+
 
 def ValidName(value):
     """
     A method to validate user name.
     """
     regexp = '^[\w\-]*$'
-    if re.match(regexp, value) == None:
+    if re.match(regexp, value) is None:
         return False
     if len(value) > 100:
         return False
     return True
+
 
 def MakeValidHTMLComment(text):
     """
@@ -470,13 +503,15 @@ def MakeValidHTMLComment(text):
     """
     ret = ''
     for c in text:
-        if c in set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+*/=_()[]{}:;,.?!@#$%|~ "):
+        if c in set(
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+*/=_()[]{}:;,.?!@#$%|~ "):
             ret += c
     return ret
 
+
 def ValidateBitCoinAddress(strAddr):
-    """ 
-    Does simple validation of a bitcoin address. 
+    """
+    Does simple validation of a bitcoin address.
         :param strAddr: an ASCII or unicode string, of a bitcoin public address.
         :return boolean: indicating that the address has a correct format.
     http://www.rugatu.com/questions/3255/anybody-has-python-code-to-verifyvalidate-bitcoin-address
@@ -485,23 +520,24 @@ def ValidateBitCoinAddress(strAddr):
     CHARS_OK_FIRST = "123"
     # alphanumeric characters without : l I O 0
     CHARS_OK = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-    # We do not check the high length limit of the adress. 
+    # We do not check the high length limit of the adress.
     if len(strAddr) < 27:
         return False
     if len(strAddr) > 35:
         return False
     if strAddr[0] not in CHARS_OK_FIRST:
         return False
-    # We use the function "all" by passing it an enumerator as parameter. 
-    # It does a little optimisation : 
+    # We use the function "all" by passing it an enumerator as parameter.
+    # It does a little optimisation :
     # if one of the character is not valid, the next ones are not tested.
-    return all( ( char in CHARS_OK for char in strAddr[1:] ) )
+    return all((char in CHARS_OK for char in strAddr[1:]))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def RoundupFile(filename, stepsize):
     """
-    For some things we need to have files which are round sizes, 
+    For some things we need to have files which are round sizes,
     for example some encryption needs files that are multiples of 8 bytes.
     This function rounds file up to the next multiple of step size.
     """
@@ -513,9 +549,10 @@ def RoundupFile(filename, stepsize):
     increase = 0
     if mod > 0:
         increase = stepsize - mod
-        fil = open(filename, 'a')         
+        fil = open(filename, 'a')
         fil.write(' ' * increase)
         fil.close()
+
 
 def RoundupString(data, stepsize):
     """
@@ -529,11 +566,13 @@ def RoundupString(data, stepsize):
         addon = ' ' * increase
     return data + addon
 
+
 def AddNL(s):
     """
-    Just return a same string but with '\n' symbol at the end. 
+    Just return a same string but with '\n' symbol at the end.
     """
     return s + "\n"
+
 
 def Data():
     """
@@ -541,11 +580,13 @@ def Data():
     """
     return "Data"
 
+
 def Parity():
     """
     An alias for Parity packets.
     """
     return "Parity"
+
 
 def BinaryToAscii(input):
     """
@@ -555,29 +596,33 @@ def BinaryToAscii(input):
     """
     return base64.encodestring(input)
 
+
 def AsciiToBinary(input):
     """
     Uses built-in method ``base64.decodestring``.
     """
     return base64.decodestring(input)
 
+
 def ObjectToString_old(obj):
     """
     """
     return cPickle.dumps(obj, protocol=cPickle.HIGHEST_PROTOCOL)
+
 
 def StringToObject_old(inp):
     """
     """
     return cPickle.loads(inp)
 
+
 def ObjectToString(obj):
     """
     """
     import serialization
     return serialization.ObjectToString(obj)
-    
-    
+
+
 def StringToObject(inp):
     """
     """
@@ -591,13 +636,16 @@ def ObjectToAscii(input):
     """
     return BinaryToAscii(ObjectToString(input))
 
+
 def AsciiToObject(input):
     """
     Not used.
     """
-    return StringToObject(AsciiToBinary(input))              # works for 384 bit RSA keys
+    return StringToObject(AsciiToBinary(
+        input))              # works for 384 bit RSA keys
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def pack_url_param(s):
     """
@@ -611,6 +659,7 @@ def pack_url_param(s):
         except:
             lg.exc()
     return s
+
 
 def unpack_url_param(s, default=None):
     """
@@ -626,17 +675,21 @@ def unpack_url_param(s, default=None):
         lg.exc()
         return default
 
+
 def rndstr(length):
     """
     This generates a random string of given ``length`` - with only digits and letters.
     """
-    return ''.join([random.choice(string.letters+string.digits) for i in range(0,length)])
+    return ''.join([random.choice(string.letters + string.digits)
+                    for i in range(0, length)])
+
 
 def stringToLong(s):
     """
     Not used.
     """
-    return long('\0'+s, 256)
+    return long('\0' + s, 256)
+
 
 def longToString(n):
     """
@@ -647,14 +700,16 @@ def longToString(n):
         s = s[1:]
     return s
 
+
 def receiptIDstr(receipt_id):
     """
-    This method is used to make good string for receipt ID.  
+    This method is used to make good string for receipt ID.
     """
     try:
         return '%08d' % int(receipt_id)
     except:
         return str(receipt_id)
+
 
 def username2idurl(username, host='id.bitdust.io'):
     """
@@ -662,21 +717,22 @@ def username2idurl(username, host='id.bitdust.io'):
     """
     return 'http://' + host + '/' + username + '.xml'
 
+
 def calculate_best_dimension(sz, maxsize=8):
     """
     This method is used to visually organize users on screen.
     Say 4 items is pretty good looking in one line.
     But 13 items seems fine in three lines.
         :param sz: number of items to be organized
-        :param maxsize: the maximum width of the matrix. 
+        :param maxsize: the maximum width of the matrix.
     """
-    cached = {2: (2,1), 
-              4: (4,1),
-              7: (4,2),
-              13:(5,3),
-              18:(6,3),
-              26:(7,4),
-              64:(8,8)}.get(sz, None)
+    cached = {2: (2, 1),
+              4: (4, 1),
+              7: (4, 2),
+              13: (5, 3),
+              18: (6, 3),
+              26: (7, 4),
+              64: (8, 8)}.get(sz, None)
     if cached:
         return cached
     try:
@@ -693,41 +749,44 @@ def calculate_best_dimension(sz, maxsize=8):
         h = sz / w
     w = int(w)
     h = int(h)
-    w = 1 if w==0 else w
-    h = 1 if h==0 else h
+    w = 1 if w == 0 else w
+    h = 1 if h == 0 else h
     if w * h < sz:
         h += 1
     if w * h - sz > h:
-        w -= 1 
+        w -= 1
     return w, h
+
 
 def calculate_padding(w, h):
     """
-    Calculates space between icons to show in the GUI. 
-    Need to put less spaces when show a lot of items. 
+    Calculates space between icons to show in the GUI.
+    Need to put less spaces when show a lot of items.
     """
     imgW = 64
     imgH = 64
     if w >= 4:
         imgW = 4 * imgW / w
         imgH = 4 * imgH / w
-    padding = 64/w - 8
+    padding = 64 / w - 8
     return imgW, imgH, padding
+
 
 def getDeltaTime(tm):
     """
     Return a string shows how much time passed since ``tm`` moment.
     """
     try:
-#        tm = time.mktime(time.strptime(self.backupID, "F%Y%m%d%I%M%S%p"))
+        #        tm = time.mktime(time.strptime(self.backupID, "F%Y%m%d%I%M%S%p"))
         dt = round(time.time() - tm)
-        if dt > 2*60*60:
-            return round(dt/(60.0*60.0)), 'hours'
+        if dt > 2 * 60 * 60:
+            return round(dt / (60.0 * 60.0)), 'hours'
         if dt > 60:
-            return round(dt/60.0), 'minutes'
+            return round(dt / 60.0), 'minutes'
         return dt, 'seconds'
     except:
         return None, None
+
 
 def getRealHost(host, port=None):
     """
@@ -743,7 +802,8 @@ def getRealHost(host, port=None):
     else:
         if getattr(host, 'host', None) is not None:
             if getattr(host, 'port', None) is not None:
-                host = str(getattr(host, 'host')) + ':' + str(getattr(host, 'port'))
+                host = str(getattr(host, 'host')) + ':' + \
+                    str(getattr(host, 'port'))
             else:
                 host = str(getattr(host, 'host'))
         elif getattr(host, 'underlying', None) is not None:
@@ -765,20 +825,23 @@ def split_geom_string(geomstr):
     except:
         return None, None, None, None
 
+
 def percent2string(percent, precis=3):
     """
-    A tool to make a string (with % at the end) from given float, ``precis`` is precision to round the number. 
+    A tool to make a string (with % at the end) from given float, ``precis`` is precision to round the number.
     """
     s = float2str(round(percent, precis),
-                  mask=("%%3.%df" % (precis+2)))
+                  mask=("%%3.%df" % (precis + 2)))
     return s + '%'
+
 
 def value2percent(value, total, precis=3):
     """
     """
     if not total:
         return '0%'
-    return percent2string(100.0 * (float(value)/float(total)), precis)
+    return percent2string(100.0 * (float(value) / float(total)), precis)
+
 
 def float2str(float_value, mask='%6.8f', no_trailing_zeros=True):
     """
@@ -787,11 +850,12 @@ def float2str(float_value, mask='%6.8f', no_trailing_zeros=True):
     try:
         f = float(float_value)
     except:
-        return float_value 
+        return float_value
     s = mask % f
     if no_trailing_zeros:
         s = s.rstrip('0').rstrip('.')
     return s
+
 
 def seconds_to_time_left_string(seconds):
     """
@@ -827,7 +891,7 @@ def seconds_to_time_left_string(seconds):
         r = 'one day'
         if hours > 0:
             r += ' and %d hours' % hours
-        return r 
+        return r
     s = s - (hours * 3600)
     minutes = s // 60
     seconds = s - (minutes * 60)
@@ -851,19 +915,21 @@ def seconds_to_time_left_string(seconds):
         return '%d minutes' % minutes
     return '%d minutes and %d seconds' % (minutes, seconds)
 
+
 def unicode_to_str_safe(unicode_string, encodings=None):
     """
-    I tried to make an 'ultimate' method to convert unicode to string here. 
+    I tried to make an 'ultimate' method to convert unicode to string here.
     """
     try:
-        return str(unicode_string) # .decode('utf-8')
+        return str(unicode_string)  # .decode('utf-8')
     except:
         try:
-            return unicode(unicode_string).encode(locale.getpreferredencoding(), errors='ignore')
+            return unicode(unicode_string).encode(
+                locale.getpreferredencoding(), errors='ignore')
         except:
             pass
     if encodings is None:
-        encodings = [locale.getpreferredencoding(),] #  'utf-8' 
+        encodings = [locale.getpreferredencoding(), ]  # 'utf-8'
     output = ''
     for i in xrange(len(unicode_string)):
         unicode_char = unicode_string[i]
@@ -882,17 +948,20 @@ def unicode_to_str_safe(unicode_string, encodings=None):
         output += char
     return output
 
+
 def wrap_long_string(longstring, width=40, wraptext='\n'):
     w = len(longstring)
     if w < width:
         return longstring
     return wraptext.join(textwrap.wrap(longstring, width))
 
+
 def cut_long_string(longstring, length=40, suffix=''):
     l = len(longstring)
     if l < length:
         return longstring
     return longstring[:length] + suffix
+
 
 def isEnglishString(s):
     try:
@@ -904,9 +973,10 @@ def isEnglishString(s):
 
 #------------------------------------------------------------------------------
 
+
 def getClipboardText():
     """
-    A portable way to get a clipboard data - some sort of Ctrl-V.  
+    A portable way to get a clipboard data - some sort of Ctrl-V.
     """
     if bpio.Windows():
         try:
@@ -915,7 +985,7 @@ def getClipboardText():
             win32clipboard.OpenClipboard()
             d = win32clipboard.GetClipboardData(win32con.CF_TEXT)
             win32clipboard.CloseClipboard()
-            return d.replace('\r\n','\n')
+            return d.replace('\r\n', '\n')
         except:
             lg.exc()
             return ''
@@ -923,8 +993,8 @@ def getClipboardText():
         try:
             import wx
             # may crash, otherwise
-            # this needs app.MainLoop() to be started 
-            if not wx.TheClipboard.IsOpened():  
+            # this needs app.MainLoop() to be started
+            if not wx.TheClipboard.IsOpened():
                 do = wx.TextDataObject()
                 wx.TheClipboard.Open()
                 success = wx.TheClipboard.GetData(do)
@@ -940,9 +1010,10 @@ def getClipboardText():
     else:
         return ''
 
+
 def setClipboardText(txt):
     """
-    A portable way to set a clipboard data - just like when you select something and press Ctrl-C.  
+    A portable way to set a clipboard data - just like when you select something and press Ctrl-C.
     """
     if bpio.Windows():
         try:
@@ -966,16 +1037,17 @@ def setClipboardText(txt):
         except:
             lg.exc()
     elif bpio.Mac():
-#         import tempfile
-#         fd, fname = tempfile.mkstemp()
-#         fd.write(txt)
-#         fd.close()
-#         subprocess.Popen('')
-#         os.system('cat %s | pbcopy')
-        #TODO
+        #         import tempfile
+        #         fd, fname = tempfile.mkstemp()
+        #         fd.write(txt)
+        #         fd.close()
+        #         subprocess.Popen('')
+        #         os.system('cat %s | pbcopy')
+        # TODO
         return
 
 #------------------------------------------------------------------------------
+
 
 def hmac_hash(string):
     """
@@ -984,11 +1056,13 @@ def hmac_hash(string):
     h = hmac.HMAC(settings.HMAC_key_word(), string)
     return h.hexdigest().upper()
 
+
 def encode64(s):
     """
     A wrapper for built-in ``base64.b64encode``.
     """
     return base64.b64encode(s)
+
 
 def decode64(s):
     """
@@ -996,11 +1070,13 @@ def decode64(s):
     """
     return base64.b64decode(s)
 
+
 def get_hash(src):
     """
     Get a good looking MD5 hash of ``src`` string.
     """
     return hashlib.md5(src).hexdigest()
+
 
 def file_hash(path):
     """
@@ -1011,7 +1087,8 @@ def file_hash(path):
         return None
     return get_hash(src)
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
 
 def time2daystring(tm=None):
     """
@@ -1021,6 +1098,7 @@ def time2daystring(tm=None):
     if tm_ is None:
         tm_ = time.time()
     return time.strftime('%Y%m%d', time.localtime(tm_))
+
 
 def daystring2time(daystring):
     """
@@ -1032,11 +1110,13 @@ def daystring2time(daystring):
         return None
     return time.mktime(t)
 
+
 def time2str(format):
     """
     A wrapper for ``time.strftime``.
     """
     return time.strftime(format)
+
 
 def gmtime2str(format, seconds=None):
     """
@@ -1046,13 +1126,15 @@ def gmtime2str(format, seconds=None):
         return time.strftime(format, time.gmtime())
     return time.strftime(format, time.gmtime(seconds))
 
+
 def str2gmtime(time_string, format):
     """
     A reverse method for ``gmtime2str``.
     """
     return time.mktime(time.strptime(time_string, format))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def ReadRepoLocation():
     """
@@ -1064,7 +1146,8 @@ def ReadRepoLocation():
             src = bpio.ReadTextFile(repo_file)
             if src:
                 try:
-                    return src.split('\n')[0].strip(), src.split('\n')[1].strip() 
+                    return src.split('\n')[0].strip(
+                    ), src.split('\n')[1].strip()
                 except:
                     lg.exc()
         return 'sources', 'http://bitdust.io/download/'
@@ -1074,23 +1157,32 @@ def ReadRepoLocation():
     l = src.split('\n')
     if len(l) < 2:
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
-    return l[0], l[1]   
+    return l[0], l[1]
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
 
 def SetAutorunWindows():
     """
     Creates a shortcut in Start->Applications->Startup under Windows, so program can be started during system startup.
     """
-    if os.path.abspath(bpio.getExecutableDir()) != os.path.abspath(settings.WindowsBinDir()):
+    if os.path.abspath(
+            bpio.getExecutableDir()) != os.path.abspath(
+            settings.WindowsBinDir()):
         return
     createWindowsShortcut(
         'BitDust.lnk',
-        '%s' % settings.getIconLaunchFilename(),
+        '%s' %
+        settings.getIconLaunchFilename(),
         bpio.getExecutableDir(),
-        os.path.join(bpio.getExecutableDir(), 'icons', settings.IconFilename()),
+        os.path.join(
+            bpio.getExecutableDir(),
+            'icons',
+            settings.IconFilename()),
         '',
-        'Startup', )
+        'Startup',
+    )
+
 
 def ClearAutorunWindows():
     """
@@ -1098,17 +1190,18 @@ def ClearAutorunWindows():
     """
     removeWindowsShortcut('BitDust.lnk', folder='Startup')
 
-#def SetAutorunWindowsOld(CUorLM='CU', location=settings.getAutorunFilename(), name=settings.ApplicationName()):
+# def SetAutorunWindowsOld(CUorLM='CU', location=settings.getAutorunFilename(), name=settings.ApplicationName()):
 #    cmdexec = r'reg add HK%s\software\microsoft\windows\currentversion\run /v "%s" /t REG_SZ /d "%s" /f' % (CUorLM, name, location)
 #    lg.out(6, 'misc.SetAutorunWindows executing: ' + cmdexec)
 #    return nonblocking.ExecuteString(cmdexec)
 
-#def ClearAutorunWindowsOld(CUorLM='CU', name = settings.ApplicationName()):
+# def ClearAutorunWindowsOld(CUorLM='CU', name = settings.ApplicationName()):
 #    cmdexec = r'reg delete HK%s\software\microsoft\windows\currentversion\run /v "%s" /f' % (CUorLM, name)
 #    lg.out(6, 'misc.ClearAutorunWindows executing: ' + cmdexec)
 #    return nonblocking.ExecuteString(cmdexec)
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
 
 def transport_control_remove_after():
     """
@@ -1117,6 +1210,7 @@ def transport_control_remove_after():
     global _RemoveAfterSent
     return _RemoveAfterSent
 
+
 def set_transport_control_remove_after(flag):
     """
     Not used.
@@ -1124,7 +1218,8 @@ def set_transport_control_remove_after(flag):
     global _RemoveAfterSent
     _RemoveAfterSent = flag
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
 
 def pathToWindowsShortcut(filename, folder='Desktop'):
     """
@@ -1139,9 +1234,16 @@ def pathToWindowsShortcut(filename, folder='Desktop'):
         lg.exc()
         return ''
 
-def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
+
+def createWindowsShortcut(
+        filename,
+        target='',
+        wDir='',
+        icon='',
+        args='',
+        folder='Desktop'):
     """
-    Creates a shortcut for BitDust on the desktop. 
+    Creates a shortcut for BitDust on the desktop.
     """
     if bpio.Windows():
         try:
@@ -1159,6 +1261,7 @@ def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder
         except:
             lg.exc()
 
+
 def removeWindowsShortcut(filename, folder='Desktop'):
     """
     Removes a BitDust shortcut from the desktop.
@@ -1171,16 +1274,17 @@ def removeWindowsShortcut(filename, folder='Desktop'):
             except:
                 lg.exc()
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
 
 def pathToStartMenuShortcut(filename):
     """
     Path to the Windows start menu folder.
     """
     try:
-        from win32com.shell import shell, shellcon #@UnresolvedImport
+        from win32com.shell import shell, shellcon  # @UnresolvedImport
         from win32com.client import Dispatch
-        shell_ = Dispatch('WScript.Shell') 
+        shell_ = Dispatch('WScript.Shell')
         csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
         startmenu = shell.SHGetSpecialFolderPath(0, csidl, False)
         return os.path.join(startmenu, filename)
@@ -1188,13 +1292,14 @@ def pathToStartMenuShortcut(filename):
         lg.exc()
         return ''
 
+
 def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
     """
     Create a BitDust shortcut in the Windows start menu.
     """
     if bpio.Windows():
         try:
-            from win32com.shell import shell, shellcon #@UnresolvedImport
+            from win32com.shell import shell, shellcon  # @UnresolvedImport
             from win32com.client import Dispatch
             shell_ = Dispatch('WScript.Shell')
             csidl = getattr(shellcon, 'CSIDL_PROGRAMS')
@@ -1210,6 +1315,7 @@ def createStartMenuShortcut(filename, target='', wDir='', icon='', args=''):
         except:
             lg.exc()
 
+
 def removeStartMenuShortcut(filename):
     """
     Remove a shortcut from Windows start menu.
@@ -1223,7 +1329,8 @@ def removeStartMenuShortcut(filename):
                 lg.exc()
     return
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def DoRestart(param='', detach=False):
     """
@@ -1234,20 +1341,29 @@ def DoRestart(param='', detach=False):
             # lg.out(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
             # lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
             # lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
-            starter_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsStarterFileName())
+            starter_filepath = os.path.join(
+                bpio.getExecutableDir(),
+                settings.WindowsStarterFileName())
             if not os.path.isfile(starter_filepath):
                 # lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
-                main_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsMainScritpFileName())
-                cmdargs = [os.path.basename(main_filepath),]
+                main_filepath = os.path.join(
+                    bpio.getExecutableDir(),
+                    settings.WindowsMainScritpFileName())
+                cmdargs = [os.path.basename(main_filepath), ]
                 if param != '':
                     cmdargs.append(param)
                 # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-                return os.spawnve(os.P_DETACH, main_filepath, cmdargs, os.environ)
-            cmdargs = [os.path.basename(starter_filepath),]
+                return os.spawnve(
+                    os.P_DETACH, main_filepath, cmdargs, os.environ)
+            cmdargs = [os.path.basename(starter_filepath), ]
             if param != '':
                 cmdargs.append(param)
             # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-            return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
+            return os.spawnve(
+                os.P_DETACH,
+                starter_filepath,
+                cmdargs,
+                os.environ)
 
         else:
             lg.out(2, "misc.DoRestart under Windows param=%s" % param)
@@ -1267,7 +1383,7 @@ def DoRestart(param='', detach=False):
                 from system import child_process
                 lg.out(0, 'run "%s"' % str(' '.join(cmdargs)))
                 return child_process.detach(cmdargs)
-            lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
+            lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
             return os.execvpe(pypath, cmdargs, os.environ)
 
     else:
@@ -1288,23 +1404,25 @@ def DoRestart(param='', detach=False):
             cmdargs.remove('detach')
         pid = os.fork()
         if pid != 0:
-            lg.out(2, "misc.DoRestart os.fork returned: "+str(pid))
+            lg.out(2, "misc.DoRestart os.fork returned: " + str(pid))
             return None
         if detach:
-        #     from lib import child_process
-        #     return child_process.detach(cmdargs)
+            #     from lib import child_process
+            #     return child_process.detach(cmdargs)
             # return os.spawnv(os.P_DETACH, pypath, cmdargs)
             cmdargs[1] = os.path.abspath(cmdargs[1])
             # cmdargs.insert(0, '/usr/bin/nohup')
             cmdargs.append('1>/dev/null')
             cmdargs.append('2>/dev/null')
-            # return os.spawnve(os.P_NOWAIT, '/usr/bin/nohup', cmdargs, os.environ)
+            # return os.spawnve(os.P_NOWAIT, '/usr/bin/nohup', cmdargs,
+            # os.environ)
             cmd = 'nohup ' + (' '.join(cmdargs)) + ' &'
             # lg.out(0, 'run "%s"' % cmd)
             return os.system(cmd)
-        lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
+        lg.out(2, "misc.DoRestart cmdargs=" + str(cmdargs))
         return os.execvpe(pypyth, cmdargs, os.environ)
-            
+
+
 def RunBatFile(filename, output_filename=None):
     """
     Can execute a bat file under Windows.
@@ -1322,7 +1440,7 @@ def RunBatFile(filename, output_filename=None):
 
 def RunShellCommand(cmdstr, wait=True):
     """
-    This uses ``subprocess.Popen`` to execute a process. 
+    This uses ``subprocess.Popen`` to execute a process.
         :param cmdstr: a full command line ( with arguments ) to execute.
         :param wait: if True - the main process will be blocked until child is finished.
     """
@@ -1333,7 +1451,7 @@ def RunShellCommand(cmdstr, wait=True):
             p = subprocess.Popen(
                 cmdstr,
                 shell=True,
-                creationflags = win32process.CREATE_NO_WINDOW,)
+                creationflags=win32process.CREATE_NO_WINDOW,)
         else:
             p = subprocess.Popen(
                 cmdstr,
@@ -1354,19 +1472,21 @@ def RunShellCommand(cmdstr, wait=True):
 
 def ExplorePathInOS(filepath):
     """
-    Very nice and portable way to show location or file on local disk. 
+    Very nice and portable way to show location or file on local disk.
     """
     try:
         if bpio.Windows():
             # os.startfile(filepath)
             if os.path.isfile(filepath):
-                subprocess.Popen(['explorer', '/select,', '%s' % (filepath.replace('/','\\'))])
+                subprocess.Popen(['explorer', '/select,', '%s' %
+                                  (filepath.replace('/', '\\'))])
             else:
-                subprocess.Popen(['explorer', '%s' % (filepath.replace('/','\\'))])
+                subprocess.Popen(['explorer', '%s' %
+                                  (filepath.replace('/', '\\'))])
 
         elif bpio.Linux():
             subprocess.Popen(['`which xdg-open`', filepath])
-            
+
         elif bpio.Mac():
             subprocess.Popen(["open", "-R", filepath])
 
@@ -1382,15 +1502,15 @@ def ExplorePathInOS(filepath):
 def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
     """
     The idea was to be able to move the files inside the donated area to another location.
-    Say, user want to switch our software to donate space from another HDD. 
+    Say, user want to switch our software to donate space from another HDD.
     At the moment this feature is off.
     """
     if os.path.abspath(current_dir) == os.path.abspath(new_dir):
         return None
-    
+
     current = cmdLineQuote(current_dir)
     new = cmdLineQuote(new_dir)
-    
+
     try:
         if bpio.Linux():
             cmdargs = ['cp', '-r', current, new]
@@ -1398,40 +1518,53 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
             subprocess.call(cmdargs)
             if remove_old:
                 cmdargs = ['rm', '-r', current]
-                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
+                lg.out(
+                    4,
+                    'misc.MoveFolderWithFiles wish to call: ' +
+                    str(cmdargs))
                 subprocess.call(cmdargs)
             return 'ok'
-    
+
         if bpio.Windows():
             cmdstr0 = 'mkdir %s' % new
-            cmdstr1 = 'xcopy %s %s /E /K /R /H /Y' % (cmdLineQuote(os.path.join(current_dir, '*.*')), new)
+            cmdstr1 = 'xcopy %s %s /E /K /R /H /Y' % (
+                cmdLineQuote(os.path.join(current_dir, '*.*')), new)
             cmdstr2 = 'rmdir /S /Q %s' % current
             if not os.path.isdir(new):
-                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr0))
+                lg.out(
+                    4,
+                    'misc.MoveFolderWithFiles wish to call: ' +
+                    str(cmdstr0))
                 if RunShellCommand(cmdstr0) is None:
                     return 'error'
-                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr1))
+                lg.out(
+                    4,
+                    'misc.MoveFolderWithFiles wish to call: ' +
+                    str(cmdstr1))
             if RunShellCommand(cmdstr1) is None:
                 return 'error'
             if remove_old:
-                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr2))
+                lg.out(
+                    4,
+                    'misc.MoveFolderWithFiles wish to call: ' +
+                    str(cmdstr2))
                 if RunShellCommand(cmdstr2) is None:
                     return 'error'
             return 'ok'
-        
+
         if bpio.Mac():
             # TODO
             return 'error'
-        
+
     except:
         lg.exc()
         return 'failed'
-    
+
     return 'ok'
 
 #------------------------------------------------------------------------------
 
-#def UpdateDesktopShortcut():
+# def UpdateDesktopShortcut():
 #    """
 #    Called at startup to update BitDust shortcut on the desktop.
 #    I was playing with that, tried to keep the shortcut on the desktop always (even if user removes it).
@@ -1452,7 +1585,7 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
 #                removeWindowsShortcut(settings.getIconLinkFilename())
 #
 #
-#def UpdateStartMenuShortcut():
+# def UpdateStartMenuShortcut():
 #    """
 #    Update icons in the start menu, switched off right now.
 #    """
@@ -1478,7 +1611,8 @@ def UpdateSettings():
     """
     lg.out(6, 'misc.UpdateSettings')
 
-#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
+
 
 def SendDevReportOld(subject, body, includelogs):
     """
@@ -1489,8 +1623,14 @@ def SendDevReportOld(subject, body, includelogs):
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
             filesList.append(settings.UserConfigFilename())
-            filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.exe.log'))
-            filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.log'))
+            filesList.append(
+                os.path.join(
+                    bpio.getExecutableDir(),
+                    'bpmain.exe.log'))
+            filesList.append(
+                os.path.join(
+                    bpio.getExecutableDir(),
+                    'bpmain.log'))
             for filename in os.listdir(settings.LogsDir()):
                 filepath = os.path.join(settings.LogsDir(), filename)
                 filesList.append(filepath)
@@ -1498,17 +1638,19 @@ def SendDevReportOld(subject, body, includelogs):
             import zipfile
             import time
             username = bpio.ReadTextFile(settings.UserNameFilename())
-            zipfd, zipfilename = tempfile.mkstemp('.zip', username+'-'+time.strftime('%Y%m%d%I%M%S')+'-' )
-            zfile = zipfile.ZipFile(zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
+            zipfd, zipfilename = tempfile.mkstemp(
+                '.zip', username + '-' + time.strftime('%Y%m%d%I%M%S') + '-')
+            zfile = zipfile.ZipFile(
+                zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
             for filename in filesList:
                 if os.path.isfile(filename):
                     try:
-                        if os.path.getsize(filename) < 1024*512:
+                        if os.path.getsize(filename) < 1024 * 512:
                             zfile.write(filename, os.path.basename(filename))
                     except:
                         pass
             zfile.close()
-            filesList = [zipfilename]    
+            filesList = [zipfilename]
         net_misc.SendEmail(
             'to@mail',
             'from@mail',
@@ -1521,7 +1663,7 @@ def SendDevReportOld(subject, body, includelogs):
             filesList,)
     except:
         lg.exc()
-        
+
 
 def SendDevReport(subject, body, includelogs, progress=None):
     """
@@ -1538,16 +1680,26 @@ def SendDevReport(subject, body, includelogs, progress=None):
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
             filesList.append(settings.UserConfigFilename())
-            filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.exe.log'))
-            filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.log'))
+            filesList.append(
+                os.path.join(
+                    bpio.getExecutableDir(),
+                    'bpmain.exe.log'))
+            filesList.append(
+                os.path.join(
+                    bpio.getExecutableDir(),
+                    'bpmain.log'))
             lst = os.listdir(settings.LogsDir())
-            lst.sort(key=lambda fn: os.path.getatime(os.path.join(settings.LogsDir(),fn)), 
-                     reverse=True)
+            lst.sort(
+                key=lambda fn: os.path.getatime(
+                    os.path.join(
+                        settings.LogsDir(),
+                        fn)),
+                reverse=True)
             totalsz = 0
             for filename in lst:
                 filepath = os.path.join(settings.LogsDir(), filename)
                 sz = os.path.getsize(filepath)
-                if totalsz + sz > 1024*1024*10:
+                if totalsz + sz > 1024 * 1024 * 10:
                     continue
                 totalsz += sz
                 filesList.append(filepath)
@@ -1555,12 +1707,14 @@ def SendDevReport(subject, body, includelogs, progress=None):
             import zipfile
             import time
             username = bpio.ReadTextFile(settings.UserNameFilename())
-            zipfd, zipfilename = tempfile.mkstemp('.zip', username+'-'+time.strftime('%Y%m%d%I%M%S')+'-' )
-            zfile = zipfile.ZipFile(zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
+            zipfd, zipfilename = tempfile.mkstemp(
+                '.zip', username + '-' + time.strftime('%Y%m%d%I%M%S') + '-')
+            zfile = zipfile.ZipFile(
+                zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
             for filename in filesList:
                 if os.path.isfile(filename):
                     try:
-                        if os.path.getsize(filename) < 1024*1024*10:
+                        if os.path.getsize(filename) < 1024 * 1024 * 10:
                             zfile.write(filename, os.path.basename(filename))
                     except:
                         pass
@@ -1569,40 +1723,63 @@ def SendDevReport(subject, body, includelogs, progress=None):
         if zipfilename:
             files['upload'] = zipfilename
         data = {'subject': subject, 'body': body}
-        return net_misc.uploadHTTP('http://bitdust.io/cgi-bin/feedback.py', files, data, progress)
+        return net_misc.uploadHTTP(
+            'http://bitdust.io/cgi-bin/feedback.py',
+            files,
+            data,
+            progress)
         # r.addErrback(lambda err: lg.out(2, 'misc.SendDevReport ERROR : %s' % str(err)))
-        # r.addCallback(lambda src: lg.out(2, 'misc.SendDevReport : %s' % str(src)))            
-        # return r 
+        # r.addCallback(lambda src: lg.out(2, 'misc.SendDevReport : %s' % str(src)))
+        # return r
     except:
         lg.exc()
     return None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def GetUserProfilePicturePath():
     """
     Not used right now.
     I wish to show some personal images instead of green or gray boys.
     Users can provide own avatars, but more smart way is to take that avatar from user private space.
-    This should be used only during first install of the program. 
+    This should be used only during first install of the program.
     May be we can use facebook or google personal page to get the picture.
-    The idea was taken from: 
+    The idea was taken from:
         http://social.msdn.microsoft.com/Forums/en/vcgeneral/thread/8c72b948-d32c-4785-930e-0d6fdf032ecc
     For linux we just check the file ~/.face.
-    Than user can upload his avatar to some place (we can store avatars for free) 
+    Than user can upload his avatar to some place (we can store avatars for free)
     and set that url into his identity - so others can get his avatar very easy.
     """
     if bpio.Windows():
-        
+
         username = os.path.basename(os.path.expanduser('~'))
-        if bpio.windows_version() == 5: # Windows XP
+        if bpio.windows_version() == 5:  # Windows XP
             # %ALLUSERSPROFILE%\Application Data\Microsoft\User Account Pictures
-            allusers = os.environ.get('ALLUSERSPROFILE', os.path.join(os.path.dirname(os.path.expanduser('~')), 'All Users'))
-            return os.path.join(allusers, 'Application Data', 'Microsoft', 'User Account Pictures', username+'.bmp')
-        elif bpio.windows_version() == 6: # Windows 7
-            # C:\Users\<username>\AppData\Local\Temp\<domain>+<username>.bmp 
-            default_path = os.path.join(os.path.expanduser('~'), 'Application Data')
-            return os.path.join(os.environ.get('APPDATA', default_path), 'Local', 'Temp', username+'.bmp')
+            allusers = os.environ.get(
+                'ALLUSERSPROFILE',
+                os.path.join(
+                    os.path.dirname(
+                        os.path.expanduser('~')),
+                    'All Users'))
+            return os.path.join(
+                allusers,
+                'Application Data',
+                'Microsoft',
+                'User Account Pictures',
+                username + '.bmp')
+        elif bpio.windows_version() == 6:  # Windows 7
+            # C:\Users\<username>\AppData\Local\Temp\<domain>+<username>.bmp
+            default_path = os.path.join(
+                os.path.expanduser('~'), 'Application Data')
+            return os.path.join(
+                os.environ.get(
+                    'APPDATA',
+                    default_path),
+                'Local',
+                'Temp',
+                username +
+                '.bmp')
         else:
             return ''
     elif bpio.Linux():
@@ -1611,6 +1788,7 @@ def GetUserProfilePicturePath():
         # TODO
         return ''
     return ''
+
 
 def UpdateRegistryUninstall(uninstall=False):
     """
@@ -1621,20 +1799,27 @@ def UpdateRegistryUninstall(uninstall=False):
         import _winreg
     except:
         return False
-    unistallpath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall" 
+    unistallpath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
     regpath = unistallpath + "\\BitDust"
     values = {
-        'DisplayIcon':      '%s,0' % str(bpio.getExecutableFilename()),
-        'DisplayName':      'BitDust',
-        'DisplayVersion':   bpio.ReadTextFile(settings.VersionNumberFile()).strip(),
+        'DisplayIcon': '%s,0' % str(
+            bpio.getExecutableFilename()),
+        'DisplayName': 'BitDust',
+        'DisplayVersion': bpio.ReadTextFile(
+            settings.VersionNumberFile()).strip(),
         'InstallLocation:': settings.BaseDir(),
-        'NoModify':         1,
-        'NoRepair':         1,
-        'UninstallString':  '%s uninstall' % bpio.getExecutableFilename(),
-        'URLInfoAbout':     'http://bitdust.io', }    
+        'NoModify': 1,
+        'NoRepair': 1,
+        'UninstallString': '%s uninstall' % bpio.getExecutableFilename(),
+        'URLInfoAbout': 'http://bitdust.io',
+    }
     # open
     try:
-        reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, regpath, 0, _winreg.KEY_ALL_ACCESS)
+        reg = _winreg.OpenKey(
+            _winreg.HKEY_LOCAL_MACHINE,
+            regpath,
+            0,
+            _winreg.KEY_ALL_ACCESS)
     except:
         try:
             reg = _winreg.CreateKey(_winreg.HKEY_LOCAL_MACHINE, regpath)
@@ -1665,7 +1850,11 @@ def UpdateRegistryUninstall(uninstall=False):
     if uninstall:
         _winreg.CloseKey(reg)
         try:
-            reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, unistallpath, 0, _winreg.KEY_ALL_ACCESS)
+            reg = _winreg.OpenKey(
+                _winreg.HKEY_LOCAL_MACHINE,
+                unistallpath,
+                0,
+                _winreg.KEY_ALL_ACCESS)
         except:
             lg.exc()
             return False
@@ -1687,7 +1876,12 @@ def UpdateRegistryUninstall(uninstall=False):
     return True
 
 
-def MakeBatFileToUninstall(wait_appname='bpmain.exe', local_dir=bpio.getExecutableDir(), dirs2delete=[settings.BaseDir(),]):
+def MakeBatFileToUninstall(
+        wait_appname='bpmain.exe',
+        local_dir=bpio.getExecutableDir(),
+        dirs2delete=[
+            settings.BaseDir(),
+        ]):
     """
     Not used.
     """
@@ -1712,18 +1906,19 @@ def MakeBatFileToUninstall(wait_appname='bpmain.exe', local_dir=bpio.getExecutab
 
 #------------------------------------------------------------------------------
 
+
 def LoopAttenuation(current_delay, faster, min, max):
     """
     Pretty common method.
-    Twisted reactor is very nice, you can call ``reactor.callLater(3, method_a, 'param1')`` 
+    Twisted reactor is very nice, you can call ``reactor.callLater(3, method_a, 'param1')``
     and method_a('param1') will be called exactly when 3 seconds passed.
-    But we do not want fixed periods sometimes. 
+    But we do not want fixed periods sometimes.
     You must be hury when you have a lot of work, in the next moment - need rest.
     For example - need to read some queue as fast as possible when you have some items inside.
     This method is used to calculate the delay to the next call of some 'idle' method.
-        :param current_delay: current period of time in seconds between calls 
+        :param current_delay: current period of time in seconds between calls
         :param faster:  if this is True - method should return ``min`` period - call next time as soon as possible
-                        if this is False - method will multiply ``current_delay`` by ``_AttenuationFactor`` and so decrease the speed 
+                        if this is False - method will multiply ``current_delay`` by ``_AttenuationFactor`` and so decrease the speed
         :param min: the minimum delay between calls
         :param max: the maximum delay between calls
     """
@@ -1736,7 +1931,7 @@ def LoopAttenuation(current_delay, faster, min, max):
             current_delay = max
     return current_delay
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     lg.set_debug_level(10)
@@ -1745,20 +1940,22 @@ if __name__ == '__main__':
 
     if True:
         from twisted.internet import reactor
-        from twisted.internet.defer import Deferred        
+        from twisted.internet.defer import Deferred
+
         def _progress(x, y):
-            print '%d/%d' % (x,y)      
+            print '%d/%d' % (x, y)
+
         def _done(x):
             print 'DONE', x
             reactor.stop()
-            return x  
+            return x
+
         def _fail(x):
             print 'FAIL', x
             reactor.stop()
-            return x  
+            return x
         d = SendDevReport('subject ', 'some body112', True, _progress)
         if d:
             d.addCallback(_done)
             d.addErrback(_fail)
         reactor.run()
-        

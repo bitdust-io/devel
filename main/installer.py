@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#installer.py
+# installer.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,16 +34,16 @@
     <a href="http://bitdust.io/automats/installer/installer.png" target="_blank">
     <img src="http://bitdust.io/automats/installer/installer.png" style="max-width:100%;">
     </a>
-    
-The ``installer()`` machine is a sort of installation wizard 
+
+The ``installer()`` machine is a sort of installation wizard
 which is executed when user first time executes BitDust software.
 
-It have two directions: 
+It have two directions:
 
-    1) ``register a new user`` and 
+    1) ``register a new user`` and
     2) ``recover existing user account``
 
-A ``id_registrator()`` and ``id_restorer()`` automats is called from here 
+A ``id_registrator()`` and ``id_restorer()`` automats is called from here
 and ``installer()`` will wait until they are finished.
 
 
@@ -73,7 +73,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in installer.py')
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -92,11 +92,12 @@ from userid import id_restorer
 
 import initializer
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Installer = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def IsExist():
     """
@@ -104,7 +105,8 @@ def IsExist():
     global _Installer
     return _Installer is not None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -122,20 +124,20 @@ class Installer(automat.Automat):
     """
     A class to control the whole process of program installation.
     """
-    
+
     fast = True
-    
+
     output = {}
     RECOVER_RESULTS = {
-        'remote_identity_not_valid':  ('remote Identity is not valid', 'red'),
-        'invalid_identity_source':    ('incorrect source of the Identity file', 'red'),
-        'invalid_identity_url':       ('incorrect Identity file location', 'red'),
+        'remote_identity_not_valid': ('remote Identity is not valid', 'red'),
+        'invalid_identity_source': ('incorrect source of the Identity file', 'red'),
+        'invalid_identity_url': ('incorrect Identity file location', 'red'),
         'remote_identity_bad_format': ('incorrect format of the Identity file', 'red'),
-        'incorrect_key':              ('Private Key is not valid', 'red'),
-        'idurl_not_exist':            ('Identity URL address not exist or not reachable at this moment', 'blue'),
-        'signing_error':              ('unable to sign the local Identity file', 'red'),
-        'signature_not_match':        ('remote Identity and Private Key did not match', 'red'),
-        'success':                    ('account restored!', 'green'), }
+        'incorrect_key': ('Private Key is not valid', 'red'),
+        'idurl_not_exist': ('Identity URL address not exist or not reachable at this moment', 'blue'),
+        'signing_error': ('unable to sign the local Identity file', 'red'),
+        'signature_not_match': ('remote Identity and Private Key did not match', 'red'),
+        'success': ('account restored!', 'green'), }
 
     def getOutput(self, state=None):
         if state is None:
@@ -145,7 +147,7 @@ class Installer(automat.Automat):
     def init(self):
         self.log_events = True
         self.flagCmdLine = False
-        
+
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('INSTALL ' + newstate)
         initializer.A('installer.state', newstate)
@@ -156,124 +158,124 @@ class Installer(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'init' :
+            if event == 'init':
                 self.state = 'WHAT_TO_DO?'
-                self.flagCmdLine=False
-            elif event == 'register-cmd-line' :
+                self.flagCmdLine = False
+            elif event == 'register-cmd-line':
                 self.state = 'REGISTER'
-                self.flagCmdLine=True
+                self.flagCmdLine = True
                 self.doInit(arg)
                 id_registrator.A('start', arg)
-            elif event == 'recover-cmd-line' :
+            elif event == 'recover-cmd-line':
                 self.state = 'RECOVER'
-                self.flagCmdLine=True
+                self.flagCmdLine = True
                 self.doInit(arg)
                 id_restorer.A('start', arg)
         #---WHAT_TO_DO?---
         elif self.state == 'WHAT_TO_DO?':
-            if event == 'register-selected' :
+            if event == 'register-selected':
                 self.state = 'INPUT_NAME'
                 self.doUpdate(arg)
-            elif event == 'recover-selected' :
+            elif event == 'recover-selected':
                 self.state = 'LOAD_KEY'
                 self.doUpdate(arg)
         #---INPUT_NAME---
         elif self.state == 'INPUT_NAME':
-            if event == 'back' :
+            if event == 'back':
                 self.state = 'WHAT_TO_DO?'
                 self.doClearOutput(arg)
                 self.doUpdate(arg)
-            elif event == 'register-start' and self.isNameValid(arg) :
+            elif event == 'register-start' and self.isNameValid(arg):
                 self.state = 'REGISTER'
                 self.doClearOutput(arg)
                 self.doSaveName(arg)
                 id_registrator.A('start', arg)
                 self.doUpdate(arg)
-            elif event == 'register-start' and not self.isNameValid(arg) :
+            elif event == 'register-start' and not self.isNameValid(arg):
                 self.doClearOutput(arg)
                 self.doPrintIncorrectName(arg)
                 self.doUpdate(arg)
-            elif event == 'print' :
+            elif event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
         #---LOAD_KEY---
         elif self.state == 'LOAD_KEY':
-            if event == 'back' :
+            if event == 'back':
                 self.state = 'WHAT_TO_DO?'
                 self.doClearOutput(arg)
                 self.doUpdate(arg)
-            elif event == 'load-from-file' :
+            elif event == 'load-from-file':
                 self.doReadKey(arg)
                 self.doUpdate(arg)
-            elif event == 'paste-from-clipboard' :
+            elif event == 'paste-from-clipboard':
                 self.doPasteKey(arg)
                 self.doUpdate(arg)
-            elif event == 'restore-start' :
+            elif event == 'restore-start':
                 self.state = 'RECOVER'
                 self.doClearOutput(arg)
                 id_restorer.A('start', arg)
                 self.doUpdate(arg)
-            elif event == 'print' :
+            elif event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
         #---REGISTER---
         elif self.state == 'REGISTER':
-            if event == 'print' :
+            if event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
-            elif ( event == 'id_registrator.state' and arg in [ 'DONE' , 'FAILED' ] ) and self.flagCmdLine :
+            elif (event == 'id_registrator.state' and arg in ['DONE', 'FAILED']) and self.flagCmdLine:
                 self.state = 'DONE'
                 self.doUpdate(arg)
-            elif ( event == 'id_registrator.state' and arg == 'FAILED' ) and not self.flagCmdLine :
+            elif (event == 'id_registrator.state' and arg == 'FAILED') and not self.flagCmdLine:
                 self.state = 'INPUT_NAME'
                 self.doShowOutput(arg)
                 self.doUpdate(arg)
-            elif ( event == 'id_registrator.state' and arg == 'DONE' ) and not self.flagCmdLine :
+            elif (event == 'id_registrator.state' and arg == 'DONE') and not self.flagCmdLine:
                 self.state = 'AUTHORIZED'
                 self.doPrepareSettings(arg)
                 self.doUpdate(arg)
         #---AUTHORIZED---
         elif self.state == 'AUTHORIZED':
-            if event == 'next' :
+            if event == 'next':
                 self.state = 'WIZARD'
                 self.doUpdate(arg)
-            elif event == 'print' :
+            elif event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
         #---RECOVER---
         elif self.state == 'RECOVER':
-            if event == 'print' :
+            if event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
-            elif ( event == 'id_restorer.state' and arg == 'FAILED' ) and not self.flagCmdLine :
+            elif (event == 'id_restorer.state' and arg == 'FAILED') and not self.flagCmdLine:
                 self.state = 'LOAD_KEY'
                 self.doUpdate(arg)
-            elif ( event == 'id_restorer.state' and arg == 'FAILED' ) and self.flagCmdLine :
+            elif (event == 'id_restorer.state' and arg == 'FAILED') and self.flagCmdLine:
                 self.state = 'DONE'
                 self.doUpdate(arg)
-            elif event == 'id_restorer.state' and arg == 'RESTORED!' :
+            elif event == 'id_restorer.state' and arg == 'RESTORED!':
                 self.state = 'RESTORED'
                 self.doRestoreSettings(arg)
                 self.doUpdate(arg)
         #---DONE---
         elif self.state == 'DONE':
-            if event == 'print' :
+            if event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
         #---WIZARD---
         elif self.state == 'WIZARD':
-            if event == 'print' :
+            if event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
-            elif ( event == 'install_wizard.state' and arg == 'DONE' ) :
+            elif (event == 'install_wizard.state' and arg == 'DONE'):
                 self.state = 'DONE'
                 self.doUpdate(arg)
         #---RESTORED---
         elif self.state == 'RESTORED':
-            if event == 'print' :
+            if event == 'print':
                 self.doPrint(arg)
                 self.doUpdate(arg)
-            elif event == 'next' :
+            elif event == 'next':
                 self.state = 'WIZARD'
                 self.doUpdate(arg)
         return None
@@ -295,8 +297,8 @@ class Installer(automat.Automat):
             reactor.callLater(0, webcontrol.OnUpdateInstallPage)
         else:
             from web import control
-            control.request_update([{'state': self.state},])
-            
+            control.request_update([{'state': self.state}, ])
+
     def doClearOutput(self, arg):
         # lg.out(4, 'installer.doClearOutput')
         for state in self.output.keys():
@@ -304,7 +306,7 @@ class Installer(automat.Automat):
 
     def doPrint(self, arg):
         lg.out(8, 'installer.doPrint %s %s' % (self.state, str(arg)))
-        if not self.output.has_key(self.state):
+        if self.state not in self.output:
             self.output[self.state] = {'data': [('', 'black')]}
         if arg is None:
             self.output[self.state]['data'] = [('', 'black')]
@@ -320,13 +322,13 @@ class Installer(automat.Automat):
         """
         Action method.
         """
-        if not self.output.has_key('INPUT_NAME'):
+        if 'INPUT_NAME' not in self.output:
             self.output['INPUT_NAME'] = {'data': [('', 'black')]}
         self.output['INPUT_NAME']['data'] = self.output['REGISTER']['data']
 
     def doPrintIncorrectName(self, arg):
-        text, color = ('incorrect user name', 'red') 
-        if not self.output.has_key(self.state):
+        text, color = ('incorrect user name', 'red')
+        if self.state not in self.output:
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['data'].append((text, color))
         # lg.out(0, '  [%s]' % text)
@@ -340,7 +342,7 @@ class Installer(automat.Automat):
         src = arg['keysrc']
         lg.out(2, 'installer.doReadKey length=%s' % len(src))
         # src = bpio.ReadBinaryFile(keyfn)
-        if len(src) > 1024*10:
+        if len(src) > 1024 * 10:
             self.doPrint(('file is too big for private key', 'red'))
             return
         try:
@@ -354,18 +356,20 @@ class Installer(automat.Automat):
             lg.exc()
             idurl = ''
             keysrc = src
-        if not self.output.has_key(self.state):
+        if self.state not in self.output:
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['idurl'] = idurl
         self.output[self.state]['keysrc'] = keysrc
-        if not self.output.has_key('RECOVER'):
+        if 'RECOVER' not in self.output:
             self.output['RECOVER'] = {'data': [('', 'black')]}
         if keysrc and idurl:
-            self.output['RECOVER']['data'].append(('private key and IDURL was loaded', 'green'))
+            self.output['RECOVER']['data'].append(
+                ('private key and IDURL was loaded', 'green'))
         elif not idurl and keysrc:
-            self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
-        
+            self.output['RECOVER']['data'].append(
+                ('private key was loaded, provide correct IDURL now', 'blue'))
+
     def doPasteKey(self, arg):
         src = misc.getClipboardText()
         try:
@@ -379,16 +383,18 @@ class Installer(automat.Automat):
             lg.exc()
             idurl = ''
             keysrc = src
-        if not self.output.has_key(self.state):
+        if self.state not in self.output:
             self.output[self.state] = {'data': [('', 'black')]}
         self.output[self.state]['idurl'] = idurl
         self.output[self.state]['keysrc'] = keysrc
-        if not self.output.has_key('RECOVER'):
+        if 'RECOVER' not in self.output:
             self.output['RECOVER'] = {'data': [('', 'black')]}
         if keysrc and idurl:
-            self.output['RECOVER']['data'].append(('private key and IDURL was loaded', 'green'))
+            self.output['RECOVER']['data'].append(
+                ('private key and IDURL was loaded', 'green'))
         elif not idurl and keysrc:
-            self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
+            self.output['RECOVER']['data'].append(
+                ('private key was loaded, provide correct IDURL now', 'blue'))
 
     def doPrepareSettings(self, arg):
         """
@@ -407,5 +413,3 @@ class Installer(automat.Automat):
 #            lg.set_debug_level(0)
 #        else:
 #            lg.set_debug_level(18)
-
-

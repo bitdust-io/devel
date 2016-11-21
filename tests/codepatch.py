@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#codepatch.py
+# codepatch.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -44,10 +44,10 @@ for filename in os.listdir(sys.argv[1]):
                 pkg, modl = words[1].split('.')
                 if modl == words[3]:
                     print path, line
-                    line = 'from %s import %s' % (pkg, modl) 
+                    line = 'from %s import %s' % (pkg, modl)
         newsrc += line + '\n'
 
-    
+
 #    doclines = False
 #    for line in lines:
 #        if line.strip() == '"""':
@@ -59,10 +59,10 @@ for filename in os.listdir(sys.argv[1]):
 #        else:
 #            if doclines:
 #                newsrc += line.replace('`', '``')+'\n'
-#            else: 
+#            else:
 #                newsrc += line+'\n'
 #    newsrc = newsrc.replace('``', '``')
-    
+
     # lines = src.splitlines()
     # first_docstring_pos = False
     # for line in lines:
@@ -71,5 +71,5 @@ for filename in os.listdir(sys.argv[1]):
     #         first_docstring_pos = True
     #         newsrc += '.. module:: %s\n\n' % (filename[:-3])
     #         continue
-    
+
     open(path, 'w').write(newsrc)

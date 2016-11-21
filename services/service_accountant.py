@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_coins_accountant.py
+# service_coins_accountant.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,18 +31,20 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return CoinsAccountantService()
-    
+
+
 class CoinsAccountantService(LocalService):
-    
+
     service_name = 'service_accountant'
     config_path = 'services/accountant/enabled'
-    
+
     def dependent_on(self):
-        return ['service_p2p_hookups', 
+        return ['service_p2p_hookups',
                 ]
-    
+
     def start(self):
         from coins import accountant_node
         from coins import accountants_finder
@@ -52,7 +54,7 @@ class CoinsAccountantService(LocalService):
         accountant_node.A().addStateChangedCallback(
             self._on_accountant_node_switched)
         return True
-    
+
     def stop(self):
         from coins import accountant_node
         accountant_node.A().removeStateChangedCallback(
@@ -60,7 +62,7 @@ class CoinsAccountantService(LocalService):
         accountant_node.A('stop')
         accountant_node.A('shutdown')
         return True
-    
+
     def request(self, request, info):
         from logs import lg
         from p2p import p2p_service
@@ -71,15 +73,22 @@ class CoinsAccountantService(LocalService):
             lg.exc()
             return None
         if mode != 'join' and mode != 'write' and mode != 'read':
-            lg.out(8, "service_accountant.request DENIED, wrong mode provided : %s" % mode)
+            lg.out(
+                8,
+                "service_accountant.request DENIED, wrong mode provided : %s" %
+                mode)
             return None
         from coins import accountant_node
         if not accountant_node.A():
-            lg.out(8, "service_accountant.request DENIED, accountant_node() state machine not exist")
-            return p2p_service.SendFail(request, "accountant_node service not started")
+            lg.out(
+                8,
+                "service_accountant.request DENIED, accountant_node() state machine not exist")
+            return p2p_service.SendFail(
+                request, "accountant_node service not started")
         # if accountant_node.A().state not in ['ACCOUNTANTS?', "READY", "VALID_COIN?", "WRITE_COIN!", ]:
         #     lg.out(8, "service_accountant.request DENIED, accountant_node() state is : %s" % accountant_node.A().state)
-        #     return p2p_service.SendFail(request, "accountant_node service currently unavailable")
+        # return p2p_service.SendFail(request, "accountant_node service
+        # currently unavailable")
         if mode == 'join':
             accountant_node.A('accountant-connected', request.OwnerID)
         return p2p_service.SendAck(request, 'accepted')
@@ -90,4 +99,6 @@ class CoinsAccountantService(LocalService):
         from coins import accountant_node
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             # reactor.callLater(60, accountant_node.A, 'start')
-            lg.out(8, 'service_broadcasting._on_accountant_node_switched will try to reconnect again after 1 minute')
+            lg.out(
+                8,
+                'service_broadcasting._on_accountant_node_switched will try to reconnect again after 1 minute')

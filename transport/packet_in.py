@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#packet_in.py
+# packet_in.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -43,12 +43,12 @@ EVENTS:
     * :red:`valid-inbox-packet`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 18
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import time
@@ -66,7 +66,7 @@ from system import tmpfile
 
 from userid import my_id
 
-from contacts import contactsdb 
+from contacts import contactsdb
 from contacts import identitycache
 
 from services import driver
@@ -76,23 +76,26 @@ import stats
 import callback
 import packet_out
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _InboxItems = {}
 _PacketsCounter = 0
 _History = []
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def get_packets_counter():
     global _PacketsCounter
     return _PacketsCounter
 
+
 def increment_packets_counter():
     global _PacketsCounter
-    _PacketsCounter += 1  
-    
-#------------------------------------------------------------------------------ 
+    _PacketsCounter += 1
+
+#------------------------------------------------------------------------------
+
 
 def items():
     """
@@ -117,12 +120,15 @@ def history():
     global _History
     return _History
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def process(newpacket, info):
     if not driver.is_started('service_p2p_hookups'):
         if _Debug:
-            lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
+            lg.out(
+                _DebugLevel,
+                'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
         return
     handled = False
     if _Debug:
@@ -130,28 +136,32 @@ def process(newpacket, info):
             str(newpacket), info.proto, info.host, info.status))
     from p2p import commands
     from p2p import p2p_service
-    if newpacket.Command == commands.Identity() and newpacket.RemoteID == my_id.getLocalID():
+    if newpacket.Command == commands.Identity(
+    ) and newpacket.RemoteID == my_id.getLocalID():
         # contact sending us current identity we might not have
         # so we handle it before check that packet is valid
-        # because we might not have his identity on hands and so can not verify the packet  
+        # because we might not have his identity on hands and so can not verify the packet
         # so we check that his Identity is valid and save it into cache
         # than we check the packet to be valid too.
         if not p2p_service.Identity(newpacket):
             return
     # check that signed by a contact of ours
-    if not newpacket.Valid():              
+    if not newpacket.Valid():
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
             info.proto, info.host, newpacket))
         return
-    for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
+    for p in packet_out.search_by_response_packet(
+            newpacket, info.proto, info.host):
         p.automat('inbox-packet', (newpacket, info))
         handled = True
-    handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
-    if not handled and newpacket.Command not in [ commands.Ack(), commands.Fail() ]:
+    handled = callback.run_inbox_callbacks(
+        newpacket, info, info.status, info.error_message) or handled
+    if not handled and newpacket.Command not in [
+            commands.Ack(), commands.Fail()]:
         if _Debug:
-            lg.out(_DebugLevel-8, '    incoming %s from [%s://%s]' % (
+            lg.out(_DebugLevel - 8, '    incoming %s from [%s://%s]' % (
                 newpacket, info.proto, info.host))
-            lg.out(_DebugLevel-8, '        NOT HANDLED !!!')
+            lg.out(_DebugLevel - 8, '        NOT HANDLED !!!')
     else:
         if _Debug:
             history().append({
@@ -165,7 +175,8 @@ def process(newpacket, info):
                 'address': '%s://%s' % (info.proto, info.host),
             })
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class PacketIn(automat.Automat):
     """
@@ -177,7 +188,7 @@ class PacketIn(automat.Automat):
         self.time = None
         self.timeout = None
         self.proto = None
-        self.host = None 
+        self.host = None
         self.sender_idurl = None
         self.filename = None
         self.size = None
@@ -185,7 +196,12 @@ class PacketIn(automat.Automat):
         self.status = None
         self.error_message = None
         self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
-        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
+        automat.Automat.__init__(
+            self,
+            self.label,
+            'AT_STARTUP',
+            _DebugLevel,
+            _Debug)
         increment_packets_counter()
 
     def __repr__(self):
@@ -205,32 +221,32 @@ class PacketIn(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'register-item' :
+            if event == 'register-item':
                 self.state = 'RECEIVING'
                 self.doInit(arg)
         #---RECEIVING---
         elif self.state == 'RECEIVING':
-            if event == 'cancel' :
+            if event == 'cancel':
                 self.doCancelItem(arg)
-            elif event == 'unregister-item' and not self.isTransferFinished(arg) :
+            elif event == 'unregister-item' and not self.isTransferFinished(arg):
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doEraseInputFile(arg)
                 self.doDestroyMe(arg)
-            elif event == 'unregister-item' and self.isTransferFinished(arg) and not self.isRemoteIdentityCached(arg) :
+            elif event == 'unregister-item' and self.isTransferFinished(arg) and not self.isRemoteIdentityCached(arg):
                 self.state = 'CACHING'
                 self.doCacheRemoteIdentity(arg)
-            elif event == 'unregister-item' and self.isTransferFinished(arg) and self.isRemoteIdentityCached(arg) :
+            elif event == 'unregister-item' and self.isTransferFinished(arg) and self.isRemoteIdentityCached(arg):
                 self.state = 'INBOX?'
                 self.doReadAndUnserialize(arg)
         #---INBOX?---
         elif self.state == 'INBOX?':
-            if event == 'valid-inbox-packet' :
+            if event == 'valid-inbox-packet':
                 self.state = 'DONE'
                 self.doReportReceived(arg)
                 self.doEraseInputFile(arg)
                 self.doDestroyMe(arg)
-            elif event == 'unserialize-failed' :
+            elif event == 'unserialize-failed':
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doEraseInputFile(arg)
@@ -243,12 +259,12 @@ class PacketIn(automat.Automat):
             pass
         #---CACHING---
         elif self.state == 'CACHING':
-            if event == 'failed' :
+            if event == 'failed':
                 self.state = 'FAILED'
                 self.doReportCacheFailed(arg)
                 self.doEraseInputFile(arg)
                 self.doDestroyMe(arg)
-            elif event == 'remote-id-cached' :
+            elif event == 'remote-id-cached':
                 self.state = 'INBOX?'
                 self.doReadAndUnserialize(arg)
         return None
@@ -278,7 +294,8 @@ class PacketIn(automat.Automat):
         """
         self.proto, self.host, self.sender_idurl, self.filename, self.size = arg
         self.time = time.time()
-        self.timeout = 300 # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
+        # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
+        self.timeout = 300
         if not self.sender_idurl:
             lg.warn('sender_idurl is None: %s' % str(arg))
 
@@ -293,7 +310,7 @@ class PacketIn(automat.Automat):
         Action method.
         """
         t = gateway.transports().get(self.proto, None)
-        if t: 
+        if t:
             t.call('cancel_file_receiving', self.transfer_id)
 
     def doCacheRemoteIdentity(self, arg):
@@ -313,14 +330,22 @@ class PacketIn(automat.Automat):
         newpacket = gateway.inbox(self)
         if newpacket is None:
             if _Debug:
-                lg.out(_DebugLevel, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
-                         self.proto.upper().ljust(5), self.status.ljust(8), 
-                         self.host, os.path.basename(self.filename),))
+                lg.out(
+                    _DebugLevel,
+                    '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' %
+                    (self.proto.upper().ljust(5),
+                     self.status.ljust(8),
+                     self.host,
+                     os.path.basename(
+                        self.filename),
+                     ))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
             try:
                 fd, _ = tmpfile.make('other', '.inbox.error')
                 data = bpio.ReadBinaryFile(self.filename)
-                os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
+                os.write(
+                    fd, 'from %s:%s %s\n' %
+                    (self.proto, self.host, self.status))
                 os.write(fd, str(data))
                 os.close(fd)
                 os.remove(self.filename)
@@ -336,7 +361,11 @@ class PacketIn(automat.Automat):
         Action method.
         """
         newpacket = arg
-        stats.count_inbox(self.sender_idurl, self.proto, self.status, self.bytes_received)
+        stats.count_inbox(
+            self.sender_idurl,
+            self.proto,
+            self.status,
+            self.bytes_received)
         process(newpacket, self)
 
     def doReportFailed(self, arg):
@@ -344,15 +373,26 @@ class PacketIn(automat.Automat):
         Action method.
         """
         status, bytes_received, _ = arg
-        stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+        stats.count_inbox(
+            self.sender_idurl,
+            self.proto,
+            status,
+            bytes_received)
 
     def doReportCacheFailed(self, arg):
         """
         Action method.
         """
         status, bytes_received, _ = arg
-        stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
-        lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
+        stats.count_inbox(
+            self.sender_idurl,
+            self.proto,
+            status,
+            bytes_received)
+        lg.out(
+            18,
+            'packet_in.doReportCacheFailed WARNING : %s' %
+            self.sender_idurl)
 
     def doDestroyMe(self, arg):
         """

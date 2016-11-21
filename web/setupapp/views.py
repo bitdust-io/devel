@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#views.py
+# views.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,18 +14,18 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 import os
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from twisted.internet import reactor
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from django.views.generic import TemplateView
 from django.template.response import TemplateResponse
@@ -33,13 +33,13 @@ from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.contrib.auth import logout
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from system import bpio
 
 from lib import misc
 from lib import diskspace
-from system import diskusage 
+from system import diskusage
 
 from userid import my_id
 
@@ -48,36 +48,38 @@ from main import settings
 from main import installer
 from main import install_wizard
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _ALREADY_CONFIGURED_REDIRECT_URL = '/'
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _SetupControllerObject = None
 _FinishedState = False
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class SetupView(TemplateView):
+
     def dispatch(self, request):
         global _SetupControllerObject
         global _FinishedState
-        
+
         if _SetupControllerObject is None:
             if not installer.IsExist():
                 return HttpResponseRedirect(_ALREADY_CONFIGURED_REDIRECT_URL)
             _SetupControllerObject = SetupController()
-            
+
         result = _SetupControllerObject.render(request)
-        
+
         if result is None:
             return HttpResponseRedirect(request.path)
-        
+
         template, context, new_request = result
-        
+
         context['context_instance'] = RequestContext(new_request)
-        
+
         if _FinishedState:
             logout(new_request)
 
@@ -87,36 +89,37 @@ class SetupView(TemplateView):
             response.delete_cookie('sessionid')
 
         return response
-        
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class SetupController:
 
     def __init__(self):
         self.installer_state_to_page = {
-            'AT_STARTUP':   self.renderSelectPage,
-            'WHAT_TO_DO?':  self.renderSelectPage,
-            'INPUT_NAME':   self.renderInputNamePage,
-            'REGISTER':     self.renderRegisterNewUserPage,
-            'AUTHORIZED':   self.renderRegisterNewUserPage,
-            'LOAD_KEY':     self.renderLoadKeyPage,
-            'RECOVER':      self.renderRestorePage,
-            'RESTORED':     self.renderRestorePage,
-            'WIZARD':       self.renderWizardPage,
-            'DONE':         self.renderLastPage, 
-            }
+            'AT_STARTUP': self.renderSelectPage,
+            'WHAT_TO_DO?': self.renderSelectPage,
+            'INPUT_NAME': self.renderInputNamePage,
+            'REGISTER': self.renderRegisterNewUserPage,
+            'AUTHORIZED': self.renderRegisterNewUserPage,
+            'LOAD_KEY': self.renderLoadKeyPage,
+            'RECOVER': self.renderRestorePage,
+            'RESTORED': self.renderRestorePage,
+            'WIZARD': self.renderWizardPage,
+            'DONE': self.renderLastPage,
+        }
         self.install_wizard_state_to_page = {
-            'READY':        self.renderWizardStartPage,
-            'STORAGE':      self.renderWizardStoragePage,
-            'CONTACTS':     self.renderWizardContactsPage,
-            'LAST_PAGE':    self.renderLastPage,
-            'DONE':         self.renderLastPage, 
-            }
+            'READY': self.renderWizardStartPage,
+            'STORAGE': self.renderWizardStoragePage,
+            'CONTACTS': self.renderWizardContactsPage,
+            'LAST_PAGE': self.renderLastPage,
+            'DONE': self.renderLastPage,
+        }
         self.data = {
             'username': bpio.ReadTextFile(settings.UserNameFilename()).strip(),
             'pksize': settings.DefaultPrivateKeySize(),
-            'needed': str( int( settings.DefaultNeededBytes() / (1024*1024) ) ),
-            'donated': str( int( settings.DefaultDonatedBytes() / (1024*1024) ) ),
+            'needed': str(int(settings.DefaultNeededBytes() / (1024 * 1024))),
+            'donated': str(int(settings.DefaultDonatedBytes() / (1024 * 1024))),
             'suppliers': str(settings.DefaultDesiredSuppliers()),
             'customersdir': unicode(settings.getCustomersFilesDir()),
             'localbackupsdir': unicode(settings.getLocalBackupsDir()),
@@ -126,37 +129,42 @@ class SetupController:
             'name': '',
             'surname': '',
             'nickname': '',
-            }
+        }
         installer.A('init')
-        
+
     def _get_output(self, state):
         out = ''
         for text, color in installer.A().getOutput(state).get('data', []):
             if text.strip():
                 out += '<font color="%s">%s</font><br />\n' % (color, text)
         return out
-    
+
     def render(self, request):
         current_state = installer.A().state
         current_page = self.installer_state_to_page.get(current_state, None)
         if current_page is None:
-            raise Exception('incorrect state in installer(): %s' % current_state)
+            raise Exception(
+                'incorrect state in installer(): %s' %
+                current_state)
         result = current_page(request)
         return result
 
     def renderWizardPage(self, request):
         current_state = install_wizard.A().state
-        current_page = self.install_wizard_state_to_page.get(current_state, None)
+        current_page = self.install_wizard_state_to_page.get(
+            current_state, None)
         if current_page is None:
-            raise Exception('incorrect state in install_wizard(): %s' % current_state)
+            raise Exception(
+                'incorrect state in install_wizard(): %s' %
+                current_state)
         result = current_page(request)
         return result
 
     def renderSelectPage(self, request):
         template = 'pages/select_action.html'
-        context = { }
+        context = {}
         if request is None:
-            return template, context, request 
+            return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'next':
             installer.A(request.REQUEST.get('mode', 'register-selected'))
@@ -171,70 +179,76 @@ class SetupController:
         else:
             possible_name = ''
         context = {'username': self.data['username'],
-                   'pksize': self.data['pksize'], 
-                   'output': '', 
+                   'pksize': self.data['pksize'],
+                   'output': '',
                    'usernameplaceholder': possible_name, }
         try:
             text, color = installer.A().getOutput().get('data', [('', '')])[-1]
-            context['output'] = '<font color="%s">%s</font><br />\n' % (color, text)
+            context[
+                'output'] = '<font color="%s">%s</font><br />\n' % (color, text)
         except:
             pass
         if request is None:
-            return template, context, request 
+            return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'next':
-            self.data['pksize'] = int(request.REQUEST.get('pksize', self.data['pksize']))
-            self.data['username'] = request.REQUEST.get('username', self.data['username']).lower()
+            self.data['pksize'] = int(
+                request.REQUEST.get(
+                    'pksize', self.data['pksize']))
+            self.data['username'] = request.REQUEST.get(
+                'username', self.data['username']).lower()
             installer.A('register-start', self.data)
             return None
         if action == 'back':
             installer.A('back')
             return None
         return template, context, request
-            
+
     def renderRegisterNewUserPage(self, request):
         template = 'pages/new_user.html'
         out = ''
         for text, color in installer.A().getOutput().get('data', []):
             if text.strip():
-                out += '     <li><font color="%s">%s</font></li>\n' % (color, text)
+                out += '     <li><font color="%s">%s</font></li>\n' % (
+                    color, text)
         if out:
             out = '    <ul>\n' + out + '    </ul>\n'
-        context = {'idurl': '', 
+        context = {'idurl': '',
                    'output': out,
                    }
         if installer.A().state == 'AUTHORIZED':
             context['idurl'] = my_id.getLocalID()
             self.data['idurl'] = str(context['idurl'])
         if request is None:
-            return template, context, request 
+            return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'next':
             installer.A(action, self.data)
             return None
         return template, context, request
-    
+
     def renderLoadKeyPage(self, request):
         template = 'pages/load_key.html'
         out = ''
         try:
-            text, color = installer.A().getOutput('RECOVER').get('data', [('', '')])[-1]
+            text, color = installer.A().getOutput(
+                'RECOVER').get('data', [('', '')])[-1]
             if text:
                 out = '    <p><font color="%s">%s</font></p>\n' % (color, text)
         except:
             pass
-        context = {'idurl': request.REQUEST.get('idurl', 
-                        installer.A().getOutput().get('idurl', '')),
-                   'keysrc': request.REQUEST.get('keysrc',
-                        installer.A().getOutput().get('keysrc', '')),
-                   'output': out,
-                   }
+        context = {
+            'idurl': request.REQUEST.get(
+                'idurl', installer.A().getOutput().get(
+                    'idurl', '')), 'keysrc': request.REQUEST.get(
+                'keysrc', installer.A().getOutput().get(
+                    'keysrc', '')), 'output': out, }
         if context['idurl']:
             self.data['idurl'] = str(context['idurl'])
         if context['keysrc']:
             self.data['keysrc'] = str(context['keysrc'])
         if request is None:
-            return template, context, request 
+            return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'load-from-file':
             try:
@@ -242,8 +256,9 @@ class SetupController:
                 context['output'] = ''
             except:
                 self.data['keysrc'] = ''
-                context['output'] = '<p><font color="red">error reading file</font></p>'
-            if self.data['keysrc']:    
+                context[
+                    'output'] = '<p><font color="red">error reading file</font></p>'
+            if self.data['keysrc']:
                 installer.A(action, self.data)
             return None
         if action == 'paste-from-clipboard':
@@ -251,18 +266,19 @@ class SetupController:
             return None
         if action == 'next':
             installer.A('restore-start', self.data)
-            return None 
+            return None
         if action == 'back':
             installer.A(action)
             return None
         return template, context, request
-    
+
     def renderRestorePage(self, request):
         template = 'pages/restore_identity.html'
         out = ''
-        for text, color in installer.A().getOutput().get('data', []): 
+        for text, color in installer.A().getOutput().get('data', []):
             if text.strip():
-                out += '     <li><font color="%s">%s</font></li>\n' % (color, text)
+                out += '     <li><font color="%s">%s</font></li>\n' % (
+                    color, text)
         if out:
             out = '    <ul>\n' + out + '    </ul>\n'
         context = {'output': out,
@@ -272,7 +288,7 @@ class SetupController:
             context['idurl'] = my_id.getLocalID()
             self.data['idurl'] = str(context['idurl'])
         if request is None:
-            return template, context, request 
+            return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'next':
             installer.A(action)
@@ -281,9 +297,9 @@ class SetupController:
 
     def renderWizardStartPage(self, request):
         template = 'pages/wizard_start.html'
-        context = { }
+        context = {}
         if request is None:
-            return template, context, request 
+            return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'next':
             install_wizard.A(action)
@@ -292,24 +308,24 @@ class SetupController:
             install_wizard.A(action)
             template = 'pages/last_page.html'
         return template, context, request
-    
+
     def renderWizardStoragePage(self, request):
         template = 'pages/wizard_storage.html'
         req = {}
         if request is not None:
             req = request.REQUEST
-        self.data['customersdir'] = unicode(req.get('customersdir',
-            settings.getCustomersFilesDir()))
-        self.data['localbackupsdir'] = unicode(req.get('localbackupsdir',
-            settings.getLocalBackupsDir()))
+        self.data['customersdir'] = unicode(
+            req.get('customersdir', settings.getCustomersFilesDir()))
+        self.data['localbackupsdir'] = unicode(
+            req.get('localbackupsdir', settings.getLocalBackupsDir()))
         self.data['restoredir'] = unicode(req.get('restoredir',
-            settings.getRestoreDir()))
+                                                  settings.getRestoreDir()))
         self.data['needed'] = req.get('needed', self.data['needed'])
-        neededV = diskspace.GetBytesFromString(self.data['needed']+' Mb',
-            settings.DefaultNeededBytes())  
+        neededV = diskspace.GetBytesFromString(self.data['needed'] + ' Mb',
+                                               settings.DefaultNeededBytes())
         self.data['donated'] = req.get('donated', self.data['donated'])
-        donatedV = diskspace.GetBytesFromString(self.data['donated']+' Mb',
-            settings.DefaultDonatedBytes())
+        donatedV = diskspace.GetBytesFromString(self.data['donated'] + ' Mb',
+                                                settings.DefaultDonatedBytes())
         self.data['suppliers'] = req.get('suppliers', self.data['suppliers'])
         mounts = []
         freeSpaceIsOk = True
@@ -330,7 +346,7 @@ class SetupController:
                         color = '#e06060'
                         freeSpaceIsOk = False
                 mounts.append((d[0:2],
-                               diskspace.MakeStringFromBytes(free), 
+                               diskspace.MakeStringFromBytes(free),
                                diskspace.MakeStringFromBytes(total),
                                color,))
         elif bpio.Linux() or bpio.Mac():
@@ -344,13 +360,14 @@ class SetupController:
                     if donatedV >= free:
                         color = '#e06060'
                         freeSpaceIsOk = False
-                if bpio.getMountPointLinux(self.data['localbackupsdir']) == mnt:
+                if bpio.getMountPointLinux(
+                        self.data['localbackupsdir']) == mnt:
                     color = '#60e060'
                     if neededV >= free:
                         color = '#e06060'
                         freeSpaceIsOk = False
-                mounts.append((mnt, 
-                               diskspace.MakeStringFromBytes(free), 
+                mounts.append((mnt,
+                               diskspace.MakeStringFromBytes(free),
                                diskspace.MakeStringFromBytes(total),
                                color,))
         ok = True
@@ -360,26 +377,31 @@ class SetupController:
             ok = False
         if donatedV < settings.MinimumDonatedBytes():
             out += '<font color=red>you must donate at least %f MB</font><br/>\n' % (
-                round(settings.MinimumDonatedBytes()/(1024.0*1024.0), 2))
+                round(settings.MinimumDonatedBytes() / (1024.0 * 1024.0), 2))
             ok = False
         if not os.path.isdir(self.data['customersdir']):
-            out += '<font color=red>directory %s not exist</font><br/>\n' % self.data['customersdir']
+            out += '<font color=red>directory %s not exist</font><br/>\n' % self.data[
+                'customersdir']
             ok = False
         if not os.access(self.data['customersdir'], os.W_OK):
-            out += '<font color=red>folder %s does not have write permissions</font><br/>\n' % self.data['customersdir']
+            out += '<font color=red>folder %s does not have write permissions</font><br/>\n' % self.data[
+                'customersdir']
             ok = False
         if not os.path.isdir(self.data['localbackupsdir']):
-            out += '<font color=red>directory %s not exist</font><br/>\n' % self.data['localbackupsdir']
+            out += '<font color=red>directory %s not exist</font><br/>\n' % self.data[
+                'localbackupsdir']
             ok = False
         if not os.access(self.data['localbackupsdir'], os.W_OK):
-            out += '<font color=red>folder %s does not have write permissions</font><br/>\n' % self.data['localbackupsdir']
+            out += '<font color=red>folder %s does not have write permissions</font><br/>\n' % self.data[
+                'localbackupsdir']
             ok = False
-        if int(self.data['suppliers']) not in settings.getECCSuppliersNumbers():
+        if int(self.data['suppliers']
+               ) not in settings.getECCSuppliersNumbers():
             out += '<font color=red>incorrect number of suppliers, correct values are: %s</font><br/>\n' % (
                 str(settings.getECCSuppliersNumbers()).strip('[]'))
             ok = False
-        context = {'output': out, 
-                   'mounts': mounts, 
+        context = {'output': out,
+                   'mounts': mounts,
                    'needed': self.data['needed'],
                    'donated': self.data['donated'],
                    'localbackupsdir': self.data['localbackupsdir'],
@@ -388,7 +410,7 @@ class SetupController:
                    'suppliers': self.data['suppliers'],
                    }
         if request is None:
-            return template, context, request 
+            return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'next':
             if ok:
@@ -407,7 +429,7 @@ class SetupController:
                    'nickname': self.data['nickname'],
                    }
         if request is None:
-            return template, context, request 
+            return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'next':
             self.data['name'] = request.REQUEST['name']
@@ -429,7 +451,3 @@ class SetupController:
         template = 'pages/last_page.html'
         context = {}
         return template, context, request
-        
-    
-    
-    

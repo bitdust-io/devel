@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#nameurl.py
+# nameurl.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,10 +33,10 @@ We assume BitDust URLs are of the form::
     ssh://host.name.com:port/fooobar.xml  (maybe no foobar.xml)
     tcp://123.45.67.89:4321
     udp://veselin@my.identityserver.net:8080/some_folder/veselin
-    
-Tried built-in methods ``urlparse()`` and ``urlsplit()`` 
+
+Tried built-in methods ``urlparse()`` and ``urlsplit()``
 and they move the location from the second to the 3rd
-argument if you have "http" vs "ssh" or "tcp".  
+argument if you have "http" vs "ssh" or "tcp".
 This seems like trouble.
 """
 
@@ -44,12 +44,13 @@ import re
 import urllib
 import urlparse
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-legalchars="#.-_()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-legalset= set(legalchars)
+legalchars = "#.-_()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+legalset = set(legalchars)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def UrlParse(url):
     """
@@ -81,7 +82,7 @@ def UrlParse(url):
 
         if filename == '':
             filename = tail
-    
+
     return proto.strip(), host.strip(), port.strip(), filename.strip()
 
 
@@ -91,11 +92,11 @@ def UrlMake(protocol='', machine='', port='', filename='', parts=None):
     """
     if parts is not None:
         protocol, machine, port, filename = parts
-    url = protocol+'://'+machine
+    url = protocol + '://' + machine
     if port != '':
-        url += ':'+str(port)
+        url += ':' + str(port)
     if filename != '':
-        url += '/'+filename
+        url += '/' + filename
     return url
 
 
@@ -104,12 +105,12 @@ def UrlFilename(url):
     Generate a 'safe' filename from URL address.
     This is useful when need to store identity files on disk.
         nameurl.UrlFilename('http://id.bitdust.io/veselin.xml')
-        'http###id.bitdust.io#veselin.xml'     
+        'http###id.bitdust.io#veselin.xml'
     """
     if url is None:
         return None
-    result = url.replace("://","###")
-    result = result.replace("/","#")
+    result = url.replace("://", "###")
+    result = result.replace("/", "#")
     result = re.sub('(\:)(\d+)', '(#\g<2>#)', result)
     result = result.lower()
 #    global legalset
@@ -136,7 +137,7 @@ def UrlFilenameHTML(url):
     """
     Another method to simplify URL, so you can create a filename from URL string.
         nameurl.UrlFilenameHTML('http://id.bitdust.io/veselin.xml')
-        'id_bitdust_net_veselin_xml'     
+        'id_bitdust_net_veselin_xml'
     """
     global legalset
     s = url.replace('http://', '')
@@ -151,15 +152,16 @@ def UrlFilenameHTML(url):
 
 def GetName(url):
     """
-    Deal with the identities, return a filename (without extension) from URL address. 
+    Deal with the identities, return a filename (without extension) from URL address.
         nameurl.GetName('http://id.bitdust.io/kinggeorge.xml')
-        'kinggeorge'    
+        'kinggeorge'
     """
-    if url in [None, 'None', '',]:
+    if url in [None, 'None', '', ]:
         return ''
     if not url.endswith('.xml'):
-        return url        
-    return url[url.rfind("/")+1:-4] #return url[url.rfind("/")+1:url.rfind(".")]
+        return url
+    # return url[url.rfind("/")+1:url.rfind(".")]
+    return url[url.rfind("/") + 1:-4]
 
 
 def GetFileName(url):
@@ -168,7 +170,8 @@ def GetFileName(url):
     """
     if url in [None, 'None', ]:
         return ''
-    return url[url.rfind("/")+1:]
+    return url[url.rfind("/") + 1:]
+
 
 def Quote(s):
     """
@@ -176,18 +179,21 @@ def Quote(s):
     """
     return urllib.quote(s, '')
 
+
 def UnQuote(s):
     """
     A wrapper for built-in method ``urllib.unquote()``.
     """
     return urllib.unquote(s)
 
+
 def IdContactSplit(contact):
     try:
         return contact.split('://')
     except:
-        return '', '' 
-    
+        return '', ''
+
+
 def DjangoQuote(s):
     """
     Ensure that primary key values do not confuse the admin URLs by escaping
@@ -221,9 +227,10 @@ def DjangoUnQuote(s):
                 myappend('_' + item)
         else:
             myappend('_' + item)
-    return "".join(res)    
+    return "".join(res)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def main():
     """
@@ -232,32 +239,22 @@ def main():
 #    url = 'http://id.bitdust.io:565/sdfsdfsdf/veselin2.xml'
 ##    url = 'ssh://34.67.22.5: 5654 /gfgfg.sdfsdf/sdfsd'
 ##    url = 'q2q://d5wJMQRBYD72V6Zb5aZ1@work.offshore.ai'
-##    print UrlParse(url)
+# print UrlParse(url)
 #    print url
 #    fn =  UrlFilename(url)
 #    print fn
 #    ur = FilenameUrl(fn)
 #    print ur
-##    print filenameurl
-##    print FilenameUrl(filenameurl)
+# print filenameurl
+# print FilenameUrl(filenameurl)
 ##    proto, machine, port, name = UrlParse(url)
 ##    url2 = UrlMake(proto, machine, 1234, name)
-##    print url2
+# print url2
 ##    filenameurl2 = UrlFilename(url2)
-##    print filenameurl2
-##    print FilenameUrl(filenameurl2)
-##    print UrlParse('q2q://d5wJMQRBYD72V6Zb5aZ1@work.offshore.ai')
+# print filenameurl2
+# print FilenameUrl(filenameurl2)
+# print UrlParse('q2q://d5wJMQRBYD72V6Zb5aZ1@work.offshore.ai')
     print GetName(str(None))
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
-

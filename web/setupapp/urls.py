@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#urls.py
+# urls.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -23,10 +23,8 @@ from django.conf.urls import patterns, url
 
 import views
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 urlpatterns = patterns('',
-    url(r'', views.SetupView.as_view()),
-)
-
-
+                       url(r'', views.SetupView.as_view()),
+                       )

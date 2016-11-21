@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#initializer.py
+# initializer.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -37,19 +37,19 @@
 This Automat is the "entry point" to run all other state machines.
 It manages the process of initialization of the whole program.
 
-It also checks whether the program is installed and switch to run another "installation" code if needed. 
+It also checks whether the program is installed and switch to run another "installation" code if needed.
 
 The ``initializer()`` machine is doing several operations:
 
     * start low-level modules and init local data, see ``initializer._init_local()``
     * starts the network communications by running core method ``initializer.doInitServices()``
-    * other modules is started after all other more important things 
+    * other modules is started after all other more important things
     * machine can switch to "install" wizard if Private Key or local identity file is not fine
     * it will finally switch to "READY" state to indicate the whole status of the application
     * during shutting down it will wait for ``shutdowner()`` automat to do its work completely
     * once ``shutdowner()`` become "FINISHED" - the state machine changes its state to "EXIT" and is destroyed
-    
-    
+
+
 EVENTS:
     * :red:`init-interfaces-done`
     * :red:`init-local-done`
@@ -72,7 +72,7 @@ except:
 
 from twisted.internet import defer
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -88,11 +88,12 @@ from services import driver
 import installer
 import shutdowner
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Initializer = None
 
 #------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None, use_reactor=True):
     """
@@ -119,20 +120,20 @@ def Destroy():
     _Initializer.destroy()
     del _Initializer
     _Initializer = None
-    
-    
+
+
 class Initializer(automat.Automat):
     """
-    A class to execute start up operations to launch BitDust software. 
+    A class to execute start up operations to launch BitDust software.
     """
-    
+
     fast = True
-    
+
     def init(self):
         self.flagCmdLine = False
         self.flagGUI = False
         self.is_installed = None
-    
+
     def state_changed(self, oldstate, newstate, event, arg):
         global_state.set_global_state('INIT ' + newstate)
 
@@ -142,21 +143,22 @@ class Initializer(automat.Automat):
                 self.state = 'LOCAL'
                 shutdowner.A('init')
                 self.doInitLocal(arg)
-                self.flagCmdLine=False
+                self.flagCmdLine = False
             elif event == 'run-cmd-line-register':
                 self.state = 'INSTALL'
                 shutdowner.A('init')
-                self.flagCmdLine=True
+                self.flagCmdLine = True
                 installer.A('register-cmd-line', arg)
                 shutdowner.A('ready')
             elif event == 'run-cmd-line-recover':
                 self.state = 'INSTALL'
                 shutdowner.A('init')
-                self.flagCmdLine=True
+                self.flagCmdLine = True
                 installer.A('recover-cmd-line', arg)
                 shutdowner.A('ready')
         elif self.state == 'LOCAL':
-            if event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg):
+            if event == 'init-local-done' and not self.isInstalled(
+                    arg) and self.isGUIPossible(arg):
                 self.state = 'INSTALL'
                 installer.A('init')
                 shutdowner.A('ready')
@@ -175,32 +177,33 @@ class Initializer(automat.Automat):
                 self.state = 'READY'
                 self.doUpdate(arg)
                 self.doShowGUI(arg)
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            elif (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
         elif self.state == 'INSTALL':
-            if not self.flagCmdLine and ( event == 'installer.state' and arg == 'DONE' ):
+            if not self.flagCmdLine and (
+                    event == 'installer.state' and arg == 'DONE'):
                 self.state = 'STOPPING'
                 shutdowner.A('stop', "restartnshow")
-            elif self.flagCmdLine and ( event == 'installer.state' and arg == 'DONE' ):
+            elif self.flagCmdLine and (event == 'installer.state' and arg == 'DONE'):
                 self.state = 'STOPPING'
                 shutdowner.A('stop', "exit")
-            elif ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            elif (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
         elif self.state == 'READY':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            if (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
         elif self.state == 'STOPPING':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            if (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doUpdate(arg)
                 self.doDestroyMe(arg)
         elif self.state == 'EXIT':
             pass
         elif self.state == 'SERVICES':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            if (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
             elif event == 'init-services-done':
@@ -208,7 +211,7 @@ class Initializer(automat.Automat):
                 self.doInitModules(arg)
                 shutdowner.A('ready')
         elif self.state == 'INTERFACES':
-            if ( event == 'shutdowner.state' and arg == 'FINISHED' ):
+            if (event == 'shutdowner.state' and arg == 'FINISHED'):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
             elif event == 'init-interfaces-done':
@@ -218,12 +221,12 @@ class Initializer(automat.Automat):
 
     def isInstalled(self, arg):
         if self.is_installed is None:
-            self.is_installed = self._check_install() 
+            self.is_installed = self._check_install()
         return self.is_installed
-    
+
     def isGUIPossible(self, arg):
         return bpio.isGUIpossible()
-    
+
     def doUpdate(self, arg):
         if not settings.NewWebGUI():
             from web import webcontrol
@@ -251,7 +254,7 @@ class Initializer(automat.Automat):
 
     def doInitInterfaces(self, arg):
         lg.out(2, 'initializer.doInitInterfaces')
-#         from interface import xmlrpc_server 
+#         from interface import xmlrpc_server
 #         xmlrpc_server.init()
         from interface import jsonrpc_server
         jsonrpc_server.init()
@@ -288,7 +291,7 @@ class Initializer(automat.Automat):
             if settings.NewWebGUI():
                 def _show_gui(wsgiport):
                     reactor.callLater(0.1, control.show)
-                d.addCallback(_show_gui) 
+                d.addCallback(_show_gui)
                 # reactor.callLater(0.1, control.show)
             else:
                 d.addCallback(webcontrol.show)
@@ -314,8 +317,8 @@ class Initializer(automat.Automat):
         del _Initializer
         _Initializer = None
         self.destroy()
-        
-    #------------------------------------------------------------------------------ 
+
+    #-------------------------------------------------------------------------
 
     def _check_install(self):
         """
@@ -362,9 +365,9 @@ class Initializer(automat.Automat):
             return False
         lg.out(2, 'initializer._check_install done')
         return True
-        
+
     def _init_local(self):
-        from p2p import commands 
+        from p2p import commands
         from lib import net_misc
         from lib import misc
         from system import tmpfile
@@ -402,13 +405,13 @@ class Initializer(automat.Automat):
 #                lg.out(2, 'hp.heap().byrcs:\n'+str(hp.heap().byrcs))
 #                lg.out(2, 'hp.heap().byvia:\n'+str(hp.heap().byvia))
 #            except:
-#                lg.out(2, "guppy package is not installed")            
-    
+#                lg.out(2, "guppy package is not installed")
+
     def _init_modules(self):
         """
         Finish initialization part, run delayed methods.
         """
-        lg.out(2,"initializer._init_modules")
+        lg.out(2, "initializer._init_modules")
         from updates import git_proc
         git_proc.init()
         # from updates import os_windows_update
@@ -416,14 +419,13 @@ class Initializer(automat.Automat):
         # os_windows_update.SetNewVersionNotifyFunc(webcontrol.OnGlobalVersionReceived)
         # reactor.callLater(0, os_windows_update.init)
         # reactor.callLater(0, webcontrol.OnInitFinalDone)
-        
 
     def _on_tray_icon_command(self, cmd):
-        lg.out(2,"initializer._on_tray_icon_command : [%s]" % cmd)
+        lg.out(2, "initializer._on_tray_icon_command : [%s]" % cmd)
         try:
             if cmd == 'exit':
                 shutdowner.A('stop', 'exit')
-        
+
             elif cmd == 'restart':
                 # appList = bpio.find_process(['bpgui.',])
                 # if len(appList) > 0:
@@ -431,12 +433,12 @@ class Initializer(automat.Automat):
                 # else:
                 #     shutdowner.A('stop', 'restart') # ('restart', ''))
                 shutdowner.A('stop', 'restart')
-                
+
             elif cmd == 'reconnect':
                 from p2p import network_connector
                 if driver.is_started('service_network'):
                     network_connector.A('reconnect')
-        
+
             elif cmd == 'show':
                 from web import control
                 control.show()
@@ -445,6 +447,7 @@ class Initializer(automat.Automat):
                 try:
                     from updates import git_proc
                     from system import tray_icon
+
                     def _sync_callback(result):
                         if result == 'error':
                             tray_icon.draw_icon('error')
@@ -459,24 +462,29 @@ class Initializer(automat.Automat):
                     git_proc.sync(_sync_callback)
                 except:
                     lg.exc()
-        
+
             elif cmd == 'hide':
                 pass
-                
+
             elif cmd == 'toolbar':
                 pass
-        
+
             else:
-                lg.warn('wrong command: ' + str(cmd))     
+                lg.warn('wrong command: ' + str(cmd))
         except:
             lg.exc()
-            
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class MyTwistedOutputLog:
     softspace = 0
+
     def read(self): pass
+
     def write(self, s):
         lg.out(0, s.strip())
+
     def flush(self): pass
+
     def close(self): pass

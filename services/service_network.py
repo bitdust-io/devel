@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_network.py
+# service_network.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,27 +31,25 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return NetworkService()
-    
+
+
 class NetworkService(LocalService):
-    
+
     service_name = 'service_network'
     config_path = 'services/network/enabled'
-    
+
     def dependent_on(self):
         return []
-    
+
     def start(self):
         from p2p import network_connector
         network_connector.A('init')
         return True
-    
+
     def stop(self):
         from p2p import network_connector
         network_connector.Destroy()
         return True
-    
-    
-
-    

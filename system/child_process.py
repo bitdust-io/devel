@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#child_process.py
+# child_process.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,7 +31,7 @@ BitDust executes periodically several slaves:
     - bppipe
     - bptester
     - bpgui
-They are started as a separated processes and managed from the main process: 
+They are started as a separated processes and managed from the main process:
     bpmain.
 """
 
@@ -46,27 +46,30 @@ except:
 
 from twisted.internet import protocol
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 import bpio
 import nonblocking
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class ChildProcessProtocol(protocol.ProcessProtocol):
+
     def __init__(self, name):
         self.name = name
-                    
+
     def errReceived(self, inp):
         for line in inp.splitlines():
             lg.out(2, '[%s]: %s' % (self.name, line))
-            
+
     def processEnded(self, reason):
         lg.out(2, 'child process [%s] FINISHED' % self.name)
-        
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 def run(child_name, params=[], base_dir='.', process_protocol=None):
     """
@@ -75,12 +78,12 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
     if bpio.isFrozen() and bpio.Windows():
         progpath = os.path.abspath(os.path.join(base_dir, child_name + '.exe'))
         executable = progpath
-        cmdargs = [ progpath ]
+        cmdargs = [progpath]
         cmdargs.extend(params)
     else:
         progpath = os.path.abspath(os.path.join(base_dir, child_name + '.py'))
         executable = sys.executable
-        cmdargs = [ executable, progpath ]
+        cmdargs = [executable, progpath]
         cmdargs.extend(params)
     if not os.path.isfile(executable):
         lg.out(1, 'child_process.run ERROR %s not found' % executable)
@@ -93,40 +96,58 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
         real_CreateProcess = _dumbwin32proc.win32process.CreateProcess
-        def fake_createprocess(_appName, _commandLine, _processAttributes,
-                            _threadAttributes, _bInheritHandles, creationFlags,
-                            _newEnvironment, _currentDirectory, startupinfo):
+
+        def fake_createprocess(
+                _appName,
+                _commandLine,
+                _processAttributes,
+                _threadAttributes,
+                _bInheritHandles,
+                creationFlags,
+                _newEnvironment,
+                _currentDirectory,
+                startupinfo):
             import win32con
             flags = win32con.CREATE_NO_WINDOW
             return real_CreateProcess(_appName, _commandLine,
-                            _processAttributes, _threadAttributes,
-                            _bInheritHandles, flags, _newEnvironment,
-                            _currentDirectory, startupinfo)        
-        setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
-    
+                                      _processAttributes, _threadAttributes,
+                                      _bInheritHandles, flags, _newEnvironment,
+                                      _currentDirectory, startupinfo)
+        setattr(
+            _dumbwin32proc.win32process,
+            'CreateProcess',
+            fake_createprocess)
+
     if process_protocol is None:
-        process_protocol = ChildProcessProtocol(child_name)    
+        process_protocol = ChildProcessProtocol(child_name)
     try:
-        Process = reactor.spawnProcess(process_protocol, executable, cmdargs, path=base_dir)
+        Process = reactor.spawnProcess(
+            process_protocol, executable, cmdargs, path=base_dir)
     except:
         lg.out(1, 'child_process.run ERROR executing: %s' % str(cmdargs))
         lg.exc()
         return None
-    
+
     if bpio.Windows():
-        setattr(_dumbwin32proc.win32process, 'CreateProcess', real_CreateProcess)
+        setattr(
+            _dumbwin32proc.win32process,
+            'CreateProcess',
+            real_CreateProcess)
 
     lg.out(6, 'child_process.run [%s] pid=%d' % (child_name, Process.pid))
-    return Process    
+    return Process
 
 
 def kill_process(process):
     """
-    Send signal "KILL" to the given ``process``. 
+    Send signal "KILL" to the given ``process``.
     """
     try:
         process.signalProcess('KILL')
-        lg.out(6, 'child_process.kill_process sent signal "KILL" to %s the process %d' % process.pid)
+        lg.out(
+            6,
+            'child_process.kill_process sent signal "KILL" to %s the process %d' %
+            process.pid)
     except:
         return False
     return True
@@ -137,13 +158,14 @@ def kill_child(child_name):
     Search (by "pid") for BitDust child process with name ``child_name`` and tries to kill it.
     """
     killed = False
-    for pid in bpio.find_process([child_name+'.']): 
+    for pid in bpio.find_process([child_name + '.']):
         bpio.kill_process(pid)
         lg.out(6, 'child_process.kill_child pid %d' % pid)
         killed = True
     return killed
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def pipe(cmdargs):
     """
@@ -161,7 +183,7 @@ def pipe(cmdargs):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=False,
-                creationflags = win32process.CREATE_NO_WINDOW,)
+                creationflags=win32process.CREATE_NO_WINDOW,)
         else:
             p = nonblocking.Popen(
                 cmdargs,
@@ -191,7 +213,7 @@ def detach(cmdargs):
                 # stdout=subprocess.PIPE,
                 # stderr=subprocess.PIPE,
                 universal_newlines=False,
-                creationflags = win32process.CREATE_NO_WINDOW | win32process.DETACHED_PROCESS,
+                creationflags=win32process.CREATE_NO_WINDOW | win32process.DETACHED_PROCESS,
                 close_fds=True,)
         else:
             p = nonblocking.Popen(
@@ -202,10 +224,9 @@ def detach(cmdargs):
                 stderr=subprocess.PIPE,
                 universal_newlines=False,
                 close_fds=True,
-                )
+            )
     except:
         lg.out(1, 'child_process.detach ERROR executing: %s' + str(cmdargs))
         lg.exc()
         return None
     return p
-

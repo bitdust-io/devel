@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#raidmake.py
+# raidmake.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -58,26 +58,30 @@ if __name__ == '__main__':
 
 import raid.eccmap
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _ECCMAP = {}
+
+
 def geteccmap(name):
     global _ECCMAP
-    if not _ECCMAP.has_key(name):
-        _ECCMAP[name] = raid.eccmap.eccmap(name) 
+    if name not in _ECCMAP:
+        _ECCMAP[name] = raid.eccmap.eccmap(name)
     return _ECCMAP[name]
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def shutdown():
     global _ECCMAP
     _ECCMAP.clear()
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def RoundupFile(filename, stepsize):
     """
-    For some things we need to have files which are round sizes, 
+    For some things we need to have files which are round sizes,
     for example some encryption needs files that are multiples of 8 bytes.
     This function rounds file up to the next multiple of step size.
     """
@@ -89,9 +93,10 @@ def RoundupFile(filename, stepsize):
     increase = 0
     if mod > 0:
         increase = stepsize - mod
-        file = open(filename, 'a')         
+        file = open(filename, 'a')
         file.write(' ' * increase)
         file.close()
+
 
 def ReadBinaryFile(filename):
     """
@@ -105,6 +110,7 @@ def ReadBinaryFile(filename):
     file.close()
     return data
 
+
 def WriteFile(filename, data):
     """
     """
@@ -112,7 +118,7 @@ def WriteFile(filename, data):
     f.write(data)
     f.close()
 
-#    
+#
 #    try:
 #        tmpfilename = filename + ".new"
 #        f = open(tmpfilename, "wb")
@@ -134,9 +140,9 @@ def WriteFile(filename, data):
 #        return False
 #    return True
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-#def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):
+# def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):
 #    # lg.out(12, "raidmake.raidmake BEGIN %s %s %s %d" % (
 #    #     os.path.basename(filename), eccmapname, backupId, blockNumber))
 #    # t = time.time()
@@ -150,141 +156,149 @@ def WriteFile(filename, data):
 
 def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
     # try:
-        myeccmap = raid.eccmap.eccmap(eccmapname)
-        INTSIZE = 4 # settings.IntSize()
-        # any padding at end and block.Length fixes
-        RoundupFile(filename, myeccmap.datasegments*INTSIZE)     
-        wholefile = ReadBinaryFile(filename)
-        length = len(wholefile)
-        seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments                 
-    
-        for DSegNum in xrange(myeccmap.datasegments):
-            FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
-            f = open(FileName, "wb")
-            segoffset = DSegNum * seglength
-            for i in xrange(seglength):
-                offset = segoffset + i;
-                if offset < length:
-                    f.write(wholefile[offset])
-                else:
-                    # any padding should go at the end of last seg 
-                    # and block.Length fixes
-                    f.write(" ")               
-            f.close()
-            
-        dfds = {}
-        for DSegNum in xrange(myeccmap.datasegments):
-            FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
-            # instead of reading data from opened file 
-            # we'l put it in memory 
-            # and store current position in the data
-            # so start from zero 
-            #dfds[DSegNum] = [0, bpio.ReadBinaryFile(FileName)]
-            dfds[DSegNum] = cStringIO.StringIO(ReadBinaryFile(FileName))
-    
-        pfds = {}
+    myeccmap = raid.eccmap.eccmap(eccmapname)
+    INTSIZE = 4  # settings.IntSize()
+    # any padding at end and block.Length fixes
+    RoundupFile(filename, myeccmap.datasegments * INTSIZE)
+    wholefile = ReadBinaryFile(filename)
+    length = len(wholefile)
+    seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
+
+    for DSegNum in xrange(myeccmap.datasegments):
+        FileName = targetDir + '/' + \
+            str(blockNumber) + '-' + str(DSegNum) + '-Data'
+        f = open(FileName, "wb")
+        segoffset = DSegNum * seglength
+        for i in xrange(seglength):
+            offset = segoffset + i
+            if offset < length:
+                f.write(wholefile[offset])
+            else:
+                # any padding should go at the end of last seg
+                # and block.Length fixes
+                f.write(" ")
+        f.close()
+
+    dfds = {}
+    for DSegNum in xrange(myeccmap.datasegments):
+        FileName = targetDir + '/' + \
+            str(blockNumber) + '-' + str(DSegNum) + '-Data'
+        # instead of reading data from opened file
+        # we'l put it in memory
+        # and store current position in the data
+        # so start from zero
+        #dfds[DSegNum] = [0, bpio.ReadBinaryFile(FileName)]
+        dfds[DSegNum] = cStringIO.StringIO(ReadBinaryFile(FileName))
+
+    pfds = {}
+    for PSegNum in xrange(myeccmap.paritysegments):
+        # we will keep parirty data in the momory
+        # after doing all calculations
+        # will write all parts on the disk
+        pfds[PSegNum] = cStringIO.StringIO()
+
+    #Parities = range(myeccmap.paritysegments)
+    Parities = {}
+    for i in xrange(seglength / INTSIZE):
         for PSegNum in xrange(myeccmap.paritysegments):
-            # we will keep parirty data in the momory
-            # after doing all calculations
-            # will write all parts on the disk
-            pfds[PSegNum] = cStringIO.StringIO()
-    
-        #Parities = range(myeccmap.paritysegments)
-        Parities = {}
-        for i in xrange(seglength/INTSIZE):
-            for PSegNum in xrange(myeccmap.paritysegments):
-                Parities[PSegNum] = 0
-            for DSegNum in xrange(myeccmap.datasegments):
-                bstr = dfds[DSegNum].read(INTSIZE)
-                #pos = dfds[DSegNum][0]
-                #dfds[DSegNum][0] += INTSIZE
-                #bstr = dfds[DSegNum][1][pos:pos+INTSIZE]
-                if len(bstr) == INTSIZE:
-                    b, = struct.unpack(">l", bstr)
-                    Map = myeccmap.DataToParity[DSegNum]
-                    for PSegNum in Map:
-                        if PSegNum > myeccmap.paritysegments:
-                            # lg.out(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
-                            # lg.out(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
-                            myeccmap.check()
-                            raise Exception("eccmap error")
-                        Parities[PSegNum] = Parities[PSegNum] ^ b
-                else:
-                    raise Exception('strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' % (len(bstr), DSegNum)) 
-                    #TODO
-                    #out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
-                    #out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
-    
-            for PSegNum in xrange(myeccmap.paritysegments):
-                bstr = struct.pack(">l", Parities[PSegNum])
-                #pfds[PSegNum] += bstr
-                pfds[PSegNum].write(bstr)
-    
-        dataNum = len(dfds)
-        parityNum = len(pfds)
-        
-        for PSegNum, data in pfds.items():
-            FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
-            WriteFile(FileName, pfds[PSegNum].getvalue())
-    
-        for f in dfds.values():
-            f.close()
-            #dataNum += 1
-    
-        for f in pfds.values():
-            f.close()
-            #parityNum += 1
-    
-        del myeccmap    
-        del dfds
-        del pfds
-        del Parities
-        return dataNum, parityNum
-    
+            Parities[PSegNum] = 0
+        for DSegNum in xrange(myeccmap.datasegments):
+            bstr = dfds[DSegNum].read(INTSIZE)
+            #pos = dfds[DSegNum][0]
+            #dfds[DSegNum][0] += INTSIZE
+            #bstr = dfds[DSegNum][1][pos:pos+INTSIZE]
+            if len(bstr) == INTSIZE:
+                b, = struct.unpack(">l", bstr)
+                Map = myeccmap.DataToParity[DSegNum]
+                for PSegNum in Map:
+                    if PSegNum > myeccmap.paritysegments:
+                        # lg.out(2, "raidmake.raidmake PSegNum out of range " + str(PSegNum))
+                        # lg.out(2, "raidmake.raidmake limit is " + str(myeccmap.paritysegments))
+                        myeccmap.check()
+                        raise Exception("eccmap error")
+                    Parities[PSegNum] = Parities[PSegNum] ^ b
+            else:
+                raise Exception(
+                    'strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' %
+                    (len(bstr), DSegNum))
+                # TODO
+                #out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
+                #out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
+
+        for PSegNum in xrange(myeccmap.paritysegments):
+            bstr = struct.pack(">l", Parities[PSegNum])
+            #pfds[PSegNum] += bstr
+            pfds[PSegNum].write(bstr)
+
+    dataNum = len(dfds)
+    parityNum = len(pfds)
+
+    for PSegNum, data in pfds.items():
+        FileName = targetDir + '/' + \
+            str(blockNumber) + '-' + str(PSegNum) + '-Parity'
+        WriteFile(FileName, pfds[PSegNum].getvalue())
+
+    for f in dfds.values():
+        f.close()
+        #dataNum += 1
+
+    for f in pfds.values():
+        f.close()
+        #parityNum += 1
+
+    del myeccmap
+    del dfds
+    del pfds
+    del Parities
+    return dataNum, parityNum
+
     # except:
     #     return None
-
-         
 
 
 def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
     myeccmap = raid.eccmap.eccmap(eccmapname)
-    INTSIZE = 4 # settings.IntSize()
-    RoundupFile(filename,myeccmap.datasegments*INTSIZE)      # any padding at end and block.Length fixes
+    INTSIZE = 4  # settings.IntSize()
+    # any padding at end and block.Length fixes
+    RoundupFile(filename, myeccmap.datasegments * INTSIZE)
     wholefile = ReadBinaryFile(filename)
     length = len(wholefile)
-    seglength = (length + myeccmap.datasegments - 1)/myeccmap.datasegments                 # PREPRO -
+    seglength = (length + myeccmap.datasegments - 1) / \
+        myeccmap.datasegments                 # PREPRO -
 
     for DSegNum in range(myeccmap.datasegments):
-        FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
+        FileName = targetDir + '/' + \
+            str(blockNumber) + '-' + str(DSegNum) + '-Data'
         f = open(FileName, "wb")
         segoffset = DSegNum * seglength
         for i in range(seglength):
-            offset = segoffset + i;
+            offset = segoffset + i
             if (offset < length):
                 f.write(wholefile[offset])
             else:
-                # any padding should go at the end of last seg 
+                # any padding should go at the end of last seg
                 # and block.Length fixes
-                f.write(" ")               
+                f.write(" ")
         f.close()
     del wholefile
 
     #dfds = range(myeccmap.datasegments)
     dfds = {}
     for DSegNum in range(myeccmap.datasegments):
-        FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
+        FileName = targetDir + '/' + \
+            str(blockNumber) + '-' + str(DSegNum) + '-Data'
         dfds[DSegNum] = open(FileName, "rb")
 
     #pfds = range(myeccmap.paritysegments)
     pfds = {}
     for PSegNum in range(myeccmap.paritysegments):
-        FileName = targetDir + '/' +  str(blockNumber) + '-' + str(PSegNum) + '-Parity'
+        FileName = targetDir + '/' + \
+            str(blockNumber) + '-' + str(PSegNum) + '-Parity'
         pfds[PSegNum] = open(FileName, "wb")
 
     #Parities = range(myeccmap.paritysegments)
     Parities = {}
-    for i in range(seglength/INTSIZE):
+    for i in range(seglength / INTSIZE):
         for PSegNum in range(myeccmap.paritysegments):
             Parities[PSegNum] = 0
         for DSegNum in range(myeccmap.datasegments):
@@ -300,7 +314,7 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
                         raise Exception("eccmap error")
                     Parities[PSegNum] = Parities[PSegNum] ^ b
             # else :
-                #TODO
+                # TODO
                 # lg.warn('strange read under INTSIZE bytes')
                 # lg.out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
 
@@ -310,7 +324,7 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
 
     dataNum = 0
     parityNum = 0
-    
+
     for f in dfds.values():
         f.close()
         dataNum += 1
@@ -326,15 +340,12 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
     return dataNum, parityNum
 
 
-
 def main():
     from logs import lg
     lg.set_debug_level(18)
-    do_in_memory(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], sys.argv[6]=='1')
-    
+    do_in_memory(sys.argv[1], sys.argv[2], sys.argv[3], int(
+        sys.argv[4]), sys.argv[5], sys.argv[6] == '1')
+
 
 if __name__ == "__main__":
     main()
-
-
-

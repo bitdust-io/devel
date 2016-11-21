@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#dtuple.py
+# dtuple.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -27,41 +27,55 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
-import cPickle, hashlib
+import cPickle
+import hashlib
 
 from twisted.internet import defer
 
 from kademlia.node import rpcmethod
 from node import EntangledNode
 
+
 class DistributedTupleSpacePeer(EntangledNode):
     """ A specialized form of an Entangled DHT node that provides an API
     for participating in a distributed Tuple Space (aka Object Space)
     """
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        EntangledNode.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+
+    def __init__(
+            self,
+            udpPort=4000,
+            dataStore=None,
+            routingTable=None,
+            networkProtocol=None):
+        EntangledNode.__init__(
+            self,
+            udpPort,
+            dataStore,
+            routingTable,
+            networkProtocol)
         self._blockingGetRequests = {}
         self._blockingReadRequests = {}
 
     def put(self, dTuple, originalPublisherID=None):
         """ Produces a tuple, and writes it into tuple space
-        
+
         @note: This method is generally called "out" in tuple space literature,
-               but is renamed to "put" in this implementation to match the 
+               but is renamed to "put" in this implementation to match the
                renamed "in"/"get" method (see the description for C{get()}).
-        
+
         @param dTuple: The tuple to write into the distributed tuple space (it
                        is named "dTuple" to avoid a conflict with the Python
                        C{tuple} data type).
         @type dTuple: tuple
-        
+
         @rtype: twisted.internet.defer.Deferred
         """
-        
-        # Look for any active listener tuples for the tuple we're about to publish
+
+        # Look for any active listener tuples for the tuple we're about to
+        # publish
         listenerNodeID = []
         listenerKey = []
-        
+
         def publishToTupleSpace(result):
             if result != 'get':
                 # Extract "keywords" from the tuple
@@ -71,30 +85,36 @@ class DistributedTupleSpacePeer(EntangledNode):
                 tupleValue = cPickle.dumps(dTuple)
                 h.update('tuple:' + tupleValue)
                 mainKey = h.digest()
-                self.iterativeStore(mainKey, tupleValue, originalPublisherID=originalPublisherID)
+                self.iterativeStore(
+                    mainKey,
+                    tupleValue,
+                    originalPublisherID=originalPublisherID)
                 # ...and now make it searchable, by writing the subtuples
                 df = self._addToInvertedIndexes(subtupleKeys, mainKey)
                 return df
-        
+
         def sendTupleToNode(nodes):
             if listenerNodeID[0] in nodes:
                 contact = nodes[nodes.index(listenerNodeID[0])]
-                df = contact.receiveTuple(listenerKey[0], cPickle.dumps(dTuple))
+                df = contact.receiveTuple(
+                    listenerKey[0], cPickle.dumps(dTuple))
                 return df
-        
+
         def checkIfListenerExists(result):
-            if result != None:
-                # The result will have a node ID and main listener tuple's key concatenated
-                listenerNodeID.append(result[:20]) # 160 bits
+            if result is not None:
+                # The result will have a node ID and main listener tuple's key
+                # concatenated
+                listenerNodeID.append(result[:20])  # 160 bits
                 listenerKey.append(result[20:])
-                # Another node is waiting for this tuple; we will send it the tuple directly
+                # Another node is waiting for this tuple; we will send it the
+                # tuple directly
                 listenerNodeID.append(listenerNodeID[0])
                 # First remove the listener from the Tuple Space
                 self.iterativeDelete(listenerKey[0])
                 subtupleKeys = self._keywordHashesFromTuple(dTuple, True)
                 self._removeFromInvertedIndexes(subtupleKeys, result)
                 # ...now retrieve the contact for the target Node ID, and send it the tuple
-                #TODO: perhaps ping this node to make sure its still active
+                # TODO: perhaps ping this node to make sure its still active
                 try:
                     contact = self._routingTable.getContact(listenerNodeID[0])
                 except ValueError:
@@ -102,8 +122,10 @@ class DistributedTupleSpacePeer(EntangledNode):
                     df.addCallback(sendTupleToNode)
                     df.addCallback(publishToTupleSpace)
                 else:
-                    #TODO: add a callback to this to determine if it was a read/get
-                    df = contact.receiveTuple(listenerKey[0], cPickle.dumps(dTuple))
+                    # TODO: add a callback to this to determine if it was a
+                    # read/get
+                    df = contact.receiveTuple(
+                        listenerKey[0], cPickle.dumps(dTuple))
                     df.addCallback(publishToTupleSpace)
             else:
                 # Extract "keywords" from the tuple
@@ -113,11 +135,13 @@ class DistributedTupleSpacePeer(EntangledNode):
                 tupleValue = cPickle.dumps(dTuple)
                 h.update('tuple:' + tupleValue)
                 mainKey = h.digest()
+
                 def putToSearchIndexes(result):
                     df = self._addToInvertedIndexes(subtupleKeys, mainKey)
                     return df
-                
-                df = self.iterativeStore(mainKey, tupleValue, originalPublisherID=originalPublisherID)
+
+                df = self.iterativeStore(
+                    mainKey, tupleValue, originalPublisherID=originalPublisherID)
                 df.addCallback(putToSearchIndexes)
                 # ...and now make it searchable, by writing the subtuples
                 #df = self._addToInvertedIndexes(subtupleKeys, mainKey)
@@ -129,16 +153,17 @@ class DistributedTupleSpacePeer(EntangledNode):
 
     def get(self, template):
         """ Reads and removes (consumes) a tuple from the tuple space.
-        
+
         @type template: tuple
-        
+
         @note: This method is generally called "in" in tuple space literature,
                but is renamed to "get" in this implementation to avoid
                a conflict with the Python C{in} keyword.
         """
         outerDf = defer.Deferred()
+
         def addListener(result):
-            if result == None:
+            if result is None:
                 # The tuple does not exist (yet) - add a listener for it
                 h = hashlib.sha1()
                 listenerKey = 'listener:' + cPickle.dumps(template)
@@ -147,30 +172,31 @@ class DistributedTupleSpacePeer(EntangledNode):
                 # Extract "listener keywords" from the template
                 subtupleKeys = self._keywordHashesFromTemplate(template, True)
                 # ...now write the listener tuple(s) to the DHT Tuple Space
-                if subtupleKeys == None:
-                    # Deterministic template; all values are fully specified   
+                if subtupleKeys is None:
+                    # Deterministic template; all values are fully specified
                     self.iterativeStore(listenerKey, self.id + listenerKey)
                 else:
-                    self._addToInvertedIndexes(subtupleKeys, self.id + listenerKey)
+                    self._addToInvertedIndexes(
+                        subtupleKeys, self.id + listenerKey)
                 self._blockingGetRequests[listenerKey] = outerDf
             else:
                 outerDf.callback(result)
 
         df = self.getIfExists(template)
         df.addCallback(addListener)
-        return outerDf  
-    
+        return outerDf
+
 #    def get(self, template):
 #        """ Reads and removes (consumes) a tuple from the tuple space.
-#        
+#
 #        @type template: tuple
-#        
+#
 #        @note: This method is generally called "in" in tuple space literature,
 #               but is renamed to "get" in this implementation to avoid
 #               a conflict with the Python C{in} keyword.
 #        """
 #        outerDf = defer.Deferred()
-#        
+#
 #        mainTupleKey = []
 #        def retrieveTupleValue(tupleKey):
 #            if tupleKey == None:
@@ -182,7 +208,7 @@ class DistributedTupleSpacePeer(EntangledNode):
 #                _df = self.iterativeFindValue(tupleKey)
 #                _df.addCallback(returnTuple)
 #                return _df
-#          
+#
 #        def returnTuple(value):
 #            if type(value) == dict:
 #                # tuple was found
@@ -198,8 +224,8 @@ class DistributedTupleSpacePeer(EntangledNode):
 #            else:
 #                # tuple was not found
 #                return None
-#                
-#                
+#
+#
 #        def addListener(result):
 #            if result == None:
 #                # The tuple does not exist (yet) - add a listener for it
@@ -211,7 +237,7 @@ class DistributedTupleSpacePeer(EntangledNode):
 #                subtupleKeys = self._keywordHashesFromTemplate(template, True)
 #                # ...now write the listener tuple(s) to the DHT Tuple Space
 #                if subtupleKeys == None:
-#                    # Deterministic template; all values are fully specified   
+#                    # Deterministic template; all values are fully specified
 #                    self.iterativeStore(listenerKey, self.id + listenerKey)
 #                else:
 #                    self._addToInvertedIndexes(subtupleKeys, self.id + listenerKey)
@@ -223,40 +249,42 @@ class DistributedTupleSpacePeer(EntangledNode):
 #        df.addCallback(retrieveTupleValue)
 #        df.addCallback(addListener)
 #        return outerDf
-    
+
     def getIfExists(self, template, getListenerTuple=False):
         """ Reads and removes (consumes) a tuple from the tuple space.
-        
+
         @type template: tuple
-        
+
         @param getListenerTuple: If set to True, look for a I{listener tuple}
                                  for this template; this is typically used
                                  to remove event handlers.
         @type getListenerTuple: bool
-        
+
         @note: This method is generally called "in" in tuple space literature,
                but is renamed to "get" in this implementation to avoid
                a conflict with the Python C{in} keyword.
         """
         outerDf = defer.Deferred()
-        
+
         mainTupleKey = []
+
         def retrieveTupleValue(tupleKey):
-            if tupleKey == None:
+            if tupleKey is None:
                 # No tuple was found
                 outerDf.callback(None)
             else:
                 mainTupleKey.append(tupleKey)
-                # We use the find algorithm directly so that kademlia does not replicate the key
+                # We use the find algorithm directly so that kademlia does not
+                # replicate the key
                 if tupleKey in self._dataStore:
                     _df = defer.Deferred()
                     _df.callback({tupleKey: self._dataStore[tupleKey]})
                 else:
                     _df = self._iterativeFind(tupleKey, rpc='findValue')
                 _df.addCallback(returnTuple)
-          
+
         def returnTuple(value):
-            if type(value) == dict:
+            if isinstance(value, dict):
                 # tuple was found
                 tupleValue = value[mainTupleKey[0]]
                 # Remove the tuple itself from the DHT
@@ -273,22 +301,23 @@ class DistributedTupleSpacePeer(EntangledNode):
 
         df = self._findKeyForTemplate(template, getListenerTuple)
         df.addCallback(retrieveTupleValue)
-        
+
         return outerDf
-    
+
     def read(self, template):
         """ Non-destructively reads a tuple in the tuple space.
-        
+
         This operation is similar to "get" (or "in") in that the peer builds a
         template and waits for a matching tuple in the tuple space. Upon
         finding a matching tuple, however, it copies it, leaving the original
         tuple in the tuple space.
-        
+
         @note: This method is named "rd" in some other implementations.
         """
         outerDf = defer.Deferred()
+
         def addListener(result):
-            if result == None:
+            if result is None:
                 # The tuple does not exist (yet) - add a listener for it
                 h = hashlib.sha1()
                 listenerKey = 'listener:' + cPickle.dumps(template)
@@ -297,42 +326,44 @@ class DistributedTupleSpacePeer(EntangledNode):
                 # Extract "listener keywords" from the template
                 subtupleKeys = self._keywordHashesFromTemplate(template, True)
                 # ...now write the listener tuple(s) to the DHT Tuple Space
-                if subtupleKeys == None:
-                    # Deterministic template; all values are fully specified   
+                if subtupleKeys is None:
+                    # Deterministic template; all values are fully specified
                     self.iterativeStore(listenerKey, self.id + listenerKey)
                 else:
-                    self._addToInvertedIndexes(subtupleKeys, self.id + listenerKey)
+                    self._addToInvertedIndexes(
+                        subtupleKeys, self.id + listenerKey)
                 self._blockingReadRequests[listenerKey] = outerDf
             else:
                 outerDf.callback(result)
-        
+
         df = self.readIfExists(template)
         df.addCallback(addListener)
         return outerDf
-    
+
     def readIfExists(self, template):
         """ Non-destructively reads a tuple in the tuple space.
-        
+
         This operation is similar to "get" (or "in") in that the peer builds a
         template and waits for a matching tuple in the tuple space. Upon
         finding a matching tuple, however, it copies it, leaving the original
         tuple in the tuple space.
-        
+
         @note: This method is named "rd" in some other implementations.
         """
         outerDf = defer.Deferred()
         mainTupleKey = []
+
         def retrieveTupleValue(tupleKey):
-            if tupleKey == None:
+            if tupleKey is None:
                 # No tuple was found
                 outerDf.callback(None)
             else:
                 mainTupleKey.append(tupleKey)
                 _df = self.iterativeFindValue(tupleKey)
                 _df.addCallback(returnTuple)
-            
+
         def returnTuple(value):
-            if type(value) == dict:
+            if isinstance(value, dict):
                 # tuple was found
                 tupleValue = value[mainTupleKey[0]]
                 # Un-serialize the tuple
@@ -348,36 +379,41 @@ class DistributedTupleSpacePeer(EntangledNode):
 
     def _findKeyForTemplate(self, template, listener=False):
         """ Main search algorithm for C{get()} and C{read()} """
-        if listener == True:
+        if listener:
             prependStr = 'listener:'
         else:
             prependStr = 'tuple:'
         # Prepare a deferred result for this operation
         outerDf = defer.Deferred()
-        if listener == True:
+        if listener:
             subtupleKeys = self._keywordHashesFromTuple(template, listener)
         else:
             subtupleKeys = self._keywordHashesFromTemplate(template, listener)
-    
-        kwIndex = [-1] # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
+
+        # using a list for this counter because Python doesn't allow binding a
+        # new value to a name in an enclosing (non-global) scope
+        kwIndex = [-1]
         havePossibleMatches = [False]
         filteredResults = []
-        
+
         listenerResults = []
         listenerSubtupleSetCounter = [0]
-        
-        #TODO: If all elements in the template are None, we only have the tuple length... maybe raise an exception?
-        
+
+        # TODO: If all elements in the template are None, we only have the
+        # tuple length... maybe raise an exception?
+
         def filterResult(result):
             kwKey = subtupleKeys[kwIndex[0]]
-            if type(result) == dict:
-                # Value was found; this should be list of keys for tuples matching this criterion
+            if isinstance(result, dict):
+                # Value was found; this should be list of keys for tuples
+                # matching this criterion
                 index = result[kwKey]
                 if havePossibleMatches[0] == False:
                     havePossibleMatches[0] = True
                     filteredResults.extend(index)
                 else:
-                    # Filter the our list of possible matching tuples with the new results
+                    # Filter the our list of possible matching tuples with the
+                    # new results
                     delKeys = []
                     for tupleKey in filteredResults:
                         if tupleKey not in index:
@@ -385,40 +421,45 @@ class DistributedTupleSpacePeer(EntangledNode):
                     for tupleKey in delKeys:
                         filteredResults.remove(tupleKey)
                 if len(filteredResults) == 0:
-                    # No matches for this template exist at this point; there is no use in searching further
+                    # No matches for this template exist at this point; there
+                    # is no use in searching further
                     outerDf.callback(None)
                 else:
                     findNextSubtuple()
             else:
-                # Value wasn't found; thus no matches for this template exist - stop the search
+                # Value wasn't found; thus no matches for this template exist -
+                # stop the search
                 outerDf.callback(None)
-                
+
         def filterListenerResult(result):
             """ Same as filterResult(), except that 2 sets of subtuples keys' results are OR'ed """
             if kwIndex[0] == -1:
                 # This was the deterministic search
-                if type(result) == dict:
+                if isinstance(result, dict):
                     # An exact template match was found, callback with this
                     outerDf.callback(result[mainKey])
                 else:
-                    # The deterministic search did not find anything; start searching subtuples
+                    # The deterministic search did not find anything; start
+                    # searching subtuples
                     findNextSubtuple()
                 return
-            
+
             kwKey = subtupleKeys[kwIndex[0]]
-            
-            if type(result) == dict:
-                # Value was found; this should be list of keys for tuples matching this criterion
+
+            if isinstance(result, dict):
+                # Value was found; this should be list of keys for tuples
+                # matching this criterion
                 index = result[kwKey]
                 listenerResults.extend(index)
             listenerSubtupleSetCounter[0] += 1
-               
+
             if listenerSubtupleSetCounter[0] == 3:
                 if havePossibleMatches[0] == False:
                     havePossibleMatches[0] = True
                     filteredResults.extend(listenerResults)
                 else:
-                    # Filter the our list of possible matching tuples with the new results
+                    # Filter the our list of possible matching tuples with the
+                    # new results
                     delKeys = []
                     for tupleKey in filteredResults:
                         if tupleKey not in listenerResults:
@@ -430,7 +471,8 @@ class DistributedTupleSpacePeer(EntangledNode):
                             pass
 
                 if len(filteredResults) == 0:
-                    # No matches for this template exist at this point; there is no use in searching further
+                    # No matches for this template exist at this point; there
+                    # is no use in searching further
                     outerDf.callback(None)
                 else:
                     # Reset the cycle
@@ -440,31 +482,36 @@ class DistributedTupleSpacePeer(EntangledNode):
                     findNextSubtuple()
             else:
                 findNextSubtuple()
-        
+
         def findNextSubtuple(results=None):
             kwIndex[0] += 1
             if kwIndex[0] < len(subtupleKeys):
                 kwKey = subtupleKeys[kwIndex[0]]
-                #TODO: kademlia is going to replicate the un-updated inverted index; stop that from happening!!
+                # TODO: kademlia is going to replicate the un-updated inverted
+                # index; stop that from happening!!
                 df = self.iterativeFindValue(kwKey)
-                if listener == True:
+                if listener:
                     df.addCallback(filterListenerResult)
                 else:
                     df.addCallback(filterResult)
             else:
-                # We're done. Let the caller of the parent method know, and return the key of the first qualifying tuple in the list of results
+                # We're done. Let the caller of the parent method know, and
+                # return the key of the first qualifying tuple in the list of
+                # results
                 outerDf.callback(filteredResults[0])
-        
-        if subtupleKeys == None:
-            # The template is deterministic; thus we can retrieve the corresponding tuple directly
+
+        if subtupleKeys is None:
+            # The template is deterministic; thus we can retrieve the
+            # corresponding tuple directly
             h = hashlib.sha1()
             tupleValue = cPickle.dumps(template)
             h.update(prependStr + tupleValue)
             mainKey = h.digest()
             outerDf.callback(mainKey)
         else:
-            if listener == True:
-                # First look for an exact match if we are looking for listener tuples
+            if listener:
+                # First look for an exact match if we are looking for listener
+                # tuples
                 h = hashlib.sha1()
                 tupleValue = cPickle.dumps(template)
                 h.update(prependStr + tupleValue)
@@ -472,13 +519,14 @@ class DistributedTupleSpacePeer(EntangledNode):
                 df = self.iterativeFindValue(mainKey)
                 df.addCallback(filterListenerResult)
             else:
-                # Query the DHT for the first subtuple (this implicitly specifies the requested tuple length as well)
+                # Query the DHT for the first subtuple (this implicitly
+                # specifies the requested tuple length as well)
                 findNextSubtuple()
-        
+
         return outerDf
-    
+
     def _keywordHashesFromTuple(self, dTuple, listener=False):
-        if listener == True:
+        if listener:
             prependStr = 'listener:'
         else:
             prependStr = 'tuple:'
@@ -491,7 +539,8 @@ class DistributedTupleSpacePeer(EntangledNode):
             # This causes each element in the tuble to have two identifiying subtuples (or "keywords")
             # which can be published to the DHT: tuple_length+position+data_type and tuple_length+position+data_value
             # (data_type is implicitly given by data_value)
-            #TODO: with the current scheme, it is possible (but unlikely) that an ACTUAL tuple may clash with one of these subtuples
+            # TODO: with the current scheme, it is possible (but unlikely) that
+            # an ACTUAL tuple may clash with one of these subtuples
             typeSubtuple = (tupleLength, i, type(element))
             h = hashlib.sha1()
             h.update(prependStr + cPickle.dumps(typeSubtuple))
@@ -506,9 +555,9 @@ class DistributedTupleSpacePeer(EntangledNode):
             subtupleKeys.append(h.digest())
             i += 1
         return subtupleKeys
-    
+
     def _keywordHashesFromTemplate(self, template, listener=False):
-        if listener == True:
+        if listener:
             prependStr = 'listener:'
         else:
             prependStr = 'tuple:'
@@ -518,20 +567,22 @@ class DistributedTupleSpacePeer(EntangledNode):
         deterministicElementCount = 0
         for element in template:
             # See the description in _keywordHashesFromTuple() for how these "keyword" subtuples are constructed
-            #if element != None:
-                # This element in the template describes the element's value or type
-            if type(element) != type and element != None:
+            # if element != None:
+                # This element in the template describes the element's value or
+                # type
+            if not isinstance(element, type) and element is not None:
                 deterministicElementCount += 1
             subtuple = (tupleLength, i, element)
             h = hashlib.sha1()
             h.update(prependStr + cPickle.dumps(subtuple))
             subtupleKeys.append(h.digest())
-            #else:
-                # The element is None; treat it as a wildcard
+            # else:
+            # The element is None; treat it as a wildcard
             #    pass
             i += 1
         if deterministicElementCount == tupleLength:
-            # All of the elements are fully specified in this template; thus we can retrieve the corresponding tuple directly
+            # All of the elements are fully specified in this template; thus we
+            # can retrieve the corresponding tuple directly
             return None
         else:
             return subtupleKeys
@@ -548,7 +599,7 @@ class DistributedTupleSpacePeer(EntangledNode):
             df = self._blockingReadRequests[listenerKey]
             df.callback(dTuple)
             return 'read'
-        
+
 
 if __name__ == '__main__':
     import sys
@@ -579,6 +630,6 @@ if __name__ == '__main__':
     else:
         knownNodes = None
 
-    node = DistributedTupleSpacePeer( udpPort=int(sys.argv[1]) )
+    node = DistributedTupleSpacePeer(udpPort=int(sys.argv[1]))
     node.joinNetwork(knownNodes)
     twisted.internet.reactor.run()

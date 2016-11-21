@@ -46,6 +46,7 @@ class ReceiverProtocol(Protocol):
     HTTP request body. Instance of this will be passed to the Response's
     deliverBody method.
     """
+
     def __init__(self, finished):
         """
         @type finished: t.i.d.Deferred
@@ -194,12 +195,11 @@ class ProxyFactory(object):
         elif self._persistent:
             pool = self._getConnectionPool()
 
-
-        kwargs = {'version':        self._version,
+        kwargs = {'version': self._version,
                   'connectTimeout': self._connectTimeout,
-                  'credentials':    self._credentials,
+                  'credentials': self._credentials,
                   'contextFactory': self._contextFactory,
-                  'pool':           pool}
+                  'pool': pool}
 
         proxy = Proxy(url, **kwargs)
 

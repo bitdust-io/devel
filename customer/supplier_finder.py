@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#supplier_finder.py
+# supplier_finder.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -38,12 +38,12 @@ EVENTS:
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -61,14 +61,15 @@ from userid import my_id
 from transport import callback
 
 import fire_hire
-import supplier_connector 
+import supplier_connector
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _SupplierFinder = None
 _SuppliersToHire = []
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def AddSupplierToHire(idurl):
     """
@@ -76,7 +77,8 @@ def AddSupplierToHire(idurl):
     global _SuppliersToHire
     _SuppliersToHire.append(idurl)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -85,7 +87,8 @@ def A(event=None, arg=None):
     global _SupplierFinder
     if _SupplierFinder is None:
         # set automat name and starting state here
-        _SupplierFinder = SupplierFinder('supplier_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+        _SupplierFinder = SupplierFinder(
+            'supplier_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _SupplierFinder.automat(event, arg)
     return _SupplierFinder
@@ -97,8 +100,8 @@ class SupplierFinder(automat.Automat):
     """
 
     timers = {
-        'timer-10sec': (10.0, ['ACK?','SERVICE?']),
-        }
+        'timer-10sec': (10.0, ['ACK?', 'SERVICE?']),
+    }
 
     def init(self):
         """
@@ -114,26 +117,26 @@ class SupplierFinder(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'start' and not self.isSomeCandidatesListed(arg) :
+            if event == 'start' and not self.isSomeCandidatesListed(arg):
                 self.state = 'RANDOM_USER'
-                self.Attempts=0
+                self.Attempts = 0
                 self.doInit(arg)
                 self.doDHTFindRandomUser(arg)
-            elif event == 'start' and self.isSomeCandidatesListed(arg) :
+            elif event == 'start' and self.isSomeCandidatesListed(arg):
                 self.state = 'ACK?'
                 self.doInit(arg)
                 self.doPopCandidate(arg)
-                self.Attempts=1
+                self.Attempts = 1
                 self.doSendMyIdentity(arg)
         #---ACK?---
         elif self.state == 'ACK?':
-            if event == 'inbox-packet' and self.isAckFromUser(arg) :
+            if event == 'inbox-packet' and self.isAckFromUser(arg):
                 self.state = 'SERVICE?'
                 self.doSupplierConnect(arg)
-            elif event == 'timer-10sec' and self.Attempts<5 :
+            elif event == 'timer-10sec' and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
-            elif self.Attempts==5 and event == 'timer-10sec' :
+            elif self.Attempts == 5 and event == 'timer-10sec':
                 self.state = 'FAILED'
                 self.doDestroyMe(arg)
                 fire_hire.A('search-failed')
@@ -145,30 +148,30 @@ class SupplierFinder(automat.Automat):
             pass
         #---RANDOM_USER---
         elif self.state == 'RANDOM_USER':
-            if event == 'users-not-found' :
+            if event == 'users-not-found':
                 self.state = 'FAILED'
                 self.doDestroyMe(arg)
                 fire_hire.A('search-failed')
-            elif event == 'found-one-user' :
+            elif event == 'found-one-user':
                 self.state = 'ACK?'
                 self.doCleanPrevUser(arg)
                 self.doRememberUser(arg)
-                self.Attempts+=1
+                self.Attempts += 1
                 self.doSendMyIdentity(arg)
         #---SERVICE?---
         elif self.state == 'SERVICE?':
-            if event == 'supplier-connected' :
+            if event == 'supplier-connected':
                 self.state = 'DONE'
                 fire_hire.A('supplier-connected', self.target_idurl)
                 self.doDestroyMe(arg)
-            elif event == 'timer-10sec' and self.Attempts<5 :
+            elif event == 'timer-10sec' and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
-            elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'supplier-not-connected' ) :
+            elif self.Attempts == 5 and (event == 'timer-10sec' or event == 'supplier-not-connected'):
                 self.state = 'FAILED'
                 self.doDestroyMe(arg)
                 fire_hire.A('search-failed')
-            elif self.Attempts<5 and event == 'supplier-not-connected' :
+            elif self.Attempts < 5 and event == 'supplier-not-connected':
                 self.state = 'RANDOM_USER'
                 self.doDHTFindRandomUser(arg)
         return None
@@ -183,14 +186,13 @@ class SupplierFinder(automat.Automat):
                 return True
         return False
 
-
     def isSomeCandidatesListed(self, arg):
         """
         Condition method.
         """
         global _SuppliersToHire
         return len(_SuppliersToHire) > 0
-        
+
 #    def isServiceAccepted(self, arg):
 #        """
 #        Condition method.
@@ -222,7 +224,7 @@ class SupplierFinder(automat.Automat):
             sc = supplier_connector.create(self.target_idurl)
         sc.automat('connect')
         sc.set_callback('supplier_finder', self._supplier_connector_state)
-            
+
     def doDHTFindRandomUser(self, arg):
         """
         Action method.
@@ -245,13 +247,13 @@ class SupplierFinder(automat.Automat):
         Action method.
         """
         self.target_idurl = arg
-        
+
     def doPopCandidate(self, arg):
         """
         Action method.
         """
         global _SuppliersToHire
-        self.target_idurl = _SuppliersToHire.pop() 
+        self.target_idurl = _SuppliersToHire.pop()
 
     def doDestroyMe(self, arg):
         """
@@ -269,15 +271,18 @@ class SupplierFinder(automat.Automat):
         self.destroy()
         lg.out(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
-    #------------------------------------------------------------------------------ 
+    #-------------------------------------------------------------------------
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         self.automat('inbox-packet', (newpacket, info, status, error_message))
         return False
-        
+
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
-            lg.out(_DebugLevel, 'broadcasters_finder._nodes_lookup_finished : %r' % idurls)
+            lg.out(
+                _DebugLevel,
+                'broadcasters_finder._nodes_lookup_finished : %r' %
+                idurls)
         if not idurls:
             self.automat('users-not-found')
             return
@@ -289,7 +294,7 @@ class SupplierFinder(automat.Automat):
                 self.automat('found-one-user', idurl)
                 return
         self.automat('users-not-found')
-        
+
 #     def _found_nodes(self, nodes):
 #         lg.out(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
 #         # DEBUG
@@ -302,10 +307,10 @@ class SupplierFinder(automat.Automat):
 #             d.addErrback(self._request_error)
 #         else:
 #             self.automat('users-not-found')
-    
+
 #     def _search_nodes_failed(self, err):
 #         self.automat('users-not-found')
-    
+
 #     def _got_target_idurl(self, response):
 #         lg.out(14, 'supplier_finder._got_target_idurl response=%s' % str(response) )
 #         try:
@@ -323,11 +328,11 @@ class SupplierFinder(automat.Automat):
 #         d.addCallback(lambda src: self._got_target_identity(src, idurl))
 #         d.addErrback(lambda x: self.automat('users-not-found'))
 #         return response
-    
+
 #     def _request_error(self, err):
 #         lg.out(2, '_request_error' + str(err))
 #         self.automat('users-not-found')
-            
+
 #     def _got_target_identity(self, src, idurl):
 #         """
 #         Need to check that remote user is supported at least one of our protocols.
@@ -339,7 +344,7 @@ class SupplierFinder(automat.Automat):
 #             self.automat('found-one-user', idurl)
 #         else:
 #             self.automat('users-not-found')
-            
+
     def _supplier_connector_state(self, supplier_idurl, newstate):
         if supplier_idurl != self.target_idurl:
             return
@@ -348,4 +353,3 @@ class SupplierFinder(automat.Automat):
                 self.automat('supplier-connected', self.target_idurl)
         elif newstate in ['DISCONNECTED', 'NO_SERVICE', ]:
             self.automat('supplier-not-connected')
-

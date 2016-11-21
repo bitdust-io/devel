@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#getsizeof.py
+# getsizeof.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,12 +14,12 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-# taken from: 
+# taken from:
 # http://code.activestate.com/recipes/577504/
 
 from sys import getsizeof, stderr
@@ -30,7 +30,8 @@ try:
 except:
     pass
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def total_size(o, handlers={}, verbose=False):
     """ Returns the approximate memory footprint an object and all of its contents.
@@ -50,10 +51,11 @@ def total_size(o, handlers={}, verbose=False):
                     dict: dict_handler,
                     set: iter,
                     frozenset: iter,
-                   }
+                    }
     all_handlers.update(handlers)     # user handlers take precedence
     seen = set()                      # track which object id's have already been seen
-    default_size = getsizeof(0)       # estimate sizeof object without __sizeof__
+    # estimate sizeof object without __sizeof__
+    default_size = getsizeof(0)
 
     def sizeof(o):
         if id(o) in seen:       # do not double count the same object
@@ -62,7 +64,7 @@ def total_size(o, handlers={}, verbose=False):
         s = getsizeof(o, default_size)
 
         if verbose:
-            print(s, type(o), reprlib.repr(o)) # , file=stderr)
+            print(s, type(o), reprlib.repr(o))  # , file=stderr)
 
         for typ, handler in all_handlers.items():
             if isinstance(o, typ):
@@ -76,5 +78,5 @@ def total_size(o, handlers={}, verbose=False):
 ##### Example call #####
 
 if __name__ == '__main__':
-    d = dict(a=1, b=2, c=3, d=[4,5,6,7], e='a string of chars')
+    d = dict(a=1, b=2, c=3, d=[4, 5, 6, 7], e='a string of chars')
     print(total_size(d, verbose=True))

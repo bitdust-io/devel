@@ -13,7 +13,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,9 +31,11 @@ import pp
 # Let's move the functionality to external module - to avoid "could not get source" error for .pyc only
 # You have to run: "zip -u dist\library.zip primes.py"
 
-from primes import sum_primes, isprime 
+from primes import sum_primes, isprime
 
-# If you don't want to distribute the source code of your function you can move the functionality to another external module and add it to the list of dependent module names in job_server.submit() - last argument. 
+# If you don't want to distribute the source code of your function you can
+# move the functionality to another external module and add it to the list
+# of dependent module names in job_server.submit() - last argument.
 
 print """Usage: python sum_primes.py [ncpus]
     [ncpus] - the number of workers to run in parallel,
@@ -74,7 +76,7 @@ print "Sum of primes below 100 is", result
 # The following submits 8 jobs and then retrieves the results
 inputs = (100000, 100100, 100200, 100300, 100400, 100500, 100600, 100700)
 jobs = [(input, job_server.submit(sum_primes, (input, ), (isprime, ),
-        ("math", ))) for input in inputs]
+                                  ("math", ))) for input in inputs]
 
 for input, job in jobs:
     print "Sum of primes below", input, "is", job()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#list_files_orator.py
+# list_files_orator.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,7 +33,7 @@
     <a href="http://bitdust.io/automats/list_files_orator/list_files_orator.png" target="_blank">
     <img src="http://bitdust.io/automats/list_files_orator/list_files_orator.png" style="max-width:100%;">
     </a>
-    
+
 This simple state machine requests a list of files stored on remote machines.
 
 Before that, it scans the local backup folder and prepare an index of existing data pieces.
@@ -45,7 +45,7 @@ EVENTS:
     * :red:`local-files-done`
     * :red:`need-files`
     * :red:`timer-10sec`
-    
+
 """
 
 import os
@@ -58,7 +58,7 @@ except:
 from twisted.internet.defer import maybeDeferred
 from twisted.internet.task import LoopingCall
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -71,7 +71,7 @@ from p2p import p2p_connector
 
 from services import driver
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _ListFilesOrator = None
 _RequestedListFilesPacketIDs = set()
@@ -79,13 +79,15 @@ _RequestedListFilesCounter = 0
 
 #------------------------------------------------------------------------------
 
+
 def A(event=None, arg=None):
     """
     Access method to interact with the state machine.
     """
     global _ListFilesOrator
     if _ListFilesOrator is None:
-        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 4, True)
+        _ListFilesOrator = ListFilesOrator(
+            'list_files_orator', 'NO_FILES', 4, True)
     if event is not None:
         _ListFilesOrator.automat(event, arg)
     return _ListFilesOrator
@@ -101,16 +103,16 @@ def Destroy():
     _ListFilesOrator.destroy()
     del _ListFilesOrator
     _ListFilesOrator = None
-    
-    
+
+
 class ListFilesOrator(automat.Automat):
     """
     A class to request list of my files from my suppliers and also scan the local files.
     """
-    
+
     timers = {
         'timer-10sec': (10.0, ['REMOTE_FILES']),
-        }
+    }
 
     def state_changed(self, oldstate, newstate, event, arg):
         #global_state.set_global_state('ORATOR ' + newstate)
@@ -135,7 +137,8 @@ class ListFilesOrator(automat.Automat):
                 self.state = 'NO_FILES'
         #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':
-            if ( event == 'timer-10sec' and self.isSomeListFilesReceived(arg) ) or ( event == 'inbox-files' and self.isAllListFilesReceived(arg) ):
+            if (event == 'timer-10sec' and self.isSomeListFilesReceived(arg)
+                ) or (event == 'inbox-files' and self.isAllListFilesReceived(arg)):
                 self.state = 'SAW_FILES'
             elif event == 'timer-10sec' and not self.isSomeListFilesReceived(arg):
                 self.state = 'NO_FILES'
@@ -148,19 +151,23 @@ class ListFilesOrator(automat.Automat):
 
     def isAllListFilesReceived(self, arg):
         global _RequestedListFilesPacketIDs
-        lg.out(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
+        lg.out(
+            6, 'list_files_orator.isAllListFilesReceived need %d more' %
+            len(_RequestedListFilesPacketIDs))
         return len(_RequestedListFilesPacketIDs) == 0
 
     def isSomeListFilesReceived(self, arg):
         global _RequestedListFilesCounter
-        lg.out(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _RequestedListFilesCounter)
+        lg.out(
+            6, 'list_files_orator.isSomeListFilesReceived %d list files was received' %
+            _RequestedListFilesCounter)
         return _RequestedListFilesCounter > 0
 
     def doReadLocalFiles(self, arg):
         from storage import backup_matrix
         maybeDeferred(backup_matrix.ReadLocalFiles).addBoth(
             lambda x: self.automat('local-files-done'))
-    
+
     def doRequestRemoteFiles(self, arg):
         global _RequestedListFilesCounter
         global _RequestedListFilesPacketIDs
@@ -172,9 +179,13 @@ class ListFilesOrator(automat.Automat):
                     p2p_service.SendRequestListFiles(idurl)
                     _RequestedListFilesPacketIDs.add(idurl)
                 else:
-                    lg.out(6, 'list_files_orator.doRequestRemoteFiles SKIP %s is not online' % idurl)
+                    lg.out(
+                        6,
+                        'list_files_orator.doRequestRemoteFiles SKIP %s is not online' %
+                        idurl)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def IncomingListFiles(newpacket):
     """
@@ -185,7 +196,3 @@ def IncomingListFiles(newpacket):
     _RequestedListFilesCounter += 1
     _RequestedListFilesPacketIDs.discard(newpacket.OwnerID)
     A('inbox-files', newpacket)
-    
-    
-
-

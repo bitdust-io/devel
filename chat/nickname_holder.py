@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#nickname_holder.py
+# nickname_holder.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -58,11 +58,12 @@ from userid import my_id
 
 from dht import dht_service
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _NicknameHolder = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -71,7 +72,8 @@ def A(event=None, arg=None):
     global _NicknameHolder
     if _NicknameHolder is None:
         # set automat name and starting state here
-        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 4, True)
+        _NicknameHolder = NicknameHolder(
+            'nickname_holder', 'AT_STARTUP', 4, True)
     if event is not None:
         _NicknameHolder.automat(event, arg)
     return _NicknameHolder
@@ -87,8 +89,9 @@ def Destroy():
     _NicknameHolder.destroy()
     del _NicknameHolder
     _NicknameHolder = None
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class NicknameHolder(automat.Automat):
     """
@@ -97,7 +100,7 @@ class NicknameHolder(automat.Automat):
 
     timers = {
         'timer-5min': (300, ['READY']),
-        }
+    }
 
     def init(self):
         """
@@ -111,66 +114,66 @@ class NicknameHolder(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'set' :
+            if event == 'set':
                 self.state = 'DHT_READ'
-                self.Attempts=0
+                self.Attempts = 0
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
         #---READY---
         elif self.state == 'READY':
-            if event == 'timer-5min' :
+            if event == 'timer-5min':
                 self.state = 'DHT_READ'
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'set' :
+            elif event == 'set':
                 self.state = 'DHT_ERASE'
                 self.doDHTEraseKey(arg)
                 self.doSetNickname(arg)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
-            if event == 'dht-read-success' and self.isMyOwnKey(arg) :
+            if event == 'dht-read-success' and self.isMyOwnKey(arg):
                 self.state = 'READY'
                 self.doReportNicknameOwn(arg)
-            elif event == 'dht-read-failed' :
+            elif event == 'dht-read-failed':
                 self.state = 'DHT_WRITE'
                 self.doDHTWriteKey(arg)
-            elif event == 'dht-read-success' and not self.isMyOwnKey(arg) :
+            elif event == 'dht-read-success' and not self.isMyOwnKey(arg):
                 self.doReportNicknameExist(arg)
                 self.doNextKey(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'set' :
+            elif event == 'set':
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
-            if event == 'dht-write-failed' and self.Attempts>5 :
+            if event == 'dht-write-failed' and self.Attempts > 5:
                 self.state = 'READY'
-                self.Attempts=0
+                self.Attempts = 0
                 self.doReportNicknameFailed(arg)
-            elif event == 'dht-write-failed' and self.Attempts<=5 :
+            elif event == 'dht-write-failed' and self.Attempts <= 5:
                 self.state = 'DHT_READ'
-                self.Attempts+=1
+                self.Attempts += 1
                 self.doNextKey(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'dht-write-success' :
+            elif event == 'dht-write-success':
                 self.state = 'READY'
-                self.Attempts=0
+                self.Attempts = 0
                 self.doReportNicknameRegistered(arg)
-            elif event == 'set' :
+            elif event == 'set':
                 self.state = 'DHT_READ'
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
         #---DHT_ERASE---
         elif self.state == 'DHT_ERASE':
-            if event == 'dht-erase-success' or event == 'dht-erase-failed' :
+            if event == 'dht-erase-success' or event == 'dht-erase-failed':
                 self.state = 'DHT_READ'
                 self.doMakeKey(arg)
                 self.doDHTReadKey(arg)
-            elif event == 'set' :
+            elif event == 'set':
                 self.state = 'DHT_READ'
                 self.doSetNickname(arg)
                 self.doMakeKey(arg)
@@ -227,12 +230,14 @@ class NicknameHolder(automat.Automat):
         d.addCallback(self._dht_read_result, self.key)
         d.addErrback(self._dht_read_failed)
         self.dht_read_defer = d
-        
+
     def doDHTWriteKey(self, arg):
         """
         Action method.
         """
-        d = dht_service.set_value(self.key, my_id.getLocalID(), age=int(time.time()))
+        d = dht_service.set_value(
+            self.key, my_id.getLocalID(), age=int(
+                time.time()))
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
@@ -243,7 +248,7 @@ class NicknameHolder(automat.Automat):
         d = dht_service.delete_key(self.key)
         d.addCallback(self._dht_erase_result)
         d.addErrback(lambda x: self.automat('dht-erase-failed'))
-        
+
     def doReportNicknameOwn(self, arg):
         """
         Action method.
@@ -256,7 +261,10 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(18, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
+        lg.out(
+            18,
+            'nickname_holder.doReportNicknameRegistered : %s' %
+            self.key)
         if self.result_callback:
             self.result_callback('registered', self.key)
 
@@ -278,7 +286,7 @@ class NicknameHolder(automat.Automat):
 
     def _dht_read_result(self, value, key):
         self.dht_read_defer = None
-        if type(value) != dict:
+        if not isinstance(value, dict):
             self.automat('dht-read-failed')
             return
         try:
@@ -289,24 +297,24 @@ class NicknameHolder(automat.Automat):
             self.automat('dht-read-failed')
             return
         self.automat('dht-read-success', v)
-        
+
     def _dht_read_failed(self, x):
         self.dht_read_defer = None
         self.automat('dht-read-failed', x)
-    
+
     def _dht_write_result(self, nodes):
         if len(nodes) > 0:
             self.automat('dht-write-success')
         else:
-            self.automat('dht-write-failed')        
+            self.automat('dht-write-failed')
 
     def _dht_erase_result(self, result):
         if result is None:
             self.automat('dht-erase-failed')
         else:
             self.automat('dht-erase-success')
-            
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
 
 
 def main():
@@ -320,4 +328,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

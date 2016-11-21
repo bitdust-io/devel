@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_private_messages.py
+# service_private_messages.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,19 +31,21 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return PrivateMessagesService()
-    
+
+
 class PrivateMessagesService(LocalService):
-    
+
     service_name = 'service_private_messages'
     config_path = 'services/private-messages/enabled'
-    
+
     def dependent_on(self):
         return ['service_p2p_hookups',
                 'service_entangled_dht',
                 ]
-    
+
     def start(self):
         from chat import message
         from main import settings
@@ -54,12 +56,8 @@ class PrivateMessagesService(LocalService):
         from chat import nickname_holder
         nickname_holder.A('set', None)
         return True
-    
+
     def stop(self):
         from chat import nickname_holder
         nickname_holder.Destroy()
         return True
-    
-    
-
-    

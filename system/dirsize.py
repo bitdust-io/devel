@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dirsize.py
+# dirsize.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -49,24 +49,25 @@ from lib import diskspace
 
 import bpio
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Jobs = {}
 _Dirs = {}
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def ask(dirpath, callback=None, arg=None):
     """
     Start a thread to scan all sub folders and calculate total size of given directory.
-        
+
         :param callback: set a callback function to get the folder size in your code
-        :param arg: set some argument to put in the callback, so you can mark that result 
+        :param arg: set some argument to put in the callback, so you can mark that result
     """
     global _Jobs
     global _Dirs
     lg.out(6, 'dirsize.ask %s' % dirpath)
-    if _Jobs.has_key(dirpath):
+    if dirpath in _Jobs:
         return 'counting size'
     if not os.path.isdir(dirpath):
         _Dirs[dirpath] = 'not exist'
@@ -78,7 +79,8 @@ def ask(dirpath, callback=None, arg=None):
     _Jobs[dirpath] = (d, callback, arg)
     _Dirs[dirpath] = 'counting size'
     return 'counting size'
-    
+
+
 def done(size, dirpath):
     """
     This is called after you did ``ask`` of dir size.
@@ -93,20 +95,23 @@ def done(size, dirpath):
             cb(dirpath, size, arg)
     except:
         lg.exc()
-    
+
+
 def get(dirpath, default=''):
     """
     Only return directory size stored in memory - after previous calls to ``ask`` procedure.
     """
     global _Dirs
     return _Dirs.get(dirpath, default)
-    
+
+
 def isjob(dirpath):
     """
     You can check if some work is still in progress to calculate given folder size.
     """
     global _Jobs
-    return _Jobs.has_key(dirpath)
+    return dirpath in _Jobs
+
 
 def getLabel(dirpath):
     """
@@ -120,14 +125,16 @@ def getLabel(dirpath):
         except:
             return str(s)
     return str(s)
-    
+
+
 def getInBytes(dirpath, default=-1):
     """
     Return directory size in bytes, must use ``ask`` first.
     """
-    return diskspace.GetBytesFromString(get(dirpath), default)     
-        
-#------------------------------------------------------------------------------ 
+    return diskspace.GetBytesFromString(get(dirpath), default)
+
+#------------------------------------------------------------------------------
+
 
 def main():
     """
@@ -142,5 +149,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-    

@@ -368,6 +368,7 @@ class JSONRPCError(Exception):
 
     @TODO str, repr etc.?
     """
+
     def __init__(self, strerror, errno=INTERNAL_ERROR, data=None, id_=None,
                  version=VERSION_1):
         """

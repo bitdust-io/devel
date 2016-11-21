@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#mergecommits.py
+# mergecommits.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,15 +14,19 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
-import sys, os, re, time, pprint
+import sys
+import os
+import re
+import time
+import pprint
 
-h1=open(sys.argv[1]).read().splitlines()
-h2=open(sys.argv[2]).read().splitlines()
+h1 = open(sys.argv[1]).read().splitlines()
+h2 = open(sys.argv[2]).read().splitlines()
 h1times = {}
 h2times = {}
 
@@ -55,15 +59,15 @@ for i in xrange(len(h2sorted)):
     for dt1 in h1sorted:
         commit1 = h1times[dt1]
         if dt1 < tcurr and dt1 > dt2:
-            parts[i-1].append((dt1, commit1))
+            parts[i - 1].append((dt1, commit1))
     tcurr = dt2
 
 for i in sorted(parts.keys(), reverse=False):
     commits = parts[i]
     headcommit = commits.pop(0)
-    print '[%s]' % time.asctime(time.localtime(headcommit[0])) 
+    print '[%s]' % time.asctime(time.localtime(headcommit[0]))
     print re.match('\w+? \[.+?\] (.+?)$', headcommit[1]).group(1)
     for dt, commit in commits:
-        print '    [%s] %s' % (time.strftime('%c', time.localtime(dt)), 
+        print '    [%s] %s' % (time.strftime('%c', time.localtime(dt)),
                                re.match('\w+? \[.+?\] (.+?)$', commit).group(1))
     print

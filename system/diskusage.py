@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#diskusage.py
+# diskusage.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,14 +29,14 @@
 .. module:: diskusage
 
 This is OS specific methods to read and check the local disks usage.
-Need to be sure user have enough free space on the disk and able to donate previously specified amount of space. 
+Need to be sure user have enough free space on the disk and able to donate previously specified amount of space.
 """
 
 import os
 import time
 import glob
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from lib import diskspace
 
@@ -44,41 +44,49 @@ from main import settings
 
 import bpio
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if bpio.Windows():
     import win32api
     import win32file
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def GetWinDriveSpace(drive):
     """
     For Windows.
     Return a tuple (<free space in bytes>, <total space in bytes>) or (None, None).
     Call system method ``win32file.GetDiskFreeSpace``.
-    """ 
+    """
     try:
-        sectorsPerCluster, bytesPerSector, numFreeClusters, totalNumClusters = win32file.GetDiskFreeSpace(drive + ":\\")
+        sectorsPerCluster, bytesPerSector, numFreeClusters, totalNumClusters = win32file.GetDiskFreeSpace(
+            drive + ":\\")
         sectorsPerCluster = long(sectorsPerCluster)
         bytesPerSector = long(bytesPerSector)
         numFreeClusters = long(numFreeClusters)
         totalNumClusters = long(totalNumClusters)
     except:
         return None, None
-    return float(numFreeClusters * sectorsPerCluster * bytesPerSector), float(totalNumClusters * sectorsPerCluster * bytesPerSector)
+    return float(numFreeClusters *
+                 sectorsPerCluster *
+                 bytesPerSector), float(totalNumClusters *
+                                        sectorsPerCluster *
+                                        bytesPerSector)
+
 
 def GetLinuxDriveSpace(path):
     """
     For Linux.
     Return a tuple (<free space in bytes>, <total space in bytes>) or (None, None).
-    Call system method ``os.statvfs``.    
-    """ 
+    Call system method ``os.statvfs``.
+    """
     try:
         s = os.statvfs(str(path))
-        # free, total = s.f_bsize*(s.f_blocks-s.f_bavail), s.f_bsize * s.f_bavail 
+        # free, total = s.f_bsize*(s.f_blocks-s.f_bavail), s.f_bsize * s.f_bavail
         # free, total = float(s.f_bsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
-        free, total = float(s.f_frsize * s.f_bavail), float(s.f_bsize * s.f_blocks) 
+        free, total = float(
+            s.f_frsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
         return free, total
     except:
         return None, None
@@ -87,20 +95,23 @@ def GetLinuxDriveSpace(path):
 #    else:
 #        return free, total
 
+
 def GetDriveSpace(path):
     """
     So this a sort of portable way to get the free HDD space in the system.
     """
     if bpio.Windows():
         drive = os.path.abspath(path)[0]
-        if os.path.isdir(drive+':'):
+        if os.path.isdir(drive + ':'):
             # the drive the data directory is on, ie C
             return GetWinDriveSpace(drive)
         else:
             return None, None
     else:
-        # on linux the mount points can make a directory be off a different disk than root
+        # on linux the mount points can make a directory be off a different
+        # disk than root
         return GetLinuxDriveSpace(path)
+
 
 def SumFileSizes(fileList):
     """
@@ -114,7 +125,8 @@ def SumFileSizes(fileList):
             pass
     return fileSizeTotal
 
-def GetOurTempFileSizeTotal(tempDirectory, masks=['*',]):
+
+def GetOurTempFileSizeTotal(tempDirectory, masks=['*', ]):
     """
     Not used right now.
     Tried here to calculate our temporary files size.
@@ -122,8 +134,13 @@ def GetOurTempFileSizeTotal(tempDirectory, masks=['*',]):
     """
     ourFileSizes = 0
     for mask in masks:
-        ourFileSizes += SumFileSizes(glob.glob(os.path.join(tempDirectory, mask)))
+        ourFileSizes += SumFileSizes(
+            glob.glob(
+                os.path.join(
+                    tempDirectory,
+                    mask)))
     return ourFileSizes
+
 
 def OkToShareSpace(desiredSharedSpaceMB):
     """
@@ -134,18 +151,21 @@ def OkToShareSpace(desiredSharedSpaceMB):
     if dataDriveFreeSpace is None:
         return False
     currentlySharedSpace = GetDirectorySize(dataDir)
-    if (currentlySharedSpace + dataDriveFreeSpace/(1024*1024)) < desiredSharedSpaceMB:
+    if (currentlySharedSpace + dataDriveFreeSpace /
+            (1024 * 1024)) < desiredSharedSpaceMB:
         return False
     else:
         return True
-    
+
+
 def GetDirectorySize(directoryPath):
     """
     Calculates the folder size in megabytes using ``bpio.getDirectorySize``.
     """
-    return bpio.getDirectorySize(directoryPath)/(1024*1024)
+    return bpio.getDirectorySize(directoryPath) / (1024 * 1024)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def main():
     """
@@ -164,11 +184,11 @@ def main():
 
     print "data dir =", dataDir
     print "tep dir =", tempDir
-    print "data dir: " + str(dataDriveFreeSpace/(1024*1024)) +"MB free/" + str(dataDriveTotalSpace/(1024*1024)) +"MB total"
-    print "temp dir: " + str(tempDriveFreeSpace/(1024*1024)) +"MB free/" + str(tempDriveTotalSpace/(1024*1024)) +"MB total"
+    print "data dir: " + str(dataDriveFreeSpace / (1024 * 1024)) + "MB free/" + str(dataDriveTotalSpace / (1024 * 1024)) + "MB total"
+    print "temp dir: " + str(tempDriveFreeSpace / (1024 * 1024)) + "MB free/" + str(tempDriveTotalSpace / (1024 * 1024)) + "MB total"
 
     print time.time()
-    print "our temp files: " + str(GetOurTempFileSizeTotal(tempDir)/(1024*1024)) + "MB"
+    print "our temp files: " + str(GetOurTempFileSizeTotal(tempDir) / (1024 * 1024)) + "MB"
     print time.time()
 
     GetDirectorySize(dataDir)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#propagate.py
+# propagate.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,12 +30,13 @@ sys.path.append(os.path.abspath('..'))
 
 from logs import lg
 
+
 def main():
     lg.set_debug_level(24)
-    
+
     # TEST
     import transport.gate
-    transport.gate.init(['tcp',])
+    transport.gate.init(['tcp', ])
     import userid.propagate
     userid.propagate.SendServers()
     reactor.run()

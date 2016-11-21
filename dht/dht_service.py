@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dht_service.py
+# dht_service.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,12 +29,12 @@
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 14
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import sys
 import hashlib
@@ -50,13 +50,18 @@ from entangled.kademlia.datastore import SQLiteDataStore
 from entangled.kademlia.node import rpcmethod
 from entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    sys.path.insert(
+        0, _p.abspath(
+            _p.join(
+                _p.dirname(
+                    _p.abspath(
+                        sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -66,31 +71,36 @@ from main import settings
 
 import known_nodes
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _MyNode = None
 _UDPListener = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.init SKIP, already created a DHTNode')
+            lg.out(
+                _DebugLevel,
+                'dht_service.init SKIP, already created a DHTNode')
         return
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)
-    lg.out(4, 'dht_service.init UDP port is %d, DB file path: %s' % (udp_port, dbPath))
+    lg.out(
+        4, 'dht_service.init UDP port is %d, DB file path: %s' %
+        (udp_port, dbPath))
     dataStore = SQLiteDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
-        # None, encoding.Bencode(), msgformat.DefaultFormat())
+    # None, encoding.Bencode(), msgformat.DefaultFormat())
     _MyNode = DHTNode(udp_port, dataStore, networkProtocol=networkProtocol)
     # _MyNode._protocol.node = _MyNode
-    
+
 
 def shutdown():
     global _MyNode
@@ -105,7 +115,8 @@ def shutdown():
     else:
         lg.warn('DHTNode not exist')
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def node():
     global _MyNode
@@ -122,20 +133,24 @@ def connect():
     else:
         node().joinNetwork(known_nodes.nodes())
         if _Debug:
-            lg.out(_DebugLevel, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
+            lg.out(
+                _DebugLevel,
+                'dht_service.connect with %d known nodes' %
+                (len(
+                    known_nodes.nodes())))
     return True
 
 
 def disconnect():
-#    global _UDPListener
-#    if _UDPListener is not None:
-#        lg.out(6, 'dht_service.disconnect')
-#        d = _UDPListener.stopListening()
-#        del _UDPListener
-#        _UDPListener = None
-#        return d
-#    else:
-#        lg.warn('- UDPListener is None')
+    #    global _UDPListener
+    #    if _UDPListener is not None:
+    #        lg.out(6, 'dht_service.disconnect')
+    #        d = _UDPListener.stopListening()
+    #        del _UDPListener
+    #        _UDPListener = None
+    #        return d
+    #    else:
+    #        lg.warn('- UDPListener is None')
     return None
 
 
@@ -152,19 +167,23 @@ def key_to_hash(key):
 
 
 def okay(result, method, key, arg=None):
-    if type(result) == dict:
+    if isinstance(result, dict):
         v = str(result.values())
     else:
         v = 'None'
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.okay   %s(%s)   result=%s ...' % (method, key, v[:20]))
+        lg.out(_DebugLevel +
+               10, 'dht_service.okay   %s(%s)   result=%s ...' %
+               (method, key, v[:20]))
     return result
 
 
 def error(err, method, key):
     if _Debug:
-        lg.out(_DebugLevel, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
-    return err  
+        lg.out(
+            _DebugLevel, 'dht_service.error %s(%s) returned an ERROR:\n%s' %
+            (method, key, str(err)))
+    return err
 
 
 def get_value(key):
@@ -176,11 +195,13 @@ def get_value(key):
     d.addCallback(okay, 'get_value', key)
     d.addErrback(error, 'get_value', key)
     return d
-        
+
 
 def set_value(key, value, age=0):
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
+        lg.out(_DebugLevel +
+               10, 'dht_service.set_value key=[%s] value=[%s]' %
+               (key, str(value)[:20]))
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeStore(key_to_hash(key), value, age=age)
@@ -198,7 +219,7 @@ def delete_key(key):
     d.addCallback(okay, 'delete_value', key)
     d.addErrback(error, 'delete_key', key)
     return d
-    
+
 
 def random_key():
     return key_to_hash(str(random.getrandbits(255)))
@@ -208,8 +229,10 @@ def set_node_data(key, value):
     if not node():
         return
     if _Debug:
-        lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
-    node().data[key] = value    
+        lg.out(_DebugLevel +
+               10, 'dht_service.set_node_data key=[%s] value: %s' %
+               (key, str(value)[:20]))
+    node().data[key] = value
 
 
 def find_node(node_id):
@@ -223,28 +246,42 @@ def find_node(node_id):
     d.addErrback(error, 'find_node', node_id64)
     return d
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class DHTNode(DistributedTupleSpacePeer):
-    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
-        DistributedTupleSpacePeer.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
+
+    def __init__(
+            self,
+            udpPort=4000,
+            dataStore=None,
+            routingTable=None,
+            networkProtocol=None):
+        DistributedTupleSpacePeer.__init__(
+            self, udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
-        
+
     if _Debug:
         @rpcmethod
         def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
             if _Debug:
-                lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
-                    base64.b32encode(key), str(value)[:20]))
-            return DistributedTupleSpacePeer.store(self, key, value, 
-                originalPublisherID=originalPublisherID, age=age, **kwargs)
+                lg.out(_DebugLevel +
+                       10, 'dht_service.DHTNode.store key=[%s], value=[%s]' %
+                       (base64.b32encode(key), str(value)[:20]))
+            return DistributedTupleSpacePeer.store(
+                self, key, value, originalPublisherID=originalPublisherID, age=age, **kwargs)
 
     @rpcmethod
     def request(self, key):
         value = str(self.data.get(key, None))
         if _Debug:
-            lg.out(_DebugLevel + 10, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
-                base64.b32encode(key), str(value)[:20]))
+            lg.out(
+                _DebugLevel +
+                10,
+                'dht_service.DHTNode.request key=[%s], return value=[%s]' %
+                (base64.b32encode(key),
+                 str(value)[
+                    :20]))
         return {str(key): value}
 
     def reconnect(self, knownNodeAddresses=None):
@@ -261,18 +298,20 @@ class DHTNode(DistributedTupleSpacePeer):
         d.callback(1)
         return d
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class KademliaProtocolConveyor(KademliaProtocol):
-    
-    def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.DefaultFormat()):
+
+    def __init__(self, node, msgEncoder=encoding.Bencode(),
+                 msgTranslator=msgformat.DefaultFormat()):
         KademliaProtocol.__init__(self, node, msgEncoder, msgTranslator)
         self.datagrams_queue = []
         self.worker = None
-    
+
     def datagramReceived(self, datagram, address):
         if len(self.datagrams_queue) > 10:
-            # TODO: 
+            # TODO:
             # seems like DHT traffic is too huge at that moment
             # need to find some solution here probably
             return
@@ -285,21 +324,33 @@ class KademliaProtocolConveyor(KademliaProtocol):
             self.worker = None
             return
         # if _Debug:
-        #     print '                dht._process, queue length:', len(self.datagrams_queue)
+        # print '                dht._process, queue length:',
+        # len(self.datagrams_queue)
         datagram, address = self.datagrams_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
         self.worker = reactor.callLater(0.005, self._process)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def parseCommandLine():
     oparser = optparse.OptionParser()
-    oparser.add_option("-p", "--udpport", dest="udpport", type="int", help="specify UDP port for DHT network")
+    oparser.add_option(
+        "-p",
+        "--udpport",
+        dest="udpport",
+        type="int",
+        help="specify UDP port for DHT network")
     oparser.set_default('udpport', settings.DefaultDHTPort())
-    oparser.add_option("-d", "--dhtdb", dest="dhtdb", help="specify DHT database file location")
+    oparser.add_option(
+        "-d",
+        "--dhtdb",
+        dest="dhtdb",
+        help="specify DHT database file location")
     oparser.set_default('dhtdb', settings.DHTDBFile())
     (options, args) = oparser.parse_args()
     return options, args
+
 
 def main():
     bpio.init()
@@ -314,7 +365,7 @@ def main():
         def _r(x):
             print x
             reactor.stop()
-        cmd = args[0] 
+        cmd = args[0]
         if cmd == 'get':
             get_value(args[1]).addBoth(_r)
         elif cmd == 'set':
@@ -325,4 +376,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

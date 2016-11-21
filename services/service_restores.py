@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_restores.py
+# service_restores.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,18 +31,20 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return RestoreMonitorService()
-    
+
+
 class RestoreMonitorService(LocalService):
-    
+
     service_name = 'service_restores'
     config_path = 'services/restores/enabled'
-    
+
     def dependent_on(self):
         return ['service_backups',
                 ]
-    
+
     def start(self):
         from storage import restore_monitor
         from web import webcontrol
@@ -53,12 +55,8 @@ class RestoreMonitorService(LocalService):
             restore_monitor.OnRestoreBlockFunc = webcontrol.OnRestoreSingleBlock
             restore_monitor.OnRestoreDoneFunc = webcontrol.OnRestoreDone
         return True
-    
+
     def stop(self):
         from storage import restore_monitor
         restore_monitor.shutdown()
         return True
-    
-    
-
-    

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#dbwrite.py
+# dbwrite.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,11 +29,12 @@
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def update_identities(ids, cache, single_item):
     if single_item:
@@ -42,12 +43,15 @@ def update_identities(ids, cache, single_item):
     lg.out(16, 'dbwrite.update_identities %d items' % len(cache))
     from web.identityapp.models import Identity
     current_identities = Identity.objects.all()
-    lg.out(16, '        currently %d items will be removed' % len(current_identities))
+    lg.out(
+        16,
+        '        currently %d items will be removed' %
+        len(current_identities))
     new_identities = []
     for idurl, idobj in cache.items():
         new_identities.append(Identity(
-            id=ids[idurl], 
-            idurl=idurl, 
+            id=ids[idurl],
+            idurl=idurl,
             src=idobj.serialize()))
     current_identities.delete()
     Identity.objects.bulk_create(new_identities)
@@ -55,7 +59,7 @@ def update_identities(ids, cache, single_item):
 
 
 def update_single_identity(index, idurl, idobj):
-    lg.out(16, 'dbwrite.update_single_identity') 
+    lg.out(16, 'dbwrite.update_single_identity')
     from web.identityapp.models import Identity
     if idurl is None:
         try:
@@ -73,25 +77,32 @@ def update_single_identity(index, idurl, idobj):
         ident.idurl = idurl
         ident.src = idobj.serialize()
         ident.save()
-        
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 def update_friends(old_friends_list, friends_list):
-    lg.out(16, 'dbwrite.update_friends old:%d new:%d' % (len(old_friends_list), len(friends_list)))
+    lg.out(16, 'dbwrite.update_friends old:%d new:%d' %
+           (len(old_friends_list), len(friends_list)))
     from web.friendapp.models import Friend
     current_friends = Friend.objects.all()
-    lg.out(16, '        currently %d items will be removed' % len(current_friends))
+    lg.out(
+        16,
+        '        currently %d items will be removed' %
+        len(current_friends))
     new_friends = []
     for idurl, username in friends_list:
         new_friends.append(Friend(idurl=idurl, name=username))
     current_friends.delete()
     Friend.objects.bulk_create(new_friends)
     lg.out(16, '        wrote %d items' % len(new_friends))
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 def incoming_message(request, message_text):
-    lg.out(16, 'dbwrite.incoming_message of %d bytes, type=%s' % (len(message_text), type(message_text)))
+    lg.out(16, 'dbwrite.incoming_message of %d bytes, type=%s' %
+           (len(message_text), type(message_text)))
     from django.shortcuts import get_object_or_404
     from django.utils.html import escape
     from django.contrib.auth.models import User
@@ -110,7 +121,7 @@ def incoming_message(request, message_text):
         ThisRoom = get_object_or_404(Room, idurl=idurl)
     except:
         nik = contactsdb.get_correspondent_nickname(idurl)
-        ThisRoom = Room(idurl=idurl, 
+        ThisRoom = Room(idurl=idurl,
                         name=(nik or nameurl.GetName(idurl)))
         ThisRoom.save()
     message_text = escape(unicode(message_text))
@@ -118,4 +129,3 @@ def incoming_message(request, message_text):
     RoomMember.objects.create_member(idurl=idurl,
                                      # name=nameurl.GetName(idurl),
                                      room=ThisRoom)
-    

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_data_motion.py
+# service_data_motion.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,25 +31,27 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return DataMotionService()
-    
+
+
 class DataMotionService(LocalService):
-    
+
     service_name = 'service_data_motion'
     config_path = 'services/data-motion/enabled'
-    
+
     def dependent_on(self):
         return ['service_customer',
                 ]
-    
+
     def start(self):
         from customer import io_throttle
         from customer import data_sender
         io_throttle.init()
         data_sender.A('init')
         return True
-    
+
     def stop(self):
         from customer import io_throttle
         from customer import data_sender
@@ -57,7 +59,3 @@ class DataMotionService(LocalService):
         data_sender.Destroy()
         io_throttle.shutdown()
         return True
-    
-    
-
-    

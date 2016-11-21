@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#coins_io.py
+# coins_io.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,24 +29,30 @@
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import json
 from collections import OrderedDict
 from hashlib import md5
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    import sys, os.path as _p
-    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
+    import sys
+    import os.path as _p
+    sys.path.insert(
+        0, _p.abspath(
+            _p.join(
+                _p.dirname(
+                    _p.abspath(
+                        sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -57,16 +63,16 @@ from crypt import key
 from userid import my_id
 
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 def storage_contract_open(customer_idurl, duration, amount, price=1.0):
-    """  
+    """
     + signer: idurl of this node
     + partner: idurl of given customer
     + type: sold_storage (can be also : buy_cpu, sell_traffic, buy_hosting, etc.)
     + duration: seconds
     + amount: in megabytes
-    + price: 1.0 by default 
+    + price: 1.0 by default
     """
     coin = {
         "payload": {
@@ -91,7 +97,7 @@ def signed_coin(acoin):
     chash = get_coin_hash(scoin)
     signature = key.Sign(chash)
     scoin['signature'] = signature
-    return scoin 
+    return scoin
 
 
 def verify_coin_signature(scoin):
@@ -107,7 +113,7 @@ def coin_to_string(acoin):
 
 def string_to_coin(s):
     return json.loads(s)
-    
+
 
 def get_coin_hash(acoin):
     coin_hashbase = coin_to_string(acoin)
@@ -126,7 +132,7 @@ def bought_storage(partner, ):
     pass
 
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 def read_query_from_packet(newpacket):
     try:
@@ -137,6 +143,7 @@ def read_query_from_packet(newpacket):
     # TODO: verify query fields
     return query_j
 
+
 def read_coins_from_packet(newpacket):
     try:
         coins_list = json.loads(newpacket.Payload)
@@ -146,7 +153,8 @@ def read_coins_from_packet(newpacket):
     # TODO: verify coins
     return coins_list
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def validate_coin(acoin):
     # TODO: validate fields, hashes, query on DB, etc.
@@ -158,15 +166,17 @@ def validate_coin(acoin):
         return False
     return True
 
+
 def verify_coin(acoin):
     # TODO: check coin was really mined
     # if acoin['hash'] != calculated_hash:
-    #     return False 
+    #     return False
     return True
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def _test():
     pass
@@ -175,4 +185,3 @@ def _test():
 if __name__ == "__main__":
     lg.set_debug_level(20)
     _test()
-    

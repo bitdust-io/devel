@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#tmpfile.py
+# tmpfile.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,7 +28,7 @@
 .. module:: tmpfile
 
 Keep track of temporary files created in the program.
-The temp folder is placed in the BitDust data directory. 
+The temp folder is placed in the BitDust data directory.
 All files are divided into several sub folders.
 """
 
@@ -40,59 +40,60 @@ from twisted.internet import task
 
 from logs import lg
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _TempDirPath = None
 _FilesDict = {}
 _CollectorTask = None
 _SubDirs = {
 
-    'outbox':   60*60*1,
+    'outbox': 60 * 60 * 1,
     # hold onto outbox files 1 hour
     # so we can handle resends if contact is off-line
 
-    'tcp-in':   60*10,
+    'tcp-in': 60 * 10,
     # 10 minutes for incoming tcp files
-    
-    'udp-in': 60*10,
+
+    'udp-in': 60 * 10,
     # 10 minutes for incoming udp files
 
-    'proxy-in': 60*10,
+    'proxy-in': 60 * 10,
     # 10 minutes for incoming proxy files
-    
-    'proxy-out': 60*10,
+
+    'proxy-out': 60 * 10,
     # 10 minutes for outgoing proxy files
-    
-    'propagate': 60*10,
+
+    'propagate': 60 * 10,
     # propagate happens often enough,
     # 10 minutes should be enough
 
-    'backup':   60*10,
+    'backup': 60 * 10,
     # 10 minutes for backup files
-    
-    'restore':  60*10,
+
+    'restore': 60 * 10,
     # 10 minutes for restoring files
 
-    'raid':   60*10,
+    'raid': 60 * 10,
     # 10 minutes for backup files
-    
-    'idsrv':  60, 
+
+    'idsrv': 60,
     # 1 minute for incoming xml identity files
 
-    'other':    0,
+    'other': 0,
     # other files. do not know when to remove
     # they can be even in another location
     # use register(name, filename)
 
-    }
+}
 
 #------------------------------------------------------------------------------
+
 
 def init(temp_dir_path=''):
     """
     Must be called before all other things here.
         - check existence and access mode of temp folder
-        - creates a needed sub folders  
+        - creates a needed sub folders
         - call ``startup_clean()``
         - starts collector task to call method ``collect()`` every 5 minutes
     """
@@ -118,7 +119,10 @@ def init(temp_dir_path=''):
                     temp_dir = os_temp_dir
 
             if not os.access(temp_dir, os.W_OK):
-                lg.out(2, 'tmpfile.init ERROR no write permissions to ' + temp_dir)
+                lg.out(
+                    2,
+                    'tmpfile.init ERROR no write permissions to ' +
+                    temp_dir)
                 temp_dir = os_temp_dir
 
             _TempDirPath = temp_dir
@@ -133,14 +137,14 @@ def init(temp_dir_path=''):
                 lg.exc()
 
     for name in _SubDirs.keys():
-        if not _FilesDict.has_key(name):
+        if name not in _FilesDict:
             _FilesDict[name] = {}
 
     startup_clean()
 
     if _CollectorTask is None:
         _CollectorTask = task.LoopingCall(collect)
-        _CollectorTask.start(60*5)
+        _CollectorTask.start(60 * 5)
 
 
 def shutdown():
@@ -157,7 +161,7 @@ def shutdown():
 
 def subdir(name):
     """
-    Return a path to given sub folder. 
+    Return a path to given sub folder.
     """
     global _TempDirPath
     if _TempDirPath is None:
@@ -181,9 +185,9 @@ def make(name, extension='', prefix=''):
     """
     Make a new file under sub folder ``name`` and return a tuple of it's file descriptor and path.
     .. warning::    Remember you need to close the file descriptor by your own.
-    The ``tmpfile`` module will remove it later - do not worry. 
+    The ``tmpfile`` module will remove it later - do not worry.
     This is a job for our collector.
-    However if you will keep the file opened for awhile 
+    However if you will keep the file opened for awhile
     it should print a ```WARNING``` in logs because will fail to delete it.
     """
     global _TempDirPath
@@ -213,7 +217,9 @@ def erase(name, filename, why='no reason'):
         try:
             _FilesDict[name].pop(filename, '')
         except:
-            lg.warn('we do not know about file %s in sub folder %s' %(filename, name))
+            lg.warn(
+                'we do not know about file %s in sub folder %s' %
+                (filename, name))
     else:
         lg.warn('we do not know sub folder ' + name)
 
@@ -229,8 +235,10 @@ def erase(name, filename, why='no reason'):
         os.remove(filename)
         # lg.out(24, 'tmpfile.erase [%s] : "%s"' % (filename, why))
     except:
-        lg.out(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
-        #exc()
+        lg.out(
+            2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' %
+            (filename, why))
+        # exc()
 
 
 def throw_out(filepath, why='dont know'):
@@ -325,7 +333,3 @@ if __name__ == '__main__':
     os.close(fd)
     from twisted.internet import reactor
     reactor.run()
-
-
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#bandwidth.py
+# bandwidth.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,10 +29,10 @@
 .. module:: bandwidth
 .. role:: red
 
-Here are counted incoming and outgoing traffic. 
-Statistics are saved on the user's disk in the 
+Here are counted incoming and outgoing traffic.
+Statistics are saved on the user's disk in the
 folders /bandin and /bandout in the BitDust local data dir.
-This is a daily stats - a single file for every day. 
+This is a daily stats - a single file for every day.
 """
 
 import os
@@ -40,9 +40,9 @@ import time
 
 from twisted.internet import reactor
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-from logs import lg 
+from logs import lg
 
 from userid import my_id
 
@@ -54,7 +54,7 @@ from lib import misc
 
 from main import settings
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 BandInDict = {}
 BandOutDict = {}
@@ -62,6 +62,7 @@ CountTimeIn = 0
 CountTimeOut = 0
 
 #------------------------------------------------------------------------------
+
 
 def init():
     """
@@ -81,8 +82,8 @@ def init():
     CountTimeIn = time.time()
     CountTimeOut = time.time()
     reactor.addSystemEventTrigger('before', 'shutdown', save)
-    
-    
+
+
 def shutdown():
     """
     """
@@ -91,10 +92,10 @@ def shutdown():
 
 def filenameIN(basename=None):
     """
-    File name for incoming stats for today or other day 
+    File name for incoming stats for today or other day
     """
     if basename is None:
-        basename = misc.gmtime2str('%d%m%y') 
+        basename = misc.gmtime2str('%d%m%y')
     return os.path.join(settings.BandwidthInDir(), basename)
 
 
@@ -103,7 +104,7 @@ def filenameOUT(basename=None):
     File name for outgoing stats for today or other day
     """
     if basename is None:
-        basename = misc.gmtime2str('%d%m%y') 
+        basename = misc.gmtime2str('%d%m%y')
     return os.path.join(settings.BandwidthOutDir(), basename)
 
 
@@ -118,10 +119,10 @@ def save():
 
 def saveIN(basename=None):
     """
-    Writes incoming stats for today on disk 
+    Writes incoming stats for today on disk
     """
     if basename is None:
-        basename = misc.gmtime2str('%d%m%y') 
+        basename = misc.gmtime2str('%d%m%y')
     ret = os.path.isfile(filenameIN(basename))
     bpio._write_dict(filenameIN(basename), getBandwidthIN())
     if not ret:
@@ -133,10 +134,10 @@ def saveIN(basename=None):
 
 def saveOUT(basename=None):
     """
-    Writes outgoing stats for today on disk 
+    Writes outgoing stats for today on disk
     """
     if basename is None:
-        basename = misc.gmtime2str('%d%m%y') 
+        basename = misc.gmtime2str('%d%m%y')
     ret = os.path.isfile(filenameOUT(basename))
     bpio._write_dict(filenameOUT(basename), getBandwidthOUT())
     if not ret:
@@ -148,7 +149,7 @@ def saveOUT(basename=None):
 
 def read_bandwidthIN():
     """
-    Reads today's incoming bandwidth stats from disk  
+    Reads today's incoming bandwidth stats from disk
     """
     global BandInDict
     lg.out(6, 'bandwidth.read_bandwidthIN ')
@@ -158,7 +159,7 @@ def read_bandwidthIN():
 
 def read_bandwidthOUT():
     """
-    Reads today's outgoing bandwidth stats from disk  
+    Reads today's outgoing bandwidth stats from disk
     """
     global BandOutDict
     lg.out(6, 'bandwidth.read_bandwidthOUT ')
@@ -168,7 +169,7 @@ def read_bandwidthOUT():
 
 def clear_bandwidthIN():
     """
-    Erase all incoming stats from memory 
+    Erase all incoming stats from memory
     """
     global BandInDict
     lg.out(6, 'bandwidth.clear_bandwidthIN ')
@@ -178,7 +179,7 @@ def clear_bandwidthIN():
 def clear_bandwidthOUT():
     """
     Erase all outgoing stats from memory
-    """ 
+    """
     global BandOutDict
     lg.out(6, 'bandwidth.clear_bandwidthOUT ')
     BandOutDict.clear()
@@ -187,14 +188,14 @@ def clear_bandwidthOUT():
 def clear():
     """
     Erase all bandwidth stats from memory
-    """ 
+    """
     clear_bandwidthIN()
     clear_bandwidthOUT()
 
 
 def getBandwidthIN():
     """
-    Get current incoming bandwidth stats from memory 
+    Get current incoming bandwidth stats from memory
     """
     global BandInDict
     return BandInDict
@@ -202,7 +203,7 @@ def getBandwidthIN():
 
 def getBandwidthOUT():
     """
-    Get current outgoing bandwidth stats from memory 
+    Get current outgoing bandwidth stats from memory
     """
     global BandOutDict
     return BandOutDict
@@ -210,14 +211,14 @@ def getBandwidthOUT():
 
 def isExistIN():
     """
-    Check existence of today's incoming bandwidth file on disk 
+    Check existence of today's incoming bandwidth file on disk
     """
     return os.path.isfile(filenameIN())
 
 
 def isExistOUT():
     """
-    Check existence of today's outgoing bandwidth file on disk 
+    Check existence of today's outgoing bandwidth file on disk
     """
     return os.path.isfile(filenameOUT())
 
@@ -225,7 +226,7 @@ def isExistOUT():
 def files2send():
     """
     Return a list of file names to be read and send later.
-    Sent files are market with ".sent" extension and skipped here.  
+    Sent files are market with ".sent" extension and skipped here.
     """
     lg.out(6, 'bandwidth.files2send')
     listIN = []
@@ -238,7 +239,7 @@ def files2send():
         if len(filename) != 6:
             continue
         # skip today bandwidth - it is still counting, right?
-        if filename == misc.gmtime2str('%d%m%y'): 
+        if filename == misc.gmtime2str('%d%m%y'):
             continue
         filepath = os.path.join(settings.BandwidthInDir(), filename)
         # if filepath == filenameIN():
@@ -249,13 +250,15 @@ def files2send():
             continue
         if len(filename) != 6:
             continue
-        if filename == misc.gmtime2str('%d%m%y'): #time.strftime('%d%m%y'):
+        if filename == misc.gmtime2str('%d%m%y'):  # time.strftime('%d%m%y'):
             continue
         filepath = os.path.join(settings.BandwidthOutDir(), filename)
         # if filepath == filenameOUT():
         #     continue
         listOUT.append(filepath)
-    lg.out(6, 'bandwidth.files2send listIN=%d listOUT=%d' % (len(listIN), len(listOUT)))
+    lg.out(
+        6, 'bandwidth.files2send listIN=%d listOUT=%d' %
+        (len(listIN), len(listOUT)))
     for i in listIN:
         lg.out(6, '  ' + i)
     for i in listOUT:
@@ -335,6 +338,3 @@ def OUTfile(pkt_out, item, status, size, error_message):
         OUT(pkt_out.remote_idurl, pkt_out.filesize)
     # OUT(workitem.remoteid, workitem.payloadsize)
     return False
-
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#nonblocking.py
+# nonblocking.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -41,7 +41,7 @@ import traceback
 
 PIPE = subprocess.PIPE
 
-#Pipe States:
+# Pipe States:
 PIPE_EMPTY = 0
 PIPE_READY2READ = 1
 PIPE_CLOSED = 2
@@ -53,29 +53,31 @@ if subprocess.mswindows:
     import msvcrt
 else:
     import select
-    import fcntl #@UnresolvedImport
+    import fcntl  # @UnresolvedImport
     import signal
+
 
 class Popen(subprocess.Popen):
     """
     This is inherited from ``subprocess.Popen`` class.
     Added some wrappers and platform specific code.
-    Most important method added is ``make_nonblocking``.  
+    Most important method added is ``make_nonblocking``.
     """
     err_report = ''
+
     def __init__(self, args, bufsize=0, executable=None,
-                stdin=None, stdout=None, stderr=None,
-                preexec_fn=None, close_fds=False, shell=False,
-                cwd=None, env=None, universal_newlines=False,
-                startupinfo=None, creationflags=0):
+                 stdin=None, stdout=None, stderr=None,
+                 preexec_fn=None, close_fds=False, shell=False,
+                 cwd=None, env=None, universal_newlines=False,
+                 startupinfo=None, creationflags=0):
 
         self.args = args
         subprocess.Popen.__init__(self,
-            args, bufsize, executable,
-            stdin, stdout, stderr,
-            preexec_fn, close_fds, shell,
-            cwd, env, universal_newlines,
-            startupinfo, creationflags)
+                                  args, bufsize, executable,
+                                  stdin, stdout, stderr,
+                                  preexec_fn, close_fds, shell,
+                                  cwd, env, universal_newlines,
+                                  startupinfo, creationflags)
 
     def __del__(self):
         try:
@@ -123,7 +125,7 @@ class Popen(subprocess.Popen):
             return
         flags = fcntl.fcntl(conn, fcntl.F_GETFL)
         if not conn.closed:
-            fcntl.fcntl(conn, fcntl.F_SETFL, flags| os.O_NONBLOCK)
+            fcntl.fcntl(conn, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     if subprocess.mswindows:
         def send(self, input):
@@ -183,7 +185,6 @@ class Popen(subprocess.Popen):
             except:
                 pass
 
-
     else:
         def send(self, input):
             if not self.stdin:
@@ -206,7 +207,7 @@ class Popen(subprocess.Popen):
 
             flags = fcntl.fcntl(conn, fcntl.F_GETFL)
             if not conn.closed:
-                fcntl.fcntl(conn, fcntl.F_SETFL, flags| os.O_NONBLOCK)
+                fcntl.fcntl(conn, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
             try:
                 if not select.select([conn], [], [], 0)[0]:
@@ -230,7 +231,7 @@ class Popen(subprocess.Popen):
 
             try:
                 # check and see if there is any input ready
-                ready = select.select([conn],[],[], 0)
+                ready = select.select([conn], [], [], 0)
                 if conn in ready[0]:
                     return PIPE_READY2READ
                 return PIPE_EMPTY
@@ -239,7 +240,6 @@ class Popen(subprocess.Popen):
 
         def kill(self):
             os.kill(self.pid, signal.SIGTERM)
-
 
 
 def ExecuteString(execstr):
@@ -253,6 +253,6 @@ def ExecuteString(execstr):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            creationflags = win32process.CREATE_NO_WINDOW,)
+            creationflags=win32process.CREATE_NO_WINDOW,)
     except:
         return None

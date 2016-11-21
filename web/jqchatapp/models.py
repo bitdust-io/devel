@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#models.py
+# models.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -24,26 +24,26 @@
 import datetime
 import time
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import warnings
 import exceptions
-warnings.filterwarnings("ignore", category=exceptions.RuntimeWarning) 
+warnings.filterwarnings("ignore", category=exceptions.RuntimeWarning)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 from django.conf import settings
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from lib import nameurl
 
 from contacts import contactsdb
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 # The list of events can be customized for each project.
 try:
@@ -55,14 +55,25 @@ except:
         (3, "has left the room"),
     )
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class Room(models.Model):
     idurl = models.URLField(max_length=255)
-    name = models.CharField(max_length=255, null=True, blank=True, help_text='Name of the room.')
+    name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text='Name of the room.')
     created = models.DateTimeField(editable=False)
-    description = models.CharField(max_length=100, null=True, blank=True, help_text='The description of this room.')
-    last_activity = models.IntegerField(editable=False, help_text='Last activity in the room. Stored as a Unix timestamp.')
+    description = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text='The description of this room.')
+    last_activity = models.IntegerField(
+        editable=False,
+        help_text='Last activity in the room. Stored as a Unix timestamp.')
     content_type = models.ForeignKey(ContentType, blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
     content_object = generic.GenericForeignKey()
@@ -92,12 +103,14 @@ class Room(models.Model):
     def last_activity_datetime(self):
         return datetime.datetime.fromtimestamp(self.last_activity)
 
-#------------------------------------------------------------------------------ 
-    
+#------------------------------------------------------------------------------
+
+
 class messageManager(models.Manager):
-    
+
     def create_message(self, idurl, room, msg):
-        name = contactsdb.get_correspondent_nickname(idurl) or nameurl.GetName(idurl) 
+        name = contactsdb.get_correspondent_nickname(
+            idurl) or nameurl.GetName(idurl)
         m = Message.objects.create(
             idurl=idurl,
             room=room,
@@ -107,25 +120,37 @@ class messageManager(models.Manager):
         return m
 
     def create_event(self, idurl, room, event_id):
-        name = contactsdb.get_correspondent_nickname(idurl) or nameurl.GetName(idurl)
+        name = contactsdb.get_correspondent_nickname(
+            idurl) or nameurl.GetName(idurl)
         m = Message(
             idurl=idurl,
             room=room,
             event=event_id)
         # m.text = "<strong>%s</strong><em class=event>%s</em><br />" % (user, m.get_event_display())
         m.text = '<span class=chatname>%s</span><span class=chatevent>%s</span>' % (
-            name, m.get_event_display())                                                                                   
+            name, m.get_event_display())
         m.save()
         return m
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class Message(models.Model):
     idurl = models.URLField(max_length=255)
-    room = models.ForeignKey(Room, help_text='This message was posted in a given chat room.')
-    event = models.IntegerField(null=True, blank=True, choices=EVENT_CHOICES, help_text='An action performed in the room, either by a user or by the system (e.g. XYZ leaves room.')
-    text = models.TextField(null=True, blank=True, help_text='A message, either typed in by a user or generated by the system.')
-    unix_timestamp = models.FloatField(editable=False, help_text='Unix timestamp when this message was inserted into the database.')
+    room = models.ForeignKey(
+        Room, help_text='This message was posted in a given chat room.')
+    event = models.IntegerField(
+        null=True,
+        blank=True,
+        choices=EVENT_CHOICES,
+        help_text='An action performed in the room, either by a user or by the system (e.g. XYZ leaves room.')
+    text = models.TextField(
+        null=True,
+        blank=True,
+        help_text='A message, either typed in by a user or generated by the system.')
+    unix_timestamp = models.FloatField(
+        editable=False,
+        help_text='Unix timestamp when this message was inserted into the database.')
     created = models.DateTimeField(editable=False)
 
     def __unicode__(self):
@@ -144,10 +169,11 @@ class Message(models.Model):
 
     objects = messageManager()
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class memberManager(models.Manager):
-    
+
     def remove_member(self, idurl, room):
         usr_prev_rooms = RoomMember.objects.filter(idurl=idurl)
         for prev_room in usr_prev_rooms:
@@ -157,31 +183,31 @@ class memberManager(models.Manager):
         usr_prev_rooms.delete()
 
     def create_member(self, idurl, room):
-        self.remove_member(idurl, room)        
+        self.remove_member(idurl, room)
         Message.objects.create_event(idurl, room, 2)
-        m = RoomMember.objects.create(idurl=idurl, 
-                                      # name=name, 
+        m = RoomMember.objects.create(idurl=idurl,
+                                      # name=name,
                                       room=room)
         return m
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class RoomMember(models.Model):
     room = models.ForeignKey(Room, null=True)
     idurl = models.URLField(max_length=255)
-    # name = models.URLField(max_length=255) 
-    
+    # name = models.URLField(max_length=255)
+
     def save(self, **kw):
         super(RoomMember, self).save(**kw)
-        
+
     class Meta:
-        ordering = ['idurl',]
+        ordering = ['idurl', ]
 
     objects = memberManager()
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def display_timestamp(t):
     return '%s (%s)' % (t, time.strftime('%d/%m/%Y %H:%M', time.gmtime(t)))
-
-

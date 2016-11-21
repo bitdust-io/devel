@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#views.py
+# views.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -36,30 +36,32 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 
 import json
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from interface import api
- 
-from web import auth
-from web import control 
 
-#------------------------------------------------------------------------------ 
+from web import auth
+from web import control
+
+#------------------------------------------------------------------------------
 
 SETUP_PATH = '/setup/'
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class IndexView(TemplateView):
     template_name = 'index.html'
 
-    # @method_decorator(login_required)    
-    # @method_decorator(cache_control(no_cache=True, must_revalidate=True, no_store=True))    
+    # @method_decorator(login_required)
+    # @method_decorator(cache_control(no_cache=True, must_revalidate=True, no_store=True))
     # def dispatch(self, request, *args, **kwargs):
     #     return generic.View.dispatch(self, request, *args, **kwargs)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def call_api_method(request, method):
     lg.out(2, 'views.asite.call_api_method:    %s()' % method)
@@ -93,14 +95,15 @@ def call_api_method(request, method):
 <body>
 <h1>BitDust process will be restarted now.</h1>
 </body>
-</html>""")        
-    return HttpResponseRedirect(pth) 
+</html>""")
+    return HttpResponseRedirect(pth)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 @never_cache
 def LoginPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
-                current_app=None, extra_context=None, ):
+               current_app=None, extra_context=None, ):
     ok = auth.is_identity_authenticated()
     lg.out(4, 'django.login_point is_identity_authenticated=%s' % ok)
     if not ok:
@@ -108,7 +111,7 @@ def LoginPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
     # if installer.IsExist() and installer.A().state == 'DONE':
         # return HttpResponseRedirect(SETUP_PATH)
     user = authenticate(
-        username=auth.username(), 
+        username=auth.username(),
         password=auth.password())
     lg.out(4, '    authenticate user is %s' % user)
     if user is not None:
@@ -122,13 +125,13 @@ def LoginPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
             password=auth.password())
         newuser.save()
         user = authenticate(
-            username=auth.username(), 
+            username=auth.username(),
             password=auth.password())
         if user is None:
             lg.out(4, '    authenticate after creating a new user failed')
             logout(request)
             return HttpResponseRedirect(SETUP_PATH)
-        lg.out(4, '    created new user %s %s' % (newuser, user))        
+        lg.out(4, '    created new user %s %s' % (newuser, user))
     login(request, user)
     redirect_to = request.POST.get(redirect_field_name,
                                    request.GET.get(redirect_field_name, ''))
@@ -137,7 +140,8 @@ def LoginPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
     lg.out(4, '    redirecting to %s' % redirect_to)
     return HttpResponseRedirect(redirect_to)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 @never_cache
 def LogoutPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
@@ -150,7 +154,8 @@ def LogoutPoint(request, redirect_field_name=REDIRECT_FIELD_NAME,
         redirect_to = resolve_url(settings.LOGIN_REDIRECT_URL)
     return HttpResponseRedirect(redirect_to)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 @never_cache
 def RepaintState(request):
@@ -159,6 +164,3 @@ def RepaintState(request):
         control.set_updated()
     return HttpResponse(json.dumps(data),
                         content_type='application/json')
-    
-  
-    

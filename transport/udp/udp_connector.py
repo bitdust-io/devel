@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#udp_connector.py
+# udp_connector.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -44,16 +44,17 @@ from automats import automat
 
 from dht import dht_service
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _ConnectorsDict = {}
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def connectors():
     """
@@ -77,16 +78,17 @@ def get(peer_id):
     """
     for id, c in connectors().items():
         if c.peer_id == peer_id:
-            return c 
+            return c
     return None
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class DHTUDPConnector(automat.Automat):
     """
     This class implements all the functionality of the ``udp_connector()`` state machine.
     """
-    
+
     fast = True
 
     def __init__(self, node, peer_id):
@@ -94,7 +96,7 @@ class DHTUDPConnector(automat.Automat):
         self.peer_id = peer_id
         name = 'udp_connector[%s]' % self.peer_id
         automat.Automat.__init__(self, name, 'AT_STARTUP', 18)
-        
+
     def init(self):
         """
         Method to initialize additional variables and flags at creation of the state machine.
@@ -107,34 +109,34 @@ class DHTUDPConnector(automat.Automat):
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'DHT_LOOP'
                 self.doInit(arg)
-                self.KeyPosition=0
+                self.KeyPosition = 0
                 self.doDHTReadIncoming(arg)
         #---DHT_WRITE---
         elif self.state == 'DHT_WRITE':
-            if event == 'dht-write-success' :
+            if event == 'dht-write-success':
                 self.state = 'DHT_READ'
                 self.doDHTReadPeerAddress(arg)
-            elif event == 'dht-write-failed' :
+            elif event == 'dht-write-failed':
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'abort' :
+            elif event == 'abort':
                 self.state = 'ABORTED'
                 self.doDestroyMe(arg)
         #---DHT_READ---
         elif self.state == 'DHT_READ':
-            if event == 'dht-read-success' :
+            if event == 'dht-read-success':
                 self.state = 'DONE'
                 self.doStartNewSession(arg)
                 self.doDestroyMe(arg)
-            elif event == 'dht-read-failed' :
+            elif event == 'dht-read-failed':
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'abort' :
+            elif event == 'abort':
                 self.state = 'ABORTED'
                 self.doDestroyMe(arg)
         #---DONE---
@@ -145,20 +147,20 @@ class DHTUDPConnector(automat.Automat):
             pass
         #---DHT_LOOP---
         elif self.state == 'DHT_LOOP':
-            if event == 'dht-read-failed' :
+            if event == 'dht-read-failed':
                 self.state = 'DHT_WRITE'
                 self.doDHTWriteIncoming(arg)
-            elif event == 'dht-read-success' and self.KeyPosition>=10 :
+            elif event == 'dht-read-success' and self.KeyPosition >= 10:
                 self.state = 'FAILED'
                 self.doReportFailed(arg)
                 self.doDestroyMe(arg)
-            elif event == 'dht-read-success' and self.KeyPosition<10 and not self.isMyIncoming(arg) :
-                self.KeyPosition+=1
+            elif event == 'dht-read-success' and self.KeyPosition < 10 and not self.isMyIncoming(arg):
+                self.KeyPosition += 1
                 self.doDHTReadIncoming(arg)
-            elif event == 'dht-read-success' and self.isMyIncoming(arg) :
+            elif event == 'dht-read-success' and self.isMyIncoming(arg):
                 self.state = 'DHT_READ'
                 self.doDHTReadPeerAddress(arg)
-            elif event == 'abort' :
+            elif event == 'abort':
                 self.state = 'ABORTED'
                 self.doDestroyMe(arg)
         #---ABORTED---
@@ -183,24 +185,27 @@ class DHTUDPConnector(automat.Automat):
         """
         Action method.
         """
-        key = self.peer_id+':incoming'+str(self.KeyPosition)
+        key = self.peer_id + ':incoming' + str(self.KeyPosition)
         self.working_deferred = dht_service.get_value(key)
-        self.working_deferred.addCallback(self._got_peer_incoming, key, self.KeyPosition)
-        self.working_deferred.addErrback(lambda x: self.automat('dht-read-failed'))
+        self.working_deferred.addCallback(
+            self._got_peer_incoming, key, self.KeyPosition)
+        self.working_deferred.addErrback(
+            lambda x: self.automat('dht-read-failed'))
 
     def doDHTWriteIncoming(self, arg):
         """
         Action method.
         """
-        key = self.peer_id+':incoming'+str(self.KeyPosition)
-        value = '%s %s:%d %s\n' % (
-            str(self.my_id), self.my_address[0], self.my_address[1], str(time.time()))
+        key = self.peer_id + ':incoming' + str(self.KeyPosition)
+        value = '%s %s:%d %s\n' % (str(self.my_id), self.my_address[
+            0], self.my_address[1], str(time.time()))
         if _Debug:
             lg.out(_DebugLevel, 'doDHTWriteIncoming  key=%s' % key)
         self.working_deferred = dht_service.set_value(key, value)
         self.working_deferred.addCallback(self._wrote_peer_incoming)
-        self.working_deferred.addErrback(lambda x: self.automat('dht-write-failed'))
-        
+        self.working_deferred.addErrback(
+            lambda x: self.automat('dht-write-failed'))
+
     def doStartNewSession(self, arg):
         """
         Action method.
@@ -209,17 +214,28 @@ class DHTUDPConnector(automat.Automat):
         peer_address = arg
         if self.node.my_address is None:
             if _Debug:
-                lg.out(_DebugLevel, 'udp_connector.doStartNewSession to %s at %s SKIP because my_address is None' % (self.peer_id, peer_address))
+                lg.out(
+                    _DebugLevel,
+                    'udp_connector.doStartNewSession to %s at %s SKIP because my_address is None' %
+                    (self.peer_id,
+                     peer_address))
             return
         s = udp_session.get(peer_address)
         if s:
             if _Debug:
-                lg.out(_DebugLevel, 'udp_connector.doStartNewSession SKIP because found existing : %s' % s)
+                lg.out(
+                    _DebugLevel,
+                    'udp_connector.doStartNewSession SKIP because found existing : %s' %
+                    s)
             return
         s = udp_session.get_by_peer_id(self.peer_id)
         if s:
             if _Debug:
-                lg.out(_DebugLevel, 'udp_connector.doStartNewSession SKIP because found existing by peer id:%s %s' % (self.peer_id, s))
+                lg.out(
+                    _DebugLevel,
+                    'udp_connector.doStartNewSession SKIP because found existing by peer id:%s %s' %
+                    (self.peer_id,
+                     s))
             return
         s = udp_session.create(self.node, peer_address, self.peer_id)
         s.automat('init', (self.listen_port, self.my_id, self.my_address))
@@ -228,18 +244,20 @@ class DHTUDPConnector(automat.Automat):
         """
         Action method.
         """
-        key = self.peer_id+':address'
+        key = self.peer_id + ':address'
         self.working_deferred = dht_service.get_value(key)
         self.working_deferred.addCallback(self._got_peer_address, key)
-        self.working_deferred.addErrback(lambda x: self.automat('dht-read-failed'))
+        self.working_deferred.addErrback(
+            lambda x: self.automat('dht-read-failed'))
 
     def doReportFailed(self, arg):
         """
         Action method.
         """
         from transport.udp import udp_session
-        udp_session.report_and_remove_pending_outbox_files_to_host(self.peer_id, 'unable to establish connection')
-        
+        udp_session.report_and_remove_pending_outbox_files_to_host(
+            self.peer_id, 'unable to establish connection')
+
     def doDestroyMe(self, arg):
         """
         Action method.
@@ -253,10 +271,13 @@ class DHTUDPConnector(automat.Automat):
 
     def _got_peer_incoming(self, value, key, position):
         if _Debug:
-            lg.out(_DebugLevel, 'udp_connector._got_peer_incoming at position %d: %d' % (position, len(str(value))))
+            lg.out(
+                _DebugLevel, 'udp_connector._got_peer_incoming at position %d: %d' %
+                (position, len(
+                    str(value))))
         self.working_deferred = None
-        incoming = None 
-        if type(value) != dict:
+        incoming = None
+        if not isinstance(value, dict):
             self.automat('dht-read-failed')
             return
         try:
@@ -268,25 +289,31 @@ class DHTUDPConnector(automat.Automat):
             self.automat('dht-read-failed')
             return
         try:
-            incoming_peer_id, incoming_user_address, time_placed = incoming.split(' ')
+            incoming_peer_id, incoming_user_address, time_placed = incoming.split(
+                ' ')
             incoming_user_address = incoming_user_address.split(':')
-            incoming_user_address = (incoming_user_address[0], int(incoming_user_address[1]))
+            incoming_user_address = (
+                incoming_user_address[0], int(
+                    incoming_user_address[1]))
         except:
             lg.out(2, '%r' % incoming)
             lg.exc()
             self.automat('dht-read-failed')
             return
-        self.automat('dht-read-success', (incoming_peer_id, incoming_user_address))        
-        
+        self.automat(
+            'dht-read-success',
+            (incoming_peer_id,
+             incoming_user_address))
+
     def _wrote_peer_incoming(self, nodes):
         self.working_deferred = None
         if len(nodes) > 0:
             self.automat('dht-write-success')
         else:
             self.automat('dht-write-failed')
-        
+
     def _got_peer_address(self, value, key):
-        if type(value) != dict:
+        if not isinstance(value, dict):
             self.automat('dht-read-failed')
             return
         try:
@@ -294,11 +321,10 @@ class DHTUDPConnector(automat.Automat):
             peer_port = int(peer_port)
         except:
             lg.exc()
-            self.automat('dht-read-failed')            
+            self.automat('dht-read-failed')
             return
         if _Debug:
-            lg.out(_DebugLevel, 'udp_connector._got_peer_address %s:%d ~ %s' % (
-                peer_ip, peer_port, self.peer_id))
-        self.automat('dht-read-success', (peer_ip, peer_port))        
-
-
+            lg.out(
+                _DebugLevel, 'udp_connector._got_peer_address %s:%d ~ %s' %
+                (peer_ip, peer_port, self.peer_id))
+        self.automat('dht-read-success', (peer_ip, peer_port))

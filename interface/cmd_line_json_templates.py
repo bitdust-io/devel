@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#cmd_line_json_templates.py
+# cmd_line_json_templates.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -24,7 +24,7 @@
 def ls(tpl, tag='result'):
     return "{.section %s}{.repeated section @}%s{.end}{.end}" % (tag, tpl)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 tpl_status = "{.section status}{@}{.end}"
 tpl_result = ls("{@}\n")
@@ -38,16 +38,16 @@ tpl_5_items = """{0}{1}
 {2}{3}{4}
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_JSON = "{@}"
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_RAW = tpl_5_items.format(
     tpl_status, tpl_execution, tpl_result, tpl_message, tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_BACKUPS_LIST = tpl_4_items.format(
     tpl_status,
@@ -64,7 +64,7 @@ TPL_BACKUPS_LIST_IDS = tpl_4_items.format(
 TPL_BACKUPS_RUNNING_LIST = tpl_5_items.format(
     tpl_status,
     tpl_execution,
-    ls("{backup_id} from {source_path} of total {total_size}, currently {bytes_processed} bytes processed, ready by {progress}%\n"), 
+    ls("{backup_id} from {source_path} of total {total_size}, currently {bytes_processed} bytes processed, ready by {progress}%\n"),
     tpl_message,
     tpl_errors)
 
@@ -75,7 +75,7 @@ TPL_BACKUPS_TASKS_LIST = tpl_5_items.format(
     tpl_message,
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_RESTORES_RUNNING_LIST = tpl_5_items.format(
     tpl_status,
@@ -84,7 +84,7 @@ TPL_RESTORES_RUNNING_LIST = tpl_5_items.format(
     tpl_message,
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_OPTIONS_LIST_KEY_TYPE_VALUE = tpl_4_items.format(
     tpl_status,
@@ -92,7 +92,7 @@ TPL_OPTIONS_LIST_KEY_TYPE_VALUE = tpl_4_items.format(
     ls("{key} ({type}) : {value}\n"),
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_OPTION_MODIFIED = tpl_4_items.format(
     tpl_status,
@@ -106,7 +106,7 @@ TPL_OPTION_SINGLE = tpl_4_items.format(
     ls("{key} ({type}) : {value}{.section old_value}, previous : {@}{.or}{.end}\n"),
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_SUPPLIERS = tpl_4_items.format(
     tpl_status,
@@ -114,7 +114,7 @@ TPL_SUPPLIERS = tpl_4_items.format(
     ls("{position}: {idurl}, since {connected}, keeps {numfiles} files, {status}\n"),
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_CUSTOMERS = tpl_4_items.format(
     tpl_status,
@@ -122,7 +122,7 @@ TPL_CUSTOMERS = tpl_4_items.format(
     ls("{position}: {idurl}, {status}\n"),
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_STORAGE = tpl_4_items.format(
     tpl_status,
@@ -136,7 +136,7 @@ TPL_STORAGE = tpl_4_items.format(
     used on each supplier: {used_per_supplier} ({used_per_supplier_str})
     available on every supplier: {available_per_supplier} ({available_per_supplier_str})
 {.end}{.section donated}donated:
-    customers: {customers_num} 
+    customers: {customers_num}
     donated: {donated} ({donated_str})
     allocated: {consumed} ({consumed_str}) {consumed_percent}
     uploaded: {used} ({used_str}) {used_percent}
@@ -144,13 +144,13 @@ TPL_STORAGE = tpl_4_items.format(
     disk size: {disktotal} ({disktotal_str})
     disk free: {diskfree} ({diskfree_str}) {diskfree_percent}
     disk consumed: {total} ({total_str}) {total_percent}
-      buffered files: {backups} ({backups_str}) 
+      buffered files: {backups} ({backups_str})
       temporary files: {temp} ({temp_str})
       customers files: {customers} ({customers_str})
 {.end}"""),
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_AUTOMATS = tpl_4_items.format(
     tpl_status,
@@ -158,7 +158,7 @@ TPL_AUTOMATS = tpl_4_items.format(
     ls('{index}: {name}({state}) {.section timers}   timers: {@}{.end}\n'),
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_SERVICES = tpl_4_items.format(
     tpl_status,
@@ -178,7 +178,7 @@ config path: {config_path}
 """),
     tpl_errors)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 TPL_FRIEND_LOOKUP = """{.section result}
 friend lookup:
@@ -203,4 +203,3 @@ TPL_MESSAGE_SENDING = """{.section result}
 {.end}
     recipient: {.section recipient}{@}{.end}
 """
-

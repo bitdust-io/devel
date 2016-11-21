@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#config_details.py
+# config_details.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -44,7 +44,7 @@ def raw():
 {logs/stream-enabled} enable web logs
     Enabled this and go to http://127.0.0.1:[logs port number] to browse the program log.
     Need to restart the program.
-    
+
 {personal} personal information
     Your personal information.
 {personal/betatester} betatester
@@ -55,7 +55,7 @@ def raw():
 {personal/surname} surname
     Set your surname if you wish.
 {personal/nickname} nickname
-    Set your nickname to private messaging. 
+    Set your nickname to private messaging.
     If you leave this blank your identity address will be used to form a nickname.
 
 {paths/backups} local backups location
@@ -69,15 +69,15 @@ def raw():
     Folder to store financial receipts.
 {paths/restore} restored files location
     Location where your restored files should be placed by default.
-    
+
 {services} network services
     Network services settings.
-    
+
 {services/backup-db} backup database
     Backup database settings.
 {services/backup-db/enabled} enable backups
     Enable service "backup-db".
-    
+
 {services/backups} backups settings
     Backups setting.
 {services/backups/enabled} enable backups
@@ -96,7 +96,7 @@ def raw():
     Enable this to keep a copy of every new backup on your local HDD as well as on remote machines of your suppliers.
     This increases rebuilding performance and network load but consumes a lot space on your HDD.
 {services/backups/wait-suppliers-enabled} wait suppliers 24 hours
-    If you disabled storing of local data of your backups but one day a critical amount of your suppliers become unreliable - your data may be lost completely. 
+    If you disabled storing of local data of your backups but one day a critical amount of your suppliers become unreliable - your data may be lost completely.
     Enable this option to wait for 24 hours after finishing any backup and perform a check all of your suppliers before removing the locally backed up data for this copy.
 
 {services/supplier} supplier service
@@ -131,15 +131,15 @@ def raw():
 {services/network} network service
     "Network" service settings.
 {services/network/receive-limit} incoming bandwidth limit
-    Limit incoming traffic with a value in bytes per second. 
+    Limit incoming traffic with a value in bytes per second.
     A value of "0" means no incoming limit.
 {services/network/send-limit} outgoing bandwidth limit
-    The value in bytes per second to decrease network load. 
+    The value in bytes per second to decrease network load.
     A value of "0" means no outgoing limit.
 
 {services/entangled-dht} entangled-dht service
     "Entangled-DHT" service settings.
-{services/entangled-dht/udp-port} udp port number for distributed hash table 
+{services/entangled-dht/udp-port} udp port number for distributed hash table
     This is a UDP port number for Distributed Hash Table communications.
     BitDust uses <a href="http://entangled.sourceforge.net/">Entangled Project</a> to implement DHT functionality.
 
@@ -147,9 +147,9 @@ def raw():
     Enter the TCP port number, it will be used to connect with your machine by other users.
 {services/tcp-connections/upnp-enabled} UPnP enable
     Enable this if you want to perform checking of UPnP devices to configure port forwarding automatically.
-       
+
 {services/tcp-transport} tcp-transport service
-    You can use different protocols to transfer packets across the network, they are called "transports". 
+    You can use different protocols to transfer packets across the network, they are called "transports".
     Here you can customize your "TCP-transport" service, it is based on standard TCP protocol.
 {services/tcp-transport/enabled} enable tcp-transport service
     Enable "TCP-transport" service.
@@ -160,16 +160,16 @@ def raw():
 
 {services/udp-datagrams/udp-port} udp port number
     Set a UDP port for sending and receiving UDP datagrams.
-    
+
 {services/udp-transport} udp-transport service
-    You can use different protocols to transfer packets across the network, they are called "transports". 
+    You can use different protocols to transfer packets across the network, they are called "transports".
     Here you can customize your "UDP-transport" service.
-    It sends and receives UDP datagrams to transfer data from one peer to another in the network. 
+    It sends and receives UDP datagrams to transfer data from one peer to another in the network.
     UDP-transport performs own bandwidth management and load balancing.
 {services/udp-transport/enabled} enable udp-transport service
     Enable "UDP-transport" service.
 {services/udp-transport/receiving-enabled} enable udp receiving
     Disable this if you do not want to use UDP-transport for receiving packets from other users.
 {services/udp-transport/sending-enabled} enable udp sending
-    Disable this if you do not want to use UDP-transport for sending packets to other users.    
+    Disable this if you do not want to use UDP-transport for sending packets to other users.
 """
