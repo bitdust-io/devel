@@ -131,25 +131,26 @@ class DataSender(automat.Automat):
     def A(self, event, arg):
         #---READY---
         if self.state == 'READY':
-            if event == 'new-data' or event == 'timer-1min' or event == 'restart' :
+            if event == 'new-data' or event == 'timer-1min' or event == 'restart':
                 self.state = 'SCAN_BLOCKS'
                 self.doScanAndQueue(arg)
-            elif event == 'init' :
+            elif event == 'init':
                 pass
         #---SCAN_BLOCKS---
         elif self.state == 'SCAN_BLOCKS':
-            if event == 'scan-done' and self.isQueueEmpty(arg) :
+            if event == 'scan-done' and self.isQueueEmpty(arg):
                 self.state = 'READY'
                 self.doRemoveUnusedFiles(arg)
-            elif event == 'scan-done' and not self.isQueueEmpty(arg) :
+            elif event == 'scan-done' and not self.isQueueEmpty(arg):
                 self.state = 'SENDING'
         #---SENDING---
         elif self.state == 'SENDING':
-            if event == 'restart' or ( ( event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' ) and self.isQueueEmpty(arg) ) :
+            if event == 'timer-1sec':
+                self.doPrintStats(arg)
+            elif event == 'restart' or ( ( event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data' ) and self.isQueueEmpty(arg) ):
                 self.state = 'SCAN_BLOCKS'
                 self.doScanAndQueue(arg)
-            elif event == 'timer-1sec' :
-                self.doPrintStats(arg)
+        return None
 
     def isQueueEmpty(self, arg):
         if not arg:
