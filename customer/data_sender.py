@@ -116,8 +116,8 @@ class DataSender(automat.Automat):
     A class to manage process of sending data packets to remote suppliers.
     """
     timers = {'timer-1min': (60, ['READY']),
-              'timer-1min': (60, ['READY']),
-              'timer-1sec': (1.0, ['SENDING']),
+        'timer-1min': (60, ['READY']),
+        'timer-1sec': (1.0, ['SENDING']),
               }
     statistic = {}
 
@@ -141,9 +141,7 @@ class DataSender(automat.Automat):
                 self.state = 'SENDING'
         #---SENDING---
         elif self.state == 'SENDING':
-            if event == 'timer-1sec':
-                self.doPrintStats(arg)
-            elif event == 'restart' or ((event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data') and self.isQueueEmpty(arg)):
+            if event == 'restart' or ( ( event == 'timer-1sec' or event == 'block-acked' or event == 'block-failed' or event == 'new-data' ) and self.isQueueEmpty(arg) ):
                 self.state = 'SCAN_BLOCKS'
                 self.doScanAndQueue(arg)
         return None
@@ -252,9 +250,9 @@ class DataSender(automat.Automat):
             log.flush()
             log.close()
 
-    def doPrintStats(self, arg):
-        """
-        """
+#     def doPrintStats(self, arg):
+#         """
+#         """
 #        if lg.is_debug(18):
 #            transfers = transport_control.current_transfers()
 #            bytes_stats = transport_control.current_bytes_transferred()

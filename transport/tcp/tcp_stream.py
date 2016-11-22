@@ -106,7 +106,8 @@ def list_input_streams(sorted_by_time=True):
     streams = []
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
-            streams.extend(connection.stream.inboxFiles.values())
+            if connection.stream:
+                streams.extend(connection.stream.inboxFiles.values())
     if sorted_by_time:
         streams.sort(key=lambda stream: stream.started)
     return streams
@@ -117,7 +118,8 @@ def list_output_streams(sorted_by_time=True):
     streams = []
     for connections in tcp_node.opened_connections().values():
         for connection in connections:
-            streams.extend(connection.stream.outboxFiles.values())
+            if connection.stream:
+                streams.extend(connection.stream.outboxFiles.values())
     if sorted_by_time:
         streams.sort(key=lambda stream: stream.started)
     return streams

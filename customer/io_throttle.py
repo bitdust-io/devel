@@ -469,7 +469,7 @@ class SupplierQueue:
                     lg.exc()
                     continue
             # prepare the packet
-            dt = time.time()
+            # dt = time.time()
             Payload = str(bpio.ReadBinaryFile(fileToSend.fileName))
             newpacket = signed.Packet(
                 commands.Data(),

@@ -90,9 +90,9 @@ def ReadBinaryFile(filename):
     if not os.access(filename, os.R_OK):
         return ''
     try:
-        file = open(filename, "rb")
-        data = file.read()
-        file.close()
+        fin = open(filename, "rb")
+        data = fin.read()
+        fin.close()
         return data
     except:
         return ''
@@ -114,7 +114,7 @@ def RebuildOne(inlist, listlen, outfilename):
                     f.close()
                 except:
                     pass
-            return
+            return False
     rebuildfile = open(outfilename, "wb")
     while True:
         for k in xrange(listlen):
@@ -132,6 +132,7 @@ def RebuildOne(inlist, listlen, outfilename):
     for filenum in xrange(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
+    return True
 
 
 def RebuildOne_new(inlist, listlen, outfilename):
