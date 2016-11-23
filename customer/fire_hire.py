@@ -227,8 +227,7 @@ class FireHire(automat.Automat):
                 self.doConnectSuppliers(arg)
         #---DECISION?---
         elif self.state == 'DECISION?':
-            if event == 'made-decision' and self.isSomeoneToDismiss(
-                    arg) and not self.isMoreNeeded(arg):
+            if event == 'made-decision' and self.isSomeoneToDismiss(arg) and not self.isMoreNeeded(arg):
                 self.state = 'FIRE_MANY'
                 self.doRememberSuppliers(arg)
                 self.doRemoveSuppliers(arg)
@@ -417,6 +416,12 @@ class FireHire(automat.Automat):
         global _SuppliersToFire
         result = set(_SuppliersToFire)
         _SuppliersToFire = []
+        # if you have some empty suppliers need to get rid of them,
+        # but no need to dismiss anyone at the moment.
+        if '' in contactsdb.suppliers():
+            lg.out(10, 'fire_hire.doDecideToDismiss found empty supplier, SKIP')
+            self.automat('made-decision', [])
+            return
         for supplier_idurl in contactsdb.suppliers():
             if not supplier_idurl:
                 continue

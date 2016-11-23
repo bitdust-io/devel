@@ -21,7 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 """
-..module:: file_queue
+..module:: udp_file_queue
 """
 
 import os
@@ -40,7 +40,7 @@ from contacts import contactsdb
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 
 #------------------------------------------------------------------------------
 

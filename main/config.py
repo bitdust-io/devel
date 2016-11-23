@@ -138,7 +138,7 @@ class BaseConfig(object):
         if data is None:
             return default
         try:
-            return int(data.strip())
+            return int(data.strip('"').strip())
         except ValueError:
             return default
 
