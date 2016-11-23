@@ -67,6 +67,7 @@ from main import config
 _Services = {}
 _BootUpOrder = []
 _EnabledServices = set()
+_DisabledServices = set()
 _StartingDeferred = None
 _StopingDeferred = None
 
@@ -86,7 +87,8 @@ def enabled_services():
 
 
 def disabled_services():
-    return set()
+    global _DisabledServices
+    return _DisabledServices
 
 
 def boot_up_order():
