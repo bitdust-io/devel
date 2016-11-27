@@ -136,8 +136,7 @@ def process(newpacket, info):
             str(newpacket), info.proto, info.host, info.status))
     from p2p import commands
     from p2p import p2p_service
-    if newpacket.Command == commands.Identity(
-    ) and newpacket.RemoteID == my_id.getLocalID():
+    if newpacket.Command == commands.Identity() and newpacket.RemoteID == my_id.getLocalID():
         # contact sending us current identity we might not have
         # so we handle it before check that packet is valid
         # because we might not have his identity on hands and so can not verify the packet

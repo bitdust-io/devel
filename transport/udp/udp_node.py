@@ -281,6 +281,7 @@ class UDPNode(automat.Automat):
         udp_stream.set_global_limit_send_bytes_per_sec(bandoutlimit)
         udp_stream.set_global_limit_receive_bytes_per_sec(bandinlimit)
         reactor.callLater(0, udp_session.process_sessions)
+        reactor.callLater(0, udp_stream.process_streams)
 
     def doStartStunClient(self, arg):
         """
@@ -419,11 +420,13 @@ class UDPNode(automat.Automat):
         """
         Action method.
         """
+        from transport.udp import udp_stream
         lg.out(
             12, 'udp_node.doDisconnect going to close %d sessions and %d connectors' %
             (len(
                 udp_session.sessions().values()), len(
                 udp_connector.connectors().values())))
+        udp_stream.stop_process_streams()
         udp_session.stop_process_sessions()
         for s in udp_session.sessions().values():
             if _Debug:

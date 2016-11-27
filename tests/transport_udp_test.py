@@ -57,7 +57,7 @@ from transport import gateway
 
 
 def main():
-    lg.set_debug_level(24)
+    lg.set_debug_level(18)
     lg.life_begins()
     from crypt import key
     key.InitMyKey()
@@ -91,50 +91,56 @@ def main():
     reactor.addSystemEventTrigger('before', 'shutdown', gateway.shutdown)
     gateway.init()
     gateway.start()
-    # [filename] [peer idurl]
-    if len(sys.argv) >= 3:
-        p = signed.Packet(commands.Data(), my_id.getLocalID(),
-                          my_id.getLocalID(), my_id.getLocalID(),
-                          bpio.ReadBinaryFile(sys.argv[1]), sys.argv[2])
-        # bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
 
-        def _try_reconnect():
-            sess = udp_session.get_by_peer_id(sys.argv[2])
-            reconnect = False
-            if not sess:
-                reconnect = True
-                print 'sessions', udp_session.sessions_by_peer_id().keys()
-                print map(lambda s: s.peer_id, udp_session.sessions().values())
-            else:
-                if sess.state != 'CONNECTED':
-                    print 'state: ', sess.state
+    def _ok_to_send(transport, oldstate, newstate):
+        if newstate != 'LISTENING':
+            return
+        # [filename] [peer idurl]
+        if len(sys.argv) >= 3:
+            p = signed.Packet(commands.Data(), my_id.getLocalID(),
+                              my_id.getLocalID(), my_id.getLocalID(),
+                              bpio.ReadBinaryFile(sys.argv[1]), sys.argv[2])
+            # bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
+
+            def _try_reconnect():
+                sess = udp_session.get_by_peer_id(sys.argv[2])
+                reconnect = False
+                if not sess:
                     reconnect = True
-            if reconnect:
-                print 'reconnect', sess
-                udp_session.add_pending_outbox_file(
-                    sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
-                udp_node.A('connect', sys.argv[2])
-            reactor.callLater(0.5, _try_reconnect)
+                    print 'sessions', udp_session.sessions_by_peer_id().keys()
+                    print map(lambda s: s.peer_id, udp_session.sessions().values())
+                else:
+                    if sess.state != 'CONNECTED':
+                        print 'state: ', sess.state
+                        reconnect = True
+                if reconnect:
+                    print 'reconnect', sess
+                    udp_session.add_pending_outbox_file(
+                        sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
+                    udp_node.A('connect', sys.argv[2])
+                reactor.callLater(0.5, _try_reconnect)
 
-        def _try_connect():
-            if udp_node.A().state == 'LISTEN':
-                print 'connect'
-                gateway.stop_packets_timeout_loop()
-                udp_session.add_pending_outbox_file(
-                    sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
-                udp_node.A('connect', sys.argv[2])
-                reactor.callLater(5, _try_reconnect)
-            else:
-                reactor.callLater(1, _try_connect)
-        # _try_connect()
+            def _try_connect():
+                if udp_node.A().state == 'LISTEN':
+                    print 'connect'
+                    gateway.stop_packets_timeout_loop()
+                    udp_session.add_pending_outbox_file(
+                        sys.argv[1] + '.signed', sys.argv[2], 'descr', Deferred(), False)
+                    udp_node.A('connect', sys.argv[2])
+                    reactor.callLater(5, _try_reconnect)
+                else:
+                    reactor.callLater(1, _try_connect)
+            # _try_connect()
 
-        def _send(c):
-            from transport.udp import udp_stream
-            print '_send', udp_stream.streams().keys()
-            gateway.outbox(p)
-            # if c < 20:
-            #     reactor.callLater(0.01, _send, c+1)
-        reactor.callLater(10, _send, 0)
+            def _send(c):
+                from transport.udp import udp_stream
+                print '_send', udp_stream.streams().keys()
+                gateway.outbox(p)
+                # if c < 20:
+                #     reactor.callLater(0.01, _send, c+1)
+            reactor.callLater(0, _send, 0)
+
+    gateway.add_transport_state_changed_callback(_ok_to_send)
     reactor.run()
 
 
