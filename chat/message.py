@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#message.py
+# message.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -40,7 +40,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in message.py')
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -62,59 +62,65 @@ from userid import my_id
 
 from transport import gateway
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _IncomingMessageCallbacks = []
 _OutgoingMessageCallback = None
 _InboxHistory = []
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 
 def init():
-    lg.out(4,"message.init")
-##    guimessage.UpdateCorrespondents()
+    lg.out(4, "message.init")
+# guimessage.UpdateCorrespondents()
+
 
 def shutdown():
-    lg.out(4,"message.shutdown")
+    lg.out(4, "message.shutdown")
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def ConnectCorrespondent(idurl):
     pass
 
 
 def UniqueID():
-    return str(int(time.time()*100.0))
+    return str(int(time.time() * 100.0))
+
 
 def inbox_history():
     global _InboxHistory
     return _InboxHistory
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class MessageClass:
     """
     A class to represent a message.
     We always encrypt messages with a session key so we need to package with encrypted body.
     """
+
     def __init__(self, destinationidentity, messagebody):
         lg.out(8, "message.MessageClass making message of %d bytes" % len(messagebody))
         sessionkey = key.NewSessionKey()
         self.encryptedKey = key.EncryptStringPK(
             destinationidentity.publickey, sessionkey)
         self.encryptedMessage = key.EncryptWithSessionKey(sessionkey, messagebody)
-        
+
     def ClearBody(self):
         sessionkey = key.DecryptLocalPK(self.encryptedKey)
         # we only decrypt with LocalIdentity
         return key.DecryptWithSessionKey(sessionkey, self.encryptedMessage)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def Message(request):
     """
-    Message came in for us so we:    
+    Message came in for us so we:
         1) check that it is a correspondent
         2) decrypt message body
         3) save on local HDD
@@ -145,7 +151,8 @@ def Message(request):
     for cb in _IncomingMessageCallbacks:
         cb(request, clear_message)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def SendMessage(remote_idurl, messagebody, packet_id=None):
     """
@@ -176,7 +183,8 @@ def SendMessage(remote_idurl, messagebody, packet_id=None):
         _OutgoingMessageCallback(result, messagebody, remote_identity, packet_id)
     return result
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def SortMessagesList(mlist, sort_by_column):
     order = {}
@@ -184,28 +192,28 @@ def SortMessagesList(mlist, sort_by_column):
     for msg in mlist:
         order[msg[sort_by_column]] = i
         i += 1
-    keys = order.keys()
-    keys.sort()
+    keys = sorted(order.keys())
     msorted = []
     for key in keys:
         msorted.append(order[key])
     return msorted
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def AddIncomingMessageCallback(cb):
     global _IncomingMessageCallbacks
     if cb not in _IncomingMessageCallbacks:
         _IncomingMessageCallbacks.append(cb)
-    
+
+
 def RemoveIncomingMessageCallback(cb):
     global _IncomingMessageCallbacks
     if cb in _IncomingMessageCallbacks:
         _IncomingMessageCallbacks.remove(cb)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     init()
     reactor.run()
-

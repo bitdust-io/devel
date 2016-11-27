@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#checksum.py
+# checksum.py
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
 # This file (checksum.py) is part of BitDust Software.
@@ -13,7 +13,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -22,7 +22,7 @@
 import os
 import sys
 
-sys.path.append(os.path.join('..','..'))
+sys.path.append(os.path.join('..', '..'))
 from lib import misc
 
 
@@ -30,10 +30,10 @@ def mkinfo(dirpath):
     r = ''
     for root, dirs, files in os.walk(dirpath):
         for fname in files:
-            abspath = os.path.abspath(os.path.join(root,fname))
-            relpath = os.path.join(root,fname)
+            abspath = os.path.abspath(os.path.join(root, fname))
+            relpath = os.path.join(root, fname)
             relpath = relpath.split(os.sep, 1)[1]
-            txt = misc.file_hash(abspath)+' '+relpath+'\n'
+            txt = misc.file_hash(abspath) + ' ' + relpath + '\n'
             r += txt
     return r
 
@@ -47,4 +47,3 @@ if __name__ == "__main__":
         fout.write(src)
         fout.close()
         sys.stdout.write(misc.get_hash(src))
-

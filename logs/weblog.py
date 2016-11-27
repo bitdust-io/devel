@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#weblog.py
+# weblog.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -15,7 +15,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,7 +29,7 @@
 """
 .. module:: weblog
 
-A useful code to monitor program logs in the Web browser using local HTML server. 
+A useful code to monitor program logs in the Web browser using local HTML server.
 """
 
 import sys
@@ -44,7 +44,7 @@ except:
 
 from twisted.web import server, resource
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 myweblistener = None
 default_level = 6
@@ -109,11 +109,12 @@ level2color = {
     21: '#D0D0D0',
     22: '#D0D0D0',
     23: '#D0D0D0',
-    }
+}
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-def init(port = 9999):
+
+def init(port=9999):
     global myweblistener
     if myweblistener:
         return
@@ -127,6 +128,7 @@ def init(port = 9999):
         return
     lg.set_weblog_func(log)
 
+
 def shutdown():
     global myweblistener
     if myweblistener:
@@ -134,7 +136,8 @@ def shutdown():
         del myweblistener
         myweblistener = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def log(level, s):
     global logtext
@@ -148,13 +151,15 @@ def log(level, s):
     numlines += 1
     lineindex += 1
     while numlines > maxlines:
-        logtext = logtext[logtext.find('\n')+1:]
+        logtext = logtext[logtext.find('\n') + 1:]
         numlines -= 1
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class LogPage(resource.Resource):
-    def __init__(self,parent):
+
+    def __init__(self, parent):
         self.parent = parent
         resource.Resource.__init__(self)
 
@@ -182,8 +187,8 @@ class LogPage(resource.Resource):
         d = {'level': str(DlevelV), 'reload': str(reloadV), 'lines': str(maxlines)}
         out = header_html % d
         all_lines = logtext.splitlines()
-        for lineindex in range(len(all_lines)-1, -1, -1):
-            line = all_lines[lineindex] 
+        for lineindex in range(len(all_lines) - 1, -1, -1):
+            line = all_lines[lineindex]
             t = line.split('|')
             try:
                 #lineindex = int(t[0])
@@ -197,10 +202,10 @@ class LogPage(resource.Resource):
                 s = line
             if level > DlevelV:
                 continue
-            
+
             s = s.strip().replace('#nl', '\n')
             s = ('%6d' % lineindex) + ' ' + timestr + (' ' * level) + ' ' + s
-            
+
             textcolor = level2color.get(level, '')
             color = ''
             if s.find('BOGUS') > 0:
@@ -233,7 +238,7 @@ class LogPage(resource.Resource):
                 else:
                     color = '#ccffcc'
                 textcolor = 'black'
-            
+
             a = '%s'
             if color != '':
                 a = ('<font color="%s" style="BACKGROUND-COLOR:%s">' % (textcolor, color)) + '%s</font>'
@@ -252,26 +257,20 @@ class LogPage(resource.Resource):
                 except:
                     out += a % str(base64.encodestring(s))
 
-        return out+'</pre></body></html>'
+        return out + '</pre></body></html>'
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class RootResource(resource.Resource):
+
     def __init__(self):
         resource.Resource.__init__(self)
         logpage = LogPage(self)
         self.putChild('', logpage)
- 
+
 #------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     init(int(sys.argv[1]))
     reactor.run()
-
-
-
-
-
-
-
-

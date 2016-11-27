@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#coins_miner.py
+# coins_miner.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -41,12 +41,12 @@ EVENTS:
     * :red:`timer-2min`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import time
 import random
@@ -58,13 +58,14 @@ from twisted.internet import reactor
 from twisted.internet import threads
 from twisted.internet.defer import Deferred, fail
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    import sys, os.path as _p
+    import sys
+    import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -84,11 +85,12 @@ from transport import callback
 from coins import coins_db
 from coins import coins_io
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _CoinsMiner = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -104,9 +106,10 @@ def A(event=None, arg=None):
         _CoinsMiner.automat(event, arg)
     return _CoinsMiner
 
+
 def Destroy():
     """
-    Destroy the state machine and remove the instance from memory. 
+    Destroy the state machine and remove the instance from memory.
     """
     global _CoinsMiner
     if _CoinsMiner is None:
@@ -115,7 +118,8 @@ def Destroy():
     del _CoinsMiner
     _CoinsMiner = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class CoinsMiner(automat.Automat):
     """
@@ -124,23 +128,23 @@ class CoinsMiner(automat.Automat):
 
     timers = {
         'timer-2min': (120, ['ACCOUNTANTS?']),
-        }
+    }
 
     def init(self):
         """
         Method to initialize additional variables and flags
         at creation phase of coins_miner() machine.
         """
-        self.offline_mode = False # only for Debug purposes
+        self.offline_mode = False  # only for Debug purposes
         self.connected_accountants = []
-        self.min_accountants_connected = 3 # TODO: read from settings
-        self.max_accountants_connected = 5 # TODO: read from settings
+        self.min_accountants_connected = 3  # TODO: read from settings
+        self.max_accountants_connected = 5  # TODO: read from settings
         self.input_data = []
-        self.max_mining_counts = 10**8 # TODO: read from settings
-        self.max_mining_seconds = 60*3 # TODO: read from settings
+        self.max_mining_counts = 10**8  # TODO: read from settings
+        self.max_mining_seconds = 60 * 3  # TODO: read from settings
         self.simplification = 2
-        self.starter_length = 10 
-        self.starter_limit = 9999  
+        self.starter_length = 10
+        self.starter_limit = 9999
         self.mining_started = -1
         self.mining_counts = 0
 
@@ -203,7 +207,7 @@ class CoinsMiner(automat.Automat):
             elif event == 'new-data-received':
                 self.doPushInputData(arg)
         elif self.state == 'ACCOUNTANTS?':
-            if event == 'stop' or event == 'timer-2min' or ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ):
+            if event == 'stop' or event == 'timer-2min' or (event == 'lookup-failed' and not self.isAnyAccountants(arg)):
                 self.state = 'STOPPED'
             elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READY'
@@ -278,7 +282,7 @@ class CoinsMiner(automat.Automat):
             return
         from coins import accountants_finder
         accountants_finder.A('start', (self.automat, 'read'))
-    
+
     def doPushInputData(self, arg):
         """
         Action method.
@@ -301,7 +305,7 @@ class CoinsMiner(automat.Automat):
         d.addCallback(lambda result: self.automat('coin-mined', result))
         d.addErrback(lambda err: self.automat('stop'))
         d.addErrback(lambda err: lg.exc(exc_value=err))
-    
+
     def doStopMining(self, arg):
         """
         Action method.
@@ -317,7 +321,7 @@ class CoinsMiner(automat.Automat):
         if self.offline_mode:
             self.automat('coin-confirmed')
             return
-        coins = [arg,]
+        coins = [arg, ]
         for idurl in self.connected_accountants:
             p2p_service.SendCoin(idurl, coins)
 
@@ -347,7 +351,7 @@ class CoinsMiner(automat.Automat):
         del _CoinsMiner
         _CoinsMiner = None
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
@@ -371,7 +375,7 @@ class CoinsMiner(automat.Automat):
             for coin in new_coins:
                 self.automat('new-data-received', coin)
             return True
-        return False        
+        return False
 
     def _stop_marker(self):
         if self.mining_started < 0:
@@ -385,12 +389,12 @@ class CoinsMiner(automat.Automat):
 
     def _build_starter(self, length):
         return (''.join(
-            [random.choice(string.uppercase+string.lowercase+string.digits)
-                for _ in xrange(length)])) + '_'    
-    
+            [random.choice(string.uppercase + string.lowercase + string.digits)
+                for _ in xrange(length)])) + '_'
+
     def _build_hash(self, payload):
         return hashlib.sha1(payload).hexdigest()
-    
+
     def _get_hash_complexity(self, hexdigest, simplification):
         complexity = 0
         while complexity < len(hexdigest):
@@ -399,21 +403,21 @@ class CoinsMiner(automat.Automat):
             else:
                 break
         return complexity
-    
+
     def _get_hash_difficulty(self, hexdigest, simplification):
         difficulty = 0
         while True:
             ok = False
             for simpl in xrange(simplification):
-                if hexdigest.startswith(str(simpl)*difficulty):
+                if hexdigest.startswith(str(simpl) * difficulty):
                     ok = True
                     break
             if ok:
                 difficulty += 1
             else:
                 break
-        return difficulty - 1 
-    
+        return difficulty - 1
+
     def _run(self, signed_coin, difficulty, simplification, starter_length, starter_limit):
         acoin = coins_io.get_coin_base(signed_coin)
         data_dump = coins_io.coin_to_string(acoin)
@@ -434,13 +438,13 @@ class CoinsMiner(automat.Automat):
                     on = 0
                 continue
             result = {
-                "starter": starter+str(on), 
+                "starter": starter + str(on),
                 "hash": hexdigest,
                 "mined": utime.utcnow_to_sec1970(),
             }
             result.update(signed_coin)
             return result
-        
+
     def _start(self, signed_coin, prev_hash):
         signed_coin['prev'] = prev_hash
         signed_coin['miner'] = my_id.getLocalID()
@@ -453,7 +457,8 @@ class CoinsMiner(automat.Automat):
         return threads.deferToThread(self._run, signed_coin, complexity,
                                      self.simplification, self.starter_length, self.starter_limit)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def _test():
     from crypt import signed
@@ -475,8 +480,8 @@ def _test():
             print coin
             sys.exit()
     outpacket = signed.Packet(
-        commands.Coin(), my_id.getLocalID(), 
-        my_id.getLocalID(), packetid.UniqueID(), 
+        commands.Coin(), my_id.getLocalID(),
+        my_id.getLocalID(), packetid.UniqueID(),
         json.dumps(coins), 'http://server.com/id.xml')
     reactor.callLater(0.1, callback.run_inbox_callbacks, outpacket, None, 'finished', '')
     # reactor.callLater(5.1, A, 'shutdown')

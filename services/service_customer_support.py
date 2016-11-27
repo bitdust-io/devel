@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_customer_support.py
+# service_customer_support.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,11 +31,13 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return CustomerSupportService()
-    
+
+
 class CustomerSupportService(LocalService):
-    
+
     service_name = 'service_customer_support'
     config_path = 'services/customer-support/enabled'
     _jobs = {}
@@ -44,18 +46,18 @@ class CustomerSupportService(LocalService):
     def dependent_on(self):
         return ['service_customer_patrol',
                 ]
-    
+
     def start(self):
         for starter in self._support_methods().values():
             starter()
         return True
-    
+
     def stop(self):
         for job in self._jobs.values():
             job.stop()
         self._jobs.clear()
         return True
-    
+
     def _support_methods(self):
         return {
             'ping': self._run_ping,
@@ -74,4 +76,3 @@ class CustomerSupportService(LocalService):
         self._jobs['ping'] = LoopingCall(self._ping)
         self._jobs['ping'].start(self._PING_INTERVAL, now=False)
         return 'ping'
-    

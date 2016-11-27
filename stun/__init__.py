@@ -12,7 +12,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,6 +30,6 @@ This is a STUN server and client idea, very simple.
 
 Every user starts own STUN server - he listen on UDP port for incoming datagrams.
 
-Another user use DHT to pick a random peer in the network 
-and tries to connect to his STUN server to detect own IP address. 
+Another user use DHT to pick a random peer in the network
+and tries to connect to his STUN server to detect own IP address.
 """

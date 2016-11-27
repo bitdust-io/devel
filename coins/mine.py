@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#mine.py
+# mine.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,18 +14,18 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import time
 import random
@@ -33,13 +33,14 @@ import string
 import json
 import hashlib
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    import sys, os.path as _p
+    import sys
+    import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -52,7 +53,8 @@ from lib import utime
 
 from coins import coins_db
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init():
     pass
@@ -61,12 +63,13 @@ def init():
 def shutdown():
     pass
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def build_starter(length=5):
     return (''.join(
-        [random.choice(string.uppercase+string.lowercase+string.digits)
-           for _ in xrange(length)])) + '_'    
+        [random.choice(string.uppercase + string.lowercase + string.digits)
+         for _ in xrange(length)])) + '_'
 
 
 def build_hash(payload):
@@ -88,21 +91,21 @@ def get_hash_difficulty(hexdigest, simplification=2):
     while True:
         ok = False
         for simpl in xrange(simplification):
-            if hexdigest.startswith(str(simpl)*difficulty):
+            if hexdigest.startswith(str(simpl) * difficulty):
                 ok = True
                 break
         if ok:
             difficulty += 1
         else:
             break
-    return difficulty - 1 
+    return difficulty - 1
 
 
 def work_on_data_with_known_difficulty(data,
                                        difficulty,
                                        simplification=2,
                                        starter_length=10,
-                                       starter_limit=99999, 
+                                       starter_limit=99999,
                                        stop_marker=None):
     data['miner'] = my_id.getLocalID()
     data_dump = json.dumps(data)
@@ -123,19 +126,20 @@ def work_on_data_with_known_difficulty(data,
                 on = 0
             continue
         return {
-            "starter": starter+str(on), 
+            "starter": starter + str(on),
             "hash": hexdigest,
             "tm": utime.utcnow_to_sec1970(),
             "data": data,
         }
-    
+
+
 def work_on_data_from_known_hash(data,
                                  prev_hash,
                                  simplification=2,
                                  starter_length=10,
-                                 starter_limit=99999, 
+                                 starter_limit=99999,
                                  stop_marker=None):
-    data.update({'prev': prev_hash,})
+    data.update({'prev': prev_hash, })
     difficulty = get_hash_difficulty(prev_hash)
     complexity = get_hash_complexity(prev_hash, simplification)
     if difficulty == complexity:
@@ -150,10 +154,11 @@ def work_on_data_from_known_hash(data,
         stop_marker=stop_marker
     )
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class MininigCounter(object):
-    
+
     def __init__(self, max_counts, max_seconds):
         self.max_counts = max_counts
         self.max_seconds = max_seconds
@@ -180,7 +185,7 @@ def _test():
             starter_limit = 99999
             coins = 0
             hexhash = ''
-            data = {'a':'b', }
+            data = {'a': 'b', }
             while True:
                 coin = work_on_data_from_known_hash(
                     data,
@@ -201,7 +206,7 @@ def _test():
             print time.time() - start, 'seconds'
             print mc.counts, 'iterations'
             print 'simplification:', simplification
-            print 
+            print
 
     except KeyboardInterrupt:
         pass
@@ -211,6 +216,3 @@ if __name__ == "__main__":
     init()
     _test()
     shutdown()
-    
-
-

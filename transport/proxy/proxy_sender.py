@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#proxy_sender.py
+# proxy_sender.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -42,17 +42,17 @@ EVENTS:
     * :red:`stop`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred, fail
 from twisted.internet import reactor
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from automats import automat
 
@@ -76,11 +76,12 @@ from transport import packet_out
 
 from transport.proxy import proxy_receiver
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _ProxySender = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -96,7 +97,8 @@ def A(event=None, arg=None):
         _ProxySender.automat(event, arg)
     return _ProxySender
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class ProxySender(automat.Automat):
     """
@@ -149,9 +151,9 @@ class ProxySender(automat.Automat):
                 self.state = 'CLOSED'
                 self.doStopFilterOutgoingTraffic(arg)
                 self.doDestroyMe(arg)
-            elif ( event == 'proxy_receiver.state' and arg == 'OFFLINE' ):
+            elif (event == 'proxy_receiver.state' and arg == 'OFFLINE'):
                 self.state = 'STOPPED'
-            elif ( event == 'proxy_receiver.state' and arg == 'LISTEN' ):
+            elif (event == 'proxy_receiver.state' and arg == 'LISTEN'):
                 self.state = 'REDIRECTING'
                 self.doSendAllPendingPackets(arg)
         #---REDIRECTING---
@@ -175,7 +177,7 @@ class ProxySender(automat.Automat):
         """
         self.traffic_out = 0
         self.pending_packets = []
-        self.max_pending_packets = 100 # TODO: read from settings
+        self.max_pending_packets = 100  # TODO: read from settings
 
     def doStartFilterOutgoingTraffic(self, arg):
         """
@@ -255,7 +257,7 @@ class ProxySender(automat.Automat):
         src = ''
         src += my_id.getLocalID() + '\n'
         src += outpacket.RemoteID + '\n'
-        src += 'wide\n' if wide else '\n' 
+        src += 'wide\n' if wide else '\n'
         src += outpacket.Serialize()
         block = encrypted.Block(
             my_id.getLocalID(),
@@ -268,16 +270,16 @@ class ProxySender(automat.Automat):
             EncryptFunc=lambda inp: key.EncryptStringPK(publickey, inp))
         block_encrypted = block.Serialize()
         newpacket = signed.Packet(
-            commands.Relay(), 
+            commands.Relay(),
             outpacket.OwnerID,
-            my_id.getLocalID(), 
+            my_id.getLocalID(),
             outpacket.PacketID,
-            block_encrypted, 
+            block_encrypted,
             router_idurl)
         result_packet = packet_out.create(
-            outpacket, 
-            wide=wide, 
-            callbacks=callbacks, 
+            outpacket,
+            wide=wide,
+            callbacks=callbacks,
             route={
                 'packet': newpacket,
                 'proto': router_proto,
@@ -298,16 +300,16 @@ class ProxySender(automat.Automat):
         del router_idurl
         del router_proto_host
         return result_packet
- 
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor
     reactor.callWhenRunning(A, 'init')
     reactor.run()
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#ppauto.py
+# ppauto.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -88,12 +88,12 @@ class Discover(object):
         """Sends a broadcast"""
         if self.isclient:
             logging.debug("Client sends initial broadcast to (%s, %i)"
-                    % self.broadcast_addr)
+                          % self.broadcast_addr)
             self.bsocket.sendto("C", self.broadcast_addr)
         else:
             while True:
                 logging.debug("Server sends broadcast to (%s, %i)"
-                        % self.broadcast_addr)
+                              % self.broadcast_addr)
                 self.bsocket.sendto("S", self.broadcast_addr)
                 time.sleep(BROADCAST_INTERVAL)
 
@@ -113,16 +113,16 @@ class Discover(object):
                 remote_address = (host, self.broadcast_addr[1])
                 hostid = host + ":" + str(self.broadcast_addr[1])
                 logging.debug("Discovered host (%s, %i) message=%c"
-                        % (remote_address + (message[0], )))
+                              % (remote_address + (message[0], )))
                 if not self.base.autopp_list.get(hostid, 0) and self.isclient \
                         and message[0] == 'S':
                     logging.debug("Connecting to host %s" % (hostid, ))
                     thread.start_new_thread(self.base.connect1,
-                            remote_address+(False, ))
+                                            remote_address + (False, ))
                 if not self.isclient and message[0] == 'C':
                     logging.debug("Replying to host %s" % (hostid, ))
                     self.bsocket.sendto("S", self.broadcast_addr)
             except:
                 logging.error("An error has occured during execution of "
-                        "Discover.listen")
+                              "Discover.listen")
                 sys.excepthook(*sys.exc_info())

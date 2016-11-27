@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#jsonrpc_client.py
+# jsonrpc_client.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,7 +30,8 @@
 
 
 if __name__ == '__main__':
-    import sys, os.path as _p
+    import sys
+    import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 from twisted.internet import reactor
@@ -39,7 +40,8 @@ from main import settings
 
 from lib.fastjsonrpc.client import Proxy
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def output(value):
     print value
@@ -51,4 +53,3 @@ proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
 proxy.callRemote('filemanager_list', 'path=/').addBoth(output)
 
 reactor.run()
-

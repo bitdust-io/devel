@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#views.py
+# views.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -22,12 +22,13 @@
 from django.views import generic
 
 #----------------------------------------------------------------------------- 4
-                                        
+
 from models import Supplier
- 
+
 from lib import nameurl
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class SupplierView(generic.DetailView):
     template_name = 'supplier.html'
@@ -36,13 +37,13 @@ class SupplierView(generic.DetailView):
     def get_context_data(self, **kwargs):
         Sup = super(SupplierView, self).get_object()
         context = super(SupplierView, self).get_context_data(**kwargs)
-        context['identity_id'] = nameurl.DjangoQuote(Sup.idurl) # nameurl.Quote(Sup.idurl)
+        context['identity_id'] = nameurl.DjangoQuote(Sup.idurl)  # nameurl.Quote(Sup.idurl)
         return context
+
 
 class SuppliersView(generic.ListView):
     template_name = 'suppliers.html'
     context_object_name = 'suppliers_list'
-    
+
     def get_queryset(self):
         return Supplier.objects.order_by('id')
-

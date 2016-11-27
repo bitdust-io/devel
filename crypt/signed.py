@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#signed.py
+# signed.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -25,29 +25,29 @@
 #
 
 """
-.. module:: signed 
+.. module:: signed
 
 These packets usually hold on the order of 1 MB.
 Something equal to a packet number so we can detect duplicates in transport.
 Packet Fields are all strings (no integers, objects, etc)
-    - Command : Legal Commands are in bitdust/lib/commands.py               
-    - OwnerID : who owns this data and pays bills - http://cate.com/id1.xml                
-    - CreatorID : this is signer - http://cate.com/id1.xml - might be an authorized scrubber            
+    - Command : Legal Commands are in bitdust/lib/commands.py
+    - OwnerID : who owns this data and pays bills - http://cate.com/id1.xml
+    - CreatorID : this is signer - http://cate.com/id1.xml - might be an authorized scrubber
     - PacketID : string of the above 4 "Number"s with "-" separator to uniquely identify a packet
-                on the local machine.  Can be used for filenames, and to prevent duplicates.               
+                on the local machine.  Can be used for filenames, and to prevent duplicates.
     - Date : create a string to remember current world time
-    - Payload : main body of binary data                
+    - Payload : main body of binary data
     - RemoteID : want full IDURL for other party so troublemaker could not
                 use his packets to mess up other nodes by sending it to them
     - Signature : signature on Hash is always by CreatorID
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -58,7 +58,7 @@ import datetime
 from twisted.internet import threads
 from twisted.internet.defer import Deferred
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -75,42 +75,44 @@ from contacts import contactsdb
 
 import key
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class Packet:
     """
-    Init with: Command, OwnerID, CreatorID, PacketID, Payload, RemoteID 
+    Init with: Command, OwnerID, CreatorID, PacketID, Payload, RemoteID
     The core class.
-    Represents a data packet in the network. 
+    Represents a data packet in the network.
     Payload can be encrypted using bitdust.key.encrypted.Block.
     We expect remote user run the correct software.
     His BitDust must verify signature of that packet .
-    If you want to encrypt the fields and so hide that service traffic completely - 
-    do that in the transport protocols. 
+    If you want to encrypt the fields and so hide that service traffic completely -
+    do that in the transport protocols.
     Need to transfer our public key to remote peer and than he can send us a safe messages.
-    This is outside work, here is most important things to make all network working. 
+    This is outside work, here is most important things to make all network working.
     """
+
     def __init__(self, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID,):
         """
         Init all fields and sign the packet .
         """
         # Legal Commands are in commands.py
-        self.Command = Command               
+        self.Command = Command
         # who owns this data and pays bills - http://cate.com/id1.xml
-        self.OwnerID = OwnerID                
+        self.OwnerID = OwnerID
         # signer - http://cate.com/id1.xml - might be an authorized scrubber
-        self.CreatorID = CreatorID         
+        self.CreatorID = CreatorID
         # string of the above 4 "Number"s with "-" separator to uniquely identify a packet
-        # on the local machine.  Can be used for filenames, and to prevent duplicates.   
+        # on the local machine.  Can be used for filenames, and to prevent duplicates.
         self.PacketID = PacketID
-        # create a string to remember current world time              
+        # create a string to remember current world time
         self.Date = utime.sec1970_to_datetime_utc().strftime("%Y/%m/%d %I:%M:%S %p")
         # datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S %p")
         # main body of binary data
-        self.Payload = Payload                
+        self.Payload = Payload
         # want full IDURL for other party so troublemaker could not
         # use his packets to mess up other nodes by sending it to them
-        self.RemoteID = RemoteID             
+        self.RemoteID = RemoteID
         # signature on Hash is always by CreatorID
         self.Signature = None
         # must be signed to be valid
@@ -130,7 +132,7 @@ class Packet:
         """
         Call ``GenerateSignature`` and save the result. Usually just done at packet creation.
         """
-        self.Signature = self.GenerateSignature()  
+        self.Signature = self.GenerateSignature()
         return self
 
     def GenerateHashBase(self):
@@ -188,7 +190,7 @@ class Packet:
 
     def Ready(self):
         """
-        I was playing with generating signatures in separate thread, 
+        I was playing with generating signatures in separate thread,
         so this is just to check that Signature already exists.
         """
         return self.Signature is not None
@@ -252,7 +254,7 @@ class Packet:
 
     def __len__(self):
         """
-        Return a length of serialized packet . 
+        Return a length of serialized packet .
         """
         return len(self.Serialize())
 
@@ -260,7 +262,8 @@ class Packet:
 class PacketZeroSigned(Packet):
     """
     I was playing with hacking packets and do some debug also.
-    """    
+    """
+
     def GenerateSignature(self):
         return '0'
 
@@ -269,7 +272,7 @@ def Unserialize(data):
     """
     We expect here a string containing a whole packet object in text form.
     Here is used a special libraries in ``twisted.spread``: ``banana`` and ``jelly`` to do that work.
-    This stuff is placed in the ``lib.misc.StringToObject``. 
+    This stuff is placed in the ``lib.misc.StringToObject``.
     So return a real object in the memory from given string.
     All class fields are loaded, signature can be verified to be sure - it was  truly original string.
     """
@@ -280,13 +283,14 @@ def Unserialize(data):
     if newobject is None:
         lg.warn("result is None")
         return None
-    if type(newobject) != types.InstanceType:
+    if not isinstance(newobject, types.InstanceType):
         lg.warn("not an instance: " + str(newobject))
         return None
     if not str(newobject.__class__).count('signed.Packet'):
         lg.warn("not a packet: " + str(newobject.__class__))
         return None
     return newobject
+
 
 def MakePacket(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
     """
@@ -295,12 +299,14 @@ def MakePacket(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
     result = Packet(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
     return result
 
+
 def MakePacketInThread(CallBackFunc, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
     """
-    Signing packets is not atomic operation, so can be moved out from the main thread. 
+    Signing packets is not atomic operation, so can be moved out from the main thread.
     """
     d = threads.deferToThread(MakePacket, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
     d.addCallback(CallBackFunc)
+
 
 def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID):
     """
@@ -308,7 +314,7 @@ def MakePacketDeferred(Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
     """
     return threads.deferToThread(MakePacket, Command, OwnerID, CreatorID, PacketID, Payload, RemoteID)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     bpio.init()
@@ -318,6 +324,3 @@ if __name__ == '__main__':
     key.InitMyKey()
     p = Unserialize(bpio.ReadBinaryFile(sys.argv[1]))
     print p
-    
-    
-    

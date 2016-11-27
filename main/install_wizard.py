@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#install_wizard.py
+# install_wizard.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,7 +33,7 @@
     <a href="http://bitdust.io/automats/install_wizard/install_wizard.png" target="_blank">
     <img src="http://bitdust.io/automats/install_wizard/install_wizard.png" style="max-width:100%;">
     </a>
-    
+
 A state machine to show installation wizard for BitDust software.
 User need to answer some questions step by step to configure the program first time.
 
@@ -41,8 +41,8 @@ This is several pages:
     * select a role: "free backups", "secure storage", "donator", "just to try", "beta tester"
     * set up needed and donated space and local folders locations
     * provide some personal information about yourself if you wish
-    * set software update settings  
-    
+    * set software update settings
+
 EVENTS:
     * :red:`back`
     * :red:`next`
@@ -64,11 +64,12 @@ from automats import automat
 
 import installer
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _InstallWizard = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -81,17 +82,18 @@ def A(event=None, arg=None):
         _InstallWizard.automat(event, arg)
     return _InstallWizard
 
+
 class InstallWizard(automat.Automat):
     """
     BitDust install_wizard() Automat.
     Runs install wizard process.
     """
-    
+
     fast = True
-    
+
     role_args = None
     role = None
-    
+
     def init(self):
         self.log_events = True
         # TODO: we do not need 'READY' state now
@@ -100,7 +102,7 @@ class InstallWizard(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         if newstate == 'CONTACTS' and oldstate == 'STORAGE':
-            self.event('next', {}) 
+            self.event('next', {})
             # TODO:
             # here just skip Contacts page!
             # we do not need that now, but can back to that soon when add chat
@@ -115,22 +117,22 @@ class InstallWizard(automat.Automat):
     def A(self, event, arg):
         #---READY---
         if self.state == 'READY':
-            if event == 'next' :
+            if event == 'next':
                 self.state = 'STORAGE'
-            elif event == 'skip' :
+            elif event == 'skip':
                 self.state = 'LAST_PAGE'
         #---STORAGE---
         elif self.state == 'STORAGE':
-            if event == 'next' :
+            if event == 'next':
                 self.state = 'CONTACTS'
                 self.doSaveStorage(arg)
-            elif event == 'back' :
+            elif event == 'back':
                 self.state = 'READY'
         #---CONTACTS---
         elif self.state == 'CONTACTS':
-            if event == 'back' :
+            if event == 'back':
                 self.state = 'STORAGE'
-            elif event == 'next' :
+            elif event == 'next':
                 self.state = 'LAST_PAGE'
                 self.doSaveContacts(arg)
         #---DONE---
@@ -138,9 +140,9 @@ class InstallWizard(automat.Automat):
             pass
         #---LAST_PAGE---
         elif self.state == 'LAST_PAGE':
-            if event == 'next' :
+            if event == 'next':
                 self.state = 'DONE'
-            elif event == 'back' :
+            elif event == 'back':
                 self.state = 'CONTACTS'
         return None
 
@@ -151,9 +153,9 @@ class InstallWizard(automat.Automat):
         localbackupsdir = arg.get('localbackupsdir', '')
         restoredir = arg.get('restoredir', '')
         if needed:
-            config.conf().setData('services/customer/needed-space', needed+' MB')
+            config.conf().setData('services/customer/needed-space', needed + ' MB')
         if donated:
-            config.conf().setData('services/supplier/donated-space', donated+' MB')
+            config.conf().setData('services/supplier/donated-space', donated + ' MB')
         if customersdir:
             config.conf().setData('paths/customers', customersdir)
         if localbackupsdir:
@@ -166,5 +168,3 @@ class InstallWizard(automat.Automat):
         config.conf().setData('personal/name', arg.get('name', '').strip())
         config.conf().setData('personal/surname', arg.get('surname', '').strip())
         config.conf().setData('personal/nickname', arg.get('nickname', '').strip())
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#tcp_interface.py
+# tcp_interface.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -15,7 +15,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,15 +28,15 @@
 """
 .. module:: tcp_interface
 
-This is a client side part of the TCP plug-in. 
-The server side part is placed in the file tcp_process.py. 
+This is a client side part of the TCP plug-in.
+The server side part is placed in the file tcp_process.py.
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -57,27 +57,29 @@ from lib import misc
 
 from transport.tcp import tcp_node
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _GateProxy = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def proxy():
     global _GateProxy
     return _GateProxy
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class GateInterface():
-    
+
     def init(self, xml_rpc_url_or_object):
         """
         """
         global _GateProxy
         if _Debug:
             lg.out(4, 'tcp_interface.init')
-        if type(xml_rpc_url_or_object) == str:
+        if isinstance(xml_rpc_url_or_object, str):
             _GateProxy = xmlrpc.Proxy(xml_rpc_url_or_object, allowNone=True)
         else:
             _GateProxy = xml_rpc_url_or_object
@@ -112,7 +114,7 @@ class GateInterface():
         tcp_node.stop_streams()
         tcp_node.close_connections()
         return tcp_node.disconnect()
-    
+
     def build_contacts(self, id_obj):
         """
         """
@@ -128,7 +130,7 @@ class GateInterface():
         if _Debug:
             lg.out(4, 'tcp_interface.build_contacts : %s' % str(result))
         return result
-    
+
     def verify_contacts(self, id_obj):
         """
         """
@@ -141,11 +143,11 @@ class GateInterface():
         if tcp_node.get_internal_port() != settings.getTCPPort():
             if _Debug:
                 lg.out(4, 'tcp_interface.verify_contacts returning False: tcp port has been changed')
-            return False       
+            return False
         if _Debug:
             lg.out(4, 'tcp_interface.verify_contacts returning True')
         return True
-    
+
     def send_file(self, remote_idurl, filename, host, description=''):
         """
         """
@@ -159,17 +161,17 @@ class GateInterface():
         host = host.split(':')
         host = (host[0], int(host[1]))
         return tcp_node.send(filename, host, description, True)
-    
+
     def connect_to(self, host):
         """
         """
-        return tcp_node.connect_to(host) 
+        return tcp_node.connect_to(host)
 
     def disconnect_from(self, host):
         """
         """
-        return tcp_node.disconnect_from(host) 
-    
+        return tcp_node.disconnect_from(host)
+
     def cancel_file_sending(self, transferID):
         """
         """
@@ -179,7 +181,7 @@ class GateInterface():
         """
         """
         return tcp_node.cancel_file_receiving(transferID)
-    
+
     def cancel_outbox_file(self, host, filename):
         """
         """
@@ -195,7 +197,7 @@ class GateInterface():
         for started_connection in tcp_node.started_connections():
             result.append(started_connection)
         return result
-    
+
     def list_streams(self, sorted_by_time=True):
         """
         """
@@ -204,15 +206,16 @@ class GateInterface():
         result.extend(tcp_node.list_output_streams(sorted_by_time))
         return result
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def interface_transport_initialized(xmlrpcurl):
     if proxy():
         return proxy().callRemote('transport_initialized', 'tcp', xmlrpcurl)
     lg.warn('transport_tcp is not ready')
     return fail('transport_tcp is not ready')
-    
-    
+
+
 def interface_receiving_started(host, new_options={}):
     if proxy():
         return proxy().callRemote('receiving_started', 'tcp', host, new_options)
@@ -277,5 +280,3 @@ def interface_cancelled_file_sending(host, filename, size=0, description=None, e
         return proxy().callRemote('cancelled_file_sending', 'tcp', '%s:%d' % host, filename, size, description, error_message)
     lg.warn('transport_tcp is not ready')
     return fail('transport_tcp is not ready')
-
-

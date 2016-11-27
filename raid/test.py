@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#test.py
+# test.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,7 +34,7 @@ except:
         sys.exit()
 
 from twisted.internet import reactor
-        
+
 import pp
 
 import make
@@ -43,12 +43,15 @@ js = pp.Server()
 tsks = range(20)
 active = []
 
+
 def _print():
     js.print_stats()
 
+
 def _func(filename, eccmapname, backupId, blockNumber, targetDir):
     return make.do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir)
-    
+
+
 def _cb(result, bnum):
     global active
     print 'cb', result, bnum, active
@@ -59,6 +62,7 @@ def _cb(result, bnum):
     else:
         _more()
 
+
 def _more():
     global js
     global tsks
@@ -67,16 +71,15 @@ def _more():
         if len(active) >= js.get_ncpus():
             break
         blockNumber = tsks.pop(0)
-        active.append(blockNumber) 
+        active.append(blockNumber)
         l = sys.argv[1:]
         l.insert(-1, str(blockNumber))
         args = tuple(l)
-        js.submit(_func, args, modules=('make',), 
-                  callback=lambda result: _cb(result, blockNumber), ) # callbackargs=(sys.argv[2],),)
+        js.submit(_func, args, modules=('make',),
+                  callback=lambda result: _cb(result, blockNumber), )  # callbackargs=(sys.argv[2],),)
         print 'more', tsks, active
         break
     reactor.callLater(0.01, _more)
 
 _more()
 reactor.run()
-

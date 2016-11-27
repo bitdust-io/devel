@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#views.py
+# views.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,18 +28,20 @@ from django.http import HttpResponse, HttpResponseBadRequest
 
 from interface import api
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class FileManagerView(generic.TemplateView):
     template_name = 'filemanager.html'
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def filemanager_api_view(request):
     try:
         json_request = json.loads(request.body.decode('utf-8'))
     except:
-        error_dict = {"result": {"success": False,"error": traceback.format_exc()}}
+        error_dict = {"result": {"success": False, "error": traceback.format_exc()}}
         json_context = json.dumps(
             error_dict).encode('utf-8')
         return HttpResponseBadRequest(
@@ -48,8 +50,7 @@ def filemanager_api_view(request):
     return HttpResponse(json.dumps(result), content_type='application/json')
 
 
-
-#class JSONResponseMixin(object):
+# class JSONResponseMixin(object):
 #    """
 #    A mixin that allows you to easily serialize simple data such as a dict or
 #    Django models.
@@ -94,7 +95,7 @@ def filemanager_api_view(request):
 #        return HttpResponse(json_data, content_type=self.get_content_type())
 #
 #
-#class AjaxResponseMixin(object):
+# class AjaxResponseMixin(object):
 #    """
 #    Mixin allows you to define alternative methods for ajax requests. Similar
 #    to the normal get, post, and put methods, you can use get_ajax, post_ajax,
@@ -127,7 +128,7 @@ def filemanager_api_view(request):
 #        return self.get(request, *args, **kwargs)
 #
 #
-#class JsonRequestResponseMixin(JSONResponseMixin):
+# class JsonRequestResponseMixin(JSONResponseMixin):
 #    """
 #    Extends JSONResponseMixin.  Attempts to parse request as JSON.  If request
 #    is properly formatted, the json is saved to self.request_json as a Python
@@ -173,5 +174,3 @@ def filemanager_api_view(request):
 #            return self.render_bad_request_response()
 #        return super(JsonRequestResponseMixin, self).dispatch(
 #            request, *args, **kwargs)
-        
-            

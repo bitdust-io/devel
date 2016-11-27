@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#tray1.py
+# tray1.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,19 +14,22 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 import wx
 from wx import ImageFromStream, BitmapFromImage, EmptyIcon
-import cStringIO, zlib
+import cStringIO
+import zlib
 
 # ================================ ICON ======================================
+
+
 def getData():
     return zlib.decompress(
-'x\xda\x01\x97\x03h\xfc\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\
+        'x\xda\x01\x97\x03h\xfc\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\
 \x00\x00\x00\x10\x08\x06\x00\x00\x00\x1f\xf3\xffa\x00\x00\x00\x04sBIT\x08\
 \x08\x08\x08|\x08d\x88\x00\x00\x03NIDAT8\x8dm\xd2ML\x9bu\x00\xc7\xf1\xef\xf3\
 <\xed\xda><\xa3@\xcb\x8a\x0cp\xac8\x15\x87\x89/ \x11\xd1d&:5&#n\xc9\\\xa2\
@@ -61,14 +64,17 @@ W\xdb\xbf\xd3:\xb7{49\x0e\xeem\x1dkAG+Z\xb4l\xdf\xc6o-\xc3\xea\x9fK\xbf\x84\
 \xf2\xf2\xfc\x07\x85B\xdel\x8e\xc7%]\xd7/\xa7R\xa9\xe4\x96\xc04M\xc7q\x9c\
 \xb5\x89\x89\x89N!\xc4\xd3S\xdf|4\xcd\xfftw\xff\x97_]\xd3\xf5I\xc0\xf2}\xdf\
 \x02\xf8\x0b\xc1.\x9e\xd8Y.\x85\x85\x00\x00\x00\x00IEND\xaeB`\x822\x86\xba\
-\xb3' )
+\xb3')
+
 
 def getBitmap():
     return BitmapFromImage(getImage())
 
+
 def getImage():
     stream = cStringIO.StringIO(getData())
     return ImageFromStream(stream)
+
 
 def getIcon():
     icon = EmptyIcon()
@@ -76,7 +82,10 @@ def getIcon():
     return icon
 
 # ============================================================================
+
+
 class MainWindow(wx.Frame):
+
     def __init__(self, *args, **kwargs):
         wx.Frame.__init__(self, *args, **kwargs)
         self.number = 0
@@ -115,8 +124,8 @@ class MainWindow(wx.Frame):
         # dc.DrawText(str(self.number), 0, 0)
         dc.SelectObject(wx.NullBitmap)
 
-        # Convert the bitmap to Image again 
-        # and fix the alpha of pixels with that color 
+        # Convert the bitmap to Image again
+        # and fix the alpha of pixels with that color
         image = bitmap.ConvertToImage()
         for x in range(image.GetWidth()):
             for y in range(image.GetHeight()):
@@ -125,10 +134,10 @@ class MainWindow(wx.Frame):
                               image.GetBlue(x, y))
                 if p == my_solid_color:
                     image.SetAlpha(x, y, 255)   # Clear the alpha
-                    image.SetRGB(x, y, 0, 0, 0) # Set the color that we want
+                    image.SetRGB(x, y, 0, 0, 0)  # Set the color that we want
 
         # Convert back to Bitmap and save to Icon
-        bitmap = image.ConvertToBitmap() 
+        bitmap = image.ConvertToBitmap()
         icon = wx.IconFromBitmap(bitmap)
         self.tbicon.SetIcon(icon, "Test")
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#accountant_node.py
+# accountant_node.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -45,19 +45,19 @@ EVENTS:
     * :red:`valid-coins-received`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import time
 import datetime
 
 from twisted.internet.defer import Deferred
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -74,11 +74,12 @@ from coins import coins_db
 
 from broadcast import broadcast_service
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _AccountantNode = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -94,7 +95,8 @@ def A(event=None, arg=None):
         _AccountantNode.automat(event, arg)
     return _AccountantNode
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class AccountantNode(automat.Automat):
     """
@@ -103,16 +105,16 @@ class AccountantNode(automat.Automat):
     timers = {
         'timer-2min': (120, ['ACCOUNTANTS?']),
         'timer-1min': (60, ['READ_COINS']),
-        }
-    
+    }
+
     def init(self):
         """
         Method to initialize additional variables and flags
         at creation phase of accountant_node() machine.
         """
         self.connected_accountants = []
-        self.min_accountants_connected = 1 # TODO: read from settings
-        self.max_accountants_connected = 1 # TODO: read from settings
+        self.min_accountants_connected = 1  # TODO: read from settings
+        self.max_accountants_connected = 1  # TODO: read from settings
         self.download_offset = datetime.datetime(2016, 1, 1)
         self.download_limit = 100
         self.pending_coins = []
@@ -154,7 +156,7 @@ class AccountantNode(automat.Automat):
             elif event == 'accountant-connected':
                 self.doAddAccountant(arg)
                 self.doRetreiveCoins(arg)
-            elif event == 'stop' or ( event == 'timer-1min' and not self.isAnyCoinsReceived(arg) ):
+            elif event == 'stop' or (event == 'timer-1min' and not self.isAnyCoinsReceived(arg)):
                 self.state = 'OFFLINE'
             elif event == 'new-coin-mined':
                 self.doPushCoin(arg)
@@ -221,7 +223,7 @@ class AccountantNode(automat.Automat):
             elif event == 'accountant-connected' and self.isMoreNeeded(arg):
                 self.doAddAccountant(arg)
                 self.doLookupAccountants(arg)
-            elif ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ) or event == 'timer-2min':
+            elif (event == 'lookup-failed' and not self.isAnyAccountants(arg)) or event == 'timer-2min':
                 self.state = 'OFFLINE'
             elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READ_COINS'
@@ -286,8 +288,8 @@ class AccountantNode(automat.Automat):
         query = {'method': 'get_all',
                  'index': 'time',
                  'limit': self.download_limit,
-                 'start' : utime.datetime_to_sec1970(self.download_offset),
-                 'end': utime.utcnow_to_sec1970(),}
+                 'start': utime.datetime_to_sec1970(self.download_offset),
+                 'end': utime.utcnow_to_sec1970(), }
         for idurl in self.connected_accountants:
             p2p_service.SendRetreiveCoin(idurl, query)
 
@@ -306,13 +308,13 @@ class AccountantNode(automat.Automat):
         Action method.
         """
         self.pending_coins.append(arg)
-    
+
     def doPullCoin(self, arg):
         """
         Action method.
         """
         self.current_coin = self.pending_coins.pop(0)
-        
+
     def doCheckPendingCoins(self, arg):
         """
         Action method.
@@ -343,7 +345,7 @@ class AccountantNode(automat.Automat):
         Action method.
         """
         coins_db.insert(arg)
-        
+
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
@@ -355,8 +357,8 @@ class AccountantNode(automat.Automat):
         global _AccountantNode
         del _AccountantNode
         _AccountantNode = None
-    
-    #------------------------------------------------------------------------------ 
+
+    #------------------------------------------------------------------------------
 
     def _verify_coin(self, acoin):
         # TODO:
@@ -365,7 +367,7 @@ class AccountantNode(automat.Automat):
         d = Deferred()
         d.callback(acoin)
         return d
-    
+
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
             return False
@@ -391,7 +393,7 @@ class AccountantNode(automat.Automat):
                     p2p_service.SendFail(newpacket, 'coin verification failed')
                     return True
                 if coins_db.exist(acoin):
-                    self.automat('valid-coins-received', [acoin,])
+                    self.automat('valid-coins-received', [acoin, ])
                 else:
                     self.automat('new-coin-mined', acoin)
                 return True

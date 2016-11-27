@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#setup.py
+# setup.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,23 +14,25 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 from distutils.core import setup
-import py2exe, sys, os
+import py2exe
+import sys
+import os
 
 sys.argv.append('py2exe')
 
 setup(
-    options = { 'py2exe': { 'includes': ["pp.ppworker"] } },
-    console = ["sum_primes.py"],
-    data_files = [ ('',[r'C:\Python25\python.exe']) ],
+    options={'py2exe': {'includes': ["pp.ppworker"]}},
+    console=["sum_primes.py"],
+    data_files=[('', [r'C:\Python25\python.exe'])],
 )
 
 # We need to add the source code of the function into the library.zip modules
 from zipfile import ZipFile
-zip = ZipFile('dist/library.zip','a')
+zip = ZipFile('dist/library.zip', 'a')
 zip.write("primes.py")

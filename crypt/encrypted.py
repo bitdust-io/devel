@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#encrypted.py
+# encrypted.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -55,12 +55,12 @@ RAIDREAD:
     generate the read requests to get fetch the packets.
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 12
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -71,7 +71,8 @@ from userid import my_id
 
 import key
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class Block:
     """
@@ -93,23 +94,23 @@ class Block:
     Signature              digital signature by Creator - verifiable by public key in creator identity
     """
 
-    def __init__ (self, 
-                  CreatorID,
-                  BackupID, 
-                  BlockNumber, 
-                  SessionKey, 
-                  SessionKeyType, 
-                  LastBlock, 
-                  Data, 
-                  EncryptFunc=key.EncryptLocalPK):
+    def __init__(self,
+                 CreatorID,
+                 BackupID,
+                 BlockNumber,
+                 SessionKey,
+                 SessionKeyType,
+                 LastBlock,
+                 Data,
+                 EncryptFunc=key.EncryptLocalPK):
         self.CreatorID = CreatorID
         self.BackupID = BackupID
         self.BlockNumber = BlockNumber
         self.EncryptedSessionKey = EncryptFunc(SessionKey)
         self.SessionKeyType = SessionKeyType
         self.Length = len(Data)
-        self.LastBlock = bool(LastBlock)               
-        self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data) # DataLonger
+        self.LastBlock = bool(LastBlock)
+        self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data)  # DataLonger
         self.Signature = None
         self.Sign()
         if _Debug:
@@ -195,7 +196,8 @@ class Block:
         e = misc.ObjectToString(self)
         return e
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def Unserialize(data):
     """
@@ -203,8 +205,3 @@ def Unserialize(data):
     """
     newobject = misc.StringToObject(data)
     return newobject
-
-
-
-
-

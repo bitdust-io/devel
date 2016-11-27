@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#accountants_finder.py
+# accountants_finder.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -40,12 +40,12 @@ EVENTS:
     * :red:`users-not-found`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -60,11 +60,12 @@ from userid import my_id
 
 from transport import callback
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _AccountantsFinder = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -72,15 +73,16 @@ def A(event=None, arg=None):
     """
     global _AccountantsFinder
     if event is None and arg is None:
-        return _AccountantsFinder 
+        return _AccountantsFinder
     if _AccountantsFinder is None:
         # set automat name and starting state here
         _AccountantsFinder = AccountantsFinder('accountants_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _AccountantsFinder.automat(event, arg)
     return _AccountantsFinder
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class AccountantsFinder(automat.Automat):
     """
@@ -89,8 +91,8 @@ class AccountantsFinder(automat.Automat):
 
     timers = {
         'timer-3sec': (3.0, ['ACK?']),
-        'timer-10sec': (10.0, ['ACK?','SERVICE?']),
-        }
+        'timer-10sec': (10.0, ['ACK?', 'SERVICE?']),
+    }
 
     def init(self):
         """
@@ -127,7 +129,7 @@ class AccountantsFinder(automat.Automat):
             elif event == 'found-one-user':
                 self.state = 'ACK?'
                 self.doRememberUser(arg)
-                self.Attempts+=1
+                self.Attempts += 1
                 self.doSendMyIdentity(arg)
             elif event == 'users-not-found':
                 self.state = 'READY'
@@ -139,7 +141,7 @@ class AccountantsFinder(automat.Automat):
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
                 self.doSendRequestService(arg)
-            elif event == 'timer-10sec' and self.Attempts<5:
+            elif event == 'timer-10sec' and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
                 self.doLookupRandomUser(arg)
             elif event == 'timer-3sec':
@@ -151,17 +153,17 @@ class AccountantsFinder(automat.Automat):
             elif event == 'service-accepted':
                 self.state = 'READY'
                 self.doNotifyLookupSuccess(arg)
-            elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'service-denied' ):
+            elif self.Attempts == 5 and (event == 'timer-10sec' or event == 'service-denied'):
                 self.state = 'READY'
                 self.doNotifyLookupFailed(arg)
-            elif ( event == 'timer-10sec' or event == 'service-denied' ) and self.Attempts<5:
+            elif (event == 'timer-10sec' or event == 'service-denied') and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
                 self.doLookupRandomUser(arg)
         elif self.state == 'READY':
             if event == 'start':
                 self.state = 'RANDOM_USER'
                 self.doSetNotifyCallback(arg)
-                self.Attempts=0
+                self.Attempts = 0
                 self.doLookupRandomUser(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
@@ -209,7 +211,7 @@ class AccountantsFinder(automat.Automat):
         service_info = 'service_accountant ' + self.request_service_params
         out_packet = p2p_service.SendRequestService(
             self.target_idurl, service_info, callbacks={
-                commands.Ack():  self._node_acked,
+                commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
             }
         )
@@ -245,13 +247,13 @@ class AccountantsFinder(automat.Automat):
         del _AccountantsFinder
         _AccountantsFinder = None
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         if  newpacket.Command == commands.Ack() and \
-            newpacket.OwnerID == self.target_idurl and \
-            newpacket.PacketID == 'identity' and \
-            self.state == 'ACK?':
+                newpacket.OwnerID == self.target_idurl and \
+                newpacket.PacketID == 'identity' and \
+                self.state == 'ACK?':
             self.automat('ack-received', self.target_idurl)
             return True
         return False
@@ -275,7 +277,7 @@ class AccountantsFinder(automat.Automat):
 
     def _nodes_lookup_finished(self, idurls):
         # TODO: this is still under construction - so I am using this node for tests
-        idurls = ['http://veselin-p2p.ru/bitdust_vps1000_k.xml',]
+        idurls = ['http://veselin-p2p.ru/bitdust_vps1000_k.xml', ]
         if _Debug:
             lg.out(_DebugLevel, 'accountants_finder._nodes_lookup_finished : %r' % idurls)
         for idurl in idurls:

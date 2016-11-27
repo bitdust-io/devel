@@ -13,7 +13,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -26,12 +26,12 @@
 .. module:: commands
 
 This module describes all commands in the BitDust p2p communication protocol.
-The command is stored as a string in the packet.Command field. 
+The command is stored as a string in the packet.Command field.
 If all commands are repeatable, then sequence numbers are not so critical,
 though we would want date so time for replay trouble was limited.
 If backups are write, read, delete (and never write again), then replay
 is not an issue here and we use PacketID that identifies data.
-So we want things like "replace supplier Vincecate"  not "replace supplier 5" 
+So we want things like "replace supplier Vincecate"  not "replace supplier 5"
 where seeing command an extra time would not hurt.
 
 These are the valid values for the command field of a packet:
@@ -43,11 +43,12 @@ These are the valid values for the command field of a packet:
     - Coin/Ack                  (for contracts publishing/management)
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-P2PCommandAcks={}
+P2PCommandAcks = {}
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init():
     """
@@ -76,7 +77,8 @@ def init():
     P2PCommandAcks[Broadcast()] = None
     P2PCommandAcks[Relay()] = None
 
-def IsCommand(s):                 
+
+def IsCommand(s):
     """
     Check to see if ``s`` is a valid command.
     """
@@ -85,7 +87,8 @@ def IsCommand(s):
         init()
     return s in P2PCommandAcks
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def Data():
     """
@@ -93,21 +96,25 @@ def Data():
     """
     return "Data"
 
+
 def Ack():
     """
     Response packet for some request.
     """
     return "Ack"
 
+
 def RequestService():
     """
     """
     return "RequestService"
 
+
 def CancelService():
     """
     """
     return "CancelService"
+
 
 def Retrieve():
     """
@@ -116,12 +123,14 @@ def Retrieve():
     # TODO: rename to RetreiveData
     return "Retrieve"
 
+
 def Fail():
     """
-    Used to report an error in response, 
+    Used to report an error in response,
     for example when requested file is not found on remote machine.
     """
     return "Fail"
+
 
 def Relay():
     """
@@ -133,11 +142,13 @@ def Relay():
 # def Resend():
 #    return("Resend")
 
+
 def ListFiles():
     """
     Response from remote peer with a list of my files stored on his machine.
     """
     return "ListFiles"
+
 
 def Files():
     """
@@ -145,12 +156,14 @@ def Files():
     """
     return "Files"
 
+
 def ListContacts():
     """
-    Response with a list of my contacts, 
-    may be suppliers, customers or correspondents. 
+    Response with a list of my contacts,
+    may be suppliers, customers or correspondents.
     """
     return "ListContacts"
+
 
 def Contacts():
     """
@@ -158,24 +171,28 @@ def Contacts():
     """
     return "Contacts"
 
+
 def NearnessCheck():
     """
     Used to detect how far is peers
-    """ 
+    """
     return "NearnessCheck"
+
 
 def Nearness():
     """
     Used to detect how far is peers
-    """ 
+    """
     return "Nearness"
+
 
 def RequestIdentity():
     """
-    Not used right now, probably can be used to request 
+    Not used right now, probably can be used to request
     latest version of peer's identity.
     """
     return "RequestIdentity"
+
 
 def Identity():
     """
@@ -183,11 +200,13 @@ def Identity():
     """
     return "Identity"
 
+
 def DeleteFile():
     """
     Request to delete a single file or list of my files from remote machine.
     """
     return "DeleteFile"
+
 
 def DeleteBackup():
     """
@@ -195,23 +214,27 @@ def DeleteBackup():
     """
     return "DeleteBackup"
 
+
 def Transfer():
     """
     Transfer funds to remote peer.
     """
     return "Transfer"
 
+
 def Receipt():
     """
-    Some billing report. 
+    Some billing report.
     """
     return "Receipt"
+
 
 def Message():
     """
     A message from one peer to another.
     """
     return "Message"
+
 
 def Correspondent():
     """
@@ -220,6 +243,7 @@ def Correspondent():
     """
     return "Correspondent"
 
+
 def Broadcast():
     """
     This message type is for delivering some piece of data to all peers in the network.
@@ -227,19 +251,22 @@ def Broadcast():
     """
     return "Broadcast"
 
+
 def Coin():
     """
     Every "contract" store a list of "coin" as a separate chain in global DB.
-    This is similar to well-known "blockchain" technology. 
-    """    
+    This is similar to well-known "blockchain" technology.
+    """
     return "Coin"
+
 
 def RetreiveCoin():
     """
     """
     return "RetreiveCoin"
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def Register():
     """
@@ -247,11 +274,13 @@ def Register():
     """
     return "Register"
 
+
 def RequestSuppliers():
     """
     Request a list of my suppliers.
     """
     return "RequestSuppliers"
+
 
 def Suppliers():
     """
@@ -259,11 +288,13 @@ def Suppliers():
     """
     return "Suppliers"
 
+
 def RequestCustomers():
     """
     Request a list of my customers.
     """
     return "RequestCustomers"
+
 
 def Settings():
     """
@@ -271,10 +302,9 @@ def Settings():
     """
     return 'Settings'
 
+
 def BandwidthReport():
     """
     Used to daily reports of users bandwidh stats.
     """
     return 'BandwidthReport'
-
-

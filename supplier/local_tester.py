@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#local_tester.py
+# local_tester.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -32,7 +32,7 @@ Checks that customer packets on the local disk still have good signatures.
 These packets could be outgoing, cached, incoming, or stored for remote customers.
 
 Idea is to detect bit-rot and then either if there is a problem we can do different
-things depending on what type it is.  
+things depending on what type it is.
 
 So far:
   1) If data we store for a remote customer:  ask for the packet again (he may call his scrubber)
@@ -65,7 +65,7 @@ from twisted.python.win32 import cmdLineQuote
 
 import subprocess
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 try:
     from logs import lg
@@ -93,7 +93,8 @@ _LoopValidate = None
 _LoopUpdateCustomers = None
 _LoopSpaceTime = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init():
     global _Loop
@@ -137,7 +138,8 @@ def shutdown():
         del _CurrentProcess
         _CurrentProcess = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def _pushTester(Tester):
     global _TesterQueue
@@ -155,6 +157,7 @@ def _popTester():
     return Tester
 
 #-------------------------------------------------------------------------------
+
 
 def run(Tester):
     global _CurrentProcess
@@ -178,20 +181,20 @@ def run(Tester):
             import win32process
             _CurrentProcess = nonblocking.Popen(
                 cmdargs,
-                shell = False,
-                stdin = subprocess.PIPE,
-                stdout = subprocess.PIPE,
-                stderr = subprocess.PIPE,
-                universal_newlines = False,
-                creationflags = win32process.CREATE_NO_WINDOW,)
+                shell=False,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=False,
+                creationflags=win32process.CREATE_NO_WINDOW,)
         else:
             _CurrentProcess = nonblocking.Popen(
                 cmdargs,
-                shell = False,
-                stdin = subprocess.PIPE,
-                stdout = subprocess.PIPE,
-                stderr = subprocess.PIPE,
-                universal_newlines = False,)
+                shell=False,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=False,)
     except:
         lg.out(1, 'localtester.run ERROR executing: %s' % str(cmdargs))
         lg.exc()
@@ -238,11 +241,14 @@ def loop_space_time():
 
 #-------------------------------------------------------------------------------
 
+
 def TestUpdateCustomers():
     _pushTester(TesterUpdateCustomers)
 
+
 def TestValid():
     _pushTester(TesterValidate)
+
 
 def TestSpaceTime():
     _pushTester(TesterSpaceTime)
@@ -255,4 +261,3 @@ if __name__ == "__main__":
     settings.init()
     init()
     reactor.run()
-

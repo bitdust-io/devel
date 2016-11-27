@@ -52,6 +52,7 @@ EVENTS:
     * :red:`inbox-data-packet`
     * :red:`init`
     * :red:`instant`
+    * :red:`no-requests`
     * :red:`rebuilding-finished`
     * :red:`requests-sent`
     * :red:`start`
@@ -139,6 +140,7 @@ class BackupRebuilder(automat.Automat):
         self.currentBackupID = None             # currently working on this backup
         # list of missing blocks we work on for current backup
         self.workingBlocksQueue = []
+        self.backupsWasRebuilt = []
         self.missingPackets = 0
         self.missingSuppliers = set()
 
@@ -148,7 +150,7 @@ class BackupRebuilder(automat.Automat):
         Need to notify backup_monitor() machine about my new state.
         """
         # global_state.set_global_state('REBUILD ' + newstate)
-        if newstate == 'NEXT_BACKUP':
+        if newstate in ['NEXT_BACKUP', 'REQUEST', 'REBUILDING', ]:
             self.automat('instant')
         elif newstate == 'DONE' or newstate == 'STOPPED':
             if driver.is_started('service_backups'):
@@ -158,15 +160,14 @@ class BackupRebuilder(automat.Automat):
     def A(self, event, arg):
         #---REQUEST---
         if self.state == 'REQUEST':
-            if (event == 'timer-1sec' or event == 'inbox-data-packet' or event ==
-                    'requests-sent') and self.isChanceToRebuild(arg):
+            if ( event == 'timer-1sec' or event == 'inbox-data-packet' or event == 'requests-sent' ) and self.isChanceToRebuild(arg) and not self.isStopped(arg):
                 self.state = 'REBUILDING'
                 self.doAttemptRebuild(arg)
-            elif (event == 'instant' or event == 'timer-1sec' or event == 'requests-sent') and self.isStopped(arg):
-                self.state = 'STOPPED'
-                self.doCloseThisBackup(arg)
-            elif (event == 'requests-sent' and not self.isAnyRequestsSent(arg)) or ((event == 'timer-1sec' or event == 'inbox-data-packet') and self.isRequestQueueEmpty(arg) and not self.isMissingPackets(arg)):
+            elif ( event == 'no-requests' or ( ( event == 'timer-1sec' or event == 'inbox-data-packet' ) and self.isRequestQueueEmpty(arg) and not self.isMissingPackets(arg) ) ) and not self.isStopped(arg):
                 self.state = 'DONE'
+                self.doCloseThisBackup(arg)
+            elif ( event == 'instant' or event == 'timer-1sec' or event == 'requests-sent' or event == 'no-requests' ) and self.isStopped(arg):
+                self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
         #---STOPPED---
         elif self.state == 'STOPPED':
@@ -177,73 +178,83 @@ class BackupRebuilder(automat.Automat):
                 self.doClearStoppedFlag(arg)
         #---NEXT_BACKUP---
         elif self.state == 'NEXT_BACKUP':
-            if event == 'instant' and not self.isStopped(
-                    arg) and self.isMoreBackups(arg):
-                self.state = 'PREPARE'
-                self.doOpenNextBackup(arg)
-                self.doScanBrokenBlocks(arg)
-            elif event == 'instant' and not self.isMoreBackups(arg) and not self.isStopped(arg):
+            if event == 'instant' and not self.isMoreBackups(arg) and not self.isStopped(arg):
                 self.state = 'DONE'
             elif event == 'instant' and self.isStopped(arg):
                 self.state = 'STOPPED'
+            elif event == 'instant' and not self.isStopped(arg) and self.isMoreBackups(arg):
+                self.state = 'PREPARE'
+                self.doOpenNextBackup(arg)
+                self.doScanBrokenBlocks(arg)
         #---DONE---
         elif self.state == 'DONE':
-            if event == 'start':
+            if event == 'start' or ( event == 'instant' and self.isSomeRebuilts(arg) ):
                 self.state = 'NEXT_BACKUP'
                 self.doClearStoppedFlag(arg)
         #---PREPARE---
         elif self.state == 'PREPARE':
-            if event == 'backup-ready' and not self.isStopped(
-                    arg) and not self.isMoreBlocks(arg) and self.isMoreBackups(arg):
-                self.state = 'NEXT_BACKUP'
-                self.doCloseThisBackup(arg)
-            elif event == 'backup-ready' and (not self.isMoreBackups(arg) and not self.isMoreBlocks(arg)):
+            if event == 'backup-ready' and ( not self.isMoreBackups(arg) and not self.isMoreBlocks(arg) ):
                 self.state = 'DONE'
                 self.doCloseThisBackup(arg)
-            elif (event == 'instant' or event == 'backup-ready') and self.isStopped(arg):
+            elif ( event == 'instant' or event == 'backup-ready' ) and self.isStopped(arg):
                 self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
-            elif (event == 'instant' or event == 'backup-ready') and not self.isStopped(arg) and self.isMoreBlocks(arg):
+            elif ( event == 'instant' or event == 'backup-ready' ) and not self.isStopped(arg) and self.isMoreBlocks(arg):
                 self.state = 'REQUEST'
                 self.doRequestAvailablePieces(arg)
+            elif event == 'backup-ready' and not self.isStopped(arg) and not self.isMoreBlocks(arg) and self.isMoreBackups(arg):
+                self.state = 'NEXT_BACKUP'
+                self.doCloseThisBackup(arg)
         #---REBUILDING---
         elif self.state == 'REBUILDING':
-            if event == 'rebuilding-finished' and not self.isStopped(
-                    arg) and self.isMoreBlocks(arg):
-                self.state = 'REQUEST'
-                self.doRequestAvailablePieces(arg)
-            elif (event == 'instant' or event == 'rebuilding-finished') and self.isStopped(arg):
+            if event == 'rebuilding-finished' and not self.isStopped(arg) and not self.isMoreBlocks(arg):
+                self.state = 'PREPARE'
+                self.doScanBrokenBlocks(arg)
+            elif ( event == 'instant' or event == 'rebuilding-finished' ) and self.isStopped(arg):
                 self.state = 'STOPPED'
                 self.doCloseThisBackup(arg)
                 self.doKillRebuilders(arg)
-            elif event == 'rebuilding-finished' and not self.isStopped(arg) and not self.isMoreBlocks(arg):
-                self.state = 'PREPARE'
-                self.doScanBrokenBlocks(arg)
+            elif event == 'rebuilding-finished' and not self.isStopped(arg) and self.isMoreBlocks(arg):
+                self.state = 'REQUEST'
+                self.doRequestAvailablePieces(arg)
         return None
 
-    def isMoreBackups(self, arg):
-        global _BackupIDsQueue
-        return len(_BackupIDsQueue) > 0
-
-    def isAnyRequestsSent(self, arg):
+    def isSomeRebuilts(self, arg):
         """
         Condition method.
         """
-        if arg and isinstance(arg, int):
-            return arg > 0
-        return False
+        return len(self.backupsWasRebuilt) > 0
+
+    def isMoreBackups(self, arg):
+        """
+        Condition method.
+        """
+        global _BackupIDsQueue
+        return len(_BackupIDsQueue) > 0
 
     def isMoreBlocks(self, arg):
+        """
+        Condition method.
+        """
         # because started from 0,  -1 means not found
         return len(self.workingBlocksQueue) > 0
 
     def isMissingPackets(self, arg):
+        """
+        Condition method.
+        """
         return self.missingPackets > 0
 
     def isStopped(self, arg):
+        """
+        Condition method.
+        """
         return ReadStoppedFlag()  # :-)
 
     def isChanceToRebuild(self, arg):
+        """
+        Condition method.
+        """
         from storage import backup_matrix
 #         return len(self.missingSuppliers) <= eccmap.Current().CorrectableErrors
         # supplierSet = backup_matrix.suppliers_set()
@@ -261,6 +272,9 @@ class BackupRebuilder(automat.Automat):
         return False
 
     def isRequestQueueEmpty(self, arg):
+        """
+        Condition method.
+        """
         from customer import io_throttle
         # supplierSet = backup_matrix.suppliers_set()
         for supplierNum in range(contactsdb.num_suppliers()):
@@ -286,6 +300,7 @@ class BackupRebuilder(automat.Automat):
 
     def doOpenNextBackup(self, arg):
         """
+        Action method.
         """
         global _BackupIDsQueue
         # check it, may be we already fixed all things
@@ -363,7 +378,7 @@ class BackupRebuilder(automat.Automat):
         """
         self.blocksSucceed = []
         if len(self.workingBlocksQueue) == 0:
-            self.automat('rebuilding-finished', False)
+            self.automat('rebuilding-finished')
             return
         # let's rebuild the backup blocks in reverse order, take last blocks first ...
         # in such way we can propagate how big is the whole backup as soon as possible!
@@ -380,6 +395,10 @@ class BackupRebuilder(automat.Automat):
         raid_worker.A('shutdown')
 
     def doClearStoppedFlag(self, arg):
+        """
+        Action method.
+        """
+        self.backupsWasRebuilt = []
         ClearStoppedFlag()
 
     #-------------------------------------------------------------------------
@@ -396,7 +415,7 @@ class BackupRebuilder(automat.Automat):
         # at the moment I do download everything I have available and needed
         if '' in contactsdb.suppliers():
             lg.out(8, 'backup_rebuilder._request_files SKIP - empty supplier')
-            self.automat('requests-sent', total_requests_count)
+            self.automat('no-requests')
             return
         for supplierNum in range(contactsdb.num_suppliers()):
             supplierID = contactsdb.supplier(supplierNum)
@@ -464,7 +483,10 @@ class BackupRebuilder(automat.Automat):
         lg.out(
             8, 'backup_rebuilder._request_files : %d chunks requested' %
             total_requests_count)
-        self.automat('requests-sent', total_requests_count)
+        if total_requests_count > 0:
+            self.automat('requests-sent', total_requests_count)
+        else:
+            self.automat('no-requests')
 
     def _file_received(self, newpacket, state):
         if state in ['in queue', 'shutdown', 'exist', 'failed']:
@@ -595,12 +617,13 @@ class BackupRebuilder(automat.Automat):
             (str(
                 self.blocksSucceed), str(
                 self.workingBlocksQueue)))
-        result = len(self.blocksSucceed) > 0
+        if len(self.blocksSucceed):
+            self.backupsWasRebuilt.append(self.currentBackupID)
         self.blocksSucceed = []
-        self.automat('rebuilding-finished', result)
+        self.automat('rebuilding-finished')
+
 
 #------------------------------------------------------------------------------
-
 
 def AddBackupsToWork(backupIDs):
     """

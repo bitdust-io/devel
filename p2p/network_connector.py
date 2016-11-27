@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#network_connector.py
+# network_connector.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,10 +34,10 @@
     <a href="http://bitdust.io/automats/network_connector/network_connector.png" target="_blank">
     <img src="http://bitdust.io/automats/network_connector/network_connector.png" style="max-width:100%;">
     </a>
-    
+
 The ``network_connector()`` machine is needed to monitor status of the Internet connection.
 
-It will periodically check for incoming traffic and start STUN discovery procedure 
+It will periodically check for incoming traffic and start STUN discovery procedure
 to detect connection status and possible external IP changes.
 
 If BitDust get disconnected it will ping "http://google.com" to know what is going on.
@@ -61,15 +61,15 @@ EVENTS:
     * :red:`timer-1hour`
     * :red:`timer-5sec`
     * :red:`upnp-done`
-    
+
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import sys
 import time
@@ -81,7 +81,7 @@ except:
 
 from twisted.internet import threads
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -98,7 +98,7 @@ from services import driver
 from main import settings
 from main import shutdowner
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _NetworkConnector = None
 _CounterSuccessConnections = 0
@@ -106,6 +106,7 @@ _CounterFailedConnections = 0
 _LastSuccessConnectionTime = 0
 
 #------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -136,13 +137,13 @@ def Destroy():
 
 class NetworkConnector(automat.Automat):
     """
-    Class to monitor Internet connection and reconnect when needed.  
+    Class to monitor Internet connection and reconnect when needed.
     """
-    
+
     timers = {
         'timer-1hour': (3600, ['DISCONNECTED']),
-        'timer-5sec': (5.0, ['DISCONNECTED','CONNECTED']),
-        }
+        'timer-5sec': (5.0, ['DISCONNECTED', 'CONNECTED']),
+    }
 
     def init(self):
         self.last_upnp_time = 0
@@ -164,16 +165,16 @@ class NetworkConnector(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'START_UP'
-                self.Disconnects=0
-                self.Reset=False
-                self.ColdStart=True
+                self.Disconnects = 0
+                self.Reset = False
+                self.ColdStart = True
                 self.doCheckNetworkInterfaces(arg)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
-            if event == 'reconnect' or ( event == 'timer-5sec' and ( self.Reset or not self.isConnectionAlive(arg) ) ):
+            if event == 'reconnect' or (event == 'timer-5sec' and (self.Reset or not self.isConnectionAlive(arg))):
                 self.state = 'DOWN'
-                self.Disconnects=0
-                self.Reset=False
+                self.Disconnects = 0
+                self.Reset = False
                 self.doSetDown(arg)
             elif event == 'check-reconnect':
                 self.state = 'TRANSPORTS?'
@@ -197,11 +198,11 @@ class NetworkConnector(automat.Automat):
                 self.doSetUp(arg)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
-            if event == 'reconnect' or event == 'check-reconnect' or event == 'timer-1hour' or ( event == 'timer-5sec' and ( self.Disconnects < 3 or self.Reset ) ) or ( event == 'connection-done' and self.isTimePassed(arg) ):
+            if event == 'reconnect' or event == 'check-reconnect' or event == 'timer-1hour' or (event == 'timer-5sec' and (self.Disconnects < 3 or self.Reset)) or (event == 'connection-done' and self.isTimePassed(arg)):
                 self.state = 'DOWN'
                 self.doRememberTime(arg)
-                self.Disconnects+=1
-                self.Reset=False
+                self.Disconnects += 1
+                self.Reset = False
                 self.doSetDown(arg)
         #---UP---
         elif self.state == 'UP':
@@ -209,11 +210,11 @@ class NetworkConnector(automat.Automat):
                 self.state = 'TRANSPORTS?'
                 self.doStartNetworkTransports(arg)
             elif event == 'reconnect' or event == 'check-reconnect':
-                self.Reset=True
+                self.Reset = True
             elif self.ColdStart and event == 'network-up':
                 self.state = 'TRANSPORTS?'
                 self.doColdStartNetworkTransports(arg)
-                self.ColdStart=False
+                self.ColdStart = False
             elif not self.ColdStart and event == 'network-up' and self.isNeedUPNP(arg):
                 self.state = 'UPNP'
                 self.doUPNP(arg)
@@ -224,22 +225,22 @@ class NetworkConnector(automat.Automat):
                 self.doCheckNetworkInterfaces(arg)
         #---TRANSPORTS?---
         elif self.state == 'TRANSPORTS?':
-            if event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or ( event == 'network-transport-state-changed' and self.isAllTransportsFailed(arg) ):
+            if event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or (event == 'network-transport-state-changed' and self.isAllTransportsFailed(arg)):
                 self.state = 'DISCONNECTED'
             elif event == 'reconnect' or event == 'check-reconnect':
-                self.Reset=True
-            elif self.Reset and ( event == 'all-network-transports-ready' or event == 'network-transports-verified' or ( event == 'network-transport-state-changed' and self.isAllTransportsReady(arg) ) ):
+                self.Reset = True
+            elif self.Reset and (event == 'all-network-transports-ready' or event == 'network-transports-verified' or (event == 'network-transport-state-changed' and self.isAllTransportsReady(arg))):
                 self.state = 'DOWN'
-                self.Reset=False
-                self.Disconnects=0
+                self.Reset = False
+                self.Disconnects = 0
                 self.doSetDown(arg)
-            elif not self.Reset and ( event == 'all-network-transports-ready' or event == 'network-transports-verified' or ( event == 'network-transport-state-changed' and self.isAllTransportsReady(arg) ) ):
+            elif not self.Reset and (event == 'all-network-transports-ready' or event == 'network-transports-verified' or (event == 'network-transport-state-changed' and self.isAllTransportsReady(arg))):
                 self.state = 'CONNECTED'
         #---START_UP---
         elif self.state == 'START_UP':
             if event == 'got-network-info' and not self.isNetworkActive(arg):
                 self.state = 'DISCONNECTED'
-                self.Disconnects=3
+                self.Disconnects = 3
             elif event == 'reconnect' or event == 'check-reconnect':
                 self.state = 'UP'
                 self.doSetUp(arg)
@@ -249,7 +250,7 @@ class NetworkConnector(automat.Automat):
                 self.state = 'TRANSPORTS?'
                 self.doStartNetworkTransports(arg)
             elif event == 'reconnect' or event == 'check-reconnect':
-                self.Reset=True
+                self.Reset = True
         return None
 
     def isNeedUPNP(self, arg):
@@ -263,7 +264,7 @@ class NetworkConnector(automat.Automat):
             except:
                 lg.exc()
                 return False
-        return time.time() - self.last_upnp_time > 60*60
+        return time.time() - self.last_upnp_time > 60 * 60
 
     def isConnectionAlive(self, arg):
         # miss = 0
@@ -286,16 +287,16 @@ class NetworkConnector(automat.Automat):
         # else:
         #     miss += 1
         # if miss >= 2:
-        #     return True 
+        #     return True
         return False
 
     def isNetworkActive(self, arg):
         return len(arg) > 0
-    
+
     def isCurrentInterfaceActive(self, arg):
-        # I am not sure about external IP, 
+        # I am not sure about external IP,
         # because if you have a white IP it should be the same with your local IP
-        return ( misc.readLocalIP() in arg ) or ( misc.readExternalIP() in arg ) 
+        return (misc.readLocalIP() in arg) or (misc.readExternalIP() in arg)
 
     def isTimePassed(self, arg):
         return time.time() - self.last_reconnect_time < 15
@@ -340,10 +341,10 @@ class NetworkConnector(automat.Automat):
     def doSetUp(self, arg):
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doSetUp')
-        # if driver.is_started('service_identity_server'): 
-        #     if settings.enableIdServer():       
+        # if driver.is_started('service_identity_server'):
+        #     if settings.enableIdServer():
         #         from userid import id_server
-        #         id_server.A('start', (settings.getIdServerWebPort(), 
+        #         id_server.A('start', (settings.getIdServerWebPort(),
         #                               settings.getIdServerTCPPort()))
         if driver.is_started('service_service_entangled_dht'):
             from dht import dht_service
@@ -355,7 +356,7 @@ class NetworkConnector(automat.Automat):
         if driver.is_started('service_my_ip_port'):
             from stun import stun_client
             stun_client.A().dropMyExternalAddress()
-            stun_client.A('start')    
+            stun_client.A('start')
         if driver.is_started('service_private_messages'):
             from chat import nickname_holder
             nickname_holder.A('set', None)
@@ -375,7 +376,7 @@ class NetworkConnector(automat.Automat):
         if driver.is_started('service_ip_port_responder'):
             from stun import stun_server
             stun_server.A('stop')
-        # if driver.is_started('service_identity_server'): 
+        # if driver.is_started('service_identity_server'):
         #     if settings.enableIdServer():
         #         from userid import id_server
         #         id_server.A('stop')
@@ -398,9 +399,9 @@ class NetworkConnector(automat.Automat):
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doPingGoogleDotCom')
         net_misc.TestInternetConnection().addCallbacks(
-            lambda x: self.automat('internet-success', 'connected'), 
+            lambda x: self.automat('internet-success', 'connected'),
             lambda x: self.automat('internet-failed', 'disconnected'))
-            
+
     def doCheckNetworkInterfaces(self, arg):
         # lg.out(4, 'network_connector.doCheckNetworkInterfaces')
         # TODO
@@ -409,16 +410,17 @@ class NetworkConnector(automat.Automat):
         if bpio.Linux():
             def _call():
                 return net_misc.getNetworkInterfaces()
+
             def _done(result, start_time):
                 if _Debug:
-                    lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(result), time.time()-start_time))
+                    lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(result), time.time() - start_time))
                 self.automat('got-network-info', result)
             d = threads.deferToThread(_call)
             d.addBoth(_done, start_time)
         else:
             ips = net_misc.getNetworkInterfaces()
             if _Debug:
-                lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time()-start_time))
+                lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time() - start_time))
             self.automat('got-network-info', ips)
 
     def doRememberTime(self, arg):
@@ -456,6 +458,7 @@ class NetworkConnector(automat.Automat):
             self.automat('gateway-is-not-started')
             return
         from transport import gateway
+
         def _transports_verified(all_results):
             if _Debug:
                 lg.out(_DebugLevel, 'network_connector._transports_verified : %s' % str(all_results))
@@ -491,7 +494,7 @@ class NetworkConnector(automat.Automat):
                 return
         gateway.verify().addCallback(_transports_verified)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 
 def UpdateUPNP():
@@ -500,7 +503,7 @@ def UpdateUPNP():
     """
     if _Debug:
         lg.out(_DebugLevel, 'network_connector.UpdateUPNP ')
-    protos_need_upnp = set(['tcp',])
+    protos_need_upnp = set(['tcp', ])
     if not settings.enableTCP():
         # need to update only enabled protocols
         protos_need_upnp.discard('tcp')
@@ -547,20 +550,19 @@ def UpdateUPNP():
 
     _update_next_proto()
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def ConnectionDoneCallback(param, proto, info):
-    global _CounterSuccessConnections 
+    global _CounterSuccessConnections
     global _LastSuccessConnectionTime
     _CounterSuccessConnections += 1
     _LastSuccessConnectionTime = time.time()
     A('connection-done')
-    
-    
+
+
 def ConnectionFailedCallback(param, proto, info):
     global _CounterFailedConnections
     if proto is not 'udp' and proto is not 'proxy':
         _CounterFailedConnections += 1
     A('connection-failed')
-
-

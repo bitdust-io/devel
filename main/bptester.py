@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#bptester.py
+# bptester.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,7 +30,7 @@
 This is a BitDust child process, do monitoring of customer's files.
 
 In case some of customers do not play fair - need to stop this.:
-   
+
     * check if he use more space than we gave him, remove too old files
     * test/remove files after list of customers was changed
     * check all packets to be valid
@@ -40,31 +40,33 @@ import os
 import sys
 import time
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 AppData = ''
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def sharedPath(filename, subdir='logs'):
     global AppData
     if AppData == '':
-        curdir = os.getcwd() # os.path.dirname(os.path.abspath(sys.executable))
+        curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
         if os.path.isfile(os.path.join(curdir, 'appdata')):
             try:
-                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip()) 
+                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip())
             except:
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
             if not os.path.isdir(appdata):
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
-        else: 
+        else:
             appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
         AppData = appdata
     return os.path.join(AppData, subdir, filename)
 
+
 def logfilepath():
     """
-    A file path to the file where ``bptester`` will write logs. 
+    A file path to the file where ``bptester`` will write logs.
     Need to make sure the ``bptester`` log is in a directory the user has permissions for,
     Such as the customer data directory.  Possibly move to temp directory?
     """
@@ -72,17 +74,18 @@ def logfilepath():
 #    if not os.path.isdir(logspath):
 #        return 'tester.log'
 #    return os.path.join(logspath, 'tester.log')
-    return sharedPath('bptester.log') 
+    return sharedPath('bptester.log')
+
 
 def printlog(txt):
     """
     Write a line to the log file.
     """
     lf = open(logfilepath(), 'a')
-    lf.write(txt+'\n')
+    lf.write(txt + '\n')
     lf.close()
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
 
 # if __name__ == "__main__":
 #     dirpath = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -92,17 +95,18 @@ def printlog(txt):
 try:
     from logs import lg
     from system import bpio
-    from lib import nameurl 
+    from lib import nameurl
     from main import settings
     from contacts import contactsdb
     from p2p import commands
-    from crypt import signed  
+    from crypt import signed
 except:
     import traceback
     printlog(traceback.format_exc())
     sys.exit(2)
 
 #-------------------------------------------------------------------------------
+
 
 def SpaceTime():
     """
@@ -140,9 +144,10 @@ def SpaceTime():
             continue
         timedict = {}
         sizedict = {}
+
         def cb(path, subpath, name):
-#             if not os.access(path, os.R_OK | os.W_OK):
-#                 return False
+            #             if not os.access(path, os.R_OK | os.W_OK):
+            #                 return False
             if not os.path.isfile(path):
                 return True
 #             if name in [settings.BackupIndexFileName(),]:
@@ -152,14 +157,14 @@ def SpaceTime():
             sizedict[path] = stats.st_size
         bpio.traverse_dir_recursive(cb, onecustdir)
         currentV = 0
-        for path in sorted(timedict.keys(), key=lambda x:timedict[x], reverse=True):
+        for path in sorted(timedict.keys(), key=lambda x: timedict[x], reverse=True):
             filesize = sizedict.get(path, 0)
             currentV += filesize
             if currentV < maxspaceV:
                 continue
             try:
                 os.remove(path)
-                printlog('SpaceTime ' + path + ' file removed (cur:%s, max: %s)' % (str(currentV), str(maxspaceV)) )
+                printlog('SpaceTime ' + path + ' file removed (cur:%s, max: %s)' % (str(currentV), str(maxspaceV)))
             except:
                 printlog('SpaceTime ERROR removing ' + path)
             # time.sleep(0.01)
@@ -178,7 +183,7 @@ def SpaceTime():
             continue
         try:
             if not os.access(path, os.W_OK):
-                os.chmod(path, 0600)
+                os.chmod(path, 0o600)
         except:
             pass
         try:
@@ -191,13 +196,14 @@ def SpaceTime():
 
 #------------------------------------------------------------------------------
 
+
 def UpdateCustomers():
     """
     Test packets after list of customers was changed.
     """
     space = bpio._read_dict(settings.CustomersSpaceFile())
     if space is None:
-        printlog('UpdateCustomers ERROR space file can not be read' )
+        printlog('UpdateCustomers ERROR space file can not be read')
         return
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
@@ -229,7 +235,7 @@ def UpdateCustomers():
             continue
         try:
             if not os.access(path, os.W_OK):
-                os.chmod(path, 0600)
+                os.chmod(path, 0o600)
         except:
             pass
         try:
@@ -240,6 +246,7 @@ def UpdateCustomers():
     printlog('UpdateCustomers ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
 
 #------------------------------------------------------------------------------
+
 
 def Validate():
     """
@@ -255,9 +262,10 @@ def Validate():
         onecustdir = os.path.join(customers_dir, customer_filename)
         if not os.path.isdir(onecustdir):
             continue
+
         def cb(path, subpath, name):
-#             if not os.access(path, os.R_OK | os.W_OK):
-#                 return False
+            #             if not os.access(path, os.R_OK | os.W_OK):
+            #                 return False
             if not os.path.isfile(path):
                 return True
 #             if name in [settings.BackupIndexFileName(),]:
@@ -265,7 +273,7 @@ def Validate():
             packetsrc = bpio.ReadBinaryFile(path)
             if not packetsrc:
                 try:
-                    os.remove(path) # if is is no good it is of no use to anyone
+                    os.remove(path)  # if is is no good it is of no use to anyone
                     printlog('Validate ' + path + ' removed (empty file)')
                 except:
                     printlog('Validate ERROR removing ' + path)
@@ -273,7 +281,7 @@ def Validate():
             p = signed.Unserialize(packetsrc)
             if p is None:
                 try:
-                    os.remove(path) # if is is no good it is of no use to anyone
+                    os.remove(path)  # if is is no good it is of no use to anyone
                     printlog('Validate ' + path + ' removed (unserialize error)')
                 except:
                     printlog('Validate ERROR removing ' + path)
@@ -283,7 +291,7 @@ def Validate():
             del p
             if not result:
                 try:
-                    os.remove(path) # if is is no good it is of no use to anyone
+                    os.remove(path)  # if is is no good it is of no use to anyone
                     printlog('Validate ' + path + ' removed (invalid packet)')
                 except:
                     printlog('Validate ERROR removing ' + path)
@@ -293,6 +301,7 @@ def Validate():
         bpio.traverse_dir_recursive(cb, onecustdir)
 
 #------------------------------------------------------------------------------
+
 
 def main():
     """
@@ -306,9 +315,9 @@ def main():
     settings.init()
     lg.set_debug_level(0)
     commands = {
-        'update_customers' : UpdateCustomers,
-        'validate' : Validate,
-        'space_time' : SpaceTime,
+        'update_customers': UpdateCustomers,
+        'validate': Validate,
+        'space_time': SpaceTime,
     }
     cmd = commands.get(sys.argv[1], None)
     if not cmd:
@@ -318,13 +327,7 @@ def main():
 #    bpio.stdout_stop_redirecting()
 #    bpio.CloseLogFile()
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-

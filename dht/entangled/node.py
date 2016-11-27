@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#node.py
+# node.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -37,10 +37,11 @@ from kademlia.node import rpcmethod
 
 class EntangledNode(kademlia.node.Node):
     """ Entangled DHT node
-    
+
     This is basically a Kademlia node, but with a few more (non-standard, but
     useful) RPCs defined.
     """
+
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
         kademlia.node.Node.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
         self.invalidKeywords = []
@@ -48,11 +49,11 @@ class EntangledNode(kademlia.node.Node):
 
     def searchForKeywords(self, keywords):
         """ The Entangled search operation (keyword-based)
-        
+
         Call this to find keys in the DHT which contain the specified
         keyword(s).
         """
-        if type(keywords) == str:
+        if isinstance(keywords, str):
             for splitter in self.keywordSplitters:
                 keywords = keywords.replace(splitter, ' ')
             keywords = keywords.lower().split()
@@ -62,19 +63,19 @@ class EntangledNode(kademlia.node.Node):
             if testWord not in self.invalidKeywords:
                 keyword = testWord
                 break
-        if keyword == None:
+        if keyword is None:
             df = defer.Deferred()
             df.callback([])
             return df
-        
+
         keywords.remove(keyword)
 
         h = hashlib.sha1()
         h.update(keyword)
         key = h.digest()
-        
+
         def checkResult(result):
-            if type(result) == dict:
+            if isinstance(result, dict):
                 # Value was found; this should be list of "real names" (not keys, in this implementation)
                 index = result[key]
                 filteredResults = list(index)
@@ -88,19 +89,19 @@ class EntangledNode(kademlia.node.Node):
                 # Value wasn't found
                 index = []
             return index
- 
+
         df = self.iterativeFindValue(key)
         df.addCallback(checkResult)
         return df
 
     def publishData(self, name, data):
         """ The Entangled high-level data publishing operation
-        
+
         Call this to store data in the Entangled DHT.
-        
+
         @note: This will automatically create a hash of the specified C{name}
         parameter, and add the published data to the appropriate inverted
-        indexes, to enable keyword-based searching. If this behaviour is not 
+        indexes, to enable keyword-based searching. If this behaviour is not
         wanted/needed, rather call the Kademlia base node's
         C{iterativeStore()} method directly.
         """
@@ -110,7 +111,7 @@ class EntangledNode(kademlia.node.Node):
 
         outerDf = defer.Deferred()
 
-        def publishKeywords(deferredResult=None):        
+        def publishKeywords(deferredResult=None):
             # Create hashes for the keywords in the name
             keywordKeys = self._keywordHashesFromString(name)
             # Update the appropriate inverted indexes
@@ -119,24 +120,24 @@ class EntangledNode(kademlia.node.Node):
 
         # Store the main key, with its value...
         df = self.iterativeStore(mainKey, data)
-        
+
         df.addCallback(publishKeywords)
-        
+
         return outerDf
 
     def _addToInvertedIndexes(self, keywordKeys, indexLink):
         # Prepare a deferred result for this operation
         outerDf = defer.Deferred()
 
-        kwIndex = [-1] # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
+        kwIndex = [-1]  # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
 
         # ...and now update the inverted indexes (or add them, if they don't exist yet)
         def addToInvertedIndex(results):
             kwKey = keywordKeys[kwIndex[0]]
-            if type(results) == dict:
+            if isinstance(results, dict):
                 # An index already exists; add our value to it
                 index = results[kwKey]
-                #TODO: this might not actually be an index, but a value... do some name-mangling to avoid this
+                # TODO: this might not actually be an index, but a value... do some name-mangling to avoid this
                 index.append(indexLink)
             else:
                 # An index does not yet exist for this keyword; create one
@@ -169,9 +170,9 @@ class EntangledNode(kademlia.node.Node):
 
     def removeData(self, name):
         """ The Entangled high-level data removal (delete) operation
-        
+
         Call this to remove data from the Entangled DHT.
-        
+
         @note: This will automatically create a hash of the specified C{name}
         parameter. It will also remove the published data from the appropriate
         inverted indexes, so as to maintain reliability of keyword-based
@@ -181,13 +182,13 @@ class EntangledNode(kademlia.node.Node):
         h = hashlib.sha1()
         h.update(name)
         mainKey = h.digest()
-        
+
         # Remove the main key
         self.iterativeDelete(mainKey)
 
         # Create hashes for the keywords in the name
         keywordKeys = self._keywordHashesFromString(name)
-        
+
         # Update the appropriate inverted indexes
         df = self._removeFromInvertedIndexes(keywordKeys, name)
         return df
@@ -195,17 +196,17 @@ class EntangledNode(kademlia.node.Node):
     def _removeFromInvertedIndexes(self, keywordKeys, indexLink):
         # Prepare a deferred result for this operation
         outerDf = defer.Deferred()
-    
-        kwIndex = [-1] # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
+
+        kwIndex = [-1]  # using a list for this counter because Python doesn't allow binding a new value to a name in an enclosing (non-global) scope
 
         # ...and now update the inverted indexes (or ignore them, if they don't exist yet)
         def removeFromInvertedIndex(results):
             kwKey = keywordKeys[kwIndex[0]]
-            if type(results) == dict:
+            if isinstance(results, dict):
                 # An index for this keyword exists; remove our value from it
                 index = results[kwKey]
-                #TODO: this might not actually be an index, but a value... do some name-mangling to avoid this
-                #TODO: this might throw a ValueError; handle it
+                # TODO: this might not actually be an index, but a value... do some name-mangling to avoid this
+                # TODO: this might throw a ValueError; handle it
                 index.remove(indexLink)
                 # Remove the index completely if it is empty, otherwise put it back
                 if len(index) > 0:
@@ -231,7 +232,7 @@ class EntangledNode(kademlia.node.Node):
             else:
                 # We're done. Let the caller of the parent method know
                 outerDf.callback(None)
-             
+
         if len(keywordKeys) > 0:
             # Start the "keyword store"-cycle
             findNextKeyword()
@@ -240,15 +241,15 @@ class EntangledNode(kademlia.node.Node):
 
     def iterativeDelete(self, key):
         """ The Entangled delete operation
-        
+
         Call this to remove data from the DHT.
-        
+
         The Entangled delete operation uses the basic Kademlia node lookup
         algorithm (same as Kademlia's search/retrieve). The algorithm behaves
         the same as when issueing the FIND_NODE RPC - the only difference is
         that the DELETE RPC (defined in C{delete()}) is used instead of
         FIND_NODE.
-        
+
         @param key: The hashtable key of the data
         @type key: str
         """
@@ -262,11 +263,11 @@ class EntangledNode(kademlia.node.Node):
     def delete(self, key, **kwargs):
         """ Deletes the the specified key (and it's value) if present in
         this node's data, and executes FIND_NODE for the key
-        
+
         @param key: The hashtable key of the data to delete
         @type key: str
-        
-        @return: A list of contact triples closest to the specified key. 
+
+        @return: A list of contact triples closest to the specified key.
                  This method will return C{k} (or C{count}, if specified)
                  contacts if at all possible; it will only return fewer if the
                  node is returning all of the contacts that it knows of.
@@ -297,7 +298,8 @@ class EntangledNode(kademlia.node.Node):
 if __name__ == '__main__':
     import twisted.internet.reactor
     from kademlia.datastore import SQLiteDataStore
-    import sys, os
+    import sys
+    import os
     if len(sys.argv) < 2:
         print 'Usage:\n%s UDP_PORT  [KNOWN_NODE_IP  KNOWN_NODE_PORT]' % sys.argv[0]
         print 'or:\n%s UDP_PORT  [FILE_WITH_KNOWN_NODES]' % sys.argv[0]
@@ -327,8 +329,8 @@ if __name__ == '__main__':
 
     # if os.path.isfile('/tmp/dbFile%s.db' % sys.argv[1]):
     #     os.remove('/tmp/dbFile%s.db' % sys.argv[1])
-    dataStore = SQLiteDataStore(dbFile = '/tmp/dbFile%s.db' % sys.argv[1])
-    node = EntangledNode( udpPort=int(sys.argv[1]), dataStore=dataStore )
+    dataStore = SQLiteDataStore(dbFile='/tmp/dbFile%s.db' % sys.argv[1])
+    node = EntangledNode(udpPort=int(sys.argv[1]), dataStore=dataStore)
     #node = EntangledNode( udpPort=int(sys.argv[1]) )
     node.joinNetwork(knownNodes)
     twisted.internet.reactor.run()

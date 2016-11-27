@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#coins_db.py
+# coins_db.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,11 +29,11 @@
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import json
@@ -44,13 +44,14 @@ from CodernityDB.hash_index import HashIndex
 from CodernityDB.tree_index import TreeBasedIndex
 from CodernityDB.index import IndexNotFoundException
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    import sys, os.path as _p
+    import sys
+    import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -58,11 +59,12 @@ from main import settings
 
 from crypt import key
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _LocalStorage = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def indexes():
     return {
@@ -73,6 +75,7 @@ def indexes():
         'miner': IndexByMinerIDURL,
     }
 
+
 def refresh_indexes():
     for ind, ind_class in indexes().items():
         ind_obj = ind_class(db().path, ind)
@@ -81,7 +84,8 @@ def refresh_indexes():
         else:
             db().edit_index(ind_obj, reindex=True)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init():
     global _LocalStorage
@@ -104,11 +108,13 @@ def shutdown():
     _LocalStorage.close()
     _LocalStorage = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def db():
     global _LocalStorage
     return _LocalStorage
+
 
 def get(index_name, key, with_doc=True, with_storage=True):
     try:
@@ -117,28 +123,32 @@ def get(index_name, key, with_doc=True, with_storage=True):
         return iter(())
     except (IndexNotFoundException, DatabaseIsNotOpened, ):
         return iter(())
-    return (r for r in [res,])
-        
+    return (r for r in [res, ])
+
+
 def get_many(index_name, key=None, limit=-1, offset=0,
              start=None, end=None,
              with_doc=True, with_storage=True, **kwargs):
     try:
         for r in db().get_many(index_name, key, limit, offset,
-                              with_doc, with_storage,
-                              start, end, **kwargs):
+                               with_doc, with_storage,
+                               start, end, **kwargs):
             yield r
     except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened, ):
         pass
+
 
 def get_all(index_name, limit=-1, offset=0, with_doc=True, with_storage=True):
     try:
         for r in db().all(index_name, limit, offset, with_doc, with_storage):
             yield r
     except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened):
-        pass        
+        pass
+
 
 def insert(acoin):
     return db().insert(acoin)
+
 
 def exist(acoin):
     if 'tm' in acoin:
@@ -152,12 +162,14 @@ def exist(acoin):
             return False
     return True
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def _clean_doc(doc):
     doc.pop('_id')
     doc.pop('_rev')
     return doc
+
 
 def query_json(jdata):
     """
@@ -173,7 +185,7 @@ def query_json(jdata):
     if not db().opened:
         return None, 'database is closed'
     method = jdata.pop('method', None)
-    if method not in ['get', 'get_many', 'get_all',]:
+    if method not in ['get', 'get_many', 'get_all', ]:
         return None, 'unknown method'
     callmethod = globals().get(method)
     if not callmethod:
@@ -193,7 +205,8 @@ def query_json(jdata):
         return (_clean_doc(r['doc']) for r in result), ''
     return result, ''
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class IndexByTime(TreeBasedIndex):
 
@@ -210,7 +223,7 @@ class IndexByTime(TreeBasedIndex):
         if tm:
             return tm, None
         return None
-    
+
 
 class IndexByOwnerIDURL(HashIndex):
 
@@ -242,7 +255,7 @@ class IndexByMinerIDURL(HashIndex):
         if miner_idurl:
             return md5(miner_idurl).digest(), None
         return None
-    
+
 
 class IndexByHash(HashIndex):
 
@@ -275,7 +288,8 @@ class IndexByPrevHash(HashIndex):
             return hashval
         return None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def _test():
     from lib import utime
@@ -284,33 +298,33 @@ def _test():
 
     def _p(ret):
         if ret and ret[0]:
-            print '\n'.join(map(str,list(ret[0])))
+            print '\n'.join(map(str, list(ret[0])))
         else:
             print ret[1]
 
 #     print insert({'idurl': 'http://idurl1234', 'time': '12345678'})
 #     print insert({'hash': '1234567812345678' + random.choice(['a,b,c']), 'data': {'a':'b', 'c': 'd', 'time': 123456,}})
-    
+
 #     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn.xml',
 #                   'hash': 'abcdef',
 #                   'tm': utime.since1970(datetime.datetime.utcnow())})
-#       
+#
 #     time.sleep(3)
-#       
+#
 #     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml',
 #                   'hash': 'abcdef123',
 #                   'tm': utime.since1970(datetime.datetime.utcnow())})
-#   
+#
 #     time.sleep(4)
-#   
+#
 #     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn567.xml',
 #                   'hash': 'abcdef567',
 #                   'tm': utime.since1970(datetime.datetime.utcnow())})
-    
+
 #     print 'query all from "id"'
 #     for x in query_from_json({'method': 'get_all', 'index': 'id'})[0]:
 #         print x
-#    
+#
 #     print 'query all from "idurl"'
 #     for x in query_from_json({'method': 'get_all', 'index': 'idurl'})[0]:
 #         print x
@@ -323,7 +337,7 @@ def _test():
 
     print 'query one from "time"'
     _p(query_json({'method': 'get', 'index': 'time', 'key': 1474380456, }))
-    
+
     print 'query one from "idurl"'
     _p(query_json({'method': 'get', 'index': 'idurl', 'key': 'http://veselin-p2p.ru/veselin_kpn123.xml'}))
 
@@ -341,7 +355,7 @@ def _test():
 
     print 'query all from "id"'
     _p(query_json({'method': 'get_all', 'index': 'id'}))
-    
+
     print 'test item exists:', exist({'tm': 1474380456,
                                       'hash': 'abcdef123',
                                       'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml'})
@@ -352,4 +366,3 @@ if __name__ == "__main__":
     init()
     _test()
     shutdown()
-    

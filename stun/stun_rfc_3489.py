@@ -13,14 +13,14 @@ This is a code to run STUN client to detect external IP of that machine.
 It uses UDP protocol to communicate with public STUN servers.
 
 After all process of "stunning" IP address is finished you can leave the opened UDP port opened.
-This way external UDP port is not changed and 
+This way external UDP port is not changed and
 so other users can send us packets to <external IP>:<external PORT>.
 
 TODO:
 All this stuff must be simplified.
 We really do not need to use a real STUN servers.
 No need to detect a network metric or other info, just detect our external IP:PORT.
-BitDust already have some sort of own stun server, need to use that stuff instead of shtoom code.   
+BitDust already have some sort of own stun server, need to use that stuff instead of shtoom code.
 """
 
 import sys
@@ -42,7 +42,7 @@ from system import bpio
 import shtoom.stun
 import shtoom.nat
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _WorkingDefers = []
 _IsWorking = False
@@ -52,7 +52,8 @@ _LastStunTime = 0
 _LastStunResult = None
 _TimeoutTask = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
     """
@@ -81,11 +82,11 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
                 ip = str(self.externalAddress[0])
                 port = str(self.externalAddress[1])
                 typ = str(self.natType.name)
-                alt = str(self._altStunAddress) 
+                alt = str(self._altStunAddress)
         except:
             lg.exc()
         lg.out(2, 'stun.IPStunProtocol.finishedStun local=%s external=%s altStun=%s NAT_type=%s' % (
-            local, ip+':'+port, alt, typ))
+            local, ip + ':' + port, alt, typ))
         if self.result is not None:
             if not self.result.called:
                 if ip == '0.0.0.0':
@@ -93,7 +94,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
                 else:
                     self.result.callback(ip)
             self.result = None
-    
+
     def datagramReceived(self, dgram, address):
         """
         Called when UDP datagram is received.
@@ -116,7 +117,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
                         return
                     return self.datagram_received_callback(dgram, address)
         return shtoom.stun.StunDiscoveryProtocol.datagramReceived(self, dgram, address)
-    
+
     def refresh(self):
         """
         Clear fields to be able to restart the process.
@@ -133,7 +134,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
         self.result = Deferred()
         self.count = 0
         self.servers = [(host, port) for host, port in shtoom.stun.DefaultServers]
-        
+
     def setCallback(self, cb, arg=None):
         """
         Set a callback to get the stun results.
@@ -148,7 +149,7 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
         :param verbose: set to True to print more log messages
         :param close_listener: if True the listener will be closed after STUN is finished
         :param internal_port: a port number to listen, the external port will be different
-        :param block_marker: you can provide a function if you need to block some other code while STUN is working  
+        :param block_marker: you can provide a function if you need to block some other code while STUN is working
     """
     global _WorkingDefers
     global _IsWorking
@@ -156,18 +157,18 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
     global _StunClient
     global _LastStunTime
     global _TimeoutTask
-    
+
     # d = Deferred()
     # ip = bpio.ReadTextFile(settings.ExternalIPFilename())
     # d.callback(ip or '0.0.0.0')
-    # return d 
-    
+    # return d
+
     if _IsWorking:
         res = Deferred()
         _WorkingDefers.append(res)
         lg.out(4, 'stun.stunExternalIP SKIP, already called')
         return res
-    
+
     res = Deferred()
     _WorkingDefers.append(res)
     _IsWorking = True
@@ -178,14 +179,14 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
     shtoom.nat._Debug = verbose
     shtoom.nat._cachedLocalIP = None
     shtoom.nat.getLocalIPAddress.clearCache()
-    
+
     if _UDPListener is None:
         lg.out(4, 'stun.stunExternalIP prepare listener')
         if _StunClient is None:
             _StunClient = IPStunProtocol()
         else:
             _StunClient.refresh()
-    
+
         try:
             UDP_port = int(internal_port)
             _UDPListener = reactor.listenUDP(UDP_port, _StunClient)
@@ -212,8 +213,8 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
         global _WorkingDefers
         global _IsWorking
         global _LastStunResult
-        global _TimeoutTask 
-        
+        global _TimeoutTask
+
         if block_marker:
             block_marker('unblock')
         lg.out(6, 'stun.stunExternalIP.stun_finished: ' + str(x).replace('\n', ''))
@@ -236,7 +237,7 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
                 _StunClient = None
         except:
             lg.exc()
-    
+
     _StunClient.setCallback(stun_finished, block_marker)
 
     lg.out(6, 'stun.stunExternalIP starting discovery')
@@ -244,7 +245,7 @@ def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port
         block_marker('block')
     reactor.callLater(0, _StunClient.startDiscovery)
 
-    _LastStunTime = time.time() 
+    _LastStunTime = time.time()
     return res
 
 
@@ -277,17 +278,19 @@ def stopUDPListener():
         _UDPListener = None
     if _StunClient is not None:
         del _StunClient
-        _StunClient = None   
+        _StunClient = None
     if result is None:
         result = succeed(1)
-    return result     
+    return result
+
 
 def last_stun_time():
     """
-    Return a last moment when STUN process was started. 
+    Return a last moment when STUN process was started.
     """
-    global _LastStunTime 
-    return _LastStunTime 
+    global _LastStunTime
+    return _LastStunTime
+
 
 def last_stun_result():
     """
@@ -296,7 +299,8 @@ def last_stun_result():
     global _LastStunResult
     return _LastStunResult
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def success(x):
     """
@@ -308,6 +312,7 @@ def success(x):
     else:
         reactor.stop()
 
+
 def fail(x):
     """
     For tests.
@@ -318,18 +323,19 @@ def fail(x):
     else:
         reactor.stop()
 
+
 def main(verbose=False):
     """
     For tests.
     """
     if sys.argv.count('port'):
-        d = stunExternalIP(verbose=verbose, close_listener=False, internal_port=int(sys.argv[sys.argv.index('port')+1]))
+        d = stunExternalIP(verbose=verbose, close_listener=False, internal_port=int(sys.argv[sys.argv.index('port') + 1]))
     else:
         d = stunExternalIP(verbose=verbose, close_listener=False,)
     d.addCallback(success)
     d.addErrback(fail)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     bpio.init()
@@ -341,9 +347,3 @@ if __name__ == "__main__":
         lg.set_debug_level(20)
         main(True)
     reactor.run()
-
-
-
-
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_ip_port_responder.py
+# service_ip_port_responder.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,32 +31,30 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return IPPortResponderService()
-    
+
+
 class IPPortResponderService(LocalService):
-    
+
     service_name = 'service_ip_port_responder'
     config_path = 'services/ip-port-responder/enabled'
-    
+
     def dependent_on(self):
         return ['service_udp_datagrams',
                 'service_entangled_dht',
                 ]
-    
+
     def start(self):
         from stun import stun_server
         from main import settings
         udp_port = int(settings.getUDPPort())
-        stun_server.A('start', udp_port) 
+        stun_server.A('start', udp_port)
         return True
-    
+
     def stop(self):
         from stun import stun_server
         stun_server.A('stop')
         stun_server.Destroy()
         return True
-    
-    
-
-    

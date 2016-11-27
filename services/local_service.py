@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#local_service.py
+# local_service.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -48,16 +48,16 @@ EVENTS:
     * :red:`stop`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from twisted.internet.defer import Deferred
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -70,13 +70,14 @@ from driver import on_service_callback
 from driver import RequireSubclass
 from driver import ServiceAlreadyExist
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class LocalService(automat.Automat):
     """
     This class implements all the functionality of the ``local_service()`` state machine.
     """
-    
+
     service_name = ''
     config_path = ''
 
@@ -88,21 +89,21 @@ class LocalService(automat.Automat):
         self.result_deferred = None
         automat.Automat.__init__(self, self.service_name, 'OFF', 12)
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
     def dependent_on(self):
         return []
-    
+
     def installed(self):
         return True
-    
+
     def enabled(self):
         from main import config
         return config.conf().getBool(self.config_path)
 
     def start(self):
         raise RequireSubclass()
-    
+
     def stop(self):
         raise RequireSubclass()
 
@@ -112,7 +113,7 @@ class LocalService(automat.Automat):
     def cancel(self, request, info):
         raise RequireSubclass()
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -130,108 +131,108 @@ class LocalService(automat.Automat):
     def A(self, event, arg):
         #---ON---
         if self.state == 'ON':
-            if event == 'shutdown' :
+            if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doStopService(arg)
                 self.doDestroyMe(arg)
-            elif event == 'stop' :
+            elif event == 'stop':
                 self.state = 'INFLUENCE'
                 self.doSetCallback(arg)
                 self.doStopDependentServices(arg)
         #---OFF---
         elif self.state == 'OFF':
-            if event == 'stop' :
+            if event == 'stop':
                 self.doSetCallback(arg)
                 self.doNotifyStopped(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'start' :
+            elif event == 'start':
                 self.state = 'STARTING'
-                self.NeedStart=False
-                self.NeedStop=False
+                self.NeedStart = False
+                self.NeedStop = False
                 self.doSetCallback(arg)
                 self.doStartService(arg)
         #---NOT_INSTALLED---
         elif self.state == 'NOT_INSTALLED':
-            if event == 'stop' :
+            if event == 'stop':
                 self.doSetCallback(arg)
                 self.doNotifyNotInstalled(arg)
-            elif event == 'start' :
+            elif event == 'start':
                 self.state = 'STARTING'
                 self.doSetCallback(arg)
                 self.doStartService(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
         #---INFLUENCE---
         elif self.state == 'INFLUENCE':
-            if event == 'start' :
+            if event == 'start':
                 self.doSetCallback(arg)
-                self.NeedStart=True
-            elif event == 'stop' :
+                self.NeedStart = True
+            elif event == 'stop':
                 self.doSetCallback(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doStopService(arg)
                 self.doDestroyMe(arg)
-            elif event == 'depend-service-stopped' and self.isAllDependsStopped(arg) and self.NeedStart :
+            elif event == 'depend-service-stopped' and self.isAllDependsStopped(arg) and self.NeedStart:
                 self.state = 'STARTING'
-                self.NeedStart=False
+                self.NeedStart = False
                 self.doStopService(arg)
                 self.doNotifyStopped(arg)
                 self.doStartService(arg)
-            elif event == 'depend-service-stopped' and self.isAllDependsStopped(arg) and not self.NeedStart :
+            elif event == 'depend-service-stopped' and self.isAllDependsStopped(arg) and not self.NeedStart:
                 self.state = 'STOPPING'
                 self.doStopService(arg)
         #---STARTING---
         elif self.state == 'STARTING':
-            if event == 'stop' :
+            if event == 'stop':
                 self.doSetCallback(arg)
-                self.NeedStop=True
-            elif event == 'start' :
+                self.NeedStop = True
+            elif event == 'start':
                 self.doSetCallback(arg)
-            elif event == 'service-started' and self.NeedStop :
+            elif event == 'service-started' and self.NeedStop:
                 self.state = 'INFLUENCE'
-                self.NeedStop=False
+                self.NeedStop = False
                 self.doStopDependentServices(arg)
-            elif event == 'service-failed' :
+            elif event == 'service-failed':
                 self.state = 'OFF'
                 self.doNotifyFailed(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doStopService(arg)
                 self.doDestroyMe(arg)
-            elif event == 'service-not-installed' :
+            elif event == 'service-not-installed':
                 self.state = 'NOT_INSTALLED'
                 self.doNotifyNotInstalled(arg)
-            elif event == 'service-depend-off' :
+            elif event == 'service-depend-off':
                 self.state = 'DEPENDS_OFF'
                 self.doNotifyDependsOff(arg)
-            elif event == 'service-started' and not self.NeedStop :
+            elif event == 'service-started' and not self.NeedStop:
                 self.state = 'ON'
                 self.doNotifyStarted(arg)
         #---DEPENDS_OFF---
         elif self.state == 'DEPENDS_OFF':
-            if event == 'stop' :
+            if event == 'stop':
                 self.doSetCallback(arg)
                 self.doNotifyDependsOff(arg)
-            elif event == 'start' :
+            elif event == 'start':
                 self.state = 'STARTING'
                 self.doSetCallback(arg)
                 self.doStartService(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
         #---STOPPING---
         elif self.state == 'STOPPING':
-            if event == 'start' :
+            if event == 'start':
                 self.doSetCallback(arg)
-                self.NeedStart=True
-            elif event == 'service-stopped' :
+                self.NeedStart = True
+            elif event == 'service-stopped':
                 self.state = 'OFF'
                 self.doNotifyStopped(arg)
-            elif event == 'shutdown' :
+            elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
         #---CLOSED---
@@ -246,8 +247,8 @@ class LocalService(automat.Automat):
         for svc in services().values():
             if self.service_name in svc.dependent_on():
                 if  svc.state != 'OFF' and \
-                    svc.state != 'DEPENDS_OFF' and \
-                    svc.state != 'NOT_INSTALLED':
+                        svc.state != 'DEPENDS_OFF' and \
+                        svc.state != 'NOT_INSTALLED':
                     return False
         return True
 
@@ -267,7 +268,7 @@ class LocalService(automat.Automat):
             if depend_service.state != 'ON':
                 depends_results.append((depend_name, 'not started'))
                 continue
-        if len(depends_results) > 0: 
+        if len(depends_results) > 0:
             self.automat('service-depend-off', depends_results)
             return
         lg.out(2, '[%s] STARTING' % self.service_name)
@@ -324,7 +325,7 @@ class LocalService(automat.Automat):
                 count += 1
         if count == 0:
             self.automat('depend-service-stopped')
-        
+
     def doNotifyStarted(self, arg):
         """
         Action method.
@@ -374,8 +375,5 @@ class LocalService(automat.Automat):
         """
         Action method.
         """
-        self.result_deferred = None  
+        self.result_deferred = None
         self.destroy()
-            
-
-        

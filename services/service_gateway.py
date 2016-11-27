@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_gateway.py
+# service_gateway.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,18 +31,20 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return GatewayService()
-    
+
+
 class GatewayService(LocalService):
-    
+
     service_name = 'service_gateway'
     config_path = 'services/gateway/enabled'
-    
+
     def dependent_on(self):
         return ['service_network',
                 ]
-    
+
     def start(self):
         from transport import gateway
         from transport import callback
@@ -52,7 +54,7 @@ class GatewayService(LocalService):
         callback.insert_inbox_callback(0, bandwidth.INfile)
         callback.add_finish_file_sending_callback(bandwidth.OUTfile)
         return True
-    
+
     def stop(self):
         from transport import gateway
         from transport import callback
@@ -63,7 +65,3 @@ class GatewayService(LocalService):
         bandwidth.shutdown()
         gateway.shutdown()
         return d
-    
-    
-
-    

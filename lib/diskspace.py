@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#diskspace.py
+# diskspace.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,55 +28,57 @@
 """
 .. module:: diskspace
 
-This is set of methods to operate with amount of space units. 
-Examples:: 
+This is set of methods to operate with amount of space units.
+Examples::
     123 bytes
     45 KB
     67 mb
     8.9 Gigabytes
-        
-You can translate values from Kb to Mb or create a good looking string from bytes number.         
+
+You can translate values from Kb to Mb or create a good looking string from bytes number.
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Suffixes = {
-    '':                 1.0,
-    'bytes':            1.0,
-    'b':                1.0,
-    'KB':               1024.0,
-    'Kb':               1024.0,
-    'kb':               1024.0,
-    'Kilobytes':        1024.0,
-    'kilobytes':        1024.0,
-    'MB':               1024.0*1024.0,
-    'Mb':               1024.0*1024.0,
-    'mb':               1024.0*1024.0,
-    'Megabytes':        1024.0*1024.0,
-    'megabytes':        1024.0*1024.0,
-    'GB':               1024.0*1024.0*1024.0,
-    'Gb':               1024.0*1024.0*1024.0,
-    'gb':               1024.0*1024.0*1024.0,
-    'Gigabytes':        1024.0*1024.0*1024.0,
-    'gigabytes':        1024.0*1024.0*1024.0,
+    '': 1.0,
+    'bytes': 1.0,
+    'b': 1.0,
+    'KB': 1024.0,
+    'Kb': 1024.0,
+    'kb': 1024.0,
+    'Kilobytes': 1024.0,
+    'kilobytes': 1024.0,
+    'MB': 1024.0 * 1024.0,
+    'Mb': 1024.0 * 1024.0,
+    'mb': 1024.0 * 1024.0,
+    'Megabytes': 1024.0 * 1024.0,
+    'megabytes': 1024.0 * 1024.0,
+    'GB': 1024.0 * 1024.0 * 1024.0,
+    'Gb': 1024.0 * 1024.0 * 1024.0,
+    'gb': 1024.0 * 1024.0 * 1024.0,
+    'Gigabytes': 1024.0 * 1024.0 * 1024.0,
+    'gigabytes': 1024.0 * 1024.0 * 1024.0,
 }
 
 _SuffixLabels = ['bytes', 'Kb', 'Mb', 'Gb']
 
 _MultiDict = {
-        'Kb' : 1024.0,
-        'Mb' : 1024.0 * 1024.0,
-        'Gb' : 1024.0 * 1024.0 * 1024.0,
-    }
+    'Kb': 1024.0,
+    'Mb': 1024.0 * 1024.0,
+    'Gb': 1024.0 * 1024.0 * 1024.0,
+}
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class DiskSpace:
     """
     You can create an object of this class and use it as variable to store amount of space.
-    But in most cases this class is not used, see below global methods in this module. 
+    But in most cases this class is not used, see below global methods in this module.
     """
-    def __init__(self, v = None, s = '0Mb'):
+
+    def __init__(self, v=None, s='0Mb'):
         if v is None:
             self.v = s
             if self.getSZ() not in ['Kb', 'Mb', 'Gb']:
@@ -84,22 +86,29 @@ class DiskSpace:
         else:
             self.v = str(self.getValueBest(v))
         self.b = self.getValue() * _MultiDict[self.getSZ()]
+
     def __repr__(self):
         return self.v
+
     def addSZ(self, sz):
         self.v += sz
+
     def setSZ(self, sz):
         self.v[-2] = sz[0]
         self.v[-1] = sz[1]
+
     def getSZ(self):
         return self.v[-2:]
+
     def getValue(self):
         try:
             return float(self.v[:-2])
         except:
             return 0.0
+
     def getValueBytes(self):
         return self.b
+
     def getValueKb(self):
         sz = self.getSZ()
         if sz == 'Gb':
@@ -107,6 +116,7 @@ class DiskSpace:
         elif sz == 'Mb':
             return round(self.getValue() * 1024.0, 2)
         return self.getValue()
+
     def getValueMb(self):
         sz = self.getSZ().lower()
         if sz == 'Kb':
@@ -114,14 +124,16 @@ class DiskSpace:
         elif sz == 'Gb':
             return round(self.getValue() * 1024.0, 2)
         return self.getValue()
+
     def getValueGb(self):
         sz = self.getSZ()
         if sz == 'Kb':
-            return round( self.getValue() / (1024.0 * 1024.0), 2)
+            return round(self.getValue() / (1024.0 * 1024.0), 2)
         elif sz == 'Mb':
-            return round( self.getValue() / 1024.0, 2)
+            return round(self.getValue() / 1024.0, 2)
         return self.getValue()
-    def getValueBest(self, value = None):
+
+    def getValueBest(self, value=None):
         if value is not None:
             v = value
         else:
@@ -135,12 +147,12 @@ class DiskSpace:
         else:
             res = round(v / _MultiDict['Kb'], 2)
             sz = 'Kb'
-        return str(res)+sz
+        return str(res) + sz
 
 
 def SuffixIsCorrect(suffix):
     """
-    Check input string to be a valid unit label. 
+    Check input string to be a valid unit label.
     See global variable ``_Suffixes``.
     """
     global _Suffixes
@@ -157,7 +169,7 @@ def SuffixLabels():
 
 def SameSuffix(suf1, suf2):
     """
-    Compare 2 unit labels. Return True if both are same unit: 
+    Compare 2 unit labels. Return True if both are same unit:
         from diskspace import *
         SameSuffix('b','bytes')
         True
@@ -248,7 +260,7 @@ def GetBytesFromString(s, default=None):
 
 def MakeStringWithSuffix(s, suffix):
     """
-    You can move strings from one unit measure to another. 
+    You can move strings from one unit measure to another.
     Convert input string to a string with given suffix.
         from diskspace import *
         MakeStringWithSuffix("12.345 Mb", "Kb")
@@ -272,7 +284,7 @@ def GetMegaBytesFromString(s):
     b = GetBytesFromString(s)
     if b is None:
         return None
-    return round(b/(1024*1024), 2)
+    return round(b / (1024 * 1024), 2)
 
 
 def MakeStringFromString(s):
@@ -283,5 +295,4 @@ def MakeStringFromString(s):
     value, suf = SplitString(s)
     if value is None:
         return s
-    return MakeString(value, suf) 
-
+    return MakeString(value, suf)

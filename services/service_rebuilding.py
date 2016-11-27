@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#service_rebuilding.py
+# service_rebuilding.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,32 +31,30 @@
 
 from services.local_service import LocalService
 
+
 def create_service():
     return RebuildingService()
-    
+
+
 class RebuildingService(LocalService):
-    
+
     service_name = 'service_rebuilding'
     config_path = 'services/rebuilding/enabled'
-    
+
     def dependent_on(self):
         return ['service_data_motion',
                 ]
-    
+
     def start(self):
         from raid import raid_worker
         from storage import backup_rebuilder
         raid_worker.A('init')
         backup_rebuilder.A('init')
         return True
-    
+
     def stop(self):
         from raid import raid_worker
         from storage import backup_rebuilder
         backup_rebuilder.Destroy()
         raid_worker.A('shutdown')
         return True
-    
-    
-
-    

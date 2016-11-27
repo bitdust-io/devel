@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#os_windows_update.py
+# os_windows_update.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -15,7 +15,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,7 +29,7 @@
 """
 .. module:: os_windows_update
 
-A code for Windows platforms to check for updates and download latest binaries.   
+A code for Windows platforms to check for updates and download latest binaries.
 """
 
 import os
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -88,6 +88,7 @@ _SheduleTypesDict = {
 
 #------------------------------------------------------------------------------
 
+
 def init():
     lg.out(4, 'os_windows_update.init')
     # update_shedule_file(settings.getUpdatesSheduleData())
@@ -104,6 +105,7 @@ def init():
         lg.out(6, 'os_windows_update.init skip, update mode is: %s' % settings.getUpdatesMode())
 
 #------------------------------------------------------------------------------
+
 
 def SetUpdateWindowObject(obj):
     global _UpdateWindowObject
@@ -146,6 +148,7 @@ def UpdatingInProgress():
 
 #-------------------------------------------------------------------------------
 
+
 def write2log(txt):
     out_file = file(settings.UpdateLogFilename(), 'a')
     print >>out_file, txt
@@ -178,6 +181,7 @@ def set_bat_filename(filename):
 
 #-------------------------------------------------------------------------------
 
+
 def fail(txt):
     global _NewVersionNotifyFunc
     global _UpdatingInProgress
@@ -186,6 +190,7 @@ def fail(txt):
     _UpdatingInProgress = False
 
 #------------------------------------------------------------------------------
+
 
 def download_version():
     repo, locationURL = misc.ReadRepoLocation()
@@ -206,6 +211,7 @@ def download_info():
             files_dict[words[1].strip()] = words[0].strip()
         result.callback(files_dict)
         return src
+
     def _fail(x, result):
         lg.out(1, 'os_windows_update.download_info FAILED')
         result.errback(Exception('error downloading info'))
@@ -219,12 +225,13 @@ def download_info():
     d.addErrback(_fail, result)
     return result
 
-def download_and_replace_starter(output_func = None):
+
+def download_and_replace_starter(output_func=None):
     repo, locationURL = misc.ReadRepoLocation()
     url = locationURL + settings.WindowsStarterFileName()
     lg.out(6, 'os_windows_update.download_and_replace_starter ' + str(url))
     result = Deferred()
-    
+
     def _done(x, filename):
         try:
             fin = open(filename, 'rb')
@@ -248,7 +255,7 @@ def download_and_replace_starter(output_func = None):
         python27dll_path = os.path.join(GetLocalDir(), 'python27.dll')
         if not os.path.exists(python27dll_path):
             lg.out(4, 'os_windows_update.download_and_replace_starter file "python27.dll" not found download from "%s" repo' % repo)
-            url = settings.DefaultRepoURL(repo) + 'python27.dll' 
+            url = settings.DefaultRepoURL(repo) + 'python27.dll'
             d = net_misc.downloadHTTP(url, python27dll_path)
             d.addCallback(_done_python27_dll, filename)
             d.addErrback(_fail, filename)
@@ -281,6 +288,7 @@ def download_and_replace_starter(output_func = None):
 
 #-------------------------------------------------------------------------------
 
+
 def step0():
     lg.out(4, 'os_windows_update.step0')
     global _UpdatingInProgress
@@ -292,11 +300,12 @@ def step0():
     src = bpio.ReadTextFile(settings.RepoFile())
     if src == '':
         bpio.WriteFile(settings.RepoFile(), '%s\n%s' % (repo, locationURL))
-             
+
     _UpdatingInProgress = True
     d = download_version()
     d.addCallback(step1)
     d.addErrback(fail)
+
 
 def step1(version_digest):
     lg.out(4, 'os_windows_update.step1')
@@ -326,6 +335,7 @@ def step1(version_digest):
     d = download_info()
     d.addCallback(step2, _CurrentVersionDigest)
     d.addErrback(fail)
+
 
 def step2(info, version_digest):
     lg.out(4, 'os_windows_update.step2')
@@ -376,13 +386,13 @@ def step4(version_digest):
         return
 
     if _UpdatingByUser or settings.getUpdatesMode() == settings.getUpdatesModeValues()[0]:
-#        info_file_path = os.path.join(bpio.getExecutableDir(), settings.FilesDigestsFilename())
+        #        info_file_path = os.path.join(bpio.getExecutableDir(), settings.FilesDigestsFilename())
         info_file_path = settings.InfoFile()
         if os.path.isfile(info_file_path):
             try:
                 os.remove(info_file_path)
             except:
-                lg.out(1, 'os_windows_update.step4 ERROR can no remove ' + info_file_path )
+                lg.out(1, 'os_windows_update.step4 ERROR can no remove ' + info_file_path)
                 lg.exc()
 
         param = ''
@@ -399,6 +409,7 @@ def step4(version_digest):
             _NewVersionNotifyFunc(_CurrentVersionDigest)
 
 #------------------------------------------------------------------------------
+
 
 def is_running():
     global _UpdatingInProgress
@@ -420,15 +431,15 @@ def write_shedule_dict(d):
     if d is None or not check_shedule_dict_correct(d):
         return
     old = string_to_shedule(settings.getUpdatesSheduleData())
-    d ['lasttime'] = old.get('lasttime', '')
+    d['lasttime'] = old.get('lasttime', '')
     settings.setUpdatesSheduleData(shedule_to_string(d))
-    if d.has_key('mode'):
+    if 'mode' in d:
         settings.setUpdatesMode(d['mode'])
     # bpio._write_dict(settings.UpdateSheduleFilename(), d)
 
 
 def blank_shedule(type):
-    d = { 'type': type }
+    d = {'type': type}
     if type == 'none':
         d['interval'] = ''
         d['daytime'] = ''
@@ -468,7 +479,7 @@ def blank_shedule(type):
     return d
 
 
-#def make_blank_shedule(type='daily'):
+# def make_blank_shedule(type='daily'):
 #    lg.out(8, 'os_windows_update.make_blank_shedule')
 #    d = blank_shedule(type)
 #    # bpio._write_dict(settings.UpdateSheduleFilename(), d)
@@ -476,11 +487,11 @@ def blank_shedule(type):
 
 
 def check_shedule_dict_correct(d):
-    if not (d.has_key('type') and
-            d.has_key('interval') and
-            d.has_key('daytime') and
-            d.has_key('details') and
-            d.has_key('lasttime')):
+    if not ('type' in d and
+            'interval' in d and
+            'daytime' in d and
+            'details' in d and
+            'lasttime' in d):
         lg.warn('incorrect data: ' + str(d))
         return False
     try:
@@ -509,7 +520,7 @@ def string_to_shedule(raw_data):
     global _SheduleTypesDict
     l = raw_data.split('\n')
     if len(l) < 3:
-        return blank_shedule('hourly') 
+        return blank_shedule('hourly')
     d = {}
     d['type'] = l[0].strip()
     if d['type'] in ['0', '1', '2', '3', '4', '5']:
@@ -561,7 +572,7 @@ def run_sheduled_update():
     _UpdatingByUser = False
     reactor.callLater(0, step0)
 
-    #check or start the update
+    # check or start the update
     d = read_shedule_dict()
     d['lasttime'] = str(time.time())
     write_shedule_dict(d)
@@ -572,14 +583,14 @@ def next(d):
     lasttime = d.get('lasttime', '').strip()
     if lasttime == '':
         # let it be one year ago (we can shedule 1 month maximum)
-        lasttime = str(time.time()-365*24*60*60)
+        lasttime = str(time.time() - 365 * 24 * 60 * 60)
 
     if d['type'] in ['none', 'disabled']:
         return -1
 
     elif d['type'] == 'continuously':
         return maths.shedule_continuously(lasttime, d['interval'],)
-    
+
     elif d['type'] == 'hourly':
         return maths.shedule_next_hourly(lasttime, d['interval'])
 
@@ -614,7 +625,8 @@ def next(d):
 
     else:
         lg.out(1, 'os_windows_update.loop ERROR wrong shedule type')
-        return None    
+        return None
+
 
 def loop(first_start=False):
     global _ShedulerTask
@@ -629,11 +641,11 @@ def loop(first_start=False):
 #    nexttime = next(d)
     if first_start:
         nexttime = time.time()
-    
+
     if nexttime is None:
         lg.out(1, 'os_windows_update.loop ERROR calculating shedule interval')
         return
-    
+
     if nexttime < 0:
         lg.out(1, 'os_windows_update.loop nexttime=%s' % str(nexttime))
         return
@@ -646,15 +658,15 @@ def loop(first_start=False):
         lg.warn('delay=%s %s' % (str(delay), shed))
         delay = 0
 
-    lg.out(6, 'os_windows_update.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay/3600.0)))
+    lg.out(6, 'os_windows_update.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay / 3600.0)))
     _ShedulerTask = reactor.callLater(delay, run_sheduled_update)
 
 
 def update_sheduler():
     global _ShedulerTask
     lg.out(4, 'os_windows_update.update_sheduler')
-##    if not bpio.isFrozen() or not bpio.Windows():
-##        return
+# if not bpio.isFrozen() or not bpio.Windows():
+# return
     if _ShedulerTask is not None:
         if _ShedulerTask.active():
             _ShedulerTask.cancel()
@@ -696,20 +708,10 @@ def test1():
     settings.init()
     update_sheduler()
     #SetLocalDir('c:\\Program Files\\\xc4 \xd8 \xcd')
-    #download_and_replace_starter()
+    # download_and_replace_starter()
     reactor.run()
 
 if __name__ == '__main__':
     bpio.init()
     settings.init()
     test1()
-
-
-
-
-
-
-
-
-
-

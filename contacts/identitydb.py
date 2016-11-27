@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#identitydb.py
+# identitydb.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -27,12 +27,12 @@
 .. module:: identitydb
 
 Here is a simple1 database for identities cache.
-Also keep track of changing identities sources and maintain a several "index" dictionaries to speed up processes.  
+Also keep track of changing identities sources and maintain a several "index" dictionaries to speed up processes.
 """
 
 import os
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -44,7 +44,7 @@ from lib import nameurl
 
 from userid import identity
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 # Dictionary cache of identities - lookup by primary url
 # global dictionary of identities in this file
@@ -59,36 +59,40 @@ _LocalIPs = {}
 
 _IdentityCacheUpdatedCallbacks = []
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def cache():
     global _IdentityCache
     return _IdentityCache
 
+
 def cache_ids():
     global _IdentityCacheIDs
     return _IdentityCacheIDs
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init():
     """
     Need to call before all other methods.
     Check to exist and create a folder to keep all cached identities.
     """
-    lg.out(4,"identitydb.init")
+    lg.out(4, "identitydb.init")
     iddir = settings.IdentityCacheDir()
     if not os.path.exists(iddir):
         lg.out(8, 'identitydb.init create folder ' + iddir)
         bpio._dir_make(iddir)
-        
+
 
 def shutdown():
     """
     """
-    lg.out(4,"identitydb.shutdown")
-        
-#------------------------------------------------------------------------------ 
+    lg.out(4, "identitydb.shutdown")
+
+#------------------------------------------------------------------------------
+
 
 def clear(exclude_list=None):
     """
@@ -99,7 +103,7 @@ def clear(exclude_list=None):
     global _IPPort2IDURL
     global _IDURL2Contacts
     global _IdentityCacheIDs
-    lg.out(4,"identitydb.clear")
+    lg.out(4, "identitydb.clear")
     _IdentityCache.clear()
     _IdentityCacheIDs.clear()
     _Contact2IDURL.clear()
@@ -115,11 +119,11 @@ def clear(exclude_list=None):
         if exclude_list:
             idurl = nameurl.FilenameUrl(name)
             if idurl in exclude_list:
-                continue 
+                continue
         os.remove(path)
         lg.out(6, 'identitydb.clear remove ' + path)
     fire_cache_updated_callbacks()
-    
+
 
 def size():
     """
@@ -129,12 +133,12 @@ def size():
     return len(_IdentityCache)
 
 
-def has_key(idurl):
+def has_idurl(idurl):
     """
     Return True if that IDURL already cached.
     """
     global _IdentityCache
-    return _IdentityCache.has_key(idurl)
+    return idurl in _IdentityCache
 
 
 def has_file(idurl):
@@ -159,33 +163,33 @@ def idset(idurl, id_obj):
     global _Contact2IDURL
     global _IDURL2Contacts
     global _IPPort2IDURL
-    if not has_key(idurl):
+    if not has_idurl(idurl):
         lg.out(6, 'identitydb.idset new identity: ' + idurl)
     _IdentityCache[idurl] = id_obj
     identid = _IdentityCacheIDs.get(idurl, None)
-    if identid is None: 
+    if identid is None:
         identid = _IdentityCacheCounter
         _IdentityCacheCounter += 1
         _IdentityCacheIDs[idurl] = identid
     for contact in id_obj.getContacts():
-        if not _Contact2IDURL.has_key(contact):
+        if contact not in _Contact2IDURL:
             _Contact2IDURL[contact] = set()
         else:
             if len(_Contact2IDURL[contact]) >= 1 and idurl not in _Contact2IDURL[contact]:
                 lg.warn('another user have same contact: ' + str(list(_Contact2IDURL[contact])))
         _Contact2IDURL[contact].add(idurl)
-        if not _IDURL2Contacts.has_key(idurl):
+        if idurl not in _IDURL2Contacts:
             _IDURL2Contacts[idurl] = set()
         _IDURL2Contacts[idurl].add(contact)
-        try: 
+        try:
             proto, host, port, fname = nameurl.UrlParse(contact)
             ipport = (host, int(port))
-            _IPPort2IDURL[ipport] = idurl 
+            _IPPort2IDURL[ipport] = idurl
         except:
             pass
-    #TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
+    # TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
     fire_cache_updated_callbacks(single_item=(
-        identid, idurl, id_obj))        
+        identid, idurl, id_obj))
 
 
 def idget(url):
@@ -211,13 +215,13 @@ def idremove(url):
     if idobj is not None:
         for contact in idobj.getContacts():
             _Contact2IDURL.pop(contact, None)
-            try: 
+            try:
                 proto, host, port, fname = nameurl.UrlParse(contact)
                 ipport = (host, int(port))
-                _IPPort2IDURL.pop(ipport, None) 
+                _IPPort2IDURL.pop(ipport, None)
             except:
                 pass
-    fire_cache_updated_callbacks(single_item=(identid, None, None))        
+    fire_cache_updated_callbacks(single_item=(identid, None, None))
     return idobj
 
 
@@ -234,7 +238,7 @@ def get(url):
     A smart way to get identity from cache.
     If not cached in memory but found on disk - will cache from disk.
     """
-    if has_key(url):
+    if has_idurl(url):
         return idget(url)
     else:
         try:
@@ -253,7 +257,7 @@ def get(url):
             if url == url2:
                 idset(url, idobj)
                 return idobj
-            
+
             else:
                 lg.out(1, "identitydb.get ERROR url=%s url2=%s" % (url, url2))
                 return None
@@ -272,7 +276,7 @@ def get_filename(idurl):
 
 def get_idurls_by_contact(contact):
     """
-    Use index dictionary to get IDURL with given contact. 
+    Use index dictionary to get IDURL with given contact.
     """
     global _Contact2IDURL
     return list(_Contact2IDURL.get(contact, set()))
@@ -280,7 +284,7 @@ def get_idurls_by_contact(contact):
 
 def get_idurl_by_ip_port(ip, port):
     """
-    Use index dictionary to get IDURL by IP and PORT. 
+    Use index dictionary to get IDURL by IP and PORT.
     """
     global _IPPort2IDURL
     return _IPPort2IDURL.get((ip, int(port)), None)
@@ -356,7 +360,7 @@ def update_local_ips_dict(local_ips_dict):
 
 def get_local_ip(idurl):
     """
-    This is to get a local IP of some user from the index. 
+    This is to get a local IP of some user from the index.
     """
     global _LocalIPs
     return _LocalIPs.get(idurl, None)
@@ -367,7 +371,7 @@ def has_local_ip(idurl):
     To check for some known local IP of given user.
     """
     global _LocalIPs
-    return _LocalIPs.has_key(idurl)
+    return idurl in _LocalIPs
 
 
 def search_local_ip(ip):
@@ -380,18 +384,19 @@ def search_local_ip(ip):
             return idurl
     return None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def print_id(url):
     """
     For debug purposes.
     """
-    if has_key(url):
+    if has_idurl(url):
         idForKey = get(url)
-        lg.out(6, str(idForKey.sources) )
-        lg.out(6, str(idForKey.contacts ))
-        lg.out(6, str(idForKey.publickey ))
-        lg.out(6, str(idForKey.signature ))
+        lg.out(6, str(idForKey.sources))
+        lg.out(6, str(idForKey.contacts))
+        lg.out(6, str(idForKey.publickey))
+        lg.out(6, str(idForKey.signature))
 
 
 def print_keys():
@@ -409,10 +414,11 @@ def print_cache():
     """
     global _IdentityCache
     for key in _IdentityCache.keys():
-        lg.out(6, "---------------------" )
+        lg.out(6, "---------------------")
         print_id(key)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def AddCacheUpdatedCallback(cb):
     global _IdentityCacheUpdatedCallbacks
@@ -428,7 +434,4 @@ def RemoveCacheUpdatedCallback(cb):
 def fire_cache_updated_callbacks(single_item=None):
     global _IdentityCacheUpdatedCallbacks
     for cb in _IdentityCacheUpdatedCallbacks:
-        cb(cache_ids(), cache(), single_item)    
-
-
-
+        cb(cache_ids(), cache(), single_item)

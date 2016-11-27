@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#packetid.py
+# packetid.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,21 +34,22 @@ Note - we return strings and not integers.
 
 Packet ID consists of several parts:
     <path ID>/<version Name>/<block number>-<supplier number>-<'Data'|'Parity'>
-    
+
 So Backup ID is just a short form:
     <path ID>/<version Name>
-    
+
 See module ``p2p.backup_fs`` to learn how Path ID is generated from file or folder path.
 """
 
 import time
 import re
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _LastUniqueNumber = 0
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def UniqueID():
     """
@@ -57,21 +58,23 @@ def UniqueID():
     """
     global _LastUniqueNumber
     _LastUniqueNumber += 1
-    if _LastUniqueNumber > 1000000000:     
+    if _LastUniqueNumber > 1000000000:
         _LastUniqueNumber = 0
     inttime = int(time.time() * 100.0)
     if _LastUniqueNumber < inttime:
         _LastUniqueNumber = inttime
-    return str(_LastUniqueNumber) 
+    return str(_LastUniqueNumber)
+
 
 def MakePacketID(backupID, blockNumber, supplierNumber, dataORparity):
     """
     Create a full packet ID from backup ID and other parts.
         import packetid
         packetid.MakePacketID('0/0/1/0/F20131120053803PM', 1234, 63, 'Data')
-        '0/0/1/0/F20131120053803PM/1234-63-Data'    
+        '0/0/1/0/F20131120053803PM/1234-63-Data'
     """
     return backupID + '/' + str(blockNumber) + '-' + str(supplierNumber) + '-' + dataORparity
+
 
 def Valid(packetID):
     """
@@ -79,7 +82,7 @@ def Valid(packetID):
         - full:     0/0/1/0/F20131120053803PM/0-1-Data
         - backupID: 0/0/1/0/F20131120053803PM
         - pathID:   0/0/1/0
-        
+
     Here is:
         - pathID:        0/0/1/0
         - versionName:   F20131120053803PM
@@ -108,17 +111,18 @@ def Valid(packetID):
     if IsPathIDCorrect(packetID):
         # we have only two options now, let's if this is a pathID
         return True
-        # this should be a backupID - no other cases 
+        # this should be a backupID - no other cases
     if IsCanonicalVersion(tail) and IsPathIDCorrect(head):
         return True
     # something is not fine with that string
     return False
 
+
 def Split(packetID):
     """
     Split a full packet ID into tuple of 4 parts.
         packetid.Split("0/0/1/0/F20131120053803PM/0-1-Data")
-        ('0/0/1/0/F20131120053803PM', 0, 1, 'Data')    
+        ('0/0/1/0/F20131120053803PM', 0, 1, 'Data')
     """
     try:
         backupID, x, fileName = packetID.rpartition('/')
@@ -128,6 +132,7 @@ def Split(packetID):
     except:
         return None, None, None, None
     return backupID, blockNum, supplierNum, dataORparity
+
 
 def SplitFull(packetID):
     """
@@ -145,12 +150,13 @@ def SplitFull(packetID):
         return None, None, None, None, None
     return pathID, versionName, blockNum, supplierNum, dataORparity
 
+
 def SplitVersionFilename(packetID):
     """
     Return 3 parts:
         packetid.SplitVersionFilename("0/0/1/0/F20131120053803PM/0-1-Data")
-        ('0/0/1/0', 'F20131120053803PM', '0-1-Data')    
-    """ 
+        ('0/0/1/0', 'F20131120053803PM', '0-1-Data')
+    """
     try:
         backupID, x, fileName = packetID.rpartition('/')
         pathID, x, versionName = backupID.rpartition('/')
@@ -158,11 +164,12 @@ def SplitVersionFilename(packetID):
         return None, None, None
     return pathID, versionName, fileName
 
+
 def SplitBackupID(backupID):
     """
     This takes a short string, only backup ID:
         packetid.SplitBackupID('0/0/1/0/F20131120053803PM')
-        ('0/0/1/0', 'F20131120053803PM')    
+        ('0/0/1/0', 'F20131120053803PM')
     """
     try:
         pathID, x, versionName = backupID.rpartition('/')
@@ -170,24 +177,28 @@ def SplitBackupID(backupID):
         return None, None
     return pathID, versionName
 
+
 def IsCanonicalVersion(versionName):
     """
-    Check given ``versionName`` to have a valid format. 
+    Check given ``versionName`` to have a valid format.
     """
     return re.match('^F\d+?(AM|PM)\d*?$', versionName) is not None
 
+
 def IsPacketNameCorrect(fileName):
     """
-    Check the ``fileName`` (this is a last 3 parts of packet ID) to have a valid format. 
+    Check the ``fileName`` (this is a last 3 parts of packet ID) to have a valid format.
     """
     return re.match('^\d+?\-\d+?\-(Data|Parity)$', fileName) is not None
+
 
 def IsPathIDCorrect(pathID):
     """
     Validate a given ``pathID``, should have only digits and '/' symbol.
     """
-    #TODO more strict validation
+    # TODO more strict validation
     return pathID.replace('/', '').isdigit()
+
 
 def IsBackupIDCorrect(backupID):
     """
@@ -200,11 +211,13 @@ def IsBackupIDCorrect(backupID):
         return False
     return True
 
+
 def BidBnSnDp(packetID):
     """
     A wrapper for ``Split()`` method.
     """
     return Split(packetID)
+
 
 def BackupID(packetID):
     """
@@ -212,11 +225,13 @@ def BackupID(packetID):
     """
     return Split(packetID)[0]
 
+
 def BlockNumber(packetID):
     """
     A wrapper for ``Split()`` method to get the second part - block number.
     """
     return Split(packetID)[1]
+
 
 def SupplierNumber(packetID):
     """
@@ -224,11 +239,13 @@ def SupplierNumber(packetID):
     """
     return Split(packetID)[2]
 
+
 def DataOrParity(packetID):
     """
     A wrapper for ``Split()`` method to get the last part - is this Data or Parity packet .
     """
     return Split(packetID)[3]
+
 
 def parentPathsList(ID):
     """
@@ -236,14 +253,9 @@ def parentPathsList(ID):
         list(packetid.parentPathsList('0/0/1/0/F20131120053803PM/0-1-Data'))
         ['0', '0/0', '0/0/1', '0/0/1/0', '0/0/1/0/F20131120053803PM', '0/0/1/0/F20131120053803PM/0-1-Data']
     """
-    path = '' 
+    path = ''
     for word in ID.split('/'):
         if path:
             path += '/'
         path += word
         yield path
-        
-
-
-
-

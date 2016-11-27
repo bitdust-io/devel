@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#proxy_router.py
+# proxy_router.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -48,12 +48,12 @@ EVENTS:
     * :red:`stop`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -62,7 +62,7 @@ import cStringIO
 import json
 import pprint
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 try:
     from logs import lg
@@ -94,12 +94,13 @@ from p2p import p2p_service
 from p2p import commands
 from p2p import network_connector
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _ProxyRouter = None
 _MaxRoutesNumber = 20
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -115,7 +116,8 @@ def A(event=None, arg=None):
         _ProxyRouter.automat(event, arg)
     return _ProxyRouter
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class ProxyRouter(automat.Automat):
     """
@@ -237,7 +239,7 @@ class ProxyRouter(automat.Automat):
                 else:
                     # accept existing router
                     oldnew = 'OLD'
-                if not self._is_my_contacts_present_in_identity(cached_id): 
+                if not self._is_my_contacts_present_in_identity(cached_id):
                     identitycache.OverrideIdentity(target, idsrc)
                 else:
                     if _Debug:
@@ -250,14 +252,14 @@ class ProxyRouter(automat.Automat):
                 self._write_route(target)
                 self.acks.append(
                     p2p_service.SendAck(
-                        request, 
-                        'accepted', 
-                        wide=True, 
-                        packetid=request.PacketID)) 
+                        request,
+                        'accepted',
+                        wide=True,
+                        packetid=request.PacketID))
                 if _Debug:
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest !!!!!!! ACCEPTED %s ROUTE for %s' % (oldnew, target))
         elif request.Command == commands.CancelService():
-            if self.routes.has_key(target):
+            if target in self.routes:
                 # cancel existing route
                 self._remove_route(target)
                 self.routes.pop(target)
@@ -271,7 +273,7 @@ class ProxyRouter(automat.Automat):
                     lg.out(_DebugLevel, 'proxy_server.doProcessRequest CancelService rejected : %s is not found in routes' % target)
                     lg.out(_DebugLevel, '    %s' % pprint.pformat(self.routes))
         else:
-            p2p_service.SendFail(request, 'wrong command or payload') # , wide=True)
+            p2p_service.SendFail(request, 'wrong command or payload')  # , wide=True)
 
     def doUnregisterAllRouts(self, arg):
         """
@@ -313,7 +315,7 @@ class ProxyRouter(automat.Automat):
             inpt.close()
             lg.warn('route with %s not found' % (sender_idurl))
             p2p_service.SendFail(newpacket, 'route not exist', remote_idurl=sender_idurl)
-            return 
+            return
         data = inpt.read()
         inpt.close()
         routed_packet = signed.Unserialize(data)
@@ -348,7 +350,7 @@ class ProxyRouter(automat.Automat):
         hosts = route_info['address']
         if len(hosts) == 0:
             lg.warn('route with %s do not have actual info about the host, use identity contacts instead' % receiver_idurl)
-            hosts = route_info['contacts'] 
+            hosts = route_info['contacts']
         if len(hosts) == 0:
             lg.warn('has no known contacts for route with %s' % receiver_idurl)
             return
@@ -369,11 +371,11 @@ class ProxyRouter(automat.Automat):
             commands.Relay(),
             newpacket.OwnerID,
             my_id.getLocalID(),
-            newpacket.PacketID, 
-            block.Serialize(), 
+            newpacket.PacketID,
+            block.Serialize(),
             receiver_idurl)
         pout = packet_out.create(
-            newpacket, 
+            newpacket,
             wide=False,
             callbacks={},
             route={
@@ -393,7 +395,7 @@ class ProxyRouter(automat.Automat):
         del block
         del newpacket
         del routed_packet
-                
+
     def doCountOutgoingTraffic(self, arg):
         """
         Action method.
@@ -477,7 +479,7 @@ class ProxyRouter(automat.Automat):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if newpacket.RemoteID == my_id.getLocalID():
-            # this packet was addressed directly to me ... 
+            # this packet was addressed directly to me ...
             if newpacket.Command == commands.Relay():
                 # but this is a routed packet addressed to someone else
                 if newpacket.CreatorID in self.routes.keys():
@@ -489,7 +491,7 @@ class ProxyRouter(automat.Automat):
                 return False
             # and this is not a Relay packet
             if newpacket.Command == commands.Identity() and \
-                newpacket.CreatorID == newpacket.OwnerID:
+                    newpacket.CreatorID == newpacket.OwnerID:
                 if newpacket.CreatorID in self.routes.keys():
                     # this is a "propagate" packet from node A addressed to this proxy
                     # mark that packet as handled and send Ack
@@ -537,7 +539,7 @@ class ProxyRouter(automat.Automat):
             return True
         if _Debug:
             lg.out(_DebugLevel, 'proxy_router._on_inbox_packet_received SKIPPED %s' % newpacket)
-        return False             
+        return False
 
     def _on_network_connector_state_changed(self, oldstate, newstate, event, arg):
         if oldstate != 'CONNECTED' and newstate == 'CONNECTED':
@@ -563,7 +565,7 @@ class ProxyRouter(automat.Automat):
             if PacketID == ack.PacketID:
                 self.automat('request-route-ack-sent', (RemoteID, pkt_out, item, status, size, error_message))
         return True
-        
+
     def _is_my_contacts_present_in_identity(self, ident):
         for my_contact in my_id.getLocalIdentity().getContacts():
             if ident.getContactIndex(contact=my_contact) >= 0:
@@ -572,7 +574,7 @@ class ProxyRouter(automat.Automat):
                         my_contact, ident.getIDURL()))
                 return True
         return False
-                
+
     def _load_routes(self):
         src = config.conf().getData('services/proxy-server/current-routes')
         if src is None:
@@ -582,10 +584,10 @@ class ProxyRouter(automat.Automat):
             dct = json.loads(src)
         except:
             dct = {}
-        for k,v in dct.items():
+        for k, v in dct.items():
             self.routes[k] = v
             ident = identity.identity(xmlsrc=v['identity'])
-            if not self._is_my_contacts_present_in_identity(ident): 
+            if not self._is_my_contacts_present_in_identity(ident):
                 identitycache.OverrideIdentity(k, v['identity'])
             else:
                 if _Debug:
@@ -596,8 +598,8 @@ class ProxyRouter(automat.Automat):
     def _clear_routes(self):
         config.conf().setData('services/proxy-server/current-routes', '{}')
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._clear_routes') 
-    
+            lg.out(_DebugLevel, 'proxy_router._clear_routes')
+
     def _write_route(self, target):
         src = config.conf().getData('services/proxy-server/current-routes')
         try:
@@ -608,8 +610,8 @@ class ProxyRouter(automat.Automat):
         newsrc = pprint.pformat(json.dumps(dct, indent=0))
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc)) 
-    
+            lg.out(_DebugLevel, 'proxy_router._write_route %d bytes wrote' % len(newsrc))
+
     def _remove_route(self, target):
         src = config.conf().getData('services/proxy-server/current-routes')
         try:
@@ -621,9 +623,10 @@ class ProxyRouter(automat.Automat):
         newsrc = json.dumps(dct)
         config.conf().setData('services/proxy-server/current-routes', newsrc)
         if _Debug:
-            lg.out(_DebugLevel, 'proxy_router._remove_route %d bytes wrote' % len(newsrc)) 
+            lg.out(_DebugLevel, 'proxy_router._remove_route %d bytes wrote' % len(newsrc))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor
@@ -632,4 +635,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

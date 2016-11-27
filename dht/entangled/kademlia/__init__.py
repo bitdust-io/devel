@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -44,7 +44,7 @@ with a TCP-based protocol, instead of the provided UDP-based one.
 
 Client applications should also modify the values found in
 C{entangled.kademlia.constants} to suit their needs. Refer to the C{constants}
-module for documentation on what these values control. 
+module for documentation on what these values control.
 """
 
 from node import Node

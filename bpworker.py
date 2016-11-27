@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#bpworker.py
+# bpworker.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,4 +30,4 @@ if __name__ == "__main__":
     sys.path.append(os.path.abspath(os.path.join('.', 'parallelp', 'pp')))
     from parallelp.pp.ppworker import _WorkerProcess
     wp = _WorkerProcess()
-    wp.run() 
+    wp.run()

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#webtraffic.py
+# webtraffic.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -15,7 +15,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,7 +29,7 @@
 """
 .. module:: webtraffic
 
-A useful code to monitor program packets traffic in the Web browser using local HTML server. 
+A useful code to monitor program packets traffic in the Web browser using local HTML server.
 """
 
 import sys
@@ -62,6 +62,7 @@ _DefaultReloadTimeout = 600
 
 #-------------------------------------------------------------------------------
 
+
 def init(root=None, path='traffic', port=9997):
     global _WebListener
     if root is not None:
@@ -85,6 +86,7 @@ def init(root=None, path='traffic', port=9997):
     callback.insert_inbox_callback(-1, inbox)
     callback.add_finish_file_sending_callback(outbox)
 
+
 def shutdown():
     global _WebListener
     if _WebListener:
@@ -92,45 +94,56 @@ def shutdown():
         del _WebListener
         _WebListener = None
 
+
 def inbox_packets_count():
     global _InboxPacketsCount
     return _InboxPacketsCount
-    
+
+
 def inbox_by_idurl():
     global _InboxByIDURL
     return _InboxByIDURL
-    
+
+
 def inbox_by_host():
     global _InboxByHost
     return _InboxByHost
-    
+
+
 def inbox_by_proto():
     global _InboxByProto
     return _InboxByProto
 
+
 def inbox_by_type():
     global _InboxByType
     return _InboxByType
-    
+
+
 def outbox_packets_count():
     global _OutboxPacketsCount
     return _OutboxPacketsCount
-    
+
+
 def outbox_by_idurl():
     global _OutboxByIDURL
     return _OutboxByIDURL
-    
+
+
 def outbox_by_host():
     global _OutboxByHost
     return _OutboxByHost
-    
-def outbox_by_proto(): 
+
+
+def outbox_by_proto():
     global _OutboxByProto
     return _OutboxByProto
+
 
 def outbox_by_type():
     global _OutboxByType
     return _OutboxByType
+
 
 def inbox(newpacket, info, status, error_message):
     global _InboxPacketsCount
@@ -138,7 +151,7 @@ def inbox(newpacket, info, status, error_message):
     global _InboxByHost
     global _InboxByProto
     global _InboxByType
-    
+
     if newpacket is None:
         return False
 
@@ -147,7 +160,7 @@ def inbox(newpacket, info, status, error_message):
     host = '%s://%s' % (info.proto, info.host)
     typ = newpacket.Command
 
-    if not _InboxByIDURL.has_key(idurl):
+    if idurl not in _InboxByIDURL:
         _InboxByIDURL[idurl] = [0, 0, 0, 0]
     _InboxByIDURL[idurl][0] += byts
     if status == 'finished':
@@ -156,7 +169,7 @@ def inbox(newpacket, info, status, error_message):
         _InboxByIDURL[idurl][2] += 1
     _InboxByIDURL[idurl][3] += 1
 
-    if not _InboxByHost.has_key(host):
+    if host not in _InboxByHost:
         _InboxByHost[host] = [0, 0, 0, 0]
     _InboxByHost[host][0] += byts
     if status == 'finished':
@@ -165,7 +178,7 @@ def inbox(newpacket, info, status, error_message):
         _InboxByHost[host][2] += 1
     _InboxByHost[host][3] += 1
 
-    if not _InboxByProto.has_key(info.proto):
+    if info.proto not in _InboxByProto:
         _InboxByProto[info.proto] = [0, 0, 0, 0]
     _InboxByProto[info.proto][0] += byts
     if status == 'finished':
@@ -173,8 +186,8 @@ def inbox(newpacket, info, status, error_message):
     else:
         _InboxByProto[info.proto][2] += 1
     _InboxByProto[info.proto][3] += 1
-    
-    if not _InboxByType.has_key(typ):
+
+    if typ not in _InboxByType:
         _InboxByType[typ] = [0, 0, 0, 0]
     _InboxByType[typ][0] += byts
     if status == 'finished':
@@ -199,7 +212,7 @@ def outbox(pkt_out, item, status, size, error_message):
     host = '%s://%s' % (item.proto, item.host)
     typ = pkt_out.outpacket.Command
 
-    if not _OutboxByIDURL.has_key(idurl):
+    if idurl not in _OutboxByIDURL:
         _OutboxByIDURL[idurl] = [0, 0, 0, 0]
     _OutboxByIDURL[idurl][0] += byts
     if status == 'finished':
@@ -208,7 +221,7 @@ def outbox(pkt_out, item, status, size, error_message):
         _OutboxByIDURL[idurl][2] += 1
     _OutboxByIDURL[idurl][3] += 1
 
-    if not _OutboxByHost.has_key(host):
+    if host not in _OutboxByHost:
         _OutboxByHost[host] = [0, 0, 0, 0]
     _OutboxByHost[host][0] += byts
     if status == 'finished':
@@ -217,7 +230,7 @@ def outbox(pkt_out, item, status, size, error_message):
         _OutboxByHost[host][2] += 1
     _OutboxByHost[host][3] += 1
 
-    if not _OutboxByProto.has_key(item.proto):
+    if item.proto not in _OutboxByProto:
         _OutboxByProto[item.proto] = [0, 0, 0, 0]
     _OutboxByProto[item.proto][0] += byts
     if status == 'finished':
@@ -226,7 +239,7 @@ def outbox(pkt_out, item, status, size, error_message):
         _OutboxByProto[item.proto][2] += 1
     _OutboxByProto[item.proto][3] += 1
 
-    if not _OutboxByType.has_key(typ):
+    if typ not in _OutboxByType:
         _OutboxByType[typ] = [0, 0, 0, 0]
     _OutboxByType[typ][0] += byts
     if status == 'finished':
@@ -236,9 +249,10 @@ def outbox(pkt_out, item, status, size, error_message):
     _OutboxByType[typ][3] += 1
 
     _OutboxPacketsCount += 1
-    return False    
+    return False
 
 #-------------------------------------------------------------------------------
+
 
 class TrafficPage(resource.Resource):
     header_html = '''<html><head>
@@ -338,9 +352,8 @@ class TrafficPage(resource.Resource):
 
         return out
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     init()
     reactor.run()
-

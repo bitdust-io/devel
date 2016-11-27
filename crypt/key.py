@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#key.py
+# key.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -48,21 +48,21 @@ import hashlib
 
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import DES3
-from Crypto.Cipher import AES  
+from Crypto.Cipher import AES
 from Crypto.Cipher import Blowfish
 
 import warnings
-warnings.filterwarnings('ignore',category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 from twisted.conch.ssh import keys
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -70,27 +70,28 @@ from system import bpio
 
 from main import settings
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-_MyRsaKey = None 
+_MyRsaKey = None
 _MyPubKey = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def InitMyKey(keyfilename=None):
     """
-    This is core method. 
-    At first it check the Private Key in the memory, if it is already initialized it does nothing. 
+    This is core method.
+    At first it check the Private Key in the memory, if it is already initialized it does nothing.
     The local key are placed in the "[BitDust data dir]/metadata/mykeyfile".
-    If file "[BitDust data dir]/metadata/mykeyfile_location" exists - 
+    If file "[BitDust data dir]/metadata/mykeyfile_location" exists -
     it should contain the location of the mykeyfile. Useful to store Private Key on the USB flash.
     BitDust data dir is platform dependent:
         - Linux and Mac: ~/.bitdust
         - Windows XP: C:/Documents and Settings/[user]/.bitdust
         - Windows Vista, 7, 8: C:/Users/[user]/.bitdust
     Finally if target file exist - the Private Key will be loaded into memory.
-    If file does not exist - the new key will be generated. 
-    The size for new key will be taken from settings.  
+    If file does not exist - the new key will be generated.
+    The size for new key will be taken from settings.
     """
     global _MyRsaKey
     global _MyPubKey
@@ -101,13 +102,14 @@ def InitMyKey(keyfilename=None):
     if not LoadMyKey(keyfilename):
         GenerateNewKey(keyfilename)
 
+
 def LoadMyKey(keyfilename=None):
     global _MyRsaKey
     global _MyPubKey
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
-    if os.path.exists(keyfilename+'_location'):
-        newkeyfilename = bpio.ReadTextFile(keyfilename+'_location').strip()
+    if os.path.exists(keyfilename + '_location'):
+        newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     if os.path.exists(keyfilename):
@@ -117,13 +119,14 @@ def LoadMyKey(keyfilename=None):
         return ValidateKey()
     return False
 
+
 def GenerateNewKey(keyfilename=None):
     global _MyPubKey
     global _MyRsaKey
     if keyfilename is None:
         keyfilename = settings.KeyFileName()
-    if os.path.exists(keyfilename+'_location'):
-        newkeyfilename = bpio.ReadTextFile(keyfilename+'_location').strip()
+    if os.path.exists(keyfilename + '_location'):
+        newkeyfilename = bpio.ReadTextFile(keyfilename + '_location').strip()
         if os.path.exists(newkeyfilename):
             keyfilename = newkeyfilename
     lg.out(4, 'key.InitMyKey generate new private key')
@@ -133,11 +136,13 @@ def GenerateNewKey(keyfilename=None):
     bpio.WriteFile(keyfilename, keystring)
     lg.out(4, '    wrote %d bytes to %s' % (len(keystring), keyfilename))
 
+
 def ValidateKey():
     curkey = MyPrivateKeyObject()
     data256 = os.urandom(256)
     signature256 = curkey.sign(data256)
     return curkey.verify(signature256, data256)
+
 
 def ForgetMyKey():
     """
@@ -148,12 +153,14 @@ def ForgetMyKey():
     _MyPubKey = None
     _MyRsaKey = None
 
+
 def isMyKeyReady():
     """
     Check if the Key is already loaded into memory.
     """
     global _MyRsaKey
     return _MyRsaKey is not None
+
 
 def MyPublicKey():
     """
@@ -164,6 +171,7 @@ def MyPublicKey():
     Result = _MyPubKey.public().toString('openssh')
     return Result
 
+
 def MyPrivateKey():
     """
     Return Private part of the Key as openssh string.
@@ -171,6 +179,7 @@ def MyPrivateKey():
     global _MyPubKey
     InitMyKey()
     return _MyPubKey.toString('openssh')
+
 
 def MyPublicKeyObject():
     """
@@ -180,6 +189,7 @@ def MyPublicKeyObject():
     InitMyKey()
     return _MyPubKey.public()
 
+
 def MyPrivateKeyObject():
     """
     Return Private part of the Key as object.
@@ -188,7 +198,8 @@ def MyPrivateKeyObject():
     InitMyKey()
     return _MyPubKey
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def Sign(inp):
     """
@@ -198,42 +209,45 @@ def Sign(inp):
     InitMyKey()
     # Makes a list but we just want a string
     Signature = _MyPubKey.keyObject.sign(inp, '')
-    # so we take first element in list - need str cause was long    
-    result = str(Signature[0]) 
+    # so we take first element in list - need str cause was long
+    result = str(Signature[0])
     return result
+
 
 def VerifySignature(pubkeystring, hashcode, signature):
     """
     Verify signature, this calls function ``Crypto.PublicKey.RSA.verify`` to verify.
-    
+
     :param keystring: PublicKey in openssh format.
-    :param hashcode: input data to verify, we use method ``Hash`` to prepare that. 
+    :param hashcode: input data to verify, we use method ``Hash`` to prepare that.
     :param signature: string with signature to verify.
-    
-    Return True if signature is correct, otherwise False. 
+
+    Return True if signature is correct, otherwise False.
     """
-    # key is public key in string format 
+    # key is public key in string format
     keyobj = keys.Key.fromString(pubkeystring).keyObject
     # needs to be a long in a list
     sig_long = long(signature),
     Result = bool(keyobj.verify(hashcode, sig_long))
     return Result
 
+
 def Verify(ConIdentity, hashcode, signature):
     """
     This takes Public Key from user identity and calls ``VerifySignature``.
-     
+
     :param ConIdentity: user's identity object'.
     """
     pubkey = ConIdentity.publickey
     Result = VerifySignature(pubkey, hashcode, signature)
     return Result
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def HashMD5(inp, hexdigest=False):
     """
-    Use MD5 method to calculate the hash of ``inp`` string. 
+    Use MD5 method to calculate the hash of ``inp`` string.
     However it seems it is not so safe anymore:
     http://natmchugh.blogspot.co.uk/2014/10/how-i-created-two-images-with-same-md5.html
     """
@@ -241,13 +255,15 @@ def HashMD5(inp, hexdigest=False):
         return hashlib.md5(inp).hexdigest()
     return hashlib.md5(inp).digest()
 
+
 def HashSHA(inp, hexdigest=False):
     """
-    Use SHA1 method to calculate the hash of ``inp`` string. 
+    Use SHA1 method to calculate the hash of ``inp`` string.
     """
     if hexdigest:
         return hashlib.sha1(inp).hexdigest()
     return hashlib.sha1(inp).digest()
+
 
 def HashSHA512(inp, hexdigest=False):
     """
@@ -255,7 +271,8 @@ def HashSHA512(inp, hexdigest=False):
     if hexdigest:
         return hashlib.sha512(inp).hexdigest()
     return hashlib.sha512(inp).digest()
-    
+
+
 def Hash(inp, hexdigest=False):
     """
     Core function to calculate hash of ``inp`` string, right now it uses MD5 method.
@@ -263,7 +280,8 @@ def Hash(inp, hexdigest=False):
     # return HashMD5(inp)
     return HashSHA(inp, hexdigest=hexdigest)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def SessionKeyType():
     """
@@ -272,37 +290,40 @@ def SessionKeyType():
     # return "AES"
     return 'DES3'
 
+
 def NewSessionKey():
     """
     Return really random string for making equivalent DES3 objects when needed.
     """
-    # to work around bug in rsa.encrypt - do not want leading 0.          
-    return chr(random.randint(1, 255)) + os.urandom(23)   
+    # to work around bug in rsa.encrypt - do not want leading 0.
+    return chr(random.randint(1, 255)) + os.urandom(23)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def DecryptWithSessionKey(rand24, inp, session_key_type=SessionKeyType()):
     """
     Decrypt string with given session key.
 
-    :param rand24: a session key comes with the message in encrypted form  
-    :param inp: input string to encrypt 
+    :param rand24: a session key comes with the message in encrypted form
+    :param inp: input string to encrypt
     """
     if session_key_type == 'DES3':
         SessionKey = DES3.new(rand24)
-        ret = SessionKey.decrypt(inp) 
+        ret = SessionKey.decrypt(inp)
     elif session_key_type == 'AES':
         # TODO: AES is not tested yet
         SessionKey = AES.new(rand24)
         ret = SessionKey.decrypt(inp)
     return ret
 
+
 def EncryptWithSessionKey(session_key, inp, session_key_type=SessionKeyType()):
     """
     Encrypt input string with Session Key.
-    
-    :param session_key: randomly generated session key 
-    :param inp: input string to encrypt 
+
+    :param session_key: randomly generated session key
+    :param inp: input string to encrypt
     """
     if session_key_type == 'DES3':
         SessionKey = DES3.new(session_key)
@@ -323,7 +344,8 @@ def EncryptWithSessionKey(session_key, inp, session_key_type=SessionKeyType()):
         ret = ''
     return ret
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def DecryptLocalPK(inp):
     """
@@ -335,8 +357,9 @@ def DecryptLocalPK(inp):
     atuple = (inp,)
     padresult = _MyRsaKey.decrypt(atuple)
     # remove the "1" added in EncryptBinaryPK
-    result = padresult[1:]                   
+    result = padresult[1:]
     return result
+
 
 def EncryptLocalPK(inp):
     """
@@ -346,7 +369,8 @@ def EncryptLocalPK(inp):
     InitMyKey()
     return EncryptBinaryPK(_MyPubKey, inp)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def EncryptStringPK(publickeystring, inp):
     """
@@ -354,6 +378,7 @@ def EncryptStringPK(publickeystring, inp):
     """
     keyobj = keys.Key.fromString(publickeystring)
     return EncryptBinaryPK(keyobj, inp)
+
 
 def EncryptBinaryPK(publickey, inp):
     """
@@ -364,10 +389,11 @@ def EncryptBinaryPK(publickey, inp):
     # Only think we encrypt is produced by NewSessionKey() which takes care not to have leading zero.
     # See   bug report in http://permalink.gmane.org/gmane.comp.python.cryptography.cvs/217
     # So we add a 1 in front.
-    atuple = publickey.keyObject.encrypt('1'+inp, "")
-    return atuple[0]                     
+    atuple = publickey.keyObject.encrypt('1' + inp, "")
+    return atuple[0]
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def SpeedTest():
     """
@@ -376,7 +402,7 @@ def SpeedTest():
     import time
     import string
     import random
-    dataSZ = 1024*640
+    dataSZ = 1024 * 640
     loops = 10
     packets = []
     dt = time.time()
@@ -389,9 +415,9 @@ def SpeedTest():
         Signature = Sign(Hash(EncryptedData))
         packets.append((Data, len(Data), EncryptedSessionKey, EncryptedData, Signature))
         print '.',
-    print time.time()-dt, 'seconds'
-    
-    dt = time.time()    
+    print time.time() - dt, 'seconds'
+
+    dt = time.time()
     print 'decrypt now'
     for Data, Length, EncryptedSessionKey, EncryptedData, Signature in packets:
         SessionKey = DecryptLocalPK(EncryptedSessionKey)
@@ -400,11 +426,11 @@ def SpeedTest():
         if not VerifySignature(MyPublicKey(), Hash(EncryptedData), Signature):
             raise Exception()
         if newData != Data:
-            raise Exception 
+            raise Exception
         print '.',
-    print time.time()-dt, 'seconds'
+    print time.time() - dt, 'seconds'
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
@@ -415,5 +441,3 @@ if __name__ == '__main__':
     # settings.uconfig().set('backup.private-key-size', '3072')
     InitMyKey()
     SpeedTest()
-    
-     

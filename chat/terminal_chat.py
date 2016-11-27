@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#terminal_chat.py
+# terminal_chat.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -37,23 +37,24 @@ import threading
 
 from twisted.internet import reactor
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from lib import nameurl
 
 from chat import kbhit
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _SimpleTerminalChat = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init(do_send_message_func=None):
     """
@@ -61,7 +62,7 @@ def init(do_send_message_func=None):
     global _SimpleTerminalChat
     _SimpleTerminalChat = SimpleTerminalChat(
         send_message_func=do_send_message_func)
-    
+
 
 def shutdown():
     """
@@ -69,8 +70,8 @@ def shutdown():
     global _SimpleTerminalChat
     del _SimpleTerminalChat
     _SimpleTerminalChat = None
-    
-    
+
+
 def run():
     """
     """
@@ -84,7 +85,7 @@ def stop():
     """
     global _SimpleTerminalChat
     _SimpleTerminalChat.stop()
-    
+
 
 def process_message(sender, message):
     """
@@ -99,11 +100,13 @@ def on_incoming_message(result):
     global _SimpleTerminalChat
     for msg in result['result']:
         _SimpleTerminalChat.on_inbox_message(msg['from'], msg['message'])
-    return result        
+    return result
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class SimpleTerminalChat(object):
+
     def __init__(self, send_message_func=None):
         self.chars = []
         self.input = []
@@ -128,7 +131,7 @@ class SimpleTerminalChat(object):
             'sender': sender,
             'time': time.time(),
         })
-    
+
     def on_my_message(self, message):
         if message.startswith('!add '):
             idurl = message[5:]
@@ -149,7 +152,7 @@ class SimpleTerminalChat(object):
         if self.send_message_func is not None:
             for to in self.users:
                 reactor.callFromThread(self.send_message_func, to, message)
-        
+
     def bot(self):
         while True:
             if self.quitnow:
@@ -170,7 +173,7 @@ class SimpleTerminalChat(object):
                 break
             time.sleep(0.05)
             if self.printed < len(self.history):
-                sys.stdout.write('\b' * (len(last_line)+2))
+                sys.stdout.write('\b' * (len(last_line) + 2))
                 # sys.stdout.write('\n\r')
                 sys.stdout.flush()
                 for h in self.history[self.printed:]:
@@ -212,7 +215,7 @@ class SimpleTerminalChat(object):
                 continue
             for c in inp:
                 # ESC
-                if ord(c) == 27: 
+                if ord(c) == 27:
                     sys.stdout.write('\n\r')
                     sys.stdout.flush()
                     self.quitnow = True
@@ -260,7 +263,7 @@ class SimpleTerminalChat(object):
         self.old_settings = termios.tcgetattr(self.fd)
         self.kb = kbhit.KBHit()
         tty.setraw(sys.stdin.fileno())
-        
+
         self.welcome()
         # bot = threading.Thread(target=self.bot)
         # bot.start()
@@ -272,19 +275,17 @@ class SimpleTerminalChat(object):
         proc.start()
         proc.join()
         self.goodbye()
-        
+
         termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old_settings)
         self.kb.set_normal_term()
-        
-        
+
     def stop(self):
         self.quitnow = 1
-    
-#------------------------------------------------------------------------------ 
-        
+
+#------------------------------------------------------------------------------
+
 if __name__ == '__main__':
     init()
     reactor.callInThread(run)
     reactor.run()
     shutdown()
-    

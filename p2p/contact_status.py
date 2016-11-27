@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#contact_status.py
+# contact_status.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -15,7 +15,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,15 +33,15 @@
     <a href="http://bitdust.io/automats/contact_status/contact_status.png" target="_blank">
     <img src="http://bitdust.io/automats/contact_status/contact_status.png" style="max-width:100%;">
     </a>
-    
+
 A state machine and several extra methods to keep track of current users's online state.
 To do p2p communications need to know who is available and who is not at the moment.
 
 This simple state machine is used to detect connection status with remote user.
-The situation when remote user replies to a packet sent to him 
-means that he is currently available over the network.   
+The situation when remote user replies to a packet sent to him
+means that he is currently available over the network.
 
-A one instance of ``contact_status()`` machine is created for 
+A one instance of ``contact_status()`` machine is created for
 every remote contact and monitor his status.
 
 
@@ -55,12 +55,12 @@ EVENTS:
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import sys
@@ -71,7 +71,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in contact_status.py')
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -91,28 +91,29 @@ import ratings
 
 from userid import my_id
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _StatusLabels = {
     'CONNECTED': 'online',
     'ACK?': 'responding',
     'PING': 'checking',
     'OFFLINE': 'offline',
-    }
+}
 
 _StatusIcons = {
     'CONNECTED': 'icons/online-user01.png',
     'ACK?': 'icons/ackwait-user01.png',
     'PING': 'icons/ping-user01.png',
     'OFFLINE': 'icons/offline-user01.png',
-    }
+}
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _ContactsStatusDict = {}
 _ShutdownFlag = False
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init():
     """
@@ -122,7 +123,7 @@ def init():
     callback.insert_inbox_callback(-1, Inbox)
     callback.add_outbox_callback(Outbox)
     callback.add_queue_item_status_callback(OutboxStatus)
-    
+
 
 def shutdown():
     """
@@ -135,11 +136,11 @@ def shutdown():
         A.destroy()
     _ContactsStatusDict.clear()
     _ShutdownFlag = True
-    
+
 
 def isKnown(idurl):
     """
-    Return `True` if state machine contact_status() already exists for this user. 
+    Return `True` if state machine contact_status() already exists for this user.
     """
     if idurl in [None, 'None', '']:
         return False
@@ -196,7 +197,7 @@ def isCheckingNow(idurl):
         if _Debug:
             lg.out(_DebugLevel, 'contact_status.isCheckingNow contact %s is not found, made a new instance' % idurl)
     st = A(idurl).state
-    return st == 'PING' or st == 'ACK?' 
+    return st == 'PING' or st == 'ACK?'
 
 
 def getStatusLabel(idurl):
@@ -234,7 +235,7 @@ def getStatusIcon(idurl):
     global _StatusIcons
     return _StatusIcons.get(A(idurl).state, '?')
 
-    
+
 def listOfflineSuppliers():
     """
     Loops all suppliers and check their state, return a list of those with state OFFLINE.
@@ -259,7 +260,7 @@ def listOfflineCustomers():
         elif isOffline(idurl):
             result.append(idurl)
     return result
-    
+
 
 def countOfflineAmong(idurls_list):
     """
@@ -270,6 +271,7 @@ def countOfflineAmong(idurls_list):
         if isOffline(idurl):
             num += 1
     return num
+
 
 def countOnlineAmong(idurls_list):
     """
@@ -282,7 +284,8 @@ def countOnlineAmong(idurls_list):
                 num += 1
     return num
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(idurl, event=None, arg=None):
     """
@@ -290,7 +293,7 @@ def A(idurl, event=None, arg=None):
     """
     global _ShutdownFlag
     global _ContactsStatusDict
-    if not _ContactsStatusDict.has_key(idurl):
+    if idurl not in _ContactsStatusDict:
         if _ShutdownFlag:
             return None
         _ContactsStatusDict[idurl] = ContactStatus(
@@ -298,78 +301,78 @@ def A(idurl, event=None, arg=None):
     if event is not None:
         _ContactsStatusDict[idurl].automat(event, arg)
     return _ContactsStatusDict[idurl]
-      
+
 
 class ContactStatus(automat.Automat):
     """
     A class to keep track of user's online status.
     """
-    
+
     fast = True
-    
+
     timers = {
-        'timer-20sec': (20.0, ['PING','ACK?']),
-        }
-    
+        'timer-20sec': (20.0, ['PING', 'ACK?']),
+    }
+
     def __init__(self, idurl, name, state, debug_level):
         self.idurl = idurl
         self.time_connected = None
         automat.Automat.__init__(self, name, state, debug_level)
         if _Debug:
-            lg.out(_DebugLevel+2, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
-        
+            lg.out(_DebugLevel + 2, 'contact_status.ContactStatus %s %s %s' % (name, state, idurl))
+
     def state_changed(self, oldstate, newstate, event, arg):
         if _Debug:
-            lg.out(_DebugLevel-2, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
-        
+            lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
+
     def A(self, event, arg):
         #---CONNECTED---
         if self.state == 'CONNECTED':
-            if event == 'sent-failed' and self.Fails>=3 and self.isDataPacket(arg) :
+            if event == 'sent-failed' and self.Fails >= 3 and self.isDataPacket(arg):
                 self.state = 'OFFLINE'
                 self.doRepaint(arg)
-            elif event == 'sent-failed' and self.isDataPacket(arg) and self.Fails<3 :
-                self.Fails+=1
+            elif event == 'sent-failed' and self.isDataPacket(arg) and self.Fails < 3:
+                self.Fails += 1
         #---OFFLINE---
         elif self.state == 'OFFLINE':
-            if event == 'outbox-packet' and self.isPingPacket(arg) :
+            if event == 'outbox-packet' and self.isPingPacket(arg):
                 self.state = 'PING'
-                self.AckCounter=0
+                self.AckCounter = 0
                 self.doRepaint(arg)
-            elif event == 'inbox-packet' :
+            elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
-                self.Fails=0
+                self.Fails = 0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
         #---PING---
         elif self.state == 'PING':
-            if event == 'sent-done' :
+            if event == 'sent-done':
                 self.state = 'ACK?'
-                self.AckCounter=0
-            elif event == 'inbox-packet' :
+                self.AckCounter = 0
+            elif event == 'inbox-packet':
                 self.state = 'CONNECTED'
-                self.Fails=0
+                self.Fails = 0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
-            elif event == 'file-sent' :
-                self.AckCounter+=1
-            elif event == 'sent-failed' and self.AckCounter>1 :
-                self.AckCounter-=1
-            elif event == 'timer-20sec' or ( event == 'sent-failed' and self.AckCounter==1 ) :
+            elif event == 'file-sent':
+                self.AckCounter += 1
+            elif event == 'sent-failed' and self.AckCounter > 1:
+                self.AckCounter -= 1
+            elif event == 'timer-20sec' or (event == 'sent-failed' and self.AckCounter == 1):
                 self.state = 'OFFLINE'
                 self.doRepaint(arg)
         #---ACK?---
         elif self.state == 'ACK?':
-            if event == 'inbox-packet' :
+            if event == 'inbox-packet':
                 self.state = 'CONNECTED'
-                self.Fails=0
+                self.Fails = 0
                 self.doRememberTime(arg)
                 self.doRepaint(arg)
-            elif event == 'timer-20sec' :
+            elif event == 'timer-20sec':
                 self.state = 'OFFLINE'
-            elif event == 'outbox-packet' and self.isPingPacket(arg) :
+            elif event == 'outbox-packet' and self.isPingPacket(arg):
                 self.state = 'PING'
-                self.AckCounter=0
+                self.AckCounter = 0
                 self.doRepaint(arg)
         return None
 
@@ -386,13 +389,13 @@ class ContactStatus(automat.Automat):
         """
         pkt_out, status, error = arg
         return pkt_out.outpacket.Command not in [commands.Identity(), commands.Ack()]
-    
+
     def doRememberTime(self, arg):
         """
         Action method.
         """
         self.time_connected = time.time()
-        
+
     def doRepaint(self, arg):
         """
         Action method.
@@ -402,15 +405,16 @@ class ContactStatus(automat.Automat):
             webcontrol.OnAliveStateChanged(self.idurl)
         else:
             from web import control
-            control.request_update([('contact', self.idurl)])  
- 
-#------------------------------------------------------------------------------ 
+            control.request_update([('contact', self.idurl)])
+
+#------------------------------------------------------------------------------
+
 
 def OutboxStatus(pkt_out, status, error=''):
     """
-    This method is called when raised a status report after 
+    This method is called when raised a status report after
     sending a packet to remote peer.
-    If packet sending was failed - user seems to be OFFLINE.   
+    If packet sending was failed - user seems to be OFFLINE.
     """
     if pkt_out.remote_idurl == my_id.getLocalID():
         return False
@@ -436,13 +440,13 @@ def Inbox(newpacket, info, status, message):
     A(newpacket.OwnerID, 'inbox-packet', (newpacket, info, status, message))
     ratings.remember_connected_time(newpacket.OwnerID)
     return False
-    
+
 
 def Outbox(pkt_out):
     """
     Called when some ``packet`` is placed in the sending queue.
-    This packet can be our Identity packet - this is a sort of PING operation 
-    to try to connect with that man.    
+    This packet can be our Identity packet - this is a sort of PING operation
+    to try to connect with that man.
     """
     if pkt_out.outpacket.RemoteID == my_id.getLocalID():
         return False
@@ -458,7 +462,7 @@ def FileSent(workitem, args):
     Used to count how many times you PING him.
     """
     if workitem.remoteid == my_id.getLocalID():
-        return 
+        return
     A(workitem.remoteid, 'file-sent', (workitem, args))
 
 
@@ -468,6 +472,5 @@ def PacketSendingTimeout(remoteID, packetID):
     Right now this do nothing, state machine ignores that event.
     """
     if remoteID == my_id.getLocalID():
-        return 
+        return
     A(remoteID, 'sent-timeout', packetID)
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#broadcasters_finder.py
+# broadcasters_finder.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -41,12 +41,12 @@ EVENTS:
 """
 
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -61,11 +61,12 @@ from userid import my_id
 
 from transport import callback
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _BroadcastersFinder = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -73,15 +74,16 @@ def A(event=None, arg=None):
     """
     global _BroadcastersFinder
     if event is None and arg is None:
-        return _BroadcastersFinder 
+        return _BroadcastersFinder
     if _BroadcastersFinder is None:
         # set automat name and starting state here
         _BroadcastersFinder = BroadcastersFinder('broadcasters_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _BroadcastersFinder.automat(event, arg)
     return _BroadcastersFinder
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class BroadcastersFinder(automat.Automat):
     """
@@ -90,8 +92,8 @@ class BroadcastersFinder(automat.Automat):
 
     timers = {
         'timer-3sec': (3.0, ['ACK?']),
-        'timer-10sec': (10.0, ['ACK?','SERVICE?']),
-        }
+        'timer-10sec': (10.0, ['ACK?', 'SERVICE?']),
+    }
 
     def init(self):
         self.target_idurl = None
@@ -114,7 +116,7 @@ class BroadcastersFinder(automat.Automat):
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
                 self.doSendRequestService(arg)
-            elif event == 'timer-10sec' and self.Attempts<5:
+            elif event == 'timer-10sec' and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
                 self.doLookupRandomUser(arg)
             elif event == 'timer-3sec':
@@ -123,7 +125,7 @@ class BroadcastersFinder(automat.Automat):
             if event == 'found-one-user':
                 self.state = 'ACK?'
                 self.doRememberUser(arg)
-                self.Attempts+=1
+                self.Attempts += 1
                 self.doSendMyIdentity(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
@@ -138,17 +140,17 @@ class BroadcastersFinder(automat.Automat):
             elif event == 'service-accepted':
                 self.state = 'READY'
                 self.doNotifyLookupSuccess(arg)
-            elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'service-denied' ):
+            elif self.Attempts == 5 and (event == 'timer-10sec' or event == 'service-denied'):
                 self.state = 'READY'
                 self.doNotifyLookupFailed(arg)
-            elif ( event == 'timer-10sec' or event == 'service-denied' ) and self.Attempts<5:
+            elif (event == 'timer-10sec' or event == 'service-denied') and self.Attempts < 5:
                 self.state = 'RANDOM_USER'
                 self.doLookupRandomUser(arg)
         elif self.state == 'READY':
             if event == 'start':
                 self.state = 'RANDOM_USER'
                 self.doSetNotifyCallback(arg)
-                self.Attempts=0
+                self.Attempts = 0
                 self.doLookupRandomUser(arg)
         elif self.state == 'CLOSED':
             pass
@@ -193,7 +195,7 @@ class BroadcastersFinder(automat.Automat):
         service_info = 'service_broadcasting ' + self.request_service_params
         out_packet = p2p_service.SendRequestService(
             self.target_idurl, service_info, callbacks={
-                commands.Ack():  self._node_acked,
+                commands.Ack(): self._node_acked,
                 commands.Fail(): self._node_failed,
             }
         )
@@ -220,7 +222,7 @@ class BroadcastersFinder(automat.Automat):
         self.result_callback = None
         self.request_service_params = None
         self.current_broadcasters = []
-        
+
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
@@ -231,13 +233,13 @@ class BroadcastersFinder(automat.Automat):
         del _BroadcastersFinder
         _BroadcastersFinder = None
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         if  newpacket.Command == commands.Ack() and \
-            newpacket.OwnerID == self.target_idurl and \
-            newpacket.PacketID == 'identity' and \
-            self.state == 'ACK?':
+                newpacket.OwnerID == self.target_idurl and \
+                newpacket.PacketID == 'identity' and \
+                self.state == 'ACK?':
             self.automat('ack-received', self.target_idurl)
             return True
         return False

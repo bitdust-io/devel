@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#propagate.py
+# propagate.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -40,12 +40,12 @@ able to contact them in 2 or 3 hours then fetch copy of identity from
 their server.
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 
 import os
@@ -58,7 +58,7 @@ except:
 
 from twisted.internet.defer import DeferredList, Deferred, TimeoutError
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -86,15 +86,16 @@ from transport import packet_out
 
 from dht import dht_service
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _SlowSendIsWorking = False
 
 #------------------------------------------------------------------------------
 
+
 def init():
     """
-    Need to call that at start up to link with transport_control. 
+    Need to call that at start up to link with transport_control.
     """
     lg.out(4, "propagate.init ")
     # callback.add_finish_file_sending_callback(OnFileSent)
@@ -105,16 +106,18 @@ def shutdown():
     """
     lg.out(4, "propagate.shutdown")
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def propagate(selected_contacts, AckHandler=None, wide=False):
     """
-    Run the "propagate" process. 
+    Run the "propagate" process.
     First need to fetch ``selected_contacts`` IDs from id server.
-    And then send our Identity file to that contacts. 
+    And then send our Identity file to that contacts.
     """
     lg.out(6, "propagate.propagate to %d contacts" % len(selected_contacts))
     d = Deferred()
+
     def contacts_fetched(x):
         lg.out(6, "propagate.propagate.contacts_fetched")
         SendToIDs(selected_contacts, AckHandler, wide)
@@ -124,7 +127,7 @@ def propagate(selected_contacts, AckHandler=None, wide=False):
     return d
 
 
-def fetch(list_ids): 
+def fetch(list_ids):
     """
     Request a list of identity files.
     """
@@ -177,8 +180,8 @@ def single(idurl, ack_handler=None, wide=False):
     d.addCallback(lambda x: SendToIDs([idurl], ack_handler, wide))
     if ack_handler:
         d.addErrback(lambda err: ack_handler(err))
-    return d 
-    
+    return d
+
 
 def update():
     """
@@ -187,6 +190,7 @@ def update():
     lg.out(6, "propagate.update")
     return SendServers()
 
+
 def write_to_dht():
     """
     """
@@ -194,7 +198,8 @@ def write_to_dht():
     LocalIdentity = my_id.getLocalIdentity()
     return dht_service.set_value(LocalIdentity.getIDURL(), LocalIdentity.serialize())
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def FetchSingle(idurl):
     """
@@ -224,7 +229,8 @@ def FetchCustomers():
     """
     return fetch(contactsdb.customers())
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def SendServers():
     """
@@ -243,10 +249,10 @@ def SendServers():
         protocol, host, port, filename = nameurl.UrlParse(idurl)
         # if host == settings.IdentityServerName():
         #     host = '67.207.147.183'
-        webport, tcpport = known_servers.by_host().get(host, 
-            (settings.IdentityWebPort(), settings.IdentityServerPort()))
-        srvhost = '%s:%d'%(host, int(tcpport))
-        dlist.append(tcp_node.send(sendfilename, (host, int(tcpport)), 'Identity', True)) 
+        webport, tcpport = known_servers.by_host().get(host,
+                                                       (settings.IdentityWebPort(), settings.IdentityServerPort()))
+        srvhost = '%s:%d' % (host, int(tcpport))
+        dlist.append(tcp_node.send(sendfilename, (host, int(tcpport)), 'Identity', True))
         # dlist.append(gateway.send_file_single('tcp', srvhost, sendfilename, 'Identity'))
     dl = DeferredList(dlist, consumeErrors=True)
     return dl
@@ -254,7 +260,7 @@ def SendServers():
 
 def SendSuppliers():
     """
-    Send my identity file to all my suppliers, calls to ``SendToIDs()`` method. 
+    Send my identity file to all my suppliers, calls to ``SendToIDs()`` method.
     """
     lg.out(6, "propagate.SendSuppliers")
     SendToIDs(contactsdb.suppliers(), HandleSuppliersAck)
@@ -287,7 +293,7 @@ def SlowSendSuppliers(delay=1):
             return
         # transport_control.ClearAliveTime(idurl)
         SendToID(idurl, Payload=payload, wide=True)
-        reactor.callLater(delay, _send, index+1, payload, delay)
+        reactor.callLater(delay, _send, index + 1, payload, delay)
 
     _SlowSendIsWorking = True
     payload = my_id.getLocalIdentity().serialize()
@@ -298,7 +304,7 @@ def SlowSendCustomers(delay=1):
     """
     Same, "slowly" send my identity file to all my customers.
     """
-    
+
     global _SlowSendIsWorking
     if _SlowSendIsWorking:
         lg.out(8, "propagate.SlowSendCustomers  slow send is working at the moment. skip.")
@@ -313,7 +319,7 @@ def SlowSendCustomers(delay=1):
             return
         # transport_control.ClearAliveTime(idurl)
         SendToID(idurl, Payload=payload, wide=True)
-        reactor.callLater(delay, _send, index+1, payload, delay)
+        reactor.callLater(delay, _send, index + 1, payload, delay)
 
     _SlowSendIsWorking = True
     payload = my_id.getLocalIdentity().serialize()
@@ -322,14 +328,14 @@ def SlowSendCustomers(delay=1):
 
 def HandleSuppliersAck(ackpacket, info):
     """
-    Called when supplier is "Acked" to my after call to ``SendSuppliers()``. 
+    Called when supplier is "Acked" to my after call to ``SendSuppliers()``.
     """
     lg.out(8, "propagate.HandleSupplierAck %s" % ackpacket.OwnerID)
 
 
 def HandleCustomersAck(ackpacket, info):
     """
-    Called when supplier is "Acked" to my after call to ``SendCustomers()``. 
+    Called when supplier is "Acked" to my after call to ``SendCustomers()``.
     """
     lg.out(8, "propagate.HandleCustomerAck %s" % ackpacket.OwnerID)
 
@@ -343,6 +349,7 @@ def OnFileSent(pkt_out, item, status, size, error_message):
     """
     return False
 
+
 def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     """
     Create ``packet`` with my Identity file and calls ``transport.gateway.outbox()`` to send it.
@@ -355,15 +362,15 @@ def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
         thePayload = my_id.getLocalIdentity().serialize()
     p = signed.Packet(
         commands.Identity(),
-        my_id.getLocalID(), #MyID,
-        my_id.getLocalID(), #MyID,
-        'Identity', # my_id.getLocalID(), #PacketID,
+        my_id.getLocalID(),  # MyID,
+        my_id.getLocalID(),  # MyID,
+        'Identity',  # my_id.getLocalID(), #PacketID,
         thePayload,
         idurl)
     # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
     gateway.outbox(p, wide, callbacks={
         commands.Ack(): ack_handler,
-        commands.Fail(): ack_handler}) 
+        commands.Fail(): ack_handler})
     if wide:
         # this is a ping packet - need to clear old info
         stats.ErasePeerProtosStates(idurl)
@@ -410,19 +417,19 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
 #                break
 #        if found_previous_packets >= 3:
 #            lg.out(8, '        skip sending to %s' % contact)
-#            continue    
+#            continue
         p = signed.Packet(
             commands.Identity(),
-            my_id.getLocalID(), #MyID,
-            my_id.getLocalID(), #MyID,
-            'Identity', # my_id.getLocalID(), #PacketID,
+            my_id.getLocalID(),  # MyID,
+            my_id.getLocalID(),  # MyID,
+            'Identity',  # my_id.getLocalID(), #PacketID,
             Payload,
             contact)
         lg.out(8, "        sending [Identity] to %s" % nameurl.GetName(contact))
         # callback.register_interest(AckHandler, signed.RemoteID, signed.PacketID)
         gateway.outbox(p, wide, callbacks={
             commands.Ack(): ack_handler,
-            commands.Fail(): ack_handler, }) 
+            commands.Fail(): ack_handler, })
         if wide:
             # this is a ping packet - need to clear old info
             stats.ErasePeerProtosStates(contact)
@@ -433,35 +440,39 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
 
 def PingContact(idurl, timeout=30):
     """
-    Called from outside when need to "ping" some user, this will just send my Identity to that guy, 
+    Called from outside when need to "ping" some user, this will just send my Identity to that guy,
     he will need to respond. Previously it request his identity from ID server.
     """
     if _Debug:
         lg.out(_DebugLevel, "propagate.PingContact")
     ping_result = Deferred()
+
     def _cancel_ack_timeout(x, tmcall):
         lg.out(_DebugLevel, "propagate.PingContact._cancel_ack_timeout")
         if tmcall.active():
             tmcall.cancel()
         return x
+
     def _ack_handler(response, info, tmcall, res):
         lg.out(_DebugLevel, "propagate.PingContact._ack_handler %s" % str((response, info)))
         if tmcall:
             _cancel_ack_timeout((response, info), tmcall)
         if not res.called:
             res.callback((response, info))
+
     def _ack_timed_out(tm, cache_request):
         lg.out(_DebugLevel, "propagate.PingContact._ack_timed_out")
         if not cache_request.called:
             cache_request.cancel()
         ping_result.errback(TimeoutError('response was not received within %d seconds' % tm))
+
     def _identity_cached(x, idsrc, timeout_call, result):
         lg.out(_DebugLevel, "propagate.PingContact._identity_cached %s bytes" % len(idsrc))
         # TODO Verify()
-        SendToIDs(  [idurl], 
-                    lambda response, info:
-                        _ack_handler(response, info, timeout_call, result), 
-                    wide=True,)
+        SendToIDs([idurl],
+                  lambda response, info:
+                  _ack_handler(response, info, timeout_call, result),
+                  wide=True,)
     idcache_defer = identitycache.scheduleForCaching(idurl, timeout)
     if timeout:
         timeout_call = reactor.callLater(timeout, _ack_timed_out, timeout, idcache_defer)
@@ -471,4 +482,3 @@ def PingContact(idurl, timeout=30):
     idcache_defer.addCallback(_identity_cached, idurl, timeout_call, ping_result)
     idcache_defer.addErrback(ping_result.errback)
     return ping_result
-

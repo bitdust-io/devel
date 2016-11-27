@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#udp.py
+# udp.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,18 +33,18 @@ from twisted.internet import protocol
 from twisted.internet import task
 from twisted.internet.defer import DeferredList
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 from system import bpio
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 24
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Listeners = {}
 # _DatagramReceivedCallbacksList = []
@@ -60,20 +60,21 @@ CMD_ALIVE = 'a'
 CMD_STUN = 's'
 CMD_MYIPPORT = 'm'
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-#def add_datagram_receiver_callback(callback):
+# def add_datagram_receiver_callback(callback):
 #    global _DatagramReceivedCallbacksList
 #    if callback not in _DatagramReceivedCallbacksList:
 #        _DatagramReceivedCallbacksList.append(callback)
 #
 #
-#def remove_datagram_receiver_callback(callback):
+# def remove_datagram_receiver_callback(callback):
 #    global _DatagramReceivedCallbacksList
 #    if callback in _DatagramReceivedCallbacksList:
 #        _DatagramReceivedCallbacksList.remove(callback)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def listen(port, proto=None):
     if port in listeners().keys():
@@ -92,8 +93,8 @@ def listen(port, proto=None):
 def port_closed(x):
     lg.out(6, 'udp.port_closed   listeners: %d' % (len(listeners())))
     return x
-    
-    
+
+
 def close(port):
     lg.out(6, 'udp.close  %r' % port)
     l = listeners().pop(port)
@@ -120,7 +121,8 @@ def close_all():
     lg.out(6, 'udp.close_all  %d UDP listeners were closed' % len(shutlist))
     return DeferredList(shutlist)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def listeners():
     global _Listeners
@@ -139,7 +141,8 @@ def listener(port):
         return None
     return listeners()[port]
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def send_command(from_port, command, data, address):
     p = proto(from_port)
@@ -149,15 +152,17 @@ def send_command(from_port, command, data, address):
     result = p.sendCommand(command, data, address)
     p = None
     return result
-    
+
+
 def get_last_datagram_time():
     global _LastDatagramReceivedTime
     return _LastDatagramReceivedTime
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class BasicProtocol(protocol.DatagramProtocol):
-    
+
     def __init__(self):
         """
         """
@@ -167,7 +172,7 @@ class BasicProtocol(protocol.DatagramProtocol):
         self.stopping = False
         self.bytes_in = 0
         self.bytes_out = 0
-    
+
     def __del__(self):
         """
         """
@@ -179,7 +184,7 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def add_callback(self, cb):
         self.callbacks.append(cb)
-        
+
     def remove_callback(self, cb):
         self.callbacks.remove(cb)
 
@@ -192,7 +197,7 @@ class BasicProtocol(protocol.DatagramProtocol):
     def datagramReceived(self, datagram, address):
         self.bytes_in += len(datagram)
         self.run_callbacks(datagram, address)
-        
+
     def sendDatagram(self, datagram, address):
         """
         """
@@ -205,7 +210,7 @@ class BasicProtocol(protocol.DatagramProtocol):
             return False
         self.bytes_out += len(datagram)
         return True
-        
+
     def startProtocol(self):
         """
         """
@@ -217,48 +222,49 @@ class BasicProtocol(protocol.DatagramProtocol):
         lg.out(6, 'udp.stopProtocol %r' % self)
         self.port = None
         self.callbacks = []
-        
+
     def disconnect(self):
         """
         """
         self.stopping = True
         self.callbacks = []
         # self.transport.abortConnection()
-        
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 class CommandsProtocol(BasicProtocol):
     """
     Datagram format is::
-    
-        | Software | Command ID | Payload |  
+
+        | Software | Command ID | Payload |
         | version  |            |         |
         | (1 byte) | (1 byte)   |         |
-        
+
     Commands have different payload format, see in the code.
     List of valid commands (by ID):
-    
-        * 'p' = ``PING``        an empty packet to establish connection   
+
+        * 'p' = ``PING``        an empty packet to establish connection
         * 'g' = ``GREETING``    need to give a response when received a ``PING`` packet,
                                 payload should contain a global ID of responding user
-                                so remote peer can identify who is this.                 
-        * 'd' = ``DATA``        a data packet, payload format will be described bellow.   
+                                so remote peer can identify who is this.
+        * 'd' = ``DATA``        a data packet, payload format will be described bellow.
         * 'r' = ``REPORT``      a response after receiving a ``DATA`` packet,
-                                so sender can send next packets. 
+                                so sender can send next packets.
         * 'a' = ``ALIVE``       periodically need to send an empty packet to keep session alive.
         * 's' = ``STUN``        request remote peer for my external IP:PORT.
         * 'm' = ``MYIPPORT``    response to ``STUN`` packet, payload will contain IP:PORT of remote peer
     """
-    
+
     SoftwareVersion = '1'
-    
+
     def __init__(self):
         self.command_filter_callback = None
         BasicProtocol.__init__(self)
-    
+
     def set_command_filter_callback(self, cb):
         self.command_filter_callback = cb
-        
+
     def datagramReceived(self, datagram, address):
         global _LastDatagramReceivedTime
         _LastDatagramReceivedTime = time.time()
@@ -295,7 +301,7 @@ class CommandsProtocol(BasicProtocol):
             self.run_callbacks((command, payload), address)
         self.bytes_in += datagramsz
         # if command in [CMD_DATA, CMD_ACK]:
-        
+
     def sendCommand(self, command, data, address):
         payloadsz = len(data)
         outp = cStringIO.StringIO()
@@ -319,28 +325,33 @@ class CommandsProtocol(BasicProtocol):
         # if command in [CMD_DATA, CMD_ACK]:
         return result
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def main():
     bpio.init()
     lg.set_debug_level(18)
     listnport = int(sys.argv[1])
+
     def received(dgrm, addr):
         send_command(listnport, CMD_ALIVE, 'ok', addr)
+
     def go(x, port):
         print 'go', x
         l = listen(port)
         l.protocol.add_callback(received)
+
     def restart(port):
         print 'restart'
         if listener(port):
             close(port).addCallback(go, port)
         else:
             go(None, port)
+
     def ping(fromport, toaddr):
         print 'ping'
         send_command(fromport, CMD_PING, 'ping', toaddr)
-    if len(sys.argv)>2:
+    if len(sys.argv) > 2:
         addr = sys.argv[2].split(':')
         addr = (addr[0], int(addr[1]))
         listen(listnport)
@@ -351,13 +362,4 @@ def main():
     reactor.run()
 
 if __name__ == "__main__":
-    main()        
-        
-        
-        
-        
-        
-        
-
-    
-        
+    main()

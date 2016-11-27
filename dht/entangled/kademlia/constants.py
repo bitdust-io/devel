@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#constants.py
+# constants.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,7 +30,7 @@
 """ This module defines the charaterizing constants of the Kademlia network
 
 C{checkRefreshInterval} and C{udpDatagramMaxSize} are implementation-specific
-constants, and do not affect general Kademlia operation. 
+constants, and do not affect general Kademlia operation.
 """
 
 ######### KADEMLIA CONSTANTS ###########
@@ -48,19 +48,19 @@ rpcTimeout = 5
 iterativeLookupDelay = rpcTimeout / 2
 
 #: If a k-bucket has not been used for this amount of time, refresh it (in seconds)
-refreshTimeout = 3600 # 1 hour
+refreshTimeout = 3600  # 1 hour
 #: The interval at which nodes replicate (republish/refresh) data they are holding
 replicateInterval = refreshTimeout
 # The time it takes for data to expire in the network; the original publisher of the data
 # will also republish the data at this time if it is still valid
-dataExpireTimeout = 86400 # 24 hours
+dataExpireTimeout = 86400  # 24 hours
 
 ######## IMPLEMENTATION-SPECIFIC CONSTANTS ###########
 
 #: The interval in which the node should check its whether any buckets need refreshing,
 #: or whether any data needs to be republished (in seconds)
-checkRefreshInterval = refreshTimeout/5
+checkRefreshInterval = refreshTimeout / 5
 
 #: Max size of a single UDP datagram, in bytes. If a message is larger than this, it will
 #: be spread accross several UDP packets.
-udpDatagramMaxSize = 8192 # 8 KB
+udpDatagramMaxSize = 8192  # 8 KB

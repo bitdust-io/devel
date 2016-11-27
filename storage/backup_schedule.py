@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#backup_schedule.py
+# backup_schedule.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -15,7 +15,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,16 +29,16 @@
 """
 .. module:: backup_schedule
 
-A set of methods to run backups at given intervals, used to provide scheduled backups. 
+A set of methods to run backups at given intervals, used to provide scheduled backups.
 
 TODO:
 need to turn on this module, it is switched off during last "big changes".
-many things was changed since that moment, so need to put some work here 
+many things was changed since that moment, so need to put some work here
 """
 
 from logs import lg
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _SheduledTasks = {}
 _UsingGUI = False
@@ -47,7 +47,8 @@ _GuiBackupUpdate = None
 
 #------------------------------------------------------------------------------
 
-def init(usingGui = False):
+
+def init(usingGui=False):
     global _UsingGUI
     _UsingGUI = usingGui
     lg.out(4, 'backup_schedule.init ')
@@ -74,12 +75,12 @@ def loop():
     # reactor.callLater(timeout(), loop)
 
 
-#will check all Shedules each 60 minutes
+# will check all Shedules each 60 minutes
 def timeout():
-    return 60.0*60.0
+    return 60.0 * 60.0
 
 
-#def run():
+# def run():
 #    global _SheduledTasks
 #    try:
 #        lg.out(8, 'backup_schedule.run ')
@@ -117,7 +118,7 @@ def timeout():
 #        lg.exc()
 
 
-#def start_backup(dirName):
+# def start_backup(dirName):
 #    global _SheduledTasks
 #    if _SheduledTasks.has_key(unicode(dirName)): # we're running now, no longer need the schedule
 #        del _SheduledTasks[unicode(dirName)]
@@ -141,7 +142,7 @@ def timeout():
 #        _GuiBackupUpdate()
 
 
-#def backup_done(backupID):
+# def backup_done(backupID):
 #    lg.out(4, 'backup_schedule.backup_done ' + str(backupID))
 #
 #    global _UsingGUI
@@ -180,7 +181,7 @@ def timeout():
 #            _GuiBackupUpdate()
 
 
-#def backup_fail(backupID):
+# def backup_fail(backupID):
 #    lg.out(4, 'backup_schedule.backup_fail ' + str(backupID))
 #    global _UsingGUI
 #    global _GuiBackupUpdate
@@ -213,7 +214,7 @@ def next(dirName):
     global _SheduledTasks
 #    lastRunId, lastRunSize, lastRunStatus, lastRunStart, lastRunFinish = backup_db.GetLastRunInfo(dirName)
 #    schedule_type, schedule_time, schedule_interval, interval_details = backup_db.GetSchedule(dirName)
-    schedule = None # backup_db.GetSchedule(dirName)
+    schedule = None  # backup_db.GetSchedule(dirName)
     if schedule is None:
         return None
 
@@ -221,7 +222,7 @@ def next(dirName):
 #    lg.out(8, 'backup_schedule.next %s %s' % (str(dirName), schedule))
 
     return schedule.next_time()
-    
+
 #    next_start = None
 #    if schedule_type == 'none':
 #        next_start = -1
@@ -267,16 +268,16 @@ def next(dirName):
 #    return next_start
 
 
-def debugWrite(debugtext): # useful when debugging this module, otherwise don't use (leave False)
+def debugWrite(debugtext):  # useful when debugging this module, otherwise don't use (leave False)
     if False:
-        debugFile = open("scheduledebug.txt","a")
-        debugFile.write(debugtext+"\r\n")
+        debugFile = open("scheduledebug.txt", "a")
+        debugFile.write(debugtext + "\r\n")
         debugFile.close()
     else:
         lg.out(8, debugtext)
 
 
-#def types(k=None):
+# def types(k=None):
 #    d = {'0': 'none',
 #         '1': 'hourly',
 #         '2': 'daily',
@@ -288,7 +289,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #    return d.get(k, d['0'])
 
 
-#def labels():
+# def labels():
 #    return {'n': 'none',
 #            'h': 'hourly',
 #            'd': 'daily',
@@ -297,32 +298,32 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #            'c': 'continuously'}
 
 
-#def default():
+# def default():
 #    return {'type': 'none',
 #            'interval': '1',
 #            'time': '',
 #            'details': '',}
 
 
-#def format():
+# def format():
 #    return '''
-#Schedule compact format:
+# Schedule compact format:
 #[mode].[interval].[time].[details]
 #
-#mode:
+# mode:
 #  n-none, h-hourly, d-daily, w-weekly, m-monthly
-#  
-#interval:
+#
+# interval:
 #  just a number - how often to restart the task, default is 1
-#    
-#time:
+#
+# time:
 #  [hour]:[minute]
-#  
-#details:
+#
+# details:
 #  for weeks: Mon Tue Wed Thu Fri Sat Sun
 #  for months: Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
-#  
-#some examples:
+#
+# some examples:
 #  n.1..                   no schedule
 #  hourly.3                each 3 hours
 #  daily.4.10:15.          every 4th day at 10:15
@@ -333,7 +334,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #'''
 
 
-#def unpack(s):
+# def unpack(s):
 #    try:
 #        parts = s.split('.')
 #        parts += ['']*(4-len(parts))
@@ -367,7 +368,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #            'details': sh_details_new.strip(),}
 
 
-#def split(t):
+# def split(t):
 #    typ = str(t[0])
 #    if typ in types().keys():
 #        typ = types()[typ]
@@ -384,7 +385,7 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 #-------------------------------------------------------------------------------
 
 
-#def main():
+# def main():
 #    nt = maths.shedule_next_daily(time.time()-60*60*24*2, 4, '12:00')
 #    print 'daily', time.asctime(time.localtime(nt))
 #    nw = maths.shedule_next_weekly(time.time(),1,'12:00', [0,])
@@ -398,5 +399,3 @@ def debugWrite(debugtext): # useful when debugging this module, otherwise don't 
 if __name__ == '__main__':
     lg.set_debug_level(12)
     # main()
-
-

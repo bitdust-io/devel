@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#timeprecision.py
+# timeprecision.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,7 +31,7 @@ def _qpc():
     from ctypes import byref, c_int64, windll
     val = c_int64()
     windll.Kernel32.QueryPerformanceCounter(byref(val))
-    return val.value    
+    return val.value
 
 
 _InitTime = None
@@ -61,7 +61,7 @@ def _time_windows():
     from ctypes import byref, c_int64, windll
     time_now = c_int64()
     windll.Kernel32.QueryPerformanceCounter(byref(time_now))
-    return _InitTime + ( (_TimeStart - time_now.value) / _Frequency)
+    return _InitTime + ((_TimeStart - time_now.value) / _Frequency)
 
 
 if sys.platform == "win32":
@@ -72,13 +72,11 @@ else:
     # On most other platforms the best timer is time.time()
     _time = time.time
 
-print '%f' % (time.time() - _time()) 
+print '%f' % (time.time() - _time())
 
 for j in range(10):
     c = 0
     for i in range(9999999):
-        c = i / float( i + 1 )
+        c = i / float(i + 1)
         if str(i).count('0') == 6 and int(str(i)[0]) % 5:
             print '%f' % (time.time() - _time())
-
-

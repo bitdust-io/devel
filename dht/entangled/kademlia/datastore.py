@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#datastore.py
+# datastore.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -37,9 +37,10 @@ import os
 class DataStore(UserDict.DictMixin):
     """ Interface for classes implementing physical storage (for data
     published via the "STORE" RPC) for the Kademlia DHT
-    
+
     @note: This provides an interface for a dict-like object
     """
+
     def keys(self):
         """ Return a list of the keys in this data store """
 
@@ -78,8 +79,10 @@ class DataStore(UserDict.DictMixin):
     def __delitem__(self, key):
         """ Delete the specified key (and its value) """
 
+
 class DictDataStore(DataStore):
     """ A datastore using an in-memory Python dictionary """
+
     def __init__(self):
         # Dictionary format:
         # { <key>: (<value>, <lastPublished>, <originallyPublished> <originalPublisherID>) }
@@ -96,10 +99,10 @@ class DictDataStore(DataStore):
 
     def originalPublisherID(self, key):
         """ Get the original publisher of the data's node ID
-        
+
         @param key: The key that identifies the stored data
         @type key: str
-        
+
         @return: Return the node ID of the original publisher of the
         C{(key, value)} pair identified by C{key}.
         """
@@ -129,6 +132,7 @@ class DictDataStore(DataStore):
 class SQLiteDataStore(DataStore):
     """ Example of a SQLite database-based datastore
     """
+
     def __init__(self, dbFile=':memory:'):
         """
         @param dbFile: The name of the file containing the SQLite database; if
@@ -163,7 +167,7 @@ class SQLiteDataStore(DataStore):
 
         @param key: The key that identifies the stored data
         @type key: str
-        
+
         @return: Return the node ID of the original publisher of the
         C{(key, value)} pair identified by C{key}.
         """
@@ -178,18 +182,18 @@ class SQLiteDataStore(DataStore):
         # Encode the key so that it doesn't corrupt the database
         encodedKey = key.encode('hex')
         self._cursor.execute("select key from data where key=:reqKey", {'reqKey': encodedKey})
-        if self._cursor.fetchone() == None:
+        if self._cursor.fetchone() is None:
             self._cursor.execute('INSERT INTO data(key, value, lastPublished, originallyPublished, originalPublisherID) VALUES (?, ?, ?, ?, ?)', (encodedKey, buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID))
         else:
             self._cursor.execute('UPDATE data SET value=?, lastPublished=?, originallyPublished=?, originalPublisherID=? WHERE key=?', (buffer(pickle.dumps(value, pickle.HIGHEST_PROTOCOL)), lastPublished, originallyPublished, originalPublisherID, encodedKey))
-        
+
     def _dbQuery(self, key, columnName, unpickle=False):
         try:
             self._cursor.execute("SELECT %s FROM data WHERE key=:reqKey" % columnName, {'reqKey': key.encode('hex')})
             row = self._cursor.fetchone()
             value = str(row[0])
         except TypeError:
-            raise KeyError, key
+            raise KeyError(key)
         else:
             if unpickle:
                 return pickle.loads(value)

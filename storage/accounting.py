@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#accouning.py
+# accouning.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -37,11 +37,11 @@ Various methods to keep track of:
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _DebugLevel = 4
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import os
 import math
@@ -52,7 +52,7 @@ from system import bpio
 from system import diskusage
 
 from lib import diskspace
-from lib import misc 
+from lib import misc
 
 from main import settings
 
@@ -60,25 +60,30 @@ from contacts import contactsdb
 
 from storage import backup_fs
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init():
     lg.out(_DebugLevel, 'accounting.init')
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 def check_create_customers_quotas():
     if not os.path.isfile(settings.CustomersSpaceFile()):
         bpio._write_dict(settings.CustomersSpaceFile(),
-            {'free': settings.getDonatedBytes()})
+                         {'free': settings.getDonatedBytes()})
         return True
     return False
-    
+
+
 def read_customers_quotas():
     return bpio._read_dict(settings.CustomersSpaceFile(), {})
 
+
 def write_customers_quotas(new_space_dict):
-    return bpio._write_dict(settings.CustomersSpaceFile(), new_space_dict)      
+    return bpio._write_dict(settings.CustomersSpaceFile(), new_space_dict)
+
 
 def count_consumed_space(space_dict=None):
     if space_dict is None:
@@ -88,6 +93,7 @@ def count_consumed_space(space_dict=None):
         if idurl != 'free':
             consumed_bytes += int(customer_consumed)
     return consumed_bytes
+
 
 def validate_customers_quotas(space_dict=None):
     unknown_customers = set()
@@ -103,7 +109,7 @@ def validate_customers_quotas(space_dict=None):
             continue
         if idurl != 'free' and space_dict[idurl] <= 0:
             unknown_customers.add(idurl)
-            continue            
+            continue
     for idurl in contactsdb.customers():
         if idurl not in space_dict.keys():
             unknown_customers.add(idurl)
@@ -113,19 +119,22 @@ def validate_customers_quotas(space_dict=None):
                 unused_quotas.add(idurl)
     return unknown_customers, unused_quotas
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
-def read_customers_usage(): 
+
+def read_customers_usage():
     return bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
 
+
 def update_customers_usage(new_space_usage_dict):
-    return bpio._write_dict(settings.CustomersUsedSpaceFile(), new_space_usage_dict)    
+    return bpio._write_dict(settings.CustomersUsedSpaceFile(), new_space_usage_dict)
+
 
 def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
     if space_dict is None:
         space_dict = read_customers_quotas()
     if used_dict is None:
-        used_dict = read_customers_usage()        
+        used_dict = read_customers_usage()
     current_customers = contactsdb.customers()
     used_space_ratio_dict = {}
     for idurl in current_customers:
@@ -141,7 +150,8 @@ def calculate_customers_usage_ratio(space_dict=None, used_dict=None):
         used_space_ratio_dict[idurl] = ratio
     return used_space_ratio_dict
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def report_consumed_storage():
     result = {}
@@ -155,8 +165,8 @@ def report_consumed_storage():
     result['needed_per_supplier'] = 0
     result['used_per_supplier'] = 0
     result['available_per_supplier'] = 0
-    if result['suppliers_num'] > 0: 
-        result['needed_per_supplier'] = int(math.ceil(2.0 * result['needed'] / result['suppliers_num'])) 
+    if result['suppliers_num'] > 0:
+        result['needed_per_supplier'] = int(math.ceil(2.0 * result['needed'] / result['suppliers_num']))
         result['used_per_supplier'] = int(math.ceil(2.0 * result['used'] / result['suppliers_num']))
         result['available_per_supplier'] = result['needed_per_supplier'] - result['used_per_supplier']
     result['needed_per_supplier_str'] = diskspace.MakeStringFromBytes(result['needed_per_supplier'])
@@ -219,7 +229,7 @@ def report_donated_storage():
     r['consumed_str'] = diskspace.MakeStringFromBytes(r['consumed'])
     if r['donated'] != r['free'] + r['consumed']:
         r['errors'].append('total consumed %d and known free %d (%d total) bytes not match with donated %d bytes' % (
-            r['consumed'], r['free'], 
+            r['consumed'], r['free'],
             r['consumed'] + r['free'], r['donated']))
     if r['used'] > r['donated']:
         r['errors'].append('total space used by customers exceed the donated limit')
@@ -236,7 +246,7 @@ def report_donated_storage():
             'used_str': diskspace.MakeStringFromBytes(used_space_dict['idurl']),
             'real': real,
             'real_str': diskspace.MakeStringFromBytes(real),
-            })
+        })
     try:
         r['used_percent'] = misc.percent2string(float(r['used']) / float(r['donated']), 5)
     except:
@@ -244,7 +254,7 @@ def report_donated_storage():
     try:
         r['consumed_percent'] = misc.percent2string(float(r['consumed']) / float(r['donated']), 5)
     except:
-        r['consumed_percent'] = ''  
+        r['consumed_percent'] = ''
     return r
 
 
@@ -254,9 +264,9 @@ def report_local_storage():
     # need to add: total = total + customers
     r = {}
     r['backups'] = bpio.getDirectorySize(settings.getLocalBackupsDir())
-    r['backups_str'] =  diskspace.MakeStringFromBytes(r['backups']) 
+    r['backups_str'] = diskspace.MakeStringFromBytes(r['backups'])
     r['temp'] = bpio.getDirectorySize(settings.getTempDir())
-    r['temp_str'] =  diskspace.MakeStringFromBytes(r['temp']) 
+    r['temp_str'] = diskspace.MakeStringFromBytes(r['temp'])
     r['customers'] = bpio.getDirectorySize(settings.getCustomersFilesDir())
     r['customers_str'] = diskspace.MakeStringFromBytes(r['customers'])
     r['total'] = bpio.getDirectorySize(settings.GetBaseDir())
@@ -275,5 +285,5 @@ def report_local_storage():
     try:
         r['diskfree_percent'] = misc.percent2string(float(r['diskfree']) / float(r['disktotal']), 5)
     except:
-        r['diskfree_percent'] = ''  
+        r['diskfree_percent'] = ''
     return r

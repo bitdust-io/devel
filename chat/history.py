@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#history.py
+# history.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,24 +14,26 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _MessagesCache = {}
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def store(idurl, msg):
     global _MessagesCache
     if idurl not in _MessagesCache.keys():
         _MessagesCache[idurl] = {}
     _MessagesCache[idurl]
+
 
 def get_messages():
     pass

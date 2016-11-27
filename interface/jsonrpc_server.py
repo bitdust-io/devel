@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#jsonrpc_server.py
+# jsonrpc_server.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -37,19 +37,21 @@ from twisted.internet.defer import Deferred
 from twisted.web import server
 
 if __name__ == '__main__':
-    import sys, os.path as _p
+    import sys
+    import os.path as _p
     sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 from lib.fastjsonrpc.server import JSONRPCServer
 from lib.fastjsonrpc.jsonrpc import JSONRPCError
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
 import api
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def init():
     lg.out(4, 'jsonrpc_server.init')
@@ -61,10 +63,11 @@ def init():
     reactor.listenTCP(port, server.Site(BitDustJsonRPCServer()))
     lg.out(4, '    started on port %d' % port)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class BitDustJsonRPCServer(JSONRPCServer):
-    
+
     def _register_execution(self, request_dict, result):
         if result is None:
             result = dict()
@@ -78,12 +81,12 @@ class BitDustJsonRPCServer(JSONRPCServer):
         if 'result' in result and isinstance(result['result'], dict):
             if 'success' in result['result'] and not result['result']['success']:
                 result['status'] = 'ERROR'
-                result['errors'] = [result['result']['error'],]
+                result['errors'] = [result['result']['error'], ]
                 del result['result']
             else:
-                result['result'] = [result['result'],]
+                result['result'] = [result['result'], ]
         return result
-    
+
     def _catch_filemanager_methods(self, request_dict):
         if not request_dict['method'].startswith('filemanager_'):
             return None
@@ -92,9 +95,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
             fm_request = {}
             params = [] if 'params' not in request_dict else request_dict['params']
             fm_request['params'] = {
-                i[0]:i[1] for i in map(lambda p: p.split("=", 1), params)}
+                i[0]: i[1] for i in map(lambda p: p.split("=", 1), params)}
             fm_request['params']['mode'] = fm_method
-            request_dict = {'_executed': time.time(),}
+            request_dict = {'_executed': time.time(), }
         except Exception as exc:
             lg.exc()
             return api.ERROR(exc.message)
@@ -108,7 +111,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
             lg.exc()
             fm_result = api.ERROR(exc.message)
         return fm_result
-    
+
     def _callMethod(self, request_dict):
         lg.out(12, 'jsonrpc_server._callMethod:\n%s' % pprint.pformat(request_dict))
         request_dict['_executed'] = time.time()
@@ -124,11 +127,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
             result = api.ERROR(str(traceback.format_exc()), message=exc.message)
         if isinstance(result, Deferred):
             result.addCallback(
-               lambda result: self._register_execution(request_dict, result))
+                lambda result: self._register_execution(request_dict, result))
         else:
             result = self._register_execution(request_dict, result)
         return result
-        
+
     def jsonrpc_stop(self):
         return api.stop()
 
@@ -137,7 +140,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_restart(self, show=False):
         return api.restart(show)
-    
+
     def jsonrpc_reconnect(self):
         return api.reconnect()
 
@@ -152,7 +155,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_backups_id_list(self):
         return api.backups_id_list()
-        
+
     def jsonrpc_backup_start_path(self, path, bind_local_path=True):
         return api.backup_start_path(path, bind_local_path=True)
 
@@ -161,10 +164,10 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_backup_map_path(self, dirpath):
         return api.backup_map_path(dirpath)
-    
+
     def jsonrpc_backup_dir_add(self, dirpath):
         return api.backup_dir_add(dirpath)
-    
+
     def jsonrpc_backup_file_add(self, filepath):
         return api.backup_file_add(filepath)
 
@@ -179,16 +182,16 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_backup_delete_path(self, path):
         return api.backup_delete_path(path)
-    
+
     def jsonrpc_restore_single(self, pathID_or_backupID_or_localPath, destinationPath=None):
         return api.restore_single(pathID_or_backupID_or_localPath, destinationPath)
-    
+
     def jsonrpc_backups_queue(self):
         return api.backups_queue()
-    
+
     def jsonrpc_backups_running(self):
         return api.backups_running()
-    
+
     def jsonrpc_backup_cancel_pending(self, path_id):
         return api.backup_cancel_pending(path_id)
 
@@ -197,7 +200,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_restores_running(self):
         return api.restores_running()
-    
+
     def jsonrpc_restore_abort(self, backup_id):
         return api.restore_abort(backup_id)
 
@@ -212,7 +215,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_suppliers_ping(self):
         return api.suppliers_ping()
- 
+
     def jsonrpc_customers_list(self):
         return api.customers_list()
 
@@ -221,10 +224,10 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_customers_ping(self):
         return api.customers_ping()
- 
+
     def jsonrpc_space_donated(self):
         return api.space_donated()
- 
+
     def jsonrpc_space_consumed(self):
         return api.space_consumed()
 
@@ -248,13 +251,13 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_packets_stats(self):
         return api.packets_stats()
-    
+
     def jsonrpc_packets_list(self):
         return api.packets_list()
-    
+
     def jsonrpc_connections_list(self, wanted_protos=None):
         return api.connections_list(wanted_protos)
-    
+
     def jsonrpc_streams_list(self, wanted_protos=None):
         return api.streams_list(wanted_protos)
 
@@ -269,19 +272,19 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_config_set(self, key, value):
         return api.config_set(key, value)
-    
+
 #     def jsonrpc_list_messages(self):
 #         return api.list_messages()
-    
+
     def jsonrpc_send_message(self, recipient, message_body):
         return api.send_message(recipient, message_body)
-    
+
     def jsonrpc_receive_one_message(self):
         return api.receive_one_message()
-    
+
 #     def jsonrpc_list_correspondents(self):
 #         return api.list_correspondents()
-    
+
 #     def jsonrpc_add_correspondent(self, idurl, nickname=''):
 #         return api.add_correspondent(idurl, nickname)
 
@@ -299,12 +302,10 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     # def jsonrpc_:
     #     return api.
-    
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     lg.set_debug_level(20)
     init()
     reactor.run()
-    
-        

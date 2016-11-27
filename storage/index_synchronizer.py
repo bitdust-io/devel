@@ -80,12 +80,12 @@ EVENTS:
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 6
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
@@ -119,12 +119,14 @@ _IndexSynchronizer = None
 
 #------------------------------------------------------------------------------
 
+
 def is_synchronized():
     if not A():
         return False
     return A().state == 'IN_SYNC!'
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -139,7 +141,8 @@ def A(event=None, arg=None):
         _IndexSynchronizer.automat(event, arg)
     return _IndexSynchronizer
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class IndexSynchronizer(automat.Automat):
     """
@@ -149,8 +152,8 @@ class IndexSynchronizer(automat.Automat):
     timers = {
         'timer-1min': (60, ['NO_INFO']),
         'timer-5min': (300, ['IN_SYNC!']),
-        'timer-15sec': (15.0, ['REQUEST?','SENDING']),
-        }
+        'timer-15sec': (15.0, ['REQUEST?', 'SENDING']),
+    }
 
     def init(self):
         """
@@ -202,18 +205,18 @@ class IndexSynchronizer(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'timer-15sec' and not self.isSomeResponded(arg):
                 self.state = 'NO_INFO'
-            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ) ) and self.isVersionChanged(arg):
+            elif (event == 'all-responded' or (event == 'timer-15sec' and self.isSomeResponded(arg))) and self.isVersionChanged(arg):
                 self.state = 'SENDING'
                 self.doSuppliersSendIndexFile(arg)
             elif event == 'index-file-received':
                 self.doCheckVersion(arg)
-            elif ( event == 'all-responded' or ( event == 'timer-15sec' and self.isSomeResponded(arg) ) ) and not self.isVersionChanged(arg):
+            elif (event == 'all-responded' or (event == 'timer-15sec' and self.isSomeResponded(arg))) and not self.isVersionChanged(arg):
                 self.state = 'IN_SYNC!'
         #---SENDING---
         elif self.state == 'SENDING':
             if event == 'timer-15sec' and not self.isSomeAcked(arg):
                 self.state = 'NO_INFO'
-            elif event == 'all-acked' or ( event == 'timer-15sec' and self.isSomeAcked(arg) ):
+            elif event == 'all-acked' or (event == 'timer-15sec' and self.isSomeAcked(arg)):
                 self.state = 'IN_SYNC!'
             elif event == 'shutdown':
                 self.state = 'CLOSED'
@@ -296,7 +299,7 @@ class IndexSynchronizer(automat.Automat):
                 self.requested_suppliers_number += 1
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
-                    (pkt_out, nameurl.GetName(supplierId)))
+                       (pkt_out, nameurl.GetName(supplierId)))
 
     def doSuppliersSendIndexFile(self, arg):
         """
@@ -334,7 +337,7 @@ class IndexSynchronizer(automat.Automat):
                 self.sent_suppliers_number += 1
             if _Debug:
                 lg.out(_DebugLevel, '    %s sending to %s' %
-                    (pkt_out, nameurl.GetName(supplierId)))
+                       (pkt_out, nameurl.GetName(supplierId)))
 
     def doDestroyMe(self, arg):
         """
@@ -383,4 +386,3 @@ class IndexSynchronizer(automat.Automat):
                 newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
         if len(self.sending_suppliers) == 0:
             self.automat('all-acked')
-

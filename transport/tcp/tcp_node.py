@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#tcp_connection.py
+# tcp_connection.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -15,7 +15,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -26,15 +26,14 @@
 #
 
 
-
 """
 .. module:: tcp_process
 
-This is a 
+This is a
 This is a sub process to send/receive files between users over TCP protocol.
-1) listen for incoming connections on a port 7771 (by default) 
+1) listen for incoming connections on a port 7771 (by default)
 2) establish connections to remote peers
-3) keeps TCP session opened to be able to send asap 
+3) keeps TCP session opened to be able to send asap
 """
 
 import sys
@@ -53,7 +52,7 @@ from logs import lg
 
 from transport.tcp import tcp_stream
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _MyIDURL = None
 _MyHost = None
@@ -64,45 +63,54 @@ _OpenedConnections = {}
 _StartedConnections = {}
 _ConnectionsCounter = 0
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def started_connections():
     global _StartedConnections
     return _StartedConnections
 
+
 def opened_connections():
     global _OpenedConnections
     return _OpenedConnections
+
 
 def opened_connections_count():
     global _ConnectionsCounter
     return _ConnectionsCounter
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def increase_connections_counter():
     global _ConnectionsCounter
     _ConnectionsCounter += 1
 
+
 def decrease_connections_counter():
     global _ConnectionsCounter
     _ConnectionsCounter -= 1
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def get_internal_port():
     global _InternalPort
     return _InternalPort
 
-def my_idurl(): 
+
+def my_idurl():
     global _MyIDURL
     return _MyIDURL
+
 
 def my_host():
     global _MyHost
     return _MyHost
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def receive(options):
     global _MyIDURL
@@ -117,11 +125,11 @@ def receive(options):
         _MyIDURL = options['idurl']
         _InternalPort = int(options['tcp_port'])
         _Listener = reactor.listenTCP(_InternalPort, TCPFactory(None, keep_alive=True))
-        _MyHost = options['host'].split(':')[0]+':'+str(_InternalPort)
+        _MyHost = options['host'].split(':')[0] + ':' + str(_InternalPort)
         tcp_interface.interface_receiving_started(_MyHost, options)
-    except CannotListenError, ex:
+    except CannotListenError as ex:
         tcp_interface.interface_receiving_failed('port is busy')
-    except Exception, ex:
+    except Exception as ex:
         # print err, dir(err)
         try:
             e = ex.getErrorMessage()
@@ -148,7 +156,7 @@ def connect_to(host, keep_alive=True):
     connection.connector = reactor.connectTCP(host[0], host[1], connection)
     started_connections()[host] = connection
     return False
-    
+
 
 def disconnect_from(host):
     """
@@ -168,7 +176,7 @@ def disconnect_from(host):
                     connection.automat('disconnect')
                     return True
     return ok
-    
+
 
 def disconnect():
     """
@@ -268,6 +276,7 @@ def cancel_file_receiving(transferID):
 #     lg.warn('%r not found' % transferID)
 #     return False
 
+
 def cancel_file_sending(transferID):
     """
     """
@@ -280,7 +289,8 @@ def cancel_file_sending(transferID):
                         return True
     lg.warn('%r not found' % transferID)
     return False
-   
+
+
 def cancel_outbox_file(host, filename):
     """
     """
@@ -288,7 +298,7 @@ def cancel_outbox_file(host, filename):
     for connections in opened_connections().values():
         for connection in connections:
             if  connection.peer_address and connection.peer_address == host or \
-                connection.peer_external_address and connection.peer_external_address == host:
+                    connection.peer_external_address and connection.peer_external_address == host:
                 i = 0
                 while i < len(connection.outboxQueue):
                     fn, description, result_defer, single = connection.outboxQueue[i]
@@ -312,7 +322,8 @@ def cancel_outbox_file(host, filename):
                     continue
                 i += 1
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class TCPFactory(protocol.ClientFactory):
     protocol = None
@@ -326,7 +337,7 @@ class TCPFactory(protocol.ClientFactory):
         self.connector = None
 
     def __repr__(self):
-        return 'TCPFactory(%s)' % str(self.connection_address) 
+        return 'TCPFactory(%s)' % str(self.connection_address)
 
     def clientConnectionFailed(self, connector, reason):
         from transport.tcp import tcp_interface
@@ -344,12 +355,13 @@ class TCPFactory(protocol.ClientFactory):
         self.pendingoutboxfiles = []
         # lg.out(18, 'tcp_node.clientConnectionFailed from %s  :   %s closed, %d more started' % (
         #     str(destaddress), self, len(started_connections())))
-        
+
     def add_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.pendingoutboxfiles.append((filename, description, result_defer, single))
         tcp_stream.process_streams()
-        
-#------------------------------------------------------------------------------ 
+
+#------------------------------------------------------------------------------
+
 
 def parseCommandLine():
     oparser = optparse.OptionParser()
@@ -369,10 +381,7 @@ def parseCommandLine():
 
 def main():
     pass
-    
+
 if __name__ == "__main__":
     main()
-    reactor.run()    
-    
-    
-
+    reactor.run()

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#ratings.py
+# ratings.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -81,14 +81,14 @@ def run():
     # debug
     #interval = 5
     reactor.callLater(interval, start)
-    lg.out(6, 'ratings.run will start after %s minutes' % str(interval/60.0))
-    
-    
+    lg.out(6, 'ratings.run will start after %s minutes' % str(interval / 60.0))
+
+
 def start():
     global _LoopCountRatingsTask
     _LoopCountRatingsTask = task.LoopingCall(rate_all_users)
     _LoopCountRatingsTask.start(settings.DefaultAlivePacketTimeOut())
-    lg.out(6, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut()/60.0))
+    lg.out(6, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut() / 60.0))
 
 
 def stop():
@@ -99,8 +99,8 @@ def stop():
         del _LoopCountRatingsTask
         _LoopCountRatingsTask = None
         lg.out(6, 'ratings.stop task finished')
-        
-            
+
+
 def rating_dir(idurl):
     return os.path.join(settings.RatingsDir(), nameurl.UrlFilename(idurl))
 
@@ -144,7 +144,7 @@ def write_total_rating_dict(idurl, rating_dict):
 
 
 def make_blank_rating_dict():
-    return {'all':'0', 'alive':'0'}
+    return {'all': '0', 'alive': '0'}
 
 
 def increase_rating(idurl, alive_state):
@@ -191,8 +191,8 @@ def rate_all_users():
     for idurl in contactsdb.contacts_full():
         isalive = contact_status.isOnline(idurl)
         mall, malive, tall, talive = increase_rating(idurl, isalive)
-        month_percent = 100.0*float(malive)/float(mall)
-        total_percent = 100.0*float(talive)/float(tall)
+        month_percent = 100.0 * float(malive) / float(mall)
+        total_percent = 100.0 * float(talive) / float(tall)
         lg.out(4, '[%6.2f%%: %s/%s] in %s and [%6.2f%%: %s/%s] total - %s' % (
             month_percent,
             malive,
@@ -209,7 +209,7 @@ def remember_connected_time(idurl):
     if not exist_rating_dir(idurl):
         make_rating_dir(idurl)
     bpio._write_data(os.path.join(rating_dir(idurl), 'connected'), time.strftime('%d%m%y %H:%M:%S'))
-                         
+
 
 def connected_time(idurl):
     s = bpio._read_data(os.path.join(rating_dir(idurl), 'connected'))
@@ -272,7 +272,7 @@ def month_percent(idurl):
         return round(100.0 * float(r['alive']) / float(r['all']), 2)
     except:
         return 0.0
-    
+
 
 def total_percent(idurl):
     try:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#views.py
+# views.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,14 +14,14 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Please contact us if you have any questions at bitdust.io@gmail.com
 import time
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from django.http import HttpResponseBadRequest
 from django.http import HttpResponseRedirect
@@ -31,7 +31,7 @@ from django.template import RequestContext
 from django.conf import settings
 from django.utils.html import escape
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from web import auth
 
@@ -49,7 +49,7 @@ from contacts import contactsdb
 
 from userid import my_id
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 try:
     DATE_FORMAT = settings.JQCHAT_DATE_FORMAT
@@ -57,9 +57,10 @@ except:
     DATE_FORMAT = "H:i:s"
 
 # How many messages to retrieve at most.
-JQCHAT_DISPLAY_COUNT = getattr(settings, 'JQCHAT_DISPLAY_COUNT', 100) 
+JQCHAT_DISPLAY_COUNT = getattr(settings, 'JQCHAT_DISPLAY_COUNT', 100)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def open_room(request):
     roomid = request.REQUEST.get('id', '')
@@ -76,10 +77,10 @@ def open_room(request):
             ThisRoom = get_object_or_404(Room, id=roomid)
         except:
             ThisRoom = Room(id=roomid,
-                            idurl=idurl, 
+                            idurl=idurl,
                             name=name)
-            ThisRoom.save() 
-            # myname = settings.getNickName() or my_id.getIDName() 
+            ThisRoom.save()
+            # myname = settings.getNickName() or my_id.getIDName()
             RoomMember.objects.create_member(idurl=my_id.getLocalID(),
                                              # name=nameurl.GetName(my_id.getLocalID()),
                                              room=ThisRoom)
@@ -89,9 +90,9 @@ def open_room(request):
         try:
             ThisRoom = get_object_or_404(Room, idurl=idurl)
         except:
-            ThisRoom = Room(idurl=idurl, 
+            ThisRoom = Room(idurl=idurl,
                             name=name)
-            ThisRoom.save() 
+            ThisRoom.save()
             RoomMember.objects.create_member(idurl=my_id.getLocalID(),
                                              # name=nameurl.GetName(my_id.getLocalID()),
                                              room=ThisRoom)
@@ -99,18 +100,20 @@ def open_room(request):
 
     return Http404('need to provide a room info')
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def room_by_id(request, id):
     try:
         ThisRoom = get_object_or_404(Room, id=id)
     except:
         raise Http404
-    return render_to_response('jqchat/chat_test.html', 
+    return render_to_response('jqchat/chat_test.html',
                               {'room': ThisRoom},
                               context_instance=RequestContext(request))
 
 #------------------------------------------------------------------------------
+
 
 def room_by_idurl(request, idurl):
     idurl = nameurl.DjangoUnQuote(idurl)
@@ -118,19 +121,21 @@ def room_by_idurl(request, idurl):
         ThisRoom = get_object_or_404(Room, idurl=idurl)
     except:
         raise Http404
-    return render_to_response('jqchat/chat_test.html', 
+    return render_to_response('jqchat/chat_test.html',
                               {'room': ThisRoom},
                               context_instance=RequestContext(request))
 
 #------------------------------------------------------------------------------
 
+
 class Ajax(object):
+
     def __call__(self, request, id):
         try:
             if not (auth.is_session_authenticated(request.user) and auth.is_identity_authenticated()):
                 return HttpResponseBadRequest('You need to be logged in to access the chat system.')
-        
-            StatusCode = 0 # Default status code is 0 i.e. no new data.
+
+            StatusCode = 0  # Default status code is 0 i.e. no new data.
 
             self.request = request
             try:
@@ -144,12 +149,12 @@ class Ajax(object):
                 return HttpResponseBadRequest("Not found Room with id=%s" % str(id))
 
             NewDescription = None
-    
+
             if self.request.method == "POST":
                 # User has sent new data.
                 action = self.request.POST['action']
                 msg_text = ''
-        
+
                 if action == 'postmsg':
                     msg_text = self.request.POST['message']
                 if action == 'room_join':
@@ -160,50 +165,49 @@ class Ajax(object):
                     RoomMember.objects.remove_member(idurl=id,
                                                      # name=nameurl.GetName(id),
                                                      room=self.ThisRoom)
-                if len(msg_text.strip()) > 0: # Ignore empty strings.
+                if len(msg_text.strip()) > 0:  # Ignore empty strings.
                     Message.objects.create_message(
-                        my_id.getLocalID(), 
-                        self.ThisRoom, 
+                        my_id.getLocalID(),
+                        self.ThisRoom,
                         escape(msg_text))
                     message.SendMessage(
-                        str(self.ThisRoom.idurl), 
+                        str(self.ThisRoom.idurl),
                         str(msg_text))
             else:
                 # If a GET, make sure that no action was specified.
                 if self.request.GET.get('action', None):
                     return HttpResponseBadRequest('Need to POST if you want to send data.')
-    
+
             NewMessages = self.ThisRoom.message_set.filter(unix_timestamp__gt=self.request_time)
             if NewMessages:
                 StatusCode = 1
-    
+
             NewMembers = RoomMember.objects.filter(room=self.ThisRoom)
             NewMembersNames = map(lambda mem: nameurl.GetName(mem.idurl), NewMembers)
-    
+
             l = len(NewMessages)
             if l > JQCHAT_DISPLAY_COUNT:
-                NewMessages = NewMessages[l-JQCHAT_DISPLAY_COUNT:]
-                
+                NewMessages = NewMessages[l - JQCHAT_DISPLAY_COUNT:]
+
             response = render_to_response('jqchat/chat_payload.json',
-                {'current_unix_timestamp': time.time(),
-                 'NewMessages': NewMessages,
-                 'StatusCode': StatusCode,
-                 'NewDescription': NewDescription,
-                 'NewMembers': NewMembers,
-                 'NewMembersNames': NewMembersNames,
-                 'CustomPayload': '',
-                 'TimeDisplayFormat': DATE_FORMAT
-                },
-                context_instance=RequestContext(self.request))
-            
+                                          {'current_unix_timestamp': time.time(),
+                                           'NewMessages': NewMessages,
+                                           'StatusCode': StatusCode,
+                                           'NewDescription': NewDescription,
+                                           'NewMembers': NewMembers,
+                                           'NewMembersNames': NewMembersNames,
+                                           'CustomPayload': '',
+                                           'TimeDisplayFormat': DATE_FORMAT
+                                           },
+                                          context_instance=RequestContext(self.request))
+
             response['Content-Type'] = 'text/plain; charset=utf-8'
             response['Cache-Control'] = 'no-cache'
             return response
-        
+
         except:
             e = lg.exc()
             return HttpResponseBadRequest('EXCEPTION:' + e)
 
 
 BasicAjaxHandler = Ajax()
-

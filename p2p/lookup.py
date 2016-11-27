@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#lookup.py
+# lookup.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,12 +30,12 @@
 
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = False
 _DebugLevel = 10
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import sys
 import time
@@ -47,20 +47,21 @@ except:
 
 from twisted.internet.defer import DeferredList, Deferred
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 from logs import lg
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _KnownIDURLsDict = {}
 _DiscoveredIDURLsList = []
 _NextLookupTask = None
-_LookupMethod = None # method to get a list of random nodes
-_ObserveMethod = None # method to get IDURL from given node
-_ProcessMethod = None # method to do some stuff with discovered IDURL
+_LookupMethod = None  # method to get a list of random nodes
+_ObserveMethod = None  # method to get IDURL from given node
+_ProcessMethod = None  # method to do some stuff with discovered IDURL
 
 #------------------------------------------------------------------------------
+
 
 def init(lookup_method=None, observe_method=None, process_method=None):
     """
@@ -85,17 +86,20 @@ def shutdown():
     _ProcessMethod = None
     lg.out(_DebugLevel, "lookup.shutdown")
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def known_idurls():
     global _KnownIDURLsDict
     return _KnownIDURLsDict
 
+
 def discovered_idurls():
     global _DiscoveredIDURLsList
     return _DiscoveredIDURLsList
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def consume_discovered_idurls(count=1):
     if not discovered_idurls():
@@ -130,20 +134,22 @@ def schedule_next_lookup(current_lookup_task, delay=60):
     if _Debug:
         lg.out(_DebugLevel, 'lookup.schedule_next_lookup after %d seconds' % delay)
     _NextLookupTask = reactor.callLater(delay, start,
-        count=current_lookup_task.count,
-        consume=current_lookup_task.consume,
-        lookup_method=current_lookup_task.lookup_method,
-        observe_method=current_lookup_task.observe_method,
-        process_method=current_lookup_task.process_method
-    )
+                                        count=current_lookup_task.count,
+                                        consume=current_lookup_task.consume,
+                                        lookup_method=current_lookup_task.lookup_method,
+                                        observe_method=current_lookup_task.observe_method,
+                                        process_method=current_lookup_task.process_method
+                                        )
+
 
 def reset_next_lookup():
     global _NextLookupTask
     if _NextLookupTask and not _NextLookupTask.called and not _NextLookupTask.cancelled:
         _NextLookupTask.cancel()
-        _NextLookupTask = None 
+        _NextLookupTask = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def start(count=1, consume=True,
           lookup_method=None, observe_method=None, process_method=None,):
@@ -162,9 +168,11 @@ def start(count=1, consume=True,
     t.start()
     return t.result
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class LookupTask(object):
+
     def __init__(self,
                  count,
                  consume=True,
@@ -185,7 +193,7 @@ class LookupTask(object):
         self.lookup_now = False
         self.stopped = False
         self.result = Deferred(canceller=lambda d: setattr(self, 'stopped', True))
-        
+
     def __del__(self):
         if _Debug:
             lg.out(_DebugLevel, 'lookup.__del__')
@@ -247,12 +255,12 @@ class LookupTask(object):
         self.succeed += 1
         if _Debug:
             lg.out(_DebugLevel + 10, 'lookup.on_succeed %s info: %s' % (node, info))
-        
+
     def on_node_failed(self, err, arg=None):
         self.failed += 1
         if _Debug:
             lg.warn('%r : %r' % (arg, err))
-    
+
     def on_node_observed(self, idurl, node):
         if self.stopped:
             return None
@@ -315,6 +323,4 @@ class LookupTask(object):
             return []
         return self.observe_nodes(nodes)
 
-#------------------------------------------------------------------------------ 
-
-
+#------------------------------------------------------------------------------

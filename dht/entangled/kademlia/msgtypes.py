@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#msgtypes.py
+# msgtypes.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,8 +30,10 @@
 import hashlib
 import random
 
+
 class Message(object):
     """ Base class for messages - all "unknown" messages use this class """
+
     def __init__(self, rpcID, nodeID):
         self.id = rpcID
         self.nodeID = nodeID
@@ -39,10 +41,11 @@ class Message(object):
 
 class RequestMessage(Message):
     """ Message containing an RPC request """
+
     def __init__(self, nodeID, method, methodArgs, rpcID=None):
-        if rpcID == None:
+        if rpcID is None:
             hash = hashlib.sha1()
-            hash.update(str(random.getrandbits(255)))  
+            hash.update(str(random.getrandbits(255)))
             rpcID = hash.digest()
         Message.__init__(self, rpcID, nodeID)
         self.request = method
@@ -51,6 +54,7 @@ class RequestMessage(Message):
 
 class ResponseMessage(Message):
     """ Message containing the result from a successful RPC request """
+
     def __init__(self, rpcID, nodeID, response):
         Message.__init__(self, rpcID, nodeID)
         self.response = response
@@ -58,6 +62,7 @@ class ResponseMessage(Message):
 
 class ErrorMessage(ResponseMessage):
     """ Message containing the error from an unsuccessful RPC request """
+
     def __init__(self, rpcID, nodeID, exceptionType, errorMessage):
         ResponseMessage.__init__(self, rpcID, nodeID, errorMessage)
         if isinstance(exceptionType, type):

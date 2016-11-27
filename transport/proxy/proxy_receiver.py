@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#proxy_receiver.py
+# proxy_receiver.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -51,12 +51,12 @@ EVENTS:
     * :red:`timer-5sec`
 """
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _Debug = True
 _DebugLevel = 8
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 import cStringIO
 
@@ -95,11 +95,13 @@ _ProxyReceiver = None
 
 #------------------------------------------------------------------------------
 
+
 def GetRouterIDURL():
     global _ProxyReceiver
     if not _ProxyReceiver:
         return None
     return _ProxyReceiver.router_idurl
+
 
 def GetRouterIdentity():
     global _ProxyReceiver
@@ -107,17 +109,21 @@ def GetRouterIdentity():
         return None
     return _ProxyReceiver.router_identity
 
+
 def GetRouterProtoHost():
     global _ProxyReceiver
     if not _ProxyReceiver:
         return None
     return _ProxyReceiver.router_proto_host
 
+
 def ReadMyOriginalIdentitySource():
     return config.conf().getData('services/proxy-transport/my-original-identity').strip()
 
+
 def ReadCurrentRouter():
     return config.conf().getString('services/proxy-transport/current-router').strip()
+
 
 def VerifyExistingRouter():
     if ReadCurrentRouter() and not ReadMyOriginalIdentitySource():
@@ -128,7 +134,8 @@ def VerifyExistingRouter():
         return False
     return True
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -146,15 +153,16 @@ def A(event=None, arg=None):
 
 #------------------------------------------------------------------------------
 
+
 class ProxyReceiver(automat.Automat):
     """
     This class implements all the functionality of the ``proxy_receiver()`` state machine.
     """
 
     timers = {
-        'timer-5sec': (5.0, ['ACK?','SERVICE?']),
+        'timer-5sec': (5.0, ['ACK?', 'SERVICE?']),
         'timer-15sec': (15.0, ['ACK?']),
-        }
+    }
 
     def init(self):
         """
@@ -315,8 +323,8 @@ class ProxyReceiver(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity using my current identity, contacts=%s' % cur_contacts)
         newpacket = signed.Packet(
-            commands.Identity(), my_id.getLocalID(), 
-            my_id.getLocalID(), 'identity', 
+            commands.Identity(), my_id.getLocalID(),
+            my_id.getLocalID(), 'identity',
             identity_source, self.router_idurl,
         )
         packet_out.create(newpacket, wide=True, callbacks={
@@ -357,9 +365,9 @@ class ProxyReceiver(automat.Automat):
         #     service_info += '%s://%s' % (t.proto, t.host)
         # service_info += ' '
         newpacket = signed.Packet(
-            commands.RequestService(), 
-            my_id.getLocalID(), 
-            my_id.getLocalID(), 
+            commands.RequestService(),
+            my_id.getLocalID(),
+            my_id.getLocalID(),
             packetid.UniqueID(),
             service_info,
             self.router_idurl,)
@@ -373,9 +381,9 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         newpacket = signed.Packet(
-            commands.CancelService(), 
-            my_id.getLocalID(), 
-            my_id.getLocalID(), 
+            commands.CancelService(),
+            my_id.getLocalID(),
+            my_id.getLocalID(),
             packetid.UniqueID(),
             'service_proxy_server',
             self.router_idurl,)
@@ -441,7 +449,7 @@ class ProxyReceiver(automat.Automat):
         if ReadMyOriginalIdentitySource():
             lg.warn('my original identity is not empty')
         else:
-            config.conf().setData('services/proxy-transport/my-original-identity', 
+            config.conf().setData('services/proxy-transport/my-original-identity',
                                   my_id.getLocalIdentity().serialize())
         self.request_service_packet_id = []
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
@@ -456,7 +464,7 @@ class ProxyReceiver(automat.Automat):
         if not ReadMyOriginalIdentitySource():
             lg.warn('my original identity is not empty')
         else:
-            config.conf().setData('services/proxy-transport/my-original-identity', '') 
+            config.conf().setData('services/proxy-transport/my-original-identity', '')
         config.conf().setString('services/proxy-transport/current-router', '')
         callback.remove_inbox_callback(self._on_inbox_packet_received)
         self.router_identity = None
@@ -487,7 +495,7 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         proxy_interface.interface_receiving_started(self.router_idurl,
-            {'router_idurl': self.router_idurl,})
+                                                    {'router_idurl': self.router_idurl, })
 
     def doNotifyDisconnected(self, arg):
         """
@@ -536,7 +544,7 @@ class ProxyReceiver(automat.Automat):
 #         d.addCallback(self._some_nodes_found)
 #         d.addErrback(lambda x: self.automat('nodes-not-found'))
 #         return d
-# 
+#
 #     def _some_nodes_found(self, nodes):
 #         if _Debug:
 #             lg.out(_DebugLevel, 'proxy_receiver._some_nodes_found : %d' % len(nodes))
@@ -548,7 +556,7 @@ class ProxyReceiver(automat.Automat):
 #         else:
 #             self.automat('nodes-not-found')
 #         return nodes
-# 
+#
 #     def _got_remote_idurl(self, response):
 #         if _Debug:
 #             lg.out(_DebugLevel, 'proxy_receiver._got_remote_idurl response=%s' % str(response) )
@@ -580,7 +588,7 @@ class ProxyReceiver(automat.Automat):
             self.automat('service-accepted', (response, info))
         else:
             self.automat('service-refused', (response, info))
-            
+
     def _on_request_service_fail(self, response, info):
         if response.PacketID not in self.request_service_packet_id:
             lg.warn('wong PacketID in response: %s, but outgoing was : %s' % (
@@ -591,16 +599,16 @@ class ProxyReceiver(automat.Automat):
 
     def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if  newpacket.Command == commands.Identity() and \
-            newpacket.CreatorID == self.router_idurl and \
-            newpacket.RemoteID == my_id.getLocalID():
-                self.automat('router-id-received', (newpacket, info))
-                return True
+                newpacket.CreatorID == self.router_idurl and \
+                newpacket.RemoteID == my_id.getLocalID():
+            self.automat('router-id-received', (newpacket, info))
+            return True
         if  newpacket.Command == commands.Fail() and \
-            newpacket.CreatorID == self.router_idurl and \
-            newpacket.RemoteID == my_id.getLocalID():
+                newpacket.CreatorID == self.router_idurl and \
+                newpacket.RemoteID == my_id.getLocalID():
             # newpacket.Payload == 'route not exist':
-                self.automat('service-refused', (newpacket, info))
-                return True
+            self.automat('service-refused', (newpacket, info))
+            return True
         if newpacket.Command != commands.Relay():
             return False
         # if not newpacket.PacketID.startswith('routed_in_'):
@@ -610,9 +618,10 @@ class ProxyReceiver(automat.Automat):
 #         if newpacket.CreatorID != self.router_idurl:
 #             return False
         self.automat('inbox-packet', (newpacket, info, status, error_message))
-        return True             
+        return True
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def main():
     from twisted.internet import reactor
@@ -621,4 +630,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

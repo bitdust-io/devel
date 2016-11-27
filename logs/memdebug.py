@@ -13,7 +13,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,6 +30,7 @@ Can start a local HTTP server to keep track of all python objects in the memory.
 import cherrypy
 import dowser
 
+
 def start(port):
     cherrypy.config.update({
         'environment': 'embedded',
@@ -38,8 +39,9 @@ def start(port):
     })
     cherrypy.tree.mount(dowser.Root())
 
-    #cherrypy.server.quickstart()
+    # cherrypy.server.quickstart()
     cherrypy.engine.start()
+
 
 def stop():
     cherrypy.engine.exit()
@@ -50,12 +52,10 @@ def stop():
 #
 #from dozer import Dozer
 #
-#def application(environ, start_response):
+# def application(environ, start_response):
 #    start_response('200 OK', [('Content-type', 'text/plain')])
 #    return ['Hello, world!']
 #
-#def start():
+# def start():
 #    resource = WSGIResource(reactor, reactor.getThreadPool(), application)
 #    wsgi_app = Dozer(application)
-
-

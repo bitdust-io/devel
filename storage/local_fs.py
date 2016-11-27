@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#local_fs.py
+# local_fs.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -36,18 +36,20 @@ import sys
 import stat
 
 from logs import lg
-        
+
 from system import bpio
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _FileSystemIndexByName = {}
+
 
 def fs():
     global _FileSystemIndexByName
     return _FileSystemIndexByName
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def TraverseLocalFileSystem(basedir, expanded_dirs, callback):
     def cb(realpath, subpath, name):
@@ -60,9 +62,3 @@ def TraverseLocalFileSystem(basedir, expanded_dirs, callback):
             callback(realpath, subpath, name)
             return False
     bpio.traverse_dir_recursive(cb, basedir)
-
-
-
-
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#raidread.py
+# raidread.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -61,22 +61,26 @@ import raid.eccmap
 
 INTSIZE = 4
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 _ECCMAP = {}
+
+
 def geteccmap(name):
     global _ECCMAP
-    if not _ECCMAP.has_key(name):
-        _ECCMAP[name] = raid.eccmap.eccmap(name) 
+    if name not in _ECCMAP:
+        _ECCMAP[name] = raid.eccmap.eccmap(name)
     return _ECCMAP[name]
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def shutdown():
     global _ECCMAP
     _ECCMAP.clear()
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def ReadBinaryFile(filename):
     """
@@ -86,18 +90,21 @@ def ReadBinaryFile(filename):
     if not os.access(filename, os.R_OK):
         return ''
     try:
-        file = open(filename, "rb")
-        data = file.read()
-        file.close()
+        fin = open(filename, "rb")
+        data = fin.read()
+        fin.close()
         return data
     except:
         return ''
 
-#RebuildOne_new and RebuildOne_orig are just for debugging purposes
+# RebuildOne_new and RebuildOne_orig are just for debugging purposes
+
+
 def RebuildOne(inlist, listlen, outfilename):
-    readsize = 1 # vary from 1 byte to 4 bytes
-    raidfiles = [''] * listlen # range(listlen)   # just need a list of this size
-    raidreads = [''] * listlen # range(listlen)
+    readsize = 1  # vary from 1 byte to 4 bytes
+    # range(listlen)   # just need a list of this size
+    raidfiles = [''] * listlen
+    raidreads = [''] * listlen  # range(listlen)
     for filenum in xrange(listlen):
         try:
             raidfiles[filenum] = open(inlist[filenum], "rb")
@@ -106,8 +113,8 @@ def RebuildOne(inlist, listlen, outfilename):
                 try:
                     f.close()
                 except:
-                    pass 
-            return 
+                    pass
+            return False
     rebuildfile = open(outfilename, "wb")
     while True:
         for k in xrange(listlen):
@@ -125,16 +132,17 @@ def RebuildOne(inlist, listlen, outfilename):
     for filenum in xrange(listlen):
         raidfiles[filenum].close()
     rebuildfile.close()
+    return True
 
 
 def RebuildOne_new(inlist, listlen, outfilename):
     # INTSIZE = settings.IntSize()
-    fds = range(0,listlen)   # just need a list of this size
+    fds = range(0, listlen)   # just need a list of this size
     wholefile = ReadBinaryFile(inlist[0])
     seglength = len(wholefile)   # just needed length of file
     for filenum in xrange(listlen):
-        fds[filenum]=open(inlist[filenum],"r")
-    fout = open(outfilename,"w")
+        fds[filenum] = open(inlist[filenum], "r")
+    fout = open(outfilename, "w")
     for i in xrange(seglength):
         xor = 0
         for j in xrange(listlen):
@@ -144,25 +152,28 @@ def RebuildOne_new(inlist, listlen, outfilename):
     for filenum in xrange(listlen):
         fds[filenum].close
 
-# We XOR list of listlen input files and write result to a file named outfilename
+# We XOR list of listlen input files and write result to a file named
+# outfilename
+
+
 def RebuildOne_orig(inlist, listlen, outfilename):
         # INTSIZE = settings.IntSize()
-        fds = range(0,listlen)   # just need a list of this size
-        wholefile = ReadBinaryFile(inlist[0])
-        seglength=len(wholefile)   # just needed length of file
-        for filenum in range(0, listlen):
-                fds[filenum]=open(inlist[filenum],"rb")
-        fout=open(outfilename,"w")
-        for i in range(0,seglength/INTSIZE):
-                xor=0
-                for j in range(0, listlen):
-                        bstr1 = fds[j].read(INTSIZE)
-                        b1, = struct.unpack(">l", bstr1)
-                        xor = xor ^ b1
-                outstr = struct.pack(">l", xor)
-                fout.write(outstr)
-        for filenum in range(0, listlen):
-                fds[filenum].close
+    fds = range(0, listlen)   # just need a list of this size
+    wholefile = ReadBinaryFile(inlist[0])
+    seglength = len(wholefile)   # just needed length of file
+    for filenum in range(0, listlen):
+        fds[filenum] = open(inlist[filenum], "rb")
+    fout = open(outfilename, "w")
+    for i in range(0, seglength / INTSIZE):
+        xor = 0
+        for j in range(0, listlen):
+            bstr1 = fds[j].read(INTSIZE)
+            b1, = struct.unpack(">l", bstr1)
+            xor = xor ^ b1
+        outstr = struct.pack(">l", xor)
+        fout.write(outstr)
+    for filenum in range(0, listlen):
+        fds[filenum].close
 
 # If segment is good, there is a file for it, if not then no file exists.
 # We only rebuild data segments.
@@ -172,45 +183,69 @@ def RebuildOne_orig(inlist, listlen, outfilename):
 #  When we can't do anything more we could how many good data segments there
 #    are, and if we have all we win, if not we fail.
 
-def raidread(OutputFileName, eccmapname, backupId, blockNumber, data_parity_dir):
+
+def raidread(
+        OutputFileName,
+        eccmapname,
+        backupId,
+        blockNumber,
+        data_parity_dir):
     # try:
-        # INTSIZE = settings.IntSize()
-        # myeccmap = eccmap.eccmap(eccmapname)
-        myeccmap = raid.eccmap.eccmap(eccmapname)
-        GoodFiles = range(0, 200)
-        MakingProgress = 1
-        while MakingProgress == 1:
-            MakingProgress = 0
-            for PSegNum in xrange(myeccmap.paritysegments):
-                PFileName = os.path.join(data_parity_dir, backupId, str(blockNumber) + '-' + str(PSegNum) + '-Parity')
-                if os.path.exists(PFileName):
-                    Map = myeccmap.ParityToData[PSegNum]
-                    TotalDSegs = 0
-                    GoodDSegs = 0
-                    for DSegNum in Map:
-                        TotalDSegs += 1
-                        FileName = os.path.join(data_parity_dir, backupId, str(blockNumber) + '-' + str(DSegNum) + '-Data')
-                        if os.path.exists(FileName):
-                            GoodFiles[GoodDSegs] = FileName
-                            GoodDSegs+=1
-                        else:
-                            BadName = FileName
-                    if GoodDSegs == TotalDSegs - 1:
-                        MakingProgress = 1
-                        GoodFiles[GoodDSegs] = PFileName
+    # INTSIZE = settings.IntSize()
+    # myeccmap = eccmap.eccmap(eccmapname)
+    myeccmap = raid.eccmap.eccmap(eccmapname)
+    GoodFiles = range(0, 200)
+    MakingProgress = 1
+    while MakingProgress == 1:
+        MakingProgress = 0
+        for PSegNum in xrange(myeccmap.paritysegments):
+            PFileName = os.path.join(
+                data_parity_dir,
+                backupId,
+                str(blockNumber) +
+                '-' +
+                str(PSegNum) +
+                '-Parity')
+            if os.path.exists(PFileName):
+                Map = myeccmap.ParityToData[PSegNum]
+                TotalDSegs = 0
+                GoodDSegs = 0
+                for DSegNum in Map:
+                    TotalDSegs += 1
+                    FileName = os.path.join(
+                        data_parity_dir,
+                        backupId,
+                        str(blockNumber) +
+                        '-' +
+                        str(DSegNum) +
+                        '-Data')
+                    if os.path.exists(FileName):
+                        GoodFiles[GoodDSegs] = FileName
                         GoodDSegs += 1
-                        RebuildOne(GoodFiles, GoodDSegs, BadName)
-        #  Count up the good segments and combine
-        GoodDSegs = 0
-        output = open(OutputFileName, "wb")
-        for DSegNum in xrange(myeccmap.datasegments):
-            FileName = os.path.join(data_parity_dir, backupId, str(blockNumber) + '-' + str(DSegNum) + '-Data')
-            if os.path.exists(FileName):
-                GoodDSegs += 1
-                moredata = open(FileName,"rb").read()
-                output.write(moredata)
-        output.close()
-        return GoodDSegs
+                    else:
+                        BadName = FileName
+                if GoodDSegs == TotalDSegs - 1:
+                    MakingProgress = 1
+                    GoodFiles[GoodDSegs] = PFileName
+                    GoodDSegs += 1
+                    RebuildOne(GoodFiles, GoodDSegs, BadName)
+    #  Count up the good segments and combine
+    GoodDSegs = 0
+    output = open(OutputFileName, "wb")
+    for DSegNum in xrange(myeccmap.datasegments):
+        FileName = os.path.join(
+            data_parity_dir,
+            backupId,
+            str(blockNumber) +
+            '-' +
+            str(DSegNum) +
+            '-Data')
+        if os.path.exists(FileName):
+            GoodDSegs += 1
+            moredata = open(FileName, "rb").read()
+            output.write(moredata)
+    output.close()
+    return GoodDSegs
     # except:
     #     return None
 
@@ -231,5 +266,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

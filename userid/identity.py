@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#identity.py
+# identity.py
 #
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
@@ -15,7 +15,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -39,18 +39,18 @@ Hum.
 The whole idea of identity files is that they can be stored anywhere.
 User can decide to put his identity file on his own host, or he can use some another trusted public host.
 All identity files is signed with user's Key and client code should verify signatures.
-Even if someone tried to fake my identity - this will be refused by other nodes in the network.  
+Even if someone tried to fake my identity - this will be refused by other nodes in the network.
 
 Example in http://id.bitdust.io/veselin.xml
 
 Could have info just be XML on a web page.  So an Identity could be a URL.
-If we do this, then we get the scaling of DNS for free.  
+If we do this, then we get the scaling of DNS for free.
 
 BitDust could have mappings from unique short names to URLs for
 identities.  Or we could just make sure that the MD5 of the URL was
-always unique (this is 16 bytes).  Or we could go with the primary URL.  
-Hum. BitDust does need some sort of unique identifier, as do others.  
-Also, would be nice to be able to send someone a list of their 
+always unique (this is 16 bytes).  Or we could go with the primary URL.
+Hum. BitDust does need some sort of unique identifier, as do others.
+Also, would be nice to be able to send someone a list of their
 current 64 nodes they use, or the 300 that use them, without
 crazy amounts of data.  For display
 of backup status I would like a unique identifier that is short,
@@ -61,10 +61,10 @@ identity servers and they can get very short names like id.ai.
 If we forced them all to be ".com/" we could display "id:vince1",
 or "cate:vince1", which is short.  The force could just be
 a lower rating for those that did not do this.  Could have
-short name take up 2 lines out of my 5, and just plan on 
+short name take up 2 lines out of my 5, and just plan on
 letting user click on things to change what things are
 displayed.  So they have 5 lines and full URL takes 2,
-but last of URL is just 1 line, and maybe they don't 
+but last of URL is just 1 line, and maybe they don't
 care what the name is and just display other stuff.
 
 If we open it up a bit, people could just use tinyurl.com/foolksd
@@ -93,7 +93,7 @@ revision number
 signature on all identity info
 
 Contact list has enough info we can tell what protocol to use.
-User could put in order he prefers us to try the contact methods.  
+User could put in order he prefers us to try the contact methods.
 So we might have a list like:
     bitdust:offshore.ai:5008
     bitdust:209.88.68.34:5008
@@ -101,12 +101,12 @@ So we might have a list like:
     vertex:foo@bar.com
     email:bitdust@gmail.com
     email:bitdust@hotmal.com
-    http://foobar.com/data.pl?vince    
+    http://foobar.com/data.pl?vince
 
 Really best if all the identity servers use SSL.
 We could make certificates for identity servers, but might
 not bother as it is probably best if they have ones that
-web browsers understand.    
+web browsers understand.
 On the other hand, this might be a good way to get into the certificate-authority business. :-)
 
 Having XML on a web site means we can start before we
@@ -121,7 +121,7 @@ limitation really.  And we don't need to farm it out.
 Identity's are signed and have a revision number, so an identity
 server can pass on an update that it gets to other servers listed
 for that identity (in case there is network partition funnyness)
-to help keep all of them updated. 
+to help keep all of them updated.
 """
 
 import os
@@ -131,7 +131,7 @@ import time
 from xml.dom import minidom, Node
 from xml.dom.minidom import getDOMImplementation
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 try:
     from logs import lg
@@ -148,7 +148,7 @@ from lib import nameurl
 
 from crypt import key
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 <identity>
@@ -164,19 +164,20 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
   <signature></signature>
 </identity>"""
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class identity:
     """
     We are passed an XML version of an identity and make an Identity.
-    Also can construct an Identity by providing all fields. 
+    Also can construct an Identity by providing all fields.
     The fields is:
         * sources : list of URLs, first is primary URL and name
         * contacts : list of ways to contact this identity
         * certificates : signatures by identity servers
         * scrubbers : list of URLs for people allowed to scrub
         * postage : a price for message delivery if not on correspondents list
-        * date : the date an time when that identity was created 
+        * date : the date an time when that identity was created
         * version : a version string - some info about BitDust software and platform
         * revision : every time identity were modified this value will be increased by 1
         * publickey : the public part of user's key, string in twisted.conch.ssh format
@@ -193,18 +194,18 @@ class identity:
     publickey = ""      # string in twisted.conch.ssh format
     signature = ""      # digital signature
 
-    def __init__ (  self,
-                    sources = [],
-                    contacts = [],
-                    certificates = [],
-                    scrubbers = [],
-                    postage = "1",
-                    date = "",
-                    version = "",
-                    revision = "0",
-                    publickey = '',
-                    xmlsrc = None,
-                    filename = '' ):
+    def __init__(self,
+                 sources=[],
+                 contacts=[],
+                 certificates=[],
+                 scrubbers=[],
+                 postage="1",
+                 date="",
+                 version="",
+                 revision="0",
+                 publickey='',
+                 xmlsrc=None,
+                 filename=''):
 
         self.sources = sources
         self.contacts = contacts
@@ -219,7 +220,7 @@ class identity:
         if publickey != '':
             self.sign()
         else:
-            self.signature=''
+            self.signature = ''
             # no point in signing if no public key listed, probably about to unserialize something
 
         if xmlsrc is not None:
@@ -227,7 +228,7 @@ class identity:
 
         if filename != '':
             self.unserialize(bpio.ReadTextFile(filename))
-            
+
         if xmlsrc is None and filename == '':
             self.default()
 
@@ -236,7 +237,7 @@ class identity:
         Erase all fields data, clear identity.
         """
         self.sources = []      # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
-        self.certificates = [] # identity servers each sign the source they are with - hash just (IDURL + publickey)
+        self.certificates = []  # identity servers each sign the source they are with - hash just (IDURL + publickey)
         self.publickey = ''    # string
         self.contacts = []     # list of ways to contact this identity
         self.scrubbers = []    # list of URLs for people allowed to scrub
@@ -253,7 +254,7 @@ class identity:
         global default_identity_src
         self.unserialize(default_identity_src)
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
     def isCorrect(self):
         """
@@ -279,9 +280,9 @@ class identity:
         """
         http://docs.python.org/lib/module-urlparse.html
         Note that certificates and signatures are not part of what is hashed.
-        PREPRO 
+        PREPRO
         Thinking of standard that fields have labels and empty fields are left out,
-        including label, so future versions could have same signatures as older which had fewer fields - 
+        including label, so future versions could have same signatures as older which had fewer fields -
         can just do this for fields after these, so maybe don't need to change anything for now.
         Don't include certificate - so identity server can just add it.
         """
@@ -290,12 +291,12 @@ class identity:
         hsh += sep + sep.join(self.sources)
         hsh += sep + sep.join(self.contacts)
         # hsh += sep + sep.join(self.certificates)
-        hsh += sep + sep.join(self.scrubbers) 
+        hsh += sep + sep.join(self.scrubbers)
         hsh += sep + self.postage
         hsh += sep + self.date.replace(' ', '_')
         hsh += sep + self.version
         hsh += sep + self.revision
-        hashcode = key.Hash(hsh)          
+        hashcode = key.Hash(hsh)
         return hashcode
 
     def makehash_old(self):
@@ -312,7 +313,7 @@ class identity:
         for i in self.sources:
             sr += i
         stufftohash = c + sep + s + sep + sr + sep + self.version + sep + self.postage + sep + self.date.replace(' ', '_')
-        hashcode = key.Hash(stufftohash)          
+        hashcode = key.Hash(stufftohash)
         return hashcode
 
     def sign(self):
@@ -321,9 +322,9 @@ class identity:
         """
         hashcode = self.makehash()
         self.signature = key.Sign(hashcode)
-##        if self.Valid():
+# if self.Valid():
 ##            lg.out(12, "identity.sign tested after making and it looks good")
-##        else:
+# else:
 ##            lg.out(1, "identity.sign ERROR tested after making sign ")
 ##            raise Exception("sign fails")
 
@@ -346,7 +347,7 @@ class identity:
                 str(self.signature))
         return result
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
     def unserialize(self, xmlsrc):
         """
@@ -356,7 +357,7 @@ class identity:
             doc = minidom.parseString(xmlsrc)
         except:
             lg.exc('identity unserialize failed', 8, 1)
-            lg.out(12, '\n'+xmlsrc[:256]+'\n')
+            lg.out(12, '\n' + xmlsrc[:256] + '\n')
             return
         self.clear_data()
         self.from_xmlobj(doc.documentElement)
@@ -370,8 +371,8 @@ class identity:
 
     def serialize(self):
         """
-        A method to generate XML content for that identity object. 
-        Used to save identity on disk or transfer over network.  
+        A method to generate XML content for that identity object.
+        Used to save identity on disk or transfer over network.
         """
         return self.toxml()[0]
 
@@ -383,13 +384,13 @@ class identity:
 
     def toxml(self):
         """
-        Call this to convert to XML format. 
+        Call this to convert to XML format.
         """
         impl = getDOMImplementation()
-        
+
         doc = impl.createDocument(None, 'identity', None)
         root = doc.documentElement
-        
+
         sources = doc.createElement('sources')
         root.appendChild(sources)
         for source in self.sources:
@@ -513,9 +514,9 @@ class identity:
             return False
         return True
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
-    def getIDURL(self, index = 0):
+    def getIDURL(self, index=0):
         """
         Return a source IDURL - this is a user ID.
         Must have at least one IDURL in the ``sources``.
@@ -523,7 +524,7 @@ class identity:
         result = self.sources[index].strip()
         return result
 
-    def getIDName(self, index = 0):
+    def getIDName(self, index=0):
         """
         Return an account name - this is just a user name taken from IDURL:
             "veselin" for "http://id.bitdust.io/veselin.xml"
@@ -531,7 +532,7 @@ class identity:
         protocol, host, port, filename = nameurl.UrlParse(self.getIDURL(index))
         return filename.strip()[0:-4]
 
-    def getIDHost(self, index = 0):
+    def getIDHost(self, index=0):
         """
         Return a server host name where that identity is stored:
             "id.bitdust.io" for "http://id.bitdust.io/veselin.xml"
@@ -556,7 +557,7 @@ class identity:
     def getContact(self, index=0):
         """
         Return a contact with given ``index`` number or None.
-        """ 
+        """
         try:
             return self.contacts[index]
         except:
@@ -579,14 +580,14 @@ class identity:
     def getContactParts(self, index):
         """
         Return tuple with 4 parts of the contact:
-            (proto, host, port, filename) 
+            (proto, host, port, filename)
         """
         return nameurl.UrlParse(self.contacts[index])
 
     def getProtoParts(self, proto):
         """
         See ``getProtoContact``, return a tuple for given ``proto``:
-            (proto, host, port, filename) 
+            (proto, host, port, filename)
         """
         contact = self.getProtoContact(proto)
         if contact is None:
@@ -608,11 +609,11 @@ class identity:
         """
         for i in range(0, len(self.contacts)):
             c = self.contacts[i]
-            if proto: 
-                if c.find(proto+"://") == 0:
+            if proto:
+                if c.find(proto + "://") == 0:
                     return i
             if host:
-                if c.find('://'+host) == 0:
+                if c.find('://' + host) == 0:
                     return i
             if contact:
                 if c == contact:
@@ -624,7 +625,7 @@ class identity:
         Search for first found contact with given ``proto``. Return None if not found a contact.
         """
         for contact in self.contacts:
-            if contact.startswith(proto+"://"):
+            if contact.startswith(proto + "://"):
                 return contact
         return None
 
@@ -632,11 +633,11 @@ class identity:
         """
         Return a list of "proto" parts of all contacts.
         In other words return a list of all supported protocols.
-        This keeps the order of the protos - this is a sort of priority of the transports. 
+        This keeps the order of the protos - this is a sort of priority of the transports.
         """
         orderL = []
         for c in self.contacts:
-            proto,host,port,filename = nameurl.UrlParse(c)
+            proto, host, port, filename = nameurl.UrlParse(c)
             orderL.append(proto)
         return orderL
 
@@ -645,7 +646,7 @@ class identity:
         """
         result = []
         for c in self.contacts:
-            proto,host = c.split('://')
+            proto, host = c.split('://')
             result.append((proto, host))
         return result
 
@@ -679,7 +680,7 @@ class identity:
                 return host
         return self.getProtoHost('tcp')
 
-    #------------------------------------------------------------------------------ 
+    #------------------------------------------------------------------------------
 
     def setContacts(self, contacts_list):
         """
@@ -702,12 +703,12 @@ class identity:
             self.contacts[index] = contact
         except:
             lg.exc()
-        
+
     def setProtoContact(self, proto, contact):
         """
         Found a contact with given ``proto`` and set its value or append a new contact.
         """
-        for i in range(0,len(self.contacts)):
+        for i in range(0, len(self.contacts)):
             proto_, host, port, filename = nameurl.UrlParse(self.contacts[i])
             if proto_.strip() == proto.strip():
                 self.contacts[i] = contact
@@ -723,7 +724,7 @@ class identity:
 
     def setContactHost(self, host, index):
         """
-        This is to set only host part of the contact. 
+        This is to set only host part of the contact.
         """
         protocol, host_, port, filename = nameurl.UrlParse(self.contacts[index])
         url = nameurl.UrlMake(protocol, host, port, filename)
@@ -731,7 +732,7 @@ class identity:
 
     def setContactPort(self, index, newport):
         """
-        This is useful when listening port get changed. 
+        This is useful when listening port get changed.
         """
         protocol, host, port, filename = nameurl.UrlParse(self.contacts[index])
         url = nameurl.UrlMake(protocol, host, newport, filename)
@@ -739,13 +740,13 @@ class identity:
 
     def setCertificate(self, certificate):
         """
-        Not used yet. 
+        Not used yet.
         TODO. Need to ask Vince for more details about id certificates.
         """
         self.certificates.append(certificate)
         self.sign()
-                
-    #------------------------------------------------------------------------------ 
+
+    #------------------------------------------------------------------------------
 
     def clearContacts(self):
         """
@@ -758,7 +759,7 @@ class identity:
         Remove all contacts with given ``proto``.
         """
         for contact in self.contacts:
-            if contact.find(proto+"://") == 0:
+            if contact.find(proto + "://") == 0:
                 self.contacts.remove(contact)
 
     def pushProtoContact(self, proto):
@@ -767,7 +768,7 @@ class identity:
         First contact in the list have more priority for remote machine,
         so we can manipulate our protos to get more p2p connections.
         Push less reliable protocols to the end of the list.
-        This is to decrease its priority. 
+        This is to decrease its priority.
         """
         i = self.getContactIndex(proto=proto)
         if i < 0:
@@ -807,10 +808,10 @@ def test1():
     print "myidentity.contacts"
     print myidentity.contacts
     print "len myidentity.contacts "
-    print len (myidentity.contacts)
+    print len(myidentity.contacts)
     print "len myidentity.contacts[0] "
     print myidentity.contacts[0]
-    con=myidentity.getContact()
+    con = myidentity.getContact()
     print "con:", con, type(con)
     protocol, machine, port, filename = nameurl.UrlParse(con)
     print protocol, machine, port, filename
@@ -826,9 +827,9 @@ def test2():
     """
     from userid import my_id
     ident = my_id.buildDefaultIdentity()
-    print ident.serialize() 
+    print ident.serialize()
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 
 def main():
@@ -848,7 +849,8 @@ def main():
         print 'Valid is: ', my_id.getLocalIdentity().Valid()
         my_id._LocalIdentity = None
         my_id.loadLocalIdentity()
-        
+
+
 def update():
     """
     A good way to check all things - load and sign again.
@@ -860,14 +862,11 @@ def update():
     my_id.setLocalIdentity(identity(xmlsrc=src))
     my_id.getLocalIdentity().sign()
     my_id.saveLocalIdentity()
-    print my_id.getLocalIdentity().serialize()    
-    
-#------------------------------------------------------------------------------ 
+    print my_id.getLocalIdentity().serialize()
+
+#------------------------------------------------------------------------------
 
 
 if __name__ == '__main__':
     lg.set_debug_level(18)
     main()
-
-
-

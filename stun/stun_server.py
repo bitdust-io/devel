@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#stun_server.py
+# stun_server.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -49,10 +49,11 @@ from lib import udp
 from dht import dht_service
 
 #------------------------------------------------------------------------------
- 
+
 _StunServer = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def A(event=None, arg=None):
     """
@@ -83,28 +84,28 @@ class StunServer(automat.Automat):
     """
     This class implements all the functionality of the ``stun_server()`` state machine.
     """
-    
+
     fast = True
 
     def init(self):
         self.listen_port = None
-        
+
     def A(self, event, arg):
         #---AT_STARTUP---
         if self.state is 'AT_STARTUP':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'LISTEN'
                 self.doInit(arg)
         #---LISTEN---
         elif self.state is 'LISTEN':
-            if event == 'stop' :
+            if event == 'stop':
                 self.state = 'STOPPED'
                 self.doStop(arg)
-            elif event == 'datagram-received' and self.isSTUN(arg) :
+            elif event == 'datagram-received' and self.isSTUN(arg):
                 self.doSendYourIPPort(arg)
         #---STOPPED---
         elif self.state is 'STOPPED':
-            if event == 'start' :
+            if event == 'start':
                 self.state = 'LISTEN'
                 self.doInit(arg)
 
@@ -164,7 +165,7 @@ class StunServer(automat.Automat):
         """
         self.automat('datagram-received', (datagram, address))
         return False
-        
+
 
 def main():
     from twisted.internet import reactor
@@ -179,7 +180,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
-    
-    
-    

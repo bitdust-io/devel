@@ -1,5 +1,5 @@
 #!/usr/bin/python
-#py2exe_build_starter.py
+# py2exe_build_starter.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,10 +29,11 @@ try:
         import py2exe.mf as modulefinder
     except ImportError:
         import modulefinder
-    import win32com, sys
+    import win32com
+    import sys
     for p in win32com.__path__[1:]:
         modulefinder.AddPackagePath("win32com", p)
-    for extra in ["win32com.shell"]: #,"win32com.mapi"
+    for extra in ["win32com.shell"]:  # ,"win32com.mapi"
         __import__(extra)
         m = sys.modules[extra]
         for p in m.__path__[1:]:
@@ -49,19 +50,19 @@ import twisted.web.resource as resource
 
 packages = [
     'encodings',
-    ]
+]
 
 includes = [
     'encodings',
     'encodings.*',
     'twisted.web.resource',
     'optparse',
-    ]
+]
 
 excludes = [
-    'ICCProfile', 
-    '_imaging_gif', 
-    '_imagingagg',           
+    'ICCProfile',
+    '_imaging_gif',
+    '_imagingagg',
     'DLFCN',
     'PAM',
     'PyQt4',
@@ -78,11 +79,11 @@ excludes = [
     'email.Generator',
     'email.Iterators',
     'email.Utils',
-    'email.Encoders', 
-    'email.MIMEBase', 
-    'email.MIMEMultipart', 
-    'email.MIMEText', 
-    'email.base64MIME',    
+    'email.Encoders',
+    'email.MIMEBase',
+    'email.MIMEMultipart',
+    'email.MIMEText',
+    'email.base64MIME',
     'guppy',
     'guppy.heapy.RM',
     'hotshot',
@@ -109,18 +110,18 @@ excludes = [
     '_sysconfigdata',
     'html',
     'queue',
-    ]
+]
 
 
 setup(
 
-    name = 'BitDust Starter',
+    name='BitDust Starter',
 
-    description = 'BitDust Starter',
+    description='BitDust Starter',
 
-    version = open('release/version').read().strip(), 
+    version=open('release/version').read().strip(),
 
-    windows = [
+    windows=[
 
         {
             'script': 'bitstarter.py',
@@ -129,7 +130,7 @@ setup(
 
     ],
 
-    options = {
+    options={
         'py2exe': {
             'packages': packages,
             'includes': includes,
@@ -142,14 +143,5 @@ setup(
         },
     },
 
-    zipfile = None,
+    zipfile=None,
 )
-
-
-
-
-
-
-
-
-

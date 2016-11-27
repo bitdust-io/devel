@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#admin.py
+# admin.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -24,20 +24,21 @@
 from models import Message, Room, RoomMember
 from django.contrib import admin
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class RoomAdmin(admin.ModelAdmin):
     list_display = ('name', 'created', 'last_activity_formatted', 'description')
     readonly_fields = ('created', 'content_type', 'object_id')
-    # As we've set some fields to be read-only, they will automatically appear at the end 
+    # As we've set some fields to be read-only, they will automatically appear at the end
     # of the list. Manually order the fields to be as they are defined in the model.
     fieldsets = (
         (None, {
-            'fields': ('idurl', 
-                       'name', 
-                       'created', 
-                       'description', 
-                       'content_type', 
+            'fields': ('idurl',
+                       'name',
+                       'created',
+                       'description',
+                       'content_type',
                        'object_id')
         }),
     )
@@ -50,7 +51,8 @@ class RoomAdmin(admin.ModelAdmin):
 
 admin.site.register(Room, RoomAdmin)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class RoomMemberAdmin(admin.ModelAdmin):
     list_display = ('room', 'idurl', )
@@ -58,12 +60,11 @@ class RoomMemberAdmin(admin.ModelAdmin):
 
 admin.site.register(RoomMember, RoomMemberAdmin)
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('room', 'created', 'unix_timestamp', 'idurl', 'text', 'event',)
-    list_filter = ['room', 'idurl',]
+    list_filter = ['room', 'idurl', ]
 
 admin.site.register(Message, MessageAdmin)
-
-

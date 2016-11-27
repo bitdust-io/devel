@@ -10,7 +10,8 @@ Licensed under the GNU LGPL.
 
 from twisted.internet import defer
 from twisted.internet.protocol import DatagramProtocol
-import random, socket
+import random
+import socket
 from twisted.python import log
 from defcache import DeferredCache
 
@@ -18,24 +19,25 @@ from defcache import DeferredCache
 
 _Debug = False
 
+
 class LocalNetworkMulticast(DatagramProtocol, object):
 
     def __init__(self, *args, **kwargs):
         self.compDef = defer.Deferred()
         self.completed = False
-        super(LocalNetworkMulticast,self).__init__(*args, **kwargs)
+        super(LocalNetworkMulticast, self).__init__(*args, **kwargs)
 
     def listenMulticast(self):
         from twisted.internet import reactor
         from twisted.internet.error import CannotListenError
         attempt = 0
-        port = 11000 + random.randint(0,5000)
+        port = 11000 + random.randint(0, 5000)
         while True:
             try:
                 mcast = reactor.listenMulticast(port, self)
                 break
             except CannotListenError:
-                port = 11000 + random.randint(0,5000)
+                port = 11000 + random.randint(0, 5000)
                 attempt += 1
                 if _Debug:
                     print "listenmulticast failed, trying", port
@@ -44,9 +46,11 @@ class LocalNetworkMulticast(DatagramProtocol, object):
             d, self.compDef = self.compDef, None
             d.callback(None)
         dd = mcast.joinGroup('239.255.255.250', socket.INADDR_ANY)
+
         def _cb(x):
             if _Debug:
                 print 'multicast group joined'
+
         def _eb(x):
             if _Debug:
                 print 'multicast group join failed', x
@@ -76,15 +80,21 @@ class LocalNetworkMulticast(DatagramProtocol, object):
             d.callback(addr[0])
 
 _cachedLocalIP = None
+
+
 def _cacheLocalIP(res):
     global _cachedLocalIP
-    if _Debug: print "caching value", res
+    if _Debug:
+        print "caching value", res
     _cachedLocalIP = res
     return res
 
 # If there's a need to clear the cache, call this method (e.g. DHCP client)
+
+
 def _clearCachedLocalIP():
     _cacheLocalIP(None)
+
 
 def _getLocalIPAddress():
     # So much pain. Don't even bother with
@@ -97,7 +107,7 @@ def _getLocalIPAddress():
     if _cachedLocalIP is not None:
         return defer.succeed(_cachedLocalIP)
     # first we try a connected udp socket
-    if _Debug: 
+    if _Debug:
         print "resolving A.ROOT-SERVERS.NET"
     ret = defer.Deferred()
     d = reactor.resolve('A.ROOT-SERVERS.NET')
@@ -117,38 +127,39 @@ getLocalIPAddress = DeferredCache(_getLocalIPAddress)
 #     uClearCache()
 #     sClearCache()
 
+
 def _noDNSerrback(failure, ret):
     # No global DNS? What the heck, it's possible, I guess.
-    if _Debug: 
+    if _Debug:
         print "no DNS, trying multicast"
     d = _getLocalIPAddressViaMulticast(ret)
-    
+
 
 def _getLocalIPAddressViaConnectedUDP(ip, ret):
     from twisted.internet import reactor
     from twisted.internet.protocol import DatagramProtocol
-    if _Debug: 
+    if _Debug:
         print "connecting UDP socket to", ip
     prot = DatagramProtocol()
     p = reactor.listenUDP(0, prot)
     try:
         res = prot.transport.connect(ip, 7)
     except:
-        if _Debug: 
-            print "can not connect to %s:%d" % ( ip, 7 )
+        if _Debug:
+            print "can not connect to %s:%d" % (ip, 7)
         return _getLocalIPAddressViaMulticast(ret)
     locip = prot.transport.getHost().host
     p.stopListening()
     del prot, p
-    if _Debug: 
+    if _Debug:
         print "connected UDP socket says", locip
     if isBogusAddress(locip):
         # #$#*(&??!@#$!!!
-        if _Debug: 
+        if _Debug:
             print "connected UDP socket gives crack, trying mcast instead"
         return _getLocalIPAddressViaMulticast(ret)
     else:
-        return ret.callback(locip) 
+        return ret.callback(locip)
 
 
 def _getLocalIPAddressViaMulticast(ret):
@@ -160,14 +171,16 @@ def _getLocalIPAddressViaMulticast(ret):
     try:
         IReactorMulticast(reactor)
     except:
-        if _Debug: 
+        if _Debug:
             print "no multicast support in reactor"
         log.msg("warning: no multicast in reactor", system='network')
         return ret.callback('0.0.0.0')
     locprot = LocalNetworkMulticast()
+
     def _cb(x, ret):
         _cacheLocalIP(x)
         ret.callback(x)
+
     def _eb(x, ret):
         if _Debug:
             print 'multicast failed'
@@ -175,10 +188,10 @@ def _getLocalIPAddressViaMulticast(ret):
     try:
         locprot.compDef.addCallback(_cb, ret)
         locprot.compDef.addErrback(_eb, ret)
-        if _Debug: 
+        if _Debug:
             print "listening to multicast"
         locprot.listenMulticast()
-        if _Debug: 
+        if _Debug:
             print "sending multicast packets"
         locprot.blatMCast()
     except:
@@ -267,6 +280,7 @@ def _getLocalIPAddressViaMulticast(ret):
 # def _forceMapper(mapper):
 #     global _forcedMapper
 #     _forcedMapper = mapper
+
 
 def isBogusAddress(addr):
     """ Returns true if the given address is bogus, i.e. 0.0.0.0 or
@@ -472,10 +486,9 @@ def isBogusAddress(addr):
 #     return _defaultPolicy
 
 
-
 if __name__ == "__main__":
-#     from twisted.internet import gtk2reactor
-#     gtk2reactor.install()
+    #     from twisted.internet import gtk2reactor
+    #     gtk2reactor.install()
     from twisted.internet import reactor
     import sys
 
@@ -490,5 +503,5 @@ if __name__ == "__main__":
 #     d2 = detectNAT().addCallback(cb_gotnat)
 #     dl = defer.DeferredList([d1,d2])
 #     dl.addCallback(lambda x:reactor.stop())
-    d1.addCallback(lambda x:reactor.stop())
+    d1.addCallback(lambda x: reactor.stop())
     reactor.run()

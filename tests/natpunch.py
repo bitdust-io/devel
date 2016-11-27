@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#natpunch.py
+# natpunch.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
@@ -14,7 +14,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Affero General Public License
 # along with BitDust Software.  If not, see <http://www.gnu.org/licenses/>.
 #
@@ -37,7 +37,8 @@ from logs import lg
 from system import bpio
 from lib import udp
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
+
 
 def listen(local_port, servers, incomings_filename):
     def _loop():
@@ -57,7 +58,7 @@ def listen(local_port, servers, incomings_filename):
 
 def connect(local_port, remote_ip, servers, min_port, max_port):
     def _loop():
-        for port_num in range(min_port, max_port+1):
+        for port_num in range(min_port, max_port + 1):
             udp.send_command(local_port, udp.CMD_PING, 'ping', (remote_ip, port_num))
         reactor.callLater(5, _loop)
     for srv in servers:
@@ -97,30 +98,30 @@ def main():
 
     lg.set_debug_level(24)
     bpio.init()
-    
+
     if sys.argv[1] == 'server':
         min_port = int(sys.argv[2])
         max_port = int(sys.argv[3])
-        for port_num in range(min_port, max_port+1):
+        for port_num in range(min_port, max_port + 1):
             udp.listen(port_num)
-            udp.proto(port_num).add_callback(lambda d,a: datagram_received(d, a, port_num))
-            
+            udp.proto(port_num).add_callback(lambda d, a: datagram_received(d, a, port_num))
+
     elif sys.argv[1] == 'listen':
         port_num = int(sys.argv[2])
         udp.listen(port_num)
-        udp.proto(port_num).add_callback(lambda d,a: datagram_received(d, a, port_num))
+        udp.proto(port_num).add_callback(lambda d, a: datagram_received(d, a, port_num))
         servers = []
         for line in open(sys.argv[3]).read().split('\n'):
             addr = line.strip().split(':')
             addr[1] = int(addr[1])
             servers.append(tuple(addr))
         listen(port_num, servers, sys.argv[4])
-        
+
     elif sys.argv[1] == 'connect':
         port_num = int(sys.argv[2])
         remote_ip = sys.argv[3]
         udp.listen(port_num)
-        udp.proto(port_num).add_callback(lambda d,a: datagram_received(d, a, port_num))
+        udp.proto(port_num).add_callback(lambda d, a: datagram_received(d, a, port_num))
         servers = []
         for line in open(sys.argv[4]).read().split('\n'):
             addr = line.strip().split(':')
@@ -129,9 +130,8 @@ def main():
         min_port = int(sys.argv[5])
         max_port = int(sys.argv[6])
         connect(port_num, remote_ip, servers, min_port, max_port)
-        
+
     reactor.run()
 
 if __name__ == '__main__':
     main()
-    
