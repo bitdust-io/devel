@@ -24,7 +24,7 @@
 #
 
 """
-.. module:: key
+.. module:: key.
 
 Here is a bunch of cryptography methods used in all parts of the software.
 BitDust uses PyCrypto library:
@@ -60,12 +60,7 @@ from twisted.conch.ssh import keys
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -85,12 +80,13 @@ _MyPubKey = None
 
 def InitMyKey(keyfilename=None):
     """
-    This is core method.
-    At first it check the Private Key in the memory, if it is already initialized it does nothing.
-    The local key are placed in the "[BitDust data dir]/metadata/mykeyfile".
-    If file "[BitDust data dir]/metadata/mykeyfile_location" exists -
-    it should contain the location of the mykeyfile. Useful to store Private Key on the USB flash.
-    BitDust data dir is platform dependent:
+    This is core method. At first it check the Private Key in the memory, if it
+    is already initialized it does nothing. The local key are placed in the
+    "[BitDust data dir]/metadata/mykeyfile". If file "[BitDust data
+    dir]/metadata/mykeyfile_location" exists - it should contain the location
+    of the mykeyfile. Useful to store Private Key on the USB flash. BitDust
+    data dir is platform dependent:
+
         - Linux and Mac: ~/.bitdust
         - Windows XP: C:/Documents and Settings/[user]/.bitdust
         - Windows Vista, 7, 8: C:/Users/[user]/.bitdust
@@ -188,7 +184,8 @@ def MyPrivateKey():
 
 def MyPublicKeyObject():
     """
-    Return Public part of the Key as object, useful to convert to different formats.
+    Return Public part of the Key as object, useful to convert to different
+    formats.
     """
     global _MyPubKey
     InitMyKey()
@@ -208,7 +205,8 @@ def MyPrivateKeyObject():
 
 def Sign(inp):
     """
-    Sign some ``inp`` string with our Private Key, this calls PyCrypto method ``Crypto.PublicKey.RSA.sign``.
+    Sign some ``inp`` string with our Private Key, this calls PyCrypto method
+    ``Crypto.PublicKey.RSA.sign``.
     """
     global _MyPubKey
     InitMyKey()
@@ -221,7 +219,8 @@ def Sign(inp):
 
 def VerifySignature(pubkeystring, hashcode, signature):
     """
-    Verify signature, this calls function ``Crypto.PublicKey.RSA.verify`` to verify.
+    Verify signature, this calls function ``Crypto.PublicKey.RSA.verify`` to
+    verify.
 
     :param keystring: PublicKey in openssh format.
     :param hashcode: input data to verify, we use method ``Hash`` to prepare that.
@@ -253,8 +252,10 @@ def Verify(ConIdentity, hashcode, signature):
 def HashMD5(inp, hexdigest=False):
     """
     Use MD5 method to calculate the hash of ``inp`` string.
+
     However it seems it is not so safe anymore:
-    http://natmchugh.blogspot.co.uk/2014/10/how-i-created-two-images-with-same-md5.html
+    http://natmchugh.blogspot.co.uk/2014/10/how-i-created-two-images-
+    with-same-md5.html
     """
     if hexdigest:
         return hashlib.md5(inp).hexdigest()
@@ -272,6 +273,7 @@ def HashSHA(inp, hexdigest=False):
 
 def HashSHA512(inp, hexdigest=False):
     """
+    
     """
     if hexdigest:
         return hashlib.sha512(inp).hexdigest()
@@ -280,7 +282,8 @@ def HashSHA512(inp, hexdigest=False):
 
 def Hash(inp, hexdigest=False):
     """
-    Core function to calculate hash of ``inp`` string, right now it uses MD5 method.
+    Core function to calculate hash of ``inp`` string, right now it uses MD5
+    method.
     """
     # return HashMD5(inp)
     return HashSHA(inp, hexdigest=hexdigest)
@@ -355,6 +358,7 @@ def EncryptWithSessionKey(session_key, inp, session_key_type=SessionKeyType()):
 def DecryptLocalPK(inp):
     """
     Decrypt ``inp`` string with your Private Key.
+
     We only decrypt with our local private key so no argument for that.
     """
     global _MyRsaKey
@@ -388,6 +392,7 @@ def EncryptStringPK(publickeystring, inp):
 def EncryptBinaryPK(publickey, inp):
     """
     Encrypt ``inp`` string using given Public Key in the ``publickey`` object.
+
     Return encrypted string.
     """
     # There is a bug in rsa.encrypt if there is a leading '\0' in the string.
@@ -418,12 +423,7 @@ def SpeedTest():
         EncryptedSessionKey = EncryptLocalPK(SessionKey)
         EncryptedData = EncryptWithSessionKey(SessionKey, Data)
         Signature = Sign(Hash(EncryptedData))
-        packets.append(
-            (Data,
-             len(Data),
-                EncryptedSessionKey,
-                EncryptedData,
-                Signature))
+        packets.append((Data, len(Data), EncryptedSessionKey, EncryptedData, Signature))
         print '.',
     print time.time() - dt, 'seconds'
 

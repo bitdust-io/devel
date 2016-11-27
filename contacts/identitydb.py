@@ -24,10 +24,11 @@
 #
 
 """
-.. module:: identitydb
+.. module:: identitydb.
 
-Here is a simple1 database for identities cache.
-Also keep track of changing identities sources and maintain a several "index" dictionaries to speed up processes.
+Here is a simple1 database for identities cache. Also keep track of
+changing identities sources and maintain a several "index" dictionaries
+to speed up processes.
 """
 
 import os
@@ -77,6 +78,7 @@ def cache_ids():
 def init():
     """
     Need to call before all other methods.
+
     Check to exist and create a folder to keep all cached identities.
     """
     lg.out(4, "identitydb.init")
@@ -88,6 +90,7 @@ def init():
 
 def shutdown():
     """
+    
     """
     lg.out(4, "identitydb.shutdown")
 
@@ -143,6 +146,7 @@ def has_idurl(idurl):
 
 def has_file(idurl):
     """
+    
     """
     try:
         partfilename = nameurl.UrlFilename(idurl)
@@ -175,10 +179,8 @@ def idset(idurl, id_obj):
         if contact not in _Contact2IDURL:
             _Contact2IDURL[contact] = set()
         else:
-            if len(_Contact2IDURL[contact]) >= 1 and idurl not in _Contact2IDURL[
-                    contact]:
-                lg.warn('another user have same contact: ' +
-                        str(list(_Contact2IDURL[contact])))
+            if len(_Contact2IDURL[contact]) >= 1 and idurl not in _Contact2IDURL[contact]:
+                lg.warn('another user have same contact: ' + str(list(_Contact2IDURL[contact])))
         _Contact2IDURL[contact].add(idurl)
         if idurl not in _IDURL2Contacts:
             _IDURL2Contacts[idurl] = set()
@@ -189,8 +191,7 @@ def idset(idurl, id_obj):
             _IPPort2IDURL[ipport] = idurl
         except:
             pass
-    # TODO: when identity contacts changed - need to remove old items from
-    # _Contact2IDURL
+    # TODO: when identity contacts changed - need to remove old items from _Contact2IDURL
     fire_cache_updated_callbacks(single_item=(
         identid, idurl, id_obj))
 
@@ -205,7 +206,9 @@ def idget(url):
 
 def idremove(url):
     """
-    Remove identity from cache, also update indexes. Not remove local file.
+    Remove identity from cache, also update indexes.
+
+    Not remove local file.
     """
     global _IdentityCache
     global _IdentityCacheIDs
@@ -239,6 +242,7 @@ def idcontacts(idurl):
 def get(url):
     """
     A smart way to get identity from cache.
+
     If not cached in memory but found on disk - will cache from disk.
     """
     if has_idurl(url):
@@ -251,9 +255,7 @@ def get(url):
             return None
         filename = os.path.join(settings.IdentityCacheDir(), partfilename)
         if not os.path.exists(filename):
-            lg.out(
-                6, "identitydb.get file %s not exist" %
-                os.path.basename(filename))
+            lg.out(6, "identitydb.get file %s not exist" % os.path.basename(filename))
             return None
         idxml = bpio.ReadTextFile(filename)
         if idxml:
@@ -298,7 +300,9 @@ def get_idurl_by_ip_port(ip, port):
 def update(url, xml_src):
     """
     This is a correct method to update an identity in the database.
-    PREPRO need to check that date or version is after old one so not vulnerable to replay attacks.
+
+    PREPRO need to check that date or version is after old one so not
+    vulnerable to replay attacks.
     """
     try:
         newid = identity.identity(xmlsrc=xml_src)
@@ -318,31 +322,22 @@ def update(url, xml_src):
         lg.exc()
         return False
 
-    filename = os.path.join(
-        settings.IdentityCacheDir(),
-        nameurl.UrlFilename(url))
+    filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(url))
     if os.path.exists(filename):
         oldidentityxml = bpio.ReadTextFile(filename)
         oldidentity = identity.identity(xmlsrc=oldidentityxml)
 
         if oldidentity.publickey != newid.publickey:
-            lg.out(
-                1,
-                "identitydb.update ERROR new publickey does not match old : SECURITY VIOLATION " +
-                url)
+            lg.out(1, "identitydb.update ERROR new publickey does not match old : SECURITY VIOLATION " + url)
             return False
 
         if oldidentity.signature != newid.signature:
-            lg.out(
-                6,
-                'identitydb.update have new data for ' +
-                nameurl.GetName(url))
+            lg.out(6, 'identitydb.update have new data for ' + nameurl.GetName(url))
         else:
             idset(url, newid)
             return True
 
-    # publickeys match so we can update it
-    bpio.WriteFile(filename, xml_src)
+    bpio.WriteFile(filename, xml_src)             # publickeys match so we can update it
     idset(url, newid)
 
     return True
@@ -352,9 +347,7 @@ def remove(url):
     """
     Top method to remove identity from cache - also remove local file.
     """
-    filename = os.path.join(
-        settings.IdentityCacheDir(),
-        nameurl.UrlFilename(url))
+    filename = os.path.join(settings.IdentityCacheDir(), nameurl.UrlFilename(url))
     if os.path.isfile(filename):
         lg.out(6, "identitydb.remove file %s" % filename)
         try:

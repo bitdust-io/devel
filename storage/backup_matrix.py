@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_matrix
+.. module:: backup_matrix.
 
 The software stores all backup IDs in the memory.
 Also we need to keep track of every piece of data.
@@ -98,6 +98,7 @@ _RepaintingTaskDelay = 2.0
 def init():
     """
     Call this method before all others here. Prepare several things here:
+
     * start a loop to repaint the GUI when needed
     * scan local files and build the "local" matrix
     * read latest (stored on local disk) ListFiles for suppliers to build "remote" matrix
@@ -120,9 +121,8 @@ def shutdown():
 
 def remote_files():
     """
-    This is a "remote" matrix.
-    Here is stored info for all remote files (on suppliers HDD's)
-    stored in dictionary. The values are integers::
+    This is a "remote" matrix. Here is stored info for all remote files (on
+    suppliers HDD's) stored in dictionary. The values are integers::
 
       -1 : this mean file is missing
       0  : no info comes yet
@@ -146,7 +146,8 @@ def remote_files():
 
 def remote_max_block_numbers():
     """
-    This is a dictionary to store max block number for every remote backup, by backup ID.
+    This is a dictionary to store max block number for every remote backup, by
+    backup ID.
     """
     global _RemoteMaxBlockNumbers
     return _RemoteMaxBlockNumbers
@@ -155,8 +156,9 @@ def remote_max_block_numbers():
 def local_files():
     """
     This is a "local" matrix, same structure like ``remote_files()``.
-    Keeps info for all local files stored on your HDD.
-    The values are integers: 0 or 1 to know that local file exists or not.
+
+    Keeps info for all local files stored on your HDD. The values are
+    integers: 0 or 1 to know that local file exists or not.
     """
     global _LocalFiles
     return _LocalFiles
@@ -173,8 +175,9 @@ def local_max_block_numbers():
 def local_backup_size():
     """
     The pieces can have different sizes.
-    To get the size of the particular backup need to count size of all pieces.
-    Here is a dictionary of counters for every backup.
+
+    To get the size of the particular backup need to count size of all
+    pieces. Here is a dictionary of counters for every backup.
     """
     global _LocalBackupSize
     return _LocalBackupSize
@@ -185,8 +188,10 @@ def local_backup_size():
 def GetActiveArray():
     """
     Loops all suppliers and returns who is alive at the moment.
-    Return a list with integers: 0 for offline suppler and 1 if he is available right now.
-    Uses ``p2p.contact_status.isOnline()`` to see the current state of supplier.
+
+    Return a list with integers: 0 for offline suppler and 1 if he is
+    available right now. Uses ``p2p.contact_status.isOnline()`` to see
+    the current state of supplier.
     """
     from p2p import contact_status
     activeArray = [0] * contactsdb.num_suppliers()
@@ -203,8 +208,8 @@ def GetActiveArray():
 
 def SuppliersChangedNumbers(oldSupplierList):
     """
-    Return list of positions of changed suppliers,
-    say if suppliers 1 and 3 were changed it should return [1,3].
+    Return list of positions of changed suppliers, say if suppliers 1 and 3
+    were changed it should return [1,3].
     """
     changedList = []
     for i in xrange(len(oldSupplierList)):
@@ -232,8 +237,8 @@ def SaveLatestRawListFiles(idurl, listFileText):
 
 def ReadRawListFiles(supplierNum, listFileText):
     """
-    Read ListFiles packet for given supplier and build a "remote" matrix.
-    All lines are something like that::
+    Read ListFiles packet for given supplier and build a "remote" matrix. All
+    lines are something like that::
 
       Findex 5456
       D0 -1
@@ -260,14 +265,8 @@ def ReadRawListFiles(supplierNum, listFileText):
     paths2remove = set()
     oldfiles = ClearSupplierRemoteInfo(supplierNum)
     newfiles = 0
-    lg.out(
-        8,
-        'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, %s, is_in_sync=%s' %
-        (len(listFileText),
-         supplierNum,
-         backup_control.revision(),
-         index_synchronizer.A(),
-         is_in_sync))
+    lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, %s, is_in_sync=%s' % (
+        len(listFileText), supplierNum, backup_control.revision(), index_synchronizer.A(), is_in_sync))
     inpt = cStringIO.StringIO(listFileText)
     while True:
         line = inpt.readline()
@@ -297,35 +296,28 @@ def ReadRawListFiles(supplierNum, listFileText):
             # because it should be empty right after we recover our account
             # or we may loose it if the local index file were lost
             # the first idea:  check index_synchronizer() state - IN_SYNC means index is fine
-            # the second idea: check revision number of the local index - 0
-            # means we have no index yet
+            # the second idea: check revision number of the local index - 0 means we have no index yet
             try:
                 pth, filesz = line.split(' ')
                 filesz = int(filesz)
             except:
                 pth = line
                 filesz = -1
-            if not backup_fs.IsFileID(
-                    pth):  # remote supplier have some file - but we don't have it in the index
+            if not backup_fs.IsFileID(pth):  # remote supplier have some file - but we don't have it in the index
                 if pth.strip('/') in [settings.BackupIndexFileName(), ]:
                     # this is the index file saved on remote supplier
                     # let's remember its size and put it in the backup_fs
-                    item = backup_fs.FSItemInfo(
-                        pth.strip('/'), pth.strip('/'), backup_fs.FILE)
+                    item = backup_fs.FSItemInfo(pth.strip('/'), pth.strip('/'), backup_fs.FILE)
                     item.size = filesz
                     backup_fs.SetFile(item)
                 else:
                     if is_in_sync:
                         # so we have some modifications in the index - it is not empty!
                         # index_synchronizer() did his job - so we have up to date index on hands
-                        # now we are sure that this file is old and must be
-                        # removed from remote site
+                        # now we are sure that this file is old and must be removed from remote site
                         paths2remove.add(pth)
-                        lg.out(
-                            8, '        F%s - remove, not found in the index' %
-                            pth)
-                # what to do now? let's hope we still can restore our index and
-                # this file is our remote data
+                        lg.out(8, '        F%s - remove, not found in the index' % pth)
+                # what to do now? let's hope we still can restore our index and this file is our remote data
         elif typ == 'D':
             try:
                 pth = line.split(' ')[0]
@@ -334,13 +326,9 @@ def ReadRawListFiles(supplierNum, listFileText):
             if not backup_fs.ExistsID(pth):
                 if is_in_sync:
                     paths2remove.add(pth)
-                    lg.out(
-                        8,
-                        '        D%s - remove, not found in the index' %
-                        pth)
+                    lg.out(8, '        D%s - remove, not found in the index' % pth)
         elif typ == 'V':
-            # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000"
-            # "123456"
+            # minimum is 4 words: "0/0/F20090709034221PM", "3", "0-1000" "123456"
             words = line.split(' ')
             if len(words) < 4:
                 lg.warn('incorrect line:[%s]' % line)
@@ -355,12 +343,9 @@ def ReadRawListFiles(supplierNum, listFileText):
                 lg.warn('incorrect line:[%s]' % line)
                 continue
             if lineSupplierNum != supplierNum:
-                # this mean supplier have old files and we do not need those
-                # files
+                # this mean supplier have old files and we do not need those files
                 backups2remove.add(backupID)
-                lg.out(
-                    8, '        V%s - remove, different supplier number' %
-                    backupID)
+                lg.out(8, '        V%s - remove, different supplier number' % backupID)
                 continue
             iter_path = backup_fs.WalkByID(pathID)
             if iter_path is None:
@@ -368,9 +353,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                 if is_in_sync:
                     backups2remove.add(backupID)
                     paths2remove.add(pathID)
-                    lg.out(
-                        8, '        V%s - remove, path not found in the index' %
-                        pathID)
+                    lg.out(8, '        V%s - remove, path not found in the index' % pathID)
                 continue
             item, localPath = iter_path
             if isinstance(item, dict):
@@ -381,9 +364,7 @@ def ReadRawListFiles(supplierNum, listFileText):
             if not item or not item.has_version(versionName):
                 if is_in_sync:
                     backups2remove.add(backupID)
-                    lg.out(
-                        8, '        V%s - remove, version is not found in the index' %
-                        backupID)
+                    lg.out(8, '        V%s - remove, version is not found in the index' % backupID)
                 continue
             missingBlocksSet = {'Data': set(), 'Parity': set()}
             if len(words) > 4:
@@ -408,14 +389,10 @@ def ReadRawListFiles(supplierNum, listFileText):
                         'D': [0] * contactsdb.num_suppliers(),
                         'P': [0] * contactsdb.num_suppliers(), }
                 for dataORparity in ['Data', 'Parity']:
-                    # we set -1 if the file is missing and 1 if exist, so 0
-                    # mean "no info yet" ... smart!
-                    bit = - \
-                        1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
-                    remote_files()[backupID][blockNum][
-                        dataORparity[0]][supplierNum] = bit
-                    # this should switch -1 or 1 to 0 or 1
-                    newfiles += int((bit + 1) / 2)
+                    # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
+                    bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
+                    remote_files()[backupID][blockNum][dataORparity[0]][supplierNum] = bit
+                    newfiles += int((bit + 1) / 2)  # this should switch -1 or 1 to 0 or 1
             # save max block number for this backup
             if backupID not in remote_max_block_numbers():
                 remote_max_block_numbers()[backupID] = -1
@@ -426,14 +403,14 @@ def ReadRawListFiles(supplierNum, listFileText):
     inpt.close()
     lg.out(8, '            old:%d, new:%d, backups2remove:%d, paths2remove:%d' % (
         oldfiles, newfiles, len(backups2remove), len(paths2remove)))
-    # return list of backupID's which is too old but stored on suppliers
-    # machines
+    # return list of backupID's which is too old but stored on suppliers machines
     return backups2remove, paths2remove
 
 
 def ReadLatestRawListFiles():
     """
-    Call ``ReadRawListFiles()`` for every local file we have on hands and build whole "remote" matrix.
+    Call ``ReadRawListFiles()`` for every local file we have on hands and build
+    whole "remote" matrix.
     """
     lg.out(4, 'backup_matrix.ReadLatestRawListFiles')
     for idurl in contactsdb.suppliers():
@@ -442,8 +419,7 @@ def ReadLatestRawListFiles():
             if os.path.isfile(filename):
                 listFileText = bpio.ReadTextFile(filename)
                 if listFileText.strip() != '':
-                    ReadRawListFiles(
-                        contactsdb.supplier_position(idurl), listFileText)
+                    ReadRawListFiles(contactsdb.supplier_position(idurl), listFileText)
 
 
 def ReadLocalFiles():
@@ -462,11 +438,7 @@ def ReadLocalFiles():
             return True
         if realpath.startswith('newblock-'):
             return False
-        if subpath in [
-                settings.BackupIndexFileName(),
-                settings.BackupInfoFileName(),
-                settings.BackupInfoFileNameOld(),
-                settings.BackupInfoEncryptedFileName()]:
+        if subpath in [settings.BackupIndexFileName(), settings.BackupInfoFileName(), settings.BackupInfoFileNameOld(), settings.BackupInfoEncryptedFileName()]:
             return False
         try:
             version = subpath.split('/')[-2]
@@ -489,22 +461,10 @@ def ReadLocalFiles():
                 remoteSZ = lib.getsizeof.total_size(remote_files())
                 indexByName = lib.getsizeof.total_size(backup_fs.fs())
                 indexByID = lib.getsizeof.total_size(backup_fs.fsID())
-                lg.out(
-                    10,
-                    '    all local info uses %d bytes in the memory' %
-                    localSZ)
-                lg.out(
-                    10,
-                    '    all remote info uses %d bytes in the memory' %
-                    remoteSZ)
-                lg.out(
-                    10,
-                    '    index by name takes %d bytes in the memory' %
-                    indexByName)
-                lg.out(
-                    10,
-                    '    index by ID takes %d bytes in the memory' %
-                    indexByID)
+                lg.out(10, '    all local info uses %d bytes in the memory' % localSZ)
+                lg.out(10, '    all remote info uses %d bytes in the memory' % remoteSZ)
+                lg.out(10, '    index by name takes %d bytes in the memory' % indexByName)
+                lg.out(10, '    index by ID takes %d bytes in the memory' % indexByID)
         except:
             lg.exc()
     if _LocalFilesNotifyCallback is not None:
@@ -516,28 +476,23 @@ def ReadLocalFiles():
 def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
     """
     Writes info for a single piece of data into "remote" matrix.
-    May be called when you got an Ack packet from remote supplier
-    after you sent him some Data packet .
+
+    May be called when you got an Ack packet from remote supplier after
+    you sent him some Data packet .
     """
     blockNum = int(blockNum)
     supplierNum = int(supplierNum)
     if supplierNum > contactsdb.num_suppliers():
-        lg.out(
-            4,
-            'backup_matrix.RemoteFileReport got too big supplier number, possible this is an old packet')
+        lg.out(4, 'backup_matrix.RemoteFileReport got too big supplier number, possible this is an old packet')
         return
     if backupID not in remote_files():
         remote_files()[backupID] = {}
-        lg.out(
-            8,
-            'backup_matrix.RemoteFileReport new remote entry for %s created in the memory' %
-            backupID)
+        lg.out(8, 'backup_matrix.RemoteFileReport new remote entry for %s created in the memory' % backupID)
     if blockNum not in remote_files()[backupID]:
         remote_files()[backupID][blockNum] = {
             'D': [0] * contactsdb.num_suppliers(),
             'P': [0] * contactsdb.num_suppliers(), }
-    # save backed up block info into remote info structure, synchronize on
-    # hand info
+    # save backed up block info into remote info structure, synchronize on hand info
     flag = 1 if result else 0
     if dataORparity == 'Data':
         remote_files()[backupID][blockNum]['D'][supplierNum] = flag
@@ -547,19 +502,12 @@ def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
         lg.warn('incorrect backup ID: %s' % backupID)
     # if we know only 5 blocks stored on remote machine
     # but we have backed up 6th block - remember this
-    remote_max_block_numbers()[backupID] = max(
-        remote_max_block_numbers().get(
-            backupID, -1), blockNum)
+    remote_max_block_numbers()[backupID] = max(remote_max_block_numbers().get(backupID, -1), blockNum)
     # mark to repaint this backup in gui
     RepaintBackup(backupID)
 
 
-def LocalFileReport(
-        packetID=None,
-        backupID=None,
-        blockNum=None,
-        supplierNum=None,
-        dataORparity=None):
+def LocalFileReport(packetID=None, backupID=None, blockNum=None, supplierNum=None, dataORparity=None):
     """
     Writes info for a single piece of data into "local" matrix.
 
@@ -570,8 +518,7 @@ def LocalFileReport(
     This is called when new local file created, for example during rebuilding process.
     """
     if packetID is not None:
-        backupID, blockNum, supplierNum, dataORparity = packetid.Split(
-            packetID)
+        backupID, blockNum, supplierNum, dataORparity = packetid.Split(packetID)
         if backupID is None:
             lg.warn('incorrect filename: ' + packetID)
             return
@@ -579,8 +526,7 @@ def LocalFileReport(
         blockNum = int(blockNum)
         supplierNum = int(supplierNum)
         dataORparity = dataORparity
-        packetID = packetid.MakePacketID(
-            backupID, blockNum, supplierNum, dataORparity)
+        packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
     filename = packetID
     if dataORparity not in ['Data', 'Parity']:
         lg.warn('Data or Parity? ' + filename)
@@ -630,8 +576,7 @@ def LocalBlockReport(backupID, blockNumber, result):
     repaint_flag = False
     for supplierNum in xrange(contactsdb.num_suppliers()):
         for dataORparity in ('Data', 'Parity'):
-            packetID = packetid.MakePacketID(
-                backupID, blockNum, supplierNum, dataORparity)
+            packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
             local_file = os.path.join(settings.getLocalBackupsDir(), packetID)
             if backupID not in local_files():
                 local_files()[backupID] = {}
@@ -643,8 +588,7 @@ def LocalBlockReport(backupID, blockNumber, result):
                     'P': [0] * contactsdb.num_suppliers()}
                 repaint_flag = True
             if not os.path.isfile(local_file):
-                local_files()[backupID][blockNum][
-                    dataORparity[0]][supplierNum] = 0
+                local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 0
                 repaint_flag = True
                 continue
             local_files()[backupID][blockNum][dataORparity[0]][supplierNum] = 1
@@ -670,8 +614,10 @@ def LocalBlockReport(backupID, blockNumber, result):
 def ScanMissingBlocks(backupID):
     """
     Finally here is some real logic.
-    This will compare both matrixes to find missing pieces on remote suppliers.
-    Should return a list of numbers of missed blocks for given backup.
+
+    This will compare both matrixes to find missing pieces on remote
+    suppliers. Should return a list of numbers of missed blocks for
+    given backup.
     """
     missingBlocks = set()
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
@@ -683,17 +629,13 @@ def ScanMissingBlocks(backupID):
             # we have no local and no remote info for this backup
             # no chance to do some rebuilds...
             # TODO: but how we get here ?!
-            lg.out(
-                4,
-                'backup_matrix.ScanMissingBlocks no local and no remote info for %s' %
-                backupID)
+            lg.out(4, 'backup_matrix.ScanMissingBlocks no local and no remote info for %s' % backupID)
         else:
             # we have no remote info, but some local files exists
             # so let's try to sent all of them
             # need to scan all block numbers
-            lg.out(
-                6, 'backup_matrix.ScanMissingBlocks for %s, use LOCAL maxBlockNum=%d' %
-                (backupID, localMaxBlockNum))
+            lg.out(6, 'backup_matrix.ScanMissingBlocks for %s, use LOCAL maxBlockNum=%d' % (
+                backupID, localMaxBlockNum))
             for blockNum in xrange(localMaxBlockNum + 1):
                 # we check for Data and Parity packets
                 localData = GetLocalDataArray(backupID, blockNum)
@@ -713,11 +655,9 @@ def ScanMissingBlocks(backupID):
         maxBlockNum = max(remoteMaxBlockNum, localMaxBlockNum)
         lg.out(6, 'backup_matrix.ScanMissingBlocks for %s, maxBlockNum=%d' % (
             backupID, maxBlockNum))
-        # and increase by one because range(3) give us [0, 1, 2], but we want
-        # [0, 1, 2, 3]
+        # and increase by one because range(3) give us [0, 1, 2], but we want [0, 1, 2, 3]
         for blockNum in xrange(maxBlockNum + 1):
-            # if we have few remote files, but many locals - we want to send
-            # all missed
+            # if we have few remote files, but many locals - we want to send all missed
             if blockNum not in remote_files()[backupID]:
                 missingBlocks.add(blockNum)
                 continue
@@ -732,8 +672,7 @@ def ScanMissingBlocks(backupID):
                     continue
                 if remoteData[supplierNum] != 1:    # -1 means missing
                     missingBlocks.add(blockNum)     # 0 - no info yet
-                if remoteParity[
-                        supplierNum] != 1:  # 1 - file exist on remote supplier
+                if remoteParity[supplierNum] != 1:  # 1 - file exist on remote supplier
                     missingBlocks.add(blockNum)
 
     # lg.out(6, 'backup_matrix.ScanMissingBlocks %s' % missingBlocks)
@@ -742,8 +681,11 @@ def ScanMissingBlocks(backupID):
 
 def ScanBlocksToRemove(backupID, check_all_suppliers=True):
     """
-    This method compare both matrixes and found pieces which is present on both sides.
-    If remote supplier got that file it can be removed from the local HDD.
+    This method compare both matrixes and found pieces which is present on both
+    sides.
+
+    If remote supplier got that file it can be removed from the local
+    HDD.
     """
     from customer import io_throttle
     lg.out(10, 'backup_matrix.ScanBlocksToRemove for %s' % backupID)
@@ -759,12 +701,10 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
                        'Parity': GetRemoteParityArray(backupID, blockNum)}
         if (0 in remoteArray['Data']) or (0 in remoteArray['Parity']):
             # if some supplier do not have some data for that block - do not remove any local files for that block!
-            # we do remove the local files only when we sure all suppliers got
-            # the all data pieces
+            # we do remove the local files only when we sure all suppliers got the all data pieces
             continue
         if (-1 in remoteArray['Data']) or (-1 in remoteArray['Parity']):
-            # also if we do not have any info about this block for some
-            # supplier do not remove other local pieces
+            # also if we do not have any info about this block for some supplier do not remove other local pieces
             continue
         for supplierNum in xrange(contactsdb.num_suppliers()):
             supplierIDURL = contactsdb.supplier(supplierNum)
@@ -772,8 +712,7 @@ def ScanBlocksToRemove(backupID, check_all_suppliers=True):
                 # supplier is unknown - skip
                 continue
             for dataORparity in ['Data', 'Parity']:
-                packetID = packetid.MakePacketID(
-                    backupID, blockNum, supplierNum, dataORparity)
+                packetID = packetid.MakePacketID(backupID, blockNum, supplierNum, dataORparity)
                 if io_throttle.HasPacketInSendQueue(supplierIDURL, packetID):
                     # if we do sending the packet at the moment - skip
                     continue
@@ -808,12 +747,9 @@ def ScanBlocksToSend(backupID):
                 if supplierActiveArray[supplierNum] != 1:
                     continue
                 if localData[supplierNum] == 1:
-                    bySupplier[supplierNum].add(
-                        packetid.MakePacketID(
-                            backupID, blockNum, supplierNum, 'Data'))
+                    bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Data'))
                 if localParity[supplierNum] == 1:
-                    bySupplier[supplierNum].add(packetid.MakePacketID(
-                        backupID, blockNum, supplierNum, 'Parity'))
+                    bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Parity'))
     else:
         for blockNum in xrange(localMaxBlockNum + 1):
             remoteData = GetRemoteDataArray(backupID, blockNum)
@@ -823,15 +759,10 @@ def ScanBlocksToSend(backupID):
             for supplierNum in xrange(len(supplierActiveArray)):
                 if supplierActiveArray[supplierNum] != 1:
                     continue
-                if remoteData[supplierNum] != 1 and localData[
-                        supplierNum] == 1:
-                    bySupplier[supplierNum].add(
-                        packetid.MakePacketID(
-                            backupID, blockNum, supplierNum, 'Data'))
-                if remoteParity[supplierNum] != 1 and localParity[
-                        supplierNum] == 1:
-                    bySupplier[supplierNum].add(packetid.MakePacketID(
-                        backupID, blockNum, supplierNum, 'Parity'))
+                if remoteData[supplierNum] != 1 and localData[supplierNum] == 1:
+                    bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Data'))
+                if remoteParity[supplierNum] != 1 and localParity[supplierNum] == 1:
+                    bySupplier[supplierNum].add(packetid.MakePacketID(backupID, blockNum, supplierNum, 'Parity'))
     return bySupplier
 
 #------------------------------------------------------------------------------
@@ -871,11 +802,9 @@ def RepaintingProcess(on_off):
     from storage import backup_control
     if backup_control.HasRunningBackup():
         minDelay = 8.0
-    _RepaintingTaskDelay = misc.LoopAttenuation(
-        _RepaintingTaskDelay, len(_UpdatedBackupIDs) > 0, minDelay, 8.0)
+    _RepaintingTaskDelay = misc.LoopAttenuation(_RepaintingTaskDelay, len(_UpdatedBackupIDs) > 0, minDelay, 8.0)
     _UpdatedBackupIDs.clear()
-    _RepaintingTask = reactor.callLater(
-        _RepaintingTaskDelay, RepaintingProcess, True)
+    _RepaintingTask = reactor.callLater(_RepaintingTaskDelay, RepaintingProcess, True)
 
 #------------------------------------------------------------------------------
 
@@ -923,7 +852,8 @@ def ClearRemoteInfo():
 
 def ClearSupplierRemoteInfo(supplierNum):
     """
-    Clear only "single column" in the "remote" matrix corresponding to given supplier.
+    Clear only "single column" in the "remote" matrix corresponding to given
+    supplier.
     """
     files = 0
     for backupID in remote_files().keys():
@@ -947,7 +877,8 @@ def ClearSupplierRemoteInfo(supplierNum):
 
 def GetBackupStats(backupID):
     """
-    Collect needed info from "remote" matrix and create a detailed report about given backup.
+    Collect needed info from "remote" matrix and create a detailed report about
+    given backup.
     """
     if backupID not in remote_files():
         return 0, 0, [(0, 0)] * contactsdb.num_suppliers()
@@ -969,8 +900,7 @@ def GetBackupStats(backupID):
     for supplierNum in xrange(contactsdb.num_suppliers()):
         if maxBlockNum > -1:
             # 0.5 because we count both Parity and Data.
-            percent = percentPerSupplier * 0.5 * \
-                fileNumbers[supplierNum] / (maxBlockNum + 1)
+            percent = percentPerSupplier * 0.5 * fileNumbers[supplierNum] / (maxBlockNum + 1)
         else:
             percent = 0.0
         statsArray.append((percent, fileNumbers[supplierNum]))
@@ -980,10 +910,10 @@ def GetBackupStats(backupID):
 
 def GetBackupLocalStats(backupID):
     """
-    Provide detailed info about local files for that backup.
-    Return a tuple::
+    Provide detailed info about local files for that backup. Return a tuple::
 
-      (totalPercent, totalNumberOfFiles, totalSize, maxBlockNum, statsArray)
+    (totalPercent, totalNumberOfFiles, totalSize, maxBlockNum,
+    statsArray)
     """
     # ??? maxBlockNum = local_max_block_numbers().get(backupID, -1)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
@@ -1008,16 +938,13 @@ def GetBackupLocalStats(backupID):
     for supplierNum in xrange(contactsdb.num_suppliers()):
         if maxBlockNum > -1:
             # 0.5 because we count both Parity and Data.
-            percent = percentPerSupplier * 0.5 * \
-                fileNumbers[supplierNum] / (maxBlockNum + 1)
+            percent = percentPerSupplier * 0.5 * fileNumbers[supplierNum] / (maxBlockNum + 1)
         else:
             percent = 0.0
         statsArray.append((percent, fileNumbers[supplierNum]))
     del fileNumbers
-    totalPercent = 100.0 * 0.5 * totalNumberOfFiles / \
-        ((maxBlockNum + 1) * contactsdb.num_suppliers())
-    return totalPercent, totalNumberOfFiles, local_backup_size().get(
-        backupID, 0), maxBlockNum, statsArray
+    totalPercent = 100.0 * 0.5 * totalNumberOfFiles / ((maxBlockNum + 1) * contactsdb.num_suppliers())
+    return totalPercent, totalNumberOfFiles, local_backup_size().get(backupID, 0), maxBlockNum, statsArray
 
 
 def GetBackupBlocksAndPercent(backupID):
@@ -1040,14 +967,13 @@ def GetBackupBlocksAndPercent(backupID):
             if remote_files()[backupID][blockNum]['P'][supplierNum] == 1:
                 fileCounter += 1
     # +1 since zero based and *0.5 because Data and Parity
-    return maxBlockNum + 1, 100.0 * 0.5 * fileCounter / \
-        ((maxBlockNum + 1) * contactsdb.num_suppliers())
+    return maxBlockNum + 1, 100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * contactsdb.num_suppliers())
 
 
 def GetBackupRemoteStats(backupID, only_available_files=True):
     """
-    This method found a most "weak" block of that backup,
-    this is a block which pieces is kept by less suppliers from all other blocks.
+    This method found a most "weak" block of that backup, this is a block which
+    pieces is kept by less suppliers from all other blocks.
 
     This is needed to detect the whole backup availability.
     Because if you loose at least one block of the backup - you will loose the whole backup.!
@@ -1080,8 +1006,7 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
             if activeArray[supplierNum] != 1 and only_available_files:
                 goodSuppliers -= 1
                 continue
-            if remote_files()[backupID][blockNum]['D'][supplierNum] != 1 or remote_files()[
-                    backupID][blockNum]['P'][supplierNum] != 1:
+            if remote_files()[backupID][blockNum]['D'][supplierNum] != 1 or remote_files()[backupID][blockNum]['P'][supplierNum] != 1:
                 goodSuppliers -= 1
             if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
                 fileCounter += 1
@@ -1091,10 +1016,8 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
             lessSuppliers = goodSuppliers
             weakBlockNum = blockNum
     # +1 since zero based and *0.5 because Data and Parity
-    return (maxBlockNum + 1,
-            100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * supplierCount),
-            weakBlockNum,
-            100.0 * float(lessSuppliers) / float(supplierCount))
+    return (maxBlockNum + 1, 100.0 * 0.5 * fileCounter / ((maxBlockNum + 1) * supplierCount),
+            weakBlockNum, 100.0 * float(lessSuppliers) / float(supplierCount))
 
 
 def GetBackupRemoteArray(backupID):
@@ -1124,6 +1047,7 @@ def GetBackupLocalArray(backupID):
 def GetBackupIDs(remote=True, local=False, sorted_ids=False):
     """
     Return a list of backup IDs which is present in the matrixes.
+
     You can choose which matrix to use.
     """
     s = set()
@@ -1146,6 +1070,7 @@ def GetKnownMaxBlockNum(backupID):
 
 def GetLocalMatrix(backupID, blockNum):
     """
+    
     """
     if backupID not in local_files():
         return {'D': [0] * contactsdb.num_suppliers(),
@@ -1158,7 +1083,8 @@ def GetLocalMatrix(backupID, blockNum):
 
 def GetLocalDataArray(backupID, blockNum):
     """
-    Get "local" info for a single block of given backup, this is for "Data" surface.
+    Get "local" info for a single block of given backup, this is for "Data"
+    surface.
     """
     if backupID not in local_files():
         return [0] * contactsdb.num_suppliers()
@@ -1169,7 +1095,8 @@ def GetLocalDataArray(backupID, blockNum):
 
 def GetLocalParityArray(backupID, blockNum):
     """
-    Get "local" info for a single block of given backup, this is for "Parity" surface.
+    Get "local" info for a single block of given backup, this is for "Parity"
+    surface.
     """
     if backupID not in local_files():
         return [0] * contactsdb.num_suppliers()
@@ -1180,6 +1107,7 @@ def GetLocalParityArray(backupID, blockNum):
 
 def GetRemoteMatrix(backupID, blockNum):
     """
+    
     """
     if backupID not in remote_files():
         return {'D': [0] * contactsdb.num_suppliers(),
@@ -1192,7 +1120,8 @@ def GetRemoteMatrix(backupID, blockNum):
 
 def GetRemoteDataArray(backupID, blockNum):
     """
-    Get "remote" info for a single block of given backup, this is for "Data" surface.
+    Get "remote" info for a single block of given backup, this is for "Data"
+    surface.
     """
     if backupID not in remote_files():
         return [0] * contactsdb.num_suppliers()
@@ -1203,7 +1132,8 @@ def GetRemoteDataArray(backupID, blockNum):
 
 def GetRemoteParityArray(backupID, blockNum):
     """
-    Get "remote" info for a single block of given backup, this is for "Parity" surface.
+    Get "remote" info for a single block of given backup, this is for "Parity"
+    surface.
     """
     if backupID not in remote_files():
         return [0] * contactsdb.num_suppliers()
@@ -1247,8 +1177,7 @@ def GetWeakLocalBlock(backupID):
             return blockNum, 0, supplierCount
         goodSuppliers = supplierCount
         for supplierNum in xrange(supplierCount):
-            if local_files()[backupID][blockNum]['D'][supplierNum] != 1 or local_files()[
-                    backupID][blockNum]['P'][supplierNum] != 1:
+            if local_files()[backupID][blockNum]['D'][supplierNum] != 1 or local_files()[backupID][blockNum]['P'][supplierNum] != 1:
                 goodSuppliers -= 1
         if goodSuppliers < lessSuppliers:
             lessSuppliers = goodSuppliers
@@ -1276,8 +1205,7 @@ def GetWeakRemoteBlock(backupID):
             if activeArray[supplierNum] != 1:
                 goodSuppliers -= 1
                 continue
-            if remote_files()[backupID][blockNum]['D'][supplierNum] != 1 or remote_files()[
-                    backupID][blockNum]['P'][supplierNum] != 1:
+            if remote_files()[backupID][blockNum]['D'][supplierNum] != 1 or remote_files()[backupID][blockNum]['P'][supplierNum] != 1:
                 goodSuppliers -= 1
         if goodSuppliers < lessSuppliers:
             lessSuppliers = goodSuppliers

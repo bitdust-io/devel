@@ -20,11 +20,11 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 """
-.. module:: memdebug
+.. module:: memdebug.
 
-This is to test memory usage.
-It was useful when I looked for memory leaks.
-Can start a local HTTP server to keep track of all python objects in the memory.
+This is to test memory usage. It was useful when I looked for memory
+leaks. Can start a local HTTP server to keep track of all python objects
+in the memory.
 """
 
 import cherrypy

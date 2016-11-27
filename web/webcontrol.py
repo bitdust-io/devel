@@ -48,7 +48,7 @@ from twisted.web import static
 from twisted.web import http
 from twisted.web.server import NOT_DONE_YET
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 from logs import lg
 from logs import webtraffic
@@ -94,7 +94,7 @@ from p2p import ratings
 
 from chat import message
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 myweblistener = None
 init_done = False
@@ -258,10 +258,7 @@ def init(port=6001):
 
     if myweblistener:
         global local_port
-        lg.out(
-            2,
-            'webcontrol.init SKIP, already started on port ' +
-            str(local_port))
+        lg.out(2, 'webcontrol.init SKIP, already started on port ' + str(local_port))
         return succeed(local_port)
 
     events.init(SendCommandToGUI)
@@ -283,8 +280,7 @@ def init(port=6001):
         global local_checksum
         if bpio.Windows() and bpio.isFrozen():
             local_checksum = bpio.ReadBinaryFile(settings.CheckSumFile())
-        version_number = bpio.ReadTextFile(
-            settings.VersionNumberFile()).strip()
+        version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         lg.out(6, 'webcontrol.init.version : %s' % version_number)
 
     def html():
@@ -334,9 +330,7 @@ def init(port=6001):
         root.putChild(_PAGE_MENU, MenuPage())
         # root.putChild(_PAGE_BUSY, BusyPage())
         root.putChild(_PAGE_INSTALL, InstallPage())
-        root.putChild(
-            _PAGE_INSTALL_NETWORK_SETTINGS,
-            InstallNetworkSettingsPage())
+        root.putChild(_PAGE_INSTALL_NETWORK_SETTINGS, InstallNetworkSettingsPage())
         root.putChild(_PAGE_SUPPLIERS, SuppliersPage())
         root.putChild(_PAGE_CUSTOMERS, CustomersPage())
         root.putChild(_PAGE_STORAGE, StoragePage())
@@ -360,9 +354,7 @@ def init(port=6001):
         root.putChild(_PAGE_CORRESPONDENTS, CorrespondentsPage())
         root.putChild(_PAGE_SET_NICKNAME, SetNickNamePage())
         # root.putChild(_PAGE_BACKUP_SHEDULE, BackupShedulePage())
-        root.putChild(
-            _PAGE_SOFTWARE_UPDATE_SHEDULE,
-            SoftwareUpdateShedulePage())
+        root.putChild(_PAGE_SOFTWARE_UPDATE_SHEDULE, SoftwareUpdateShedulePage())
         root.putChild(_PAGE_DEV_REPORT, DevReportPage())
         root.putChild(_PAGE_DEVELOPMENT, DevelopmentPage())
         # root.putChild(_PAGE_BIT_COIN_SETTINGS, BitCoinSettingsPage())
@@ -372,10 +364,7 @@ def init(port=6001):
         root.putChild(_PAGE_MONITOR_TRANSPORTS, MonitorTransportsPage())
         root.putChild(_PAGE_TRAFFIC, TrafficPage())
         root.putChild(_PAGE_CONFIRM, ConfirmPage())
-        root.putChild(
-            settings.IconFilename(),
-            static.File(
-                settings.IconFilename()))
+        root.putChild(settings.IconFilename(), static.File(settings.IconFilename()))
         root.putChild('icons', static.File(settings.IconsFolderPath()))
         return LocalSite(root)
 
@@ -383,10 +372,7 @@ def init(port=6001):
         global local_port
         local_port = int(x)
         bpio.WriteFile(settings.LocalPortFilename(), str(local_port))
-        lg.out(
-            4,
-            'webcontrol.init.done local server started on port %d' %
-            local_port)
+        lg.out(4, 'webcontrol.init.done local server started on port %d' % local_port)
 
     def start_listener(site):
         lg.out(6, 'webcontrol.start_listener')
@@ -398,10 +384,7 @@ def init(port=6001):
             try:
                 l = reactor.listenTCP(port, site)
             except:
-                lg.out(
-                    4,
-                    'webcontrol.init.start_listener._try it seems port %d is busy' %
-                    port)
+                lg.out(4, 'webcontrol.init.start_listener._try it seems port %d is busy' % port)
                 l = None
             if l is not None:
                 myweblistener = l
@@ -446,20 +429,13 @@ def show(x=None):
         return
     appList = bpio.find_process(['bpgui.', ])
     if len(appList):
-        lg.out(
-            2,
-            'webcontrol.show SKIP, we found another bpgui process running at the moment, pid=%s' %
-            appList)
+        lg.out(2, 'webcontrol.show SKIP, we found another bpgui process running at the moment, pid=%s' % appList)
         SendCommandToGUI('raise')
         return
     try:
         if bpio.Windows():
             if bpio.isFrozen():
-                pypath = os.path.abspath(
-                    os.path.join(
-                        os.path.dirname(
-                            sys.executable),
-                        'bpgui.exe'))
+                pypath = os.path.abspath(os.path.join(os.path.dirname(sys.executable), 'bpgui.exe'))
                 lg.out(4, 'webcontrol.show : "%s"' % pypath)
                 os.spawnv(os.P_DETACH, pypath, ('bpgui.exe',))
             else:
@@ -500,10 +476,8 @@ def kill():
             return 0
         total_count += 1
         if total_count > 3:
-            lg.out(
-                2, 'webcontrol.kill ERROR: some "bpgui." processes found, but can not stop it')
-            lg.out(
-                2, 'webcontrol.kill may be we do not have permissions to stop them?')
+            lg.out(2, 'webcontrol.kill ERROR: some "bpgui." processes found, but can not stop it')
+            lg.out(2, 'webcontrol.kill may be we do not have permissions to stop them?')
             return 1
         time.sleep(1)
     return 1
@@ -563,8 +537,7 @@ def iconurl(request, icon_path):
     if icon_path.startswith('icons/'):
         return 'memory:' + icon_path[6:]
     else:
-        return 'http://%s:%s/%s' % (request.getHost().host,
-                                    str(request.getHost().port), icon_path)
+        return 'http://%s:%s/%s' % (request.getHost().host, str(request.getHost().port), icon_path)
 
 
 def confirmurl(request, yes=None, no=None, text='', back='', args=None):
@@ -573,8 +546,7 @@ def confirmurl(request, yes=None, no=None, text='', back='', args=None):
         misc.pack_url_param(no if no else request.path),
         misc.pack_url_param(text),
         back if back else request.path))
-    lnk = '%s?param=%s' % ('/' + _PAGE_CONFIRM,
-                           base64.urlsafe_b64encode(param))
+    lnk = '%s?param=%s' % ('/' + _PAGE_CONFIRM, base64.urlsafe_b64encode(param))
     if args is not None:
         lnk += '&args=%s' % base64.urlsafe_b64encode(str(args))
     return lnk
@@ -646,25 +618,19 @@ def html_from_dict(request, d):
     if bpio.Windows() and bpio.isFrozen():
         if global_checksum != '' and global_checksum != local_checksum:
             if request.path != '/' + _PAGE_SOFTWARE_UPDATE:
-                d['home'] += '&nbsp;&nbsp;&nbsp;<a href="%s">[update software]</a>' % (
-                    '/' + _PAGE_SOFTWARE_UPDATE)
+                d['home'] += '&nbsp;&nbsp;&nbsp;<a href="%s">[update software]</a>' % ('/' + _PAGE_SOFTWARE_UPDATE)
     d['refresh'] = '<a href="%s">refresh</a>' % request.path
     if 'reload' in d:
-        d['reload_tag'] = '<meta http-equiv="refresh" content="%s">' % d.get(
-            'reload', '600')
+        d['reload_tag'] = '<meta http-equiv="refresh" content="%s">' % d.get('reload', '600')
     else:
         d['reload_tag'] = ''
     if 'debug' not in d:
         if lg.is_debug(24):
-            d['debug'] = '<br><br><br>request.args: ' + \
-                str(request.args) + '\n<br>\n'
+            d['debug'] = '<br><br><br>request.args: ' + str(request.args) + '\n<br>\n'
             d['debug'] += 'request.path: ' + str(request.path) + '<br>\n'
-            d['debug'] += 'request.getClientIP: ' + \
-                str(request.getClientIP()) + '<br>\n'
-            d['debug'] += 'request.getHost: ' + \
-                str(request.getHost()) + '<br>\n'
-            d['debug'] += 'request.getRequestHostname: ' + \
-                str(request.getRequestHostname()) + '<br>\n'
+            d['debug'] += 'request.getClientIP: ' + str(request.getClientIP()) + '<br>\n'
+            d['debug'] += 'request.getHost: ' + str(request.getHost()) + '<br>\n'
+            d['debug'] += 'request.getRequestHostname: ' + str(request.getRequestHostname()) + '<br>\n'
             # if lg.is_debug(30):
             #     d['debug'] += 'sys.modules:<br><pre>%s</pre><br>\n'+pprint.pformat(sys.modules) + '<br>\n'
         else:
@@ -725,7 +691,7 @@ def html_message(text, typ='info'):
 def html_comment(text):
     return '<!--[begin] %s [end]-->\n' % text
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def SetReadOnlyState(state):
@@ -774,11 +740,7 @@ def OnGlobalVersionReceived(txt):
     global_checksum = txt.strip()
     lg.out(6, '  global:' + str(global_checksum))
     lg.out(6, '  local :' + str(local_checksum))
-    SendCommandToGUI(
-        'version: ' +
-        str(global_checksum) +
-        ' ' +
-        str(local_checksum))
+    SendCommandToGUI('version: ' + str(global_checksum) + ' ' + str(local_checksum))
 
 
 def OnAliveStateChanged(idurl):
@@ -953,16 +915,10 @@ def OnTrafficOut(pkt_out, item, status, size, message):
     if message:
         message = message.replace(' ', '_')
     SendCommandToGUI(
-        'packet out %s to %s (%s://%s) %s %d %s "%s"' %
-        (pkt_out.outpacket.Command,
-         nameurl.GetName(
-             pkt_out.remote_idurl),
-            item.proto,
-            item.host,
-            pkt_out.outpacket.PacketID,
-            pkt_out.filesize,
-            status,
-            message))
+        'packet out %s to %s (%s://%s) %s %d %s "%s"' % (
+            pkt_out.outpacket.Command, nameurl.GetName(pkt_out.remote_idurl),
+            item.proto, item.host, pkt_out.outpacket.PacketID, pkt_out.filesize,
+            status, message))
     return False
 
 # def OnSupplierQueuePacketCallback(sendORrequest, supplier_idurl, packetid, result):
@@ -1038,7 +994,7 @@ def OnReadLocalFiles():
 #        if not currentVisiblePageUrl().count('?'):
 #            SendCommandToGUI('update')
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def SendCommandToGUI(cmd):
@@ -1065,15 +1021,12 @@ class LocalHTTPChannel(http.HTTPChannel):
     def lineReceived(self, line):
         global _GUICommandCallbacks
         if line.strip().upper() == 'BITDUST-VIEW-REQUEST':
-            lg.out(2, 'GUI: view request received from ' +
-                   str(self.transport.getHost()))
+            lg.out(2, 'GUI: view request received from ' + str(self.transport.getHost()))
             self.controlState = True
             _GUICommandCallbacks.append(self.send)
             SendCommandToGUI('BITDUST-SERVER:' + GetGlobalState())
             for index, object in automat.objects().items():
-                SendCommandToGUI(
-                    'automat %s %s %s %s' %
-                    (str(index), object.id, object.name, object.state))
+                SendCommandToGUI('automat %s %s %s %s' % (str(index), object.id, object.name, object.state))
         else:
             return http.HTTPChannel.lineReceived(self, line)
 
@@ -1143,8 +1096,7 @@ class Page(resource.Resource):
         # check if we refresh the current page
         if self.pagename != current_pagename or request.path != current_url:
             # check if we are going back
-            if len(
-                    pagename_history) > 0 and current_pagename != self.pagename and url_history[-1] == request.path:
+            if len(pagename_history) > 0 and current_pagename != self.pagename and url_history[-1] == request.path:
                 pagename_history.pop()
                 url_history.pop()
             # if not going back - remember this place in history
@@ -1166,23 +1118,19 @@ class Page(resource.Resource):
             from main import shutdowner
             reactor.callLater(0, shutdowner.A, 'stop', 'exit')
             d = {}
-            d['body'] = ('<br>' * 10) + \
-                '\n<h1>Good Luck!<br><br>See you</h1>\n'
+            d['body'] = ('<br>' * 10) + '\n<h1>Good Luck!<br><br>See you</h1>\n'
             print >>request, html_centered_src(d, request)
             request.finish()
             return NOT_DONE_YET
 
-        # and not bpupdate.is_running():
-        elif arg(request, 'action') == 'restart':
+        elif arg(request, 'action') == 'restart':  # and not bpupdate.is_running():
             lg.out(2, 'webcontrol.Page.render action is [restart]')
             from main import shutdowner
             from p2p import network_connector
             appList = bpio.find_process(['bpgui.', ])
             if len(appList) > 0:
-                lg.out(
-                    2, 'webcontrol.Page.render found bpgui process, add param "show"')
-                # ('restart', 'show'))
-                reactor.callLater(0, shutdowner.A, 'stop', 'restartnshow')
+                lg.out(2, 'webcontrol.Page.render found bpgui process, add param "show"')
+                reactor.callLater(0, shutdowner.A, 'stop', 'restartnshow')  # ('restart', 'show'))
             else:
                 lg.out(2, 'webcontrol.Page.render did not found bpgui process')
                 reactor.callLater(0, shutdowner.A, 'stop', 'restart')
@@ -1220,14 +1168,9 @@ class Page(resource.Resource):
         # BitDust is not installed or broken somehow
         if not check_install():
             # page requested is not the install page
-            # we do not need this in that moment because bpmain is not
-            # installed
-            if self.pagename not in [
-                    _PAGE_INSTALL,
-                    _PAGE_INSTALL_NETWORK_SETTINGS]:
-                lg.out(
-                    4, 'webcontrol.Page.render redirect to the page %s' %
-                    _PAGE_INSTALL)
+            # we do not need this in that moment because bpmain is not installed
+            if self.pagename not in [_PAGE_INSTALL, _PAGE_INSTALL_NETWORK_SETTINGS]:
+                lg.out(4, 'webcontrol.Page.render redirect to the page %s' % _PAGE_INSTALL)
                 request.redirect('/' + _PAGE_INSTALL)
                 request.finish()
                 return NOT_DONE_YET
@@ -1250,9 +1193,7 @@ class Page(resource.Resource):
             exc_src += e
             exc_src += '</code>\n</div>\n</td></tr></table>\n'
             exc_src += '</center>'
-            s = html_from_args(
-                request, body=str(exc_src), back=arg(
-                    request, 'back', '/' + _PAGE_MAIN))
+            s = html_from_args(request, body=str(exc_src), back=arg(request, 'back', '/' + _PAGE_MAIN))
             request.write(s)
             request.finish()
             ret = NOT_DONE_YET
@@ -1284,13 +1225,8 @@ class ConfirmPage(Page):
         urlyes = misc.unpack_url_param(urlyes)
         urlno = misc.unpack_url_param(urlno)
         text = misc.unpack_url_param(text)
-        text = re.sub(
-            '\%\(option\:(.+?)\)s',
-            lambda m: config.conf().getData(
-                m.group(1).replace(
-                    '.',
-                    '/')),
-            text)
+        text = re.sub('\%\(option\:(.+?)\)s',
+                      lambda m: config.conf().getData(m.group(1).replace('.', '/')), text)
         args = arg(request, 'args')
         if args:
             args = base64.urlsafe_b64decode(args)
@@ -1347,9 +1283,7 @@ class StartingPage(Page):
         current_state = initializer.A().state
         page = self.state2page.get(current_state, None)
         if page is None:
-            raise Exception(
-                'incorrect state in initializer(): %s' %
-                current_state)
+            raise Exception('incorrect state in initializer(): %s' % current_state)
         return page(request)
 
     def renderStartingPage(self, request):
@@ -1371,16 +1305,9 @@ class StartingPage(Page):
             disabled = 'disabled'
             button = 'connecting ...'
         src += '<form action="%s" method="get">\n' % ('/' + _PAGE_MAIN)
-        src += '<input type="submit" name="submit" value=" %s " %s />\n' % (
-            button, disabled)
+        src += '<input type="submit" name="submit" value=" %s " %s />\n' % (button, disabled)
         src += '</form>'
-        return html(
-            request,
-            body=src,
-            title='launching',
-            home='',
-            back='',
-            reload='1')
+        return html(request, body=src, title='launching', home='', back='', reload='1')
 
     def renderInstallPage(self, request):
         request.redirect('/' + _PAGE_INSTALL)
@@ -1447,9 +1374,7 @@ class InstallPage(Page):
         current_state = installer.A().state
         page = self.state2page.get(current_state, None)
         if page is None:
-            raise Exception(
-                'incorrect state in installer(): %s' %
-                current_state)
+            raise Exception('incorrect state in installer(): %s' % current_state)
         return page(request)
 
     def renderSelectPage(self, request):
@@ -1476,12 +1401,8 @@ class InstallPage(Page):
         if action is not None:
             if action != 'register a new identity' and action != 'recover my identity and personal data':
                 action = 'register a new identity'
-            action = action.replace(
-                'register a new identity',
-                'register-selected')
-            action = action.replace(
-                'recover my identity and personal data',
-                'recover-selected')
+            action = action.replace('register a new identity', 'register-selected')
+            action = action.replace('recover my identity and personal data', 'recover-selected')
             if action != 'recover-selected':  # TODO
                 from main import installer
                 installer.A(action)
@@ -1520,19 +1441,12 @@ class InstallPage(Page):
             idurl = my_id.getLocalID()
             src += '<br>Here is your identity file: \n'
             src += '<a href="%s" target="_blank">%s</a><br>\n' % (idurl, idurl)
-            src += '<br><form action="%s" method="get">\n' % (
-                '/' + _PAGE_INSTALL)
+            src += '<br><form action="%s" method="get">\n' % ('/' + _PAGE_INSTALL)
             src += '<input type="submit" name="submit" value=" next " />\n'
             src += '<input type="hidden" name="action" value="next" />\n'
             src += '</form>\n'
         action = arg(request, 'action', None)
-        result = html(
-            request,
-            body=src,
-            title='register new user',
-            home='',
-            back='',
-            reload='1')
+        result = html(request, body=src, title='register new user', home='', back='', reload='1')
         if action == 'next':
             installer.A(action, self.login)
         return result
@@ -1544,8 +1458,7 @@ class InstallPage(Page):
             self.login = bpio.ReadTextFile(settings.UserNameFilename())
         try:
             from main import installer
-            message, messageColor = installer.A().getOutput(
-                'INPUT_NAME').get('data', [('', '')])[-1]
+            message, messageColor = installer.A().getOutput('INPUT_NAME').get('data', [('', '')])[-1]
         except:
             lg.exc()
             message = messageColor = ''
@@ -1562,8 +1475,7 @@ class InstallPage(Page):
         src += '</ul>\n'
         src += '</td></tr></table>\n'
         if message != '':
-            src += '<p><font color="%s">%s</font></p><br>\n' % (
-                messageColor, message)
+            src += '<p><font color="%s">%s</font></p><br>\n' % (messageColor, message)
         else:
             src += '<br><br>\n'
             # src += '<p>&nbsp;</p>\n'
@@ -1576,12 +1488,9 @@ class InstallPage(Page):
         src += 'If you plan to do a lot of backups regularly choose 1024.</p>\n'
         src += '</td></tr>\n'
         src += '<tr><td align=center>\n'
-        src += '<input id="radio2" type="radio" name="pksize" value="1024" %s />&nbsp;&nbsp;&nbsp;\n' % (
-            'checked' if self.pksize == 1024 else '')
-        src += '<input id="radio3" type="radio" name="pksize" value="2048" %s />&nbsp;&nbsp;&nbsp;\n' % (
-            'checked' if self.pksize == 2048 else '')
-        src += '<input id="radio4" type="radio" name="pksize" value="4096" %s />\n' % (
-            'checked' if self.pksize == 4096 else '')
+        src += '<input id="radio2" type="radio" name="pksize" value="1024" %s />&nbsp;&nbsp;&nbsp;\n' % ('checked' if self.pksize == 1024 else '')
+        src += '<input id="radio3" type="radio" name="pksize" value="2048" %s />&nbsp;&nbsp;&nbsp;\n' % ('checked' if self.pksize == 2048 else '')
+        src += '<input id="radio4" type="radio" name="pksize" value="4096" %s />\n' % ('checked' if self.pksize == 4096 else '')
         src += '</td></tr>'
         src += '</table>\n'
         src += '<br><br>\n'
@@ -1590,13 +1499,7 @@ class InstallPage(Page):
         src += '</form><br>\n'
         # src += '<br><br><font size=-1><a href="%s?back=%s">[network settings]</a></font>\n' % ('/'+_PAGE_INSTALL_NETWORK_SETTINGS, request.path)
         action = arg(request, 'action', None)
-        result = html(
-            request,
-            body=src,
-            title='enter user name',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='enter user name', home='', back='%s?action=back' % request.path)
         if action:
             settings.setPrivateKeySize(self.pksize)
             if action == 'register-start':
@@ -1627,18 +1530,12 @@ class InstallPage(Page):
         src += '</td></tr></table>\n'
         if id_restorer.A().state == 'RESTORED!':
             src += '<br><br>Here is your identity file: \n'
-            src += '<a href="%s" target="_blank">%s</a><br>\n' % (
-                my_id.getLocalID(), my_id.getLocalID())
+            src += '<a href="%s" target="_blank">%s</a><br>\n' % (my_id.getLocalID(), my_id.getLocalID())
             src += '<br><br><form action="%s" method="get">\n' % request.path
             src += '<input type="submit" name="submit" value=" start " />\n'
             src += '<input type="hidden" name="action" value="start" />\n'
             src += '</form>\n'
-        result = html(
-            request,
-            body=src,
-            title='recover account',
-            home='',
-            back='')
+        result = html(request, body=src, title='recover account', home='', back='')
         action = arg(request, 'action', None)
         if action == 'start':
             id_restorer.A('start')
@@ -1646,21 +1543,10 @@ class InstallPage(Page):
 
     def renderLoadKeyPage(self, request):
         from main import installer
-        self.idurl = arg(
-            request,
-            'idurl',
-            installer.A().getOutput().get(
-                'idurl',
-                self.idurl))
-        self.keysrc = arg(
-            request,
-            'keysrc',
-            installer.A().getOutput().get(
-                'keysrc',
-                self.keysrc))
+        self.idurl = arg(request, 'idurl', installer.A().getOutput().get('idurl', self.idurl))
+        self.keysrc = arg(request, 'keysrc', installer.A().getOutput().get('keysrc', self.keysrc))
         try:
-            message, messageColor = installer.A().getOutput(
-                'RECOVER').get('data', [('', '')])[-1]
+            message, messageColor = installer.A().getOutput('RECOVER').get('data', [('', '')])[-1]
         except:
             message = messageColor = ''
         src = ''
@@ -1686,8 +1572,7 @@ class InstallPage(Page):
         src += '</td><td align=center>\n'
         src += '<form action="%s" method="post">\n' % request.path
         src += '<input type="hidden" name="action" value="paste-from-clipboard" />\n'
-        src += '<input type="submit" name="submit" value=" paste from clipboard " %s />' % (
-            'disabled' if bpio.Linux() else '')
+        src += '<input type="submit" name="submit" value=" paste from clipboard " %s />' % ('disabled' if bpio.Linux() else '')
         src += '</form>\n'
         src += '</td></tr></table>\n'
         src += '<table align=center><tr><td align=center>\n'
@@ -1701,20 +1586,13 @@ class InstallPage(Page):
         src += '</textarea><br>\n'
         src += '<input type="hidden" name="action" value="restore-start" />\n'
         if message != '':
-            src += '<p><font color="%s">%s</font></p><br><br>\n' % (
-                messageColor, message)
+            src += '<p><font color="%s">%s</font></p><br><br>\n' % (messageColor, message)
         else:
             src += '<br>\n'
         src += '<input type="submit" name="submit" value=" next " />\n'
         src += '</form>\n'
         src += '</td></tr></table>\n'
-        result = html(
-            request,
-            body=src,
-            title='restore identity',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='restore identity', home='', back='%s?action=back' % request.path)
         action = arg(request, 'action', None)
         if action is not None:
             if action == 'load-from-file':
@@ -1724,9 +1602,7 @@ class InstallPage(Page):
             elif action == 'back':
                 installer.A('back')
             elif action == 'restore-start':
-                installer.A(
-                    action, {
-                        'idurl': self.idurl, 'keysrc': self.keysrc})
+                installer.A(action, {'idurl': self.idurl, 'keysrc': self.keysrc})
             else:
                 lg.warn('incorrect action: %s' % action)
         return result
@@ -1736,9 +1612,7 @@ class InstallPage(Page):
         current_state = install_wizard.A().state
         page = self.wizardstate2page.get(current_state, None)
         if page is None:
-            raise Exception(
-                'incorrect state in install_wizard(): %s' %
-                current_state)
+            raise Exception('incorrect state in install_wizard(): %s' % current_state)
         return page(request)
 
     def renderWizardSelectRolePage(self, request):
@@ -1834,19 +1708,11 @@ class InstallPage(Page):
         src += '<input type="submit" name="submit" value=" next " />\n'
         src += '<input type="hidden" name="action" value="next" />\n'
         src += '</form>'
-        result = html(
-            request,
-            body=src,
-            title='almost ready',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='almost ready', home='', back='%s?action=back' % request.path)
         action = arg(request, 'action', None)
         if action:
             if action == 'next':
-                install_wizard.A(
-                    'next', {
-                        'needed': self.needed, 'donated': self.donated, })
+                install_wizard.A('next', {'needed': self.needed, 'donated': self.donated, })
             elif action == 'back':
                 install_wizard.A('back')
             else:
@@ -1878,8 +1744,7 @@ class InstallPage(Page):
 #        src += 'to sign up in the beta testing.</p>\n'
         src += '<br><br><table cellpadding=0 cellspacing=0 align=center>\n'
         src += '<tr><td valign=middle width=30>\n'
-        src += '<input type="checkbox" name="development" value="True" %s />\n' % (
-            ('checked' if self.development == 'True' else ''))
+        src += '<input type="checkbox" name="development" value="True" %s />\n' % (('checked' if self.development == 'True' else ''))
         src += '</td><td valign=top align=left>\n'
         src += '<font size="+0"><b>enable development tools:</b> This will set higher debug level \n'
         src += 'to produce more logs, enable HTTP server to watch the logs.</font>\n'
@@ -1890,13 +1755,7 @@ class InstallPage(Page):
         src += '<input type="submit" name="submit" value=" next " />\n'
         src += '<input type="hidden" name="action" value="next" />\n'
         src += '</form>\n'
-        result = html(
-            request,
-            body=src,
-            title='beta testing',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='beta testing', home='', back='%s?action=back' % request.path)
         if action:
             if action == 'next':
                 install_wizard.A('next', {'development': self.development, })
@@ -1926,13 +1785,7 @@ class InstallPage(Page):
         src += '<br><br><br><input type="submit" name="submit" value=" next " />\n'
         src += '<input type="hidden" name="action" value="next" />\n'
         src += '</form>'
-        result = html(
-            request,
-            body=src,
-            title='donate space',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='donate space', home='', back='%s?action=back' % request.path)
         action = arg(request, 'action', None)
         if action:
             if action == 'next':
@@ -1966,13 +1819,7 @@ class InstallPage(Page):
         src += '<br><br><br><input type="submit" name="submit" value=" next " />\n'
         src += '<input type="hidden" name="action" value="next" />\n'
         src += '</form>'
-        result = html(
-            request,
-            body=src,
-            title='needed//donated space',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='needed//donated space', home='', back='%s?action=back' % request.path)
         action = arg(request, 'action', None)
         if action:
             if action == 'next':
@@ -2006,13 +1853,7 @@ class InstallPage(Page):
         src += '<br><br><br><input type="submit" name="submit" value=" next " />\n'
         src += '<input type="hidden" name="action" value="next" />\n'
         src += '</form>\n'
-        result = html(
-            request,
-            body=src,
-            title='needed//donated space',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='needed//donated space', home='', back='%s?action=back' % request.path)
         action = arg(request, 'action', None)
         if action:
             if action == 'next':
@@ -2042,34 +1883,25 @@ class InstallPage(Page):
                 settings.getRestoreDir()))
         if opendir != '':
             if hasArg(request, '_customersdir'):
-                self.customersdir = misc.unpack_url_param(
-                    arg(request, '_customersdir'), self.customersdir)
+                self.customersdir = misc.unpack_url_param(arg(request, '_customersdir'), self.customersdir)
             elif hasArg(request, '_localbackupsdir'):
-                self.localbackupsdir = misc.unpack_url_param(
-                    arg(request, '_localbackupsdir'), self.localbackupsdir)
+                self.localbackupsdir = misc.unpack_url_param(arg(request, '_localbackupsdir'), self.localbackupsdir)
             elif hasArg(request, '_restoredir'):
-                self.restoredir = misc.unpack_url_param(
-                    arg(request, '_restoredir'), self.restoredir)
+                self.restoredir = misc.unpack_url_param(arg(request, '_restoredir'), self.restoredir)
             else:
                 raise 'Not found target location: ' + str(request.args)
         self.neededMB = arg(request, 'needed', self.needed)
         if self.neededMB == '':
-            self.neededMB = str(
-                int(settings.DefaultNeededBytes() / (1024 * 1024)))
-        neededV = diskspace.GetBytesFromString(
-            self.neededMB + ' Mb', settings.DefaultNeededBytes())
+            self.neededMB = str(int(settings.DefaultNeededBytes() / (1024 * 1024)))
+        neededV = diskspace.GetBytesFromString(self.neededMB + ' Mb', settings.DefaultNeededBytes())
         self.donatedMB = arg(request, 'donated', self.donated)
         if self.donatedMB == '':
-            self.donatedMB = str(
-                int(settings.DefaultDonatedBytes() / (1024 * 1024)))
-        donatedV = diskspace.GetBytesFromString(
-            self.donatedMB + ' Mb', settings.DefaultDonatedBytes())
+            self.donatedMB = str(int(settings.DefaultDonatedBytes() / (1024 * 1024)))
+        donatedV = diskspace.GetBytesFromString(self.donatedMB + ' Mb', settings.DefaultDonatedBytes())
         self.suppliersNum = arg(request, 'suppliers', self.suppliers)
         if self.suppliersNum == '':
             self.suppliersNum = str(settings.DefaultDesiredSuppliers())
-        suppliersN = misc.ToInt(
-            settings.getSuppliersNumberDesired(),
-            settings.DefaultDesiredSuppliers())
+        suppliersN = misc.ToInt(settings.getSuppliersNumberDesired(), settings.DefaultDesiredSuppliers())
         mounts = []
         freeSpaceIsOk = True
         if bpio.Windows():
@@ -2114,29 +1946,23 @@ class InstallPage(Page):
                                color,))
         ok = True
         if not freeSpaceIsOk:
-            message += '\n<br>' + \
-                html_message('you do not have enough free space on the disk', 'error')
+            message += '\n<br>' + html_message('you do not have enough free space on the disk', 'error')
             ok = False
         if donatedV < settings.MinimumDonatedBytes():
             message += '\n<br>' + html_message('you must donate at least %f MB' % (
                 round(settings.MinimumDonatedBytes() / (1024.0 * 1024.0), 2)), 'notify')
             ok = False
         if not os.path.isdir(self.customersdir):
-            message += '\n<br>' + \
-                html_message('directory %s not exist' % self.customersdir, 'error')
+            message += '\n<br>' + html_message('directory %s not exist' % self.customersdir, 'error')
             ok = False
         if not os.access(self.customersdir, os.W_OK):
-            message += '\n<br>' + \
-                html_message('folder %s does not have write permissions' % self.customersdir, 'error')
+            message += '\n<br>' + html_message('folder %s does not have write permissions' % self.customersdir, 'error')
             ok = False
         if not os.path.isdir(self.localbackupsdir):
-            message += '\n<br>' + \
-                html_message('directory %s not exist' % self.localbackupsdir, 'error')
+            message += '\n<br>' + html_message('directory %s not exist' % self.localbackupsdir, 'error')
             ok = False
         if not os.access(self.localbackupsdir, os.W_OK):
-            message += '\n<br>' + html_message(
-                'folder %s does not have write permissions' %
-                self.localbackupsdir, 'error')
+            message += '\n<br>' + html_message('folder %s does not have write permissions' % self.localbackupsdir, 'error')
             ok = False
         src = ''
         src += '<form action="%s" method="post">\n' % request.path
@@ -2144,8 +1970,7 @@ class InstallPage(Page):
         if len(mounts) > 0:
             src += '<table align=center cellspacing=2><tr>\n'
             for d in mounts:
-                src += '<td bgcolor=%s>&nbsp;&nbsp;<font size=-2><b>%s</b><br>%s free / %s total</font>&nbsp;&nbsp;</td>\n' % (d[
-                                                                                                                               3], d[0], d[1], d[2])
+                src += '<td bgcolor=%s>&nbsp;&nbsp;<font size=-2><b>%s</b><br>%s free / %s total</font>&nbsp;&nbsp;</td>\n' % (d[3], d[0], d[1], d[2])
             src += '</tr></table><br><br>\n'
         # src += '<font size=1><hr width=80% size=1></font>\n'
         # src += '.............................................................................................................................................'
@@ -2153,8 +1978,7 @@ class InstallPage(Page):
         src += '<td align=left nowrap valign=top width=100>'
         src += '<font size="+1"><b>megabytes needed</b></font>\n'
         src += '<br><br>'
-        src += '<input type="text" name="needed" size="10" value="%s" />\n' % str(
-            round(neededV / (1024 * 1024), 2))
+        src += '<input type="text" name="needed" size="10" value="%s" />\n' % str(round(neededV / (1024 * 1024), 2))
         src += '</td>\n'
         src += '<td align=right valign=top nowrap>\n'
         # src += '<b>local backups location:</b><br>\n'
@@ -2171,8 +1995,7 @@ class InstallPage(Page):
         src += '<td align=left nowrap valign=top width=100>'
         src += '<font size="+1"><b>megabytes donated</b></font>\n'
         src += '<br><br>'
-        src += '<input type="text" name="donated" size="10" value="%s" />\n' % str(
-            round(donatedV / (1024 * 1024), 2))
+        src += '<input type="text" name="donated" size="10" value="%s" />\n' % str(round(donatedV / (1024 * 1024), 2))
         src += '</td>\n'
         src += '<td align=right valign=top nowrap>\n'
         # src += '<b>donated space location:</b><br>\n'
@@ -2197,8 +2020,7 @@ class InstallPage(Page):
                 checked = 'checked'
             src += '<input id="radio%s" type="radio" name="suppliers" value="%s" %s />' % (
                 str(i), supplier_set[i], checked,)
-            # supplier_set[i],)
-            src += '<label for="radio%s"></label>&nbsp;\n' % (str(i),)
+            src += '<label for="radio%s"></label>&nbsp;\n' % (str(i),)  # supplier_set[i],)
         src += '</td>\n'
         src += '<td align=right valign=top nowrap>'
         # src += '<b>location for restored files:</b><br>\n'
@@ -2215,23 +2037,15 @@ class InstallPage(Page):
         src += '<input type="hidden" name="localbackupsdir" value="%s" />\n' % self.localbackupsdir
         src += '<input type="hidden" name="restoredir" value="%s" />\n' % self.restoredir
         src += '</form>\n'
-        result = html(
-            request,
-            body=src,
-            title='program paths',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='program paths', home='', back='%s?action=back' % request.path)
         if action:
             if action == 'next' and arg(request, 'submit').strip() == 'next':
                 if ok:
-                    install_wizard.A('next',
-                                     {'needed': self.neededMB,
-                                      'donated': self.donatedMB,
-                                      'customersdir': self.customersdir,
-                                      'localbackupsdir': self.localbackupsdir,
-                                      'restoredir': self.restoredir,
-                                      })
+                    install_wizard.A('next', {'needed': self.neededMB,
+                                              'donated': self.donatedMB,
+                                              'customersdir': self.customersdir,
+                                              'localbackupsdir': self.localbackupsdir,
+                                              'restoredir': self.restoredir, })
             elif action == 'back':
                 install_wizard.A('back')
             else:
@@ -2276,13 +2090,7 @@ class InstallPage(Page):
         src += '<br><br><br><input type="submit" name="submit" value=" next " />\n'
         src += '</td></tr></table>\n'
         src += '</form>\n'
-        result = html(
-            request,
-            body=src,
-            title='my contacts',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='my contacts', home='', back='%s?action=back' % request.path)
         if action:
             if action == 'next':
                 install_wizard.A('next', {'email': self.email,
@@ -2359,13 +2167,7 @@ class InstallPage(Page):
         src += '<input type="submit" name="submit" value=" start " />\n'
         src += '</form></td></tr></table>\n'
         action = arg(request, 'action', None)
-        result = html(
-            request,
-            body=src,
-            title='installed',
-            home='',
-            back='%s?action=back' %
-            request.path)
+        result = html(request, body=src, title='installed', home='', back='%s?action=back' % request.path)
         if action:
             if action == 'next':
                 install_wizard.A('next')
@@ -2410,8 +2212,7 @@ class InstallNetworkSettingsPage(Page):
         src += '<p>Leave fields blank to not use proxy server.</p>\n'
         src += '<br><br><h3>UPnP port forwarding</h3>\n'
         src += '<table><tr><td>\n'
-        src += '<br><input type="checkbox" name="upnpenable" value="%s" %s />' % (
-            'True', checked.get(upnpenable == 'True'))
+        src += '<br><input type="checkbox" name="upnpenable" value="%s" %s />' % ('True', checked.get(upnpenable == 'True'))
         src += '</td><td valign=center align=left>'
         src += 'Use UPnP to automaticaly configure port forwarding for BitDust.<br>'
         src += 'Enable this if you are connected to the Internet with network router.'
@@ -2476,8 +2277,7 @@ class MainPage(Page):
 
         #--- list items and backups
         if self.listExpandedDirs is None or len(self.listExpandedDirs) == 0:
-            self.listExpandedDirs, self.listExpandedVersions = backup_fs.ListExpandedFoldersAndBackups(
-                self.expanded_dirs, self.selected_items)
+            self.listExpandedDirs, self.listExpandedVersions = backup_fs.ListExpandedFoldersAndBackups(self.expanded_dirs, self.selected_items)
 
         src += '<table width=100% align=center cellspacing=10 cellpadding=0 border=0>'
         src += '<tr>\n'
@@ -2512,8 +2312,8 @@ class MainPage(Page):
                 src += '%d more tasks in queue, ' % numtasks
             # src += '<a href="%s?action=cancelall&back=%s">cancel</a>' % (request.path, back)
             msg = 'Do you want to abort current backup process and cancel all tasks in the queue?'
-            src += '<a href="%s">cancel</a>' % confirmurl(
-                request, text=msg, back=back, yes='%s?action=cancelall' % request.path)
+            src += '<a href="%s">cancel</a>' % confirmurl(request, text=msg, back=back,
+                                                          yes='%s?action=cancelall' % request.path)
             src += '</font>'
         src += '</td>\n'
         src += '</tr></table>\n'
@@ -2529,8 +2329,7 @@ class MainPage(Page):
             src += '<img src="%s">' % iconurl(request, 'icons/folder-add.png')
             src += '</a>'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/folder-add-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/folder-add-gray.png')
         src += '</td>\n'
 
         #--- add many button ---
@@ -2538,31 +2337,24 @@ class MainPage(Page):
         if len(self.selected_items) == 0 and len(self.selected_backups) == 0:
             src += '<a href="%s?action=diraddrecursive&path=%s&showincluded=true&label=%s" target="_opendir">' % (
                 request.path, misc.pack_url_param(os.path.expanduser('~')), misc.pack_url_param('Recursive add files and folders from given location'))
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/folders-many-add.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/folders-many-add.png')
             src += '</a>'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/folders-many-add-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/folders-many-add-gray.png')
         src += '</td>\n'
 
         #--- delete button ---
         src += '<td align=center width=10%>'
         if len(self.selected_backups) == 0 and len(self.selected_items) > 0:
             # src += '<a href="%s?action=delete">' % request.path
-            msg = 'Delete <b>%d</b> selected items from the catalog and erase all remote backups associated with them?' % len(
-                self.selected_items)
+            msg = 'Delete <b>%d</b> selected items from the catalog and erase all remote backups associated with them?' % len(self.selected_items)
             msg += ' Your local files and folders will not be affected.'
-            src += '<a href="%s">' % confirmurl(request,
-                                                text=msg,
-                                                back=back,
+            src += '<a href="%s">' % confirmurl(request, text=msg, back=back,
                                                 yes='%s?action=delete' % request.path)
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/folder-delete.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/folder-delete.png')
             src += '</a>'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/folder-delete-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/folder-delete-gray.png')
         src += '</td>\n'
 
         #--- backup button ---
@@ -2584,36 +2376,28 @@ class MainPage(Page):
                 treeBackupPossible = True
         if treeBackupPossible:
             src += '<a href="%s?action=startrecursive">' % request.path
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/folder-tree-backup.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/folder-tree-backup.png')
             src += '</a>'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/folder-tree-backup-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/folder-tree-backup-gray.png')
         src += '</td>\n'
 
         #--- delete backups button ---
         src += '<td align=center width=10%>'
-        if len(
-                self.selected_backups) > 0 or len(
-                self.listExpandedVersions) > 0:
+        if len(self.selected_backups) > 0 or len(self.listExpandedVersions) > 0:
             # src += '<a href="%s?action=deletebackups">' % request.path
             if len(self.selected_backups) == 0:
                 msg = 'Delete all backed up data stored on remote machines for selected items?'
             elif len(self.selected_backups) == 1:
                 msg = 'You agree to erase this backup and delete corresponding data from remote machines?'
             else:
-                msg = 'You agree to erase these <b>%d</b> backups and delete all corresponding data from remote machines?' % len(
-                    self.selected_backups)
-            src += '<a href="%s">' % confirmurl(request,
-                                                text=msg,
-                                                back=back,
+                msg = 'You agree to erase these <b>%d</b> backups and delete all corresponding data from remote machines?' % len(self.selected_backups)
+            src += '<a href="%s">' % confirmurl(request, text=msg, back=back,
                                                 yes='%s?action=deletebackups' % request.path)
             src += '<img src="%s">' % iconurl(request, 'icons/box-delete.png')
             src += '</a>'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/box-delete-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/box-delete-gray.png')
         src += '</td>\n'
 
         #--- select backups button ---
@@ -2633,8 +2417,7 @@ class MainPage(Page):
             src += '<img src="%s">' % iconurl(request, 'icons/select-tree.png')
             src += '</a>'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/select-tree-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/select-tree-gray.png')
         src += '</td>\n'
 
         #--- restore button ---
@@ -2643,15 +2426,12 @@ class MainPage(Page):
             # src += '<a href="%s?action=restore">' % request.path
             msg = 'Restore selected items from remote machines<br>and place them to its original locations?'
             msg += '<br><font color=red><b>WARNING!</b></font><br>Existing files will be overwritten.'
-            src += '<a href="%s">' % confirmurl(request,
-                                                text=msg,
-                                                back=back,
+            src += '<a href="%s">' % confirmurl(request, text=msg, back=back,
                                                 yes='%s?action=restore' % request.path)
             src += '<img src="%s">' % iconurl(request, 'icons/restore.png')
             src += '</a>'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/restore-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/restore-gray.png')
         src += '</td>\n'
 
         #--- restore into folder button ---
@@ -2661,18 +2441,13 @@ class MainPage(Page):
             msg = 'Restore selected items from remote machines?<br><br>\n'
             msg += 'Your restored files will be placed into this location:<br>\n'
             msg += '<b>%(option:paths.restore)s</b><br>'
-            msg += '<a href="%s?back=%s">[change]</a><br>\n' % (
-                '/' + _PAGE_SETTINGS + '/' + 'paths.restore', '/' + _PAGE_CONFIRM)
-            src += '<a href="%s">' % confirmurl(request,
-                                                text=msg,
-                                                back=back,
+            msg += '<a href="%s?back=%s">[change]</a><br>\n' % ('/' + _PAGE_SETTINGS + '/' + 'paths.restore', '/' + _PAGE_CONFIRM)
+            src += '<a href="%s">' % confirmurl(request, text=msg, back=back,
                                                 yes='%s?action=restoretodir' % request.path)
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/restoretodir.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/restoretodir.png')
             src += '</a>'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/restoretodir-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/restoretodir-gray.png')
         src += '</td>\n'
 
         src += '</tr>\n'
@@ -2694,8 +2469,7 @@ class MainPage(Page):
 
         if len(self.listExpandedDirs) == 0:
             # src += '<p>Add some files to backup on remote machines.</p>\n'
-            src += html_comment(
-                'run "python bitdust.py add <folder path>" to add backup folder')
+            src += html_comment('run "python bitdust.py add <folder path>" to add backup folder')
             # return src
 
         #--- list items
@@ -2712,20 +2486,14 @@ class MainPage(Page):
                 x, x, name = localPath.rpartition('/')
                 if len(name) == 2 and name[1] == ':':
                     name = name.capitalize()
-                spaces = (
-                    '<img src="%s">' %
-                    iconurl(
-                        request, 'icons/white20x16.png')) * pathID.count('/')
-                sizeString = diskspace.MakeStringFromBytes(
-                    sizeInBytes) if sizeInBytes else '&nbsp;'
+                spaces = ('<img src="%s">' % iconurl(request, 'icons/white20x16.png')) * pathID.count('/')
+                sizeString = diskspace.MakeStringFromBytes(sizeInBytes) if sizeInBytes else '&nbsp;'
                 sizeVersions = 0
-                versions_sorted = misc.sorted_versions(
-                    versions.keys(), reverse=True)
+                versions_sorted = misc.sorted_versions(versions.keys(), reverse=True)
                 for versionInfo in versions.values():
                     if versionInfo[1] > 0:
                         sizeVersions += versionInfo[1]
-                backupsSize = 0 if contactsdb.num_suppliers() == 0 else sizeVersions / \
-                    contactsdb.num_suppliers()
+                backupsSize = 0 if contactsdb.num_suppliers() == 0 else sizeVersions / contactsdb.num_suppliers()
 
                 src += '<tr>'
                 src += '<td align=left valign=top nowrap>\n'
@@ -2734,22 +2502,16 @@ class MainPage(Page):
                 #--- dir/file button
                 if type in [backup_fs.DIR, backup_fs.PARENT]:
                     if pathID in self.expanded_dirs:
-                        src += '<a href="%s?action=collapse&pathid=%s">' % (
-                            request.path, pathID)
-                        src += '<img src="%s">' % iconurl(
-                            request, 'icons/dir-opened.png')
+                        src += '<a href="%s?action=collapse&pathid=%s">' % (request.path, pathID)
+                        src += '<img src="%s">' % iconurl(request, 'icons/dir-opened.png')
                         src += '</a>'
                     else:
-                        src += '<a href="%s?action=expand&pathid=%s">' % (
-                            request.path, pathID)
-                        src += '<img src="%s">' % iconurl(
-                            request, 'icons/dir-closed.png')
+                        src += '<a href="%s?action=expand&pathid=%s">' % (request.path, pathID)
+                        src += '<img src="%s">' % iconurl(request, 'icons/dir-closed.png')
                         src += '</a>'
                 else:
-                    src += '<a href="%s?action=fileclicked&pathid=%s">' % (
-                        request.path, pathID)
-                    src += '<img src="%s">' % iconurl(request,
-                                                      'icons/file.png')
+                    src += '<a href="%s?action=fileclicked&pathid=%s">' % (request.path, pathID)
+                    src += '<img src="%s">' % iconurl(request, 'icons/file.png')
                     src += '</a>'
 
                 #--- version box icon
@@ -2761,45 +2523,32 @@ class MainPage(Page):
                                 isBackupSelected = True
                                 break
                     if pathID in self.expanded_items:
-                        src += '<a href="%s?action=versionsclicked&pathid=%s">' % (
-                            request.path, pathID)
-                        if backup_control.HasTask(
-                                pathID) or backup_control.IsPathInProcess(pathID):
-                            src += '<img src="%s">' % iconurl(
-                                request, 'icons/hourglass20x16.png')
+                        src += '<a href="%s?action=versionsclicked&pathid=%s">' % (request.path, pathID)
+                        if backup_control.HasTask(pathID) or backup_control.IsPathInProcess(pathID):
+                            src += '<img src="%s">' % iconurl(request, 'icons/hourglass20x16.png')
                         else:
                             if isBackupSelected:
-                                src += '<img src="%s">' % iconurl(
-                                    request, 'icons/box-open-selected.png')
+                                src += '<img src="%s">' % iconurl(request, 'icons/box-open-selected.png')
                             else:
-                                src += '<img src="%s">' % iconurl(
-                                    request, 'icons/box-open.png')
+                                src += '<img src="%s">' % iconurl(request, 'icons/box-open.png')
                         src += '</a>'
                     else:
-                        src += '<a href="%s?action=versionsclicked&pathid=%s">' % (
-                            request.path, pathID)
-                        if backup_control.HasTask(
-                                pathID) or backup_control.IsPathInProcess(pathID):
-                            src += '<img src="%s">' % iconurl(
-                                request, 'icons/hourglass20x16.png')
+                        src += '<a href="%s?action=versionsclicked&pathid=%s">' % (request.path, pathID)
+                        if backup_control.HasTask(pathID) or backup_control.IsPathInProcess(pathID):
+                            src += '<img src="%s">' % iconurl(request, 'icons/hourglass20x16.png')
                         else:
                             if isBackupSelected:
-                                src += '<img src="%s">' % iconurl(
-                                    request, 'icons/box-close-selected.png')
+                                src += '<img src="%s">' % iconurl(request, 'icons/box-close-selected.png')
                             else:
-                                src += '<img src="%s">' % iconurl(
-                                    request, 'icons/box-close.png')
+                                src += '<img src="%s">' % iconurl(request, 'icons/box-close.png')
                         src += '</a>'
                 else:
                     if backup_control.HasTask(pathID):
-                        src += '<a href="%s?action=versionsclicked&pathid=%s">' % (
-                            request.path, pathID)
-                        src += '<img src="%s">' % iconurl(
-                            request, 'icons/hourglass20x16.png')
+                        src += '<a href="%s?action=versionsclicked&pathid=%s">' % (request.path, pathID)
+                        src += '<img src="%s">' % iconurl(request, 'icons/hourglass20x16.png')
                         src += '</a>'
                     else:
-                        src += '<img src="%s">' % iconurl(
-                            request, 'icons/white20x16.png')
+                        src += '<img src="%s">' % iconurl(request, 'icons/white20x16.png')
 
                 src += '&nbsp;\n'
 
@@ -2812,14 +2561,11 @@ class MainPage(Page):
                 # label = misc.unicode_to_str_safe(itemname)
 #                if not isExist:
 #                    label += ' (not exist) '
-                src += '<a href="%s?action=select&pathid=%s">' % (
-                    request.path, pathID.replace('/', '_'))
+                src += '<a href="%s?action=select&pathid=%s">' % (request.path, pathID.replace('/', '_'))
                 if pathID in self.selected_items:
-                    src += '<img src="%s">' % iconurl(
-                        request, 'icons/checkbox-on.png')
+                    src += '<img src="%s">' % iconurl(request, 'icons/checkbox-on.png')
                 else:
-                    src += '<img src="%s">' % iconurl(
-                        request, 'icons/checkbox-off.png')
+                    src += '<img src="%s">' % iconurl(request, 'icons/checkbox-off.png')
                 src += '</a>'
                 src += '<font size=+2 %s>' % color
                 try:
@@ -2833,13 +2579,11 @@ class MainPage(Page):
 
                 #--- image
                 src += '<td nowrap width=100>\n'
-                # if len(versions_sorted) > 0 and pathID not in
-                # self.expanded_items:
+                # if len(versions_sorted) > 0 and pathID not in self.expanded_items:
                 if False:  # dont want to show the image for all items because eat too much performance
                     backupID = pathID + '/' + versions_sorted[0]
                     backupIDurl = backupID.replace('/', '_')
-                    src += '<a href="%s?back=%s">' % (
-                        '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_DIAGRAM + backupIDurl, request.path,)
+                    src += '<a href="%s?back=%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_DIAGRAM + backupIDurl, request.path,)
                     src += '<img src="%s?type=bar&width=100&height=16" />' % (
                         iconurl(request, _PAGE_MAIN + '/' + _PAGE_BACKUP_IMAGE + backupIDurl))
                     src += '</a>\n'
@@ -2851,11 +2595,9 @@ class MainPage(Page):
                 if sizeVersions > 0:
                     if pathID not in self.expanded_items:
                         src += '<td nowrap align=right>'
-                        src += '<font size=-1 color=#80D080>%s</font>' % diskspace.MakeStringFromBytes(
-                            backupsSize)
+                        src += '<font size=-1 color=#80D080>%s</font>' % diskspace.MakeStringFromBytes(backupsSize)
                         src += '<font size=-1 color=gray>&nbsp;/&nbsp;</font>'
-                        src += '<font size=-1 color=#8080D0>%s</font>' % diskspace.MakeStringFromBytes(
-                            sizeVersions)
+                        src += '<font size=-1 color=#8080D0>%s</font>' % diskspace.MakeStringFromBytes(sizeVersions)
                         src += '</td>\n'
                     else:
                         src += '<td nowrap align=right>&nbsp;</td>\n'
@@ -2884,28 +2626,20 @@ class MainPage(Page):
                         src += '<tr>'
                         src += '<td align=left nowrap>\n'
                         src += spaces + '\n'
-                        src += '<img src="%s">' % iconurl(
-                            request, 'icons/white20x16.png')
+                        src += '<img src="%s">' % iconurl(request, 'icons/white20x16.png')
                         if restore_monitor.IsWorking(backupID):
-                            src += '<img src="%s">' % iconurl(
-                                request, 'icons/restore16.png')
+                            src += '<img src="%s">' % iconurl(request, 'icons/restore16.png')
                         else:
-                            src += '<img src="%s">' % iconurl(
-                                request, 'icons/white20x16.png')
-                        src += '<a href="%s?back=%s">' % (
-                            '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + backupIDurl, request.path,)
-                        src += '<img src="%s">' % iconurl(
-                            request, 'icons/document-green.png')
+                            src += '<img src="%s">' % iconurl(request, 'icons/white20x16.png')
+                        src += '<a href="%s?back=%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + backupIDurl, request.path,)
+                        src += '<img src="%s">' % iconurl(request, 'icons/document-green.png')
                         src += '</a>'
                         src += '&nbsp;\n'
-                        src += '<a href="%s?action=select&backupid=%s">' % (
-                            request.path, backupIDurl)
+                        src += '<a href="%s?action=select&backupid=%s">' % (request.path, backupIDurl)
                         if backupID in self.selected_backups:
-                            src += '<img src="%s">' % iconurl(
-                                request, 'icons/checkbox-on.png')
+                            src += '<img src="%s">' % iconurl(request, 'icons/checkbox-on.png')
                         else:
-                            src += '<img src="%s">' % iconurl(
-                                request, 'icons/checkbox-off.png')
+                            src += '<img src="%s">' % iconurl(request, 'icons/checkbox-off.png')
                         src += '</a>'
                         src += '<font size=+2>'
                         # src += '<a href="%s?back=%s">' % ('/'+_PAGE_MAIN+'/'+_PAGE_BACKUP+backupIDurl, request.path,)
@@ -2913,28 +2647,23 @@ class MainPage(Page):
                         # src += '</a>'
                         src += '</font>'
                         # src += '<input type="checkbox" name="backupid%s" value="1" label="%s" onclick=submit %s />' % (
-                        # backupID.replace('/','_'), version, ('checked' if
-                        # backupID in self.selected_backups else ''))
+                        #     backupID.replace('/','_'), version, ('checked' if backupID in self.selected_backups else ''))
                         src += '</td>\n'
                         src += '<td nowrap width=100>\n'
                         if bpio.Linux():
                             src += '&nbsp;'
                         else:
-                            src += '<a href="%s?back=%s">' % (
-                                '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_DIAGRAM + backupIDurl, request.path,)
+                            src += '<a href="%s?back=%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_DIAGRAM + backupIDurl, request.path,)
                             src += '<img src="%s?type=bar&width=100&height=16" />' % (
                                 iconurl(request, _PAGE_MAIN + '/' + _PAGE_BACKUP_IMAGE + backupIDurl))
                             src += '</a>\n'
                         src += '</td>\n'
                         if versionInfo[1] >= 0:
-                            supplierSize = 0 if contactsdb.num_suppliers() == 0 else versionInfo[
-                                1] / contactsdb.num_suppliers()
+                            supplierSize = 0 if contactsdb.num_suppliers() == 0 else versionInfo[1] / contactsdb.num_suppliers()
                             src += '<td nowrap align=right>'
-                            src += '<font size=-1 color=#80D080>%s</font>' % diskspace.MakeStringFromBytes(
-                                supplierSize)
+                            src += '<font size=-1 color=#80D080>%s</font>' % diskspace.MakeStringFromBytes(supplierSize)
                             src += '<font size=-1 color=gray>&nbsp;/&nbsp;</font>'
-                            src += '<font size=-1 color=#8080D0>%s</font>' % diskspace.MakeStringFromBytes(
-                                versionInfo[1])
+                            src += '<font size=-1 color=#8080D0>%s</font>' % diskspace.MakeStringFromBytes(versionInfo[1])
                             src += '</td>\n'
                         else:
                             src += '<td>&nbsp;</td>\n'
@@ -2956,43 +2685,35 @@ class MainPage(Page):
 
         #---diradd---
         if action == 'diradd':
-            opendir = unicode(misc.unpack_url_param(
-                arg(request, 'opendir'), ''))
+            opendir = unicode(misc.unpack_url_param(arg(request, 'opendir'), ''))
             if opendir:
                 newPathID, iter, iterID = backup_fs.AddDir(opendir, True)
-                dirsize.ask(
-                    opendir, backup_control.FoundFolderSize, (newPathID, None))
+                dirsize.ask(opendir, backup_control.FoundFolderSize, (newPathID, None))
                 backup_fs.Calculate()
                 backup_control.Save()
                 self.listExpandedDirs = None
                 self.listExpandedVersions = None
                 self.htmlComment += html_comment('new folder was added:')
-                self.htmlComment += html_comment('  %s %s' %
-                                                 (newPathID.ljust(27), opendir.ljust(70)))
+                self.htmlComment += html_comment('  %s %s' % (newPathID.ljust(27), opendir.ljust(70)))
 
         #---diraddrecursive---
         elif action == 'diraddrecursive':
-            opendir = unicode(misc.unpack_url_param(
-                arg(request, 'opendir'), ''))
+            opendir = unicode(misc.unpack_url_param(arg(request, 'opendir'), ''))
             if opendir:
-                newPathID, iter, iterID, num = backup_fs.AddLocalPath(
-                    opendir, True)
+                newPathID, iter, iterID, num = backup_fs.AddLocalPath(opendir, True)
                 backup_fs.Calculate()
                 backup_control.Save()
                 if newPathID:
                     for parentPathID in packetid.parentPathsList(newPathID):
                         self.expanded_dirs.add(parentPathID)
-                    self.htmlComment += html_comment(
-                        '%d items were added to catalog, parent path ID is:' % num)
-                    self.htmlComment += html_comment('  %s %s' %
-                                                     (newPathID.ljust(27), opendir.ljust(70)))
+                    self.htmlComment += html_comment('%d items were added to catalog, parent path ID is:' % num)
+                    self.htmlComment += html_comment('  %s %s' % (newPathID.ljust(27), opendir.ljust(70)))
                 self.listExpandedDirs = None
                 self.listExpandedVersions = None
 
         #---fileadd---
         elif action == 'fileadd':
-            openfile = unicode(misc.unpack_url_param(
-                arg(request, 'openfile'), ''))
+            openfile = unicode(misc.unpack_url_param(arg(request, 'openfile'), ''))
             if openfile:
                 newPathID, iter, iterID = backup_fs.AddFile(openfile, True)
                 backup_fs.Calculate()
@@ -3000,8 +2721,7 @@ class MainPage(Page):
                 self.listExpandedDirs = None
                 self.listExpandedVersions = None
                 self.htmlComment += html_comment('new file was added:')
-                self.htmlComment += html_comment('  %s %s' %
-                                                 (newPathID.ljust(27), openfile.ljust(70)))
+                self.htmlComment += html_comment('  %s %s' % (newPathID.ljust(27), openfile.ljust(70)))
 
         #---expand---
         elif action == 'expand':
@@ -3009,8 +2729,7 @@ class MainPage(Page):
             if pathid:
                 self.expanded_dirs.add(pathid)
                 if pathid in self.selected_items:
-                    for type, subPathID, localPath, sizeInBytes, versions in backup_fs.ListSelectedFolders([
-                                                                                                           pathid, ]):
+                    for type, subPathID, localPath, sizeInBytes, versions in backup_fs.ListSelectedFolders([pathid, ]):
                         if subPathID.startswith(pathid + '/'):
                             self.selected_items.add(subPathID)
                 self.listExpandedDirs = None
@@ -3026,8 +2745,7 @@ class MainPage(Page):
                         eraselist.add(pathid)
                 self.expanded_dirs.difference_update(eraselist)
                 if pathid2remove in self.selected_items:
-                    for type, subPathID, localPath, sizeInBytes, versions in backup_fs.ListSelectedFolders(
-                            eraselist):
+                    for type, subPathID, localPath, sizeInBytes, versions in backup_fs.ListSelectedFolders(eraselist):
                         if subPathID.startswith(pathid2remove + '/'):
                             self.selected_items.discard(subPathID)
                 del eraselist
@@ -3045,8 +2763,7 @@ class MainPage(Page):
             clickedBackupID = arg(request, 'backupid').replace('_', '/')
             if clickedPathID:
                 self.selected_backups.clear()
-                listExpandedItems = backup_fs.ListSelectedFolders(
-                    self.expanded_dirs)
+                listExpandedItems = backup_fs.ListSelectedFolders(self.expanded_dirs)
                 subItemsSelected = set()
                 state = 0
                 isAlreadyExpanded = False
@@ -3075,31 +2792,25 @@ class MainPage(Page):
                             state = 3  # dir is checked, some files also checked
                 if state == 1:  # check on dir, keep files clear
                     for type, fsPathID, localPath, sizeInBytes, versions in listExpandedItems:
-                        if clickedPathID.startswith(
-                                fsPathID + '/'):  # this is a top level item
+                        if clickedPathID.startswith(fsPathID + '/'):  # this is a top level item
                             self.selected_items.discard(fsPathID)
                     self.selected_items.add(clickedPathID)
                 elif state == 2:  # keep dir checked, check sub items, uncheck top level items
                     for type, fsPathID, localPath, sizeInBytes, versions in listExpandedItems:
-                        if fsPathID.startswith(
-                                clickedPathID + '/'):  # this is our sub item - check it
+                        if fsPathID.startswith(clickedPathID + '/'):  # this is our sub item - check it
                             self.selected_items.add(fsPathID)
-                        if clickedPathID.startswith(
-                                fsPathID + '/'):  # this is a top level item - uncheck
+                        if clickedPathID.startswith(fsPathID + '/'):  # this is a top level item - uncheck
                             self.selected_items.discard(fsPathID)
                     self.selected_items.add(clickedPathID)
                 elif state == 3:  # uncheck dir, keep sub items checked, uncheck top level items
                     for type, fsPathID, localPath, sizeInBytes, versions in listExpandedItems:
-                        if clickedPathID.startswith(
-                                fsPathID + '/'):  # this is a top level item - uncheck
+                        if clickedPathID.startswith(fsPathID + '/'):  # this is a top level item - uncheck
                             self.selected_items.discard(fsPathID)
                     self.selected_items.discard(clickedPathID)
                 elif state == 4:  # keep dir unchecked, uncheck all files
-                    self.selected_items.difference_update(
-                        subItemsSelected)  # uncheck sub items
+                    self.selected_items.difference_update(subItemsSelected)  # uncheck sub items
                     for type, fsPathID, localPath, sizeInBytes, versions in listExpandedItems:
-                        if clickedPathID.startswith(
-                                fsPathID + '/'):  # this is a top level item - uncheck
+                        if clickedPathID.startswith(fsPathID + '/'):  # this is a top level item - uncheck
                             self.selected_items.discard(fsPathID)
                     self.selected_items.discard(clickedPathID)
                 elif state == 5:  # check that item, but uncheck all top level items
@@ -3113,8 +2824,7 @@ class MainPage(Page):
                 del subItemsSelected
             if clickedBackupID:
                 self.selected_items.clear()
-                self.selected_backups.symmetric_difference_update(
-                    set([clickedBackupID]))
+                self.selected_backups.symmetric_difference_update(set([clickedBackupID]))
 
         #---selectbackups---
         elif action == 'selectbackups':
@@ -3133,9 +2843,7 @@ class MainPage(Page):
             for pathID in self.selected_items:
                 iter_and_path = backup_fs.WalkByID(pathID)
                 if iter_and_path:
-                    backup_fs.TraverseByID(
-                        lambda subpathID, path, info: self._selectionVisitor(
-                            pathID, subpathID, path, info), iter_and_path[0])
+                    backup_fs.TraverseByID(lambda subpathID, path, info: self._selectionVisitor(pathID, subpathID, path, info), iter_and_path[0])
             self.selected_items.clear()
 
         #---start---
@@ -3151,19 +2859,15 @@ class MainPage(Page):
 
         #---startpath---
         elif action == 'startpath':
-            localPath = unicode(
-                misc.unpack_url_param(arg(request, 'path'), ''))
+            localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
             if bpio.pathExist(localPath):
                 pathID = backup_fs.ToID(localPath)
                 if pathID is None:
                     if bpio.pathIsDir(localPath):
-                        pathID, iter, iterID = backup_fs.AddDir(
-                            localPath, True)
-                        self.htmlComment += html_comment(
-                            'new folder was added:')
+                        pathID, iter, iterID = backup_fs.AddDir(localPath, True)
+                        self.htmlComment += html_comment('new folder was added:')
                     else:
-                        pathID, iter, iterID = backup_fs.AddFile(
-                            localPath, True)
+                        pathID, iter, iterID = backup_fs.AddFile(localPath, True)
                         self.htmlComment += html_comment('new file was added:')
                     backup_control.StartSingle(pathID, localPath)
                     self.htmlComment += html_comment('  %s' % localPath)
@@ -3173,27 +2877,22 @@ class MainPage(Page):
                 backup_control.Save()
                 self.listExpandedDirs = None
                 self.listExpandedVersions = None
-                self.htmlComment += html_comment(
-                    '  %s : backup started' % pathID)
+                self.htmlComment += html_comment('  %s : backup started' % pathID)
 
         #---startpathrecursive---
         elif action == 'startpathrecursive':
             opendir = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
             if opendir:
-                newPathID, iter, iterID, num = backup_fs.AddLocalPath(
-                    opendir, True)
+                newPathID, iter, iterID, num = backup_fs.AddLocalPath(opendir, True)
                 backup_fs.Calculate()
                 backup_control.Save()
                 if newPathID:
-                    self.htmlComment += html_comment(
-                        '%d items were added to catalog, parent path ID is:' % num)
-                    self.htmlComment += html_comment('  %s %s' %
-                                                     (newPathID.ljust(27), opendir.ljust(70)))
+                    self.htmlComment += html_comment('%d items were added to catalog, parent path ID is:' % num)
+                    self.htmlComment += html_comment('  %s %s' % (newPathID.ljust(27), opendir.ljust(70)))
                     backup_control.StartRecursive(newPathID, opendir)
                     self.listExpandedDirs = None
                     self.listExpandedVersions = None
-                    self.htmlComment += html_comment(
-                        '  %s : recursive backup started' % newPathID)
+                    self.htmlComment += html_comment('  %s : recursive backup started' % newPathID)
 
         #---startid---
         elif action == 'startid':
@@ -3207,10 +2906,8 @@ class MainPage(Page):
                         backup_control.Save()
                         self.listExpandedDirs = None
                         self.listExpandedVersions = None
-                        self.htmlComment += html_comment('  %s' %
-                                                         misc.unicode_to_str_safe(localPath))
-                        self.htmlComment += html_comment(
-                            '  %s : backup started' % pathID)
+                        self.htmlComment += html_comment('  %s' % misc.unicode_to_str_safe(localPath))
+                        self.htmlComment += html_comment('  %s : backup started' % pathID)
 
         #---startrecursive---
         elif action == 'startrecursive':
@@ -3223,10 +2920,8 @@ class MainPage(Page):
         elif action == 'delete':
             if driver.is_started('service_backups'):
                 for pathID in self.selected_items:
-                    backup_control.DeletePathBackups(
-                        pathID, saveDB=False, calculate=False)
-                    backup_fs.DeleteLocalDir(
-                        settings.getLocalBackupsDir(), pathID)
+                    backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
                     backup_fs.DeleteByID(pathID)
                     for subPathID in list(self.expanded_dirs):
                         if subPathID.startswith(pathID + '/'):
@@ -3248,14 +2943,12 @@ class MainPage(Page):
                 modified = False
                 if len(self.selected_backups) > 0:
                     for backupID in self.selected_backups:
-                        backup_control.DeleteBackup(
-                            backupID, saveDB=False, calculate=False)
+                        backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
                         modified = True
                     self.selected_backups.clear()
                 if len(self.selected_items) > 0:
                     for pathID in self.selected_items:
-                        backup_control.DeletePathBackups(
-                            pathID, saveDB=False, calculate=False)
+                        backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
                         self.expanded_items.discard(pathID)
                         modified = True
                     self.selected_items.clear()
@@ -3273,13 +2966,10 @@ class MainPage(Page):
                 pathID = arg(request, 'pathid').replace('_', '/')
                 if packetid.Valid(pathID):
                     if packetid.IsCanonicalVersion(pathID.split('/')[-1]):
-                        backup_control.DeleteBackup(
-                            pathID, saveDB=False, calculate=False)
+                        backup_control.DeleteBackup(pathID, saveDB=False, calculate=False)
                     else:
-                        backup_control.DeletePathBackups(
-                            pathID, saveDB=False, calculate=False)
-                        backup_fs.DeleteLocalDir(
-                            settings.getLocalBackupsDir(), pathID)
+                        backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                        backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
                         backup_fs.DeleteByID(pathID)
                         for subPathID in list(self.expanded_dirs):
                             if subPathID.startswith(pathID + '/'):
@@ -3298,14 +2988,11 @@ class MainPage(Page):
         #---deletepath---
         elif action == 'deletepath':
             if driver.is_started('service_backups'):
-                localPath = unicode(
-                    misc.unpack_url_param(arg(request, 'path'), ''))
+                localPath = unicode(misc.unpack_url_param(arg(request, 'path'), ''))
                 pathID = backup_fs.ToID(localPath)
                 if pathID and packetid.Valid(pathID):
-                    backup_control.DeletePathBackups(
-                        pathID, saveDB=False, calculate=False)
-                    backup_fs.DeleteLocalDir(
-                        settings.getLocalBackupsDir(), pathID)
+                    backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
+                    backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
                     backup_fs.DeleteByID(pathID)
                     for subPathID in list(self.expanded_dirs):
                         if subPathID.startswith(pathID + '/'):
@@ -3354,23 +3041,18 @@ class MainPage(Page):
                 localPath = backup_fs.ToPath(pathID)
                 if not localPath:
                     continue
-                if len(localPath) > 3 and localPath[
-                        1] == ':' and localPath[2] == '/':
+                if len(localPath) > 3 and localPath[1] == ':' and localPath[2] == '/':
                     # need to remove leading drive letter
                     # even if we are not under windows - we may restore in other OS
                     # so if the second character is ':' and third is '/' - means path starts from drive letter
                     # here we assume the path is in portable form - separator is "/"
-                    # TODO: - also may need to check other options like network
-                    # drive (//) or so
+                    # TODO: - also may need to check other options like network drive (//) or so
                     localPath = localPath[3:]
-                # remove the leading separator - for Linux we want to have
-                # relative path
+                # remove the leading separator - for Linux we want to have relative path
                 localPath = localPath.lstrip('/')
-                # get the base folder - tar extract will take care of creating
-                # all directoriy tree
+                # get the base folder - tar extract will take care of creating all directoriy tree
                 localDir = os.path.dirname(localPath)
-                # make a restore dir, keep the folders tree, this will be a
-                # relative path
+                # make a restore dir, keep the folders tree, this will be a relative path
                 restoreDir = os.path.join(settings.getRestoreDir(), localDir)
                 restore_monitor.Start(backupID, restoreDir)
             self.selected_backups.clear()
@@ -3385,22 +3067,17 @@ class MainPage(Page):
                     localPath = backup_fs.ToPath(pathID)
                     if localPath:
                         if dest:
-                            if len(localPath) > 3 and localPath[
-                                    1] == ':' and localPath[2] == '/':
-                                # TODO: - also may need to check other options
-                                # like network drive (//) or so
+                            if len(localPath) > 3 and localPath[1] == ':' and localPath[2] == '/':
+                                # TODO: - also may need to check other options like network drive (//) or so
                                 localPath = localPath[3:]
                             localDir = os.path.dirname(localPath.lstrip('/'))
                             restoreDir = os.path.join(dest, localDir)
                             restore_monitor.Start(backupID, restoreDir)
                         else:
                             restoreDir = os.path.dirname(localPath)
-                            restore_monitor.Start(
-                                backupID, restoreDir, self._itemRestored)
+                            restore_monitor.Start(backupID, restoreDir, self._itemRestored)
                         self.selected_backups.clear()
-                        self.htmlComment += html_comment(
-                            '  %s : restore started to %s' %
-                            (backupID, restoreDir))
+                        self.htmlComment += html_comment('  %s : restore started to %s' % (backupID, restoreDir))
 
         #---cancelall---
         elif action == 'cancelall':
@@ -3412,43 +3089,29 @@ class MainPage(Page):
         #---list---
         elif action == 'list':
             src = ''
-            src += html_comment(
-                '  %s %s %s' %
-                ('[path ID]'.ljust(27),
-                 '[local path / version]'.ljust(70),
-                 '[size]'))
+            src += html_comment('  %s %s %s' % ('[path ID]'.ljust(27), '[local path / version]'.ljust(70), '[size]'))
             for pathID, localPath, item in backup_fs.IterateIDs():
-                sz = diskspace.MakeStringFromBytes(
-                    item.size) if item.exist() else ''
-                src += html_comment('  %s %s %s' %
-                                    (pathID.ljust(27), localPath.ljust(70), sz.ljust(9)))
+                sz = diskspace.MakeStringFromBytes(item.size) if item.exist() else ''
+                src += html_comment('  %s %s %s' % (pathID.ljust(27), localPath.ljust(70), sz.ljust(9)))
                 for version, vinfo in item.get_versions().items():
                     if vinfo[1] >= 0:
-                        szver = diskspace.MakeStringFromBytes(
-                            vinfo[1] / contactsdb.num_suppliers()) + ' / ' + diskspace.MakeStringFromBytes(vinfo[1])
+                        szver = diskspace.MakeStringFromBytes(vinfo[1] / contactsdb.num_suppliers()) + ' / ' + diskspace.MakeStringFromBytes(vinfo[1])
                     else:
                         szver = '?'
-                    src += html_comment('  %s   %s %s' %
-                                        (' ' * 27, (pathID + '/' + version).ljust(68), szver))
+                    src += html_comment('  %s   %s %s' % (' ' * 27, (pathID + '/' + version).ljust(68), szver))
             return html(request, body=str(src),)
 
         #---idlist---
         elif action == 'idlist':
             src = ''
-            src += html_comment('  %s %s %s' %
-                                ('[path ID]'.ljust(37), '[size]'.ljust(20), '[local path]'))
-            for itemName, backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(
-                    True, True):
+            src += html_comment('  %s %s %s' % ('[path ID]'.ljust(37), '[size]'.ljust(20), '[local path]'))
+            for itemName, backupID, versionInfo, localPath in backup_fs.ListAllBackupIDsFull(True, True):
                 if versionInfo[1] >= 0 and contactsdb.num_suppliers() > 0:
-                    szver = diskspace.MakeStringFromBytes(
-                        versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(
-                        versionInfo[1] / contactsdb.num_suppliers())
+                    szver = diskspace.MakeStringFromBytes(versionInfo[1]) + ' / ' + diskspace.MakeStringFromBytes(versionInfo[1] / contactsdb.num_suppliers())
                 else:
                     szver = '?'
-                szver = diskspace.MakeStringFromBytes(
-                    versionInfo[1]) if versionInfo[1] >= 0 else '?'
-                src += html_comment('  %s %s %s' %
-                                    (backupID.ljust(37), szver.ljust(20), localPath))
+                szver = diskspace.MakeStringFromBytes(versionInfo[1]) if versionInfo[1] >= 0 else '?'
+                src += html_comment('  %s %s %s' % (backupID.ljust(37), szver.ljust(20), localPath))
             return html(request, body=str(src),)
 
         #---cache---
@@ -3457,8 +3120,7 @@ class MainPage(Page):
             l = identitycache.Items().keys()
             if len(l) > 0:
                 for idurl in l:
-                    st = '' if identitycache.HasFile(
-                        idurl) else '[file not exist]'
+                    st = '' if identitycache.HasFile(idurl) else '[file not exist]'
                     src += html_comment('  %s %s' % (idurl, st))
             else:
                 src += html_comment('  empty')
@@ -3467,8 +3129,7 @@ class MainPage(Page):
         #---cacheclear---
         elif action == 'cacheclear':
             src = ''
-            src += html_comment('  %d items cached, removing ...' %
-                                identitycache.CacheLen())
+            src += html_comment('  %d items cached, removing ...' % identitycache.CacheLen())
             identitycache.Clear()
             src += html_comment('  cache is empty')
             return html(request, body=str(src),)
@@ -3486,8 +3147,7 @@ class MainPage(Page):
     def _selectionVisitor(self, pathID, subpathID, path, info):
         versions = info.list_versions(sorted=True, reverse=True)
         if len(versions) > 0:
-            self.selected_backups.add(
-                pathID + '/' + subpathID + '/' + versions[0])
+            self.selected_backups.add(pathID + '/' + subpathID + '/' + versions[0])
 
     def getChild(self, path, request):
         if path == '':
@@ -3519,12 +3179,7 @@ class MainPage(Page):
                 'This may be due to the fact that the connection with other users \n' +
                 'is not yet established or BitDust can not find the number \n' +
                 'of users that meet your requirements.')
-            return html(
-                request,
-                body=str(src),
-                title='my files',
-                back='',
-                reload=reload)
+            return html(request, body=str(src), title='my files', back='', reload=reload)
 
         if not driver.is_started('service_restores'):
             src = ''
@@ -3532,37 +3187,25 @@ class MainPage(Page):
                 src += '<h1>my files</h1>\n'
                 src += '<table width="70%"><tr><td align=left>\n'
                 src += '<p>The BitDust software is not ready to manage your remote files.<br><br>\n'
-                src += 'Network service <a href="%s"><b>restores<b></a> is disabled,\n' % (
-                    '/' + _PAGE_SERVICES_SETTINGS)
+                src += 'Network service <a href="%s"><b>restores<b></a> is disabled,\n' % ('/' + _PAGE_SERVICES_SETTINGS)
                 src += 'please check your software configs.</p>\n'
                 src += '</td></tr></table>\n'
                 src += html_comment(
                     'The BitDust software is not ready to manage your remote files.\n' +
                     'Network service "restores" is disabled,\n' +
                     'please check your software configs.\n')
-                return html(
-                    request,
-                    body=str(src),
-                    title='my files',
-                    back='',
-                    reload=reload)
+                return html(request, body=str(src), title='my files', back='', reload=reload)
             src += '<h1>connecting...</h1>\n'
             src += '<table width="70%"><tr><td align=left>\n'
             src += '<p>The software is in process of configuring your distributed data storage.<br><br>\n'
             src += 'Please wait a bit while establishing connection with other nodes\n'
             src += 'or check your network settings and Internet connection status.</p>\n'
             src += '</td></tr></table>\n'
-            src += html_comment(
-                'Connecting...\n' +
-                'The software is in process of configuring your distributed data storage.\n' +
-                'Please wait a bit while establishing connection with other nodes\n' +
-                'or check your network settings and Internet connection status.\n')
-            return html(
-                request,
-                body=str(src),
-                title='my files',
-                back='',
-                reload=reload)
+            src += html_comment('Connecting...\n' +
+                                'The software is in process of configuring your distributed data storage.\n' +
+                                'Please wait a bit while establishing connection with other nodes\n' +
+                                'or check your network settings and Internet connection status.\n')
+            return html(request, body=str(src), title='my files', back='', reload=reload)
 
         ret = self._action(request)
         if ret == NOT_DONE_YET:
@@ -3571,18 +3214,14 @@ class MainPage(Page):
         src = self._body(request)
 
         src += '<br><br><table><tr><td><div align=left>\n'
-        availibleSpace = diskspace.MakeStringFromBytes(
-            settings.getNeededBytes())
+        availibleSpace = diskspace.MakeStringFromBytes(settings.getNeededBytes())
         backupsSizeTotal = backup_fs.sizebackups()
-        backupsSizeSupplier = -1 if contactsdb.num_suppliers() == 0 else backupsSizeTotal / \
-            contactsdb.num_suppliers()
+        backupsSizeSupplier = -1 if contactsdb.num_suppliers() == 0 else backupsSizeTotal / contactsdb.num_suppliers()
         usedSpaceTotal = diskspace.MakeStringFromBytes(backupsSizeTotal)
-        usedSpaceSupplier = '-' if backupsSizeSupplier < 0 else diskspace.MakeStringFromBytes(
-            backupsSizeSupplier)
+        usedSpaceSupplier = '-' if backupsSizeSupplier < 0 else diskspace.MakeStringFromBytes(backupsSizeSupplier)
         src += 'availible space:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % (
             '/' + _PAGE_SETTINGS + '/' + 'services.customer.needed-space?back=' + request.path, availibleSpace,)
-        src += 'total space used:&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % (
-            '/' + _PAGE_STORAGE, usedSpaceTotal)
+        src += 'total space used:&nbsp;&nbsp;<a href="%s">%s</a><br>\n' % ('/' + _PAGE_STORAGE, usedSpaceTotal)
         src += 'used per supplier:&nbsp;%s\n' % (usedSpaceSupplier)
         src += '</div></td></tr></table>\n'
 
@@ -3591,8 +3230,7 @@ class MainPage(Page):
         src += html_comment('used per supplier: %s' % usedSpaceSupplier)
 
         src += '<p><a href="%s?action=update">Request my suppliers to check my backups now</a></p>\n' % request.path
-        src += '<p><a href="%s">Check the backup settings</a></p>\n' % (
-            '/' + _PAGE_BACKUP_SETTINGS + '?back=' + request.path,)
+        src += '<p><a href="%s">Check the backup settings</a></p>\n' % ('/' + _PAGE_BACKUP_SETTINGS + '?back=' + request.path,)
         # src += '<p><a href="%s" target=_blank>Get help on this page</a></p>\n' % help_url(self.pagename)
 
         return html(request, body=str(src), title='my files', back='')
@@ -3661,14 +3299,7 @@ class MenuPage(Page):
                                    yes=request.path + '?action=exit',
                                    text='Do you want to stop BitDust?',
                                    back=back)
-        return html(
-            request,
-            body=src,
-            home='',
-            title='menu',
-            back=back,
-            next='<a href="%s">[shutdown]</a>' %
-            shutdown_link)
+        return html(request, body=src, home='', title='menu', back=back, next='<a href="%s">[shutdown]</a>' % shutdown_link)
 
 #------------------------------------------------------------------------------
 
@@ -3707,8 +3338,7 @@ class BackupPage(Page, BackupIDSplit):
         Page.__init__(self)
         self.splitpath(path)
         self.getfsitem()
-        self.sizeStr = diskspace.MakeStringFromBytes(
-            self.size) if self.size > 0 else ''
+        self.sizeStr = diskspace.MakeStringFromBytes(self.size) if self.size > 0 else ''
         self.isExist = os.path.exists(self.localPath)
 
     def _itemRestored(self, backupID, result):
@@ -3718,8 +3348,7 @@ class BackupPage(Page, BackupIDSplit):
 
     def _renderRunningPage(self, request, backupObj):
         from storage import backup_matrix
-        totalPercent, totalNumberOfFiles, local_backup_size, maxBlockNum, statsArray = backup_matrix.GetBackupLocalStats(
-            self.backupID)
+        totalPercent, totalNumberOfFiles, local_backup_size, maxBlockNum, statsArray = backup_matrix.GetBackupLocalStats(self.backupID)
         blockNumber = backupObj.blockNumber + 1
         dirSizeBytes = 0
         folder_or_file = 'folder' if self.isDir else 'file'
@@ -3738,10 +3367,8 @@ class BackupPage(Page, BackupIDSplit):
         #---info---
         src = ''
         src += '<table width=95%><tr><td align=center>'
-        src += '<h3>%s</h3>\n' % misc.wrap_long_string(
-            str(self.localPath), 60, '<br>\n')
-        src += '<p><a href="%s">%s</a></p>\n' % (
-            '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
+        src += '<h3>%s</h3>\n' % misc.wrap_long_string(str(self.localPath), 60, '<br>\n')
+        src += '<p><a href="%s">%s</a></p>\n' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
         src += html_comment('  [%s] %s' % (self.backupID, self.localPath))
         src += '<table width=90%><tr><td align=center>\n'
         src += '<p align=justify>This backup is currently running.\n'
@@ -3751,39 +3378,25 @@ class BackupPage(Page, BackupIDSplit):
         src += '<p align=justify>'
         if dirSizeBytes == 0:
             src += '%s size is unknown, ' % folder_or_file.capitalize()
-            src += 'currently <b>%s</b> read. ' % diskspace.MakeStringFromBytes(
-                dataSent)
+            src += 'currently <b>%s</b> read. ' % diskspace.MakeStringFromBytes(dataSent)
             src += 'Backup copy contains <b>%d</b> files at this point.\n' % totalNumberOfFiles
             src += html_comment('  %s size is unknown' % folder_or_file)
-            src += html_comment('  currently %s read' %
-                                diskspace.MakeStringFromBytes(dataSent))
-            src += html_comment(
-                '  backup copy contains %d files at this point' %
-                totalNumberOfFiles)
+            src += html_comment('  currently %s read' % diskspace.MakeStringFromBytes(dataSent))
+            src += html_comment('  backup copy contains %d files at this point' % totalNumberOfFiles)
         elif dataSent < dirSizeBytes:
-            src += 'Currently <b>%s</b> read from total <b>%s</b> %s size, ' % (diskspace.MakeStringFromBytes(
-                dataSent), diskspace.MakeStringFromBytes(dirSizeBytes), folder_or_file)
+            src += 'Currently <b>%s</b> read from total <b>%s</b> %s size, ' % (
+                diskspace.MakeStringFromBytes(dataSent), diskspace.MakeStringFromBytes(dirSizeBytes), folder_or_file)
             src += 'this is <b>%s</b>.\n' % misc.percent2string(percent)
             src += 'Backup copy contains <b>%d</b> files at this point.\n' % totalNumberOfFiles
-            src += html_comment(
-                '  currently %s read from total %s size, this is %s' %
-                (diskspace.MakeStringFromBytes(dataSent),
-                 diskspace.MakeStringFromBytes(dirSizeBytes),
-                 misc.percent2string(percent)))
-            src += html_comment(
-                '  backup copy contains %d files at this point' %
-                totalNumberOfFiles)
+            src += html_comment('  currently %s read from total %s size, this is %s' % (
+                diskspace.MakeStringFromBytes(dataSent), diskspace.MakeStringFromBytes(dirSizeBytes), misc.percent2string(percent)))
+            src += html_comment('  backup copy contains %d files at this point' % totalNumberOfFiles)
         else:
             src += '%s size is <b>%s</b>, all the files have been processed ' % (
                 folder_or_file.capitalize(), diskspace.MakeStringFromBytes(dirSizeBytes))
-            src += 'and divided into <b>%s</b> blocks in <b>%d</b> files.\n' % (
-                blockNumber, totalNumberOfFiles)
-            src += html_comment(
-                '  %s size is %s, all %d files have been processed and divided into %s blocks' %
-                (folder_or_file,
-                 diskspace.MakeStringFromBytes(dirSizeBytes),
-                 totalNumberOfFiles,
-                 blockNumber))
+            src += 'and divided into <b>%s</b> blocks in <b>%d</b> files.\n' % (blockNumber, totalNumberOfFiles)
+            src += html_comment('  %s size is %s, all %d files have been processed and divided into %s blocks' % (
+                folder_or_file, diskspace.MakeStringFromBytes(dirSizeBytes), totalNumberOfFiles, blockNumber))
         src += ' Encrypted <b>%d</b> blocks of data.\n' % blocksSent
         src += html_comment('  encrypted %d blocks of data' % blocksSent)
 #         if blockNumber > 0:
@@ -3839,34 +3452,29 @@ class BackupPage(Page, BackupIDSplit):
             src += '<img src="%s">' % iconurl(request, 'icons/explore48.png')
             src += '</a>\n'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/explore48-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/explore48-gray.png')
         src += '<br><font size=-1 color=gray>explore this<br>local %s</font>\n' % folder_or_file
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' +
-                                  _PAGE_BACKUP_REMOTE_FILES + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_REMOTE_FILES + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/remote-files48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>show remote files<br>stored on<br>suppliers machines</font>\n'
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' +
-                                  _PAGE_BACKUP_LOCAL_FILES + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_LOCAL_FILES + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/local-files48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>show local files<br>stored on HDD</font>\n'
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN +
-                                  '/' + _PAGE_BACKUP_DIAGRAM + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_DIAGRAM + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/chart48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>let\'s see<br>the big picture</font>\n'
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s?action=backup.abort">' % (
-            '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
+        src += '<a href="%s?action=backup.abort">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/backup-abort48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>abort this backup</font>\n'
@@ -3879,26 +3487,22 @@ class BackupPage(Page, BackupIDSplit):
         from storage import backup_matrix
         from storage import restore_monitor
         bstats = restore_monitor.GetProgress(self.backupID)
-        totalPercent, totalNumberOfFiles, local_backup_size, maxBlockNum, statsLocalArray = backup_matrix.GetBackupLocalStats(
-            self.backupID)
+        totalPercent, totalNumberOfFiles, local_backup_size, maxBlockNum, statsLocalArray = backup_matrix.GetBackupLocalStats(self.backupID)
         w, h = misc.calculate_best_dimension(contactsdb.num_suppliers())
         imgW, imgH, padding = misc.calculate_padding(w, h)
         maxBlockNum = backup_matrix.GetKnownMaxBlockNum(self.backupID)
         currentBlock = max(0, restoreObj.BlockNumber)
         folder_or_file = 'folder' if self.isDir else 'file'
         #---info---
-        src = '<h3>%s</h3>\n' % misc.wrap_long_string(
-            str(self.localPath), 60, '<br>\n')
-        src += '<p><a href="%s">%s</a></p>\n' % (
-            '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
+        src = '<h3>%s</h3>\n' % misc.wrap_long_string(str(self.localPath), 60, '<br>\n')
+        src += '<p><a href="%s">%s</a></p>\n' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
         src += html_comment('  [%s] %s' % (self.backupID, self.localPath))
         src += '<table width=90%><tr><td align=center>\n'
         src += '<p align=justify>This backup is currently restoring,\n'
         src += 'your data is downloaded from remote computers and will be decrypted.\n'
         src += 'It should be noted that if too many remote suppliers became offline - '
         src += 'you need to wait until they become available to restore your data.</p>\n'
-        src += '<p>Currently restoring <b>%d</b>th block from all <b>%d</b> blocks.</p>' % (
-            currentBlock, maxBlockNum + 1)
+        src += '<p>Currently restoring <b>%d</b>th block from all <b>%d</b> blocks.</p>' % (currentBlock, maxBlockNum + 1)
         src += '</td></tr></table>\n'
         src += html_comment('  this backup is currently restoring')
         #---suppliers---
@@ -3908,8 +3512,7 @@ class BackupPage(Page, BackupIDSplit):
             for x in range(w):
                 src += '<td align=center valign=top>\n'
                 supplierNum = y * w + x
-                link = '/' + _PAGE_SUPPLIERS + '/' + \
-                    str(supplierNum) + '?back=%s' % request.path
+                link = '/' + _PAGE_SUPPLIERS + '/' + str(supplierNum) + '?back=%s' % request.path
                 if supplierNum >= contactsdb.num_suppliers():
                     src += '&nbsp;\n'
                     continue
@@ -3954,29 +3557,25 @@ class BackupPage(Page, BackupIDSplit):
         src += '<table width=1 align=center cellspacing=20 cellpadding=0 border=0>'
         src += '<tr>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' +
-                                  _PAGE_BACKUP_REMOTE_FILES + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_REMOTE_FILES + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/remote-files48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>show remote files<br>stored on<br>suppliers machines</font>\n'
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' +
-                                  _PAGE_BACKUP_LOCAL_FILES + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_LOCAL_FILES + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/local-files48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>show local files<br>stored on HDD</font>\n'
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN +
-                                  '/' + _PAGE_BACKUP_DIAGRAM + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_DIAGRAM + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/chart48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>let\'s see<br>the big picture</font>\n'
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s?action=restore.abort">' % (
-            '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
+        src += '<a href="%s?action=restore.abort">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/restore-abort48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>abort restoring</font>\n'
@@ -3989,42 +3588,32 @@ class BackupPage(Page, BackupIDSplit):
         from storage import backup_matrix
         src = ''
         back = arg(request, 'back', '/' + _PAGE_MAIN)
-        blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(
-            self.backupID)
-        localPercent, localFiles, totalSize, maxBlockNum, localStats = backup_matrix.GetBackupLocalStats(
-            self.backupID)
+        blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(self.backupID)
+        localPercent, localFiles, totalSize, maxBlockNum, localStats = backup_matrix.GetBackupLocalStats(self.backupID)
         start_tm = misc.TimeFromBackupID(self.version)
         start_dt, start_suf = misc.getDeltaTime(start_tm)
         #---info---
-        src = '<h3>%s</h3>\n' % misc.wrap_long_string(
-            str(self.localPath), 60, '<br>\n')
+        src = '<h3>%s</h3>\n' % misc.wrap_long_string(str(self.localPath), 60, '<br>\n')
         src += html_comment('  [%s] %s' % (self.backupID, self.localPath))
         folder_or_file = 'folder' if self.isDir else 'file'
         if self.isExist:
             src += 'This %s exists on local HDD<br>\n' % folder_or_file
-            src += html_comment('  this %s exists on local HDD' %
-                                folder_or_file)
+            src += html_comment('  this %s exists on local HDD' % folder_or_file)
         else:
             src += '<font color=red>This %s does not exist on local HDD</font><br>\n' % folder_or_file
-            src += html_comment('  this %s does not exist on local HDD' %
-                                folder_or_file)
+            src += html_comment('  this %s does not exist on local HDD' % folder_or_file)
         if self.sizeStr:
             src += 'Known %s size is %s<br>\n' % (folder_or_file, self.sizeStr)
-            src += html_comment('  known %s size is %s' %
-                                (folder_or_file, self.sizeStr))
+            src += html_comment('  known %s size is %s' % (folder_or_file, self.sizeStr))
 #         else:
 #             src += '<font color=red>%s size unknown</font><br>\n' % (folder_or_file.capitalize())
 #             src += html_comment('  %s size unknown' % folder_or_file)
         src += 'Full backup ID is <b>%s</b><br>\n' % self.backupID
         if maxBlockNum >= 0:
-            src += 'Backed up data contains <b>%d</b> blocks and ready at <b>%s</b>.<br>' % (
-                maxBlockNum + 1, misc.percent2string(weakPercent))
-            src += 'Delivered <b>%s</b> and <b>%s</b> is stored on local HDD.' % (
-                misc.percent2string(percent), misc.percent2string(localPercent))
-            src += html_comment('  contains %d blocks and ready by %s' %
-                                (maxBlockNum + 1, misc.percent2string(weakPercent)))
-            src += html_comment('  %s delivered, %s stored' %
-                                (misc.percent2string(percent), misc.percent2string(localPercent)))
+            src += 'Backed up data contains <b>%d</b> blocks and ready at <b>%s</b>.<br>' % (maxBlockNum + 1, misc.percent2string(weakPercent))
+            src += 'Delivered <b>%s</b> and <b>%s</b> is stored on local HDD.' % (misc.percent2string(percent), misc.percent2string(localPercent))
+            src += html_comment('  contains %d blocks and ready by %s' % (maxBlockNum + 1, misc.percent2string(weakPercent)))
+            src += html_comment('  %s delivered, %s stored' % (misc.percent2string(percent), misc.percent2string(localPercent)))
         else:
             src += 'No information about this backup yet.<br>'
             src += html_comment('  no information about this backup yet')
@@ -4041,14 +3630,10 @@ class BackupPage(Page, BackupIDSplit):
         src += '<td align=center valign=top width=70 nowrap>'
         msg = 'Restore this %s from remote machines and put into this location:<br>\n' % folder_or_file
         msg += '<b>%(option:paths.restore)s</b> ?<br>'
-        msg += '<a href="%s?back=%s">[change]</a><br>\n' % (
-            '/' + _PAGE_SETTINGS + '/' + 'paths.restore', '/' + _PAGE_CONFIRM)
-        src += '<a href="%s">' % confirmurl(request,
-                                            text=msg,
-                                            back=back,
+        msg += '<a href="%s?back=%s">[change]</a><br>\n' % ('/' + _PAGE_SETTINGS + '/' + 'paths.restore', '/' + _PAGE_CONFIRM)
+        src += '<a href="%s">' % confirmurl(request, text=msg, back=back,
                                             yes='%s?action=restoretodir' % request.path)
-        src += '<img src="%s">' % iconurl(request,
-                                          'icons/restore-to-dir48.png')
+        src += '<img src="%s">' % iconurl(request, 'icons/restore-to-dir48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>restore %s into<br>specified location</font>\n' % folder_or_file
         src += '</td>\n'
@@ -4058,27 +3643,23 @@ class BackupPage(Page, BackupIDSplit):
             src += '<img src="%s">' % iconurl(request, 'icons/explore48.png')
             src += '</a>\n'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/explore48-gray.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/explore48-gray.png')
         src += '<br><font size=-1 color=gray>explore this<br>local %s</font>\n' % folder_or_file
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' +
-                                  _PAGE_BACKUP_REMOTE_FILES + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_REMOTE_FILES + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/remote-files48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>show remote files<br>stored on<br>suppliers machines</font>\n'
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' +
-                                  _PAGE_BACKUP_LOCAL_FILES + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_LOCAL_FILES + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/local-files48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>show local files<br>stored on HDD</font>\n'
         src += '</td>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        src += '<a href="%s">' % ('/' + _PAGE_MAIN +
-                                  '/' + _PAGE_BACKUP_DIAGRAM + self.backupIDurl)
+        src += '<a href="%s">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP_DIAGRAM + self.backupIDurl)
         src += '<img src="%s">' % iconurl(request, 'icons/chart48.png')
         src += '</a>\n'
         src += '<br><font size=-1 color=gray>let\'s see<br>the big picture</font>\n'
@@ -4114,73 +3695,54 @@ class BackupPage(Page, BackupIDSplit):
         #---delete.local---
         elif action == 'delete.local':
             from storage import backup_fs
-            num, sz = backup_fs.DeleteLocalBackup(
-                settings.getLocalBackupsDir(), self.backupID)
+            num, sz = backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), self.backupID)
             backup_matrix.EraseBackupLocalInfo(self.backupID)
             backup_fs.ScanID(self.pathID)
             backup_fs.Calculate()
             src = '<br><br><br>\n'
             if num > 0:
-                src += '%d files were removed with a total size of %s' % (
-                    num, diskspace.MakeStringFromBytes(sz))
-                src += html_comment(
-                    '  %d files were removed with a total size of %s' %
-                    (num, diskspace.MakeStringFromBytes(sz)))
+                src += '%d files were removed with a total size of %s' % (num, diskspace.MakeStringFromBytes(sz))
+                src += html_comment('  %d files were removed with a total size of %s' % (num, diskspace.MakeStringFromBytes(sz)))
             else:
                 src += 'This backup does not contain any files stored on your hard disk.'
-                src += html_comment(
-                    '  this backup does not contain any files stored on your hard disk.')
+                src += html_comment('  this backup does not contain any files stored on your hard disk.')
             src += '<br><br>\n'
-            src += '<a href="%s">[return]</a>\n' % (
-                '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
+            src += '<a href="%s">[return]</a>\n' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
             return html(request, body=src, back=request.path)
         #---restore---
         elif action == 'restore':
             if not backup_control.IsBackupInProcess(self.backupID):
                 if not backup_control.HasTask(self.pathID):
                     if self.localPath:
-                        restore_monitor.Start(
-                            self.backupID, os.path.dirname(
-                                self.localPath), self._itemRestored)
+                        restore_monitor.Start(self.backupID, os.path.dirname(self.localPath), self._itemRestored)
         #---restoretodir---
         elif action == 'restoretodir':
             if not backup_control.IsBackupInProcess(self.backupID):
                 if not backup_control.HasTask(self.pathID):
                     if self.localPath:
                         restorePath = self.localPath
-                        if len(restorePath) > 3 and restorePath[
-                                1] == ':' and restorePath[2] == '/':
+                        if len(restorePath) > 3 and restorePath[1] == ':' and restorePath[2] == '/':
                             # need to remove leading drive letter
                             # even if we are not under windows - we may restore in other OS
                             # so if the second character is ':' and third is '/' - means path starts from drive letter
                             # here we assume the path is in portable form - separator is "/"
-                            # TODO: - also may need to check other options like
-                            # network drive (//) or so
+                            # TODO: - also may need to check other options like network drive (//) or so
                             restorePath = restorePath[3:]
                         restoreDir = os.path.dirname(restorePath)
-                        restore_monitor.Start(
-                            self.backupID, os.path.join(
-                                settings.getRestoreDir(), restoreDir))
+                        restore_monitor.Start(self.backupID, os.path.join(settings.getRestoreDir(), restoreDir))
 
         #---requestrandomblock---
         elif action == 'requestrandomblock':
-            randBlockNum = random.randint(
-                0, backup_matrix.GetKnownMaxBlockNum(
-                    self.backupID))
+            randBlockNum = random.randint(0, backup_matrix.GetKnownMaxBlockNum(self.backupID))
             randSupplierNum = random.randint(0, contactsdb.num_suppliers() - 1)
-            packetID = packetid.MakePacketID(
-                self.backupID, randBlockNum, randSupplierNum, 'Data')
+            packetID = packetid.MakePacketID(self.backupID, randBlockNum, randSupplierNum, 'Data')
             lg.out(4, 'REQUEST: %s' % packetID)
             if driver.is_started('service_data_motion'):
                 try:
                     from customer import io_throttle
                     io_throttle.QueueRequestFile(
-                        lambda packet,
-                        state: lg.out(
-                            4,
-                            'RECEIVED: %r with state %s' %
-                            (packet,
-                             state)),
+                        lambda packet, state:
+                            lg.out(4, 'RECEIVED: %r with state %s' % (packet, state)),
                         my_id.getLocalID(),
                         packetID,
                         my_id.getLocalID(),
@@ -4232,15 +3794,12 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
         from storage import backup_matrix
         from storage import backup_control
         from storage import restore_monitor
-        localPercent, numberOfFiles, totalSize, maxBlockNum, bstats = backup_matrix.GetBackupLocalStats(
-            self.backupID)
+        localPercent, numberOfFiles, totalSize, maxBlockNum, bstats = backup_matrix.GetBackupLocalStats(self.backupID)
         w, h = misc.calculate_best_dimension(contactsdb.num_suppliers())
         imgW, imgH, padding = misc.calculate_padding(w, h)
         #---info---
-        src = '<h3>%s</h3>\n' % misc.wrap_long_string(
-            str(self.localPath), 60, '<br>\n')
-        src += '<p><a href="%s">%s</a></p>\n' % (
-            '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
+        src = '<h3>%s</h3>\n' % misc.wrap_long_string(str(self.localPath), 60, '<br>\n')
+        src += '<p><a href="%s">%s</a></p>\n' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
         src += html_comment('  [%s] %s' % (self.backupID, self.localPath))
         src += '<table width=95%><tr><td align=center><p align=justify>'
         src += 'Here is a list of local files stored on your hard drive for this backup.\n '
@@ -4249,8 +3808,7 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
         src += 'At the moment, saved <b>%d</b> files with total size of <b>%s</b>, this is <b>%s</b> of the whole data.<br>\n' % (
             numberOfFiles, diskspace.MakeStringFromBytes(totalSize), misc.percent2string(localPercent))
         src += '</p></td></tr></table>\n'
-        src += html_comment('  saved %d files with total size of %s' %
-                            (numberOfFiles, diskspace.MakeStringFromBytes(totalSize)))
+        src += html_comment('  saved %d files with total size of %s' % (numberOfFiles, diskspace.MakeStringFromBytes(totalSize)))
         #---suppliers---
         src += '<table cellpadding=%d cellspacing=2>\n' % padding  # width="90%%"
         for y in range(h):
@@ -4258,8 +3816,7 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
             for x in range(w):
                 src += '<td align=center valign=top>\n'
                 supplierNum = y * w + x
-                link = '/' + _PAGE_SUPPLIERS + '/' + \
-                    str(supplierNum) + '?back=%s' % request.path
+                link = '/' + _PAGE_SUPPLIERS + '/' + str(supplierNum) + '?back=%s' % request.path
                 if supplierNum >= contactsdb.num_suppliers():
                     src += '&nbsp;\n'
                     continue
@@ -4286,8 +3843,7 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
                 if supplierNum < len(bstats):
                     percent, localFiles = bstats[supplierNum]
                     src += misc.percent2string(percent)
-                    src += ' in %d/%d files<br>for ' % (
-                        localFiles, 2 * (maxBlockNum + 1))
+                    src += ' in %d/%d files<br>for ' % (localFiles, 2 * (maxBlockNum + 1))
                     src += '<a href="%s">%s</a>\n' % (link, name)
                 src += '</td>\n'
                 src += html_comment('    %s in %d/%d files for %s [%s]' % (
@@ -4298,29 +3854,17 @@ class BackupLocalFilesPage(Page, BackupIDSplit):
         src += '<table width=1 align=center cellspacing=20 cellpadding=0 border=0>'
         src += '<tr>\n'
         src += '<td align=center valign=top width=70 nowrap>'
-        if not backup_control.IsBackupInProcess(
-                self.backupID) and not restore_monitor.IsWorking(
-                self.backupID):
-            src += '<a href="%s?action=delete.local">' % (
-                '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/delete-local-files48.png')
+        if not backup_control.IsBackupInProcess(self.backupID) and not restore_monitor.IsWorking(self.backupID):
+            src += '<a href="%s?action=delete.local">' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
+            src += '<img src="%s">' % iconurl(request, 'icons/delete-local-files48.png')
             src += '</a>\n'
         else:
-            src += '<img src="%s">' % iconurl(request,
-                                              'icons/delete-local-files-gray48.png')
+            src += '<img src="%s">' % iconurl(request, 'icons/delete-local-files-gray48.png')
         src += '<br><font size=-1 color=gray>remove local files<br>for this backup</font>\n'
         src += '</td>\n'
         src += '</tr>\n'
         src += '</table>\n'
-        return html(
-            request,
-            body=src,
-            back='/' +
-            _PAGE_MAIN +
-            '/' +
-            _PAGE_BACKUP +
-            self.backupIDurl)
+        return html(request, body=src, back='/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
 
 
 class BackupRemoteFilesPage(Page, BackupIDSplit):
@@ -4333,10 +3877,8 @@ class BackupRemoteFilesPage(Page, BackupIDSplit):
 
     def renderPage(self, request):
         from storage import backup_matrix
-        totalNumberOfFiles, maxBlockNumber, bstats = backup_matrix.GetBackupStats(
-            self.backupID)
-        blocks, percent = backup_matrix.GetBackupBlocksAndPercent(
-            self.backupID)
+        totalNumberOfFiles, maxBlockNumber, bstats = backup_matrix.GetBackupStats(self.backupID)
+        blocks, percent = backup_matrix.GetBackupBlocksAndPercent(self.backupID)
         w, h = misc.calculate_best_dimension(contactsdb.num_suppliers())
         imgW, imgH, padding = misc.calculate_padding(w, h)
         versionSize = 0
@@ -4344,31 +3886,23 @@ class BackupRemoteFilesPage(Page, BackupIDSplit):
             versionSize = self.fsitem.get_version_info(self.version)[1]
             if versionSize < 0:
                 versionSize = 0
-        supplierSize = diskspace.MakeStringFromBytes(
-            versionSize / contactsdb.num_suppliers())
+        supplierSize = diskspace.MakeStringFromBytes(versionSize / contactsdb.num_suppliers())
         totalSize = diskspace.MakeStringFromBytes(versionSize)
         #---info---
-        src = '<h3>%s</h3>\n' % misc.wrap_long_string(
-            str(self.localPath), 60, '<br>\n')
-        src += '<p><a href="%s">%s</a></p>\n' % (
-            '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
+        src = '<h3>%s</h3>\n' % misc.wrap_long_string(str(self.localPath), 60, '<br>\n')
+        src += '<p><a href="%s">%s</a></p>\n' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
         src += html_comment('  [%s] %s' % (self.backupID, self.localPath))
         src += '<table width=70%><tr><td align=center><p align=justify>'
         src += 'Each supplier keeps a piece of that backup.\n '
         src += 'Here you see the overall condition and availability of data at the moment.\n'
         if versionSize > 0:
-            src += '<br>This backup contains <b>%d</b> blocks in <b>%d</b> remote files and ' % (
-                blocks, totalNumberOfFiles)
+            src += '<br>This backup contains <b>%d</b> blocks in <b>%d</b> remote files and ' % (blocks, totalNumberOfFiles)
             src += 'ready by <b>%s</b>. ' % misc.percent2string(percent)
-            src += 'Each supplier should store <b>%s</b> and the total size is <b>%s</b>.\n' % (
-                supplierSize, totalSize)
+            src += 'Each supplier should store <b>%s</b> and the total size is <b>%s</b>.\n' % (supplierSize, totalSize)
         src += '</p></td></tr></table>\n'
-        src += html_comment(
-            '  this backup contains %d blocks in %d files and ready by %s' %
-            (blocks, totalNumberOfFiles, misc.percent2string(percent)))
-        src += html_comment(
-            '  each supplier should store %s and the total size is %s' %
-            (supplierSize, totalSize))
+        src += html_comment('  this backup contains %d blocks in %d files and ready by %s' % (
+            blocks, totalNumberOfFiles, misc.percent2string(percent)))
+        src += html_comment('  each supplier should store %s and the total size is %s' % (supplierSize, totalSize))
         #---suppliers---
         src += '<table cellpadding=%d cellspacing=2>\n' % padding
         for y in range(h):
@@ -4376,8 +3910,7 @@ class BackupRemoteFilesPage(Page, BackupIDSplit):
             for x in range(w):
                 src += '<td align=center valign=top>\n'
                 supplierNum = y * w + x
-                link = '/' + _PAGE_SUPPLIERS + '/' + \
-                    str(supplierNum) + '?back=%s' % request.path
+                link = '/' + _PAGE_SUPPLIERS + '/' + str(supplierNum) + '?back=%s' % request.path
                 if supplierNum >= contactsdb.num_suppliers():
                     src += '&nbsp;\n'
                     continue
@@ -4401,27 +3934,17 @@ class BackupRemoteFilesPage(Page, BackupIDSplit):
                     iconurl(request, icon),
                     imgW, imgH,)
                 src += '</a><br>\n'
-                percent, remoteFiles = (
-                    bstats[supplierNum] if supplierNum < len(bstats) else (
-                        0, 0))
+                percent, remoteFiles = (bstats[supplierNum] if supplierNum < len(bstats) else (0, 0))
                 if remoteFiles > 0:
                     src += misc.percent2string(percent)
-                    src += ' in %d/%d files<br>on ' % (
-                        remoteFiles, 2 * (maxBlockNumber + 1))
+                    src += ' in %d/%d files<br>on ' % (remoteFiles, 2 * (maxBlockNumber + 1))
                 src += '<a href="%s">%s</a>\n' % (link, name)
                 src += '</td>\n'
-                src += html_comment('    %s in %d/%d files on %s [%s]' % (misc.percent2string(
-                    percent), remoteFiles, 2 * (maxBlockNumber + 1), name, state))
+                src += html_comment('    %s in %d/%d files on %s [%s]' % (
+                    misc.percent2string(percent), remoteFiles, 2 * (maxBlockNumber + 1), name, state))
             src += '</tr>\n'
         src += '</table>\n'
-        return html(
-            request,
-            body=src,
-            back='/' +
-            _PAGE_MAIN +
-            '/' +
-            _PAGE_BACKUP +
-            self.backupIDurl)
+        return html(request, body=src, back='/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl)
 
 
 class BackupDiagramPage(Page, BackupIDSplit):
@@ -4433,10 +3956,8 @@ class BackupDiagramPage(Page, BackupIDSplit):
         self.getfsitem()
 
     def renderPage(self, request):
-        src = '<h3>%s</h3>\n' % misc.wrap_long_string(
-            str(self.localPath), 60, '<br>\n')
-        src += '<p><a href="%s">%s</a></p>\n' % (
-            '/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
+        src = '<h3>%s</h3>\n' % misc.wrap_long_string(str(self.localPath), 60, '<br>\n')
+        src += '<p><a href="%s">%s</a></p>\n' % ('/' + _PAGE_MAIN + '/' + _PAGE_BACKUP + self.backupIDurl, self.backupID)
         src += html_comment('  [%s] %s' % (self.backupID, self.localPath))
         src += '<br><br>\n'
         src += '<img width=300 height=300 src="%s?type=circle&width=300&height=300" />\n' % (
@@ -4530,16 +4051,10 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
                 for y in range(w):  # suppliers
                     for DP in ['D', 'P']:
                         try:
-                            remote = (
-                                0 if (
-                                    arrayRemote is None or x not in arrayRemote) else (
-                                    0 if arrayRemote[x][DP][y] != 1 else 1))
+                            remote = (0 if (arrayRemote is None or x not in arrayRemote) else (0 if arrayRemote[x][DP][y] != 1 else 1))
                             active = suppliersActive[y]
-                            local = (
-                                0 if (
-                                    arrayLocal is None or x not in arrayLocal) else arrayLocal[x][DP][y])
-                            color = _BackupDiagramColors[DP][
-                                '%d%d%d' % (local, remote, active)]
+                            local = (0 if (arrayLocal is None or x not in arrayLocal) else arrayLocal[x][DP][y])
+                            color = _BackupDiagramColors[DP]['%d%d%d' % (local, remote, active)]
                         except:
                             lg.exc()
                             color = 'red'
@@ -4559,8 +4074,7 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
                                 (self.toInt(x0 + dx - 1), self.toInt(y0 + dy)),
                                 (self.toInt(x0 + dx - 1), self.toInt(y0)), ],
                                 fill=color, outline=None)
-            draw.polygon([(0, 0), (0, height - 1), (width - 1, height - 1),
-                          (width - 1, 0)], fill=None, outline="#555555")
+            draw.polygon([(0, 0), (0, height - 1), (width - 1, height - 1), (width - 1, 0)], fill=None, outline="#555555")
         elif type == 'circle':
             x0 = (width - 2) / 2.0
             y0 = (height - 2) / 2.0
@@ -4571,16 +4085,10 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
                 for y in range(w):  # suppliers
                     for DP in ['D', 'P']:
                         try:
-                            remote = (
-                                0 if (
-                                    arrayRemote is None or x not in arrayRemote) else (
-                                    0 if arrayRemote[x][DP][y] != 1 else 1))
+                            remote = (0 if (arrayRemote is None or x not in arrayRemote) else (0 if arrayRemote[x][DP][y] != 1 else 1))
                             active = suppliersActive[y]
-                            local = (
-                                0 if (
-                                    arrayLocal is None or x not in arrayLocal) else arrayLocal[x][DP][y])
-                            color = _BackupDiagramColors[DP][
-                                '%d%d%d' % (local, remote, active)]
+                            local = (0 if (arrayLocal is None or x not in arrayLocal) else arrayLocal[x][DP][y])
+                            color = _BackupDiagramColors[DP]['%d%d%d' % (local, remote, active)]
                         except:
                             lg.exc()
                             color = 'red'
@@ -4595,37 +4103,21 @@ class BackupDiagramImage(resource.Resource, BackupIDSplit):
                                    self.toInt(x0 + r12), self.toInt(y0 + r12))
                         start = float(y) * dA
                         end = start + dA
-                        draw.pieslice(
-                            box,
-                            self.toInt(start),
-                            self.toInt(end),
-                            fill=color,
-                            outline=None)
+                        draw.pieslice(box, self.toInt(start), self.toInt(end), fill=color, outline=None)
             for y in range(w):
                 start = float(y) * dA
                 end = start + dA
-                draw.pieslice(
-                    (self.toInt(
-                        x0 - R),
-                        self.toInt(
-                        y0 - R),
-                        self.toInt(
-                        x0 + R),
-                        self.toInt(
-                        y0 + R)),
-                    self.toInt(start),
-                    self.toInt(end),
-                    outline='#555555',
-                    fill=None)
+                draw.pieslice((self.toInt(x0 - R), self.toInt(y0 - R),
+                               self.toInt(x0 + R), self.toInt(y0 + R)),
+                              self.toInt(start), self.toInt(end), outline='#555555', fill=None)
             if width > 256 and height > 256:
                 for supplierNum in range(w):
                     a = float(supplierNum) * dA + dA / 2.0
                     x1 = math.cos(a * math.pi / 180.0) * R * 0.7 + x0
                     y1 = math.sin(a * math.pi / 180.0) * R * 0.7 + y0
-                    draw.text(
-                        (x1 - 20, y1 - 5), '%s' %
-                        nameurl.GetName(
-                            contactsdb.supplier(supplierNum)), fill="#000000", font=font)
+                    draw.text((x1 - 20, y1 - 5),
+                              '%s' % nameurl.GetName(contactsdb.supplier(supplierNum)),
+                              fill="#000000", font=font)
         img.save(f, "PNG")
         f.seek(0)
         request.write(f.read())
@@ -4671,24 +4163,22 @@ class SupplierPage(Page):
             msg += 'After changing one of your suppliers BitDust start the rebuilding process to distribute your data.\n'
             msg += 'This takes some time depending on data size and network speed.<br>\n'
             msg += 'If you change your suppliers too often you can loose your backed up data!<br>'
-            msg += 'Do you want to replace user <b>%s</b> with someone else?' % nameurl.GetName(
-                self.idurl)
-            replace_link = confirmurl(
-                request, yes='%s?action=yes.replace&back=%s' %
-                (request.path, back), text=msg, back=back)
+            msg += 'Do you want to replace user <b>%s</b> with someone else?' % nameurl.GetName(self.idurl)
+            replace_link = confirmurl(request,
+                                      yes='%s?action=yes.replace&back=%s' % (request.path, back),
+                                      text=msg,
+                                      back=back)
             request.redirect(replace_link)
             request.finish()
             return NOT_DONE_YET
         elif action == 'yes.replace':
-            url = '%s?action=replace&idurl=%s&back=%s' % (
-                '/' + _PAGE_SUPPLIERS, misc.pack_url_param(self.idurl), request.path)
+            url = '%s?action=replace&idurl=%s&back=%s' % ('/' + _PAGE_SUPPLIERS, misc.pack_url_param(self.idurl), request.path)
             request.redirect(url)
             request.finish()
             return NOT_DONE_YET
         elif action == 'ping':
             propagate.single(self.idurl)
-        bytesNeeded = diskspace.GetBytesFromString(
-            settings.getNeededString(), 0)
+        bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         bytesUsed = backup_fs.sizebackups()  # backup_db.GetTotalBackupsSize() * 2
         suppliers_count = contactsdb.num_suppliers()
         if suppliers_count > 0:
@@ -4704,12 +4194,9 @@ class SupplierPage(Page):
         #---draw
         src += '<h1>%s</h1>\n' % nameurl.GetName(self.idurl)
         src += '<table>\n'
-        src += '<tr><td>IDURL</td><td><a href="%s" target="_blank">%s</a></td></tr>\n' % (
-            self.idurl, self.idurl)
-        src += '<tr><td>gives you</td><td>%s on his HDD</td></tr>\n' % diskspace.MakeStringFromBytes(
-            bytesNeededPerSupplier)
-        src += '<tr><td>your files takes</td><td>%s at the moment</td></tr>\n' % diskspace.MakeStringFromBytes(
-            bytesUsedPerSupplier)
+        src += '<tr><td>IDURL</td><td><a href="%s" target="_blank">%s</a></td></tr>\n' % (self.idurl, self.idurl)
+        src += '<tr><td>gives you</td><td>%s on his HDD</td></tr>\n' % diskspace.MakeStringFromBytes(bytesNeededPerSupplier)
+        src += '<tr><td>your files takes</td><td>%s at the moment</td></tr>\n' % diskspace.MakeStringFromBytes(bytesUsedPerSupplier)
         src += '<tr><td>currenly taken</td><td>%3.2f%% space given to you</td></tr>\n' % percUsed
         src += '<tr><td>current status is</td><td>'
         if contact_status.isOnline(self.idurl):
@@ -4717,8 +4204,7 @@ class SupplierPage(Page):
         else:
             src += '<font color="red">offline</font>\n'
         src += '</td></tr>\n'
-        src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % (ratings.month_percent(
-            self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
+        src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % (ratings.month_percent(self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
         src += '</table>\n'
         src += '<br><br>\n'
         src += '<p><a href="%s?action=ping&back=%s">Ping <b>%s</b> to check his current status now</a></p>\n' % (
@@ -4756,8 +4242,7 @@ class SupplierRemoteFilesPage(Page):
         self.name = nameurl.GetName(self.idurl)
 
     def renderPage(self, request):
-        back = arg(request, 'back', '/' + _PAGE_SUPPLIERS +
-                   '/' + str(self.supplierNum))
+        back = arg(request, 'back', '/' + _PAGE_SUPPLIERS + '/' + str(self.supplierNum))
         title = 'remote files on %s' % self.name
         action = arg(request, 'action')
         src = '<h1>%s</h1>\n' % title
@@ -4767,20 +4252,15 @@ class SupplierRemoteFilesPage(Page):
             packetID = p2p_service.SendRequestListFiles(self.supplierNum)
             src += html_message('list of your files were requested', 'notify')
 
-        list_files_src = bpio.ReadTextFile(
-            settings.SupplierListFilesFilename(self.idurl))
+        list_files_src = bpio.ReadTextFile(settings.SupplierListFilesFilename(self.idurl))
         if list_files_src:
             src += '<table width=70%><tr><td align=center>\n'
             src += '<div><code>\n'
-            src += list_files_src[
-                list_files_src.find('\n'):].replace(
-                '\n', '<br>\n').replace(
-                ' ', '&nbsp;')
+            src += list_files_src[list_files_src.find('\n'):].replace('\n', '<br>\n').replace(' ', '&nbsp;')
             src += '</code></div>\n</td></tr></table>\n'
         else:
             src += '<p>no information about your files received yet</p>\n'
-        src += '<p><a href="%s?action=files&back=%s">Request a list of My Files from %s</a></p>\n' % (
-            request.path, back, self.name)
+        src += '<p><a href="%s?action=files&back=%s">Request a list of My Files from %s</a></p>\n' % (request.path, back, self.name)
         return html(request, body=src, back=back, title=title)
 
 
@@ -4794,8 +4274,7 @@ class SupplierLocalFilesPage(Page):
         self.name = nameurl.GetName(self.idurl)
 
     def renderPage(self, request):
-        back = arg(request, 'back', '/' + _PAGE_SUPPLIERS +
-                   '/' + str(self.supplierNum))
+        back = arg(request, 'back', '/' + _PAGE_SUPPLIERS + '/' + str(self.supplierNum))
         title = 'local files for %s' % self.name
         src = '<h1>%s</h1>\n' % title
         list_files = []
@@ -4803,8 +4282,7 @@ class SupplierLocalFilesPage(Page):
             if filename.startswith('newblock-'):
                 continue
             try:
-                backupID, blockNum, supplierNum, dataORparity = filename.split(
-                    '-')
+                backupID, blockNum, supplierNum, dataORparity = filename.split('-')
                 blockNum = int(blockNum)
                 supplierNum = int(supplierNum)
             except:
@@ -4944,8 +4422,7 @@ class SuppliersPage(Page):
 
         #---draw page---
         src = ''
-        src += '<p>my ID is <a href="%s" target=_blank>@:</a>%s</p>\n' % (
-            my_id.getLocalID(), my_id.getIDName())
+        src += '<p>my ID is <a href="%s" target=_blank>@:</a>%s</p>\n' % (my_id.getLocalID(), my_id.getIDName())
         src += '<h1>my suppliers</h1>\n'
 
         if contactsdb.num_suppliers() > 0:
@@ -4962,8 +4439,7 @@ class SuppliersPage(Page):
                 imgW = 4 * imgW / w
                 imgH = 4 * imgH / w
             padding = 64 / w - 8
-            src += html_comment(
-                '  index status    user                 month rating         total rating')
+            src += html_comment('  index status    user                 month rating         total rating')
             src += '<table cellpadding=%d cellspacing=2>\n' % padding  # width="90%%"
             for y in range(h):
                 src += '<tr valign=top>\n'
@@ -5026,23 +4502,18 @@ class SuppliersPage(Page):
                             idcontacts = idobj.getContacts()
                             idversion = idobj.version.split(' ')[0]
                             try:
-                                idversion += ' ' + \
-                                    idobj.version.split(' ')[2].split('-')[0]
+                                idversion += ' ' + idobj.version.split(' ')[2].split('-')[0]
                             except:
                                 pass
                         if len(idcontacts) > 0:
                             src += '<table cellpadding=0 cellspacing=0 border=0>\n'
                             for c in idcontacts:
                                 color = '404040'
-                                # for proto in
-                                # transport_control._PeersProtos.get(idurl,
-                                # set()):
+                                # for proto in transport_control._PeersProtos.get(idurl, set()):
                                 for proto in stats.peers_protos().get(idurl, set()):
                                     if c.startswith(proto + '://'):
                                         color = color[0:4] + 'F0'
-                                # for proto in
-                                # transport_control._MyProtos.get(idurl,
-                                # set()):
+                                # for proto in transport_control._MyProtos.get(idurl, set()):
                                 for proto in stats.my_protos().get(idurl, set()):
                                     if c.startswith(proto + '://'):
                                         color = color[0:2] + 'F0' + color[4:6]
@@ -5052,8 +4523,7 @@ class SuppliersPage(Page):
                                 src += '</font>'
                                 src += '</td></tr>\n'
                             try:
-                                src += '<tr><td><font size=-4 color=gray>version: %s</font></td></tr>\n' % (
-                                    idversion)
+                                src += '<tr><td><font size=-4 color=gray>version: %s</font></td></tr>\n' % (idversion)
                             except:
                                 pass
                             src += '</table>\n'
@@ -5095,12 +4565,9 @@ class SuppliersPage(Page):
                         src += '</font>'
                         src += '</td></tr>\n'
                     try:
-                        idversion = my_id.getLocalIdentity().version.split(' ')[
-                            0]
-                        idversion += ' ' + \
-                            my_id.getLocalIdentity().version.split(' ')[2].split('-')[0]
-                        src += '<tr><td><font size=-4 color=gray>my version: %s</font></td></tr>\n' % (
-                            idversion)
+                        idversion = my_id.getLocalIdentity().version.split(' ')[0]
+                        idversion += ' ' + my_id.getLocalIdentity().version.split(' ')[2].split('-')[0]
+                        src += '<tr><td><font size=-4 color=gray>my version: %s</font></td></tr>\n' % (idversion)
                     except:
                         pass
                     src += '</table>\n'
@@ -5126,21 +4593,12 @@ class SuppliersPage(Page):
             src += '<p><a href="?action=callalive&back=%s">Call only alive suppliers now - just to test</a></p><br>\n' % back
             src += '<p><a href="?action=cacheids&back=%s">Request suppliers\'s identities</a></p><br>\n' % back
         # src += '<p><a href="?action=request&back=%s">Request list of suppliers from Central server</a></p>\n' % (back)
-        src += '<p><a href="%s?back=%s">Switch to Customers</a></p>\n' % (
-            '/' + _PAGE_CUSTOMERS, back)
+        src += '<p><a href="%s?back=%s">Switch to Customers</a></p>\n' % ('/' + _PAGE_CUSTOMERS, back)
         if self.show_ratings:
-            src += '<p><a href="%s?ratings=0&back=%s">Hide monthly ratings</a></p>\n' % (
-                request.path, back)
+            src += '<p><a href="%s?ratings=0&back=%s">Hide monthly ratings</a></p>\n' % (request.path, back)
         else:
-            src += '<p><a href="%s?ratings=1&back=%s">Show monthly ratings</a></p>\n' % (
-                request.path, back)
-        return html(
-            request,
-            body=src,
-            title='suppliers',
-            back=back,
-            reload='5',
-        )
+            src += '<p><a href="%s?ratings=1&back=%s">Show monthly ratings</a></p>\n' % (request.path, back)
+        return html(request, body=src, title='suppliers', back=back, reload='5',)
 
     def getChild(self, path, request):
         if path == '':
@@ -5200,12 +4658,9 @@ class CustomerPage(Page):
         src += '<br><h1>%s</h1>\n' % nameurl.GetName(self.idurl)
 
         src += '<table>\n'
-        src += '<tr><td>IDURL</td><td><a href="%s" target="_blank">%s</a></td></tr>\n' % (
-            self.idurl, self.idurl)
-        src += '<tr><td>takes</td><td>%s on your HDD</td></tr>\n' % diskspace.MakeStringFromBytes(
-            bytesGiven)
-        src += '<tr><td>he use</td><td>%s at the moment</td></tr>\n' % diskspace.MakeStringFromBytes(
-            bytesUsed)
+        src += '<tr><td>IDURL</td><td><a href="%s" target="_blank">%s</a></td></tr>\n' % (self.idurl, self.idurl)
+        src += '<tr><td>takes</td><td>%s on your HDD</td></tr>\n' % diskspace.MakeStringFromBytes(bytesGiven)
+        src += '<tr><td>he use</td><td>%s at the moment</td></tr>\n' % diskspace.MakeStringFromBytes(bytesUsed)
         src += '<tr><td>currently used</td><td>%3.2f%% of his taken space</td></tr>\n' % percUsed
         src += '<tr><td>current status is</td><td>'
         if contact_status.isOnline(self.idurl):
@@ -5213,8 +4668,7 @@ class CustomerPage(Page):
         else:
             src += '<font color="red">offline</font>\n'
         src += '</td></tr>\n'
-        src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % (ratings.month_percent(
-            self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
+        src += '<tr><td>month rating</td><td>%s%% - %s/%s</td></tr>\n' % (ratings.month_percent(self.idurl), ratings.month(self.idurl)['alive'], ratings.month(self.idurl)['all'])
         src += '</table>\n'
         src += '<br><br>\n'
         src += '<p><a href="%s?action=remove&back=%s">Dismis customer <b>%s</b> and throw out His/Her Files from my HDD</a></p>\n' % (
@@ -5239,8 +4693,7 @@ class CustomerFilesPage(Page):
         self.name = nameurl.GetName(self.idurl)
 
     def renderPage(self, request):
-        back = arg(request, 'back', '/' + _PAGE_CUSTOMERS +
-                   '/' + str(self.customerNum))
+        back = arg(request, 'back', '/' + _PAGE_CUSTOMERS + '/' + str(self.customerNum))
         title = '%s\'s files' % self.name
         src = '<h1>%s</h1>\n' % title
         list_files = []
@@ -5305,8 +4758,7 @@ class CustomersPage(Page):
 
         #---draw page---
         src = ''
-        src += '<p>me is <a href="%s" target=_blank>@:</a>%s</p>\n' % (
-            my_id.getLocalID(), my_id.getIDName())
+        src += '<p>me is <a href="%s" target=_blank>@:</a>%s</p>\n' % (my_id.getLocalID(), my_id.getIDName())
         src += '<h1>my customers</h1>\n'
 
         if contactsdb.num_customers() > 0:
@@ -5317,8 +4769,7 @@ class CustomersPage(Page):
                 imgW = 4 * imgW / w
                 imgH = 4 * imgH / w
             padding = 64 / w - 8
-            src += html_comment(
-                '  index status    user                 month rating         total rating')
+            src += html_comment('  index status    user                 month rating         total rating')
             src += '<table cellpadding=%d cellspacing=2>\n' % padding
             for y in range(h):
                 src += '<tr valign=top>\n'
@@ -5376,24 +4827,19 @@ class CustomersPage(Page):
                             idcontacts = idobj.getContacts()
                             idversion = idobj.version.split(' ')[0]
                             try:
-                                idversion += ' ' + \
-                                    idobj.version.split(' ')[2].split('-')[0]
+                                idversion += ' ' + idobj.version.split(' ')[2].split('-')[0]
                             except:
                                 pass
                         if len(idcontacts) > 0:
                             src += '<table cellpadding=0 cellspacing=0 border=0>\n'
                             for c in idcontacts:
                                 color = '404040'
-                                # for proto in
-                                # transport_control._PeersProtos.get(idurl,
-                                # set()):
+                                # for proto in transport_control._PeersProtos.get(idurl, set()):
                                 for proto in stats.peers_protos().get(idurl, set()):
                                     if c.startswith(proto + '://'):
                                         color = color[0:4] + 'F0'
                                 for proto in stats.my_protos().get(idurl, set()):
-                                    # for proto in
-                                    # transport_control._MyProtos.get(idurl,
-                                    # set()):
+                                    # for proto in transport_control._MyProtos.get(idurl, set()):
                                     if c.startswith(proto + '://'):
                                         color = color[0:2] + 'F0' + color[4:6]
                                 src += '<tr><td>'
@@ -5402,8 +4848,7 @@ class CustomersPage(Page):
                                 src += '</font>'
                                 src += '</td></tr>\n'
                             try:
-                                src += '<tr><td><font size=-4 color=gray>version: %s</font></td></tr>\n' % (
-                                    idversion)
+                                src += '<tr><td><font size=-4 color=gray>version: %s</font></td></tr>\n' % (idversion)
                             except:
                                 pass
                             src += '</table>\n'
@@ -5437,23 +4882,13 @@ class CustomersPage(Page):
         #---links---
         if contactsdb.num_customers() > 0:
             src += '<p><a href="?action=call&back=%s">Call all customers to find out who is alive</a></p><br>\n' % back
-        src += '<p><a href="?action=request&back=%s">Request list of my customers</a></p>\n' % (
-            back)
-        src += '<p><a href="%s?back=%s">Switch to Suppliers</a></p>\n' % (
-            '/' + _PAGE_SUPPLIERS, back)
+        src += '<p><a href="?action=request&back=%s">Request list of my customers</a></p>\n' % (back)
+        src += '<p><a href="%s?back=%s">Switch to Suppliers</a></p>\n' % ('/' + _PAGE_SUPPLIERS, back)
         if self.show_ratings:
-            src += '<p><a href="%s?ratings=0&back=%s">Hide monthly ratings</a></p>\n' % (
-                request.path, back)
+            src += '<p><a href="%s?ratings=0&back=%s">Hide monthly ratings</a></p>\n' % (request.path, back)
         else:
-            src += '<p><a href="%s?ratings=1&back=%s">Show monthly ratings</a></p>\n' % (
-                request.path, back)
-        return html(
-            request,
-            body=src,
-            title='customers',
-            back=back,
-            reload='5',
-        )
+            src += '<p><a href="%s?ratings=1&back=%s">Show monthly ratings</a></p>\n' % (request.path, back)
+        return html(request, body=src, title='customers', back=back, reload='5',)
 
     def getChild(self, path, request):
         if path == '':
@@ -5473,15 +4908,12 @@ class StoragePage(Page):
         bytesUsed = int(backup_fs.sizebackups() / 2)
         suppliers_count = contactsdb.num_suppliers()
         if suppliers_count > 0:
-            bytesNeededPerSupplier = int(
-                math.ceil(2.0 * bytesNeeded / suppliers_count))
-            bytesUsedPerSupplier = int(
-                math.ceil(2.0 * bytesUsed / suppliers_count))
+            bytesNeededPerSupplier = int(math.ceil(2.0 * bytesNeeded / suppliers_count))
+            bytesUsedPerSupplier = int(math.ceil(2.0 * bytesUsed / suppliers_count))
         else:
             bytesNeededPerSupplier = bytesUsedPerSupplier = 0
         dataDir = settings.getCustomersFilesDir()
-        dataDriveFreeSpace, dataDriveTotalSpace = diskusage.GetDriveSpace(
-            dataDir)
+        dataDriveFreeSpace, dataDriveTotalSpace = diskusage.GetDriveSpace(dataDir)
         if dataDriveFreeSpace is None:
             dataDriveFreeSpace = 0
         customers_count = contactsdb.num_customers()
@@ -5491,8 +4923,7 @@ class StoragePage(Page):
         except:
             lg.exc()
             freeDonatedBytes = 0.0
-        totalCustomersBytes = sum(map(lambda idurl: int(
-            spaceDict[idurl]), contactsdb.customers()))
+        totalCustomersBytes = sum(map(lambda idurl: int(spaceDict[idurl]), contactsdb.customers()))
         usedSpace = bpio._read_dict(settings.CustomersUsedSpaceFile())
         try:
             currentlyUsedDonatedBytes = sum(map(int, usedSpace.values()))
@@ -5502,23 +4933,18 @@ class StoragePage(Page):
         StringNeeded = diskspace.MakeStringFromBytes(bytesNeeded)
         StringDonated = diskspace.MakeStringFromBytes(bytesDonated)
         StringUsed = diskspace.MakeStringFromBytes(bytesUsed)
-        StringNeededPerSupplier = diskspace.MakeStringFromBytes(
-            bytesNeededPerSupplier)
-        StringUsedPerSupplier = diskspace.MakeStringFromBytes(
-            bytesUsedPerSupplier)
+        StringNeededPerSupplier = diskspace.MakeStringFromBytes(bytesNeededPerSupplier)
+        StringUsedPerSupplier = diskspace.MakeStringFromBytes(bytesUsedPerSupplier)
         StringDiskFreeSpace = diskspace.MakeStringFromBytes(dataDriveFreeSpace)
-        StringTotalCustomers = diskspace.MakeStringFromBytes(
-            totalCustomersBytes)
+        StringTotalCustomers = diskspace.MakeStringFromBytes(totalCustomersBytes)
         StringFreeDonated = diskspace.MakeStringFromBytes(freeDonatedBytes)
-        StringUsedDonated = diskspace.MakeStringFromBytes(
-            currentlyUsedDonatedBytes)
+        StringUsedDonated = diskspace.MakeStringFromBytes(currentlyUsedDonatedBytes)
         try:
             PercNeed = 100.0 * bytesUsed / bytesNeeded
         except:
             PercNeed = 0.0
         try:
-            PercAllocated = (100.0 * totalCustomersBytes /
-                             (totalCustomersBytes + freeDonatedBytes))
+            PercAllocated = (100.0 * totalCustomersBytes / (totalCustomersBytes + freeDonatedBytes))
         except:
             PercAllocated = 0.0
         try:
@@ -5530,8 +4956,7 @@ class StoragePage(Page):
         src += '<table><tr>\n'
         src += '<td valign=top align=center>\n'
         src += '<h3>needed</h3>\n'
-        src += '<img src="%s?width=300&height=300" /><br>\n' % (
-            iconurl(request, _PAGE_STORAGE + '/needed'))
+        src += '<img src="%s?width=300&height=300" /><br>\n' % (iconurl(request, _PAGE_STORAGE + '/needed'))
         src += '<table>\n'
         src += '<tr><td><table border=1 cellspacing=0 cellpadding=0><tr>\n'
         src += '<td bgcolor="#82f282">&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table></td>\n'
@@ -5542,8 +4967,7 @@ class StoragePage(Page):
         src += '</table>\n'
         src += '<table>\n'
         src += html_comment('needed space:')
-        src += '<tr><td nowrap>number of <a href="%s">suppliers</a>:</td><td nowrap><b>%d</b></td></tr>\n' % (
-            '/' + _PAGE_SUPPLIERS, suppliers_count)
+        src += '<tr><td nowrap>number of <a href="%s">suppliers</a>:</td><td nowrap><b>%d</b></td></tr>\n' % ('/' + _PAGE_SUPPLIERS, suppliers_count)
         src += html_comment('  number of suppliers: %d' % suppliers_count)
         src += '<tr><td nowrap>space given to you:</td><td nowrap><b>%s</b></td></tr>\n' % StringNeeded
         src += html_comment('  allocated space: %s' % StringNeeded)
@@ -5552,17 +4976,14 @@ class StoragePage(Page):
         src += '<tr><td nowrap>percentage used:</td><td nowrap><b>%3.2f%%</b></td></tr>\n' % PercNeed
         src += html_comment('  percentage used: %3.2f%%' % PercNeed)
         src += '<tr><td nowrap>each supplier gives you:</td><td nowrap><b>%s</b></td></tr>\n' % StringNeededPerSupplier
-        src += html_comment('  each supplier gives you: %s' %
-                            StringNeededPerSupplier)
+        src += html_comment('  each supplier gives you: %s' % StringNeededPerSupplier)
         src += '<tr><td nowrap>space used per supplier:</td><td nowrap><b>%s</b></td></tr>\n' % StringUsedPerSupplier
-        src += html_comment('  space used per supplier: %s' %
-                            StringUsedPerSupplier)
+        src += html_comment('  space used per supplier: %s' % StringUsedPerSupplier)
         src += '</table>\n'
         src += '</td>\n'
         src += '<td valign=top align=center>\n'
         src += '<h3 align=center>donated</h3>\n'
-        src += '<img src="%s?width=300&height=300" /><br>\n' % (
-            iconurl(request, _PAGE_STORAGE + '/donated'))
+        src += '<img src="%s?width=300&height=300" /><br>\n' % (iconurl(request, _PAGE_STORAGE + '/donated'))
         src += '<table>\n'
         src += '<tr><td><table border=1 cellspacing=0 cellpadding=0><tr>\n'
         src += '<td bgcolor="#e2e242">&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table></td>\n'
@@ -5576,8 +4997,7 @@ class StoragePage(Page):
         src += '</table>\n'
         src += '<table>\n'
         src += html_comment('donated space:')
-        src += '<tr><td nowrap>number of <a href="%s">customers</a>:</td><td nowrap><b>%d</b></td></tr>\n' % (
-            '/' + _PAGE_CUSTOMERS, customers_count)
+        src += '<tr><td nowrap>number of <a href="%s">customers</a>:</td><td nowrap><b>%d</b></td></tr>\n' % ('/' + _PAGE_CUSTOMERS, customers_count)
         src += html_comment('  number of customers: %d' % customers_count)
         if bytesDonated > dataDriveFreeSpace:
             src += '<tr><td nowrap>your donated space:</td><td nowrap><b><font color="red">%s</font></b></td></tr>\n' % StringDonated
@@ -5585,18 +5005,15 @@ class StoragePage(Page):
             src += '<tr><td nowrap>your donated space:</td><td nowrap><b>%s</b></td></tr>\n' % StringDonated
         src += html_comment('  your donated space: %s' % StringDonated)
         src += '<tr><td nowrap>free space on the disk:</td><td nowrap><b>%s</b></td></tr>\n' % StringDiskFreeSpace
-        src += html_comment('  free space on the disk: %s' %
-                            StringDiskFreeSpace)
+        src += html_comment('  free space on the disk: %s' % StringDiskFreeSpace)
         src += '<tr><td nowrap>space taken by customers:</td><td nowrap><b>%s</b></td></tr>\n' % StringTotalCustomers
-        src += html_comment('  space taken by customers: %s' %
-                            StringTotalCustomers)
+        src += html_comment('  space taken by customers: %s' % StringTotalCustomers)
         src += '<tr><td nowrap>free donated space:</td><td nowrap><b>%s</b></td></tr>\n' % StringFreeDonated
         src += html_comment('  free donated space: %s' % StringFreeDonated)
         src += '<tr><td nowrap>percentage allocated:</td><td nowrap><b>%3.2f%%</b></td></tr>\n' % PercAllocated
         src += html_comment('  percentage allocated: %3.2f%%' % PercAllocated)
         src += '<tr><td nowrap>space used by customers:</td><td nowrap><b>%s</b></td></tr>\n' % StringUsedDonated
-        src += html_comment('  space used by customers: %s' %
-                            StringUsedDonated)
+        src += html_comment('  space used by customers: %s' % StringUsedDonated)
         src += '<tr><td nowrap>percentage used:</td><td nowrap><b>%3.2f%%</b></td></tr>\n' % PercDonated
         src += html_comment('  percentage used: %3.2f%%' % PercDonated)
         src += '</table>\n'
@@ -5643,8 +5060,7 @@ class StorageNeededImage(resource.Resource):
         except:
             font = None
         f = cStringIO.StringIO()
-        bytesNeeded = diskspace.GetBytesFromString(
-            settings.getNeededString(), None)
+        bytesNeeded = diskspace.GetBytesFromString(settings.getNeededString(), None)
         if bytesNeeded is None:
             img.save(f, "PNG")
             f.seek(0)
@@ -5667,35 +5083,15 @@ class StorageNeededImage(resource.Resource):
         for y in range(w):  # needed
             start = float(y) * dA
             end = start + dA
-            draw.pieslice(
-                (self.toInt(
-                    x0 - R),
-                    self.toInt(
-                    y0 - R),
-                    self.toInt(
-                    x0 + R),
-                    self.toInt(
-                    y0 + R)),
-                self.toInt(start),
-                self.toInt(end),
-                fill='#82f282',
-                outline='#777777')
+            draw.pieslice((self.toInt(x0 - R), self.toInt(y0 - R),
+                           self.toInt(x0 + R), self.toInt(y0 + R)),
+                          self.toInt(start), self.toInt(end), fill='#82f282', outline='#777777')
         for y in range(w):  # used
             start = float(y) * dA
             end = start + dA
-            draw.pieslice(
-                (self.toInt(
-                    x0 - dR),
-                    self.toInt(
-                    y0 - dR),
-                    self.toInt(
-                    x0 + dR),
-                    self.toInt(
-                    y0 + dR)),
-                self.toInt(start),
-                self.toInt(end),
-                fill='#22b222',
-                outline='#777777')
+            draw.pieslice((self.toInt(x0 - dR), self.toInt(y0 - dR),
+                           self.toInt(x0 + dR), self.toInt(y0 + dR)),
+                          self.toInt(start), self.toInt(end), fill='#22b222', outline='#777777')
         if width >= 256 and height >= 256:
             for supplierNum in range(w):
                 a = float(supplierNum) * dA + dA / 2.0
@@ -5703,14 +5099,7 @@ class StorageNeededImage(resource.Resource):
                 y1 = math.sin(a * math.pi / 180.0) * R * 0.7 + y0
                 s = nameurl.GetName(contactsdb.supplier(supplierNum))
                 sw, sh = draw.textsize(s, font=font)
-                draw.text(
-                    (self.toInt(
-                        x1 - sw / 2.0),
-                        self.toInt(
-                        y1 - sh / 2.0)),
-                    s,
-                    fill="#000000",
-                    font=font)
+                draw.text((self.toInt(x1 - sw / 2.0), self.toInt(y1 - sh / 2.0)), s, fill="#000000", font=font)
         img.save(f, "PNG")
         f.seek(0)
         request.write(f.read())
@@ -5749,8 +5138,7 @@ class StorageDonatedImage(resource.Resource):
             font = None
         f = cStringIO.StringIO()
         dataDir = settings.getCustomersFilesDir()
-        dataDriveFreeSpace, dataDriveTotalSpace = diskusage.GetDriveSpace(
-            dataDir)
+        dataDriveFreeSpace, dataDriveTotalSpace = diskusage.GetDriveSpace(dataDir)
         if dataDriveFreeSpace is None:
             dataDriveFreeSpace = 0
         customers_ids = list(contactsdb.customers())
@@ -5793,8 +5181,7 @@ class StorageDonatedImage(resource.Resource):
                 for idurl in customers_ids + ['free', ]:
                     usedBytes = usedSpaceDict.get(idurl, 0)
                     givenBytes = int(spaceDict[idurl])
-                    dA = 360.0 * givenBytes / \
-                        (totalCustomersBytes + freeDonatedBytes)
+                    dA = 360.0 * givenBytes / (totalCustomersBytes + freeDonatedBytes)
 #                    if dA < 1.0:
 #                        A += dA
 #                        continue
@@ -5806,47 +5193,19 @@ class StorageDonatedImage(resource.Resource):
                     end = start + dA
                     colorGiven = '#ffffff' if idurl == 'free' else '#e2e242'
                     colorUsed = '#a2a202'
-                    draw.pieslice(
-                        (self.toInt(
-                            x0 - R),
-                            self.toInt(
-                            y0 - R),
-                            self.toInt(
-                            x0 + R),
-                            self.toInt(
-                            y0 + R)),
-                        self.toInt(start),
-                        self.toInt(end),
-                        fill=colorGiven,
-                        outline='#777777')
-                    draw.pieslice(
-                        (self.toInt(
-                            x0 - dR),
-                            self.toInt(
-                            y0 - dR),
-                            self.toInt(
-                            x0 + dR),
-                            self.toInt(
-                            y0 + dR)),
-                        self.toInt(start),
-                        self.toInt(end),
-                        fill=colorUsed,
-                        outline='#777777')
+                    draw.pieslice((self.toInt(x0 - R), self.toInt(y0 - R),
+                                   self.toInt(x0 + R), self.toInt(y0 + R)),
+                                  self.toInt(start), self.toInt(end), fill=colorGiven, outline='#777777')
+                    draw.pieslice((self.toInt(x0 - dR), self.toInt(y0 - dR),
+                                   self.toInt(x0 + dR), self.toInt(y0 + dR)),
+                                  self.toInt(start), self.toInt(end), fill=colorUsed, outline='#777777')
                     A += dA
             A = 0.0
             if width >= 256 and height >= 256:
                 if customers_count == 0:
-                    s = 'free ' + \
-                        diskspace.MakeStringFromBytes(freeDonatedBytes)
+                    s = 'free ' + diskspace.MakeStringFromBytes(freeDonatedBytes)
                     sw, sh = draw.textsize(s, font=font)
-                    draw.text(
-                        (self.toInt(
-                            x0 - sw / 2.0),
-                            self.toInt(
-                            y0 - sh / 2.0)),
-                        s,
-                        fill="#000000",
-                        font=font)
+                    draw.text((self.toInt(x0 - sw / 2.0), self.toInt(y0 - sh / 2.0)), s, fill="#000000", font=font)
                 else:
                     for idurl in customers_ids:
                         usedBytes = usedSpaceDict.get(idurl, 0)
@@ -5859,38 +5218,17 @@ class StorageDonatedImage(resource.Resource):
                         x1 = math.cos(a * math.pi / 180.0) * R * 0.7 + x0
                         y1 = math.sin(a * math.pi / 180.0) * R * 0.7 + y0
                         if idurl == 'free':
-                            s = 'free ' + \
-                                diskspace.MakeStringFromBytes(givenBytes)
+                            s = 'free ' + diskspace.MakeStringFromBytes(givenBytes)
                             sw, sh = draw.textsize(s, font=font)
-                            draw.text(
-                                (self.toInt(
-                                    x1 - sw / 2.0),
-                                    self.toInt(
-                                    y1 - sh / 2.0)),
-                                s,
-                                fill="#000000",
-                                font=font)
+                            draw.text((self.toInt(x1 - sw / 2.0), self.toInt(y1 - sh / 2.0)), s, fill="#000000", font=font)
                         else:
                             s1 = nameurl.GetName(idurl)
                             s2 = '%s/%s' % (diskspace.MakeStringFromBytes(usedBytes),
                                             diskspace.MakeStringFromBytes(givenBytes))
                             sw1, sh1 = draw.textsize(s1, font=font)
                             sw2, sh2 = draw.textsize(s2, font=font)
-                            draw.text(
-                                (self.toInt(
-                                    x1 - sw1 / 2.0),
-                                    self.toInt(
-                                    y1 - sh1)),
-                                s1,
-                                fill="#000000",
-                                font=font)
-                            draw.text(
-                                (self.toInt(
-                                    x1 - sw2 / 2.0),
-                                    self.toInt(y1)),
-                                s2,
-                                fill="#000000",
-                                font=font)
+                            draw.text((self.toInt(x1 - sw1 / 2.0), self.toInt(y1 - sh1)), s1, fill="#000000", font=font)
+                            draw.text((self.toInt(x1 - sw2 / 2.0), self.toInt(y1)), s2, fill="#000000", font=font)
                         A += dA
         except:
             lg.exc()
@@ -5946,13 +5284,7 @@ class ConfigPage(Page):
                 # src += html_comment('  [%s] %s' % (label, link_url))
             src += '</tr>\n'
         src += '</table>\n'
-        return html(
-            request,
-            body=str(src),
-            title='settings',
-            back='/' +
-            _PAGE_MENU,
-        )
+        return html(request, body=str(src), title='settings', back='/' + _PAGE_MENU, )
 
 
 class ServicesSettingsPage(Page):
@@ -6080,9 +5412,7 @@ class SecurityPage(Page):
 
         elif action == 'view':
             TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
-            TextToSave = TextToSave.replace(
-                '\n', '<br>\n').replace(
-                ' ', '&nbsp;')
+            TextToSave = TextToSave.replace('\n', '<br>\n').replace(' ', '&nbsp;')
             src = '<h1>private key</h1>\n'
             src += '<table align=center><tr><td align=center>\n'
             src += '<div align=left><code>\n'
@@ -6095,8 +5425,7 @@ class SecurityPage(Page):
 
         elif action == 'write':
             TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
-            savefile = unicode(misc.unpack_url_param(
-                arg(request, 'savefile'), ''))
+            savefile = unicode(misc.unpack_url_param(arg(request, 'savefile'), ''))
             bpio.AtomicWriteFile(savefile, TextToSave)
             messageA = '<font color="green">Your Private Key were copied to the file %s</font>' % savefile
             comment = 'your private key were copied to the file %s' % savefile
@@ -6104,8 +5433,7 @@ class SecurityPage(Page):
 
         elif action == 'move':
             TextToSave = key.MyPrivateKey()
-            savefile = unicode(misc.unpack_url_param(
-                arg(request, 'savefile'), ''))
+            savefile = unicode(misc.unpack_url_param(arg(request, 'savefile'), ''))
             if bpio.AtomicWriteFile(savefile, TextToSave):
                 keyfilename = settings.KeyFileName()
                 if bpio.AtomicWriteFile(keyfilename + '_location', savefile):
@@ -6118,10 +5446,8 @@ class SecurityPage(Page):
                     messageB = '<font color="green">Your Private Key were moved to %s,<br>be sure to have the file in same place during next program start</font>' % savefile
                     comment = 'your private key were moved to %s,\nbe sure to have the file in same place during next program start' % savefile
                 else:
-                    messageB = '<font color="red">Failed to write to the file %s</font>' % (
-                        keyfilename + '_location')
-                    comment = 'failed to write to the file %s' % (
-                        keyfilename + '_location')
+                    messageB = '<font color="red">Failed to write to the file %s</font>' % (keyfilename + '_location')
+                    comment = 'failed to write to the file %s' % (keyfilename + '_location')
             else:
                 messageB = '<font color="red">Failed to write your Private Key to the file %s</font>' % savefile
                 comment = 'failed to write your Private Key to the file %s' % savefile
@@ -6192,9 +5518,7 @@ class SecurityPage(Page):
         src += '<input type="hidden" name="showincluded" value="true" />\n'
         removable_drives = bpio.listRemovableDrives()
         if len(removable_drives) > 0:
-            start_path = os.path.join(
-                removable_drives[0],
-                my_id.getIDName() + '-BitDust.key')
+            start_path = os.path.join(removable_drives[0], my_id.getIDName() + '-BitDust.key')
         else:
             start_path = ''
         src += '<input type="submit" name="savefile" value=" move my key to removable media " path="%s" />\n' % start_path
@@ -6285,15 +5609,7 @@ class NetworkSettingsPage(Page):
         src += '</td>\n'
         src += '</tr>\n'
         src += '</table>\n'
-        return html(
-            request,
-            body=src,
-            back=arg(
-                request,
-                'back',
-                '/' +
-                _PAGE_CONFIG),
-            title='network settings')
+        return html(request, body=src, back=arg(request, 'back', '/' + _PAGE_CONFIG), title='network settings')
 
 
 class SoftwareUpdatePage(Page):
@@ -6306,12 +5622,7 @@ class SoftwareUpdatePage(Page):
         src += '<p>current version is <b>%s</b></p>\n' % version_number
         src += self._body_windows_frozen(request)
         back = '/' + _PAGE_CONFIG
-        request.write(
-            html_from_args(
-                request,
-                body=str(src),
-                title='update software',
-                back=back))
+        request.write(html_from_args(request, body=str(src), title='update software', back=back))
         request.finish()
 
     def _body_windows_frozen(self, request, repo_msg=None):
@@ -6320,8 +5631,7 @@ class SoftwareUpdatePage(Page):
         global local_checksum
         global global_checksum
         try:
-            repo, update_url = bpio.ReadTextFile(
-                settings.RepoFile()).split('\n')
+            repo, update_url = bpio.ReadTextFile(settings.RepoFile()).split('\n')
         except:
             repo = settings.DefaultRepo()
             update_url = settings.DefaultRepoURL()
@@ -6343,29 +5653,24 @@ class SoftwareUpdatePage(Page):
         src += '<form action="%s" method="post">\n' % request.path
         src += '<table align=center>\n'
         src += '<tr><td align=left>\n'
-        src += '<input id="test" type="radio" name="repo" value="testing" %s />\n' % (
-            'checked' if repo == 'test' else '')
+        src += '<input id="test" type="radio" name="repo" value="testing" %s />\n' % ('checked' if repo == 'test' else '')
         src += '</td></tr>\n'
         src += '<tr><td align=left>\n'
-        src += '<input id="devel" type="radio" name="repo" value="development" %s />\n' % (
-            'checked' if repo == 'devel' else '')
+        src += '<input id="devel" type="radio" name="repo" value="development" %s />\n' % ('checked' if repo == 'devel' else '')
         src += '</td></tr>\n'
         src += '<tr><td align=left>\n'
-        src += '<input id="stable" type="radio" name="repo" value="stable" %s />\n' % (
-            'checked' if repo == 'stable' else '')
+        src += '<input id="stable" type="radio" name="repo" value="stable" %s />\n' % ('checked' if repo == 'stable' else '')
         src += '</td></tr>\n'
         src += '<tr><td align=center>\n'
         if repo_msg is not None:
-            src += '<p><font color=%s>%s</font></p>\n' % (
-                repo_msg[1], repo_msg[0])
+            src += '<p><font color=%s>%s</font></p>\n' % (repo_msg[1], repo_msg[0])
         src += '<input type="hidden" name="action" value="repo" />\n'
         src += '<br><input type="submit" name="submit" value=" set "/>\n'
         src += '</td></tr>\n'
         src += '</table>\n'
         src += '</form>\n'
         src += '<h3>Update schedule</h3>\n'
-        shed = schedule.Schedule(
-            from_dict=os_windows_update.read_shedule_dict())
+        shed = schedule.Schedule(from_dict=os_windows_update.read_shedule_dict())
         next = shed.next_time()
         src += '<p>'
         if next is None:
@@ -6375,17 +5680,14 @@ class SoftwareUpdatePage(Page):
         else:
             src += shed.html_description() + ',<br>\n'
             src += shed.html_next_start() + ',<br>\n'
-        src += '<a href="%s?back=%s">change schedule</a>\n' % (
-            '/' + _PAGE_SOFTWARE_UPDATE_SHEDULE, request.path)
+        src += '<a href="%s?back=%s">change schedule</a>\n' % ('/' + _PAGE_SOFTWARE_UPDATE_SHEDULE, request.path)
         src += '</p>\n'
         if button is not None:
             src += '<br><br><form action="%s" method="post">\n' % request.path
             src += '<table align=center>\n'
             src += '<tr><td>\n'
-            src += '<input type="hidden" name="action" value="%s" />\n' % button[
-                2]
-            src += '<input type="submit" name="submit" value="%s" %s />\n' % (
-                button[0], ('disabled' if not button[1] else ''))
+            src += '<input type="hidden" name="action" value="%s" />\n' % button[2]
+            src += '<input type="submit" name="submit" value="%s" %s />\n' % (button[0], ('disabled' if not button[1] else ''))
             src += '</td></tr>\n'
             src += '</table>\n'
             src += '</form>\n'
@@ -6435,12 +5737,7 @@ class SoftwareUpdatePage(Page):
 
         elif action == 'repo':
             repo = arg(request, 'repo')
-            repo = {
-                'development': 'devel',
-                'testing': 'test',
-                'stable': 'stable'}.get(
-                repo,
-                'test')
+            repo = {'development': 'devel', 'testing': 'test', 'stable': 'stable'}.get(repo, 'test')
             repo_file_src = '%s\n%s' % (repo, settings.DefaultRepoURL(repo))
             bpio.WriteFile(settings.RepoFile(), repo_file_src)
             global_checksum = ''
@@ -6490,20 +5787,11 @@ class DevelopmentPage(Page):
             src += 'or <a href="http://127.0.0.1:%d" target="_blank">here</a>.<br>\n' % settings.getWebStreamPort()
             src += 'It is needed to restart BitDust to be able to see the logs.</p>\n'
         # src += '<br><br><h3>To see current packets transfers go to the <a href="%s">Packet Transfers page</a>.</h3>\n' % ('/'+_PAGE_MONITOR_TRANSPORTS)
-        src += '<p>You can watch current memory usage on the <a href="%s">Memory page</a>.</p>\n' % (
-            '/' + _PAGE_MEMORY)
+        src += '<p>You can watch current memory usage on the <a href="%s">Memory page</a>.</p>\n' % ('/' + _PAGE_MEMORY)
         src += '<h3>If you want to give a feedback or you found a bug or other cause,<br>you can <a href="%s?back=%s">send a developer report</a> now.</h3>' % (
             '/' + _PAGE_DEV_REPORT, request.path)
         src += '<br><br>\n'
-        return html(
-            request,
-            body=src,
-            back=arg(
-                request,
-                'back',
-                '/' +
-                _PAGE_CONFIG),
-            title='developers')
+        return html(request, body=src, back=arg(request, 'back', '/' + _PAGE_CONFIG), title='developers')
 
 
 # class MoneyPage(Page):
@@ -6539,8 +5827,7 @@ class DevelopmentPage(Page):
 #        src += '<br><br><a href="%s"><b>BUY/SELL</b> BP credits <b>for BitCoins</b> on the BitDust Market Place</a>\n' % _PAGE_MONEY_MARKET_LIST
 #        src += '<br><br><a href="%s">Let\'s <b>SEND</b> some of my <b>earned</b> BP credits to one of my friends</a>\n' % _PAGE_TRANSFER
 #        src += '<br><br><a href="%s">Show me the full receipts <b>HISTORY</b></a>\n' % _PAGE_RECEIPTS
-# return html(request, body=src, back=arg(request, 'back',
-# '/'+_PAGE_MENU), title='money')
+#        return html(request, body=src, back=arg(request, 'back', '/'+_PAGE_MENU), title='money')
 
 
 # class MoneyAddPage(Page):
@@ -6571,7 +5858,7 @@ class DevelopmentPage(Page):
 #        src += '<input type="hidden" name="back" value="%s" />\n' % back
 #        src += '<input type="submit" name="submit" value=" buy BitDust credits ON-LINE with your Credit Card " />\n'
 #        src += '</form>\n'
-# return html(request, body=src, back=back, title='buy credits for $ US')
+#        return html(request, body=src, back=back, title='buy credits for $ US')
 
 
 # class MoneyMarketBuyPage(Page):
@@ -6713,8 +6000,7 @@ class DevelopmentPage(Page):
 #        src += '<input type="hidden" name="back" value="%s" />\n' % back
 #        src += '<br><br><br><input type="submit" name="submit" value=" make a bid " />\n'
 #        src += '</form>\n'
-# return html(request, body=src, back=back, title='buy credits for
-# BitCoins')
+#        return html(request, body=src, back=back, title='buy credits for BitCoins')
 
 
 # class MoneyMarketSellPage(Page):
@@ -6868,8 +6154,7 @@ class DevelopmentPage(Page):
 #        src += '<input type="hidden" name="back" value="%s" />\n' % back
 #        src += '<br><br><input type="submit" name="submit" value=" place offer " />\n'
 #        src += '</form>\n'
-# return html(request, body=src, back=back, title='sell credits for
-# BitCoins')
+#        return html(request, body=src, back=back, title='sell credits for BitCoins')
 
 
 # class MoneyMarketListPage(Page):
@@ -6992,8 +6277,7 @@ class DevelopmentPage(Page):
 #        src += '</table>\n'
 #        src += '<p><a href="%s?action=request&back=%s">Send a request to the Market Server for a list of my bids and offers</a></p>\n' % (request.path, back)
 #        src += '<br><p>To see bids and offers from all users go to the BitDust <a href="%s" target=_blank>Market Place</a>.</p>' % settings.MarketPlaceURL()
-# return html(request, body=src, back=back, title='list of my bids and
-# offers')
+#        return html(request, body=src, back=back, title='list of my bids and offers')
 
 
 # class BitCoinSettingsPage(Page):
@@ -7042,8 +6326,7 @@ class DevelopmentPage(Page):
 #                '/'+_PAGE_SETTINGS+'/'+'other.bitcoin.bitcoin-password', request.path,
 #                ('*'*len(settings.getBitCoinServerPassword()) or 'not set' ))
 #        src += '<br><br>\n'
-# return html(request, body=src,  back=arg(request, 'back',
-# '/'+_PAGE_CONFIG), title='BitCoin settings')
+#        return html(request, body=src,  back=arg(request, 'back', '/'+_PAGE_CONFIG), title='BitCoin settings')
 
 
 # class TransferPage(Page):
@@ -7170,8 +6453,7 @@ class DevelopmentPage(Page):
 #        src += '<input type="submit" name="submit" value="%s" />\n' % button
 #        src += '</form><br><br>\n'
 #        src += html_comment(msg.lower().replace('<b>', '').replace('</b>', ''))
-# return html(request, body=src, back='/'+_PAGE_MONEY, title='money
-# transfer')
+#        return html(request, body=src, back='/'+_PAGE_MONEY, title='money transfer')
 
 
 # class ReceiptPage(Page):
@@ -7354,10 +6636,8 @@ class MessagePage(Page):
         src += '<table>\n'
         src += '<tr><td align=right><b>From:</b></td><td>%s</td></tr>\n' % nickfrom
         src += '<tr><td align=right><b>To:</b></td><td>%s</td></tr>\n' % nickto
-        src += '<tr><td align=right><b>Date:</b></td><td>%s</td></tr>\n' % msg[
-            3]
-        src += '<tr><td align=right><b>Subject:</b></td><td>%s</td></tr>\n' % msg[
-            2]
+        src += '<tr><td align=right><b>Date:</b></td><td>%s</td></tr>\n' % msg[3]
+        src += '<tr><td align=right><b>Subject:</b></td><td>%s</td></tr>\n' % msg[2]
         src += '</table>\n'
         src += '</td></tr>\n'
         src += '<tr><td align=left>\n'
@@ -7368,12 +6648,9 @@ class MessagePage(Page):
         src += '<form action="%s" method="post">\n' % ('/' + _PAGE_NEW_MESSAGE)
         src += '<input type="submit" name="submit" value=" reply " />\n'
         src += '<input type="hidden" name="action" value="reply" />\n'
-        src += '<input type="hidden" name="subject" value="%s" />\n' % misc.pack_url_param(msg[
-                                                                                           2])
-        src += '<input type="hidden" name="recipient" value="%s" />\n' % misc.unpack_url_param(
-            recipient)
-        src += '<input type="hidden" name="body" value="%s" />\n' % misc.unpack_url_param(
-            'replying on message from %s ...' % msg[3])
+        src += '<input type="hidden" name="subject" value="%s" />\n' % misc.pack_url_param(msg[2])
+        src += '<input type="hidden" name="recipient" value="%s" />\n' % misc.unpack_url_param(recipient)
+        src += '<input type="hidden" name="body" value="%s" />\n' % misc.unpack_url_param('replying on message from %s ...' % msg[3])
         src += '</form>\n'
         src += '<br><br><a href="%s">[return]</a>\n' % _PAGE_MESSAGES
         return html(request, body=src, back=_PAGE_MESSAGES)
@@ -7386,14 +6663,12 @@ class ConversationPage(Page):
         Page.__init__(self)
         self.path = path
         try:
-            self.recipient, self.subject = base64.urlsafe_b64decode(
-                self.path[3:]).split(' ', 1)
+            self.recipient, self.subject = base64.urlsafe_b64decode(self.path[3:]).split(' ', 1)
         except:
             self.recipient = ''
             self.subject = ''
             lg.exc()
-        self.recipient_nickname = contactsdb.get_correspondent_nickname(
-            self.recipient)
+        self.recipient_nickname = contactsdb.get_correspondent_nickname(self.recipient)
 
     def renderPage(self, request):
         body = arg(request, 'body')
@@ -7450,8 +6725,7 @@ class MessagesPage(Page):
 
     def _body_conversations(self, request):
         nicks = contactsdb.correspondents_dict()
-        nicks[my_id.getLocalID()] = settings.getNickName(
-        ) or nameurl.GetName(my_id.getLocalID())
+        nicks[my_id.getLocalID()] = settings.getNickName() or nameurl.GetName(my_id.getLocalID())
         cdict = message.DictAllConversations()
         conversations_list = cdict.keys()
         src = ''
@@ -7477,28 +6751,20 @@ class MessagesPage(Page):
                 src += '<tr bgcolor="%s">\n' % bgcolor
                 conversation_id = base64.urlsafe_b64encode(key)
                 src += '<tr bgcolor="%s">\n' % bgcolor
-                src += '<td><a href="%s/key%s">' % (
-                    request.path, conversation_id)
+                src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
                 src += nicks.get(recipient, nameurl.GetName(recipient))
                 src += '</a></td>\n'
-                src += '<td><a href="%s/key%s">' % (
-                    request.path, conversation_id)
+                src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
                 src += subj
                 src += '</a></td>\n'
-                src += '<td><a href="%s/key%s">' % (
-                    request.path, conversation_id)
+                src += '<td><a href="%s/key%s">' % (request.path, conversation_id)
                 src += last_msg_datetime
                 src += '</a></td>\n'
                 # src += '<a href="%s?action=delete&mid=%s"><td>' % (request.path, mid)
                 # src += '<img src="%s" /></td></a>\n' % iconurl(request, 'icons/delete-message.png')
                 src += '</tr>\n'
-                src += html_comment(
-                    '  %s %s %s' %
-                    (nicks.get(
-                        recipient,
-                        nameurl.GetName(recipient)),
-                        subj,
-                        last_msg_datetime))
+                src += html_comment('  %s %s %s' % (
+                    nicks.get(recipient, nameurl.GetName(recipient)), subj, last_msg_datetime))
                 i += 1
             src += '</table><br><br>\n'
         return src
@@ -7506,8 +6772,7 @@ class MessagesPage(Page):
     def _body_messages_by_date(self, request, reverse_order):
         myid = my_id.getLocalID()
         nicks = contactsdb.correspondents_dict()
-        nicks[my_id.getLocalID()] = settings.getNickName(
-        ) or nameurl.GetName(my_id.getLocalID())
+        nicks[my_id.getLocalID()] = settings.getNickName() or nameurl.GetName(my_id.getLocalID())
         mlist = message.ListAllMessages()
         mlist.sort(key=lambda item: item[self.sortby], reverse=reverse_order)
         src = ''
@@ -7545,10 +6810,8 @@ class MessagesPage(Page):
                 src += msg[3]
                 src += '</a></td>\n'
                 #--- delete button
-                src += '<td><a href="%s?action=delete&mid=%s">' % (
-                    request.path, mid)
-                src += '<img src="%s" /></a></td>\n' % iconurl(
-                    request, 'icons/delete-message.png')
+                src += '<td><a href="%s?action=delete&mid=%s">' % (request.path, mid)
+                src += '<img src="%s" /></a></td>\n' % iconurl(request, 'icons/delete-message.png')
                 src += '</tr>\n'
                 src += html_comment('  %s -> %s  "%s"  at %s' % (
                     nicks.get(msg[1], nameurl.GetName(msg[1])),
@@ -7585,24 +6848,14 @@ class MessagesPage(Page):
         src += '<a href="%s?back=%s">Create a new message</a><br><br>\n' % (
             _PAGE_NEW_MESSAGE, request.path)
         if not self.conversations:
-            src += '<a href="%s?conversations=1&back=%s">Show conversations</a><br>\n' % (
-                request.path, back)
+            src += '<a href="%s?conversations=1&back=%s">Show conversations</a><br>\n' % (request.path, back)
         else:
-            src += '<a href="%s?conversations=0&back=%s">Show messages by date</a><br>\n' % (
-                request.path, back)
+            src += '<a href="%s?conversations=0&back=%s">Show messages by date</a><br>\n' % (request.path, back)
         if self.conversations:
             src += self._body_conversations(request)
         else:
             src += self._body_messages_by_date(request, _reverse)
-        return html(
-            request,
-            body=src,
-            title='messages',
-            back=arg(
-                request,
-                'back',
-                '/' +
-                _PAGE_MENU))
+        return html(request, body=src, title='messages', back=arg(request, 'back', '/' + _PAGE_MENU))
 
     def getChild(self, path, request):
         if path == '':
@@ -7617,9 +6870,7 @@ class NewMessagePage(Page):
 
     def renderPage(self, request):
         correspondents_dict = contactsdb.correspondents_dict()
-        correspondents_names = sorted(
-            correspondents_dict.keys(),
-            key=lambda k: correspondents_dict[k])
+        correspondents_names = sorted(correspondents_dict.keys(), key=lambda k: correspondents_dict[k])
         recipient = misc.unpack_url_param(arg(request, 'recipient', ''), '')
         subject = misc.unpack_url_param(arg(request, 'subject'), '')
         body = misc.unpack_url_param(arg(request, 'body'), '')
@@ -7751,8 +7002,7 @@ class CorrespondentsPage(Page):
             for y in range(h):
                 src += '<tr valign=center>\n'
                 for x in range(w):
-                    src += '<td align=center width="%s%%">\n' % (
-                        (str(int(100.0 / float(w)))))
+                    src += '<td align=center width="%s%%">\n' % ((str(int(100.0 / float(w)))))
                     n = y * w + x
                     if n >= len(idurls):
                         src += '&nbsp;\n'
@@ -7794,8 +7044,8 @@ class CorrespondentsPage(Page):
             else:
                 self.results = []
                 from chat import nickname_observer
-                nickname_observer.observe_many(
-                    nickname, results_callback=self._nickname_observer_result)
+                nickname_observer.observe_many(nickname,
+                                               results_callback=self._nickname_observer_result)
                 msg = 'checking <b>%s</b> ...' % nickname
                 typ = 'info'
         elif action == 'remove':
@@ -7804,8 +7054,7 @@ class CorrespondentsPage(Page):
             idurl = nameurl.UnQuote(arg(request, 'idurl'))
             # name = nameurl.GetName(idurl)
             if idurl in contactsdb.correspondents_ids():
-                nickname = contactsdb.remove_correspondent(
-                    idurl) or nameurl.GetName(idurl)
+                nickname = contactsdb.remove_correspondent(idurl) or nameurl.GetName(idurl)
                 contactsdb.save_correspondents()
                 msg = '%s were removed from friends list' % nickname
                 typ = 'success'
@@ -7819,17 +7068,10 @@ class CorrespondentsPage(Page):
             self.results = []
             self.last_nickname = None
             if not contactsdb.is_correspondent(arg(request, 'addidurl')):
-                contactsdb.add_correspondent(
-                    arg(request, 'addidurl'), arg(request, 'addnickname'))
+                contactsdb.add_correspondent(arg(request, 'addidurl'), arg(request, 'addnickname'))
                 contactsdb.save_correspondents()
         src = self._body(request, nickname, msg, typ)
-        return html(
-            request,
-            body=src,
-            back=arg(
-                request,
-                'back',
-                _PAGE_CORRESPONDENTS))
+        return html(request, body=src, back=arg(request, 'back', _PAGE_CORRESPONDENTS))
 
 
 class SetNickNamePage(Page):
@@ -7854,17 +7096,14 @@ class SetNickNamePage(Page):
 
     def renderPage(self, request):
         current_nickname = settings.getNickName() or my_id.getLocalIdentity().getIDName()
-        nickname = arg(
-            request,
-            'nickname',
-            self.last_nickname or current_nickname)
+        nickname = arg(request, 'nickname', self.last_nickname or current_nickname)
         submit = arg(request, 'submit').strip()
         if submit == 'test':
             self.results = []
             self.last_nickname = nickname
             from chat import nickname_observer
-            nickname_observer.find_one(
-                nickname, results_callback=self._nickname_observer_result)
+            nickname_observer.find_one(nickname,
+                                       results_callback=self._nickname_observer_result)
             msg = 'checking <b>%s</b> ...' % nickname
             typ = 'info'
         elif submit == 'set':
@@ -7922,13 +7161,7 @@ class SetNickNamePage(Page):
         if self.holder_result:
             src += '#%s : <b>%s</b> - %s' % self.holder_result
         src += '<br>\n'
-        return html(
-            request,
-            body=src,
-            back=arg(
-                request,
-                'back',
-                _PAGE_MESSAGES))
+        return html(request, body=src, back=arg(request, 'back', _PAGE_MESSAGES))
 
 #------------------------------------------------------------------------------
 
@@ -7987,8 +7220,7 @@ class ShedulePage(Page):
         back = arg(request, 'back', '/' + _PAGE_MAIN)
 
         stored = self.load_from_data(request)
-        lg.out(6, 'webcontrol.ShedulePage.renderPage stored=%s args=%s' %
-               (str(stored), str(request.args)))
+        lg.out(6, 'webcontrol.ShedulePage.renderPage stored=%s args=%s' % (str(stored), str(request.args)))
 
         src = ''
 
@@ -8063,14 +7295,7 @@ class ShedulePage(Page):
                 src += '<input type="text" name="interval" value="%s" size=1 />' % current.interval
                 src += '&nbsp;week(s) in:<br><br>\n'
                 src += '<table><tr>\n'
-                labels = (
-                    'Monday',
-                    'Tuesday',
-                    'Wednesday',
-                    'Thursday',
-                    'Friday',
-                    'Saturday',
-                    'Sunday')
+                labels = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
                 days = current.details.split(' ')
                 for i in range(len(labels)):
                     day = labels[i]
@@ -8113,10 +7338,7 @@ class ShedulePage(Page):
                 src += '<br><br>\n'
                 src += html_message('saved!', 'done')
             else:
-                lg.out(
-                    2,
-                    'webcontrol.ShedulePage.renderPage ERROR incorrect "submit" parameter value: ' +
-                    submit)
+                lg.out(2, 'webcontrol.ShedulePage.renderPage ERROR incorrect "submit" parameter value: ' + submit)
                 src += '<input type="hidden" name="action" value="type" />\n'
                 src += '<input type="hidden" name="back" value="%s" />\n' % back
                 src += self.store_params(request)
@@ -8199,8 +7421,7 @@ class SoftwareUpdateShedulePage(ShedulePage):
 
     def load_from_data(self, request):
         from updates import os_windows_update
-        return schedule.Schedule(
-            from_dict=os_windows_update.read_shedule_dict())
+        return schedule.Schedule(from_dict=os_windows_update.read_shedule_dict())
 
     def save(self, request):
         from updates import os_windows_update
@@ -8262,12 +7483,7 @@ class DevReportPage(Page):
                 src += 'compressing ... '
             else:
                 src += 'sending: ' + _DevReportProcess
-            return html(
-                request,
-                body=src,
-                back='/' +
-                _PAGE_CONFIG,
-                reload='0.2')
+            return html(request, body=src, back='/' + _PAGE_CONFIG, reload='0.2')
 
         src += '<h3>send Message</h3>\n'
         src += '<form action="%s", method="post">\n' % request.path
@@ -8297,27 +7513,13 @@ class MemoryPage(Page):
             src = '<p>You need to switch on <a href="%s">memory profiler</a> in the settings and restart BitDust.</p>\n' % (
                 '/' + _PAGE_SETTINGS + '/' + 'logs.memprofile-enabled')
             src += html_comment('You need to switch on memory profiler in the settings.')
-            return html(
-                request,
-                back=arg(
-                    request,
-                    'back',
-                    '/' +
-                    _PAGE_CONFIG),
-                body=src)
+            return html(request, back=arg(request, 'back', '/' + _PAGE_CONFIG), body=src)
         try:
             from guppy import hpy  # @UnresolvedImport
         except:
             src = 'guppy package is not installed in your system.'
             src += html_comment('guppy package is not installed in your system.')
-            return html(
-                request,
-                back=arg(
-                    request,
-                    'back',
-                    '/' +
-                    _PAGE_CONFIG),
-                body=src)
+            return html(request, back=arg(request, 'back', '/' + _PAGE_CONFIG), body=src)
         # lg.out(6, 'webcontrol.MemoryPage')
         h = hpy()
         out = str(h.heap())
@@ -8326,29 +7528,12 @@ class MemoryPage(Page):
         src += '<table width="600px"><tr><td>\n'
         src += '<div align=left>\n'
         src += '<code>\n'
-        wwwout = out.replace(
-            ' ',
-            '&nbsp;').replace(
-            "'",
-            '"').replace(
-            '<',
-            '[').replace(
-                '>',
-                ']').replace(
-                    '\n',
-            '<br>\n')
+        wwwout = out.replace(' ', '&nbsp;').replace("'", '"').replace('<', '[').replace('>', ']').replace('\n', '<br>\n')
         src += wwwout
         src += '</code>\n</div>\n</td></tr></table>\n'
         for line in out.splitlines():
             src += html_comment(line)
-        return html(
-            request,
-            back=arg(
-                request,
-                'back',
-                '/' +
-                _PAGE_CONFIG),
-            body=src)
+        return html(request, back=arg(request, 'back', '/' + _PAGE_CONFIG), body=src)
 
 
 class EmergencyPage(Page):
@@ -8364,20 +7549,13 @@ class EmergencyPage(Page):
         src += '<p>We can contact you if your account balance is running low,'
         src += 'if your backups are not working, or if your machine appears to not be working.</p>\n'
         src += '<br><br><b>What email address should we contact you at? Email contact is free.</b>\n'
-        src += '<br><br><input type="text" name="email" size="25" value="%s" />\n' % arg(
-            request, 'email')
-        # config.conf().getData('emergency.phone', 'info')
-        src += '<br><br><b>%s</b>\n' % ''
-        src += '<br><br><input type="text" name="phone" size="25" value="%s" />\n' % arg(
-            request, 'phone')
-        # config.conf().getData('emergency.fax', 'info')
-        src += '<br><br><b>%s</b>\n' % ''
-        src += '<br><br><input type="text" name="fax" size="25" value="%s" />\n' % arg(
-            request, 'fax')
-        # config.conf().getData('emergency.text', 'info')
-        src += '<br><br><b>%s</b>\n' % ''
-        src += '<br><br><textarea name="text" rows="5" cols="40">%s</textarea><br>\n' % arg(
-            request, 'text')
+        src += '<br><br><input type="text" name="email" size="25" value="%s" />\n' % arg(request, 'email')
+        src += '<br><br><b>%s</b>\n' % ''  # config.conf().getData('emergency.phone', 'info')
+        src += '<br><br><input type="text" name="phone" size="25" value="%s" />\n' % arg(request, 'phone')
+        src += '<br><br><b>%s</b>\n' % ''  # config.conf().getData('emergency.fax', 'info')
+        src += '<br><br><input type="text" name="fax" size="25" value="%s" />\n' % arg(request, 'fax')
+        src += '<br><br><b>%s</b>\n' % ''  # config.conf().getData('emergency.text', 'info')
+        src += '<br><br><textarea name="text" rows="5" cols="40">%s</textarea><br>\n' % arg(request, 'text')
         # if message != '':
         #     src += '<br><br><font color="%s">%s</font>\n' % (messageColor, message)
         src += '<br><center><input type="submit" name="submit" value=" save " /></center>\n'
@@ -8415,13 +7593,7 @@ class MonitorTransportsPage(Page):
             src += self.renderTransfers(request)
         else:
             src += self.renderConnections(request)
-        return html(
-            request,
-            body=src,
-            back='none',
-            home='',
-            reload=reloadtime,
-            window_title='Traffic')
+        return html(request, body=src, back='none', home='', reload=reloadtime, window_title='Traffic')
 
     def renderTransfers(self, request):
         index = {'unknown': {'send': [], 'receive': []}}
@@ -8438,11 +7610,7 @@ class MonitorTransportsPage(Page):
 #            index[idurl]['send'].append((info_out.transfer_id, info_out.proto,
 #                                         info_out.size, info_out.description))
         for idurl in stats.counters_in().keys() + stats.counters_out().keys():
-            if idurl in [
-                'total_bytes',
-                'total_packets',
-                'unknown_bytes',
-                    'unknown_packets']:
+            if idurl in ['total_bytes', 'total_packets', 'unknown_bytes', 'unknown_packets']:
                 continue
             if idurl not in index:
                 index[idurl] = {'send': [], 'receive': []}
@@ -8450,16 +7618,14 @@ class MonitorTransportsPage(Page):
         src += '<font size=-4>\n'
         src += '<table width=100%>'
         src += '<tr><td width=50% valign=top>\n'
-        src += '<p>send queue length: <b>%d</b>\n</p>\n' % len(
-            packet_out.queue())
+        src += '<p>send queue length: <b>%d</b>\n</p>\n' % len(packet_out.queue())
         if len(packet_out.queue()) > 0:
             src += '<table width=100% cellspacing=0 cellpadding=2 border=0>\n'
             src += '<tr bgcolor="#000000">\n'
             src += '<td align=left nowrap><b><font color="#ffffff">remote IDURL</font></b></td>\n'
             src += '<td align=left nowrap><b><font color="#ffffff">command</font></b></td>\n'
             src += '<td align=left nowrap><b><font color="#ffffff">packet ID</font></b></td>\n'
-            # src += '<td align=left><b><font color="#ffffff">file
-            # name</font></b></td>\n'
+            # src += '<td align=left><b><font color="#ffffff">file name</font></b></td>\n'
             src += '<td align=left nowrap><b><font color="#ffffff">file size</font></b></td>\n'
             src += '<td align=left nowrap><b><font color="#ffffff">host</font></b></td>\n'
             src += '<td align=left nowrap><b><font color="#ffffff">transfer ID</font></b></td>\n'
@@ -8471,8 +7637,7 @@ class MonitorTransportsPage(Page):
                         src += '<tr>\n'
                     else:
                         src += '<tr bgcolor="#f0f0f0">\n'
-                    src += '<td>%s</td>\n' % nameurl.GetName(
-                        pktout.remote_idurl)
+                    src += '<td>%s</td>\n' % nameurl.GetName(pktout.remote_idurl)
                     src += '<td>%s</td>\n' % pktout.outpacket.Command
                     packetid = pktout.outpacket.packetid
                     if len(packetid) > 30:
@@ -8480,8 +7645,7 @@ class MonitorTransportsPage(Page):
                     src += '<td>%s</td>\n' % packetid
                     # src += '<td>%s</td>\n' % os.path.basename(workitem.filename)
                     src += '<td>%s</td>\n' % str(pktout.filesize)
-                    src += '<td>%s://%s</td>\n' % (workitem.proto,
-                                                   workitem.host)
+                    src += '<td>%s://%s</td>\n' % (workitem.proto, workitem.host)
                     src += '<td>%s</td>\n' % (str(workitem.transfer_id) or '')
                     src += '</tr>\n'
                 i += 1
@@ -8505,25 +7669,17 @@ class MonitorTransportsPage(Page):
             for idurl in sorted(index.keys()):
                 i += 1
                 if idurl == 'unknown':
-                    bytes_in = stats.counters_in().get(
-                        'unknown_bytes', {'receive': 0})
-                    bytes_in = '&nbsp;' if bytes_in == 0 else diskspace.MakeStringFromBytes(
-                        bytes_in)
-                    bytes_out = stats.counters_out().get(
-                        'unknown_bytes', {'send': 0})['send']
-                    bytes_out = '&nbsp;' if bytes_out == 0 else diskspace.MakeStringFromBytes(
-                        bytes_out)
+                    bytes_in = stats.counters_in().get('unknown_bytes', {'receive': 0})
+                    bytes_in = '&nbsp;' if bytes_in == 0 else diskspace.MakeStringFromBytes(bytes_in)
+                    bytes_out = stats.counters_out().get('unknown_bytes', {'send': 0})['send']
+                    bytes_out = '&nbsp;' if bytes_out == 0 else diskspace.MakeStringFromBytes(bytes_out)
                     send_queue = 0
                     request_queue = 0
                 else:
-                    bytes_in = stats.counters_in().get(
-                        idurl, {'receive': 0})['receive']
-                    bytes_in = '&nbsp;' if bytes_in == 0 else diskspace.MakeStringFromBytes(
-                        bytes_in)
-                    bytes_out = stats.counters_out().get(
-                        idurl, {'send': 0})['send']
-                    bytes_out = '&nbsp;' if bytes_out == 0 else diskspace.MakeStringFromBytes(
-                        bytes_out)
+                    bytes_in = stats.counters_in().get(idurl, {'receive': 0})['receive']
+                    bytes_in = '&nbsp;' if bytes_in == 0 else diskspace.MakeStringFromBytes(bytes_in)
+                    bytes_out = stats.counters_out().get(idurl, {'send': 0})['send']
+                    bytes_out = '&nbsp;' if bytes_out == 0 else diskspace.MakeStringFromBytes(bytes_out)
                     from customer import io_throttle
                     send_queue = io_throttle.GetSendQueueLength(idurl)
                     request_queue = io_throttle.GetRequestQueueLength(idurl)
@@ -8536,18 +7692,15 @@ class MonitorTransportsPage(Page):
                 if len(index.get(idurl, {'receive': []})['receive']) > 0:
                     src += '<table border=0 cellspacing=0 cellpadding=0><tr><td align=right>\n'
                     counter = 0
-                    for tranfer_id, proto, size, description in index[
-                            idurl]['receive']:
+                    for tranfer_id, proto, size, description in index[idurl]['receive']:
                         command = description
                         if description.count('('):
                             command = description[:description.find('(')]
                         b = 0  # bytes_stats[tranfer_id]
                         if str(size) not in ['', '0', '-1']:
-                            progress = '%s/%s' % (diskspace.MakeStringFromBytes(b).replace(
-                                ' ', ''), diskspace.MakeStringFromBytes(size).replace(' ', ''))
+                            progress = '%s/%s' % (diskspace.MakeStringFromBytes(b).replace(' ', ''), diskspace.MakeStringFromBytes(size).replace(' ', ''))
                         else:
-                            progress = '%s' % diskspace.MakeStringFromBytes(
-                                b).replace(' ', '')
+                            progress = '%s' % diskspace.MakeStringFromBytes(b).replace(' ', '')
                         src += '<table bgcolor="#a0a0f0"><tr><td nowrap><font>%s:%s[%s]</font></td></tr></table>\n' % (
                             proto, command, progress)
                         counter += 1
@@ -8561,23 +7714,22 @@ class MonitorTransportsPage(Page):
                     color = 'gray'
                 src += '<td align=right nowrap><font color=gray>%d</font></td>\n' % request_queue
                 src += '<td align=center nowrap><b><font color=%s> %s </font></b></td>\n' % (
-                    color, 'unknown' if idurl == 'unknown' else nameurl.GetName(idurl), )
+                    color,
+                    'unknown' if idurl == 'unknown' else nameurl.GetName(idurl),
+                )
                 src += '<td align=left nowrap><font color=gray>%d</font></td>\n' % send_queue
                 src += '<td align=left>'
                 if len(index.get(idurl, {'send': []})['send']) > 0:
                     src += '<table border=0 cellspacing=0 cellpadding=0><tr><td align=left>\n'
-                    for tranfer_id, proto, size, description in index[
-                            idurl]['send']:
+                    for tranfer_id, proto, size, description in index[idurl]['send']:
                         b = 0  # bytes_stats[tranfer_id]
                         command = description
                         if description.count('('):
                             command = description[:description.find('(')]
                         if b:
-                            progress = '%s/%s' % (diskspace.MakeStringFromBytes(b).replace(
-                                ' ', ''), diskspace.MakeStringFromBytes(size).replace(' ', ''))
+                            progress = '%s/%s' % (diskspace.MakeStringFromBytes(b).replace(' ', ''), diskspace.MakeStringFromBytes(size).replace(' ', ''))
                         else:
-                            progress = '%s' % diskspace.MakeStringFromBytes(
-                                size).replace(' ', '')
+                            progress = '%s' % diskspace.MakeStringFromBytes(size).replace(' ', '')
                         src += '<table bgcolor="#a0f0a0"><tr><td nowrap><font>%s:%s[%s]</font></td></tr></table>\n' % (
                             proto, command, progress)
                     src += '</td></tr></table>\n'
@@ -8587,15 +7739,13 @@ class MonitorTransportsPage(Page):
                 src += '<td nowrap align=right>%s</td>\n' % bytes_out
                 src += '</tr>\n'
             src += '<tr bgcolor="#d0d0d0">\n'
-            # diskspace.MakeStringFromBytes(counters.get('total_bytes', {'receive': 0})['receive'])
-            src += '<td nowrap>%s</td>\n' % '0 b'
+            src += '<td nowrap>%s</td>\n' % '0 b'  # diskspace.MakeStringFromBytes(counters.get('total_bytes', {'receive': 0})['receive'])
             src += '<td>&nbsp;</td>\n'
             src += '<td>&nbsp;</td>\n'
             src += '<td>&nbsp;</td>\n'
             src += '<td>&nbsp;</td>\n'
             src += '<td>&nbsp;</td>\n'
-            # diskspace.MakeStringFromBytes(counters.get('total_bytes', {'send': 0})['send'])
-            src += '<td nowrap>%s</td>\n' % '0 b'
+            src += '<td nowrap>%s</td>\n' % '0 b'  # diskspace.MakeStringFromBytes(counters.get('total_bytes', {'send': 0})['send'])
             src += '</tr>\n'
             src += '</table>\n'
         src += '</td></tr>\n'
@@ -8772,19 +7922,9 @@ class TrafficPage(Page):
         if direction == 'out':
             src += '<p>total outgoing packets: %d</p>' % webtraffic.outbox_packets_count()
         src += '</body></html>'
-        d = {
-            'type': typ,
-            'dir': direction,
-            'baseurl': 'http://127.0.0.1:%d%s' % (local_port,
-                                                  request.path)}
+        d = {'type': typ, 'dir': direction, 'baseurl': 'http://127.0.0.1:%d%s' % (local_port, request.path)}
         src = src % d
-        return html(
-            request,
-            body=src,
-            back='none',
-            home='',
-            reload=1,
-            window_title='Counters')
+        return html(request, body=src, back='none', home='', reload=1, window_title='Counters')
 
 #------------------------------------------------------------------------------
 
@@ -8792,9 +7932,7 @@ class TrafficPage(Page):
 def InitSettingsTreePages():
     global _SettingsTreeNodesDict
     lg.out(4, 'webcontrol.init.options')
-    SettingsTreeAddComboboxList(
-        'services/customer/suppliers-number',
-        settings.getECCSuppliersNumbers())
+    SettingsTreeAddComboboxList('services/customer/suppliers-number', settings.getECCSuppliersNumbers())
 
     _SettingsTreeNodesDict = {
         'logs/debug-level': SettingsTreeNumericPositiveNode,
@@ -8881,10 +8019,7 @@ class SettingsTreeNode(Page):
         self.update()
 
     def renderPage(self, request):
-        lg.out(
-            6, 'webcontrol.SettingsTreeNode.renderPage [%s] args=%s' %
-            (self.path, str(
-                request.args)))
+        lg.out(6, 'webcontrol.SettingsTreeNode.renderPage [%s] args=%s' % (self.path, str(request.args)))
         src = ''
         if self.exist:
             src += '<h3>%s</h3>\n' % self.label
@@ -8903,8 +8038,7 @@ class SettingsTreeNode(Page):
             src += html_comment('  type:     %s' % self.typ)
             src += html_comment('  value:    %s' % self.value)
             if old_value != self.value:
-                src += html_comment('  modified: [%s]->[%s]' %
-                                    (old_value, self.value))
+                src += html_comment('  modified: [%s]->[%s]' % (old_value, self.value))
             if ret.startswith('redirect'):
                 ret = ret.split(' ', 1)[1]
                 request.redirect(ret)
@@ -8919,18 +8053,14 @@ class SettingsTreeNode(Page):
         if self.exist and len(self.leafs) >= 1:
             header = 'settings'
             try:
-                lg.out(
-                    14, 'webcontrol.SettingsTreeNode.renderPage leafs=%s' %
-                    (self.leafs))
+                lg.out(14, 'webcontrol.SettingsTreeNode.renderPage leafs=%s' % (self.leafs))
                 for i in range(0, len(self.leafs)):
                     fullname = '.'.join(self.leafs[0:i + 1])
                     label = fullname  # config.conf().getData(fullname)
                     if label is None:
                         label = self.leafs[i]
                     header += ' > ' + label
-                    lg.out(
-                        14, 'webcontrol.SettingsTreeNode.renderPage fullname=%s label=%s' %
-                        (fullname, label))
+                    lg.out(14, 'webcontrol.SettingsTreeNode.renderPage fullname=%s label=%s' % (fullname, label))
             except:
                 lg.exc()
         else:
@@ -8984,17 +8114,13 @@ class SettingsTreeNode(Page):
             self.value = None
         else:
             self.value = config.conf().getData(self.path)
-        # settings.uconfig().labels.get(self.path, '')
-        self.label = config.conf().getLabel(self.path)
-        # settings.uconfig().infos.get(self.path, '')
-        self.info = config.conf().getInfo(self.path)
+        self.label = config.conf().getLabel(self.path)  # settings.uconfig().labels.get(self.path, '')
+        self.info = config.conf().getInfo(self.path)  # settings.uconfig().infos.get(self.path, '')
         self.typ = config.conf().getTypeLabel(self.path)
         self.leafs = self.path.split('/')
 
     def modified(self, old_value=None):
-        lg.out(
-            8, 'webcontrol.SettingsTreeNode.modified %s %s' %
-            (self.path, self.value))
+        lg.out(8, 'webcontrol.SettingsTreeNode.modified %s %s' % (self.path, self.value))
 
 #        if self.path.count('services/'):
 #            svc_name = self.path.replace('services/', 'service_').replace('/enabled', '').replace('-', '_')
@@ -9184,16 +8310,16 @@ class SettingsTreeComboboxNode(SettingsTreeNode):
             if items[i] == self.value or items[i] == self.leafs[-1]:
                 checked = 'checked'
             src += '<tr><td><input id="radio%s" type="radio" name="choice" value="%s" %s />' % (
-                str(i), items[i], checked,)
+                str(i),
+                items[i],
+                checked,)
             #src += '<label for="radio%s">  %s</label></p>\n' % (str(i), items[i],)
             src += '</td></tr>\n'
         src += '</table><br>\n'
         src += '<br>'
-        src += '<input class="buttonsave" type="submit" name="submit" value=" Save " %s />&nbsp;\n' % (
-            'disabled' if ReadOnly() else '')
+        src += '<input class="buttonsave" type="submit" name="submit" value=" Save " %s />&nbsp;\n' % ('disabled' if ReadOnly() else '')
         # src += '<input class="buttonreset" type="reset" name="reset" value=" Reset " /><br>\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % arg(
-            request, 'back', '/' + _PAGE_CONFIG)
+        src += '<input type="hidden" name="back" value="%s" />\n' % arg(request, 'back', '/' + _PAGE_CONFIG)
         src += '</form><br>\n'
         src += html_message(message[0], message[1])
         return src
@@ -9215,11 +8341,9 @@ class SettingsTreeUStringNode(SettingsTreeNode):
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<input type="text" name="text" value="%s" /><br>\n' % self.value
         src += '<br>'
-        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % (
-            'disabled' if ReadOnly() else '')
+        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % ('disabled' if ReadOnly() else '')
         # src += '<input type="reset" name="reset" value=" Reset " /><br>\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % arg(
-            request, 'back', '/' + _PAGE_CONFIG)
+        src += '<input type="hidden" name="back" value="%s" />\n' % arg(request, 'back', '/' + _PAGE_CONFIG)
         src += '</form><br>\n'
         src += html_message(message[0], message[1])
         return src
@@ -9241,11 +8365,9 @@ class SettingsTreePasswordNode(SettingsTreeNode):
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<input type="password" name="text" value="%s" /><br>\n' % self.value
         src += '<br>'
-        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % (
-            'disabled' if ReadOnly() else '')
+        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % ('disabled' if ReadOnly() else '')
         # src += '<input type="reset" name="reset" value=" Reset " /><br>\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % arg(
-            request, 'back', '/' + _PAGE_CONFIG)
+        src += '<input type="hidden" name="back" value="%s" />\n' % arg(request, 'back', '/' + _PAGE_CONFIG)
         src += '</form><br>\n'
         src += html_message(message[0], message[1])
         return src
@@ -9261,14 +8383,10 @@ class SettingsTreeNumericNonZeroPositiveNode(SettingsTreeNode):
             try:
                 text = int(text)
             except:
-                message = (
-                    'wrong value. enter positive non zero number.',
-                    'failed')
+                message = ('wrong value. enter positive non zero number.', 'failed')
                 text = None
             if text <= 0:
-                message = (
-                    'wrong value. enter positive non zero number.',
-                    'failed')
+                message = ('wrong value. enter positive non zero number.', 'failed')
                 text = None
         if text is not None and not ReadOnly():
             self.requestModify(self.path, unicode(text))
@@ -9278,8 +8396,7 @@ class SettingsTreeNumericNonZeroPositiveNode(SettingsTreeNode):
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<input type="text" name="text" value="%s" />\n' % self.value
         src += '<br><br>\n'
-        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % (
-            'disabled' if ReadOnly() else '')
+        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % ('disabled' if ReadOnly() else '')
         # src += '<input type="reset" name="reset" value=" Reset " />\n'
         src += '<input type="hidden" name="back" value="%s" />\n' % back
         src += '</form><br>\n'
@@ -9310,8 +8427,7 @@ class SettingsTreeNumericPositiveNode(SettingsTreeNode):
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<input type="text" name="text" value="%s" />\n' % self.value
         src += '<br><br>\n'
-        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % (
-            'disabled' if ReadOnly() else '')
+        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % ('disabled' if ReadOnly() else '')
         # src += '<input type="reset" name="reset" value=" Reset " />\n'
         src += '<input type="hidden" name="back" value="%s" />\n' % back
         src += '</form><br>\n'
@@ -9341,13 +8457,11 @@ class SettingsTreeDirPathNode(SettingsTreeNode):
 
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<input type="hidden" name="action" value="dirselected" />\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % arg(
-            request, 'back', '/' + _PAGE_CONFIG)
+        src += '<input type="hidden" name="back" value="%s" />\n' % arg(request, 'back', '/' + _PAGE_CONFIG)
         src += '<input type="hidden" name="parent" value="%s" />\n' % request.path
         src += '<input type="hidden" name="label" value="Select folder" />\n'
         src += '<input type="hidden" name="showincluded" value="true" />\n'
-        src += '<input type="submit" name="opendir" value=" browse " path="%s" %s />\n' % (
-            self.value, ('disabled' if ReadOnly() else ''))
+        src += '<input type="submit" name="opendir" value=" browse " path="%s" %s />\n' % (self.value, ('disabled' if ReadOnly() else ''))
         src += '</form>\n'
         return src
 
@@ -9373,13 +8487,11 @@ class SettingsTreeFilePathNode(SettingsTreeNode):
 
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<input type="hidden" name="action" value="fileselected" />\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % arg(
-            request, 'back', '/' + _PAGE_CONFIG)
+        src += '<input type="hidden" name="back" value="%s" />\n' % arg(request, 'back', '/' + _PAGE_CONFIG)
         src += '<input type="hidden" name="parent" value="%s" />\n' % request.path
         src += '<input type="hidden" name="label" value="Select file" />\n'
         src += '<input type="hidden" name="showincluded" value="true" />\n'
-        src += '<input type="submit" name="openfile" value=" browse " path="%s" %s />\n' % (
-            self.value, ('disabled' if ReadOnly() else ''))
+        src += '<input type="submit" name="openfile" value=" browse " path="%s" %s />\n' % (self.value, ('disabled' if ReadOnly() else ''))
         src += '</form>\n'
         return src
 
@@ -9400,11 +8512,9 @@ class SettingsTreeTextNode(SettingsTreeNode):
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<textarea name="text" rows="5" cols="40">%s</textarea><br>\n' % self.value
         src += '<br>'
-        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % (
-            'disabled' if ReadOnly() else '')
+        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % ('disabled' if ReadOnly() else '')
         # src += '<input type="reset" name="reset" value=" Reset " /><br>\n'
-        src += '<input type="hidden" name="back" value="%s" />\n' % arg(
-            request, 'back', '/' + _PAGE_CONFIG)
+        src += '<input type="hidden" name="back" value="%s" />\n' % arg(request, 'back', '/' + _PAGE_CONFIG)
         src += '</form><br>\n'
         src += html_message(message[0], message[1])
         return src
@@ -9413,8 +8523,7 @@ class SettingsTreeTextNode(SettingsTreeNode):
 class SettingsTreeDiskSpaceNode(SettingsTreeNode):
 
     def body(self, request):
-        lg.out(6, 'webcontrol.SettingsTreeDiskSpaceNode.body args=%s' %
-               str(request.args))
+        lg.out(6, 'webcontrol.SettingsTreeDiskSpaceNode.body args=%s' % str(request.args))
 
         number = arg(request, 'number', None)
         suffix = arg(request, 'suffix', None)
@@ -9431,9 +8540,7 @@ class SettingsTreeDiskSpaceNode(SettingsTreeNode):
                 message = ('wrong value. enter positive value.', 'failed')
                 number = None
             if not diskspace.SuffixIsCorrect(suffix):
-                message = (
-                    'wrong suffix. use values from the drop down list only.',
-                    'failed')
+                message = ('wrong suffix. use values from the drop down list only.', 'failed')
                 suffix = None
 
         if number is not None and suffix is not None and not ReadOnly():
@@ -9447,18 +8554,15 @@ class SettingsTreeDiskSpaceNode(SettingsTreeNode):
         src = ''
         src += '<br><form action="%s" method="post">\n' % request.path
         src += '<input type="text" name="number" value="%s" />\n' % number_current
-        src += '<input type="hidden" name="back" value="%s" />\n' % arg(
-            request, 'back', '/' + _PAGE_CONFIG)
+        src += '<input type="hidden" name="back" value="%s" />\n' % arg(request, 'back', '/' + _PAGE_CONFIG)
         src += '<select name="suffix">\n'
         for suf in diskspace.SuffixLabels():
             if diskspace.SameSuffix(suf, suffix_current):
-                src += '<option value="%s" selected >%s</option>\n' % (
-                    suf, suf)
+                src += '<option value="%s" selected >%s</option>\n' % (suf, suf)
             else:
                 src += '<option value="%s">%s</option>\n' % (suf, suf)
         src += '</select><br><br>\n'
-        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % (
-            'disabled' if ReadOnly() else '')
+        src += '<input type="submit" name="submit" value=" Save " %s />&nbsp;\n' % ('disabled' if ReadOnly() else '')
         # src += '<input type="reset" name="reset" value=" Reset " /><br>\n'
         src += '</form><br>\n'
         src += html_message(message[0], message[1])
@@ -9471,8 +8575,7 @@ class SettingsPage(Page):
 
     def renderPage(self, request):
         global _SettingsTreeNodesDict
-        lg.out(6, 'webcontrol.SettingsPage.renderPage args=%s' %
-               str(request.args))
+        lg.out(6, 'webcontrol.SettingsPage.renderPage args=%s' % str(request.args))
         src = ''
         for path in config.conf().listAllEntries():
             #             if path.strip() == '':
@@ -9489,12 +8592,7 @@ class SettingsPage(Page):
                 src += '<h3><a href="%s">%s</a></h3>\n' % (
                     _PAGE_SETTINGS + '/' + path, label.capitalize())
 
-        return html(
-            request,
-            body=src,
-            back='/' +
-            _PAGE_CONFIG,
-            title='settings')
+        return html(request, body=src, back='/' + _PAGE_CONFIG, title='settings')
 
     def getChild(self, path, request):
         global _SettingsTreeNodesDict
@@ -9528,20 +8626,13 @@ class SettingsListPage(Page):
             label = path  # settings.uconfig().labels.get(path, '')
             info = ''  # settings.uconfig().infos.get(path, '')
             src += '<tr>\n'
-            src += '<td><a href="%s">%s</a></td>\n' % (
-                _PAGE_SETTINGS + '/' + path, path)
+            src += '<td><a href="%s">%s</a></td>\n' % (_PAGE_SETTINGS + '/' + path, path)
             src += '<td>%s</td>\n' % label
             src += '<td>%s</td>\n' % value
             src += '</tr>\n'
             #src += html_comment('  %s    %s    %s' % (label.ljust(30), value.ljust(20)[:20], path))
-            src += html_comment('  %s    %s' %
-                                (path.ljust(50), value.ljust(20)))
+            src += html_comment('  %s    %s' % (path.ljust(50), value.ljust(20)))
         src += '</table>\n'
-        return html(
-            request,
-            body=src,
-            back='/' +
-            _PAGE_CONFIG,
-            title='settings')
+        return html(request, body=src, back='/' + _PAGE_CONFIG, title='settings')
 
 #------------------------------------------------------------------------------

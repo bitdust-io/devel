@@ -27,12 +27,11 @@
 #
 
 """
-.. module:: git_proc
+.. module:: git_proc.
 
 A code for all platforms to perform source code updates from official Git repo at:
 
    http://gitlab.bitdust.io/devel/bitdust.git
-
 """
 
 #------------------------------------------------------------------------------
@@ -57,12 +56,7 @@ from twisted.internet import protocol
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -140,8 +134,7 @@ def loop(first_start=False):
     if delay < 0:
         lg.warn('delay=%s %s %s' % (str(delay), nexttime, time.time()))
         delay = 0
-    lg.out(6, 'git_proc.loop run_sync will start after %s minutes' %
-           str(delay / 60.0))
+    lg.out(6, 'git_proc.loop run_sync will start after %s minutes' % str(delay / 60.0))
     _ShedulerTask = reactor.callLater(delay, run_sync)
 
 #------------------------------------------------------------------------------
@@ -149,6 +142,7 @@ def loop(first_start=False):
 
 def sync(callback_func=None):
     """
+    
     """
     def _reset_done(response, retcode, result):
         if callback_func is None:
@@ -179,27 +173,19 @@ def sync(callback_func=None):
 
 def run(cmdargs, callback_func=None):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, 'git_proc.run')
     if bpio.Windows():
         cmd = ['git', ] + cmdargs
         exec_dir = bpio.getExecutableDir()
-        git_exe = bpio.portablePath(
-            os.path.join(
-                exec_dir,
-                '..',
-                'git',
-                'bin',
-                'git.exe'))
+        git_exe = bpio.portablePath(os.path.join(exec_dir, '..', 'git', 'bin', 'git.exe'))
         if not os.path.isfile(git_exe):
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '    not found git.exe, try to run from shell')
+                lg.out(_DebugLevel, '    not found git.exe, try to run from shell')
             try:
-                response, retcode = execute_in_shell(
-                    cmd, base_dir=bpio.getExecutableDir())
+                response, retcode = execute_in_shell(cmd, base_dir=bpio.getExecutableDir())
             except:
                 response = ''
                 retcode = 1
@@ -221,10 +207,7 @@ def execute_in_shell(cmdargs, base_dir=None):
     from system import nonblocking
     import subprocess
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'git_proc.execute_in_shell: "%s"' %
-            (' '.join(cmdargs)))
+        lg.out(_DebugLevel, 'git_proc.execute_in_shell: "%s"' % (' '.join(cmdargs)))
     _CurrentProcess = nonblocking.Popen(
         cmdargs,
         shell=True,
@@ -235,9 +218,7 @@ def execute_in_shell(cmdargs, base_dir=None):
     out_data = _CurrentProcess.communicate()[0]
     returncode = _CurrentProcess.returncode
     if _Debug:
-        lg.out(
-            _DebugLevel, 'git_proc.execute_in_shell returned: %s\n%s' %
-            (returncode, out_data))
+        lg.out(_DebugLevel, 'git_proc.execute_in_shell returned: %s\n%s' % (returncode, out_data))
     return (out_data, returncode)  # _CurrentProcess
 
 #------------------------------------------------------------------------------
@@ -264,10 +245,7 @@ class GitProcessProtocol(protocol.ProcessProtocol):
 
     def processEnded(self, reason):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'git process FINISHED : %s' %
-                reason.value.exitCode)
+            lg.out(_DebugLevel, 'git process FINISHED : %s' % reason.value.exitCode)
         if self.callback:
             self.callback(self.out, reason.value.exitCode)
 
@@ -275,24 +253,15 @@ class GitProcessProtocol(protocol.ProcessProtocol):
 def execute(cmdargs, base_dir=None, process_protocol=None, callback=None):
     global _CurrentProcess
     if _Debug:
-        lg.out(
-            _DebugLevel, 'git_proc.execute: "%s" in %s' %
-            (' '.join(cmdargs), base_dir))
+        lg.out(_DebugLevel, 'git_proc.execute: "%s" in %s' % (' '.join(cmdargs), base_dir))
     executable = cmdargs[0]
     if bpio.Windows():
         from twisted.internet import _dumbwin32proc
         real_CreateProcess = _dumbwin32proc.win32process.CreateProcess
 
-        def fake_createprocess(
-                _appName,
-                _commandLine,
-                _processAttributes,
-                _threadAttributes,
-                _bInheritHandles,
-                creationFlags,
-                _newEnvironment,
-                _currentDirectory,
-                startupinfo):
+        def fake_createprocess(_appName, _commandLine, _processAttributes,
+                               _threadAttributes, _bInheritHandles, creationFlags,
+                               _newEnvironment, _currentDirectory, startupinfo):
             import win32con
             import _subprocess
             flags = win32con.CREATE_NO_WINDOW
@@ -302,10 +271,7 @@ def execute(cmdargs, base_dir=None, process_protocol=None, callback=None):
                                       _processAttributes, _threadAttributes,
                                       _bInheritHandles, flags, _newEnvironment,
                                       _currentDirectory, startupinfo)
-        setattr(
-            _dumbwin32proc.win32process,
-            'CreateProcess',
-            fake_createprocess)
+        setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
 
     if process_protocol is None:
         process_protocol = GitProcessProtocol(callback)
@@ -316,10 +282,7 @@ def execute(cmdargs, base_dir=None, process_protocol=None, callback=None):
         lg.exc()
         return None
     if bpio.Windows():
-        setattr(
-            _dumbwin32proc.win32process,
-            'CreateProcess',
-            real_CreateProcess)
+        setattr(_dumbwin32proc.win32process, 'CreateProcess', real_CreateProcess)
     return _CurrentProcess
 
 #------------------------------------------------------------------------------

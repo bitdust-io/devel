@@ -23,6 +23,7 @@
 #
 
 """
-.. module:: proxy
+..
 
+module:: proxy
 """

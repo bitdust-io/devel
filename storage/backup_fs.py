@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_fs
+.. module:: backup_fs.
 
 This is some kind of file system.
 To store backed up data on remote peers we can not use original files and folders names -
@@ -65,12 +65,7 @@ import time
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -128,7 +123,8 @@ def fsID():
 
 def counter():
     """
-    Software keeps track of total number of indexed items, this returns that value.
+    Software keeps track of total number of indexed items, this returns that
+    value.
     """
     global _ItemsCount
     return _ItemsCount
@@ -161,6 +157,7 @@ def sizefiles():
 def sizefolders():
     """
     Total size of all indexed folders.
+
     May be incorrect, because folder size is not calculated regular yet.
     """
     global _SizeFolders
@@ -200,7 +197,8 @@ def shutdown():
 
 class FSItemInfo():
     """
-    A class to represent a file or folder (possible other file system items) in the index.
+    A class to represent a file or folder (possible other file system items) in
+    the index.
     """
 
     def __init__(self, name='', path='', typ=UNKNOWN):
@@ -276,8 +274,7 @@ class FSItemInfo():
                 except:
                     lg.exc()
                 # add some bytes because on remote machines all files are packets
-                # so they have a header and the files size will be bigger than
-                # on local machine
+                # so they have a header and the files size will be bigger than on local machine
                 versionSize += sz + 1024
                 maxBlock = max(maxBlock, blockNum)
             self.set_version_info(version, maxBlock, versionSize)
@@ -362,11 +359,7 @@ class FSItemInfo():
             raise
 
     def __repr__(self):
-        return '<%s %s %d>' % (TYPES[
-            self.type],
-            misc.unicode_to_str_safe(
-            self.name()),
-            self.size)
+        return '<%s %s %d>' % (TYPES[self.type], misc.unicode_to_str_safe(self.name()), self.size)
 
 #------------------------------------------------------------------------------
 
@@ -374,17 +367,13 @@ class FSItemInfo():
 def MakeID(iter, startID=-1):
     """
     Create a new unique number for the folder to create a index ID.
+
     Parameter ``iter`` is a reference for a single item in the ``fs()``.
     """
     id = 0
     if startID >= 0:
         id = startID
-    while id in map(
-            lambda k: '' if k == 0 else (
-                iter[k] if isinstance(
-                    iter[k],
-                    int) else iter[k][0]),
-            iter.keys()):
+    while id in map(lambda k: '' if k == 0 else (iter[k] if isinstance(iter[k], int) else iter[k][0]), iter.keys()):
         id += 1
     return id
 
@@ -393,7 +382,9 @@ def MakeID(iter, startID=-1):
 
 def AddFile(path, read_stats=False, iter=None, iterID=None):
     """
-    Scan all components of the ``path`` and create an item in the index for that file.
+    Scan all components of the ``path`` and create an item in the index for
+    that file.
+
         >>> import backup_fs
         >>> backup_fs.AddFile('C:/Documents and Settings/veselin/Application Data/Google/GoogleEarth/myplaces.kml')
         ('0/0/0/0/0/0/0', {0: 0, u'myplaces.kml': 0}, {'i': <PARENT GoogleEarth -1>, 0: <FILE myplaces.kml -1>})
@@ -421,8 +412,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
         if name not in iter:
             # made a new ID for this folder, ID starts from 0. new folders will get the last ID +1
             # or it may find a free place in the middle, if some folders or files were removed before
-            # this way we try to protect the files and directories names. we
-            # store index in the encrypted files
+            # this way we try to protect the files and directories names. we store index in the encrypted files
             id = MakeID(iter)
             # build a unique backup id for that file including all indexed ids
             resultID += '/' + str(id)
@@ -430,8 +420,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
             ii = FSItemInfo(name, resultID.lstrip('/'), PARENT)
             if read_stats:
                 ii.read_stats(p)
-            # we use 0 key as decimal value, all files and folders are strings
-            # - no conflicts possible 0 != '0'
+            # we use 0 key as decimal value, all files and folders are strings - no conflicts possible 0 != '0'
             iter[ii.name()] = {0: id}
             # also save index from opposite side
             iterID[id] = {INFO_KEY: ii}
@@ -454,8 +443,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
         ii.read_stats(path)
     iter[ii.name()] = id
     iterID[id] = ii
-    # finally make a complete backup id - this a relative path to the backed
-    # up file
+    # finally make a complete backup id - this a relative path to the backed up file
     return resultID, iter, iterID
 
 
@@ -510,8 +498,9 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
 
 def AddLocalPath(localpath, read_stats=False):
     """
-    Operate like ``AddDir()`` but also recursively reads the entire folder and put all items in the index.
-    Parameter ``localpath`` can be a file or folder path in "portable" form.
+    Operate like ``AddDir()`` but also recursively reads the entire folder and
+    put all items in the index. Parameter ``localpath`` can be a file or folder
+    path in "portable" form.
 
         >>> import backup_fs
         >>> i = backup_fs.AddLocalPath('C:/Program Files/7-Zip/')
@@ -547,8 +536,7 @@ def AddLocalPath(localpath, read_stats=False):
             if bpio.pathIsDir(p):
                 if name not in iter:
                     id = MakeID(iter, lastID)
-                    ii = FSItemInfo(
-                        name, (path_id + '/' + str(id)).lstrip('/'), DIR)
+                    ii = FSItemInfo(name, (path_id + '/' + str(id)).lstrip('/'), DIR)
                     iter[ii.name()] = {0: id}
                     if read_stats:
                         ii.read_stats(p)
@@ -556,14 +544,10 @@ def AddLocalPath(localpath, read_stats=False):
                     lastID = id
                 else:
                     id = iter[name][0]
-                c += recursive_read_dir(p,
-                                        path_id + '/' + str(id),
-                                        iter[name],
-                                        iterID[id])
+                c += recursive_read_dir(p, path_id + '/' + str(id), iter[name], iterID[id])
             else:
                 id = MakeID(iter, lastID)
-                ii = FSItemInfo(
-                    name, (path_id + '/' + str(id)).lstrip('/'), FILE)
+                ii = FSItemInfo(name, (path_id + '/' + str(id)).lstrip('/'), FILE)
                 if read_stats:
                     ii.read_stats(p)
                 iter[ii.name()] = id
@@ -584,8 +568,9 @@ def AddLocalPath(localpath, read_stats=False):
 
 def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1):
     """
-    Acts like AddFile() but do not follow the directory structure.
-    This just "map" some local path (file or dir) to one item
+    Acts like AddFile() but do not follow the directory structure. This just
+    "map" some local path (file or dir) to one item.
+
     in the catalog - by default as a top level item.
     The name of new item will be equal to the local path.
     """
@@ -611,8 +596,9 @@ def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1):
 def SetFile(item, iter=None, iterID=None):
     """
     Put existing FSItemInfo ``item`` (for some single file) into the index.
-    This is used when loading index from file.
-    Should create all parent items in the index.
+
+    This is used when loading index from file. Should create all parent
+    items in the index.
     """
     if iter is None:
         iter = fs()
@@ -718,8 +704,7 @@ def WalkByPath(path, iter=None):
             return None
         if isinstance(iter[name], dict):
             if 0 not in iter[name]:
-                raise Exception(
-                    'Error, file or directory ID missed in the index')
+                raise Exception('Error, file or directory ID missed in the index')
             path_id += '/' + str(iter[name][0])
         elif isinstance(iter[name], int):
             if j != len(parts) - 1:
@@ -736,6 +721,7 @@ def WalkByPath(path, iter=None):
 def WalkByID(pathID, iterID=None):
     """
     Same, but search by ID:
+
         >>> backup_fs.WalkByID('0/0/0/10/1')
         (<FILE ru.txt 19107>, u'c:/Program Files/7-Zip/Lang/ru.txt')
 
@@ -758,16 +744,14 @@ def WalkByID(pathID, iterID=None):
             if INFO_KEY not in iterID[id]:
                 raise Exception('Error, directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
-            if bpio.pathIsDriveLetter(
-                    name) or bpio.pathIsNetworkLocation(name):
+            if bpio.pathIsDriveLetter(name) or bpio.pathIsNetworkLocation(name):
                 path += name
             else:
                 path += '/' + name
         elif isinstance(iterID[id], FSItemInfo):
             if j != len(parts) - 1:
                 return None
-            path += (('/' + iterID[id].name())
-                     if ('/' in pathID) else iterID[id].name())
+            path += (('/' + iterID[id].name()) if ('/' in pathID) else iterID[id].name())
         else:
             raise Exception('Wrong data type in the index')
         if j == len(parts) - 1:
@@ -797,8 +781,7 @@ def DeleteByID(pathID, iter=None, iterID=None):
             if INFO_KEY not in iterID[id]:
                 raise Exception('Error, directory info missed in the index')
             name = iterID[id][INFO_KEY].name()
-            if bpio.pathIsDriveLetter(
-                    name) or bpio.pathIsNetworkLocation(name):
+            if bpio.pathIsDriveLetter(name) or bpio.pathIsNetworkLocation(name):
                 path += name
             else:
                 path += '/' + name
@@ -894,7 +877,9 @@ def ToID(localPath, iter=None):
 
 def ToPath(pathID, iterID=None):
     """
-    Get a full relative path from ``pathID``, this is a wrapper for ``WalkByID()`` method::
+    Get a full relative path from ``pathID``, this is a wrapper for
+    ``WalkByID()`` method::
+
         >>> backup_fs.ToPath("/0/0/12/1")
         u'/home/veselin/Documents/somefile.txt'
 
@@ -910,7 +895,8 @@ def ToPath(pathID, iterID=None):
 
 def GetByID(pathID):
     """
-    Return iterator to item with given ID, search in the index with ``WalkByID()``.
+    Return iterator to item with given ID, search in the index with
+    ``WalkByID()``.
     """
     iter_and_path = WalkByID(pathID)
     if iter_and_path is None:
@@ -922,9 +908,12 @@ def GetByID(pathID):
 
 def GetByPath(path):
     """
-    This calls ``ToID()`` first to get the ID and than use ``GetByID()`` to take the item.
-    In fact we store items by ID, to have fast search by path we also keep opposite index.
-    So we need to use second index to get the ID at first and than use the main index to get the item.
+    This calls ``ToID()`` first to get the ID and than use ``GetByID()`` to
+    take the item.
+
+    In fact we store items by ID, to have fast search by path we also
+    keep opposite index. So we need to use second index to get the ID at
+    first and than use the main index to get the item.
     """
     path_id = ToID(path)
     if path_id is None:
@@ -1088,13 +1077,7 @@ def TraverseByID(callback, iterID=None):
             if id == INFO_KEY:
                 continue
             if isinstance(i[id], dict):
-                recursive_traverse(
-                    i[id],
-                    path_id +
-                    '/' +
-                    str(id) if path_id else str(id),
-                    path,
-                    cb)
+                recursive_traverse(i[id], path_id + '/' + str(id) if path_id else str(id), path, cb)
             elif isinstance(i[id], FSItemInfo):
                 cb((path_id + '/' + str(id)).lstrip('/') if path_id else str(id),
                     ResolvePath(path, i[id].name()),
@@ -1136,14 +1119,9 @@ def TraverseByIDSorted(callback, iterID=None):
         dirs.sort(key=lambda e: e[1])
         files.sort(key=lambda e: e[1])
         for id, pth in dirs:
-            recursive_traverse(
-                i[id],
-                (path_id + '/' + str(id)).lstrip('/') if path_id else str(id),
-                path,
-                cb)
+            recursive_traverse(i[id], (path_id + '/' + str(id)).lstrip('/') if path_id else str(id), path, cb)
         for id, pth in files:
-            cb((path_id + '/' + str(id)).lstrip('/')
-               if path_id else str(id), pth, i[id], False)
+            cb((path_id + '/' + str(id)).lstrip('/') if path_id else str(id), pth, i[id], False)
         del dirs
         del files
     if iterID is None:
@@ -1154,6 +1132,7 @@ def TraverseByIDSorted(callback, iterID=None):
 
 def TraverseChildsByID(callback, iterID=None):
     """
+    
     """
     def list_traverse(i, path_id, path, cb):
         name = None
@@ -1205,6 +1184,7 @@ def TraverseChildsByID(callback, iterID=None):
 def IterateIDs(iterID=None):
     """
     You can iterate all index using that method:
+
         >>> for pathID, localPath, itemInfo in p2p.backup_fs.IterateIDs():
         ...     print pathID, localPath, itemInfo
         ...
@@ -1241,8 +1221,7 @@ def IterateIDs(iterID=None):
             if id == INFO_KEY:
                 continue
             if isinstance(i[id], dict):
-                for t in recursive_iterate(
-                        i[id], (path_id + '/' + str(id)).lstrip('/') if path_id else str(id), path):
+                for t in recursive_iterate(i[id], (path_id + '/' + str(id)).lstrip('/') if path_id else str(id), path):
                     yield t
             elif isinstance(i[id], FSItemInfo):
                 yield ((path_id + '/' + str(id)).lstrip('/') if path_id else str(id),
@@ -1274,14 +1253,11 @@ def GetBackupStatus(backupID, item_info, item_name, parent_path_existed=None):
             if maxBlockNum > 0:
                 percent = 100.0 * currentBlock / maxBlockNum
             # blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
-            # return '%s / %s' % (misc.percent2string(percent),
-            # misc.percent2string(weakPercent))
+            # return '%s / %s' % (misc.percent2string(percent), misc.percent2string(weakPercent))
             return 'down', misc.percent2string(percent)
-    blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(
-        backupID)
+    blocks, percent, weakBlock, weakPercent = backup_matrix.GetBackupRemoteStats(backupID)
     # localPercent, localFiles, totalSize, maxBlockNum, localStats = backup_matrix.GetBackupLocalStats(backupID)
-    # return '%s / %s' % (misc.percent2string(localPercent),
-    # misc.percent2string(weakPercent))
+    # return '%s / %s' % (misc.percent2string(localPercent), misc.percent2string(weakPercent))
     return 'ready', misc.percent2string(weakPercent)
 
 
@@ -1306,8 +1282,7 @@ def ExtractVersions(item_id, item_info, path_exist=None):
                 b[1:5], b[5:7], b[7:9], b[9:11], b[11:13], b[13:15], b[15:17])
         else:
             version_label = backupID
-        version_state, version_status = GetBackupStatus(
-            backupID, item_info, item_info.name(), path_exist)
+        version_state, version_status = GetBackupStatus(backupID, item_info, item_info.name(), path_exist)
         # item_status += version_status + ' '
         versions.append({'backupid': backupID,
                          'label': version_label,
@@ -1317,8 +1292,7 @@ def ExtractVersions(item_id, item_info, path_exist=None):
                          'state': version_state, })
     # if not item_status:
         # item_status = '-'
-    item_time = time.strftime("%Y-%m-%d %H:%M:%S",
-                              time.gmtime(item_time)) if item_time else ''
+    item_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(item_time)) if item_time else ''
     return (item_size, item_time, versions)
 
 #------------------------------------------------------------------------------
@@ -1326,6 +1300,7 @@ def ExtractVersions(item_id, item_info, path_exist=None):
 
 def ListRootItems(iter=None):
     """
+    
     """
     result = []
     root_items = WalkByPath('', iter)
@@ -1338,6 +1313,7 @@ def ListRootItems(iter=None):
 
 def ListChilds(iterID):
     """
+    
     """
     lg.out(4, 'backup_fs.ListChilds %s' % (iterID))
     result = []
@@ -1392,10 +1368,7 @@ def ListByID(pathID, iterID=None):
             itm = iterID[id]
         else:
             raise Exception('Wrong data type in the index')
-        result.append(
-            ((pathID + '/' + str(id)).lstrip('/'),
-             path + '/' + name,
-             itm))
+        result.append(((pathID + '/' + str(id)).lstrip('/'), path + '/' + name, itm))
     return result
 
 
@@ -1427,8 +1400,7 @@ def ListByPath(path, iter=None):
             id = iter[key]
         else:
             raise Exception('Wrong data type in the index')
-        result.append(
-            ((path_id + '/' + str(id)).lstrip('/'), path + '/' + key))
+        result.append(((path_id + '/' + str(id)).lstrip('/'), path + '/' + key))
     return result
 
 
@@ -1454,11 +1426,7 @@ def ListAllBackupIDsFull(sorted=False, reverse=False, iterID=None):
     def visitor(path_id, path, info):
         for version in info.list_versions(sorted, reverse):
             backupID = (path_id + '/' + version).lstrip('/')
-            lst.append(
-                (info.name(),
-                 backupID,
-                 info.get_version_info(version),
-                 path))
+            lst.append((info.name(), backupID, info.get_version_info(version), path))
     TraverseByID(visitor)
     return lst
 
@@ -1472,34 +1440,23 @@ def ListAllBackupIDsSQL(sorted=False, reverse=False, iterID=None):
     def visitor(path_id, path, info):
         for version in info.list_versions(sorted, reverse):
             szver = info.get_version_info(version)[1]
-            szverstr = diskspace.MakeStringFromBytes(
-                szver) if szver >= 0 else '?'
-            lst.append(
-                (len(lst) + 1,
-                 (path_id + '/' + version).lstrip('/'),
-                    szverstr,
-                    path))
+            szverstr = diskspace.MakeStringFromBytes(szver) if szver >= 0 else '?'
+            lst.append((len(lst) + 1, (path_id + '/' + version).lstrip('/'), szverstr, path))
     TraverseByID(visitor)
     return lst
 
 
 def ListSelectedFolders(selected_dirs_ids, sorted=False, reverse=False):
     """
-    List items from index only if they are sub items of ``selected_dirs_ids`` list.
+    List items from index only if they are sub items of ``selected_dirs_ids``
+    list.
     """
     lst = []
 
     def visitor(path_id, path, info, has_childs):
         basepathid = path_id[:path_id.rfind('/')] if path_id.count('/') else ''
         if basepathid in selected_dirs_ids:
-            lst.append(
-                (info.type,
-                 path_id,
-                 path,
-                 info.size,
-                 info.list_versions(
-                     sorted,
-                     reverse)))
+            lst.append((info.type, path_id, path, info.size, info.list_versions(sorted, reverse)))
         return True
     TraverseByIDSorted(visitor)
     return lst
@@ -1515,12 +1472,7 @@ def ListExpandedFoldersAndBackups(expanded_dirs, selected_items):
     def visitor(path_id, path, info, has_childs):
         basepathid = path_id[:path_id.rfind('/')] if path_id.count('/') else ''
         if basepathid in expanded_dirs:
-            lst.append(
-                (info.type,
-                 path_id,
-                 path,
-                 info.size,
-                 info.get_versions()))
+            lst.append((info.type, path_id, path, info.size, info.get_versions()))
         if path_id in selected_items:
             for version in info.list_versions():
                 backups.append((path_id + '/' + version).lstrip('/'))
@@ -1554,32 +1506,14 @@ def ListByPathAdvanced(path, iter=None):
     def visitor(item_type, item_name, item_path_id, item_info, has_childs):
         if item_type == DIR:
             item_id = (pathID + '/' + item_path_id).strip('/')
-            (item_size, item_time, versions) = ExtractVersions(
-                item_id, item_info, path_exist)
-            result.append(
-                ('dir',
-                 item_info.name(),
-                 item_id,
-                 item_size,
-                 item_time,
-                 path,
-                 has_childs,
-                 item_info.exist(),
-                 versions))
+            (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)
+            result.append(('dir', item_info.name(), item_id,
+                           item_size, item_time, path, has_childs, item_info.exist(), versions))
         elif item_type == FILE:
             item_id = (pathID + '/' + item_path_id).strip('/')
-            (item_size, item_time, versions) = ExtractVersions(
-                item_id, item_info, path_exist)
-            result.append(
-                ('file',
-                 item_info.name(),
-                 item_id,
-                 item_size,
-                 item_time,
-                 path,
-                 False,
-                 item_info.exist(),
-                 versions))
+            (item_size, item_time, versions) = ExtractVersions(item_id, item_info, path_exist)
+            result.append(('file', item_info.name(), item_id,
+                           item_size, item_time, path, False, item_info.exist(), versions))
     TraverseChildsByID(visitor, iterID)
     return result
 
@@ -1596,29 +1530,11 @@ def ListAllBackupIDsAdvanced(sorted=False, reverse=False, iterID=None):
         dirpath = os.path.dirname(path)
         (item_size, item_time, versions) = ExtractVersions(path_id, info, dirpath)
         if info.type == DIR:
-            result.append(
-                ('dir',
-                 info.name(),
-                    path_id,
-                    item_size,
-                    item_time,
-                    dirpath,
-                    has_childs,
-                    info.exist(),
-                    versions,
-                 ))
+            result.append(('dir', info.name(), path_id,
+                           item_size, item_time, dirpath, has_childs, info.exist(), versions,))
         elif info.type == FILE:
-            result.append(
-                ('file',
-                 info.name(),
-                    path_id,
-                    item_size,
-                    item_time,
-                    dirpath,
-                    has_childs,
-                    info.exist(),
-                    versions,
-                 ))
+            result.append(('file', info.name(), path_id,
+                           item_size, item_time, dirpath, has_childs, info.exist(), versions,))
     TraverseByIDSorted(visitor)
     return result
 
@@ -1692,10 +1608,12 @@ def DeleteLocalBackup(basedir, backupID):
 
 def Scan(basedir=None):
     """
-    Walk all items in the index and check if local files and folders with same names exists.
-    Parameter ``basedir`` is a root path of that structure,
-    default is ``lib.settings.getLocalBackupsDir()``.
-    Also calculate size of the files.
+    Walk all items in the index and check if local files and folders with same
+    names exists.
+
+    Parameter ``basedir`` is a root path of that structure, default is
+    ``lib.settings.getLocalBackupsDir()``. Also calculate size of the
+    files.
     """
     if basedir is None:
         basedir = settings.getLocalBackupsDir()
@@ -1867,23 +1785,18 @@ def Unserialize(inpt, iter=None, iterID=None):
     """
     count = 0
     while True:
-        # 2 times because we take 2 lines for every item
-        src = inpt.readline() + inpt.readline()
+        src = inpt.readline() + inpt.readline()  # 2 times because we take 2 lines for every item
         if src.strip() == '':
             break
         item = FSItemInfo()
         item.unserialize(src)
         if item.type == FILE:
             if not SetFile(item, iter, iterID):
-                raise Exception(
-                    'Can not put item into the tree: %s' %
-                    str(item))
+                raise Exception('Can not put item into the tree: %s' % str(item))
             count += 1
         elif item.type == DIR or item.type == PARENT:
             if not SetDir(item, iter, iterID):
-                raise Exception(
-                    'Can not put item into the tree: %s' %
-                    str(item))
+                raise Exception('Can not put item into the tree: %s' % str(item))
             count += 1
         else:
             raise Exception('Incorrect entry type')
@@ -1914,8 +1827,7 @@ def test():
     # pprint.pprint(fsID())
     # for pathID, localPath, item in IterateIDs():
     #     sz = diskspace.MakeStringFromBytes(item.size) if item.exist() else ''
-    # print '  %s %s %s' % (pathID.ljust(27), localPath.ljust(70),
-    # sz.ljust(9))
+    #     print '  %s %s %s' % (pathID.ljust(27), localPath.ljust(70), sz.ljust(9))
 
     # import pdb
     # pdb.set_trace()

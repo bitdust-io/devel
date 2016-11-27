@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: config_details
+..
+
+module:: config_details
 """
 
 

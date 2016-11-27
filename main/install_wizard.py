@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: install_wizard
+.. module:: install_wizard.
 
 .. raw:: html
 
@@ -86,6 +86,7 @@ def A(event=None, arg=None):
 class InstallWizard(automat.Automat):
     """
     BitDust install_wizard() Automat.
+
     Runs install wizard process.
     """
 

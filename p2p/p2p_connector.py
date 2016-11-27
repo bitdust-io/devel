@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: p2p_connector
+.. module:: p2p_connector.
 
 .. raw:: html
 
@@ -118,42 +118,23 @@ def inbox(newpacket, info, status, message):
     if info.proto in ['tcp', ]:
         if not net_misc.IpIsLocal(str(info.host).split(':')[0]):
             # but we want to check that this packet is come from the Internet, not our local network
-            # because we do not want to use this proto as first method if it is
-            # not working for all
+            # because we do not want to use this proto as first method if it is not working for all
             if info.proto not in active_protos():
                 if _Debug:
-                    lg.out(
-                        2,
-                        'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' %
-                        info.proto)
-                    lg.out(
-                        2, '                    We got packet from %s://%s' %
-                        (info.proto, str(
-                            info.host)))
+                    lg.out(2, 'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                    lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
                 active_protos().add(info.proto)
     elif info.proto in ['udp', ]:
         if info.proto not in active_protos():
             if _Debug:
-                lg.out(
-                    2,
-                    'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' %
-                    info.proto)
-                lg.out(
-                    2, '                    We got packet from %s://%s' %
-                    (info.proto, str(
-                        info.host)))
+                lg.out(2, 'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     elif info.proto in ['proxy', ]:
         if info.proto not in active_protos():
             if _Debug:
-                lg.out(
-                    2,
-                    'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' %
-                    info.proto)
-                lg.out(
-                    2, '                    We got packet from %s://%s' %
-                    (info.proto, str(
-                        info.host)))
+                lg.out(2, 'p2p_connector.inbox [transport_%s] seems to work !!!!!!!!!!!!!!!!!!!!!' % info.proto)
+                lg.out(2, '                    We got packet from %s://%s' % (info.proto, str(info.host)))
             active_protos().add(info.proto)
     A('inbox-packet', (newpacket, info, status, message))
     return False
@@ -190,6 +171,7 @@ def Destroy():
 
 class P2PConnector(automat.Automat):
     """
+    
     """
 
     timers = {
@@ -267,8 +249,7 @@ class P2PConnector(automat.Automat):
                 self.state = 'CONNECTED'
         #---PROPAGATE---
         elif self.state == 'PROPAGATE':
-            if ((event == 'network_connector.state' and arg ==
-                 'CONNECTED')) or event == 'check-synchronize':
+            if ((event == 'network_connector.state' and arg == 'CONNECTED')) or event == 'check-synchronize':
                 self.state = 'MY_IDENTITY'
                 self.doUpdateMyIdentity(arg)
             elif event == 'my-id-propagated':
@@ -302,12 +283,9 @@ class P2PConnector(automat.Automat):
         propagate.single(arg, wide=True)
 
     def doInit(self, arg):
-        version_number = bpio.ReadTextFile(
-            settings.VersionNumberFile()).strip()
+        version_number = bpio.ReadTextFile(settings.VersionNumberFile()).strip()
         if _Debug:
-            lg.out(
-                4, 'p2p_connector.doInit RevisionNumber=%s' %
-                str(version_number))
+            lg.out(4, 'p2p_connector.doInit RevisionNumber=%s' % str(version_number))
         callback.insert_inbox_callback(0, inbox)
 
     def doUpdateMyIdentity(self, arg):
@@ -331,25 +309,19 @@ class P2PConnector(automat.Automat):
             # erase all stats about received packets
             # if some contacts in my identity has been changed
             if _Debug:
-                lg.out(
-                    4, '    my contacts were changed, erase active_protos() flags')
+                lg.out(4, '    my contacts were changed, erase active_protos() flags')
             active_protos().clear()
         if _Debug:
-            lg.out(4, '    identity HAS %sBEEN CHANGED' %
-                   ('' if identity_changed else 'NOT '))
+            lg.out(4, '    identity HAS %sBEEN CHANGED' % ('' if identity_changed else 'NOT '))
         self.automat('my-id-updated', (contacts_changed, identity_changed))
 
     def doPropagateMyIdentity(self, arg):
-        # TODO: need to run this actions one by one, not in parallel - use
-        # Defered chain
+        # TODO: need to run this actions one by one, not in parallel - use Defered chain
         propagate.update()
         propagate.write_to_dht()
         dht_service.set_node_data('idurl', my_id.getLocalID())
         d = propagate.start(wide=True)
-        d.addCallback(
-            lambda contacts_list: self.automat(
-                'my-id-propagated',
-                contacts_list))
+        d.addCallback(lambda contacts_list: self.automat('my-id-propagated', contacts_list))
 
     def doPopBestProto(self, arg):
         self._pop_active_proto()
@@ -391,16 +363,13 @@ class P2PConnector(automat.Automat):
         # if no protocols in local identity - do nothing
         if len(order) == 0:
             return True
-        # when transport proxy is working we do not need to check our contacts
-        # at all
+        # when transport proxy is working we do not need to check our contacts at all
         if settings.transportIsEnabled('proxy'):
             if driver.is_started('service_proxy_transport'):
                 if settings.transportReceivingIsEnabled('proxy'):
                     try:
-                        # TODO: change here to receive the value directly from
-                        # service_proxy_transport object
-                        router_idurl = driver.services()['service_proxy_transport'].transport.options[
-                            'router_idurl']
+                        # TODO: change here to receive the value directly from service_proxy_transport object
+                        router_idurl = driver.services()['service_proxy_transport'].transport.options['router_idurl']
                     except:
                         router_idurl = None
                     if router_idurl:
@@ -415,35 +384,26 @@ class P2PConnector(automat.Automat):
                                     contacts_is_ok = False
                         if contacts_is_ok:
                             if _Debug:
-                                lg.out(
-                                    6, 'p2p_connector._check_to_use_best_proto returning True : proxy_transport is fine :-)')
+                                lg.out(6, 'p2p_connector._check_to_use_best_proto returning True : proxy_transport is fine :-)')
                             return True
         first = order[0]
         # if first contact in local identity is not working yet
         # but there is another working methods - switch first method
         if first not in active_protos():
             if _Debug:
-                lg.out(
-                    2, 'p2p_connector._check_to_use_best_proto first contact (%s) is not working!   active_protos()=%s' %
-                    (first, str(
-                        active_protos())))
+                lg.out(2, 'p2p_connector._check_to_use_best_proto first contact (%s) is not working!   active_protos()=%s' % (first, str(active_protos())))
             return False
         # #small hack to make udp as first method if all is fine
         # if first != 'udp' and ('udp' in active_protos() and 'tcp' in active_protos()):
         #     lg.out(2, 'p2p_connector._check_to_use_best_proto first contact (%s) but UDP also works!  active_protos()=%s' % (first, str(active_protos())))
         #     return False
-        # if tcp contact is on first place and it is working - we are VERY
-        # HAPPY! - no need to change anything - return False
+        # if tcp contact is on first place and it is working - we are VERY HAPPY! - no need to change anything - return False
         if first == 'tcp' and 'tcp' in active_protos():
             return True
-        # but if tcp method is not the first and it works - we want to TURN IT
-        # ON! - return True
+        # but if tcp method is not the first and it works - we want to TURN IT ON! - return True
         if first != 'tcp' and 'tcp' in active_protos():
             if _Debug:
-                lg.out(
-                    2,
-                    'p2p_connector._check_to_use_best_proto tcp is not first but it works active_protos()=%s' % str(
-                        active_protos()))
+                lg.out(2, 'p2p_connector._check_to_use_best_proto tcp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
         # if we are using udp and it is working - this is fantastic!
         if first == 'udp' and 'udp' in active_protos():
@@ -452,27 +412,18 @@ class P2PConnector(automat.Automat):
             if 'tcp' in active_protos():
                 return False
             return True
-        # udp seems to be working and first contact is not working - so switch
-        # to udp
+        # udp seems to be working and first contact is not working - so switch to udp
         if first != 'udp' and 'udp' in active_protos():
             if _Debug:
-                lg.out(
-                    2,
-                    'p2p_connector._check_to_use_best_proto udp is not first but it works active_protos()=%s' % str(
-                        active_protos()))
+                lg.out(2, 'p2p_connector._check_to_use_best_proto udp is not first but it works active_protos()=%s' % str(active_protos()))
             return False
-        # if we are using proxy and it is working - that is fine - it must work
-        # always!
+        # if we are using proxy and it is working - that is fine - it must work always!
         if first == 'proxy' and 'proxy' in active_protos():
             return True
-        # proxy seems to be working and first contact is not working - so
-        # switch to proxy
+        # proxy seems to be working and first contact is not working - so switch to proxy
         if first != 'proxy' and 'proxy' in active_protos():
             if _Debug:
-                lg.out(
-                    2,
-                    'p2p_connector._check_to_use_best_proto proxy is not first but it works active_protos()=%s' % str(
-                        active_protos()))
+                lg.out(2, 'p2p_connector._check_to_use_best_proto proxy is not first but it works active_protos()=%s' % str(active_protos()))
             return False
         # in other cases - do nothing
         return True
@@ -500,10 +451,8 @@ class P2PConnector(automat.Automat):
         if first != 'tcp' and 'tcp' in active_protos():
             wantedproto = 'tcp'
         if _Debug:
-            lg.out(
-                4, 'p2p_connector.PopWorkingProto will pop %s contact order=%s active_protos()=%s' %
-                (wantedproto, str(order), str(
-                    active_protos())))
+            lg.out(4, 'p2p_connector.PopWorkingProto will pop %s contact order=%s active_protos()=%s' % (
+                wantedproto, str(order), str(active_protos())))
         # now move best proto on the top
         # other users will use this method to send to us
         lid.popProtoContact(wantedproto)

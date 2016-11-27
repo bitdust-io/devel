@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: coins_db
+..
 
+module:: coins_db
 """
 
 #------------------------------------------------------------------------------
@@ -49,12 +50,7 @@ from CodernityDB.index import IndexNotFoundException
 if __name__ == '__main__':
     import sys
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -179,13 +175,12 @@ def _clean_doc(doc):
 def query_json(jdata):
     """
     Input keys:
-        method: 'get', 'get_many' or 'get_all'
-        index: 'id', 'idurl', etc.
-        key: key to read single record from db (optional)
-        start: low key limit to search records in range
-        end: high key limit to search records in range
-    Returns tuple:
-        generator object or None, error message
+
+    method: 'get', 'get_many' or 'get_all'     index: 'id', 'idurl',
+    etc.     key: key to read single record from db (optional)
+    start: low key limit to search records in range     end: high key
+    limit to search records in range Returns tuple:     generator object
+    or None, error message
     """
     if not db().opened:
         return None, 'database is closed'
@@ -308,8 +303,7 @@ def _test():
             print ret[1]
 
 #     print insert({'idurl': 'http://idurl1234', 'time': '12345678'})
-# print insert({'hash': '1234567812345678' + random.choice(['a,b,c']),
-# 'data': {'a':'b', 'c': 'd', 'time': 123456,}})
+#     print insert({'hash': '1234567812345678' + random.choice(['a,b,c']), 'data': {'a':'b', 'c': 'd', 'time': 123456,}})
 
 #     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn.xml',
 #                   'hash': 'abcdef',
@@ -339,19 +333,16 @@ def _test():
     _p(query_json({'method': 'get', 'index': 'hash', 'key': 'abcdef123', }))
 
     print 'query many from "hash"'
-    _p(query_json({'method': 'get_many',
-                   'index': 'hash', 'key': 'abcdef123', }))
+    _p(query_json({'method': 'get_many', 'index': 'hash', 'key': 'abcdef123', }))
 
     print 'query one from "time"'
     _p(query_json({'method': 'get', 'index': 'time', 'key': 1474380456, }))
 
     print 'query one from "idurl"'
-    _p(query_json({'method': 'get', 'index': 'idurl',
-                   'key': 'http://veselin-p2p.ru/veselin_kpn123.xml'}))
+    _p(query_json({'method': 'get', 'index': 'idurl', 'key': 'http://veselin-p2p.ru/veselin_kpn123.xml'}))
 
     print 'query some from "time"'
-    _p(query_json({'method': 'get_many', 'index': 'time',
-                   'limit': 3, 'offset': 2, 'start': 0, 'end': None, }))
+    _p(query_json({'method': 'get_many', 'index': 'time', 'limit': 3, 'offset': 2, 'start': 0, 'end': None, }))
 
     print 'query all from "hash"'
     _p(query_json({'method': 'get_all', 'index': 'hash'}))
@@ -360,8 +351,7 @@ def _test():
     _p(query_json({'method': 'get_many', 'index': 'time', 'key': 1474380456, }))
 
     print 'query one from "id"'
-    _p(query_json({'method': 'get', 'index': 'id',
-                   'key': '5d909de518db44329183d187927cabc9', }))
+    _p(query_json({'method': 'get', 'index': 'id', 'key': '5d909de518db44329183d187927cabc9', }))
 
     print 'query all from "id"'
     _p(query_json({'method': 'get_all', 'index': 'id'}))

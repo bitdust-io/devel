@@ -27,9 +27,10 @@
 #
 
 """
-.. module:: webtraffic
+.. module:: webtraffic.
 
-A useful code to monitor program packets traffic in the Web browser using local HTML server.
+A useful code to monitor program packets traffic in the Web browser
+using local HTML server.
 """
 
 import sys
@@ -41,7 +42,7 @@ except:
 
 from twisted.web import server, resource
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 #(total bytes, finished packets, failed packets, total packets)
 _InboxPacketsCount = 0
@@ -60,7 +61,7 @@ _WebListener = None
 
 _DefaultReloadTimeout = 600
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init(root=None, path='traffic', port=9997):
@@ -251,7 +252,7 @@ def outbox(pkt_out, item, status, size, error_message):
     _OutboxPacketsCount += 1
     return False
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 class TrafficPage(resource.Resource):
@@ -306,11 +307,7 @@ class TrafficPage(resource.Resource):
         except:
             reloadV = _DefaultReloadTimeout
 
-        d = {
-            'type': typ,
-            'reload': str(reloadV),
-            'dir': direction,
-            'baseurl': request.path}
+        d = {'type': typ, 'reload': str(reloadV), 'dir': direction, 'baseurl': request.path}
         out = self.header_html % d
         if direction == 'in':
             if typ == 'idurl':

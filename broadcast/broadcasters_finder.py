@@ -22,7 +22,8 @@
 
 
 """
-.. module:: broadcasters_finder
+.. module:: broadcasters_finder.
+
 .. role:: red
 
 BitDust broadcasters_finder() Automat
@@ -77,8 +78,7 @@ def A(event=None, arg=None):
         return _BroadcastersFinder
     if _BroadcastersFinder is None:
         # set automat name and starting state here
-        _BroadcastersFinder = BroadcastersFinder(
-            'broadcasters_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+        _BroadcastersFinder = BroadcastersFinder('broadcasters_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _BroadcastersFinder.automat(event, arg)
     return _BroadcastersFinder
@@ -88,7 +88,8 @@ def A(event=None, arg=None):
 
 class BroadcastersFinder(automat.Automat):
     """
-    This class implements all the functionality of the ``broadcasters_finder()`` state machine.
+    This class implements all the functionality of the
+    ``broadcasters_finder()`` state machine.
     """
 
     timers = {
@@ -104,7 +105,8 @@ class BroadcastersFinder(automat.Automat):
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'AT_STARTUP':
             if event == 'init':
@@ -217,10 +219,7 @@ class BroadcastersFinder(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'broadcasters_finder.doNotifyLookupFailed, Attempts=%d' %
-                self.Attempts)
+            lg.out(_DebugLevel, 'broadcasters_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
         if self.result_callback:
             self.result_callback('lookup-failed', arg)
         self.result_callback = None
@@ -237,7 +236,7 @@ class BroadcastersFinder(automat.Automat):
         del _BroadcastersFinder
         _BroadcastersFinder = None
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         if  newpacket.Command == commands.Ack() and \
@@ -250,36 +249,24 @@ class BroadcastersFinder(automat.Automat):
 
     def _node_acked(self, response, info):
         if _Debug:
-            lg.out(
-                _DebugLevel, 'broadcasters_finder._node_acked %r %r' %
-                (response, info))
+            lg.out(_DebugLevel, 'broadcasters_finder._node_acked %r %r' % (response, info))
         if not response.Payload.startswith('accepted'):
             if _Debug:
-                lg.out(
-                    _DebugLevel, 'broadcasters_finder._node_acked with service denied %r %r' %
-                    (response, info))
+                lg.out(_DebugLevel, 'broadcasters_finder._node_acked with service denied %r %r' % (response, info))
             self.automat('service-denied')
             return
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'broadcasters_finder._node_acked !!!! broadcaster %s connected' %
-                response.CreatorID)
+            lg.out(_DebugLevel, 'broadcasters_finder._node_acked !!!! broadcaster %s connected' % response.CreatorID)
         self.automat('service-accepted', response.CreatorID)
 
     def _node_failed(self, response, info):
         if _Debug:
-            lg.out(
-                _DebugLevel, 'broadcasters_finder._node_failed %r %r' %
-                (response, info))
+            lg.out(_DebugLevel, 'broadcasters_finder._node_failed %r %r' % (response, info))
         self.automat('service-denied')
 
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'broadcasters_finder._nodes_lookup_finished : %r' %
-                idurls)
+            lg.out(_DebugLevel, 'broadcasters_finder._nodes_lookup_finished : %r' % idurls)
         for idurl in idurls:
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())

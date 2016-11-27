@@ -45,7 +45,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 """
-Parallel Python Software, PP Worker
+Parallel Python Software, PP Worker.
 
 http://www.parallelpython.com - updates, documentation, examples and support
 forums
@@ -97,8 +97,7 @@ class _WorkerProcess(object):
         origsout = sys.stdout
         sys.stdout = self.sout
         sys.stderr = self.sout
-        self.t = pptransport.CPipeTransport(
-            sys.stdin, origsout)  # sys.__stdout__)
+        self.t = pptransport.CPipeTransport(sys.stdin, origsout)  # sys.__stdout__)
         self.t.send(str(os.getpid()))
         self.pickle_proto = int(self.t.receive())
 

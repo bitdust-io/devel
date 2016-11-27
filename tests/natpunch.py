@@ -30,12 +30,7 @@ from twisted.internet.defer import Deferred, DeferredList
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 from logs import lg
 
@@ -64,8 +59,7 @@ def listen(local_port, servers, incomings_filename):
 def connect(local_port, remote_ip, servers, min_port, max_port):
     def _loop():
         for port_num in range(min_port, max_port + 1):
-            udp.send_command(local_port, udp.CMD_PING,
-                             'ping', (remote_ip, port_num))
+            udp.send_command(local_port, udp.CMD_PING, 'ping', (remote_ip, port_num))
         reactor.callLater(5, _loop)
     for srv in servers:
         udp.send_command(local_port, udp.CMD_PING, 'ping', srv)
@@ -78,12 +72,7 @@ def datagram_received(datagram, address, local_port):
     except:
         return
     if sys.argv[1] == 'server':
-        udp.send_command(
-            local_port,
-            udp.CMD_PING,
-            'stun %s:%d' %
-            address,
-            address)
+        udp.send_command(local_port, udp.CMD_PING, 'stun %s:%d' % address, address)
     elif sys.argv[1] == 'listen':
         if payload.startswith('stun'):
             print payload
@@ -115,15 +104,12 @@ def main():
         max_port = int(sys.argv[3])
         for port_num in range(min_port, max_port + 1):
             udp.listen(port_num)
-            udp.proto(port_num).add_callback(
-                lambda d, a: datagram_received(d, a, port_num))
+            udp.proto(port_num).add_callback(lambda d, a: datagram_received(d, a, port_num))
 
     elif sys.argv[1] == 'listen':
         port_num = int(sys.argv[2])
         udp.listen(port_num)
-        udp.proto(port_num).add_callback(
-            lambda d, a: datagram_received(
-                d, a, port_num))
+        udp.proto(port_num).add_callback(lambda d, a: datagram_received(d, a, port_num))
         servers = []
         for line in open(sys.argv[3]).read().split('\n'):
             addr = line.strip().split(':')
@@ -135,9 +121,7 @@ def main():
         port_num = int(sys.argv[2])
         remote_ip = sys.argv[3]
         udp.listen(port_num)
-        udp.proto(port_num).add_callback(
-            lambda d, a: datagram_received(
-                d, a, port_num))
+        udp.proto(port_num).add_callback(lambda d, a: datagram_received(d, a, port_num))
         servers = []
         for line in open(sys.argv[4]).read().split('\n'):
             addr = line.strip().split(':')

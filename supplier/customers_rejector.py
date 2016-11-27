@@ -22,7 +22,8 @@
 
 
 """
-.. module:: customers_rejector
+.. module:: customers_rejector.
+
 .. role:: red
 
 BitDust customers_rejector() Automat
@@ -74,8 +75,7 @@ def A(event=None, arg=None):
     global _CustomersRejector
     if _CustomersRejector is None:
         # set automat name and starting state here
-        _CustomersRejector = CustomersRejector(
-            'customers_rejector', 'READY', 4)
+        _CustomersRejector = CustomersRejector('customers_rejector', 'READY', 4)
     if event is not None:
         _CustomersRejector.automat(event, arg)
     return _CustomersRejector
@@ -95,8 +95,8 @@ def Destroy():
 
 class CustomersRejector(automat.Automat):
     """
-    This class implements all the functionality of the ``customers_rejector()`` state machine.
-
+    This class implements all the functionality of the ``customers_rejector()``
+    state machine.
     """
 
     timers = {
@@ -105,7 +105,8 @@ class CustomersRejector(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
 
     def A(self, event, arg):
@@ -134,11 +135,12 @@ class CustomersRejector(automat.Automat):
     def doTestMyCapacity(self, arg):
         """
         Here are some values.
-            + donated_bytes : you set this in the configs
-            + consumed_bytes : how many space was taken from you by other users
-            + free_bytes = donated_bytes - consumed_bytes : not yet allocated space
-            + used_bytes : size of all files, which you store on your disk for your customers
-            + ratio : currently used space compared to consumed space
+
+        + donated_bytes : you set this in the configs
+        + consumed_bytes : how many space was taken from you by other users
+        + free_bytes = donated_bytes - consumed_bytes : not yet allocated space
+        + used_bytes : size of all files, which you store on your disk for your customers
+        + ratio : currently used space compared to consumed space
         """
         lg.out(8, 'customers_rejector.doTestMyCapacity')
         failed_customers = set()
@@ -146,8 +148,7 @@ class CustomersRejector(automat.Automat):
         donated_bytes = settings.getDonatedBytes()
         space_dict = accounting.read_customers_quotas()
         used_dict = accounting.read_customers_usage()
-        unknown_customers, unused_quotas = accounting.validate_customers_quotas(
-            space_dict)
+        unknown_customers, unused_quotas = accounting.validate_customers_quotas(space_dict)
         failed_customers.update(unknown_customers)
         for idurl in unknown_customers:
             space_dict.pop(idurl, None)
@@ -165,19 +166,12 @@ class CustomersRejector(automat.Automat):
                 '            \n'.join(failed_customers)))
             for idurl in failed_customers:
                 current_customers.remove(idurl)
-            self.automat(
-                'space-overflow',
-                (space_dict,
-                 consumed_bytes,
-                 current_customers,
-                 failed_customers))
+            self.automat('space-overflow', (
+                space_dict, consumed_bytes, current_customers, failed_customers))
             return
-        used_space_ratio_dict = accounting.calculate_customers_usage_ratio(
-            space_dict, used_dict)
-        customers_sorted = sorted(
-            current_customers,
-            key=lambda idurl: used_space_ratio_dict[idurl],
-        )
+        used_space_ratio_dict = accounting.calculate_customers_usage_ratio(space_dict, used_dict)
+        customers_sorted = sorted(current_customers,
+                                  key=lambda idurl: used_space_ratio_dict[idurl],)
         while len(customers_sorted) > 0 and consumed_bytes > donated_bytes:
             idurl = customers_sorted.pop()
             allocated_bytes = int(space_dict[idurl])
@@ -194,10 +188,11 @@ class CustomersRejector(automat.Automat):
     def doTestMyCapacity2(self, arg):
         """
         Here are some values.
-            - donated_bytes : you set this in the config
-            - spent_bytes : how many space is taken from you by other users right now
-            - free_bytes = donated_bytes - spent_bytes : not yet allocated space
-            - used_bytes : size of all files, which you store on your disk for your customers
+
+        - donated_bytes : you set this in the config
+        - spent_bytes : how many space is taken from you by other users right now
+        - free_bytes = donated_bytes - spent_bytes : not yet allocated space
+        - used_bytes : size of all files, which you store on your disk for your customers
         """
         current_customers = contactsdb.customers()
         removed_customers = []
@@ -208,10 +203,7 @@ class CustomersRejector(automat.Automat):
         else:
             space_dict = {'free': donated_bytes}
         used_dict = bpio._read_dict(settings.CustomersUsedSpaceFile(), {})
-        lg.out(
-            8,
-            'customers_rejector.doTestMyCapacity donated=%d' %
-            donated_bytes)
+        lg.out(8, 'customers_rejector.doTestMyCapacity donated=%d' % donated_bytes)
         try:
             int(space_dict['free'])
             for idurl, customer_bytes in space_dict.items():
@@ -223,12 +215,7 @@ class CustomersRejector(automat.Automat):
             spent_bytes = 0
             removed_customers = list(current_customers)
             current_customers = []
-            self.automat(
-                'space-overflow',
-                (space_dict,
-                 spent_bytes,
-                 current_customers,
-                 removed_customers))
+            self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
             return
         lg.out(8, '        spent=%d' % spent_bytes)
         if spent_bytes < donated_bytes:
@@ -276,9 +263,7 @@ class CustomersRejector(automat.Automat):
                 else:
                     lg.warn('%s not customers' % customer_idurl)
                 spent_bytes -= allocated_bytes
-                lg.warn(
-                    '%s space overflow, where is bptester?' %
-                    customer_idurl)
+                lg.warn('%s space overflow, where is bptester?' % customer_idurl)
                 continue
             used_space_ratio_dict[customer_idurl] = ratio
         customers_sorted = sorted(current_customers,
@@ -295,12 +280,7 @@ class CustomersRejector(automat.Automat):
                 break
         space_dict['free'] = donated_bytes - spent_bytes
         lg.out(8, '        SPACE NOT ENOUGH !!!!!!!!!!')
-        self.automat(
-            'space-overflow',
-            (space_dict,
-             spent_bytes,
-             current_customers,
-             removed_customers))
+        self.automat('space-overflow', (space_dict, spent_bytes, current_customers, removed_customers))
 
     def doRemoveCustomers(self, arg):
         """
@@ -317,8 +297,7 @@ class CustomersRejector(automat.Automat):
         """
         space_dict, spent_bytes, current_customers, removed_customers = arg
         for customer_idurl in removed_customers:
-            p2p_service.SendFailNoRequest(
-                customer_idurl, packetid.UniqueID(), 'service rejected')
+            p2p_service.SendFailNoRequest(customer_idurl, packetid.UniqueID(), 'service rejected')
         self.automat('packets-sent')
 
     def doRestartLocalTester(self, arg):

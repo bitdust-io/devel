@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: sqlio
+..
 
+module:: sqlio
 """
 
 import os

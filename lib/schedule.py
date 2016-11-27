@@ -26,11 +26,11 @@
 #
 
 """
-.. module:: schedule
+.. module:: schedule.
 
-The code here is intended to operate with scheduled events.
-User should be able to set a schedule to run backups at given moments.
-At the moment all this code is disabled.
+The code here is intended to operate with scheduled events. User should
+be able to set a schedule to run backups at given moments. At the moment
+all this code is disabled.
 """
 
 import os
@@ -68,7 +68,7 @@ all_labels = {
 
 class Schedule:
     """
-
+    
     """
     types = all_types
     labels = all_labels
@@ -189,8 +189,7 @@ class Schedule:
     def next_time(self):
         lasttime = self.lasttime
         if lasttime == '':
-            # let it be one year ago (we can schedule 1 month maximum) and one
-            # day
+            # let it be one year ago (we can schedule 1 month maximum) and one day
             lasttime = str(time.time() - 366 * 24 * 60 * 60)
 
         try:
@@ -200,18 +199,15 @@ class Schedule:
 
             # every N seconds
             elif self.type == 'continuously':
-                return maths.shedule_continuously(
-                    lasttime, int(self.interval),)
+                return maths.shedule_continuously(lasttime, int(self.interval),)
 
-            # every N hours, exactly when hour begins, minutes and seconds are
-            # 0
+            # every N hours, exactly when hour begins, minutes and seconds are 0
             elif self.type == 'hourly':
                 return maths.shedule_next_hourly(lasttime, int(self.interval),)
 
             # every N days, at given time
             elif self.type == 'daily':
-                return maths.shedule_next_daily(
-                    lasttime, self.interval, self.daytime)
+                return maths.shedule_next_daily(lasttime, self.interval, self.daytime)
 
             # every N weeks, at given time and selected week days
             elif self.type == 'weekly':
@@ -224,14 +220,12 @@ class Schedule:
                     except:
                         continue
                     week_day_numbers.append(i)
-                return maths.shedule_next_weekly(
-                    lasttime, self.interval, self.daytime, week_day_numbers)
+                return maths.shedule_next_weekly(lasttime, self.interval, self.daytime, week_day_numbers)
 
             # monthly, at given time and day
             elif self.type == 'monthly':
                 month_dates = self.details.split(' ')
-                return maths.shedule_next_monthly(
-                    lasttime, self.interval, self.daytime, month_dates)
+                return maths.shedule_next_monthly(lasttime, self.interval, self.daytime, month_dates)
 
             # yearly, at given time and month, day, NOT DONE YET!
             elif self.type == 'yearly':
@@ -244,14 +238,10 @@ class Schedule:
                     except:
                         continue
                     months_numbers.append(i)
-                return maths.shedule_next_monthly(
-                    lasttime, self.interval, self.daytime, months_numbers)
+                return maths.shedule_next_monthly(lasttime, self.interval, self.daytime, months_numbers)
 
             else:
-                lg.out(
-                    1,
-                    'schedule.next_time ERROR wrong schedule type: ' +
-                    self.type)
+                lg.out(1, 'schedule.next_time ERROR wrong schedule type: ' + self.type)
                 return None
         except:
             lg.exc()
@@ -276,8 +266,7 @@ class Schedule:
             d['interval'] = str(int(d['interval']))
         except:
             d['interval'] = '1'
-        if d['daytime'] == '' or d[
-                'daytime'] is None or d['daytime'] == 'None':
+        if d['daytime'] == '' or d['daytime'] is None or d['daytime'] == 'None':
             d['daytime'] = time.strftime('%H:%M:%S', time.localtime())
         time_parts = d['daytime'].split(':')
         if len(time_parts) == 1:
@@ -298,8 +287,7 @@ class Schedule:
                     time_parts[2] = '00'
         if len(time_parts) < 3:
             time_parts.append('00')
-        d['daytime'] = '%02d:%02d:%02d' % (
-            int(time_parts[0]), int(time_parts[1]), int(time_parts[2]))
+        d['daytime'] = '%02d:%02d:%02d' % (int(time_parts[0]), int(time_parts[1]), int(time_parts[2]))
         if d['type'] == 'weekly' and d['details'].strip() == '':
             d['details'] = 'Monday Tuesday Wednesday Thursday Friday Saturday Sunday'
         if d['type'] == 'monthly' and d['details'].strip() == '':
@@ -347,8 +335,7 @@ class Schedule:
             if self.interval == '1':
                 return 'every day, at <b>%s</b>' % self.daytime
             else:
-                return 'every <b>%s</b> days, at <b>%s</b>' % (
-                    self.interval, self.daytime)
+                return 'every <b>%s</b> days, at <b>%s</b>' % (self.interval, self.daytime)
         if self.type == 'weekly':
             if self.interval == '1':
                 return 'every week, at <b>%s</b>, in <b>%s</b>' % (
@@ -369,8 +356,7 @@ class Schedule:
             return ''
         try:
             # nextString = time.asctime(time.localtime(next))
-            nextString = time.strftime(
-                '%A, %d %B %Y %H:%M:%S', time.localtime(next))
+            nextString = time.strftime('%A, %d %B %Y %H:%M:%S', time.localtime(next))
         except:
             lg.exc()
             return ''
@@ -466,8 +452,4 @@ def from_compact_string(s):
             lg.warn('incorrect schedule details: ' + s)
             return None
         sh_details_new += label + ' '
-    return Schedule(
-        sh_type,
-        str(sh_time),
-        str(sh_interval),
-        sh_details_new.strip())
+    return Schedule(sh_type, str(sh_time), str(sh_interval), sh_details_new.strip())

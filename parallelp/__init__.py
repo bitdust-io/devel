@@ -23,6 +23,7 @@
 #
 
 """
-.. module:: parallelp
+..
 
+module:: parallelp
 """

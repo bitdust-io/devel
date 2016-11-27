@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: config
+..
+
+module:: config
 """
 
 import os
@@ -48,6 +50,7 @@ _Config = None
 
 def init(configDir):
     """
+    
     """
     global _Config
     if _Config is None:
@@ -59,6 +62,7 @@ def init(configDir):
 
 def shutdown():
     """
+    
     """
     lg.out(2, 'config.shutdown')
     global _Config
@@ -138,7 +142,7 @@ class BaseConfig(object):
         if data is None:
             return default
         try:
-            return int(data.strip('"').strip())
+            return int(data.strip().strip('"'))
         except ValueError:
             return default
 
@@ -316,15 +320,14 @@ class NotifiableConfig(DefaultsConfig):
 
     def addCallback(self, mask, cb):
         """
-        You can add a callback to catch a moment when some particular option were modified.
-        Mask is a string which is used to compared in this way:
+        You can add a callback to catch a moment when some particular option
+        were modified. Mask is a string which is used to compared in this way:
 
             entryPath.startswith(mask)
 
         The callback will be fired with such arguments:
 
             cb(entryPath, newValue, oldValue, result)
-
         """
         self.callbacks[mask] = cb
 
@@ -424,6 +427,7 @@ class DetailedConfig(CachedConfig):
 
     def _loadDetails(self, src):
         """
+        
         """
         current_option = ''
         for line in src.splitlines():
@@ -467,8 +471,7 @@ def main():
 #            print parent
 #            last = parent
 #        print ' ' * (last.count(' ') + 1) * 2, key, '\t\t\t\t', conf().get_type_label(entry).upper()
-    # print '\n'.join(map(lambda x: "    '%s':\t\t\tNode," % x,
-    # sorted(conf().listAllEntries())))
+    # print '\n'.join(map(lambda x: "    '%s':\t\t\tNode," % x, sorted(conf().listAllEntries())))
     s = conf().getData('details')
     conf().loadDetails(s)
 

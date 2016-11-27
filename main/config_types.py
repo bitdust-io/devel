@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: config_defaults
+..
+
+module:: config_defaults
 """
 
 

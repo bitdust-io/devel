@@ -33,7 +33,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Python implementation of json-template.
+"""
+Python implementation of json-template.
 
 JSON Template is a minimal and powerful templating language for transforming a
 JSON dictionary to arbitrary text.
@@ -49,20 +50,10 @@ Other functions are exposed for tools which may want to process templates.
 __author__ = 'Andy Chu'
 
 __all__ = [
-    'Error',
-    'CompilationError',
-    'EvaluationError',
-    'BadFormatter',
-    'BadPredicate',
-    'MissingFormatter',
-    'ConfigurationError',
-    'TemplateSyntaxError',
-    'UndefinedVariable',
-    'CompileTemplate',
-    'FromString',
-    'FromFile',
-    'Template',
-    'expand']
+    'Error', 'CompilationError', 'EvaluationError', 'BadFormatter',
+    'BadPredicate', 'MissingFormatter', 'ConfigurationError',
+    'TemplateSyntaxError', 'UndefinedVariable', 'CompileTemplate', 'FromString',
+    'FromFile', 'Template', 'expand']
 
 import StringIO
 import pprint
@@ -75,17 +66,19 @@ import urlparse  # for urljoin
 
 
 class Error(Exception):
-    """Base class for all exceptions in this module.
+    """
+    Base class for all exceptions in this module.
 
-    Thus you can "except jsontemplate.Error: to catch all exceptions thrown by
-    this module.
+    Thus you can "except jsontemplate.Error: to catch all exceptions
+    thrown by this module.
     """
 
     def __str__(self):
-        """This helps people debug their templates.
+        """
+        This helps people debug their templates.
 
-        If a variable isn't defined, then some context is shown in the traceback.
-        TODO: Attach context for other errors.
+        If a variable isn't defined, then some context is shown in the
+        traceback. TODO: Attach context for other errors.
         """
         if hasattr(self, 'near'):
             return '%s\n\nNear: %s' % (self.args[0], pprint.pformat(self.near))
@@ -94,14 +87,17 @@ class Error(Exception):
 
 
 class CompilationError(Error):
-    """Base class for errors that happen during the compilation stage."""
+    """
+    Base class for errors that happen during the compilation stage.
+    """
 
 
 class EvaluationError(Error):
-    """Base class for errors that happen when expanding the template.
+    """
+    Base class for errors that happen when expanding the template.
 
-    This class of errors generally involve the data dictionary or the execution of
-    the formatters.
+    This class of errors generally involve the data dictionary or the
+    execution of the formatters.
     """
 
     def __init__(self, msg, original_exception=None):
@@ -110,11 +106,15 @@ class EvaluationError(Error):
 
 
 class BadFormatter(CompilationError):
-    """A bad formatter was specified, e.g. {variable|BAD}"""
+    """
+    A bad formatter was specified, e.g. {variable|BAD}
+    """
 
 
 class BadPredicate(CompilationError):
-    """A bad predicate was specified, e.g. {.BAD?}"""
+    """
+    A bad predicate was specified, e.g. {.BAD?}
+    """
 
 
 class MissingFormatter(CompilationError):
@@ -130,11 +130,15 @@ class ConfigurationError(CompilationError):
 
 
 class TemplateSyntaxError(CompilationError):
-    """Syntax error in the template text."""
+    """
+    Syntax error in the template text.
+    """
 
 
 class UndefinedVariable(EvaluationError):
-    """The template contains a variable not defined by the data dictionary."""
+    """
+    The template contains a variable not defined by the data dictionary.
+    """
 
 
 _SECTION_RE = re.compile(r'(repeated)?\s*section\s+(\S+)')
@@ -146,10 +150,13 @@ SIMPLE_FUNC, ENHANCED_FUNC = 0, 1
 
 
 class FunctionRegistry(object):
-    """Abstract class for looking up formatters or predicates at compile time."""
+    """
+    Abstract class for looking up formatters or predicates at compile time.
+    """
 
     def Lookup(self, user_str):
-        """Lookup a function.
+        """
+        Lookup a function.
 
         Args:
           user_str: A raw string from the user, which may include uninterpreted
@@ -172,8 +179,8 @@ class FunctionRegistry(object):
 
 def _DecideFuncType(user_str):
     """
-    By default, formatters/predicates which start with a non-lowercase letter take
-    contexts rather than just the cursor.
+    By default, formatters/predicates which start with a non-lowercase letter
+    take contexts rather than just the cursor.
     """
     if user_str[0].islower():
         return SIMPLE_FUNC
@@ -182,7 +189,9 @@ def _DecideFuncType(user_str):
 
 
 class DictRegistry(FunctionRegistry):
-    """Look up functions in a simple dictionary."""
+    """
+    Look up functions in a simple dictionary.
+    """
 
     def __init__(self, func_dict):
         self.func_dict = func_dict
@@ -192,7 +201,9 @@ class DictRegistry(FunctionRegistry):
 
 
 class CallableRegistry(FunctionRegistry):
-    """Look up functions in a (higher-order) function."""
+    """
+    Look up functions in a (higher-order) function.
+    """
 
     def __init__(self, func):
         self.func = func
@@ -202,18 +213,19 @@ class CallableRegistry(FunctionRegistry):
 
 
 class PrefixRegistry(FunctionRegistry):
-    """Lookup functions with arguments.
+    """
+    Lookup functions with arguments.
 
-    The function name is identified by a prefix.  The character after the prefix,
-    usually a space, is considered the argument delimiter (similar to sed/perl's
-    s/foo/bar s|foo|bar syntax).
+    The function name is identified by a prefix.  The character after
+    the prefix, usually a space, is considered the argument delimiter
+    (similar to sed/perl's s/foo/bar s|foo|bar syntax).
     """
 
     def __init__(self, functions):
         """
-        Args:
-          functions: List of 2-tuples (prefix, function), e.g.
-          [('pluralize', _Pluralize), ('cycle', _Cycle)]
+        Args: functions: List of 2-tuples (prefix, function), e.g.
+
+        [('pluralize', _Pluralize), ('cycle', _Cycle)]
         """
         self.functions = functions
 
@@ -235,7 +247,9 @@ class PrefixRegistry(FunctionRegistry):
 
 
 class ChainedRegistry(FunctionRegistry):
-    """Look up functions in chain of other FunctionRegistry instances."""
+    """
+    Look up functions in chain of other FunctionRegistry instances.
+    """
 
     def __init__(self, registries):
         self.registries = registries
@@ -259,8 +273,9 @@ class _ProgramBuilder(object):
     def __init__(self, formatters, predicates):
         """
         Args:
-          formatters: See docstring for CompileTemplate
-          predicates: See docstring for CompileTemplate
+
+        formatters: See docstring for CompileTemplate predicates: See
+        docstring for CompileTemplate
         """
         self.current_block = _Section()
         self.stack = [self.current_block]
@@ -293,7 +308,8 @@ class _ProgramBuilder(object):
     def Append(self, statement):
         """
         Args:
-          statement: Append a literal
+
+        statement: Append a literal
         """
         self.current_block.Append(statement)
 
@@ -327,10 +343,11 @@ class _ProgramBuilder(object):
         self.current_block = new_block
 
     def NewSection(self, token_type, section_name):
-        """For sections or repeated sections."""
+        """
+        For sections or repeated sections.
+        """
 
-        # TODO: Consider getting rid of this dispatching, and turn _Do* into
-        # methods
+        # TODO: Consider getting rid of this dispatching, and turn _Do* into methods
         if token_type == REPEATED_SECTION_TOKEN:
             new_block = _RepeatedSection(section_name)
             func = _DoRepeatedSection
@@ -357,7 +374,9 @@ class _ProgramBuilder(object):
         self.current_block.AlternatesWith()
 
     def NewPredicateSection(self, pred_str):
-        """For chains of predicate clauses."""
+        """
+        For chains of predicate clauses.
+        """
         pred = self._GetPredicate(pred_str)
         block = _PredicateSection()
         block.NewOrClause(pred)
@@ -380,7 +399,9 @@ class _AbstractSection(object):
         self.current_clause = []
 
     def Append(self, statement):
-        """Append a statement to this block."""
+        """
+        Append a statement to this block.
+        """
         self.current_clause.append(statement)
 
     def AlternatesWith(self):
@@ -392,14 +413,17 @@ class _AbstractSection(object):
 
 
 class _Section(_AbstractSection):
-    """Represents a (repeated) section."""
+    """
+    Represents a (repeated) section.
+    """
 
     def __init__(self, section_name=None):
         """
         Args:
-          section_name: name given as an argument to the section
-          token_type: The token type that created this section (e.g.
-              PREDICATE_TOKEN)
+
+        section_name: name given as an argument to the section
+        token_type: The token type that created this section (e.g.
+        PREDICATE_TOKEN)
         """
         _AbstractSection.__init__(self)
         self.section_name = section_name
@@ -422,7 +446,9 @@ class _Section(_AbstractSection):
 
 
 class _RepeatedSection(_Section):
-    """Repeated section is like section, but it supports {.alternates with}"""
+    """
+    Repeated section is like section, but it supports {.alternates with}
+    """
 
     def AlternatesWith(self):
         self.current_clause = []
@@ -430,7 +456,9 @@ class _RepeatedSection(_Section):
 
 
 class _PredicateSection(_AbstractSection):
-    """Represents a sequence of predicate clauses."""
+    """
+    Represents a sequence of predicate clauses.
+    """
 
     def __init__(self):
         _AbstractSection.__init__(self)
@@ -445,38 +473,42 @@ class _PredicateSection(_AbstractSection):
 
 
 class _Frame(object):
-    """A stack frame."""
+    """
+    A stack frame.
+    """
 
     def __init__(self, context, index=-1):
         # Public attributes
         self.context = context
-        # An iteration index.  -1 means we're NOT iterating.
-        self.index = index
+        self.index = index   # An iteration index.  -1 means we're NOT iterating.
 
     def __str__(self):
         return 'Frame %s (%s)' % (self.context, self.index)
 
 
 class _ScopedContext(object):
-    """Allows scoped lookup of variables.
+    """
+    Allows scoped lookup of variables.
 
-    If the variable isn't in the current context, then we search up the stack.
+    If the variable isn't in the current context, then we search up the
+    stack.
     """
 
     def __init__(self, context, undefined_str):
         """
         Args:
-          context: The root context
-          undefined_str: See Template() constructor.
+
+        context: The root context undefined_str: See Template()
+        constructor.
         """
         self.stack = [_Frame(context)]
         self.undefined_str = undefined_str
 
     def PushSection(self, name):
-        """Given a section name, push it on the top of the stack.
+        """
+        Given a section name, push it on the top of the stack.
 
-        Returns:
-          The new section, or None if there is no such section.
+        Returns:   The new section, or None if there is no such section.
         """
         if name == '@':
             new_context = self.stack[-1].context
@@ -489,10 +521,10 @@ class _ScopedContext(object):
         self.stack.pop()
 
     def Next(self):
-        """Advance to the next item in a repeated section.
+        """
+        Advance to the next item in a repeated section.
 
-        Raises:
-          StopIteration if there are no more elements
+        Raises:   StopIteration if there are no more elements
         """
         stacktop = self.stack[-1]
 
@@ -519,7 +551,9 @@ class _ScopedContext(object):
             return self.undefined_str
 
     def _LookUpStack(self, name):
-        """Look up the stack for the given name."""
+        """
+        Look up the stack for the given name.
+        """
         i = len(self.stack) - 1
         while True:
             frame = self.stack[i]
@@ -528,9 +562,7 @@ class _ScopedContext(object):
                     return frame.index  # @index is 1-based
             else:
                 context = frame.context
-                if hasattr(
-                        context,
-                        'get'):  # Can't look up names in a list or atom
+                if hasattr(context, 'get'):  # Can't look up names in a list or atom
                     try:
                         return context[name]
                     except KeyError:
@@ -541,7 +573,8 @@ class _ScopedContext(object):
                 return self._Undefined(name)
 
     def Lookup(self, name):
-        """Get the value associated with a name in the current context.
+        """
+        Get the value associated with a name in the current context.
 
         The current context could be an dictionary in a list, or a dictionary
         outside a list.
@@ -585,7 +618,8 @@ def _HtmlAttrValue(x):
 
 
 def _AbsUrl(relative_url, context, unused_args):
-    """Returns an absolute URL, given the current node as a relative URL.
+    """
+    Returns an absolute URL, given the current node as a relative URL.
 
     Assumes that the context has a value named 'base-url'.  This is a little like
     the HTML <base> tag, but implemented with HTML generation.
@@ -623,8 +657,7 @@ _DEFAULT_FORMATTERS = {
     # The argument is a dictionary, and we get a a=1&b=2 string back.
     'url-params': urllib.urlencode,
 
-    # The argument is an atom, and it takes 'Search query?' ->
-    # 'Search+query%3F'
+    # The argument is an atom, and it takes 'Search query?' -> 'Search+query%3F'
     'url-param-value': urllib.quote_plus,  # param is an atom
 
     # The default formatter, when no other default is specifier.  For debugging,
@@ -653,7 +686,9 @@ _DEFAULT_FORMATTERS = {
 
 
 def _Pluralize(value, unused_context, args):
-    """Formatter to pluralize words."""
+    """
+    Formatter to pluralize words.
+    """
 
     if len(args) == 0:
         s, p = '', 's'
@@ -672,7 +707,9 @@ def _Pluralize(value, unused_context, args):
 
 
 def _Cycle(value, unused_context, args):
-    """Cycle between various values on consecutive integers."""
+    """
+    Cycle between various values on consecutive integers.
+    """
     # @index starts from 1, so used 1-based indexing
     return args[(value - 1) % len(args)]
 
@@ -692,7 +729,8 @@ _DEFAULT_PREDICATES = {
 
 
 def SplitMeta(meta):
-    """Split and validate metacharacters.
+    """
+    Split and validate metacharacters.
 
     Example: '{}' -> ('{', '}')
 
@@ -709,7 +747,8 @@ _token_re_cache = {}
 
 
 def MakeTokenRegex(meta_left, meta_right):
-    """Return a (compiled) regular expression for tokenization.
+    """
+    Return a (compiled) regular expression for tokenization.
 
     Args:
       meta_left, meta_right: e.g. '{' and '}'
@@ -745,7 +784,9 @@ def MakeTokenRegex(meta_left, meta_right):
 
 
 def _MatchDirective(token):
-    """Helper function for matching certain directives."""
+    """
+    Helper function for matching certain directives.
+    """
 
     if token.startswith('.'):
         token = token[1:]
@@ -784,7 +825,9 @@ def _MatchDirective(token):
 
 
 def _Tokenize(template_str, meta_left, meta_right):
-    """Yields tokens, which are 2-tuples (TOKEN_TYPE, token_string)."""
+    """
+    Yields tokens, which are 2-tuples (TOKEN_TYPE, token_string).
+    """
 
     trimlen = len(meta_left)
 
@@ -854,7 +897,8 @@ def CompileTemplate(
         template_str, builder=None, meta='{}', format_char='|',
         more_formatters=lambda x: None, more_predicates=lambda x: None,
         default_formatter='str'):
-    """Compile the template string, calling methods on the 'program builder'.
+    """
+    Compile the template string, calling methods on the 'program builder'.
 
     Args:
       template_str: The template string.  It should not have any compilation
@@ -901,8 +945,7 @@ def CompileTemplate(
     # useful for multiple formatters, e.g. {name|js-string|html}
     if format_char not in (':', '|'):
         raise ConfigurationError(
-            'Only format characters : and | are accepted (got %r)' %
-            format_char)
+            'Only format characters : and | are accepted (got %r)' % format_char)
 
     # If we go to -1, then we got too many {end}.  If end at 1, then we're missing
     # an {end}.
@@ -921,8 +964,7 @@ def CompileTemplate(
             continue
 
         if token_type == PREDICATE_TOKEN:
-            # Everything of the form {.predicate?} starts a new predicate
-            # section
+            # Everything of the form {.predicate?} starts a new predicate section
             block_made = builder.NewPredicateSection(token)
             balance_counter += 1
             continue
@@ -941,8 +983,8 @@ def CompileTemplate(
                 # TODO: Show some context for errors
                 raise TemplateSyntaxError(
                     'Got too many %send%s statements.  You may have mistyped an '
-                    "earlier 'section' or 'repeated section' directive." %
-                    (meta_left, meta_right))
+                    "earlier 'section' or 'repeated section' directive."
+                    % (meta_left, meta_right))
             builder.EndSection()
             continue
 
@@ -950,8 +992,7 @@ def CompileTemplate(
             parts = token.split(format_char)
             if len(parts) == 1:
                 if default_formatter is None:
-                    raise MissingFormatter(
-                        'This template requires explicit formatters.')
+                    raise MissingFormatter('This template requires explicit formatters.')
                 # If no formatter is specified, the default is the 'str' formatter,
                 # which the user can define however they desire.
                 name = token
@@ -975,17 +1016,17 @@ _OPTION_NAMES = ['meta', 'format-char', 'default-formatter', 'undefined-str']
 
 
 def FromString(s, more_formatters=lambda x: None, _constructor=None):
-    """Like FromFile, but takes a string."""
+    """
+    Like FromFile, but takes a string.
+    """
 
     f = StringIO.StringIO(s)
-    return FromFile(
-        f,
-        more_formatters=more_formatters,
-        _constructor=_constructor)
+    return FromFile(f, more_formatters=more_formatters, _constructor=_constructor)
 
 
 def FromFile(f, more_formatters=lambda x: None, _constructor=None):
-    """Parse a template from a file, using a simple file format.
+    """
+    Parse a template from a file, using a simple file format.
 
     This is useful when you want to include template options in a data file,
     rather than in the source code.
@@ -1035,8 +1076,8 @@ def FromFile(f, more_formatters=lambda x: None, _constructor=None):
     if options:
         if line.strip():
             raise CompilationError(
-                'Must be one blank line between template options and body (got %r)' %
-                line)
+                'Must be one blank line between template options and body (got %r)'
+                % line)
         body = f.read()
     else:
         # There were no options, so no blank line is necessary.
@@ -1046,7 +1087,8 @@ def FromFile(f, more_formatters=lambda x: None, _constructor=None):
 
 
 class Template(object):
-    """Represents a compiled template.
+    """
+    Represents a compiled template.
 
     Like many template systems, the template string is compiled into a program,
     and then it can be expanded any number of times.  For example, in a web app,
@@ -1062,16 +1104,15 @@ class Template(object):
     def __init__(self, template_str, builder=None, undefined_str=None,
                  **compile_options):
         """
-        Args:
-          template_str: The template string.
-          undefined_str: A string to appear in the output when a variable to be
-              substituted is missing.  If None, UndefinedVariable is raised.
-              (Note: This is not really a compilation option, because affects
-              template expansion rather than compilation.  Nonetheless we make it a
-              constructor argument rather than an .expand() argument for
-              simplicity.)
+        Args: template_str: The template string. undefined_str: A string to
+        appear in the output when a variable to be substituted is missing.  If
+        None, UndefinedVariable is raised. (Note: This is not really a
+        compilation option, because affects template expansion rather than
+        compilation.  Nonetheless we make it a constructor argument rather than
+        an .expand() argument for simplicity.)
 
-        It also accepts all the compile options that CompileTemplate does.
+        It also accepts all the compile options that CompileTemplate
+        does.
         """
         self._program = CompileTemplate(
             template_str, builder=builder, **compile_options)
@@ -1082,7 +1123,8 @@ class Template(object):
     #
 
     def render(self, data_dict, callback):
-        """Low level method to expands the template piece by piece.
+        """
+        Low level method to expands the template piece by piece.
 
         Args:
           data_dict: The JSON data dictionary.
@@ -1095,7 +1137,9 @@ class Template(object):
         _Execute(self._program.Statements(), context, callback)
 
     def expand(self, *args, **kwargs):
-        """Expands the template with the given data dictionary, returning a string.
+        """
+        Expands the template with the given data dictionary, returning a
+        string.
 
         This is a small wrapper around render(), and is the most convenient
         interface.
@@ -1115,8 +1159,7 @@ class Template(object):
                 data_dict = args[0]
             else:
                 raise TypeError(
-                    'expand() only takes 1 positional argument (got %s)' %
-                    args)
+                    'expand() only takes 1 positional argument (got %s)' % args)
         else:
             data_dict = kwargs
 
@@ -1125,7 +1168,8 @@ class Template(object):
         return ''.join(tokens)
 
     def tokenstream(self, data_dict):
-        """Yields a list of tokens resulting from expansion.
+        """
+        Yields a list of tokens resulting from expansion.
 
         This may be useful for WSGI apps.  NOTE: In the current implementation, the
         entire expanded template must be stored memory.
@@ -1139,7 +1183,9 @@ class Template(object):
 
 
 def _DoRepeatedSection(args, context, callback):
-    """{repeated section foo}"""
+    """
+    {repeated section foo}
+    """
 
     block = args
 
@@ -1159,8 +1205,7 @@ def _DoRepeatedSection(args, context, callback):
                 context.Next()
                 # Execute the statements in the block for every item in the list.
                 # Execute the alternate block on every iteration except the last.  Each
-                # item could be an atom (string, integer, etc.) or a
-                # dictionary.
+                # item could be an atom (string, integer, etc.) or a dictionary.
                 _Execute(statements, context, callback)
                 if i != last_index:
                     _Execute(alt_statements, context, callback)
@@ -1175,7 +1220,9 @@ def _DoRepeatedSection(args, context, callback):
 
 
 def _DoSection(args, context, callback):
-    """{section foo}"""
+    """
+    {section foo}
+    """
 
     block = args
     # If a section present and "true", push the dictionary onto the stack as the
@@ -1189,9 +1236,11 @@ def _DoSection(args, context, callback):
 
 
 def _DoPredicates(args, context, callback):
-    """{.predicate?}
+    """
+    {.predicate?}
 
-    Here we execute the first clause that evaluates to true, and then stop.
+    Here we execute the first clause that evaluates to true, and then
+    stop.
     """
     block = args
     value = context.Lookup('@')
@@ -1207,7 +1256,9 @@ def _DoPredicates(args, context, callback):
 
 
 def _DoSubstitute(args, context, callback):
-    """Variable substitution, e.g. {foo}"""
+    """
+    Variable substitution, e.g. {foo}
+    """
 
     name, formatters = args
 
@@ -1242,7 +1293,8 @@ def _DoSubstitute(args, context, callback):
 
 
 def _Execute(statements, context, callback):
-    """Execute a bunch of template statements in a ScopedContext.
+    """
+    Execute a bunch of template statements in a ScopedContext.
 
     Args:
       callback: Strings are "written" to this callback function.
@@ -1268,10 +1320,12 @@ def _Execute(statements, context, callback):
 
 
 def expand(template_str, dictionary, **kwargs):
-    """Free function to expands a template string with a data dictionary.
+    """
+    Free function to expands a template string with a data dictionary.
 
-    This is useful for cases where you don't care about saving the result of
-    compilation (similar to re.match('.*', s) vs DOT_STAR.match(s))
+    This is useful for cases where you don't care about saving the
+    result of compilation (similar to re.match('.*', s) vs
+    DOT_STAR.match(s))
     """
     t = Template(template_str, **kwargs)
     return t.expand(dictionary)

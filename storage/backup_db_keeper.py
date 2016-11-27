@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_db_keeper
+.. module:: backup_db_keeper.
 
 .. raw:: html
 
@@ -64,7 +64,6 @@ EVENTS:
     * :red:`timer-1hour`
     * :red:`timer-1sec`
     * :red:`timer-30sec`
-
 """
 
 #------------------------------------------------------------------------------

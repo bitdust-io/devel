@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: currency
+..
 
+module:: currency
 """

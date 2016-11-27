@@ -25,10 +25,9 @@
 #
 
 """
-.. module:: broadcast_service
+.. module:: broadcast_service.
 
 @author: Veselin
-
 """
 
 #------------------------------------------------------------------------------
@@ -42,12 +41,7 @@ _DebugLevel = 6
 if __name__ == '__main__':
     import sys
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -149,10 +143,7 @@ def send_broadcast_message(payload):
 
 
 def on_incoming_broadcast_message(json_msg):
-    lg.out(
-        2,
-        'service_broadcasting._on_incoming_broadcast_message : %r' %
-        json_msg)
+    lg.out(2, 'service_broadcasting._on_incoming_broadcast_message : %r' % json_msg)
 
 #------------------------------------------------------------------------------
 

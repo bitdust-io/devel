@@ -22,7 +22,8 @@
 
 
 """
-.. module:: coins_miner
+.. module:: coins_miner.
+
 .. role:: red
 
 BitDust coins_miner() Automat
@@ -63,12 +64,7 @@ from twisted.internet.defer import Deferred, fail
 if __name__ == '__main__':
     import sys
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -106,11 +102,7 @@ def A(event=None, arg=None):
         return _CoinsMiner
     if _CoinsMiner is None:
         # set automat name and starting state here
-        _CoinsMiner = CoinsMiner(
-            'coins_miner',
-            'AT_STARTUP',
-            _DebugLevel,
-            _Debug)
+        _CoinsMiner = CoinsMiner('coins_miner', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _CoinsMiner.automat(event, arg)
     return _CoinsMiner
@@ -132,7 +124,8 @@ def Destroy():
 
 class CoinsMiner(automat.Automat):
     """
-    This class implements all the functionality of the ``coins_miner()`` state machine.
+    This class implements all the functionality of the ``coins_miner()`` state
+    machine.
     """
 
     timers = {
@@ -141,8 +134,8 @@ class CoinsMiner(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of coins_miner() machine.
+        Method to initialize additional variables and flags at creation phase
+        of coins_miner() machine.
         """
         self.offline_mode = False  # only for Debug purposes
         self.connected_accountants = []
@@ -159,7 +152,8 @@ class CoinsMiner(automat.Automat):
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'AT_STARTUP':
             if event == 'init':
@@ -216,8 +210,7 @@ class CoinsMiner(automat.Automat):
             elif event == 'new-data-received':
                 self.doPushInputData(arg)
         elif self.state == 'ACCOUNTANTS?':
-            if event == 'stop' or event == 'timer-2min' or (
-                    event == 'lookup-failed' and not self.isAnyAccountants(arg)):
+            if event == 'stop' or event == 'timer-2min' or (event == 'lookup-failed' and not self.isAnyAccountants(arg)):
                 self.state = 'STOPPED'
             elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READY'
@@ -287,8 +280,7 @@ class CoinsMiner(automat.Automat):
         """
         Action method.
         """
-        if self.offline_mode or len(
-                self.connected_accountants) >= self.min_accountants_connected:
+        if self.offline_mode or len(self.connected_accountants) >= self.min_accountants_connected:
             self.automat('accountant-connected', '')
             return
         from coins import accountants_finder
@@ -328,10 +320,7 @@ class CoinsMiner(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'coins_miner.doSendCoinToAccountants: %s' %
-                arg)
+            lg.out(_DebugLevel, 'coins_miner.doSendCoinToAccountants: %s' % arg)
         if self.offline_mode:
             self.automat('coin-confirmed')
             return
@@ -365,7 +354,7 @@ class CoinsMiner(automat.Automat):
         del _CoinsMiner
         _CoinsMiner = None
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
@@ -432,13 +421,7 @@ class CoinsMiner(automat.Automat):
                 break
         return difficulty - 1
 
-    def _run(
-            self,
-            signed_coin,
-            difficulty,
-            simplification,
-            starter_length,
-            starter_limit):
+    def _run(self, signed_coin, difficulty, simplification, starter_length, starter_limit):
         acoin = coins_io.get_coin_base(signed_coin)
         data_dump = coins_io.coin_to_string(acoin)
         starter = self._build_starter(starter_length)
@@ -446,15 +429,12 @@ class CoinsMiner(automat.Automat):
         while True:
             if self._stop_marker():
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        'coins_miner._run STOPPED, stop marker returned True')
+                    lg.out(_DebugLevel, 'coins_miner._run STOPPED, stop marker returned True')
                 return None
             check = starter + str(on)
             check += data_dump
             hexdigest = self._build_hash(check)
-            if difficulty != self._get_hash_complexity(
-                    hexdigest, simplification):
+            if difficulty != self._get_hash_complexity(hexdigest, simplification):
                 on += 1
                 if on > starter_limit:
                     starter = self._build_starter(starter_length)
@@ -476,17 +456,9 @@ class CoinsMiner(automat.Automat):
         if difficulty == complexity:
             complexity += 1
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'coins_miner.found golden coin, step up complexity: %s' %
-                    complexity)
-        return threads.deferToThread(
-            self._run,
-            signed_coin,
-            complexity,
-            self.simplification,
-            self.starter_length,
-            self.starter_limit)
+                lg.out(_DebugLevel, 'coins_miner.found golden coin, step up complexity: %s' % complexity)
+        return threads.deferToThread(self._run, signed_coin, complexity,
+                                     self.simplification, self.starter_length, self.starter_limit)
 
 #------------------------------------------------------------------------------
 
@@ -514,13 +486,7 @@ def _test():
         commands.Coin(), my_id.getLocalID(),
         my_id.getLocalID(), packetid.UniqueID(),
         json.dumps(coins), 'http://server.com/id.xml')
-    reactor.callLater(
-        0.1,
-        callback.run_inbox_callbacks,
-        outpacket,
-        None,
-        'finished',
-        '')
+    reactor.callLater(0.1, callback.run_inbox_callbacks, outpacket, None, 'finished', '')
     # reactor.callLater(5.1, A, 'shutdown')
     reactor.run()
 

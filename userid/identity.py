@@ -27,7 +27,8 @@
 #
 
 """
-.. module:: identity
+.. module:: identity.
+
 .. role:: red
 
 This is a core module.
@@ -169,19 +170,19 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 
 class identity:
     """
-    We are passed an XML version of an identity and make an Identity.
-    Also can construct an Identity by providing all fields.
-    The fields is:
-        * sources : list of URLs, first is primary URL and name
-        * contacts : list of ways to contact this identity
-        * certificates : signatures by identity servers
-        * scrubbers : list of URLs for people allowed to scrub
-        * postage : a price for message delivery if not on correspondents list
-        * date : the date an time when that identity was created
-        * version : a version string - some info about BitDust software and platform
-        * revision : every time identity were modified this value will be increased by 1
-        * publickey : the public part of user's key, string in twisted.conch.ssh format
-        * signature : digital signature to protect the file
+    We are passed an XML version of an identity and make an Identity. Also can
+    construct an Identity by providing all fields. The fields is:
+
+    * sources : list of URLs, first is primary URL and name
+    * contacts : list of ways to contact this identity
+    * certificates : signatures by identity servers
+    * scrubbers : list of URLs for people allowed to scrub
+    * postage : a price for message delivery if not on correspondents list
+    * date : the date an time when that identity was created
+    * version : a version string - some info about BitDust software and platform
+    * revision : every time identity were modified this value will be increased by 1
+    * publickey : the public part of user's key, string in twisted.conch.ssh format
+    * signature : digital signature to protect the file
     """
     sources = []        # list of URLs, first is primary URL and name
     contacts = []       # list of ways to contact this identity
@@ -190,9 +191,7 @@ class identity:
     postage = "1"       # a price for message delivery if not on correspondents list
     date = ""           # date
     version = ""        # version string
-    # revision number, every time my id were modified this value will be
-    # increased by 1
-    revision = "0"
+    revision = "0"      # revision number, every time my id were modified this value will be increased by 1
     publickey = ""      # string in twisted.conch.ssh format
     signature = ""      # digital signature
 
@@ -223,8 +222,7 @@ class identity:
             self.sign()
         else:
             self.signature = ''
-            # no point in signing if no public key listed, probably about to
-            # unserialize something
+            # no point in signing if no public key listed, probably about to unserialize something
 
         if xmlsrc is not None:
             self.unserialize(xmlsrc)
@@ -240,9 +238,7 @@ class identity:
         Erase all fields data, clear identity.
         """
         self.sources = []      # list of URLs for fetching this identiy, first is primary URL and name - called IDURL
-        # identity servers each sign the source they are with - hash just
-        # (IDURL + publickey)
-        self.certificates = []
+        self.certificates = []  # identity servers each sign the source they are with - hash just (IDURL + publickey)
         self.publickey = ''    # string
         self.contacts = []     # list of ways to contact this identity
         self.scrubbers = []    # list of URLs for people allowed to scrub
@@ -259,7 +255,7 @@ class identity:
         global default_identity_src
         self.unserialize(default_identity_src)
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def isCorrect(self):
         """
@@ -283,12 +279,13 @@ class identity:
 
     def makehash(self):
         """
-        http://docs.python.org/lib/module-urlparse.html
-        Note that certificates and signatures are not part of what is hashed.
-        PREPRO
-        Thinking of standard that fields have labels and empty fields are left out,
-        including label, so future versions could have same signatures as older which had fewer fields -
-        can just do this for fields after these, so maybe don't need to change anything for now.
+        http://docs.python.org/lib/module-urlparse.html Note that certificates
+        and signatures are not part of what is hashed. PREPRO Thinking of
+        standard that fields have labels and empty fields are left out,
+        including label, so future versions could have same signatures as older
+        which had fewer fields - can just do this for fields after these, so
+        maybe don't need to change anything for now.
+
         Don't include certificate - so identity server can just add it.
         """
         sep = "-"
@@ -306,6 +303,7 @@ class identity:
 
     def makehash_old(self):
         """
+        
         """
         sep = "-"
         c = ''
@@ -317,14 +315,14 @@ class identity:
         sr = ''
         for i in self.sources:
             sr += i
-        stufftohash = c + sep + s + sep + sr + sep + self.version + \
-            sep + self.postage + sep + self.date.replace(' ', '_')
+        stufftohash = c + sep + s + sep + sr + sep + self.version + sep + self.postage + sep + self.date.replace(' ', '_')
         hashcode = key.Hash(stufftohash)
         return hashcode
 
     def sign(self):
         """
-        Make a hash, generate digital signature on it and remember the signature.
+        Make a hash, generate digital signature on it and remember the
+        signature.
         """
         hashcode = self.makehash()
         self.signature = key.Sign(hashcode)
@@ -337,6 +335,7 @@ class identity:
     def Valid(self):
         """
         This will make a hash and verify the signature by public key.
+
         PREPRO - should test certificate too.
         """
         hashcode = self.makehash()
@@ -353,7 +352,7 @@ class identity:
                 str(self.signature))
         return result
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def unserialize(self, xmlsrc):
         """
@@ -378,6 +377,7 @@ class identity:
     def serialize(self):
         """
         A method to generate XML content for that identity object.
+
         Used to save identity on disk or transfer over network.
         """
         return self.toxml()[0]
@@ -465,29 +465,25 @@ class identity:
                     for xsources in xsection.childNodes:
                         for xsource in xsources.childNodes:
                             if (xsource.nodeType == Node.TEXT_NODE):
-                                self.sources.append(
-                                    xsource.wholeText.strip().encode())
+                                self.sources.append(xsource.wholeText.strip().encode())
                                 break
                 elif xsection.tagName == 'contacts':
                     for xcontacts in xsection.childNodes:
                         for xcontact in xcontacts.childNodes:
                             if (xcontact.nodeType == Node.TEXT_NODE):
-                                self.contacts.append(
-                                    xcontact.wholeText.strip().encode())
+                                self.contacts.append(xcontact.wholeText.strip().encode())
                                 break
                 elif xsection.tagName == 'certificates':
                     for xcertificates in xsection.childNodes:
                         for xcertificate in xcertificates.childNodes:
                             if (xcertificate.nodeType == Node.TEXT_NODE):
-                                self.certificates.append(
-                                    xcertificate.wholeText.strip().encode())
+                                self.certificates.append(xcertificate.wholeText.strip().encode())
                                 break
                 elif xsection.tagName == 'scrubbers':
                     for xscrubbers in xsection.childNodes:
                         for xscrubber in xscrubbers.childNodes:
                             if (xscrubber.nodeType == Node.TEXT_NODE):
-                                self.scrubbers.append(
-                                    xscrubber.wholeText.strip().encode())
+                                self.scrubbers.append(xscrubber.wholeText.strip().encode())
                                 break
                 elif xsection.tagName == 'postage':
                     for xpostage in xsection.childNodes:
@@ -524,7 +520,7 @@ class identity:
             return False
         return True
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def getIDURL(self, index=0):
         """
@@ -545,7 +541,7 @@ class identity:
     def getIDHost(self, index=0):
         """
         Return a server host name where that identity is stored:
-            "id.bitdust.io" for "http://id.bitdust.io/veselin.xml"
+        "id.bitdust.io" for "http://id.bitdust.io/veselin.xml".
         """
         protocol, host, port, filename = nameurl.UrlParse(self.getIDURL(index))
         if port:
@@ -589,15 +585,14 @@ class identity:
 
     def getContactParts(self, index):
         """
-        Return tuple with 4 parts of the contact:
-            (proto, host, port, filename)
+        Return tuple with 4 parts of the contact: (proto, host, port, filename)
         """
         return nameurl.UrlParse(self.contacts[index])
 
     def getProtoParts(self, proto):
         """
-        See ``getProtoContact``, return a tuple for given ``proto``:
-            (proto, host, port, filename)
+        See ``getProtoContact``, return a tuple for given ``proto``: (proto,
+        host, port, filename)
         """
         contact = self.getProtoContact(proto)
         if contact is None:
@@ -632,7 +627,9 @@ class identity:
 
     def getProtoContact(self, proto):
         """
-        Search for first found contact with given ``proto``. Return None if not found a contact.
+        Search for first found contact with given ``proto``.
+
+        Return None if not found a contact.
         """
         for contact in self.contacts:
             if contact.startswith(proto + "://"):
@@ -641,8 +638,9 @@ class identity:
 
     def getProtoOrder(self):
         """
-        Return a list of "proto" parts of all contacts.
-        In other words return a list of all supported protocols.
+        Return a list of "proto" parts of all contacts. In other words return a
+        list of all supported protocols.
+
         This keeps the order of the protos - this is a sort of priority of the transports.
         """
         orderL = []
@@ -653,6 +651,7 @@ class identity:
 
     def getContactsAsTuples(self):
         """
+        
         """
         result = []
         for c in self.contacts:
@@ -682,6 +681,7 @@ class identity:
     def getIP(self, proto=None):
         """
         A smart way to get the IP address of the user.
+
         Check TCP proto if available and get host from contact.
         """
         if proto:
@@ -690,15 +690,17 @@ class identity:
                 return host
         return self.getProtoHost('tcp')
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def setContacts(self, contacts_list):
         """
+        
         """
         self.contacts = contacts_list
 
     def setContactsFromDict(self, contacts_dict, contacts_order=None):
         """
+        
         """
         if contacts_order is None:
             contacts_order = contacts_dict.keys()
@@ -716,7 +718,8 @@ class identity:
 
     def setProtoContact(self, proto, contact):
         """
-        Found a contact with given ``proto`` and set its value or append a new contact.
+        Found a contact with given ``proto`` and set its value or append a new
+        contact.
         """
         for i in range(0, len(self.contacts)):
             proto_, host, port, filename = nameurl.UrlParse(self.contacts[i])
@@ -736,8 +739,7 @@ class identity:
         """
         This is to set only host part of the contact.
         """
-        protocol, host_, port, filename = nameurl.UrlParse(
-            self.contacts[index])
+        protocol, host_, port, filename = nameurl.UrlParse(self.contacts[index])
         url = nameurl.UrlMake(protocol, host, port, filename)
         self.contacts[index] = url.encode("ascii").strip()
 
@@ -752,12 +754,13 @@ class identity:
     def setCertificate(self, certificate):
         """
         Not used yet.
+
         TODO. Need to ask Vince for more details about id certificates.
         """
         self.certificates.append(certificate)
         self.sign()
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def clearContacts(self):
         """
@@ -776,10 +779,11 @@ class identity:
     def pushProtoContact(self, proto):
         """
         Move given protocol in the bottom of the contacts list.
+
         First contact in the list have more priority for remote machine,
         so we can manipulate our protos to get more p2p connections.
-        Push less reliable protocols to the end of the list.
-        This is to decrease its priority.
+        Push less reliable protocols to the end of the list. This is to
+        decrease its priority.
         """
         i = self.getContactIndex(proto=proto)
         if i < 0:
@@ -791,6 +795,7 @@ class identity:
     def popProtoContact(self, proto):
         """
         Move given protocol to the top of the contacts list.
+
         This is to increase its priority.
         """
         i = self.getContactIndex(proto=proto)
@@ -801,7 +806,7 @@ class identity:
         self.contacts.insert(0, contact)
 
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 def test1():
     """

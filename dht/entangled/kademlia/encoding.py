@@ -29,14 +29,16 @@
 
 
 class Encoding(object):
-    """ Interface for RPC message encoders/decoders
+    """
+    Interface for RPC message encoders/decoders.
 
-    All encoding implementations used with this library should inherit and
-    implement this.
+    All encoding implementations used with this library should inherit
+    and implement this.
     """
 
     def encode(self, data):
-        """ Encode the specified data
+        """
+        Encode the specified data.
 
         @param data: The data to encode
                      This method has to support encoding of the following
@@ -50,7 +52,8 @@ class Encoding(object):
         """
 
     def decode(self, data):
-        """ Decode the specified data string
+        """
+        Decode the specified data string.
 
         @param data: The data (byte string) to decode.
         @type data: str
@@ -60,7 +63,8 @@ class Encoding(object):
 
 
 class Bencode(Encoding):
-    """ Implementation of a Bencode-based algorithm (Bencode is the encoding
+    """
+    Implementation of a Bencode-based algorithm (Bencode is the encoding
     algorithm used by Bittorrent).
 
     @note: This algorithm differs from the "official" Bencode algorithm in
@@ -69,7 +73,8 @@ class Bencode(Encoding):
     """
 
     def encode(self, data):
-        """ Encoder implementation of the Bencode algorithm
+        """
+        Encoder implementation of the Bencode algorithm.
 
         @param data: The data to encode
         @type data: int, long, tuple, list, dict or str
@@ -94,14 +99,14 @@ class Bencode(Encoding):
                 encodedDictItems += self.encode(data[key])
             return 'd%se' % encodedDictItems
         elif type(data == float):
-            # This (float data type) is a non-standard extension to the
-            # original Bencode algorithm
+            # This (float data type) is a non-standard extension to the original Bencode algorithm
             return 'f%fe' % data
         else:
             raise TypeError("Cannot bencode '%s' object" % type(data))
 
     def decode(self, data):
-        """ Decoder implementation of the Bencode algorithm
+        """
+        Decoder implementation of the Bencode algorithm.
 
         @param data: The encoded data
         @type data: str
@@ -116,7 +121,8 @@ class Bencode(Encoding):
 
     @staticmethod
     def _decodeRecursive(data, startIndex=0):
-        """ Actual implementation of the recursive Bencode algorithm
+        """
+        Actual implementation of the recursive Bencode algorithm.
 
         Do not call this; use C{decode()} instead
         """
@@ -127,8 +133,7 @@ class Bencode(Encoding):
             startIndex += 1
             decodedList = []
             while data[startIndex] != 'e':
-                listData, startIndex = Bencode._decodeRecursive(
-                    data, startIndex)
+                listData, startIndex = Bencode._decodeRecursive(data, startIndex)
                 decodedList.append(listData)
             return (decodedList, startIndex + 1)
         elif data[startIndex] == 'd':
@@ -140,8 +145,7 @@ class Bencode(Encoding):
                 decodedDict[key] = value
             return (decodedDict, startIndex)
         elif data[startIndex] == 'f':
-            # This (float data type) is a non-standard extension to the
-            # original Bencode algorithm
+            # This (float data type) is a non-standard extension to the original Bencode algorithm
             endPos = data[startIndex:].find('e') + startIndex
             return (float(data[startIndex + 1:endPos]), endPos + 1)
         else:

@@ -27,10 +27,11 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
-""" This module defines the charaterizing constants of the Kademlia network
+"""
+This module defines the charaterizing constants of the Kademlia network.
 
-C{checkRefreshInterval} and C{udpDatagramMaxSize} are implementation-specific
-constants, and do not affect general Kademlia operation.
+C{checkRefreshInterval} and C{udpDatagramMaxSize} are implementation-
+specific constants, and do not affect general Kademlia operation.
 """
 
 ######### KADEMLIA CONSTANTS ###########
@@ -44,8 +45,7 @@ k = 8
 #: Timeout for network operations (in seconds)
 rpcTimeout = 5
 
-# Delay between iterations of iterative node lookups (for loose
-# parallelism)  (in seconds)
+# Delay between iterations of iterative node lookups (for loose parallelism)  (in seconds)
 iterativeLookupDelay = rpcTimeout / 2
 
 #: If a k-bucket has not been used for this amount of time, refresh it (in seconds)

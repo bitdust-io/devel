@@ -27,9 +27,10 @@
 #
 
 """
-.. module:: os_windows_update
+.. module:: os_windows_update.
 
-A code for Windows platforms to check for updates and download latest binaries.
+A code for Windows platforms to check for updates and download latest
+binaries.
 """
 
 import os
@@ -46,12 +47,7 @@ from twisted.internet.defer import Deferred
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -67,7 +63,7 @@ from lib import schedule
 
 from main import settings
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 _CloseFunc = None
 _LocalDir = ''
@@ -107,9 +103,7 @@ def init():
         lg.out(6, 'os_windows_update.init starting the loop')
         reactor.callLater(0, loop, True)
     else:
-        lg.out(
-            6, 'os_windows_update.init skip, update mode is: %s' %
-            settings.getUpdatesMode())
+        lg.out(6, 'os_windows_update.init skip, update mode is: %s' % settings.getUpdatesMode())
 
 #------------------------------------------------------------------------------
 
@@ -153,7 +147,7 @@ def UpdatingInProgress():
     global _UpdatingInProgress
     return _UpdatingInProgress
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def write2log(txt):
@@ -186,7 +180,7 @@ def set_bat_filename(filename):
         return
     _UpdateWindowObject.set_bat_filename(filename)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def fail(txt):
@@ -249,28 +243,19 @@ def download_and_replace_starter(output_func=None):
                 output_func('error opening downloaded starter file')
             result.errback(Exception('error opening downloaded starter file'))
             return
-        local_filename = os.path.join(
-            GetLocalDir(), settings.WindowsStarterFileName())
+        local_filename = os.path.join(GetLocalDir(), settings.WindowsStarterFileName())
         bpio.backup_and_remove(local_filename)
         try:
             os.rename(filename, local_filename)
-            lg.out(
-                4,
-                'os_windows_update.download_and_replace_starter  file %s was updated' %
-                local_filename)
+            lg.out(4, 'os_windows_update.download_and_replace_starter  file %s was updated' % local_filename)
         except:
-            lg.out(
-                1, 'os_windows_update.download_and_replace_starter ERROR can not rename %s to %s ' %
-                (filename, local_filename))
+            lg.out(1, 'os_windows_update.download_and_replace_starter ERROR can not rename %s to %s ' % (filename, local_filename))
             lg.exc()
             result.errback(Exception('can not rename the file ' + filename))
             return
         python27dll_path = os.path.join(GetLocalDir(), 'python27.dll')
         if not os.path.exists(python27dll_path):
-            lg.out(
-                4,
-                'os_windows_update.download_and_replace_starter file "python27.dll" not found download from "%s" repo' %
-                repo)
+            lg.out(4, 'os_windows_update.download_and_replace_starter file "python27.dll" not found download from "%s" repo' % repo)
             url = settings.DefaultRepoURL(repo) + 'python27.dll'
             d = net_misc.downloadHTTP(url, python27dll_path)
             d.addCallback(_done_python27_dll, filename)
@@ -279,10 +264,7 @@ def download_and_replace_starter(output_func=None):
         result.callback(1)
 
     def _done_python27_dll(x, filename):
-        lg.out(
-            4,
-            'os_windows_update.download_and_replace_starter file %s was updated' %
-            filename)
+        lg.out(4, 'os_windows_update.download_and_replace_starter file %s was updated' % filename)
         result.callback(1)
 
     def _fail(x, filename):
@@ -295,10 +277,7 @@ def download_and_replace_starter(output_func=None):
         try:
             os.remove(filename)
         except:
-            lg.out(
-                1,
-                'os_windows_update.download_and_replace_starter ERROR can not remove ' +
-                filename)
+            lg.out(1, 'os_windows_update.download_and_replace_starter ERROR can not remove ' + filename)
         result.errback(Exception('error downloading starter'))
 
     fileno, filename = tmpfile.make('other', '.starter')
@@ -308,7 +287,7 @@ def download_and_replace_starter(output_func=None):
     d.addErrback(_fail, filename)
     return result
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def step0():
@@ -348,8 +327,7 @@ def step1(version_digest):
     appList = bpio.find_process(['bpgui.', ])
     if len(appList) > 0:
         if not _UpdatingByUser:
-            lg.out(
-                6, 'os_windows_update.step1 bpgui is running, ask user to update.')
+            lg.out(6, 'os_windows_update.step1 bpgui is running, ask user to update.')
             _UpdatingInProgress = False
             if _NewVersionNotifyFunc is not None:
                 _NewVersionNotifyFunc(_CurrentVersionDigest)
@@ -366,16 +344,14 @@ def step2(info, version_digest):
         fail('wrong data')
         return
 
-    bitstarter_server_digest = info.get(
-        settings.WindowsStarterFileName(), None)
+    bitstarter_server_digest = info.get(settings.WindowsStarterFileName(), None)
     if bitstarter_server_digest is None:
         lg.warn('windows starter executable is not found in the info file')
         reactor.callLater(0.5, step4, version_digest)
         #fail('windows starter executable is not found in the info file')
         return
 
-    bitstarter_local_digest = misc.file_hash(os.path.join(
-        GetLocalDir(), settings.WindowsStarterFileName()))
+    bitstarter_local_digest = misc.file_hash(os.path.join(GetLocalDir(), settings.WindowsStarterFileName()))
 
     if bitstarter_local_digest != bitstarter_server_digest:
         reactor.callLater(0.5, step3, version_digest)
@@ -404,28 +380,20 @@ def step4(version_digest):
         _UpdatingInProgress = False
         return
 
-    lg.out(6, 'os_windows_update.step4 local=%s current=%s ' %
-           (local_version, _CurrentVersionDigest))
+    lg.out(6, 'os_windows_update.step4 local=%s current=%s ' % (local_version, _CurrentVersionDigest))
 
-    if settings.getUpdatesMode() == settings.getUpdatesModeValues()[
-            2] and not _UpdatingByUser:
-        lg.out(
-            6, 'os_windows_update.step4 run scheduled, but mode is %s, skip now' %
-            settings.getUpdatesMode())
+    if settings.getUpdatesMode() == settings.getUpdatesModeValues()[2] and not _UpdatingByUser:
+        lg.out(6, 'os_windows_update.step4 run scheduled, but mode is %s, skip now' % settings.getUpdatesMode())
         return
 
-    if _UpdatingByUser or settings.getUpdatesMode(
-    ) == settings.getUpdatesModeValues()[0]:
+    if _UpdatingByUser or settings.getUpdatesMode() == settings.getUpdatesModeValues()[0]:
         #        info_file_path = os.path.join(bpio.getExecutableDir(), settings.FilesDigestsFilename())
         info_file_path = settings.InfoFile()
         if os.path.isfile(info_file_path):
             try:
                 os.remove(info_file_path)
             except:
-                lg.out(
-                    1,
-                    'os_windows_update.step4 ERROR can no remove ' +
-                    info_file_path)
+                lg.out(1, 'os_windows_update.step4 ERROR can no remove ' + info_file_path)
                 lg.exc()
 
         param = ''
@@ -640,13 +608,11 @@ def next(d):
             except:
                 continue
             week_day_numbers.append(i)
-        return maths.shedule_next_weekly(
-            lasttime, d['interval'], d['daytime'], week_day_numbers)
+        return maths.shedule_next_weekly(lasttime, d['interval'], d['daytime'], week_day_numbers)
 
     elif d['type'] == 'monthly':
         month_dates = d['details'].split(' ')
-        return maths.shedule_next_monthly(
-            lasttime, d['interval'], d['daytime'], month_dates)
+        return maths.shedule_next_monthly(lasttime, d['interval'], d['daytime'], month_dates)
 #        months_labels = d['details'].split(' ')
 #        months_numbers = []
 #        months_names = list(calendar.month_name)
@@ -656,8 +622,7 @@ def next(d):
 #            except:
 #                continue
 #            months_numbers.append(i)
-# return maths.shedule_next_monthly(lasttime, d['interval'], d['daytime'],
-# months_numbers)
+#        return maths.shedule_next_monthly(lasttime, d['interval'], d['daytime'], months_numbers)
 
     else:
         lg.out(1, 'os_windows_update.loop ERROR wrong shedule type')
@@ -694,10 +659,7 @@ def loop(first_start=False):
         lg.warn('delay=%s %s' % (str(delay), shed))
         delay = 0
 
-    lg.out(
-        6, 'os_windows_update.loop run_sheduled_update will start after %s seconds (%s hours)' %
-        (str(delay), str(
-            delay / 3600.0)))
+    lg.out(6, 'os_windows_update.loop run_sheduled_update will start after %s seconds (%s hours)' % (str(delay), str(delay / 3600.0)))
     _ShedulerTask = reactor.callLater(delay, run_sheduled_update)
 
 
@@ -721,19 +683,14 @@ def check():
         global _NewVersionNotifyFunc
         _CurrentVersionDigest = str(x)
         local_version = bpio.ReadBinaryFile(settings.CheckSumFile())
-        lg.out(
-            6, 'os_windows_update.check._success local=%s current=%s' %
-            (local_version, _CurrentVersionDigest))
+        lg.out(6, 'os_windows_update.check._success local=%s current=%s' % (local_version, _CurrentVersionDigest))
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc(_CurrentVersionDigest)
         return x
 
     def _fail(x):
         global _NewVersionNotifyFunc
-        lg.out(
-            10,
-            'os_windows_update.check._fail NETERROR ' +
-            x.getErrorMessage())
+        lg.out(10, 'os_windows_update.check._fail NETERROR ' + x.getErrorMessage())
         if _NewVersionNotifyFunc is not None:
             _NewVersionNotifyFunc('failed')
         return x

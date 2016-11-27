@@ -22,7 +22,8 @@
 
 
 """
-.. module:: proxy_receiver
+.. module:: proxy_receiver.
+
 .. role:: red
 
 BitDust proxy_receiver(at_startup) Automat
@@ -130,8 +131,7 @@ def VerifyExistingRouter():
         lg.warn('current router is set, but my original identity is empty')
         return False
     if not ReadCurrentRouter() and ReadMyOriginalIdentitySource():
-        lg.warn(
-            'current router is not set, but some wrong data found as original identity')
+        lg.warn('current router is not set, but some wrong data found as original identity')
         return False
     return True
 
@@ -147,8 +147,7 @@ def A(event=None, arg=None):
         return _ProxyReceiver
     if _ProxyReceiver is None:
         # set automat name and starting state here
-        _ProxyReceiver = ProxyReceiver(
-            'proxy_receiver', 'AT_STARTUP', _DebugLevel, _Debug)
+        _ProxyReceiver = ProxyReceiver('proxy_receiver', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _ProxyReceiver.automat(event, arg)
     return _ProxyReceiver
@@ -158,7 +157,8 @@ def A(event=None, arg=None):
 
 class ProxyReceiver(automat.Automat):
     """
-    This class implements all the functionality of the ``proxy_receiver()`` state machine.
+    This class implements all the functionality of the ``proxy_receiver()``
+    state machine.
     """
 
     timers = {
@@ -168,8 +168,8 @@ class ProxyReceiver(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of proxy_receiver() machine.
+        Method to initialize additional variables and flags at creation phase
+        of proxy_receiver() machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -182,13 +182,14 @@ class ProxyReceiver(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the proxy_receiver()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the proxy_receiver() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The core proxy_receiver() code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The core proxy_receiver() code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
@@ -282,9 +283,7 @@ class ProxyReceiver(automat.Automat):
         """
         if not ReadMyOriginalIdentitySource():
             return False
-        return config.conf().getString(
-            'services/proxy-transport/current-router',
-            '').strip() != ''
+        return config.conf().getString('services/proxy-transport/current-router', '').strip() != ''
 
     def doInit(self, arg):
         """
@@ -310,46 +309,31 @@ class ProxyReceiver(automat.Automat):
         Action method.
         """
         # self._find_random_node()
-        # TODO: this is still under construction - so I am using this node for
-        # tests
-        self.automat(
-            'found-one-node',
-            'http://veselin-p2p.ru/bitdust_j2_vps1001.xml')
+        # TODO: this is still under construction - so I am using this node for tests
+        self.automat('found-one-node', 'http://veselin-p2p.ru/bitdust_j2_vps1001.xml')
 
     def doSendMyIdentity(self, arg):
         """
         Action method.
         """
-        identity_source = config.conf().getData(
-            'services/proxy-transport/my-original-identity').strip()
+        identity_source = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if identity_source:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'proxy_receiver.doSendMyIdentity use my previously stored identity')
+                lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity use my previously stored identity')
         else:
             identity_source = my_id.getLocalIdentity().serialize()
             cur_contacts = my_id.getLocalIdentity().getContacts()
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'proxy_receiver.doSendMyIdentity using my current identity, contacts=%s' %
-                    cur_contacts)
+                lg.out(_DebugLevel, 'proxy_receiver.doSendMyIdentity using my current identity, contacts=%s' % cur_contacts)
         newpacket = signed.Packet(
             commands.Identity(), my_id.getLocalID(),
             my_id.getLocalID(), 'identity',
             identity_source, self.router_idurl,
         )
-        packet_out.create(
-            newpacket,
-            wide=True,
-            callbacks={
-                commands.Ack(): lambda response,
-                info: self.automat(
-                    'ack-received',
-                    (response,
-                     info)),
-                commands.Fail(): lambda x: self.automat('nodes-not-found')})
+        packet_out.create(newpacket, wide=True, callbacks={
+            commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
+            commands.Fail(): lambda x: self.automat('nodes-not-found')
+        })
 #         from p2p import network_connector
 #         network_connector.A('reconnect')
 #         gateway.outbox(result, wide=True, callbacks={
@@ -376,8 +360,7 @@ class ProxyReceiver(automat.Automat):
             self.automat('service-refused', arg)
             return
         service_info = 'service_proxy_server \n'
-        orig_identity = config.conf().getData(
-            'services/proxy-transport/my-original-identity').strip()
+        orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if not orig_identity:
             orig_identity = my_id.getLocalIdentity().serialize()
         service_info += orig_identity
@@ -418,20 +401,15 @@ class ProxyReceiver(automat.Automat):
         newpacket, info, _, _ = arg
         block = encrypted.Unserialize(newpacket.Payload)
         if block is None:
-            lg.out(
-                2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' %
-                newpacket.CreatorID)
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
             return
         try:
             session_key = key.DecryptLocalPK(block.EncryptedSessionKey)
-            padded_data = key.DecryptWithSessionKey(
-                session_key, block.EncryptedData)
+            padded_data = key.DecryptWithSessionKey(session_key, block.EncryptedData)
             inpt = cStringIO.StringIO(padded_data[:int(block.Length)])
             data = inpt.read()
         except:
-            lg.out(
-                2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' %
-                newpacket.CreatorID)
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR reading data from %s' % newpacket.CreatorID)
             lg.exc()
             try:
                 inpt.close()
@@ -441,9 +419,7 @@ class ProxyReceiver(automat.Automat):
         inpt.close()
         routed_packet = signed.Unserialize(data)
         if not routed_packet:
-            lg.out(
-                2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' %
-                newpacket.CreatorID)
+            lg.out(2, 'proxy_receiver.doProcessInboxPacket ERROR unserialize packet from %s' % newpacket.CreatorID)
             return
         if _Debug:
             lg.out(_DebugLevel, '<<<Relay-IN %s from %s://%s' % (
@@ -471,20 +447,18 @@ class ProxyReceiver(automat.Automat):
             except:
                 lg.exc()
         self.router_identity = identitycache.FromCache(self.router_idurl)
-        config.conf().setString('services/proxy-transport/current-router', '%s %s %s' %
-                                (self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
+        config.conf().setString('services/proxy-transport/current-router', '%s %s %s' % (
+            self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
         if ReadMyOriginalIdentitySource():
             lg.warn('my original identity is not empty')
         else:
-            config.conf().setData(
-                'services/proxy-transport/my-original-identity',
-                my_id.getLocalIdentity().serialize())
+            config.conf().setData('services/proxy-transport/my-original-identity',
+                                  my_id.getLocalIdentity().serialize())
         self.request_service_packet_id = []
         callback.insert_inbox_callback(0, self._on_inbox_packet_received)
         if _Debug:
-            lg.out(
-                2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' %
-                (self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
+            lg.out(2, 'proxy_receiver.doStartListening !!!!!!! router: %s at %s://%s' % (
+                self.router_idurl, self.router_proto_host[0], self.router_proto_host[1]))
 
     def doStopListening(self, arg):
         """
@@ -523,8 +497,8 @@ class ProxyReceiver(automat.Automat):
         """
         Action method.
         """
-        proxy_interface.interface_receiving_started(
-            self.router_idurl, {'router_idurl': self.router_idurl, })
+        proxy_interface.interface_receiving_started(self.router_idurl,
+                                                    {'router_idurl': self.router_idurl, })
 
     def doNotifyDisconnected(self, arg):
         """
@@ -549,10 +523,7 @@ class ProxyReceiver(automat.Automat):
 
     def _on_nodes_lookup_finished(self, idurls):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'proxy_receiver._on_nodes_lookup_finished : %r' %
-                idurls)
+            lg.out(_DebugLevel, 'proxy_receiver._on_nodes_lookup_finished : %r' % idurls)
         for idurl in idurls:
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
@@ -613,13 +584,9 @@ class ProxyReceiver(automat.Automat):
         if response.PacketID in self.request_service_packet_id:
             self.request_service_packet_id.remove(response.PacketID)
         else:
-            lg.warn('%s was not found in pending requests: %s' %
-                    (response.PacketID, self.request_service_packet_id))
+            lg.warn('%s was not found in pending requests: %s' % (response.PacketID, self.request_service_packet_id))
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'proxy_receiver._on_request_service_ack : %s' % str(
-                    response.Payload))
+            lg.out(_DebugLevel, 'proxy_receiver._on_request_service_ack : %s' % str(response.Payload))
         if response.Payload.startswith('accepted'):
             self.automat('service-accepted', (response, info))
         else:
@@ -633,12 +600,7 @@ class ProxyReceiver(automat.Automat):
             self.request_service_packet_id.remove(response.PacketID)
         self.automat('service-refused', (response, info))
 
-    def _on_inbox_packet_received(
-            self,
-            newpacket,
-            info,
-            status,
-            error_message):
+    def _on_inbox_packet_received(self, newpacket, info, status, error_message):
         if  newpacket.Command == commands.Identity() and \
                 newpacket.CreatorID == self.router_idurl and \
                 newpacket.RemoteID == my_id.getLocalID():

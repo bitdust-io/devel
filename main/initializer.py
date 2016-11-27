@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: initializer
+.. module:: initializer.
 
 .. raw:: html
 
@@ -157,8 +157,7 @@ class Initializer(automat.Automat):
                 installer.A('recover-cmd-line', arg)
                 shutdowner.A('ready')
         elif self.state == 'LOCAL':
-            if event == 'init-local-done' and not self.isInstalled(
-                    arg) and self.isGUIPossible(arg):
+            if event == 'init-local-done' and not self.isInstalled(arg) and self.isGUIPossible(arg):
                 self.state = 'INSTALL'
                 installer.A('init')
                 shutdowner.A('ready')
@@ -181,8 +180,7 @@ class Initializer(automat.Automat):
                 self.state = 'EXIT'
                 self.doDestroyMe(arg)
         elif self.state == 'INSTALL':
-            if not self.flagCmdLine and (
-                    event == 'installer.state' and arg == 'DONE'):
+            if not self.flagCmdLine and (event == 'installer.state' and arg == 'DONE'):
                 self.state = 'STOPPING'
                 shutdowner.A('stop', "restartnshow")
             elif self.flagCmdLine and (event == 'installer.state' and arg == 'DONE'):
@@ -237,6 +235,7 @@ class Initializer(automat.Automat):
 
     def doInitLocal(self, arg):
         """
+        
         """
         self.flagGUI = arg.strip() == 'show'
         lg.out(2, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
@@ -318,11 +317,12 @@ class Initializer(automat.Automat):
         _Initializer = None
         self.destroy()
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _check_install(self):
         """
-        Return True if Private Key and local identity files exists and both is valid.
+        Return True if Private Key and local identity files exists and both is
+        valid.
         """
         lg.out(2, 'initializer._check_install')
         from userid import identity

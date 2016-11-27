@@ -84,9 +84,7 @@ def packet_in_callback(backupID, newpacket):
 
 
 def extract_done(retcode, backupID, tarfilename, callback):
-    lg.out(
-        4, 'restore_monitor.extract_done %s result: %s' %
-        (backupID, str(retcode)))
+    lg.out(4, 'restore_monitor.extract_done %s result: %s' % (backupID, str(retcode)))
     global OnRestoreDoneFunc
 
     _WorkingBackupIDs.pop(backupID, None)
@@ -155,15 +153,9 @@ def Start(backupID, outputLocation, callback=None):
     global _WorkingRestoreProgress
     if backupID in _WorkingBackupIDs.keys():
         return None
-    outfd, outfilename = tmpfile.make(
-        'restore', '.tar.gz', backupID.replace(
-            '/', '_') + '_')
+    outfd, outfilename = tmpfile.make('restore', '.tar.gz', backupID.replace('/', '_') + '_')
     r = restore.restore(backupID, outfd)
-    r.MyDeferred.addCallback(
-        restore_done,
-        outfilename,
-        outputLocation,
-        callback)
+    r.MyDeferred.addCallback(restore_done, outfilename, outputLocation, callback)
     r.MyDeferred.addErrback(restore_failed, outfilename, callback)
     r.set_block_restored_callback(block_restored_callback)
     r.set_packet_in_callback(packet_in_callback)

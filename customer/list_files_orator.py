@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: list_files_orator
+.. module:: list_files_orator.
 
 .. raw:: html
 
@@ -45,7 +45,6 @@ EVENTS:
     * :red:`local-files-done`
     * :red:`need-files`
     * :red:`timer-10sec`
-
 """
 
 import os
@@ -86,8 +85,7 @@ def A(event=None, arg=None):
     """
     global _ListFilesOrator
     if _ListFilesOrator is None:
-        _ListFilesOrator = ListFilesOrator(
-            'list_files_orator', 'NO_FILES', 4, True)
+        _ListFilesOrator = ListFilesOrator('list_files_orator', 'NO_FILES', 4, True)
     if event is not None:
         _ListFilesOrator.automat(event, arg)
     return _ListFilesOrator
@@ -107,7 +105,8 @@ def Destroy():
 
 class ListFilesOrator(automat.Automat):
     """
-    A class to request list of my files from my suppliers and also scan the local files.
+    A class to request list of my files from my suppliers and also scan the
+    local files.
     """
 
     timers = {
@@ -137,8 +136,7 @@ class ListFilesOrator(automat.Automat):
                 self.state = 'NO_FILES'
         #---REMOTE_FILES---
         elif self.state == 'REMOTE_FILES':
-            if (event == 'timer-10sec' and self.isSomeListFilesReceived(arg)
-                ) or (event == 'inbox-files' and self.isAllListFilesReceived(arg)):
+            if (event == 'timer-10sec' and self.isSomeListFilesReceived(arg)) or (event == 'inbox-files' and self.isAllListFilesReceived(arg)):
                 self.state = 'SAW_FILES'
             elif event == 'timer-10sec' and not self.isSomeListFilesReceived(arg):
                 self.state = 'NO_FILES'
@@ -151,16 +149,12 @@ class ListFilesOrator(automat.Automat):
 
     def isAllListFilesReceived(self, arg):
         global _RequestedListFilesPacketIDs
-        lg.out(
-            6, 'list_files_orator.isAllListFilesReceived need %d more' %
-            len(_RequestedListFilesPacketIDs))
+        lg.out(6, 'list_files_orator.isAllListFilesReceived need %d more' % len(_RequestedListFilesPacketIDs))
         return len(_RequestedListFilesPacketIDs) == 0
 
     def isSomeListFilesReceived(self, arg):
         global _RequestedListFilesCounter
-        lg.out(
-            6, 'list_files_orator.isSomeListFilesReceived %d list files was received' %
-            _RequestedListFilesCounter)
+        lg.out(6, 'list_files_orator.isSomeListFilesReceived %d list files was received' % _RequestedListFilesCounter)
         return _RequestedListFilesCounter > 0
 
     def doReadLocalFiles(self, arg):
@@ -179,17 +173,15 @@ class ListFilesOrator(automat.Automat):
                     p2p_service.SendRequestListFiles(idurl)
                     _RequestedListFilesPacketIDs.add(idurl)
                 else:
-                    lg.out(
-                        6,
-                        'list_files_orator.doRequestRemoteFiles SKIP %s is not online' %
-                        idurl)
+                    lg.out(6, 'list_files_orator.doRequestRemoteFiles SKIP %s is not online' % idurl)
 
 #------------------------------------------------------------------------------
 
 
 def IncomingListFiles(newpacket):
     """
-    Called from ``p2p.backup_control`` to pass incoming "ListFiles" packet here.
+    Called from ``p2p.backup_control`` to pass incoming "ListFiles" packet
+    here.
     """
     global _RequestedListFilesPacketIDs
     global _RequestedListFilesCounter

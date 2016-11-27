@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: network_transport
+.. module:: network_transport.
+
 .. role:: red
 BitDust network_transport() Automat
 
@@ -73,7 +74,8 @@ import gateway
 
 class NetworkTransport(automat.Automat):
     """
-    This class implements all the functionality of the ``network_transport()`` state machine.
+    This class implements all the functionality of the ``network_transport()``
+    state machine.
     """
 
     fast = True
@@ -91,20 +93,19 @@ class NetworkTransport(automat.Automat):
         method = getattr(self.interface, method_name, None)
         if method is None:
             lg.err('method %s not found in protos' % (method_name, self.proto))
-            return fail(
-                Exception(
-                    'Method %s not found in the transport %s interface' %
-                    (method_name, self.proto)))
+            return fail(Exception('Method %s not found in the transport %s interface' % (method_name, self.proto)))
         return method(*args)
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
         if self.state_changed_callback:
             self.state_changed_callback(self, oldstate, newstate)
@@ -235,17 +236,14 @@ class NetworkTransport(automat.Automat):
             options['tcp_port'] = settings.getTCPPort()
         elif self.proto == 'udp':
             if not id_contact:
-                default_host = nameurl.GetName(
-                    my_id.getLocalID()) + '@' + platform.node()
+                default_host = nameurl.GetName(my_id.getLocalID()) + '@' + platform.node()
             options['host'] = id_contact or default_host
             options['dht_port'] = settings.getDHTPort()
             options['udp_port'] = settings.getUDPPort()
         elif self.proto == 'proxy':
             pass
         if _Debug:
-            lg.out(
-                8, 'network_transport.doStart connecting %s transport : %s' %
-                (self.proto.upper(), options))
+            lg.out(8, 'network_transport.doStart connecting %s transport : %s' % (self.proto.upper(), options))
         self.interface.connect(options)
 
     def doStop(self, arg):
@@ -253,9 +251,7 @@ class NetworkTransport(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(
-                8, 'network_transport.doStop disconnecting %s transport' %
-                (self.proto.upper()))
+            lg.out(8, 'network_transport.doStop disconnecting %s transport' % (self.proto.upper()))
         self.interface.disconnect()
 
     def doCreateProxy(self, arg):

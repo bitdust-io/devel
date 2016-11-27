@@ -27,9 +27,10 @@
 #
 
 """
-.. module:: weblog
+.. module:: weblog.
 
-A useful code to monitor program logs in the Web browser using local HTML server.
+A useful code to monitor program logs in the Web browser using local
+HTML server.
 """
 
 import sys
@@ -147,12 +148,7 @@ def log(level, s):
     global myweblistener
     if not myweblistener:
         return
-    logtext += '%s|%s|%s|%s\n' % (str(lineindex),
-                                  str(level),
-                                  strftime('%H:%M:%S'),
-                                  s.replace(
-        '\n',
-        '#nl'))
+    logtext += '%s|%s|%s|%s\n' % (str(lineindex), str(level), strftime('%H:%M:%S'), s.replace('\n', '#nl'))
     numlines += 1
     lineindex += 1
     while numlines > maxlines:
@@ -189,10 +185,7 @@ class LogPage(resource.Resource):
         except:
             maxlines = default_lines
 
-        d = {
-            'level': str(DlevelV),
-            'reload': str(reloadV),
-            'lines': str(maxlines)}
+        d = {'level': str(DlevelV), 'reload': str(reloadV), 'lines': str(maxlines)}
         out = header_html % d
         all_lines = logtext.splitlines()
         for lineindex in range(len(all_lines) - 1, -1, -1):
@@ -249,9 +242,7 @@ class LogPage(resource.Resource):
 
             a = '%s'
             if color != '':
-                a = (
-                    '<font color="%s" style="BACKGROUND-COLOR:%s">' %
-                    (textcolor, color)) + '%s</font>'
+                a = ('<font color="%s" style="BACKGROUND-COLOR:%s">' % (textcolor, color)) + '%s</font>'
             elif textcolor != '':
                 a = ('<font color="%s">' % textcolor) + '%s</font>'
             if level <= 4:

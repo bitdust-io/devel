@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_coins_accountant
+..
 
+module:: service_coins_accountant
 """
 
 from services.local_service import LocalService

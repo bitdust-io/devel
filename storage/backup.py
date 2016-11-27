@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: backup
+.. module:: backup.
 
 .. raw:: html
 
@@ -72,7 +72,6 @@ EVENTS:
     * :red:`start`
     * :red:`timer-001sec`
     * :red:`timer-01sec`
-
 """
 
 #------------------------------------------------------------------------------
@@ -121,7 +120,7 @@ from raid import raid_worker
 from crypt import encrypted
 from crypt import key
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 class backup(automat.Automat):
@@ -158,14 +157,9 @@ class backup(automat.Automat):
         self.totalSize = -1
         self.finishCallback = finishCallback
         self.blockResultCallback = blockResultCallback
-        automat.Automat.__init__(
-            self,
-            'backup_%s' %
-            self.backupID,
-            'AT_STARTUP',
-            _DebugLevel)
+        automat.Automat.__init__(self, 'backup_%s' % self.backupID, 'AT_STARTUP', _DebugLevel)
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def A(self, event, arg):
         from customer import data_sender
@@ -177,8 +171,7 @@ class backup(automat.Automat):
                 self.doFirstBlock(arg)
         #---READ---
         elif self.state == 'READ':
-            if event == 'read-success' and not self.isReadingNow(
-                    arg) and (self.isBlockReady(arg) or self.isEOF(arg)):
+            if event == 'read-success' and not self.isReadingNow(arg) and (self.isBlockReady(arg) or self.isEOF(arg)):
                 self.state = 'ENCRYPT'
                 self.doEncryptBlock(arg)
             elif event == 'block-raid-done' and not self.isAborted(arg):
@@ -194,8 +187,7 @@ class backup(automat.Automat):
                 self.doRead(arg)
         #---RAID---
         elif self.state == 'RAID':
-            if (event == 'timer-01sec' or event == 'block-raid-done' or event ==
-                    'block-raid-started') and self.isAborted(arg):
+            if (event == 'timer-01sec' or event == 'block-raid-done' or event == 'block-raid-started') and self.isAborted(arg):
                 self.state = 'ABORTED'
                 self.doClose(arg)
                 self.doReport(arg)
@@ -240,10 +232,10 @@ class backup(automat.Automat):
 
     def isPipeReady(self, arg):
         """
-        Return True if ``pipe`` object exist and is ready for reading a the new chunk of data.
+        Return True if ``pipe`` object exist and is ready for reading a the new
+        chunk of data.
         """
-        return self.pipe is not None and self.pipe.state() in [
-            nonblocking.PIPE_CLOSED, nonblocking.PIPE_READY2READ]
+        return self.pipe is not None and self.pipe.state() in [nonblocking.PIPE_CLOSED, nonblocking.PIPE_READY2READ]
 
     def isBlockReady(self, arg):
         return self.currentBlockSize >= self.blockSize
@@ -270,15 +262,10 @@ class backup(automat.Automat):
         def readChunk():
             size = self.blockSize - self.currentBlockSize
             if size < 0:
-                lg.out(1, "backup.readChunk ERROR eccmap.nodes=" +
-                       str(self.eccmap.nodes()))
-                lg.out(1, "backup.readChunk ERROR blockSize=" +
-                       str(self.blockSize))
-                lg.out(1, "backup.readChunk ERROR currentBlockSize=" +
-                       str(self.currentBlockSize))
-                raise Exception(
-                    'size < 0, blockSize=%s, currentBlockSize=%s' %
-                    (self.blockSize, self.currentBlockSize))
+                lg.out(1, "backup.readChunk ERROR eccmap.nodes=" + str(self.eccmap.nodes()))
+                lg.out(1, "backup.readChunk ERROR blockSize=" + str(self.blockSize))
+                lg.out(1, "backup.readChunk ERROR currentBlockSize=" + str(self.currentBlockSize))
+                raise Exception('size < 0, blockSize=%s, currentBlockSize=%s' % (self.blockSize, self.currentBlockSize))
                 return ''
             elif size == 0:
                 return ''
@@ -287,20 +274,15 @@ class backup(automat.Automat):
                 return ''
             if self.pipe.state() == nonblocking.PIPE_CLOSED:
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
+                    lg.out(_DebugLevel, 'backup.readChunk the state is PIPE_CLOSED !!!!!!!!!!!!!!!!!!!!!!!!')
                 return ''
             if self.pipe.state() == nonblocking.PIPE_READY2READ:
                 newchunk = self.pipe.recv(size)
                 if newchunk == '':
                     if _Debug:
-                        lg.out(
-                            _DebugLevel,
-                            'backup.readChunk pipe.recv() returned empty string')
+                        lg.out(_DebugLevel, 'backup.readChunk pipe.recv() returned empty string')
                 return newchunk
-            lg.out(1, "backup.readChunk ERROR pipe.state=" +
-                   str(self.pipe.state()))
+            lg.out(1, "backup.readChunk ERROR pipe.state=" + str(self.pipe.state()))
             raise Exception('backup.pipe.state is ' + str(self.pipe.state()))
             return ''
 
@@ -342,9 +324,7 @@ class backup(automat.Automat):
         newblock = arg
         if self.terminating:
             self.automat('block-raid-done', (newblock.BlockNumber, None))
-            lg.out(
-                _DebugLevel,
-                'backup.doBlockPushAndRaid SKIP, terminating=True')
+            lg.out(_DebugLevel, 'backup.doBlockPushAndRaid SKIP, terminating=True')
             return
         fileno, filename = tmpfile.make('raid')
         serializedblock = newblock.Serialize()
@@ -354,29 +334,14 @@ class backup(automat.Automat):
         self.workBlocks[newblock.BlockNumber] = filename
         dt = time.time()
         outputpath = os.path.join(settings.getLocalBackupsDir(), self.backupID)
-        task_params = (
-            filename,
-            self.eccmap.name,
-            self.backupID,
-            newblock.BlockNumber,
-            outputpath)
-        raid_worker.add_task(
-            'make',
-            task_params,
-            lambda cmd,
-            params,
-            result: self._raidmakeCallback(
-                params,
-                result,
-                dt),
-        )
+        task_params = (filename, self.eccmap.name, self.backupID, newblock.BlockNumber, outputpath)
+        raid_worker.add_task('make', task_params,
+                             lambda cmd, params, result: self._raidmakeCallback(params, result, dt),)
         self.automat('block-raid-started', newblock)
         del serializedblock
         if _Debug:
-            lg.out(
-                _DebugLevel, 'backup.doBlockPushAndRaid %s : start process data from %s to %s, %d' %
-                (newblock.BlockNumber, filename, outputpath, id(
-                    self.terminating)))
+            lg.out(_DebugLevel, 'backup.doBlockPushAndRaid %s : start process data from %s to %s, %d' % (
+                newblock.BlockNumber, filename, outputpath, id(self.terminating)))
 
     def doPopBlock(self, arg):
         """
@@ -433,17 +398,14 @@ class backup(automat.Automat):
         self.destroy()
         collected = gc.collect()
         if _Debug:
-            lg.out(
-                _DebugLevel, 'backup.doDestroyMe [%s] collected %d objects' %
-                (self.backupID, collected))
+            lg.out(_DebugLevel, 'backup.doDestroyMe [%s] collected %d objects' % (self.backupID, collected))
 
     def abort(self):
         """
         This method should stop this backup by killing the pipe process.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'backup.abort id %s, %d' %
-                   (str(self.backupID), id(self.ask4abort)))
+            lg.out(_DebugLevel, 'backup.abort id %s, %d' % (str(self.backupID), id(self.ask4abort)))
         self.terminating = True
         if len(self.workBlocks) > 0:
             for blockNumber, filename in self.workBlocks.items():
@@ -453,6 +415,7 @@ class backup(automat.Automat):
 
     def progress(self):
         """
+        
         """
         if self.totalSize <= 0:
             return 0.0
@@ -463,20 +426,14 @@ class backup(automat.Automat):
         filename, eccmapname, backupID, blockNumber, targetDir = params
         if result is None:
             if _Debug:
-                lg.out(
-                    _DebugLevel, 'backup._raidmakeCallback WARNING - result is None :  %r eof=%s dt=%s' %
-                    (blockNumber, str(
-                        self.stateEOF), str(
-                        time.time() - dt)))
+                lg.out(_DebugLevel, 'backup._raidmakeCallback WARNING - result is None :  %r eof=%s dt=%s' % (
+                    blockNumber, str(self.stateEOF), str(time.time() - dt)))
             events.info('backup', '%s aborted' % self.backupID)
             self._kill_pipe()
         else:
             if _Debug:
-                lg.out(
-                    _DebugLevel, 'backup._raidmakeCallback %r %r eof=%s dt=%s' %
-                    (blockNumber, result, str(
-                        self.stateEOF), str(
-                        time.time() - dt)))
+                lg.out(_DebugLevel, 'backup._raidmakeCallback %r %r eof=%s dt=%s' % (
+                    blockNumber, result, str(self.stateEOF), str(time.time() - dt)))
             self.automat('block-raid-done', (blockNumber, result))
 
     def _kill_pipe(self):
@@ -500,13 +457,11 @@ def main():
     compress_mode = 'none'  # 'gz'
     backupID = sys.argv[2]
     raid_worker.A('init')
-    backupPath = backup_fs.MakeLocalDir(
-        settings.getLocalBackupsDir(), backupID)
+    backupPath = backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
     if bpio.pathIsDir(sourcePath):
         backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
     else:
-        backupPipe = backup_tar.backuptarfile(
-            sourcePath, compress=compress_mode)
+        backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)
     backupPipe.make_nonblocking()
 
     def _bk_done(bid, result):
@@ -515,12 +470,8 @@ def main():
             os.mkdir(os.path.join(settings.getLocalBackupsDir(), bid + '.out'))
         except:
             pass
-        for filename in os.listdir(
-            os.path.join(
-                settings.getLocalBackupsDir(),
-                bid)):
-            filepath = os.path.join(
-                settings.getLocalBackupsDir(), bid, filename)
+        for filename in os.listdir(os.path.join(settings.getLocalBackupsDir(), bid)):
+            filepath = os.path.join(settings.getLocalBackupsDir(), bid, filename)
             payld = str(bpio.ReadBinaryFile(filepath))
             newpacket = signed.Packet(
                 'Data',
@@ -529,8 +480,7 @@ def main():
                 filename,
                 payld,
                 'http://megafaq.ru/cvps1010.xml')
-            newfilepath = os.path.join(
-                settings.getLocalBackupsDir(), bid + '.out', filename)
+            newfilepath = os.path.join(settings.getLocalBackupsDir(), bid + '.out', filename)
             bpio.AtomicWriteFile(newfilepath, newpacket.Serialize())
         reactor.stop()
     job = backup(backupID, backupPipe, _bk_done)

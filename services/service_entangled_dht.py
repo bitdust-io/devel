@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_entangled_dht
+..
 
+module:: service_entangled_dht
 """
 
 from services.local_service import LocalService

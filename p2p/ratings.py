@@ -49,14 +49,14 @@ from contacts import contactsdb
 
 import contact_status
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 _LoopCountRatingsTask = None
 _IndexMonth = {}
 _IndexTotal = {}
 _InitDone = False
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init():
@@ -88,8 +88,7 @@ def start():
     global _LoopCountRatingsTask
     _LoopCountRatingsTask = task.LoopingCall(rate_all_users)
     _LoopCountRatingsTask.start(settings.DefaultAlivePacketTimeOut())
-    lg.out(6, 'ratings.start will count ratings every %s minutes' %
-           str(settings.DefaultAlivePacketTimeOut() / 60.0))
+    lg.out(6, 'ratings.start will count ratings every %s minutes' % str(settings.DefaultAlivePacketTimeOut() / 60.0))
 
 
 def stop():
@@ -209,11 +208,7 @@ def rate_all_users():
 def remember_connected_time(idurl):
     if not exist_rating_dir(idurl):
         make_rating_dir(idurl)
-    bpio._write_data(
-        os.path.join(
-            rating_dir(idurl),
-            'connected'),
-        time.strftime('%d%m%y %H:%M:%S'))
+    bpio._write_data(os.path.join(rating_dir(idurl), 'connected'), time.strftime('%d%m%y %H:%M:%S'))
 
 
 def connected_time(idurl):
@@ -256,10 +251,8 @@ def read_index(monthstr=None):
             continue
         month = read_month_rating_dict(idurl, monthstr)
         total = read_total_rating_dict(idurl)
-        _IndexMonth[idurl] = {'all': '0',
-                              'alive': '0'} if month is None else month
-        _IndexTotal[idurl] = {'all': '0',
-                              'alive': '0'} if total is None else total
+        _IndexMonth[idurl] = {'all': '0', 'alive': '0'} if month is None else month
+        _IndexTotal[idurl] = {'all': '0', 'alive': '0'} if total is None else total
         #out(4, '    [%s]: %s, %s' % (nameurl.GetName(idurl), _IndexMonth[idurl], _IndexTotal[idurl]))
 
 
@@ -289,7 +282,7 @@ def total_percent(idurl):
         return 0.0
 
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def main():

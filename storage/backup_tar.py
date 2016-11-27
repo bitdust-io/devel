@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_tar
+.. module:: backup_tar.
 
 We want a pipe output or input so we don't need to store intermediate data.
 Our backup code only takes data from this pipe when it is ready and form blocks one by one.
@@ -62,7 +62,9 @@ from system import child_process
 def backuptar(directorypath, recursive_subfolders=True, compress=None):
     """
     Returns file descriptor for process that makes tar archive.
-    In other words executes a child process and create a Pipe to communicate with it.
+
+    In other words executes a child process and create a Pipe to
+    communicate with it.
     """
     if not bpio.pathIsDir(directorypath):
         lg.out(1, 'backup_tar.backuptar ERROR %s not found' % directorypath)
@@ -79,20 +81,10 @@ def backuptar(directorypath, recursive_subfolders=True, compress=None):
             cmdargs = [commandpath, subdirs, compress, directorypath]
         else:
             commandpath = "bppipe.py"
-            cmdargs = [
-                sys.executable,
-                commandpath,
-                subdirs,
-                compress,
-                directorypath]
+            cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath]
     else:
         commandpath = "bppipe.py"
-        cmdargs = [
-            sys.executable,
-            commandpath,
-            subdirs,
-            compress,
-            directorypath]
+        cmdargs = [sys.executable, commandpath, subdirs, compress, directorypath]
     if not os.path.isfile(commandpath):
         lg.out(1, 'backup_tar.backuptar ERROR %s not found' % commandpath)
         return None
@@ -119,20 +111,10 @@ def backuptarfile(filepath, compress=None):
             cmdargs = [commandpath, 'nosubdirs', compress, filepath]
         else:
             commandpath = "bppipe.py"
-            cmdargs = [
-                sys.executable,
-                commandpath,
-                'nosubdirs',
-                compress,
-                filepath]
+            cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath]
     else:
         commandpath = "bppipe.py"
-        cmdargs = [
-            sys.executable,
-            commandpath,
-            'nosubdirs',
-            compress,
-            filepath]
+        cmdargs = [sys.executable, commandpath, 'nosubdirs', compress, filepath]
     if not os.path.isfile(commandpath):
         lg.out(1, 'backup_tar.backuptarfile ERROR %s not found' % commandpath)
         return None

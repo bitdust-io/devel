@@ -37,8 +37,7 @@ class SupplierView(generic.DetailView):
     def get_context_data(self, **kwargs):
         Sup = super(SupplierView, self).get_object()
         context = super(SupplierView, self).get_context_data(**kwargs)
-        context['identity_id'] = nameurl.DjangoQuote(
-            Sup.idurl)  # nameurl.Quote(Sup.idurl)
+        context['identity_id'] = nameurl.DjangoQuote(Sup.idurl)  # nameurl.Quote(Sup.idurl)
         return context
 
 

@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_restores
+..
 
+module:: service_restores
 """
 
 from services.local_service import LocalService

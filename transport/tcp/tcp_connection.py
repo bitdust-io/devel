@@ -22,7 +22,8 @@
 
 
 """
-.. module:: tcp_connection
+.. module:: tcp_connection.
+
 .. role:: red
 
 BitDust tcp_connection() Automat
@@ -33,7 +34,6 @@ EVENTS:
     * :red:`data-received`
     * :red:`disconnect`
     * :red:`timer-10sec`
-
 """
 #------------------------------------------------------------------------------
 
@@ -84,7 +84,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
 
     def A(self, event, arg):
@@ -291,8 +292,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         for filename, description, result_defer, single in self.factory.pendingoutboxfiles:
-            self.append_outbox_file(
-                filename, description, result_defer, single)
+            self.append_outbox_file(filename, description, result_defer, single)
         self.factory.pendingoutboxfiles = []
 
     def doStopInOutFiles(self, arg):
@@ -321,10 +321,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         Action method.
         """
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'tcp_connection.doDisconnect with %s' % str(
-                    self.peer_address))
+            lg.out(_DebugLevel, 'tcp_connection.doDisconnect with %s' % str(self.peer_address))
         try:
             self.transport.abortConnection()
         except:
@@ -343,9 +340,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
                 tcp_node.opened_connections().pop(self.peer_address)
             tcp_node.decrease_connections_counter()
         else:
-            raise Exception(
-                'not found %s in the opened connections' %
-                self.peer_address)
+            raise Exception('not found %s in the opened connections' % self.peer_address)
         self.stream = None
         self.peer_address = None
         self.peer_external_address = None
@@ -367,10 +362,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def connectionMade(self):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'tcp_connection.connectionMade %s:%d' %
-                self.getTransportAddress())
+            lg.out(_DebugLevel, 'tcp_connection.connectionMade %s:%d' % self.getTransportAddress())
         address = self.getAddress()
         name = 'tcp_connection[%s:%d]' % (address[0], address[1])
         automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel, _Debug)
@@ -378,10 +370,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def connectionLost(self, reason):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'tcp_connection.connectionLost with %s:%d' %
-                self.getTransportAddress())
+            lg.out(_DebugLevel, 'tcp_connection.connectionLost with %s:%d' % self.getTransportAddress())
         self.automat('connection-lost')
 
     def sendData(self, command, payload):
@@ -405,12 +394,7 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
         # print '>>>>>> [%s] %d bytes' % (command, len(payload))
         self.automat('data-received', (command, payload))
 
-    def append_outbox_file(
-            self,
-            filename,
-            description='',
-            result_defer=None,
-            single=False):
+    def append_outbox_file(self, filename, description='', result_defer=None, single=False):
         self.outboxQueue.append((filename, description, result_defer, single))
 
     def process_outbox_queue(self):
@@ -420,41 +404,29 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
             return False
         from transport.tcp import tcp_stream
         has_reads = False
-        while len(
-                self.outboxQueue) > 0 and len(
-                self.stream.outboxFiles) < tcp_stream.MAX_SIMULTANEOUS_OUTGOING_FILES:
-            filename, description, result_defer, single = self.outboxQueue.pop(
-                0)
+        while len(self.outboxQueue) > 0 and len(self.stream.outboxFiles) < tcp_stream.MAX_SIMULTANEOUS_OUTGOING_FILES:
+            filename, description, result_defer, single = self.outboxQueue.pop(0)
             has_reads = True
             # we have a queue of files to be sent
             # somehow file may be removed before we start sending it
             # so we check it here and skip not existed files
             if not os.path.isfile(filename):
-                self.failed_outbox_queue_item(
-                    filename, description, 'file not exist')
+                self.failed_outbox_queue_item(filename, description, 'file not exist')
                 if single:
                     self.automat('shutdown')
                 continue
             try:
                 filesize = os.path.getsize(filename)
             except:
-                self.failed_outbox_queue_item(
-                    filename, description, 'can not get file size')
+                self.failed_outbox_queue_item(filename, description, 'can not get file size')
                 if single:
                     self.automat('shutdown')
                 continue
-            self.stream.create_outbox_file(
-                filename, filesize, description, result_defer, single)
+            self.stream.create_outbox_file(filename, filesize, description, result_defer, single)
         return has_reads
 
-    def failed_outbox_queue_item(
-            self,
-            filename,
-            description='',
-            error_message=''):
+    def failed_outbox_queue_item(self, filename, description='', error_message=''):
         from transport.tcp import tcp_interface
-        lg.out(
-            6, 'tcp_connection.failed_outbox_queue_item %s because %s' %
-            (filename, error_message))
+        lg.out(6, 'tcp_connection.failed_outbox_queue_item %s because %s' % (filename, error_message))
         tcp_interface.interface_cancelled_file_sending(
             self.getAddress(), filename, 0, description, error_message)

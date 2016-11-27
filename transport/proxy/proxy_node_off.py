@@ -22,7 +22,8 @@
 
 
 """
-.. module:: proxy_node
+.. module:: proxy_node.
+
 .. role:: red
 
 BitDust proxy_node(AT_STARTUP) Automat
@@ -83,7 +84,8 @@ def A(event=None, arg=None):
 
 class ProxyNode(automat.Automat):
     """
-    This class implements all the functionality of the ``proxy_node()`` state machine.
+    This class implements all the functionality of the ``proxy_node()`` state
+    machine.
     """
 
     timers = {
@@ -92,8 +94,8 @@ class ProxyNode(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of proxy_node() machine.
+        Method to initialize additional variables and flags at creation phase
+        of proxy_node() machine.
         """
         self.router_idurl = None
         self.router_identity = None
@@ -107,13 +109,14 @@ class ProxyNode(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the proxy_node()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the proxy_node() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The core proxy_node() code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The core proxy_node() code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         #---TRANSPORTS?---
         if self.state == 'TRANSPORTS?':

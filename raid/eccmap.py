@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: eccmap
+.. module:: eccmap.
 
 This object holds one error correcting code map.
 When creating an object we give a filename to load from or a map name to load from memory.
@@ -205,6 +205,7 @@ def Current():
 def SuppliersNumbers():
     """
     Return a list of valid suppliers numbers.
+
     This is: [2, 4, 7, 13, 18, 26, 64]
     """
     global __suppliers_numbers
@@ -241,7 +242,9 @@ def GetEccMapSuppliersNumber(eccmapname):
 
 def GetEccMapData(name):
     """
-    This return a matrix of that ecc map. You can see this is in the top of the file.
+    This return a matrix of that ecc map.
+
+    You can see this is in the top of the file.
     """
     global __eccmaps
     return __eccmaps.get(name, None)
@@ -260,6 +263,7 @@ def GetCorrectableErrors(suppliers_number):
 def ReadTextFile(filename):
     """
     Read text file and return its content.
+
     Also replace line endings: \r\n with \n - convert to Linux file format.
     """
     if not os.path.isfile(filename):
@@ -292,23 +296,18 @@ class eccmap:
             self.suppliers_number = suppliers_number
             self.name = GetEccMapName(self.suppliers_number)
         self.CorrectableErrors = self.CalcCorrectableErrors(self.name)
-        # index with Parity number and output is Data numbers for that parity
-        self.ParityToData = []
-        # index with Data number and output is Parities that use that Data
-        # number
-        self.DataToParity = []
+        self.ParityToData = []    # index with Parity number and output is Data numbers for that parity
+        self.DataToParity = []    # index with Data number and output is Parities that use that Data number
         self.datasegments = 0     #
         self.paritysegments = 0   #
         self.type = 0             # 0 is data+parity on same nodes, 1 is different
         self.from_memory(self.name)
         self.convert()
-        lg.out(8, 'eccmap.init %s id=%d thread=%s' %
-               (self.name, id(self), threading.currentThread().getName()))
+        lg.out(8, 'eccmap.init %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
 
     def __del__(self):
         try:
-            lg.out(8, 'eccmap.del %s id=%d thread=%s' %
-                   (self.name, id(self), threading.currentThread().getName()))
+            lg.out(8, 'eccmap.del %s id=%d thread=%s' % (self.name, id(self), threading.currentThread().getName()))
         except:
             pass
 
@@ -330,6 +329,7 @@ class eccmap:
     def CalcCorrectableErrors(self, filename):
         """
         We can fix at least this many errors (probably more for big nums).
+
         All our codes can handle at least one error.
         """
         basename = os.path.basename(filename)
@@ -380,7 +380,8 @@ class eccmap:
 
     def loadfromfile(self, fname):
         """
-        This is old method, I decide to move all constants into the Python code.
+        This is old method, I decide to move all constants into the Python
+        code.
         """
         # lg.out(10, "eccmap.loadfromfile with " + fname)
         if os.path.exists(fname):
@@ -451,11 +452,9 @@ class eccmap:
         DataSegs = [0] * self.datasegments
         ParitySegs = [0] * self.datasegments
         if len(NodeMap) != self.datasegments:
-            raise Exception(
-                "eccmap.FixableNode not given NodeMap of correct length")
+            raise Exception("eccmap.FixableNode not given NodeMap of correct length")
         if self.datasegments != self.paritysegments:
-            raise Exception(
-                "eccmap.FixableNode only usable if same number of data and parity ")
+            raise Exception("eccmap.FixableNode only usable if same number of data and parity ")
         for i in range(0, self.datasegments):
             DataSegs[i] = NodeMap[i]
             ParitySegs[i] = NodeMap[i]
@@ -464,7 +463,9 @@ class eccmap:
     def Fixable(self, DataSegs, ParitySegs):
         """
         Check is reconstruction is possible.
-        Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is don't have 1 is have.
+
+        Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is
+        don't have 1 is have.
         """
         stillMissing = 0
         for i in range(self.datasegments):
@@ -477,8 +478,7 @@ class eccmap:
             MakingProgress = 0
             for paritynum in range(self.paritysegments):
                 if ParitySegs[paritynum] == 1:      # foreach parity
-                    # If parity is not missing (so we can use it)
-                    Parity = self.ParityToData[paritynum]
+                    Parity = self.ParityToData[paritynum]  # If parity is not missing (so we can use it)
                     missing = 0                     # We will see how many of the datas are missing
                     for DataNum in Parity:          # look at all datas that went into this parity
                         if DataSegs[DataNum] == 0:  # if this data is missing
@@ -486,8 +486,7 @@ class eccmap:
                             lastMissing = DataNum  # keep track of the last missing in case only one is missing
                     if missing == 1:                # if missing exactly 1 of datas in parity
                         MakingProgress = 1  # then we are making progress
-                        # as we could fix lastMissing with current Parity
-                        DataSegs[lastMissing] = 1
+                        DataSegs[lastMissing] = 1  # as we could fix lastMissing with current Parity
                         stillMissing -= 1  # so one less stillMissing
 
         AllFixed = stillMissing == 0                # If nothing else missing we are good
@@ -496,11 +495,12 @@ class eccmap:
     def CanMakeProgress(self, DataSegs, ParitySegs):
         """
         Another method to check if we can do some data reconstruction.
-        Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is don't have 1 is have.
+
+        Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is
+        don't have 1 is have.
         """
         for paritynum in range(self.paritysegments):  # foreach parity
-            if ParitySegs[
-                    paritynum] == 1:      # If parity is not missing (so we can use it)
+            if ParitySegs[paritynum] == 1:      # If parity is not missing (so we can use it)
                 Parity = self.ParityToData[paritynum]
                 missing = 0                     # We will see how many of the datas are missing
                 for DataNum in Parity:          # look at all datas that went into this parity
@@ -510,8 +510,7 @@ class eccmap:
                     except:
                         lg.exc()
                         return False
-                        # keep track of the last missing in case only one is
-                        # missing
+                        #     keep track of the last missing in case only one is missing
                 if missing == 1:                # if missing exactly 1 of datas in parity, we can fix the data, have work to do
                     return True
             else:                               # we're missing this parity, can we rebuild it
@@ -524,17 +523,19 @@ class eccmap:
                     except:
                         lg.exc()
                         return False
-                        # keep track of the last missing in case only one is
-                        # missing
+                        #     keep track of the last missing in case only one is missing
                 if missing == 0:                # if missing none of the data for this parity, we have work to do
                     return True
         return False
 
     def GetDataFixPath(self, DataSegs, ParitySegs, DataSegNum):
         """
-        Given a missing segment number (DataSegNum) and a list of available Data Segments and Parity Segments.
-        Identify which Parity to use to rebuild the missing Data Segment, return the parity segment number and
-        the map of data segments in that parity.
+        Given a missing segment number (DataSegNum) and a list of available
+        Data Segments and Parity Segments.
+
+        Identify which Parity to use to rebuild the missing Data
+        Segment, return the parity segment number and the map of data
+        segments in that parity.
         """
         #out(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
         bestParityNum = -1
@@ -544,18 +545,15 @@ class eccmap:
             #out(12, "eccmap.GetDataFixPath we already have the data segment requested to fix?")
             return bestParityNum, bestParityMap
         for paritynum in range(0, self.paritysegments):
-            # If parity is not missing (so we can use it) and contains the
-            # missing DataSegNum
-            if ParitySegs[paritynum] and (
-                    DataSegNum in self.ParityToData[paritynum]):
+            # If parity is not missing (so we can use it) and contains the missing DataSegNum
+            if ParitySegs[paritynum] and (DataSegNum in self.ParityToData[paritynum]):
                 Parity = self.ParityToData[paritynum]
                 missing = 0                       # We will see how many of the datas are missing
                 for DataNum in Parity:          # look at all datas that went into this parity
                     if DataSegs[DataNum] == 0:  # if this data is missing
                         missing += 1  # increase count of those missing in this parity
                 if missing == 1:              # if missing exactly 1 of datas in parity
-                    if (len(bestParityMap) == 0) or (
-                            len(Parity) < len(bestParityMap)):
+                    if (len(bestParityMap) == 0) or (len(Parity) < len(bestParityMap)):
                         bestParityNum = paritynum
                         bestParityMap = Parity
         return bestParityNum, bestParityMap
@@ -575,8 +573,7 @@ def main():
     print "Do some checks for rebuilding a block"
     dataSegments = [1, 0, 1, 1]
     paritySegments = [1, 1, 1, 0]
-    parityNum, parityMap = myecc.GetDataFixPath(
-        dataSegments, paritySegments, 1)
+    parityNum, parityMap = myecc.GetDataFixPath(dataSegments, paritySegments, 1)
     print parityNum       # as of the writing, the best parity was 7
     print parityMap
     print myecc.Fixable(dataSegments, paritySegments)
@@ -595,13 +592,11 @@ def main2():
     dataSegments = [1] * 64
     paritySegments = [1] * 64
     dataSegments[2] = 0   # making it so we're missing data segment 2
-    parityNum, parityMap = myecc.GetDataFixPath(
-        dataSegments, paritySegments, 2)
+    parityNum, parityMap = myecc.GetDataFixPath(dataSegments, paritySegments, 2)
     print parityNum       # as of the writing, the best parity was 7
     print parityMap
     paritySegments[7] = 0  # remove parity 7 and then try it again.
-    parityNum, parityMap = myecc.GetDataFixPath(
-        dataSegments, paritySegments, 2)
+    parityNum, parityMap = myecc.GetDataFixPath(dataSegments, paritySegments, 2)
     print parityNum       # should be 11
     print parityMap
 

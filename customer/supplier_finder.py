@@ -22,7 +22,8 @@
 
 
 """
-.. module:: supplier_finder
+.. module:: supplier_finder.
+
 .. role:: red
 BitDust supplier_finder() Automat
 
@@ -35,7 +36,6 @@ EVENTS:
     * :red:`supplier-not-connected`
     * :red:`timer-10sec`
     * :red:`users-not-found`
-
 """
 
 #------------------------------------------------------------------------------
@@ -73,6 +73,7 @@ _SuppliersToHire = []
 
 def AddSupplierToHire(idurl):
     """
+    
     """
     global _SuppliersToHire
     _SuppliersToHire.append(idurl)
@@ -87,8 +88,7 @@ def A(event=None, arg=None):
     global _SupplierFinder
     if _SupplierFinder is None:
         # set automat name and starting state here
-        _SupplierFinder = SupplierFinder(
-            'supplier_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+        _SupplierFinder = SupplierFinder('supplier_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _SupplierFinder.automat(event, arg)
     return _SupplierFinder
@@ -96,7 +96,8 @@ def A(event=None, arg=None):
 
 class SupplierFinder(automat.Automat):
     """
-    This class implements all the functionality of the ``supplier_finder()`` state machine.
+    This class implements all the functionality of the ``supplier_finder()``
+    state machine.
     """
 
     timers = {
@@ -105,13 +106,15 @@ class SupplierFinder(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.target_idurl = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
 
     def A(self, event, arg):
@@ -271,7 +274,7 @@ class SupplierFinder(automat.Automat):
         self.destroy()
         lg.out(14, 'supplier_finder.doDestroyMy index=%s' % self.index)
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         self.automat('inbox-packet', (newpacket, info, status, error_message))
@@ -279,10 +282,7 @@ class SupplierFinder(automat.Automat):
 
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'broadcasters_finder._nodes_lookup_finished : %r' %
-                idurls)
+            lg.out(_DebugLevel, 'broadcasters_finder._nodes_lookup_finished : %r' % idurls)
         if not idurls:
             self.automat('users-not-found')
             return

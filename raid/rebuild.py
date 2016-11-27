@@ -29,13 +29,7 @@ import main.settings
 import raid.read
 
 
-def rebuild(
-        backupID,
-        blockNum,
-        eccMap,
-        availableSuppliers,
-        remoteMatrix,
-        localMatrix):
+def rebuild(backupID, blockNum, eccMap, availableSuppliers, remoteMatrix, localMatrix):
     # try:
 
     def _build_raid_file_name(supplierNumber, dataOrParity):
@@ -57,14 +51,12 @@ def rebuild(
     # The file is missing if value in the corresponding cell
     # in the "remote" matrix (see ``p2p.backup_matrix``) is -1 or 0
     # but the supplier who must keep that file is online.
-    # In other words, if supplier is online but do not have that piece - this
-    # piece is missing.
+    # In other words, if supplier is online but do not have that piece - this piece is missing.
     for supplierNum in xrange(supplierCount):
         if availableSuppliers[supplierNum] == 0:
             continue
         # if remote Data file not exist and supplier is online
-        # we mark it as missing and will try to rebuild this file and send to
-        # him
+        # we mark it as missing and will try to rebuild this file and send to him
         if remoteData[supplierNum] != 1:
             # mark file as missing
             missingData[supplierNum] = 1
@@ -81,25 +73,19 @@ def rebuild(
         # will check all data packets we have
         for supplierNum in xrange(supplierCount):
             dataFileName = _build_raid_file_name(supplierNum, 'Data')
-            # if we do not have this item on hands - we will reconstruct it
-            # from other items
+            # if we do not have this item on hands - we will reconstruct it from other items
             if localData[supplierNum] == 0:
-                parityNum, parityMap = eccMap.GetDataFixPath(
-                    localData, localParity, supplierNum)
+                parityNum, parityMap = eccMap.GetDataFixPath(localData, localParity, supplierNum)
                 if parityNum != -1:
                     rebuildFileList = []
-                    rebuildFileList.append(
-                        _build_raid_file_name(
-                            parityNum, 'Parity'))
+                    rebuildFileList.append(_build_raid_file_name(parityNum, 'Parity'))
                     for supplierParity in parityMap:
                         if supplierParity != supplierNum:
-                            filename = _build_raid_file_name(
-                                supplierParity, 'Data')
+                            filename = _build_raid_file_name(supplierParity, 'Data')
                             if os.path.isfile(filename):
                                 rebuildFileList.append(filename)
                     # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(dataFileName), len(rebuildFileList)))
-                    raid.read.RebuildOne(
-                        rebuildFileList, len(rebuildFileList), dataFileName)
+                    raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), dataFileName)
                 if os.path.exists(dataFileName):
                     localData[supplierNum] = 1
                     madeProgress = True
@@ -107,8 +93,7 @@ def rebuild(
             # now we check again if we have the data on hand after rebuild at it is missing - send it
             # but also check to not duplicate sending to this man
             # now sending is separated, see the file data_sender.py
-            if localData[supplierNum] == 1 and missingData[
-                    supplierNum] == 1:  # and self.dataSent[supplierNum] == 0:
+            if localData[supplierNum] == 1 and missingData[supplierNum] == 1:  # and self.dataSent[supplierNum] == 0:
                 # lg.out(10, '            rebuilt a new Data for supplier %d' % supplierNum)
                 newData = True
                 reconstructedData[supplierNum] = 1
@@ -127,33 +112,23 @@ def rebuild(
             if HaveAllData:
                 rebuildFileList = []
                 for supplierParity in parityMap:
-                    filename = _build_raid_file_name(
-                        supplierParity, 'Data')  # ??? why not 'Parity'
+                    filename = _build_raid_file_name(supplierParity, 'Data')  # ??? why not 'Parity'
                     if os.path.isfile(filename):
                         rebuildFileList.append(filename)
                 # lg.out(10, '    rebuilding file %s from %d files' % (os.path.basename(parityFileName), len(rebuildFileList)))
-                raid.read.RebuildOne(
-                    rebuildFileList,
-                    len(rebuildFileList),
-                    parityFileName)
+                raid.read.RebuildOne(rebuildFileList, len(rebuildFileList), parityFileName)
                 if os.path.exists(parityFileName):
                     # lg.out(10, '        Parity file %s found after rebuilding for supplier %d' % (os.path.basename(parityFileName), supplierNum))
                     localParity[supplierNum] = 1
         # so we have the parity on hand and it is missing - send it
-        if localParity[supplierNum] == 1 and missingParity[
-                supplierNum] == 1:  # and self.paritySent[supplierNum] == 0:
+        if localParity[supplierNum] == 1 and missingParity[supplierNum] == 1:  # and self.paritySent[supplierNum] == 0:
             # lg.out(10, '            rebuilt a new Parity for supplier %d' % supplierNum)
             newData = True
             reconstructedParity[supplierNum] = 1
             # self.outstandingFilesList.append((parityFileName, self.BuildFileName(supplierNum, 'Parity'), supplierNum))
             # self.paritySent[supplierNum] = 1
     # lg.out(14, 'block_rebuilder.AttemptRebuild END')
-    return (
-        newData,
-        localData,
-        localParity,
-        reconstructedData,
-        reconstructedParity)
+    return (newData, localData, localParity, reconstructedData, reconstructedParity)
 
     # except:
     #     return None

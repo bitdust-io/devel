@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: miner
+.. module:: miner.
 
 Data to be store in global "coins" storage:
 
@@ -74,8 +74,6 @@ And remote node should declare that as well to confirm this, this is sort of "po
     + type: identity
     + start: time in UTC when this node receives a packet
     + end: <empty>
-
-
 """
 
 _Debug = True

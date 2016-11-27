@@ -25,12 +25,13 @@
 #
 
 """
-.. module:: backup_control
+.. module:: backup_control.
 
-A high level functions to manage backups.
-Keeps track of current ``Jobs`` and ``Tasks``.
-The "Jobs" dictionary keeps already started backups ( by backupID ) objects, see ``p2p.backup`` module.
-"Tasks" is a list of path IDs to start backups in the future, as soon as some "Jobs" gets finished.
+A high level functions to manage backups. Keeps track of current
+``Jobs`` and ``Tasks``. The "Jobs" dictionary keeps already started
+backups ( by backupID ) objects, see ``p2p.backup`` module. "Tasks" is a
+list of path IDs to start backups in the future, as soon as some "Jobs"
+gets finished.
 """
 
 #------------------------------------------------------------------------------
@@ -122,6 +123,7 @@ def revision():
 def commit(new_revision_number=None):
     """
     Need to be called after any changes in the index database.
+
     This increase revision number by 1 or set ``new_revision_number``.
     """
     global _RevisionNumber
@@ -136,6 +138,7 @@ def commit(new_revision_number=None):
 def init():
     """
     Must be called before other methods here.
+
     Load index database from file .bitdust/metadata/index.
     """
     lg.out(4, 'backup_control.init')
@@ -167,9 +170,11 @@ def WriteIndex(filepath=None):
 
 def ReadIndex(inpt):
     """
-    Read index data base, ``input`` is a ``cStringIO.StringIO`` object which keeps the data.
-    This is a simple text format, see ``p2p.backup_fs.Serialize()`` method.
-    The first line keeps revision number.
+    Read index data base, ``input`` is a ``cStringIO.StringIO`` object which
+    keeps the data.
+
+    This is a simple text format, see ``p2p.backup_fs.Serialize()``
+    method. The first line keeps revision number.
     """
     global _LoadingFlag
     if _LoadingFlag:
@@ -218,7 +223,8 @@ def Load(filepath=None):
 
 def Save(filepath=None):
     """
-    Save index data base to local file ( call ``WriteIndex()`` ) and notify "index_synchronizer()" state machine.
+    Save index data base to local file ( call ``WriteIndex()`` ) and notify
+    "index_synchronizer()" state machine.
     """
     global _LoadingFlag
     if _LoadingFlag:
@@ -234,20 +240,19 @@ def Save(filepath=None):
 
 def IncomingSupplierListFiles(newpacket):
     """
-    Called by ``p2p.p2p_service`` when command "Files" were received from one of our suppliers.
-    This is an answer from given supplier (after our request) to get a list of our files stored on his machine.
+    Called by ``p2p.p2p_service`` when command "Files" were received from one
+    of our suppliers.
+
+    This is an answer from given supplier (after our request) to get a
+    list of our files stored on his machine.
     """
     from p2p import p2p_service
     supplier_idurl = newpacket.OwnerID
     num = contactsdb.supplier_position(supplier_idurl)
     if num < -1:
-        lg.out(
-            2,
-            'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' %
-            supplier_idurl)
+        lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
         return
-    src = p2p_service.UnpackListFiles(
-        newpacket.Payload, settings.ListFilesFormat())
+    src = p2p_service.UnpackListFiles(newpacket.Payload, settings.ListFilesFormat())
     backups2remove, paths2remove = backup_matrix.ReadRawListFiles(num, src)
     from customer import list_files_orator
     list_files_orator.IncomingListFiles(newpacket)
@@ -264,15 +269,14 @@ def IncomingSupplierListFiles(newpacket):
 
 def IncomingSupplierBackupIndex(newpacket):
     """
-    Called by ``p2p.p2p_service`` when a remote copy of our local index data base ( in the "Data" packet )
-    is received from one of our suppliers. The index is also stored on suppliers to be able to restore it.
+    Called by ``p2p.p2p_service`` when a remote copy of our local index data
+    base ( in the "Data" packet ) is received from one of our suppliers.
+
+    The index is also stored on suppliers to be able to restore it.
     """
     b = encrypted.Unserialize(newpacket.Payload)
     if b is None:
-        lg.out(
-            2,
-            'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' %
-            newpacket.RemoteID)
+        lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         return
     try:
         session_key = key.DecryptLocalPK(b.EncryptedSessionKey)
@@ -285,10 +289,7 @@ def IncomingSupplierBackupIndex(newpacket):
             supplier_revision = -1
         inpt.seek(0)
     except:
-        lg.out(
-            2,
-            'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' %
-            newpacket.RemoteID)
+        lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         lg.out(2, '\n' + padded_data)
         lg.exc()
         try:
@@ -298,17 +299,15 @@ def IncomingSupplierBackupIndex(newpacket):
         return
     if driver.is_started('service_backup_db'):
         from storage import index_synchronizer
-        index_synchronizer.A(
-            'index-file-received', (newpacket, supplier_revision))
+        index_synchronizer.A('index-file-received', (newpacket, supplier_revision))
     if revision() < supplier_revision:
         ReadIndex(inpt)
         backup_fs.Scan()
         backup_fs.Calculate()
         WriteIndex()
         control.request_update()
-        lg.out(
-            2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' %
-            (revision(), newpacket.RemoteID))
+        lg.out(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
+            revision(), newpacket.RemoteID))
     inpt.close()
 
 #------------------------------------------------------------------------------
@@ -321,10 +320,7 @@ def DeleteAllBackups():
     # prepare a list of all known backup IDs
     all_ids = set(backup_fs.ListAllBackupIDs())
     all_ids.update(backup_matrix.GetBackupIDs(remote=True, local=True))
-    lg.out(
-        4,
-        'backup_control.DeleteAllBackups %d ID\'s to kill' %
-        len(all_ids))
+    lg.out(4, 'backup_control.DeleteAllBackups %d ID\'s to kill' % len(all_ids))
     # delete one by one
     for backupID in all_ids:
         DeleteBackup(backupID, saveDB=False, calculate=False)
@@ -338,32 +334,25 @@ def DeleteAllBackups():
     control.request_update()
 
 
-def DeleteBackup(
-        backupID,
-        removeLocalFilesToo=True,
-        saveDB=True,
-        calculate=True):
+def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True):
     """
     This removes a single backup ID completely. Perform several operations:
 
-        1) abort backup if it just started and is running at the moment
-        2) if we requested for files for this backup we do not need it anymore - remove 'Data' requests
-        3) remove interests in transport_control, see ``lib.transport_control.DeleteBackupInterest()``
-        4) remove that ID from the index data base
-        5) remove local files for this backup ID
-        6) remove all remote info for this backup from the memory, see ``p2p.backup_matrix.EraseBackupRemoteInfo()``
-        7) also remove local info from memory, see ``p2p.backup_matrix.EraseBackupLocalInfo()``
-        8) stop any rebuilding, we will restart it soon
-        9) check and calculate used space
-        10) save the modified index data base, soon it will be synchronized with "index_synchronizer()" state machine
+    1) abort backup if it just started and is running at the moment
+    2) if we requested for files for this backup we do not need it anymore - remove 'Data' requests
+    3) remove interests in transport_control, see ``lib.transport_control.DeleteBackupInterest()``
+    4) remove that ID from the index data base
+    5) remove local files for this backup ID
+    6) remove all remote info for this backup from the memory, see ``p2p.backup_matrix.EraseBackupRemoteInfo()``
+    7) also remove local info from memory, see ``p2p.backup_matrix.EraseBackupLocalInfo()``
+    8) stop any rebuilding, we will restart it soon
+    9) check and calculate used space
+    10) save the modified index data base, soon it will be synchronized with "index_synchronizer()" state machine
     """
     # if the user deletes a backup, make sure we remove any work we're doing on it
     # abort backup if it just started and is running at the moment
     if AbortRunningBackup(backupID):
-        lg.out(
-            8,
-            'backup_control.DeleteBackup %s is in process, stopping' %
-            backupID)
+        lg.out(8, 'backup_control.DeleteBackup %s is in process, stopping' % backupID)
         return True
     from customer import io_throttle
     import backup_rebuilder
@@ -373,8 +362,7 @@ def DeleteBackup(
     io_throttle.DeleteBackupSendings(backupID)
     # remove interests in transport_control
     callback.delete_backup_interest(backupID)
-    # mark it as being deleted in the db, well... just remove it from the
-    # index now
+    # mark it as being deleted in the db, well... just remove it from the index now
     if not backup_fs.DeleteBackupID(backupID):
         return False
     # finally remove local files for this backupID
@@ -398,13 +386,10 @@ def DeleteBackup(
     return True
 
 
-def DeletePathBackups(
-        pathID,
-        removeLocalFilesToo=True,
-        saveDB=True,
-        calculate=True):
+def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=True):
     """
     This removes all backups of given path ID.
+
     Doing same operations as ``DeleteBackup()``.
     """
     import backup_rebuilder
@@ -426,8 +411,7 @@ def DeletePathBackups(
         callback.delete_backup_interest(backupID)
         # remove local files for this backupID
         if removeLocalFilesToo:
-            backup_fs.DeleteLocalBackup(
-                settings.getLocalBackupsDir(), backupID)
+            backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
         # remove remote info for this backup from the memory
         backup_matrix.EraseBackupLocalInfo(backupID)
         # also remove local info
@@ -454,6 +438,7 @@ def DeletePathBackups(
 def NewTaskNumber():
     """
     A method to create a unique number for new task.
+
     It just increments a variable in memory and returns it.
     """
     global _LastTaskNumber
@@ -477,26 +462,25 @@ class Task():
 
     def __repr__(self):
         """
-        Return a string like "Task-5: 0/1/2/3 from /home/veselin/Documents/myfile.txt".
+        Return a string like "Task-5: 0/1/2/3 from
+        /home/veselin/Documents/myfile.txt".
         """
-        return 'Task-%d(%s from %s)' % (self.number,
-                                        self.pathID, self.localPath)
+        return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
 
     #--- !!! STARTING BACKUP HERE !!! ---
     def run(self):
         """
         Runs a new ``Job`` from that ``Task``.
-        Called from ``RunTasks()`` method if it is possible to start a new task -
-        the maximum number of simultaneously running ``Jobs`` is limited.
+
+        Called from ``RunTasks()`` method if it is possible to start a
+        new task - the maximum number of simultaneously running ``Jobs``
+        is limited.
         """
         import backup_tar
         import backup
         iter_and_path = backup_fs.WalkByID(self.pathID)
         if iter_and_path is None:
-            lg.out(
-                4,
-                'backup_control.Task.run ERROR %s not found in the index' %
-                self.pathID)
+            lg.out(4, 'backup_control.Task.run ERROR %s not found in the index' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return
         itemInfo, sourcePath = iter_and_path
@@ -507,9 +491,7 @@ class Task():
                 lg.exc()
                 return
         if self.localPath and self.localPath != sourcePath:
-            lg.warn(
-                'local path were changed: %s -> %s' %
-                (self.localPath, sourcePath))
+            lg.warn('local path were changed: %s -> %s' % (self.localPath, sourcePath))
         self.localPath = sourcePath
         if not bpio.pathExist(sourcePath):
             lg.warn('path not exist: %s' % sourcePath)
@@ -518,8 +500,7 @@ class Task():
         dataID = misc.NewBackupID()
         if itemInfo.has_version(dataID):
             # ups - we already have same version
-            # let's add 1,2,3... to the end to make absolutely unique version
-            # ID
+            # let's add 1,2,3... to the end to make absolutely unique version ID
             i = 1
             while itemInfo.has_version(dataID + str(i)):
                 i += 1
@@ -529,19 +510,14 @@ class Task():
             backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
         except:
             lg.exc()
-            lg.out(
-                4,
-                'backup_control.Task.run ERROR creating destination folder for %s' %
-                self.pathID)
+            lg.out(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return
         compress_mode = 'bz2'  # 'none' # 'gz'
         if bpio.pathIsDir(sourcePath):
-            backupPipe = backup_tar.backuptar(
-                sourcePath, compress=compress_mode)
+            backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
         else:
-            backupPipe = backup_tar.backuptarfile(
-                sourcePath, compress=compress_mode)
+            backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)
         backupPipe.make_nonblocking()
         job = backup.backup(
             backupID, backupPipe,
@@ -605,7 +581,8 @@ def RunTasks():
 
 def OnFoundFolderSize(pth, sz, arg):
     """
-    This is a callback, fired from ``lib.dirsize.ask()`` method after finish calculating of folder size.
+    This is a callback, fired from ``lib.dirsize.ask()`` method after finish
+    calculating of folder size.
     """
     try:
         pathID, version = arg
@@ -617,9 +594,7 @@ def OnFoundFolderSize(pth, sz, arg):
         if job:
             job.totalSize = sz
         if _Debug:
-            lg.out(
-                _DebugLevel, 'backup_control.OnFoundFolderSize %s %d' %
-                (backupID, sz))
+            lg.out(_DebugLevel, 'backup_control.OnFoundFolderSize %s %d' % (backupID, sz))
     except:
         lg.exc()
 
@@ -629,15 +604,13 @@ def OnFoundFolderSize(pth, sz, arg):
 def OnJobDone(backupID, result):
     """
     A callback method fired when backup is finished.
+
     Here we need to save the index data base.
     """
     import backup_rebuilder
     from customer import io_throttle
     lg.out(4, '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    lg.out(
-        4, 'backup_control.OnJobDone [%s] %s, %d more tasks' %
-        (backupID, result, len(
-            tasks())))
+    lg.out(4, 'backup_control.OnJobDone [%s] %s, %d more tasks' % (backupID, result, len(tasks())))
     jobs().pop(backupID)
     pathID, version = packetid.SplitBackupID(backupID)
     if result == 'done':
@@ -654,16 +627,14 @@ def OnJobDone(backupID, result):
                         io_throttle.DeleteBackupRequests(backupID)
                         io_throttle.DeleteBackupSendings(backupID)
                         callback.delete_backup_interest(backupID)
-                        backup_fs.DeleteLocalBackup(
-                            settings.getLocalBackupsDir(), backupID)
+                        backup_fs.DeleteLocalBackup(settings.getLocalBackupsDir(), backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
                         backup_matrix.EraseBackupLocalInfo(backupID)
         backup_fs.ScanID(pathID)
         backup_fs.Calculate()
         Save()
         control.request_update([('pathID', pathID), ])
-        # TODO: check used space, if we have over use - stop all tasks
-        # immediately
+        # TODO: check used space, if we have over use - stop all tasks immediately
         backup_matrix.RepaintBackup(backupID)
     elif result == 'abort':
         DeleteBackup(backupID)
@@ -671,8 +642,7 @@ def OnJobDone(backupID, result):
         # do we really need to restart backup_monitor after each backup?
         # if we have a lot tasks started this will produce a lot unneeded actions
         # will be smarter to restart it once we finish all tasks
-        # because user will probably leave BitDust working after starting a
-        # long running operations
+        # because user will probably leave BitDust working after starting a long running operations
         from storage import backup_monitor
         backup_monitor.A('restart')
     RunTasks()
@@ -683,10 +653,7 @@ def OnTaskFailed(pathID, result):
     """
     Called when backup process get failed somehow.
     """
-    lg.out(
-        4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' %
-        (pathID, result, len(
-            tasks())))
+    lg.out(4, 'backup_control.OnTaskFailed [%s] %s, %d more tasks' % (pathID, result, len(tasks())))
     RunTasks()
     reactor.callLater(0, FireTaskFinishedCallbacks, pathID, None, result)
 
@@ -694,9 +661,9 @@ def OnTaskFailed(pathID, result):
 def OnBackupBlockReport(backupID, blockNum, result):
     """
     Called for every finished block during backup process.
-        :param newblock: this is a ``p2p.encrypted_block.encrypted_block`` instance
-        :param num_suppliers: number of suppliers which is used for that backup
 
+    :param newblock: this is a ``p2p.encrypted_block.encrypted_block`` instance
+    :param num_suppliers: number of suppliers which is used for that backup
     """
     backup_matrix.LocalBlockReport(backupID, blockNum, result)
 
@@ -706,6 +673,7 @@ def OnBackupBlockReport(backupID, blockNum, result):
 def AddTaskStartedCallback(pathID, callback):
     """
     You can catch a moment when given ``Task`` were started.
+
     Call this method to provide a callback method to handle.
     """
     global _TaskStartedCallbacks
@@ -716,7 +684,8 @@ def AddTaskStartedCallback(pathID, callback):
 
 def AddTaskFinishedCallback(pathID, callback):
     """
-    You can also catch a moment when the whole ``Job`` is done and backup process were finished or failed.
+    You can also catch a moment when the whole ``Job`` is done and backup
+    process were finished or failed.
     """
     global _TaskFinishedCallbacks
     if pathID not in _TaskFinishedCallbacks:
@@ -759,7 +728,9 @@ def StartSingle(pathID, localPath=None):
 def StartRecursive(pathID, localPath=None):
     """
     A high level method to start recursive backup of given path.
-    This is will traverse all paths below this ID in the 'tree' and add tasks for them.
+
+    This is will traverse all paths below this ID in the 'tree' and add
+    tasks for them.
     """
     from storage import backup_monitor
     startedtasks = set()
@@ -772,9 +743,7 @@ def StartRecursive(pathID, localPath=None):
     backup_fs.TraverseByID(visitor)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.A, 'restart')
-    lg.out(
-        6, 'backup_control.StartRecursive %s  :  %d tasks started' %
-        (pathID, len(startedtasks)))
+    lg.out(6, 'backup_control.StartRecursive %s  :  %d tasks started' % (pathID, len(startedtasks)))
     return startedtasks
 
 #------------------------------------------------------------------------------
@@ -782,6 +751,7 @@ def StartRecursive(pathID, localPath=None):
 
 def IsTaskScheduled(pathID):
     """
+    
     """
     for t in tasks():
         if t.pathID == pathID:
@@ -791,6 +761,7 @@ def IsTaskScheduled(pathID):
 
 def GetPendingTask(pathID):
     """
+    
     """
     for t in tasks():
         if t.pathID == pathID:
@@ -800,12 +771,14 @@ def GetPendingTask(pathID):
 
 def ListPendingTasks():
     """
+    
     """
     return tasks()
 
 
 def AbortPendingTask(pathID):
     """
+    
     """
     for t in tasks():
         if t.pathID == pathID:

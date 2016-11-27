@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: installer
+.. module:: installer.
+
 .. role:: red
 
 .. raw:: html
@@ -101,6 +102,7 @@ _Installer = None
 
 def IsExist():
     """
+    
     """
     global _Installer
     return _Installer is not None
@@ -364,11 +366,9 @@ class Installer(automat.Automat):
         if 'RECOVER' not in self.output:
             self.output['RECOVER'] = {'data': [('', 'black')]}
         if keysrc and idurl:
-            self.output['RECOVER']['data'].append(
-                ('private key and IDURL was loaded', 'green'))
+            self.output['RECOVER']['data'].append(('private key and IDURL was loaded', 'green'))
         elif not idurl and keysrc:
-            self.output['RECOVER']['data'].append(
-                ('private key was loaded, provide correct IDURL now', 'blue'))
+            self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
 
     def doPasteKey(self, arg):
         src = misc.getClipboardText()
@@ -390,11 +390,9 @@ class Installer(automat.Automat):
         if 'RECOVER' not in self.output:
             self.output['RECOVER'] = {'data': [('', 'black')]}
         if keysrc and idurl:
-            self.output['RECOVER']['data'].append(
-                ('private key and IDURL was loaded', 'green'))
+            self.output['RECOVER']['data'].append(('private key and IDURL was loaded', 'green'))
         elif not idurl and keysrc:
-            self.output['RECOVER']['data'].append(
-                ('private key was loaded, provide correct IDURL now', 'blue'))
+            self.output['RECOVER']['data'].append(('private key was loaded, provide correct IDURL now', 'blue'))
 
     def doPrepareSettings(self, arg):
         """

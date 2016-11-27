@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: terminal_chat
+..
+
+module:: terminal_chat
 """
 
 import time
@@ -63,6 +65,7 @@ _SimpleTerminalChat = None
 
 def init(do_send_message_func=None):
     """
+    
     """
     global _SimpleTerminalChat
     _SimpleTerminalChat = SimpleTerminalChat(
@@ -71,6 +74,7 @@ def init(do_send_message_func=None):
 
 def shutdown():
     """
+    
     """
     global _SimpleTerminalChat
     del _SimpleTerminalChat
@@ -79,6 +83,7 @@ def shutdown():
 
 def run():
     """
+    
     """
     global _SimpleTerminalChat
     _SimpleTerminalChat.run()
@@ -87,6 +92,7 @@ def run():
 
 def stop():
     """
+    
     """
     global _SimpleTerminalChat
     _SimpleTerminalChat.stop()
@@ -94,6 +100,7 @@ def stop():
 
 def process_message(sender, message):
     """
+    
     """
     global _SimpleTerminalChat
     _SimpleTerminalChat.process_message(sender, message)
@@ -101,6 +108,7 @@ def process_message(sender, message):
 
 def on_incoming_message(result):
     """
+    
     """
     global _SimpleTerminalChat
     for msg in result['result']:

@@ -165,6 +165,7 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def __init__(self):
         """
+        
         """
         # lg.out(6, 'udp.BasicProtocol.__init__ %r' % id(self))
         self.port = None
@@ -175,6 +176,7 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def __del__(self):
         """
+        
         """
         # lg.out(6, 'udp.BasicProtocol.__del__ %r' % id(self))
         # protocol.DatagramProtocol.__del__(self)
@@ -200,6 +202,7 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def sendDatagram(self, datagram, address):
         """
+        
         """
         if self.stopping:
             return False
@@ -213,11 +216,13 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def startProtocol(self):
         """
+        
         """
         lg.out(6, 'udp.startProtocol %r' % self)
 
     def stopProtocol(self):
         """
+        
         """
         lg.out(6, 'udp.stopProtocol %r' % self)
         self.port = None
@@ -225,6 +230,7 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def disconnect(self):
         """
+        
         """
         self.stopping = True
         self.callbacks = []
@@ -286,15 +292,13 @@ class CommandsProtocol(BasicProtocol):
             lg.warn('- different software version: %s' % version)
             return
         if _Debug:
-            lg.out(
-                _DebugLevel, '<<< [%s] (%d bytes) from %s, total %d bytes received' %
-                (command, datagramsz, str(address), self.bytes_in))
+            lg.out(_DebugLevel, '<<< [%s] (%d bytes) from %s, total %d bytes received' % (
+                command, datagramsz, str(address), self.bytes_in))
         # self.bytes_in += datagramsz
         handled = False
         try:
             if self.command_filter_callback:
-                handled = self.command_filter_callback(
-                    command, datagram, inp, address)
+                handled = self.command_filter_callback(command, datagram, inp, address)
         except:
             lg.exc()
         payload = inp.read()
@@ -316,9 +320,8 @@ class CommandsProtocol(BasicProtocol):
             #     command,
             #     data))
             if _Debug:
-                lg.out(
-                    _DebugLevel, '>>> [%s] (%d bytes) to %s, total %d bytes sent' %
-                    (command, payloadsz + 2, address, self.bytes_out))
+                lg.out(_DebugLevel, '>>> [%s] (%d bytes) to %s, total %d bytes sent' % (
+                    command, payloadsz + 2, address, self.bytes_out))
             result = self.sendDatagram(outp.getvalue(), address)
         except:
             outp.close()

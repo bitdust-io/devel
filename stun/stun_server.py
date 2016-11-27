@@ -22,7 +22,7 @@
 
 
 """
-.. module:: stun_server
+.. module:: stun_server.
 
 BitDust stun_server() Automat
 
@@ -37,12 +37,7 @@ import sys
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 from logs import lg
 
@@ -87,7 +82,8 @@ def Destroy():
 
 class StunServer(automat.Automat):
     """
-    This class implements all the functionality of the ``stun_server()`` state machine.
+    This class implements all the functionality of the ``stun_server()`` state
+    machine.
     """
 
     fast = True
@@ -161,16 +157,13 @@ class StunServer(automat.Automat):
         except:
             return False
         youripport = '%s:%d' % (address[0], address[1])
-        udp.send_command(
-            self.listen_port,
-            udp.CMD_MYIPPORT,
-            youripport,
-            address)
+        udp.send_command(self.listen_port, udp.CMD_MYIPPORT, youripport, address)
         lg.out(4, 'stun_server.doSendYourIPPort [%s] to %s' % (
             youripport, address))
 
     def _datagramReceived(self, datagram, address):
         """
+        
         """
         self.automat('datagram-received', (datagram, address))
         return False

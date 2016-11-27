@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: cmd_line_json
+..
 
+module:: cmd_line_json
 """
 
 import os
@@ -80,8 +81,11 @@ def parser():
 
 def override_options(opts, args):
     """
-    The program can replace some user options by values passed via command line.
-    This method return a dictionary where is stored a key-value pairs for new options.
+    The program can replace some user options by values passed via command
+    line.
+
+    This method return a dictionary where is stored a key-value pairs
+    for new options.
     """
     overDict = {}
     if opts.debug or str(opts.debug) == '0':
@@ -109,6 +113,7 @@ def print_text(msg, nl='\n'):
 def print_exception():
     """
     This is second most common method in the project.
+
     Print detailed info about last exception to the logs.
     """
     import traceback
@@ -172,14 +177,13 @@ def fail_and_stop(err):
 def call_jsonrpc_method(method, *args):
     """
     Method to communicate with existing BitDust process.
+
     Reads port number of the local RPC server and do the request.
     """
     from system import bpio
     from main import settings
     try:
-        local_port = int(
-            bpio.ReadBinaryFile(
-                settings.LocalJsonRPCPortFilename()))
+        local_port = int(bpio.ReadBinaryFile(settings.LocalJsonRPCPortFilename()))
     except:
         local_port = settings.DefaultJsonRPCPort()
     proxy = jsonProxy('http://127.0.0.1:' + str(local_port))
@@ -188,6 +192,7 @@ def call_jsonrpc_method(method, *args):
 
 def call_jsonrpc_method_and_stop(method, *args):
     """
+    
     """
     d = call_jsonrpc_method(method, *args)
     d.addCallback(print_and_stop)
@@ -198,6 +203,7 @@ def call_jsonrpc_method_and_stop(method, *args):
 
 def call_jsonrpc_method_template_and_stop(method, template, *args):
     """
+    
     """
     d = call_jsonrpc_method(method, *args)
     d.addCallback(print_template_and_stop, template)
@@ -206,15 +212,12 @@ def call_jsonrpc_method_template_and_stop(method, template, *args):
     return 0
 
 
-def call_jsonrpc_method_transform_template_and_stop(
-        method, template, transform, *args):
+def call_jsonrpc_method_transform_template_and_stop(method, template, transform, *args):
     """
+    
     """
     d = call_jsonrpc_method(method, *args)
-    d.addCallback(
-        lambda result: print_template_and_stop(
-            transform(result),
-            template))
+    d.addCallback(lambda result: print_template_and_stop(transform(result), template))
     d.addErrback(fail_and_stop)
     reactor.run()
     return 0
@@ -264,12 +267,14 @@ def kill():
 
 def wait_then_kill(x):
     """
-    For correct shutdown of the program need to send a URL request to the HTTP server::
-        http://localhost:<random port>/?action=exit
+    For correct shutdown of the program need to send a URL request to the HTTP
+    server:: http://localhost:<random port>/?action=exit.
 
-    After receiving such request the program will call ``p2p.init_shutdown.shutdown()`` method and stops.
-    But if the main process was blocked it needs to be killed with system "kill" procedure.
-    This method will wait for 10 seconds and then call method ``kill()``.
+    After receiving such request the program will call
+    ``p2p.init_shutdown.shutdown()`` method and stops. But if the main
+    process was blocked it needs to be killed with system "kill"
+    procedure. This method will wait for 10 seconds and then call method
+    ``kill()``.
     """
     import time
     from twisted.internet import reactor
@@ -365,8 +370,7 @@ def cmd_identity(opts, args, overDict, running):
         from lib import misc
         if not misc.ValidUserName(args[2]):
             return 0
-        initializer.A('run-cmd-line-register',
-                      {'username': args[2], 'pksize': pksize})
+        initializer.A('run-cmd-line-register', {'username': args[2], 'pksize': pksize})
         reactor.run()
         automat.objects().clear()
         if my_id.isLocalIdentityReady():
@@ -398,8 +402,7 @@ def cmd_identity(opts, args, overDict, running):
         if idurl == '' and len(args) > 3:
             idurl = args[3]
         if idurl == '':
-            print_text(
-                'BitDust need to know your IDURL to recover your account\n')
+            print_text('BitDust need to know your IDURL to recover your account\n')
             return 2
         from automats import automat
         from main import initializer
@@ -415,27 +418,22 @@ def cmd_identity(opts, args, overDict, running):
 
     if args[1].lower() in ['create', 'new', 'register', 'generate', ]:
         if my_id.isLocalIdentityReady():
-            print_text(
-                'local identity [%s] already exist\n' %
-                my_id.getIDName())
+            print_text('local identity [%s] already exist\n' % my_id.getIDName())
             return 1
         if running:
-            print_text(
-                'BitDust is running at the moment, need to stop the software at first\n')
+            print_text('BitDust is running at the moment, need to stop the software at first\n')
             return 0
         return _register()
 
     if args[1].lower() in ['restore', 'recover', 'read', 'load', ]:
         if running:
-            print_text(
-                'BitDust is running at the moment, need to stop the software at first\n')
+            print_text('BitDust is running at the moment, need to stop the software at first\n')
             return 0
         return _recover()
 
     if args[1].lower() in ['delete', 'remove', 'erase', 'del', 'rm', 'kill']:
         if running:
-            print_text(
-                'BitDust is running at the moment, need to stop the software at first\n')
+            print_text('BitDust is running at the moment, need to stop the software at first\n')
             return 0
         oldname = my_id.getIDName()
         my_id.forgetLocalIdentity()
@@ -469,17 +467,14 @@ def cmd_key(opts, args, overDict, running, executablePath):
             TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
             misc.setClipboardText(TextToSave)
             del TextToSave
-            print_text(
-                'now you can "paste" with Ctr+V your private key where you want')
-            print_text(
-                'WARNING! keep your key in safe place, do not publish it!\n')
+            print_text('now you can "paste" with Ctr+V your private key where you want')
+            print_text('WARNING! keep your key in safe place, do not publish it!\n')
             return 0
         elif args[1] == 'print':
             TextToSave = my_id.getLocalID() + "\n" + key.MyPrivateKey()
             print_text('\n' + TextToSave + '\n')
             del TextToSave
-            print_text(
-                'WARNING! keep your key in safe place, do not publish it!\n')
+            print_text('WARNING! keep your key in safe place, do not publish it!\n')
             return 0
     elif len(args) == 3:
         if args[1] == 'copy' or args[1] == 'save' or args[1] == 'backup':
@@ -495,8 +490,7 @@ def cmd_key(opts, args, overDict, running, executablePath):
                 return 1
             del TextToSave
             print_text('your private key were copied to file %s' % filenameto)
-            print_text(
-                'WARNING! keep your key in safe place, do not publish it!\n')
+            print_text('WARNING! keep your key in safe place, do not publish it!\n')
             return 0
 
     return 2
@@ -563,78 +557,63 @@ def cmd_backup(opts, args, overDict, executablePath):
     if len(args) >= 2 and args[1] in ['bind', 'map', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if os.path.exists(args[2]):
-            return call_jsonrpc_method_template_and_stop(
-                'backup_map_path', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_map_path', tpl, args[2])
         print_text('path %s not exist\n' % args[2])
         return 1
 
     if len(args) >= 2 and args[1] in ['add', 'append', 'insert', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if os.path.isdir(args[2]):
-            return call_jsonrpc_method_template_and_stop(
-                'backup_dir_add', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2])
         elif os.path.isfile(args[2]):
-            return call_jsonrpc_method_template_and_stop(
-                'backup_file_add', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2])
         print_text('path %s not exist\n' % args[2])
         return 1
 
-    if len(args) >= 2 and args[1] in [
-            'tree', 'addtree', 'buildtree', 'replicate', ]:
+    if len(args) >= 2 and args[1] in ['tree', 'addtree', 'buildtree', 'replicate', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if not os.path.isdir(args[2]):
             print_text('path %s not exist\n' % args[2])
             return 1
-        return call_jsonrpc_method_template_and_stop(
-            'backup_tree_add', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('backup_tree_add', tpl, args[2])
 
     from lib import packetid
-    if len(args) >= 3 and args[1] in [
-            'delete', 'del', 'rm', 'remove', 'erase', ]:
+    if len(args) >= 3 and args[1] in ['delete', 'del', 'rm', 'remove', 'erase', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if args[2] == 'local':
             if len(args) < 4:
                 return 2
-            return call_jsonrpc_method_template_and_stop(
-                'backup_delete_local', tpl, args[3])
+            return call_jsonrpc_method_template_and_stop('backup_delete_local', tpl, args[3])
         if packetid.Valid(args[2]):
-            return call_jsonrpc_method_template_and_stop(
-                'backup_delete_id', tpl, args[2])
-        return call_jsonrpc_method_template_and_stop(
-            'backup_delete_path', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_delete_id', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('backup_delete_path', tpl, args[2])
 
     if len(args) > 2 and args[1] in ['cancel', 'abort']:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if packetid.IsBackupIDCorrect(args[2]):
-            return call_jsonrpc_method_template_and_stop(
-                'backup_abort_running', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_abort_running', tpl, args[2])
         if packetid.IsPathIDCorrect(args[2]):
-            return call_jsonrpc_method_template_and_stop(
-                'backup_cancel_pending', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_cancel_pending', tpl, args[2])
         print_text('path %s not exist\n' % args[2])
         return 1
 
     if len(args) > 2 and args[1] == 'start':
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if packetid.Valid(args[2]):
-            return call_jsonrpc_method_template_and_stop(
-                'backup_start_id', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[2])
         if not os.path.exists(os.path.abspath(args[2])):
             print_text('path %s not exist\n' % args[2])
             return 1
-        return call_jsonrpc_method_template_and_stop(
-            'backup_start_path', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[2])
 
     if len(args) == 2:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if packetid.Valid(args[1]):
-            return call_jsonrpc_method_template_and_stop(
-                'backup_start_id', tpl, args[1])
+            return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[1])
         if not os.path.exists(os.path.abspath(args[1])):
             print_text('path %s not exist\n' % args[1])
             return 1
-        return call_jsonrpc_method_template_and_stop(
-            'backup_start_path', tpl, args[1])
+        return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[1])
 
     return 2
 
@@ -652,20 +631,16 @@ def cmd_restore(opts, args, overDict, executablePath):
 
     tpl = jsontemplate.Template(templ.TPL_RAW)
     if len(args) > 2 and args[1] in ['cancel', 'abort']:
-        return call_jsonrpc_method_template_and_stop(
-            'restore_abort', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('restore_abort', tpl, args[2])
 
     if len(args) > 3 and args[1] in ['start', 'go', 'run', ]:
-        return call_jsonrpc_method_template_and_stop(
-            'restore_single', tpl, args[2], args[3])
+        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[2], args[3])
 
     if len(args) == 2:
-        return call_jsonrpc_method_template_and_stop(
-            'restore_single', tpl, args[1])
+        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1])
 
     if len(args) == 3:
-        return call_jsonrpc_method_template_and_stop(
-            'restore_single', tpl, args[1], args[2])
+        return call_jsonrpc_method_template_and_stop('restore_single', tpl, args[1], args[2])
 
     return 2
 
@@ -674,7 +649,8 @@ def cmd_restore(opts, args, overDict, executablePath):
 
 def cmd_integrate(opts, args, overDict):
     """
-    This is a helper to make a "system-wide" command called for fast access BitDust.
+    This is a helper to make a "system-wide" command called for fast access
+    BitDust.
 
     Run:
         python bitdust.py alias > /usr/local/bin/bitdust
@@ -780,9 +756,7 @@ def cmd_set(opts, args, overDict):
     name = args[1].lower()
     if name in ['list', 'ls', 'all', 'show', 'print', ]:
         settings.init()
-        sort = True if (
-            len(args) > 2 and args[2] in [
-                'sort', 'sorted', ]) else False
+        sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         result = api.config_list(sort)
         for i in xrange(len(result['result'])):
             result['result'][i]['value'] = result['result'][i]['value'][:60]
@@ -808,18 +782,14 @@ def cmd_set_request(opts, args, overDict):
     print_text('connecting to already started BitDust process ...')
     name = args[1].lower()
     if name in ['list', 'ls', 'all', 'show', 'print', ]:
-        sort = True if (
-            len(args) > 2 and args[2] in [
-                'sort', 'sorted', ]) else False
+        sort = True if (len(args) > 2 and args[2] in ['sort', 'sorted', ]) else False
         tpl = jsontemplate.Template(templ.TPL_OPTIONS_LIST_KEY_TYPE_VALUE)
 
         def _limit_length(result):
             for i in xrange(len(result['result'])):
-                result['result'][i]['value'] = result[
-                    'result'][i]['value'][:60]
+                result['result'][i]['value'] = result['result'][i]['value'][:60]
             return result
-        return call_jsonrpc_method_transform_template_and_stop(
-            'config_list', tpl, _limit_length, sort)
+        return call_jsonrpc_method_transform_template_and_stop('config_list', tpl, _limit_length, sort)
     path = '' if len(args) < 2 else args[1]
     path = option_name_to_path(name, path)
     if len(args) == 2:
@@ -827,8 +797,7 @@ def cmd_set_request(opts, args, overDict):
         return call_jsonrpc_method_template_and_stop('config_get', tpl, path)
     value = ' '.join(args[2:])
     tpl = jsontemplate.Template(templ.TPL_OPTION_MODIFIED)
-    return call_jsonrpc_method_template_and_stop(
-        'config_set', tpl, path, value)
+    return call_jsonrpc_method_template_and_stop('config_set', tpl, path, value)
 
 #------------------------------------------------------------------------------
 
@@ -844,13 +813,11 @@ def cmd_suppliers(opts, args, overDict):
 
     elif args[1] in ['fire', 'replace', 'rep', 'rp'] and len(args) >= 3:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop(
-            'supplier_replace', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('supplier_replace', tpl, args[2])
 
     elif args[1] in ['hire', 'change', 'ch', ] and len(args) >= 4:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop(
-            'supplier_change', tpl, args[2], args[3])
+        return call_jsonrpc_method_template_and_stop('supplier_change', tpl, args[2], args[3])
     return 2
 
 #------------------------------------------------------------------------------
@@ -867,8 +834,7 @@ def cmd_customers(opts, args, overDict):
 
     elif args[1] in ['reject', 'refuse', 'remove', 'delete', 'rm', 'free', 'del', ] and len(args) >= 3:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop(
-            'customer_reject', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('customer_reject', tpl, args[2])
 
     return 2
 
@@ -880,18 +846,13 @@ def cmd_storage(opts, args, overDict):
         def _got_local(result3, result2, result1):
             result = {
                 'status': 'OK',
-                'execution': float(
-                    result1['execution']) +
-                float(
-                    result2['execution']) +
-                float(
-                    result3['execution']),
-                'result': [
-                    {
-                        'donated': result1['result'][0],
-                        'consumed': result2['result'][0],
-                        'local': result3['result'][0],
-                    }]}
+                'execution': float(result1['execution']) + float(result2['execution']) + float(result3['execution']),
+                'result': [{
+                    'donated': result1['result'][0],
+                    'consumed': result2['result'][0],
+                    'local': result3['result'][0],
+                }]
+            }
             print_template(result, jsontemplate.Template(templ.TPL_STORAGE))
             reactor.stop()
 
@@ -937,20 +898,16 @@ def cmd_services(opts, args, overDict):
                 result['result'][i] = r
             return result
         tpl = jsontemplate.Template(templ.TPL_SERVICES)
-        return call_jsonrpc_method_transform_template_and_stop(
-            'services_list', tpl, _services_update)
+        return call_jsonrpc_method_transform_template_and_stop('services_list', tpl, _services_update)
     if len(args) >= 3 and args[1] in ['start', 'enable', 'on', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop(
-            'service_start', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('service_start', tpl, args[2])
     if len(args) >= 3 and args[1] in ['stop', 'disable', 'off', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop(
-            'service_stop', tpl, args[2])
+        return call_jsonrpc_method_template_and_stop('service_stop', tpl, args[2])
     if len(args) >= 2:
         tpl = jsontemplate.Template(templ.TPL_SERVICE_INFO)
-        return call_jsonrpc_method_template_and_stop(
-            'service_info', tpl, args[1])
+        return call_jsonrpc_method_template_and_stop('service_info', tpl, args[1])
     return 2
 
 #------------------------------------------------------------------------------
@@ -959,11 +916,10 @@ def cmd_services(opts, args, overDict):
 def cmd_message(opts, args, overDict):
     #     if len(args) < 2 or args[1] == 'list':
     #         tpl = jsontemplate.Template(templ.TPL_RAW)
-    # return call_jsonrpc_method_template_and_stop('list_messages', tpl)
+    #         return call_jsonrpc_method_template_and_stop('list_messages', tpl)
     if len(args) >= 4 and args[1] in ['send', 'to', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
-        return call_jsonrpc_method_template_and_stop(
-            'send_message', tpl, args[2], args[3])
+        return call_jsonrpc_method_template_and_stop('send_message', tpl, args[2], args[3])
     if len(args) < 2 or args[1] in ['listen', 'read', ]:
         from chat import terminal_chat
 
@@ -1009,23 +965,19 @@ def cmd_friend(opts, args, overDict):
     tpl_add = jsontemplate.Template(templ.TPL_RAW)
     if len(args) < 2:
         tpl = jsontemplate.Template(templ.TPL_FRIEND_LOOKUP_REPEATED_SECTION)
-        return call_jsonrpc_method_template_and_stop(
-            'list_correspondents', tpl)
+        return call_jsonrpc_method_template_and_stop('list_correspondents', tpl)
     elif len(args) > 2 and args[1] in ['check', 'nick', 'nickname', 'test', ]:
-        return call_jsonrpc_method_template_and_stop(
-            'find_peer_by_nickname', tpl_lookup, unicode(args[2]))
+        return call_jsonrpc_method_template_and_stop('find_peer_by_nickname', tpl_lookup, unicode(args[2]))
     elif len(args) > 2 and args[1] in ['add', 'append', ]:
         inp = unicode(args[2])
         if inp.startswith('http://'):
-            return call_jsonrpc_method_template_and_stop(
-                'add_correspondent', tpl_add, inp)
+            return call_jsonrpc_method_template_and_stop('add_correspondent', tpl_add, inp)
 
         def _lookup(result):
             try:
                 if result['result'] == 'exist':
                     print_template(result, tpl_lookup)
-                    d = call_jsonrpc_method(
-                        'add_correspondent', result['idurl'])
+                    d = call_jsonrpc_method('add_correspondent', result['idurl'])
                     d.addCallback(print_template_and_stop, tpl_add)
                     d.addErrback(fail_and_stop)
                     return 0
@@ -1062,9 +1014,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             'regexp:^/usr/bin/python.*bitdust.*$',
         ])
         if len(appList) > 0:
-            print_text(
-                'BitDust already started, found another process: %s' %
-                str(appList))
+            print_text('BitDust already started, found another process: %s' % str(appList))
             return 0
         return run_now(opts, args)
 
@@ -1077,9 +1027,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             'regexp:^/usr/bin/python.*bitdust.*$',
         ])
         if len(appList) > 0:
-            print_text(
-                'main BitDust process already started: %s' %
-                str(appList))
+            print_text('main BitDust process already started: %s' % str(appList))
             return 0
         from lib import misc
         print_text('run and detach main BitDust process')
@@ -1104,9 +1052,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         ui = False
         if cmd == 'restart':
             ui = True
-        print_text(
-            'found main BitDust process: %s, sending "restart" command' %
-            str(appList))
+        print_text('found main BitDust process: %s, sending "restart" command' % str(appList))
 
         def done(x):
             print_text('DONE\n', '')
@@ -1115,20 +1061,14 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 reactor.stop()
 
         def failed(x):
-            print_text(
-                'soft restart FAILED, now killing previous process and do restart')
+            print_text('soft restart FAILED, now killing previous process and do restart')
             try:
                 kill()
             except:
                 print_exception()
             from twisted.internet import reactor
             from lib import misc
-            reactor.addSystemEventTrigger(
-                'after',
-                'shutdown',
-                misc.DoRestart,
-                param='show' if ui else '',
-                detach=True)
+            reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
             reactor.stop()
         try:
             from twisted.internet import reactor
@@ -1156,9 +1096,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 for pid in appList_bpgui:
                     bpio.kill_process(pid)
             else:
-                print_text(
-                    'BitDust GUI already opened, found another process: %s' %
-                    str(appList))
+                print_text('BitDust GUI already opened, found another process: %s' % str(appList))
                 return 0
         if len(appList) == 0:
             from lib import misc
@@ -1170,9 +1108,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
                 pass
             print_text(result)
             return 0
-        print_text(
-            'found main BitDust process: %s, sending command "show" to start the GUI\n' %
-            str(appList))
+        print_text('found main BitDust process: %s, sending command "show" to start the GUI\n' % str(appList))
         call_jsonrpc_method('show')
         return 0
 
@@ -1185,9 +1121,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
             'regexp:^/usr/bin/python.*bitdust.*$',
         ])
         if len(appList) > 0:
-            print_text(
-                'found main BitDust process: %s, sending command "exit" ... ' %
-                str(appList), '')
+            print_text('found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:
                 from twisted.internet import reactor
                 call_jsonrpc_method('stop').addBoth(wait_then_kill)

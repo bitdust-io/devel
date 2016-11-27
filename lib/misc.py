@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: misc
+.. module:: misc.
 
 A set of different methods across the code.
 
@@ -56,12 +56,7 @@ from twisted.python.win32 import cmdLineQuote
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -91,12 +86,13 @@ _RemoveAfterSent = True
 # more stable transports must be higher
 _AttenuationFactor = 2.0
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init():
     """
     Will be called in main thread at start up.
+
     Can put here some minor things if needed.
     """
     lg.out(4, 'misc.init')
@@ -121,7 +117,9 @@ def readExternalIP():
 def readSupplierData(idurl, filename):
     """
     Read a file from [BitDust data dir]/suppliers/[IDURL] folder.
-    The file names right now is ['connected', 'disconnected', 'listfiles'].
+
+    The file names right now is ['connected', 'disconnected',
+    'listfiles'].
     """
     path = settings.SupplierPath(idurl, filename)
     if not os.path.isfile(path):
@@ -139,14 +137,15 @@ def writeSupplierData(idurl, filename, data):
     path = settings.SupplierPath(idurl, filename)
     return bpio.WriteFile(path, data)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def NewBackupID(time_st=None):
     """
     BackupID is just a string representing time and date.
-    Symbol "F" is placed at the start to identify that this is a FULL backup.
-    We have a plans to provide INCREMENTAL backups also.
+
+    Symbol "F" is placed at the start to identify that this is a FULL
+    backup. We have a plans to provide INCREMENTAL backups also.
     """
     if time_st is None:
         time_st = time.localtime()
@@ -160,6 +159,7 @@ def NewBackupID(time_st=None):
 
 def TimeStructFromVersion(backupID):
     """
+    
     """
     try:
         if backupID.endswith('AM') or backupID.endswith('PM'):
@@ -189,7 +189,9 @@ def TimeFromBackupID(backupID):
 
 def modified_version(a):
     """
-    Next functions are to come up with a sorted list of backup ids (dealing with AM/PM).
+    Next functions are to come up with a sorted list of backup ids (dealing
+    with AM/PM).
+
     This method make a number for given BackupID - used to compare two BackupID's.
     """
     try:
@@ -213,11 +215,12 @@ def modified_version(a):
 
 def version_compare(version1, version2):
     """
-    Compare two BackupID's, I start using another term for BackupID not so long ago: ``version``.
-    I decided to create a complex ID to identify the data on remote machine.:
-        <path>/<version>/<packetName>
-    This way same data can have different versions.
-    See ``lib.packetid`` module for more info.
+    Compare two BackupID's, I start using another term for BackupID not so long
+    ago: ``version``. I decided to create a complex ID to identify the data on
+    remote machine.:
+
+    <path>/<version>/<packetName> This way same data can have
+    different versions. See ``lib.packetid`` module for more info.
     """
     return cmp(modified_version(version1), modified_version(version2))
 
@@ -287,10 +290,12 @@ def base_encode(string, base=BASE_LIST):
 
 def FilePathToBackupID(filepath):
     """
-    The idea was to hide the original file and folders names on suppliers machines but keep the directory structure.
-    Finally I came to index file wich is encrypted and all data is stored in the same directory tree,
-    but files and folders names are replaced with numbers.
-    Not used at the moment.
+    The idea was to hide the original file and folders names on suppliers
+    machines but keep the directory structure.
+
+    Finally I came to index file wich is encrypted and all data is
+    stored in the same directory tree, but files and folders names are
+    replaced with numbers. Not used at the moment.
     """
     # be sure the string is in unicode
     fp = bpio.portablePath(filepath)
@@ -338,8 +343,7 @@ def BackupIDToFilePath(backupID, decompress=False):
         if c == '/':
             if part != '':
                 # base64.b64encode(part).replace('+', '-').replace('/', '_')
-                result += base64.b64decode(part.replace('-',
-                                                        '+').replace('_', '/'))
+                result += base64.b64decode(part.replace('-', '+').replace('_', '/'))
 #                if decompress:
 #                    import zlib
 #                    # result += zlib.decompress(base_decode(part))
@@ -378,6 +382,7 @@ def BackupIDToFilePath(backupID, decompress=False):
 def DigitsOnly(input, includes=''):
     """
     Very basic method to convert string to number.
+
     This returns same string but with digits only.
     """
     return ''.join([c for c in input if c in '0123456789' + includes])
@@ -503,8 +508,7 @@ def MakeValidHTMLComment(text):
     """
     ret = ''
     for c in text:
-        if c in set(
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+*/=_()[]{}:;,.?!@#$%|~ "):
+        if c in set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-+*/=_()[]{}:;,.?!@#$%|~ "):
             ret += c
     return ret
 
@@ -512,6 +516,7 @@ def MakeValidHTMLComment(text):
 def ValidateBitCoinAddress(strAddr):
     """
     Does simple validation of a bitcoin address.
+
         :param strAddr: an ASCII or unicode string, of a bitcoin public address.
         :return boolean: indicating that the address has a correct format.
     http://www.rugatu.com/questions/3255/anybody-has-python-code-to-verifyvalidate-bitcoin-address
@@ -537,8 +542,9 @@ def ValidateBitCoinAddress(strAddr):
 
 def RoundupFile(filename, stepsize):
     """
-    For some things we need to have files which are round sizes,
-    for example some encryption needs files that are multiples of 8 bytes.
+    For some things we need to have files which are round sizes, for example
+    some encryption needs files that are multiples of 8 bytes.
+
     This function rounds file up to the next multiple of step size.
     """
     try:
@@ -556,6 +562,7 @@ def RoundupFile(filename, stepsize):
 
 def RoundupString(data, stepsize):
     """
+    
     """
     size = len(data)
     mod = size % stepsize
@@ -591,8 +598,9 @@ def Parity():
 def BinaryToAscii(input):
     """
     Not used right now.
-    Have had some troubles with jelly/banana.
-    Plan to move to my own serialization of objects but leaving this here for now.
+
+    Have had some troubles with jelly/banana. Plan to move to my own
+    serialization of objects but leaving this here for now.
     """
     return base64.encodestring(input)
 
@@ -606,18 +614,21 @@ def AsciiToBinary(input):
 
 def ObjectToString_old(obj):
     """
+    
     """
     return cPickle.dumps(obj, protocol=cPickle.HIGHEST_PROTOCOL)
 
 
 def StringToObject_old(inp):
     """
+    
     """
     return cPickle.loads(inp)
 
 
 def ObjectToString(obj):
     """
+    
     """
     import serialization
     return serialization.ObjectToString(obj)
@@ -625,6 +636,7 @@ def ObjectToString(obj):
 
 def StringToObject(inp):
     """
+    
     """
     import serialization
     return serialization.StringToObject(inp)
@@ -641,8 +653,7 @@ def AsciiToObject(input):
     """
     Not used.
     """
-    return StringToObject(AsciiToBinary(
-        input))              # works for 384 bit RSA keys
+    return StringToObject(AsciiToBinary(input))              # works for 384 bit RSA keys
 
 #------------------------------------------------------------------------------
 
@@ -680,8 +691,7 @@ def rndstr(length):
     """
     This generates a random string of given ``length`` - with only digits and letters.
     """
-    return ''.join([random.choice(string.letters + string.digits)
-                    for i in range(0, length)])
+    return ''.join([random.choice(string.letters + string.digits) for i in range(0, length)])
 
 
 def stringToLong(s):
@@ -720,11 +730,11 @@ def username2idurl(username, host='id.bitdust.io'):
 
 def calculate_best_dimension(sz, maxsize=8):
     """
-    This method is used to visually organize users on screen.
-    Say 4 items is pretty good looking in one line.
-    But 13 items seems fine in three lines.
-        :param sz: number of items to be organized
-        :param maxsize: the maximum width of the matrix.
+    This method is used to visually organize users on screen. Say 4 items is
+    pretty good looking in one line. But 13 items seems fine in three lines.
+
+    :param sz: number of items to be organized
+    :param maxsize: the maximum width of the matrix.
     """
     cached = {2: (2, 1),
               4: (4, 1),
@@ -761,6 +771,7 @@ def calculate_best_dimension(sz, maxsize=8):
 def calculate_padding(w, h):
     """
     Calculates space between icons to show in the GUI.
+
     Need to put less spaces when show a lot of items.
     """
     imgW = 64
@@ -802,8 +813,7 @@ def getRealHost(host, port=None):
     else:
         if getattr(host, 'host', None) is not None:
             if getattr(host, 'port', None) is not None:
-                host = str(getattr(host, 'host')) + ':' + \
-                    str(getattr(host, 'port'))
+                host = str(getattr(host, 'host')) + ':' + str(getattr(host, 'port'))
             else:
                 host = str(getattr(host, 'host'))
         elif getattr(host, 'underlying', None) is not None:
@@ -828,7 +838,8 @@ def split_geom_string(geomstr):
 
 def percent2string(percent, precis=3):
     """
-    A tool to make a string (with % at the end) from given float, ``precis`` is precision to round the number.
+    A tool to make a string (with % at the end) from given float, ``precis`` is
+    precision to round the number.
     """
     s = float2str(round(percent, precis),
                   mask=("%%3.%df" % (precis + 2)))
@@ -837,6 +848,7 @@ def percent2string(percent, precis=3):
 
 def value2percent(value, total, precis=3):
     """
+    
     """
     if not total:
         return '0%'
@@ -860,8 +872,10 @@ def float2str(float_value, mask='%6.8f', no_trailing_zeros=True):
 def seconds_to_time_left_string(seconds):
     """
     Using this method you can print briefly some period of time.
+
     This is my post on StackOverflow to share that:
-        http://stackoverflow.com/questions/538666/python-format-timedelta-to-string/19074707#19074707
+    http://stackoverflow.com/questions/538666/python-format-timedelta-
+    to-string/19074707#19074707
     """
     s = int(seconds)
     years = s // 31104000
@@ -924,8 +938,7 @@ def unicode_to_str_safe(unicode_string, encodings=None):
         return str(unicode_string)  # .decode('utf-8')
     except:
         try:
-            return unicode(unicode_string).encode(
-                locale.getpreferredencoding(), errors='ignore')
+            return unicode(unicode_string).encode(locale.getpreferredencoding(), errors='ignore')
         except:
             pass
     if encodings is None:
@@ -1087,12 +1100,13 @@ def file_hash(path):
         return None
     return get_hash(src)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def time2daystring(tm=None):
     """
-    Use built-in method ``time.strftime`` to conver ``tm`` to string in '%Y%m%d' format.
+    Use built-in method ``time.strftime`` to conver ``tm`` to string in
+    '%Y%m%d' format.
     """
     tm_ = tm
     if tm_ is None:
@@ -1120,7 +1134,8 @@ def time2str(format):
 
 def gmtime2str(format, seconds=None):
     """
-    Almost the same to ``time2str``, but uses ``time.gmtime`` to get the current moment.
+    Almost the same to ``time2str``, but uses ``time.gmtime`` to get the
+    current moment.
     """
     if not seconds:
         return time.strftime(format, time.gmtime())
@@ -1138,7 +1153,8 @@ def str2gmtime(time_string, format):
 
 def ReadRepoLocation():
     """
-    This method reutrn a tuple of two strings: "name of the current repo" and "repository location".
+    This method reutrn a tuple of two strings: "name of the current repo" and
+    "repository location".
     """
     if bpio.Linux() or bpio.Mac():
         repo_file = os.path.join(bpio.getExecutableDir(), 'repo')
@@ -1146,8 +1162,7 @@ def ReadRepoLocation():
             src = bpio.ReadTextFile(repo_file)
             if src:
                 try:
-                    return src.split('\n')[0].strip(
-                    ), src.split('\n')[1].strip()
+                    return src.split('\n')[0].strip(), src.split('\n')[1].strip()
                 except:
                     lg.exc()
         return 'sources', 'http://bitdust.io/download/'
@@ -1159,29 +1174,23 @@ def ReadRepoLocation():
         return settings.DefaultRepo(), settings.DefaultRepoURL(settings.DefaultRepo())
     return l[0], l[1]
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def SetAutorunWindows():
     """
-    Creates a shortcut in Start->Applications->Startup under Windows, so program can be started during system startup.
+    Creates a shortcut in Start->Applications->Startup under Windows, so
+    program can be started during system startup.
     """
-    if os.path.abspath(
-            bpio.getExecutableDir()) != os.path.abspath(
-            settings.WindowsBinDir()):
+    if os.path.abspath(bpio.getExecutableDir()) != os.path.abspath(settings.WindowsBinDir()):
         return
     createWindowsShortcut(
         'BitDust.lnk',
-        '%s' %
-        settings.getIconLaunchFilename(),
+        '%s' % settings.getIconLaunchFilename(),
         bpio.getExecutableDir(),
-        os.path.join(
-            bpio.getExecutableDir(),
-            'icons',
-            settings.IconFilename()),
+        os.path.join(bpio.getExecutableDir(), 'icons', settings.IconFilename()),
         '',
-        'Startup',
-    )
+        'Startup', )
 
 
 def ClearAutorunWindows():
@@ -1200,7 +1209,7 @@ def ClearAutorunWindows():
 #    lg.out(6, 'misc.ClearAutorunWindows executing: ' + cmdexec)
 #    return nonblocking.ExecuteString(cmdexec)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def transport_control_remove_after():
@@ -1218,12 +1227,13 @@ def set_transport_control_remove_after(flag):
     global _RemoveAfterSent
     _RemoveAfterSent = flag
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def pathToWindowsShortcut(filename, folder='Desktop'):
     """
-    This should return a path to the "Desktop" folder, creating a files in that folder will show an icons on the desktop.
+    This should return a path to the "Desktop" folder, creating a files in that
+    folder will show an icons on the desktop.
     """
     try:
         from win32com.client import Dispatch
@@ -1235,13 +1245,7 @@ def pathToWindowsShortcut(filename, folder='Desktop'):
         return ''
 
 
-def createWindowsShortcut(
-        filename,
-        target='',
-        wDir='',
-        icon='',
-        args='',
-        folder='Desktop'):
+def createWindowsShortcut(filename, target='', wDir='', icon='', args='', folder='Desktop'):
     """
     Creates a shortcut for BitDust on the desktop.
     """
@@ -1274,7 +1278,7 @@ def removeWindowsShortcut(filename, folder='Desktop'):
             except:
                 lg.exc()
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def pathToStartMenuShortcut(filename):
@@ -1341,29 +1345,20 @@ def DoRestart(param='', detach=False):
             # lg.out(2, "misc.DoRestart under Windows (Frozen), param=%s" % param)
             # lg.out(2, "misc.DoRestart sys.executable=" + sys.executable)
             # lg.out(2, "misc.DoRestart sys.argv=" + str(sys.argv))
-            starter_filepath = os.path.join(
-                bpio.getExecutableDir(),
-                settings.WindowsStarterFileName())
+            starter_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsStarterFileName())
             if not os.path.isfile(starter_filepath):
                 # lg.out(2, "misc.DoRestart ERROR %s not found" % starter_filepath)
-                main_filepath = os.path.join(
-                    bpio.getExecutableDir(),
-                    settings.WindowsMainScritpFileName())
+                main_filepath = os.path.join(bpio.getExecutableDir(), settings.WindowsMainScritpFileName())
                 cmdargs = [os.path.basename(main_filepath), ]
                 if param != '':
                     cmdargs.append(param)
                 # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-                return os.spawnve(
-                    os.P_DETACH, main_filepath, cmdargs, os.environ)
+                return os.spawnve(os.P_DETACH, main_filepath, cmdargs, os.environ)
             cmdargs = [os.path.basename(starter_filepath), ]
             if param != '':
                 cmdargs.append(param)
             # lg.out(2, "misc.DoRestart cmdargs="+str(cmdargs))
-            return os.spawnve(
-                os.P_DETACH,
-                starter_filepath,
-                cmdargs,
-                os.environ)
+            return os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
 
         else:
             lg.out(2, "misc.DoRestart under Windows param=%s" % param)
@@ -1414,8 +1409,7 @@ def DoRestart(param='', detach=False):
             # cmdargs.insert(0, '/usr/bin/nohup')
             cmdargs.append('1>/dev/null')
             cmdargs.append('2>/dev/null')
-            # return os.spawnve(os.P_NOWAIT, '/usr/bin/nohup', cmdargs,
-            # os.environ)
+            # return os.spawnve(os.P_NOWAIT, '/usr/bin/nohup', cmdargs, os.environ)
             cmd = 'nohup ' + (' '.join(cmdargs)) + ' &'
             # lg.out(0, 'run "%s"' % cmd)
             return os.system(cmd)
@@ -1441,8 +1435,9 @@ def RunBatFile(filename, output_filename=None):
 def RunShellCommand(cmdstr, wait=True):
     """
     This uses ``subprocess.Popen`` to execute a process.
-        :param cmdstr: a full command line ( with arguments ) to execute.
-        :param wait: if True - the main process will be blocked until child is finished.
+
+    :param cmdstr: a full command line ( with arguments ) to execute.
+    :param wait: if True - the main process will be blocked until child is finished.
     """
     lg.out(8, 'misc.RunShellCommand ' + cmdstr)
     try:
@@ -1478,11 +1473,9 @@ def ExplorePathInOS(filepath):
         if bpio.Windows():
             # os.startfile(filepath)
             if os.path.isfile(filepath):
-                subprocess.Popen(['explorer', '/select,', '%s' %
-                                  (filepath.replace('/', '\\'))])
+                subprocess.Popen(['explorer', '/select,', '%s' % (filepath.replace('/', '\\'))])
             else:
-                subprocess.Popen(['explorer', '%s' %
-                                  (filepath.replace('/', '\\'))])
+                subprocess.Popen(['explorer', '%s' % (filepath.replace('/', '\\'))])
 
         elif bpio.Linux():
             subprocess.Popen(['`which xdg-open`', filepath])
@@ -1501,9 +1494,11 @@ def ExplorePathInOS(filepath):
 
 def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
     """
-    The idea was to be able to move the files inside the donated area to another location.
-    Say, user want to switch our software to donate space from another HDD.
-    At the moment this feature is off.
+    The idea was to be able to move the files inside the donated area to
+    another location.
+
+    Say, user want to switch our software to donate space from another
+    HDD. At the moment this feature is off.
     """
     if os.path.abspath(current_dir) == os.path.abspath(new_dir):
         return None
@@ -1518,36 +1513,23 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
             subprocess.call(cmdargs)
             if remove_old:
                 cmdargs = ['rm', '-r', current]
-                lg.out(
-                    4,
-                    'misc.MoveFolderWithFiles wish to call: ' +
-                    str(cmdargs))
+                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdargs))
                 subprocess.call(cmdargs)
             return 'ok'
 
         if bpio.Windows():
             cmdstr0 = 'mkdir %s' % new
-            cmdstr1 = 'xcopy %s %s /E /K /R /H /Y' % (
-                cmdLineQuote(os.path.join(current_dir, '*.*')), new)
+            cmdstr1 = 'xcopy %s %s /E /K /R /H /Y' % (cmdLineQuote(os.path.join(current_dir, '*.*')), new)
             cmdstr2 = 'rmdir /S /Q %s' % current
             if not os.path.isdir(new):
-                lg.out(
-                    4,
-                    'misc.MoveFolderWithFiles wish to call: ' +
-                    str(cmdstr0))
+                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr0))
                 if RunShellCommand(cmdstr0) is None:
                     return 'error'
-                lg.out(
-                    4,
-                    'misc.MoveFolderWithFiles wish to call: ' +
-                    str(cmdstr1))
+                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr1))
             if RunShellCommand(cmdstr1) is None:
                 return 'error'
             if remove_old:
-                lg.out(
-                    4,
-                    'misc.MoveFolderWithFiles wish to call: ' +
-                    str(cmdstr2))
+                lg.out(4, 'misc.MoveFolderWithFiles wish to call: ' + str(cmdstr2))
                 if RunShellCommand(cmdstr2) is None:
                     return 'error'
             return 'ok'
@@ -1607,30 +1589,27 @@ def MoveFolderWithFiles(current_dir, new_dir, remove_old=False):
 def UpdateSettings():
     """
     This method is called at startup, during "local initialization" part.
+
     I used that place sometimes to 'patch' users settings on clients.
     """
     lg.out(6, 'misc.UpdateSettings')
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def SendDevReportOld(subject, body, includelogs):
     """
-    The old stuff to send dev. reports.
+    The old stuff to send dev.
+
+    reports.
     """
     try:
         filesList = []
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
             filesList.append(settings.UserConfigFilename())
-            filesList.append(
-                os.path.join(
-                    bpio.getExecutableDir(),
-                    'bpmain.exe.log'))
-            filesList.append(
-                os.path.join(
-                    bpio.getExecutableDir(),
-                    'bpmain.log'))
+            filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.exe.log'))
+            filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.log'))
             for filename in os.listdir(settings.LogsDir()):
                 filepath = os.path.join(settings.LogsDir(), filename)
                 filesList.append(filepath)
@@ -1638,10 +1617,8 @@ def SendDevReportOld(subject, body, includelogs):
             import zipfile
             import time
             username = bpio.ReadTextFile(settings.UserNameFilename())
-            zipfd, zipfilename = tempfile.mkstemp(
-                '.zip', username + '-' + time.strftime('%Y%m%d%I%M%S') + '-')
-            zfile = zipfile.ZipFile(
-                zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
+            zipfd, zipfilename = tempfile.mkstemp('.zip', username + '-' + time.strftime('%Y%m%d%I%M%S') + '-')
+            zfile = zipfile.ZipFile(zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
             for filename in filesList:
                 if os.path.isfile(filename):
                     try:
@@ -1667,12 +1644,12 @@ def SendDevReportOld(subject, body, includelogs):
 
 def SendDevReport(subject, body, includelogs, progress=None):
     """
-    Send a developer report to our public cgi script at:
-        http://bitdust.io/cgi-bin/feedback.py
-    It should record it and so I can get your message and ( optional ) your logs.
-        TODO:
-            This seems to be not working correct yet.
-            The process may not finish for big data, and progress is not shown correctly.
+    Send a developer report to our public cgi script at: http://bitdust.io/cgi-
+    bin/feedback.py It should record it and so I can get your message and (
+    optional ) your logs.
+
+    TODO:     This seems to be not working correct yet.     The process
+    may not finish for big data, and progress is not shown correctly.
     """
     try:
         zipfilename = ''
@@ -1680,21 +1657,11 @@ def SendDevReport(subject, body, includelogs, progress=None):
         if includelogs:
             filesList.append(settings.LocalIdentityFilename())
             filesList.append(settings.UserConfigFilename())
-            filesList.append(
-                os.path.join(
-                    bpio.getExecutableDir(),
-                    'bpmain.exe.log'))
-            filesList.append(
-                os.path.join(
-                    bpio.getExecutableDir(),
-                    'bpmain.log'))
+            filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.exe.log'))
+            filesList.append(os.path.join(bpio.getExecutableDir(), 'bpmain.log'))
             lst = os.listdir(settings.LogsDir())
-            lst.sort(
-                key=lambda fn: os.path.getatime(
-                    os.path.join(
-                        settings.LogsDir(),
-                        fn)),
-                reverse=True)
+            lst.sort(key=lambda fn: os.path.getatime(os.path.join(settings.LogsDir(), fn)),
+                     reverse=True)
             totalsz = 0
             for filename in lst:
                 filepath = os.path.join(settings.LogsDir(), filename)
@@ -1707,10 +1674,8 @@ def SendDevReport(subject, body, includelogs, progress=None):
             import zipfile
             import time
             username = bpio.ReadTextFile(settings.UserNameFilename())
-            zipfd, zipfilename = tempfile.mkstemp(
-                '.zip', username + '-' + time.strftime('%Y%m%d%I%M%S') + '-')
-            zfile = zipfile.ZipFile(
-                zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
+            zipfd, zipfilename = tempfile.mkstemp('.zip', username + '-' + time.strftime('%Y%m%d%I%M%S') + '-')
+            zfile = zipfile.ZipFile(zipfilename, "w", compression=zipfile.ZIP_DEFLATED)
             for filename in filesList:
                 if os.path.isfile(filename):
                     try:
@@ -1723,11 +1688,7 @@ def SendDevReport(subject, body, includelogs, progress=None):
         if zipfilename:
             files['upload'] = zipfilename
         data = {'subject': subject, 'body': body}
-        return net_misc.uploadHTTP(
-            'http://bitdust.io/cgi-bin/feedback.py',
-            files,
-            data,
-            progress)
+        return net_misc.uploadHTTP('http://bitdust.io/cgi-bin/feedback.py', files, data, progress)
         # r.addErrback(lambda err: lg.out(2, 'misc.SendDevReport ERROR : %s' % str(err)))
         # r.addCallback(lambda src: lg.out(2, 'misc.SendDevReport : %s' % str(src)))
         # return r
@@ -1740,15 +1701,15 @@ def SendDevReport(subject, body, includelogs, progress=None):
 
 def GetUserProfilePicturePath():
     """
-    Not used right now.
-    I wish to show some personal images instead of green or gray boys.
-    Users can provide own avatars, but more smart way is to take that avatar from user private space.
-    This should be used only during first install of the program.
-    May be we can use facebook or google personal page to get the picture.
-    The idea was taken from:
-        http://social.msdn.microsoft.com/Forums/en/vcgeneral/thread/8c72b948-d32c-4785-930e-0d6fdf032ecc
-    For linux we just check the file ~/.face.
-    Than user can upload his avatar to some place (we can store avatars for free)
+    Not used right now. I wish to show some personal images instead of green or
+    gray boys. Users can provide own avatars, but more smart way is to take
+    that avatar from user private space. This should be used only during first
+    install of the program. May be we can use facebook or google personal page
+    to get the picture. The idea was taken from: http://social.msdn.microsoft.c
+    om/Forums/en/vcgeneral/thread/8c72b948-d32c-4785-930e-0d6fdf032ecc For
+    linux we just check the file ~/.face. Than user can upload his avatar to
+    some place (we can store avatars for free)
+
     and set that url into his identity - so others can get his avatar very easy.
     """
     if bpio.Windows():
@@ -1756,30 +1717,12 @@ def GetUserProfilePicturePath():
         username = os.path.basename(os.path.expanduser('~'))
         if bpio.windows_version() == 5:  # Windows XP
             # %ALLUSERSPROFILE%\Application Data\Microsoft\User Account Pictures
-            allusers = os.environ.get(
-                'ALLUSERSPROFILE',
-                os.path.join(
-                    os.path.dirname(
-                        os.path.expanduser('~')),
-                    'All Users'))
-            return os.path.join(
-                allusers,
-                'Application Data',
-                'Microsoft',
-                'User Account Pictures',
-                username + '.bmp')
+            allusers = os.environ.get('ALLUSERSPROFILE', os.path.join(os.path.dirname(os.path.expanduser('~')), 'All Users'))
+            return os.path.join(allusers, 'Application Data', 'Microsoft', 'User Account Pictures', username + '.bmp')
         elif bpio.windows_version() == 6:  # Windows 7
             # C:\Users\<username>\AppData\Local\Temp\<domain>+<username>.bmp
-            default_path = os.path.join(
-                os.path.expanduser('~'), 'Application Data')
-            return os.path.join(
-                os.environ.get(
-                    'APPDATA',
-                    default_path),
-                'Local',
-                'Temp',
-                username +
-                '.bmp')
+            default_path = os.path.join(os.path.expanduser('~'), 'Application Data')
+            return os.path.join(os.environ.get('APPDATA', default_path), 'Local', 'Temp', username + '.bmp')
         else:
             return ''
     elif bpio.Linux():
@@ -1793,7 +1736,9 @@ def GetUserProfilePicturePath():
 def UpdateRegistryUninstall(uninstall=False):
     """
     This is not used right now.
-    Now BitDust is installed via .msi file and we do all that stuff inside it.
+
+    Now BitDust is installed via .msi file and we do all that stuff
+    inside it.
     """
     try:
         import _winreg
@@ -1802,24 +1747,17 @@ def UpdateRegistryUninstall(uninstall=False):
     unistallpath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
     regpath = unistallpath + "\\BitDust"
     values = {
-        'DisplayIcon': '%s,0' % str(
-            bpio.getExecutableFilename()),
+        'DisplayIcon': '%s,0' % str(bpio.getExecutableFilename()),
         'DisplayName': 'BitDust',
-        'DisplayVersion': bpio.ReadTextFile(
-            settings.VersionNumberFile()).strip(),
+        'DisplayVersion': bpio.ReadTextFile(settings.VersionNumberFile()).strip(),
         'InstallLocation:': settings.BaseDir(),
         'NoModify': 1,
         'NoRepair': 1,
         'UninstallString': '%s uninstall' % bpio.getExecutableFilename(),
-        'URLInfoAbout': 'http://bitdust.io',
-    }
+        'URLInfoAbout': 'http://bitdust.io', }
     # open
     try:
-        reg = _winreg.OpenKey(
-            _winreg.HKEY_LOCAL_MACHINE,
-            regpath,
-            0,
-            _winreg.KEY_ALL_ACCESS)
+        reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, regpath, 0, _winreg.KEY_ALL_ACCESS)
     except:
         try:
             reg = _winreg.CreateKey(_winreg.HKEY_LOCAL_MACHINE, regpath)
@@ -1850,11 +1788,7 @@ def UpdateRegistryUninstall(uninstall=False):
     if uninstall:
         _winreg.CloseKey(reg)
         try:
-            reg = _winreg.OpenKey(
-                _winreg.HKEY_LOCAL_MACHINE,
-                unistallpath,
-                0,
-                _winreg.KEY_ALL_ACCESS)
+            reg = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, unistallpath, 0, _winreg.KEY_ALL_ACCESS)
         except:
             lg.exc()
             return False
@@ -1876,12 +1810,7 @@ def UpdateRegistryUninstall(uninstall=False):
     return True
 
 
-def MakeBatFileToUninstall(
-        wait_appname='bpmain.exe',
-        local_dir=bpio.getExecutableDir(),
-        dirs2delete=[
-            settings.BaseDir(),
-        ]):
+def MakeBatFileToUninstall(wait_appname='bpmain.exe', local_dir=bpio.getExecutableDir(), dirs2delete=[settings.BaseDir(), ]):
     """
     Not used.
     """
@@ -1909,10 +1838,11 @@ def MakeBatFileToUninstall(
 
 def LoopAttenuation(current_delay, faster, min, max):
     """
-    Pretty common method.
-    Twisted reactor is very nice, you can call ``reactor.callLater(3, method_a, 'param1')``
-    and method_a('param1') will be called exactly when 3 seconds passed.
-    But we do not want fixed periods sometimes.
+    Pretty common method. Twisted reactor is very nice, you can call
+    ``reactor.callLater(3, method_a, 'param1')`` and method_a('param1') will be
+    called exactly when 3 seconds passed. But we do not want fixed periods
+    sometimes.
+
     You must be hury when you have a lot of work, in the next moment - need rest.
     For example - need to read some queue as fast as possible when you have some items inside.
     This method is used to calculate the delay to the next call of some 'idle' method.

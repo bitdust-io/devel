@@ -31,15 +31,17 @@ import msgtypes
 
 
 class MessageTranslator(object):
-    """ Interface for RPC message translators/formatters
+    """
+    Interface for RPC message translators/formatters.
 
-    Classes inheriting from this should provide a translation services between
-    the classes used internally by this Kademlia implementation and the actual
-    data that is transmitted between nodes.
+    Classes inheriting from this should provide a translation services
+    between the classes used internally by this Kademlia implementation
+    and the actual data that is transmitted between nodes.
     """
 
     def fromPrimitive(self, msgPrimitive):
-        """ Create an RPC Message from a message's string representation
+        """
+        Create an RPC Message from a message's string representation.
 
         @param msgPrimitive: The unencoded primitive representation of a message
         @type msgPrimitive: str, int, list or dict
@@ -49,7 +51,8 @@ class MessageTranslator(object):
         """
 
     def toPrimitive(self, message):
-        """ Create a string representation of a message
+        """
+        Create a string representation of a message.
 
         @param message: The message object
         @type message: msgtypes.Message
@@ -61,38 +64,23 @@ class MessageTranslator(object):
 
 
 class DefaultFormat(MessageTranslator):
-    """ The default on-the-wire message format for this library """
+    """
+    The default on-the-wire message format for this library.
+    """
     typeRequest, typeResponse, typeError = range(3)
     headerType, headerMsgID, headerNodeID, headerPayload, headerArgs = range(5)
 
     def fromPrimitive(self, msgPrimitive):
         msgType = msgPrimitive[self.headerType]
         if msgType == self.typeRequest:
-            msg = msgtypes.RequestMessage(
-                msgPrimitive[
-                    self.headerNodeID], msgPrimitive[
-                    self.headerPayload], msgPrimitive[
-                    self.headerArgs], msgPrimitive[
-                    self.headerMsgID])
+            msg = msgtypes.RequestMessage(msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs], msgPrimitive[self.headerMsgID])
         elif msgType == self.typeResponse:
-            msg = msgtypes.ResponseMessage(
-                msgPrimitive[
-                    self.headerMsgID], msgPrimitive[
-                    self.headerNodeID], msgPrimitive[
-                    self.headerPayload])
+            msg = msgtypes.ResponseMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload])
         elif msgType == self.typeError:
-            msg = msgtypes.ErrorMessage(
-                msgPrimitive[
-                    self.headerMsgID], msgPrimitive[
-                    self.headerNodeID], msgPrimitive[
-                    self.headerPayload], msgPrimitive[
-                    self.headerArgs])
+            msg = msgtypes.ErrorMessage(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID], msgPrimitive[self.headerPayload], msgPrimitive[self.headerArgs])
         else:
             # Unknown message, no payload
-            msg = msgtypes.Message(
-                msgPrimitive[
-                    self.headerMsgID], msgPrimitive[
-                    self.headerNodeID])
+            msg = msgtypes.Message(msgPrimitive[self.headerMsgID], msgPrimitive[self.headerNodeID])
         return msg
 
     def toPrimitive(self, message):

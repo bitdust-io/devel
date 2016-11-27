@@ -81,8 +81,9 @@ def shutdown():
 
 def RoundupFile(filename, stepsize):
     """
-    For some things we need to have files which are round sizes,
-    for example some encryption needs files that are multiples of 8 bytes.
+    For some things we need to have files which are round sizes, for example
+    some encryption needs files that are multiples of 8 bytes.
+
     This function rounds file up to the next multiple of step size.
     """
     try:
@@ -100,6 +101,7 @@ def RoundupFile(filename, stepsize):
 
 def ReadBinaryFile(filename):
     """
+    
     """
     if not os.path.isfile(filename):
         return ''
@@ -113,6 +115,7 @@ def ReadBinaryFile(filename):
 
 def WriteFile(filename, data):
     """
+    
     """
     f = open(filename, "wb")
     f.write(data)
@@ -165,8 +168,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
     seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments
 
     for DSegNum in xrange(myeccmap.datasegments):
-        FileName = targetDir + '/' + \
-            str(blockNumber) + '-' + str(DSegNum) + '-Data'
+        FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
         f = open(FileName, "wb")
         segoffset = DSegNum * seglength
         for i in xrange(seglength):
@@ -181,8 +183,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
 
     dfds = {}
     for DSegNum in xrange(myeccmap.datasegments):
-        FileName = targetDir + '/' + \
-            str(blockNumber) + '-' + str(DSegNum) + '-Data'
+        FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
         # instead of reading data from opened file
         # we'l put it in memory
         # and store current position in the data
@@ -218,9 +219,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
                         raise Exception("eccmap error")
                     Parities[PSegNum] = Parities[PSegNum] ^ b
             else:
-                raise Exception(
-                    'strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' %
-                    (len(bstr), DSegNum))
+                raise Exception('strange read under INTSIZE bytes, len(bstr)=%d DSegNum=%d' % (len(bstr), DSegNum))
                 # TODO
                 #out(2, 'raidmake.raidmake WARNING strange read under INTSIZE bytes')
                 #out(2, 'raidmake.raidmake len(bstr)=%s DSegNum=%s' % (str(len(bstr)), str(DSegNum)))
@@ -234,8 +233,7 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
     parityNum = len(pfds)
 
     for PSegNum, data in pfds.items():
-        FileName = targetDir + '/' + \
-            str(blockNumber) + '-' + str(PSegNum) + '-Parity'
+        FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
         WriteFile(FileName, pfds[PSegNum].getvalue())
 
     for f in dfds.values():
@@ -259,16 +257,13 @@ def do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir):
 def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
     myeccmap = raid.eccmap.eccmap(eccmapname)
     INTSIZE = 4  # settings.IntSize()
-    # any padding at end and block.Length fixes
-    RoundupFile(filename, myeccmap.datasegments * INTSIZE)
+    RoundupFile(filename, myeccmap.datasegments * INTSIZE)      # any padding at end and block.Length fixes
     wholefile = ReadBinaryFile(filename)
     length = len(wholefile)
-    seglength = (length + myeccmap.datasegments - 1) / \
-        myeccmap.datasegments                 # PREPRO -
+    seglength = (length + myeccmap.datasegments - 1) / myeccmap.datasegments                 # PREPRO -
 
     for DSegNum in range(myeccmap.datasegments):
-        FileName = targetDir + '/' + \
-            str(blockNumber) + '-' + str(DSegNum) + '-Data'
+        FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
         f = open(FileName, "wb")
         segoffset = DSegNum * seglength
         for i in range(seglength):
@@ -285,15 +280,13 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
     #dfds = range(myeccmap.datasegments)
     dfds = {}
     for DSegNum in range(myeccmap.datasegments):
-        FileName = targetDir + '/' + \
-            str(blockNumber) + '-' + str(DSegNum) + '-Data'
+        FileName = targetDir + '/' + str(blockNumber) + '-' + str(DSegNum) + '-Data'
         dfds[DSegNum] = open(FileName, "rb")
 
     #pfds = range(myeccmap.paritysegments)
     pfds = {}
     for PSegNum in range(myeccmap.paritysegments):
-        FileName = targetDir + '/' + \
-            str(blockNumber) + '-' + str(PSegNum) + '-Parity'
+        FileName = targetDir + '/' + str(blockNumber) + '-' + str(PSegNum) + '-Parity'
         pfds[PSegNum] = open(FileName, "wb")
 
     #Parities = range(myeccmap.paritysegments)
@@ -343,8 +336,7 @@ def do_with_files(filename, eccmapname, backupId, blockNumber, targetDir):
 def main():
     from logs import lg
     lg.set_debug_level(18)
-    do_in_memory(sys.argv[1], sys.argv[2], sys.argv[3], int(
-        sys.argv[4]), sys.argv[5], sys.argv[6] == '1')
+    do_in_memory(sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5], sys.argv[6] == '1')
 
 
 if __name__ == "__main__":

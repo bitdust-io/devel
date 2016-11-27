@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_private_messages
+..
 
+module:: service_private_messages
 """
 
 from services.local_service import LocalService

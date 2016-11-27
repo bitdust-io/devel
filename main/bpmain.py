@@ -27,7 +27,7 @@
 #
 
 """
-.. module:: bpmain
+.. module:: bpmain.
 
 This is the entry point of the program, see method ``main()`` bellow.
 """
@@ -37,11 +37,11 @@ import sys
 import time
 import threading
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 AppDataDir = ''
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def show():
@@ -62,8 +62,10 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     """
     In the method ``main()`` program firstly checks the command line arguments
     and then calls this method to start the whole process.
-    This initialize some low level modules and finally create
-    an instance of ``initializer()`` state machine and send it an event "run".
+
+    This initialize some low level modules and finally create an
+    instance of ``initializer()`` state machine and send it an event
+    "run".
     """
     global AppDataDir
 
@@ -84,9 +86,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
                               lambda p, value, o, r: lg.set_debug_level(value))
 
     #---USE_TRAY_ICON---
-    if os.path.isfile(
-            settings.LocalIdentityFilename()) and os.path.isfile(
-            settings.KeyFileName()):
+    if os.path.isfile(settings.LocalIdentityFilename()) and os.path.isfile(settings.KeyFileName()):
         try:
             from system.tray_icon import USE_TRAY_ICON
             if bpio.Mac() or not bpio.isGUIpossible():
@@ -105,8 +105,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     lg.out(4, '    USE_TRAY_ICON=' + str(USE_TRAY_ICON))
     if USE_TRAY_ICON:
         from system import tray_icon
-        icons_path = bpio.portablePath(
-            os.path.join(bpio.getExecutableDir(), 'icons'))
+        icons_path = bpio.portablePath(os.path.join(bpio.getExecutableDir(), 'icons'))
         lg.out(4, 'bpmain.run call tray_icon.init(%s)' % icons_path)
         tray_icon.init(icons_path)
 
@@ -139,11 +138,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         if bpio.Windows() and bpio.isFrozen():
             lg.stdout_stop_redirecting()
         lg.close_log_file()
-        lg.open_log_file(
-            settings.MainLogFilename() +
-            '-' +
-            time.strftime('%y%m%d%H%M%S') +
-            '.log')
+        lg.open_log_file(settings.MainLogFilename() + '-' + time.strftime('%y%m%d%H%M%S') + '.log')
         if bpio.Windows() and bpio.isFrozen():
             lg.stdout_start_redirecting()
 
@@ -163,9 +158,7 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         pid = os.getpid()
         pid_file_path = os.path.join(settings.MetaDataDir(), 'processid')
         bpio.WriteFile(pid_file_path, str(pid))
-        lg.out(
-            2, 'bpmain.run wrote process id [%s] in the file %s' %
-            (str(pid), pid_file_path))
+        lg.out(2, 'bpmain.run wrote process id [%s] in the file %s' % (str(pid), pid_file_path))
     except:
         lg.exc()
 
@@ -216,14 +209,11 @@ def shutdown():
         for a in automat.index().keys():
             lg.out(2, '    %r' % a)
     else:
-        lg.out(
-            2,
-            'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
+        lg.out(2, 'bpmain.shutdown automat.objects().clear() SUCCESS, no state machines left in memory')
 
     config.conf().removeCallback('logs/debug-level')
 
-    lg.out(2, 'bpmain.shutdown currently %d threads running:' %
-           len(threading.enumerate()))
+    lg.out(2, 'bpmain.shutdown currently %d threads running:' % len(threading.enumerate()))
     for t in threading.enumerate():
         lg.out(2, '    ' + str(t))
 
@@ -289,17 +279,14 @@ def parser():
                      dest='output',
                      type='string',
                      help='print log messages to the file',)
-    group.add_option(
-        '-a',
-        '--appdir',
-        dest='appdir',
-        type='string',
-        help='set alternative location for application data files, default is ~/.bitdust/',
-    )
+    group.add_option('-a', '--appdir',
+                     dest='appdir',
+                     type='string',
+                     help='set alternative location for application data files, default is ~/.bitdust/',)
 #    group.add_option('-t', '--tempdir',
 #                        dest='tempdir',
 #                        type='string',
-# help='set location for temporary files, default is ~/.bitdust/temp',)
+#                        help='set location for temporary files, default is ~/.bitdust/temp',)
     group.add_option('--twisted',
                      dest='twisted',
                      action='store_true',
@@ -307,8 +294,7 @@ def parser():
 #    group.add_option('--memdebug',
 #                        dest='memdebug',
 #                        action='store_true',
-# help='start web server to debug memory usage, need cherrypy and dozer
-# modules',)
+#                        help='start web server to debug memory usage, need cherrypy and dozer modules',)
     parser.add_option_group(group)
 #    group = OptionGroup(parser, "Network")
 #    group.add_option('--tcp-port',
@@ -330,8 +316,11 @@ def parser():
 
 def override_options(opts, args):
     """
-    The program can replace some user options by values passed via command line.
-    This method return a dictionary where is stored a key-value pairs for new options.
+    The program can replace some user options by values passed via command
+    line.
+
+    This method return a dictionary where is stored a key-value pairs
+    for new options.
     """
     overDict = {}
 #    if opts.tcp_port:
@@ -393,12 +382,14 @@ def kill():
 
 def wait_then_kill(x):
     """
-    For correct shutdown of the program need to send a URL request to the HTTP server::
-        http://localhost:<random port>/?action=exit
+    For correct shutdown of the program need to send a URL request to the HTTP
+    server:: http://localhost:<random port>/?action=exit.
 
-    After receiving such request the program will call ``p2p.init_shutdown.shutdown()`` method and stops.
-    But if the main process was blocked it needs to be killed with system "kill" procedure.
-    This method will wait for 10 seconds and then call method ``kill()``.
+    After receiving such request the program will call
+    ``p2p.init_shutdown.shutdown()`` method and stops. But if the main
+    process was blocked it needs to be killed with system "kill"
+    procedure. This method will wait for 10 seconds and then call method
+    ``kill()``.
     """
     from twisted.internet import reactor
     from logs import lg
@@ -440,6 +431,7 @@ _LastCallableID = 0
 class _callable():
     """
     This class shows my experiments with performance monitoring.
+
     I tried to decrease the number of delayed calls.
     """
 
@@ -473,7 +465,8 @@ def _callLater(delay, callable, *args, **kw):
 
 def patchReactorCallLater(r):
     """
-    Replace original ``reactor.callLater()`` with my hacked solution to monitor overall performance.
+    Replace original ``reactor.callLater()`` with my hacked solution to monitor
+    overall performance.
     """
     global _OriginalCallLater
     _OriginalCallLater = r.callLater
@@ -492,17 +485,17 @@ def monitorDelayedCalls(r):
     s = ''
     for i in range(0, min(10, len(_DelayedCallsIndex))):
         cb = keys[i]
-        s += '        %d %d %s\n' % (_DelayedCallsIndex[cb][
-                                     0], _DelayedCallsIndex[cb][1], cb)
+        s += '        %d %d %s\n' % (_DelayedCallsIndex[cb][0], _DelayedCallsIndex[cb][1], cb)
     lg.out(8, '    delayed calls: %d\n%s' % (len(_DelayedCallsIndex), s))
     r.callLater(10, monitorDelayedCalls, r)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def usage():
     """
-    Calls ``p2p.help.usage()`` method to print out how to run BitDust software from command line.
+    Calls ``p2p.help.usage()`` method to print out how to run BitDust software
+    from command line.
     """
     try:
         import help
@@ -539,7 +532,7 @@ def copyright():
     """
     print 'Copyright BitDust, 2014. All rights reserved.'
 
-#--- THIS IS THE ENTRY POINT OF THE PROGRAM! -----------------------------
+#--- THIS IS THE ENTRY POINT OF THE PROGRAM! ---------------------------------------------------------
 
 
 def main(executable_path=None):
@@ -549,9 +542,7 @@ def main(executable_path=None):
     global AppDataDir
 
     import warnings
-    warnings.filterwarnings(
-        "ignore",
-        message="You do not have a working installation of the service_identity module")
+    warnings.filterwarnings("ignore", message="You do not have a working installation of the service_identity module")
 
     try:
         from logs import lg
@@ -592,8 +583,7 @@ def main(executable_path=None):
         appdata = defaultappdata
         if os.path.isfile(appdatafile):
             try:
-                appdata = os.path.abspath(
-                    open(appdatafile, 'rb').read().strip())
+                appdata = os.path.abspath(open(appdatafile, 'rb').read().strip())
             except:
                 appdata = defaultappdata
             if not os.path.isdir(appdata):
@@ -606,8 +596,7 @@ def main(executable_path=None):
 
     # ask to count time for each log line from that moment, not absolute time
     lg.life_begins()
-    # try to read debug level value at the early stage - no problem if fail
-    # here
+    # try to read debug level value at the early stage - no problem if fail here
     try:
         if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'show' or cmd == 'open':
             lg.set_debug_level(int(
@@ -688,10 +677,7 @@ def main(executable_path=None):
 #            lg.exc()
 
         if len(appList) > 0:
-            lg.out(
-                0,
-                'BitDust already started, found another process: %s\n' %
-                str(appList))
+            lg.out(0, 'BitDust already started, found another process: %s\n' % str(appList))
             bpio.shutdown()
             return 0
         UI = ''
@@ -715,9 +701,7 @@ def main(executable_path=None):
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
         ])
         if len(appList) > 0:
-            lg.out(
-                0, 'main BitDust process already started: %s\n' %
-                str(appList))
+            lg.out(0, 'main BitDust process already started: %s\n' % str(appList))
             bpio.shutdown()
             return 0
         from lib import misc
@@ -750,11 +734,7 @@ def main(executable_path=None):
         # if cmd == 'restart':
         # ui = True
         if len(appList) > 0:
-            lg.out(
-                0,
-                'found main BitDust process: %s, sending "restart" command ... ' %
-                str(appList),
-                '')
+            lg.out(0, 'found main BitDust process: %s, sending "restart" command ... ' % str(appList), '')
 
             def done(x):
                 lg.out(0, 'DONE\n', '')
@@ -769,21 +749,13 @@ def main(executable_path=None):
                     lg.out(0, 'DONE\n', '')
                     reactor.stop()
                     return
-                lg.out(
-                    0,
-                    'FAILED while killing previous process - do HARD restart\n',
-                    '')
+                lg.out(0, 'FAILED while killing previous process - do HARD restart\n', '')
                 try:
                     kill()
                 except:
                     lg.exc()
                 from lib import misc
-                reactor.addSystemEventTrigger(
-                    'after',
-                    'shutdown',
-                    misc.DoRestart,
-                    param='show' if ui else '',
-                    detach=True)
+                reactor.addSystemEventTrigger('after', 'shutdown', misc.DoRestart, param='show' if ui else '', detach=True)
                 reactor.stop()
             try:
                 from twisted.internet import reactor
@@ -841,9 +813,7 @@ def main(executable_path=None):
                     for pid in appList_bpgui:
                         bpio.kill_process(pid)
                 else:
-                    lg.out(
-                        0, 'BitDust GUI already opened, found another process: %s\n' %
-                        str(appList))
+                    lg.out(0, 'BitDust GUI already opened, found another process: %s\n' % str(appList))
                     bpio.shutdown()
                     return 0
         if len(appList) == 0:
@@ -854,10 +824,7 @@ def main(executable_path=None):
                 ret = 1
             bpio.shutdown()
             return ret
-        lg.out(
-            0,
-            'found main BitDust process: %s, start the GUI\n' %
-            str(appList))
+        lg.out(0, 'found main BitDust process: %s, start the GUI\n' % str(appList))
         ret = show()
         bpio.shutdown()
         return ret
@@ -871,11 +838,7 @@ def main(executable_path=None):
             'regexp:^/usr/bin/python\ +/usr/bin/bitdust.*$',
         ])
         if len(appList) > 0:
-            lg.out(
-                0,
-                'found main BitDust process: %s, sending command "exit" ... ' %
-                str(appList),
-                '')
+            lg.out(0, 'found main BitDust process: %s, sending command "exit" ... ' % str(appList), '')
             try:
                 from twisted.internet import reactor
                 # from interface.command_line import run_url_command
@@ -908,22 +871,15 @@ def main(executable_path=None):
     elif cmd == 'uninstall':
         def do_spawn(x=None):
             from main.settings import WindowsStarterFileName
-            starter_filepath = os.path.join(
-                bpio.getExecutableDir(), WindowsStarterFileName())
-            lg.out(
-                0, "bpmain.main bitstarter.exe path: %s " %
-                starter_filepath)
+            starter_filepath = os.path.join(bpio.getExecutableDir(), WindowsStarterFileName())
+            lg.out(0, "bpmain.main bitstarter.exe path: %s " % starter_filepath)
             if not os.path.isfile(starter_filepath):
                 lg.out(0, "ERROR: %s not found\n" % starter_filepath)
                 bpio.shutdown()
                 return 1
             cmdargs = [os.path.basename(starter_filepath), 'uninstall']
             lg.out(0, "bpmain.main os.spawnve cmdargs=" + str(cmdargs))
-            ret = os.spawnve(
-                os.P_DETACH,
-                starter_filepath,
-                cmdargs,
-                os.environ)
+            ret = os.spawnve(os.P_DETACH, starter_filepath, cmdargs, os.environ)
             bpio.shutdown()
             return ret
 
@@ -939,9 +895,7 @@ def main(executable_path=None):
             bpio.shutdown()
             return 0
         if not bpio.isFrozen():
-            lg.out(
-                0,
-                'You are running BitDust from sources, uninstall command is available only for installable version.\n')
+            lg.out(0, 'You are running BitDust from sources, uninstall command is available only for installable version.\n')
             bpio.shutdown()
             return 0
         appList = bpio.find_process(['bitdust.exe', ])
@@ -957,8 +911,7 @@ def main(executable_path=None):
                 # from interface import cmd_line
                 # cmd_line.call_xmlrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
                 from interface import cmd_line_json
-                cmd_line_json.call_jsonrpc_method(
-                    'stop').addBoth(do_reactor_stop_and_spawn)
+                cmd_line_json.call_jsonrpc_method('stop').addBoth(do_reactor_stop_and_spawn)
                 reactor.run()
                 return 0
             except:

@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: settings
+.. module:: settings.
 
 I think this is a most used module in the project.
 Various parts of the code use this module to get the user settings and global constants.
@@ -88,12 +88,13 @@ def init(base_dir=None):
 def _init(base_dir=None):
     """
     This is called only once, prepare a bunch of things:
-        - Set the base folder where for program data
-        - Check and create if not exist "metadata" directory
-        - Load settings from [BitDust data dir]/metadata/userconfig or create a new, default settings
-        - Check other "static" folders
-        - Validate most important user settings
-        - Check custom folders
+
+    - Set the base folder where for program data
+    - Check and create if not exist "metadata" directory
+    - Load settings from [BitDust data dir]/metadata/userconfig or create a new, default settings
+    - Check other "static" folders
+    - Validate most important user settings
+    - Check custom folders
     """
     lg.out(2, 'settings.init')
     _initBaseDir(base_dir)
@@ -155,7 +156,9 @@ def _init(base_dir=None):
 
 def override(key, value):
     """
-    This method can be used to redefine values in UserConfig without writing changes on disk.
+    This method can be used to redefine values in UserConfig without writing
+    changes on disk.
+
     Useful when user pass some params via command line - they should override the local settings.
     """
     global _OverrideDict
@@ -290,6 +293,7 @@ def NewWebGUI():
 def DefaultPrivateKeySize():
     """
     User can choose size of his Private Key during install.
+
     Can be 1024, 2048 or 4096.
     """
     return 2048
@@ -297,9 +301,11 @@ def DefaultPrivateKeySize():
 
 def BasePricePerGBmonth():
     """
-    Dropbox have a 10$/month for 100-500 GB.
-    So let's have 10$ for 1Tb. this is 0.01$.
+    Dropbox have a 10$/month for 100-500 GB. So let's have 10$ for 1Tb. this is
+    0.01$.
+
     Definitely - this is not very important thing at the moment. :-)
+
     """
     return 0.01
 
@@ -321,6 +327,7 @@ def defaultDebugLevel():
 def IntSize():
     """
     This constant is used in the RAID code.
+
     The idea is to be able to optionally switch to 64 bit one day.
     """
     return 4
@@ -329,6 +336,7 @@ def IntSize():
 def MinimumSendingDelay():
     """
     The lower limit of delay for repeated calls for sending processes.
+
     DO NOT SET TO 0 - the main process will be blocked.
     See ``lib.misc.LoopAttenuation`` method.
     """
@@ -338,7 +346,9 @@ def MinimumSendingDelay():
 def MaximumSendingDelay():
     """
     The higher limit of delay for repeated calls for sending processes.
-    Higher values should decrease the network speed, but save CPU resources.
+
+    Higher values should decrease the network speed, but save CPU
+    resources.
     """
     return 2.0
 
@@ -359,8 +369,7 @@ def MaximumReceivingDelay():
 
 def MaxPacketsOutstanding():
     """
-    PREPRO
-    Should be a function of disk space available
+    PREPRO Should be a function of disk space available.
     """
     return 100
 
@@ -368,6 +377,7 @@ def MaxPacketsOutstanding():
 def SendingSpeedLimit():
     """
     This is lower limit during file sending in Kilobytes per second.
+
     Used to calculate a packet timeout - bigger packets should have longer timeouts.
     If sending below this speed - we count this supplier as failed.
     If we sending too slow to all nodes - it's our problems, not suppliers.
@@ -405,6 +415,7 @@ def SendTimeOut():
 def MaxRetries():
     """
     The idea was to create some "exponential backoff" -
+
     double each time. Set to 1 at the moment - so failed packets is ignored.
     """
     return 1
@@ -441,6 +452,7 @@ def DefaultBandwidthReportTimeOut():
 def DefaultNeedSuppliersPacketTimeOut():
     """
     If we need suppliers we will request it every 60 sec.
+
     Not used right now.
     """
     return 60
@@ -449,14 +461,18 @@ def DefaultNeedSuppliersPacketTimeOut():
 def DefaultDesiredSuppliers():
     """
     A starting number of suppliers for new users.
-    Definitely we want to have 64 by default, but we need to have much more alive users to do that.
+
+    Definitely we want to have 64 by default, but we need to have much
+    more alive users to do that.
     """
     return 4
 
 
 def DefaultLocaltesterLoop():
     """
-    The code in ``p2p.local_tester`` will check the customers files periodically.
+    The code in ``p2p.local_tester`` will check the customers files
+    periodically.
+
     This constant controls that - seconds between two calls.
     """
     return 20
@@ -524,8 +540,9 @@ def MinimumNeededBytes():
 
 def DefaultBackupBlockSize():
     """
-    Default block size in bytes, user can set this in settings.
-    We split a backed up data into blocks of equal size and
+    Default block size in bytes, user can set this in settings. We split a
+    backed up data into blocks of equal size and.
+
     perform RAID operation on every block - one by one.
     """
     return 16 * 1024 * 1024  # 16 MB
@@ -569,6 +586,7 @@ def BackupDBSynchronizeDelay():
 def MaxDeletedBackupIDsToKeep():
     """
     How many deleted backup IDs do we want to hold on to in backup db.
+
     Not used.
     """
     return 100
@@ -589,8 +607,8 @@ def ApplicationName():
 def ListFilesFormat():
     """
     Argument to ListFiles command to say format to return the data in.
-    Can be "Text" or "Compressed".
-    TODO: add "Encrypted" format
+
+    Can be "Text" or "Compressed". TODO: add "Encrypted" format
     """
     return "Compressed"
 
@@ -612,10 +630,11 @@ def HMAC_key_word():
 def DefaultRepo():
     """
     BitDust software can be updated from different "repositories".
-    Right now we have three locations for Windows (testing, development and stable)
-    and one for Linux (going to add another one).
-    This is to be able to run different code in the network and so be able to test new features
-    without any chances to broke the whole network.
+
+    Right now we have three locations for Windows (testing, development
+    and stable) and one for Linux (going to add another one). This is to
+    be able to run different code in the network and so be able to test
+    new features without any chances to broke the whole network.
     """
     return 'stable'
 
@@ -634,8 +653,8 @@ def DefaultRepoURL(repo='stable'):
 
 def FilesDigestsFilename():
     """
-    This file keeps MD5 checksum of all binary files for Windows release.
-    Every Windows repository have such file, this is link for "stable" repo::
+    This file keeps MD5 checksum of all binary files for Windows release. Every
+    Windows repository have such file, this is link for "stable" repo::
 
         http://bitdust.io/repo/stable/files
 
@@ -652,8 +671,8 @@ def FilesDigestsFilename():
 
 def CurrentVersionDigestsFilename():
     """
-    This file keeps a MD5 checksum of the file "files", see ``FilesDigestsFilename()``.
-    It is also placed in the Windows repository::
+    This file keeps a MD5 checksum of the file "files", see
+    ``FilesDigestsFilename()``. It is also placed in the Windows repository::
 
         http://bitdust.io/repo/stable/checksum
 
@@ -679,8 +698,7 @@ def LegalNickNameChars():
     """
     A set of correct chars that can be used for user account names.
     """
-    return set(
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,{}[]()@!$^&*=+")
+    return set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.,{}[]()@!$^&*=+")
 
 
 #------------------------------------------------------------------------------
@@ -690,6 +708,7 @@ def LegalNickNameChars():
 def BaseDirDefault():
     """
     A default location for BitDust data folder.
+
     All of the paths below should be under some base directory.
     """
     return os.path.join(os.path.expanduser('~'), '.bitdust')
@@ -731,7 +750,8 @@ def GetBaseDir():
 
 def BaseDir():
     """
-    Return current data folder location, also call ``init()`` to be sure all things were configured.
+    Return current data folder location, also call ``init()`` to be sure all
+    things were configured.
     """
     global _BaseDirPath
     init()
@@ -741,8 +761,10 @@ def BaseDir():
 def BaseDirPathFileName():
     """
     You can configure BitDust software to use another place for data folder.
-    Say you want to store BitDust files on another disk.
-    In the binary folder file "appdata" can be created and it will keep the path to the data folder.
+
+    Say you want to store BitDust files on another disk. In the binary
+    folder file "appdata" can be created and it will keep the path to
+    the data folder.
     """
     return os.path.join(bpio.getExecutableDir(), "appdata")
 
@@ -757,7 +779,9 @@ def DefaultRestoreDir():
 def WindowsBinDir():
     """
     Under Windows executable files is placed in the [BitDust data folder]/bin/.
-    This is because Windows Vista and later not allow to write to "Program files" folder.
+
+    This is because Windows Vista and later not allow to write to
+    "Program files" folder.
     """
     return os.path.join(BaseDir(), 'bin')
 
@@ -771,27 +795,33 @@ def MetaDataDir():
 
 def ConfigDir():
     """
+    
     """
     return os.path.join(BaseDir(), 'config')
 
 
 def TempDir():
     """
-    A place for temporary BitDust files, we really need some extra disk space to operate.
-    TODO: need to add some stuff to control how much extra space we use and be able limit that.
+    A place for temporary BitDust files, we really need some extra disk space
+    to operate.
+
+    TODO: need to add some stuff to control how much extra space we use
+    and be able limit that.
     """
     return os.path.join(BaseDir(), "temp")
 
 
 def IdentityCacheDir():
     """
-    See ``lib.identitycache`` module, this is a place to store user's identity files to have them on hands.
+    See ``lib.identitycache`` module, this is a place to store user's identity
+    files to have them on hands.
     """
     return os.path.join(BaseDir(), "identitycache")
 
 
 def IdentityServerDir():
     """
+    
     """
     return os.path.join(BaseDir(), 'identityserver')
 
@@ -817,6 +847,7 @@ def DefaultBackupsDBDir():
 def DefaultCustomersDir():
     """
     Here will be placed files uploaded by other users.
+
     Your customers will user your HDD to keep their personal data.
     """
     return os.path.join(BaseDir(), "customers")
@@ -880,6 +911,7 @@ def RatingsDir():
 
 def BlockChainDir():
     """
+    
     """
     return os.path.join(BaseDir(), 'blockchain')
 
@@ -909,7 +941,9 @@ def KeyFileNameLocation():
 
 def SupplierIDsFilename():
     """
-    IDs for places that store data for us. Keeps a list of IDURLs of our suppliers.
+    IDs for places that store data for us.
+
+    Keeps a list of IDURLs of our suppliers.
     """
     return os.path.join(MetaDataDir(), "supplierids")
 
@@ -923,7 +957,8 @@ def CustomerIDsFilename():
 
 def CorrespondentIDsFilename():
     """
-    People we get messages from and other stuff not related to backup/restore process.
+    People we get messages from and other stuff not related to backup/restore
+    process.
     """
     return os.path.join(MetaDataDir(), "correspondentids")
 
@@ -931,6 +966,7 @@ def CorrespondentIDsFilename():
 def LocalIdentityFilename():
     """
     A local copy of user's identity file is stored here.
+
     When doing any changes in the identity file - this appear here firstly.
     Further local identity file is propagated to the identity server
     and all our contacts so they got the fresh copy asap.
@@ -976,6 +1012,7 @@ def UserNameFilename():
 def UserConfigFilename():
     """
     File to keep a configurable user settings in XML format.
+
     See ``lib.userconfig`` module.
     """
     return os.path.join(MetaDataDir(), "userconfig")
@@ -984,7 +1021,9 @@ def UserConfigFilename():
 def GUIOptionsFilename():
     """
     A small file to keep GUI config.
-    For example windows positions and sizes after last execution of the program.
+
+    For example windows positions and sizes after last execution of the
+    program.
     """
     return os.path.join(MetaDataDir(), "guioptions")
 
@@ -992,50 +1031,57 @@ def GUIOptionsFilename():
 def UpdateSheduleFilename():
     """
     Under Windows software update process is made by bitstarter.exe file.
-    Periodically, the main file process "bitdust.exe" requests
-    the file "checksum" (from user configurable repository location)
-    to check for new software release of that repository.
-    Main process can restart itself thru bitstarter to be able to update the binaries.
-    User can set a schedule to check for updates in the settings.
+
+    Periodically, the main file process "bitdust.exe" requests the file
+    "checksum" (from user configurable repository location) to check for
+    new software release of that repository. Main process can restart
+    itself thru bitstarter to be able to update the binaries. User can
+    set a schedule to check for updates in the settings.
     """
     return os.path.join(MetaDataDir(), "updateshedule")
 
 
 def LocalPortFilename():
     """
-    This is a file to keep randomly generated port number
-    for HTTP server to provide a Web Access to BitDust main process.
-    See module ``web.webcontrol`` for more details.
-    This is old stuff, will be removed soon!
+    This is a file to keep randomly generated port number for HTTP server to
+    provide a Web Access to BitDust main process.
+
+    See module ``web.webcontrol`` for more details. This is old stuff,
+    will be removed soon!
     """
     return os.path.join(MetaDataDir(), 'localport')
 
 
 def LocalWSGIPortFilename():
     """
-    This is a file to keep randomly generated port number
-    for Django WSGI server.
-    This stuff creates a User Interface to the BitDust main process.
-    See module ``web.control`` for more details.
+    This is a file to keep randomly generated port number for Django WSGI
+    server.
+
+    This stuff creates a User Interface to the BitDust main process. See
+    module ``web.control`` for more details.
     """
     return os.path.join(MetaDataDir(), 'localwsgiport')
 
 
 def LocalXMLRPCPortFilename():
     """
+    
     """
     return os.path.join(MetaDataDir(), 'localxmlrpcport')
 
 
 def LocalJsonRPCPortFilename():
     """
+    
     """
     return os.path.join(MetaDataDir(), 'localjsonrpcport')
 
 
 def BackupInfoFileNameOld():
     """
-    Long time ago backup data base were stored in that file. Obsolete, see ``BackupIndexFileName()``..
+    Long time ago backup data base were stored in that file.
+
+    Obsolete, see ``BackupIndexFileName()``..
     """
     return "backup_info.xml"
 
@@ -1056,10 +1102,12 @@ def BackupInfoEncryptedFileName():
 
 def BackupIndexFileName():
     """
-    This is backup data base index file location.
-    This store folder and files names and locations with path ID's and some extra info.
-    Located in the file .bitdust/metadata/index .
-    Also this file is saved on suppliers in encrypted state.
+    This is backup data base index file location. This store folder and files
+    names and locations with path ID's and some extra info. Located in the
+    file.
+
+    .bitdust/metadata/index . Also this file is saved on suppliers in encrypted
+    state.
 
     TODO:
     - need to store files checksums
@@ -1093,6 +1141,7 @@ def BackupIndexFilePath():
 def SupplierPath(idurl, filename=None):
     """
     A location to given supplie's data.
+
     If ``filename`` is provided - return a full path to that file.
     Currently those data are stored for every supplier:
 
@@ -1101,10 +1150,7 @@ def SupplierPath(idurl, filename=None):
         - "listfiles" : a list of our local files stored on his machine
     """
     if filename is not None:
-        return os.path.join(
-            SuppliersDir(),
-            nameurl.UrlFilename(idurl),
-            filename)
+        return os.path.join(SuppliersDir(), nameurl.UrlFilename(idurl), filename)
     return os.path.join(SuppliersDir(), nameurl.UrlFilename(idurl))
 
 
@@ -1166,7 +1212,8 @@ def RepoFile():
 
 def VersionFile():
     """
-    A place for local copy of "checksum" file, see ``CurrentVersionDigestsFilename()``.
+    A place for local copy of "checksum" file, see
+    ``CurrentVersionDigestsFilename()``.
     """
     return os.path.join(MetaDataDir(), 'checksum')
 
@@ -1181,9 +1228,10 @@ def InfoFile():
 
 def RevisionNumberFile():
     """
-    We keep track of Subversion revision number and store it in the binary folder.
-    This is a sort of "product version".
-    Probably not very best idea, we need to use a widely used software version format.
+    We keep track of Subversion revision number and store it in the binary
+    folder. This is a sort of "product version". Probably not very best idea,
+    we need to use a widely used software version format.
+
     This is not used anymore - switched to ``VersionNumberFile()``.
     """
     return os.path.join(bpio.getExecutableDir(), 'revnum')
@@ -1191,12 +1239,14 @@ def RevisionNumberFile():
 
 def VersionNumberFile():
     """
+    
     """
     return os.path.join(bpio.getExecutableDir(), 'version')
 
 
 def CheckSumFile():
     """
+    
     """
     return os.path.join(bpio.getExecutableDir(), 'checksum')
 
@@ -1210,6 +1260,7 @@ def CustomersSpaceFile():
 
 def CustomersUsedSpaceFile():
     """
+    
     """
     return os.path.join(MetaDataDir(), 'spaceused')
 
@@ -1225,7 +1276,8 @@ def BalanceFile():
 
 def CertificateFiles():
     """
-    The idea is to have a global certificate for BitDust server, just like https works.
+    The idea is to have a global certificate for BitDust server, just like
+    https works.
     """
     return [os.path.join(MetaDataDir(), 'bitdust.cer'),
             os.path.join('.', 'bitdust.cer'),
@@ -1256,9 +1308,12 @@ def WindowsMainScritpFileName():
 
 def WindowsStarterFileURL(repo=DefaultRepo()):
     """
-    Return a public URL of the "bitstarter.exe" file, according to given ``repo``.
-    When need to modify the starter code need to place it in the repository along with other binaries.
-    It will be downloaded automatically by all users and updated.
+    Return a public URL of the "bitstarter.exe" file, according to given
+    ``repo``.
+
+    When need to modify the starter code need to place it in the
+    repository along with other binaries. It will be downloaded
+    automatically by all users and updated.
     """
     return DefaultRepoURL(repo) + WindowsStarterFileName()
 
@@ -1266,7 +1321,9 @@ def WindowsStarterFileURL(repo=DefaultRepo()):
 def getIconLaunchFilename():
     """
     Not used.
-    For Windows platforms this should target to executable file to run when clicked on Desktop icon.
+
+    For Windows platforms this should target to executable file to run
+    when clicked on Desktop icon.
     """
     return os.path.join(bpio.getExecutableDir(), 'bitdust.exe')
 
@@ -1287,12 +1344,14 @@ def IconFilename():
 
 def StyleSheetsFilename():
     """
+    
     """
     return 'styles.css'
 
 
 def StyleSheetsPath():
     """
+    
     """
     return os.path.join(bpio.getExecutableDir(), 'html', StyleSheetsFilename())
 
@@ -1301,9 +1360,8 @@ def IconsFolderPath():
     """
     A folder name where application icons is stored.
 
-    PREPRO:
-    maybe we better use another name: "media",
-    because we may need not only "icons" but also other data files
+    PREPRO: maybe we better use another name: "media", because we may
+    need not only "icons" but also other data files
     """
     return os.path.join(bpio.getExecutableDir(), 'icons')
 
@@ -1328,12 +1386,14 @@ def FontImageFile():
 
 def DefaultXMLRPCPort():
     """
+    
     """
     return 8082
 
 
 def DefaultJsonRPCPort():
     """
+    
     """
     return 8083
 
@@ -1358,7 +1418,8 @@ def IdentityServerPort():
 
 def IdentityWebPort():
     """
-    Our public identity servers use standard web port number to publish identity files.
+    Our public identity servers use standard web port number to publish
+    identity files.
     """
     return 8084
 
@@ -1411,14 +1472,16 @@ def getCustomersFilesDir():
 
 def getCustomerFilesDir(idurl):
     """
-    Alias to get a given customer's files inside our donated location from settings.
+    Alias to get a given customer's files inside our donated location from
+    settings.
     """
     return os.path.join(getCustomersFilesDir(), nameurl.UrlFilename(idurl))
 
 
 def getLocalBackupsDir():
     """
-    Alias to get local backups folder from settings, see ``DefaultBackupsDBDir()``.
+    Alias to get local backups folder from settings, see
+    ``DefaultBackupsDBDir()``.
     """
     return config.conf().getData('paths/backups').strip()
 
@@ -1480,15 +1543,15 @@ def getProxyPort():
 
 def setProxySettings(d):
     """
-    Set proxy settings via dictionary, see ``lib.net_misc.detect_proxy_settings`` for more details.
+    Set proxy settings via dictionary, see
+    ``lib.net_misc.detect_proxy_settings`` for more details.
     """
     if 'host' in d:
         config.conf().setData('services/network/proxy/host', str(d.get('host', '')))
     if 'port' in d:
         config.conf().setData('services/network/proxy/port', str(d.get('port', '')))
     if 'username' in d:
-        config.conf().setData('services/network/proxy.network-proxy-username',
-                              str(d.get('username', '')))
+        config.conf().setData('services/network/proxy.network-proxy-username', str(d.get('username', '')))
     if 'password' in d:
         config.conf().setData('services/network/proxy/password', str(d.get('password', '')))
     if 'ssl' in d:
@@ -1509,7 +1572,8 @@ def getProxySettingsDict():
 
 def update_proxy_settings():
     """
-    Calls ``lib.net_misc.detect_proxy_settings()`` to check current system proxy server settings.
+    Calls ``lib.net_misc.detect_proxy_settings()`` to check current system
+    proxy server settings.
     """
     from lib import net_misc
     net_misc.init()
@@ -1538,22 +1602,19 @@ def getBandOutLimit():
     """
     This is a current outgoing bandwidth limit in bytes per second.
     """
-    return config.conf().getInt(
-        'services/network/send-limit',
-        DefaultBandwidthOutLimit())
+    return config.conf().getInt('services/network/send-limit', DefaultBandwidthOutLimit())
 
 
 def getBandInLimit():
     """
     This is a current incoming bandwidth limit in bytes per second.
     """
-    return config.conf().getInt(
-        'services/network/receive-limit',
-        DefaultBandwidthInLimit())
+    return config.conf().getInt('services/network/receive-limit', DefaultBandwidthInLimit())
 
 
 def enableIdServer(enable=None):
     """
+    
     """
     if enable is None:
         return config.conf().getBool('services/id-server/enabled')
@@ -1562,36 +1623,42 @@ def enableIdServer(enable=None):
 
 def getIdServerHost():
     """
+    
     """
     return config.conf().getData("services/id-server/host").strip()
 
 
 def setIdServerHost(hostname_or_ip):
     """
+    
     """
     return config.conf().setData("services/id-server/host", hostname_or_ip)
 
 
 def getIdServerWebPort():
     """
+    
     """
     return config.conf().getInt("services/id-server/web-port", IdentityWebPort())
 
 
 def setIdServerWebPort(web_port):
     """
+    
     """
     return config.conf().setInt("services/id-server/web-port", web_port)
 
 
 def getIdServerTCPPort():
     """
+    
     """
     return config.conf().getInt("services/id-server/tcp-port", IdentityServerPort())
 
 
 def setIdServerTCPPort(tcp_port):
     """
+    
     """
     return config.conf().setInt("services/id-server/tcp-port", tcp_port)
 
@@ -1610,6 +1677,7 @@ def getTransportPort(proto):
 def enableTCP(enable=None):
     """
     Switch on/off transport_tcp in the settings or get current state.
+
     Note : transport_tcp is always available for identites to id server.
     """
     if enable is None:
@@ -1619,7 +1687,8 @@ def enableTCP(enable=None):
 
 def enableTCPsending(enable=None):
     """
-    Switch on/off sending over transport_tcp in the settings or get current state.
+    Switch on/off sending over transport_tcp in the settings or get current
+    state.
     """
     if enable is None:
         return config.conf().getBool('services/tcp-transport/sending-enabled')
@@ -1628,7 +1697,8 @@ def enableTCPsending(enable=None):
 
 def enableTCPreceiving(enable=None):
     """
-    Switch on/off receiving over transport_tcp in the settings or get current state.
+    Switch on/off receiving over transport_tcp in the settings or get current
+    state.
     """
     if enable is None:
         return config.conf().getBool('services/tcp-transport/receiving-enabled')
@@ -1708,7 +1778,8 @@ def enablePROXY(enable=None):
 
 def enablePROXYsending(enable=None):
     """
-    Switch on/off sending over proxy transport in the settings or get current state.
+    Switch on/off sending over proxy transport in the settings or get current
+    state.
     """
     if enable is None:
         return config.conf().getBool('services/proxy-transport/sending-enabled')
@@ -1717,7 +1788,8 @@ def enablePROXYsending(enable=None):
 
 def enablePROXYreceiving(enable=None):
     """
-    Switch on/off receiving over proxy transport in the settings or get current state.
+    Switch on/off receiving over proxy transport in the settings or get current
+    state.
     """
     if enable is None:
         return config.conf().getBool('services/proxy-transport/receiving-enabled')
@@ -1726,16 +1798,16 @@ def enablePROXYreceiving(enable=None):
 
 def getTransportPriority(proto):
     """
+    
     """
     return config.conf().getInt('services/%s-transport/priority' % proto, 1)
 
 
 def setTransportPriority(proto, value):
     """
+    
     """
-    return config.conf().setInt(
-        'services/%s-transport/priority' %
-        proto, value)
+    return config.conf().setInt('services/%s-transport/priority' % proto, value)
 
 
 def setDHTPort(port):
@@ -1767,7 +1839,8 @@ def transportIsEnabled(proto):
 
 def transportIsInstalled(proto):
     """
-    This should return True if given transport have been configured and all needed config info is available.
+    This should return True if given transport have been configured and all
+    needed config info is available.
     """
     return True
 
@@ -1796,6 +1869,7 @@ def transportSendingIsEnabled(proto):
 
 def enableProxyServer(enable=None):
     """
+    
     """
     if enable is None:
         return config.conf().getBool('services/proxy-server/enabled')
@@ -1835,8 +1909,8 @@ def enableWebStream(enable=None):
 
 def enableWebTraffic(enable=None):
     """
-    Get current state or enable/disable using of HTTP server to print packets traffic,
-    need to restart BitDust to take place changes.
+    Get current state or enable/disable using of HTTP server to print packets
+    traffic, need to restart BitDust to take place changes.
     """
     if enable is None:
         return config.conf().getBool('logs/traffic-enabled')
@@ -1859,7 +1933,8 @@ def getWebTrafficPort():
 
 def enableMemoryProfile(enable=None):
     """
-    Get current state or enable/disable using of HTTP server to momory profiling.
+    Get current state or enable/disable using of HTTP server to momory
+    profiling.
     """
     if enable is None:
         return config.conf().getBool('logs/memprofile-enabled')
@@ -1890,6 +1965,7 @@ def getNeededString():
 
 def getNeededBytes():
     """
+    
     """
     return diskspace.GetBytesFromString(getNeededString())
 
@@ -1903,6 +1979,7 @@ def getDonatedString():
 
 def getDonatedBytes():
     """
+    
     """
     return diskspace.GetBytesFromString(getDonatedString())
 
@@ -1910,7 +1987,9 @@ def getDonatedBytes():
 def getEmergencyEmail():
     """
     Get a user email address from settings.
-    User can set that to be able to receive email notification in case of some troubles with his backups.
+
+    User can set that to be able to receive email notification in case
+    of some troubles with his backups.
     """
     # return config.conf().getData('emergency/email')
     # TODO: remove this after get rid of webcontrol.py
@@ -1987,24 +2066,28 @@ def getEmergencyMethods():
 
 def getNickName():
     """
+    
     """
     return config.conf().getData('personal/nickname')
 
 
 def setNickName(nickname):
     """
+    
     """
     config.conf().setData('personal/nickname', nickname.strip())
 
 
 def getEmail():
     """
+    
     """
     return config.conf().getData('personal/email')
 
 
 def setEmail(nickname):
     """
+    
     """
     config.conf().setData('personal/email', nickname.strip())
 
@@ -2019,6 +2102,7 @@ def getUpdatesMode():
 
 def setUpdatesMode(mode):
     """
+    
     """
     # TODO: remove this after get rid of webcontrol.py
 
@@ -2051,7 +2135,9 @@ def setUpdatesSheduleData(raw_shedule):
 def getBackupsMaxCopies():
     """
     Return a number of copies to keep for every backed up data.
-    The oldest copies (over that amount) will be removed from data base and remote suppliers.
+
+    The oldest copies (over that amount) will be removed from data base
+    and remote suppliers.
     """
     return config.conf().getInt('services/backups/max-copies', 2)
 
@@ -2065,13 +2151,15 @@ def getBackupsKeepLocalCopies():
 
 def getGeneralWaitSuppliers():
     """
-    Return True if user want to be sure that suppliers are reliable enough before removing the local backups.
+    Return True if user want to be sure that suppliers are reliable enough
+    before removing the local backups.
     """
     return config.conf().getBool('services/backups/wait-suppliers-enabled')
 
 
 def getBackupBlockSizeStr():
     """
+    
     """
     return config.conf().getData('services/backups/block-size')
 
@@ -2085,6 +2173,7 @@ def getBackupBlockSize():
 
 def getBackupMaxBlockSizeStr():
     """
+    
     """
     return config.conf().getData('services/backups/max-block-size')
 
@@ -2100,23 +2189,20 @@ def setBackupBlockSize(block_size):
     """
     Set current backup block size in the memory to have fast access.
     """
-    return config.conf().setData(
-        'services/backups/block-size',
-        diskspace.MakeStringFromBytes(block_size))
+    return config.conf().setData('services/backups/block-size', diskspace.MakeStringFromBytes(block_size))
 
 
 def setBackupMaxBlockSize(block_size):
     """
     Set current maximum backup block size in the memory to have fast access.
     """
-    return config.conf().setData(
-        'services/backups/max-block-size',
-        diskspace.MakeStringFromBytes(block_size))
+    return config.conf().setData('services/backups/max-block-size', diskspace.MakeStringFromBytes(block_size))
 
 
 def getPrivateKeySize():
     """
-    Return Private Key size from settings, but typically Private Key is generated only once during install stage.
+    Return Private Key size from settings, but typically Private Key is
+    generated only once during install stage.
     """
     return config.conf().getInt('personal/private-key-size')
 
@@ -2130,7 +2216,9 @@ def setPrivateKeySize(pksize):
 
 def enableUPNP(enable=None):
     """
-    Return True if user want to try to config his router to config port forwarding automatically.
+    Return True if user want to try to config his router to config port
+    forwarding automatically.
+
     If ``enable`` is not None - rewrite current value in the settings.
     """
     if enable is None:
@@ -2156,7 +2244,9 @@ def enableBroadcastRouting(enable=None):
 
 def RenameBaseDir(newdir):
     """
-    The idea was to be able to move BitDust data folder to another place if user want that.
+    The idea was to be able to move BitDust data folder to another place if
+    user want that.
+
     Not used.
     """
     global _BaseDirPath
@@ -2186,7 +2276,9 @@ def RenameBaseDir(newdir):
 
 def _initBaseDir(base_dir=None):
     """
-    Do some validation and create needed data folders if they are not exist yet.
+    Do some validation and create needed data folders if they are not exist
+    yet.
+
     You can specify another location for data files.
     """
     global _BaseDirPath
@@ -2200,9 +2292,7 @@ def _initBaseDir(base_dir=None):
 
     # if we have a file "appdata" in current folder - take the place from there
     if os.path.isfile(BaseDirPathFileName()):
-        path = os.path.abspath(
-            bpio.ReadBinaryFile(
-                BaseDirPathFileName()).strip())
+        path = os.path.abspath(bpio.ReadBinaryFile(BaseDirPathFileName()).strip())
         if os.path.isdir(path):
             _BaseDirPath = path
             if not os.path.exists(_BaseDirPath):
@@ -2216,12 +2306,7 @@ def _initBaseDir(base_dir=None):
     # /..
     #   /.bitdust - data files
     #   /bitdust  - binary files
-    path1 = str(
-        os.path.abspath(
-            os.path.join(
-                bpio.getExecutableDir(),
-                '..',
-                '.bitdust')))
+    path1 = str(os.path.abspath(os.path.join(bpio.getExecutableDir(), '..', '.bitdust')))
     # and default path will have lower priority
     path2 = default_path
 
@@ -2232,8 +2317,7 @@ def _initBaseDir(base_dir=None):
     if os.path.isdir(path1):
         _BaseDirPath = path1
 
-    # if we did not found "metadata" subfolder - use default path, new copy of
-    # BitDust
+    # if we did not found "metadata" subfolder - use default path, new copy of BitDust
     if not os.path.isdir(MetaDataDir()):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
@@ -2241,11 +2325,7 @@ def _initBaseDir(base_dir=None):
         return
 
     # if we did not found our key - use default path, new copy of BitDust
-    if not os.access(
-            KeyFileName(),
-            os.R_OK) or not os.access(
-            KeyFileNameLocation(),
-            os.R_OK):
+    if not os.access(KeyFileName(), os.R_OK) or not os.access(KeyFileNameLocation(), os.R_OK):
         _BaseDirPath = path2
         if not os.path.exists(_BaseDirPath):
             bpio._dirs_make(_BaseDirPath)
@@ -2289,16 +2369,14 @@ def _checkMetaDataDirectory():
     Check that the metadata directory exists.
     """
     if not os.path.exists(MetaDataDir()):
-        lg.out(
-            8,
-            'settings.init want to create metadata folder: ' +
-            MetaDataDir())
+        lg.out(8, 'settings.init want to create metadata folder: ' + MetaDataDir())
         bpio._dirs_make(MetaDataDir())
 
 
 def _setUpDefaultSettings():
     """
     Configure default values for all settings.
+
     Every option must have a default value!
     """
     config.conf().setDefaultValue('logs/debug-level', defaultDebugLevel())
@@ -2316,9 +2394,7 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('paths/receipts', '')
     config.conf().setDefaultValue('paths/restore', '')
 
-    config.conf().setDefaultValue(
-        'personal/private-key-size',
-        DefaultPrivateKeySize())
+    config.conf().setDefaultValue('personal/private-key-size', DefaultPrivateKeySize())
     config.conf().setDefaultValue('personal/betatester', 'false')
     config.conf().setDefaultValue('personal/email', '')
     config.conf().setDefaultValue('personal/name', '')
@@ -2330,31 +2406,22 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/backup-db/enabled', 'true')
 
     config.conf().setDefaultValue('services/backups/enabled', 'true')
-    config.conf().setDefaultValue(
-        'services/backups/block-size',
-        diskspace.MakeStringFromBytes(
-            DefaultBackupBlockSize()))
-    config.conf().setDefaultValue(
-        'services/backups/max-block-size',
-        diskspace.MakeStringFromBytes(
-            DefaultBackupMaxBlockSize()))
+    config.conf().setDefaultValue('services/backups/block-size',
+                                  diskspace.MakeStringFromBytes(DefaultBackupBlockSize()))
+    config.conf().setDefaultValue('services/backups/max-block-size',
+                                  diskspace.MakeStringFromBytes(DefaultBackupMaxBlockSize()))
     config.conf().setDefaultValue('services/backups/max-copies', '2')
     config.conf().setDefaultValue('services/backups/keep-local-copies-enabled', 'false')
     config.conf().setDefaultValue('services/backups/wait-suppliers-enabled', 'true')
 
     config.conf().setDefaultValue('services/broadcasting/enabled', 'true')
     config.conf().setDefaultValue('services/broadcasting/routing-enabled', 'false')
-    config.conf().setDefaultValue(
-        'services/broadcasting/max-broadcast-connections', '10')
+    config.conf().setDefaultValue('services/broadcasting/max-broadcast-connections', '10')
 
     config.conf().setDefaultValue('services/customer/enabled', 'true')
-    config.conf().setDefaultValue(
-        'services/customer/needed-space',
-        diskspace.MakeStringFromBytes(
-            DefaultNeededBytes()))
-    config.conf().setDefaultValue(
-        'services/customer/suppliers-number',
-        DefaultDesiredSuppliers())
+    config.conf().setDefaultValue('services/customer/needed-space',
+                                  diskspace.MakeStringFromBytes(DefaultNeededBytes()))
+    config.conf().setDefaultValue('services/customer/suppliers-number', DefaultDesiredSuppliers())
 
     config.conf().setDefaultValue('services/customer-patrol/enabled', 'true')
 
@@ -2370,9 +2437,7 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/id-server/enabled', 'false')
     config.conf().setDefaultValue('services/id-server/host', '')
-    config.conf().setDefaultValue(
-        'services/id-server/tcp-port',
-        IdentityServerPort())
+    config.conf().setDefaultValue('services/id-server/tcp-port', IdentityServerPort())
     config.conf().setDefaultValue('services/id-server/web-port', IdentityWebPort())
 
     config.conf().setDefaultValue('services/identity-propagate/enabled', 'true')
@@ -2392,12 +2457,8 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/network/proxy/port', '')
     config.conf().setDefaultValue('services/network/proxy/ssl', 'false')
     config.conf().setDefaultValue('services/network/proxy/username', '')
-    config.conf().setDefaultValue(
-        'services/network/receive-limit',
-        DefaultBandwidthInLimit())
-    config.conf().setDefaultValue(
-        'services/network/send-limit',
-        DefaultBandwidthOutLimit())
+    config.conf().setDefaultValue('services/network/receive-limit', DefaultBandwidthInLimit())
+    config.conf().setDefaultValue('services/network/send-limit', DefaultBandwidthOutLimit())
 
     config.conf().setDefaultValue('services/nodes-lookup/enabled', 'true')
 
@@ -2416,23 +2477,18 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/proxy-transport/my-original-identity', '')
     config.conf().setDefaultValue('services/proxy-transport/current-router', '')
     config.conf().setDefaultValue('services/proxy-transport/preferred-routers', '')
-    config.conf().setDefaultValue(
-        'services/proxy-transport/router-lifetime-seconds', 600)
+    config.conf().setDefaultValue('services/proxy-transport/router-lifetime-seconds', 600)
 
     config.conf().setDefaultValue('services/rebuilding/enabled', 'true')
 
     config.conf().setDefaultValue('services/restores/enabled', 'true')
 
     config.conf().setDefaultValue('services/supplier/enabled', 'true')
-    config.conf().setDefaultValue(
-        'services/supplier/donated-space',
-        diskspace.MakeStringFromBytes(
-            DefaultDonatedBytes()))
+    config.conf().setDefaultValue('services/supplier/donated-space',
+                                  diskspace.MakeStringFromBytes(DefaultDonatedBytes()))
 
     config.conf().setDefaultValue('services/tcp-connections/enabled', 'true')
-    config.conf().setDefaultValue(
-        'services/tcp-connections/tcp-port',
-        DefaultTCPPort())
+    config.conf().setDefaultValue('services/tcp-connections/tcp-port', DefaultTCPPort())
     config.conf().setDefaultValue('services/tcp-connections/upnp-enabled', 'true')
 
     config.conf().setDefaultValue('services/tcp-transport/enabled', 'true')
@@ -2457,11 +2513,8 @@ def _createNotExisingSettings():
         if not config.conf().exist(key):
             value = config.conf().getDefaultValue(key)
             config.conf().setData(key, value)
-            lg.out(
-                2, '    created option %s with default value : [%s]' %
-                (key, value))
-            # print '    created option %s with default value : [%s]' % (key,
-            # value)
+            lg.out(2, '    created option %s with default value : [%s]' % (key, value))
+            # print '    created option %s with default value : [%s]' % (key, value)
 
 
 def _checkStaticDirectories():
@@ -2498,18 +2551,12 @@ def _checkCustomDirectories():
     if getCustomersFilesDir() == '':
         config.conf().setData('paths/customers', DefaultCustomersDir())
     if not os.path.exists(getCustomersFilesDir()):
-        lg.out(
-            6,
-            'settings.init want to create folder: ' +
-            getCustomersFilesDir())
+        lg.out(6, 'settings.init want to create folder: ' + getCustomersFilesDir())
         os.makedirs(getCustomersFilesDir())
     if getLocalBackupsDir() == '':
         config.conf().setData('paths/backups', DefaultBackupsDBDir())
     if not os.path.exists(getLocalBackupsDir()):
-        lg.out(
-            6,
-            'settings.init want to create folder: ' +
-            getLocalBackupsDir())
+        lg.out(6, 'settings.init want to create folder: ' + getLocalBackupsDir())
         os.makedirs(getLocalBackupsDir())
     if getMessagesDir() == '':
         config.conf().setData('paths/messages', DefaultMessagesDir())
@@ -2524,7 +2571,7 @@ def _checkCustomDirectories():
     if getRestoreDir() == '':
         config.conf().setData('paths/restore', DefaultRestoreDir())
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     init()

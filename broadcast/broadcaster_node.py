@@ -22,7 +22,8 @@
 
 
 """
-.. module:: broadcaster_node
+.. module:: broadcaster_node.
+
 .. role:: red
 
 BitDust broadcaster_node() Automat
@@ -81,8 +82,7 @@ def A(event=None, arg=None):
         return _BroadcasterNode
     if _BroadcasterNode is None:
         # set automat name and starting state here
-        _BroadcasterNode = BroadcasterNode(
-            'broadcaster_node', 'AT_STARTUP', _DebugLevel, _Debug)
+        _BroadcasterNode = BroadcasterNode('broadcaster_node', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _BroadcasterNode.automat(event, arg)
     return _BroadcasterNode
@@ -92,7 +92,8 @@ def A(event=None, arg=None):
 
 class BroadcasterNode(automat.Automat):
     """
-    This class implements all the functionality of the ``broadcaster_node()`` state machine.
+    This class implements all the functionality of the ``broadcaster_node()``
+    state machine.
     """
 
     timers = {
@@ -111,7 +112,8 @@ class BroadcasterNode(automat.Automat):
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'AT_STARTUP':
             if event == 'init':
@@ -200,9 +202,8 @@ class BroadcasterNode(automat.Automat):
         Action method.
         """
         from broadcast import broadcasters_finder
-        broadcasters_finder.A(
-            'start', (self.automat, 'route', list(
-                self.connected_broadcasters)))
+        broadcasters_finder.A('start',
+                              (self.automat, 'route', list(self.connected_broadcasters)))
 
     def doAddBroadcaster(self, arg):
         """
@@ -218,10 +219,7 @@ class BroadcasterNode(automat.Automat):
         self.connected_broadcasters.append(arg)
         self.last_success_action_time = time.time()
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'broadcaster_node.doAddBroadcaster %s joined !!!!!!!!' %
-                arg)
+            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster %s joined !!!!!!!!' % arg)
 
     def doRemoveBroadcaster(self, arg):
         """
@@ -232,10 +230,7 @@ class BroadcasterNode(automat.Automat):
             return
         self.connected_broadcasters.remove(arg)
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'broadcaster_node.doRemoveBroadcaster %s now disconnected' %
-                arg)
+            lg.out(_DebugLevel, 'broadcaster_node.doRemoveBroadcaster %s now disconnected' % arg)
 
     def doEraseBroadcasters(self, arg):
         """
@@ -251,18 +246,13 @@ class BroadcasterNode(automat.Automat):
         msg, newpacket = arg
         msgid = msg['id']
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'broadcaster_node.doCheckAndSendForward %s' %
-                msgid)
+            lg.out(_DebugLevel, 'broadcaster_node.doCheckAndSendForward %s' % msgid)
         self.last_success_action_time = time.time()
         # skip broadcasting if this message was already sent
         if msgid in self.messages_sent:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '        resent skipped, %s was already sent to my broadcasters' %
-                    msgid)
+                lg.out(_DebugLevel,
+                       '        resent skipped, %s was already sent to my broadcasters' % msgid)
 #             if msgid not in self.messages_acked:
 #                 p2p_service.SendAck(newpacket, '0')
 #             else:
@@ -270,23 +260,19 @@ class BroadcasterNode(automat.Automat):
             return
         # if some listeners connected - send to them
         for listener_idurl, scope in self.listeners.items():
-            lg.out(
-                4, '           test %s:%s for %s' %
-                (listener_idurl, scope, msg['owner']))
+            lg.out(4, '           test %s:%s for %s' % (listener_idurl, scope, msg['owner']))
             # but check if they really need that message
             # listener can set a scope, so he will get this broadcasting
             # only if creator of that message is listed in scope
             if not scope or msg['owner'] in scope:
-                outpacket = broadcast_service.packet_for_listener(
-                    listener_idurl, msg)
+                outpacket = broadcast_service.packet_for_listener(listener_idurl, msg)
                 p2p_service.SendBroadcastMessage(outpacket)
         # fire broadcast listening callback
         if self.incoming_broadcast_message_callback is not None:
             self.incoming_broadcast_message_callback(msg)
         # finally broadcast further
         for broadcaster_idurl in self.connected_broadcasters:
-            outpacket = broadcast_service.packet_for_broadcaster(
-                broadcaster_idurl, msg)
+            outpacket = broadcast_service.packet_for_broadcaster(broadcaster_idurl, msg)
             p2p_service.SendBroadcastMessage(outpacket)
         self.messages_sent[msgid] = int(time.time())
 
@@ -298,10 +284,7 @@ class BroadcasterNode(automat.Automat):
         msg, newpacket = arg
         msgid = msg['id']
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'broadcaster_node.doBroadcastMessage %s' %
-                msgid)
+            lg.out(_DebugLevel, 'broadcaster_node.doBroadcastMessage %s' % msgid)
         if msgid in self.messages_sent:
             lg.warn('CRITICAL, found same message already broadcasted !!!')
             return
@@ -310,9 +293,7 @@ class BroadcasterNode(automat.Automat):
             if listener_idurl == newpacket.OwnerID:
                 # skip this listener
                 continue
-            lg.out(
-                4, '           test %s:%s for %s' %
-                (listener_idurl, scope, msg['owner']))
+            lg.out(4, '           test %s:%s for %s' % (listener_idurl, scope, msg['owner']))
             # but check if they really need that message
             # listener can set a scope, so he will get this broadcasting
             # only if creator of that message is listed in scope
@@ -345,7 +326,7 @@ class BroadcasterNode(automat.Automat):
         del _BroadcasterNode
         _BroadcasterNode = None
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def add_listener(self, listener_idurl, scope_as_string):
         try:
@@ -354,9 +335,7 @@ class BroadcasterNode(automat.Automat):
             lg.exc(scope_as_string)
             return
         if listener_idurl in self.connected_broadcasters:
-            lg.warn(
-                '%s already connected as broadcaster, can not set it as listener' %
-                listener_idurl)
+            lg.warn('%s already connected as broadcaster, can not set it as listener' % listener_idurl)
             return
         self.listeners[listener_idurl] = scope
 
@@ -366,7 +345,7 @@ class BroadcasterNode(automat.Automat):
             return
         self.listeners.pop(listener_idurl)
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
@@ -378,16 +357,12 @@ class BroadcasterNode(automat.Automat):
                 return False
             if msg['id'] in self.messages_sent:
                 if _Debug:
-                    lg.out(
-                        _DebugLevel,
-                        'broadcaster_node._on_inbox_packet SKIPPED, %s already broadcasted' %
-                        msg['id'])
+                    lg.out(_DebugLevel,
+                           'broadcaster_node._on_inbox_packet SKIPPED, %s already broadcasted' % msg['id'])
                 return True
             if msg['owner'] in self.listeners:
                 if msg['owner'] in self.connected_broadcasters:
-                    lg.warn(
-                        '%s present in both lists: listeners and broadcasters!!!' %
-                        msg['owner'])
+                    lg.warn('%s present in both lists: listeners and broadcasters!!!' % msg['owner'])
                     return True
                 # message from listener - start broadcasting
                 self.automat('new-outbound-message', (msg, newpacket))

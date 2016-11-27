@@ -22,7 +22,8 @@
 
 
 """
-.. module:: broadcast_listener
+.. module:: broadcast_listener.
+
 .. role:: red
 
 BitDust broadcast_listener() Automat
@@ -75,8 +76,7 @@ def A(event=None, arg=None):
         return _BroadcastListener
     if _BroadcastListener is None:
         # set automat name and starting state here
-        _BroadcastListener = BroadcastListener(
-            'broadcast_listener', 'AT_STARTUP', _DebugLevel, _Debug)
+        _BroadcastListener = BroadcastListener('broadcast_listener', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _BroadcastListener.automat(event, arg)
     return _BroadcastListener
@@ -86,20 +86,22 @@ def A(event=None, arg=None):
 
 class BroadcastListener(automat.Automat):
     """
-    This class implements all the functionality of the ``broadcast_listener()`` state machine.
+    This class implements all the functionality of the ``broadcast_listener()``
+    state machine.
     """
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of broadcast_listener() machine.
+        Method to initialize additional variables and flags at creation phase
+        of broadcast_listener() machine.
         """
         self.broadcaster_idurl = None
         self.incoming_broadcast_message_callback = None
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         #--- AT_STARTUP
         if self.state == 'AT_STARTUP':
@@ -157,9 +159,8 @@ class BroadcastListener(automat.Automat):
         scope = arg
         if not scope:
             scope = []
-        broadcasters_finder.A(
-            'start', (self.automat, 'listen %s' %
-                      json.dumps(scope), []))
+        broadcasters_finder.A('start',
+                              (self.automat, 'listen %s' % json.dumps(scope), []))
 
     def doSetBroadcaster(self, arg):
         """
@@ -201,7 +202,7 @@ class BroadcastListener(automat.Automat):
         del _BroadcastListener
         _BroadcastListener = None
 
-    #-------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
 
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
@@ -217,7 +218,6 @@ class BroadcastListener(automat.Automat):
                 self.automat('incoming-message', (msg, newpacket))
                 return True
             else:
-                lg.warn(
-                    'received broadcast message from another broadcaster? : %s != %s' %
-                    (newpacket.CreatorID, self.broadcaster_idurl))
+                lg.warn('received broadcast message from another broadcaster? : %s != %s' % (
+                    newpacket.CreatorID, self.broadcaster_idurl))
         return False

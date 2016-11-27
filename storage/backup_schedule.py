@@ -27,7 +27,7 @@
 #
 
 """
-.. module:: backup_schedule
+.. module:: backup_schedule.
 
 A set of methods to run backups at given intervals, used to provide scheduled backups.
 
@@ -62,10 +62,7 @@ def shutdown():
         try:
             task.cancel()
         except:
-            lg.out(
-                1,
-                'backup_schedule.shutdown ERROR can not stop task for ' +
-                str(dirName))
+            lg.out(1, 'backup_schedule.shutdown ERROR can not stop task for ' + str(dirName))
             lg.exc()
         lg.out(4, 'backup_schedule.shutdown canceled: ' + str(dirName))
 
@@ -385,7 +382,7 @@ def debugWrite(debugtext):  # useful when debugging this module, otherwise don't
 #        'details':      str(t[3]), }
 
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 # def main():

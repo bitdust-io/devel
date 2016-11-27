@@ -45,7 +45,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 """
-Parallel Python Software, PP Transport
+Parallel Python Software, PP Transport.
 
 http://www.parallelpython.com - updates, documentation, examples and support
 forums
@@ -104,7 +104,8 @@ class Transport(object):
 
 
 class CTransport(Transport):
-    """Cached transport
+    """
+    Cached transport.
     """
     rcache = {}
 

@@ -31,7 +31,9 @@ import constants
 
 
 class BucketFull(Exception):
-    """ Raised when the bucket is full """
+    """
+    Raised when the bucket is full.
+    """
 
 
 class KBucket(object):
@@ -51,7 +53,8 @@ class KBucket(object):
         self._contacts = list()
 
     def addContact(self, contact):
-        """ Add contact to _contact list in the right order. This will move the
+        """
+        Add contact to _contact list in the right order. This will move the
         contact to the end of the k-bucket if it is already present.
 
         @raise kademlia.kbucket.BucketFull: Raised when the bucket is full and
@@ -72,12 +75,15 @@ class KBucket(object):
             raise BucketFull("No space in bucket to insert contact")
 
     def getContact(self, contactID):
-        """ Get the contact specified node ID"""
+        """
+        Get the contact specified node ID.
+        """
         index = self._contacts.index(contactID)
         return self._contacts[index]
 
     def getContacts(self, count=-1, excludeContact=None):
-        """ Returns a list containing up to the first count number of contacts
+        """
+        Returns a list containing up to the first count number of contacts.
 
         @param count: The amount of contacts to return (if 0 or less, return
                       all contacts)
@@ -125,7 +131,8 @@ class KBucket(object):
         return contactList
 
     def removeContact(self, contact):
-        """ Remove given contact from list
+        """
+        Remove given contact from list.
 
         @param contact: The contact to remove, or a string containing the
                         contact's node ID
@@ -136,10 +143,10 @@ class KBucket(object):
         self._contacts.remove(contact)
 
     def keyInRange(self, key):
-        """ Tests whether the specified key (i.e. node ID) is in the range
-        of the 160-bit ID space covered by this k-bucket (in otherwords, it
-        returns whether or not the specified key should be placed in this
-        k-bucket)
+        """
+        Tests whether the specified key (i.e. node ID) is in the range of the
+        160-bit ID space covered by this k-bucket (in otherwords, it returns
+        whether or not the specified key should be placed in this k-bucket)
 
         @param key: The key to test
         @type key: str or int

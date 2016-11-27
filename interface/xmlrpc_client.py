@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: xmlrpc_client
+..
+
+module:: xmlrpc_client
 """
 
 

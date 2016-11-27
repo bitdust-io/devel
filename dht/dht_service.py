@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: dht_service
+..
 
+module:: dht_service
 """
 
 #------------------------------------------------------------------------------
@@ -54,12 +55,7 @@ from entangled.kademlia.protocol import KademliaProtocol, encoding, msgformat
 
 if __name__ == '__main__':
     import os.path as _p
-    sys.path.insert(
-        0, _p.abspath(
-            _p.join(
-                _p.dirname(
-                    _p.abspath(
-                        sys.argv[0])), '..')))
+    sys.path.insert(0, _p.abspath(_p.join(_p.dirname(_p.abspath(sys.argv[0])), '..')))
 
 #------------------------------------------------------------------------------
 
@@ -83,18 +79,14 @@ def init(udp_port, db_file_path=None):
     global _MyNode
     if _MyNode is not None:
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'dht_service.init SKIP, already created a DHTNode')
+            lg.out(_DebugLevel, 'dht_service.init SKIP, already created a DHTNode')
         return
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.init UDP port is %d' % udp_port)
     if db_file_path is None:
         db_file_path = settings.DHTDBFile()
     dbPath = bpio.portablePath(db_file_path)
-    lg.out(
-        4, 'dht_service.init UDP port is %d, DB file path: %s' %
-        (udp_port, dbPath))
+    lg.out(4, 'dht_service.init UDP port is %d, DB file path: %s' % (udp_port, dbPath))
     dataStore = SQLiteDataStore(dbFile=dbPath)
     networkProtocol = KademliaProtocolConveyor
     # None, encoding.Bencode(), msgformat.DefaultFormat())
@@ -133,11 +125,7 @@ def connect():
     else:
         node().joinNetwork(known_nodes.nodes())
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'dht_service.connect with %d known nodes' %
-                (len(
-                    known_nodes.nodes())))
+            lg.out(_DebugLevel, 'dht_service.connect with %d known nodes' % (len(known_nodes.nodes())))
     return True
 
 
@@ -172,17 +160,13 @@ def okay(result, method, key, arg=None):
     else:
         v = 'None'
     if _Debug:
-        lg.out(_DebugLevel +
-               10, 'dht_service.okay   %s(%s)   result=%s ...' %
-               (method, key, v[:20]))
+        lg.out(_DebugLevel + 10, 'dht_service.okay   %s(%s)   result=%s ...' % (method, key, v[:20]))
     return result
 
 
 def error(err, method, key):
     if _Debug:
-        lg.out(
-            _DebugLevel, 'dht_service.error %s(%s) returned an ERROR:\n%s' %
-            (method, key, str(err)))
+        lg.out(_DebugLevel, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
     return err
 
 
@@ -199,9 +183,7 @@ def get_value(key):
 
 def set_value(key, value, age=0):
     if _Debug:
-        lg.out(_DebugLevel +
-               10, 'dht_service.set_value key=[%s] value=[%s]' %
-               (key, str(value)[:20]))
+        lg.out(_DebugLevel + 10, 'dht_service.set_value key=[%s] value=[%s]' % (key, str(value)[:20]))
     if not node():
         return fail(Exception('DHT service is off'))
     d = node().iterativeStore(key_to_hash(key), value, age=age)
@@ -229,9 +211,7 @@ def set_node_data(key, value):
     if not node():
         return
     if _Debug:
-        lg.out(_DebugLevel +
-               10, 'dht_service.set_node_data key=[%s] value: %s' %
-               (key, str(value)[:20]))
+        lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
     node().data[key] = value
 
 
@@ -251,43 +231,30 @@ def find_node(node_id):
 
 class DHTNode(DistributedTupleSpacePeer):
 
-    def __init__(
-            self,
-            udpPort=4000,
-            dataStore=None,
-            routingTable=None,
-            networkProtocol=None):
-        DistributedTupleSpacePeer.__init__(
-            self, udpPort, dataStore, routingTable, networkProtocol)
+    def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
+        DistributedTupleSpacePeer.__init__(self, udpPort, dataStore, routingTable, networkProtocol)
         self.data = {}
 
     if _Debug:
         @rpcmethod
         def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
             if _Debug:
-                lg.out(_DebugLevel +
-                       10, 'dht_service.DHTNode.store key=[%s], value=[%s]' %
-                       (base64.b32encode(key), str(value)[:20]))
-            return DistributedTupleSpacePeer.store(
-                self, key, value, originalPublisherID=originalPublisherID, age=age, **kwargs)
+                lg.out(_DebugLevel + 10, 'dht_service.DHTNode.store key=[%s], value=[%s]' % (
+                    base64.b32encode(key), str(value)[:20]))
+            return DistributedTupleSpacePeer.store(self, key, value,
+                                                   originalPublisherID=originalPublisherID, age=age, **kwargs)
 
     @rpcmethod
     def request(self, key):
         value = str(self.data.get(key, None))
         if _Debug:
-            lg.out(
-                _DebugLevel +
-                10,
-                'dht_service.DHTNode.request key=[%s], return value=[%s]' %
-                (base64.b32encode(key),
-                 str(value)[
-                    :20]))
+            lg.out(_DebugLevel + 10, 'dht_service.DHTNode.request key=[%s], return value=[%s]' % (
+                base64.b32encode(key), str(value)[:20]))
         return {str(key): value}
 
     def reconnect(self, knownNodeAddresses=None):
         """
-        TODO:
-        need to restart _scheduleNextNodeRefresh
+        TODO: need to restart _scheduleNextNodeRefresh.
         """
         d = Deferred()
         if not self.listener:
@@ -303,8 +270,7 @@ class DHTNode(DistributedTupleSpacePeer):
 
 class KademliaProtocolConveyor(KademliaProtocol):
 
-    def __init__(self, node, msgEncoder=encoding.Bencode(),
-                 msgTranslator=msgformat.DefaultFormat()):
+    def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.DefaultFormat()):
         KademliaProtocol.__init__(self, node, msgEncoder, msgTranslator)
         self.datagrams_queue = []
         self.worker = None
@@ -324,8 +290,7 @@ class KademliaProtocolConveyor(KademliaProtocol):
             self.worker = None
             return
         # if _Debug:
-        # print '                dht._process, queue length:',
-        # len(self.datagrams_queue)
+        #     print '                dht._process, queue length:', len(self.datagrams_queue)
         datagram, address = self.datagrams_queue.pop(0)
         KademliaProtocol.datagramReceived(self, datagram, address)
         self.worker = reactor.callLater(0.005, self._process)
@@ -335,18 +300,9 @@ class KademliaProtocolConveyor(KademliaProtocol):
 
 def parseCommandLine():
     oparser = optparse.OptionParser()
-    oparser.add_option(
-        "-p",
-        "--udpport",
-        dest="udpport",
-        type="int",
-        help="specify UDP port for DHT network")
+    oparser.add_option("-p", "--udpport", dest="udpport", type="int", help="specify UDP port for DHT network")
     oparser.set_default('udpport', settings.DefaultDHTPort())
-    oparser.add_option(
-        "-d",
-        "--dhtdb",
-        dest="dhtdb",
-        help="specify DHT database file location")
+    oparser.add_option("-d", "--dhtdb", dest="dhtdb", help="specify DHT database file location")
     oparser.set_default('dhtdb', settings.DHTDBFile())
     (options, args) = oparser.parse_args()
     return options, args

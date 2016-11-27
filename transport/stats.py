@@ -26,8 +26,9 @@
 #
 
 """
-.. module:: stats
+..
 
+module:: stats
 """
 
 #------------------------------------------------------------------------------
@@ -87,6 +88,7 @@ def EraseMyProtosStates(idurl):
 
 def count_outbox(remote_idurl, proto, status, size):
     """
+    
     """
     if remote_idurl not in peers_protos():
         peers_protos()[remote_idurl] = set()
@@ -94,8 +96,7 @@ def count_outbox(remote_idurl, proto, status, size):
         peers_protos()[remote_idurl].add(proto)
 
     counters_out()['total_bytes'] += size
-    if remote_idurl and remote_idurl.startswith(
-            'http://') and remote_idurl.endswith('.xml'):
+    if remote_idurl and remote_idurl.startswith('http://') and remote_idurl.endswith('.xml'):
         if remote_idurl not in counters_out():
             counters_out()[remote_idurl] = 0
         counters_out()[remote_idurl] += size
@@ -110,6 +111,7 @@ def count_outbox(remote_idurl, proto, status, size):
 
 def count_inbox(remote_idurl, proto, status, bytes_received):
     """
+    
     """
     if remote_idurl not in my_protos():
         my_protos()[remote_idurl] = set()
@@ -117,8 +119,7 @@ def count_inbox(remote_idurl, proto, status, bytes_received):
         my_protos()[remote_idurl].add(proto)
 
     counters_in()['total_bytes'] += bytes_received
-    if remote_idurl and remote_idurl.startswith(
-            'http://') and remote_idurl.endswith('.xml'):
+    if remote_idurl and remote_idurl.startswith('http://') and remote_idurl.endswith('.xml'):
         if status == 'finished':
             counters_in()['total_packets'] += 1
         else:

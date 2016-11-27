@@ -49,12 +49,7 @@ def _print():
 
 
 def _func(filename, eccmapname, backupId, blockNumber, targetDir):
-    return make.do_in_memory(
-        filename,
-        eccmapname,
-        backupId,
-        blockNumber,
-        targetDir)
+    return make.do_in_memory(filename, eccmapname, backupId, blockNumber, targetDir)
 
 
 def _cb(result, bnum):
@@ -80,10 +75,8 @@ def _more():
         l = sys.argv[1:]
         l.insert(-1, str(blockNumber))
         args = tuple(l)
-        js.submit(
-            _func, args, modules=(
-                'make',), callback=lambda result: _cb(
-                result, blockNumber), )  # callbackargs=(sys.argv[2],),)
+        js.submit(_func, args, modules=('make',),
+                  callback=lambda result: _cb(result, blockNumber), )  # callbackargs=(sys.argv[2],),)
         print 'more', tsks, active
         break
     reactor.callLater(0.01, _more)

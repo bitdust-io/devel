@@ -22,7 +22,8 @@
 
 
 """
-.. module:: id_registrator
+.. module:: id_registrator.
+
 .. role:: red
 
 
@@ -100,7 +101,8 @@ def A(event=None, arg=None):
 
 class IdRegistrator(automat.Automat):
     """
-    This class implements all the functionality of the ``id_registrator()`` state machine.
+    This class implements all the functionality of the ``id_registrator()``
+    state machine.
     """
 
     timers = {
@@ -132,8 +134,7 @@ class IdRegistrator(automat.Automat):
         msg = self.MESSAGES.get(msgid, ['', 'black'])
         text = msg[0] % {
             'login': bpio.ReadTextFile(settings.UserNameFilename()),
-            # bpio.ReadTextFile(settings.ExternalIPFilename()),
-            'externalip': misc.readExternalIP(),
+            'externalip': misc.readExternalIP(),  # bpio.ReadTextFile(settings.ExternalIPFilename()),
             'localip': bpio.ReadTextFile(settings.LocalIPFilename()), }
         color = 'black'
         if len(msg) == 2:
@@ -142,7 +143,8 @@ class IdRegistrator(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.preferred_server = None
         self.discovered_servers = []
@@ -153,7 +155,8 @@ class IdRegistrator(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
         from main import installer
         installer.A('id_registrator.state', newstate)
@@ -175,8 +178,7 @@ class IdRegistrator(automat.Automat):
             pass
         #---ID_SERVERS?---
         elif self.state == 'ID_SERVERS?':
-            if (event == 'id-server-response' or event ==
-                    'id-server-failed') and self.isAllTested(arg) and self.isSomeAlive(arg):
+            if (event == 'id-server-response' or event == 'id-server-failed') and self.isAllTested(arg) and self.isSomeAlive(arg):
                 self.state = 'NAME_FREE?'
                 self.doRequestServers(arg)
                 self.doPrint(self.msg('MSG_1', arg))
@@ -186,8 +188,7 @@ class IdRegistrator(automat.Automat):
                 self.doDestroyMe(arg)
         #---NAME_FREE?---
         elif self.state == 'NAME_FREE?':
-            if event == 'id-not-exist' and self.isAllResponded(
-                    arg) and self.isFreeIDURLs(arg):
+            if event == 'id-not-exist' and self.isAllResponded(arg) and self.isFreeIDURLs(arg):
                 self.state = 'LOCAL_IP'
                 self.doDetectLocalIP(arg)
                 self.doPrint(self.msg('MSG_2', arg))
@@ -300,15 +301,13 @@ class IdRegistrator(automat.Automat):
             s.difference_update(self.discovered_servers)
             if len(s) > 0:
                 self.discovered_servers.append(random.choice(list(s)))
-        lg.out(4, 'id_registrator.doSelectRandomServers %s' %
-               str(self.discovered_servers))
+        lg.out(4, 'id_registrator.doSelectRandomServers %s' % str(self.discovered_servers))
 
     def doPingServers(self, arg):
         """
         Action method.
         """
-        lg.out(4, 'id_registrator.doPingServers    %d in list' %
-               len(self.discovered_servers))
+        lg.out(4, 'id_registrator.doPingServers    %d in list' % len(self.discovered_servers))
 
         def _cb(htmlsrc, id_server_host):
             lg.out(4, '            RESPONDED: %s' % id_server_host)
@@ -324,8 +323,8 @@ class IdRegistrator(automat.Automat):
             self.discovered_servers.remove(id_server_host)
             self.automat('id-server-failed', (id_server_host, err))
         for host in self.discovered_servers:
-            webport, tcpport = known_servers.by_host().get(
-                host, (settings.IdentityWebPort(), settings.IdentityServerPort()))
+            webport, tcpport = known_servers.by_host().get(host,
+                                                           (settings.IdentityWebPort(), settings.IdentityServerPort()))
             if webport == 80:
                 webport = ''
             server_url = nameurl.UrlMake('http', host, webport, '')
@@ -363,10 +362,7 @@ class IdRegistrator(automat.Automat):
             d.addCallback(_cb, idurl, host)
             d.addErrback(_eb, idurl, host)
             self.registrations.append(idurl)
-        lg.out(
-            4, 'id_registrator.doRequestServers login=%s registrations=%d' %
-            (login, len(
-                self.registrations)))
+        lg.out(4, 'id_registrator.doRequestServers login=%s registrations=%d' % (login, len(self.registrations)))
 
     def doDetectLocalIP(self, arg):
         """
@@ -478,15 +474,13 @@ class IdRegistrator(automat.Automat):
     def _create_new_identity(self):
         """
         Generate new Private key and new identity file.
+
         Reads some extra info from config files.
         """
         login = bpio.ReadTextFile(settings.UserNameFilename())
-        # bpio.ReadTextFile(settings.ExternalIPFilename())
-        externalIP = misc.readExternalIP()
+        externalIP = misc.readExternalIP()  # bpio.ReadTextFile(settings.ExternalIPFilename())
 
-        lg.out(
-            4, 'id_registrator._create_new_identity %s %s ' %
-            (login, externalIP))
+        lg.out(4, 'id_registrator._create_new_identity %s %s ' % (login, externalIP))
 
         key.InitMyKey()
 
@@ -499,12 +493,12 @@ class IdRegistrator(automat.Automat):
         newfilename = settings.LocalIdentityFilename() + '.new'
         bpio.WriteFile(newfilename, my_identity_xmlsrc)
         self.new_identity = ident
-        lg.out(4, '    wrote %d bytes to %s' %
-               (len(my_identity_xmlsrc), newfilename))
+        lg.out(4, '    wrote %d bytes to %s' % (len(my_identity_xmlsrc), newfilename))
 
     def _send_new_identity(self):
         """
         Send created identity to the identity server to register it.
+
         TODO: need to close transport and gateway after that
         """
         lg.out(4, 'id_registrator._send_new_identity ')

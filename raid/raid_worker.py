@@ -26,7 +26,8 @@
 
 
 """
-.. module:: raid_worker
+.. module:: raid_worker.
+
 .. role:: red
 
 BitDust raid_worker Automat
@@ -117,13 +118,9 @@ def cancel_task(cmd, first_parameter):
         if cmd == t_cmd and first_parameter == t_params[0]:
             try:
                 A().tasks.remove(t_id, t_cmd, t_params)
-                lg.out(
-                    10, 'raid_worker.cancel_task found pending task %d, canceling %s' %
-                    (t_id, first_parameter))
+                lg.out(10, 'raid_worker.cancel_task found pending task %d, canceling %s' % (t_id, first_parameter))
             except:
-                lg.warn(
-                    'failed removing pending task %d, %s' %
-                    (t_id, first_parameter))
+                lg.warn('failed removing pending task %d, %s' % (t_id, first_parameter))
             found = True
             break
 #    for i in xrange(len(A().tasks)):
@@ -136,9 +133,7 @@ def cancel_task(cmd, first_parameter):
     for task_id, task_data in A().activetasks.items():
         t_proc, t_cmd, t_params = task_data
         if cmd == t_cmd and first_parameter == t_params[0]:
-            lg.out(
-                10, 'raid_worker.cancel_task found started task %d, aborting process %d' %
-                (task_id, t_proc.tid))
+            lg.out(10, 'raid_worker.cancel_task found started task %d, aborting process %d' % (task_id, t_proc.tid))
             A().processor.cancel(t_proc.tid)
             found = True
             break
@@ -167,8 +162,8 @@ def A(event=None, arg=None):
 
 class RaidWorker(automat.Automat):
     """
-    This class implements all the functionality of the ``raid_worker()`` state machine.
-
+    This class implements all the functionality of the ``raid_worker()`` state
+    machine.
     """
 
     timers = {
@@ -177,7 +172,8 @@ class RaidWorker(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.task_id = -1
         self.tasks = []
@@ -269,8 +265,7 @@ class RaidWorker(automat.Automat):
         """
         Action method.
         """
-        reactor.addSystemEventTrigger(
-            'after', 'shutdown', self._kill_processor)
+        reactor.addSystemEventTrigger('after', 'shutdown', self._kill_processor)
 
     def doStartProcess(self, arg):
         """
@@ -321,16 +316,9 @@ class RaidWorker(automat.Automat):
         except:
             lg.exc()
             return
-        proc = self.processor.submit(
-            func,
-            params,
-            modules=_MODULES,
-            depfuncs=depfuncs,
-            callback=lambda result: self._job_done(
-                task_id,
-                cmd,
-                params,
-                result))
+        proc = self.processor.submit(func, params,
+                                     modules=_MODULES, depfuncs=depfuncs,
+                                     callback=lambda result: self._job_done(task_id, cmd, params, result))
         self.activetasks[task_id] = (proc, cmd, params)
         lg.out(12, 'raid_worker.doStartTask %r active=%d cpus=%d' % (
             task_id, len(self.activetasks), self.processor.get_ncpus()))
@@ -345,19 +333,11 @@ class RaidWorker(automat.Automat):
             cb = self.callbacks.pop(task_id)
             reactor.callLater(0, cb, cmd, params, result)
             if result is not None:
-                lg.out(
-                    12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' %
-                    (len(
-                        self.callbacks), len(
-                        self.tasks), len(
-                        self.activetasks)))
+                lg.out(12, 'raid_worker.doReportTaskDone callbacks: %d tasks: %d active: %d' % (
+                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
             else:
-                lg.out(
-                    12, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' %
-                    (len(
-                        self.callbacks), len(
-                        self.tasks), len(
-                        self.activetasks)))
+                lg.out(12, 'raid_worker.doReportTaskDone result=None !!!!! callbacks: %d tasks: %d active: %d' % (
+                    len(self.callbacks), len(self.tasks), len(self.activetasks)))
         except:
             lg.exc()
 
@@ -403,8 +383,7 @@ def main():
     bpio.init()
     lg.set_debug_level(20)
     reactor.callWhenRunning(A, 'init')
-    reactor.callLater(0.5, A, 'new-task', ('make', _cb,
-                                           ('sdfsdf', '45', '324', '45')))
+    reactor.callLater(0.5, A, 'new-task', ('make', _cb, ('sdfsdf', '45', '324', '45')))
     reactor.run()
 
 if __name__ == "__main__":

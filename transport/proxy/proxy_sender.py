@@ -22,7 +22,8 @@
 
 
 """
-.. module:: proxy_sender
+.. module:: proxy_sender.
+
 .. role:: red
 
 BitDust proxy_sender() Automat
@@ -92,11 +93,7 @@ def A(event=None, arg=None):
         return _ProxySender
     if _ProxySender is None:
         # set automat name and starting state here
-        _ProxySender = ProxySender(
-            'proxy_sender',
-            'AT_STARTUP',
-            _DebugLevel,
-            _Debug)
+        _ProxySender = ProxySender('proxy_sender', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _ProxySender.automat(event, arg)
     return _ProxySender
@@ -106,13 +103,14 @@ def A(event=None, arg=None):
 
 class ProxySender(automat.Automat):
     """
-    This class implements all the functionality of the ``proxy_sender()`` state machine.
+    This class implements all the functionality of the ``proxy_sender()`` state
+    machine.
     """
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of proxy_sender machine.
+        Method to initialize additional variables and flags at creation phase
+        of proxy_sender machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -122,13 +120,14 @@ class ProxySender(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the proxy_sender
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the proxy_sender but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://code.google.com/p/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://code.google.com/p/visio2python/>`_ tool.
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
@@ -208,14 +207,10 @@ class ProxySender(automat.Automat):
         """
         def _do_send():
             while len(self.pending_packets):
-                outpacket, wide, callbacks, pending_result = self.pending_packets.pop(
-                    0)
-                result_packet = self._on_outbox_packet(
-                    outpacket, wide, callbacks)
+                outpacket, wide, callbacks, pending_result = self.pending_packets.pop(0)
+                result_packet = self._on_outbox_packet(outpacket, wide, callbacks)
                 if not isinstance(result_packet, packet_out.PacketOut):
-                    lg.warn(
-                        'failed sending pending packet %s, skip all pending packets' %
-                        outpacket)
+                    lg.warn('failed sending pending packet %s, skip all pending packets' % outpacket)
                     self.pending_packets = []
                     break
                 pending_result.callback(result_packet)
@@ -233,33 +228,21 @@ class ProxySender(automat.Automat):
     def _add_pending_packet(self, outpacket, wide, callbacks):
         if len(self.pending_packets) > self.max_pending_packets:
             if _Debug:
-                lg.warn(
-                    'pending packets queue is full, skip sending outgoing packet')
+                lg.warn('pending packets queue is full, skip sending outgoing packet')
             return fail((outpacket, wide, callbacks))
         pending_result = Deferred()
-        self.pending_packets.append(
-            (outpacket, wide, callbacks, pending_result))
+        self.pending_packets.append((outpacket, wide, callbacks, pending_result))
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'proxy_sender._add_pending_packet %s' %
-                outpacket)
+            lg.out(_DebugLevel, 'proxy_sender._add_pending_packet %s' % outpacket)
         return pending_result
 
-    def _on_outbox_packet(
-            self,
-            outpacket,
-            wide,
-            callbacks,
-            target=None,
-            route=None):
+    def _on_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None):
         """
+        
         """
         if not driver.is_started('service_proxy_transport'):
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'proxy_sender._on_outbox_packet skip because service_proxy_transport is not started')
+                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet skip because service_proxy_transport is not started')
             return None
         if proxy_receiver.A() and proxy_receiver.A().state != 'LISTEN':
             return self._add_pending_packet(outpacket, wide, callbacks)
@@ -273,9 +256,7 @@ class ProxySender(automat.Automat):
             return self._add_pending_packet(outpacket, wide, callbacks)
         if outpacket.RemoteID == router_idurl:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'proxy_sender._on_outbox_packet skip, packet addressed to router and must be sent in a usual way')
+                lg.out(_DebugLevel, 'proxy_sender._on_outbox_packet skip, packet addressed to router and must be sent in a usual way')
             return None
         src = ''
         src += my_id.getLocalID() + '\n'
@@ -308,9 +289,7 @@ class ProxySender(automat.Automat):
                 'proto': router_proto,
                 'host': router_host,
                 'remoteid': router_idurl,
-                'description': 'Relay_%s[%s]_%s' % (outpacket.Command,
-                                                    outpacket.PacketID,
-                                                    nameurl.GetName(router_idurl)),
+                'description': 'Relay_%s[%s]_%s' % (outpacket.Command, outpacket.PacketID, nameurl.GetName(router_idurl)),
             })
         self.event('outbox-packet-sent', (outpacket, newpacket, result_packet))
         if _Debug:

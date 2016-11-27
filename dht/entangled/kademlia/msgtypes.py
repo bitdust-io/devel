@@ -40,7 +40,9 @@ class Message(object):
 
 
 class RequestMessage(Message):
-    """ Message containing an RPC request """
+    """
+    Message containing an RPC request.
+    """
 
     def __init__(self, nodeID, method, methodArgs, rpcID=None):
         if rpcID is None:
@@ -53,7 +55,9 @@ class RequestMessage(Message):
 
 
 class ResponseMessage(Message):
-    """ Message containing the result from a successful RPC request """
+    """
+    Message containing the result from a successful RPC request.
+    """
 
     def __init__(self, rpcID, nodeID, response):
         Message.__init__(self, rpcID, nodeID)
@@ -61,12 +65,13 @@ class ResponseMessage(Message):
 
 
 class ErrorMessage(ResponseMessage):
-    """ Message containing the error from an unsuccessful RPC request """
+    """
+    Message containing the error from an unsuccessful RPC request.
+    """
 
     def __init__(self, rpcID, nodeID, exceptionType, errorMessage):
         ResponseMessage.__init__(self, rpcID, nodeID, errorMessage)
         if isinstance(exceptionType, type):
-            self.exceptionType = '%s.%s' % (
-                exceptionType.__module__, exceptionType.__name__)
+            self.exceptionType = '%s.%s' % (exceptionType.__module__, exceptionType.__name__)
         else:
             self.exceptionType = exceptionType

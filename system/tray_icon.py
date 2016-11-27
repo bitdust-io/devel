@@ -27,10 +27,10 @@
 #
 
 """
-.. module:: tray_icon
+.. module:: tray_icon.
 
-Uses wxPython to show tray icon for BitDust.
-This is working inside ``bpmain`` process, uses wxreactor to connect with main Twisted loop.
+Uses wxPython to show tray icon for BitDust. This is working inside
+``bpmain`` process, uses wxreactor to connect with main Twisted loop.
 """
 
 #------------------------------------------------------------------------------
@@ -138,11 +138,9 @@ def init(icons_path, icons_files=None):
             self.icons = {}
             self.popup_icons = {}
             for name, filename in icons_dict().items():
-                self.icons[name] = wx.IconFromBitmap(
-                    wx.Bitmap(os.path.join(icons_path, filename)))
+                self.icons[name] = wx.IconFromBitmap(wx.Bitmap(os.path.join(icons_path, filename)))
             for name, filename in popup_icons_dict().items():
-                self.popup_icons[name] = wx.Bitmap(
-                    os.path.join(icons_path, filename))
+                self.popup_icons[name] = wx.Bitmap(os.path.join(icons_path, filename))
             if len(self.icons) == 0:
                 self.icons['default'] = ''
             if current_icon_name is not None and current_icon_name in self.icons.keys():
@@ -154,41 +152,11 @@ def init(icons_path, icons_files=None):
 
         def CreatePopupMenu(self):
             menu = wx.Menu()
-            create_menu_item(
-                menu,
-                'open',
-                self.on_show,
-                self.popup_icons.get(
-                    'open',
-                    None))
-            create_menu_item(
-                menu,
-                'synchronize',
-                self.on_sync,
-                self.popup_icons.get(
-                    'sync',
-                    None))
-            create_menu_item(
-                menu,
-                'reconnect',
-                self.on_reconnect,
-                self.popup_icons.get(
-                    'reconnect',
-                    None))
-            create_menu_item(
-                menu,
-                'restart',
-                self.on_restart,
-                self.popup_icons.get(
-                    'restart',
-                    None))
-            create_menu_item(
-                menu,
-                'exit',
-                self.on_exit,
-                self.popup_icons.get(
-                    'shutdown',
-                    None))
+            create_menu_item(menu, 'open', self.on_show, self.popup_icons.get('open', None))
+            create_menu_item(menu, 'synchronize', self.on_sync, self.popup_icons.get('sync', None))
+            create_menu_item(menu, 'reconnect', self.on_reconnect, self.popup_icons.get('reconnect', None))
+            create_menu_item(menu, 'restart', self.on_restart, self.popup_icons.get('restart', None))
+            create_menu_item(menu, 'exit', self.on_exit, self.popup_icons.get('shutdown', None))
             self.menu = menu
             return menu
 
@@ -220,11 +188,7 @@ def init(icons_path, icons_files=None):
             # print 'select_icon', icon_name, self.icons
             if icon_name in self.icons.keys():
                 self.current = icon_name
-                self.SetIcon(
-                    self.icons.get(
-                        self.current,
-                        self.icons.values()[0]),
-                    LABEL)
+                self.SetIcon(self.icons.get(self.current, self.icons.values()[0]), LABEL)
 
         def clear_icon(self):
             self.RemoveIcon()

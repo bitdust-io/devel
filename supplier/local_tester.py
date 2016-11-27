@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: local_tester
+.. module:: local_tester.
 
 Checks that customer packets on the local disk still have good signatures.
 
@@ -80,7 +80,7 @@ from system import nonblocking
 
 from main import settings
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 TesterUpdateCustomers = 'update_customers'
 TesterValidate = 'validate'
@@ -156,7 +156,7 @@ def _popTester():
     del _TesterQueue[0]
     return Tester
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def run(Tester):
@@ -225,27 +225,21 @@ def loop():
 def loop_validate():
     global _LoopValidate
     TestValid()
-    _LoopValidate = reactor.callLater(
-        settings.DefaultLocaltesterValidateTimeout(),
-        loop_validate)
+    _LoopValidate = reactor.callLater(settings.DefaultLocaltesterValidateTimeout(), loop_validate)
 
 
 def loop_update_customers():
     global _LoopUpdateCustomers
     TestUpdateCustomers()
-    _LoopUpdateCustomers = reactor.callLater(
-        settings.DefaultLocaltesterUpdateCustomersTimeout(),
-        loop_update_customers)
+    _LoopUpdateCustomers = reactor.callLater(settings.DefaultLocaltesterUpdateCustomersTimeout(), loop_update_customers)
 
 
 def loop_space_time():
     global _LoopSpaceTime
     TestSpaceTime()
-    _LoopSpaceTime = reactor.callLater(
-        settings.DefaultLocaltesterSpaceTimeTimeout(),
-        loop_space_time)
+    _LoopSpaceTime = reactor.callLater(settings.DefaultLocaltesterSpaceTimeTimeout(), loop_space_time)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def TestUpdateCustomers():
@@ -259,7 +253,7 @@ def TestValid():
 def TestSpaceTime():
     _pushTester(TesterSpaceTime)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     lg.set_debug_level(18)

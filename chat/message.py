@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: message
+..
 
+module:: message
 """
 
 import os
@@ -100,18 +101,17 @@ def inbox_history():
 class MessageClass:
     """
     A class to represent a message.
-    We always encrypt messages with a session key so we need to package with encrypted body.
+
+    We always encrypt messages with a session key so we need to package
+    with encrypted body.
     """
 
     def __init__(self, destinationidentity, messagebody):
-        lg.out(
-            8, "message.MessageClass making message of %d bytes" %
-            len(messagebody))
+        lg.out(8, "message.MessageClass making message of %d bytes" % len(messagebody))
         sessionkey = key.NewSessionKey()
         self.encryptedKey = key.EncryptStringPK(
             destinationidentity.publickey, sessionkey)
-        self.encryptedMessage = key.EncryptWithSessionKey(
-            sessionkey, messagebody)
+        self.encryptedMessage = key.EncryptWithSessionKey(sessionkey, messagebody)
 
     def ClearBody(self):
         sessionkey = key.DecryptLocalPK(self.encryptedKey)
@@ -123,12 +123,9 @@ class MessageClass:
 
 def Message(request):
     """
-    Message came in for us so we:
-        1) check that it is a correspondent
-        2) decrypt message body
-        3) save on local HDD
-        4) call the GUI
-        5) send an "Ack" back to sender
+    Message came in for us so we: 1) check that it is a correspondent 2)
+    decrypt message body 3) save on local HDD 4) call the GUI 5) send an "Ack"
+    back to sender.
     """
     global _IncomingMessageCallbacks
     lg.out(6, "message.Message from " + str(request.OwnerID))
@@ -144,10 +141,7 @@ def Message(request):
         return
     for old_id, old_message in inbox_history():
         if old_id == request.PacketID:
-            lg.out(
-                6,
-                "message.Message SKIP, message %s found in history" %
-                old_message)
+            lg.out(6, "message.Message SKIP, message %s found in history" % old_message)
             return
     inbox_history().append((request.PacketID, new_message))
     clear_message = new_message.ClearBody()
@@ -176,9 +170,7 @@ def SendMessage(remote_idurl, messagebody, packet_id=None):
         return d
     Amessage = MessageClass(remote_identity, messagebody)
     Payload = misc.ObjectToString(Amessage)
-    lg.out(
-        6, "message.SendMessage to %s with %d bytes" %
-        (remote_idurl, len(Payload)))
+    lg.out(6, "message.SendMessage to %s with %d bytes" % (remote_idurl, len(Payload)))
     outpacket = signed.Packet(
         commands.Message(),
         my_id.getLocalID(),
@@ -188,11 +180,7 @@ def SendMessage(remote_idurl, messagebody, packet_id=None):
         remote_idurl)
     result = gateway.outbox(outpacket, wide=True)
     if _OutgoingMessageCallback:
-        _OutgoingMessageCallback(
-            result,
-            messagebody,
-            remote_identity,
-            packet_id)
+        _OutgoingMessageCallback(result, messagebody, remote_identity, packet_id)
     return result
 
 #------------------------------------------------------------------------------

@@ -22,7 +22,8 @@
 
 
 """
-.. module:: nickname_holder
+.. module:: nickname_holder.
+
 .. role:: red
 
 BitDust nickname_holder() Automat
@@ -72,8 +73,7 @@ def A(event=None, arg=None):
     global _NicknameHolder
     if _NicknameHolder is None:
         # set automat name and starting state here
-        _NicknameHolder = NicknameHolder(
-            'nickname_holder', 'AT_STARTUP', 4, True)
+        _NicknameHolder = NicknameHolder('nickname_holder', 'AT_STARTUP', 4, True)
     if event is not None:
         _NicknameHolder.automat(event, arg)
     return _NicknameHolder
@@ -95,7 +95,8 @@ def Destroy():
 
 class NicknameHolder(automat.Automat):
     """
-    This class implements all the functionality of the ``nickname_holder()`` state machine.
+    This class implements all the functionality of the ``nickname_holder()``
+    state machine.
     """
 
     timers = {
@@ -104,7 +105,8 @@ class NicknameHolder(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.nickname = None
         self.key = None
@@ -235,9 +237,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        d = dht_service.set_value(
-            self.key, my_id.getLocalID(), age=int(
-                time.time()))
+        d = dht_service.set_value(self.key, my_id.getLocalID(), age=int(time.time()))
         d.addCallback(self._dht_write_result)
         d.addErrback(lambda x: self.automat('dht-write-failed'))
 
@@ -261,10 +261,7 @@ class NicknameHolder(automat.Automat):
         """
         Action method.
         """
-        lg.out(
-            18,
-            'nickname_holder.doReportNicknameRegistered : %s' %
-            self.key)
+        lg.out(18, 'nickname_holder.doReportNicknameRegistered : %s' % self.key)
         if self.result_callback:
             self.result_callback('registered', self.key)
 

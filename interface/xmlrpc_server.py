@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: xmlrpc_server
+..
+
+module:: xmlrpc_server
 """
 
 from twisted.internet import reactor
@@ -83,10 +85,8 @@ class XMLRPCServer(xmlrpc.XMLRPC):
         try:
             return self.methods[procedurePath]
         except KeyError as e:
-            raise xmlrpc.NoSuchFunction(
-                self.NOT_FOUND,
-                "procedure %s not found" %
-                procedurePath)
+            raise xmlrpc.NoSuchFunction(self.NOT_FOUND,
+                                        "procedure %s not found" % procedurePath)
 
     def listProcedures(self):
         return self.methods.keys()

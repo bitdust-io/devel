@@ -22,7 +22,8 @@
 
 
 """
-.. module:: accountant_node
+.. module:: accountant_node.
+
 .. role:: red
 
 BitDust accountant_node() Automat
@@ -90,8 +91,7 @@ def A(event=None, arg=None):
         return _AccountantNode
     if _AccountantNode is None:
         # set automat name and starting state here
-        _AccountantNode = AccountantNode(
-            'accountant_node', 'AT_STARTUP', _DebugLevel, _Debug)
+        _AccountantNode = AccountantNode('accountant_node', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _AccountantNode.automat(event, arg)
     return _AccountantNode
@@ -101,7 +101,8 @@ def A(event=None, arg=None):
 
 class AccountantNode(automat.Automat):
     """
-    This class implements all the functionality of the ``accountant_node()`` state machine.
+    This class implements all the functionality of the ``accountant_node()``
+    state machine.
     """
     timers = {
         'timer-2min': (120, ['ACCOUNTANTS?']),
@@ -110,8 +111,8 @@ class AccountantNode(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of accountant_node() machine.
+        Method to initialize additional variables and flags at creation phase
+        of accountant_node() machine.
         """
         self.connected_accountants = []
         self.min_accountants_connected = 1  # TODO: read from settings
@@ -128,13 +129,14 @@ class AccountantNode(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the accountant_node()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the accountant_node() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'READY':
             if event == 'shutdown':
@@ -275,17 +277,12 @@ class AccountantNode(automat.Automat):
         """
         if arg in self.connected_accountants:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'accountant_node.doAddAccountant SKIP, %s already connected, skip' %
-                    arg)
+                lg.out(_DebugLevel, 'accountant_node.doAddAccountant SKIP, %s already connected, skip' % arg)
             return
         self.connected_accountants.append(arg)
         if _Debug:
-            lg.out(
-                _DebugLevel, 'accountant_node.doAddAccountant NEW %s connected, %d total accountants' %
-                (arg, len(
-                    self.connected_accountants)))
+            lg.out(_DebugLevel, 'accountant_node.doAddAccountant NEW %s connected, %d total accountants' % (
+                arg, len(self.connected_accountants)))
 
     def doRetreiveCoins(self, arg):
         """
@@ -307,8 +304,7 @@ class AccountantNode(automat.Automat):
             if not coins_db.exist(coin):
                 coins_db.insert(coin)
             if coin['tm'] > utime.datetime_to_sec1970(self.download_offset):
-                self.download_offset = utime.sec1970_to_datetime_utc(coin[
-                                                                     'tm'])
+                self.download_offset = utime.sec1970_to_datetime_utc(coin['tm'])
 
     def doPushCoin(self, arg):
         """
@@ -365,7 +361,7 @@ class AccountantNode(automat.Automat):
         del _AccountantNode
         _AccountantNode = None
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _verify_coin(self, acoin):
         # TODO:
@@ -384,16 +380,12 @@ class AccountantNode(automat.Automat):
                 p2p_service.SendFail(newpacket, 'incorrect query received')
                 return False
             coins = coins_db.query_json(query_j)
-            p2p_service.SendCoin(
-                newpacket.CreatorID,
-                coins,
-                packet_id=newpacket.PacketID)
+            p2p_service.SendCoin(newpacket.CreatorID, coins, packet_id=newpacket.PacketID)
             return True
         if newpacket.Command == commands.Coin():
             coins_list = coins_db.read_coins_from_packet(newpacket)
             if not coins_list:
-                p2p_service.SendFail(
-                    newpacket, 'failed to read coins from packet')
+                p2p_service.SendFail(newpacket, 'failed to read coins from packet')
                 return True
             if len(coins_list) == 1:
                 acoin = coins_list[0]
@@ -418,7 +410,6 @@ class AccountantNode(automat.Automat):
             if len(valid_coins) == len(coins_list):
                 self.automat('valid-coins-received', valid_coins)
             else:
-                p2p_service.SendFail(
-                    newpacket, 'some non-valid coins received')
+                p2p_service.SendFail(newpacket, 'some non-valid coins received')
             return True
         return False

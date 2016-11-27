@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: customer
+..
 
+module:: customer
 """

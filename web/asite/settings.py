@@ -72,12 +72,7 @@ if APP_DATA_PATH == '':
     appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
     if os.path.isfile(os.path.join(curdir, 'appdata')):
         try:
-            appdata = os.path.abspath(
-                open(
-                    os.path.join(
-                        curdir,
-                        'appdata'),
-                    'rb').read().strip())
+            appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip())
         except:
             pass
     if not os.path.exists(appdata):

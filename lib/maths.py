@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: maths
+.. module:: maths.
 
 This is mostly methods to calculate schedule events.
 """
@@ -33,14 +33,14 @@ This is mostly methods to calculate schedule events.
 import time
 import datetime
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def interval_to_next_hour():
     """
     Here is a value for "seconds to to the end of an hour.:"
-        C:\work\bitdust>python -c "import lib.maths; print lib.maths.interval_to_next_hour()"
-        3538.81299996
+    C:\work\bitdust>python -c "import lib.maths; print
+    lib.maths.interval_to_next_hour()" 3538.81299996.
     """
     _struct_time = list(time.localtime())
     _struct_time[4] = 0
@@ -48,17 +48,19 @@ def interval_to_next_hour():
     prev_hour_time = time.mktime(_struct_time)
     return prev_hour_time + 60 * 60 - time.time()
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def shedule_continuously(last_time, interval):
     """
     Return value for "moment when next time interval event will happens".
-    In other words: when need to run the backup exactly, within that ``interval`` in seconds.
-    ``last_time`` is taken from file [BitDust data dir]\metadata\updateshedule.
-        C:\work\bitdust>python -c "import time, lib.maths; print lib.maths.shedule_continuously(1397152186.41, 60)-time.time()"
-        12.5670001507
 
+    In other words: when need to run the backup exactly, within that
+    ``interval`` in seconds. ``last_time`` is taken from file [BitDust
+    data dir]\metadata\updateshedule.     C:\work\bitdust>python -c
+    "import time, lib.maths; print
+    lib.maths.shedule_continuously(1397152186.41, 60)-time.time()"
+    12.5670001507
     """
     try:
         dt = time.time() - float(last_time)
@@ -67,16 +69,18 @@ def shedule_continuously(last_time, interval):
         return None
     return float(last_time) + (n + 1) * float(interval)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def shedule_next_hourly(last_time, interval):
     """
     Return value for "moment when next time interval event happens".
-    ``interval`` is number of hours between events.
-    ``last_time`` is taken from file [BitDust data dir]\metadata\updateshedule.
-        C:\work\bitdust>python -c "import time, lib.maths; print lib.maths.shedule_next_hourly(1397152186.41, 5)-time.time()"
-        9930.79699993
+
+    ``interval`` is number of hours between events. ``last_time`` is
+    taken from file [BitDust data dir]\metadata\updateshedule.
+    C:\work\bitdust>python -c "import time, lib.maths; print
+    lib.maths.shedule_next_hourly(1397152186.41, 5)-time.time()"
+    9930.79699993
     """
     try:
         t = list(time.localtime(float(last_time)))
@@ -97,19 +101,17 @@ def shedule_next_hourly(last_time, interval):
 def shedule_next_daily(last_time, period_string, start_time_string):
     """
     Return value for "moment when next time interval event happens".
+
     ``period_string`` is number of days between events.
     ``start_time_string`` is start time throughout the day.
-    ``last_time`` is taken from file [BitDust data dir]\metadata\updateshedule.
+    ``last_time`` is taken from file [BitDust data
+    dir]\metadata\updateshedule.
     """
     try:
-        start_time_structtime = list(
-            time.strptime(
-                start_time_string,
-                '%H:%M:%S'))
+        start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
     except:
         try:
-            start_time_structtime = list(
-                time.strptime(start_time_string, '%H:%M'))
+            start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             from logs import lg
             lg.exc()
@@ -158,27 +160,20 @@ def shedule_next_daily(last_time, period_string, start_time_string):
 #------------------------------------------------------------------------------
 
 
-def shedule_next_weekly(
-        last_time,
-        period_string,
-        start_time_string,
-        week_days):
+def shedule_next_weekly(last_time, period_string, start_time_string, week_days):
     """
     Weekly scheduler.
+
     ``period_string`` is number of weeks between events.
     ``start_time_string`` is start time throughout the day.
     ``week_days`` is a string to mark needed days of week, format like that : "Monday Tuesday Wednesday".
     ``last_time`` is taken from file [BitDust data dir]\metadata\updateshedule.
     """
     try:
-        start_time_structtime = list(
-            time.strptime(
-                start_time_string,
-                '%H:%M:%S'))
+        start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
     except:
         try:
-            start_time_structtime = list(
-                time.strptime(start_time_string, '%H:%M'))
+            start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             from logs import lg
             lg.exc()
@@ -243,14 +238,10 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
     That is old code, DON'T LOOK IT!!!
     """
     try:
-        start_time_structtime = list(
-            time.strptime(
-                start_time_string,
-                '%H:%M:%S'))
+        start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
     except:
         try:
-            start_time_structtime = list(
-                time.strptime(start_time_string, '%H:%M'))
+            start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             from logs import lg
             lg.exc()
@@ -312,27 +303,20 @@ def shedule_next_monthly_old(last_time, day_string, start_time_string, months):
 #------------------------------------------------------------------------------
 
 
-def shedule_next_monthly(
-        last_time,
-        interval_months_string,
-        start_time_string,
-        dates):
+def shedule_next_monthly(last_time, interval_months_string, start_time_string, dates):
     """
     Monthly scheduler.
+
     ``interval_months_string`` is number of months between events.
     ``start_time_string`` is start time throughout the day.
     ``dates`` is a string to mark needed days of month, format like that : "1 2 3 28 29 30 31".
     ``last_time`` is taken from file [BitDust data dir]\metadata\updateshedule.
     """
     try:
-        start_time_structtime = list(
-            time.strptime(
-                start_time_string,
-                '%H:%M:%S'))
+        start_time_structtime = list(time.strptime(start_time_string, '%H:%M:%S'))
     except:
         try:
-            start_time_structtime = list(
-                time.strptime(start_time_string, '%H:%M'))
+            start_time_structtime = list(time.strptime(start_time_string, '%H:%M'))
         except:
             from logs import lg
             lg.exc()
@@ -414,7 +398,7 @@ def shedule_next_monthly(
         microsecond=0)
     return time.mktime(today.timetuple())
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def toInt(s, default=0):
@@ -446,8 +430,7 @@ if __name__ == '__main__':
     # print time.asctime(time.localtime(shedule_non_stop(t, 60*60)))
     # print shedule_non_stop(t, 60*60) - time.time()
     #    print shedule_next_hourly(time.time()-60*60*9-12, 1)/60
-    t = shedule_next_monthly(time.time() - 60 * 60 *
-                             9 - 12, '1', '14:00', ['2', '6', '9', '15', '16'])
+    t = shedule_next_monthly(time.time() - 60 * 60 * 9 - 12, '1', '14:00', ['2', '6', '9', '15', '16'])
     print time.time(), t, time.time() - t
     print time.asctime(time.localtime(t))
     print time.asctime(time.localtime())

@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: filemanager_api
+..
 
+module:: filemanager_api
 """
 
 #------------------------------------------------------------------------------
@@ -63,13 +64,10 @@ from web import control
 def process(json_request):
     lg.out(20, 'filemanager_api.process %s' % json_request)
     if not driver.is_started('service_backups'):
-        return {
-            'result': {
-                "success": False,
-                "error": "network [service_backups] is not started: %s" %
-                (driver.services().get(
-                    'service_backups',
-                    '!!! not found !!!'))}}
+        return {'result': {
+            "success": False,
+            "error": "network [service_backups] is not started: %s" % (
+                driver.services().get('service_backups', '!!! not found !!!'))}}
     mode = ''
     result = {}
     try:
@@ -106,11 +104,8 @@ def process(json_request):
         elif mode == 'debuginfo':
             result = _debuginfo(json_request['params'])
         else:
-            result = {
-                "result": {
-                    "success": False,
-                    "error": 'filemanager method %s not found' %
-                    mode}}
+            result = {"result": {"success": False,
+                                 "error": 'filemanager method %s not found' % mode}}
     except Exception as exc:
         lg.exc()
         descr = str(sys.exc_info()[0].__name__) + ': ' + str(sys.exc_info()[1])
@@ -143,20 +138,15 @@ def _stats(params):
     result = {}
     result['suppliers'] = contactsdb.num_suppliers()
     result['max_suppliers'] = settings.getSuppliersNumberDesired()
-    result['online_suppliers'] = contact_status.countOnlineAmong(
-        contactsdb.suppliers())
+    result['online_suppliers'] = contact_status.countOnlineAmong(contactsdb.suppliers())
     result['customers'] = contactsdb.num_customers()
     result['bytes_donated'] = settings.getDonatedBytes()
-    result['value_donated'] = diskspace.MakeStringFromBytes(
-        settings.getDonatedBytes())
+    result['value_donated'] = diskspace.MakeStringFromBytes(settings.getDonatedBytes())
     result['bytes_needed'] = settings.getNeededBytes()
-    result['value_needed'] = diskspace.MakeStringFromBytes(
-        settings.getNeededBytes())
+    result['value_needed'] = diskspace.MakeStringFromBytes(settings.getNeededBytes())
     result['bytes_used_total'] = backup_fs.sizebackups()
-    result['value_used_total'] = diskspace.MakeStringFromBytes(
-        backup_fs.sizebackups())
-    result['bytes_used_supplier'] = 0 if (contactsdb.num_suppliers() == 0) else (
-        int(backup_fs.sizebackups() / contactsdb.num_suppliers()))
+    result['value_used_total'] = diskspace.MakeStringFromBytes(backup_fs.sizebackups())
+    result['bytes_used_supplier'] = 0 if (contactsdb.num_suppliers() == 0) else (int(backup_fs.sizebackups() / contactsdb.num_suppliers()))
     result['bytes_indexed'] = backup_fs.sizefiles() + backup_fs.sizefolders()
     result['files_count'] = backup_fs.numberfiles()
     result['folders_count'] = backup_fs.numberfolders()
@@ -255,11 +245,7 @@ def _upload(params):
         path = '/' + (path.lstrip('/'))
     localPath = unicode(path)
     if not bpio.pathExist(localPath):
-        return {
-            'result': {
-                "success": False,
-                "error": 'local path %s was not found' %
-                path}}
+        return {'result': {"success": False, "error": 'local path %s was not found' % path}}
     result = []
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
@@ -286,18 +272,10 @@ def _download(params):
     restorePath = bpio.portablePath(destpath)
     # overwrite = params['overwrite']
     if not packetid.Valid(backupID):
-        return {
-            'result': {
-                "success": False,
-                "error": "path %s is not valid" %
-                backupID}}
+        return {'result': {"success": False, "error": "path %s is not valid" % backupID}}
     pathID, version = packetid.SplitBackupID(backupID)
     if not pathID:
-        return {
-            'result': {
-                "success": False,
-                "error": "path %s is not valid" %
-                backupID}}
+        return {'result': {"success": False, "error": "path %s is not valid" % backupID}}
     if backup_control.IsBackupInProcess(backupID):
         return {'result': {"success": True, "error": None}}
     if backup_control.HasTask(pathID):
@@ -317,17 +295,9 @@ def _delete(params):
     # localPath = params['path'].lstrip('/')
     pathID = params['id']
     if not packetid.Valid(pathID):
-        return {
-            'result': {
-                "success": False,
-                "error": "path %s is not valid" %
-                pathID}}
+        return {'result': {"success": False, "error": "path %s is not valid" % pathID}}
     if not backup_fs.ExistsID(pathID):
-        return {
-            'result': {
-                "success": False,
-                "error": "path %s not found" %
-                pathID}}
+        return {'result': {"success": False, "error": "path %s not found" % pathID}}
     backup_control.DeletePathBackups(pathID, saveDB=False, calculate=False)
     backup_fs.DeleteLocalDir(settings.getLocalBackupsDir(), pathID)
     backup_fs.DeleteByID(pathID)
@@ -343,18 +313,10 @@ def _delete_version(params):
     lg.out(6, '_delete_version %s' % str(params))
     backupID = params['backupid']
     if not packetid.Valid(backupID):
-        return {
-            'result': {
-                "success": False,
-                "error": "backupID %s is not valid" %
-                backupID}}
+        return {'result': {"success": False, "error": "backupID %s is not valid" % backupID}}
     pathID, version = packetid.SplitBackupID(backupID)
     if not backup_fs.ExistsID(pathID):
-        return {
-            'result': {
-                "success": False,
-                "error": "path %s not found" %
-                pathID}}
+        return {'result': {"success": False, "error": "path %s not found" % pathID}}
     if version:
         backup_control.DeleteBackup(backupID, saveDB=False, calculate=False)
     backup_fs.Scan()
@@ -493,8 +455,7 @@ def _list_active_connections(params):
             if proto == 'tcp':
                 if hasattr(connection, 'stream'):
                     try:
-                        host = '%s:%s' % (connection.peer_address[
-                                          0], connection.peer_address[1])
+                        host = '%s:%s' % (connection.peer_address[0], connection.peer_address[1])
                     except:
                         host = 'unknown'
                     item.update({
@@ -507,8 +468,7 @@ def _list_active_connections(params):
                     })
                 else:
                     try:
-                        host = '%s:%s' % (connection.connection_address[
-                                          0], connection.connection_address[1])
+                        host = '%s:%s' % (connection.connection_address[0], connection.connection_address[1])
                     except:
                         host = 'unknown'
                     item.update({
@@ -517,8 +477,7 @@ def _list_active_connections(params):
                     })
             elif proto == 'udp':
                 try:
-                    host = '%s:%s' % (connection.peer_address[
-                                      0], connection.peer_address[1])
+                    host = '%s:%s' % (connection.peer_address[0], connection.peer_address[1])
                 except:
                     host = 'unknown'
                 item.update({

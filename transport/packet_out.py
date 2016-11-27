@@ -22,7 +22,8 @@
 
 
 """
-.. module:: packet_out
+.. module:: packet_out.
+
 .. role:: red
 
 BitDust packet_out() Automat
@@ -103,6 +104,7 @@ def increment_packets_counter():
 
 def queue():
     """
+    
     """
     global _OutboxQueue
     return _OutboxQueue
@@ -110,6 +112,7 @@ def queue():
 
 def create(outpacket, wide, callbacks, target=None, route=None):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
@@ -131,15 +134,12 @@ def search(proto, host, filename, remote_idurl=None):
                     return p, i
                 if p.remote_idurl and remote_idurl != p.remote_idurl:
                     if _Debug:
-                        lg.out(
-                            _DebugLevel,
-                            'packet_out.search found a packet addressed for another idurl: %s' %
-                            p.remote_idurl)
+                        lg.out(_DebugLevel, 'packet_out.search found a packet addressed for another idurl: %s' % p.remote_idurl)
                 return p, i
     if _Debug:
         for p in queue():
-            lg.out(_DebugLevel, '%s [%s]' % (os.path.basename(
-                p.filename), ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
+            lg.out(_DebugLevel, '%s [%s]' % (os.path.basename(p.filename),
+                                             ('|'.join(map(lambda i: '%s:%s' % (i.proto, i.host), p.items)))))
     return None, None
 
 
@@ -166,9 +166,8 @@ def search_many(proto=None,
                 continue
             result.append((p, i))
     if _Debug:
-        lg.out(
-            _DebugLevel, 'packet_out.search_many query: (%s, %s, %s, %s) :' %
-            (proto, host, filename, remote_idurl))
+        lg.out(_DebugLevel, 'packet_out.search_many query: (%s, %s, %s, %s) :' % (
+            proto, host, filename, remote_idurl))
         lg.out(_DebugLevel, '%s' % ('        \n'.join(map(str, result))))
     return result
 
@@ -185,8 +184,7 @@ def search_by_response_packet(newpacket, proto=None, host=None):
     #     if _Debug:
     #         lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s %s' % (
     #             nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
-    # nameurl.GetName(newpacket.RemoteID), newpacket.PacketID,
-    # newpacket.Command))
+    #             nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command))
     result = []
     target_idurl = newpacket.CreatorID
     if newpacket.OwnerID == my_id.getLocalID():
@@ -204,31 +202,18 @@ def search_by_response_packet(newpacket, proto=None, host=None):
             continue
         result.append(p)
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'packet_out.search_by_response_packet [%s/%s/%s]:%s(%s) from [%s://%s] cb:%s' %
-                (nameurl.GetName(
-                    p.outpacket.OwnerID),
-                    nameurl.GetName(
-                    p.outpacket.CreatorID),
-                    nameurl.GetName(
-                    p.outpacket.RemoteID),
-                    p.outpacket.Command,
-                    p.outpacket.PacketID,
-                    proto,
-                    host,
-                    p.callbacks.keys()))
+            lg.out(_DebugLevel, 'packet_out.search_by_response_packet [%s/%s/%s]:%s(%s) from [%s://%s] cb:%s' % (
+                nameurl.GetName(p.outpacket.OwnerID), nameurl.GetName(p.outpacket.CreatorID),
+                nameurl.GetName(p.outpacket.RemoteID), p.outpacket.Command, p.outpacket.PacketID,
+                proto, host,
+                p.callbacks.keys()))
     if len(result) == 0:
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'packet_out.search_by_response_packet NOT FOUND pending packets in outbox queue for')
-            lg.out(
-                _DebugLevel, '        [%s/%s/%s]:%s:%s from [%s://%s]' %
-                (nameurl.GetName(
-                    newpacket.OwnerID), nameurl.GetName(
-                    newpacket.CreatorID), nameurl.GetName(
-                    newpacket.RemoteID), newpacket.PacketID, newpacket.Command, proto, host))
+            lg.out(_DebugLevel, 'packet_out.search_by_response_packet NOT FOUND pending packets in outbox queue for')
+            lg.out(_DebugLevel, '        [%s/%s/%s]:%s:%s from [%s://%s]' % (
+                nameurl.GetName(newpacket.OwnerID), nameurl.GetName(newpacket.CreatorID),
+                nameurl.GetName(newpacket.RemoteID), newpacket.PacketID, newpacket.Command,
+                proto, host))
     return result
 
 
@@ -245,6 +230,7 @@ def search_similar_packets(outpacket):
 
 def correct_packet_destination(outpacket):
     """
+    
     """
     if outpacket.CreatorID == my_id.getLocalID():
         # our data will go where it should go
@@ -279,7 +265,8 @@ class WorkItem(object):
 
 class PacketOut(automat.Automat):
     """
-    This class implements all the functionality of the ``packet_out()`` state machine.
+    This class implements all the functionality of the ``packet_out()`` state
+    machine.
     """
 
     timers = {
@@ -301,8 +288,7 @@ class PacketOut(automat.Automat):
         for command, cb in callbacks.items():
             self.set_callback(command, cb)
         self.caching_deferred = None
-        self.description = self.outpacket.Command + \
-            '[' + self.outpacket.PacketID + ']'
+        self.description = self.outpacket.Command + '[' + self.outpacket.PacketID + ']'
         self.remote_idurl = target
         self.route = route
         if self.route:
@@ -310,28 +296,22 @@ class PacketOut(automat.Automat):
             self.remote_idurl = self.route['remoteid']
         self.label = 'out_%d_%s' % (
             get_packets_counter(), self.description)
-        automat.Automat.__init__(
-            self,
-            self.label,
-            'AT_STARTUP',
-            _DebugLevel,
-            _Debug)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.log_events = True
         self.error_message = None
         self.time = time.time()
-        self.description = self.outpacket.Command + \
-            '(' + self.outpacket.PacketID + ')'
+        self.description = self.outpacket.Command + '(' + self.outpacket.PacketID + ')'
         self.payloadsize = len(self.outpacket.Payload)
         if not self.remote_idurl:
             self.remote_idurl = correct_packet_destination(self.outpacket)
-        self.remote_identity = contactsdb.get_contact_identity(
-            self.remote_idurl)
+        self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         self.timeout = 300  # settings.SendTimeOut() * 3
         self.packetdata = None
         self.filename = None
@@ -527,8 +507,7 @@ class PacketOut(automat.Automat):
         """
         Action method.
         """
-        self.caching_deferred = identitycache.immediatelyCaching(
-            self.remote_idurl)
+        self.caching_deferred = identitycache.immediatelyCaching(self.remote_idurl)
         self.caching_deferred.addCallback(self._remote_identity_cached)
         self.caching_deferred.addErrback(lambda err: self.automat('failed'))
 
@@ -583,9 +562,7 @@ class PacketOut(automat.Automat):
             if self.items[i].proto == proto:  # and self.items[i].host == host:
                 self.items[i].transfer_id = transfer_id
                 if _Debug:
-                    lg.out(
-                        _DebugLevel, 'packet_out.doSetTransferID  %r:%r = %r' %
-                        (proto, host, transfer_id))
+                    lg.out(_DebugLevel, 'packet_out.doSetTransferID  %r:%r = %r' % (proto, host, transfer_id))
                 ok = True
         if not ok:
             lg.warn('not found item for %r:%r' % (proto, host))
@@ -698,8 +675,7 @@ class PacketOut(automat.Automat):
 
     def _remote_identity_cached(self, xmlsrc):
         self.caching_deferred = None
-        self.remote_identity = contactsdb.get_contact_identity(
-            self.remote_idurl)
+        self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
         if self.remote_identity is None:
             self.automat('failed')
         else:
@@ -734,19 +710,12 @@ class PacketOut(automat.Automat):
                         gateway.is_installed(proto):
                     if proto == 'tcp' and localIP:
                         host = localIP
-                    gateway.send_file(
-                        self.remote_idurl,
-                        proto,
-                        host,
-                        self.filename,
-                        self.description)
+                    gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                     self.items.append(WorkItem(proto, host, self.filesize))
                     workitem_sent = True
             if not workitem_sent:
                 self.automat('nothing-to-send')
-                lg.warn(
-                    '(wide) no supported protocols with %s' %
-                    self.remote_idurl)
+                lg.warn('(wide) no supported protocols with %s' % self.remote_idurl)
             else:
                 self.automat('items-sent')
             return
@@ -773,12 +742,7 @@ class PacketOut(automat.Automat):
                 proto, host, port, fn = nameurl.UrlParse(tcp_contact)
                 if port:
                     host = localIP + ':' + str(port)
-                gateway.send_file(
-                    self.remote_idurl,
-                    proto,
-                    host,
-                    self.filename,
-                    self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -788,12 +752,7 @@ class PacketOut(automat.Automat):
             if host.strip() and gateway.is_installed(proto) and gateway.can_send(proto):
                 if port:
                     host = host + ':' + str(port)
-                gateway.send_file(
-                    self.remote_idurl,
-                    proto,
-                    host,
-                    self.filename,
-                    self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -801,12 +760,7 @@ class PacketOut(automat.Automat):
         if udp_contact and 'udp' in working_protos:
             proto, host = nameurl.IdContactSplit(udp_contact)
             if host.strip() and gateway.is_installed('udp') and gateway.can_send(proto):
-                gateway.send_file(
-                    self.remote_idurl,
-                    proto,
-                    host,
-                    self.filename,
-                    self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
@@ -814,34 +768,21 @@ class PacketOut(automat.Automat):
         if proxy_contact and 'proxy' in working_protos:
             proto, host = nameurl.IdContactSplit(proxy_contact)
             if host.strip() and gateway.is_installed('proxy') and gateway.can_send(proto):
-                gateway.send_file(
-                    self.remote_idurl,
-                    proto,
-                    host,
-                    self.filename,
-                    self.description)
+                gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                 self.items.append(WorkItem(proto, host, self.filesize))
                 self.automat('items-sent')
                 return
-        # finally use the first proto we supported if we can not find the best
-        # preferable method
+        # finally use the first proto we supported if we can not find the best preferable method
         for contactmethod in self.remote_identity.getContacts():
             proto, host, port, fn = nameurl.UrlParse(contactmethod)
             if port:
                 host = host + ':' + str(port)
             # if method exist but empty - don't use it
             if host.strip():
-                # try sending with tcp even if it is switched off in the
-                # settings
+                # try sending with tcp even if it is switched off in the settings
                 if gateway.is_installed(proto) and gateway.can_send(proto):
-                    if settings.enableTransport(
-                            proto) and settings.transportSendingIsEnabled(proto):
-                        gateway.send_file(
-                            self.remote_idurl,
-                            proto,
-                            host,
-                            self.filename,
-                            self.description)
+                    if settings.enableTransport(proto) and settings.transportSendingIsEnabled(proto):
+                        gateway.send_file(self.remote_idurl, proto, host, self.filename, self.description)
                         self.items.append(WorkItem(proto, host, self.filesize))
                         self.automat('items-sent')
                         return

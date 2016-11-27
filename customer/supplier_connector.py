@@ -22,7 +22,8 @@
 
 
 """
-.. module:: supplier
+.. module:: supplier.
+
 .. role:: red
 
 BitDust supplier_connector() Automat
@@ -79,6 +80,7 @@ _SuppliersConnectors = {}
 
 def connectors():
     """
+    
     """
     global _SuppliersConnectors
     return _SuppliersConnectors
@@ -86,6 +88,7 @@ def connectors():
 
 def create(supplier_idurl):
     """
+    
     """
     assert supplier_idurl not in connectors()
     connectors()[supplier_idurl] = SupplierConnector(supplier_idurl)
@@ -100,8 +103,8 @@ def by_idurl(idurl):
 
 class SupplierConnector(automat.Automat):
     """
-    This class implements all the functionality of the ``supplier_connector()`` state machine.
-
+    This class implements all the functionality of the ``supplier_connector()``
+    state machine.
     """
 
     timers = {
@@ -115,38 +118,28 @@ class SupplierConnector(automat.Automat):
         self.request_packet_id = None
         self.callbacks = {}
         try:
-            st = bpio.ReadTextFile(
-                settings.SupplierServiceFilename(
-                    self.idurl)).strip()
+            st = bpio.ReadTextFile(settings.SupplierServiceFilename(self.idurl)).strip()
         except:
             st = 'DISCONNECTED'
         if st == 'CONNECTED':
-            automat.Automat.__init__(
-                self, 'supplier_%s' %
-                self.name, 'CONNECTED', _DebugLevel, _Debug)
+            automat.Automat.__init__(self, 'supplier_%s' % self.name, 'CONNECTED', _DebugLevel, _Debug)
         elif st == 'NO_SERVICE':
-            automat.Automat.__init__(
-                self, 'supplier_%s' %
-                self.name, 'NO_SERVICE', _DebugLevel, _Debug)
+            automat.Automat.__init__(self, 'supplier_%s' % self.name, 'NO_SERVICE', _DebugLevel, _Debug)
         else:
-            automat.Automat.__init__(
-                self,
-                'supplier_%s' %
-                self.name,
-                'DISCONNECTED',
-                _DebugLevel,
-                _Debug)
+            automat.Automat.__init__(self, 'supplier_%s' % self.name, 'DISCONNECTED', _DebugLevel, _Debug)
         for cb in self.callbacks.values():
             cb(self.idurl, self.state, self.state)
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
         if newstate in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE']:
             supplierPath = settings.SupplierPath(self.idurl)
@@ -156,9 +149,7 @@ class SupplierConnector(automat.Automat):
                 except:
                     lg.exc()
                     return
-            bpio.WriteFile(
-                settings.SupplierServiceFilename(
-                    self.idurl), newstate)
+            bpio.WriteFile(settings.SupplierServiceFilename(self.idurl), newstate)
 
     def set_callback(self, name, cb):
         self.callbacks[name] = cb
@@ -253,10 +244,7 @@ class SupplierConnector(automat.Automat):
         newpacket = arg
         if newpacket.Payload.startswith('accepted'):
             if _Debug:
-                lg.out(
-                    6,
-                    'supplier_connector.isServiceAccepted !!!! supplier %s connected' %
-                    self.idurl)
+                lg.out(6, 'supplier_connector.isServiceAccepted !!!! supplier %s connected' % self.idurl)
             return True
         return False
 
@@ -268,10 +256,7 @@ class SupplierConnector(automat.Automat):
         if newpacket.Command == commands.Ack():
             if newpacket.Payload.startswith('accepted'):
                 if _Debug:
-                    lg.out(
-                        6,
-                        'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' %
-                        self.idurl)
+                    lg.out(6, 'supplier_connector.isServiceCancelled !!!! supplier %s disconnected' % self.idurl)
                 return True
         return False
 
@@ -279,30 +264,19 @@ class SupplierConnector(automat.Automat):
         """
         Action method.
         """
-        bytes_needed = diskspace.GetBytesFromString(
-            settings.getNeededString(), 0)
+        bytes_needed = diskspace.GetBytesFromString(settings.getNeededString(), 0)
         num_suppliers = settings.getSuppliersNumberDesired()
         if num_suppliers > 0:
-            bytes_per_supplier = int(
-                math.ceil(
-                    2.0 *
-                    bytes_needed /
-                    float(num_suppliers)))
+            bytes_per_supplier = int(math.ceil(2.0 * bytes_needed / float(num_suppliers)))
         else:
-            bytes_per_supplier = int(
-                math.ceil(
-                    2.0 *
-                    settings.MinimumNeededBytes() /
-                    float(
-                        settings.DefaultDesiredSuppliers())))
+            bytes_per_supplier = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
         service_info = 'service_supplier %d' % bytes_per_supplier
         request = p2p_service.SendRequestService(
             self.idurl, service_info, callbacks={
                 commands.Ack(): self._supplier_acked,
                 commands.Fail(): self._supplier_failed})
         # commands.Ack(): lambda response, info: self.automat('ack', response),
-        # commands.Fail(): lambda response, info: self.automat('fail',
-        # response)})
+        # commands.Fail(): lambda response, info: self.automat('fail', response)})
         self.request_packet_id = request.PacketID
 
     def doCancelService(self, arg):
@@ -358,14 +332,10 @@ class SupplierConnector(automat.Automat):
 
     def _supplier_acked(self, response, info):
         if _Debug:
-            lg.out(
-                16, 'supplier_connector._supplier_acked %r %r' %
-                (response, info))
+            lg.out(16, 'supplier_connector._supplier_acked %r %r' % (response, info))
         self.automat(response.Command.lower(), response)
 
     def _supplier_failed(self, response, info):
         if _Debug:
-            lg.out(
-                16, 'supplier_connector._supplier_failed %r %r' %
-                (response, info))
+            lg.out(16, 'supplier_connector._supplier_failed %r %r' % (response, info))
         self.automat(response.Command.lower(), response)

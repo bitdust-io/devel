@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: bptester
+.. module:: bptester.
 
 This is a BitDust child process, do monitoring of customer's files.
 
@@ -53,12 +53,7 @@ def sharedPath(filename, subdir='logs'):
         curdir = os.getcwd()  # os.path.dirname(os.path.abspath(sys.executable))
         if os.path.isfile(os.path.join(curdir, 'appdata')):
             try:
-                appdata = os.path.abspath(
-                    open(
-                        os.path.join(
-                            curdir,
-                            'appdata'),
-                        'rb').read().strip())
+                appdata = os.path.abspath(open(os.path.join(curdir, 'appdata'), 'rb').read().strip())
             except:
                 appdata = os.path.join(os.path.expanduser('~'), '.bitdust')
             if not os.path.isdir(appdata):
@@ -72,8 +67,10 @@ def sharedPath(filename, subdir='logs'):
 def logfilepath():
     """
     A file path to the file where ``bptester`` will write logs.
-    Need to make sure the ``bptester`` log is in a directory the user has permissions for,
-    Such as the customer data directory.  Possibly move to temp directory?
+
+    Need to make sure the ``bptester`` log is in a directory the user
+    has permissions for, Such as the customer data directory.  Possibly
+    move to temp directory?
     """
 #    logspath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs')
 #    if not os.path.isdir(logspath):
@@ -110,20 +107,20 @@ except:
     printlog(traceback.format_exc())
     sys.exit(2)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def SpaceTime():
     """
     Test all packets for each customer.
-    Check if he use more space than we gave him and if packets is too old.
+
+    Check if he use more space than we gave him and if packets is too
+    old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
     space = bpio._read_dict(settings.CustomersSpaceFile())
     if space is None:
-        printlog(
-            'SpaceTime ERROR can not read file ' +
-            settings.CustomersSpaceFile())
+        printlog('SpaceTime ERROR can not read file ' + settings.CustomersSpaceFile())
         return
     customers_dir = settings.getCustomersFilesDir()
     if not os.path.exists(customers_dir):
@@ -164,19 +161,14 @@ def SpaceTime():
             sizedict[path] = stats.st_size
         bpio.traverse_dir_recursive(cb, onecustdir)
         currentV = 0
-        for path in sorted(
-                timedict.keys(),
-                key=lambda x: timedict[x],
-                reverse=True):
+        for path in sorted(timedict.keys(), key=lambda x: timedict[x], reverse=True):
             filesize = sizedict.get(path, 0)
             currentV += filesize
             if currentV < maxspaceV:
                 continue
             try:
                 os.remove(path)
-                printlog(
-                    'SpaceTime ' + path + ' file removed (cur:%s, max: %s)' %
-                    (str(currentV), str(maxspaceV)))
+                printlog('SpaceTime ' + path + ' file removed (cur:%s, max: %s)' % (str(currentV), str(maxspaceV)))
             except:
                 printlog('SpaceTime ERROR removing ' + path)
             # time.sleep(0.01)
@@ -189,11 +181,7 @@ def SpaceTime():
         if os.path.isdir(path):
             try:
                 bpio._dir_remove(path)
-                printlog(
-                    'SpaceTime ' +
-                    path +
-                    ' dir removed (%s)' %
-                    (remove_list[path]))
+                printlog('SpaceTime ' + path + ' dir removed (%s)' % (remove_list[path]))
             except:
                 printlog('SpaceTime ERROR removing ' + path)
             continue
@@ -204,11 +192,7 @@ def SpaceTime():
             pass
         try:
             os.remove(path)
-            printlog(
-                'SpaceTime ' +
-                path +
-                ' file removed (%s)' %
-                (remove_list[path]))
+            printlog('SpaceTime ' + path + ' file removed (%s)' % (remove_list[path]))
         except:
             printlog('SpaceTime ERROR removing ' + path)
     del remove_list
@@ -249,11 +233,7 @@ def UpdateCustomers():
         if os.path.isdir(path):
             try:
                 bpio._dir_remove(path)
-                printlog(
-                    'UpdateCustomers ' +
-                    path +
-                    ' folder removed (%s)' %
-                    (remove_list[path]))
+                printlog('UpdateCustomers ' + path + ' folder removed (%s)' % (remove_list[path]))
             except:
                 printlog('UpdateCustomers ERROR removing ' + path)
             continue
@@ -264,15 +244,10 @@ def UpdateCustomers():
             pass
         try:
             os.remove(path)
-            printlog(
-                'UpdateCustomers ' +
-                path +
-                ' file removed (%s)' %
-                (remove_list[path]))
+            printlog('UpdateCustomers ' + path + ' file removed (%s)' % (remove_list[path]))
         except:
             printlog('UpdateCustomers ERROR removing ' + path)
-    printlog('UpdateCustomers ' +
-             str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
+    printlog('UpdateCustomers ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
 
 #------------------------------------------------------------------------------
 
@@ -302,8 +277,7 @@ def Validate():
             packetsrc = bpio.ReadBinaryFile(path)
             if not packetsrc:
                 try:
-                    # if is is no good it is of no use to anyone
-                    os.remove(path)
+                    os.remove(path)  # if is is no good it is of no use to anyone
                     printlog('Validate ' + path + ' removed (empty file)')
                 except:
                     printlog('Validate ERROR removing ' + path)
@@ -311,12 +285,8 @@ def Validate():
             p = signed.Unserialize(packetsrc)
             if p is None:
                 try:
-                    # if is is no good it is of no use to anyone
-                    os.remove(path)
-                    printlog(
-                        'Validate ' +
-                        path +
-                        ' removed (unserialize error)')
+                    os.remove(path)  # if is is no good it is of no use to anyone
+                    printlog('Validate ' + path + ' removed (unserialize error)')
                 except:
                     printlog('Validate ERROR removing ' + path)
                     return False
@@ -325,8 +295,7 @@ def Validate():
             del p
             if not result:
                 try:
-                    # if is is no good it is of no use to anyone
-                    os.remove(path)
+                    os.remove(path)  # if is is no good it is of no use to anyone
                     printlog('Validate ' + path + ' removed (invalid packet)')
                 except:
                     printlog('Validate ERROR removing ' + path)

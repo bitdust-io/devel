@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_broadcasting
+..
 
+module:: service_broadcasting
 """
 
 from services.local_service import LocalService
@@ -57,13 +58,11 @@ class BroadcastingService(LocalService):
         from main import settings
         broadcasters_finder.A('init')
         if settings.enableBroadcastRouting():
-            broadcaster_node.A(
-                'init', broadcast_service.on_incoming_broadcast_message)
+            broadcaster_node.A('init', broadcast_service.on_incoming_broadcast_message)
             broadcaster_node.A().addStateChangedCallback(
                 self._on_broadcaster_node_switched)
         else:
-            broadcast_listener.A(
-                'init', broadcast_service.on_incoming_broadcast_message)
+            broadcast_listener.A('init', broadcast_service.on_incoming_broadcast_message)
             broadcast_listener.A().addStateChangedCallback(
                 self._on_broadcast_listener_switched)
             broadcast_listener.A('connect', self.scope)
@@ -101,59 +100,41 @@ class BroadcastingService(LocalService):
             lg.exc()
             return None
         if mode != 'route' and mode != 'listen':
-            lg.out(
-                8,
-                "service_broadcasting.request DENIED, wrong mode provided : %s" %
-                mode)
+            lg.out(8, "service_broadcasting.request DENIED, wrong mode provided : %s" % mode)
             return None
         if not settings.enableBroadcastRouting():
-            lg.out(
-                8, "service_broadcasting.request DENIED, broadcast routing disabled")
+            lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
             return p2p_service.SendFail(request, 'broadcast routing disabled')
         from broadcast import broadcaster_node
         if not broadcaster_node.A():
-            lg.out(
-                8, "service_broadcasting.request DENIED, broadcast routing disabled")
+            lg.out(8, "service_broadcasting.request DENIED, broadcast routing disabled")
             return p2p_service.SendFail(request, 'broadcast routing disabled')
-        if broadcaster_node.A().state not in [
-                'BROADCASTING', 'OFFLINE', 'BROADCASTERS?', ]:
-            lg.out(
-                8, "service_broadcasting.request DENIED, current state is : %s" %
-                broadcaster_node.A().state)
+        if broadcaster_node.A().state not in ['BROADCASTING', 'OFFLINE', 'BROADCASTERS?', ]:
+            lg.out(8, "service_broadcasting.request DENIED, current state is : %s" % broadcaster_node.A().state)
             return p2p_service.SendFail(request, 'currently not broadcasting')
         if mode == 'route':
             broadcaster_node.A('new-broadcaster-connected', request.OwnerID)
-            lg.out(
-                8,
-                "service_broadcasting.request ACCEPTED, mode: %s" %
-                words)
+            lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words)
             return p2p_service.SendAck(request, 'accepted')
         if mode == 'listen':
-            broadcaster_node.A().add_listener(
-                request.OwnerID, ' '.join(words[2:]))
-            lg.out(
-                8,
-                "service_broadcasting.request ACCEPTED, mode: %s" %
-                words[1])
+            broadcaster_node.A().add_listener(request.OwnerID, ' '.join(words[2:]))
+            lg.out(8, "service_broadcasting.request ACCEPTED, mode: %s" % words[1])
             return p2p_service.SendAck(request, 'accepted')
         return None
 
-    def _on_broadcast_routing_enabled_disabled(
-            self, path, value, oldvalue, result):
+    def _on_broadcast_routing_enabled_disabled(self, path, value, oldvalue, result):
         from logs import lg
         from broadcast import broadcaster_node
         from broadcast import broadcast_listener
         from broadcast import broadcast_service
-        lg.out(
-            2, 'service_broadcasting._on_broadcast_routing_enabled_disabled : %s->%s : %s' %
-            (oldvalue, value, path))
+        lg.out(2, 'service_broadcasting._on_broadcast_routing_enabled_disabled : %s->%s : %s' % (
+            oldvalue, value, path))
         if not value:
             if broadcaster_node.A() is not None:
                 broadcaster_node.A().removeStateChangedCallback(
                     self._on_broadcaster_node_switched)
                 broadcaster_node.A('shutdown')
-            broadcast_listener.A(
-                'init', broadcast_service.on_incoming_broadcast_message)
+            broadcast_listener.A('init', broadcast_service.on_incoming_broadcast_message)
             broadcast_listener.A().addStateChangedCallback(
                 self._on_broadcast_listener_switched)
             broadcast_listener.A('connect', self.scope)
@@ -162,8 +143,7 @@ class BroadcastingService(LocalService):
                 broadcast_listener.A().removeStateChangedCallback(
                     self._on_broadcast_listener_switched)
                 broadcast_listener.A('shutdown')
-            broadcaster_node.A(
-                'init', broadcast_service.on_incoming_broadcast_message)
+            broadcaster_node.A('init', broadcast_service.on_incoming_broadcast_message)
             broadcaster_node.A().addStateChangedCallback(
                 self._on_broadcaster_node_switched)
 
@@ -173,9 +153,7 @@ class BroadcastingService(LocalService):
         from broadcast import broadcast_listener
         if newstate == 'OFFLINE':
             reactor.callLater(60, broadcast_listener.A, 'connect', self.scope)
-            lg.out(
-                8,
-                'service_broadcasting._on_broadcast_listener_switched will try to connect again after 1 minute')
+            lg.out(8, 'service_broadcasting._on_broadcast_listener_switched will try to connect again after 1 minute')
 
     def _on_broadcaster_node_switched(self, oldstate, newstate, evt, args):
         from logs import lg
@@ -183,9 +161,7 @@ class BroadcastingService(LocalService):
         from broadcast import broadcaster_node
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             reactor.callLater(60, broadcaster_node.A, 'reconnect')
-            lg.out(
-                8,
-                'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')
+            lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')
 
 
 #     def cancel(self, request, info):

@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: id_restorer
+.. module:: id_restorer.
+
 .. role:: red
 
 
@@ -107,6 +108,7 @@ def A(event=None, arg=None):
 class IdRestorer(automat.Automat):
     """
     BitDust identity_restorer() Automat.
+
     Class to run the process to restore user account.
     """
 
@@ -191,9 +193,7 @@ class IdRestorer(automat.Automat):
     def doRequestMyIdentity(self, arg):
         global _WorkingIDURL
         idurl = _WorkingIDURL
-        lg.out(
-            4, 'identity_restorer.doRequestMyIdentity %s %s' %
-            (idurl, type(idurl)))
+        lg.out(4, 'identity_restorer.doRequestMyIdentity %s %s' % (idurl, type(idurl)))
         net_misc.getPageTwisted(idurl).addCallbacks(
             lambda src: self.automat('my-id-received', src),
             lambda err: self.automat('my-id-failed', err))
@@ -205,17 +205,11 @@ class IdRestorer(automat.Automat):
         remote_identity_src = arg
 
         if os.path.isfile(settings.KeyFileName()):
-            lg.out(
-                4,
-                'identity_restorer.doVerifyAndRestore will backup and remove ' +
-                settings.KeyFileName())
+            lg.out(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.KeyFileName())
             bpio.backup_and_remove(settings.KeyFileName())
 
         if os.path.isfile(settings.LocalIdentityFilename()):
-            lg.out(
-                4,
-                'identity_restorer.doVerifyAndRestore will backup and remove ' +
-                settings.LocalIdentityFilename())
+            lg.out(4, 'identity_restorer.doVerifyAndRestore will backup and remove ' + settings.LocalIdentityFilename())
             bpio.backup_and_remove(settings.LocalIdentityFilename())
 
         try:
@@ -223,12 +217,7 @@ class IdRestorer(automat.Automat):
             local_ident = identity.identity(xmlsrc=remote_identity_src)
         except:
             # lg.exc()
-            reactor.callLater(
-                0.1,
-                self.automat,
-                'restore-failed',
-                ('remote identity have incorrect format',
-                 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity have incorrect format', 'red'))
             return
 
         lg.out(4, 'identity_restorer.doVerifyAndRestore checking remote identity')
@@ -238,15 +227,8 @@ class IdRestorer(automat.Automat):
             lg.exc()
             res = False
         if not res:
-            lg.out(
-                4,
-                'identity_restorer.doVerifyAndRestore remote identity is not correct FAILED!!!!')
-            reactor.callLater(
-                0.1,
-                self.automat,
-                'restore-failed',
-                ('remote identity format is not correct',
-                 'red'))
+            lg.out(4, 'identity_restorer.doVerifyAndRestore remote identity is not correct FAILED!!!!')
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity format is not correct', 'red'))
             return
 
         lg.out(4, 'identity_restorer.doVerifyAndRestore validate remote identity')
@@ -256,14 +238,8 @@ class IdRestorer(automat.Automat):
             lg.exc()
             res = False
         if not res:
-            lg.out(
-                4, 'identity_restorer.doVerifyAndRestore validate remote identity FAILED!!!!')
-            reactor.callLater(
-                0.1,
-                self.automat,
-                'restore-failed',
-                ('remote identity is not valid',
-                 'red'))
+            lg.out(4, 'identity_restorer.doVerifyAndRestore validate remote identity FAILED!!!!')
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('remote identity is not valid', 'red'))
             return
 
         key.ForgetMyKey()
@@ -277,29 +253,18 @@ class IdRestorer(automat.Automat):
                 os.remove(settings.KeyFileName())
             except:
                 pass
-            reactor.callLater(0.1, self.automat, 'restore-failed',
-                              ('private key is not valid', 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('private key is not valid', 'red'))
             return
 
         try:
             local_ident.sign()
         except:
             # lg.exc()
-            reactor.callLater(
-                0.1,
-                self.automat,
-                'restore-failed',
-                ('error while signing identity',
-                 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('error while signing identity', 'red'))
             return
 
         if remote_ident.signature != local_ident.signature:
-            reactor.callLater(
-                0.1,
-                self.automat,
-                'restore-failed',
-                ('signature did not match, key verification failed!',
-                 'red'))
+            reactor.callLater(0.1, self.automat, 'restore-failed', ('signature did not match, key verification failed!', 'red'))
             return
 
         my_id.setLocalIdentity(local_ident)
@@ -308,26 +273,19 @@ class IdRestorer(automat.Automat):
         bpio.WriteFile(settings.UserNameFilename(), my_id.getIDName())
 
         if os.path.isfile(settings.KeyFileName() + '.backup'):
-            lg.out(
-                4,
-                'identity_restorer.doVerifyAndRestore will remove backup file for ' +
-                settings.KeyFileName())
+            lg.out(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.KeyFileName())
             bpio.remove_backuped_file(settings.KeyFileName())
 
         if os.path.isfile(settings.LocalIdentityFilename() + '.backup'):
-            lg.out(
-                4,
-                'identity_restorer.doVerifyAndRestore will remove backup file for ' +
-                settings.LocalIdentityFilename())
+            lg.out(4, 'identity_restorer.doVerifyAndRestore will remove backup file for ' + settings.LocalIdentityFilename())
             bpio.remove_backuped_file(settings.LocalIdentityFilename())
 
         reactor.callLater(0.1, self.automat, 'restore-success')
 
     def doRestoreSave(self, arg):
         """
-        TODO: use lib.config here
-        request settings from DHT
-        my suppliers need to keep that settings in DHT
+        TODO: use lib.config here request settings from DHT my suppliers need
+        to keep that settings in DHT.
         """
         # settings.uconfig().set('storage.suppliers', '0')
         # settings.uconfig().set('storage.needed', '0Mb')

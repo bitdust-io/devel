@@ -22,7 +22,8 @@
 
 
 """
-.. module:: accountants_finder
+.. module:: accountants_finder.
+
 .. role:: red
 
 BitDust accountants_finder() Automat
@@ -76,8 +77,7 @@ def A(event=None, arg=None):
         return _AccountantsFinder
     if _AccountantsFinder is None:
         # set automat name and starting state here
-        _AccountantsFinder = AccountantsFinder(
-            'accountants_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+        _AccountantsFinder = AccountantsFinder('accountants_finder', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _AccountantsFinder.automat(event, arg)
     return _AccountantsFinder
@@ -87,7 +87,8 @@ def A(event=None, arg=None):
 
 class AccountantsFinder(automat.Automat):
     """
-    This class implements all the functionality of the ``accountants_finder()`` state machine.
+    This class implements all the functionality of the ``accountants_finder()``
+    state machine.
     """
 
     timers = {
@@ -97,8 +98,8 @@ class AccountantsFinder(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of accountants_finder() machine.
+        Method to initialize additional variables and flags at creation phase
+        of accountants_finder() machine.
         """
         self.target_idurl = None
         self.requested_packet_id = None
@@ -106,18 +107,20 @@ class AccountantsFinder(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to catch the moment when accountants_finder() state were changed.
+        Method to catch the moment when accountants_finder() state were
+        changed.
         """
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the accountants_finder()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the accountants_finder() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'AT_STARTUP':
             if event == 'init':
@@ -232,10 +235,7 @@ class AccountantsFinder(automat.Automat):
         Action method.
         """
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'accountants_finder.doNotifyLookupFailed, Attempts=%d' %
-                self.Attempts)
+            lg.out(_DebugLevel, 'accountants_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
         if self.result_callback:
             self.result_callback('lookup-failed', arg)
         self.result_callback = None
@@ -251,7 +251,7 @@ class AccountantsFinder(automat.Automat):
         del _AccountantsFinder
         _AccountantsFinder = None
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _inbox_packet_received(self, newpacket, info, status, error_message):
         if  newpacket.Command == commands.Ack() and \
@@ -264,39 +264,26 @@ class AccountantsFinder(automat.Automat):
 
     def _node_acked(self, response, info):
         if _Debug:
-            lg.out(
-                _DebugLevel, 'accountants_finder._node_acked %r %r' %
-                (response, info))
+            lg.out(_DebugLevel, 'accountants_finder._node_acked %r %r' % (response, info))
         if not response.Payload.startswith('accepted'):
             if _Debug:
-                lg.out(
-                    _DebugLevel, 'accountants_finder._node_acked with service denied %r %r' %
-                    (response, info))
+                lg.out(_DebugLevel, 'accountants_finder._node_acked with service denied %r %r' % (response, info))
             self.automat('service-denied')
             return
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'accountants_finder._node_acked !!!! accountant %s connected' %
-                response.CreatorID)
+            lg.out(_DebugLevel, 'accountants_finder._node_acked !!!! accountant %s connected' % response.CreatorID)
         self.automat('service-accepted', response.CreatorID)
 
     def _node_failed(self, response, info):
         if _Debug:
-            lg.out(
-                _DebugLevel, 'accountants_finder._node_failed %r %r' %
-                (response, info))
+            lg.out(_DebugLevel, 'accountants_finder._node_failed %r %r' % (response, info))
         self.automat('service-denied')
 
     def _nodes_lookup_finished(self, idurls):
-        # TODO: this is still under construction - so I am using this node for
-        # tests
+        # TODO: this is still under construction - so I am using this node for tests
         idurls = ['http://veselin-p2p.ru/bitdust_vps1000_k.xml', ]
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'accountants_finder._nodes_lookup_finished : %r' %
-                idurls)
+            lg.out(_DebugLevel, 'accountants_finder._nodes_lookup_finished : %r' % idurls)
         for idurl in idurls:
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())

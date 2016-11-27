@@ -286,8 +286,10 @@ def _getLocalIPAddressViaMulticast(ret):
 
 
 def isBogusAddress(addr):
-    """ Returns true if the given address is bogus, i.e. 0.0.0.0 or
-        127.0.0.1. Additional forms of bogus might be added later.
+    """
+    Returns true if the given address is bogus, i.e. 0.0.0.0 or 127.0.0.1.
+
+    Additional forms of bogus might be added later.
     """
     if addr.startswith('0.') or addr.startswith('127.'):
         return True

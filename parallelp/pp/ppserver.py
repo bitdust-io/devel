@@ -45,7 +45,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 """
-Parallel Python Software, Network Server
+Parallel Python Software, Network Server.
 
 http://www.parallelpython.com - updates, documentation, examples and support
 forums
@@ -79,7 +79,8 @@ except ImportError:
 
 
 class _NetworkServer(Server):
-    """Network Server Class
+    """
+    Network Server Class.
     """
 
     def __init__(self, ncpus="autodetect", interface="0.0.0.0",
@@ -107,14 +108,18 @@ class _NetworkServer(Server):
             thread.start_new_thread(self.check_timeout, ())
 
     def ncon_add(self, val):
-        """Keeps track of the number of connections and time of the last one"""
+        """
+        Keeps track of the number of connections and time of the last one.
+        """
         self.ncon_lock.acquire()
         self.ncon += val
         self.last_con_time = time.time()
         self.ncon_lock.release()
 
     def check_timeout(self):
-        """Checks if timeout happened and shutdowns server if it did"""
+        """
+        Checks if timeout happened and shutdowns server if it did.
+        """
         while True:
             if self.ncon == 0:
                 idle_time = time.time() - self.last_con_time
@@ -128,7 +133,9 @@ class _NetworkServer(Server):
                 time.sleep(self.timeout)
 
     def listen(self):
-        """Initiates listenting to incoming connections"""
+        """
+        Initiates listenting to incoming connections.
+        """
         try:
             ssocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # following allows ppserver to restart faster on the same port
@@ -151,7 +158,9 @@ class _NetworkServer(Server):
             ssocket.close()
 
     def crun(self, csocket):
-        """Authenticates client and handles its jobs"""
+        """
+        Authenticates client and handles its jobs.
+        """
         mysocket = pptransport.CSocketTransport(csocket)
         # send PP version
         mysocket.send(version)
@@ -195,7 +204,9 @@ class _NetworkServer(Server):
             self.ncon_add(-1)
 
     def broadcast(self):
-        """Initiaates auto-discovery mechanism"""
+        """
+        Initiaates auto-discovery mechanism.
+        """
         discover = ppauto.Discover(self)
         thread.start_new_thread(discover.run,
                                 ((self.host, self.port),
@@ -278,7 +289,9 @@ configuration files. You can still use command line switches."
 
 
 def print_usage():
-    """Prints help"""
+    """
+    Prints help.
+    """
     print "Parallel Python Network Server (pp-" + version + ")"
     print "Usage: ppserver.py [-hdar] [-n proto] [-c config_path]"\
         " [-i interface] [-b broadcast] [-p port] [-w nworkers]"\

@@ -26,10 +26,11 @@
 #
 
 """
-.. module:: diskusage
+.. module:: diskusage.
 
 This is OS specific methods to read and check the local disks usage.
-Need to be sure user have enough free space on the disk and able to donate previously specified amount of space.
+Need to be sure user have enough free space on the disk and able to
+donate previously specified amount of space.
 """
 
 import os
@@ -56,37 +57,33 @@ if bpio.Windows():
 def GetWinDriveSpace(drive):
     """
     For Windows.
-    Return a tuple (<free space in bytes>, <total space in bytes>) or (None, None).
-    Call system method ``win32file.GetDiskFreeSpace``.
+
+    Return a tuple (<free space in bytes>, <total space in bytes>) or
+    (None, None). Call system method ``win32file.GetDiskFreeSpace``.
     """
     try:
-        sectorsPerCluster, bytesPerSector, numFreeClusters, totalNumClusters = win32file.GetDiskFreeSpace(
-            drive + ":\\")
+        sectorsPerCluster, bytesPerSector, numFreeClusters, totalNumClusters = win32file.GetDiskFreeSpace(drive + ":\\")
         sectorsPerCluster = long(sectorsPerCluster)
         bytesPerSector = long(bytesPerSector)
         numFreeClusters = long(numFreeClusters)
         totalNumClusters = long(totalNumClusters)
     except:
         return None, None
-    return float(numFreeClusters *
-                 sectorsPerCluster *
-                 bytesPerSector), float(totalNumClusters *
-                                        sectorsPerCluster *
-                                        bytesPerSector)
+    return float(numFreeClusters * sectorsPerCluster * bytesPerSector), float(totalNumClusters * sectorsPerCluster * bytesPerSector)
 
 
 def GetLinuxDriveSpace(path):
     """
     For Linux.
-    Return a tuple (<free space in bytes>, <total space in bytes>) or (None, None).
-    Call system method ``os.statvfs``.
+
+    Return a tuple (<free space in bytes>, <total space in bytes>) or
+    (None, None). Call system method ``os.statvfs``.
     """
     try:
         s = os.statvfs(str(path))
         # free, total = s.f_bsize*(s.f_blocks-s.f_bavail), s.f_bsize * s.f_bavail
         # free, total = float(s.f_bsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
-        free, total = float(
-            s.f_frsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
+        free, total = float(s.f_frsize * s.f_bavail), float(s.f_bsize * s.f_blocks)
         return free, total
     except:
         return None, None
@@ -108,14 +105,14 @@ def GetDriveSpace(path):
         else:
             return None, None
     else:
-        # on linux the mount points can make a directory be off a different
-        # disk than root
+        # on linux the mount points can make a directory be off a different disk than root
         return GetLinuxDriveSpace(path)
 
 
 def SumFileSizes(fileList):
     """
-    Just iterate the input list and call ``os.path.getsize`` for every item, also calculate and return the total size.
+    Just iterate the input list and call ``os.path.getsize`` for every item,
+    also calculate and return the total size.
     """
     fileSizeTotal = 0
     for filename in fileList:
@@ -129,16 +126,13 @@ def SumFileSizes(fileList):
 def GetOurTempFileSizeTotal(tempDirectory, masks=['*', ]):
     """
     Not used right now.
-    Tried here to calculate our temporary files size.
-    Temp files was reorganized and so this must be rewritten. TODO.
+
+    Tried here to calculate our temporary files size. Temp files was
+    reorganized and so this must be rewritten. TODO.
     """
     ourFileSizes = 0
     for mask in masks:
-        ourFileSizes += SumFileSizes(
-            glob.glob(
-                os.path.join(
-                    tempDirectory,
-                    mask)))
+        ourFileSizes += SumFileSizes(glob.glob(os.path.join(tempDirectory, mask)))
     return ourFileSizes
 
 
@@ -151,8 +145,7 @@ def OkToShareSpace(desiredSharedSpaceMB):
     if dataDriveFreeSpace is None:
         return False
     currentlySharedSpace = GetDirectorySize(dataDir)
-    if (currentlySharedSpace + dataDriveFreeSpace /
-            (1024 * 1024)) < desiredSharedSpaceMB:
+    if (currentlySharedSpace + dataDriveFreeSpace / (1024 * 1024)) < desiredSharedSpaceMB:
         return False
     else:
         return True
@@ -170,6 +163,7 @@ def GetDirectorySize(directoryPath):
 def main():
     """
     This method is for tests.
+
     Need to move all things here to unit tests. TODO.
     """
     dataDir = settings.getCustomersFilesDir()

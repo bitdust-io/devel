@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: child_process
+.. module:: child_process.
 
 BitDust executes periodically several slaves:
     - bppipe
@@ -97,42 +97,28 @@ def run(child_name, params=[], base_dir='.', process_protocol=None):
         from twisted.internet import _dumbwin32proc
         real_CreateProcess = _dumbwin32proc.win32process.CreateProcess
 
-        def fake_createprocess(
-                _appName,
-                _commandLine,
-                _processAttributes,
-                _threadAttributes,
-                _bInheritHandles,
-                creationFlags,
-                _newEnvironment,
-                _currentDirectory,
-                startupinfo):
+        def fake_createprocess(_appName, _commandLine, _processAttributes,
+                               _threadAttributes, _bInheritHandles, creationFlags,
+                               _newEnvironment, _currentDirectory, startupinfo):
             import win32con
             flags = win32con.CREATE_NO_WINDOW
             return real_CreateProcess(_appName, _commandLine,
                                       _processAttributes, _threadAttributes,
                                       _bInheritHandles, flags, _newEnvironment,
                                       _currentDirectory, startupinfo)
-        setattr(
-            _dumbwin32proc.win32process,
-            'CreateProcess',
-            fake_createprocess)
+        setattr(_dumbwin32proc.win32process, 'CreateProcess', fake_createprocess)
 
     if process_protocol is None:
         process_protocol = ChildProcessProtocol(child_name)
     try:
-        Process = reactor.spawnProcess(
-            process_protocol, executable, cmdargs, path=base_dir)
+        Process = reactor.spawnProcess(process_protocol, executable, cmdargs, path=base_dir)
     except:
         lg.out(1, 'child_process.run ERROR executing: %s' % str(cmdargs))
         lg.exc()
         return None
 
     if bpio.Windows():
-        setattr(
-            _dumbwin32proc.win32process,
-            'CreateProcess',
-            real_CreateProcess)
+        setattr(_dumbwin32proc.win32process, 'CreateProcess', real_CreateProcess)
 
     lg.out(6, 'child_process.run [%s] pid=%d' % (child_name, Process.pid))
     return Process
@@ -144,10 +130,7 @@ def kill_process(process):
     """
     try:
         process.signalProcess('KILL')
-        lg.out(
-            6,
-            'child_process.kill_process sent signal "KILL" to %s the process %d' %
-            process.pid)
+        lg.out(6, 'child_process.kill_process sent signal "KILL" to %s the process %d' % process.pid)
     except:
         return False
     return True
@@ -155,7 +138,8 @@ def kill_process(process):
 
 def kill_child(child_name):
     """
-    Search (by "pid") for BitDust child process with name ``child_name`` and tries to kill it.
+    Search (by "pid") for BitDust child process with name ``child_name`` and
+    tries to kill it.
     """
     killed = False
     for pid in bpio.find_process([child_name + '.']):
@@ -169,7 +153,9 @@ def kill_child(child_name):
 
 def pipe(cmdargs):
     """
-    Execute a process in different way, create a Pipe to do read/write operations with child process.
+    Execute a process in different way, create a Pipe to do read/write
+    operations with child process.
+
     See ``lib.nonblocking`` module.
     """
     lg.out(6, "child_process.pipe %s" % str(cmdargs))
@@ -201,6 +187,7 @@ def pipe(cmdargs):
 
 def detach(cmdargs):
     """
+    
     """
     lg.out(2, "child_process.detach %s" % str(cmdargs))
     try:

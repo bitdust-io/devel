@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_list_files
+..
 
+module:: service_list_files
 """
 
 from services.local_service import LocalService

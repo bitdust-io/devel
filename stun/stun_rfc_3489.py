@@ -85,9 +85,8 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
                 alt = str(self._altStunAddress)
         except:
             lg.exc()
-        lg.out(
-            2, 'stun.IPStunProtocol.finishedStun local=%s external=%s altStun=%s NAT_type=%s' %
-            (local, ip + ':' + port, alt, typ))
+        lg.out(2, 'stun.IPStunProtocol.finishedStun local=%s external=%s altStun=%s NAT_type=%s' % (
+            local, ip + ':' + port, alt, typ))
         if self.result is not None:
             if not self.result.called:
                 if ip == '0.0.0.0':
@@ -99,6 +98,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
     def datagramReceived(self, dgram, address):
         """
         Called when UDP datagram is received.
+
         I place a hook here to process datagrams in another place.
         """
         if self._finished:
@@ -117,8 +117,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
                     if self.datagram_received_callback is None:
                         return
                     return self.datagram_received_callback(dgram, address)
-        return shtoom.stun.StunDiscoveryProtocol.datagramReceived(
-            self, dgram, address)
+        return shtoom.stun.StunDiscoveryProtocol.datagramReceived(self, dgram, address)
 
     def refresh(self):
         """
@@ -135,8 +134,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
         self.natType = None
         self.result = Deferred()
         self.count = 0
-        self.servers = [(host, port)
-                        for host, port in shtoom.stun.DefaultServers]
+        self.servers = [(host, port) for host, port in shtoom.stun.DefaultServers]
 
     def setCallback(self, cb, arg=None):
         """
@@ -145,19 +143,15 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
         self.result.addBoth(cb, arg)
 
 
-def stunExternalIP(
-        timeout=10,
-        verbose=False,
-        close_listener=True,
-        internal_port=5061,
-        block_marker=None):
+def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port=5061, block_marker=None):
     """
     Start the STUN process.
-        :param timeout: how long to wait before decide that STUN is failed
-        :param verbose: set to True to print more log messages
-        :param close_listener: if True the listener will be closed after STUN is finished
-        :param internal_port: a port number to listen, the external port will be different
-        :param block_marker: you can provide a function if you need to block some other code while STUN is working
+
+    :param timeout: how long to wait before decide that STUN is failed
+    :param verbose: set to True to print more log messages
+    :param close_listener: if True the listener will be closed after STUN is finished
+    :param internal_port: a port number to listen, the external port will be different
+    :param block_marker: you can provide a function if you need to block some other code while STUN is working
     """
     global _WorkingDefers
     global _IsWorking
@@ -198,10 +192,7 @@ def stunExternalIP(
         try:
             UDP_port = int(internal_port)
             _UDPListener = reactor.listenUDP(UDP_port, _StunClient)
-            lg.out(
-                4,
-                'stun.stunExternalIP UDP listening on port %d started' %
-                UDP_port)
+            lg.out(4, 'stun.stunExternalIP UDP listening on port %d started' % UDP_port)
         except:
             try:
                 _UDPListener = reactor.listenUDP(0, _StunClient)
@@ -228,12 +219,7 @@ def stunExternalIP(
 
         if block_marker:
             block_marker('unblock')
-        lg.out(
-            6,
-            'stun.stunExternalIP.stun_finished: ' +
-            str(x).replace(
-                '\n',
-                ''))
+        lg.out(6, 'stun.stunExternalIP.stun_finished: ' + str(x).replace('\n', ''))
         _LastStunResult = x
         try:
             if _IsWorking:
@@ -345,13 +331,7 @@ def main(verbose=False):
     For tests.
     """
     if sys.argv.count('port'):
-        d = stunExternalIP(
-            verbose=verbose,
-            close_listener=False,
-            internal_port=int(
-                sys.argv[
-                    sys.argv.index('port') +
-                    1]))
+        d = stunExternalIP(verbose=verbose, close_listener=False, internal_port=int(sys.argv[sys.argv.index('port') + 1]))
     else:
         d = stunExternalIP(verbose=verbose, close_listener=False,)
     d.addCallback(success)

@@ -84,6 +84,7 @@ def shutdown():
 
 def ReadBinaryFile(filename):
     """
+    
     """
     if not os.path.isfile(filename):
         return ''

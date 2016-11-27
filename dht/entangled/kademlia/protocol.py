@@ -43,17 +43,20 @@ _Debug = False
 
 
 class TimeoutError(Exception):
-    """ Raised when a RPC times out """
+    """
+    Raised when a RPC times out.
+    """
 
 
 class KademliaProtocol(protocol.DatagramProtocol):
-    """ Implements all low-level network-related functions of a Kademlia node """
+    """
+    Implements all low-level network-related functions of a Kademlia node.
+    """
     msgSizeLimit = constants.udpDatagramMaxSize - 26
     maxToSendDelay = 10**-3
     minToSendDelay = 10**-5
 
-    def __init__(self, node, msgEncoder=encoding.Bencode(),
-                 msgTranslator=msgformat.DefaultFormat()):
+    def __init__(self, node, msgEncoder=encoding.Bencode(), msgTranslator=msgformat.DefaultFormat()):
         self._node = node
         self._encoder = msgEncoder
         self._translator = msgTranslator
@@ -62,7 +65,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._partialMessagesProgress = {}
 
     def sendRPC(self, contact, method, args, rawResponse=False):
-        """ Sends an RPC to the specified contact
+        """
+        Sends an RPC to the specified contact.
 
         @param contact: The contact (remote node) to send the RPC to
         @type contact: kademlia.contacts.Contact
@@ -97,10 +101,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             df._rpcRawResponse = True
 
         # Set the RPC timeout timer
-        timeoutCall = reactor.callLater(
-            constants.rpcTimeout,
-            self._msgTimeout,
-            msg.id)  # IGNORE:E1101
+        timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, msg.id)  # IGNORE:E1101
         # Transmit the data
         if _Debug:
             print '                sendRPC', (method, contact.address, contact.port)
@@ -109,7 +110,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         return df
 
     def datagramReceived(self, datagram, address):
-        """ Handles and parses incoming RPC messages (and responses)
+        """
+        Handles and parses incoming RPC messages (and responses)
 
         @note: This is automatically called by Twisted when the protocol
                receives a UDP datagram
@@ -139,8 +141,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
             msgPrimitive = self._encoder.decode(datagram)
             message = self._translator.fromPrimitive(msgPrimitive)
 
-            remoteContact = Contact(
-                message.nodeID, address[0], address[1], self)
+            remoteContact = Contact(message.nodeID, address[0], address[1], self)
             # Refresh the remote node's details in the local node's k-buckets
             self._node.addContact(remoteContact)
 
@@ -150,11 +151,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
 
             if isinstance(message, msgtypes.RequestMessage):
                 # This is an RPC method request
-                self._handleRPC(
-                    remoteContact,
-                    message.id,
-                    message.request,
-                    message.args)
+                self._handleRPC(remoteContact, message.id, message.request, message.args)
             elif isinstance(message, msgtypes.ResponseMessage):
                 # Find the message that triggered this response
                 if message.id in self._sentMessages:
@@ -164,32 +161,26 @@ class KademliaProtocol(protocol.DatagramProtocol):
                     del self._sentMessages[message.id]
 
                     if hasattr(df, '_rpcRawResponse'):
-                        # The RPC requested that the raw response message and
-                        # originating address be returned; do not interpret it
+                        # The RPC requested that the raw response message and originating address be returned; do not interpret it
                         df.callback((message, address))
                     elif isinstance(message, msgtypes.ErrorMessage):
-                        # The RPC request raised a remote exception; raise it
-                        # locally
+                        # The RPC request raised a remote exception; raise it locally
                         if message.exceptionType.startswith('exceptions.'):
                             exceptionClassName = message.exceptionType[11:]
                         else:
                             localModuleHierarchy = self.__module__.split('.')
                             remoteHierarchy = message.exceptionType.split('.')
                             # strip the remote hierarchy
-                            while remoteHierarchy[
-                                    0] == localModuleHierarchy[0]:
+                            while remoteHierarchy[0] == localModuleHierarchy[0]:
                                 remoteHierarchy.pop(0)
                                 localModuleHierarchy.pop(0)
                             exceptionClassName = '.'.join(remoteHierarchy)
                         remoteException = None
                         try:
-                            exec 'remoteException = %s("%s") from %s' % (
-                                exceptionClassName, message.response, address)
+                            exec 'remoteException = %s("%s") from %s' % (exceptionClassName, message.response, address)
                         except Exception:
-                            # We could not recreate the exception; create a
-                            # generic one
-                            remoteException = Exception(
-                                str(message.response) + (' from %s' % str(address)))
+                            # We could not recreate the exception; create a generic one
+                            remoteException = Exception(str(message.response) + (' from %s' % str(address)))
                         df.errback(remoteException)
                     else:
                         # We got a result from the RPC
@@ -205,8 +196,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
             print '                dt=%s' % (time.time() - _t)
 
     def _send(self, data, rpcID, address):
-        """ Transmit the specified data over UDP, breaking it up into several
-        packets if necessary
+        """
+        Transmit the specified data over UDP, breaking it up into several
+        packets if necessary.
 
         If the data is spread over multiple UDP datagrams, the packets have the
         following structure::
@@ -223,9 +215,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         """
         if len(data) > self.msgSizeLimit:
             # We have to spread the data over multiple UDP datagrams, and provide sequencing information
-            # 1st byte is transmission type id, bytes 2 & 3 are the total
-            # number of packets in this transmission, bytes 4 & 5 are the
-            # sequence number for this specific packet
+            # 1st byte is transmission type id, bytes 2 & 3 are the total number of packets in this transmission, bytes 4 & 5 are the sequence number for this specific packet
             totalPackets = len(data) / self.msgSizeLimit
             if len(data) % self.msgSizeLimit > 0:
                 totalPackets += 1
@@ -236,15 +226,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # reactor.iterate() #IGNORE:E1101
                 packetData = data[startPos:startPos + self.msgSizeLimit]
                 encSeqNumber = chr(seqNumber >> 8) + chr(seqNumber & 0xff)
-                txData = '\x00%s%s%s\x00%s' % (
-                    encTotalPackets, encSeqNumber, rpcID, packetData)
-                reactor.callLater(
-                    self.maxToSendDelay *
-                    seqNumber +
-                    self.minToSendDelay,
-                    self._write,
-                    txData,
-                    address)  # IGNORE:E1101
+                txData = '\x00%s%s%s\x00%s' % (encTotalPackets, encSeqNumber, rpcID, packetData)
+                reactor.callLater(self.maxToSendDelay * seqNumber + self.minToSendDelay, self._write, txData, address)  # IGNORE:E1101
                 startPos += self.msgSizeLimit
                 seqNumber += 1
         else:
@@ -261,7 +244,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 traceback.print_exc()
 
     def _sendResponse(self, contact, rpcID, response):
-        """ Send a RPC response to the specified contact
+        """
+        Send a RPC response to the specified contact.
         """
         msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
         msgPrimitive = self._translator.toPrimitive(msg)
@@ -271,13 +255,10 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _sendError(self, contact, rpcID, exceptionType, exceptionMessage):
-        """ Send an RPC error message to the specified contact
         """
-        msg = msgtypes.ErrorMessage(
-            rpcID,
-            self._node.id,
-            exceptionType,
-            exceptionMessage)
+        Send an RPC error message to the specified contact.
+        """
+        msg = msgtypes.ErrorMessage(rpcID, self._node.id, exceptionType, exceptionMessage)
         msgPrimitive = self._translator.toPrimitive(msg)
         encodedMsg = self._encoder.encode(msgPrimitive)
         if _Debug:
@@ -285,7 +266,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _handleRPC(self, senderContact, rpcID, method, args):
-        """ Executes a local function in response to an RPC request """
+        """
+        Executes a local function in response to an RPC request.
+        """
         # Set up the deferred callchain
         def handleError(f):
             self._sendError(senderContact, rpcID, f.type, f.getErrorMessage())
@@ -304,8 +287,7 @@ class KademliaProtocol(protocol.DatagramProtocol):
         # Execute the RPC
         func = getattr(self._node, method, None)
         if callable(func) and hasattr(func, 'rpcmethod'):
-            # Call the exposed Node method and return the result to the
-            # deferred callback chain
+            # Call the exposed Node method and return the result to the deferred callback chain
             try:
                 try:
                     # Try to pass the sender's node id to the function...
@@ -319,14 +301,12 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 df.callback(result)
         else:
             # No such exposed method
-            df.errback(
-                failure.Failure(
-                    AttributeError(
-                        'Invalid method: %s' %
-                        method)))
+            df.errback(failure.Failure(AttributeError('Invalid method: %s' % method)))
 
     def _msgTimeout(self, messageID):
-        """ Called when an RPC request message times out """
+        """
+        Called when an RPC request message times out.
+        """
         # Find the message that timed out
         if messageID in self._sentMessages:
             remoteContactID, df = self._sentMessages[messageID][0:2]
@@ -334,26 +314,19 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 # We are still receiving this message
                 # See if any progress has been made; if not, kill the message
                 if messageID in self._partialMessagesProgress:
-                    if len(
-                            self._partialMessagesProgress[messageID]) == len(
-                            self._partialMessages[messageID]):
+                    if len(self._partialMessagesProgress[messageID]) == len(self._partialMessages[messageID]):
                         # No progress has been made
                         del self._partialMessagesProgress[messageID]
                         del self._partialMessages[messageID]
-                        df.errback(
-                            failure.Failure(
-                                TimeoutError(remoteContactID)))
+                        df.errback(failure.Failure(TimeoutError(remoteContactID)))
                         return
                 # Reset the RPC timeout timer
-                timeoutCall = reactor.callLater(
-                    constants.rpcTimeout, self._msgTimeout, messageID)  # IGNORE:E1101
-                self._sentMessages[messageID] = (
-                    remoteContactID, df, timeoutCall)
+                timeoutCall = reactor.callLater(constants.rpcTimeout, self._msgTimeout, messageID)  # IGNORE:E1101
+                self._sentMessages[messageID] = (remoteContactID, df, timeoutCall)
                 return
             del self._sentMessages[messageID]
             # The message's destination node is now considered to be dead;
-            # raise an (asynchronous) TimeoutError exception and update the
-            # host node
+            # raise an (asynchronous) TimeoutError exception and update the host node
             self._node.removeContact(remoteContactID)
             df.errback(failure.Failure(TimeoutError(remoteContactID)))
         else:

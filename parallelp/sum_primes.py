@@ -33,9 +33,7 @@ import pp
 
 from primes import sum_primes, isprime
 
-# If you don't want to distribute the source code of your function you can
-# move the functionality to another external module and add it to the list
-# of dependent module names in job_server.submit() - last argument.
+# If you don't want to distribute the source code of your function you can move the functionality to another external module and add it to the list of dependent module names in job_server.submit() - last argument.
 
 print """Usage: python sum_primes.py [ncpus]
     [ncpus] - the number of workers to run in parallel,

@@ -23,7 +23,7 @@
 #
 #
 """
-.. module:: commands
+.. module:: commands.
 
 This module describes all commands in the BitDust p2p communication protocol.
 The command is stored as a string in the packet.Command field.
@@ -57,25 +57,18 @@ def init():
     global P2PCommandAcks
     P2PCommandAcks[Ack()] = None                         # No Ack for Ack
     P2PCommandAcks[Fail()] = None                        # No Ack for Fail
-    # Ack with Ack unless it is our data coming back (would be only after
-    # Retrieve)
-    P2PCommandAcks[Data()] = Ack()
+    P2PCommandAcks[Data()] = Ack()                          # Ack with Ack unless it is our data coming back (would be only after Retrieve)
     P2PCommandAcks[Retrieve()] = Data()                     # Ack with Data
-    # Ack ListFiles with Files
-    P2PCommandAcks[ListFiles()] = Files()
+    P2PCommandAcks[ListFiles()] = Files()                   # Ack ListFiles with Files
     P2PCommandAcks[Files()] = None
     P2PCommandAcks[ListContacts()] = Contacts()             # Ack with Contacts
     P2PCommandAcks[Contacts()] = None
     P2PCommandAcks[NearnessCheck()] = Nearness()            # Ack with Nearness
     P2PCommandAcks[Nearness()] = None
-    # Ack with Identity (always an interested party waiting)
-    P2PCommandAcks[RequestIdentity()] = Identity()
-    # If identity comes in and no interested party then transport sends an Ack
-    P2PCommandAcks[Identity()] = Ack()
-    # Ack with Ack (maybe should be Files)
-    P2PCommandAcks[DeleteFile()] = Ack()
-    # Ack with Ack (maybe should be Files)
-    P2PCommandAcks[DeleteBackup()] = Ack()
+    P2PCommandAcks[RequestIdentity()] = Identity()          # Ack with Identity (always an interested party waiting)
+    P2PCommandAcks[Identity()] = Ack()                      # If identity comes in and no interested party then transport sends an Ack
+    P2PCommandAcks[DeleteFile()] = Ack()                    # Ack with Ack (maybe should be Files)
+    P2PCommandAcks[DeleteBackup()] = Ack()                  # Ack with Ack (maybe should be Files)
     P2PCommandAcks[Message()] = Ack()                       # Ack with Ack
     P2PCommandAcks[Receipt()] = Ack()                       # Ack with Ack
     P2PCommandAcks[Correspondent()] = Correspondent()
@@ -99,7 +92,7 @@ def IsCommand(s):
 
 def Data():
     """
-    Data packet, may be Data, Parity, Backup database, may be more
+    Data packet, may be Data, Parity, Backup database, may be more.
     """
     return "Data"
 
@@ -113,12 +106,14 @@ def Ack():
 
 def RequestService():
     """
+    
     """
     return "RequestService"
 
 
 def CancelService():
     """
+    
     """
     return "CancelService"
 
@@ -133,8 +128,8 @@ def Retrieve():
 
 def Fail():
     """
-    Used to report an error in response,
-    for example when requested file is not found on remote machine.
+    Used to report an error in response, for example when requested file is not
+    found on remote machine.
     """
     return "Fail"
 
@@ -166,37 +161,37 @@ def Files():
 
 def ListContacts():
     """
-    Response with a list of my contacts,
-    may be suppliers, customers or correspondents.
+    Response with a list of my contacts, may be suppliers, customers or
+    correspondents.
     """
     return "ListContacts"
 
 
 def Contacts():
     """
-    Request a list of my contacts
+    Request a list of my contacts.
     """
     return "Contacts"
 
 
 def NearnessCheck():
     """
-    Used to detect how far is peers
+    Used to detect how far is peers.
     """
     return "NearnessCheck"
 
 
 def Nearness():
     """
-    Used to detect how far is peers
+    Used to detect how far is peers.
     """
     return "Nearness"
 
 
 def RequestIdentity():
     """
-    Not used right now, probably can be used to request
-    latest version of peer's identity.
+    Not used right now, probably can be used to request latest version of
+    peer's identity.
     """
     return "RequestIdentity"
 
@@ -245,15 +240,17 @@ def Message():
 
 def Correspondent():
     """
-    Remote user should send you this to be included
-    in your correspondents (friends) list.
+    Remote user should send you this to be included in your correspondents
+    (friends) list.
     """
     return "Correspondent"
 
 
 def Broadcast():
     """
-    This message type is for delivering some piece of data to all peers in the network.
+    This message type is for delivering some piece of data to all peers in the
+    network.
+
     It is used to broadcast "crypto-coins" between peers.
     """
     return "Broadcast"
@@ -262,6 +259,7 @@ def Broadcast():
 def Coin():
     """
     Every "contract" store a list of "coin" as a separate chain in global DB.
+
     This is similar to well-known "blockchain" technology.
     """
     return "Coin"
@@ -269,6 +267,7 @@ def Coin():
 
 def RetreiveCoin():
     """
+    
     """
     return "RetreiveCoin"
 

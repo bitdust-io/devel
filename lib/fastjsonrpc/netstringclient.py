@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Copyright 2012 Tadeas Moravec
+Copyright 2012 Tadeas Moravec.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,8 +34,9 @@ import jsonrpc
 
 class CallbackProtocol(basic.NetstringReceiver):
     """
-    Protocol with callback. It will call given callback after it receives
-    full data.
+    Protocol with callback.
+
+    It will call given callback after it receives full data.
     """
 
     def __init__(self, callback):
@@ -48,7 +49,7 @@ class CallbackProtocol(basic.NetstringReceiver):
 
     def stringReceived(self, string):
         """
-        Call our callback with string we have received and close connection
+        Call our callback with string we have received and close connection.
 
         @type string: str|unicode
         @param string: The netstring we have received, striped of the
@@ -61,8 +62,9 @@ class CallbackProtocol(basic.NetstringReceiver):
 
 class CallbackFactory(Factory):
     """
-    Factory with callback. It will call given callback after the protocol
-    receives full data.
+    Factory with callback.
+
+    It will call given callback after the protocol receives full data.
     """
 
     def __init__(self, callback):
@@ -86,8 +88,8 @@ class CallbackFactory(Factory):
 
     def responseReceived(self, string):
         """
-        This is what the Protocol calls after it receives data. We just pass
-        it to whatever callback we were given.
+        This is what the Protocol calls after it receives data. We just pass it
+        to whatever callback we were given.
 
         @type string: mixed
         @param string: what the Protocol received and we pass on
@@ -98,8 +100,10 @@ class CallbackFactory(Factory):
 
 class ResponseDeferred(Deferred):
     """
-    Deferred the client gets. Proxy.callRemote returns an instance of this.
-    It fires 'itself' after the factory calls responseReceived.
+    Deferred the client gets.
+
+    Proxy.callRemote returns an instance of this. It fires 'itself'
+    after the factory calls responseReceived.
     """
 
     def __init__(self, verbose=False):
@@ -115,8 +119,8 @@ class ResponseDeferred(Deferred):
 
     def responseReceived(self, json_response):
         """
-        This gets called by the factory after we received a response. We
-        decode it and fire with result.
+        This gets called by the factory after we received a response. We decode
+        it and fire with result.
 
         @type json_response: str|unicode
         @param json_response: The response from the server

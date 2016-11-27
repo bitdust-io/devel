@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: control
+..
 
+module:: control
 """
 
 #------------------------------------------------------------------------------
@@ -113,9 +114,7 @@ def init():
         lg.out(_DebugLevel + 6, '    \n' + pprint.pformat(sys.path))
 
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            '    setting environment DJANGO_SETTINGS_MODULE=web.asite.settings')
+        lg.out(_DebugLevel, '    setting environment DJANGO_SETTINGS_MODULE=web.asite.settings')
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.asite.settings")
 
     from django.core.wsgi import get_wsgi_application
@@ -140,17 +139,12 @@ def init():
         node = static.File(static_path)
         root.putChild(sub, node)
         if _Debug:
-            lg.out(
-                _DebugLevel, '        added static dir: %s->%s' %
-                (sub, static_path))
+            lg.out(_DebugLevel, '        added static dir: %s->%s' % (sub, static_path))
         if sub == 'asite':
             admin_path = os.path.join(root_static_dir, sub, 'admin', 'static')
             node.putChild('admin', static.File(admin_path))
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '        added ADMIN static dir: admin->%s' %
-                    admin_path)
+                lg.out(_DebugLevel, '        added ADMIN static dir: admin->%s' % admin_path)
     site = server.Site(root)
     _WSGIPort = 8080  # TODO: read port num from settings
     if _Debug:
@@ -179,15 +173,9 @@ def init():
 
     if _Debug:
         lg.out(_DebugLevel, '    running django "syncdb" command')
-    management.call_command(
-        'syncdb',
-        stdout=open(
-            os.path.join(
-                settings.LogsDir(),
-                'django-syncdb.log'),
-            'w'),
-        interactive=False,
-        verbosity=verbosity)
+    management.call_command('syncdb',
+                            stdout=open(os.path.join(settings.LogsDir(), 'django-syncdb.log'), 'w'),
+                            interactive=False, verbosity=verbosity)
 
     _ShortPoolPort = 8081  # TODO: read port num from settings
     # shortpool.init(get_update_items, set_updated, _ShortPoolPort)
@@ -252,27 +240,19 @@ def start_listener(site):
         if counter > 10:
             _WSGIPort = random.randint(8001, 8999)
         if _Debug:
-            lg.out(
-                _DebugLevel, '                _try port=%d counter=%d' %
-                (_WSGIPort, counter))
+            lg.out(_DebugLevel, '                _try port=%d counter=%d' % (_WSGIPort, counter))
         try:
             _WSGIListener = reactor.listenTCP(_WSGIPort, site)
         except:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '                _try it seems port %d is busy' %
-                    _WSGIPort)
+                lg.out(_DebugLevel, '                _try it seems port %d is busy' % _WSGIPort)
             _WSGIListener = None
         if _WSGIListener is None:
             reactor.callLater(0.5, _try, site, result, counter + 1)
             return
         bpio.WriteFile(settings.LocalWSGIPortFilename(), str(_WSGIPort))
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                '                _try STARTED on port %d' %
-                _WSGIPort)
+            lg.out(_DebugLevel, '                _try STARTED on port %d' % _WSGIPort)
         result.callback(_WSGIPort)
 
     result = Deferred()
@@ -291,17 +271,12 @@ def show():
 
     else:
         try:
-            local_port = int(
-                bpio.ReadBinaryFile(
-                    settings.LocalWSGIPortFilename()))
+            local_port = int(bpio.ReadBinaryFile(settings.LocalWSGIPortFilename()))
         except:
             local_port = None
         if not local_port:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'control.show SKIP, LocalWebPort is None, %s is empty' %
-                    settings.LocalWSGIPortFilename())
+                lg.out(_DebugLevel, 'control.show SKIP, LocalWebPort is None, %s is empty' % settings.LocalWSGIPortFilename())
         else:
             if _Debug:
                 lg.out(_DebugLevel, 'control.show on port %d' % local_port)
@@ -314,10 +289,7 @@ def stop_updating():
     global _UpdateFlag
     global _UpdateItems
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'control.stop_updating  _UpdateFlag=None, current items: %s' %
-            str(_UpdateItems))
+        lg.out(_DebugLevel, 'control.stop_updating  _UpdateFlag=None, current items: %s' % str(_UpdateItems))
     _UpdateFlag = None
     _UpdateItems.clear()
     _UpdateItems['stop'] = int(time.time())
@@ -327,10 +299,7 @@ def set_updated():
     global _UpdateFlag
     global _UpdateItems
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'control.set_updated  _UpdateFlag=False, current items: %s' %
-            str(_UpdateItems))
+        lg.out(_DebugLevel, 'control.set_updated  _UpdateFlag=False, current items: %s' % str(_UpdateItems))
     _UpdateFlag = False
     _UpdateItems.clear()
 
@@ -349,10 +318,7 @@ def request_update(items=None):
     global _UpdateFlag
     global _UpdateItems
     if _Debug:
-        lg.out(
-            _DebugLevel,
-            'control.request_update  _UpdateFlag=True, new items=%s' %
-            str(items))
+        lg.out(_DebugLevel, 'control.request_update  _UpdateFlag=True, new items=%s' % str(items))
     _UpdateFlag = True
     _UpdateItems['refresh'] = int(time.time())
     if items is not None:

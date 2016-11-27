@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: automat
+.. module:: automat.
 
 This is the base class for State Machine.
 The BitDust project is developing in principles of
@@ -96,7 +96,7 @@ _LifeBeginsTime = 0
 
 def get_new_index():
     """
-    Just get the current index and increase by one
+    Just get the current index and increase by one.
     """
     global _Counter
     _Counter += 1
@@ -105,7 +105,7 @@ def get_new_index():
 
 def create_index(name):
     """
-    Generate unique ID, and put it into Index dict, increment counter
+    Generate unique ID, and put it into Index dict, increment counter.
     """
     global _Index
     automatid = name
@@ -120,7 +120,7 @@ def create_index(name):
 
 def set_object(index, obj):
     """
-    Put object for that index into memory
+    Put object for that index into memory.
     """
     global _Objects
     _Objects[index] = obj
@@ -128,7 +128,7 @@ def set_object(index, obj):
 
 def clear_object(index):
     """
-    Clear object with given index from memory
+    Clear object with given index from memory.
     """
     global _Objects
     if _Objects is None:
@@ -139,7 +139,7 @@ def clear_object(index):
 
 def objects():
     """
-    Get all state machines stored in memory
+    Get all state machines stored in memory.
     """
     global _Objects
     return _Objects
@@ -174,10 +174,10 @@ def communicate(index, event, arg=None):
 
 def SetStateChangedCallback(cb):
     """
-    Set callback to be fired when any state machine changes its state
-    Callback parameters are::
+    Set callback to be fired when any state machine changes its state Callback
+    parameters are::
 
-        cb(index, id, name, new state)
+    cb(index, id, name, new state)
     """
     global _StateChangedCallback
     _StateChangedCallback = cb
@@ -187,8 +187,7 @@ def RedirectLogFile(stream):
     """
     You can simple send all output to the stdout:
 
-        import sys
-        RedirectLogFile(sys.stdout)
+    import sys RedirectLogFile(sys.stdout)
     """
     global _LogFile
     _LogFile = stream
@@ -196,7 +195,9 @@ def RedirectLogFile(stream):
 
 def OpenLogFile(filename):
     """
-    Open a file to write logs from all state machines. Very useful during debug.
+    Open a file to write logs from all state machines.
+
+    Very useful during debug.
     """
     global _LogFile
     global _LogFilename
@@ -224,7 +225,8 @@ def CloseLogFile():
 
 def LifeBegins(when=None):
     """
-    Call that function during program start up to print relative time in the logs, not absolute.
+    Call that function during program start up to print relative time in the
+    logs, not absolute.
     """
     global _LifeBeginsTime
     if when:
@@ -238,13 +240,14 @@ def LifeBegins(when=None):
 class Automat(object):
     """
     Base class of the State Machine Object.
-    You need to subclass this class and override the method ``A(event, arg)``.
-    Constructor needs the ``name`` of the state machine and the beginning ``state``.
-    At first it generate an unique ``id`` and new ``index`` value.
-    You can use ``init()`` method in the subclass to call some code at start.
-    Finally put the new object into the memory with given index -
-    it is placed into ``objects()`` dictionary.
-    To remove the instance call ``destroy()`` method.
+
+    You need to subclass this class and override the method ``A(event,
+    arg)``. Constructor needs the ``name`` of the state machine and the
+    beginning ``state``. At first it generate an unique ``id`` and new
+    ``index`` value. You can use ``init()`` method in the subclass to
+    call some code at start. Finally put the new object into the memory
+    with given index - it is placed into ``objects()`` dictionary. To
+    remove the instance call ``destroy()`` method.
     """
 
     state = 'NOT_EXIST'
@@ -285,12 +288,7 @@ class Automat(object):
     put ``[post]`` string into the last line of the LABEL shape.
     """
 
-    def __init__(
-            self,
-            name,
-            state,
-            debug_level=_DebugLevel * 2,
-            log_events=False):
+    def __init__(self, name, state, debug_level=_DebugLevel * 2, log_events=False):
         self.id, self.index = create_index(name)
         self.name = name
         self.state = state
@@ -317,17 +315,12 @@ class Automat(object):
         debug_level = max(_DebugLevel, self.debug_level)
         if _Index is None:
             if _Debug:
-                self.log(
-                    debug_level, 'automat.__del__ WARNING Index is None: %r %r' %
-                    (automatid, name))
+                self.log(debug_level, 'automat.__del__ WARNING Index is None: %r %r' % (automatid, name))
             return
         index = _Index.get(automatid, None)
         if index is None:
             if _Debug:
-                self.log(
-                    debug_level,
-                    'automat.__del__ WARNING %s not found' %
-                    automatid)
+                self.log(debug_level, 'automat.__del__ WARNING %s not found' % automatid)
             return
         del _Index[automatid]
         if _Debug:
@@ -340,34 +333,40 @@ class Automat(object):
 
     def __repr__(self):
         """
-        Will print something like: "network_connector(CONNECTED)"
+        Will print something like: "network_connector(CONNECTED)".
         """
         return '%s(%s)' % (self.id, self.state)
 
     def A(self, event, arg):
         """
         Must define this method in subclass.
-        This is the core method of the SWITCH-technology.
-        I am using ``visio2python`` (created by me) to generate Python code from MS Visio drawing.
+
+        This is the core method of the SWITCH-technology. I am using
+        ``visio2python`` (created by me) to generate Python code from MS
+        Visio drawing.
         """
         raise NotImplementedError
 
     def init(self):
         """
-        Define this method in subclass to execute some code when creating an object.
+        Define this method in subclass to execute some code when creating an
+        object.
         """
 
     def destroy(self):
         """
-        Call this method to remove the state machine from the ``objects()`` dictionary
-        and delete that instance. Be sure to not have any existing references on
-        that instance so destructor will be called immediately.
+        Call this method to remove the state machine from the ``objects()``
+        dictionary and delete that instance.
+
+        Be sure to not have any existing references on that instance so
+        destructor will be called immediately.
         """
         # self.log(self.debug_level, 'destroying %r, refs=%d' % (self, sys.getrefcount(self)))
         self._state_callbacks.clear()
         self.stopTimers()
         # self.state = 'NOT_EXIST'
         objects().pop(self.index)
+        # print sys.getrefcount(self)
 
     def state_changed(self, oldstate, newstate, event_string, arg):
         """
@@ -378,13 +377,15 @@ class Automat(object):
     def state_not_changed(self, curstate, event_string, arg):
         """
         Redefine this method in subclass if you want to do some actions
-        immediately after processing the event, which did not change the automat's state.
+        immediately after processing the event, which did not change the
+        automat's state.
         """
 
     def communicate(self, event_string, arg=None):
         """
-        Use ``arg`` to pass extra data the conditions and actions methods.
-        This method creates a Deferred object, pass it as a parameter with ``event``
+        Use ``arg`` to pass extra data the conditions and actions methods. This
+        method creates a Deferred object, pass it as a parameter with ``event``
+
         into the state machine and return that defer to outside - to catch result.
         In the action method you must call ``callback`` or ``errback`` to pass result.
         See ``addStateChangedCallback()`` for more advanced interaction.
@@ -410,16 +411,13 @@ class Automat(object):
         if self.fast:
             self.event(event_string, arg)
         else:
-            reactor.callLater(
-                0,
-                self.event,
-                event_string,
-                arg)  # @UndefinedVariable
+            reactor.callLater(0, self.event, event_string, arg)  # @UndefinedVariable
 
     def event(self, event_string, arg=None):
         """
         You can call ``event()`` directly to execute ``self.A()`` immediately,
         but preferred way is too call ``automat()`` method.
+
         Use ``fast = True`` flag to skip call to reactor.callLater(0, self.event, ...).
         """
         global _StateChangedCallback
@@ -435,18 +433,16 @@ class Automat(object):
                 new_state = self.A(event_string, arg)
             except:
                 if _Debug:
-                    self.exc(
-                        'Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
-                            self.id, self.name, self.state, event_string, arg))
+                    self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
+                        self.id, self.name, self.state, event_string, arg))
             self.state = new_state
         else:
             try:
                 self.A(event_string, arg)
             except:
                 if _Debug:
-                    self.exc(
-                        'Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
-                            self.id, self.name, self.state, event_string, arg))
+                    self.exc('Exception in {}:{} automat, state is {}, event="{}", arg={}'.format(
+                        self.id, self.name, self.state, event_string, arg))
             new_state = self.state
         if old_state != new_state:
             if _Debug:
@@ -458,12 +454,10 @@ class Automat(object):
             self.state_changed(old_state, new_state, event_string, arg)
             self.startTimers()
             if _StateChangedCallback is not None:
-                _StateChangedCallback(
-                    self.index, self.id, self.name, new_state)
+                _StateChangedCallback(self.index, self.id, self.name, new_state)
         else:
             self.state_not_changed(self.state, event_string, arg)
-        self.executeStateChangedCallbacks(
-            old_state, new_state, event_string, arg)
+        self.executeStateChangedCallbacks(old_state, new_state, event_string, arg)
 
     def timerEvent(self, name, interval):
         """
@@ -499,6 +493,7 @@ class Automat(object):
     def restartTimers(self):
         """
         Restart all state machine timers.
+
         When state is changed - all internal timers is restarted.
         You can use external timers if you do not need that, call::
 
@@ -536,7 +531,9 @@ class Automat(object):
 
     def log(self, level, text):
         """
-        Print log message. See ``OpenLogFile()`` and ``CloseLogFile()`` methods.
+        Print log message.
+
+        See ``OpenLogFile()`` and ``CloseLogFile()`` methods.
         """
         global _LogFile
         global _LogFilename
@@ -582,7 +579,6 @@ class Automat(object):
         the callback will be executed every time when the state gets changed:
 
             machineB.addStateChangedCallback(methodB)
-
         """
         key = (oldstate, newstate)
         if key not in self._state_callbacks:
@@ -604,20 +600,16 @@ class Automat(object):
     def removeStateChangedCallbackByState(self, oldstate=None, newstate=None):
         """
         Removes all callback methods with given condition.
-        This is useful if you use ``lambda x: do_somethig()``
-        to catch the moment when state gets changed.
+
+        This is useful if you use ``lambda x: do_somethig()`` to catch
+        the moment when state gets changed.
         """
         for key in self._state_callbacks.keys():
             if key == (oldstate, newstate):
                 self._state_callbacks.pop(key)
                 break
 
-    def executeStateChangedCallbacks(
-            self,
-            oldstate,
-            newstate,
-            event_string,
-            args):
+    def executeStateChangedCallbacks(self, oldstate, newstate, event_string, args):
         """
         Compare conditions and execute state changed callback methods.
         """

@@ -22,7 +22,8 @@
 
 
 """
-.. module:: proxy_connector
+.. module:: proxy_connector.
+
 .. role:: red
 
 BitDust proxy_connector(AT_STARTUP) Automat
@@ -95,7 +96,8 @@ def Destroy():
 
 class ProxyConnector(automat.Automat):
     """
-    This class implements all the functionality of the ``proxy_connector()`` state machine.
+    This class implements all the functionality of the ``proxy_connector()``
+    state machine.
     """
 
     timers = {
@@ -106,8 +108,8 @@ class ProxyConnector(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of proxy_connector() machine.
+        Method to initialize additional variables and flags at creation phase
+        of proxy_connector() machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -117,13 +119,14 @@ class ProxyConnector(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the proxy_connector()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the proxy_connector() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The core proxy_connector() code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The core proxy_connector() code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         #---MY_IDENTITY---
         if self.state == 'MY_IDENTITY':
@@ -212,11 +215,7 @@ class ProxyConnector(automat.Automat):
             self.router_idurl,
             wide=True,
             callbacks={
-                commands.Ack(): lambda response,
-                info: self.automat(
-                    'ack-received',
-                    (response,
-                     info)),
+                commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
                 commands.Fail(): lambda x: self.automat('nodes-not-found')})
 
     def doPropagateToRouter(self, arg):
@@ -250,8 +249,7 @@ class ProxyConnector(automat.Automat):
             return
         from transport import gateway
         service_info = 'service_proxy_server \n'
-        orig_identity = config.conf().getData(
-            'services/proxy-transport/my-original-identity').strip()
+        orig_identity = config.conf().getData('services/proxy-transport/my-original-identity').strip()
         if not orig_identity:
             orig_identity = my_id.getLocalIdentity().serialize()
         service_info += orig_identity

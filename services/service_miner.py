@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_miner
+..
 
+module:: service_miner
 """
 
 from services.local_service import LocalService

@@ -37,8 +37,7 @@ def main():
 
     # TEST
     # call with parameters like that:
-    # python raidworker.py C:\temp\joomla2.sql ecc/7x7 myID_ABC 1234
-    # c:\temp\somedir
+    # python raidworker.py C:\temp\joomla2.sql ecc/7x7 myID_ABC 1234 c:\temp\somedir
     tasks = {}
 
     def _cb(cmd, taskdata, result):
@@ -50,21 +49,10 @@ def main():
             print len(tasks), 'more'
 
     def _add(blocknum):
-        tasks[blocknum] = (
-            sys.argv[1],
-            sys.argv[2],
-            sys.argv[3],
-            blocknum,
-            sys.argv[5])
-        raid_worker.A(
-            'new-task',
-            ('make',
-             (sys.argv[1],
-              sys.argv[2],
-              sys.argv[3],
-              blocknum,
-              sys.argv[5]),
-                _cb))
+        tasks[blocknum] = (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5])
+        raid_worker.A('new-task',
+                      ('make', (sys.argv[1], sys.argv[2], sys.argv[3], blocknum, sys.argv[5]),
+                       _cb))
     from system import bpio
     bpio.init()
     lg.set_debug_level(20)

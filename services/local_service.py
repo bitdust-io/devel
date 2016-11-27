@@ -25,7 +25,8 @@
 #
 
 """
-.. module:: local_service
+.. module:: local_service.
+
 .. role:: red
 
 BitDust local_service() Automat
@@ -75,7 +76,8 @@ from driver import ServiceAlreadyExist
 
 class LocalService(automat.Automat):
     """
-    This class implements all the functionality of the ``local_service()`` state machine.
+    This class implements all the functionality of the ``local_service()``
+    state machine.
     """
 
     service_name = ''
@@ -89,7 +91,7 @@ class LocalService(automat.Automat):
         self.result_deferred = None
         automat.Automat.__init__(self, self.service_name, 'OFF', 12)
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def dependent_on(self):
         return []
@@ -113,7 +115,7 @@ class LocalService(automat.Automat):
     def cancel(self, request, info):
         raise RequireSubclass()
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -125,7 +127,8 @@ class LocalService(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired but automat's state was not changed.
+        This method intended to catch the moment when some event was fired but
+        automat's state was not changed.
         """
 
     def A(self, event, arg):
@@ -296,10 +299,7 @@ class LocalService(automat.Automat):
             result = self.stop()
         except:
             lg.exc()
-            self.automat(
-                'service-stopped',
-                'exception during stopping [%s]' %
-                self.service_name)
+            self.automat('service-stopped', 'exception during stopping [%s]' % self.service_name)
             return
         if isinstance(result, Deferred):
             result.addBoth(lambda x: self.automat('service-stopped', x))

@@ -22,7 +22,8 @@
 
 
 """
-.. module:: udp_stream
+.. module:: udp_stream.
+
 .. role:: red
 
 BitDust udp_stream() Automat
@@ -43,7 +44,6 @@ EVENTS:
     * :red:`resume`
     * :red:`set-limits`
     * :red:`timeout`
-
 """
 
 """
@@ -142,6 +142,7 @@ def streams():
 
 def create(stream_id, consumer, producer):
     """
+    
     """
     if _Debug:
         lg.out(
@@ -158,6 +159,7 @@ def create(stream_id, consumer, producer):
 
 def close(stream_id):
     """
+    
     """
     s = streams().get(stream_id, None)
     if s is None:
@@ -243,7 +245,8 @@ def stop_process_streams():
 
 class UDPStream(automat.Automat):
     """
-    This class implements all the functionality of the ``udp_stream()`` state machine.
+    This class implements all the functionality of the ``udp_stream()`` state
+    machine.
     """
 
     fast = True
@@ -272,6 +275,7 @@ class UDPStream(automat.Automat):
 
     def init(self):
         """
+        
         """
         self.output_buffer_size = 0
         self.output_blocks = {}
@@ -645,6 +649,7 @@ class UDPStream(automat.Automat):
     def doDestroyMe(self, arg):
         """
         Action method.
+
         Remove all references to the state machine object to destroy it.
         """
         self.consumer.clear_stream_callback()

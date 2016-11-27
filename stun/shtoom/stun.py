@@ -330,8 +330,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
                 # We got a (potentially) working STUN server!
                 # Cancel the retransmit timers for the other ones
                 for k in self._potentialStuns.keys():
-                    if k in self._potentialStuns and self._potentialStuns[
-                            k] is not None:
+                    if k in self._potentialStuns and self._potentialStuns[k] is not None:
                         self._potentialStuns[k].cancel()
                         self._potentialStuns[k] = None
                 resdict = _parseStunResponse(dgram, address, self.expectedTID,
@@ -349,12 +348,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
             return
         if STUNVERBOSE:
             print 'calling handleStunState%s' % (self._stunState)
-        getattr(
-            self,
-            'handleStunState%s' %
-            (self._stunState))(
-            resdict,
-            address)
+        getattr(self, 'handleStunState%s' % (self._stunState))(resdict, address)
 
     def handleStunState1(self, resdict, address):
         self.__dict__.update(resdict)
@@ -368,8 +362,9 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
                 self._stunState = '2b'
             self.expectedTID = tid = getRandomTID()
             self.oldTIDs.add(tid)
-            self.state2DelayedCall = reactor.callLater(
-                INITIAL_TIMEOUT, self.retransmitStunState2, address, tid)
+            self.state2DelayedCall = reactor.callLater(INITIAL_TIMEOUT,
+                                                       self.retransmitStunState2,
+                                                       address, tid)
             self.sendRequest(address, tid, avpairs=(
                 ('CHANGE-REQUEST', CHANGE_BOTH),))
 
@@ -396,8 +391,9 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
         # </AP>
         if count <= MAX_RETRANSMIT:
             t = BACKOFF_TIME * 2**min(count, MAX_BACKOFF)
-            self.state2DelayedCall = reactor.callLater(
-                t, self.retransmitStunState2, address, tid, count + 1)
+            self.state2DelayedCall = reactor.callLater(t,
+                                                       self.retransmitStunState2,
+                                                       address, tid, count + 1)
             self.sendRequest(address, tid, avpairs=(
                 ('CHANGE-REQUEST', CHANGE_BOTH),))
         elif self._stunState == '2a':
@@ -407,8 +403,9 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
             # Off to state 3 we go!
             self.stateChanged(self._stunState, '3')
             self._stunState = '3'
-            self.state3DelayedCall = reactor.callLater(
-                INITIAL_TIMEOUT, self.retransmitStunState3, address, tid)
+            self.state3DelayedCall = reactor.callLater(INITIAL_TIMEOUT,
+                                                       self.retransmitStunState3,
+                                                       address, tid)
             self.expectedTID = tid = getRandomTID()
             self.oldTIDs.add(tid)
             self.sendRequest(self._altStunAddress, tid)
@@ -424,8 +421,9 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
             self._stunState = '4'
             self.expectedTID = tid = getRandomTID()
             self.oldTIDs.add(tid)
-            self.state4DelayedCall = reactor.callLater(
-                INITIAL_TIMEOUT, self.retransmitStunState4, address, tid)
+            self.state4DelayedCall = reactor.callLater(INITIAL_TIMEOUT,
+                                                       self.retransmitStunState4,
+                                                       address, tid)
             self.expectedTID = tid = getRandomTID()
             self.oldTIDs.add(tid)
             self.sendRequest(address, tid, avpairs=(
@@ -443,13 +441,12 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
         # </AP>
         if count <= (2 * MAX_RETRANSMIT):
             t = BACKOFF_TIME * 2**min(count, MAX_BACKOFF)
-            self.state3DelayedCall = reactor.callLater(
-                t, self.retransmitStunState3, address, tid, count + 1)
+            self.state3DelayedCall = reactor.callLater(t,
+                                                       self.retransmitStunState3,
+                                                       address, tid, count + 1)
             self.sendRequest(self._altStunAddress, tid)
         else:
-            log.err(
-                "STUN Failed in state 3, retries=%d" %
-                self.stunDiscoveryRetries)
+            log.err("STUN Failed in state 3, retries=%d" % self.stunDiscoveryRetries)
             # We should do _something_ here. a new type BrokenNAT?
             self.stunDiscoveryRetries = self.stunDiscoveryRetries + 1
             if self.stunDiscoveryRetries < 5:
@@ -473,8 +470,9 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
         # </AP>
         if count < MAX_RETRANSMIT:
             t = BACKOFF_TIME * 2**min(count, MAX_BACKOFF)
-            self.state4DelayedCall = reactor.callLater(
-                t, self.retransmitStunState4, address, tid, count + 1)
+            self.state4DelayedCall = reactor.callLater(t,
+                                                       self.retransmitStunState4,
+                                                       address, tid, count + 1)
             self.sendRequest(address, tid, avpairs=(
                 ('CHANGE-REQUEST', CHANGE_PORT),))
         else:
@@ -513,8 +511,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
             d.addErrback(lambda x: self._finishedStun())
         else:
             self._resolveStunServers(localAddress)
-            self.timerTask = reactor.callLater(
-                self.timeout, self._timeout, localAddress)
+            self.timerTask = reactor.callLater(self.timeout, self._timeout, localAddress)
 
     def _hostNotResolved(self, x, localAddress):
         #        if self.timerTask and not self.timerTask.called and not self.timerTask.cancelled:
@@ -539,9 +536,7 @@ class StunDiscoveryProtocol(DatagramProtocol, _StunBase):
     def _timeout(self, localAddress):
         #        if STUNVERBOSE:
         #            print '_timeout'
-        self._hostNotResolved(
-            'timeout %d seconds' %
-            self.timeout, localAddress)
+        self._hostNotResolved('timeout %d seconds' % self.timeout, localAddress)
 
 
 # class StunHook(_StunBase):

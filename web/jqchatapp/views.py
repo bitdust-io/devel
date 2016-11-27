@@ -65,8 +65,7 @@ JQCHAT_DISPLAY_COUNT = getattr(settings, 'JQCHAT_DISPLAY_COUNT', 100)
 def open_room(request):
     roomid = request.REQUEST.get('id', '')
     idurl = request.REQUEST.get('idurl', '')
-    name = request.REQUEST.get(
-        'name', contactsdb.get_correspondent_nickname(idurl))
+    name = request.REQUEST.get('name', contactsdb.get_correspondent_nickname(idurl))
 
     if roomid:
         try:
@@ -133,10 +132,8 @@ class Ajax(object):
 
     def __call__(self, request, id):
         try:
-            if not (auth.is_session_authenticated(request.user)
-                    and auth.is_identity_authenticated()):
-                return HttpResponseBadRequest(
-                    'You need to be logged in to access the chat system.')
+            if not (auth.is_session_authenticated(request.user) and auth.is_identity_authenticated()):
+                return HttpResponseBadRequest('You need to be logged in to access the chat system.')
 
             StatusCode = 0  # Default status code is 0 i.e. no new data.
 
@@ -149,8 +146,7 @@ class Ajax(object):
                 self.ThisRoom = get_object_or_404(Room, id=id)
             except:
                 lg.exc('id=%s' % str(id))
-                return HttpResponseBadRequest(
-                    "Not found Room with id=%s" % str(id))
+                return HttpResponseBadRequest("Not found Room with id=%s" % str(id))
 
             NewDescription = None
 
@@ -180,36 +176,30 @@ class Ajax(object):
             else:
                 # If a GET, make sure that no action was specified.
                 if self.request.GET.get('action', None):
-                    return HttpResponseBadRequest(
-                        'Need to POST if you want to send data.')
+                    return HttpResponseBadRequest('Need to POST if you want to send data.')
 
-            NewMessages = self.ThisRoom.message_set.filter(
-                unix_timestamp__gt=self.request_time)
+            NewMessages = self.ThisRoom.message_set.filter(unix_timestamp__gt=self.request_time)
             if NewMessages:
                 StatusCode = 1
 
             NewMembers = RoomMember.objects.filter(room=self.ThisRoom)
-            NewMembersNames = map(
-                lambda mem: nameurl.GetName(
-                    mem.idurl), NewMembers)
+            NewMembersNames = map(lambda mem: nameurl.GetName(mem.idurl), NewMembers)
 
             l = len(NewMessages)
             if l > JQCHAT_DISPLAY_COUNT:
                 NewMessages = NewMessages[l - JQCHAT_DISPLAY_COUNT:]
 
-            response = render_to_response(
-                'jqchat/chat_payload.json',
-                {
-                    'current_unix_timestamp': time.time(),
-                    'NewMessages': NewMessages,
-                    'StatusCode': StatusCode,
-                    'NewDescription': NewDescription,
-                    'NewMembers': NewMembers,
-                    'NewMembersNames': NewMembersNames,
-                    'CustomPayload': '',
-                    'TimeDisplayFormat': DATE_FORMAT},
-                context_instance=RequestContext(
-                    self.request))
+            response = render_to_response('jqchat/chat_payload.json',
+                                          {'current_unix_timestamp': time.time(),
+                                           'NewMessages': NewMessages,
+                                           'StatusCode': StatusCode,
+                                           'NewDescription': NewDescription,
+                                           'NewMembers': NewMembers,
+                                           'NewMembersNames': NewMembersNames,
+                                           'CustomPayload': '',
+                                           'TimeDisplayFormat': DATE_FORMAT
+                                           },
+                                          context_instance=RequestContext(self.request))
 
             response['Content-Type'] = 'text/plain; charset=utf-8'
             response['Cache-Control'] = 'no-cache'

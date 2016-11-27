@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: supplier
+..
 
+module:: supplier
 """

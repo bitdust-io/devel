@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_data_motion
+..
 
+module:: service_data_motion
 """
 
 from services.local_service import LocalService

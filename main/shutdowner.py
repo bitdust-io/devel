@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: shutdowner
+.. module:: shutdowner.
 
 .. raw:: html
 
@@ -78,7 +78,9 @@ _Shutdowner = None
 
 def shutdown(x=None):
     """
-    This is a top level method which control the process of finishing the program.
+    This is a top level method which control the process of finishing the
+    program.
+
     Calls method ``shutdown()`` in other modules.
     """
     lg.out(2, "shutdowner.shutdown " + str(x))
@@ -125,7 +127,8 @@ def A(event=None, arg=None):
 
 class Shutdowner(automat.Automat):
     """
-    This is a state machine to manage a process of correctly finishing the BitDust software.
+    This is a state machine to manage a process of correctly finishing the
+    BitDust software.
     """
 
     fast = True
@@ -201,8 +204,7 @@ class Shutdowner(automat.Automat):
         lg.out(2, 'shutdowner.doSaveParam %s' % str(self.shutdown_param))
 
     def doShutdown(self, arg):
-        lg.out(2, 'shutdowner.doShutdown %d machines currently' %
-               len(automat.objects()))
+        lg.out(2, 'shutdowner.doShutdown %d machines currently' % len(automat.objects()))
         param = arg
         if self.shutdown_param is not None:
             param = self.shutdown_param
@@ -231,11 +233,12 @@ class Shutdowner(automat.Automat):
             len(automat.objects()), '\n        '.join(
                 ['%d: %r' % (k, automat.objects()[k]) for k in automat.objects().keys()])))
 
-    #-------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
 
     def _shutdown_restart(self, param=''):
         """
-        Calls ``shutdown()`` method and stop the main reactor, then restart the program.
+        Calls ``shutdown()`` method and stop the main reactor, then restart the
+        program.
         """
         lg.out(2, "shutdowner.shutdown_restart param=%s" % param)
 
@@ -249,15 +252,15 @@ class Shutdowner(automat.Automat):
 
         def shutdown_finished(x, param):
             lg.out(2, "shutdowner.shutdown_finished want to stop the reactor")
-            reactor.addSystemEventTrigger(
-                'after', 'shutdown', do_restart, param)
+            reactor.addSystemEventTrigger('after', 'shutdown', do_restart, param)
             reactor.stop()
         d = shutdown('restart')
         d.addBoth(shutdown_finished, param)
 
     def _shutdown_exit(self, x=None):
         """
-        Calls ``shutdown()`` method and stop the main reactor, this will finish the program.
+        Calls ``shutdown()`` method and stop the main reactor, this will finish
+        the program.
         """
         lg.out(2, "shutdowner.shutdown_exit")
 

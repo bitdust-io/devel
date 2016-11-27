@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_tcp_transport
+..
 
+module:: service_tcp_transport
 """
 
 from services.local_service import LocalService
@@ -58,8 +59,8 @@ class TCPTransportService(LocalService):
         self.interface = tcp_interface.GateInterface()
         self.transport = network_transport.NetworkTransport(
             'tcp', self.interface)
-        self.transport.automat(
-            'init', (gateway.listener(), self._on_transport_state_changed))
+        self.transport.automat('init',
+                               (gateway.listener(), self._on_transport_state_changed))
         reactor.callLater(0, self.transport.automat, 'start')
         conf().addCallback('services/tcp-transport/enabled',
                            self._on_enabled_disabled)
@@ -98,15 +99,13 @@ class TCPTransportService(LocalService):
     def _on_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-        lg.out(
-            2, 'service_tcp_transport._on_enabled_disabled : %s->%s : %s' %
-            (oldvalue, value, path))
+        lg.out(2, 'service_tcp_transport._on_enabled_disabled : %s->%s : %s' % (
+            oldvalue, value, path))
         network_connector.A('reconnect')
 
     def _on_receiving_enabled_disabled(self, path, value, oldvalue, result):
         from p2p import network_connector
         from logs import lg
-        lg.out(
-            2, 'service_tcp_transport._on_receiving_enabled_disabled : %s->%s : %s' %
-            (oldvalue, value, path))
+        lg.out(2, 'service_tcp_transport._on_receiving_enabled_disabled : %s->%s : %s' % (
+            oldvalue, value, path))
         network_connector.A('reconnect')

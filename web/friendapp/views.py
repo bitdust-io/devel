@@ -116,31 +116,15 @@ class FriendSearchView(TemplateView):
             _SearchLookups[sessionkey].clear()
             _SearchLookups[sessionkey][target_username] = []
             nickname_observer.stop_all()
-            nickname_observer.observe_many(
-                target_username,
-                results_callback=lambda result,
-                nik,
-                pos,
-                idurl: nickname_observer_result(
-                    sessionkey,
-                    target_username,
-                    result,
-                    nik,
-                    pos,
-                    idurl))
+            nickname_observer.observe_many(target_username,
+                                           results_callback=lambda result, nik, pos, idurl:
+                                           nickname_observer_result(sessionkey, target_username, result, nik, pos, idurl))
             return JsonResponse({'result': 'started'})
         return TemplateResponse(request, self.template, context)
 
 
-def nickname_observer_result(
-        sessionkey,
-        target_username,
-        result,
-        nik,
-        pos,
-        idurl):
-    lg.out(6, 'django.nickname_observer_result: %s' %
-           str((sessionkey, target_username, result, nik, idurl)))
+def nickname_observer_result(sessionkey, target_username, result, nik, pos, idurl):
+    lg.out(6, 'django.nickname_observer_result: %s' % str((sessionkey, target_username, result, nik, idurl)))
     global _SearchLookups
     try:
         status = ''
@@ -148,21 +132,12 @@ def nickname_observer_result(
             if contact_status.isKnown(idurl):
                 status = contact_status.getStatusLabel(idurl)
             else:
-                propagate.single(
-                    idurl,
-                    ack_handler=lambda ackpacket,
-                    info: contact_acked(
-                        sessionkey,
-                        target_username,
-                        ackpacket,
-                        info),
-                    fail_handler=lambda failpacket,
-                    info: contact_failed(
-                        sessionkey,
-                        target_username,
-                        failpacket,
-                        info),
-                    wide=True)
+                propagate.single(idurl,
+                                 ack_handler=lambda ackpacket, info:
+                                 contact_acked(sessionkey, target_username, ackpacket, info),
+                                 fail_handler=lambda failpacket, info:
+                                 contact_failed(sessionkey, target_username, failpacket, info),
+                                 wide=True)
                 status = 'checking'
             _SearchLookups[sessionkey][target_username].append({
                 'nickname': nik,
@@ -176,8 +151,7 @@ def nickname_observer_result(
 
 
 def contact_acked(sessionkey, target_username, ackpacket, info):
-    lg.out(6, 'django.contact_acked: %s' %
-           str((sessionkey, target_username, ackpacket, info)))
+    lg.out(6, 'django.contact_acked: %s' % str((sessionkey, target_username, ackpacket, info)))
     global _SearchLookups
     try:
         results = _SearchLookups[sessionkey][target_username]
@@ -185,10 +159,8 @@ def contact_acked(sessionkey, target_username, ackpacket, info):
             result = results[i]
             if result['idurl'] == ackpacket.OwnerID:
                 if ackpacket.Command == commands.Ack():
-                    new_status = contact_status.getStatusLabel(
-                        ackpacket.OwnerID)
-                    _SearchLookups[sessionkey][target_username][
-                        i]['status'] = new_status
+                    new_status = contact_status.getStatusLabel(ackpacket.OwnerID)
+                    _SearchLookups[sessionkey][target_username][i]['status'] = new_status
                     break
     except:
         lg.exc()

@@ -28,15 +28,10 @@ from django.contrib import admin
 
 
 class RoomAdmin(admin.ModelAdmin):
-    list_display = (
-        'name',
-        'created',
-        'last_activity_formatted',
-        'description')
+    list_display = ('name', 'created', 'last_activity_formatted', 'description')
     readonly_fields = ('created', 'content_type', 'object_id')
     # As we've set some fields to be read-only, they will automatically appear at the end
-    # of the list. Manually order the fields to be as they are defined in the
-    # model.
+    # of the list. Manually order the fields to be as they are defined in the model.
     fieldsets = (
         (None, {
             'fields': ('idurl',
@@ -69,14 +64,7 @@ admin.site.register(RoomMember, RoomMemberAdmin)
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = (
-        'room',
-        'created',
-        'unix_timestamp',
-        'idurl',
-        'text',
-        'event',
-    )
+    list_display = ('room', 'created', 'unix_timestamp', 'idurl', 'text', 'event',)
     list_filter = ['room', 'idurl', ]
 
 admin.site.register(Message, MessageAdmin)

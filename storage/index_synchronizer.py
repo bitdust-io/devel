@@ -25,8 +25,8 @@
 #
 
 """
+.. module:: index_synchronizer.
 
-.. module:: index_synchronizer
 .. role:: red
 
 .. raw:: html
@@ -76,8 +76,6 @@ EVENTS:
     * :red:`timer-15sec`
     * :red:`timer-1min`
     * :red:`timer-5min`
-
-
 """
 
 #------------------------------------------------------------------------------
@@ -136,8 +134,7 @@ def A(event=None, arg=None):
     if event is None and arg is None:
         return _IndexSynchronizer
     if _IndexSynchronizer is None:
-        _IndexSynchronizer = IndexSynchronizer(
-            'index_synchronizer', 'AT_STARTUP', _DebugLevel, _Debug)
+        _IndexSynchronizer = IndexSynchronizer('index_synchronizer', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
         _IndexSynchronizer.automat(event, arg)
     return _IndexSynchronizer
@@ -147,7 +144,8 @@ def A(event=None, arg=None):
 
 class IndexSynchronizer(automat.Automat):
     """
-    This class implements all the functionality of the ``index_synchronizer()`` state machine.
+    This class implements all the functionality of the ``index_synchronizer()``
+    state machine.
     """
 
     timers = {
@@ -158,8 +156,8 @@ class IndexSynchronizer(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of index_synchronizer() machine.
+        Method to initialize additional variables and flags at creation phase
+        of index_synchronizer() machine.
         """
         self.latest_supplier_revision = -1
         self.current_local_revision = -1
@@ -170,18 +168,20 @@ class IndexSynchronizer(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to catch the moment when index_synchronizer() state were changed.
+        Method to catch the moment when index_synchronizer() state were
+        changed.
         """
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the index_synchronizer()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the index_synchronizer() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
@@ -370,10 +370,8 @@ class IndexSynchronizer(automat.Automat):
         else:
             raise Exception('wrong type of response')
         if _Debug:
-            lg.out(
-                _DebugLevel, 'index_synchronizer._on_supplier_response %s, pending: %d, total: %d' %
-                (newpacket, len(
-                    self.requesting_suppliers), self.requested_suppliers_number))
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_response %s, pending: %d, total: %d' % (
+                newpacket, len(self.requesting_suppliers), self.requested_suppliers_number))
         if len(self.requesting_suppliers) == 0:
             self.automat('all-responded')
 
@@ -385,9 +383,7 @@ class IndexSynchronizer(automat.Automat):
             raise Exception('not found supplier connector')
         self.sending_suppliers.discard(newpacket.OwnerID)
         if _Debug:
-            lg.out(
-                _DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' %
-                (newpacket, len(
-                    self.sending_suppliers), self.sent_suppliers_number))
+            lg.out(_DebugLevel, 'index_synchronizer._on_supplier_acked %s, pending: %d, total: %d' % (
+                newpacket, len(self.sending_suppliers), self.sent_suppliers_number))
         if len(self.sending_suppliers) == 0:
             self.automat('all-acked')

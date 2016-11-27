@@ -41,10 +41,7 @@ def filemanager_api_view(request):
     try:
         json_request = json.loads(request.body.decode('utf-8'))
     except:
-        error_dict = {
-            "result": {
-                "success": False,
-                "error": traceback.format_exc()}}
+        error_dict = {"result": {"success": False, "error": traceback.format_exc()}}
         json_context = json.dumps(
             error_dict).encode('utf-8')
         return HttpResponseBadRequest(

@@ -25,11 +25,10 @@
 #
 
 """
-.. module:: events
+.. module:: events.
 
-A very simple "event" system, just to show and remember what is going on.
-TODO:
-need to store events on the local HDD
+A very simple "event" system, just to show and remember what is going
+on. TODO: need to store events on the local HDD
 """
 
 import os

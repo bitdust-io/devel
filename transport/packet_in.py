@@ -22,7 +22,8 @@
 
 
 """
-.. module:: packet_in
+.. module:: packet_in.
+
 .. role:: red
 
 BitDust packet_in() Automat
@@ -99,6 +100,7 @@ def increment_packets_counter():
 
 def items():
     """
+    
     """
     global _InboxItems
     return _InboxItems
@@ -126,9 +128,7 @@ def history():
 def process(newpacket, info):
     if not driver.is_started('service_p2p_hookups'):
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
+            lg.out(_DebugLevel, 'packet_in.process SKIP incoming packet, service_p2p_hookups is not started')
         return
     handled = False
     if _Debug:
@@ -149,14 +149,11 @@ def process(newpacket, info):
         lg.warn('new packet from %s://%s is NOT VALID: %r' % (
             info.proto, info.host, newpacket))
         return
-    for p in packet_out.search_by_response_packet(
-            newpacket, info.proto, info.host):
+    for p in packet_out.search_by_response_packet(newpacket, info.proto, info.host):
         p.automat('inbox-packet', (newpacket, info))
         handled = True
-    handled = callback.run_inbox_callbacks(
-        newpacket, info, info.status, info.error_message) or handled
-    if not handled and newpacket.Command not in [
-            commands.Ack(), commands.Fail()]:
+    handled = callback.run_inbox_callbacks(newpacket, info, info.status, info.error_message) or handled
+    if not handled and newpacket.Command not in [commands.Ack(), commands.Fail()]:
         if _Debug:
             lg.out(_DebugLevel - 8, '    incoming %s from [%s://%s]' % (
                 newpacket, info.proto, info.host))
@@ -179,7 +176,8 @@ def process(newpacket, info):
 
 class PacketIn(automat.Automat):
     """
-    This class implements all the functionality of the ``packet_in()`` state machine.
+    This class implements all the functionality of the ``packet_in()`` state
+    machine.
     """
 
     def __init__(self, transfer_id):
@@ -195,12 +193,7 @@ class PacketIn(automat.Automat):
         self.status = None
         self.error_message = None
         self.label = 'in_%d_%s' % (get_packets_counter(), self.transfer_id)
-        automat.Automat.__init__(
-            self,
-            self.label,
-            'AT_STARTUP',
-            _DebugLevel,
-            _Debug)
+        automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
 
     def __repr__(self):
@@ -213,7 +206,8 @@ class PacketIn(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.log_events = False
 
@@ -293,8 +287,7 @@ class PacketIn(automat.Automat):
         """
         self.proto, self.host, self.sender_idurl, self.filename, self.size = arg
         self.time = time.time()
-        # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
-        self.timeout = 300
+        self.timeout = 300  # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
         if not self.sender_idurl:
             lg.warn('sender_idurl is None: %s' % str(arg))
 
@@ -329,22 +322,14 @@ class PacketIn(automat.Automat):
         newpacket = gateway.inbox(self)
         if newpacket is None:
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' %
-                    (self.proto.upper().ljust(5),
-                     self.status.ljust(8),
-                     self.host,
-                     os.path.basename(
-                        self.filename),
-                     ))
+                lg.out(_DebugLevel, '<<< IN <<< !!!NONE!!! [%s] %s from %s %s' % (
+                    self.proto.upper().ljust(5), self.status.ljust(8),
+                    self.host, os.path.basename(self.filename),))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
             try:
                 fd, _ = tmpfile.make('other', '.inbox.error')
                 data = bpio.ReadBinaryFile(self.filename)
-                os.write(
-                    fd, 'from %s:%s %s\n' %
-                    (self.proto, self.host, self.status))
+                os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
                 os.write(fd, str(data))
                 os.close(fd)
                 os.remove(self.filename)
@@ -360,11 +345,7 @@ class PacketIn(automat.Automat):
         Action method.
         """
         newpacket = arg
-        stats.count_inbox(
-            self.sender_idurl,
-            self.proto,
-            self.status,
-            self.bytes_received)
+        stats.count_inbox(self.sender_idurl, self.proto, self.status, self.bytes_received)
         process(newpacket, self)
 
     def doReportFailed(self, arg):
@@ -372,26 +353,15 @@ class PacketIn(automat.Automat):
         Action method.
         """
         status, bytes_received, _ = arg
-        stats.count_inbox(
-            self.sender_idurl,
-            self.proto,
-            status,
-            bytes_received)
+        stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
 
     def doReportCacheFailed(self, arg):
         """
         Action method.
         """
         status, bytes_received, _ = arg
-        stats.count_inbox(
-            self.sender_idurl,
-            self.proto,
-            status,
-            bytes_received)
-        lg.out(
-            18,
-            'packet_in.doReportCacheFailed WARNING : %s' %
-            self.sender_idurl)
+        stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+        lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
 
     def doDestroyMe(self, arg):
         """

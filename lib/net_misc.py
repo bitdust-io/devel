@@ -25,7 +25,7 @@
 #
 #
 """
-.. module:: net_misc
+.. module:: net_misc.
 
 Some network routines
 """
@@ -90,12 +90,14 @@ def init():
 
 def shutdown():
     """
+    
     """
 
 
 def SetConnectionDoneCallbackFunc(f):
     """
-    Here is a place to set a callback to catch events for ````successful```` network transfers.
+    Here is a place to set a callback to catch events for ````successful````
+    network transfers.
     """
     global _ConnectionDoneCallbackFunc
     _ConnectionDoneCallbackFunc = f
@@ -103,8 +105,11 @@ def SetConnectionDoneCallbackFunc(f):
 
 def SetConnectionFailedCallbackFunc(f):
     """
-    Set a callback to catch events for ````failed```` network transfers or connections.
-    Later, BitDust code will compare both counters to decide that connection to Internet is gone.
+    Set a callback to catch events for ````failed```` network transfers or
+    connections.
+
+    Later, BitDust code will compare both counters to decide that
+    connection to Internet is gone.
     """
     global _ConnectionFailedCallbackFunc
     _ConnectionFailedCallbackFunc = f
@@ -112,7 +117,8 @@ def SetConnectionFailedCallbackFunc(f):
 
 def ConnectionDone(param=None, proto=None, info=None):
     """
-    This method is called from different places to inform of ````successful```` network transfers, connections, requests.
+    This method is called from different places to inform of ````successful````
+    network transfers, connections, requests.
     """
     global _ConnectionDoneCallbackFunc
     if _ConnectionDoneCallbackFunc is not None:
@@ -159,8 +165,8 @@ def parse_url(url, defaultPort=None):
 
 def parse_credentials(host):
     """
-    Test host name (network location) for credentials and split by parts:
-        host, username, password
+    Test host name (network location) for credentials and split by parts: host,
+    username, password.
     """
     if not host.count('@'):
         return host, '', ''
@@ -175,7 +181,8 @@ def parse_credentials(host):
 
 def detect_proxy_settings():
     """
-    Do some work and return dictionary with Proxy server settings for that machine.
+    Do some work and return dictionary with Proxy server settings for that
+    machine.
     """
     d = {
         'host': '',
@@ -275,6 +282,7 @@ def get_proxy_ssl():
 def proxy_is_on():
     """
     In most cases people do not use any proxy servers.
+
     This is to check if user is using a proxy and we have the settings.
     """
     return get_proxy_host() != ''
@@ -289,23 +297,20 @@ def downloadPageTwisted(url, filename):
     global _UserAgentString
     return downloadPage(url, filename, agent=_UserAgentString)
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 class HTTPProgressDownloader(HTTPDownloader):
     """
     Download to a file and keep track of progress.
-        http://schwerkraft.elitedvb.net/plugins/scmcvs/cvsweb.php/enigma2-plugins/mediadownloader/src/HTTPProgressDownloader.py?rev=1.1;cvsroot=enigma2-plugins;only_with_tag=HEAD
+
+    http://schwerkraft.elitedvb.net/plugins/scmcvs/cvsweb.php/enigma2-pl
+    ugins/mediadownloader/src/HTTPProgressDownloader.py?rev=1.1;cvsroot=
+    enigma2-plugins;only_with_tag=HEAD
     """
 
     def __init__(self, url, fileOrName, writeProgress=None, *args, **kwargs):
-        HTTPDownloader.__init__(
-            self,
-            url,
-            fileOrName,
-            supportPartial=0,
-            *args,
-            **kwargs)
+        HTTPDownloader.__init__(self, url, fileOrName, supportPartial=0, *args, **kwargs)
         # Save callback(s) locally
         if writeProgress and not isinstance(writeProgress, list):
             writeProgress = [writeProgress]
@@ -343,8 +348,7 @@ def downloadWithProgressTwisted(url, file, progress_func):
     """
     global _UserAgentString
     scheme, host, port, path = parse_url(url)
-    factory = HTTPProgressDownloader(
-        url, file, progress_func, agent=_UserAgentString)
+    factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
     if scheme == 'https':
         contextFactory = ssl.ClientContextFactory()
         reactor.connectSSL(host, port, factory, contextFactory)
@@ -352,31 +356,24 @@ def downloadWithProgressTwisted(url, file, progress_func):
         reactor.connectTCP(host, port, factory)
     return factory.deferred
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
-def downloadSSLWithProgressTwisted(
-        url,
-        file,
-        progress_func,
-        privateKeyFileName,
-        certificateFileName):
+def downloadSSLWithProgressTwisted(url, file, progress_func, privateKeyFileName, certificateFileName):
     """
     Can download from HTTPS sites.
     """
     global _UserAgentString
     scheme, host, port, path = parse_url(url)
-    factory = HTTPProgressDownloader(
-        url, file, progress_func, agent=_UserAgentString)
+    factory = HTTPProgressDownloader(url, file, progress_func, agent=_UserAgentString)
     if scheme != 'https':
         return None
-    contextFactory = ssl.DefaultOpenSSLContextFactory(
-        privateKeyFileName, certificateFileName)
+    contextFactory = ssl.DefaultOpenSSLContextFactory(privateKeyFileName, certificateFileName)
     reactor.connectSSL(host, port, factory, contextFactory)
     return factory.deferred
 
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 class MyClientContextFactory(ssl.ClientContextFactory):
@@ -394,9 +391,7 @@ class MyClientContextFactory(ssl.ClientContextFactory):
                 ctx.load_verify_locations(cert)
             except:
                 pass
-        ctx.set_verify(
-            SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
-            self.verify)
+        ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, self.verify)
         return ctx
 
 
@@ -444,23 +439,13 @@ def getPageTwisted(url, timeout=0):
 #         return x
     global _UserAgentString
     if proxy_is_on():
-        factory = ProxyClientFactory(
-            url, agent=_UserAgentString, timeout=timeout)
-        tcp_call = reactor.connectTCP(
-            get_proxy_host(), get_proxy_port(), factory)
+        factory = ProxyClientFactory(url, agent=_UserAgentString, timeout=timeout)
+        tcp_call = reactor.connectTCP(get_proxy_host(), get_proxy_port(), factory)
 #         if timeout:
 #             timeout_call = reactor.callLater(timeout, getPageTwistedTimeoutDisconnect, tcp_call)
 #             factory.deferred.addBoth(getPageTwistedCancelTimeout, timeout_call)
-        factory.deferred.addCallback(
-            ConnectionDone,
-            'http',
-            'getPageTwisted proxy %s' %
-            (url))
-        factory.deferred.addErrback(
-            ConnectionFailed,
-            'http',
-            'getPageTwisted proxy %s' %
-            (url))
+        factory.deferred.addCallback(ConnectionDone, 'http', 'getPageTwisted proxy %s' % (url))
+        factory.deferred.addErrback(ConnectionFailed, 'http', 'getPageTwisted proxy %s' % (url))
         return factory.deferred
     d = getPage(url, agent=_UserAgentString, timeout=timeout)
 #     if timeout:
@@ -487,7 +472,7 @@ def downloadHTTP(url, fileOrName):
     reactor.connectTCP(host, port, factory)
     return factory.deferred
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def IpIsLocal(ip):
@@ -514,17 +499,19 @@ def IpIsLocal(ip):
             return True
     return False
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def getLocalIp():
     """
-    A stack of methods to get the local IP of that machine. Had this in p2p/stun.py.
-        http://ubuntuforums.org/showthread.php?t=1215042
-        1. Use the gethostname method
-        2. Use outside connection
-        3. Use OS specific command
-        4. Return 127.0.0.1 in unknown situation
+    A stack of methods to get the local IP of that machine.
+
+    Had this in p2p/stun.py.
+    http://ubuntuforums.org/showthread.php?t=1215042
+    1. Use the gethostname method
+    2. Use outside connection
+    3. Use OS specific command
+    4. Return 127.0.0.1 in unknown situation
     """
     # 1: Use the gethostname method
 
@@ -587,7 +574,7 @@ def getLocalIp():
 
     return '127.0.0.1'  # uh oh, we're in trouble, but don't want to return none
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def TestInternetConnectionOld(remote_host='www.google.com'):  # 74.125.113.99
@@ -595,8 +582,7 @@ def TestInternetConnectionOld(remote_host='www.google.com'):  # 74.125.113.99
     Ancient method to check Internet connection.
     """
     try:
-        (family, socktype, proto, garbage, address) = socket.getaddrinfo(
-            remote_host, "http")[0]
+        (family, socktype, proto, garbage, address) = socket.getaddrinfo(remote_host, "http")[0]
     except Exception as e:
         return False
 
@@ -651,6 +637,7 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
 def TestInternetConnection(remote_hosts=None, timeout=10):
     """
     Ping google, facebook and youtube to check Internet connection state.
+
     PREPRO switch to our own stun servers ?
     """
     if remote_hosts is None:
@@ -664,11 +651,7 @@ def TestInternetConnection(remote_hosts=None, timeout=10):
     dl = []
     for host in remote_hosts:
         dl.append(getPageTwisted(host, timeout))
-    return DeferredList(
-        dl,
-        fireOnOneCallback=True,
-        fireOnOneErrback=False,
-        consumeErrors=True)
+    return DeferredList(dl, fireOnOneCallback=True, fireOnOneErrback=False, consumeErrors=True)
 
 #------------------------------------------------------------------------------
 
@@ -699,10 +682,7 @@ def SendEmail(TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES):
         part = MIMEBase('application', "octet-stream")
         part.set_payload(open(filePath, "rb").read())
         Encoders.encode_base64(part)
-        part.add_header(
-            'Content-Disposition',
-            'attachment; filename="%s"' %
-            os.path.basename(filePath))
+        part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(filePath))
         msg.attach(part)
 
     s = smtplib.SMTP(HOST, PORT)
@@ -725,7 +705,7 @@ def SendEmail(TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES):
 #        lg.exc()
 
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 # Great Thanks to Mariano!
 # http://marianoiglesias.com.ar/python/file-uploading-with-multi-part-encoding-using-twisted/
@@ -800,10 +780,7 @@ class MultiPartProducer:
     def stopProducing(self):
         self._finish(True)
         if self._deferred and self._sent < self.length:
-            self._deferred.errback(
-                Exception(
-                    "Consumer asked to stop production of request body (%d sent out of %d)" %
-                    (self._sent, self.length)))
+            self._deferred.errback(Exception("Consumer asked to stop production of request body (%d sent out of %d)" % (self._sent, self.length)))
 
     def _produce(self):
         if self._paused:
@@ -878,12 +855,10 @@ class MultiPartProducer:
 
     def _headers(self, name, is_file=False):
         value = self._files[name] if is_file else self._data[name]
-        _boundary = self.boundary.encode(
-            "utf-8") if isinstance(self.boundary, unicode) else urllib.quote_plus(self.boundary)
+        _boundary = self.boundary.encode("utf-8") if isinstance(self.boundary, unicode) else urllib.quote_plus(self.boundary)
         headers = ["--%s" % _boundary]
         if is_file:
-            disposition = 'form-data; name="%s"; filename="%s"' % (
-                name, os.path.basename(value))
+            disposition = 'form-data; name="%s"; filename="%s"' % (name, os.path.basename(value))
         else:
             disposition = 'form-data; name="%s"' % name
         headers.append("Content-Disposition: %s" % disposition)
@@ -933,22 +908,19 @@ class MultiPartProducer:
 def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     """
     A smart way to upload a file over HTTP POST method.
-    Use ``MultiPartProducer`` and ``StringReceiver`` classes.
-    Great Thanks to Mariano!
-        http://marianoiglesias.com.ar/python/file-uploading-with-multi-part-encoding-using-twisted/
+
+    Use ``MultiPartProducer`` and ``StringReceiver`` classes. Great
+    Thanks to Mariano!     http://marianoiglesias.com.ar/python/file-
+    uploading-with-multi-part-encoding-using-twisted/
     """
     # producerDeferred = Deferred()
     receiverDeferred = Deferred()
 
-    myProducer = MultiPartProducer(
-        files, data, progress)  # , producerDeferred)
+    myProducer = MultiPartProducer(files, data, progress)  # , producerDeferred)
     myReceiver = StringReceiver(receiverDeferred)
 
     headers = http_headers.Headers()
-    headers.addRawHeader(
-        "Content-Type",
-        "multipart/form-data; boundary=%s" %
-        myProducer.boundary)
+    headers.addRawHeader("Content-Type", "multipart/form-data; boundary=%s" % myProducer.boundary)
 
     agent = client.Agent(reactor)
     request = agent.request("POST", url, headers, myProducer)
@@ -1003,10 +975,7 @@ def getNetworkInterfaces():
             except IOError:
                 return []
             rawtxt = unicode(pipe.read())
-            ips_unicode = re.findall(
-                u'^.*?IP.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*$',
-                rawtxt,
-                re.U | re.M)
+            ips_unicode = re.findall(u'^.*?IP.*?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}).*$', rawtxt, re.U | re.M)
             ips = []
             for ip in ips_unicode:
                 ips.append(str(ip))

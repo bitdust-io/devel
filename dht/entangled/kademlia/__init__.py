@@ -23,7 +23,8 @@
 # the GNU Lesser General Public License Version 3, or any later version.
 # See the COPYING file included in this archive
 
-""" Kademlia DHT implementation
+"""
+Kademlia DHT implementation.
 
 This package contains Entangled's implementation of the Kademlia
 distributed hash table (DHT).

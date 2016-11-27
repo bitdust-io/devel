@@ -13,9 +13,11 @@ Licensed under the GNU LGPL.
 
 
 class _DeferredCache:
-    """ Wraps a call that returns a deferred in a cache. Any subsequent
-        calls with the same argument will wait for the first call to
-        finish and return the same result (or errback).
+    """
+    Wraps a call that returns a deferred in a cache.
+
+    Any subsequent calls with the same argument will wait for the first
+    call to finish and return the same result (or errback).
     """
 
     hashableArgs = False
@@ -83,10 +85,11 @@ class _DeferredCache:
 
 
 def DeferredCache(op=None, hashableArgs=None, inProgressOnly=None):
-    """ Use this as a decorator for a function or method that returns a
-        deferred. Any subsequent calls using the same arguments will
-        be all triggered off the original deferred, all returning the
-        same result.
+    """
+    Use this as a decorator for a function or method that returns a deferred.
+
+    Any subsequent calls using the same arguments will be all triggered
+    off the original deferred, all returning the same result.
     """
     if op is None:
         return lambda x: DeferredCache(x, hashableArgs, inProgressOnly)

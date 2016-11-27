@@ -143,20 +143,15 @@ class SetupController:
         current_state = installer.A().state
         current_page = self.installer_state_to_page.get(current_state, None)
         if current_page is None:
-            raise Exception(
-                'incorrect state in installer(): %s' %
-                current_state)
+            raise Exception('incorrect state in installer(): %s' % current_state)
         result = current_page(request)
         return result
 
     def renderWizardPage(self, request):
         current_state = install_wizard.A().state
-        current_page = self.install_wizard_state_to_page.get(
-            current_state, None)
+        current_page = self.install_wizard_state_to_page.get(current_state, None)
         if current_page is None:
-            raise Exception(
-                'incorrect state in install_wizard(): %s' %
-                current_state)
+            raise Exception('incorrect state in install_wizard(): %s' % current_state)
         result = current_page(request)
         return result
 
@@ -184,19 +179,15 @@ class SetupController:
                    'usernameplaceholder': possible_name, }
         try:
             text, color = installer.A().getOutput().get('data', [('', '')])[-1]
-            context[
-                'output'] = '<font color="%s">%s</font><br />\n' % (color, text)
+            context['output'] = '<font color="%s">%s</font><br />\n' % (color, text)
         except:
             pass
         if request is None:
             return template, context, request
         action = request.REQUEST.get('action', None)
         if action == 'next':
-            self.data['pksize'] = int(
-                request.REQUEST.get(
-                    'pksize', self.data['pksize']))
-            self.data['username'] = request.REQUEST.get(
-                'username', self.data['username']).lower()
+            self.data['pksize'] = int(request.REQUEST.get('pksize', self.data['pksize']))
+            self.data['username'] = request.REQUEST.get('username', self.data['username']).lower()
             installer.A('register-start', self.data)
             return None
         if action == 'back':
@@ -209,8 +200,7 @@ class SetupController:
         out = ''
         for text, color in installer.A().getOutput().get('data', []):
             if text.strip():
-                out += '     <li><font color="%s">%s</font></li>\n' % (
-                    color, text)
+                out += '     <li><font color="%s">%s</font></li>\n' % (color, text)
         if out:
             out = '    <ul>\n' + out + '    </ul>\n'
         context = {'idurl': '',
@@ -231,18 +221,17 @@ class SetupController:
         template = 'pages/load_key.html'
         out = ''
         try:
-            text, color = installer.A().getOutput(
-                'RECOVER').get('data', [('', '')])[-1]
+            text, color = installer.A().getOutput('RECOVER').get('data', [('', '')])[-1]
             if text:
                 out = '    <p><font color="%s">%s</font></p>\n' % (color, text)
         except:
             pass
-        context = {
-            'idurl': request.REQUEST.get(
-                'idurl', installer.A().getOutput().get(
-                    'idurl', '')), 'keysrc': request.REQUEST.get(
-                'keysrc', installer.A().getOutput().get(
-                    'keysrc', '')), 'output': out, }
+        context = {'idurl': request.REQUEST.get('idurl',
+                                                installer.A().getOutput().get('idurl', '')),
+                   'keysrc': request.REQUEST.get('keysrc',
+                                                 installer.A().getOutput().get('keysrc', '')),
+                   'output': out,
+                   }
         if context['idurl']:
             self.data['idurl'] = str(context['idurl'])
         if context['keysrc']:
@@ -256,8 +245,7 @@ class SetupController:
                 context['output'] = ''
             except:
                 self.data['keysrc'] = ''
-                context[
-                    'output'] = '<p><font color="red">error reading file</font></p>'
+                context['output'] = '<p><font color="red">error reading file</font></p>'
             if self.data['keysrc']:
                 installer.A(action, self.data)
             return None
@@ -277,8 +265,7 @@ class SetupController:
         out = ''
         for text, color in installer.A().getOutput().get('data', []):
             if text.strip():
-                out += '     <li><font color="%s">%s</font></li>\n' % (
-                    color, text)
+                out += '     <li><font color="%s">%s</font></li>\n' % (color, text)
         if out:
             out = '    <ul>\n' + out + '    </ul>\n'
         context = {'output': out,
@@ -314,10 +301,10 @@ class SetupController:
         req = {}
         if request is not None:
             req = request.REQUEST
-        self.data['customersdir'] = unicode(
-            req.get('customersdir', settings.getCustomersFilesDir()))
-        self.data['localbackupsdir'] = unicode(
-            req.get('localbackupsdir', settings.getLocalBackupsDir()))
+        self.data['customersdir'] = unicode(req.get('customersdir',
+                                                    settings.getCustomersFilesDir()))
+        self.data['localbackupsdir'] = unicode(req.get('localbackupsdir',
+                                                       settings.getLocalBackupsDir()))
         self.data['restoredir'] = unicode(req.get('restoredir',
                                                   settings.getRestoreDir()))
         self.data['needed'] = req.get('needed', self.data['needed'])
@@ -360,8 +347,7 @@ class SetupController:
                     if donatedV >= free:
                         color = '#e06060'
                         freeSpaceIsOk = False
-                if bpio.getMountPointLinux(
-                        self.data['localbackupsdir']) == mnt:
+                if bpio.getMountPointLinux(self.data['localbackupsdir']) == mnt:
                     color = '#60e060'
                     if neededV >= free:
                         color = '#e06060'
@@ -380,23 +366,18 @@ class SetupController:
                 round(settings.MinimumDonatedBytes() / (1024.0 * 1024.0), 2))
             ok = False
         if not os.path.isdir(self.data['customersdir']):
-            out += '<font color=red>directory %s not exist</font><br/>\n' % self.data[
-                'customersdir']
+            out += '<font color=red>directory %s not exist</font><br/>\n' % self.data['customersdir']
             ok = False
         if not os.access(self.data['customersdir'], os.W_OK):
-            out += '<font color=red>folder %s does not have write permissions</font><br/>\n' % self.data[
-                'customersdir']
+            out += '<font color=red>folder %s does not have write permissions</font><br/>\n' % self.data['customersdir']
             ok = False
         if not os.path.isdir(self.data['localbackupsdir']):
-            out += '<font color=red>directory %s not exist</font><br/>\n' % self.data[
-                'localbackupsdir']
+            out += '<font color=red>directory %s not exist</font><br/>\n' % self.data['localbackupsdir']
             ok = False
         if not os.access(self.data['localbackupsdir'], os.W_OK):
-            out += '<font color=red>folder %s does not have write permissions</font><br/>\n' % self.data[
-                'localbackupsdir']
+            out += '<font color=red>folder %s does not have write permissions</font><br/>\n' % self.data['localbackupsdir']
             ok = False
-        if int(self.data['suppliers']
-               ) not in settings.getECCSuppliersNumbers():
+        if int(self.data['suppliers']) not in settings.getECCSuppliersNumbers():
             out += '<font color=red>incorrect number of suppliers, correct values are: %s</font><br/>\n' % (
                 str(settings.getECCSuppliersNumbers()).strip('[]'))
             ok = False

@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: updates
+..
 
+module:: updates
 """

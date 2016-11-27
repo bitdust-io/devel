@@ -25,10 +25,12 @@
 #
 
 """
-.. module:: help
+.. module:: help.
 
-A methods to just store text constants, used to print command-line instructions.
+A methods to just store text constants, used to print command-line
+instructions.
 """
+
 
 
 def usage():

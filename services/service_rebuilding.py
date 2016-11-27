@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_rebuilding
+..
 
+module:: service_rebuilding
 """
 
 from services.local_service import LocalService

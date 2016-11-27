@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: network_connector
+.. module:: network_connector.
+
 .. role:: red
 
 .. raw:: html
@@ -61,7 +62,6 @@ EVENTS:
     * :red:`timer-1hour`
     * :red:`timer-5sec`
     * :red:`upnp-done`
-
 """
 
 #------------------------------------------------------------------------------
@@ -171,8 +171,7 @@ class NetworkConnector(automat.Automat):
                 self.doCheckNetworkInterfaces(arg)
         #---CONNECTED---
         elif self.state == 'CONNECTED':
-            if event == 'reconnect' or (
-                    event == 'timer-5sec' and (self.Reset or not self.isConnectionAlive(arg))):
+            if event == 'reconnect' or (event == 'timer-5sec' and (self.Reset or not self.isConnectionAlive(arg))):
                 self.state = 'DOWN'
                 self.Disconnects = 0
                 self.Reset = False
@@ -199,10 +198,7 @@ class NetworkConnector(automat.Automat):
                 self.doSetUp(arg)
         #---DISCONNECTED---
         elif self.state == 'DISCONNECTED':
-            if event == 'reconnect' or event == 'check-reconnect' or event == 'timer-1hour' or (
-                    event == 'timer-5sec' and (
-                        self.Disconnects < 3 or self.Reset)) or (
-                    event == 'connection-done' and self.isTimePassed(arg)):
+            if event == 'reconnect' or event == 'check-reconnect' or event == 'timer-1hour' or (event == 'timer-5sec' and (self.Disconnects < 3 or self.Reset)) or (event == 'connection-done' and self.isTimePassed(arg)):
                 self.state = 'DOWN'
                 self.doRememberTime(arg)
                 self.Disconnects += 1
@@ -210,8 +206,7 @@ class NetworkConnector(automat.Automat):
                 self.doSetDown(arg)
         #---UP---
         elif self.state == 'UP':
-            if not self.ColdStart and event == 'network-up' and not self.isNeedUPNP(
-                    arg):
+            if not self.ColdStart and event == 'network-up' and not self.isNeedUPNP(arg):
                 self.state = 'TRANSPORTS?'
                 self.doStartNetworkTransports(arg)
             elif event == 'reconnect' or event == 'check-reconnect':
@@ -230,8 +225,7 @@ class NetworkConnector(automat.Automat):
                 self.doCheckNetworkInterfaces(arg)
         #---TRANSPORTS?---
         elif self.state == 'TRANSPORTS?':
-            if event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or (
-                    event == 'network-transport-state-changed' and self.isAllTransportsFailed(arg)):
+            if event == 'all-network-transports-disabled' or event == 'gateway-is-not-started' or (event == 'network-transport-state-changed' and self.isAllTransportsFailed(arg)):
                 self.state = 'DISCONNECTED'
             elif event == 'reconnect' or event == 'check-reconnect':
                 self.Reset = True
@@ -265,9 +259,7 @@ class NetworkConnector(automat.Automat):
         if driver.is_started('service_tcp_transport'):
             try:
                 from transport.tcp import tcp_node
-                if int(
-                        tcp_node.get_internal_port()) != int(
-                        settings.getTCPPort()):
+                if int(tcp_node.get_internal_port()) != int(settings.getTCPPort()):
                     return True
             except:
                 lg.exc()
@@ -287,9 +279,7 @@ class NetworkConnector(automat.Automat):
             from transport import gateway
             if time.time() - gateway.last_inbox_time() < 60:
                 return True
-            transport_states = map(
-                lambda t: t.state,
-                gateway.transports().values())
+            transport_states = map(lambda t: t.state, gateway.transports().values())
             if 'LISTENING' in transport_states:
                 return True
             if 'STARTING' in transport_states:
@@ -305,8 +295,7 @@ class NetworkConnector(automat.Automat):
 
     def isCurrentInterfaceActive(self, arg):
         # I am not sure about external IP,
-        # because if you have a white IP it should be the same with your local
-        # IP
+        # because if you have a white IP it should be the same with your local IP
         return (misc.readLocalIP() in arg) or (misc.readExternalIP() in arg)
 
     def isTimePassed(self, arg):
@@ -324,9 +313,7 @@ class NetworkConnector(automat.Automat):
             if t.state != 'OFFLINE':
                 return False
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'network_connector.isAllTransportsFailed returning True :  all transports OFFLINE : I AM ALONE HERE :-((((( ')
+            lg.out(_DebugLevel, 'network_connector.isAllTransportsFailed returning True :  all transports OFFLINE : I AM ALONE HERE :-((((( ')
         return True
 
     def isAllTransportsReady(self, arg):
@@ -347,12 +334,8 @@ class NetworkConnector(automat.Automat):
             if t.state == 'LISTENING':
                 LISTENING_count += 1
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'network_connector.isAllTransportsReady returning True : all transports READY : HELLO WORLD!!! ')
-            lg.out(
-                _DebugLevel, '    OFFLINE transports:%d, LISTENING transports: %d' %
-                (OFFLINE_count, LISTENING_count))
+            lg.out(_DebugLevel, 'network_connector.isAllTransportsReady returning True : all transports READY : HELLO WORLD!!! ')
+            lg.out(_DebugLevel, '    OFFLINE transports:%d, LISTENING transports: %d' % (OFFLINE_count, LISTENING_count))
         return True
 
     def doSetUp(self, arg):
@@ -384,6 +367,7 @@ class NetworkConnector(automat.Automat):
 
     def doSetDown(self, arg):
         """
+        
         """
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doSetDown')
@@ -430,18 +414,14 @@ class NetworkConnector(automat.Automat):
 
             def _done(result, start_time):
                 if _Debug:
-                    lg.out(
-                        _DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' %
-                        (str(result), time.time() - start_time))
+                    lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(result), time.time() - start_time))
                 self.automat('got-network-info', result)
             d = threads.deferToThread(_call)
             d.addBoth(_done, start_time)
         else:
             ips = net_misc.getNetworkInterfaces()
             if _Debug:
-                lg.out(
-                    _DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' %
-                    (str(ips), time.time() - start_time))
+                lg.out(_DebugLevel, 'network_connector.doCheckNetworkInterfaces DONE: %s in %d seconds' % (str(ips), time.time() - start_time))
             self.automat('got-network-info', ips)
 
     def doRememberTime(self, arg):
@@ -482,10 +462,7 @@ class NetworkConnector(automat.Automat):
 
         def _transports_verified(all_results):
             if _Debug:
-                lg.out(
-                    _DebugLevel,
-                    'network_connector._transports_verified : %s' %
-                    str(all_results))
+                lg.out(_DebugLevel, 'network_connector._transports_verified : %s' % str(all_results))
             order, all_results = all_results
             not_valid_count = 0
             restarts_count = 0
@@ -499,9 +476,7 @@ class NetworkConnector(automat.Automat):
                 proto = order[priority]
                 if not all_results[proto]:
                     if _Debug:
-                        lg.out(
-                            _DebugLevel, '    [%s] at position %d needs restart' %
-                            (proto, priority))
+                        lg.out(_DebugLevel, '    [%s] at position %d needs restart' % (proto, priority))
                     gateway.transport(proto).automat('restart')
                     restarts_count += 1
                     if not_valid_count > 1:
@@ -515,9 +490,7 @@ class NetworkConnector(automat.Automat):
                         self.automat('network-transports-verified')
                     return
                 if _Debug:
-                    lg.out(
-                        _DebugLevel, '        [%s] at position %d is fine, skip other transports' %
-                        (proto, priority))
+                    lg.out(_DebugLevel, '        [%s] at position %d is fine, skip other transports' % (proto, priority))
                 self.automat('network-transports-verified')
                 return
         gateway.verify().addCallback(_transports_verified)
@@ -538,16 +511,11 @@ def UpdateUPNP():
 
     def _update_next_proto():
         if len(protos_need_upnp) == 0:
-            lg.out(
-                _DebugLevel,
-                'network_connector.update_upnp done, sending "upnp-done" event')
+            lg.out(_DebugLevel, 'network_connector.update_upnp done, sending "upnp-done" event')
             A('upnp-done')
             return
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'network_connector.UpdateUPNP._update_next_proto ' +
-                str(protos_need_upnp))
+            lg.out(_DebugLevel, 'network_connector.UpdateUPNP._update_next_proto ' + str(protos_need_upnp))
         proto = protos_need_upnp.pop()
         protos_need_upnp.add(proto)
         port = -1
@@ -562,8 +530,7 @@ def UpdateUPNP():
     def _call_upnp(port):
         # start messing with upnp settings
         # success can be false if you're behind a router that doesn't support upnp
-        # or if you are not behind a router at all and have an external ip
-        # address
+        # or if you are not behind a router at all and have an external ip address
         from system import run_upnpc
         shutdowner.A('block')
         success, port = run_upnpc.update(port)
@@ -572,16 +539,12 @@ def UpdateUPNP():
 
     def _upnp_proto_done(result, proto):
         if _Debug:
-            lg.out(
-                _DebugLevel, 'network_connector.UpdateUPNP._upnp_proto_done %s: %s' %
-                (proto, str(result)))
+            lg.out(_DebugLevel, 'network_connector.UpdateUPNP._upnp_proto_done %s: %s' % (proto, str(result)))
         if result[0] == 'upnp-done':
             if proto == 'tcp':
                 if str(settings.getTCPPort()) != str(result[1]).strip():
-                    lg.out(
-                        _DebugLevel, '    !!!!!!!!!! created a new port mapping, TCP port were changed: %s -> %s' %
-                        (settings.getTCPPort(), str(
-                            result[1])))
+                    lg.out(_DebugLevel, '    !!!!!!!!!! created a new port mapping, TCP port were changed: %s -> %s' % (
+                        settings.getTCPPort(), str(result[1])))
                 settings.setTCPPort(result[1])
         protos_need_upnp.discard(proto)
         reactor.callLater(0, _update_next_proto)

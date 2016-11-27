@@ -98,7 +98,5 @@ def ping(request):
         return HttpResponseBadRequest('need to provide idurl parameter')
     from p2p import propagate
     propagate.single(str(idurl), wide=True)
-    next_url = request.REQUEST.get(
-        'next', '/identity/%s' %
-        nameurl.DjangoQuote(idurl))
+    next_url = request.REQUEST.get('next', '/identity/%s' % nameurl.DjangoQuote(idurl))
     return HttpResponseRedirect(next_url)

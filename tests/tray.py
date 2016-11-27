@@ -36,12 +36,7 @@ class IconBar:
     ##
     # \brief the constructor default left: red, default right: green
     #
-    def __init__(
-        self, l_off=[
-            128, 0, 0], l_on=[
-            255, 0, 0], r_off=[
-                0, 128, 0], r_on=[
-                    0, 255, 0]):
+    def __init__(self, l_off=[128, 0, 0], l_on=[255, 0, 0], r_off=[0, 128, 0], r_on=[0, 255, 0]):
         self.s_line = "\xff\xff\xff" + "\0" * 45
         self.s_border = "\xff\xff\xff\0\0\0"
         self.s_point = "\0" * 3
@@ -74,8 +69,7 @@ class IconBar:
         image.SetData(s)
 
         bmp = image.ConvertToBitmap()
-        # sets the transparency colour to white
-        bmp.SetMask(wx.Mask(bmp, wx.BLACK))
+        bmp.SetMask(wx.Mask(bmp, wx.BLACK))  # sets the transparency colour to white
 
         icon = wx.EmptyIcon()
         icon.CopyFromBitmap(bmp)
@@ -98,8 +92,7 @@ class MyTaskBarIcon(wx.TaskBarIcon):
     def __init__(self, frame):
         wx.TaskBarIcon.__init__(self)
         self.frame = frame
-        self.IconBar = IconBar(
-            (127, 127, 0), (255, 255, 0), (0, 127, 127), (0, 255, 255))
+        self.IconBar = IconBar((127, 127, 0), (255, 255, 0), (0, 127, 127), (0, 255, 255))
         self.SetIconBar(self.l, self.r)
 
     ##

@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: contactsdb
+.. module:: contactsdb.
 
 A low level methods to store list of contacts locally.:
     - suppliers
@@ -45,7 +45,7 @@ from userid import my_id
 
 import identitycache
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 _CustomersList = []      # comes from settings.CustomerIDsFilename()
 _SuppliersList = []      # comes from settings.SupplierIDsFilename()
@@ -57,14 +57,16 @@ _CustomersChangedCallback = None
 _ContactsChangedCallback = None
 _CorrespondentsChangedCallback = None
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def init():
     """
     We read from disk and if we have all the info we are set.
-    If we don't have enough, then we have to ask BitDust to list contacts and use
-    that list to get and then store all the identities for our contacts.
+
+    If we don't have enough, then we have to ask BitDust to list
+    contacts and use that list to get and then store all the identities
+    for our contacts.
     """
     global _SuppliersChangedCallback
     global _CustomersChangedCallback
@@ -83,6 +85,7 @@ def init():
 
 def shutdown():
     """
+    
     """
     global _SuppliersChangedCallback
     global _CustomersChangedCallback
@@ -268,9 +271,8 @@ def clear_correspondents():
 
 def add_correspondent(idurl, nickname=''):
     """
-    Add correspondent,
-    execute notification callback
-    and return its position in the list.
+    Add correspondent, execute notification callback and return its position in
+    the list.
     """
     global _CorrespondentsList
     global _CorrespondentsChangedCallback
@@ -283,9 +285,8 @@ def add_correspondent(idurl, nickname=''):
 
 def remove_correspondent(idurl):
     """
-    Remove correspondent with given IDURL,
-    execute notification callback
-    and return True if success.
+    Remove correspondent with given IDURL, execute notification callback and
+    return True if success.
     """
     global _CorrespondentsList
     global _CorrespondentsChangedCallback
@@ -309,7 +310,7 @@ def update_correspondents(idslist):
     if _CorrespondentsChangedCallback is not None:
         _CorrespondentsChangedCallback(oldcorrespondents, correspondents())
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def is_customer(idurl):
@@ -395,8 +396,11 @@ def customer_position(idurl):
 
 def contact_position(idurl):
     """
-    Return position for given contact ID in the total list combined from suppliers, customers.
-    Suppliers should be numbered 0 to 63 with customers after that not sure we can count on numbers staying.
+    Return position for given contact ID in the total list combined from
+    suppliers, customers.
+
+    Suppliers should be numbered 0 to 63 with customers after that not
+    sure we can count on numbers staying.
     """
     if not idurl:
         return -1
@@ -406,7 +410,7 @@ def contact_position(idurl):
         index = -1
     return index
 
-#-------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 
 def save_suppliers(path=None):
@@ -429,7 +433,8 @@ def save_customers(path=None):
 
 def save_correspondents(path=None):
     """
-    Write current correspondents list on the disk, ``path`` is a file path to save.
+    Write current correspondents list on the disk, ``path`` is a file path to
+    save.
     """
     if path is None:
         path = settings.CorrespondentIDsFilename()
@@ -498,8 +503,7 @@ def get_contact_identity(idurl):
     lg.out(6, "contactsdb.getContact %s is not found" % nameurl.GetName(idurl))
     # TODO:
     # this is not correct:
-    # need to check if other contacts is fine - if internet is turned off we
-    # can get lots fails ...
+    # need to check if other contacts is fine - if internet is turned off we can get lots fails ...
     return None
 
 
@@ -532,6 +536,7 @@ def get_correspondent_identity(idurl):
 
 def get_correspondent_nickname(correspondent_idurl):
     """
+    
     """
     for idurl, nickname in correspondents():
         if idurl == correspondent_idurl:
@@ -550,7 +555,7 @@ def find_correspondent_by_nickname(nickname):
 
 def SetSuppliersChangedCallback(cb):
     """
-    Set callback to fire when suppliers is changed
+    Set callback to fire when suppliers is changed.
     """
     global _SuppliersChangedCallback
     _SuppliersChangedCallback = cb
@@ -558,7 +563,7 @@ def SetSuppliersChangedCallback(cb):
 
 def SetCustomersChangedCallback(cb):
     """
-    Set callback to fire when customers is changed
+    Set callback to fire when customers is changed.
     """
     global _CustomersChangedCallback
     _CustomersChangedCallback = cb
@@ -566,7 +571,7 @@ def SetCustomersChangedCallback(cb):
 
 def SetContactsChangedCallback(cb):
     """
-    Set callback to fire when any contact were changed
+    Set callback to fire when any contact were changed.
     """
     global _ContactsChangedCallback
     _ContactsChangedCallback = cb
@@ -574,7 +579,7 @@ def SetContactsChangedCallback(cb):
 
 def SetCorrespondentsChangedCallback(cb):
     """
-    Set callback to fire when correspondents is changed
+    Set callback to fire when correspondents is changed.
     """
     global _CorrespondentsChangedCallback
     _CorrespondentsChangedCallback = cb

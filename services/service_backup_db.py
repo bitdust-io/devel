@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_backup_db
+..
 
+module:: service_backup_db
 """
 
 from services.local_service import LocalService

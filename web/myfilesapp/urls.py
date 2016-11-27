@@ -31,9 +31,7 @@ import views
 
 urlpatterns = patterns('',
                        url(r'(?P<pk>\d+)$',
-                           login_required(views.BackupFSItemView.as_view()),
-                           name='backupfsitem'),
+                           login_required(views.BackupFSItemView.as_view()), name='backupfsitem'),
                        url(r'$',
-                           login_required(views.BackupFSView.as_view()),
-                           name='backupfsitems'),
+                           login_required(views.BackupFSView.as_view()), name='backupfsitems'),
                        )

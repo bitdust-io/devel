@@ -22,7 +22,8 @@
 
 
 """
-.. module:: id_server
+.. module:: id_server.
+
 .. role:: red
 BitDust id_server() Automat
 
@@ -93,12 +94,14 @@ def A(event=None, arg=None):
 
 class IdServer(automat.Automat):
     """
-    This class implements all the functionality of the ``id_server()`` state machine.
+    This class implements all the functionality of the ``id_server()`` state
+    machine.
     """
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.web_listener = None
         self.tcp_listener = None
@@ -161,37 +164,26 @@ class IdServer(automat.Automat):
         """
         self.hostname = settings.getIdServerHost()
         if self.hostname == '':
-            # bpio.ReadTextFile(settings.ExternalIPFilename())
-            self.hostname = misc.readExternalIP()
+            self.hostname = misc.readExternalIP()  # bpio.ReadTextFile(settings.ExternalIPFilename())
         if self.hostname == '':
             self.hostname = net_misc.getLocalIp()
         lg.out(4, 'id_server.doSetUp hostname=%s' % self.hostname)
         if not os.path.isdir(settings.IdentityServerDir()):
             os.makedirs(settings.IdentityServerDir())
-            lg.out(
-                4, '            created a folder %s' %
-                settings.IdentityServerDir())
+            lg.out(4, '            created a folder %s' % settings.IdentityServerDir())
         root = WebRoot()
         root.putChild('', WebMainPage())
         try:
-            self.web_listener = reactor.listenTCP(
-                self.web_port, server.Site(root))
-            lg.out(
-                4, "            have started web listener on port %d " %
-                (self.web_port))
+            self.web_listener = reactor.listenTCP(self.web_port, server.Site(root))
+            lg.out(4, "            have started web listener on port %d " % (self.web_port))
         except:
-            lg.out(
-                4, "id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
+            lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.web_port))
             lg.exc()
         try:
-            self.tcp_listener = reactor.listenTCP(
-                self.tcp_port, IdServerFactory())
-            lg.out(
-                4, "            identity server listen on TCP port %d started" %
-                (self.tcp_port))
+            self.tcp_listener = reactor.listenTCP(self.tcp_port, IdServerFactory())
+            lg.out(4, "            identity server listen on TCP port %d started" % (self.tcp_port))
         except:
-            lg.out(
-                4, "id_server.set_up ERROR exception trying to listen on port " + str(self.tcp_port))
+            lg.out(4, "id_server.set_up ERROR exception trying to listen on port " + str(self.tcp_port))
             lg.exc()
 
     def doSetDown(self, arg):
@@ -232,6 +224,7 @@ class IdServer(automat.Automat):
 
     def _save_identity(self, inputfilename):
         """
+        
         """
         lg.out(6, "id_server._save_identity " + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
@@ -288,13 +281,9 @@ class IdServer(automat.Automat):
         localfilename = os.path.join(settings.IdentityServerDir(), filename)
     #    lg.out(8,"id_server.SaveIdentity with filename " + localfilename)
         oldxml = ''
-        # need to make sure id was not already used by different key - which
-        # would mean someone trying to steal identity
+        # need to make sure id was not already used by different key - which would mean someone trying to steal identity
         if os.path.exists(localfilename):
-            lg.out(
-                6,
-                "id_server._save_identity was already an identity with this name " +
-                localfilename)
+            lg.out(6, "id_server._save_identity was already an identity with this name " + localfilename)
             oldxml = bpio.ReadTextFile(localfilename)
             oldidentity = identity.identity(xmlsrc=oldxml)
             if oldidentity.publickey != newidentity.publickey:
@@ -302,10 +291,7 @@ class IdServer(automat.Automat):
                 return
         if newxml != oldxml:
             if not os.path.exists(localfilename):
-                lg.out(
-                    6,
-                    "id_server._save_identity will save NEW Identity: " +
-                    filename)
+                lg.out(6, "id_server._save_identity will save NEW Identity: " + filename)
             bpio.WriteFile(localfilename, newxml)
 
 #------------------------------------------------------------------------------
@@ -326,6 +312,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def connectionMade(self):
         """
+        
         """
         # lg.out(8, 'id_server.connectionMade from ' + str(self.transport.getPeer()))
 
@@ -347,8 +334,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
         if command != 'd':
             self.disconnect()
             # self.transport.loseConnection()
-            lg.warn('not a "data" packet from %s' %
-                    str(self.transport.getPeer()))
+            lg.warn('not a "data" packet from %s' % str(self.transport.getPeer()))
             return
         inp = cStringIO.StringIO(payload)
         try:
@@ -379,6 +365,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def connectionLost(self, reason):
         """
+        
         """
 
 #------------------------------------------------------------------------------
@@ -465,11 +452,8 @@ def main():
     lg.set_debug_level(20)
     reactor.addSystemEventTrigger('before', 'shutdown',
                                   A().automat, 'shutdown')
-    reactor.callWhenRunning(
-        A,
-        'init',
-        (settings.getIdServerWebPort(),
-         settings.getIdServerTCPPort()))
+    reactor.callWhenRunning(A, 'init',
+                            (settings.getIdServerWebPort(), settings.getIdServerTCPPort()))
     reactor.callLater(0, A, 'start')
     reactor.run()
     lg.out(2, 'reactor stopped, EXIT')
