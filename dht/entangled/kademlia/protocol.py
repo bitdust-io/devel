@@ -43,11 +43,15 @@ _Debug = False
 
 
 class TimeoutError(Exception):
-    """ Raised when a RPC times out """
+    """
+    Raised when a RPC times out.
+    """
 
 
 class KademliaProtocol(protocol.DatagramProtocol):
-    """ Implements all low-level network-related functions of a Kademlia node """
+    """
+    Implements all low-level network-related functions of a Kademlia node.
+    """
     msgSizeLimit = constants.udpDatagramMaxSize - 26
     maxToSendDelay = 10**-3
     minToSendDelay = 10**-5
@@ -61,7 +65,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._partialMessagesProgress = {}
 
     def sendRPC(self, contact, method, args, rawResponse=False):
-        """ Sends an RPC to the specified contact
+        """
+        Sends an RPC to the specified contact.
 
         @param contact: The contact (remote node) to send the RPC to
         @type contact: kademlia.contacts.Contact
@@ -105,7 +110,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         return df
 
     def datagramReceived(self, datagram, address):
-        """ Handles and parses incoming RPC messages (and responses)
+        """
+        Handles and parses incoming RPC messages (and responses)
 
         @note: This is automatically called by Twisted when the protocol
                receives a UDP datagram
@@ -190,8 +196,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
             print '                dt=%s' % (time.time() - _t)
 
     def _send(self, data, rpcID, address):
-        """ Transmit the specified data over UDP, breaking it up into several
-        packets if necessary
+        """
+        Transmit the specified data over UDP, breaking it up into several
+        packets if necessary.
 
         If the data is spread over multiple UDP datagrams, the packets have the
         following structure::
@@ -237,7 +244,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
                 traceback.print_exc()
 
     def _sendResponse(self, contact, rpcID, response):
-        """ Send a RPC response to the specified contact
+        """
+        Send a RPC response to the specified contact.
         """
         msg = msgtypes.ResponseMessage(rpcID, self._node.id, response)
         msgPrimitive = self._translator.toPrimitive(msg)
@@ -247,7 +255,8 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _sendError(self, contact, rpcID, exceptionType, exceptionMessage):
-        """ Send an RPC error message to the specified contact
+        """
+        Send an RPC error message to the specified contact.
         """
         msg = msgtypes.ErrorMessage(rpcID, self._node.id, exceptionType, exceptionMessage)
         msgPrimitive = self._translator.toPrimitive(msg)
@@ -257,7 +266,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
         self._send(encodedMsg, rpcID, (contact.address, contact.port))
 
     def _handleRPC(self, senderContact, rpcID, method, args):
-        """ Executes a local function in response to an RPC request """
+        """
+        Executes a local function in response to an RPC request.
+        """
         # Set up the deferred callchain
         def handleError(f):
             self._sendError(senderContact, rpcID, f.type, f.getErrorMessage())
@@ -293,7 +304,9 @@ class KademliaProtocol(protocol.DatagramProtocol):
             df.errback(failure.Failure(AttributeError('Invalid method: %s' % method)))
 
     def _msgTimeout(self, messageID):
-        """ Called when an RPC request message times out """
+        """
+        Called when an RPC request message times out.
+        """
         # Find the message that timed out
         if messageID in self._sentMessages:
             remoteContactID, df = self._sentMessages[messageID][0:2]

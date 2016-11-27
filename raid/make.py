@@ -81,8 +81,9 @@ def shutdown():
 
 def RoundupFile(filename, stepsize):
     """
-    For some things we need to have files which are round sizes,
-    for example some encryption needs files that are multiples of 8 bytes.
+    For some things we need to have files which are round sizes, for example
+    some encryption needs files that are multiples of 8 bytes.
+
     This function rounds file up to the next multiple of step size.
     """
     try:
@@ -100,6 +101,7 @@ def RoundupFile(filename, stepsize):
 
 def ReadBinaryFile(filename):
     """
+    
     """
     if not os.path.isfile(filename):
         return ''
@@ -113,6 +115,7 @@ def ReadBinaryFile(filename):
 
 def WriteFile(filename, data):
     """
+    
     """
     f = open(filename, "wb")
     f.write(data)

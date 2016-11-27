@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: message
+..
 
+module:: message
 """
 
 import os
@@ -100,7 +101,9 @@ def inbox_history():
 class MessageClass:
     """
     A class to represent a message.
-    We always encrypt messages with a session key so we need to package with encrypted body.
+
+    We always encrypt messages with a session key so we need to package
+    with encrypted body.
     """
 
     def __init__(self, destinationidentity, messagebody):
@@ -120,12 +123,9 @@ class MessageClass:
 
 def Message(request):
     """
-    Message came in for us so we:
-        1) check that it is a correspondent
-        2) decrypt message body
-        3) save on local HDD
-        4) call the GUI
-        5) send an "Ack" back to sender
+    Message came in for us so we: 1) check that it is a correspondent 2)
+    decrypt message body 3) save on local HDD 4) call the GUI 5) send an "Ack"
+    back to sender.
     """
     global _IncomingMessageCallbacks
     lg.out(6, "message.Message from " + str(request.OwnerID))

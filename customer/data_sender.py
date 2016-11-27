@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: data_sender
+.. module:: data_sender.
 
 .. raw:: html
 
@@ -350,7 +350,9 @@ class DataSender(automat.Automat):
 def statistic():
     """
     The ``data_sender()`` keeps track of sending results with every supplier.
-    This is used by ``fire_hire()`` to decide how reliable is given supplier.
+
+    This is used by ``fire_hire()`` to decide how reliable is given
+    supplier.
     """
     global _DataSender
     if _DataSender is None:

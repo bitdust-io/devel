@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: xmlrpc_server
+..
+
+module:: xmlrpc_server
 """
 
 from twisted.internet import reactor

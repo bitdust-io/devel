@@ -22,7 +22,8 @@
 
 
 """
-.. module:: tcp_connection
+.. module:: tcp_connection.
+
 .. role:: red
 
 BitDust tcp_connection() Automat
@@ -33,7 +34,6 @@ EVENTS:
     * :red:`data-received`
     * :red:`disconnect`
     * :red:`timer-10sec`
-
 """
 #------------------------------------------------------------------------------
 
@@ -84,7 +84,8 @@ class TCPConnection(automat.Automat, basic.Int32StringReceiver):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
 
     def A(self, event, arg):

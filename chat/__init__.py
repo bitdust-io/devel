@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: chat
+..
 
+module:: chat
 """

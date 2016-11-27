@@ -22,7 +22,8 @@
 
 
 """
-.. module:: accountants_finder
+.. module:: accountants_finder.
+
 .. role:: red
 
 BitDust accountants_finder() Automat
@@ -86,7 +87,8 @@ def A(event=None, arg=None):
 
 class AccountantsFinder(automat.Automat):
     """
-    This class implements all the functionality of the ``accountants_finder()`` state machine.
+    This class implements all the functionality of the ``accountants_finder()``
+    state machine.
     """
 
     timers = {
@@ -96,8 +98,8 @@ class AccountantsFinder(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of accountants_finder() machine.
+        Method to initialize additional variables and flags at creation phase
+        of accountants_finder() machine.
         """
         self.target_idurl = None
         self.requested_packet_id = None
@@ -105,18 +107,20 @@ class AccountantsFinder(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to catch the moment when accountants_finder() state were changed.
+        Method to catch the moment when accountants_finder() state were
+        changed.
         """
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the accountants_finder()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the accountants_finder() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'AT_STARTUP':
             if event == 'init':

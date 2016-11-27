@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: cmd_line_json
+..
 
+module:: cmd_line_json
 """
 
 import os
@@ -80,8 +81,11 @@ def parser():
 
 def override_options(opts, args):
     """
-    The program can replace some user options by values passed via command line.
-    This method return a dictionary where is stored a key-value pairs for new options.
+    The program can replace some user options by values passed via command
+    line.
+
+    This method return a dictionary where is stored a key-value pairs
+    for new options.
     """
     overDict = {}
     if opts.debug or str(opts.debug) == '0':
@@ -109,6 +113,7 @@ def print_text(msg, nl='\n'):
 def print_exception():
     """
     This is second most common method in the project.
+
     Print detailed info about last exception to the logs.
     """
     import traceback
@@ -172,6 +177,7 @@ def fail_and_stop(err):
 def call_jsonrpc_method(method, *args):
     """
     Method to communicate with existing BitDust process.
+
     Reads port number of the local RPC server and do the request.
     """
     from system import bpio
@@ -186,6 +192,7 @@ def call_jsonrpc_method(method, *args):
 
 def call_jsonrpc_method_and_stop(method, *args):
     """
+    
     """
     d = call_jsonrpc_method(method, *args)
     d.addCallback(print_and_stop)
@@ -196,6 +203,7 @@ def call_jsonrpc_method_and_stop(method, *args):
 
 def call_jsonrpc_method_template_and_stop(method, template, *args):
     """
+    
     """
     d = call_jsonrpc_method(method, *args)
     d.addCallback(print_template_and_stop, template)
@@ -206,6 +214,7 @@ def call_jsonrpc_method_template_and_stop(method, template, *args):
 
 def call_jsonrpc_method_transform_template_and_stop(method, template, transform, *args):
     """
+    
     """
     d = call_jsonrpc_method(method, *args)
     d.addCallback(lambda result: print_template_and_stop(transform(result), template))
@@ -258,12 +267,14 @@ def kill():
 
 def wait_then_kill(x):
     """
-    For correct shutdown of the program need to send a URL request to the HTTP server::
-        http://localhost:<random port>/?action=exit
+    For correct shutdown of the program need to send a URL request to the HTTP
+    server:: http://localhost:<random port>/?action=exit.
 
-    After receiving such request the program will call ``p2p.init_shutdown.shutdown()`` method and stops.
-    But if the main process was blocked it needs to be killed with system "kill" procedure.
-    This method will wait for 10 seconds and then call method ``kill()``.
+    After receiving such request the program will call
+    ``p2p.init_shutdown.shutdown()`` method and stops. But if the main
+    process was blocked it needs to be killed with system "kill"
+    procedure. This method will wait for 10 seconds and then call method
+    ``kill()``.
     """
     import time
     from twisted.internet import reactor
@@ -638,7 +649,8 @@ def cmd_restore(opts, args, overDict, executablePath):
 
 def cmd_integrate(opts, args, overDict):
     """
-    This is a helper to make a "system-wide" command called for fast access BitDust.
+    This is a helper to make a "system-wide" command called for fast access
+    BitDust.
 
     Run:
         python bitdust.py alias > /usr/local/bin/bitdust

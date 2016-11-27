@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: lg
+..
 
+module:: lg
 """
 
 import os
@@ -60,8 +61,8 @@ _TimeCountsDict = {}
 
 def out(_DebugLevel, msg, nl='\n'):
     """
-    The core method, most useful thing in any project :-)))
-    Print a text line to the log file or console.
+    The core method, most useful thing in any project :-))) Print a text line
+    to the log file or console.
 
     :param _DebugLevel: lower values is count as more important messages.
                         Usually I am using only even values from 0 to 18.
@@ -240,9 +241,11 @@ def exception_name(value):
 
 def set_debug_level(level):
     """
-    Code will use ``level`` 2-4 for most important things and 10 for really minor stuff.
-    Level 14 and higher is for things we don't think we want to see again.
-    Can set ``level`` to 0 for no debug messages at all.
+    Code will use ``level`` 2-4 for most important things and 10 for really
+    minor stuff.
+
+    Level 14 and higher is for things we don't think we want to see
+    again. Can set ``level`` to 0 for no debug messages at all.
     """
     global _GlobalDebugLevel
     level = int(level)
@@ -253,6 +256,7 @@ def set_debug_level(level):
 
 def get_debug_level():
     """
+    
     """
     global _GlobalDebugLevel
     return _GlobalDebugLevel
@@ -260,6 +264,7 @@ def get_debug_level():
 
 def get_loging_level():
     """
+    
     """
     global _GlobalDebugLevel
     return max(0, (30 - _GlobalDebugLevel) * 2)
@@ -268,6 +273,7 @@ def get_loging_level():
 def life_begins():
     """
     Start counting time in the logs from that moment.
+
     If not called the logs will contain current system time.
     """
     global _LifeBeginsTime
@@ -281,7 +287,8 @@ def when_life_begins():
 
 def is_debug(level):
     """
-    Return True if something at this ``level`` should be reported given current _GlobalDebugLevel.
+    Return True if something at this ``level`` should be reported given current
+    _GlobalDebugLevel.
     """
     global _GlobalDebugLevel
     return _GlobalDebugLevel >= level
@@ -289,7 +296,8 @@ def is_debug(level):
 
 def out_globals(level, glob_dict):
     """
-    Print all items from dictionary ``glob_dict`` to the logs if current _GlobalDebugLevel is higher than ``level``.
+    Print all items from dictionary ``glob_dict`` to the logs if current
+    _GlobalDebugLevel is higher than ``level``.
     """
     global _GlobalDebugLevel
     if level > _GlobalDebugLevel:
@@ -303,6 +311,7 @@ def out_globals(level, glob_dict):
 def time_push(t):
     """
     Remember current system time and set ``t`` marker to that.
+
     Useful to count execution time of some parts of the code.
     """
     global _TimeTotalDict
@@ -431,9 +440,11 @@ def disable_output():
 
 def disable_logs():
     """
-    Clear _LogsEnabled flag, so calls to ``log()`` and ``exc()`` will do nothing.
-    Must be used in production release to increase performance.
-    However I plan to comment all lines with ``lg.log()`` at all.
+    Clear _LogsEnabled flag, so calls to ``log()`` and ``exc()`` will do
+    nothing.
+
+    Must be used in production release to increase performance. However
+    I plan to comment all lines with ``lg.log()`` at all.
     """
     global _LogsEnabled
     _LogsEnabled = False
@@ -457,7 +468,8 @@ def setup_unbuffered_stdout():
 
 def restore_original_stdout():
     """
-    Restore original STDOUT, need to be called after ``setup_unbuffered_stdout`` to get back to default state.
+    Restore original STDOUT, need to be called after
+    ``setup_unbuffered_stdout`` to get back to default state.
     """
     global _OriginalStdOut
     if _OriginalStdOut is None:
@@ -474,7 +486,9 @@ def restore_original_stdout():
 
 def set_weblog_func(webstreamfunc):
     """
-    Set callback method to be called in Dprint, used to show logs in the WEB browser.
+    Set callback method to be called in Dprint, used to show logs in the WEB
+    browser.
+
     See ``bitdust.lib.weblog`` module.
     """
     global _WebStreamFunc

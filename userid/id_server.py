@@ -22,7 +22,8 @@
 
 
 """
-.. module:: id_server
+.. module:: id_server.
+
 .. role:: red
 BitDust id_server() Automat
 
@@ -93,12 +94,14 @@ def A(event=None, arg=None):
 
 class IdServer(automat.Automat):
     """
-    This class implements all the functionality of the ``id_server()`` state machine.
+    This class implements all the functionality of the ``id_server()`` state
+    machine.
     """
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.web_listener = None
         self.tcp_listener = None
@@ -221,6 +224,7 @@ class IdServer(automat.Automat):
 
     def _save_identity(self, inputfilename):
         """
+        
         """
         lg.out(6, "id_server._save_identity " + inputfilename)
         if os.path.getsize(inputfilename) > 50000:
@@ -308,6 +312,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def connectionMade(self):
         """
+        
         """
         # lg.out(8, 'id_server.connectionMade from ' + str(self.transport.getPeer()))
 
@@ -360,6 +365,7 @@ class IdServerProtocol(basic.Int32StringReceiver):
 
     def connectionLost(self, reason):
         """
+        
         """
 
 #------------------------------------------------------------------------------

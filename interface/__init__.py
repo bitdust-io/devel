@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: interface
+..
 
+module:: interface
 """

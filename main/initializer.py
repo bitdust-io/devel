@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: initializer
+.. module:: initializer.
 
 .. raw:: html
 
@@ -235,6 +235,7 @@ class Initializer(automat.Automat):
 
     def doInitLocal(self, arg):
         """
+        
         """
         self.flagGUI = arg.strip() == 'show'
         lg.out(2, 'initializer.doInitLocal flagGUI=%s' % self.flagGUI)
@@ -320,7 +321,8 @@ class Initializer(automat.Automat):
 
     def _check_install(self):
         """
-        Return True if Private Key and local identity files exists and both is valid.
+        Return True if Private Key and local identity files exists and both is
+        valid.
         """
         lg.out(2, 'initializer._check_install')
         from userid import identity

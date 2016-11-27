@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_proxy_server
+..
 
+module:: service_proxy_server
 """
 
 from services.local_service import LocalService

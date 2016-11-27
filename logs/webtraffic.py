@@ -27,9 +27,10 @@
 #
 
 """
-.. module:: webtraffic
+.. module:: webtraffic.
 
-A useful code to monitor program packets traffic in the Web browser using local HTML server.
+A useful code to monitor program packets traffic in the Web browser
+using local HTML server.
 """
 
 import sys

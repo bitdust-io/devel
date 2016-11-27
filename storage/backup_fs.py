@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_fs
+.. module:: backup_fs.
 
 This is some kind of file system.
 To store backed up data on remote peers we can not use original files and folders names -
@@ -123,7 +123,8 @@ def fsID():
 
 def counter():
     """
-    Software keeps track of total number of indexed items, this returns that value.
+    Software keeps track of total number of indexed items, this returns that
+    value.
     """
     global _ItemsCount
     return _ItemsCount
@@ -156,6 +157,7 @@ def sizefiles():
 def sizefolders():
     """
     Total size of all indexed folders.
+
     May be incorrect, because folder size is not calculated regular yet.
     """
     global _SizeFolders
@@ -195,7 +197,8 @@ def shutdown():
 
 class FSItemInfo():
     """
-    A class to represent a file or folder (possible other file system items) in the index.
+    A class to represent a file or folder (possible other file system items) in
+    the index.
     """
 
     def __init__(self, name='', path='', typ=UNKNOWN):
@@ -364,6 +367,7 @@ class FSItemInfo():
 def MakeID(iter, startID=-1):
     """
     Create a new unique number for the folder to create a index ID.
+
     Parameter ``iter`` is a reference for a single item in the ``fs()``.
     """
     id = 0
@@ -378,7 +382,9 @@ def MakeID(iter, startID=-1):
 
 def AddFile(path, read_stats=False, iter=None, iterID=None):
     """
-    Scan all components of the ``path`` and create an item in the index for that file.
+    Scan all components of the ``path`` and create an item in the index for
+    that file.
+
         >>> import backup_fs
         >>> backup_fs.AddFile('C:/Documents and Settings/veselin/Application Data/Google/GoogleEarth/myplaces.kml')
         ('0/0/0/0/0/0/0', {0: 0, u'myplaces.kml': 0}, {'i': <PARENT GoogleEarth -1>, 0: <FILE myplaces.kml -1>})
@@ -492,8 +498,9 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
 
 def AddLocalPath(localpath, read_stats=False):
     """
-    Operate like ``AddDir()`` but also recursively reads the entire folder and put all items in the index.
-    Parameter ``localpath`` can be a file or folder path in "portable" form.
+    Operate like ``AddDir()`` but also recursively reads the entire folder and
+    put all items in the index. Parameter ``localpath`` can be a file or folder
+    path in "portable" form.
 
         >>> import backup_fs
         >>> i = backup_fs.AddLocalPath('C:/Program Files/7-Zip/')
@@ -561,8 +568,9 @@ def AddLocalPath(localpath, read_stats=False):
 
 def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1):
     """
-    Acts like AddFile() but do not follow the directory structure.
-    This just "map" some local path (file or dir) to one item
+    Acts like AddFile() but do not follow the directory structure. This just
+    "map" some local path (file or dir) to one item.
+
     in the catalog - by default as a top level item.
     The name of new item will be equal to the local path.
     """
@@ -588,8 +596,9 @@ def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1):
 def SetFile(item, iter=None, iterID=None):
     """
     Put existing FSItemInfo ``item`` (for some single file) into the index.
-    This is used when loading index from file.
-    Should create all parent items in the index.
+
+    This is used when loading index from file. Should create all parent
+    items in the index.
     """
     if iter is None:
         iter = fs()
@@ -712,6 +721,7 @@ def WalkByPath(path, iter=None):
 def WalkByID(pathID, iterID=None):
     """
     Same, but search by ID:
+
         >>> backup_fs.WalkByID('0/0/0/10/1')
         (<FILE ru.txt 19107>, u'c:/Program Files/7-Zip/Lang/ru.txt')
 
@@ -867,7 +877,9 @@ def ToID(localPath, iter=None):
 
 def ToPath(pathID, iterID=None):
     """
-    Get a full relative path from ``pathID``, this is a wrapper for ``WalkByID()`` method::
+    Get a full relative path from ``pathID``, this is a wrapper for
+    ``WalkByID()`` method::
+
         >>> backup_fs.ToPath("/0/0/12/1")
         u'/home/veselin/Documents/somefile.txt'
 
@@ -883,7 +895,8 @@ def ToPath(pathID, iterID=None):
 
 def GetByID(pathID):
     """
-    Return iterator to item with given ID, search in the index with ``WalkByID()``.
+    Return iterator to item with given ID, search in the index with
+    ``WalkByID()``.
     """
     iter_and_path = WalkByID(pathID)
     if iter_and_path is None:
@@ -895,9 +908,12 @@ def GetByID(pathID):
 
 def GetByPath(path):
     """
-    This calls ``ToID()`` first to get the ID and than use ``GetByID()`` to take the item.
-    In fact we store items by ID, to have fast search by path we also keep opposite index.
-    So we need to use second index to get the ID at first and than use the main index to get the item.
+    This calls ``ToID()`` first to get the ID and than use ``GetByID()`` to
+    take the item.
+
+    In fact we store items by ID, to have fast search by path we also
+    keep opposite index. So we need to use second index to get the ID at
+    first and than use the main index to get the item.
     """
     path_id = ToID(path)
     if path_id is None:
@@ -1116,6 +1132,7 @@ def TraverseByIDSorted(callback, iterID=None):
 
 def TraverseChildsByID(callback, iterID=None):
     """
+    
     """
     def list_traverse(i, path_id, path, cb):
         name = None
@@ -1167,6 +1184,7 @@ def TraverseChildsByID(callback, iterID=None):
 def IterateIDs(iterID=None):
     """
     You can iterate all index using that method:
+
         >>> for pathID, localPath, itemInfo in p2p.backup_fs.IterateIDs():
         ...     print pathID, localPath, itemInfo
         ...
@@ -1282,6 +1300,7 @@ def ExtractVersions(item_id, item_info, path_exist=None):
 
 def ListRootItems(iter=None):
     """
+    
     """
     result = []
     root_items = WalkByPath('', iter)
@@ -1294,6 +1313,7 @@ def ListRootItems(iter=None):
 
 def ListChilds(iterID):
     """
+    
     """
     lg.out(4, 'backup_fs.ListChilds %s' % (iterID))
     result = []
@@ -1428,7 +1448,8 @@ def ListAllBackupIDsSQL(sorted=False, reverse=False, iterID=None):
 
 def ListSelectedFolders(selected_dirs_ids, sorted=False, reverse=False):
     """
-    List items from index only if they are sub items of ``selected_dirs_ids`` list.
+    List items from index only if they are sub items of ``selected_dirs_ids``
+    list.
     """
     lst = []
 
@@ -1587,10 +1608,12 @@ def DeleteLocalBackup(basedir, backupID):
 
 def Scan(basedir=None):
     """
-    Walk all items in the index and check if local files and folders with same names exists.
-    Parameter ``basedir`` is a root path of that structure,
-    default is ``lib.settings.getLocalBackupsDir()``.
-    Also calculate size of the files.
+    Walk all items in the index and check if local files and folders with same
+    names exists.
+
+    Parameter ``basedir`` is a root path of that structure, default is
+    ``lib.settings.getLocalBackupsDir()``. Also calculate size of the
+    files.
     """
     if basedir is None:
         basedir = settings.getLocalBackupsDir()

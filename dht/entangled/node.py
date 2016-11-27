@@ -36,10 +36,11 @@ from kademlia.node import rpcmethod
 
 
 class EntangledNode(kademlia.node.Node):
-    """ Entangled DHT node
+    """
+    Entangled DHT node.
 
-    This is basically a Kademlia node, but with a few more (non-standard, but
-    useful) RPCs defined.
+    This is basically a Kademlia node, but with a few more (non-
+    standard, but useful) RPCs defined.
     """
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
@@ -48,7 +49,8 @@ class EntangledNode(kademlia.node.Node):
         self.keywordSplitters = ['_', '.', '/']
 
     def searchForKeywords(self, keywords):
-        """ The Entangled search operation (keyword-based)
+        """
+        The Entangled search operation (keyword-based)
 
         Call this to find keys in the DHT which contain the specified
         keyword(s).
@@ -95,7 +97,8 @@ class EntangledNode(kademlia.node.Node):
         return df
 
     def publishData(self, name, data):
-        """ The Entangled high-level data publishing operation
+        """
+        The Entangled high-level data publishing operation.
 
         Call this to store data in the Entangled DHT.
 
@@ -169,7 +172,8 @@ class EntangledNode(kademlia.node.Node):
         return outerDf
 
     def removeData(self, name):
-        """ The Entangled high-level data removal (delete) operation
+        """
+        The Entangled high-level data removal (delete) operation.
 
         Call this to remove data from the Entangled DHT.
 
@@ -240,7 +244,8 @@ class EntangledNode(kademlia.node.Node):
         return outerDf
 
     def iterativeDelete(self, key):
-        """ The Entangled delete operation
+        """
+        The Entangled delete operation.
 
         Call this to remove data from the DHT.
 
@@ -261,8 +266,9 @@ class EntangledNode(kademlia.node.Node):
 
     @rpcmethod
     def delete(self, key, **kwargs):
-        """ Deletes the the specified key (and it's value) if present in
-        this node's data, and executes FIND_NODE for the key
+        """
+        Deletes the the specified key (and it's value) if present in this
+        node's data, and executes FIND_NODE for the key.
 
         @param key: The hashtable key of the data to delete
         @type key: str
@@ -280,7 +286,10 @@ class EntangledNode(kademlia.node.Node):
         return self.findNode(key, **kwargs)
 
     def _keywordHashesFromString(self, text):
-        """ Create hash keys for the keywords contained in the specified text string """
+        """
+        Create hash keys for the keywords contained in the specified text
+        string.
+        """
         keywordKeys = []
         splitText = text.lower()
         for splitter in self.keywordSplitters:

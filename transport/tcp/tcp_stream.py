@@ -22,7 +22,7 @@
 
 
 """
-..module:: tcp_stream
+..module:: tcp_stream.
 """
 
 #------------------------------------------------------------------------------
@@ -152,6 +152,7 @@ class TCPFileStream():
 
     def close(self):
         """
+        
         """
         self.connection = None
 
@@ -170,6 +171,7 @@ class TCPFileStream():
 
     def data_received(self, payload):
         """
+        
         """
         from transport.tcp import tcp_connection
         inp = cStringIO.StringIO(payload)
@@ -356,6 +358,7 @@ class TCPFileStream():
 
     def outbox_file_done(self, file_id, status, error_message=None):
         """
+        
         """
         try:
             outfile = self.outboxFiles[file_id]

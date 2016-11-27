@@ -44,7 +44,8 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
-"""Parallel Python Software, Auto-Discovery Service
+"""
+Parallel Python Software, Auto-Discovery Service.
 
 http://www.parallelpython.com - updates, documentation, examples and support
 forums
@@ -64,7 +65,9 @@ BROADCAST_INTERVAL = 10
 
 
 class Discover(object):
-    """Auto-discovery service class"""
+    """
+    Auto-discovery service class.
+    """
 
     def __init__(self, base, isclient=False):
         self.base = base
@@ -72,7 +75,9 @@ class Discover(object):
         self.isclient = isclient
 
     def run(self, interface_addr, broadcast_addr):
-        """Starts auto-discovery"""
+        """
+        Starts auto-discovery.
+        """
         self.interface_addr = interface_addr
         self.broadcast_addr = broadcast_addr
         self.bsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -85,7 +90,9 @@ class Discover(object):
             sys.excepthook(*sys.exc_info())
 
     def broadcast(self):
-        """Sends a broadcast"""
+        """
+        Sends a broadcast.
+        """
         if self.isclient:
             logging.debug("Client sends initial broadcast to (%s, %i)"
                           % self.broadcast_addr)
@@ -98,7 +105,9 @@ class Discover(object):
                 time.sleep(BROADCAST_INTERVAL)
 
     def listen(self):
-        """Listens for broadcasts from other clients/servers"""
+        """
+        Listens for broadcasts from other clients/servers.
+        """
         logging.debug("Listening (%s, %i)" % self.interface_addr)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

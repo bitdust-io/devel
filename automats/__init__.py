@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: automats
+..
 
+module:: automats
 """

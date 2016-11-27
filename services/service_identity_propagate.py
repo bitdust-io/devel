@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_identity_propagate
+..
 
+module:: service_identity_propagate
 """
 
 from services.local_service import LocalService

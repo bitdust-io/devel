@@ -25,10 +25,9 @@
 #
 
 """
-.. module:: broadcast_service
+.. module:: broadcast_service.
 
 @author: Veselin
-
 """
 
 #------------------------------------------------------------------------------

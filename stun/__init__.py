@@ -23,7 +23,7 @@
 #
 
 """
-.. module:: stun
+.. module:: stun.
 
 To detect my external IP and PORT I need to contact someone and ask for response.
 This is a STUN server and client idea, very simple.

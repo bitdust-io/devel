@@ -26,10 +26,11 @@
 #
 
 """
-.. module:: diskusage
+.. module:: diskusage.
 
 This is OS specific methods to read and check the local disks usage.
-Need to be sure user have enough free space on the disk and able to donate previously specified amount of space.
+Need to be sure user have enough free space on the disk and able to
+donate previously specified amount of space.
 """
 
 import os
@@ -56,8 +57,9 @@ if bpio.Windows():
 def GetWinDriveSpace(drive):
     """
     For Windows.
-    Return a tuple (<free space in bytes>, <total space in bytes>) or (None, None).
-    Call system method ``win32file.GetDiskFreeSpace``.
+
+    Return a tuple (<free space in bytes>, <total space in bytes>) or
+    (None, None). Call system method ``win32file.GetDiskFreeSpace``.
     """
     try:
         sectorsPerCluster, bytesPerSector, numFreeClusters, totalNumClusters = win32file.GetDiskFreeSpace(drive + ":\\")
@@ -73,8 +75,9 @@ def GetWinDriveSpace(drive):
 def GetLinuxDriveSpace(path):
     """
     For Linux.
-    Return a tuple (<free space in bytes>, <total space in bytes>) or (None, None).
-    Call system method ``os.statvfs``.
+
+    Return a tuple (<free space in bytes>, <total space in bytes>) or
+    (None, None). Call system method ``os.statvfs``.
     """
     try:
         s = os.statvfs(str(path))
@@ -108,7 +111,8 @@ def GetDriveSpace(path):
 
 def SumFileSizes(fileList):
     """
-    Just iterate the input list and call ``os.path.getsize`` for every item, also calculate and return the total size.
+    Just iterate the input list and call ``os.path.getsize`` for every item,
+    also calculate and return the total size.
     """
     fileSizeTotal = 0
     for filename in fileList:
@@ -122,8 +126,9 @@ def SumFileSizes(fileList):
 def GetOurTempFileSizeTotal(tempDirectory, masks=['*', ]):
     """
     Not used right now.
-    Tried here to calculate our temporary files size.
-    Temp files was reorganized and so this must be rewritten. TODO.
+
+    Tried here to calculate our temporary files size. Temp files was
+    reorganized and so this must be rewritten. TODO.
     """
     ourFileSizes = 0
     for mask in masks:
@@ -158,6 +163,7 @@ def GetDirectorySize(directoryPath):
 def main():
     """
     This method is for tests.
+
     Need to move all things here to unit tests. TODO.
     """
     dataDir = settings.getCustomersFilesDir()

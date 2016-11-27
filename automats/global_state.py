@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: global_state
+.. module:: global_state.
 
 This module is to keep track of changing states of State Machines.
 It also remember the current ``global`` state of the program - this a stats of a several most important automats.
@@ -81,9 +81,11 @@ _GlobalStateNotifyFunc = None
 def set_global_state(st):
     """
     This method is called from State Machines when ``state`` is changed:
-        global_state.set_global_state('P2P ' + newstate)
-    So ``st`` is a string like: 'P2P CONNECTED'.
-    ``_GlobalStateNotifyFunc`` can be used to keep track of changing program states.
+    global_state.set_global_state('P2P ' + newstate) So ``st`` is a string
+    like: 'P2P CONNECTED'.
+
+    ``_GlobalStateNotifyFunc`` can be used to keep track of changing
+    program states.
     """
     global _GlobalState
     global _GlobalStateNotifyFunc
@@ -99,8 +101,7 @@ def set_global_state(st):
 
 def get_global_state():
     """
-    Return the current ``global state``, for example:
-        P2P CONNECTED
+    Return the current ``global state``, for example: P2P CONNECTED.
     """
     global _GlobalState
     # lg.out(6, 'global_state.get_global_state return [%s]' % _GlobalState)
@@ -109,8 +110,8 @@ def get_global_state():
 
 def get_global_state_label():
     """
-    Return a label describing current global state, for example:
-        'checking network interfaces'
+    Return a label describing current global state, for example: 'checking
+    network interfaces'.
     """
     global _GlobalState
     global _StatesDict
@@ -127,7 +128,7 @@ def SetGlobalStateNotifyFunc(f):
 
 def SetSingleStateNotifyFunc(f):
     """
-    Set callback to catch state change of any automat
+    Set callback to catch state change of any automat.
     """
     automat.SetStateChangedCallback(f)
 

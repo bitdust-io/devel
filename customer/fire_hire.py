@@ -25,7 +25,8 @@
 #
 
 """
-.. module:: fire_hire
+.. module:: fire_hire.
+
 .. role:: red
 
 .. raw:: html
@@ -135,7 +136,8 @@ _SuppliersToFire = []
 
 def GetLastFireTime():
     """
-    This method returns a time moment when last time some supplier was replaced.
+    This method returns a time moment when last time some supplier was
+    replaced.
     """
     global _LastFireTime
     return _LastFireTime
@@ -143,12 +145,14 @@ def GetLastFireTime():
 
 def ClearLastFireTime():
     """
+    
     """
     _LastFireTime = 0
 
 
 def AddSupplierToFire(idurl):
     """
+    
     """
     global _SuppliersToFire
     _SuppliersToFire.append(idurl)
@@ -184,7 +188,8 @@ def Destroy():
 
 class FireHire(automat.Automat):
     """
-    This class implements all the functionality of the ``fire_hire()`` state machine.
+    This class implements all the functionality of the ``fire_hire()`` state
+    machine.
     """
 
     timers = {
@@ -193,7 +198,8 @@ class FireHire(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         # self.lastFireTime = 0 # time.time()
         self.connect_list = []
@@ -206,7 +212,8 @@ class FireHire(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
         global_state.set_global_state('FIREHIRE ' + newstate)
         if newstate == 'READY':

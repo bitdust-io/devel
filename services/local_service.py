@@ -25,7 +25,8 @@
 #
 
 """
-.. module:: local_service
+.. module:: local_service.
+
 .. role:: red
 
 BitDust local_service() Automat
@@ -75,7 +76,8 @@ from driver import ServiceAlreadyExist
 
 class LocalService(automat.Automat):
     """
-    This class implements all the functionality of the ``local_service()`` state machine.
+    This class implements all the functionality of the ``local_service()``
+    state machine.
     """
 
     service_name = ''
@@ -125,7 +127,8 @@ class LocalService(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired but automat's state was not changed.
+        This method intended to catch the moment when some event was fired but
+        automat's state was not changed.
         """
 
     def A(self, event, arg):

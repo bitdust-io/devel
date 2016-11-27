@@ -22,7 +22,8 @@
 
 
 """
-.. module:: broadcasters_finder
+.. module:: broadcasters_finder.
+
 .. role:: red
 
 BitDust broadcasters_finder() Automat
@@ -87,7 +88,8 @@ def A(event=None, arg=None):
 
 class BroadcastersFinder(automat.Automat):
     """
-    This class implements all the functionality of the ``broadcasters_finder()`` state machine.
+    This class implements all the functionality of the
+    ``broadcasters_finder()`` state machine.
     """
 
     timers = {
@@ -103,7 +105,8 @@ class BroadcastersFinder(automat.Automat):
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'AT_STARTUP':
             if event == 'init':

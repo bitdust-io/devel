@@ -21,7 +21,7 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 """
-..module:: udp_file_queue
+..module:: udp_file_queue.
 """
 
 import os
@@ -530,6 +530,7 @@ class InboxFile():
 
     def __init__(self, queue, stream_id, size):
         """
+        
         """
         self.transfer_id = None
         self.registration = None
@@ -553,6 +554,7 @@ class InboxFile():
 
     def __del__(self):
         """
+        
         """
         if _Debug:
             lg.out(18, 'udp_file_queue.InboxFile.__del__ {%s} [%d]' % (
@@ -598,6 +600,7 @@ class OutboxFile():
     def __init__(self, queue, stream_id, filename, size, description='',
                  result_defer=None, single=False):
         """
+        
         """
         self.transfer_id = None
         self.registration = None
@@ -628,6 +631,7 @@ class OutboxFile():
 
     def __del__(self):
         """
+        
         """
         if _Debug:
             lg.out(18, 'udp_file_queue.OutboxFile.__del__ {%s} [%d] file:%r' % (

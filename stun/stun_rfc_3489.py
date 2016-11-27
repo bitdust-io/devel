@@ -98,6 +98,7 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
     def datagramReceived(self, dgram, address):
         """
         Called when UDP datagram is received.
+
         I place a hook here to process datagrams in another place.
         """
         if self._finished:
@@ -145,11 +146,12 @@ class IPStunProtocol(shtoom.stun.StunDiscoveryProtocol):
 def stunExternalIP(timeout=10, verbose=False, close_listener=True, internal_port=5061, block_marker=None):
     """
     Start the STUN process.
-        :param timeout: how long to wait before decide that STUN is failed
-        :param verbose: set to True to print more log messages
-        :param close_listener: if True the listener will be closed after STUN is finished
-        :param internal_port: a port number to listen, the external port will be different
-        :param block_marker: you can provide a function if you need to block some other code while STUN is working
+
+    :param timeout: how long to wait before decide that STUN is failed
+    :param verbose: set to True to print more log messages
+    :param close_listener: if True the listener will be closed after STUN is finished
+    :param internal_port: a port number to listen, the external port will be different
+    :param block_marker: you can provide a function if you need to block some other code while STUN is working
     """
     global _WorkingDefers
     global _IsWorking

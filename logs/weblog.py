@@ -27,9 +27,10 @@
 #
 
 """
-.. module:: weblog
+.. module:: weblog.
 
-A useful code to monitor program logs in the Web browser using local HTML server.
+A useful code to monitor program logs in the Web browser using local
+HTML server.
 """
 
 import sys

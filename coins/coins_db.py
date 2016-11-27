@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: coins_db
+..
 
+module:: coins_db
 """
 
 #------------------------------------------------------------------------------
@@ -174,13 +175,12 @@ def _clean_doc(doc):
 def query_json(jdata):
     """
     Input keys:
-        method: 'get', 'get_many' or 'get_all'
-        index: 'id', 'idurl', etc.
-        key: key to read single record from db (optional)
-        start: low key limit to search records in range
-        end: high key limit to search records in range
-    Returns tuple:
-        generator object or None, error message
+
+    method: 'get', 'get_many' or 'get_all'     index: 'id', 'idurl',
+    etc.     key: key to read single record from db (optional)
+    start: low key limit to search records in range     end: high key
+    limit to search records in range Returns tuple:     generator object
+    or None, error message
     """
     if not db().opened:
         return None, 'database is closed'

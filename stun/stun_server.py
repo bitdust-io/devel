@@ -22,7 +22,7 @@
 
 
 """
-.. module:: stun_server
+.. module:: stun_server.
 
 BitDust stun_server() Automat
 
@@ -82,7 +82,8 @@ def Destroy():
 
 class StunServer(automat.Automat):
     """
-    This class implements all the functionality of the ``stun_server()`` state machine.
+    This class implements all the functionality of the ``stun_server()`` state
+    machine.
     """
 
     fast = True
@@ -162,6 +163,7 @@ class StunServer(automat.Automat):
 
     def _datagramReceived(self, datagram, address):
         """
+        
         """
         self.automat('datagram-received', (datagram, address))
         return False

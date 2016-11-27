@@ -27,10 +27,11 @@
 # The docstrings in this module contain epytext markup; API documentation
 # may be created by processing this file with epydoc: http://epydoc.sf.net
 
-""" This module defines the charaterizing constants of the Kademlia network
+"""
+This module defines the charaterizing constants of the Kademlia network.
 
-C{checkRefreshInterval} and C{udpDatagramMaxSize} are implementation-specific
-constants, and do not affect general Kademlia operation.
+C{checkRefreshInterval} and C{udpDatagramMaxSize} are implementation-
+specific constants, and do not affect general Kademlia operation.
 """
 
 ######### KADEMLIA CONSTANTS ###########

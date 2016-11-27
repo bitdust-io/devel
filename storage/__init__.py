@@ -23,7 +23,8 @@
 #
 
 """
-.. module:: storage
+.. module:: storage.
 
-Contains modules related to backup/restore/rebuilding/scrubbing features.
+Contains modules related to backup/restore/rebuilding/scrubbing
+features.
 """

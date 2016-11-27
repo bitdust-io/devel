@@ -43,17 +43,19 @@ from contact import Contact
 
 
 def rpcmethod(func):
-    """ Decorator to expose Node methods as remote procedure calls
+    """
+    Decorator to expose Node methods as remote procedure calls.
 
-    Apply this decorator to methods in the Node class (or a subclass) in order
-    to make them remotely callable via the DHT's RPC mechanism.
+    Apply this decorator to methods in the Node class (or a subclass) in
+    order to make them remotely callable via the DHT's RPC mechanism.
     """
     func.rpcmethod = True
     return func
 
 
 class Node(object):
-    """ Local node in the Kademlia network
+    """
+    Local node in the Kademlia network.
 
     This class represents a single local node in a Kademlia network; in other
     words, this class encapsulates an Entangled-using application's "presence"
@@ -123,8 +125,9 @@ class Node(object):
         self.listener = twisted.internet.reactor.listenUDP(self.port, self._protocol)  # IGNORE:E1101
 
     def joinNetwork(self, knownNodeAddresses=None):
-        """ Causes the Node to join the Kademlia network; normally, this
-        should be called before any other DHT operations.
+        """
+        Causes the Node to join the Kademlia network; normally, this should be
+        called before any other DHT operations.
 
         @param knownNodeAddresses: A sequence of tuples containing IP address
                                    information for existing nodes on the
@@ -168,7 +171,8 @@ class Node(object):
         #twisted.internet.reactor.callLater(10, self.printContacts)
 
     def iterativeStore(self, key, value, originalPublisherID=None, age=0):
-        """ The Kademlia store operation
+        """
+        The Kademlia store operation.
 
         Call this to store/republish data in the DHT.
 
@@ -213,7 +217,8 @@ class Node(object):
         return df
 
     def iterativeFindNode(self, key):
-        """ The basic Kademlia node lookup operation
+        """
+        The basic Kademlia node lookup operation.
 
         Call this to find a remote node in the P2P overlay network.
 
@@ -229,7 +234,8 @@ class Node(object):
         return self._iterativeFind(key)
 
     def iterativeFindValue(self, key):
-        """ The Kademlia search operation (deterministic)
+        """
+        The Kademlia search operation (deterministic)
 
         Call this to retrieve data from the DHT.
 
@@ -285,8 +291,9 @@ class Node(object):
         return outerDf
 
     def addContact(self, contact):
-        """ Add/update the given contact; simple wrapper for the same method
-        in this object's RoutingTable object
+        """
+        Add/update the given contact; simple wrapper for the same method in
+        this object's RoutingTable object.
 
         @param contact: The contact to add to this node's k-buckets
         @type contact: kademlia.contact.Contact
@@ -294,9 +301,10 @@ class Node(object):
         self._routingTable.addContact(contact)
 
     def removeContact(self, contactID):
-        """ Remove the contact with the specified node ID from this node's
-        table of known nodes. This is a simple wrapper for the same method
-        in this object's RoutingTable object
+        """
+        Remove the contact with the specified node ID from this node's table of
+        known nodes. This is a simple wrapper for the same method in this
+        object's RoutingTable object.
 
         @param contactID: The node ID of the contact to remove
         @type contactID: str
@@ -304,8 +312,9 @@ class Node(object):
         self._routingTable.removeContact(contactID)
 
     def findContact(self, contactID):
-        """ Find a entangled.kademlia.contact.Contact object for the specified
-        cotact ID
+        """
+        Find a entangled.kademlia.contact.Contact object for the specified
+        cotact ID.
 
         @param contactID: The contact ID of the required Contact object
         @type contactID: str
@@ -330,7 +339,8 @@ class Node(object):
 
     @rpcmethod
     def ping(self):
-        """ Used to verify contact between two Kademlia nodes
+        """
+        Used to verify contact between two Kademlia nodes.
 
         @rtype: str
         """
@@ -338,7 +348,8 @@ class Node(object):
 
     @rpcmethod
     def store(self, key, value, originalPublisherID=None, age=0, **kwargs):
-        """ Store the received data in this node's local hash table
+        """
+        Store the received data in this node's local hash table.
 
         @param key: The hashtable key of the data
         @type key: str
@@ -378,7 +389,8 @@ class Node(object):
 
     @rpcmethod
     def findNode(self, key, **kwargs):
-        """ Finds a number of known nodes closest to the node/value with the
+        """
+        Finds a number of known nodes closest to the node/value with the
         specified key.
 
         @param key: the 160-bit key (i.e. the node or value ID) to search for
@@ -403,8 +415,9 @@ class Node(object):
 
     @rpcmethod
     def findValue(self, key, **kwargs):
-        """ Return the value associated with the specified key if present in
-        this node's data, otherwise execute FIND_NODE for the key
+        """
+        Return the value associated with the specified key if present in this
+        node's data, otherwise execute FIND_NODE for the key.
 
         @param key: The hashtable key of the data to return
         @type key: str
@@ -429,7 +442,8 @@ class Node(object):
 #        return valKeyOne ^ valKeyTwo
 
     def _generateID(self):
-        """ Generates a 160-bit pseudo-random identifier
+        """
+        Generates a 160-bit pseudo-random identifier.
 
         @return: A globally unique 160-bit pseudo-random identifier
         @rtype: str
@@ -439,7 +453,8 @@ class Node(object):
         return hash.digest()
 
     def _iterativeFind(self, key, startupShortlist=None, rpc='findNode'):
-        """ The basic Kademlia iterative lookup operation (for nodes/values)
+        """
+        The basic Kademlia iterative lookup operation (for nodes/values)
 
         This builds a list of k "closest" contacts through iterative use of
         the "FIND_NODE" RPC, or if C{findValue} is set to C{True}, using the
@@ -714,8 +729,10 @@ class Node(object):
         print err
 
     def _refreshNode(self):
-        """ Periodically called to perform k-bucket refreshes and data
-        replication/republishing as necessary """
+        """
+        Periodically called to perform k-bucket refreshes and data
+        replication/republishing as necessary.
+        """
         # print 'refreshNode called'
         df = self._refreshRoutingTable()
         df.addCallback(self._republishData)
@@ -747,8 +764,9 @@ class Node(object):
         self.refresher = twisted.internet.reactor.callLater(constants.checkRefreshInterval, self._refreshNode)
 
     def _threadedRepublishData(self, *args):
-        """ Republishes and expires any stored data (i.e. stored
-        C{(key, value pairs)} that need to be republished/expired
+        """
+        Republishes and expires any stored data (i.e. stored C{(key, value
+        pairs)} that need to be republished/expired.
 
         This method should run in a deferred thread
         """

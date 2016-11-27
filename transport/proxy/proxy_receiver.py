@@ -22,7 +22,8 @@
 
 
 """
-.. module:: proxy_receiver
+.. module:: proxy_receiver.
+
 .. role:: red
 
 BitDust proxy_receiver(at_startup) Automat
@@ -156,7 +157,8 @@ def A(event=None, arg=None):
 
 class ProxyReceiver(automat.Automat):
     """
-    This class implements all the functionality of the ``proxy_receiver()`` state machine.
+    This class implements all the functionality of the ``proxy_receiver()``
+    state machine.
     """
 
     timers = {
@@ -166,8 +168,8 @@ class ProxyReceiver(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of proxy_receiver() machine.
+        Method to initialize additional variables and flags at creation phase
+        of proxy_receiver() machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -180,13 +182,14 @@ class ProxyReceiver(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the proxy_receiver()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the proxy_receiver() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The core proxy_receiver() code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The core proxy_receiver() code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':

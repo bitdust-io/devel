@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_network
+..
 
+module:: service_network
 """
 
 from services.local_service import LocalService

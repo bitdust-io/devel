@@ -23,7 +23,7 @@
 #
 
 """
-.. module:: p2p
+.. module:: p2p.
 
 Contains modules to run BitDust client code.
 """

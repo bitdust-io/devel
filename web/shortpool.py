@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: shortpool
+..
 
+module:: shortpool
 """
 
 import json
@@ -50,6 +51,7 @@ _ShortPoolListener = None
 
 def init(get_data_callback, clear_data_callback, portnum):
     """
+    
     """
     # global _ShortPoolListener
     # resource = ShortPoolServer(get_data_callback, clear_data_callback)
@@ -59,6 +61,7 @@ def init(get_data_callback, clear_data_callback, portnum):
 
 def shutdown():
     """
+    
     """
 #    global _ShortPoolListener
 #    if _ShortPoolListener:
@@ -79,6 +82,7 @@ class ShortPoolServer(Resource):
 
     def __init__(self, get_data_callback, clear_data_callback):
         """
+        
         """
         self.get_data_callback = get_data_callback
         self.clear_data_callback = clear_data_callback
@@ -86,12 +90,14 @@ class ShortPoolServer(Resource):
 
     def destroy(self):
         """
+        
         """
         self.get_data_callback = None
         self.clear_data_callback = None
 
     def render(self, request):
         """
+        
         """
         request.setHeader('Content-Type', 'application/json')
         args = request.args
@@ -106,6 +112,7 @@ class ShortPoolServer(Resource):
 
     def getData(self, request):
         """
+        
         """
         data = self.get_data_callback()
         if len(data) > 0:

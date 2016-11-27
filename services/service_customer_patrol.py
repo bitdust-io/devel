@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_customer_patrol
+..
 
+module:: service_customer_patrol
 """
 
 from services.local_service import LocalService

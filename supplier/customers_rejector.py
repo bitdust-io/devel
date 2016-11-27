@@ -22,7 +22,8 @@
 
 
 """
-.. module:: customers_rejector
+.. module:: customers_rejector.
+
 .. role:: red
 
 BitDust customers_rejector() Automat
@@ -94,8 +95,8 @@ def Destroy():
 
 class CustomersRejector(automat.Automat):
     """
-    This class implements all the functionality of the ``customers_rejector()`` state machine.
-
+    This class implements all the functionality of the ``customers_rejector()``
+    state machine.
     """
 
     timers = {
@@ -104,7 +105,8 @@ class CustomersRejector(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
 
     def A(self, event, arg):
@@ -133,11 +135,12 @@ class CustomersRejector(automat.Automat):
     def doTestMyCapacity(self, arg):
         """
         Here are some values.
-            + donated_bytes : you set this in the configs
-            + consumed_bytes : how many space was taken from you by other users
-            + free_bytes = donated_bytes - consumed_bytes : not yet allocated space
-            + used_bytes : size of all files, which you store on your disk for your customers
-            + ratio : currently used space compared to consumed space
+
+        + donated_bytes : you set this in the configs
+        + consumed_bytes : how many space was taken from you by other users
+        + free_bytes = donated_bytes - consumed_bytes : not yet allocated space
+        + used_bytes : size of all files, which you store on your disk for your customers
+        + ratio : currently used space compared to consumed space
         """
         lg.out(8, 'customers_rejector.doTestMyCapacity')
         failed_customers = set()
@@ -185,10 +188,11 @@ class CustomersRejector(automat.Automat):
     def doTestMyCapacity2(self, arg):
         """
         Here are some values.
-            - donated_bytes : you set this in the config
-            - spent_bytes : how many space is taken from you by other users right now
-            - free_bytes = donated_bytes - spent_bytes : not yet allocated space
-            - used_bytes : size of all files, which you store on your disk for your customers
+
+        - donated_bytes : you set this in the config
+        - spent_bytes : how many space is taken from you by other users right now
+        - free_bytes = donated_bytes - spent_bytes : not yet allocated space
+        - used_bytes : size of all files, which you store on your disk for your customers
         """
         current_customers = contactsdb.customers()
         removed_customers = []

@@ -24,10 +24,11 @@
 #
 
 """
-.. module:: identitydb
+.. module:: identitydb.
 
-Here is a simple1 database for identities cache.
-Also keep track of changing identities sources and maintain a several "index" dictionaries to speed up processes.
+Here is a simple1 database for identities cache. Also keep track of
+changing identities sources and maintain a several "index" dictionaries
+to speed up processes.
 """
 
 import os
@@ -77,6 +78,7 @@ def cache_ids():
 def init():
     """
     Need to call before all other methods.
+
     Check to exist and create a folder to keep all cached identities.
     """
     lg.out(4, "identitydb.init")
@@ -88,6 +90,7 @@ def init():
 
 def shutdown():
     """
+    
     """
     lg.out(4, "identitydb.shutdown")
 
@@ -143,6 +146,7 @@ def has_idurl(idurl):
 
 def has_file(idurl):
     """
+    
     """
     try:
         partfilename = nameurl.UrlFilename(idurl)
@@ -202,7 +206,9 @@ def idget(url):
 
 def idremove(url):
     """
-    Remove identity from cache, also update indexes. Not remove local file.
+    Remove identity from cache, also update indexes.
+
+    Not remove local file.
     """
     global _IdentityCache
     global _IdentityCacheIDs
@@ -236,6 +242,7 @@ def idcontacts(idurl):
 def get(url):
     """
     A smart way to get identity from cache.
+
     If not cached in memory but found on disk - will cache from disk.
     """
     if has_idurl(url):
@@ -293,7 +300,9 @@ def get_idurl_by_ip_port(ip, port):
 def update(url, xml_src):
     """
     This is a correct method to update an identity in the database.
-    PREPRO need to check that date or version is after old one so not vulnerable to replay attacks.
+
+    PREPRO need to check that date or version is after old one so not
+    vulnerable to replay attacks.
     """
     try:
         newid = identity.identity(xmlsrc=xml_src)

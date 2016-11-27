@@ -27,7 +27,8 @@
 #
 
 """
-.. module:: identity
+.. module:: identity.
+
 .. role:: red
 
 This is a core module.
@@ -169,19 +170,19 @@ default_identity_src = """<?xml version="1.0" encoding="ISO-8859-1"?>
 
 class identity:
     """
-    We are passed an XML version of an identity and make an Identity.
-    Also can construct an Identity by providing all fields.
-    The fields is:
-        * sources : list of URLs, first is primary URL and name
-        * contacts : list of ways to contact this identity
-        * certificates : signatures by identity servers
-        * scrubbers : list of URLs for people allowed to scrub
-        * postage : a price for message delivery if not on correspondents list
-        * date : the date an time when that identity was created
-        * version : a version string - some info about BitDust software and platform
-        * revision : every time identity were modified this value will be increased by 1
-        * publickey : the public part of user's key, string in twisted.conch.ssh format
-        * signature : digital signature to protect the file
+    We are passed an XML version of an identity and make an Identity. Also can
+    construct an Identity by providing all fields. The fields is:
+
+    * sources : list of URLs, first is primary URL and name
+    * contacts : list of ways to contact this identity
+    * certificates : signatures by identity servers
+    * scrubbers : list of URLs for people allowed to scrub
+    * postage : a price for message delivery if not on correspondents list
+    * date : the date an time when that identity was created
+    * version : a version string - some info about BitDust software and platform
+    * revision : every time identity were modified this value will be increased by 1
+    * publickey : the public part of user's key, string in twisted.conch.ssh format
+    * signature : digital signature to protect the file
     """
     sources = []        # list of URLs, first is primary URL and name
     contacts = []       # list of ways to contact this identity
@@ -278,12 +279,13 @@ class identity:
 
     def makehash(self):
         """
-        http://docs.python.org/lib/module-urlparse.html
-        Note that certificates and signatures are not part of what is hashed.
-        PREPRO
-        Thinking of standard that fields have labels and empty fields are left out,
-        including label, so future versions could have same signatures as older which had fewer fields -
-        can just do this for fields after these, so maybe don't need to change anything for now.
+        http://docs.python.org/lib/module-urlparse.html Note that certificates
+        and signatures are not part of what is hashed. PREPRO Thinking of
+        standard that fields have labels and empty fields are left out,
+        including label, so future versions could have same signatures as older
+        which had fewer fields - can just do this for fields after these, so
+        maybe don't need to change anything for now.
+
         Don't include certificate - so identity server can just add it.
         """
         sep = "-"
@@ -301,6 +303,7 @@ class identity:
 
     def makehash_old(self):
         """
+        
         """
         sep = "-"
         c = ''
@@ -318,7 +321,8 @@ class identity:
 
     def sign(self):
         """
-        Make a hash, generate digital signature on it and remember the signature.
+        Make a hash, generate digital signature on it and remember the
+        signature.
         """
         hashcode = self.makehash()
         self.signature = key.Sign(hashcode)
@@ -331,6 +335,7 @@ class identity:
     def Valid(self):
         """
         This will make a hash and verify the signature by public key.
+
         PREPRO - should test certificate too.
         """
         hashcode = self.makehash()
@@ -372,6 +377,7 @@ class identity:
     def serialize(self):
         """
         A method to generate XML content for that identity object.
+
         Used to save identity on disk or transfer over network.
         """
         return self.toxml()[0]
@@ -535,7 +541,7 @@ class identity:
     def getIDHost(self, index=0):
         """
         Return a server host name where that identity is stored:
-            "id.bitdust.io" for "http://id.bitdust.io/veselin.xml"
+        "id.bitdust.io" for "http://id.bitdust.io/veselin.xml".
         """
         protocol, host, port, filename = nameurl.UrlParse(self.getIDURL(index))
         if port:
@@ -579,15 +585,14 @@ class identity:
 
     def getContactParts(self, index):
         """
-        Return tuple with 4 parts of the contact:
-            (proto, host, port, filename)
+        Return tuple with 4 parts of the contact: (proto, host, port, filename)
         """
         return nameurl.UrlParse(self.contacts[index])
 
     def getProtoParts(self, proto):
         """
-        See ``getProtoContact``, return a tuple for given ``proto``:
-            (proto, host, port, filename)
+        See ``getProtoContact``, return a tuple for given ``proto``: (proto,
+        host, port, filename)
         """
         contact = self.getProtoContact(proto)
         if contact is None:
@@ -622,7 +627,9 @@ class identity:
 
     def getProtoContact(self, proto):
         """
-        Search for first found contact with given ``proto``. Return None if not found a contact.
+        Search for first found contact with given ``proto``.
+
+        Return None if not found a contact.
         """
         for contact in self.contacts:
             if contact.startswith(proto + "://"):
@@ -631,8 +638,9 @@ class identity:
 
     def getProtoOrder(self):
         """
-        Return a list of "proto" parts of all contacts.
-        In other words return a list of all supported protocols.
+        Return a list of "proto" parts of all contacts. In other words return a
+        list of all supported protocols.
+
         This keeps the order of the protos - this is a sort of priority of the transports.
         """
         orderL = []
@@ -643,6 +651,7 @@ class identity:
 
     def getContactsAsTuples(self):
         """
+        
         """
         result = []
         for c in self.contacts:
@@ -672,6 +681,7 @@ class identity:
     def getIP(self, proto=None):
         """
         A smart way to get the IP address of the user.
+
         Check TCP proto if available and get host from contact.
         """
         if proto:
@@ -684,11 +694,13 @@ class identity:
 
     def setContacts(self, contacts_list):
         """
+        
         """
         self.contacts = contacts_list
 
     def setContactsFromDict(self, contacts_dict, contacts_order=None):
         """
+        
         """
         if contacts_order is None:
             contacts_order = contacts_dict.keys()
@@ -706,7 +718,8 @@ class identity:
 
     def setProtoContact(self, proto, contact):
         """
-        Found a contact with given ``proto`` and set its value or append a new contact.
+        Found a contact with given ``proto`` and set its value or append a new
+        contact.
         """
         for i in range(0, len(self.contacts)):
             proto_, host, port, filename = nameurl.UrlParse(self.contacts[i])
@@ -741,6 +754,7 @@ class identity:
     def setCertificate(self, certificate):
         """
         Not used yet.
+
         TODO. Need to ask Vince for more details about id certificates.
         """
         self.certificates.append(certificate)
@@ -765,10 +779,11 @@ class identity:
     def pushProtoContact(self, proto):
         """
         Move given protocol in the bottom of the contacts list.
+
         First contact in the list have more priority for remote machine,
         so we can manipulate our protos to get more p2p connections.
-        Push less reliable protocols to the end of the list.
-        This is to decrease its priority.
+        Push less reliable protocols to the end of the list. This is to
+        decrease its priority.
         """
         i = self.getContactIndex(proto=proto)
         if i < 0:
@@ -780,6 +795,7 @@ class identity:
     def popProtoContact(self, proto):
         """
         Move given protocol to the top of the contacts list.
+
         This is to increase its priority.
         """
         i = self.getContactIndex(proto=proto)

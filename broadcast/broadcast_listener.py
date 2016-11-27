@@ -22,7 +22,8 @@
 
 
 """
-.. module:: broadcast_listener
+.. module:: broadcast_listener.
+
 .. role:: red
 
 BitDust broadcast_listener() Automat
@@ -85,20 +86,22 @@ def A(event=None, arg=None):
 
 class BroadcastListener(automat.Automat):
     """
-    This class implements all the functionality of the ``broadcast_listener()`` state machine.
+    This class implements all the functionality of the ``broadcast_listener()``
+    state machine.
     """
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of broadcast_listener() machine.
+        Method to initialize additional variables and flags at creation phase
+        of broadcast_listener() machine.
         """
         self.broadcaster_idurl = None
         self.incoming_broadcast_message_callback = None
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         #--- AT_STARTUP
         if self.state == 'AT_STARTUP':

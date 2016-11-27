@@ -22,7 +22,8 @@
 
 
 """
-.. module:: nickname_holder
+.. module:: nickname_holder.
+
 .. role:: red
 
 BitDust nickname_holder() Automat
@@ -94,7 +95,8 @@ def Destroy():
 
 class NicknameHolder(automat.Automat):
     """
-    This class implements all the functionality of the ``nickname_holder()`` state machine.
+    This class implements all the functionality of the ``nickname_holder()``
+    state machine.
     """
 
     timers = {
@@ -103,7 +105,8 @@ class NicknameHolder(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.nickname = None
         self.key = None

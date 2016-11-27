@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: id_restorer
+.. module:: id_restorer.
+
 .. role:: red
 
 
@@ -107,6 +108,7 @@ def A(event=None, arg=None):
 class IdRestorer(automat.Automat):
     """
     BitDust identity_restorer() Automat.
+
     Class to run the process to restore user account.
     """
 
@@ -282,9 +284,8 @@ class IdRestorer(automat.Automat):
 
     def doRestoreSave(self, arg):
         """
-        TODO: use lib.config here
-        request settings from DHT
-        my suppliers need to keep that settings in DHT
+        TODO: use lib.config here request settings from DHT my suppliers need
+        to keep that settings in DHT.
         """
         # settings.uconfig().set('storage.suppliers', '0')
         # settings.uconfig().set('storage.needed', '0Mb')

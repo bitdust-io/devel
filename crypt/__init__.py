@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: crypt
+..
 
+module:: crypt
 """

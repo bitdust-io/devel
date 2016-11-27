@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_nodes_lookup
+..
 
+module:: service_nodes_lookup
 """
 
 from services.local_service import LocalService

@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: p2p_service
+.. module:: p2p_service.
 
 This serves requests from peers:
 
@@ -70,7 +70,6 @@ Security:
     * Resource limits.
       A ``local_tester`` checks that someone is not trying to use more than they are supposed to
       and we could also do it here
-
 """
 
 #------------------------------------------------------------------------------
@@ -137,6 +136,7 @@ def shutdown():
 
 def inbox(newpacket, info, status, error_message):
     """
+    
     """
     if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
         # packet is NOT for us, skip
@@ -234,7 +234,8 @@ def constructFilename(customerID, packetID):
 
 def makeFilename(customerID, packetID):
     """
-    Must be a customer, and then we make full path filename for where this packet is stored locally.
+    Must be a customer, and then we make full path filename for where this
+    packet is stored locally.
     """
     if not packetid.Valid(packetID):  # SECURITY
         if packetID not in [settings.BackupInfoFileName(),
@@ -329,7 +330,9 @@ def SendFailNoRequest(remoteID, packetID, response):
 
 def Identity(newpacket):
     """
-    Contact or identity server is sending us a new copy of an identity for a contact of ours.
+    Contact or identity server is sending us a new copy of an identity for a
+    contact of ours.
+
     Checks that identity is signed correctly.
     """
     newxml = newpacket.Payload
@@ -371,8 +374,9 @@ def Identity(newpacket):
 def RequestIdentity(request):
     """
     Someone is requesting a copy of our current identity.
-    Already verified that they are a contact.
-    Can also be used as a sort of "ping" test to make sure we are alive.
+
+    Already verified that they are a contact. Can also be used as a sort
+    of "ping" test to make sure we are alive.
     """
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.RequestIdentity from %s" % request.OwnerID)
@@ -386,6 +390,7 @@ def RequestIdentity(request):
 
 def SendIdentity(remote_idurl, wide=False, callbacks={}):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendIdentity to %s" % nameurl.GetName(remote_idurl))
@@ -466,8 +471,9 @@ def SendCancelService(remote_idurl, service_info, callbacks={}):
 
 def ListFiles(request):
     """
-    We will want to use this to see what needs to be resent,
-    and expect normal case is very few missing.
+    We will want to use this to see what needs to be resent, and expect normal
+    case is very few missing.
+
     This is to build the ``Files()`` we are holding for a customer.
     """
     if not driver.is_started('service_supplier'):
@@ -511,9 +517,8 @@ def Files(newpacket, info):
 
 def Data(request):
     """
-    This is when we
-        1) save my requested data to restore the backup
-        2) or save the customer file on our local HDD
+    This is when we 1) save my requested data to restore the backup 2) or save
+    the customer file on our local HDD.
     """
     # 1. this is our Data!
     if request.OwnerID == my_id.getLocalID():
@@ -583,6 +588,7 @@ def Data(request):
 
 def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
     """
+    
     """
     # TODO:
     newpacket = signed.Packet(
@@ -599,7 +605,9 @@ def SendData(raw_data, ownerID, creatorID, remoteID, packetID, callbacks={}):
 def Retrieve(request):
     """
     Customer is asking us for data he previously stored with us.
-    We send with ``outboxNoAck()`` method because he will ask again if he does not get it
+
+    We send with ``outboxNoAck()`` method because he will ask again if
+    he does not get it
     """
     # TODO: rename to RetreiveData()
     if not driver.is_started('service_supplier'):
@@ -800,8 +808,8 @@ def ListCustomerFiles(customer_idurl):
 
 def ListCustomerFiles1(customerNumber):
     """
-    On the status form when clicking on a customer,
-    find out what files we're holding for that customer
+    On the status form when clicking on a customer, find out what files we're
+    holding for that customer.
     """
     idurl = contactsdb.customer(customerNumber)
     filename = nameurl.UrlFilename(idurl)
@@ -842,9 +850,8 @@ def SendRequestListFiles(supplierNumORidurl):
 
 def ListSummary(dirlist):
     """
-    Take directory listing and make summary of format::
-        BackupID-1-Data 1-1873 missing for 773,883,
-        BackupID-1-Parity 1-1873 missing for 777,982,
+    Take directory listing and make summary of format:: BackupID-1-Data 1-1873
+    missing for 773,883, BackupID-1-Parity 1-1873 missing for 777,982,
     """
     BackupMax = {}
     BackupAll = {}

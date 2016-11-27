@@ -22,7 +22,8 @@
 
 
 """
-.. module:: nickname_observer
+.. module:: nickname_observer.
+
 .. role:: red
 
 BitDust nickname_observer() Automat
@@ -64,6 +65,7 @@ _NicknameObserver = None
 
 def find_one(nickname, attempts=3, results_callback=None):
     """
+    
     """
     lg.out(12, 'nickname_observer.find_one %s %d' % (nickname, attempts))
     observer = NicknameObserver('%s_observer' % nickname, 'AT_STARTUP', 2)
@@ -73,6 +75,7 @@ def find_one(nickname, attempts=3, results_callback=None):
 
 def observe_many(nickname, attempts=10, results_callback=None):
     """
+    
     """
     lg.out(12, 'nickname_observer.observe_many %s %d' % (nickname, attempts))
     observer = NicknameObserver('%s_observer' % nickname, 'AT_STARTUP', 2)
@@ -82,6 +85,7 @@ def observe_many(nickname, attempts=10, results_callback=None):
 
 def stop_all():
     """
+    
     """
     for a in automat.objects().values():
         if isinstance(a, NicknameObserver):
@@ -93,12 +97,14 @@ def stop_all():
 
 class NicknameObserver(automat.Automat):
     """
-    This class implements all the functionality of the ``nickname_observer()`` state machine.
+    This class implements all the functionality of the ``nickname_observer()``
+    state machine.
     """
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.nickname = None
         self.attempts = None

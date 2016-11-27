@@ -22,7 +22,8 @@
 
 
 """
-.. module:: supplier_finder
+.. module:: supplier_finder.
+
 .. role:: red
 BitDust supplier_finder() Automat
 
@@ -35,7 +36,6 @@ EVENTS:
     * :red:`supplier-not-connected`
     * :red:`timer-10sec`
     * :red:`users-not-found`
-
 """
 
 #------------------------------------------------------------------------------
@@ -73,6 +73,7 @@ _SuppliersToHire = []
 
 def AddSupplierToHire(idurl):
     """
+    
     """
     global _SuppliersToHire
     _SuppliersToHire.append(idurl)
@@ -95,7 +96,8 @@ def A(event=None, arg=None):
 
 class SupplierFinder(automat.Automat):
     """
-    This class implements all the functionality of the ``supplier_finder()`` state machine.
+    This class implements all the functionality of the ``supplier_finder()``
+    state machine.
     """
 
     timers = {
@@ -104,13 +106,15 @@ class SupplierFinder(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.target_idurl = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
 
     def A(self, event, arg):

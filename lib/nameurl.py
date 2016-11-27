@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: nameurl
+.. module:: nameurl.
 
 Here is a methods to work with URL strings.
 We assume BitDust URLs are of the form::
@@ -103,9 +103,10 @@ def UrlMake(protocol='', machine='', port='', filename='', parts=None):
 def UrlFilename(url):
     """
     Generate a 'safe' filename from URL address.
+
     This is useful when need to store identity files on disk.
-        nameurl.UrlFilename('http://id.bitdust.io/veselin.xml')
-        'http###id.bitdust.io#veselin.xml'
+    nameurl.UrlFilename('http://id.bitdust.io/veselin.xml')
+    'http###id.bitdust.io#veselin.xml'
     """
     if url is None:
         return None
@@ -135,9 +136,11 @@ def FilenameUrl(filename):
 
 def UrlFilenameHTML(url):
     """
-    Another method to simplify URL, so you can create a filename from URL string.
-        nameurl.UrlFilenameHTML('http://id.bitdust.io/veselin.xml')
-        'id_bitdust_net_veselin_xml'
+    Another method to simplify URL, so you can create a filename from URL
+    string.
+
+    nameurl.UrlFilenameHTML('http://id.bitdust.io/veselin.xml')
+    'id_bitdust_net_veselin_xml'
     """
     global legalset
     s = url.replace('http://', '')
@@ -152,9 +155,10 @@ def UrlFilenameHTML(url):
 
 def GetName(url):
     """
-    Deal with the identities, return a filename (without extension) from URL address.
-        nameurl.GetName('http://id.bitdust.io/kinggeorge.xml')
-        'kinggeorge'
+    Deal with the identities, return a filename (without extension) from URL
+    address.
+
+    nameurl.GetName('http://id.bitdust.io/kinggeorge.xml') 'kinggeorge'
     """
     if url in [None, 'None', '', ]:
         return ''
@@ -197,8 +201,10 @@ def DjangoQuote(s):
     """
     Ensure that primary key values do not confuse the admin URLs by escaping
     any '/', '_' and ':' and similarly problematic characters.
-    Similar to urllib.quote, except that the quoting is slightly different so
-    that it doesn't get automatically unquoted by the Web browser.
+
+    Similar to urllib.quote, except that the quoting is slightly
+    different so that it doesn't get automatically unquoted by the Web
+    browser.
     """
     res = list(s)
     for i in range(len(res)):
@@ -210,7 +216,9 @@ def DjangoQuote(s):
 
 def DjangoUnQuote(s):
     """
-    Undo the effects of quote(). Based heavily on urllib.unquote().
+    Undo the effects of quote().
+
+    Based heavily on urllib.unquote().
     """
     mychr = chr
     myatoi = int

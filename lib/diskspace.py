@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: diskspace
+.. module:: diskspace.
 
 This is set of methods to operate with amount of space units.
 Examples::
@@ -74,8 +74,11 @@ _MultiDict = {
 
 class DiskSpace:
     """
-    You can create an object of this class and use it as variable to store amount of space.
-    But in most cases this class is not used, see below global methods in this module.
+    You can create an object of this class and use it as variable to store
+    amount of space.
+
+    But in most cases this class is not used, see below global methods
+    in this module.
     """
 
     def __init__(self, v=None, s='0Mb'):
@@ -153,6 +156,7 @@ class DiskSpace:
 def SuffixIsCorrect(suffix):
     """
     Check input string to be a valid unit label.
+
     See global variable ``_Suffixes``.
     """
     global _Suffixes
@@ -169,10 +173,10 @@ def SuffixLabels():
 
 def SameSuffix(suf1, suf2):
     """
-    Compare 2 unit labels. Return True if both are same unit:
-        from diskspace import *
-        SameSuffix('b','bytes')
-        True
+    Compare 2 unit labels.
+
+    Return True if both are same unit: from diskspace import *
+    SameSuffix('b','bytes') True
     """
     global _Suffixes
     if not SuffixIsCorrect(suf1):
@@ -196,9 +200,8 @@ def MakeString(value, suf):
 def SplitString(s):
     """
     Return tuple (<number>, <suffix>) or (None, None).
-        from diskspace import *
-        SplitString("342.67Mb")
-        (342.67, 'Mb')
+
+    from diskspace import * SplitString("342.67Mb") (342.67, 'Mb')
     """
     num = s.rstrip('bytesBYTESgmkGMK ')
     suf = s.lstrip('0123456789., ').strip()
@@ -218,13 +221,12 @@ def SplitString(s):
 
 def MakeStringFromBytes(value):
     """
-    Make a correct string value with best units measure from given number of bytes.
-        from diskspace import *
-        MakeStringFromBytes(123456)
-        '120.56 KB'
-        MakeStringFromBytes(123.456789)
-        '123 bytes'
-    I think this is most used method here.
+    Make a correct string value with best units measure from given number of
+    bytes.
+
+    from diskspace import *     MakeStringFromBytes(123456)     '120.56
+    KB'     MakeStringFromBytes(123.456789)     '123 bytes' I think this
+    is most used method here.
     """
     try:
         v = float(value)
@@ -247,10 +249,10 @@ def MakeStringFromBytes(value):
 
 def GetBytesFromString(s, default=None):
     """
-    Convert a string to a value in bytes, this is reverse method for MakeStringFromBytes.
-        from diskspace import *
-        GetBytesFromString("123.456 Mb")
-        129452998
+    Convert a string to a value in bytes, this is reverse method for
+    MakeStringFromBytes.
+
+    from diskspace import * GetBytesFromString("123.456 Mb") 129452998
     """
     num, suf = SplitString(s)
     if num is None:
@@ -261,10 +263,10 @@ def GetBytesFromString(s, default=None):
 def MakeStringWithSuffix(s, suffix):
     """
     You can move strings from one unit measure to another.
-    Convert input string to a string with given suffix.
-        from diskspace import *
-        MakeStringWithSuffix("12.345 Mb", "Kb")
-        '12641.28 Kb'
+
+    Convert input string to a string with given suffix.     from
+    diskspace import *     MakeStringWithSuffix("12.345 Mb", "Kb")
+    '12641.28 Kb'
     """
     b = GetBytesFromString(s)
     if b is None:
@@ -279,7 +281,8 @@ def MakeStringWithSuffix(s, suffix):
 
 def GetMegaBytesFromString(s):
     """
-    This is just a wrapper for ``GetBytesFromString``, but return value in Megabytes.
+    This is just a wrapper for ``GetBytesFromString``, but return value in
+    Megabytes.
     """
     b = GetBytesFromString(s)
     if b is None:
@@ -290,7 +293,9 @@ def GetMegaBytesFromString(s):
 def MakeStringFromString(s):
     """
     This method can be used during loading or checking user input.
-    Call ``SplitString`` and than ``MakeString`` to "recreate" input string.
+
+    Call ``SplitString`` and than ``MakeString`` to "recreate" input
+    string.
     """
     value, suf = SplitString(s)
     if value is None:

@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: my_id
+..
 
+module:: my_id
 """
 
 import os
@@ -68,6 +69,7 @@ _ValidTransports = ['tcp', 'udp', 'proxy', ]
 def init():
     """
     Will be called in main thread at start up.
+
     Can put here some minor things if needed.
     """
     lg.out(4, 'my_id.init')
@@ -83,7 +85,8 @@ def shutdown():
 
 def isLocalIdentityReady():
     """
-    Return True if local identity object already initialized and stored in memory.
+    Return True if local identity object already initialized and stored in
+    memory.
     """
     global _LocalIdentity
     return _LocalIdentity is not None
@@ -149,8 +152,10 @@ def getIDName():
 def loadLocalIdentity():
     """
     The core method.
-    The file [BitDust data dir]/metadata/localidentity keeps the user identity in XML format.
-    Do read the local file and set into object in memory.
+
+    The file [BitDust data dir]/metadata/localidentity keeps the user
+    identity in XML format. Do read the local file and set into object
+    in memory.
     """
     global _LocalIdentity
     global _LocalIDURL
@@ -180,6 +185,7 @@ def loadLocalIdentity():
 def saveLocalIdentity():
     """
     Save identity object from memory into local file.
+
     Do sign the identity than serialize to write to the file.
     """
     global _LocalIdentity
@@ -195,6 +201,7 @@ def saveLocalIdentity():
 
 def forgetLocalIdentity():
     """
+    
     """
     global _LocalIdentity
     if not isLocalIdentityReady():
@@ -219,6 +226,7 @@ def eraseLocalIdentity():
 
 def getValidTransports():
     """
+    
     """
     global _ValidTransports
     return _ValidTransports
@@ -227,6 +235,7 @@ def getValidTransports():
 def isValidTransport(transport):
     """
     Check string to be a valid transport.
+
     See ``lib.transport_control' for more details.
     """
     global _ValidTransports
@@ -257,7 +266,9 @@ def validateTransports(orderL):
 
 def setTransportOrder(orderL):
     """
-    Validate transports and save the list in the [BitDust data dir]\metadata\torder.
+    Validate transports and save the list in the [BitDust data
+    dir]\metadata\torder.
+
     It is useful to remember the priority of used transports.
     """
     orderl = orderL
@@ -294,8 +305,9 @@ def getOrderFromContacts(ident):
 
 def buildProtoContacts(id_obj):
     """
-    Create a full list of needed transport methods
-    to be able to accept incoming traffic from other nodes.
+    Create a full list of needed transport methods to be able to accept
+    incoming traffic from other nodes.
+
     Make calls to transport services to build a list of my contacts.
     """
     from services import driver
@@ -394,7 +406,9 @@ def buildProtoContacts(id_obj):
 def buildDefaultIdentity(name='', ip='', idurls=[]):
     """
     Use some local settings and config files to create some new identity.
-    Nice to provide a user name or it will have a form like: [ip address]_[date].
+
+    Nice to provide a user name or it will have a form like: [ip
+    address]_[date].
     """
     if ip == '':
         ip = misc.readExternalIP()  # bpio.ReadTextFile(settings.ExternalIPFilename())
@@ -457,8 +471,10 @@ def buildDefaultIdentity(name='', ip='', idurls=[]):
 
 def rebuildLocalIdentity():
     """
-    If some transports was enabled or disabled we want to update identity contacts.
-    Just empty all of the contacts and create it again in the same order.
+    If some transports was enabled or disabled we want to update identity
+    contacts. Just empty all of the contacts and create it again in the same
+    order.
+
     Also increase revision number by one - others may keep track of my modifications.
     """
     # getting current copy of local identity

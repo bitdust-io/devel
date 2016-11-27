@@ -26,11 +26,11 @@
 #
 
 """
-.. module:: dirsize
+.. module:: dirsize.
 
-Here is a tool to calculate the whole folder size.
-You start a thread and it will do the job and than remember that size.
-Now you have a fast way to get the folder size, you can ask to scan same folder again.
+Here is a tool to calculate the whole folder size. You start a thread
+and it will do the job and than remember that size. Now you have a fast
+way to get the folder size, you can ask to scan same folder again.
 """
 
 import os
@@ -59,10 +59,11 @@ _Dirs = {}
 
 def ask(dirpath, callback=None, arg=None):
     """
-    Start a thread to scan all sub folders and calculate total size of given directory.
+    Start a thread to scan all sub folders and calculate total size of given
+    directory.
 
-        :param callback: set a callback function to get the folder size in your code
-        :param arg: set some argument to put in the callback, so you can mark that result
+    :param callback: set a callback function to get the folder size in your code
+    :param arg: set some argument to put in the callback, so you can mark that result
     """
     global _Jobs
     global _Dirs
@@ -107,7 +108,8 @@ def get(dirpath, default=''):
 
 def isjob(dirpath):
     """
-    You can check if some work is still in progress to calculate given folder size.
+    You can check if some work is still in progress to calculate given folder
+    size.
     """
     global _Jobs
     return dirpath in _Jobs

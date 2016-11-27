@@ -25,12 +25,13 @@
 #
 
 """
-.. module:: backup_control
+.. module:: backup_control.
 
-A high level functions to manage backups.
-Keeps track of current ``Jobs`` and ``Tasks``.
-The "Jobs" dictionary keeps already started backups ( by backupID ) objects, see ``p2p.backup`` module.
-"Tasks" is a list of path IDs to start backups in the future, as soon as some "Jobs" gets finished.
+A high level functions to manage backups. Keeps track of current
+``Jobs`` and ``Tasks``. The "Jobs" dictionary keeps already started
+backups ( by backupID ) objects, see ``p2p.backup`` module. "Tasks" is a
+list of path IDs to start backups in the future, as soon as some "Jobs"
+gets finished.
 """
 
 #------------------------------------------------------------------------------
@@ -122,6 +123,7 @@ def revision():
 def commit(new_revision_number=None):
     """
     Need to be called after any changes in the index database.
+
     This increase revision number by 1 or set ``new_revision_number``.
     """
     global _RevisionNumber
@@ -136,6 +138,7 @@ def commit(new_revision_number=None):
 def init():
     """
     Must be called before other methods here.
+
     Load index database from file .bitdust/metadata/index.
     """
     lg.out(4, 'backup_control.init')
@@ -167,9 +170,11 @@ def WriteIndex(filepath=None):
 
 def ReadIndex(inpt):
     """
-    Read index data base, ``input`` is a ``cStringIO.StringIO`` object which keeps the data.
-    This is a simple text format, see ``p2p.backup_fs.Serialize()`` method.
-    The first line keeps revision number.
+    Read index data base, ``input`` is a ``cStringIO.StringIO`` object which
+    keeps the data.
+
+    This is a simple text format, see ``p2p.backup_fs.Serialize()``
+    method. The first line keeps revision number.
     """
     global _LoadingFlag
     if _LoadingFlag:
@@ -218,7 +223,8 @@ def Load(filepath=None):
 
 def Save(filepath=None):
     """
-    Save index data base to local file ( call ``WriteIndex()`` ) and notify "index_synchronizer()" state machine.
+    Save index data base to local file ( call ``WriteIndex()`` ) and notify
+    "index_synchronizer()" state machine.
     """
     global _LoadingFlag
     if _LoadingFlag:
@@ -234,8 +240,11 @@ def Save(filepath=None):
 
 def IncomingSupplierListFiles(newpacket):
     """
-    Called by ``p2p.p2p_service`` when command "Files" were received from one of our suppliers.
-    This is an answer from given supplier (after our request) to get a list of our files stored on his machine.
+    Called by ``p2p.p2p_service`` when command "Files" were received from one
+    of our suppliers.
+
+    This is an answer from given supplier (after our request) to get a
+    list of our files stored on his machine.
     """
     from p2p import p2p_service
     supplier_idurl = newpacket.OwnerID
@@ -260,8 +269,10 @@ def IncomingSupplierListFiles(newpacket):
 
 def IncomingSupplierBackupIndex(newpacket):
     """
-    Called by ``p2p.p2p_service`` when a remote copy of our local index data base ( in the "Data" packet )
-    is received from one of our suppliers. The index is also stored on suppliers to be able to restore it.
+    Called by ``p2p.p2p_service`` when a remote copy of our local index data
+    base ( in the "Data" packet ) is received from one of our suppliers.
+
+    The index is also stored on suppliers to be able to restore it.
     """
     b = encrypted.Unserialize(newpacket.Payload)
     if b is None:
@@ -327,16 +338,16 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
     """
     This removes a single backup ID completely. Perform several operations:
 
-        1) abort backup if it just started and is running at the moment
-        2) if we requested for files for this backup we do not need it anymore - remove 'Data' requests
-        3) remove interests in transport_control, see ``lib.transport_control.DeleteBackupInterest()``
-        4) remove that ID from the index data base
-        5) remove local files for this backup ID
-        6) remove all remote info for this backup from the memory, see ``p2p.backup_matrix.EraseBackupRemoteInfo()``
-        7) also remove local info from memory, see ``p2p.backup_matrix.EraseBackupLocalInfo()``
-        8) stop any rebuilding, we will restart it soon
-        9) check and calculate used space
-        10) save the modified index data base, soon it will be synchronized with "index_synchronizer()" state machine
+    1) abort backup if it just started and is running at the moment
+    2) if we requested for files for this backup we do not need it anymore - remove 'Data' requests
+    3) remove interests in transport_control, see ``lib.transport_control.DeleteBackupInterest()``
+    4) remove that ID from the index data base
+    5) remove local files for this backup ID
+    6) remove all remote info for this backup from the memory, see ``p2p.backup_matrix.EraseBackupRemoteInfo()``
+    7) also remove local info from memory, see ``p2p.backup_matrix.EraseBackupLocalInfo()``
+    8) stop any rebuilding, we will restart it soon
+    9) check and calculate used space
+    10) save the modified index data base, soon it will be synchronized with "index_synchronizer()" state machine
     """
     # if the user deletes a backup, make sure we remove any work we're doing on it
     # abort backup if it just started and is running at the moment
@@ -378,6 +389,7 @@ def DeleteBackup(backupID, removeLocalFilesToo=True, saveDB=True, calculate=True
 def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=True):
     """
     This removes all backups of given path ID.
+
     Doing same operations as ``DeleteBackup()``.
     """
     import backup_rebuilder
@@ -426,6 +438,7 @@ def DeletePathBackups(pathID, removeLocalFilesToo=True, saveDB=True, calculate=T
 def NewTaskNumber():
     """
     A method to create a unique number for new task.
+
     It just increments a variable in memory and returns it.
     """
     global _LastTaskNumber
@@ -449,7 +462,8 @@ class Task():
 
     def __repr__(self):
         """
-        Return a string like "Task-5: 0/1/2/3 from /home/veselin/Documents/myfile.txt".
+        Return a string like "Task-5: 0/1/2/3 from
+        /home/veselin/Documents/myfile.txt".
         """
         return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
 
@@ -457,8 +471,10 @@ class Task():
     def run(self):
         """
         Runs a new ``Job`` from that ``Task``.
-        Called from ``RunTasks()`` method if it is possible to start a new task -
-        the maximum number of simultaneously running ``Jobs`` is limited.
+
+        Called from ``RunTasks()`` method if it is possible to start a
+        new task - the maximum number of simultaneously running ``Jobs``
+        is limited.
         """
         import backup_tar
         import backup
@@ -565,7 +581,8 @@ def RunTasks():
 
 def OnFoundFolderSize(pth, sz, arg):
     """
-    This is a callback, fired from ``lib.dirsize.ask()`` method after finish calculating of folder size.
+    This is a callback, fired from ``lib.dirsize.ask()`` method after finish
+    calculating of folder size.
     """
     try:
         pathID, version = arg
@@ -587,6 +604,7 @@ def OnFoundFolderSize(pth, sz, arg):
 def OnJobDone(backupID, result):
     """
     A callback method fired when backup is finished.
+
     Here we need to save the index data base.
     """
     import backup_rebuilder
@@ -643,9 +661,9 @@ def OnTaskFailed(pathID, result):
 def OnBackupBlockReport(backupID, blockNum, result):
     """
     Called for every finished block during backup process.
-        :param newblock: this is a ``p2p.encrypted_block.encrypted_block`` instance
-        :param num_suppliers: number of suppliers which is used for that backup
 
+    :param newblock: this is a ``p2p.encrypted_block.encrypted_block`` instance
+    :param num_suppliers: number of suppliers which is used for that backup
     """
     backup_matrix.LocalBlockReport(backupID, blockNum, result)
 
@@ -655,6 +673,7 @@ def OnBackupBlockReport(backupID, blockNum, result):
 def AddTaskStartedCallback(pathID, callback):
     """
     You can catch a moment when given ``Task`` were started.
+
     Call this method to provide a callback method to handle.
     """
     global _TaskStartedCallbacks
@@ -665,7 +684,8 @@ def AddTaskStartedCallback(pathID, callback):
 
 def AddTaskFinishedCallback(pathID, callback):
     """
-    You can also catch a moment when the whole ``Job`` is done and backup process were finished or failed.
+    You can also catch a moment when the whole ``Job`` is done and backup
+    process were finished or failed.
     """
     global _TaskFinishedCallbacks
     if pathID not in _TaskFinishedCallbacks:
@@ -708,7 +728,9 @@ def StartSingle(pathID, localPath=None):
 def StartRecursive(pathID, localPath=None):
     """
     A high level method to start recursive backup of given path.
-    This is will traverse all paths below this ID in the 'tree' and add tasks for them.
+
+    This is will traverse all paths below this ID in the 'tree' and add
+    tasks for them.
     """
     from storage import backup_monitor
     startedtasks = set()
@@ -729,6 +751,7 @@ def StartRecursive(pathID, localPath=None):
 
 def IsTaskScheduled(pathID):
     """
+    
     """
     for t in tasks():
         if t.pathID == pathID:
@@ -738,6 +761,7 @@ def IsTaskScheduled(pathID):
 
 def GetPendingTask(pathID):
     """
+    
     """
     for t in tasks():
         if t.pathID == pathID:
@@ -747,12 +771,14 @@ def GetPendingTask(pathID):
 
 def ListPendingTasks():
     """
+    
     """
     return tasks()
 
 
 def AbortPendingTask(pathID):
     """
+    
     """
     for t in tasks():
         if t.pathID == pathID:

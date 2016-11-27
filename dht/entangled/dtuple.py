@@ -37,8 +37,9 @@ from node import EntangledNode
 
 
 class DistributedTupleSpacePeer(EntangledNode):
-    """ A specialized form of an Entangled DHT node that provides an API
-    for participating in a distributed Tuple Space (aka Object Space)
+    """
+    A specialized form of an Entangled DHT node that provides an API for
+    participating in a distributed Tuple Space (aka Object Space)
     """
 
     def __init__(self, udpPort=4000, dataStore=None, routingTable=None, networkProtocol=None):
@@ -47,7 +48,8 @@ class DistributedTupleSpacePeer(EntangledNode):
         self._blockingReadRequests = {}
 
     def put(self, dTuple, originalPublisherID=None):
-        """ Produces a tuple, and writes it into tuple space
+        """
+        Produces a tuple, and writes it into tuple space.
 
         @note: This method is generally called "out" in tuple space literature,
                but is renamed to "put" in this implementation to match the
@@ -132,7 +134,8 @@ class DistributedTupleSpacePeer(EntangledNode):
         return df
 
     def get(self, template):
-        """ Reads and removes (consumes) a tuple from the tuple space.
+        """
+        Reads and removes (consumes) a tuple from the tuple space.
 
         @type template: tuple
 
@@ -230,7 +233,8 @@ class DistributedTupleSpacePeer(EntangledNode):
 #        return outerDf
 
     def getIfExists(self, template, getListenerTuple=False):
-        """ Reads and removes (consumes) a tuple from the tuple space.
+        """
+        Reads and removes (consumes) a tuple from the tuple space.
 
         @type template: tuple
 
@@ -283,7 +287,8 @@ class DistributedTupleSpacePeer(EntangledNode):
         return outerDf
 
     def read(self, template):
-        """ Non-destructively reads a tuple in the tuple space.
+        """
+        Non-destructively reads a tuple in the tuple space.
 
         This operation is similar to "get" (or "in") in that the peer builds a
         template and waits for a matching tuple in the tuple space. Upon
@@ -318,7 +323,8 @@ class DistributedTupleSpacePeer(EntangledNode):
         return outerDf
 
     def readIfExists(self, template):
-        """ Non-destructively reads a tuple in the tuple space.
+        """
+        Non-destructively reads a tuple in the tuple space.
 
         This operation is similar to "get" (or "in") in that the peer builds a
         template and waits for a matching tuple in the tuple space. Upon
@@ -355,7 +361,9 @@ class DistributedTupleSpacePeer(EntangledNode):
         return outerDf
 
     def _findKeyForTemplate(self, template, listener=False):
-        """ Main search algorithm for C{get()} and C{read()} """
+        """
+        Main search algorithm for C{get()} and C{read()}
+        """
         if listener:
             prependStr = 'listener:'
         else:
@@ -402,7 +410,10 @@ class DistributedTupleSpacePeer(EntangledNode):
                 outerDf.callback(None)
 
         def filterListenerResult(result):
-            """ Same as filterResult(), except that 2 sets of subtuples keys' results are OR'ed """
+            """
+            Same as filterResult(), except that 2 sets of subtuples keys'
+            results are OR'ed.
+            """
             if kwIndex[0] == -1:
                 # This was the deterministic search
                 if isinstance(result, dict):

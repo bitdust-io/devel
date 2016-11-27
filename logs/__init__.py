@@ -23,6 +23,7 @@
 #
 
 """
-.. module:: logs
+..
 
+module:: logs
 """

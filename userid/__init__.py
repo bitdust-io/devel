@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: idsrv
+..
 
+module:: idsrv
 """

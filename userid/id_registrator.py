@@ -22,7 +22,8 @@
 
 
 """
-.. module:: id_registrator
+.. module:: id_registrator.
+
 .. role:: red
 
 
@@ -100,7 +101,8 @@ def A(event=None, arg=None):
 
 class IdRegistrator(automat.Automat):
     """
-    This class implements all the functionality of the ``id_registrator()`` state machine.
+    This class implements all the functionality of the ``id_registrator()``
+    state machine.
     """
 
     timers = {
@@ -141,7 +143,8 @@ class IdRegistrator(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.preferred_server = None
         self.discovered_servers = []
@@ -152,7 +155,8 @@ class IdRegistrator(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
         from main import installer
         installer.A('id_registrator.state', newstate)
@@ -470,6 +474,7 @@ class IdRegistrator(automat.Automat):
     def _create_new_identity(self):
         """
         Generate new Private key and new identity file.
+
         Reads some extra info from config files.
         """
         login = bpio.ReadTextFile(settings.UserNameFilename())
@@ -493,6 +498,7 @@ class IdRegistrator(automat.Automat):
     def _send_new_identity(self):
         """
         Send created identity to the identity server to register it.
+
         TODO: need to close transport and gateway after that
         """
         lg.out(4, 'id_registrator._send_new_identity ')

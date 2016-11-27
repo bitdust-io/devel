@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_broadcasting
+..
 
+module:: service_broadcasting
 """
 
 from services.local_service import LocalService

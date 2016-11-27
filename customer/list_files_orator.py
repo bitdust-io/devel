@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: list_files_orator
+.. module:: list_files_orator.
 
 .. raw:: html
 
@@ -45,7 +45,6 @@ EVENTS:
     * :red:`local-files-done`
     * :red:`need-files`
     * :red:`timer-10sec`
-
 """
 
 import os
@@ -106,7 +105,8 @@ def Destroy():
 
 class ListFilesOrator(automat.Automat):
     """
-    A class to request list of my files from my suppliers and also scan the local files.
+    A class to request list of my files from my suppliers and also scan the
+    local files.
     """
 
     timers = {
@@ -180,7 +180,8 @@ class ListFilesOrator(automat.Automat):
 
 def IncomingListFiles(newpacket):
     """
-    Called from ``p2p.backup_control`` to pass incoming "ListFiles" packet here.
+    Called from ``p2p.backup_control`` to pass incoming "ListFiles" packet
+    here.
     """
     global _RequestedListFilesPacketIDs
     global _RequestedListFilesCounter

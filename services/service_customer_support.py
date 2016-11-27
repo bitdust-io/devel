@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_customer_support
+..
 
+module:: service_customer_support
 """
 
 from services.local_service import LocalService

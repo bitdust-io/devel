@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_supplier
+..
 
+module:: service_supplier
 """
 
 from twisted.internet import reactor

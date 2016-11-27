@@ -35,21 +35,27 @@ import os
 
 
 class DataStore(UserDict.DictMixin):
-    """ Interface for classes implementing physical storage (for data
-    published via the "STORE" RPC) for the Kademlia DHT
+    """
+    Interface for classes implementing physical storage (for data published via
+    the "STORE" RPC) for the Kademlia DHT.
 
     @note: This provides an interface for a dict-like object
     """
 
     def keys(self):
-        """ Return a list of the keys in this data store """
+        """
+        Return a list of the keys in this data store.
+        """
 
     def lastPublished(self, key):
-        """ Get the time the C{(key, value)} pair identified by C{key}
-        was last published """
+        """
+        Get the time the C{(key, value)} pair identified by C{key} was last
+        published.
+        """
 
     def originalPublisherID(self, key):
-        """ Get the original publisher of the data's node ID
+        """
+        Get the original publisher of the data's node ID.
 
         @param key: The key that identifies the stored data
         @type key: str
@@ -59,29 +65,40 @@ class DataStore(UserDict.DictMixin):
         """
 
     def originalPublishTime(self, key):
-        """ Get the time the C{(key, value)} pair identified by C{key}
-        was originally published """
+        """
+        Get the time the C{(key, value)} pair identified by C{key} was
+        originally published.
+        """
 
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID):
-        """ Set the value of the (key, value) pair identified by C{key};
-        this should set the "last published" value for the (key, value)
-        pair to the current time
+        """
+        Set the value of the (key, value) pair identified by C{key}; this
+        should set the "last published" value for the (key, value) pair to the
+        current time.
         """
 
     def __getitem__(self, key):
-        """ Get the value identified by C{key} """
+        """
+        Get the value identified by C{key}
+        """
 
     def __setitem__(self, key, value):
-        """ Convenience wrapper to C{setItem}; this accepts a tuple in the
-        format: (value, lastPublished, originallyPublished, originalPublisherID) """
+        """
+        Convenience wrapper to C{setItem}; this accepts a tuple in the format:
+        (value, lastPublished, originallyPublished, originalPublisherID)
+        """
         self.setItem(key, *value)
 
     def __delitem__(self, key):
-        """ Delete the specified key (and its value) """
+        """
+        Delete the specified key (and its value)
+        """
 
 
 class DictDataStore(DataStore):
-    """ A datastore using an in-memory Python dictionary """
+    """
+    A datastore using an in-memory Python dictionary.
+    """
 
     def __init__(self):
         # Dictionary format:
@@ -89,16 +106,21 @@ class DictDataStore(DataStore):
         self._dict = {}
 
     def keys(self):
-        """ Return a list of the keys in this data store """
+        """
+        Return a list of the keys in this data store.
+        """
         return self._dict.keys()
 
     def lastPublished(self, key):
-        """ Get the time the C{(key, value)} pair identified by C{key}
-        was last published """
+        """
+        Get the time the C{(key, value)} pair identified by C{key} was last
+        published.
+        """
         return self._dict[key][1]
 
     def originalPublisherID(self, key):
-        """ Get the original publisher of the data's node ID
+        """
+        Get the original publisher of the data's node ID.
 
         @param key: The key that identifies the stored data
         @type key: str
@@ -109,28 +131,36 @@ class DictDataStore(DataStore):
         return self._dict[key][3]
 
     def originalPublishTime(self, key):
-        """ Get the time the C{(key, value)} pair identified by C{key}
-        was originally published """
+        """
+        Get the time the C{(key, value)} pair identified by C{key} was
+        originally published.
+        """
         return self._dict[key][2]
 
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID):
-        """ Set the value of the (key, value) pair identified by C{key};
-        this should set the "last published" value for the (key, value)
-        pair to the current time
+        """
+        Set the value of the (key, value) pair identified by C{key}; this
+        should set the "last published" value for the (key, value) pair to the
+        current time.
         """
         self._dict[key] = (value, lastPublished, originallyPublished, originalPublisherID)
 
     def __getitem__(self, key):
-        """ Get the value identified by C{key} """
+        """
+        Get the value identified by C{key}
+        """
         return self._dict[key][0]
 
     def __delitem__(self, key):
-        """ Delete the specified key (and its value) """
+        """
+        Delete the specified key (and its value)
+        """
         del self._dict[key]
 
 
 class SQLiteDataStore(DataStore):
-    """ Example of a SQLite database-based datastore
+    """
+    Example of a SQLite database-based datastore.
     """
 
     def __init__(self, dbFile=':memory:'):
@@ -148,7 +178,9 @@ class SQLiteDataStore(DataStore):
         self._cursor = self._db.cursor()
 
     def keys(self):
-        """ Return a list of the keys in this data store """
+        """
+        Return a list of the keys in this data store.
+        """
         keys = []
         try:
             self._cursor.execute("SELECT key FROM data")
@@ -158,12 +190,15 @@ class SQLiteDataStore(DataStore):
             return keys
 
     def lastPublished(self, key):
-        """ Get the time the C{(key, value)} pair identified by C{key}
-        was last published """
+        """
+        Get the time the C{(key, value)} pair identified by C{key} was last
+        published.
+        """
         return int(self._dbQuery(key, 'lastPublished'))
 
     def originalPublisherID(self, key):
-        """ Get the original publisher of the data's node ID
+        """
+        Get the original publisher of the data's node ID.
 
         @param key: The key that identifies the stored data
         @type key: str
@@ -174,8 +209,10 @@ class SQLiteDataStore(DataStore):
         return self._dbQuery(key, 'originalPublisherID')
 
     def originalPublishTime(self, key):
-        """ Get the time the C{(key, value)} pair identified by C{key}
-        was originally published """
+        """
+        Get the time the C{(key, value)} pair identified by C{key} was
+        originally published.
+        """
         return int(self._dbQuery(key, 'originallyPublished'))
 
     def setItem(self, key, value, lastPublished, originallyPublished, originalPublisherID):

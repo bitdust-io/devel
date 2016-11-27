@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Copyright 2012 Tadeas Moravec
+Copyright 2012 Tadeas Moravec.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,9 +33,9 @@ class JSONRPCServer(basic.NetstringReceiver):
 
     def __init__(self, verbose=False):
         """
-        Set verbosity level. By default we only log IP version, IP address
-        and port of incoming request. With verbose=True, we log incoming
-        requests bodies and outgoing responses bodies.
+        Set verbosity level. By default we only log IP version, IP address and
+        port of incoming request. With verbose=True, we log incoming requests
+        bodies and outgoing responses bodies.
 
         @type verbose: bool
         @param verbose: Log details or not
@@ -97,8 +97,8 @@ class JSONRPCServer(basic.NetstringReceiver):
 
     def stringReceived(self, string):
         """
-        This is the 'main' RPC method. This will always be called when
-        a request arrives and it's up to this method to parse the request and
+        This is the 'main' RPC method. This will always be called when a
+        request arrives and it's up to this method to parse the request and
         dispatch it further.
 
         @type string: str

@@ -25,7 +25,8 @@
 #
 
 """
-.. module:: propagate
+.. module:: propagate.
+
 .. role:: red
 
 When a user starts up he needs to run the stun.py to check what his IP is,
@@ -103,6 +104,7 @@ def init():
 
 def shutdown():
     """
+    
     """
     lg.out(4, "propagate.shutdown")
 
@@ -112,8 +114,9 @@ def shutdown():
 def propagate(selected_contacts, AckHandler=None, wide=False):
     """
     Run the "propagate" process.
-    First need to fetch ``selected_contacts`` IDs from id server.
-    And then send our Identity file to that contacts.
+
+    First need to fetch ``selected_contacts`` IDs from id server. And
+    then send our Identity file to that contacts.
     """
     lg.out(6, "propagate.propagate to %d contacts" % len(selected_contacts))
     d = Deferred()
@@ -166,7 +169,8 @@ def customers(AckHandler=None, wide=False):
 
 def allcontacts(AckHandler=None, wide=False):
     """
-    Call ``propagate()`` for all contacts and correspondents, almost the same to ``start()``.
+    Call ``propagate()`` for all contacts and correspondents, almost the same
+    to ``start()``.
     """
     lg.out(6, 'propagate.allcontacts')
     return propagate(contactsdb.contacts_full(), AckHandler, wide)
@@ -193,6 +197,7 @@ def update():
 
 def write_to_dht():
     """
+    
     """
     lg.out(6, "propagate.write_to_dht")
     LocalIdentity = my_id.getLocalIdentity()
@@ -234,9 +239,12 @@ def FetchCustomers():
 
 def SendServers():
     """
-    My identity file can be stored in different locations, see the "sources" field.
-    So I can use different identity servers to store more secure.
-    This method will send my identity file to all my identity servers via transport_tcp.
+    My identity file can be stored in different locations, see the "sources"
+    field.
+
+    So I can use different identity servers to store more secure. This
+    method will send my identity file to all my identity servers via
+    transport_tcp.
     """
     from transport.tcp import tcp_node
     sendfile, sendfilename = tmpfile.make("propagate")
@@ -277,6 +285,7 @@ def SendCustomers():
 def SlowSendSuppliers(delay=1):
     """
     Doing same thing, but puts delays before sending to every next supplier.
+
     This is used when need to "ping" suppliers.
     """
     global _SlowSendIsWorking
@@ -346,13 +355,15 @@ def HandleAck(ackpacket, info):
 
 def OnFileSent(pkt_out, item, status, size, error_message):
     """
+    
     """
     return False
 
 
 def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     """
-    Create ``packet`` with my Identity file and calls ``transport.gateway.outbox()`` to send it.
+    Create ``packet`` with my Identity file and calls
+    ``transport.gateway.outbox()`` to send it.
     """
     lg.out(8, "propagate.SendToID [%s] wide=%s" % (nameurl.GetName(idurl), str(wide)))
     if ack_handler is None:
@@ -440,8 +451,10 @@ def SendToIDs(idlist, ack_handler=None, wide=False, NeedAck=False):
 
 def PingContact(idurl, timeout=30):
     """
-    Called from outside when need to "ping" some user, this will just send my Identity to that guy,
-    he will need to respond. Previously it request his identity from ID server.
+    Called from outside when need to "ping" some user, this will just send my
+    Identity to that guy, he will need to respond.
+
+    Previously it request his identity from ID server.
     """
     if _Debug:
         lg.out(_DebugLevel, "propagate.PingContact")

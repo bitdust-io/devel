@@ -25,11 +25,11 @@
 #
 
 """
-.. module:: nonblocking
+.. module:: nonblocking.
 
-This is a wrapper around built-in module ``subprocess.Popen``.
-Provide some extended functionality.
-Can read/write from pipe without blocking the main thread.
+This is a wrapper around built-in module ``subprocess.Popen``. Provide
+some extended functionality. Can read/write from pipe without blocking
+the main thread.
 """
 
 import os
@@ -60,8 +60,9 @@ else:
 class Popen(subprocess.Popen):
     """
     This is inherited from ``subprocess.Popen`` class.
-    Added some wrappers and platform specific code.
-    Most important method added is ``make_nonblocking``.
+
+    Added some wrappers and platform specific code. Most important
+    method added is ``make_nonblocking``.
     """
     err_report = ''
 
@@ -116,7 +117,8 @@ class Popen(subprocess.Popen):
 
     def make_nonblocking(self):
         """
-        Under Linux use built-in method ``fcntl.fcntl`` to make the pipe read/write non blocking.
+        Under Linux use built-in method ``fcntl.fcntl`` to make the pipe
+        read/write non blocking.
         """
         if subprocess.mswindows:
             return

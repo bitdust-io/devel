@@ -34,7 +34,8 @@ except:
 
 
 def total_size(o, handlers={}, verbose=False):
-    """ Returns the approximate memory footprint an object and all of its contents.
+    """
+    Returns the approximate memory footprint an object and all of its contents.
 
     Automatically finds the contents of the following builtin containers and
     their subclasses:  tuple, list, deque, dict, set and frozenset.
@@ -42,7 +43,6 @@ def total_size(o, handlers={}, verbose=False):
 
         handlers = {SomeContainerClass: iter,
                     OtherContainerClass: OtherContainerClass.get_elements}
-
     """
     dict_handler = lambda d: chain.from_iterable(d.items())
     all_handlers = {tuple: iter,

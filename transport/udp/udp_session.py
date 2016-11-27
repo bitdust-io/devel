@@ -22,7 +22,7 @@
 
 
 """
-.. module:: udp_session
+.. module:: udp_session.
 
 BitDust udp_session() Automat
 
@@ -35,7 +35,6 @@ EVENTS:
     * :red:`timer-1min`
     * :red:`timer-1sec`
     * :red:`timer-30sec`
-
 """
 
 #------------------------------------------------------------------------------
@@ -78,6 +77,7 @@ _ProcessSessionsDelay = MIN_PROCESS_SESSIONS_DELAY
 
 def sessions():
     """
+    
     """
     global _SessionsDict
     return _SessionsDict
@@ -102,6 +102,7 @@ def pending_outbox_files():
 
 def create(node, peer_address, peer_id=None):
     """
+    
     """
     if _Debug:
         lg.out(
@@ -124,6 +125,7 @@ def create(node, peer_address, peer_id=None):
 
 def get(peer_address):
     """
+    
     """
 #     if _Debug:
 #         lg.out(_DebugLevel, 'udp_session.get %s %s' % (str(peer_address),
@@ -138,6 +140,7 @@ def get(peer_address):
 
 def get_by_peer_id(peer_id):
     """
+    
     """
     for s in sessions_by_peer_id().get(peer_id, []):
         return s
@@ -149,6 +152,7 @@ def get_by_peer_id(peer_id):
 
 def close(peer_address):
     """
+    
     """
     s = get(peer_address)
     if s is None:
@@ -164,6 +168,7 @@ def add_pending_outbox_file(
         result_defer=None,
         single=False):
     """
+    
     """
     pending_outbox_files().append(
         (filename, host, description, result_defer, single, time.time()))
@@ -193,6 +198,7 @@ def remove_pending_outbox_file(host, filename):
 
 def report_and_remove_pending_outbox_files_to_host(remote_host, error_message):
     """
+    
     """
     from transport.udp import udp_interface
     global _PendingOutboxFiles
@@ -252,7 +258,8 @@ def stop_process_sessions():
 
 class UDPSession(automat.Automat):
     """
-    This class implements all the functionality of the ``udp_session()`` state machine.
+    This class implements all the functionality of the ``udp_session()`` state
+    machine.
     """
 
     fast = True
@@ -289,7 +296,8 @@ class UDPSession(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.log_events = False
         self.last_datagram_received_time = 0

@@ -22,7 +22,8 @@
 
 
 """
-.. module:: supplier
+.. module:: supplier.
+
 .. role:: red
 
 BitDust supplier_connector() Automat
@@ -79,6 +80,7 @@ _SuppliersConnectors = {}
 
 def connectors():
     """
+    
     """
     global _SuppliersConnectors
     return _SuppliersConnectors
@@ -86,6 +88,7 @@ def connectors():
 
 def create(supplier_idurl):
     """
+    
     """
     assert supplier_idurl not in connectors()
     connectors()[supplier_idurl] = SupplierConnector(supplier_idurl)
@@ -100,8 +103,8 @@ def by_idurl(idurl):
 
 class SupplierConnector(automat.Automat):
     """
-    This class implements all the functionality of the ``supplier_connector()`` state machine.
-
+    This class implements all the functionality of the ``supplier_connector()``
+    state machine.
     """
 
     timers = {
@@ -129,12 +132,14 @@ class SupplierConnector(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
         if newstate in ['CONNECTED', 'DISCONNECTED', 'NO_SERVICE']:
             supplierPath = settings.SupplierPath(self.idurl)

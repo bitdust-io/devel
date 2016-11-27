@@ -24,7 +24,7 @@
 #
 
 """
-.. module:: bppipe
+.. module:: bppipe.
 
 This python code can be used to replace the Unix tar command
 and so be portable to non-unix machines.
@@ -79,7 +79,8 @@ def sharedPath(filename, subdir='logs'):
 
 def logfilepath():
     """
-    A method to detect where is placed the log file for ``bppipe`` child process.
+    A method to detect where is placed the log file for ``bppipe`` child
+    process.
     """
 #    logspath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs')
 #    if not os.path.isdir(logspath):
@@ -111,9 +112,9 @@ def printexc():
 
 def _LinuxExcludeFunction(filename):
     """
-    Return True if given file must not be included in the backup.
-    Filename comes in with the path relative to the start path, so:
-        "dirbeingbackedup/photos/christmas2008.jpg"
+    Return True if given file must not be included in the backup. Filename
+    comes in with the path relative to the start path, so:
+    "dirbeingbackedup/photos/christmas2008.jpg".
 
     PREPRO:
     On linux we should test for the attribute meaning "nodump" or "nobackup"
@@ -134,16 +135,14 @@ def _LinuxExcludeFunction(filename):
 
 def _WindowsExcludeFunction(filename):
     """
-    Same method for Windows platforms.
-    Filename comes in with the path relative to the start path, so:
-        "Local Settings\Application Data\Microsoft\Windows\UsrClass.dat"
+    Same method for Windows platforms. Filename comes in with the path relative
+    to the start path, so: "Local Settings\Application
+    Data\Microsoft\Windows\UsrClass.dat".
 
-    PREPRO:
-    On windows I run into some files that Windows tells me
-    I don't have permission to open (system files),
-    I had hoped to use
-        os.access(filename, os.R_OK) == False
-    to skip a file if I couldn't read it, but I did not get it to work every time. DWC.
+    PREPRO: On windows I run into some files that Windows tells me I
+    don't have permission to open (system files), I had hoped to use
+    os.access(filename, os.R_OK) == False to skip a file if I couldn't
+    read it, but I did not get it to work every time. DWC.
     """
     if (filename.lower().find("local settings\\temp") != -1) or (filename.lower().find(".bitdust") != -1):
         return True
@@ -209,7 +208,8 @@ def writetar(sourcepath, subdirs=True, compression='none', encoding=None):
 
 def readtar(archivepath, outputdir, encoding=None):
     """
-    Extract tar file from ``archivepath`` location into local ``outputdir`` folder.
+    Extract tar file from ``archivepath`` location into local ``outputdir``
+    folder.
     """
     mode = 'r:*'
     tar = tarfile.open(archivepath, mode, encoding=encoding)
@@ -222,6 +222,7 @@ def readtar(archivepath, outputdir, encoding=None):
 def main():
     """
     The entry point of the ``bppipe`` child process.
+
     Use command line arguments to get the command from ``bpmain``.
     """
     try:

@@ -23,5 +23,7 @@
 #
 
 """
-.. module:: services
+..
+
+module:: services
 """

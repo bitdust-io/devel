@@ -22,7 +22,8 @@
 
 
 """
-.. module:: coins_miner
+.. module:: coins_miner.
+
 .. role:: red
 
 BitDust coins_miner() Automat
@@ -123,7 +124,8 @@ def Destroy():
 
 class CoinsMiner(automat.Automat):
     """
-    This class implements all the functionality of the ``coins_miner()`` state machine.
+    This class implements all the functionality of the ``coins_miner()`` state
+    machine.
     """
 
     timers = {
@@ -132,8 +134,8 @@ class CoinsMiner(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of coins_miner() machine.
+        Method to initialize additional variables and flags at creation phase
+        of coins_miner() machine.
         """
         self.offline_mode = False  # only for Debug purposes
         self.connected_accountants = []
@@ -150,7 +152,8 @@ class CoinsMiner(automat.Automat):
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'AT_STARTUP':
             if event == 'init':

@@ -22,7 +22,8 @@
 
 
 """
-.. module:: accountant_node
+.. module:: accountant_node.
+
 .. role:: red
 
 BitDust accountant_node() Automat
@@ -100,7 +101,8 @@ def A(event=None, arg=None):
 
 class AccountantNode(automat.Automat):
     """
-    This class implements all the functionality of the ``accountant_node()`` state machine.
+    This class implements all the functionality of the ``accountant_node()``
+    state machine.
     """
     timers = {
         'timer-2min': (120, ['ACCOUNTANTS?']),
@@ -109,8 +111,8 @@ class AccountantNode(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of accountant_node() machine.
+        Method to initialize additional variables and flags at creation phase
+        of accountant_node() machine.
         """
         self.connected_accountants = []
         self.min_accountants_connected = 1  # TODO: read from settings
@@ -127,13 +129,14 @@ class AccountantNode(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the accountant_node()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the accountant_node() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         if self.state == 'READY':
             if event == 'shutdown':

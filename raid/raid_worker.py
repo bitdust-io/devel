@@ -26,7 +26,8 @@
 
 
 """
-.. module:: raid_worker
+.. module:: raid_worker.
+
 .. role:: red
 
 BitDust raid_worker Automat
@@ -161,8 +162,8 @@ def A(event=None, arg=None):
 
 class RaidWorker(automat.Automat):
     """
-    This class implements all the functionality of the ``raid_worker()`` state machine.
-
+    This class implements all the functionality of the ``raid_worker()`` state
+    machine.
     """
 
     timers = {
@@ -171,7 +172,8 @@ class RaidWorker(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.task_id = -1
         self.tasks = []

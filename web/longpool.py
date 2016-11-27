@@ -25,12 +25,11 @@
 #
 
 """
-.. module:: longpool
+.. module:: longpool.
 
 Got sample code from:
 
     http://coder1.com/articles/twisted-long-polling-jsonp
-
 """
 
 import json
@@ -54,6 +53,7 @@ _LongPoolListener = None
 
 def init(get_data_callback, clear_data_callback, portnum):
     """
+    
     """
     global _LongPoolListener
     resource = LongPoolServer(get_data_callback, clear_data_callback)
@@ -63,6 +63,7 @@ def init(get_data_callback, clear_data_callback, portnum):
 
 def shutdown():
     """
+    
     """
     global _LongPoolListener
     if _LongPoolListener:
@@ -83,6 +84,7 @@ class LongPoolServer(Resource):
 
     def __init__(self, get_data_callback, clear_data_callback):
         """
+        
         """
         self.delayed_requests = []
         self.get_data_callback = get_data_callback
@@ -93,6 +95,7 @@ class LongPoolServer(Resource):
 
     def destroy(self):
         """
+        
         """
         self.get_data_callback = None
         self.clear_data_callback = None
@@ -101,6 +104,7 @@ class LongPoolServer(Resource):
 
     def render(self, request):
         """
+        
         """
         request.setHeader('Content-Type', 'application/json')
         args = request.args
@@ -118,6 +122,7 @@ class LongPoolServer(Resource):
 
     def getData(self, request):
         """
+        
         """
         data = self.get_data_callback()
         if len(data) > 0:

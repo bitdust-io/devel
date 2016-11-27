@@ -21,8 +21,9 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 """
-.. module:: callback
+..
 
+module:: callback
 """
 
 #------------------------------------------------------------------------------
@@ -78,8 +79,8 @@ def combine_IDs(CreatorID, PacketID):
 
 def register_interest(cb, creator_id, packet_id):
     """
-    Idea is to have a list for each ComboID so that there might be more than one place called,
-    but unique entries in that list.
+    Idea is to have a list for each ComboID so that there might be more than
+    one place called, but unique entries in that list.
     """
     newparty = InterestedParty(cb, str(creator_id), str(packet_id))
     if newparty.ComboID not in interested_parties().keys():
@@ -91,7 +92,7 @@ def register_interest(cb, creator_id, packet_id):
 
 def remove_interest(creator_id, packet_id):
     """
-    cancel an interest
+    cancel an interest.
     """
     comboID = combine_IDs(creator_id, packet_id)
     if comboID in interested_parties():
@@ -124,8 +125,9 @@ def find_interested_party(newpacket, info):
 
 def delete_backup_interest(BackupName):
     """
-    Deal with removing any interest in any potential data file belonging to a backup we're deleting,
-    we don't want to call something trying to rebuild a backup we're deleting.
+    Deal with removing any interest in any potential data file belonging to a
+    backup we're deleting, we don't want to call something trying to rebuild a
+    backup we're deleting.
     """
     found = False
     partystoremove = set()
@@ -145,10 +147,10 @@ def delete_backup_interest(BackupName):
 
 def append_inbox_callback(cb):
     """
-    You can add a callback to receive incoming ``packets``.
-    Callback will be called with such arguments::
+    You can add a callback to receive incoming ``packets``. Callback will be
+    called with such arguments::
 
-        callback(newpacket, info, status, error_message).
+    callback(newpacket, info, status, error_message).
     """
     if _Debug:
         lg.out(_DebugLevel, 'callback.append_inbox_callback new callback, current callbacks:')
@@ -162,9 +164,10 @@ def append_inbox_callback(cb):
 
 def insert_inbox_callback(index, cb):
     """
-    Same like ``append_inbox_callback(cb)`` but put the callback
-    at the given position in the callbacks list.
-    If you put your callback at the top you will catch the
+    Same like ``append_inbox_callback(cb)`` but put the callback at the given
+    position in the callbacks list. If you put your callback at the top you
+    will catch the.
+
     inbox packet as soon as possible - before other callbacks.
     Callback will be called in a such way:
 
@@ -182,6 +185,7 @@ def insert_inbox_callback(index, cb):
 
 def remove_inbox_callback(cb):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, 'callback.remove_inbox_callback removing a callback, current callbacks:')
@@ -195,10 +199,10 @@ def remove_inbox_callback(cb):
 
 def append_outbox_filter_callback(cb):
     """
-    You can add a callback to filter all outgoing traffic.
-    Callback will be called with such arguments::
+    You can add a callback to filter all outgoing traffic. Callback will be
+    called with such arguments::
 
-        callback(outpacket, wide, callbacks)
+    callback(outpacket, wide, callbacks)
     """
     global _OutboxPacketFilterCallbacksList
     if cb not in _OutboxPacketFilterCallbacksList:
@@ -207,9 +211,10 @@ def append_outbox_filter_callback(cb):
 
 def insert_outbox_filter_callback(index, cb):
     """
-    Same like ``append_outbox_filter_callback(cb)`` but put the callback
-    at the given position in the filters list.
-    If you put your callback at the top you will catch the
+    Same like ``append_outbox_filter_callback(cb)`` but put the callback at the
+    given position in the filters list. If you put your callback at the top you
+    will catch the.
+
     outgoing packet as soon as possible - before other callbacks.
     If callback returned True - all other callbacks will be skipped.
     Callback will be called in a such way:
@@ -223,6 +228,7 @@ def insert_outbox_filter_callback(index, cb):
 
 def remove_outbox_filter_callback(cb):
     """
+    
     """
     global _OutboxPacketFilterCallbacksList
     if cb in _OutboxPacketFilterCallbacksList:
@@ -234,7 +240,7 @@ def add_outbox_callback(cb):
     You can add a callback to be notified when ``outbox()`` method was called.
     Useful when need to catch that event in third module. Arguments::
 
-        callback(pkt_out)
+    callback(pkt_out)
     """
     global _OutboxPacketCallbacksList
     if cb not in _OutboxPacketCallbacksList:
@@ -243,7 +249,7 @@ def add_outbox_callback(cb):
 
 def add_queue_item_status_callback(cb):
     """
-    pkt_out, status, error_message
+    pkt_out, status, error_message.
     """
     global _QueueItemStatusCallbacksList
     if cb not in _QueueItemStatusCallbacksList:
@@ -252,6 +258,7 @@ def add_queue_item_status_callback(cb):
 
 def add_begin_file_sending_callback(cb):
     """
+    
     """
     global _BeginFileSendingCallbacksList
     if cb not in _BeginFileSendingCallbacksList:
@@ -260,7 +267,7 @@ def add_begin_file_sending_callback(cb):
 
 def add_finish_file_sending_callback(cb):
     """
-    pkt_out, item, status, size, error_message
+    pkt_out, item, status, size, error_message.
     """
     global _FinishFileSendingCallbacksList
     if cb not in _FinishFileSendingCallbacksList:
@@ -269,6 +276,7 @@ def add_finish_file_sending_callback(cb):
 
 def remove_finish_file_sending_callback(cb):
     """
+    
     """
     global _FinishFileSendingCallbacksList
     if cb in _FinishFileSendingCallbacksList:
@@ -277,6 +285,7 @@ def remove_finish_file_sending_callback(cb):
 
 def add_begin_file_receiving_callback(cb):
     """
+    
     """
     global _BeginFileReceivingCallbacksList
     if cb not in _BeginFileReceivingCallbacksList:
@@ -285,6 +294,7 @@ def add_begin_file_receiving_callback(cb):
 
 def add_finish_file_receiving_callback(cb):
     """
+    
     """
     global _FinishFileReceivingCallbacksList
     if cb not in _FinishFileReceivingCallbacksList:
@@ -295,6 +305,7 @@ def add_finish_file_receiving_callback(cb):
 
 def run_inbox_callbacks(newpacket, info, status, error_message):
     """
+    
     """
     global _InboxPacketCallbacksList
     if _Debug:
@@ -316,6 +327,7 @@ def run_inbox_callbacks(newpacket, info, status, error_message):
 
 def run_outbox_callbacks(pkt_out):
     """
+    
     """
     global _OutboxPacketCallbacksList
     if _Debug:
@@ -337,6 +349,7 @@ def run_outbox_callbacks(pkt_out):
 
 def run_outbox_filter_callbacks(outpacket, wide, callbacks, target=None, route=None):
     """
+    
     """
     global _OutboxPacketFilterCallbacksList
     for cb in _OutboxPacketFilterCallbacksList:
@@ -360,6 +373,7 @@ def run_outbox_filter_callbacks(outpacket, wide, callbacks, target=None, route=N
 
 def run_queue_item_status_callbacks(pkt_out, status, error_message):
     """
+    
     """
     global _QueueItemStatusCallbacksList
     handled = False
@@ -376,11 +390,13 @@ def run_queue_item_status_callbacks(pkt_out, status, error_message):
 
 def run_begin_file_sending_callbacks(outboxfile):
     """
+    
     """
 
 
 def run_finish_file_sending_callbacks(pkt_out, item, status, size, error_message):
     """
+    
     """
     global _FinishFileSendingCallbacksList
     handled = False
@@ -397,9 +413,11 @@ def run_finish_file_sending_callbacks(pkt_out, item, status, size, error_message
 
 def run_begin_file_receiving_callbacks():
     """
+    
     """
 
 
 def run_finish_file_receiving_callbacks():
     """
+    
     """

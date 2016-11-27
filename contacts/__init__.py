@@ -23,6 +23,7 @@
 #
 
 """
-.. module:: contacts
+..
 
+module:: contacts
 """

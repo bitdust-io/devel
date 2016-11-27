@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: coins
+..
 
+module:: coins
 """

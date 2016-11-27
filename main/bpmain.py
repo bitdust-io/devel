@@ -27,7 +27,7 @@
 #
 
 """
-.. module:: bpmain
+.. module:: bpmain.
 
 This is the entry point of the program, see method ``main()`` bellow.
 """
@@ -62,8 +62,10 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
     """
     In the method ``main()`` program firstly checks the command line arguments
     and then calls this method to start the whole process.
-    This initialize some low level modules and finally create
-    an instance of ``initializer()`` state machine and send it an event "run".
+
+    This initialize some low level modules and finally create an
+    instance of ``initializer()`` state machine and send it an event
+    "run".
     """
     global AppDataDir
 
@@ -314,8 +316,11 @@ def parser():
 
 def override_options(opts, args):
     """
-    The program can replace some user options by values passed via command line.
-    This method return a dictionary where is stored a key-value pairs for new options.
+    The program can replace some user options by values passed via command
+    line.
+
+    This method return a dictionary where is stored a key-value pairs
+    for new options.
     """
     overDict = {}
 #    if opts.tcp_port:
@@ -377,12 +382,14 @@ def kill():
 
 def wait_then_kill(x):
     """
-    For correct shutdown of the program need to send a URL request to the HTTP server::
-        http://localhost:<random port>/?action=exit
+    For correct shutdown of the program need to send a URL request to the HTTP
+    server:: http://localhost:<random port>/?action=exit.
 
-    After receiving such request the program will call ``p2p.init_shutdown.shutdown()`` method and stops.
-    But if the main process was blocked it needs to be killed with system "kill" procedure.
-    This method will wait for 10 seconds and then call method ``kill()``.
+    After receiving such request the program will call
+    ``p2p.init_shutdown.shutdown()`` method and stops. But if the main
+    process was blocked it needs to be killed with system "kill"
+    procedure. This method will wait for 10 seconds and then call method
+    ``kill()``.
     """
     from twisted.internet import reactor
     from logs import lg
@@ -424,6 +431,7 @@ _LastCallableID = 0
 class _callable():
     """
     This class shows my experiments with performance monitoring.
+
     I tried to decrease the number of delayed calls.
     """
 
@@ -457,7 +465,8 @@ def _callLater(delay, callable, *args, **kw):
 
 def patchReactorCallLater(r):
     """
-    Replace original ``reactor.callLater()`` with my hacked solution to monitor overall performance.
+    Replace original ``reactor.callLater()`` with my hacked solution to monitor
+    overall performance.
     """
     global _OriginalCallLater
     _OriginalCallLater = r.callLater
@@ -485,7 +494,8 @@ def monitorDelayedCalls(r):
 
 def usage():
     """
-    Calls ``p2p.help.usage()`` method to print out how to run BitDust software from command line.
+    Calls ``p2p.help.usage()`` method to print out how to run BitDust software
+    from command line.
     """
     try:
         import help

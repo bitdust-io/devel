@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_udp_transport
+..
 
+module:: service_udp_transport
 """
 
 from services.local_service import LocalService

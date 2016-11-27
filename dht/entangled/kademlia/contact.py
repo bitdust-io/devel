@@ -29,7 +29,8 @@
 
 
 class Contact(object):
-    """ Encapsulation for remote contact
+    """
+    Encapsulation for remote contact.
 
     This class contains information on a single remote contact, and also
     provides a direct RPC API to the remote node which it represents
@@ -66,8 +67,9 @@ class Contact(object):
             self.__class__.__name__, self.address, self.port)
 
     def __getattr__(self, name):
-        """ This override allows the host node to call a method of the remote
-        node (i.e. this contact) as if it was a local function.
+        """
+        This override allows the host node to call a method of the remote node
+        (i.e. this contact) as if it was a local function.
 
         For instance, if C{remoteNode} is a instance of C{Contact}, the
         following will result in C{remoteNode}'s C{test()} method to be

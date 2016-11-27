@@ -25,9 +25,9 @@
 #
 
 """
-.. module:: lookup
-.. role:: red
+.. module:: lookup.
 
+.. role:: red
 """
 
 #------------------------------------------------------------------------------
@@ -65,6 +65,7 @@ _ProcessMethod = None  # method to do some stuff with discovered IDURL
 
 def init(lookup_method=None, observe_method=None, process_method=None):
     """
+    
     """
     global _LookupMethod
     global _ObserveMethod
@@ -77,6 +78,7 @@ def init(lookup_method=None, observe_method=None, process_method=None):
 
 def shutdown():
     """
+    
     """
     global _LookupMethod
     global _ObserveMethod

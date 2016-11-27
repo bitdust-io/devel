@@ -22,7 +22,8 @@
 
 
 """
-.. module:: stun_client
+.. module:: stun_client.
+
 .. role:: red
 
 BitDust ``stun_client()`` Automat
@@ -91,7 +92,8 @@ def A(event=None, arg=None):
 
 class StunClient(automat.Automat):
     """
-    This class implements all the functionality of the ``stun_client()`` state machine.
+    This class implements all the functionality of the ``stun_client()`` state
+    machine.
     """
     # fast = True
 

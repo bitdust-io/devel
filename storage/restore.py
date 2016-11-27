@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: restore
+.. module:: restore.
 
 .. raw:: html
 

@@ -23,6 +23,7 @@
 #
 
 """
-.. module:: udp
+..
 
+module:: udp
 """

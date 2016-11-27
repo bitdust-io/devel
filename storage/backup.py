@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: backup
+.. module:: backup.
 
 .. raw:: html
 
@@ -72,7 +72,6 @@ EVENTS:
     * :red:`start`
     * :red:`timer-001sec`
     * :red:`timer-01sec`
-
 """
 
 #------------------------------------------------------------------------------
@@ -233,7 +232,8 @@ class backup(automat.Automat):
 
     def isPipeReady(self, arg):
         """
-        Return True if ``pipe`` object exist and is ready for reading a the new chunk of data.
+        Return True if ``pipe`` object exist and is ready for reading a the new
+        chunk of data.
         """
         return self.pipe is not None and self.pipe.state() in [nonblocking.PIPE_CLOSED, nonblocking.PIPE_READY2READ]
 
@@ -415,6 +415,7 @@ class backup(automat.Automat):
 
     def progress(self):
         """
+        
         """
         if self.totalSize <= 0:
             return 0.0

@@ -25,7 +25,7 @@
 #
 #
 """
-.. module:: net_misc
+.. module:: net_misc.
 
 Some network routines
 """
@@ -90,12 +90,14 @@ def init():
 
 def shutdown():
     """
+    
     """
 
 
 def SetConnectionDoneCallbackFunc(f):
     """
-    Here is a place to set a callback to catch events for ````successful```` network transfers.
+    Here is a place to set a callback to catch events for ````successful````
+    network transfers.
     """
     global _ConnectionDoneCallbackFunc
     _ConnectionDoneCallbackFunc = f
@@ -103,8 +105,11 @@ def SetConnectionDoneCallbackFunc(f):
 
 def SetConnectionFailedCallbackFunc(f):
     """
-    Set a callback to catch events for ````failed```` network transfers or connections.
-    Later, BitDust code will compare both counters to decide that connection to Internet is gone.
+    Set a callback to catch events for ````failed```` network transfers or
+    connections.
+
+    Later, BitDust code will compare both counters to decide that
+    connection to Internet is gone.
     """
     global _ConnectionFailedCallbackFunc
     _ConnectionFailedCallbackFunc = f
@@ -112,7 +117,8 @@ def SetConnectionFailedCallbackFunc(f):
 
 def ConnectionDone(param=None, proto=None, info=None):
     """
-    This method is called from different places to inform of ````successful```` network transfers, connections, requests.
+    This method is called from different places to inform of ````successful````
+    network transfers, connections, requests.
     """
     global _ConnectionDoneCallbackFunc
     if _ConnectionDoneCallbackFunc is not None:
@@ -159,8 +165,8 @@ def parse_url(url, defaultPort=None):
 
 def parse_credentials(host):
     """
-    Test host name (network location) for credentials and split by parts:
-        host, username, password
+    Test host name (network location) for credentials and split by parts: host,
+    username, password.
     """
     if not host.count('@'):
         return host, '', ''
@@ -175,7 +181,8 @@ def parse_credentials(host):
 
 def detect_proxy_settings():
     """
-    Do some work and return dictionary with Proxy server settings for that machine.
+    Do some work and return dictionary with Proxy server settings for that
+    machine.
     """
     d = {
         'host': '',
@@ -275,6 +282,7 @@ def get_proxy_ssl():
 def proxy_is_on():
     """
     In most cases people do not use any proxy servers.
+
     This is to check if user is using a proxy and we have the settings.
     """
     return get_proxy_host() != ''
@@ -295,7 +303,10 @@ def downloadPageTwisted(url, filename):
 class HTTPProgressDownloader(HTTPDownloader):
     """
     Download to a file and keep track of progress.
-        http://schwerkraft.elitedvb.net/plugins/scmcvs/cvsweb.php/enigma2-plugins/mediadownloader/src/HTTPProgressDownloader.py?rev=1.1;cvsroot=enigma2-plugins;only_with_tag=HEAD
+
+    http://schwerkraft.elitedvb.net/plugins/scmcvs/cvsweb.php/enigma2-pl
+    ugins/mediadownloader/src/HTTPProgressDownloader.py?rev=1.1;cvsroot=
+    enigma2-plugins;only_with_tag=HEAD
     """
 
     def __init__(self, url, fileOrName, writeProgress=None, *args, **kwargs):
@@ -493,12 +504,14 @@ def IpIsLocal(ip):
 
 def getLocalIp():
     """
-    A stack of methods to get the local IP of that machine. Had this in p2p/stun.py.
-        http://ubuntuforums.org/showthread.php?t=1215042
-        1. Use the gethostname method
-        2. Use outside connection
-        3. Use OS specific command
-        4. Return 127.0.0.1 in unknown situation
+    A stack of methods to get the local IP of that machine.
+
+    Had this in p2p/stun.py.
+    http://ubuntuforums.org/showthread.php?t=1215042
+    1. Use the gethostname method
+    2. Use outside connection
+    3. Use OS specific command
+    4. Return 127.0.0.1 in unknown situation
     """
     # 1: Use the gethostname method
 
@@ -624,6 +637,7 @@ def TestInternetConnectionOld2(remote_hosts=None, timeout=10):
 def TestInternetConnection(remote_hosts=None, timeout=10):
     """
     Ping google, facebook and youtube to check Internet connection state.
+
     PREPRO switch to our own stun servers ?
     """
     if remote_hosts is None:
@@ -894,9 +908,10 @@ class MultiPartProducer:
 def uploadHTTP(url, files, data, progress=None, receiverDeferred=None):
     """
     A smart way to upload a file over HTTP POST method.
-    Use ``MultiPartProducer`` and ``StringReceiver`` classes.
-    Great Thanks to Mariano!
-        http://marianoiglesias.com.ar/python/file-uploading-with-multi-part-encoding-using-twisted/
+
+    Use ``MultiPartProducer`` and ``StringReceiver`` classes. Great
+    Thanks to Mariano!     http://marianoiglesias.com.ar/python/file-
+    uploading-with-multi-part-encoding-using-twisted/
     """
     # producerDeferred = Deferred()
     receiverDeferred = Deferred()

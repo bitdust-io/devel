@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: bptester
+.. module:: bptester.
 
 This is a BitDust child process, do monitoring of customer's files.
 
@@ -67,8 +67,10 @@ def sharedPath(filename, subdir='logs'):
 def logfilepath():
     """
     A file path to the file where ``bptester`` will write logs.
-    Need to make sure the ``bptester`` log is in a directory the user has permissions for,
-    Such as the customer data directory.  Possibly move to temp directory?
+
+    Need to make sure the ``bptester`` log is in a directory the user
+    has permissions for, Such as the customer data directory.  Possibly
+    move to temp directory?
     """
 #    logspath = os.path.join(os.path.expanduser('~'), '.bitdust', 'logs')
 #    if not os.path.isdir(logspath):
@@ -111,7 +113,9 @@ except:
 def SpaceTime():
     """
     Test all packets for each customer.
-    Check if he use more space than we gave him and if packets is too old.
+
+    Check if he use more space than we gave him and if packets is too
+    old.
     """
     printlog('SpaceTime ' + str(time.strftime("%a, %d %b %Y %H:%M:%S +0000")))
     space = bpio._read_dict(settings.CustomersSpaceFile())

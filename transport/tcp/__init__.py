@@ -23,6 +23,7 @@
 #
 
 """
-.. module:: tcp
+..
 
+module:: tcp
 """

@@ -22,7 +22,8 @@
 
 
 """
-.. module:: packet_out
+.. module:: packet_out.
+
 .. role:: red
 
 BitDust packet_out() Automat
@@ -103,6 +104,7 @@ def increment_packets_counter():
 
 def queue():
     """
+    
     """
     global _OutboxQueue
     return _OutboxQueue
@@ -110,6 +112,7 @@ def queue():
 
 def create(outpacket, wide, callbacks, target=None, route=None):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, 'packet_out.create  %s' % str(outpacket))
@@ -227,6 +230,7 @@ def search_similar_packets(outpacket):
 
 def correct_packet_destination(outpacket):
     """
+    
     """
     if outpacket.CreatorID == my_id.getLocalID():
         # our data will go where it should go
@@ -261,7 +265,8 @@ class WorkItem(object):
 
 class PacketOut(automat.Automat):
     """
-    This class implements all the functionality of the ``packet_out()`` state machine.
+    This class implements all the functionality of the ``packet_out()`` state
+    machine.
     """
 
     timers = {
@@ -296,7 +301,8 @@ class PacketOut(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.log_events = True
         self.error_message = None

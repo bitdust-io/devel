@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: bandwidth
+.. module:: bandwidth.
+
 .. role:: red
 
 Here are counted incoming and outgoing traffic.
@@ -66,7 +67,8 @@ CountTimeOut = 0
 
 def init():
     """
-    Got a filename for today, check if already exists, read today file, start counting
+    Got a filename for today, check if already exists, read today file, start
+    counting.
     """
     global CountTimeIn
     global CountTimeOut
@@ -86,13 +88,14 @@ def init():
 
 def shutdown():
     """
+    
     """
     lg.out(4, 'bandwidth.shutdown')
 
 
 def filenameIN(basename=None):
     """
-    File name for incoming stats for today or other day
+    File name for incoming stats for today or other day.
     """
     if basename is None:
         basename = misc.gmtime2str('%d%m%y')
@@ -101,7 +104,7 @@ def filenameIN(basename=None):
 
 def filenameOUT(basename=None):
     """
-    File name for outgoing stats for today or other day
+    File name for outgoing stats for today or other day.
     """
     if basename is None:
         basename = misc.gmtime2str('%d%m%y')
@@ -110,7 +113,7 @@ def filenameOUT(basename=None):
 
 def save():
     """
-    Writes today stats on disk
+    Writes today stats on disk.
     """
     lg.out(6, 'bandwidth.save')
     bpio._write_dict(filenameIN(), getBandwidthIN())
@@ -119,7 +122,7 @@ def save():
 
 def saveIN(basename=None):
     """
-    Writes incoming stats for today on disk
+    Writes incoming stats for today on disk.
     """
     if basename is None:
         basename = misc.gmtime2str('%d%m%y')
@@ -134,7 +137,7 @@ def saveIN(basename=None):
 
 def saveOUT(basename=None):
     """
-    Writes outgoing stats for today on disk
+    Writes outgoing stats for today on disk.
     """
     if basename is None:
         basename = misc.gmtime2str('%d%m%y')
@@ -149,7 +152,7 @@ def saveOUT(basename=None):
 
 def read_bandwidthIN():
     """
-    Reads today's incoming bandwidth stats from disk
+    Reads today's incoming bandwidth stats from disk.
     """
     global BandInDict
     lg.out(6, 'bandwidth.read_bandwidthIN ')
@@ -159,7 +162,7 @@ def read_bandwidthIN():
 
 def read_bandwidthOUT():
     """
-    Reads today's outgoing bandwidth stats from disk
+    Reads today's outgoing bandwidth stats from disk.
     """
     global BandOutDict
     lg.out(6, 'bandwidth.read_bandwidthOUT ')
@@ -169,7 +172,7 @@ def read_bandwidthOUT():
 
 def clear_bandwidthIN():
     """
-    Erase all incoming stats from memory
+    Erase all incoming stats from memory.
     """
     global BandInDict
     lg.out(6, 'bandwidth.clear_bandwidthIN ')
@@ -178,7 +181,7 @@ def clear_bandwidthIN():
 
 def clear_bandwidthOUT():
     """
-    Erase all outgoing stats from memory
+    Erase all outgoing stats from memory.
     """
     global BandOutDict
     lg.out(6, 'bandwidth.clear_bandwidthOUT ')
@@ -187,7 +190,7 @@ def clear_bandwidthOUT():
 
 def clear():
     """
-    Erase all bandwidth stats from memory
+    Erase all bandwidth stats from memory.
     """
     clear_bandwidthIN()
     clear_bandwidthOUT()
@@ -195,7 +198,7 @@ def clear():
 
 def getBandwidthIN():
     """
-    Get current incoming bandwidth stats from memory
+    Get current incoming bandwidth stats from memory.
     """
     global BandInDict
     return BandInDict
@@ -203,7 +206,7 @@ def getBandwidthIN():
 
 def getBandwidthOUT():
     """
-    Get current outgoing bandwidth stats from memory
+    Get current outgoing bandwidth stats from memory.
     """
     global BandOutDict
     return BandOutDict
@@ -211,14 +214,14 @@ def getBandwidthOUT():
 
 def isExistIN():
     """
-    Check existence of today's incoming bandwidth file on disk
+    Check existence of today's incoming bandwidth file on disk.
     """
     return os.path.isfile(filenameIN())
 
 
 def isExistOUT():
     """
-    Check existence of today's outgoing bandwidth file on disk
+    Check existence of today's outgoing bandwidth file on disk.
     """
     return os.path.isfile(filenameOUT())
 
@@ -226,6 +229,7 @@ def isExistOUT():
 def files2send():
     """
     Return a list of file names to be read and send later.
+
     Sent files are market with ".sent" extension and skipped here.
     """
     lg.out(6, 'bandwidth.files2send')
@@ -267,6 +271,7 @@ def files2send():
 def IN(idurl, size):
     """
     Call this when need to count incoming bandwidth.
+
     ``size`` - how many incoming bytes received from user with ``idurl``.
     Typically called when incoming packet arrives.
     """
@@ -290,6 +295,7 @@ def IN(idurl, size):
 def OUT(idurl, size):
     """
     Call this when need to count outgoing bandwidth.
+
     ``size`` - how many bytes sent to user with ``idurl``.
     Typically called when outgoing packet were sent.
     """
@@ -312,7 +318,8 @@ def OUT(idurl, size):
 
 def INfile(newpacket, pkt_in, status, error_message):
     """
-    Count incoming file from ``proto``://``host``, ``newpacket`` is already Unserialized.
+    Count incoming file from ``proto``://``host``, ``newpacket`` is already
+    Unserialized.
     """
     if status != 'finished':
         return False
@@ -328,7 +335,8 @@ def INfile(newpacket, pkt_in, status, error_message):
 
 def OUTfile(pkt_out, item, status, size, error_message):
     """
-    Count outgoing file to ``proto``://``host``, ``workitem`` is from sending queue.
+    Count outgoing file to ``proto``://``host``, ``workitem`` is from sending
+    queue.
     """
     if status != 'finished':
         return False

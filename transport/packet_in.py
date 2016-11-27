@@ -22,7 +22,8 @@
 
 
 """
-.. module:: packet_in
+.. module:: packet_in.
+
 .. role:: red
 
 BitDust packet_in() Automat
@@ -99,6 +100,7 @@ def increment_packets_counter():
 
 def items():
     """
+    
     """
     global _InboxItems
     return _InboxItems
@@ -174,7 +176,8 @@ def process(newpacket, info):
 
 class PacketIn(automat.Automat):
     """
-    This class implements all the functionality of the ``packet_in()`` state machine.
+    This class implements all the functionality of the ``packet_in()`` state
+    machine.
     """
 
     def __init__(self, transfer_id):
@@ -203,7 +206,8 @@ class PacketIn(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.log_events = False
 

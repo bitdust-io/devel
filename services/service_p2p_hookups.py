@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_p2p_hookups
+..
 
+module:: service_p2p_hookups
 """
 
 from services.local_service import LocalService

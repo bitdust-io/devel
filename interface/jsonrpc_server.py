@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: jsonrpc_server
+..
+
+module:: jsonrpc_server
 """
 
 import time

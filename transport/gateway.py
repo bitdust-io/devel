@@ -27,7 +27,7 @@
 
 
 """
-.. module:: gateway
+.. module:: gateway.
 
 This is a replacement for `lib.transport_control` stuff.
 Here is place to put `outgoing` files to send to other users in the network.
@@ -134,6 +134,7 @@ _TransportLogFilename = None
 
 def transport(proto):
     """
+    
     """
     global _TransportsDict
     return _TransportsDict[proto]
@@ -141,6 +142,7 @@ def transport(proto):
 
 def transports():
     """
+    
     """
     global _TransportsDict
     return _TransportsDict
@@ -148,6 +150,7 @@ def transports():
 
 def listener():
     """
+    
     """
     global _LocalListener
     return _LocalListener
@@ -162,12 +165,14 @@ def is_installed(proto):
 
 def can_send(proto):
     """
+    
     """
     return transport(proto).state == 'LISTENING'
 
 
 def last_inbox_time():
     """
+    
     """
     global _LastInboxPacketTime
     return _LastInboxPacketTime
@@ -177,6 +182,7 @@ def last_inbox_time():
 
 def init():
     """
+    
     """
     global _LocalListener
     global _DoingShutdown
@@ -209,6 +215,7 @@ def shutdown():
 
 def start():
     """
+    
     """
     if _Debug:
         lg.out(4, 'gateway.start')
@@ -230,6 +237,7 @@ def start():
 
 def cold_start():
     """
+    
     """
     if _Debug:
         lg.out(4, 'gateway.cold_start : sending "start" only to one transport - most preferable')
@@ -255,6 +263,7 @@ def cold_start():
 
 def stop():
     """
+    
     """
     if _Debug:
         lg.out(4, 'gateway.stop')
@@ -278,6 +287,7 @@ def stop():
 
 def verify():
     """
+    
     """
     ordered_list = transports().keys()
     ordered_list.sort(key=settings.getTransportPriority, reverse=True)
@@ -335,6 +345,7 @@ def verify():
 
 def attach(transport_instance):
     """
+    
     """
     global _TransportsDict
     global _AvailableTransports
@@ -346,6 +357,7 @@ def attach(transport_instance):
 
 def detach(transport_instance):
     """
+    
     """
     global _TransportsDict
     global _AvailableTransports
@@ -366,17 +378,18 @@ def detach(transport_instance):
 def inbox(info):
     """
     1) The protocol modules write to temporary files and gives us that filename
-    2) We unserialize
-    3) We check that it is for us
-    4) We check that it is from one of our contacts.
-    5) We use signed.validate() to check signature and that number fields are numbers
-    6) Any other sanity checks we can do and if anything funny we toss out the packet .
-    7) Then change the filename to the PackedID that it should be.
-       and call the right function(s) for this new packet
-       (encryptedblock, scrubber, remotetester, customerservice, ...)
-       to dispatch it to right place(s).
-    8) We have to keep track of bandwidth to/from everyone, and make a report every 24 hours
-       which we send to BitDust sometime in the 24 hours after that.
+    2) We unserialize 3) We check that it is for us 4) We check that it is from
+    one of our contacts.
+
+    5) We use signed.validate() to check signature and that number
+    fields are numbers 6) Any other sanity checks we can do and if
+    anything funny we toss out the packet . 7) Then change the filename
+    to the PackedID that it should be.    and call the right function(s)
+    for this new packet    (encryptedblock, scrubber, remotetester,
+    customerservice, ...)    to dispatch it to right place(s). 8) We
+    have to keep track of bandwidth to/from everyone, and make a report
+    every 24 hours    which we send to BitDust sometime in the 24 hours
+    after that.
     """
     global _DoingShutdown
     global _LastInboxPacketTime
@@ -486,41 +499,45 @@ def send_work_item(proto, host, filename, description):
     """
     Send a file to remote peer by given transport.
 
-    Args:
-        proto (str): identifier of the transport
-        host (str): remote peer's host comes from identity contact
-        filename (str): local source file to be send
-        description (str): a label for this transfer
+    Args:     proto (str): identifier of the transport     host (str):
+    remote peer's host comes from identity contact     filename (str):
+    local source file to be send     description (str): a label for this
+    transfer
     """
     return send_file(proto, host, filename, description)
 
 
 def connect_to(proto, host):
     """
+    
     """
     return transport(proto).call('connect_to', host)
 
 
 def disconnect_from(proto, host):
     """
+    
     """
     return transport(proto).call('disconnect_from', host)
 
 
 def send_file(remote_idurl, proto, host, filename, description=''):
     """
+    
     """
     return transport(proto).call('send_file', remote_idurl, filename, host, description)
 
 
 def send_file_single(remote_idurl, proto, host, filename, description=''):
     """
+    
     """
     return transport(proto).call('send_file_single', remote_idurl, filename, host, description)
 
 
 def list_active_transports():
     """
+    
     """
     result = []
     for proto, transp in transports().items():
@@ -532,12 +549,14 @@ def list_active_transports():
 
 def list_active_sessions(proto):
     """
+    
     """
     return transport(proto).call('list_sessions')
 
 
 def list_active_streams(proto):
     """
+    
     """
     return transport(proto).call('list_streams')
 
@@ -596,6 +615,7 @@ def current_bytes_received():
 
 def shutdown_all_outbox_packets():
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.shutdown_all_outbox_packets, %d live objects at the moment' % len(packet_out.queue()))
@@ -605,6 +625,7 @@ def shutdown_all_outbox_packets():
 
 def shutdown_all_inbox_packets():
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, 'gateway.shutdown_all_inbox_packets, %d live objects at the moment' % len(packet_in.items().values()))
@@ -663,6 +684,7 @@ def monitoring():
 
 def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
     """
+    
     """
     started_packets = packet_out.search_similar_packets(outpacket)
     if started_packets:
@@ -680,6 +702,7 @@ def on_outbox_packet(outpacket, wide, callbacks, target=None, route=None):
 
 def on_transport_state_changed(transport, oldstate, newstate):
     """
+    
     """
     global _TransportStateChangedCallbacksList
     if _Debug:
@@ -694,6 +717,7 @@ def on_transport_state_changed(transport, oldstate, newstate):
 
 def on_transport_initialized(proto, xmlrpcurl=None):
     """
+    
     """
     transport(proto).automat('transport-initialized', xmlrpcurl)
     return True
@@ -701,6 +725,7 @@ def on_transport_initialized(proto, xmlrpcurl=None):
 
 def on_receiving_started(proto, host, options_modified=None):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel - 8, 'gateway.on_receiving_started %s host=%s' % (proto.upper(), host))
@@ -710,6 +735,7 @@ def on_receiving_started(proto, host, options_modified=None):
 
 def on_receiving_failed(proto, error_code=None):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel - 8, 'gateway.on_receiving_failed %s    error=[%s]' % (proto.upper(), str(error_code)))
@@ -719,6 +745,7 @@ def on_receiving_failed(proto, error_code=None):
 
 def on_disconnected(proto, result=None):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel - 8, 'gateway.on_disconnected %s    result=%s' % (proto.upper(), str(result)))
@@ -729,34 +756,41 @@ def on_disconnected(proto, result=None):
 
 def on_start_connecting(host):
     """
+    
     """
     return True
 
 
 def on_session_opened(host, remote_user_id):
     """
+    
     """
 
 
 def on_connection_failed(host, error_message=None):
     """
+    
     """
 
 
 def on_session_closed(host, remote_user_id, reason=None):
     """
+    
     """
 
 
 def on_message_received(host, remote_user_id, data):
     """
+    
     """
 
 
 def on_register_file_sending(proto, host, receiver_idurl, filename, size=0, description=''):
     """
-    Called from transport plug-in when sending a single file were started to some remote peer.
-    Must return a unique transfer ID so plug-in will know that ID.
+    Called from transport plug-in when sending a single file were started to
+    some remote peer. Must return a unique transfer ID so plug-in will know
+    that ID.
+
     After finishing that given transfer - that ID is passed to `unregister_file_sending()`.
     """
     if _Debug:
@@ -808,6 +842,7 @@ def on_unregister_file_sending(transfer_id, status, bytes_sent, error_message=No
 
 def on_cancelled_file_sending(proto, host, filename, size, description='', error_message=None):
     """
+    
     """
     pkt_out, work_item = packet_out.search(proto, host, filename)
     if pkt_out is None:
@@ -825,9 +860,12 @@ def on_cancelled_file_sending(proto, host, filename, size, description='', error
 
 def on_register_file_receiving(proto, host, sender_idurl, filename, size=0):
     """
-    Called from transport plug-in when receiving a single file were started from some peer.
-    Must return a unique transfer ID, create a `FileTransferInfo` object and put it into "transfers" list.
-    Plug-in's code must create a temporary file and write incoming data into that file.
+    Called from transport plug-in when receiving a single file were started
+    from some peer.
+
+    Must return a unique transfer ID, create a `FileTransferInfo` object
+    and put it into "transfers" list. Plug-in's code must create a
+    temporary file and write incoming data into that file.
     """
     transfer_id = make_transfer_ID()
     if _Debug:

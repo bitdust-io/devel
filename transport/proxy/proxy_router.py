@@ -22,7 +22,8 @@
 
 
 """
-.. module:: proxy_router
+.. module:: proxy_router.
+
 .. role:: red
 
 BitDust proxy_router() Automat
@@ -121,13 +122,14 @@ def A(event=None, arg=None):
 
 class ProxyRouter(automat.Automat):
     """
-    This class implements all the functionality of the ``proxy_router()`` state machine.
+    This class implements all the functionality of the ``proxy_router()`` state
+    machine.
     """
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of proxy_router() machine.
+        Method to initialize additional variables and flags at creation phase
+        of proxy_router() machine.
         """
         self.routes = {}
         self.acks = []
@@ -139,13 +141,14 @@ class ProxyRouter(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the proxy_router()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the proxy_router() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://code.google.com/p/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://code.google.com/p/visio2python/>`_ tool.
         """
         #---LISTEN---
         if self.state == 'LISTEN':

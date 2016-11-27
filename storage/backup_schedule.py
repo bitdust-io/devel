@@ -27,7 +27,7 @@
 #
 
 """
-.. module:: backup_schedule
+.. module:: backup_schedule.
 
 A set of methods to run backups at given intervals, used to provide scheduled backups.
 

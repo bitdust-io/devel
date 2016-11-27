@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_tcp_transport
+..
 
+module:: service_tcp_transport
 """
 
 from services.local_service import LocalService

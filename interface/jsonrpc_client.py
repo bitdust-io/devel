@@ -25,7 +25,9 @@
 #
 
 """
-.. module:: jsonrpc_client
+..
+
+module:: jsonrpc_client
 """
 
 

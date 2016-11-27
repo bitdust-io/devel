@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_monitor
+.. module:: backup_monitor.
 
 .. raw:: html
 

@@ -25,8 +25,8 @@
 #
 
 """
+.. module:: index_synchronizer.
 
-.. module:: index_synchronizer
 .. role:: red
 
 .. raw:: html
@@ -76,8 +76,6 @@ EVENTS:
     * :red:`timer-15sec`
     * :red:`timer-1min`
     * :red:`timer-5min`
-
-
 """
 
 #------------------------------------------------------------------------------
@@ -146,7 +144,8 @@ def A(event=None, arg=None):
 
 class IndexSynchronizer(automat.Automat):
     """
-    This class implements all the functionality of the ``index_synchronizer()`` state machine.
+    This class implements all the functionality of the ``index_synchronizer()``
+    state machine.
     """
 
     timers = {
@@ -157,8 +156,8 @@ class IndexSynchronizer(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of index_synchronizer() machine.
+        Method to initialize additional variables and flags at creation phase
+        of index_synchronizer() machine.
         """
         self.latest_supplier_revision = -1
         self.current_local_revision = -1
@@ -169,18 +168,20 @@ class IndexSynchronizer(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to catch the moment when index_synchronizer() state were changed.
+        Method to catch the moment when index_synchronizer() state were
+        changed.
         """
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the index_synchronizer()
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the index_synchronizer() but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://bitdust.io/visio2python/>`_ tool.
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':

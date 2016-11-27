@@ -22,7 +22,8 @@
 
 
 """
-.. module:: udp_connector
+.. module:: udp_connector.
+
 .. role:: red
 BitDust udp_connector() Automat
 
@@ -58,6 +59,7 @@ _ConnectorsDict = {}
 
 def connectors():
     """
+    
     """
     global _ConnectorsDict
     return _ConnectorsDict
@@ -65,6 +67,7 @@ def connectors():
 
 def create(node, peer_id):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, 'udp_connector.create peer_id=%s' % peer_id)
@@ -75,6 +78,7 @@ def create(node, peer_id):
 
 def get(peer_id):
     """
+    
     """
     for id, c in connectors().items():
         if c.peer_id == peer_id:
@@ -86,7 +90,8 @@ def get(peer_id):
 
 class DHTUDPConnector(automat.Automat):
     """
-    This class implements all the functionality of the ``udp_connector()`` state machine.
+    This class implements all the functionality of the ``udp_connector()``
+    state machine.
     """
 
     fast = True
@@ -99,7 +104,8 @@ class DHTUDPConnector(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.listen_port = None
         self.my_id = None

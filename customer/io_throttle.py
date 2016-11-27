@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: io_throttle
+.. module:: io_throttle.
 
 When reconstructing a backup we don't want to take over everything
 and make BitDust unresponsive by requesting 1000's of files at once
@@ -95,7 +95,9 @@ def throttle():
 def init():
     """
     Init ``throttle()`` object and link with transports.
-    This is the mechanism for sending and requesting files to drive backups.
+
+    This is the mechanism for sending and requesting files to drive
+    backups.
     """
     lg.out(4, "io_throttle.init")
     throttle()
@@ -114,7 +116,8 @@ def shutdown():
 
 def SetPacketReportCallbackFunc(func):
     """
-    You can pass a callback to catch a moment when some packet is added/removed.
+    You can pass a callback to catch a moment when some packet is
+    added/removed.
     """
     global _PacketReportCallbackFunc
     _PacketReportCallbackFunc = func
@@ -141,48 +144,60 @@ def QueueSendFile(fileName, packetID, remoteID, ownerID, callOnAck=None, callOnF
 def QueueRequestFile(callOnReceived, creatorID, packetID, ownerID, remoteID):
     """
     Place a request to download a single file from given remote peer.
-    Remote user will verify our identity and decide to send the Data or not.
+
+    Remote user will verify our identity and decide to send the Data or
+    not.
     """
     return throttle().QueueRequestFile(callOnReceived, creatorID, packetID, ownerID, remoteID)
 
 
 def DeleteBackupSendings(backupName):
     """
-    Checks all send queues and search for packets with ``backupName`` in the packetID field.
-    For example, this is used to remove old transfers if rebuilding process is restarted.
+    Checks all send queues and search for packets with ``backupName`` in the
+    packetID field.
+
+    For example, this is used to remove old transfers if rebuilding
+    process is restarted.
     """
     return throttle().DeleteBackupSendings(backupName)
 
 
 def DeleteBackupRequests(backupName):
     """
-    Checks all request queues and search for packets with ``backupName`` in the packetID field.
-    For example, this is used to remove old requests if the restore process is aborted.
+    Checks all request queues and search for packets with ``backupName`` in the
+    packetID field.
+
+    For example, this is used to remove old requests if the restore
+    process is aborted.
     """
     return throttle().DeleteBackupRequests(backupName)
 
 
 def DeleteSuppliers(suppliers_IDURLs):
     """
-    Erase the whole queue with this peer and remove him from throttle() completely.
+    Erase the whole queue with this peer and remove him from throttle()
+    completely.
     """
     return throttle().DeleteSuppliers(suppliers_IDURLs)
 
 
 def DeleteAllSuppliers():
     """
+    
     """
     return throttle().DeleteSuppliers(throttle().supplierQueues.keys())
 
 
 def OutboxStatus(pkt_out, status, error):
     """
+    
     """
     return throttle().OutboxStatus(pkt_out, status, error)
 
 
 def IsSendingQueueEmpty():
     """
+    
     """
     return throttle().IsSendingQueueEmpty()
 
@@ -322,6 +337,7 @@ class SupplierQueue:
 
     def RemoveSupplierWork(self):
         """
+        
         """
         # in the case that we're doing work with a supplier who has just been replaced ...
         # Need to remove the register interests
@@ -828,7 +844,8 @@ class IOThrottle:
 
     def HasPacketInSendQueue(self, supplierIDURL, packetID):
         """
-        Return True if that packet is found in the sending queue to given remote peer.
+        Return True if that packet is found in the sending queue to given
+        remote peer.
         """
         if supplierIDURL not in self.supplierQueues:
             return False
@@ -836,7 +853,8 @@ class IOThrottle:
 
     def HasPacketInRequestQueue(self, supplierIDURL, packetID):
         """
-        Return True if that packet is found in the request queue from given remote peer.
+        Return True if that packet is found in the request queue from given
+        remote peer.
         """
         if supplierIDURL not in self.supplierQueues:
             return False
@@ -844,8 +862,8 @@ class IOThrottle:
 
     def HasBackupIDInSendQueue(self, supplierIDURL, backupID):
         """
-        Same to ``HasPacketInSendQueue()``, but looks for packets for the whole backup,
-        not just a single packet .
+        Same to ``HasPacketInSendQueue()``, but looks for packets for the whole
+        backup, not just a single packet .
         """
         if supplierIDURL not in self.supplierQueues:
             return False
@@ -856,8 +874,8 @@ class IOThrottle:
 
     def HasBackupIDInRequestQueue(self, supplierIDURL, backupID):
         """
-        Same to ``HasPacketInRequestQueue()``, but looks for packets for the whole backup,
-        not just a single packet .
+        Same to ``HasPacketInRequestQueue()``, but looks for packets for the
+        whole backup, not just a single packet .
         """
         if supplierIDURL not in self.supplierQueues:
             return False
@@ -868,7 +886,8 @@ class IOThrottle:
 
     def IsBackupSending(self, backupID):
         """
-        Return True if some packets for given backup is found in the sending queues.
+        Return True if some packets for given backup is found in the sending
+        queues.
         """
         for supplierIDURL in self.supplierQueues.keys():
             if self.HasBackupIDInSendQueue(supplierIDURL, backupID):
@@ -877,7 +896,8 @@ class IOThrottle:
 
     def IsBackupRequesting(self, backupID):
         """
-        Return True if some packets for given backup is found in the request queues.
+        Return True if some packets for given backup is found in the request
+        queues.
         """
         for supplierIDURL in self.supplierQueues.keys():
             if self.HasBackupIDInRequestQueue(supplierIDURL, backupID):
@@ -886,9 +906,11 @@ class IOThrottle:
 
     def OkToSend(self, supplierIDURL):
         """
-        The maximum size of any queue is limited, if this limit is not reached yet
-        you can put more files to send to that remote user.
-        This method return True if you can put more outgoing files to that man in the ``throttle()``.
+        The maximum size of any queue is limited, if this limit is not reached
+        yet you can put more files to send to that remote user.
+
+        This method return True if you can put more outgoing files to
+        that man in the ``throttle()``.
         """
         if supplierIDURL not in self.supplierQueues:
             # no queue opened to this man, so the queue is ready

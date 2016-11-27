@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_rebuilder
+.. module:: backup_rebuilder.
 
 .. raw:: html
 
@@ -57,7 +57,6 @@ EVENTS:
     * :red:`requests-sent`
     * :red:`start`
     * :red:`timer-1sec`
-
 """
 
 import os
@@ -147,6 +146,7 @@ class BackupRebuilder(automat.Automat):
     def state_changed(self, oldstate, newstate, event, arg):
         """
         This method is called every time when my state is changed.
+
         Need to notify backup_monitor() machine about my new state.
         """
         # global_state.set_global_state('REBUILD ' + newstate)
@@ -628,6 +628,7 @@ class BackupRebuilder(automat.Automat):
 def AddBackupsToWork(backupIDs):
     """
     Put backups to the working queue, ``backupIDs`` is a list of backup IDs.
+
     They will be reconstructed one by one.
     """
     global _BackupIDsQueue
@@ -645,6 +646,7 @@ def RemoveBackupToWork(backupID):
 
 def IsBackupNeedsWork(backupID):
     """
+    
     """
     global _BackupIDsQueue
     return backupID in _BackupIDsQueue
@@ -660,8 +662,8 @@ def RemoveAllBackupsToWork():
 
 def SetStoppedFlag():
     """
-    To stop backup_rebuilder() you need to call this method,
-    it will set ``_StoppedFlag`` to True.
+    To stop backup_rebuilder() you need to call this method, it will set
+    ``_StoppedFlag`` to True.
     """
     global _StoppedFlag
     _StoppedFlag = True

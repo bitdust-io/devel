@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: installer
+.. module:: installer.
+
 .. role:: red
 
 .. raw:: html
@@ -101,6 +102,7 @@ _Installer = None
 
 def IsExist():
     """
+    
     """
     global _Installer
     return _Installer is not None

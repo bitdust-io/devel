@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: coins_io
+..
 
+module:: coins_io
 """
 
 #------------------------------------------------------------------------------
@@ -62,7 +63,8 @@ from userid import my_id
 
 def storage_contract_open(customer_idurl, duration, amount, price=1.0):
     """
-    + signer: idurl of this node
+    + signer: idurl of this node.
+
     + partner: idurl of given customer
     + type: sold_storage (can be also : buy_cpu, sell_traffic, buy_hosting, etc.)
     + duration: seconds

@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: proxy_interface
+.. module:: proxy_interface.
 
 This is a client side part of the PROXY transport plug-in.
 """
@@ -65,6 +65,7 @@ class GateInterface():
 
     def init(self, xml_rpc_url_or_object):
         """
+        
         """
         global _GateProxy
         if _Debug:
@@ -82,6 +83,7 @@ class GateInterface():
 
     def shutdown(self):
         """
+        
         """
         if _Debug:
             lg.out(4, 'proxy_interface.shutdown')
@@ -97,6 +99,7 @@ class GateInterface():
 
     def connect(self, options):
         """
+        
         """
         if _Debug:
             lg.out(4, 'proxy_interface.connect %s' % str(options))
@@ -114,6 +117,7 @@ class GateInterface():
 
     def disconnect(self):
         """
+        
         """
         if _Debug:
             lg.out(4, 'proxy_interface.disconnect')
@@ -132,6 +136,7 @@ class GateInterface():
 
     def build_contacts(self, id_obj):
         """
+        
         """
         from transport.proxy import proxy_receiver
         if not proxy_receiver.GetRouterIdentity():
@@ -221,11 +226,13 @@ class GateInterface():
 
     def list_sessions(self):
         """
+        
         """
         return []
 
     def list_streams(self, sorted_by_time=True):
         """
+        
         """
         return []
 
@@ -262,6 +269,7 @@ def interface_disconnected(result=None):
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
     """
+    
     """
     if proxy():
         return proxy().callRemote('register_file_sending', 'proxy', '%s:%d' % host, receiver_idurl, filename, size, description)
@@ -271,6 +279,7 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     """
+    
     """
     if proxy():
         return proxy().callRemote('register_file_receiving', 'proxy', '%s:%d' % host, sender_idurl, filename, size)
@@ -280,6 +289,7 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
     """
+    
     """
     if proxy():
         return proxy().callRemote('unregister_file_sending', transfer_id, status, size, error_message)
@@ -289,6 +299,7 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
     """
+    
     """
     if proxy():
         return proxy().callRemote('unregister_file_receiving', transfer_id, status, size, error_message)
@@ -298,6 +309,7 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
     """
+    
     """
     if proxy():
         return proxy().callRemote('cancelled_file_sending', 'proxy', '%s:%d' % host, filename, size, description, error_message)

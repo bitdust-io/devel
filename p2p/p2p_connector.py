@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: p2p_connector
+.. module:: p2p_connector.
 
 .. raw:: html
 
@@ -171,6 +171,7 @@ def Destroy():
 
 class P2PConnector(automat.Automat):
     """
+    
     """
 
     timers = {

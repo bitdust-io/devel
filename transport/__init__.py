@@ -23,7 +23,7 @@
 #
 
 """
-.. module:: transport
+.. module:: transport.
 
 Contains modules to provide network communications over several protocols.
 

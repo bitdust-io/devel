@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: eccmap
+.. module:: eccmap.
 
 This object holds one error correcting code map.
 When creating an object we give a filename to load from or a map name to load from memory.
@@ -205,6 +205,7 @@ def Current():
 def SuppliersNumbers():
     """
     Return a list of valid suppliers numbers.
+
     This is: [2, 4, 7, 13, 18, 26, 64]
     """
     global __suppliers_numbers
@@ -241,7 +242,9 @@ def GetEccMapSuppliersNumber(eccmapname):
 
 def GetEccMapData(name):
     """
-    This return a matrix of that ecc map. You can see this is in the top of the file.
+    This return a matrix of that ecc map.
+
+    You can see this is in the top of the file.
     """
     global __eccmaps
     return __eccmaps.get(name, None)
@@ -260,6 +263,7 @@ def GetCorrectableErrors(suppliers_number):
 def ReadTextFile(filename):
     """
     Read text file and return its content.
+
     Also replace line endings: \r\n with \n - convert to Linux file format.
     """
     if not os.path.isfile(filename):
@@ -325,6 +329,7 @@ class eccmap:
     def CalcCorrectableErrors(self, filename):
         """
         We can fix at least this many errors (probably more for big nums).
+
         All our codes can handle at least one error.
         """
         basename = os.path.basename(filename)
@@ -375,7 +380,8 @@ class eccmap:
 
     def loadfromfile(self, fname):
         """
-        This is old method, I decide to move all constants into the Python code.
+        This is old method, I decide to move all constants into the Python
+        code.
         """
         # lg.out(10, "eccmap.loadfromfile with " + fname)
         if os.path.exists(fname):
@@ -457,7 +463,9 @@ class eccmap:
     def Fixable(self, DataSegs, ParitySegs):
         """
         Check is reconstruction is possible.
-        Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is don't have 1 is have.
+
+        Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is
+        don't have 1 is have.
         """
         stillMissing = 0
         for i in range(self.datasegments):
@@ -487,7 +495,9 @@ class eccmap:
     def CanMakeProgress(self, DataSegs, ParitySegs):
         """
         Another method to check if we can do some data reconstruction.
-        Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is don't have 1 is have.
+
+        Lists are 1 for Data and Parity, lists are [0,1,1,1,0...] 0 is
+        don't have 1 is have.
         """
         for paritynum in range(self.paritysegments):  # foreach parity
             if ParitySegs[paritynum] == 1:      # If parity is not missing (so we can use it)
@@ -520,9 +530,12 @@ class eccmap:
 
     def GetDataFixPath(self, DataSegs, ParitySegs, DataSegNum):
         """
-        Given a missing segment number (DataSegNum) and a list of available Data Segments and Parity Segments.
-        Identify which Parity to use to rebuild the missing Data Segment, return the parity segment number and
-        the map of data segments in that parity.
+        Given a missing segment number (DataSegNum) and a list of available
+        Data Segments and Parity Segments.
+
+        Identify which Parity to use to rebuild the missing Data
+        Segment, return the parity segment number and the map of data
+        segments in that parity.
         """
         #out(14, 'eccmap.GetDataFixPath %s %s %s' % (str(DataSegNum), str(DataSegs), str(ParitySegs)))
         bestParityNum = -1

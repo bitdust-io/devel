@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: accouning
+.. module:: accouning.
 
 Various methods to keep track of:
 
@@ -34,7 +34,6 @@ Various methods to keep track of:
     + used space
     + free space
     + consumed space
-
 """
 
 #------------------------------------------------------------------------------

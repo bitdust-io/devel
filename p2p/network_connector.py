@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: network_connector
+.. module:: network_connector.
+
 .. role:: red
 
 .. raw:: html
@@ -61,7 +62,6 @@ EVENTS:
     * :red:`timer-1hour`
     * :red:`timer-5sec`
     * :red:`upnp-done`
-
 """
 
 #------------------------------------------------------------------------------
@@ -367,6 +367,7 @@ class NetworkConnector(automat.Automat):
 
     def doSetDown(self, arg):
         """
+        
         """
         if _Debug:
             lg.out(_DebugLevel, 'network_connector.doSetDown')

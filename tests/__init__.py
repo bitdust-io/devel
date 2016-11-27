@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: tests
+..
 
+module:: tests
 """

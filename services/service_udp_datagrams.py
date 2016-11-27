@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_udp_datagrams
+..
 
+module:: service_udp_datagrams
 """
 
 from services.local_service import LocalService

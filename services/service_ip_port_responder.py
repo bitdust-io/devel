@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: service_ip_port_responder
+..
 
+module:: service_ip_port_responder
 """
 
 from services.local_service import LocalService

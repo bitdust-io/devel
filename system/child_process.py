@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: child_process
+.. module:: child_process.
 
 BitDust executes periodically several slaves:
     - bppipe
@@ -138,7 +138,8 @@ def kill_process(process):
 
 def kill_child(child_name):
     """
-    Search (by "pid") for BitDust child process with name ``child_name`` and tries to kill it.
+    Search (by "pid") for BitDust child process with name ``child_name`` and
+    tries to kill it.
     """
     killed = False
     for pid in bpio.find_process([child_name + '.']):
@@ -152,7 +153,9 @@ def kill_child(child_name):
 
 def pipe(cmdargs):
     """
-    Execute a process in different way, create a Pipe to do read/write operations with child process.
+    Execute a process in different way, create a Pipe to do read/write
+    operations with child process.
+
     See ``lib.nonblocking`` module.
     """
     lg.out(6, "child_process.pipe %s" % str(cmdargs))
@@ -184,6 +187,7 @@ def pipe(cmdargs):
 
 def detach(cmdargs):
     """
+    
     """
     lg.out(2, "child_process.detach %s" % str(cmdargs))
     try:

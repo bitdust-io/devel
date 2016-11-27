@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Copyright 2012 Tadeas Moravec
+Copyright 2012 Tadeas Moravec.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ import jsonrpc
 
 class JSONRPCServer(resource.Resource):
     """
-    JSON-RPC server. Subclass this, implement your own methods and publish
-    this as t.w.r.Resource using t.w.s.Site.
+    JSON-RPC server. Subclass this, implement your own methods and publish this
+    as t.w.r.Resource using t.w.s.Site.
 
     It will expose all methods that start with 'jsonrpc_' (without the
     'jsonrpc_' part).
@@ -109,8 +109,8 @@ class JSONRPCServer(resource.Resource):
 
     def render(self, request):
         """
-        This is the 'main' RPC method. This will always be called when
-        a request arrives and it's up to this method to parse the request and
+        This is the 'main' RPC method. This will always be called when a
+        request arrives and it's up to this method to parse the request and
         dispatch it further.
 
         @type request: t.w.s.Request

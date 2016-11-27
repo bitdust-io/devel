@@ -21,8 +21,9 @@
 # Please contact us if you have any questions at bitdust.io@gmail.com
 
 """
-.. module:: utime
+..
 
+module:: utime
 """
 
 
@@ -42,22 +43,32 @@ def local_timestamp(d):
 
 
 def datetime_to_sec1970(dt):
-    """Converts datetime object to seconds since 1970 year."""
+    """
+    Converts datetime object to seconds since 1970 year.
+    """
     return int(time.mktime(dt.timetuple()))
 
 
 def sec1970_to_datetime_utc(seconds=-1):
-    """Converts seconds since 1970 year to datetime object in UTC form."""
+    """
+    Converts seconds since 1970 year to datetime object in UTC form.
+    """
     if seconds == -1:
         seconds = utcnow_to_sec1970()
     return datetime.datetime.utcfromtimestamp(seconds)
 
 
 def utcnow_to_sec1970():
-    """Returns how much seconds passed since 1970 till current moment depend on UTC timezone."""
+    """
+    Returns how much seconds passed since 1970 till current moment depend on
+    UTC timezone.
+    """
     return datetime_to_sec1970(datetime.datetime.utcnow())
 
 
 def get_sec1970():
-    """Return how much seconds passed since 1970 using time.time() method, seems work in local time."""
+    """
+    Return how much seconds passed since 1970 using time.time() method, seems
+    work in local time.
+    """
     return int(time.time())

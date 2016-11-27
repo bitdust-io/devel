@@ -25,11 +25,11 @@
 #
 
 """
-.. module:: tmpfile
+.. module:: tmpfile.
 
-Keep track of temporary files created in the program.
-The temp folder is placed in the BitDust data directory.
-All files are divided into several sub folders.
+Keep track of temporary files created in the program. The temp folder is
+placed in the BitDust data directory. All files are divided into several
+sub folders.
 """
 
 import os
@@ -92,10 +92,11 @@ _SubDirs = {
 def init(temp_dir_path=''):
     """
     Must be called before all other things here.
-        - check existence and access mode of temp folder
-        - creates a needed sub folders
-        - call ``startup_clean()``
-        - starts collector task to call method ``collect()`` every 5 minutes
+
+    - check existence and access mode of temp folder
+    - creates a needed sub folders
+    - call ``startup_clean()``
+    - starts collector task to call method ``collect()`` every 5 minutes
     """
     lg.out(4, 'tmpfile.init')
     global _TempDirPath
@@ -168,7 +169,8 @@ def subdir(name):
 
 def register(filepath):
     """
-    You can create a temp file in another place and call this method to be able to hadle this file later.
+    You can create a temp file in another place and call this method to be able
+    to hadle this file later.
     """
     global _FilesDict
     subdir, filename = os.path.split(filepath)
@@ -180,7 +182,9 @@ def register(filepath):
 
 def make(name, extension='', prefix=''):
     """
-    Make a new file under sub folder ``name`` and return a tuple of it's file descriptor and path.
+    Make a new file under sub folder ``name`` and return a tuple of it's file
+    descriptor and path.
+
     .. warning::    Remember you need to close the file descriptor by your own.
     The ``tmpfile`` module will remove it later - do not worry.
     This is a job for our collector.
@@ -206,7 +210,9 @@ def make(name, extension='', prefix=''):
 
 def erase(name, filename, why='no reason'):
     """
-    However you can remove not needed file immediately, this is a good way also.
+    However you can remove not needed file immediately, this is a good way
+    also.
+
     But outside of this module you better use method ``throw_out``.
     """
     global _FilesDict
@@ -236,7 +242,8 @@ def erase(name, filename, why='no reason'):
 
 def throw_out(filepath, why='dont know'):
     """
-    A more smart way to remove not needed temporary file, accept a full ``filepath``.
+    A more smart way to remove not needed temporary file, accept a full
+    ``filepath``.
     """
     global _FilesDict
     global _SubDirs
@@ -282,6 +289,7 @@ def collect():
 def startup_clean():
     """
     At startup we want to scan all sub folders and remove the old files.
+
     We will get creation time with built-in ``os.stat`` method.
     """
     global _TempDirPath

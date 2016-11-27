@@ -27,9 +27,10 @@
 #
 
 """
-.. module:: os_windows_update
+.. module:: os_windows_update.
 
-A code for Windows platforms to check for updates and download latest binaries.
+A code for Windows platforms to check for updates and download latest
+binaries.
 """
 
 import os

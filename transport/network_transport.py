@@ -26,7 +26,8 @@
 #
 
 """
-.. module:: network_transport
+.. module:: network_transport.
+
 .. role:: red
 BitDust network_transport() Automat
 
@@ -73,7 +74,8 @@ import gateway
 
 class NetworkTransport(automat.Automat):
     """
-    This class implements all the functionality of the ``network_transport()`` state machine.
+    This class implements all the functionality of the ``network_transport()``
+    state machine.
     """
 
     fast = True
@@ -96,12 +98,14 @@ class NetworkTransport(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        This method intended to catch the moment when automat's state were changed.
+        This method intended to catch the moment when automat's state were
+        changed.
         """
         if self.state_changed_callback:
             self.state_changed_callback(self, oldstate, newstate)

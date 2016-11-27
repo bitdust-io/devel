@@ -22,7 +22,8 @@
 
 
 """
-.. module:: proxy_sender
+.. module:: proxy_sender.
+
 .. role:: red
 
 BitDust proxy_sender() Automat
@@ -102,13 +103,14 @@ def A(event=None, arg=None):
 
 class ProxySender(automat.Automat):
     """
-    This class implements all the functionality of the ``proxy_sender()`` state machine.
+    This class implements all the functionality of the ``proxy_sender()`` state
+    machine.
     """
 
     def init(self):
         """
-        Method to initialize additional variables and flags
-        at creation phase of proxy_sender machine.
+        Method to initialize additional variables and flags at creation phase
+        of proxy_sender machine.
         """
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -118,13 +120,14 @@ class ProxySender(automat.Automat):
 
     def state_not_changed(self, curstate, event, arg):
         """
-        This method intended to catch the moment when some event was fired in the proxy_sender
-        but its state was not changed.
+        This method intended to catch the moment when some event was fired in
+        the proxy_sender but its state was not changed.
         """
 
     def A(self, event, arg):
         """
-        The state machine code, generated using `visio2python <http://code.google.com/p/visio2python/>`_ tool.
+        The state machine code, generated using `visio2python
+        <http://code.google.com/p/visio2python/>`_ tool.
         """
         #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
@@ -235,6 +238,7 @@ class ProxySender(automat.Automat):
 
     def _on_outbox_packet(self, outpacket, wide, callbacks, target=None, route=None):
         """
+        
         """
         if not driver.is_started('service_proxy_transport'):
             if _Debug:

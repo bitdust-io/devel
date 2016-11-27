@@ -25,10 +25,10 @@
 #
 
 """
-.. module:: local_fs
+.. module:: local_fs.
 
-This module should be able to provide access to local file system.
-The GUI needs to show all existing local files, just like in Explorer.
+This module should be able to provide access to local file system. The
+GUI needs to show all existing local files, just like in Explorer.
 """
 
 import os

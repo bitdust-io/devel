@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_tar
+.. module:: backup_tar.
 
 We want a pipe output or input so we don't need to store intermediate data.
 Our backup code only takes data from this pipe when it is ready and form blocks one by one.
@@ -62,7 +62,9 @@ from system import child_process
 def backuptar(directorypath, recursive_subfolders=True, compress=None):
     """
     Returns file descriptor for process that makes tar archive.
-    In other words executes a child process and create a Pipe to communicate with it.
+
+    In other words executes a child process and create a Pipe to
+    communicate with it.
     """
     if not bpio.pathIsDir(directorypath):
         lg.out(1, 'backup_tar.backuptar ERROR %s not found' % directorypath)

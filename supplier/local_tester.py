@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: local_tester
+.. module:: local_tester.
 
 Checks that customer packets on the local disk still have good signatures.
 

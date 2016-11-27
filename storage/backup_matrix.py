@@ -25,7 +25,7 @@
 #
 
 """
-.. module:: backup_matrix
+.. module:: backup_matrix.
 
 The software stores all backup IDs in the memory.
 Also we need to keep track of every piece of data.
@@ -98,6 +98,7 @@ _RepaintingTaskDelay = 2.0
 def init():
     """
     Call this method before all others here. Prepare several things here:
+
     * start a loop to repaint the GUI when needed
     * scan local files and build the "local" matrix
     * read latest (stored on local disk) ListFiles for suppliers to build "remote" matrix
@@ -120,9 +121,8 @@ def shutdown():
 
 def remote_files():
     """
-    This is a "remote" matrix.
-    Here is stored info for all remote files (on suppliers HDD's)
-    stored in dictionary. The values are integers::
+    This is a "remote" matrix. Here is stored info for all remote files (on
+    suppliers HDD's) stored in dictionary. The values are integers::
 
       -1 : this mean file is missing
       0  : no info comes yet
@@ -146,7 +146,8 @@ def remote_files():
 
 def remote_max_block_numbers():
     """
-    This is a dictionary to store max block number for every remote backup, by backup ID.
+    This is a dictionary to store max block number for every remote backup, by
+    backup ID.
     """
     global _RemoteMaxBlockNumbers
     return _RemoteMaxBlockNumbers
@@ -155,8 +156,9 @@ def remote_max_block_numbers():
 def local_files():
     """
     This is a "local" matrix, same structure like ``remote_files()``.
-    Keeps info for all local files stored on your HDD.
-    The values are integers: 0 or 1 to know that local file exists or not.
+
+    Keeps info for all local files stored on your HDD. The values are
+    integers: 0 or 1 to know that local file exists or not.
     """
     global _LocalFiles
     return _LocalFiles
@@ -173,8 +175,9 @@ def local_max_block_numbers():
 def local_backup_size():
     """
     The pieces can have different sizes.
-    To get the size of the particular backup need to count size of all pieces.
-    Here is a dictionary of counters for every backup.
+
+    To get the size of the particular backup need to count size of all
+    pieces. Here is a dictionary of counters for every backup.
     """
     global _LocalBackupSize
     return _LocalBackupSize
@@ -185,8 +188,10 @@ def local_backup_size():
 def GetActiveArray():
     """
     Loops all suppliers and returns who is alive at the moment.
-    Return a list with integers: 0 for offline suppler and 1 if he is available right now.
-    Uses ``p2p.contact_status.isOnline()`` to see the current state of supplier.
+
+    Return a list with integers: 0 for offline suppler and 1 if he is
+    available right now. Uses ``p2p.contact_status.isOnline()`` to see
+    the current state of supplier.
     """
     from p2p import contact_status
     activeArray = [0] * contactsdb.num_suppliers()
@@ -203,8 +208,8 @@ def GetActiveArray():
 
 def SuppliersChangedNumbers(oldSupplierList):
     """
-    Return list of positions of changed suppliers,
-    say if suppliers 1 and 3 were changed it should return [1,3].
+    Return list of positions of changed suppliers, say if suppliers 1 and 3
+    were changed it should return [1,3].
     """
     changedList = []
     for i in xrange(len(oldSupplierList)):
@@ -232,8 +237,8 @@ def SaveLatestRawListFiles(idurl, listFileText):
 
 def ReadRawListFiles(supplierNum, listFileText):
     """
-    Read ListFiles packet for given supplier and build a "remote" matrix.
-    All lines are something like that::
+    Read ListFiles packet for given supplier and build a "remote" matrix. All
+    lines are something like that::
 
       Findex 5456
       D0 -1
@@ -404,7 +409,8 @@ def ReadRawListFiles(supplierNum, listFileText):
 
 def ReadLatestRawListFiles():
     """
-    Call ``ReadRawListFiles()`` for every local file we have on hands and build whole "remote" matrix.
+    Call ``ReadRawListFiles()`` for every local file we have on hands and build
+    whole "remote" matrix.
     """
     lg.out(4, 'backup_matrix.ReadLatestRawListFiles')
     for idurl in contactsdb.suppliers():
@@ -470,8 +476,9 @@ def ReadLocalFiles():
 def RemoteFileReport(backupID, blockNum, supplierNum, dataORparity, result):
     """
     Writes info for a single piece of data into "remote" matrix.
-    May be called when you got an Ack packet from remote supplier
-    after you sent him some Data packet .
+
+    May be called when you got an Ack packet from remote supplier after
+    you sent him some Data packet .
     """
     blockNum = int(blockNum)
     supplierNum = int(supplierNum)
@@ -607,8 +614,10 @@ def LocalBlockReport(backupID, blockNumber, result):
 def ScanMissingBlocks(backupID):
     """
     Finally here is some real logic.
-    This will compare both matrixes to find missing pieces on remote suppliers.
-    Should return a list of numbers of missed blocks for given backup.
+
+    This will compare both matrixes to find missing pieces on remote
+    suppliers. Should return a list of numbers of missed blocks for
+    given backup.
     """
     missingBlocks = set()
     localMaxBlockNum = local_max_block_numbers().get(backupID, -1)
@@ -672,8 +681,11 @@ def ScanMissingBlocks(backupID):
 
 def ScanBlocksToRemove(backupID, check_all_suppliers=True):
     """
-    This method compare both matrixes and found pieces which is present on both sides.
-    If remote supplier got that file it can be removed from the local HDD.
+    This method compare both matrixes and found pieces which is present on both
+    sides.
+
+    If remote supplier got that file it can be removed from the local
+    HDD.
     """
     from customer import io_throttle
     lg.out(10, 'backup_matrix.ScanBlocksToRemove for %s' % backupID)
@@ -840,7 +852,8 @@ def ClearRemoteInfo():
 
 def ClearSupplierRemoteInfo(supplierNum):
     """
-    Clear only "single column" in the "remote" matrix corresponding to given supplier.
+    Clear only "single column" in the "remote" matrix corresponding to given
+    supplier.
     """
     files = 0
     for backupID in remote_files().keys():
@@ -864,7 +877,8 @@ def ClearSupplierRemoteInfo(supplierNum):
 
 def GetBackupStats(backupID):
     """
-    Collect needed info from "remote" matrix and create a detailed report about given backup.
+    Collect needed info from "remote" matrix and create a detailed report about
+    given backup.
     """
     if backupID not in remote_files():
         return 0, 0, [(0, 0)] * contactsdb.num_suppliers()
@@ -896,10 +910,10 @@ def GetBackupStats(backupID):
 
 def GetBackupLocalStats(backupID):
     """
-    Provide detailed info about local files for that backup.
-    Return a tuple::
+    Provide detailed info about local files for that backup. Return a tuple::
 
-      (totalPercent, totalNumberOfFiles, totalSize, maxBlockNum, statsArray)
+    (totalPercent, totalNumberOfFiles, totalSize, maxBlockNum,
+    statsArray)
     """
     # ??? maxBlockNum = local_max_block_numbers().get(backupID, -1)
     maxBlockNum = GetKnownMaxBlockNum(backupID)
@@ -958,8 +972,8 @@ def GetBackupBlocksAndPercent(backupID):
 
 def GetBackupRemoteStats(backupID, only_available_files=True):
     """
-    This method found a most "weak" block of that backup,
-    this is a block which pieces is kept by less suppliers from all other blocks.
+    This method found a most "weak" block of that backup, this is a block which
+    pieces is kept by less suppliers from all other blocks.
 
     This is needed to detect the whole backup availability.
     Because if you loose at least one block of the backup - you will loose the whole backup.!
@@ -1033,6 +1047,7 @@ def GetBackupLocalArray(backupID):
 def GetBackupIDs(remote=True, local=False, sorted_ids=False):
     """
     Return a list of backup IDs which is present in the matrixes.
+
     You can choose which matrix to use.
     """
     s = set()
@@ -1055,6 +1070,7 @@ def GetKnownMaxBlockNum(backupID):
 
 def GetLocalMatrix(backupID, blockNum):
     """
+    
     """
     if backupID not in local_files():
         return {'D': [0] * contactsdb.num_suppliers(),
@@ -1067,7 +1083,8 @@ def GetLocalMatrix(backupID, blockNum):
 
 def GetLocalDataArray(backupID, blockNum):
     """
-    Get "local" info for a single block of given backup, this is for "Data" surface.
+    Get "local" info for a single block of given backup, this is for "Data"
+    surface.
     """
     if backupID not in local_files():
         return [0] * contactsdb.num_suppliers()
@@ -1078,7 +1095,8 @@ def GetLocalDataArray(backupID, blockNum):
 
 def GetLocalParityArray(backupID, blockNum):
     """
-    Get "local" info for a single block of given backup, this is for "Parity" surface.
+    Get "local" info for a single block of given backup, this is for "Parity"
+    surface.
     """
     if backupID not in local_files():
         return [0] * contactsdb.num_suppliers()
@@ -1089,6 +1107,7 @@ def GetLocalParityArray(backupID, blockNum):
 
 def GetRemoteMatrix(backupID, blockNum):
     """
+    
     """
     if backupID not in remote_files():
         return {'D': [0] * contactsdb.num_suppliers(),
@@ -1101,7 +1120,8 @@ def GetRemoteMatrix(backupID, blockNum):
 
 def GetRemoteDataArray(backupID, blockNum):
     """
-    Get "remote" info for a single block of given backup, this is for "Data" surface.
+    Get "remote" info for a single block of given backup, this is for "Data"
+    surface.
     """
     if backupID not in remote_files():
         return [0] * contactsdb.num_suppliers()
@@ -1112,7 +1132,8 @@ def GetRemoteDataArray(backupID, blockNum):
 
 def GetRemoteParityArray(backupID, blockNum):
     """
-    Get "remote" info for a single block of given backup, this is for "Parity" surface.
+    Get "remote" info for a single block of given backup, this is for "Parity"
+    surface.
     """
     if backupID not in remote_files():
         return [0] * contactsdb.num_suppliers()

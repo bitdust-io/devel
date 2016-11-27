@@ -26,11 +26,11 @@
 #
 
 """
-.. module:: schedule
+.. module:: schedule.
 
-The code here is intended to operate with scheduled events.
-User should be able to set a schedule to run backups at given moments.
-At the moment all this code is disabled.
+The code here is intended to operate with scheduled events. User should
+be able to set a schedule to run backups at given moments. At the moment
+all this code is disabled.
 """
 
 import os
@@ -68,7 +68,7 @@ all_labels = {
 
 class Schedule:
     """
-
+    
     """
     types = all_types
     labels = all_labels

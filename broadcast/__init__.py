@@ -21,6 +21,7 @@
 #
 
 """
-.. module:: broadcast
+..
 
+module:: broadcast
 """

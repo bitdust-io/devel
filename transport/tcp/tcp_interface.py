@@ -26,10 +26,10 @@
 #
 
 """
-.. module:: tcp_interface
+.. module:: tcp_interface.
 
-This is a client side part of the TCP plug-in.
-The server side part is placed in the file tcp_process.py.
+This is a client side part of the TCP plug-in. The server side part is
+placed in the file tcp_process.py.
 """
 
 #------------------------------------------------------------------------------
@@ -75,6 +75,7 @@ class GateInterface():
 
     def init(self, xml_rpc_url_or_object):
         """
+        
         """
         global _GateProxy
         if _Debug:
@@ -88,6 +89,7 @@ class GateInterface():
 
     def shutdown(self):
         """
+        
         """
         if _Debug:
             lg.out(4, 'tcp_interface.shutdown')
@@ -100,6 +102,7 @@ class GateInterface():
 
     def connect(self, options):
         """
+        
         """
         if _Debug:
             lg.out(4, 'tcp_interface.connect %s' % str(options))
@@ -108,6 +111,7 @@ class GateInterface():
 
     def disconnect(self):
         """
+        
         """
         if _Debug:
             lg.out(4, 'tcp_interface.disconnect')
@@ -117,6 +121,7 @@ class GateInterface():
 
     def build_contacts(self, id_obj):
         """
+        
         """
         result = []
         nowip = misc.readExternalIP()
@@ -133,6 +138,7 @@ class GateInterface():
 
     def verify_contacts(self, id_obj):
         """
+        
         """
         nowip = misc.readExternalIP()
         tcp_contact = 'tcp://%s:%s' % (nowip, str(settings.getTCPPort()))
@@ -150,6 +156,7 @@ class GateInterface():
 
     def send_file(self, remote_idurl, filename, host, description=''):
         """
+        
         """
         host = host.split(':')
         host = (host[0], int(host[1]))
@@ -157,6 +164,7 @@ class GateInterface():
 
     def send_file_single(self, remote_idurl, filename, host, description=''):
         """
+        
         """
         host = host.split(':')
         host = (host[0], int(host[1]))
@@ -164,31 +172,37 @@ class GateInterface():
 
     def connect_to(self, host):
         """
+        
         """
         return tcp_node.connect_to(host)
 
     def disconnect_from(self, host):
         """
+        
         """
         return tcp_node.disconnect_from(host)
 
     def cancel_file_sending(self, transferID):
         """
+        
         """
         return tcp_node.cancel_file_sending(transferID)
 
     def cancel_file_receiving(self, transferID):
         """
+        
         """
         return tcp_node.cancel_file_receiving(transferID)
 
     def cancel_outbox_file(self, host, filename):
         """
+        
         """
         return tcp_node.cancel_outbox_file(host, filename)
 
     def list_sessions(self):
         """
+        
         """
         result = []
         for opened_connection in tcp_node.opened_connections().values():
@@ -200,6 +214,7 @@ class GateInterface():
 
     def list_streams(self, sorted_by_time=True):
         """
+        
         """
         result = []
         result.extend(tcp_node.list_input_streams(sorted_by_time))
@@ -239,6 +254,7 @@ def interface_disconnected(result=None):
 
 def interface_register_file_sending(host, receiver_idurl, filename, size=0, description=''):
     """
+    
     """
     if proxy():
         return proxy().callRemote('register_file_sending', 'tcp', '%s:%d' % host, receiver_idurl, filename, size, description)
@@ -248,6 +264,7 @@ def interface_register_file_sending(host, receiver_idurl, filename, size=0, desc
 
 def interface_register_file_receiving(host, sender_idurl, filename, size=0):
     """
+    
     """
     if proxy():
         return proxy().callRemote('register_file_receiving', 'tcp', '%s:%d' % host, sender_idurl, filename, size)
@@ -257,6 +274,7 @@ def interface_register_file_receiving(host, sender_idurl, filename, size=0):
 
 def interface_unregister_file_sending(transfer_id, status, size=0, error_message=None):
     """
+    
     """
     if proxy():
         return proxy().callRemote('unregister_file_sending', transfer_id, status, size, error_message)
@@ -266,6 +284,7 @@ def interface_unregister_file_sending(transfer_id, status, size=0, error_message
 
 def interface_unregister_file_receiving(transfer_id, status, size=0, error_message=None):
     """
+    
     """
     if proxy():
         return proxy().callRemote('unregister_file_receiving', transfer_id, status, size, error_message)
@@ -275,6 +294,7 @@ def interface_unregister_file_receiving(transfer_id, status, size=0, error_messa
 
 def interface_cancelled_file_sending(host, filename, size=0, description=None, error_message=None):
     """
+    
     """
     if proxy():
         return proxy().callRemote('cancelled_file_sending', 'tcp', '%s:%d' % host, filename, size, description, error_message)

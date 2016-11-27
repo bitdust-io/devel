@@ -26,7 +26,7 @@
 #
 
 """
-.. module:: contact_status
+.. module:: contact_status.
 
 .. raw:: html
 
@@ -52,7 +52,6 @@ EVENTS:
     * :red:`sent-done`
     * :red:`sent-failed`
     * :red:`timer-20sec`
-
 """
 
 #------------------------------------------------------------------------------
@@ -140,7 +139,8 @@ def shutdown():
 
 def isKnown(idurl):
     """
-    Return `True` if state machine contact_status() already exists for this user.
+    Return `True` if state machine contact_status() already exists for this
+    user.
     """
     if idurl in [None, 'None', '']:
         return False
@@ -238,7 +238,8 @@ def getStatusIcon(idurl):
 
 def listOfflineSuppliers():
     """
-    Loops all suppliers and check their state, return a list of those with state OFFLINE.
+    Loops all suppliers and check their state, return a list of those with
+    state OFFLINE.
     """
     result = []
     for idurl in contactsdb.suppliers():
@@ -251,7 +252,8 @@ def listOfflineSuppliers():
 
 def listOfflineCustomers():
     """
-    Loops all customers and check their state, return a list of those with state OFFLINE.
+    Loops all customers and check their state, return a list of those with
+    state OFFLINE.
     """
     result = []
     for idurl in contactsdb.customers():
@@ -412,8 +414,9 @@ class ContactStatus(automat.Automat):
 
 def OutboxStatus(pkt_out, status, error=''):
     """
-    This method is called when raised a status report after
-    sending a packet to remote peer.
+    This method is called when raised a status report after sending a packet to
+    remote peer.
+
     If packet sending was failed - user seems to be OFFLINE.
     """
     if pkt_out.remote_idurl == my_id.getLocalID():
@@ -445,6 +448,7 @@ def Inbox(newpacket, info, status, message):
 def Outbox(pkt_out):
     """
     Called when some ``packet`` is placed in the sending queue.
+
     This packet can be our Identity packet - this is a sort of PING operation
     to try to connect with that man.
     """
@@ -458,7 +462,9 @@ def Outbox(pkt_out):
 
 def FileSent(workitem, args):
     """
-    This is called when transport_control starts the file transfer to some peer.
+    This is called when transport_control starts the file transfer to some
+    peer.
+
     Used to count how many times you PING him.
     """
     if workitem.remoteid == my_id.getLocalID():
@@ -469,6 +475,7 @@ def FileSent(workitem, args):
 def PacketSendingTimeout(remoteID, packetID):
     """
     Called from ``p2p.io_throttle`` when some packet is timed out.
+
     Right now this do nothing, state machine ignores that event.
     """
     if remoteID == my_id.getLocalID():

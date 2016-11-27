@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Copyright 2012 Tadeas Moravec
+Copyright 2012 Tadeas Moravec.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ ID_MAX = 2 ** 31 - 1  # 32-bit maxint
 
 def jdumps(obj):
     """
-    Encode JSON no matter what library did we import
+    Encode JSON no matter what library did we import.
 
     @type obj: mixed
     @param obj: Whatever we want to encode
@@ -74,7 +74,7 @@ def jdumps(obj):
 
 def jloads(json_string):
     """
-    Decode JSON no matter what library did we import
+    Decode JSON no matter what library did we import.
 
     @type json_string: str
     @param json_string: JSON to be decoded
@@ -364,7 +364,7 @@ def parseError():
 
 class JSONRPCError(Exception):
     """
-    JSON-RPC specific error
+    JSON-RPC specific error.
 
     @TODO str, repr etc.?
     """

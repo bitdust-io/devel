@@ -27,13 +27,12 @@
 
 
 """
-.. module:: tcp_process
+.. module:: tcp_process.
 
-This is a
-This is a sub process to send/receive files between users over TCP protocol.
-1) listen for incoming connections on a port 7771 (by default)
-2) establish connections to remote peers
-3) keeps TCP session opened to be able to send asap
+This is a This is a sub process to send/receive files between users over
+TCP protocol. 1) listen for incoming connections on a port 7771 (by
+default) 2) establish connections to remote peers 3) keeps TCP session
+opened to be able to send asap
 """
 
 import sys
@@ -142,6 +141,7 @@ def receive(options):
 
 def connect_to(host, keep_alive=True):
     """
+    
     """
     if host in started_connections():
         return False
@@ -160,6 +160,7 @@ def connect_to(host, keep_alive=True):
 
 def disconnect_from(host):
     """
+    
     """
     ok = False
     for peeraddr, connections in opened_connections().items():
@@ -180,6 +181,7 @@ def disconnect_from(host):
 
 def disconnect():
     """
+    
     """
     global _Listener
     from transport.tcp import tcp_interface
@@ -193,6 +195,7 @@ def disconnect():
 
 def close_connections():
     """
+    
     """
     for sc in started_connections().values():
         sc.connector.disconnect()
@@ -204,6 +207,7 @@ def close_connections():
 
 def send(filename, remoteaddress, description=None, single=False):
     """
+    
     """
     result_defer = Deferred()
     if remoteaddress in started_connections():
@@ -239,30 +243,35 @@ def send(filename, remoteaddress, description=None, single=False):
 
 def start_streams():
     """
+    
     """
     return tcp_stream.start_process_streams()
 
 
 def stop_streams():
     """
+    
     """
     return tcp_stream.stop_process_streams()
 
 
 def list_input_streams(sorted_by_time=True):
     """
+    
     """
     return tcp_stream.list_input_streams(sorted_by_time)
 
 
 def list_output_streams(sorted_by_time=True):
     """
+    
     """
     return tcp_stream.list_output_streams(sorted_by_time)
 
 
 def cancel_file_receiving(transferID):
     """
+    
     """
     # at the moment for TCP transport we can not stop particular file transfer
     # we can only close connection itself, which is not we really want
@@ -279,6 +288,7 @@ def cancel_file_receiving(transferID):
 
 def cancel_file_sending(transferID):
     """
+    
     """
     for connections in opened_connections().values():
         for connection in connections:
@@ -293,6 +303,7 @@ def cancel_file_sending(transferID):
 
 def cancel_outbox_file(host, filename):
     """
+    
     """
     from transport.tcp import tcp_interface
     for connections in opened_connections().values():

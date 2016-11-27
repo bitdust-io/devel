@@ -27,12 +27,11 @@
 #
 
 """
-.. module:: git_proc
+.. module:: git_proc.
 
 A code for all platforms to perform source code updates from official Git repo at:
 
    http://gitlab.bitdust.io/devel/bitdust.git
-
 """
 
 #------------------------------------------------------------------------------
@@ -143,6 +142,7 @@ def loop(first_start=False):
 
 def sync(callback_func=None):
     """
+    
     """
     def _reset_done(response, retcode, result):
         if callback_func is None:
@@ -173,6 +173,7 @@ def sync(callback_func=None):
 
 def run(cmdargs, callback_func=None):
     """
+    
     """
     if _Debug:
         lg.out(_DebugLevel, 'git_proc.run')

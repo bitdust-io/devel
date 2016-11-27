@@ -25,8 +25,9 @@
 #
 
 """
-.. module:: dht_service
+..
 
+module:: dht_service
 """
 
 #------------------------------------------------------------------------------
@@ -253,8 +254,7 @@ class DHTNode(DistributedTupleSpacePeer):
 
     def reconnect(self, knownNodeAddresses=None):
         """
-        TODO:
-        need to restart _scheduleNextNodeRefresh
+        TODO: need to restart _scheduleNextNodeRefresh.
         """
         d = Deferred()
         if not self.listener:

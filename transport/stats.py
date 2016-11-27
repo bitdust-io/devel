@@ -26,8 +26,9 @@
 #
 
 """
-.. module:: stats
+..
 
+module:: stats
 """
 
 #------------------------------------------------------------------------------
@@ -87,6 +88,7 @@ def EraseMyProtosStates(idurl):
 
 def count_outbox(remote_idurl, proto, status, size):
     """
+    
     """
     if remote_idurl not in peers_protos():
         peers_protos()[remote_idurl] = set()
@@ -109,6 +111,7 @@ def count_outbox(remote_idurl, proto, status, size):
 
 def count_inbox(remote_idurl, proto, status, bytes_received):
     """
+    
     """
     if remote_idurl not in my_protos():
         my_protos()[remote_idurl] = set()

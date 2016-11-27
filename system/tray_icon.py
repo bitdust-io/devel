@@ -27,10 +27,10 @@
 #
 
 """
-.. module:: tray_icon
+.. module:: tray_icon.
 
-Uses wxPython to show tray icon for BitDust.
-This is working inside ``bpmain`` process, uses wxreactor to connect with main Twisted loop.
+Uses wxPython to show tray icon for BitDust. This is working inside
+``bpmain`` process, uses wxreactor to connect with main Twisted loop.
 """
 
 #------------------------------------------------------------------------------

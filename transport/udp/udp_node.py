@@ -22,7 +22,8 @@
 
 
 """
-.. module:: udp_node
+.. module:: udp_node.
+
 .. role:: red
 BitDust udp_node() Automat
 
@@ -40,7 +41,6 @@ EVENTS:
     * :red:`stun-success`
     * :red:`timer-10sec`
     * :red:`timer-1sec`
-
 """
 
 from twisted.internet import reactor
@@ -99,7 +99,8 @@ def Destroy():
 
 class UDPNode(automat.Automat):
     """
-    This class implements all the functionality of the ``udp_node()`` state machine.
+    This class implements all the functionality of the ``udp_node()`` state
+    machine.
     """
 
     fast = True
@@ -111,7 +112,8 @@ class UDPNode(automat.Automat):
 
     def init(self):
         """
-        Method to initialize additional variables and flags at creation of the state machine.
+        Method to initialize additional variables and flags at creation of the
+        state machine.
         """
         self.listen_port = None
         self.my_id = None
@@ -469,6 +471,7 @@ class UDPNode(automat.Automat):
 
     def _datagram_received(self, datagram, address):
         """
+        
         """
         # command, payload = datagram
         # lg.out(18, '-> [%s] (%d bytes) from %s' % (command, len(payload), str(address)))
