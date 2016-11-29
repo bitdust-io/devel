@@ -165,7 +165,6 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def __init__(self):
         """
-        
         """
         # lg.out(6, 'udp.BasicProtocol.__init__ %r' % id(self))
         self.port = None
@@ -176,7 +175,6 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def __del__(self):
         """
-        
         """
         # lg.out(6, 'udp.BasicProtocol.__del__ %r' % id(self))
         # protocol.DatagramProtocol.__del__(self)
@@ -202,7 +200,7 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def sendDatagram(self, datagram, address):
         """
-        
+        Sends UDP datagram to transport.
         """
         if self.stopping:
             return False
@@ -216,13 +214,11 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def startProtocol(self):
         """
-        
         """
         lg.out(6, 'udp.startProtocol %r' % self)
 
     def stopProtocol(self):
         """
-        
         """
         lg.out(6, 'udp.stopProtocol %r' % self)
         self.port = None
@@ -230,7 +226,6 @@ class BasicProtocol(protocol.DatagramProtocol):
 
     def disconnect(self):
         """
-        
         """
         self.stopping = True
         self.callbacks = []

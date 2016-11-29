@@ -122,8 +122,8 @@ class UDPTransportService(LocalService):
     def _on_network_receive_limit_modified(
             self, path, value, oldvalue, result):
         from transport.udp import udp_stream
-        udp_stream.set_global_limit_receive_bytes_per_sec(int(value))
+        udp_stream.set_global_input_limit_bytes_per_sec(int(value))
 
     def _on_network_send_limit_modified(self, path, value, oldvalue, result):
         from transport.udp import udp_stream
-        udp_stream.set_global_limit_send_bytes_per_sec(int(value))
+        udp_stream.set_global_output_limit_bytes_per_sec(int(value))
