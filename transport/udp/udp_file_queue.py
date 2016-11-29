@@ -44,8 +44,8 @@ _Debug = True
 
 #------------------------------------------------------------------------------
 
-MAX_SIMULTANEOUS_STREAMS_PER_SESSION = 8
-NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS_PER_SESSION * 8
+MAX_SIMULTANEOUS_STREAMS_PER_SESSION = 16
+NUMBER_OF_STREAMS_TO_REMEMBER = MAX_SIMULTANEOUS_STREAMS_PER_SESSION * 8 * 2
 
 #------------------------------------------------------------------------------
 
