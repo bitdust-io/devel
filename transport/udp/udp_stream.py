@@ -604,6 +604,10 @@ class UDPStream(automat.Automat):
         new_limit_receive, new_limit_send = arg
         self.input_limit_bytes_per_sec = new_limit_receive
         self.output_limit_bytes_per_sec = new_limit_send
+        if _Debug:
+            lg.out(self.debug_level - 6, 'udp_stream[%d].doUpdateLimits in=%r out=%r (remote=%r)' % (
+                self.input_limit_bytes_per_sec, self.output_limit_bytes_per_sec,
+                self.output_limit_bytes_per_sec_from_remote))
 
     def doDestroyMe(self, arg):
         """
@@ -995,7 +999,7 @@ class UDPStream(automat.Automat):
         if relative_time - self.input_block_last_time > RECEIVING_TIMEOUT:
         #--- last block came long time ago, timeout receiving
             if _Debug:
-                lg.out(self.debug_level, 'TIMEOUT RECEIVING %d rtt=%r, last block in %r, reltime: %r, eof: %r, blocks to ack: %d' % (
+                lg.out(self.debug_level - 6, 'TIMEOUT RECEIVING %d rtt=%r, last block in %r, reltime: %r, eof: %r, blocks to ack: %d' % (
                     self.stream_id, self._rtt_current(), self.input_block_last_time,
                     relative_time, self.eof, len(self.input_blocks_to_ack),))
             reactor.callLater(0, self.automat, 'timeout')
@@ -1039,8 +1043,8 @@ class UDPStream(automat.Automat):
                     self.input_bytes_received,
                     self.consumer.bytes_received))
             else:
-                lg.out(self.debug_level + 6, '<-out ACK %d %r PAUSE:%r %r' % (
-                    self.stream_id, self.eof, pause_time, acks))
+                lg.out(self.debug_level - 6, '<-out ACK %d %r PAUSE:%r LIMIT:%r %r' % (
+                    self.stream_id, self.eof, pause_time, self.input_limit_bytes_per_sec, acks))
         self.producer.do_send_ack(self.stream_id, self.consumer, ack_data)
         return ack_len > 0
 
