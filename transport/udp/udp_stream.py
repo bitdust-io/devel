@@ -177,6 +177,7 @@ def get_global_input_limit_bytes_per_sec():
 def set_global_input_limit_bytes_per_sec(bps):
     global _GlobalLimitReceiveBytesPerSec
     _GlobalLimitReceiveBytesPerSec = bps
+    balance_streams_limits()
 
 
 def get_global_output_limit_bytes_per_sec():
@@ -187,6 +188,7 @@ def get_global_output_limit_bytes_per_sec():
 def set_global_output_limit_bytes_per_sec(bps):
     global _GlobalLimitSendBytesPerSec
     _GlobalLimitSendBytesPerSec = bps
+    balance_streams_limits()
 
 
 def balance_streams_limits():
@@ -197,23 +199,17 @@ def balance_streams_limits():
         receive_limit_per_stream /= num_streams
         send_limit_per_stream /= num_streams
     if _Debug:
-        lg.out(
-            _DebugLevel, 'udp_stream.balance_streams_limits in:%r out:%r total:%d' %
-            (receive_limit_per_stream, send_limit_per_stream, num_streams))
+        lg.out(_DebugLevel, 'udp_stream.balance_streams_limits in:%r out:%r total:%d' % (
+            receive_limit_per_stream, send_limit_per_stream, num_streams))
     for s in streams().values():
-        s.automat(
-            'set-limits',
-            (receive_limit_per_stream,
-             send_limit_per_stream))
+        s.automat('set-limits', (receive_limit_per_stream, send_limit_per_stream))
 
 #------------------------------------------------------------------------------
-
 
 class BufferOverflow(Exception):
     pass
 
 #------------------------------------------------------------------------------
-
 
 def process_streams():
     global _ProcessStreamsTask
@@ -233,7 +229,6 @@ def stop_process_streams():
         _ProcessSessionsTask = None
 
 #------------------------------------------------------------------------------
-
 
 class UDPStream(automat.Automat):
     """
@@ -284,6 +279,7 @@ class UDPStream(automat.Automat):
         self.output_buffer_size = 0
         self.output_limit_bytes_per_sec = 0
         self.output_limit_factor = 0.5
+        self.output_limit_bytes_per_sec_from_remote = -1
         self.output_rtt_avarage = 0.0
         self.output_rtt_counter = 1.0
         self.input_ack_last_time = 0
@@ -429,7 +425,7 @@ class UDPStream(automat.Automat):
         """
         Condition method.
         """
-        _, pause = arg
+        _, pause, _ = arg
         return pause > 0
 
     def doInit(self, arg):
@@ -500,9 +496,11 @@ class UDPStream(automat.Automat):
         """
         Action method.
         """
-        _, pause = arg
+        _, pause, remote_side_limit_receiving = arg
         if pause > 0:
             reactor.callLater(pause, self.automat, 'resume')
+        if remote_side_limit_receiving > 0:
+            self.output_limit_bytes_per_sec_from_remote = remote_side_limit_receiving
 
     def doReportSendDone(self, arg):
         """
@@ -696,6 +694,7 @@ class UDPStream(automat.Automat):
                 eof_flag = None
                 acks = []
                 pause_time = 0.0
+                remote_side_limit_receiving = -1
                 eof = False
                 raw_bytes = ''
                 self.input_ack_last_time = time.time() - self.creation_time
@@ -718,6 +717,7 @@ class UDPStream(automat.Automat):
                                 lg.warn('wrong ack: not found pause time')
                                 break
                             pause_time = struct.unpack('f', raw_bytes)[0]
+                            remote_side_limit_receiving = struct.unpack('f', raw_bytes)[0]
                 if len(acks) > 0:
                     self.input_acks_counter += 1
                 else:
@@ -778,7 +778,7 @@ class UDPStream(automat.Automat):
                         lg.out(self.debug_level + 6, 'in-> ACK %d %s %d %s %d %d' % (
                             self.stream_id, acks, len(self.output_blocks),
                             eof, sz, self.output_bytes_acked))
-                self.automat('ack-received', (acks, pause_time))
+                self.automat('ack-received', (acks, pause_time, remote_side_limit_receiving))
             except:
                 lg.exc()
 
@@ -849,23 +849,25 @@ class UDPStream(automat.Automat):
         if len(self.output_blocks) == 0:
             #--- nothing to send
             return
-        if self.output_limit_bytes_per_sec > 0:
-            #--- skip sending : bandwidth limit reached
+        current_limit = self._get_output_limit_bytes_per_sec()
+        if current_limit > 0:
             if relative_time > 0.5:
                 current_rate = self.output_bytes_sent / relative_time
-                if current_rate > self.output_limit_bytes_per_sec * self.output_limit_factor:
+                if current_rate > current_limit:
+            #--- skip sending : bandwidth limit reached
                     if _Debug:
-                        lg.out(self.debug_level, 'SKIP SENDING %d, bandwidth limit : %r>%r, factor: %r' % (
+                        lg.out(self.debug_level, 'SKIP RESENDING %d, bandwidth limit : %r>%r, factor: %r, remote: %r' % (
                             self.stream_id, current_rate,
                             self.output_limit_bytes_per_sec * self.output_limit_factor,
-                            self.output_limit_factor))
+                            self.output_limit_factor,
+                            self.output_limit_bytes_per_sec_from_remote))
                     return
-            #--- got some acks already
         if self.input_acks_counter > 0:
-            #--- check sending timeout
+            #--- got some acks already
             if self.output_blocks_counter / float(self.input_acks_counter) > BLOCKS_PER_ACK * 2:
             #--- too many blocks sent but few acks
                 if self.state == 'SENDING' or self.state == 'PAUSE':
+            #--- check sending timeout
                     if relative_time - self.input_ack_last_time > RTT_MAX_LIMIT * 2:
             #--- no responding activity at all
                         if _Debug:
@@ -944,10 +946,17 @@ class UDPStream(automat.Automat):
         for block_id in blocks_to_send:
             piece = self.output_blocks[block_id][0]
             data_size = len(piece)
-            if self.output_limit_bytes_per_sec > 0 and relative_time > 0:
+            current_limit = self._get_output_limit_bytes_per_sec()
+            if current_limit > 0 and relative_time > 0:
             #--- limit sending, current rate is too big
                 current_rate = (self.output_bytes_sent + data_size) / relative_time
-                if current_rate > self.output_limit_bytes_per_sec * self.output_limit_factor:
+                if current_rate > current_limit:
+                    if _Debug:
+                        lg.out(self.debug_level, 'SKIP SENDING %d, bandwidth limit : %r>%r, factor: %r, remote: %r' % (
+                            self.stream_id, current_rate,
+                            self.output_limit_bytes_per_sec * self.output_limit_factor,
+                            self.output_limit_factor,
+                            self.output_limit_bytes_per_sec_from_remote))
                     continue
             self.output_blocks[block_id][1] = relative_time
             output = ''.join((struct.pack('i', block_id), piece))
@@ -1012,10 +1021,13 @@ class UDPStream(automat.Automat):
         if len(acks) == 0 and pause_time == 0.0 and not self.eof:
             return
         ack_data = struct.pack('?', self.eof)
+        #--- prepare ACKS
         ack_data += ''.join(map(lambda bid: struct.pack('i', bid), acks))
         if pause_time > 0:
+        #--- add extra "PAUSE REQUIRED" ACK
             ack_data += struct.pack('i', -1)
             ack_data += struct.pack('f', pause_time)
+            ack_data += struct.pack('f', self.input_limit_bytes_per_sec)
         ack_len = len(ack_data)
         self.output_bytes_in_acks += ack_len
         self.output_acks_counter += 1
@@ -1044,3 +1056,9 @@ class UDPStream(automat.Automat):
 
     def _last_ack_timed_out(self):
         return time.time() - self.output_ack_last_time > RTT_MAX_LIMIT
+
+    def _get_output_limit_bytes_per_sec(self):
+        own_limit = self.output_limit_bytes_per_sec * self.output_limit_factor
+        if self.output_limit_bytes_per_sec_from_remote < 0:
+            return own_limit
+        return min(own_limit, self.output_limit_bytes_per_sec_from_remote)
