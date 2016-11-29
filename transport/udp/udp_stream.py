@@ -606,6 +606,7 @@ class UDPStream(automat.Automat):
         self.output_limit_bytes_per_sec = new_limit_send
         if _Debug:
             lg.out(self.debug_level - 6, 'udp_stream[%d].doUpdateLimits in=%r out=%r (remote=%r)' % (
+                self.stream_id,
                 self.input_limit_bytes_per_sec, self.output_limit_bytes_per_sec,
                 self.output_limit_bytes_per_sec_from_remote))
 
