@@ -744,9 +744,9 @@ class UDPStream(automat.Automat):
                     self.output_buffer_size -= block_size
                     self.output_bytes_acked += block_size
                     self.output_blocks_acked += 1
-                    self.output_blocks_success_counter += 1
-                    self.output_blocks_quality_counter += 1
-                    self.output_limit_factor = self.output_blocks_success_counter / (self.output_blocks_quality_counter + 1.0)
+                    self.output_blocks_success_counter += 1.0
+                    self.output_blocks_quality_counter += 1.0
+                    self.output_limit_factor = (self.output_blocks_success_counter + 1.0) / (self.output_blocks_quality_counter + 1.0)
                     relative_time = time.time() - self.creation_time
                     last_ack_rtt = relative_time - outblock[1]
                     self.output_rtt_avarage += last_ack_rtt
@@ -932,7 +932,7 @@ class UDPStream(automat.Automat):
                     self.output_blocks_errors_counter += 1.0
                     self.output_blocks_quality_counter += 1.0
             #--- adjust sending limit factor
-                    self.output_limit_factor = self.output_blocks_success_counter / (self.output_blocks_quality_counter + 1.0)
+                    self.output_limit_factor = (self.output_blocks_success_counter + 1.0) / (self.output_blocks_quality_counter + 1.0)
         if blocks_to_send_now:
             #--- send blocks now
             self._send_blocks(blocks_to_send_now)
