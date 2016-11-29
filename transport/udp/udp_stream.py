@@ -797,16 +797,12 @@ class UDPStream(automat.Automat):
     def _sending_loop(self):
         if lg.is_debug(self.debug_level):
             relative_time = time.time() - self.creation_time
-            if relative_time - self.last_progress_report > POOLING_INTERVAL * 5.0:
+            if relative_time - self.last_progress_report > POOLING_INTERVAL * 20.0:
                 if _Debug:
-                    lg.out(self.debug_level, '%d|%r%%|b.:%d/%d|pkt:%d/%d|garb.:%d/%d|err.:%d/%r%%/%r%%|%rbps|RTT:%r|last:%r|buf:%d/%d' % (
+                    lg.out(self.debug_level, 'udp_stream[%d]|%r%%|garb.:%d/%d|err.:%d/%r%%/%r%%|%rbps|b.:%d/%d|pkt:%d/%d|RTT:%r|last:%r' % (
                         self.stream_id,
                         #--- percent sent
                         round(100.0 * (float(self.output_bytes_acked) / self.consumer.size), 2),
-                        #--- bytes out/in
-                        self.output_bytes_sent, self.output_bytes_acked,
-                        #--- blocks out/acks in
-                        self.output_blocks_counter, self.input_acks_counter,
                         #--- garbage blocks out/garbacge acks in
                         self.output_blocks_retries, self.input_acks_garbage_counter,
                         #--- errors timeouts/%/%
@@ -815,31 +811,34 @@ class UDPStream(automat.Automat):
                         round(100.0 * (self.output_blocks_errors_counter / (self.output_blocks_quality_counter + 1)), 2),
                         #--- sending speed
                         int(self.output_bytes_per_sec_current),
+                        #--- bytes out/in
+                        self.output_bytes_sent, self.output_bytes_acked,
+                        #--- blocks out/acks in
+                        self.output_blocks_counter, self.input_acks_counter,
                         #--- current avarage RTT
                         round(self.output_rtt_avarage / self.output_rtt_counter, 4),
                         #--- last ACK received
                         round(relative_time - self.input_ack_last_time, 4),
-                        #--- output blocks/buffer size
-                        len(self.output_blocks), self.output_buffer_size,))
+                    ))
                 self.last_progress_report = relative_time
 
     def _receiving_loop(self):
         if lg.is_debug(self.debug_level):
             relative_time = time.time() - self.creation_time
-            if relative_time - self.last_progress_report > POOLING_INTERVAL * 5.0:
+            if relative_time - self.last_progress_report > POOLING_INTERVAL * 20.0:
                 if _Debug:
-                    lg.out(self.debug_level, 'udp_stream[%d] | %r%% | b.:%d/%d | pkt.:%d/%d | garb.:%d/%d | %d bps | last: %r sec dt' % (
+                    lg.out(self.debug_level, 'udp_stream[%d] | %r%% | garb.:%d/%d | %d bps | b.:%d/%d | pkt.:%d/%d | last: %r sec dt' % (
                         self.stream_id,
                         #--- percent received
                         round(100.0 * (float(self.consumer.bytes_received) / self.consumer.size), 2),
-                        #--- bytes in/out
-                        self.input_bytes_received, self.consumer.bytes_received,
-                        #--- blocks in/acks out
-                        self.input_blocks_counter, self.output_acks_counter,
                         #--- garbage blocks duplicated/old
                         self.input_duplicated_blocks, self.input_old_blocks,
                         #--- receiving speed
                         int(self.input_bytes_per_sec_current),
+                        #--- bytes in/out
+                        self.input_bytes_received, self.consumer.bytes_received,
+                        #--- blocks in/acks out
+                        self.input_blocks_counter, self.output_acks_counter,
                         #--- last BLOCK received
                         round(relative_time - self.input_block_last_time, 4),))
                 self.last_progress_report = relative_time
