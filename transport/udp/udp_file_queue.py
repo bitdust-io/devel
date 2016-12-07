@@ -144,11 +144,9 @@ class FileQueue:
         self.outboxQueue.insert(
             0, (filename, description, result_defer, single))
         if _Debug:
-            lg.out(
-                18, 'udp_file_queue.insert_outbox_file %s for %s : %s, streams=%d, queue=%d' %
-                (os.path.basename(filename), self.session.peer_id, description, len(
-                    self.streams), len(
-                    self.outboxQueue)))
+            lg.out(18, 'udp_file_queue.insert_outbox_file %s for %s : %s, streams=%d, queue=%d' % (
+                os.path.basename(filename), self.session.peer_id, description, len(
+                    self.streams), len(self.outboxQueue)))
         udp_session.process_sessions([self.session, ])
 
     def process_outbox_queue(self):
@@ -157,8 +155,7 @@ class FileQueue:
             if len(self.streams) >= MAX_SIMULTANEOUS_STREAMS_PER_SESSION:
                 # lg.warn('too much streams: %d' % len(self.streams))
                 break
-            filename, description, result_defer, single = self.outboxQueue.pop(
-                0)
+            filename, description, result_defer, single = self.outboxQueue.pop(0)
             has_reads = True
             # we have a queue of files to be sent
             # somehow file may be removed before we start sending it
@@ -354,14 +351,8 @@ class FileQueue:
         assert stream_id in self.inboxFiles.keys()
         infile = self.inboxFiles[stream_id]
         if _Debug:
-            lg.out(
-                18,
-                'udp_file_queue.on_inbox_file_done %s (%d bytes) %s "%s" registration=%r' %
-                (stream_id,
-                 infile.size,
-                 infile.status,
-                 infile.error_message,
-                 infile.registration))
+            lg.out(18, 'udp_file_queue.on_inbox_file_done %s (%d bytes) %s "%s" registration=%r' % (
+                stream_id, infile.size, infile.status, infile.error_message, infile.registration))
         if infile.registration:
             return
         if infile.transfer_id:
@@ -374,21 +365,14 @@ class FileQueue:
         assert stream_id in self.outboxFiles.keys()
         outfile = self.outboxFiles[stream_id]
         if _Debug:
-            lg.out(
-                18,
-                'udp_file_queue.on_outbox_file_done %s (%d bytes) %s "%s" registration=%r' %
-                (stream_id,
-                 outfile.size,
-                 outfile.status,
-                 outfile.error_message,
-                 outfile.registration))
+            lg.out(18, 'udp_file_queue.on_outbox_file_done %s (%d bytes) %s "%s" registration=%r' % (
+                stream_id, outfile.size, outfile.status, outfile.error_message, outfile.registration))
         if outfile.registration:
             return
         if outfile.transfer_id:
             self.report_outbox_file(outfile)
         if outfile.result_defer:
-            outfile.result_defer.callback(
-                (outfile, outfile.status, outfile.error_message))
+            outfile.result_defer.callback((outfile, outfile.status, outfile.error_message))
             outfile.result_defer = None
         s = self.streams[stream_id]
         s.on_close()

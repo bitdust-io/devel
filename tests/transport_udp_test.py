@@ -97,9 +97,6 @@ def main():
             return
         # [filename] [peer idurl]
         if len(sys.argv) >= 3:
-            p = signed.Packet(commands.Data(), my_id.getLocalID(),
-                              my_id.getLocalID(), my_id.getLocalID(),
-                              bpio.ReadBinaryFile(sys.argv[1]), sys.argv[2])
             # bpio.WriteFile(sys.argv[1]+'.signed', p.Serialize())
 
             def _try_reconnect():
@@ -135,10 +132,13 @@ def main():
             def _send(c):
                 from transport.udp import udp_stream
                 print '_send', udp_stream.streams().keys()
+                p = signed.Packet(commands.Data(), my_id.getLocalID(),
+                                  my_id.getLocalID(), 'packet%d' % c,
+                                  bpio.ReadBinaryFile(sys.argv[1]), sys.argv[2])
                 gateway.outbox(p)
-                # if c < 20:
-                #     reactor.callLater(0.01, _send, c+1)
-            reactor.callLater(0, _send, 0)
+                if c > 1:
+                    reactor.callLater(0.01, _send, c - 1)
+            reactor.callLater(0, _send, 8)
 
     gateway.add_transport_state_changed_callback(_ok_to_send)
     reactor.run()
