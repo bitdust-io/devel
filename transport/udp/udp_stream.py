@@ -134,7 +134,7 @@ _GlobalLimitReceiveBytesPerSec = 1000.0 * 125000  # default receiveing limit bps
 _GlobalLimitSendBytesPerSec = 1000.0 * 125000  # default sending limit bps
 # start sending at half speed
 # _CalculatedLimitSendBytesPerSec = _GlobalLimitSendBytesPerSec * SENDING_LIMIT_FACTOR_ON_START
-_CurrentSendingErrorsRate = 0.0
+_CurrentSendingAvarageRate = 0.0
 
 #------------------------------------------------------------------------------
 
@@ -267,6 +267,7 @@ def sort_method(stream_instance):
 def process_streams():
     global _ProcessStreamsTask
     global _ProcessStreamsIterations
+    global _CurrentSendingAvarageRate
     # sort streams by sending/receiving speed
     # slowest streams will go first
 
@@ -290,9 +291,18 @@ def process_streams():
 #             s.event('iterate')
 #             streams_counter += 1
 
+    sending_streams_count = 0.0
+    total_sending_rate = 0.0
     for s in streams().values():
         if s.state == 'SENDING':
             s.event('iterate')
+            total_sending_rate += s.get_current_output_bytes_per_sec()
+            sending_streams_count += 1.0
+
+    if sending_streams_count > 0.0:
+        _CurrentSendingAvarageRate = total_sending_rate / sending_streams_count
+    else:
+        _CurrentSendingAvarageRate = 0.0
 
     if _ProcessStreamsTask is None or _ProcessStreamsTask.called:
         _ProcessStreamsTask = reactor.callLater(
@@ -1006,7 +1016,7 @@ class UDPStream(automat.Automat):
     def _receiving_loop(self):
         if lg.is_debug(self.debug_level):
             relative_time = time.time() - self.creation_time
-            if relative_time - self.last_progress_report > POOLING_INTERVAL * 10.0:
+            if relative_time - self.last_progress_report > POOLING_INTERVAL * 50.0:
                 if _Debug:
                     lg.out(self.debug_level, 'udp_stream[%d] | %d/%r%% | garb.:%d/%d | %d bps | b.:%d/%d | pkt.:%d/%d | last: %r | buf: %d' % (
                         self.stream_id,
@@ -1080,7 +1090,7 @@ class UDPStream(automat.Automat):
                         self.stream_id, self.input_acks_counter, self.output_blocks_counter))
                 # seems like sending too fast
                 return
-        if self.output_block_last_time - self.input_ack_last_time > RTT_MAX_LIMIT:
+        if self.output_block_last_time - self.input_ack_last_time > RTT_MAX_LIMIT * 2.0:
             #--- last ack was timed out
             self.input_acks_timeouts_counter += 1
             if self.input_acks_timeouts_counter >= MAX_ACK_TIMEOUTS:
@@ -1175,7 +1185,7 @@ class UDPStream(automat.Automat):
         for block_id in blocks_to_send:
             piece = self.output_blocks[block_id][0]
             data_size = len(piece)
-            if current_limit > 0 and relative_time > 0:  # and period_time > 0:
+            if len(blocks_to_send) > 1 and current_limit > 0 and relative_time > 0:  # and period_time > 0:
             # if self.output_bytes_per_sec_last > 0 or period_time > 0:
             #--- limit sending, current rate is too big
                 current_rate = (self.output_bytes_sent + data_size) / relative_time
@@ -1333,7 +1343,16 @@ class UDPStream(automat.Automat):
         return time.time() - self.output_ack_last_time > RTT_MAX_LIMIT
 
     def _get_output_limit_bytes_per_sec(self):
+        global _CurrentSendingAvarageRate
         own_limit = self.output_limit_bytes_per_sec * self.output_limit_factor
+        if _CurrentSendingAvarageRate > 0:
+            own_limit = min(own_limit, _CurrentSendingAvarageRate * 3.0)
         if self.output_limit_bytes_per_sec_from_remote < 0:
             return own_limit
         return min(own_limit, self.output_limit_bytes_per_sec_from_remote)
+
+    def get_current_output_bytes_per_sec(self):
+        relative_time = time.time() - self.creation_time
+        if relative_time < 0.5:
+            return 0.0
+        return self.output_bytes_sent / relative_time
