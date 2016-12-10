@@ -294,6 +294,7 @@ class Automat(object):
         self.state = state
         self.debug_level = debug_level
         self.log_events = log_events
+        self.log_transitions = log_events
         self._timers = {}
         self._state_callbacks = {}
         self.init()
@@ -445,7 +446,7 @@ class Automat(object):
                         self.id, self.name, self.state, event_string, arg))
             new_state = self.state
         if old_state != new_state:
-            if _Debug:
+            if _Debug and self.log_transitions:
                 self.log(
                     max(_DebugLevel, self.debug_level),
                     '%s(%s): (%s)->(%s)' % (

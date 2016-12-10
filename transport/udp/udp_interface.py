@@ -223,6 +223,7 @@ class GateInterface():
         """
         
         """
+        from transport.udp import udp_node
         if not host:
             host = idurl_to_id(idurl)
         if _Debug:
