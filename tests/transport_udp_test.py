@@ -131,14 +131,18 @@ def main():
 
             def _send(c):
                 from transport.udp import udp_stream
-                print '_send', udp_stream.streams().keys()
-                p = signed.Packet(commands.Data(), my_id.getLocalID(),
-                                  my_id.getLocalID(), 'packet%d' % c,
-                                  bpio.ReadBinaryFile(sys.argv[1]), sys.argv[2])
-                gateway.outbox(p)
+                for idurl in sys.argv[2:]:
+                    print '_send', udp_stream.streams().keys()
+                    p = signed.Packet(commands.Data(),
+                                      my_id.getLocalID(),
+                                      my_id.getLocalID(),
+                                      'packet%d' % c,
+                                      bpio.ReadBinaryFile(sys.argv[1]),
+                                      idurl)
+                    gateway.outbox(p)
                 if c > 1:
                     reactor.callLater(0.01, _send, c - 1)
-            reactor.callLater(0, _send, 15)
+            reactor.callLater(0, _send, 1)
 
     gateway.add_transport_state_changed_callback(_ok_to_send)
     reactor.run()
