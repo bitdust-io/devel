@@ -79,7 +79,7 @@ Datagrams format:
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 16
 
 #------------------------------------------------------------------------------
@@ -1146,6 +1146,10 @@ class UDPStream(automat.Automat):
                 continue
             if relative_time - time_sent < RTT_MAX_LIMIT / 2.0:
                 continue
+            error_rate = float(self.output_blocks_timed_out_counter) / float(self.output_quality_counter)
+            if error_rate > ACCEPTABLE_ERRORS_RATE:
+                too_much_errors = True
+                break
             blocks_to_send_now.insert(0, block_id)
             self.output_blocks_retries += 1
             self.output_blocks_timed_out_counter += 1

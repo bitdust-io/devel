@@ -1006,6 +1006,12 @@ def GetBackupRemoteStats(backupID, only_available_files=True):
             if activeArray[supplierNum] != 1 and only_available_files:
                 goodSuppliers -= 1
                 continue
+            try:
+                remote_files()[backupID][blockNum]['D'][supplierNum]
+                remote_files()[backupID][blockNum]['D'][supplierNum]
+            except:
+                goodSuppliers -= 1
+                continue
             if remote_files()[backupID][blockNum]['D'][supplierNum] != 1 or remote_files()[backupID][blockNum]['P'][supplierNum] != 1:
                 goodSuppliers -= 1
             if remote_files()[backupID][blockNum]['D'][supplierNum] == 1:
