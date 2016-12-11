@@ -1065,7 +1065,7 @@ class UDPStream(automat.Automat):
             #--- sent more blocks, than needed, skip sending
                 self._add_iteration_result('needmoreacks')
                 return
-        #--- last block was sent long ago, need to resend now
+            #--- last block was sent long ago, need to resend now
         blocks_not_acked = sorted(self.output_blocks_ids)
         block_position = 0
         too_much_errors = False
@@ -1259,10 +1259,10 @@ class UDPStream(automat.Automat):
             #--- last ack has been long time ago, send ACK
             self._send_ack(self.input_blocks_to_ack, pause_time, why=4)
             return
-        if self._last_block_timed_out() and len(self.input_blocks_to_ack) > 0:
-            #--- last block was recevied long ago, send ACK
-            self._send_ack(self.input_blocks_to_ack, pause_time, why=5)
-            return
+#         if self._last_block_timed_out() and len(self.input_blocks_to_ack) > 0:
+#             #--- last block was recevied long ago, send ACK
+#             self._send_ack(self.input_blocks_to_ack, pause_time, why=5)
+#             return
         if _Debug and lg.is_debug(self.debug_level):
             why = 6
             if why not in self.output_acks_reasons:
