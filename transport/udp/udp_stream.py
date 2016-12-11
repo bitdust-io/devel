@@ -79,7 +79,7 @@ Datagrams format:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 16
 
 #------------------------------------------------------------------------------
@@ -135,7 +135,6 @@ _ProcessStreamsIterations = 0
 
 _GlobalLimitReceiveBytesPerSec = 1000.0 * 125000  # default receiveing limit bps
 _GlobalLimitSendBytesPerSec = 1000.0 * 125000  # default sending limit bps
-# _CalculatedLimitSendBytesPerSec = 0.0
 _CurrentSendingAvarageRate = 0.0
 
 #------------------------------------------------------------------------------
@@ -191,7 +190,6 @@ def get_global_output_limit_bytes_per_sec():
 
 def set_global_output_limit_bytes_per_sec(bps):
     global _GlobalLimitSendBytesPerSec
-    global _CalculatedLimitSendBytesPerSec
     _GlobalLimitSendBytesPerSec = bps
     balance_streams_limits()
 
@@ -199,11 +197,8 @@ def set_global_output_limit_bytes_per_sec(bps):
 
 def balance_streams_limits():
     global _CurrentSendingAvarageRate
-#     global _CalculatedLimitSendBytesPerSec
     receive_limit_per_stream = float(get_global_input_limit_bytes_per_sec())
     send_limit_per_stream = float(get_global_output_limit_bytes_per_sec())
-#     if _CalculatedLimitSendBytesPerSec > 0.0:
-#         send_limit_per_stream = min(send_limit_per_stream, _CalculatedLimitSendBytesPerSec)
     num_streams = len(streams())
     if num_streams > 0:
         receive_limit_per_stream /= float(num_streams)
@@ -212,7 +207,7 @@ def balance_streams_limits():
         lg.out(_DebugLevel, 'udp_stream.balance_streams_limits in:%r out:%r avarage:%r streams:%d' % (
             receive_limit_per_stream,
             send_limit_per_stream,
-            _CurrentSendingAvarageRate,
+            int(_CurrentSendingAvarageRate),
             num_streams))
     for s in streams().values():
         s.automat('set-limits', (receive_limit_per_stream, send_limit_per_stream))
@@ -240,9 +235,8 @@ def process_streams():
         if s.state != 'SENDING':
             continue
         s.event('iterate')
-        if s.get_output_limit_from_remote() > 0 and s.get_output_limit() > 0:
-            if s.get_output_limit_from_remote() < s.get_output_limit():
-                continue
+        if s.get_output_limit_from_remote() > 0:
+            continue
         total_sending_rate += s.get_current_output_speed()
         sending_streams_count += 1.0
 
@@ -1334,7 +1328,7 @@ class UDPStream(automat.Automat):
     def calculate_real_output_limit(self):
         global _CurrentSendingAvarageRate
         own_limit = self.get_output_limit()
-        avarage_limit = _CurrentSendingAvarageRate * 1.5
+        avarage_limit = _CurrentSendingAvarageRate * 2.0
         remote_limit = self.get_output_limit_from_remote()
         return min(own_limit, avarage_limit, remote_limit)
 
