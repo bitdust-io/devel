@@ -1146,7 +1146,7 @@ class UDPStream(automat.Automat):
                 continue
             if relative_time - time_sent < RTT_MAX_LIMIT / 2.0:
                 continue
-            if len(self.output_quality_counter) > 0:
+            if len(self.output_quality_counter) > BLOCKS_PER_ACK:
                 error_rate = float(self.output_blocks_timed_out_counter) / float(self.output_quality_counter)
                 if error_rate > ACCEPTABLE_ERRORS_RATE:
                     too_much_errors = True
