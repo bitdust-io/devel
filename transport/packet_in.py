@@ -287,7 +287,8 @@ class PacketIn(automat.Automat):
         """
         self.proto, self.host, self.sender_idurl, self.filename, self.size = arg
         self.time = time.time()
-        self.timeout = 300  # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
+        # 300  # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
+        self.timeout = None
         if not self.sender_idurl:
             lg.warn('sender_idurl is None: %s' % str(arg))
 
