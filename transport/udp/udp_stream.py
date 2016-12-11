@@ -377,6 +377,7 @@ class UDPStream(automat.Automat):
         self.output_limit_bytes_per_sec = 0
         self.output_limit_factor = SENDING_LIMIT_FACTOR_ON_START
         self.output_limit_bytes_per_sec_from_remote = 0.0
+        self.output_limit_iteration_last_time = 0
         self.output_rtt_avarage = 0.0
         self.output_rtt_counter = 1.0
         self.input_ack_last_time = 0
@@ -397,6 +398,7 @@ class UDPStream(automat.Automat):
         self.input_duplicated_bytes = 0
         self.input_old_blocks = 0
         self.input_limit_bytes_per_sec = 0
+        self.input_limit_iteration_last_time = 0
         self.last_progress_report = 0
         self.eof = False
 
@@ -1032,6 +1034,7 @@ class UDPStream(automat.Automat):
             current_rate = (self.output_bytes_sent + possible_bytes_more) / relative_time
             if current_rate > current_limit:
             #--- skip sending : bandwidth limit reached
+                self.output_limit_iteration_last_time = relative_time
                 if _Debug:
                     lg.out(self.debug_level + 6, 'SKIP RESENDING %d, bandwidth limit : %r>%r, factor: %r, remote: %r' % (
                         self.stream_id,
@@ -1042,7 +1045,9 @@ class UDPStream(automat.Automat):
                 self._add_iteration_result('limit')
                 return
         if self.state == 'SENDING' or self.state == 'PAUSE':
-            if relative_time - self.input_ack_last_time > SENDING_TIMEOUT:
+            sending_was_limited = relative_time - self.output_limit_iteration_last_time < SENDING_TIMEOUT
+            input_ack_timed_out = relative_time - self.input_ack_last_time > SENDING_TIMEOUT
+            if not sending_was_limited and input_ack_timed_out:
             #--- no responding activity at all - TIMEOUT
                 # reduce_sending_speed()
                 if _Debug:
@@ -1291,7 +1296,11 @@ class UDPStream(automat.Automat):
                 if pause_time < 0:
                     lg.warn('pause is %r, stream_id=%d' % (pause_time, self.stream_id))
                     pause_time = 0.0
-        if relative_time - self.input_block_last_time > RECEIVING_TIMEOUT:
+        if pause_time > 0:
+            self.input_limit_iteration_last_time = relative_time
+        receiving_was_limited = relative_time - self.input_limit_iteration_last_time < RECEIVING_TIMEOUT
+        input_block_timed_out = relative_time - self.input_block_last_time > RECEIVING_TIMEOUT
+        if not receiving_was_limited and input_block_timed_out:
             #--- last block came long time ago, timeout receiving
             if _Debug:
                 lg.out(self.debug_level, 'TIMEOUT RECEIVING %d rtt=%r, last block in %r, reltime: %r, eof: %r, blocks to ack: %d' % (
