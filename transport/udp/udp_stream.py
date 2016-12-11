@@ -852,13 +852,12 @@ class UDPStream(automat.Automat):
             #--- remember EOF state
             self.eof = eof
             if _Debug:
-                lg.out(self.debug_level, '    EOF RICHED !!!!!!!! : %d' % self.stream_id)
+                lg.out(self.debug_level, '    in-> ACK %d : EOF RICHED !!!!!!!!' % self.stream_id)
         if eof_flag is None and len(acks) == 0 and pause_time == 0.0:
-            #--- stream was closed on remote side
+            #--- stream was closed on remote side, probably EOF
+            self.eof = True
             if _Debug:
-                lg.out(self.debug_level, '    in-> ACK %d : REMOTE SIDE CLOSED STREAM !!!!!!!! : %d' % self.stream_id)
-            reactor.callLater(0, self.automat, 'timeout')
-            return
+                lg.out(self.debug_level, '    in-> ACK %d : REMOTE SIDE CLOSED STREAM !!!!!!!!' % self.stream_id)
         if _Debug:
             try:
                 sz = self.consumer.size
@@ -1261,7 +1260,7 @@ class UDPStream(automat.Automat):
             self._send_ack(self.input_blocks_to_ack, pause_time, why=4)
             return
         if self._last_block_timed_out() and len(self.input_blocks_to_ack) > 0:
-            #--- last ack has been long time ago, send ACK
+            #--- last block was recevied long ago, send ACK
             self._send_ack(self.input_blocks_to_ack, pause_time, why=5)
             return
         if _Debug and lg.is_debug(self.debug_level):
