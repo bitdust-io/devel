@@ -200,9 +200,10 @@ class PacketIn(automat.Automat):
         return self.label
 
     def is_timed_out(self):
-        if self.time is None or self.timeout is None:
-            return False
-        return time.time() - self.time > self.timeout
+        return False
+#         if self.time is None or self.timeout is None:
+#             return False
+#         return time.time() - self.time > self.timeout
 
     def init(self):
         """
@@ -288,7 +289,7 @@ class PacketIn(automat.Automat):
         self.proto, self.host, self.sender_idurl, self.filename, self.size = arg
         self.time = time.time()
         # 300  # max(10 * int(self.size/float(settings.SendingSpeedLimit())), 10)
-        self.timeout = None
+        # self.timeout = None
         if not self.sender_idurl:
             lg.warn('sender_idurl is None: %s' % str(arg))
 

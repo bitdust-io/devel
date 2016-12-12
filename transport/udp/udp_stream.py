@@ -310,12 +310,10 @@ class UDPStream(automat.Automat):
         self.output_blocks_last_delta = 0
         self.output_blocks_reasons = {}
         self.output_blocks_acked = 0
-        self.output_blocks_retries = 0
-        self.output_blocks_lagged_counter = 0
         self.output_blocks_success_counter = 0.0
-        self.output_blocks_timed_out_counter = 0
+        self.output_blocks_errors_counter = 0
         self.output_quality_counter = 0.0
-        self.output_errors_last_time = 0.0
+        self.output_error_last_time = 0.0
         self.output_bytes_in_acks = 0
         self.output_bytes_sent = 0
         self.output_bytes_sent_period = 0
@@ -361,11 +359,10 @@ class UDPStream(automat.Automat):
             elif event == 'consume':
                 self.doPushBlocks(arg)
                 self.doResendBlocks(arg)
-                self.doSendingLoop(arg)
             elif event == 'set-limits':
                 self.doUpdateLimits(arg)
             elif event == 'ack-received' and not self.isEOF(arg) and not self.isPaused(arg):
-                pass
+                self.doResendBlocks(arg)
             elif event == 'ack-received' and self.isEOF(arg):
                 self.doReportSendDone(arg)
                 self.doCloseStream(arg)
@@ -389,11 +386,9 @@ class UDPStream(automat.Automat):
             elif event == 'consume':
                 self.doPushBlocks(arg)
                 self.doResendBlocks(arg)
-                self.doSendingLoop(arg)
                 newstate = 'SENDING'
             elif event == 'block-received':
                 self.doResendAck(arg)
-                self.doReceivingLoop(arg)
                 newstate = 'RECEIVING'
             elif event == 'ack-received':
                 self.doReportError(arg)
@@ -421,7 +416,6 @@ class UDPStream(automat.Automat):
                 self.doReceivingLoop(arg)
             elif event == 'block-received' and not self.isEOF(arg):
                 self.doResendAck(arg)
-                self.doReceivingLoop(arg)
             elif event == 'timeout':
                 self.doReportReceiveTimeout(arg)
                 self.doCloseStream(arg)
@@ -455,7 +449,6 @@ class UDPStream(automat.Automat):
                 newstate = 'COMPLETION'
             elif event == 'resume':
                 self.doResendBlocks(arg)
-                self.doSendingLoop(arg)
                 newstate = 'SENDING'
             elif event == 'close':
                 self.doReportClosed(arg)
@@ -608,20 +601,19 @@ class UDPStream(automat.Automat):
         Action method.
         """
         if _Debug:
+            self.last_progress_report = 0
+            self._sending_loop()
+            self._receiving_loop()
             pir_id = self.producer.session.peer_id
             dt = time.time() - self.creation_time
             if dt == 0:
                 dt = 1.0
             ratein = self.input_bytes_received / dt
             rateout = self.output_bytes_sent / dt
-            extra_acks_perc = 100.0 * self.input_acks_garbage_counter / \
-                float(self.output_blocks_acked + 1)
-            extra_blocks_perc = 100.0 * self.output_blocks_retries / \
-                float(self.output_block_id_current + 1)
             lg.out(
                 self.debug_level, 'udp_stream.doCloseStream %d %s' %
                 (self.stream_id, pir_id))
-            lg.out(self.debug_level, '    in:%d|%d|%r acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r extra:A%s|B%s' % (
+            lg.out(self.debug_level, '    in:%d|%d|%r acks:%d|%d dups:%d|%d out:%d|%d|%d|%d rate:%r|%r' % (
                 self.input_blocks_counter,
                 self.input_bytes_received,
                 self._block_period_avarage(),
@@ -631,11 +623,10 @@ class UDPStream(automat.Automat):
                 self.input_duplicated_bytes,
                 self.output_blocks_counter,
                 self.output_bytes_acked,
-                self.output_blocks_retries,
+                self.output_blocks_errors_counter,
                 self.input_acks_garbage_counter,
                 int(ratein), int(rateout),
-                misc.percent2string(extra_acks_perc),
-                misc.percent2string(extra_blocks_perc)))
+            ))
             lg.out(self.debug_level, '    ACK REASONS: %r' % self.output_acks_reasons)
             del pir_id
         self.input_blocks.clear()
@@ -876,8 +867,8 @@ class UDPStream(automat.Automat):
         if self.consumer:
             if self.output_buffer_size + len(data) > OUTPUT_BUFFER_SIZE:
                 raise BufferOverflow(self.output_buffer_size)
-            if self.output_block_id_current - self.output_acked_block_id_current > BLOCKS_PER_ACK * WINDOW_SIZE:
-                raise BufferOverflow(self.output_buffer_size)
+            # if self.output_block_id_current - self.output_acked_block_id_current > BLOCKS_PER_ACK * WINDOW_SIZE:
+            #     raise BufferOverflow(self.output_buffer_size)
             self.event('consume', data)
 
     def on_close(self):
@@ -918,10 +909,10 @@ class UDPStream(automat.Automat):
                         self.output_acked_block_id_current,
                         round(100.0 * (float(self.output_bytes_acked) / self.consumer.size), 2),
                         #--- garbage blocks out/garbacge acks in
-                        self.output_blocks_retries,
+                        self.output_blocks_errors_counter,
                         self.input_acks_garbage_counter,
                         #--- errors timeouts/lagged/success %/error %
-                        round(100.0 * (self.output_blocks_timed_out_counter / self.output_quality_counter), 2),
+                        round(100.0 * (self.output_blocks_errors_counter / self.output_quality_counter), 2),
                         round(100.0 * (self.output_blocks_success_counter / self.output_quality_counter), 2),
                         #--- sending speed current/total
                         int(total_rate_out),
@@ -1079,15 +1070,15 @@ class UDPStream(automat.Automat):
                 continue
             if relative_time - time_sent < block_position * rtt_current:
                 continue
-            error_rate = float(self.output_blocks_timed_out_counter + 1) / (self.output_quality_counter + 1.0)
+            error_rate = float(self.output_blocks_errors_counter + 1) / (self.output_quality_counter + 1.0)
             if error_rate > ACCEPTABLE_ERRORS_RATE:
                 too_much_errors = True
                 break
             #--- this block was timed out, resending
             blocks_to_send_now.insert(0, block_id)
-            self.output_blocks_retries += 1
-            self.output_blocks_timed_out_counter += 1
+            self.output_blocks_errors_counter += 1
             self.output_quality_counter += 1.0
+            self.output_error_last_time = relative_time
         if len(blocks_to_send_now) >= BLOCKS_PER_ACK:
             #--- full group of blocks with timeouts
             self._send_blocks(blocks_to_send_now)
@@ -1116,14 +1107,14 @@ class UDPStream(automat.Automat):
             missed_acks = self.output_blocks[block_id][2]
             if missed_acks < int(WINDOW_SIZE / 2.0):
                 continue
-            error_rate = float(self.output_blocks_timed_out_counter + 1) / float(self.output_quality_counter + 1.0)
+            error_rate = float(self.output_blocks_errors_counter + 1) / float(self.output_quality_counter + 1.0)
             if error_rate > ACCEPTABLE_ERRORS_RATE:
                 too_much_errors = True
                 break
             blocks_to_send_now.insert(0, block_id)
-            self.output_blocks_retries += 1
-            self.output_blocks_timed_out_counter += 1
+            self.output_blocks_errors_counter += 1
             self.output_quality_counter += 1.0
+            self.output_error_last_time = relative_time
         if len(blocks_to_send_now) >= BLOCKS_PER_ACK:
             #--- full group of blocks with missed acks
             self._send_blocks(blocks_to_send_now)
@@ -1146,15 +1137,16 @@ class UDPStream(automat.Automat):
                 continue
             if relative_time - time_sent < RTT_MAX_LIMIT / 2.0:
                 continue
-            if len(self.output_quality_counter) > BLOCKS_PER_ACK:
-                error_rate = float(self.output_blocks_timed_out_counter) / float(self.output_quality_counter)
-                if error_rate > ACCEPTABLE_ERRORS_RATE:
-                    too_much_errors = True
-                    break
+            if self.output_error_last_time < RTT_MAX_LIMIT / 2.0:
+                if self.output_quality_counter > BLOCKS_PER_ACK:
+                    error_rate = float(self.output_blocks_errors_counter) / float(self.output_quality_counter)
+                    if error_rate > ACCEPTABLE_ERRORS_RATE:
+                        too_much_errors = True
+                        break
             blocks_to_send_now.insert(0, block_id)
-            self.output_blocks_retries += 1
-            self.output_blocks_timed_out_counter += 1
+            self.output_blocks_errors_counter += 1
             self.output_quality_counter += 1.0
+            self.output_error_last_time = relative_time
         if len(blocks_to_send_now) >= BLOCKS_PER_ACK:
             #--- full group of blocks with big timeouts
             self._send_blocks(blocks_to_send_now)
@@ -1164,6 +1156,12 @@ class UDPStream(automat.Automat):
             #--- not full group, bad situation
             self._send_blocks(blocks_to_send_now)
             self._add_iteration_result('badgroup')
+            return
+        if last_block_sent_delta > RECEIVING_TIMEOUT / 3.0 and len(self.output_blocks_ids) > 0:
+            #--- keep alive, send one block
+            oldest_block_id = sorted(self.output_blocks_ids)[0]
+            self._send_blocks([oldest_block_id, ])
+            self._add_iteration_result('alive')
             return
             #--- skip sending, no blocks ready to be sent
         self._add_iteration_result('skip')
@@ -1251,7 +1249,7 @@ class UDPStream(automat.Automat):
                     relative_time, self.eof, len(self.input_blocks_to_ack),))
             reactor.callLater(0, self.automat, 'timeout')
             return
-        if len(self.input_blocks_to_ack) > BLOCKS_PER_ACK:
+        if len(self.input_blocks_to_ack) >= BLOCKS_PER_ACK:
             #--- received enough blocks to make a group, send ACK
             self._send_ack(self.input_blocks_to_ack, pause_time, why=1)
             return

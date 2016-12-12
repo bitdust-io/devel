@@ -142,7 +142,7 @@ def main():
                     gateway.outbox(p)
                 if c > 1:
                     reactor.callLater(0.01, _send, c - 1)
-            reactor.callLater(0, _send, 4)
+            reactor.callLater(0, _send, 15)
 
     gateway.add_transport_state_changed_callback(_ok_to_send)
     reactor.run()

@@ -312,7 +312,7 @@ class PacketOut(automat.Automat):
         if not self.remote_idurl:
             self.remote_idurl = correct_packet_destination(self.outpacket)
         self.remote_identity = contactsdb.get_contact_identity(self.remote_idurl)
-        self.timeout = 300  # settings.SendTimeOut() * 3
+        self.timeout = None  # 300  # settings.SendTimeOut() * 3
         self.packetdata = None
         self.filename = None
         self.filesize = None
@@ -325,9 +325,10 @@ class PacketOut(automat.Automat):
         return self.MESSAGES.get(msgid, '')
 
     def is_timed_out(self):
-        if self.time is None or self.timeout is None:
-            return True
-        return time.time() - self.time > self.timeout
+        return False
+#         if self.time is None or self.timeout is None:
+#             return True
+#         return time.time() - self.time > self.timeout
 
     def set_callback(self, command, cb):
         if command not in self.callbacks.keys():
