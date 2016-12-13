@@ -334,6 +334,9 @@ class PacketIn(automat.Automat):
                 os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
                 os.write(fd, str(data))
                 os.close(fd)
+            except:
+                lg.exc()
+            try:
                 os.remove(self.filename)
             except:
                 lg.exc()
@@ -354,7 +357,11 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        status, bytes_received, _ = arg
+        try:
+            status, bytes_received, _ = arg
+        except:
+            status = 'failed'
+            bytes_received = 0
         stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
 
     def doReportCacheFailed(self, arg):
