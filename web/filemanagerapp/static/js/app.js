@@ -69,6 +69,26 @@
         };
     }]);
 
+    app.filter('percentToFloat', function() {
+        return function(input) {
+          return parseInt(input.slice(0, -1), 10);
+        };
+    });
+
+    app.filter('greenPercentGradient', function() {
+        return function(input) {
+        	var val = parseInt(input.slice(0, -1), 10);
+        	return "linear-gradient(to right, lightgreen, lightgreen " + (val) + "% , white " + (val+10) + "% , white)";
+        };
+    });
+
+    app.filter('bluePercentGradient', function() {
+        return function(input) {
+        	var val = parseInt(input.slice(0, -1), 10);
+        	return "linear-gradient(to right, lightblue, lightblue " + (val) + "% , white " + (val+10) + "% , white)";
+        };
+    });
+
     $(window.document).on('shown.bs.modal', '.modal', function() {
         var self = this;
         var timer = setTimeout(function() {

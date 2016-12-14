@@ -340,7 +340,7 @@ def _list_active_tasks(params):
             'id': tsk.pathID,
             'version': '',
             'mode': 'up',
-            'progress': '0%'})
+            'progress': '0%', })
     for backupID in backup_control.ListRunningBackups():
         backup_obj = backup_control.GetRunningBackupObject(backupID)
         pathID, versionName = packetid.SplitBackupID(backupID)
