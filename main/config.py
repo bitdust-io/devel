@@ -425,7 +425,7 @@ class DetailedConfig(CachedConfig):
         except:
             pass
 
-    def _loadDetails(self, src):
+    def _load_details(self, src):
         """
         
         """

@@ -96,7 +96,9 @@ def raw():
     A "0" value means unlimited number of copies, be sure you have enough amount of donated space on remote machines.
 {services/backups/keep-local-copies-enabled} keep local copies
     Enable this to keep a copy of every new backup on your local HDD as well as on remote machines of your suppliers.
-    This increases rebuilding performance and network load but consumes a lot space on your HDD.
+    This increases data reliablity, rebuilding performance and decrease network load,
+    but consumes space on your HDD.
+    Every one Mb of source data uploaded will consume two Mb on your local HDD.
 {services/backups/wait-suppliers-enabled} wait suppliers 24 hours
     If you disabled storing of local data of your backups but one day a critical amount of your suppliers become unreliable - your data may be lost completely.
     Enable this option to wait for 24 hours after finishing any backup and perform a check all of your suppliers before removing the locally backed up data for this copy.

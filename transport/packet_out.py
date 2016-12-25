@@ -52,7 +52,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 12
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -285,8 +285,6 @@ class PacketOut(automat.Automat):
         self.outpacket = outpacket
         self.wide = wide
         self.callbacks = {}
-        for command, cb in callbacks.items():
-            self.set_callback(command, cb)
         self.caching_deferred = None
         self.description = self.outpacket.Command + '[' + self.outpacket.PacketID + ']'
         self.remote_idurl = target
@@ -298,6 +296,8 @@ class PacketOut(automat.Automat):
             get_packets_counter(), self.description)
         automat.Automat.__init__(self, self.label, 'AT_STARTUP', _DebugLevel, _Debug)
         increment_packets_counter()
+        for command, cb in callbacks.items():
+            self.set_callback(command, cb)
 
     def init(self):
         """
@@ -325,7 +325,8 @@ class PacketOut(automat.Automat):
         return self.MESSAGES.get(msgid, '')
 
     def is_timed_out(self):
-#         return False
+        if self.state == 'RESPONSE?':
+            return False
         if self.time is None or self.timeout is None:
             return True
         return time.time() - self.time > self.timeout
@@ -334,6 +335,9 @@ class PacketOut(automat.Automat):
         if command not in self.callbacks.keys():
             self.callbacks[command] = []
         self.callbacks[command].append(cb)
+        if _Debug:
+            lg.out(_DebugLevel, '%s : new callback for [%s] added, expecting: %r' % (
+                self, command, self.callbacks.keys()))
 
     def A(self, event, arg):
         #---SENDING---

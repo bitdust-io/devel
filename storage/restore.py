@@ -81,6 +81,13 @@ EVENTS:
     * :red:`timer-5sec`
 """
 
+#------------------------------------------------------------------------------ 
+
+_Debug = True
+_DebugLevel = 14
+
+#------------------------------------------------------------------------------ 
+
 import os
 import sys
 import time
@@ -169,7 +176,7 @@ class restore(automat.Automat):
         self.packetInCallback = None
         self.blockRestoredCallback = None
 
-        automat.Automat.__init__(self, 'restore_%s' % self.BackupID, 'AT_STARTUP', 4)
+        automat.Automat.__init__(self, 'restore_%s' % self.BackupID, 'AT_STARTUP', _DebugLevel, _Debug)
         events.info('restore', '%s start restoring' % self.BackupID)
         # lg.out(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 

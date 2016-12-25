@@ -48,7 +48,7 @@ from system import bpio
 from lib import diskspace
 from lib import nameurl
 
-import config
+from main import config
 
 # import userconfig
 
@@ -2263,7 +2263,7 @@ def RenameBaseDir(newdir):
     pathfilename = BaseDirPathFileName()
     bpio.WriteFile(pathfilename, _BaseDirPath)
     lg.out(4, 'settings.RenameBaseDir  BaseDir path was saved to ' + pathfilename)
-    logfilename = bpio.LogFileName
+    logfilename = lg.log_filename()
     lg.close_log_file()
     try:
         bpio.rmdir_recursive(olddir, True)

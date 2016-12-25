@@ -47,7 +47,7 @@ EVENTS:
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 18
+_DebugLevel = 14
 
 #------------------------------------------------------------------------------
 
@@ -203,9 +203,9 @@ class PacketIn(automat.Automat):
 
     def is_timed_out(self):
         return False
-        if self.time is None or self.timeout is None:
-            return False
-        return time.time() - self.time > self.timeout
+#         if self.time is None or self.timeout is None:
+#             return False
+#         return time.time() - self.time > self.timeout
 
     def init(self):
         """

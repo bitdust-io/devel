@@ -65,7 +65,7 @@ Some of them uses DHT to store data on nodes - we can use that stuff also.
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 14
 
 #------------------------------------------------------------------------------
@@ -562,31 +562,34 @@ def list_active_streams(proto):
 
 #------------------------------------------------------------------------------
 
-
-def cancel_output_file(transferID, why=None):
-    pkt_out, work_item = packet_out.search_by_transfer_id(transferID)
-    if pkt_out is None:
-        lg.warn('%s is not found' % str(transferID))
-        return False
-    pkt_out.automat('cancel', why)
-    if _Debug:
-        lg.out(_DebugLevel - 4, 'gateway.cancel_output_file    %s' % transferID)
-    return True
-
-
 def cancel_input_file(transferID, why=None):
     pkt_in = packet_in.get(transferID)
     assert pkt_in is not None
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'gateway.cancel_input_file : %s why: %s' % (transferID, why))
     pkt_in.automat('cancel', why)
     return True
 
 
 def cancel_outbox_file(proto, host, filename, why=None):
-    pkt_out, work_item = packet_out.search(proto, host, filename)
+    pkt_out, _ = packet_out.search(proto, host, filename)
     if pkt_out is None:
         lg.err('gateway.cancel_outbox_file ERROR packet_out not found: %r' % ((proto, host, filename),))
         return None
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'gateway.cancel_outbox_file : %s:%s %s, why: %s' % (proto, host, filename, why))
     pkt_out.automat('cancel', why)
+
+
+def cancel_outbox_file_by_transfer_id(transferID, why=None):
+    pkt_out, _ = packet_out.search_by_transfer_id(transferID)
+    if pkt_out is None:
+        lg.warn('%s is not found' % str(transferID))
+        return False
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'gateway.cancel_outbox_file_by_transfer_id : %s' % transferID)
+    pkt_out.automat('cancel', why)
+    return True
 
 #------------------------------------------------------------------------------
 
@@ -644,11 +647,13 @@ def packets_timeout_loop():
     _PacketsTimeOutTask = reactor.callLater(delay, packets_timeout_loop)
     for pkt_in in packet_in.items().values():
         if pkt_in.is_timed_out():
-            lg.out(8, 'gateway.packets_timeout_loop %r is timed out' % pkt_in)
+            if _Debug:
+                lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out' % pkt_in)
             pkt_in.automat('cancel', 'timeout')
     for pkt_out in packet_out.queue():
         if pkt_out.is_timed_out():
-            lg.out(8, 'gateway.packets_timeout_loop %r is timed out' % pkt_out)
+            if _Debug:
+                lg.out(_DebugLevel - 4, 'gateway.packets_timeout_loop %r is timed out' % pkt_out)
             pkt_out.automat('cancel', 'timeout')
     if _Debug and lg.is_debug(_DebugLevel):
         monitoring()

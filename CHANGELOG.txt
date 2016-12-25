@@ -1,6 +1,20 @@
 
 2016-10-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
+* improve gui, added progress bars for in/out streams
+* huge changes in UPD streaming: improve performance, stability - it is working now actualy!
+* bug fixes in TCP transport as well
+* pep8 auto fixes for all .py files
+* added index_synchronizer() machine to replace backup_db_keeper()
+* remove old unused options from settings
+* adjust packet_out automat
+* adjust events in contact_status automat
+* added another packet type (Command) for proxy transport : Relay()
+* keep working on proxy transport
+
+
+2016-10-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
 * bug fixes in settings and fire_hire machine
 * updated README
 * start working on crypto coins
@@ -8,7 +22,7 @@
 
 2016-09-18 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
-* publish Ptyhon sources under GNU AGPL v3!
+* publish Python sources under GNU AGPL v3!
 
 
 2016-09-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
