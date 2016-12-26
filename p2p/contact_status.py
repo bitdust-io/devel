@@ -325,7 +325,7 @@ class ContactStatus(automat.Automat):
 
     def state_changed(self, oldstate, newstate, event, arg):
         if _Debug:
-            lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate.lower(), newstate.lower()))
+            lg.out(_DebugLevel - 2, '%s : [%s]->[%s]' % (nameurl.GetName(self.idurl), oldstate, newstate))
 
     def A(self, event, arg):
         #---CONNECTED---
