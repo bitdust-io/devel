@@ -263,7 +263,7 @@ def ReadRawListFiles(supplierNum, listFileText):
         is_in_sync = False
     backups2remove = set()
     paths2remove = set()
-    missed_backups = set(remote_files().keys().copy())
+    missed_backups = set(remote_files().keys())
     oldfiles = ClearSupplierRemoteInfo(supplierNum)
     newfiles = 0
     lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, %s, is_in_sync=%s' % (
