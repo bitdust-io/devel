@@ -80,7 +80,6 @@ _SuppliersConnectors = {}
 
 def connectors():
     """
-    
     """
     global _SuppliersConnectors
     return _SuppliersConnectors
@@ -88,7 +87,6 @@ def connectors():
 
 def create(supplier_idurl):
     """
-    
     """
     assert supplier_idurl not in connectors()
     connectors()[supplier_idurl] = SupplierConnector(supplier_idurl)
@@ -96,6 +94,8 @@ def create(supplier_idurl):
 
 
 def by_idurl(idurl):
+    """
+    """
     return connectors().get(idurl, None)
 
 #------------------------------------------------------------------------------

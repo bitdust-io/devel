@@ -69,10 +69,6 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-import sys
-
-#------------------------------------------------------------------------------
-
 from logs import lg
 
 from system import bpio
@@ -171,7 +167,6 @@ def Destroy():
 
 class P2PConnector(automat.Automat):
     """
-    
     """
 
     timers = {

@@ -438,7 +438,7 @@ class BackupRebuilder(automat.Automat):
                     self.currentBackupID, blockNum)
                 localParity = backup_matrix.GetLocalParityArray(
                     self.currentBackupID, blockNum)
-                # if the remote Data exist and is available because supplier is on line,
+                # if remote Data exist and is available because supplier is on-line,
                 # but we do not have it on hand - do request
                 if localData[supplierNum] == 0:
                     PacketID = packetid.MakePacketID(
@@ -449,13 +449,15 @@ class BackupRebuilder(automat.Automat):
                             # him
                             if not io_throttle.HasPacketInRequestQueue(
                                     supplierID, PacketID):
-                                if io_throttle.QueueRequestFile(
-                                        self._file_received,
-                                        my_id.getLocalID(),
-                                        PacketID,
-                                        my_id.getLocalID(),
-                                        supplierID):
-                                    requests_count += 1
+                                filename = os.path.join(settings.getLocalBackupsDir(), PacketID)
+                                if not os.path.exists(filename):
+                                    if io_throttle.QueueRequestFile(
+                                            self._file_received,
+                                            my_id.getLocalID(),
+                                            PacketID,
+                                            my_id.getLocalID(),
+                                            supplierID):
+                                        requests_count += 1
                     else:
                         # count this packet as missing
                         self.missingPackets += 1
@@ -469,13 +471,15 @@ class BackupRebuilder(automat.Automat):
                         if availableSuppliers[supplierNum]:
                             if not io_throttle.HasPacketInRequestQueue(
                                     supplierID, PacketID):
-                                if io_throttle.QueueRequestFile(
-                                        self._file_received,
-                                        my_id.getLocalID(),
-                                        PacketID,
-                                        my_id.getLocalID(),
-                                        supplierID):
-                                    requests_count += 1
+                                filename = os.path.join(settings.getLocalBackupsDir(), PacketID)
+                                if not os.path.exists(filename):
+                                    if io_throttle.QueueRequestFile(
+                                            self._file_received,
+                                            my_id.getLocalID(),
+                                            PacketID,
+                                            my_id.getLocalID(),
+                                            supplierID):
+                                        requests_count += 1
                     else:
                         self.missingPackets += 1
                         # self.missingSuppliers.add(supplierNum)

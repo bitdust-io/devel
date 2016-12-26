@@ -362,11 +362,11 @@ class IndexSynchronizer(automat.Automat):
             self.requesting_suppliers.discard(newpacket.RemoteID)
         elif newpacket.Command == commands.Fail():
             self.requesting_suppliers.discard(newpacket.OwnerID)
-            sc = supplier_connector.by_idurl(newpacket.OwnerID)
-            if sc:
-                sc.automat('fail', newpacket)
-            else:
-                raise Exception('supplier connector was not found')
+#             sc = supplier_connector.by_idurl(newpacket.OwnerID)
+#             if sc:
+#                 sc.automat('fail', newpacket)
+#             else:
+#                 raise Exception('supplier connector was not found')
         else:
             raise Exception('wrong type of response')
         if _Debug:

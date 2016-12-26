@@ -102,7 +102,6 @@ def increment_packets_counter():
 
 def items():
     """
-    
     """
     global _InboxItems
     return _InboxItems
@@ -160,18 +159,19 @@ def process(newpacket, info):
             lg.out(_DebugLevel - 8, '    incoming %s from [%s://%s]' % (
                 newpacket, info.proto, info.host))
             lg.out(_DebugLevel - 8, '        NOT HANDLED !!!')
-    else:
-        if _Debug:
-            history().append({
-                'time': newpacket.Date,
-                'command': newpacket.Command,
-                'packet_id': newpacket.PacketID,
-                'creator_id': newpacket.CreatorID,
-                'owner_id': newpacket.OwnerID,
-                'remote_id': newpacket.RemoteID,
-                'payload': len(newpacket.Payload),
-                'address': '%s://%s' % (info.proto, info.host),
-            })
+    if _Debug:
+        history().append({
+            'time': newpacket.Date,
+            'command': newpacket.Command,
+            'packet_id': newpacket.PacketID,
+            'creator_id': newpacket.CreatorID,
+            'owner_id': newpacket.OwnerID,
+            'remote_id': newpacket.RemoteID,
+            'payload': len(newpacket.Payload),
+            'address': '%s://%s' % (info.proto, info.host),
+        })
+        if len(history()) > 100:
+            history().pop(0)
 
 #------------------------------------------------------------------------------
 

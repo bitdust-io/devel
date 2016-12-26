@@ -263,6 +263,7 @@ def ReadRawListFiles(supplierNum, listFileText):
         is_in_sync = False
     backups2remove = set()
     paths2remove = set()
+    missed_backups = set(remote_files().keys().copy())
     oldfiles = ClearSupplierRemoteInfo(supplierNum)
     newfiles = 0
     lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, %s, is_in_sync=%s' % (
@@ -337,7 +338,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                 pathID, versionName = packetid.SplitBackupID(words[0])
                 backupID = pathID + '/' + versionName
                 lineSupplierNum = int(words[1])
-                minBlockNum, maxBlockNum = words[2].split('-')
+                _, maxBlockNum = words[2].split('-')
                 maxBlockNum = int(maxBlockNum)
             except:
                 lg.warn('incorrect line:[%s]' % line)
@@ -355,7 +356,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                     paths2remove.add(pathID)
                     lg.out(8, '        V%s - remove, path not found in the index' % pathID)
                 continue
-            item, localPath = iter_path
+            item, _ = iter_path
             if isinstance(item, dict):
                 try:
                     item = item[backup_fs.INFO_KEY]
@@ -379,6 +380,7 @@ def ReadRawListFiles(supplierNum, listFileText):
                     except:
                         lg.exc()
                         break
+            missed_backups.discard(backupID)
             if backupID not in remote_files():
                 remote_files()[backupID] = {}
                 # lg.out(6, 'backup_matrix.ReadRawListFiles new remote entry for %s created in the memory' % backupID)
@@ -404,7 +406,7 @@ def ReadRawListFiles(supplierNum, listFileText):
     lg.out(8, '            old:%d, new:%d, backups2remove:%d, paths2remove:%d' % (
         oldfiles, newfiles, len(backups2remove), len(paths2remove)))
     # return list of backupID's which is too old but stored on suppliers machines
-    return backups2remove, paths2remove
+    return backups2remove, paths2remove, missed_backups
 
 
 def ReadLatestRawListFiles():

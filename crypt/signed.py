@@ -150,17 +150,17 @@ class Packet:
         try:
             stufftosum += str(self.Command)
             stufftosum += sep
-            stufftosum += self.OwnerID
+            stufftosum += str(self.OwnerID)
             stufftosum += sep
-            stufftosum += self.CreatorID
+            stufftosum += str(self.CreatorID)
             stufftosum += sep
             stufftosum += str(self.PacketID)
             stufftosum += sep
-            stufftosum += self.Date
+            stufftosum += str(self.Date)
             stufftosum += sep
             stufftosum += self.Payload
             stufftosum += sep
-            stufftosum += self.RemoteID
+            stufftosum += str(self.RemoteID)
         except Exception as exc:
             lg.exc()
             raise exc

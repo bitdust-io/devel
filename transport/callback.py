@@ -185,7 +185,6 @@ def insert_inbox_callback(index, cb):
 
 def remove_inbox_callback(cb):
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel, 'callback.remove_inbox_callback removing a callback, current callbacks:')
@@ -228,7 +227,6 @@ def insert_outbox_filter_callback(index, cb):
 
 def remove_outbox_filter_callback(cb):
     """
-    
     """
     global _OutboxPacketFilterCallbacksList
     if cb in _OutboxPacketFilterCallbacksList:
@@ -247,6 +245,14 @@ def add_outbox_callback(cb):
         _OutboxPacketCallbacksList.append(cb)
 
 
+def remove_outbox_callback(cb):
+    """
+    """
+    global _OutboxPacketCallbacksList
+    if cb in _OutboxPacketCallbacksList:
+        _OutboxPacketCallbacksList.remove(cb)
+
+
 def add_queue_item_status_callback(cb):
     """
     pkt_out, status, error_message.
@@ -258,7 +264,6 @@ def add_queue_item_status_callback(cb):
 
 def add_begin_file_sending_callback(cb):
     """
-    
     """
     global _BeginFileSendingCallbacksList
     if cb not in _BeginFileSendingCallbacksList:
@@ -305,7 +310,6 @@ def add_finish_file_receiving_callback(cb):
 
 def run_inbox_callbacks(newpacket, info, status, error_message):
     """
-    
     """
     global _InboxPacketCallbacksList
     if _Debug:
@@ -327,7 +331,6 @@ def run_inbox_callbacks(newpacket, info, status, error_message):
 
 def run_outbox_callbacks(pkt_out):
     """
-    
     """
     global _OutboxPacketCallbacksList
     if _Debug:
@@ -349,7 +352,6 @@ def run_outbox_callbacks(pkt_out):
 
 def run_outbox_filter_callbacks(outpacket, wide, callbacks, target=None, route=None):
     """
-    
     """
     global _OutboxPacketFilterCallbacksList
     for cb in _OutboxPacketFilterCallbacksList:
@@ -373,7 +375,6 @@ def run_outbox_filter_callbacks(outpacket, wide, callbacks, target=None, route=N
 
 def run_queue_item_status_callbacks(pkt_out, status, error_message):
     """
-    
     """
     global _QueueItemStatusCallbacksList
     handled = False

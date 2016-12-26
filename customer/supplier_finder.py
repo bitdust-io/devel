@@ -73,7 +73,6 @@ _SuppliersToHire = []
 
 def AddSupplierToHire(idurl):
     """
-    
     """
     global _SuppliersToHire
     _SuppliersToHire.append(idurl)
@@ -294,56 +293,6 @@ class SupplierFinder(automat.Automat):
                 self.automat('found-one-user', idurl)
                 return
         self.automat('users-not-found')
-
-#     def _found_nodes(self, nodes):
-#         lg.out(14, 'supplier_finder._found_nodes %d nodes' % len(nodes))
-#         # DEBUG
-#         # self._got_target_idurl({'idurl':'http://p2p-machines.net/bitdust_j_vps1011.xml'})
-#         # return
-#         if len(nodes) > 0:
-#             node = random.choice(nodes)
-#             d = node.request('idurl')
-#             d.addCallback(self._got_target_idurl)
-#             d.addErrback(self._request_error)
-#         else:
-#             self.automat('users-not-found')
-
-#     def _search_nodes_failed(self, err):
-#         self.automat('users-not-found')
-
-#     def _got_target_idurl(self, response):
-#         lg.out(14, 'supplier_finder._got_target_idurl response=%s' % str(response) )
-#         try:
-#             idurl = response['idurl']
-#         except:
-#             idurl = None
-#         if not idurl or idurl == 'None':
-#             self.automat('users-not-found')
-#             return response
-#         if contactsdb.is_supplier(idurl):
-#             lg.out(14, '    %s is supplier already' % idurl)
-#             self.automat('users-not-found')
-#             return response
-#         d = identitycache.immediatelyCaching(idurl)
-#         d.addCallback(lambda src: self._got_target_identity(src, idurl))
-#         d.addErrback(lambda x: self.automat('users-not-found'))
-#         return response
-
-#     def _request_error(self, err):
-#         lg.out(2, '_request_error' + str(err))
-#         self.automat('users-not-found')
-
-#     def _got_target_identity(self, src, idurl):
-#         """
-#         Need to check that remote user is supported at least one of our protocols.
-#         """
-#         ident = identitycache.FromCache(idurl)
-#         remoteprotos = set(ident.getProtoOrder())
-#         myprotos = set(my_id.getLocalIdentity().getProtoOrder())
-#         if len(myprotos.intersection(remoteprotos)) > 0:
-#             self.automat('found-one-user', idurl)
-#         else:
-#             self.automat('users-not-found')
 
     def _supplier_connector_state(self, supplier_idurl, newstate):
         if supplier_idurl != self.target_idurl:

@@ -41,39 +41,50 @@ class CustomerSupportService(LocalService):
 
     service_name = 'service_customer_support'
     config_path = 'services/customer-support/enabled'
-    _jobs = {}
-    _PING_INTERVAL = 120
 
     def dependent_on(self):
         return ['service_customer_patrol',
                 ]
 
     def start(self):
-        for starter in self._support_methods().values():
-            starter()
+        from supplier import customer_assistant
+        from contacts import contactsdb
+        from transport import callback
+        for customer_idurl in contactsdb.customers():
+            if customer_idurl and not customer_assistant.by_idurl(customer_idurl):
+                ca = customer_assistant.create(customer_idurl)
+                ca.automat('init')
+        callback.add_outbox_callback(self._outbox_packet_sent)
+        callback.append_inbox_callback(self._inbox_packet_received)
         return True
 
     def stop(self):
-        for job in self._jobs.values():
-            job.stop()
-        self._jobs.clear()
+        from supplier import customer_assistant
+        from transport import callback
+        callback.remove_outbox_callback(self._outbox_packet_sent)
+        for sc in customer_assistant.assistants().values():
+            sc.automat('shutdown')
         return True
 
-    def _support_methods(self):
-        return {
-            'ping': self._run_ping,
-        }
+    def _outbox_packet_sent(self, pkt_out):
+        from p2p import commands
+        from contacts import contactsdb
+        from supplier import customer_assistant
+        if pkt_out.outpacket.Command == commands.Identity():
+            if contactsdb.is_customer(pkt_out.outpacket.RemoteID):
+                ca = customer_assistant.by_idurl(pkt_out.outpacket.RemoteID)
+                if ca:
+                    ca.automat('propagate', pkt_out)
 
-    def _ping(self):
-        from services import driver
-        if driver.is_started('service_identity_propagate'):
-            from p2p import contact_status
-            from p2p import propagate
-            for customer_idurl in contact_status.listOfflineCustomers():
-                propagate.SendToID(customer_idurl, wide=True)
-
-    def _run_ping(self):
-        from twisted.internet.task import LoopingCall
-        self._jobs['ping'] = LoopingCall(self._ping)
-        self._jobs['ping'].start(self._PING_INTERVAL, now=False)
-        return 'ping'
+    def _inbox_packet_received(self, newpacket, info, status, error_message):
+        if status != 'finished':
+            return False
+        from p2p import commands
+        from contacts import contactsdb
+        from supplier import customer_assistant
+        if newpacket.Command in [commands.Ack(), commands.Fail()]:
+            if contactsdb.is_customer(newpacket.OwnerID):
+                ca = customer_assistant.by_idurl(newpacket.OwnerID)
+                if ca:
+                    ca.automat(newpacket.Command.lower(), newpacket)
+                    return True

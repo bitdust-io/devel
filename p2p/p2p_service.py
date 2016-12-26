@@ -81,8 +81,6 @@ _DebugLevel = 4
 
 import os
 import sys
-import cStringIO
-import zlib
 import json
 
 try:
@@ -136,7 +134,6 @@ def shutdown():
 
 def inbox(newpacket, info, status, error_message):
     """
-    
     """
     if newpacket.CreatorID != my_id.getLocalID() and newpacket.RemoteID != my_id.getLocalID():
         # packet is NOT for us, skip
@@ -390,7 +387,6 @@ def RequestIdentity(request):
 
 def SendIdentity(remote_idurl, wide=False, callbacks={}):
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendIdentity to %s" % nameurl.GetName(remote_idurl))
@@ -468,7 +464,6 @@ def SendCancelService(remote_idurl, service_info, callbacks={}):
 
 #------------------------------------------------------------------------------
 
-
 def ListFiles(request):
     """
     We will want to use this to see what needs to be resent, and expect normal
@@ -478,28 +473,8 @@ def ListFiles(request):
     """
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')
-    MyID = my_id.getLocalID()
-    RemoteID = request.OwnerID
-    PacketID = request.PacketID
-    Payload = request.Payload
-    if _Debug:
-        lg.out(_DebugLevel, "p2p_service.ListFiles from [%s], format is %s" % (nameurl.GetName(request.OwnerID), Payload))
-    custdir = settings.getCustomersFilesDir()
-    ownerdir = os.path.join(custdir, nameurl.UrlFilename(request.OwnerID))
-    if not os.path.isdir(ownerdir):
-        if _Debug:
-            lg.out(_DebugLevel, "p2p_service.ListFiles did not find customer dir " + ownerdir)
-        src = PackListFiles('', Payload)
-        result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
-        gateway.outbox(result)
-        return result
-    plaintext = TreeSummary(ownerdir)
-    if _Debug:
-        lg.out(_DebugLevel + 4, '\n%s' % (plaintext))
-    src = PackListFiles(plaintext, Payload)
-    result = signed.Packet(commands.Files(), MyID, MyID, PacketID, src, RemoteID)
-    gateway.outbox(result)
-    return result
+    from supplier import list_files
+    return list_files.send(request.OwnerID, request.PacketID, request.Payload)
 
 
 def Files(newpacket, info):
@@ -509,6 +484,7 @@ def Files(newpacket, info):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.Files from [%s] at %s://%s" % (
             nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
+    # TODO use callback here
     from storage import backup_control
     backup_control.IncomingSupplierListFiles(newpacket)
 
@@ -788,39 +764,6 @@ def Correspondent(request):
 
 #------------------------------------------------------------------------------
 
-
-def ListCustomerFiles(customer_idurl):
-    filename = nameurl.UrlFilename(customer_idurl)
-    customer_dir = os.path.join(settings.getCustomersFilesDir(), filename)
-    result = cStringIO.StringIO()
-
-    def cb(realpath, subpath, name):
-        if os.path.isdir(realpath):
-            result.write('D%s\n' % subpath)
-        else:
-            result.write('F%s\n' % subpath)
-        return True
-    bpio.traverse_dir_recursive(cb, customer_dir)
-    src = result.getvalue()
-    result.close()
-    return src
-
-
-def ListCustomerFiles1(customerNumber):
-    """
-    On the status form when clicking on a customer, find out what files we're
-    holding for that customer.
-    """
-    idurl = contactsdb.customer(customerNumber)
-    filename = nameurl.UrlFilename(idurl)
-    customerDir = os.path.join(settings.getCustomersFilesDir(), filename)
-    if os.path.exists(customerDir) and os.path.isdir(customerDir):
-        backupFilesList = os.listdir(customerDir)
-        if len(backupFilesList) > 0:
-            return ListSummary(backupFilesList)
-    return "No files stored for this customer"
-
-
 def RequestListFilesAll():
     r = []
     for supi in range(contactsdb.num_suppliers()):
@@ -846,148 +789,6 @@ def SendRequestListFiles(supplierNumORidurl):
     return result
 
 #------------------------------------------------------------------------------
-
-
-def ListSummary(dirlist):
-    """
-    Take directory listing and make summary of format:: BackupID-1-Data 1-1873
-    missing for 773,883, BackupID-1-Parity 1-1873 missing for 777,982,
-    """
-    BackupMax = {}
-    BackupAll = {}
-    result = ""
-    for filename in dirlist:
-        if not packetid.Valid(filename):       # if not type we can summarize
-            result += filename + "\n"  # then just include filename
-        else:
-            BackupID, BlockNum, SupNum, DataOrParity = packetid.BidBnSnDp(filename)
-            LocalID = BackupID + "-" + str(SupNum) + "-" + DataOrParity
-            blocknum = int(BlockNum)
-            BackupAll[(LocalID, blocknum)] = True
-            if LocalID in BackupMax:
-                if BackupMax[LocalID] < blocknum:
-                    BackupMax[LocalID] = blocknum
-            else:
-                BackupMax[LocalID] = blocknum
-    for BackupName in sorted(BackupMax.keys()):
-        missing = []
-        thismax = BackupMax[BackupName]
-        for blocknum in range(0, thismax):
-            if not (BackupName, blocknum) in BackupAll:
-                missing.append(str(blocknum))
-        result += BackupName + " from 0-" + str(thismax)
-        if len(missing) > 0:
-            result += ' missing '
-            result += ','.join(missing)
-#            for m in missing:
-#                result += str(m) + ","
-        result += "\n"
-    return result
-
-
-def TreeSummary(ownerdir):
-    out = cStringIO.StringIO()
-
-    def cb(result, realpath, subpath, name):
-        if not os.access(realpath, os.R_OK):
-            return False
-        if os.path.isfile(realpath):
-            try:
-                filesz = os.path.getsize(realpath)
-            except:
-                filesz = -1
-            result.write('F%s %d\n' % (subpath, filesz))
-            return False
-        if not packetid.IsCanonicalVersion(name):
-            result.write('D%s\n' % subpath)
-            return True
-        maxBlock = -1
-        versionSize = {}
-        dataBlocks = {}
-        parityBlocks = {}
-        dataMissing = {}
-        parityMissing = {}
-        for filename in os.listdir(realpath):
-            packetID = subpath + '/' + filename
-            pth = os.path.join(realpath, filename)
-            try:
-                filesz = os.path.getsize(pth)
-            except:
-                filesz = -1
-            if os.path.isdir(pth):
-                result.write('D%s\n' % packetID)
-                continue
-            if not packetid.Valid(packetID):
-                result.write('F%s %d\n' % (packetID, filesz))
-                continue
-            pathID, versionName, blockNum, supplierNum, dataORparity = packetid.SplitFull(packetID)
-            if None in [pathID, versionName, blockNum, supplierNum, dataORparity]:
-                result.write('F%s %d\n' % (packetID, filesz))
-                continue
-            if dataORparity != 'Data' and dataORparity != 'Parity':
-                result.write('F%s %d\n' % (packetID, filesz))
-                continue
-            if maxBlock < blockNum:
-                maxBlock = blockNum
-            if supplierNum not in versionSize:
-                versionSize[supplierNum] = 0
-            if supplierNum not in dataBlocks:
-                dataBlocks[supplierNum] = {}
-            if supplierNum not in parityBlocks:
-                parityBlocks[supplierNum] = {}
-            if dataORparity == 'Data':
-                dataBlocks[supplierNum][blockNum] = filesz
-            elif dataORparity == 'Parity':
-                parityBlocks[supplierNum][blockNum] = filesz
-        for supplierNum in versionSize.keys():
-            dataMissing[supplierNum] = set(range(maxBlock + 1))
-            parityMissing[supplierNum] = set(range(maxBlock + 1))
-            for blockNum in range(maxBlock + 1):
-                if blockNum in dataBlocks[supplierNum].keys():
-                    versionSize[supplierNum] += dataBlocks[supplierNum][blockNum]
-                    dataMissing[supplierNum].discard(blockNum)
-                if blockNum in parityBlocks[supplierNum].keys():
-                    versionSize[supplierNum] += parityBlocks[supplierNum][blockNum]
-                    parityMissing[supplierNum].discard(blockNum)
-        suppliers = set(dataBlocks.keys() + parityBlocks.keys())
-        for supplierNum in suppliers:
-            versionString = '%s %d 0-%d %d' % (
-                subpath, supplierNum, maxBlock, versionSize[supplierNum])
-            if len(dataMissing[supplierNum]) > 0 or len(parityMissing[supplierNum]) > 0:
-                versionString += ' missing'
-                if len(dataMissing[supplierNum]) > 0:
-                    versionString += ' Data:' + (','.join(map(str, dataMissing[supplierNum])))
-                if len(parityMissing[supplierNum]) > 0:
-                    versionString += ' Parity:' + (','.join(map(str, parityMissing[supplierNum])))
-            result.write('V%s\n' % versionString)
-        del dataBlocks
-        del parityBlocks
-        del dataMissing
-        del parityMissing
-        return False
-    bpio.traverse_dir_recursive(lambda realpath, subpath, name: cb(out, realpath, subpath, name), ownerdir)
-    src = out.getvalue()
-    out.close()
-    return src
-
-
-def PackListFiles(plaintext, method):
-    if method == "Text":
-        return plaintext
-    elif method == "Compressed":
-        return zlib.compress(plaintext)
-    return ''
-
-
-def UnpackListFiles(payload, method):
-    if method == "Text":
-        return payload
-    elif method == "Compressed":
-        return zlib.decompress(payload)
-    return payload
-
-#------------------------------------------------------------------------------
-
 
 def RequestDeleteBackup(BackupID):
     """

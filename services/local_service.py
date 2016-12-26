@@ -89,7 +89,7 @@ class LocalService(automat.Automat):
         if self.service_name in services().keys():
             raise ServiceAlreadyExist(self.service_name)
         self.result_deferred = None
-        automat.Automat.__init__(self, self.service_name, 'OFF', 12)
+        automat.Automat.__init__(self, self.service_name, 'OFF', _DebugLevel, _Debug)
 
     #------------------------------------------------------------------------------
 

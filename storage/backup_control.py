@@ -37,7 +37,7 @@ gets finished.
 #------------------------------------------------------------------------------
 
 _Debug = True
-_DebugLevel = 14
+_DebugLevel = 12
 
 #------------------------------------------------------------------------------
 
@@ -237,7 +237,6 @@ def Save(filepath=None):
 
 #------------------------------------------------------------------------------
 
-
 def IncomingSupplierListFiles(newpacket):
     """
     Called by ``p2p.p2p_service`` when command "Files" were received from one
@@ -252,19 +251,25 @@ def IncomingSupplierListFiles(newpacket):
     if num < -1:
         lg.out(2, 'backup_control.IncomingSupplierListFiles ERROR unknown supplier: %s' % supplier_idurl)
         return
-    src = p2p_service.UnpackListFiles(newpacket.Payload, settings.ListFilesFormat())
-    backups2remove, paths2remove = backup_matrix.ReadRawListFiles(num, src)
+    from supplier import list_files
     from customer import list_files_orator
+    src = list_files.UnpackListFiles(newpacket.Payload, settings.ListFilesFormat())
+    backups2remove, paths2remove, missed_backups = backup_matrix.ReadRawListFiles(num, src)
     list_files_orator.IncomingListFiles(newpacket)
     backup_matrix.SaveLatestRawListFiles(supplier_idurl, src)
+    if _Debug:
+        lg.out(_DebugLevel, 'backup_control.IncomingSupplierListFiles from [%s]: paths2remove=%d, backups2remove=%d missed_backups=%d' % (
+            nameurl.GetName(supplier_idurl), len(paths2remove), len(backups2remove), len(missed_backups)))
     if len(backups2remove) > 0:
         p2p_service.RequestDeleteListBackups(backups2remove)
     if len(paths2remove) > 0:
         p2p_service.RequestDeleteListPaths(paths2remove)
+    if len(missed_backups) > 0:
+        from storage import backup_monitor
+        backup_monitor.A('restart')
     del backups2remove
     del paths2remove
-    lg.out(8, 'backup_control.IncomingSupplierListFiles from [%s] %s bytes long' % (
-        nameurl.GetName(supplier_idurl), len(newpacket.Payload)))
+    del missed_backups
 
 
 def IncomingSupplierBackupIndex(newpacket):
