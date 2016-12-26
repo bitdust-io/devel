@@ -265,8 +265,9 @@ def IncomingSupplierListFiles(newpacket):
     if len(paths2remove) > 0:
         p2p_service.RequestDeleteListPaths(paths2remove)
     if len(missed_backups) > 0:
-        from storage import backup_monitor
-        backup_monitor.A('restart')
+        from storage import backup_rebuilder
+        backup_rebuilder.AddBackupsToWork(missed_backups)
+        backup_rebuilder.A('start')
     del backups2remove
     del paths2remove
     del missed_backups

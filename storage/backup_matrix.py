@@ -380,36 +380,26 @@ def ReadRawListFiles(supplierNum, listFileText):
                     except:
                         lg.exc()
                         break
-            backupOK = True
             if backupID not in remote_files():
                 remote_files()[backupID] = {}
                 # lg.out(6, 'backup_matrix.ReadRawListFiles new remote entry for %s created in the memory' % backupID)
             # +1 because range(2) give us [0,1] but we want [0,1,2]
-            known_blocks = set(remote_files()[backupID].keys())
             for blockNum in xrange(maxBlockNum + 1):
                 if blockNum not in remote_files()[backupID]:
                     remote_files()[backupID][blockNum] = {
                         'D': [0] * contactsdb.num_suppliers(),
                         'P': [0] * contactsdb.num_suppliers(), }
-                both = 0
                 for dataORparity in ['Data', 'Parity']:
                     # we set -1 if the file is missing and 1 if exist, so 0 mean "no info yet" ... smart!
                     bit = -1 if str(blockNum) in missingBlocksSet[dataORparity] else 1
-                    if bit != 1:
-                        backupOK = False
                     remote_files()[backupID][blockNum][dataORparity[0]][supplierNum] = bit
                     newfiles += int((bit + 1) / 2)  # this should switch -1 or 1 to 0 or 1
-                    both += 1
-                if both == 2:
-                    known_blocks.discard(blockNum)
-            if len(known_blocks) > 0:
-                backupOK = False
             # save max block number for this backup
             if backupID not in remote_max_block_numbers():
                 remote_max_block_numbers()[backupID] = -1
             if maxBlockNum > remote_max_block_numbers()[backupID]:
                 remote_max_block_numbers()[backupID] = maxBlockNum
-            if backupOK:
+            if len(missingBlocksSet['Data']) == 0 and len(missingBlocksSet['Parity']) == 0:
                 missed_backups.discard(backupID)
             # mark this backup to be repainted
             RepaintBackup(backupID)
@@ -779,7 +769,6 @@ def ScanBlocksToSend(backupID):
     return bySupplier
 
 #------------------------------------------------------------------------------
-
 
 def RepaintBackup(backupID):
     """

@@ -115,10 +115,11 @@ class DataSender(automat.Automat):
     """
     A class to manage process of sending data packets to remote suppliers.
     """
-    timers = {'timer-1min': (60, ['READY']),
+    timers = {
+        'timer-1min': (60, ['READY']),
         'timer-1min': (60, ['READY']),
         'timer-1sec': (1.0, ['SENDING']),
-              }
+    }
     statistic = {}
 
     def state_changed(self, oldstate, newstate, event, arg):
@@ -149,22 +150,15 @@ class DataSender(automat.Automat):
     def isQueueEmpty(self, arg):
         if not arg:
             return io_throttle.IsSendingQueueEmpty()
-        remoteID, packetID = arg
+        remoteID, _ = arg
         return io_throttle.OkToSend(remoteID)
 
     def doScanAndQueue(self, arg):
         global _ShutdownFlag
         if _Debug:
-            lg.out(
-                _DebugLevel,
-                'data_sender.doScanAndQueue _ShutdownFlag=%r' %
-                _ShutdownFlag)
+            lg.out(_DebugLevel, 'data_sender.doScanAndQueue _ShutdownFlag=%r' % _ShutdownFlag)
         if _Debug:
-            log = open(
-                os.path.join(
-                    settings.LogsDir(),
-                    'data_sender.log'),
-                'w')
+            log = open(os.path.join(settings.LogsDir(), 'data_sender.log'), 'w')
             log.write('doScanAndQueue %s\n' % time.asctime())
         if _ShutdownFlag:
             if _Debug:
@@ -184,35 +178,25 @@ class DataSender(automat.Automat):
                 for supplierNum in packetsBySupplier.keys():
                     supplier_idurl = contactsdb.supplier(supplierNum)
                     if not supplier_idurl:
-                        lg.warn(
-                            '?supplierNum? %s for %s' %
-                            (supplierNum, backupID))
+                        lg.warn('?supplierNum? %s for %s' % (supplierNum, backupID))
                         continue
                     for packetID in packetsBySupplier[supplierNum]:
-                        backupID_, blockNum, supplierNum_, dataORparity = packetid.BidBnSnDp(
+                        backupID_, _, supplierNum_, _ = packetid.BidBnSnDp(
                             packetID)
                         if backupID_ != backupID:
-                            lg.warn(
-                                '?backupID? %s for %s' %
-                                (packetID, backupID))
+                            lg.warn('?backupID? %s for %s' % (packetID, backupID))
                             continue
                         if supplierNum_ != supplierNum:
-                            lg.warn(
-                                '?supplierNum? %s for %s' %
-                                (packetID, backupID))
+                            lg.warn('?supplierNum? %s for %s' % (packetID, backupID))
                             continue
                         if io_throttle.HasPacketInSendQueue(
                                 supplier_idurl, packetID):
                             if _Debug:
-                                log.write(
-                                    '%s in the send queue to %s\n' %
-                                    (packetID, supplier_idurl))
+                                log.write('%s already in sending queue for %s\n' % (packetID, supplier_idurl))
                             continue
                         if not io_throttle.OkToSend(supplier_idurl):
                             if _Debug:
-                                log.write(
-                                    'ok to send %s ? - NO!\n' %
-                                    supplier_idurl)
+                                log.write('ok to send %s ? - NO!\n' % supplier_idurl)
                             continue
                         # tranByID = gate.transfers_out_by_idurl().get(supplier_idurl, [])
                         # if len(tranByID) > 3:
@@ -222,7 +206,7 @@ class DataSender(automat.Automat):
                             settings.getLocalBackupsDir(), packetID)
                         if not os.path.isfile(filename):
                             if _Debug:
-                                log.write('%s is not file\n' % filename)
+                                log.write('%s is not a file\n' % filename)
                             continue
                         if io_throttle.QueueSendFile(
                                 filename,
@@ -232,14 +216,10 @@ class DataSender(automat.Automat):
                                 self._packetAcked,
                                 self._packetFailed):
                             if _Debug:
-                                log.write(
-                                    'io_throttle.QueueSendFile %s\n' %
-                                    packetID)
+                                log.write('io_throttle.QueueSendFile %s\n' % packetID)
                         else:
                             if _Debug:
-                                log.write(
-                                    'io_throttle.QueueSendFile FAILED %s\n' %
-                                    packetID)
+                                log.write('io_throttle.QueueSendFile FAILED %s\n' % packetID)
                         # lg.out(6, '  %s for %s' % (packetID, backupID))
 
                         # DEBUG

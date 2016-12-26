@@ -406,6 +406,7 @@ class BackupRebuilder(automat.Automat):
     def _request_files(self):
         from storage import backup_matrix
         from customer import io_throttle
+        from customer import data_sender
         self.missingPackets = 0
         # here we want to request some packets before we start working to
         # rebuild the missed blocks
@@ -463,6 +464,10 @@ class BackupRebuilder(automat.Automat):
                         self.missingPackets += 1
                         # also mark this guy as one who dont have any data - nor local nor remote
                         # self.missingSuppliers.add(supplierNum)
+                else:
+                    # but if local Data already exists, but was not sent - do it now
+                    if remoteData[supplierNum] != 1:
+                        data_sender.A('new-data')
                 # same for Parity
                 if localParity[supplierNum] == 0:
                     PacketID = packetid.MakePacketID(
@@ -483,6 +488,10 @@ class BackupRebuilder(automat.Automat):
                     else:
                         self.missingPackets += 1
                         # self.missingSuppliers.add(supplierNum)
+                else:
+                    # but if local Parity already exists, but was not sent - do it now
+                    if remoteParity[supplierNum] != 1:
+                        data_sender.A('new-data')
             total_requests_count += requests_count
         lg.out(
             8, 'backup_rebuilder._request_files : %d chunks requested' %
@@ -582,6 +591,7 @@ class BackupRebuilder(automat.Automat):
             return
         if newData:
             from storage import backup_matrix
+            from customer import data_sender
             count = 0
             for supplierNum in xrange(contactsdb.num_suppliers()):
                 if localData[supplierNum] == 1 and reconstructedData[
@@ -595,18 +605,11 @@ class BackupRebuilder(automat.Automat):
                         None, _backupID, _blockNumber, supplierNum, 'Parity')
                     count += 1
             self.blocksSucceed.append(_blockNumber)
-            from customer import data_sender
             data_sender.A('new-data')
-            lg.out(
-                10,
-                'backup_rebuilder._block_finished !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' %
-                (count,
-                 self.blockIndex))
+            lg.out(10, 'backup_rebuilder._block_finished !!!!!! %d NEW DATA segments reconstructed, blockIndex=%d' % (
+                count, self.blockIndex))
         else:
-            lg.out(
-                10,
-                'backup_rebuilder._block_finished NO CHANGES, blockIndex=%d' %
-                self.blockIndex)
+            lg.out(10, 'backup_rebuilder._block_finished NO CHANGES, blockIndex=%d' % self.blockIndex)
         self.blockIndex -= 1
         reactor.callLater(0, self._start_one_block)
 
@@ -616,11 +619,8 @@ class BackupRebuilder(automat.Automat):
                 self.workingBlocksQueue.remove(blockNum)
             else:
                 lg.warn('block %d not present in workingBlocksQueue')
-        lg.out(
-            10, 'backup_rebuilder._finish_rebuilding succeed:%s working:%s' %
-            (str(
-                self.blocksSucceed), str(
-                self.workingBlocksQueue)))
+        lg.out(10, 'backup_rebuilder._finish_rebuilding succeed:%s working:%s' % (
+            str(self.blocksSucceed), str(self.workingBlocksQueue)))
         if len(self.blocksSucceed):
             self.backupsWasRebuilt.append(self.currentBackupID)
         self.blocksSucceed = []
@@ -650,7 +650,6 @@ def RemoveBackupToWork(backupID):
 
 def IsBackupNeedsWork(backupID):
     """
-    
     """
     global _BackupIDsQueue
     return backupID in _BackupIDsQueue
