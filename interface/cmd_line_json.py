@@ -670,8 +670,8 @@ def cmd_integrate(opts, args, overDict):
     curpath = bpio.getExecutableDir()
     # cmdpath = '/usr/local/bin/bitdust'
     src = "#!/bin/sh\n"
-    src += '# This is a short shell script to fast access BitDust software.\n'
-    src += '# NOTICE: BitDust software do not need root permissions to run, expected a normal user permissions.\n\n'
+    src += '# This is a short shell script to create an alias in OS for BitDust software.\n'
+    src += '# NOTICE: BitDust software do not require root permissions to run, please start as normal user.\n\n'
     # src += "cd %s\n" % curpath
     src += 'python %s/bitdust.py "$@"\n\n' % curpath
     print_text(src)

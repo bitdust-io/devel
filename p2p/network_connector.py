@@ -41,7 +41,7 @@ The ``network_connector()`` machine is needed to monitor status of the Internet 
 It will periodically check for incoming traffic and start STUN discovery procedure
 to detect connection status and possible external IP changes.
 
-If BitDust get disconnected it will ping "http://google.com" to know what is going on.
+If BitDust get disconnected it will ping "Google dot com" (joke) to check what is going on.
 
 
 EVENTS:
@@ -479,14 +479,16 @@ class NetworkConnector(automat.Automat):
                         lg.out(_DebugLevel, '    [%s] at position %d needs restart' % (proto, priority))
                     gateway.transport(proto).automat('restart')
                     restarts_count += 1
-                    if not_valid_count > 1:
+                    if not_valid_count > 1:  # this one failed, 2 other failed as well
                         self.automat('network-transports-verified')
                         return
                     continue
                 if not_valid_count > 0:
                     if _Debug:
-                        lg.out(_DebugLevel, '    skip other transports')
+                        lg.out(_DebugLevel, '    skip %d transport [%s]' % (priority, proto))
                     if restarts_count == 0:
+                        if _Debug:
+                            lg.out(_DebugLevel, '    but no restarts and %d:[%s] is valid' % (priority, proto))
                         self.automat('network-transports-verified')
                     return
                 if _Debug:
