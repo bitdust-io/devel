@@ -1,5 +1,0 @@
-#!/bin/bash 
-
-nohup python id_server.py 1>log.id_server 2>err.id_server &
-sleep 1
-ps aux | grep -v grep | grep id_server
