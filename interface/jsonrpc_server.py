@@ -35,7 +35,7 @@ import pprint
 import traceback
 
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, succeed, fail
 from twisted.web import server
 
 if __name__ == '__main__':
@@ -54,16 +54,33 @@ import api
 
 #------------------------------------------------------------------------------
 
+_JsonRPCServer = None
 
-def init():
+#------------------------------------------------------------------------------ 
+
+def init(json_rpc_port=None):
+    global _JsonRPCServer
     lg.out(4, 'jsonrpc_server.init')
     from main import settings
     from system import bpio
-    port = settings.DefaultJsonRPCPort()
-    bpio.AtomicWriteFile(settings.LocalJsonRPCPortFilename(), str(port))
+    if not json_rpc_port:
+        json_rpc_port = settings.getJsonRPCServerPort()
+    bpio.AtomicWriteFile(settings.LocalJsonRPCPortFilename(), str(json_rpc_port))
     # TODO: add protection: accept connections only from local host: 127.0.0.1
-    reactor.listenTCP(port, server.Site(BitDustJsonRPCServer()))
-    lg.out(4, '    started on port %d' % port)
+    _JsonRPCServer = reactor.listenTCP(json_rpc_port, server.Site(BitDustJsonRPCServer()))
+    lg.out(4, '    started on port %d' % json_rpc_port)
+
+
+def shutdown():
+    global _JsonRPCServer
+    lg.out(4, 'jsonrpc_server.shutdown')
+    if not _JsonRPCServer:
+        return succeed(None)
+    result = Deferred()
+    lg.out(4, '    calling stopListening()')
+    _JsonRPCServer.stopListening().addBoth(lambda *args: result.callback(*args))
+    _JsonRPCServer = None
+    return result
 
 #------------------------------------------------------------------------------
 

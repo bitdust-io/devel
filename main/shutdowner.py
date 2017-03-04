@@ -93,13 +93,15 @@ def shutdown(x=None):
     from raid import eccmap
     from lib import net_misc
     from updates import git_proc
-    from automats import automat
+    from interface import jsonrpc_server
     dl = []
+    jsonrpc_server.shutdown()
     driver.shutdown()
     eccmap.shutdown()
     run_upnpc.shutdown()
     net_misc.shutdown()
     git_proc.shutdown()
+    tmpfile.shutdown()
     if settings.NewWebGUI():
         from web import control
         dl.append(control.shutdown())

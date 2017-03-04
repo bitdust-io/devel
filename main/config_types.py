@@ -64,6 +64,8 @@ def labels():
 
 def defaults():
     return {
+        'api/json-rpc-server/enabled': TYPE_BOOLEAN,
+        'api/json-rpc-server/port': TYPE_POSITIVE_INTEGER,
         'logs/debug-level': TYPE_POSITIVE_INTEGER,
         'logs/memdebug-enabled': TYPE_BOOLEAN,
         'logs/memdebug-port': TYPE_POSITIVE_INTEGER,

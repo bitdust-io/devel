@@ -116,44 +116,6 @@ def _init(base_dir=None):
 #---USER CONFIG----------------------------------------------------------------
 #------------------------------------------------------------------------------
 
-# def uconfig_(key=None):
-#    """
-#    An access function to user configuration.
-#    Load settings from local file or create a default set.
-#
-#    If ``key`` is None - return the whole object, see ``lib.userconfig.UserConfig`` class.
-#        >>> import settings
-#        >>> settings.init()
-#        >>> settings.uconfig()
-#        <userconfig.UserConfig instance at 0x00BB6C10>
-#
-#    Or you can pass a setting name to request it.
-#        >>> settings.config.conf().getData("logs/debug-level")
-#        '14'
-#    """
-#    global _UserConfig
-#    global _OverrideDict
-#    #init()
-#    if _UserConfig is None:
-#        if os.path.exists(os.path.join(MetaDataDir(),"user-config")) and not os.path.exists(os.path.join(MetaDataDir(),"userconfig")):
-#            lg.out(4, 'settings.uconfig rename "user-config" to "userconfig"')
-#            try:
-#                os.rename(os.path.join(MetaDataDir(),"user-config"), os.path.join(MetaDataDir(),"userconfig"))
-#            except:
-#                pass
-#        lg.out(6, 'settings.uconfig loading user configuration from: ' + UserConfigFilename())
-#        _UserConfig = userconfig.UserConfig(UserConfigFilename())
-#    if key is None:
-#        return _UserConfig
-#    else:
-#        if key in _OverrideDict:
-#            return _OverrideDict[key]
-#        res = _UserConfig.get(key)
-#        if res is None:
-#            return ''
-#        return res
-
-
 def override(key, value):
     """
     This method can be used to redefine values in UserConfig without writing
@@ -231,50 +193,6 @@ def convert_key(key):
                     p[2] = 'udp-port'
     key = '/'.join(p)
     return key
-    # except:
-    #     lg.exc()
-    #     return None
-
-# def convert_configs():
-#    lg.out(2, 'settings.convert_configs')
-#    try:
-#        from main import config
-#        config.init(ConfigDir())
-#        for k, value in uconfig().data.items():
-#            key = convert_key(k)
-#            value = value.replace('True', 'true').replace('False', 'false')
-#            lg.out(2, '    %s -> %s : [%s]' % (k, key, value.replace('\n', '\\n')))
-#            if len(uconfig().get_childs(k)) > 0:
-#                continue
-#            # if value.strip() == '':
-#            #     continue
-#            config.conf().setData(key, value)
-#    except:
-#        lg.exc()
-#    return
-
-# def patch_settings_py():
-#    src = open('p2p/webcontrol.py').read()
-#    from main import config
-#    config.init(ConfigDir())
-#    for k, value in uconfig().data.items():
-#        key = convert_key(k)
-#        src = src.replace(k, key.replace('/', '.'))
-#    # src = src.replace('uconfig(\'', 'config.conf().getData(\'')
-#    # src = src.replace('config.conf().setData(\'', 'config.conf().setData(\'')
-#    # src = src.replace('uconfig().update()\n', '')
-#    open('p2p/webcontrol_.py', 'w').write(src)
-
-# def make_default_values():
-#    from main import config
-#    config.init(ConfigDir())
-#    for k in sorted(uconfig().data.keys()):
-#        key = convert_key(k)
-#        default = config.conf().getDefaultValue(key)
-#        if default is not None:
-#            default = uconfig().get(k)
-#            default = default.replace('True', 'true')
-#            print "config.conf().setDefaultValue('%s', '%s')" % (key, default)
 
 #------------------------------------------------------------------------------
 #--- CONSTANTS ----------------------------------------------------------------
@@ -1614,7 +1532,6 @@ def getBandInLimit():
 
 def enableIdServer(enable=None):
     """
-    
     """
     if enable is None:
         return config.conf().getBool('services/id-server/enabled')
@@ -1623,44 +1540,50 @@ def enableIdServer(enable=None):
 
 def getIdServerHost():
     """
-    
     """
     return config.conf().getData("services/id-server/host").strip()
 
 
 def setIdServerHost(hostname_or_ip):
     """
-    
     """
     return config.conf().setData("services/id-server/host", hostname_or_ip)
 
 
 def getIdServerWebPort():
     """
-    
     """
     return config.conf().getInt("services/id-server/web-port", IdentityWebPort())
 
 
 def setIdServerWebPort(web_port):
     """
-    
     """
     return config.conf().setInt("services/id-server/web-port", web_port)
 
 
 def getIdServerTCPPort():
     """
-    
     """
     return config.conf().getInt("services/id-server/tcp-port", IdentityServerPort())
 
 
 def setIdServerTCPPort(tcp_port):
     """
-    
     """
     return config.conf().setInt("services/id-server/tcp-port", tcp_port)
+
+
+def getJsonRPCServerPort():
+    """
+    """
+    return config.conf().getInt('api/json-rpc-server/port', DefaultJsonRPCPort())
+
+
+def setJsonRPCServerTCPPort(json_rpc_port):
+    """
+    """
+    return config.conf().setInt("sapi/json-rpc-server/port", json_rpc_port)
 
 
 def getTransportPort(proto):
@@ -1798,14 +1721,12 @@ def enablePROXYreceiving(enable=None):
 
 def getTransportPriority(proto):
     """
-    
     """
     return config.conf().getInt('services/%s-transport/priority' % proto, 1)
 
 
 def setTransportPriority(proto, value):
     """
-    
     """
     return config.conf().setInt('services/%s-transport/priority' % proto, value)
 
@@ -1869,7 +1790,6 @@ def transportSendingIsEnabled(proto):
 
 def enableProxyServer(enable=None):
     """
-    
     """
     if enable is None:
         return config.conf().getBool('services/proxy-server/enabled')
@@ -1965,7 +1885,6 @@ def getNeededString():
 
 def getNeededBytes():
     """
-    
     """
     return diskspace.GetBytesFromString(getNeededString())
 
@@ -1979,7 +1898,6 @@ def getDonatedString():
 
 def getDonatedBytes():
     """
-    
     """
     return diskspace.GetBytesFromString(getDonatedString())
 
@@ -2066,28 +1984,24 @@ def getEmergencyMethods():
 
 def getNickName():
     """
-    
     """
     return config.conf().getData('personal/nickname')
 
 
 def setNickName(nickname):
     """
-    
     """
     config.conf().setData('personal/nickname', nickname.strip())
 
 
 def getEmail():
     """
-    
     """
     return config.conf().getData('personal/email')
 
 
 def setEmail(nickname):
     """
-    
     """
     config.conf().setData('personal/email', nickname.strip())
 
@@ -2102,7 +2016,6 @@ def getUpdatesMode():
 
 def setUpdatesMode(mode):
     """
-    
     """
     # TODO: remove this after get rid of webcontrol.py
 
@@ -2159,7 +2072,6 @@ def getGeneralWaitSuppliers():
 
 def getBackupBlockSizeStr():
     """
-    
     """
     return config.conf().getData('services/backups/block-size')
 
@@ -2173,7 +2085,6 @@ def getBackupBlockSize():
 
 def getBackupMaxBlockSizeStr():
     """
-    
     """
     return config.conf().getData('services/backups/max-block-size')
 
@@ -2379,6 +2290,9 @@ def _setUpDefaultSettings():
 
     Every option must have a default value!
     """
+    config.conf().setDefaultValue('api/json-rpc-server/enabled', 'true')
+    config.conf().setDefaultValue('api/json-rpc-server/port', DefaultJsonRPCPort())
+
     config.conf().setDefaultValue('logs/debug-level', defaultDebugLevel())
     config.conf().setDefaultValue('logs/memdebug-enabled', 'false')
     config.conf().setDefaultValue('logs/memdebug-port', '9996')
