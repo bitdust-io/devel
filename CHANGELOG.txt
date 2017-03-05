@@ -1,5 +1,18 @@
+Change Log
+==========
 
-2016-10-23 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+2017-03-04 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
+
+* migration of genezis nodes to another vps machines
+* added new configs under api/json-rpc-server/
+* bug fix in restore backup flow
+* removed unused id server conf scripts/docs, a new doc page added instead
+* hot fix in logging
+* added customer_assistant() automat to service_customer_support()
+
+
+2016-12-14 Veselin Penev [penev.veselin@gmail.com](mailto:penev.veselin@gmail.com)
 
 * improve gui, added progress bars for in/out streams
 * huge changes in UPD streaming: improve performance, stability - it is working now actualy!
