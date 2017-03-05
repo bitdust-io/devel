@@ -1,6 +1,9 @@
 *.pyc
+*/*.pyc
 *.pyo
+*/*.pyo
 *.pyd
+*/*.pyd
 *.~vsd
 *.orig
 *_off.py

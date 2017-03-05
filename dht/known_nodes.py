@@ -34,20 +34,24 @@ module:: known_nodes
 
 
 def nodes():
+    """
+    Here is a well known DHT nodes, this is "genesis" network.
+    Every new node in the network will first connect one or several of those nodes,
+    and then will be routed to some other nodes already registered.
+    
+    Right now we have started several BitDust nodes on vps hostsing across the world.
+    If you willing to support the project and already started your own BitDust node on reliable machine,
+    contact us and we will include your address here.
+    So other nodes will be able to use your machine to connect to DHT network.
+    
+    The load is not big and as network will grow we will have more machines listed here,
+    so all traffic will be distributed accross the web.
+    """
     return [
-        ('178.49.192.122', 14441),
-        ('208.78.96.185', 14441),
-        ('67.207.147.183', 14441),
-        ('37.18.255.32', 14441),
-        ('37.18.255.33', 14441),
-        ('37.18.255.34', 14441),
-        ('37.18.255.35', 14441),
-        ('37.18.255.36', 14441),
-        ('37.18.255.37', 14441),
-        ('37.18.255.38', 14441),
-        ('37.18.255.39', 14441),
-        ('37.18.255.40', 14441),
-        ('37.18.255.41', 14441),
-        ('37.18.255.42', 14441),
-        ('37.18.255.43', 14441),
+        ('208.78.96.185', 14441),  # datahaven.net
+        ('67.207.147.183', 14441), # identity.datahaven.net
+        ('185.5.250.123', 14441),  # p2p-id.ru
+        ('86.110.117.159', 14441), # veselin-p2p.ru
+        ('185.65.200.231', 14441), # bitdust.io
+        ('45.32.246.95', 14441),   # bitdust.ai
     ]

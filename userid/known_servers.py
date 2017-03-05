@@ -27,13 +27,19 @@
 def by_host():
     """
     Here is a well known identity servers to support the network.
+    Keys are domain names or global IP address (not recommended) of the ID server.
+    Values are ``Web port`` (reading) and ``TCP port`` (writing) numbers.
 
-    Values are ``Web port`` and ``TCP port`` numbers. Keys are domain
-    names or global IP address of the server.
+    This is some kind of "genesis" network.
+    If you willing to support the project and started your own BitDust node on reliable machine,
+    contact us and we will include your address here.
+    So other nodes will be able to use your machine to host their identities.
     """
     return {
-        'p2p-machines.net': (80, 6661),  # 37.18.255.32
-        'p2p-id.ru': (80, 6661),  # 37.18.255.33
-        'veselin-p2p.ru': (80, 6661),  # 37.18.255.34
         'bitdust.io': (8084, 6661),
+        'p2p-id.ru': (80, 6661),
+        'veselin-p2p.ru': (80, 6661),
+        'bitdust.ai': (80, 6661),
+        'datahaven.net': (80, 6661),
+        'p2p-machines.net': (80, 6661),
     }
