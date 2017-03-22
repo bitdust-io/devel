@@ -228,7 +228,7 @@ class NetworkTransport(automat.Automat):
             id_contact = ident.getContactsByProto().get(self.proto, '')
         if id_contact:
             assert id_contact.startswith(self.proto + '://')
-            id_contact = id_contact.strip(self.proto + '://')
+            id_contact = id_contact.lstrip(self.proto + '://')
         if self.proto == 'tcp':
             if not id_contact:
                 default_host = misc.readExternalIP() + ':' + str(settings.getTCPPort())
