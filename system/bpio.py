@@ -1223,11 +1223,16 @@ def find_process(applist):
         import psutil
         pidsL = []
         for p in psutil.process_iter():
-            if p.pid == os.getpid():
+            try:
+                p_pid = p.pid
+                p_cmdline = p.cmdline()
+            except:
+                continue
+            if p_pid == os.getpid():
                 continue
             for app in applist:
                 try:
-                    cmdline = ' '.join(p.cmdline())
+                    cmdline = ' '.join(p_cmdline)
                 except:
                     continue
                 if app.startswith('regexp:'):
