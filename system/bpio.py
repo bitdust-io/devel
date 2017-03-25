@@ -1241,16 +1241,16 @@ def find_process(applist):
                 else:
                     if cmdline.count(app):
                         pidsL.append(p.pid)
-        return pidsL
+        if pidsL:
+            return pidsL
     except:
         pass
-    pidsL = []
     ostype = platform.uname()[0]
     if ostype == "Windows":
         return find_process_win32(applist)
     else:
         return find_process_linux(applist)
-    return pidsL
+    return []
 
 
 def kill_process(pid):

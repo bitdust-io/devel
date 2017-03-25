@@ -375,8 +375,9 @@ class PacketIn(automat.Automat):
         """
         Action method.
         """
-        status, bytes_received, _ = arg
-        stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
+        if arg:
+            status, bytes_received, _ = arg
+            stats.count_inbox(self.sender_idurl, self.proto, status, bytes_received)
         lg.out(18, 'packet_in.doReportCacheFailed WARNING : %s' % self.sender_idurl)
 
     def doDestroyMe(self, arg):
