@@ -7,5 +7,5 @@ echo "----------------------------------------------------"
 for node in ${nodes[@]}
 do
   echo "[$node]"
-  ssh $node "cd bitdust; python bitdust.py automats list | grep -e p2p_connector -e BitDust"
+  ssh $node "cd bitdust; python bitdust.py idurl; python bitdust.py automats list | grep -e p2p_connector -e BitDust"
 done
