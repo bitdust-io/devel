@@ -6,10 +6,14 @@
 # Note that this process and the grep process are saved by the grep -v grep
 #    because the name of this script includes "grep"
 #
-#echo "look for [$1]"
+
+echo "running 'kill $1'"
+
 LINES=`ps auxww | grep "$1" | grep -v grep`
 [ -n "$LINES" ] && echo "$LINES"
 NUM=`echo "$LINES" | awk '{print $2}'`
-[ -n "$NUM" ] &&  kill -9 $NUM
-# sleep 1
-[ -n "$NUM" ] && echo "killed $NUM"
+[ -n "$NUM" ] && kill -9 $NUM
+[ -n "$NUM" ] && echo "killed process $NUM"
+
+exit 0
+

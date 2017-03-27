@@ -117,7 +117,7 @@ def A(event=None, arg=None):
         return _NetworkConnector
     if _NetworkConnector is None:
         _NetworkConnector = NetworkConnector(
-            'network_connector', 'AT_STARTUP', _DebugLevel, _Debug)
+            'network_connector', 'AT_STARTUP', _DebugLevel)
     if event is not None:
         _NetworkConnector.automat(event, arg)
     return _NetworkConnector
@@ -146,6 +146,7 @@ class NetworkConnector(automat.Automat):
     }
 
     def init(self):
+        self.log_transitions = True
         self.last_upnp_time = 0
         self.last_reconnect_time = 0
         self.last_internet_state = 'disconnected'

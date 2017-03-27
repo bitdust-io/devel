@@ -1,10 +1,19 @@
 #!/bin/bash
 
-for n in "00" "01" "02" "03" "04" "05" "06" "07" "08" "09" "10" "11" "12" "13" "14" "15"
+IFS=$'\n' read -d '' -r -a nodes < nodes.txt
+echo "target nodes:"
+echo "${nodes[@]}"
+
+for node in ${nodes[@]}
 do
-  name="vps10$n"
-  echo ++++++++++++++++++ $name +++++++++++++++++++++
-  scp -q bd cmd go run loop stop up reset reset.devel see states install idcreate grepnkill "$name:"
-  scp cmd "$name:"
-  ssh $name "chmod +x ./cmd; ./cmd $name"
+  echo ""
+  echo "----------------------------------------------------"
+  echo "[$node]"
+  echo "scp scripts to $node ..."
+  scp -q bd cmd go run loop stop up see kill "$node:"
+  echo "chmod +x on scripts"
+  ssh $node "chmod +x ./bd ./cmd ./go ./run ./loop ./stop ./up ./see ./kill"
+  ssh $node "chmod +x ./cmd; ./cmd $node"
+  echo "clean up all scripts"
+  ssh $node "rm ./bd ./cmd ./go ./run ./loop ./stop ./up ./see ./kill"
 done

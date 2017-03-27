@@ -2,7 +2,7 @@
 
 cd ~/bitdust
 
-python bitdust.py id create "bitdust_j_$1"
+python bitdust.py id create "test_node_$1"
 
 
 

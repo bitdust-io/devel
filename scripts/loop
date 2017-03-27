@@ -1,9 +1,11 @@
 #!/bin/bash
+
 while true; do 
     echo "loop iteration"
+    ./kill bitdust.py
     ./up
     nohup ./run 1>log 2>err.log &
-    ps -C "bitdust.py" -o "%p" --no-heading >~/pid
+    ps -C "bitdust.py" -o "%p" --no-heading >/tmp/bitdust.pid
     sleep 60000
 done
 sleep 1

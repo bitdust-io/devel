@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "running 'monitor'"
+
 # ls -la .bitdust/customers/
 # cd ~/bitdust
 # git remote -vv

@@ -1,8 +1,11 @@
 #!/bin/bash
 
+echo "running 'up'"
+
 cd ~/bitdust
+git fetch --all
 # git checkout -f master
-# git reset --hard
-git pull
+git reset --hard
+# git pull
 cd ..
 

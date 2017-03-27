@@ -1,13 +1,22 @@
 #!/bin/bash
 
-./stop
-./up
+echo "running 'cmd'"
+
+./kill bitdust.py
+
+#./stop
+
+# ./up
+
 # ./bd set debug 10
 # ./bd set udp true
-# ./bd set services/broadcasting/routing-enabled true
+# ./bd set suppliers 2
+./bd set services/broadcasting/enabled false
 # ./bd set services/broadcasting/max-broadcast-connections 3
-# rm -rf ~/.bitdust/logs/*
+
+rm -rf ~/.bitdust/logs/*
 # rm -rf ~/bitdust/services/*.pyc
+
 ./go
 
 exit 0

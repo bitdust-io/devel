@@ -1,10 +1,7 @@
 #!/bin/bash
-cd ~
-chmod +x grepnkill
-./grepnkill loop
-./grepnkill dhn.py
-./grepnkill bitpie.py
-./grepnkill bitdust.py
-./grepnkill sleep
-# sleep 1
+
+echo "running 'stop'"
+
+./bd stop
+
 exit 0

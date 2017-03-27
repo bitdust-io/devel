@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "running 'reset'"
+
 rm -rf bitdust
 git clone http://gitlab.bitdust.io/devel/bitdust.devel.git
 mv bitdust.devel bitdust

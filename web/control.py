@@ -215,8 +215,14 @@ def shutdown():
     if _WSGIListener:
         if _Debug:
             lg.out(_DebugLevel, '    close listener %s' % _WSGIListener)
-        result = _WSGIListener.stopListening()
-        _WSGIListener.connectionLost("Closing WSGIListener as requested")
+        try:
+            result = _WSGIListener.stopListening()
+        except:
+            lg.exc()
+        try:
+            _WSGIListener.connectionLost("Closing WSGIListener as requested")
+        except:
+            lg.exc()
         del _WSGIListener
     else:
         if _Debug:
