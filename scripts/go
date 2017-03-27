@@ -2,7 +2,7 @@
 
 echo "running 'go'"
 
-cd ~
+./stop_loop
 
 /bin/rm -f /tmp/nohup.loop.bitdust
 nohup ./loop > /tmp/nohup.loop.bitdust &

@@ -2,22 +2,24 @@
 
 echo "running 'cmd'"
 
-./kill bitdust.py
+# ./stop_loop
 
-#./stop
+./stop
 
-# ./up
+./up
 
 # ./bd set debug 10
 # ./bd set udp true
 # ./bd set suppliers 2
-./bd set services/broadcasting/enabled false
+# ./bd set services/broadcasting/enabled false
 # ./bd set services/broadcasting/max-broadcast-connections 3
 
 rm -rf ~/.bitdust/logs/*
 # rm -rf ~/bitdust/services/*.pyc
 
-./go
+# ./go
+
+./daemon
 
 exit 0
 

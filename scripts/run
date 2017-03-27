@@ -1,4 +1,6 @@
 #!/bin/bash
 
+echo "running 'run'"
+
 cd ~/bitdust
 python bitdust.py

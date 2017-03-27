@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "running 'kill $1'"
+echo "running 'pskill $1'"
 
 LINES=`ps auxww | grep "$1" | grep -v grep | grep -v kill`
 [ -n "$LINES" ] && echo "$LINES"
