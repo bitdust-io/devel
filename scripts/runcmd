@@ -1,6 +1,7 @@
 #!/bin/bash
 
 IFS=$'\n' read -d '' -r -a nodes < nodes.txt
+
 echo "target nodes:"
 echo "${nodes[@]}"
 

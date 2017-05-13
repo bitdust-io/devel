@@ -62,12 +62,16 @@ setup.py: venv
 bitdust_clean:
 	@rm -rfv ~/.bitdust/
 
-bitdust_install_usr_bin:
-	@$(PYTHON) bitdust.py alias > /tmp/bitdust
-	sudo mv /tmp/bitdust /usr/bin/
-	sudo chmod +x /usr/bin/bitdust
+install_usr_bin:
+	@echo "#!/bin/bash" > /tmp/bitdust
+	@echo "$(PYTHON) `pwd`/bitdust.py \"\$\@\"" >> /tmp/bitdust
+	@mv /tmp/bitdust /usr/bin/
+	@chmod +x /usr/bin/bitdust
+	@echo "created executable script in /usr/bin/bitdust"
 
-bitdust_install_usr_local_bin:
-	@$(PYTHON) bitdust.py alias > /tmp/bitdust
-	sudo mv /tmp/bitdust /usr/local/bin/
-	sudo chmod +x /usr/local/bin/bitdust
+install_usr_local_bin:
+	@echo "#!/bin/bash" > /tmp/bitdust
+	@echo "$(PYTHON) `pwd`/bitdust.py \"\$\@\"" >> /tmp/bitdust
+	@mv /tmp/bitdust /usr/local/bin/
+	@chmod +x /usr/local/bin/bitdust
+	@echo "created executable script in /usr/local/bin/bitdust"

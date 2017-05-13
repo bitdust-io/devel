@@ -5,7 +5,7 @@ echo "running 'up'"
 cd ~/bitdust
 git fetch --all
 # git checkout -f master
-git reset --hard
+git reset --hard origin/master
 # git pull
 cd ..
 
