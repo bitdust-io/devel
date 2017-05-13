@@ -24,10 +24,10 @@ pyclean:
 	@rm -rfv coverage.xml .coverage
 
 docsclean:
-	@rm -frv docs/_build/
+	@rm -fr docs/_build/
 
 clean: pyclean docsclean
-	@rm -rfv venv
+	@rm -rf venv
 
 venv:
 	@virtualenv -p python2.7 venv
@@ -59,7 +59,7 @@ setup.py: venv
 	$(PYTHON) setup_gen.py
 	@$(PYTHON) setup.py check --restructuredtext
 
-bitdust_clean:
+fullclean:
 	@rm -rfv ~/.bitdust/
 
 link:
@@ -68,5 +68,6 @@ link:
 	@chmod +x ~/.bitdust/bitdust
 	@echo "created executable script in ${HOME}/.bitdust/bitdust"
 
-pingidservers:
+smoketest:
 	@for srv in `$(PYTHON) -c "import userid.known_servers; s=userid.known_servers.by_host(); print ' '.join(['{}:{}'.format(i, s[i][0]) for i in s])"`; do echo "\n$$srv"; curl -I --connect-timeout 2 $$srv 2>/dev/null | grep "HTTP"; done
+

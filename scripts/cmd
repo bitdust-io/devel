@@ -30,8 +30,8 @@ rm -rfv ~/.bitdust/logs/*
 # rm -rfv ~/bitdust/services/*.pyc
 
 cd ~/bitdust
-# make clean
-# make venv
+make clean
+make venv
 make link
 cd ~
 
