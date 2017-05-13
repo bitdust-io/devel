@@ -3,4 +3,4 @@
 echo "running 'run'"
 
 cd ~/bitdust
-python bitdust.py
+~/.bitdust/bitdust

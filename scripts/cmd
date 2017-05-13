@@ -8,16 +8,18 @@ echo "running 'cmd'"
 
 ./up
 
-# ./bd set debug 10
+./bd set debug 10
 # ./bd set udp true
 # ./bd set suppliers 2
 # ./bd set services/broadcasting/enabled false
 # ./bd set services/broadcasting/max-broadcast-connections 3
 
-# ./bd set services/accountant/enabled true
-# ./bd set services/broadcasting/enabled true
-# ./bd set services/broadcasting/routing-enabled true
-# ./bd set services/customer/enabled false
+./bd set services/accountant/enabled true
+./bd set services/broadcasting/enabled true
+./bd set services/broadcasting/routing-enabled true
+./bd set services/customer/enabled false
+./bd set services/id-server/enabled true
+./bd set services/id-server/host $1
 
 # echo "true" > ~/.bitdust/config/services/accountant/enabled
 # echo "true" > ~/.bitdust/config/services/broadcasting/enabled
@@ -30,7 +32,7 @@ rm -rfv ~/.bitdust/logs/*
 cd ~/bitdust
 # make clean
 # make venv
-make install_usr_local_bin
+make link
 cd ~
 
 # ./go

@@ -1,8 +1,7 @@
 #!/bin/bash
 
 cd ~/bitdust
-
-python bitdust.py id create "test_node_$1"
+~/.bitdust/bitdust id create "test_node_$1"
 
 
 

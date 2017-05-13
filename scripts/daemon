@@ -2,5 +2,4 @@
 
 echo "running 'daemon'"
 
-cd ~/bitdust
-python bitdust.py daemon
+~/.bitdust/bitdust daemon

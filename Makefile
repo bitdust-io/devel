@@ -62,8 +62,11 @@ setup.py: venv
 bitdust_clean:
 	@rm -rfv ~/.bitdust/
 
-run_script:
+link:
 	@echo "#!/bin/bash" > ~/.bitdust/bitdust
 	@echo "$(PYTHON) `pwd`/bitdust.py \"\$$@\"" >> ~/.bitdust/bitdust
 	@chmod +x ~/.bitdust/bitdust
 	@echo "created executable script in ${HOME}/.bitdust/bitdust"
+
+pingidservers:
+	@for srv in `$(PYTHON) -c "import userid.known_servers; s=userid.known_servers.by_host(); print ' '.join(['{}:{}'.format(i, s[i][0]) for i in s])"`; do echo "\n$$srv"; curl -I --connect-timeout 2 $$srv 2>/dev/null | grep "HTTP"; done
