@@ -7,8 +7,9 @@
 DEPS:=requirements.txt
 DOCKER_COMPOSE=$(shell which docker-compose)
 
-PIP:="venv/bin/pip"
-CMD_FROM_VENV:=". venv/bin/activate; which"
+VENV="${HOME}/.bitdust/venv"
+PIP:="${VENV}/bin/pip"
+CMD_FROM_VENV:=". ${VENV}/bin/activate; which"
 TOX=$(shell "$(CMD_FROM_VENV)" "tox")
 PYTHON=$(shell "$(CMD_FROM_VENV)" "python")
 TOX_PY_LIST="$(shell $(TOX) -l | grep ^py | xargs | sed -e 's/ /,/g')"
@@ -27,10 +28,11 @@ docsclean:
 	@rm -fr docs/_build/
 
 clean: pyclean docsclean
-	@rm -rf venv
+	@rm -rf ${VENV}
 
 venv:
-	@virtualenv -p python2.7 venv
+	@echo "Creating new virtual environment in ${VENV}"
+	@virtualenv -p python2.7 ${VENV}
 	@$(PIP) install -U "pip>=7.0" -q
 	@$(PIP) install -r $(DEPS)
 
