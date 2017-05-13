@@ -155,11 +155,13 @@ def read_coins_from_packet(newpacket):
 
 def validate_coin(acoin):
     # TODO: validate fields, hashes, query on DB, etc.
-    if 'hash' not in acoin.keys():
+    if 'miner' not in acoin:
         return False
-    if 'tm' not in acoin.keys():
+    if 'hash' not in acoin['miner']:
         return False
-    if 'starter' not in acoin.keys():
+    if 'mined' not in acoin['miner']:
+        return False
+    if 'starter' not in acoin['miner']:
         return False
     return True
 

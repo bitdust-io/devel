@@ -120,7 +120,7 @@ def init():
     from django.core.wsgi import get_wsgi_application
     from django.conf import settings as django_settings
     from django.core import management
-    from django.contrib.auth.management.commands import changepassword
+    # from django.contrib.auth.management.commands import changepassword
 
     if _Debug:
         lg.out(_DebugLevel, '    configuring WSGI bridge from Twisted to Django')

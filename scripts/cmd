@@ -14,8 +14,18 @@ echo "running 'cmd'"
 # ./bd set services/broadcasting/enabled false
 # ./bd set services/broadcasting/max-broadcast-connections 3
 
+./bd set services/accountant/enabled true
+./bd set services/broadcasting/enabled true
+./bd set services/broadcasting/routing-enabled true
+./bd set services/customer/enabled false
+
+# echo "true" > ~/.bitdust/config/services/accountant/enabled
+# echo "true" > ~/.bitdust/config/services/broadcasting/enabled
+# echo "true" > ~/.bitdust/config/services/broadcasting/routing-enabled
+# echo "false" > ~/.bitdust/config/services/customer/enabled
+
 rm -rf ~/.bitdust/logs/*
-# rm -rf ~/bitdust/services/*.pyc
+rm -rf ~/bitdust/services/*.pyc
 
 # ./go
 

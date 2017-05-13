@@ -142,7 +142,6 @@ def loop(first_start=False):
 
 def sync(callback_func=None):
     """
-    
     """
     def _reset_done(response, retcode, result):
         if callback_func is None:
@@ -171,21 +170,23 @@ def sync(callback_func=None):
 #------------------------------------------------------------------------------
 
 
-def run(cmdargs, callback_func=None):
+def run(cmdargs, base_dir=None, git_bin=None, env=None, callback_func=None):
     """
-    
     """
     if _Debug:
         lg.out(_DebugLevel, 'git_proc.run')
+    base_dir = base_dir or bpio.getExecutableDir()
     if bpio.Windows():
         cmd = ['git', ] + cmdargs
-        exec_dir = bpio.getExecutableDir()
-        git_exe = bpio.portablePath(os.path.join(exec_dir, '..', 'git', 'bin', 'git.exe'))
+        if git_bin:
+            git_exe = git_bin
+        else:
+            git_exe = bpio.portablePath(os.path.join(base_dir, '..', 'git', 'bin', 'git.exe'))
         if not os.path.isfile(git_exe):
             if _Debug:
                 lg.out(_DebugLevel, '    not found git.exe, try to run from shell')
             try:
-                response, retcode = execute_in_shell(cmd, base_dir=bpio.getExecutableDir())
+                response, retcode = execute_in_shell(cmd, base_dir=base_dir)
             except:
                 response = ''
                 retcode = 1
@@ -196,8 +197,8 @@ def run(cmdargs, callback_func=None):
             lg.out(_DebugLevel, '    found git in %s' % git_exe)
         cmd = [git_exe, ] + cmdargs
     else:
-        cmd = ['git', ] + cmdargs
-    execute(cmd, callback=callback_func, base_dir=bpio.getExecutableDir())
+        cmd = [git_bin or 'git', ] + cmdargs
+    execute(cmd, callback=callback_func, base_dir=base_dir, env=env)
 
 #------------------------------------------------------------------------------
 
@@ -250,7 +251,7 @@ class GitProcessProtocol(protocol.ProcessProtocol):
             self.callback(self.out, reason.value.exitCode)
 
 
-def execute(cmdargs, base_dir=None, process_protocol=None, callback=None):
+def execute(cmdargs, base_dir=None, process_protocol=None, env=None, callback=None):
     global _CurrentProcess
     if _Debug:
         lg.out(_DebugLevel, 'git_proc.execute: "%s" in %s' % (' '.join(cmdargs), base_dir))
@@ -277,7 +278,7 @@ def execute(cmdargs, base_dir=None, process_protocol=None, callback=None):
         process_protocol = GitProcessProtocol(callback)
     try:
         _CurrentProcess = reactor.spawnProcess(
-            process_protocol, executable, cmdargs, path=base_dir)
+            process_protocol, executable, cmdargs, path=base_dir, env=env)
     except:
         lg.exc()
         return None
