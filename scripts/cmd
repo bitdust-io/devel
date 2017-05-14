@@ -8,11 +8,11 @@ echo "running 'cmd'"
 
 rm -rfv ~/.bitdust/logs/*
 
-cd ~/bitdust
+# cd ~/bitdust
 # make clean
 # make venv
 # make link
-cd ~
+# cd ~
 
 # ./bd set debug 10
 # ./bd set udp true
@@ -20,8 +20,8 @@ cd ~
 # ./bd set services/broadcasting/enabled false
 # ./bd set services/broadcasting/max-broadcast-connections 3
 
-./bd set services/accountant/enabled true
 # ./bd set services/accountant/enabled true
+# ./bd set services/miner/enabled false
 # ./bd set services/broadcasting/enabled true
 # ./bd set services/broadcasting/routing-enabled true
 # ./bd set services/customer/enabled false

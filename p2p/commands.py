@@ -76,6 +76,8 @@ def init():
     P2PCommandAcks[CancelService()] = Ack()
     P2PCommandAcks[Broadcast()] = None
     P2PCommandAcks[Relay()] = None
+    P2PCommandAcks[Coin()] = None
+    P2PCommandAcks[RetreiveCoin()] = Coin()
 
 
 def IsCommand(s):
