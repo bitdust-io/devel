@@ -138,6 +138,7 @@ class AccountantNode(automat.Automat):
         The state machine code, generated using `visio2python
         <http://bitdust.io/visio2python/>`_ tool.
         """
+        #---READY---
         if self.state == 'READY':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -152,6 +153,7 @@ class AccountantNode(automat.Automat):
                 self.state = 'VALID_COIN?'
                 self.doPullCoin(arg)
                 self.doVerifyCoin(arg)
+        #---READ_COINS---
         elif self.state == 'READ_COINS':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -159,7 +161,7 @@ class AccountantNode(automat.Automat):
             elif event == 'accountant-connected':
                 self.doAddAccountant(arg)
                 self.doRetreiveCoins(arg)
-            elif event == 'stop' or (event == 'timer-1min' and not self.isAnyCoinsReceived(arg)):
+            elif event == 'stop' or ( event == 'timer-1min' and not self.isAnyCoinsReceived(arg) ):
                 self.state = 'OFFLINE'
             elif event == 'new-coin-mined':
                 self.doPushCoin(arg)
@@ -170,10 +172,12 @@ class AccountantNode(automat.Automat):
                 self.state = 'READY'
                 self.doWriteCoins(arg)
                 self.doCheckPendingCoins(arg)
+        #---AT_STARTUP---
         elif self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'OFFLINE'
                 self.doInit(arg)
+        #---VALID_COIN?---
         elif self.state == 'VALID_COIN?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -193,6 +197,7 @@ class AccountantNode(automat.Automat):
                 self.doWriteCoins(arg)
             elif event == 'new-coin-mined':
                 self.doPushCoin(arg)
+        #---WRITE_COIN!---
         elif self.state == 'WRITE_COIN!':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -208,6 +213,7 @@ class AccountantNode(automat.Automat):
                 self.doWriteCoins(arg)
             elif event == 'new-coin-mined':
                 self.doPushCoin(arg)
+        #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -216,9 +222,13 @@ class AccountantNode(automat.Automat):
                 self.state = 'ACCOUNTANTS?'
                 self.doLookupAccountants(arg)
             elif event == 'accountant-connected':
+                self.state = 'ACCOUNTANTS?'
                 self.doAddAccountant(arg)
+                self.doLookupAccountants(arg)
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
+        #---ACCOUNTANTS?---
         elif self.state == 'ACCOUNTANTS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -226,7 +236,7 @@ class AccountantNode(automat.Automat):
             elif event == 'accountant-connected' and self.isMoreNeeded(arg):
                 self.doAddAccountant(arg)
                 self.doLookupAccountants(arg)
-            elif (event == 'lookup-failed' and not self.isAnyAccountants(arg)) or event == 'timer-2min':
+            elif ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ) or event == 'timer-2min':
                 self.state = 'OFFLINE'
             elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READ_COINS'
