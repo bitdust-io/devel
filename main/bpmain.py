@@ -138,7 +138,8 @@ def init(UI='', options=None, args=None, overDict=None, executablePath=None):
         if bpio.Windows() and bpio.isFrozen():
             lg.stdout_stop_redirecting()
         lg.close_log_file()
-        lg.open_log_file(settings.MainLogFilename() + '-' + time.strftime('%y%m%d%H%M%S') + '.log')
+        lg.open_log_file(settings.MainLogFilename())
+        # lg.open_log_file(settings.MainLogFilename() + '-' + time.strftime('%y%m%d%H%M%S') + '.log')
         if bpio.Windows() and bpio.isFrozen():
             lg.stdout_start_redirecting()
 

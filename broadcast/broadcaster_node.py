@@ -115,11 +115,13 @@ class BroadcasterNode(automat.Automat):
         The state machine code, generated using `visio2python
         <http://bitdust.io/visio2python/>`_ tool.
         """
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'BROADCASTERS?'
                 self.doInit(arg)
                 self.doStartBroadcastersLookup(arg)
+        #---BROADCASTERS?---
         elif self.state == 'BROADCASTERS?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -130,11 +132,12 @@ class BroadcasterNode(automat.Automat):
                 self.doAddBroadcaster(arg)
             elif event == 'lookup-failed' and not self.isAnyBroadcasters(arg):
                 self.state = 'OFFLINE'
-            elif event == 'lookup-failed' and self.isAnyBroadcasters(arg):
-                self.doStartBroadcastersLookup(arg)
             elif event == 'broadcaster-connected' and self.isMoreNeeded(arg):
                 self.doAddBroadcaster(arg)
                 self.doStartBroadcastersLookup(arg)
+            elif event == 'lookup-failed' and self.isAnyBroadcasters(arg):
+                self.state = 'BROADCASTING'
+        #---OFFLINE---
         elif self.state == 'OFFLINE':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -143,8 +146,10 @@ class BroadcasterNode(automat.Automat):
                 self.state = 'BROADCASTERS?'
                 self.doAddBroadcaster(arg)
                 self.doStartBroadcastersLookup(arg)
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
+        #---BROADCASTING---
         elif self.state == 'BROADCASTING':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -212,14 +217,15 @@ class BroadcasterNode(automat.Automat):
         if not arg:
             return
         if arg in self.connected_broadcasters:
-            lg.warn('%s already connected as broadcaster' % arg)
+            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster SKIP, %s already connected as broadcaster' % arg)
             return
         if arg in self.listeners:
-            lg.warn('%s already connected as listener' % arg)
+            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster SKIP, %s already connected as listener' % arg)
         self.connected_broadcasters.append(arg)
         self.last_success_action_time = time.time()
         if _Debug:
-            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster %s joined !!!!!!!!' % arg)
+            lg.out(_DebugLevel, 'broadcaster_node.doAddBroadcaster %s joined, %d total connected' % (
+                arg, len(self.connected_broadcasters)))
 
     def doRemoveBroadcaster(self, arg):
         """

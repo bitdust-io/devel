@@ -152,7 +152,6 @@ def reset_next_lookup():
 
 #------------------------------------------------------------------------------
 
-
 def start(count=1, consume=True,
           lookup_method=None, observe_method=None, process_method=None,):
     if len(discovered_idurls()) > count:
@@ -161,6 +160,8 @@ def start(count=1, consume=True,
             result.callback(consume_discovered_idurls(count))
         else:
             result.callback(extract_discovered_idurls(count))
+        lg.out(_DebugLevel - 4, 'lookup.start  already know %d discovered nodes, return %d nodes' % (
+            len(discovered_idurls()), count))
         return result
     reset_next_lookup()
     t = LookupTask(count=count, consume=consume,
@@ -168,10 +169,10 @@ def start(count=1, consume=True,
                    observe_method=observe_method,
                    process_method=process_method)
     t.start()
-    return t.result
+    lg.out(_DebugLevel - 4, 'lookup.start  new task created for %d nodes' % count)
+    return t.result_defer
 
 #------------------------------------------------------------------------------
-
 
 class LookupTask(object):
 
@@ -194,7 +195,7 @@ class LookupTask(object):
         self.failed = 0
         self.lookup_now = False
         self.stopped = False
-        self.result = Deferred(canceller=lambda d: setattr(self, 'stopped', True))
+        self.result_defer = Deferred(canceller=lambda d: setattr(self, 'stopped', True))
 
     def __del__(self):
         if _Debug:
@@ -203,7 +204,7 @@ class LookupTask(object):
     def start(self):
         d = self.lookup_nodes()
         d.addErrback(lambda err: None if self.stopped else schedule_next_lookup(self))
-        if self.result:
+        if self.result_defer:
             d.addErrback(lambda err: [self.report_result([]), self.close()])
         return d
 
@@ -212,7 +213,7 @@ class LookupTask(object):
         self.lookup_method = None
         self.observe_method = None
         self.process_method = None
-        self.result = None
+        self.result_defer = None
         if _Debug:
             lg.out(_DebugLevel, 'lookup.close finished in %f seconds' % round(time.time() - self.started, 3))
 
@@ -232,26 +233,25 @@ class LookupTask(object):
     def observe_nodes(self, nodes):
         if self.stopped:
             return []
-        l = []
+        observe_list = []
         for node in nodes:
             d = self.observe_method(node)
             d.addCallback(self.on_node_observed, node)
             d.addErrback(self.on_node_failed, node)
-            l.append(d)
-        dl = DeferredList(l, consumeErrors=False)
+            observe_list.append(d)
+        dl = DeferredList(observe_list, consumeErrors=False)
         dl.addCallback(self.on_all_nodes_observed)
         return nodes
 
     def report_result(self, results=None):
-        if not self.result:
-            return
         if results is None:
             if self.consume:
                 results = consume_discovered_idurls(self.count)
             else:
                 results = extract_discovered_idurls(self.count)
-        self.result.callback(results)
-        self.result = None
+        if self.result_defer:
+            self.result_defer.callback(results)
+        self.result_defer = None
 
     def on_node_succeed(self, node, info):
         self.succeed += 1
@@ -290,12 +290,15 @@ class LookupTask(object):
         if _Debug:
             lg.out(_DebugLevel, 'lookup.on_all_nodes_observed results: %d, discovered nodes: %d' % (
                 len(results), len(discovered_idurls())))
+        if len(discovered_idurls()) == 0:
+            self.report_result()
+            self.close()
+            return
         if len(discovered_idurls()) < self.count:
             self.lookup_nodes()
             return
-        if self.result:
-            self.report_result()
-            self.close()
+        self.report_result()
+        self.close()
 
     def on_identity_cached(self, idurl, node):
         if self.stopped:
@@ -316,7 +319,7 @@ class LookupTask(object):
             return
         self.lookup_now = False
         if _Debug:
-            lg.out(_DebugLevel + 10, 'lookup.on_nodes_discovered : %s' % nodes)
+            lg.out(_DebugLevel, 'lookup.on_nodes_discovered : %s' % nodes)
         if not nodes or len(discovered_idurls()) + len(nodes) < self.count:
             self.lookup_nodes()
         if len(nodes) == 0:

@@ -2,8 +2,6 @@
 
 echo "running 'cmd'"
 
-# ./stop_loop
-
 ./stop
 
 ./up
@@ -11,7 +9,6 @@ echo "running 'cmd'"
 rm -rfv ~/.bitdust/logs/*
 
 cd ~/bitdust
-rm -rf venv
 # make clean
 # make venv
 # make link
@@ -23,6 +20,7 @@ cd ~
 # ./bd set services/broadcasting/enabled false
 # ./bd set services/broadcasting/max-broadcast-connections 3
 
+./bd set services/accountant/enabled true
 # ./bd set services/accountant/enabled true
 # ./bd set services/broadcasting/enabled true
 # ./bd set services/broadcasting/routing-enabled true
@@ -35,11 +33,10 @@ cd ~
 # echo "true" > ~/.bitdust/config/services/broadcasting/routing-enabled
 # echo "false" > ~/.bitdust/config/services/customer/enabled
 
-# rm -rfv ~/bitdust/services/*.pyc
-
 # ./go
 
 ./daemon
 
-exit 0
+echo "node $1 finished with SUCCESS"
 
+exit 0

@@ -33,7 +33,7 @@ module:: dht_service
 #------------------------------------------------------------------------------
 
 _Debug = False
-_DebugLevel = 14
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -71,6 +71,7 @@ import known_nodes
 
 _MyNode = None
 _UDPListener = None
+_ActiveLookup = None
 
 #------------------------------------------------------------------------------
 
@@ -147,12 +148,17 @@ def reconnect():
         lg.out(_DebugLevel + 10, 'dht_service.reconnect')
     return node().reconnect()
 
+#------------------------------------------------------------------------------
+
+def random_key():
+    return key_to_hash(str(random.getrandbits(255)))
 
 def key_to_hash(key):
     h = hashlib.sha1()
     h.update(key)
     return h.digest()
 
+#------------------------------------------------------------------------------
 
 def okay(result, method, key, arg=None):
     if isinstance(result, dict):
@@ -169,6 +175,7 @@ def error(err, method, key):
         lg.out(_DebugLevel, 'dht_service.error %s(%s) returned an ERROR:\n%s' % (method, key, str(err)))
     return err
 
+#------------------------------------------------------------------------------
 
 def get_value(key):
     if _Debug:
@@ -203,10 +210,6 @@ def delete_key(key):
     return d
 
 
-def random_key():
-    return key_to_hash(str(random.getrandbits(255)))
-
-
 def set_node_data(key, value):
     if not node():
         return
@@ -214,20 +217,41 @@ def set_node_data(key, value):
         lg.out(_DebugLevel + 10, 'dht_service.set_node_data key=[%s] value: %s' % (key, str(value)[:20]))
     node().data[key] = value
 
+#------------------------------------------------------------------------------
+
+def on_nodes_found(result, node_id64):
+    global _ActiveLookup
+    _ActiveLookup = None
+    okay(result, 'find_node', node_id64)
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.on_nodes_found   node_id=[%s], %d nodes found' % (node_id64, len(result)))
+    return result
+
+def on_lookup_failed(result, node_id64):
+    global _ActiveLookup
+    _ActiveLookup = None
+    error(result, 'find_node', node_id64)
+    if _Debug:
+        lg.out(_DebugLevel, 'dht_service.on_lookup_failed   node_id=[%s], result=%s' % (node_id64, result))
+    return result
 
 def find_node(node_id):
+    global _ActiveLookup
+    if _ActiveLookup:
+        if _Debug:
+            lg.out(_DebugLevel, 'dht_service.find_node SKIP, already started')
+        return _ActiveLookup
     node_id64 = base64.b64encode(node_id)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.find_node   node_id=[%s]' % node_id64)
     if not node():
         return fail(Exception('DHT service is off'))
-    d = node().iterativeFindNode(node_id)
-    d.addCallback(okay, 'find_node', node_id64)
-    d.addErrback(error, 'find_node', node_id64)
-    return d
+    _ActiveLookup = node().iterativeFindNode(node_id)
+    _ActiveLookup.addCallback(on_nodes_found, node_id64)
+    _ActiveLookup.addErrback(on_lookup_failed, node_id64)
+    return _ActiveLookup
 
 #------------------------------------------------------------------------------
-
 
 class DHTNode(DistributedTupleSpacePeer):
 
@@ -328,6 +352,11 @@ def main():
             set_value(args[1], args[2]).addBoth(_r)
         elif cmd == 'find':
             find_node(key_to_hash(args[1])).addBoth(_r)
+        elif cmd == 'discover':
+            def _l(x):
+                print x
+                find_node(random_key()).addBoth(_l)
+            _l('')
     reactor.run()
 
 if __name__ == '__main__':

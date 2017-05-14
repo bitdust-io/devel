@@ -1097,7 +1097,8 @@ def MainLogFilename():
     """
     A prefix for file names to store main process logs.
     """
-    return os.path.join(LogsDir(), 'bitdust')
+    # return os.path.join(LogsDir(), 'bitdust')
+    return os.path.join(LogsDir(), 'main.log')
 
 
 def UpdateLogFilename():
@@ -2330,7 +2331,7 @@ def _setUpDefaultSettings():
 
     config.conf().setDefaultValue('services/broadcasting/enabled', 'true')
     config.conf().setDefaultValue('services/broadcasting/routing-enabled', 'false')
-    config.conf().setDefaultValue('services/broadcasting/max-broadcast-connections', '10')
+    config.conf().setDefaultValue('services/broadcasting/max-broadcast-connections', '3')
 
     config.conf().setDefaultValue('services/customer/enabled', 'true')
     config.conf().setDefaultValue('services/customer/needed-space',

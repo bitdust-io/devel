@@ -22,7 +22,7 @@
 
 
 """
-.. module:: broadcasters_finder.
+.. module:: broadcasters_finder
 
 .. role:: red
 
