@@ -266,8 +266,8 @@ def ReadRawListFiles(supplierNum, listFileText):
     missed_backups = set(remote_files().keys())
     oldfiles = ClearSupplierRemoteInfo(supplierNum)
     newfiles = 0
-    lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, %s, is_in_sync=%s' % (
-        len(listFileText), supplierNum, backup_control.revision(), index_synchronizer.A(), is_in_sync))
+    lg.out(8, 'backup_matrix.ReadRawListFiles %d bytes to read from supplier #%d, rev:%d, is_in_sync=%s' % (
+        len(listFileText), supplierNum, backup_control.revision(), is_in_sync))
     inpt = cStringIO.StringIO(listFileText)
     while True:
         line = inpt.readline()
