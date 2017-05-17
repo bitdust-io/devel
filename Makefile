@@ -66,7 +66,7 @@ fullclean:
 
 link:
 	@echo "#!/bin/bash" > ~/.bitdust/bitdust
-	@echo "$(PYTHON) `pwd`/bitdust.py \"\$$@\"" >> ~/.bitdust/bitdust
+	@echo "$(PYTHON) -u `pwd`/bitdust.py \"\$$@\"" >> ~/.bitdust/bitdust
 	@chmod +x ~/.bitdust/bitdust
 	@echo "created executable script in ${HOME}/.bitdust/bitdust"
 

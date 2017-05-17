@@ -328,6 +328,28 @@ def run_now(opts, args):
 #------------------------------------------------------------------------------
 
 
+def cmd_deploy(opts, args, overDict):
+    from main import settings
+    from system import bpio
+    source_dir = bpio.getExecutableDir()
+    venv_path = os.path.join(settings.BaseDir(), 'venv_test')
+    status = os.system('rm -rf {}'.format(venv_path))
+    if status != 0:
+        return status
+    status = os.system('virtualenv -p python2.7 {}'.format(venv_path))
+    if status != 0:
+        return status
+    status = os.system('{}/bin/pip install -U "pip>=7.0" -q'.format(venv_path))
+    if status != 0:
+        return status
+    status = os.system('{}/bin/pip install -r "{}/requirements.txt" -q'.format(venv_path, source_dir))
+    if status != 0:
+        return status
+    return 0
+
+#------------------------------------------------------------------------------
+
+
 def cmd_reconnect(opts, args, overDict):
     tpl = jsontemplate.Template(templ.TPL_RAW)
     return call_jsonrpc_method_template_and_stop('reconnect', tpl)
@@ -1004,6 +1026,9 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
 
     from system import bpio
     bpio.init()
+
+    if cmd == 'deploy':
+        return cmd_deploy(opts, args, overDict)
 
     #---start---
     if cmd == '' or cmd == 'start' or cmd == 'go' or cmd == 'run':

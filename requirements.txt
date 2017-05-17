@@ -3,6 +3,7 @@ pyOpenSSL
 pycrypto
 pyasn1
 cryptography
+service_identity
 CodernityDB
 psutil
 django==1.7  # if only you want a gui

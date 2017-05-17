@@ -261,7 +261,7 @@ def init(port=6001):
         lg.out(2, 'webcontrol.init SKIP, already started on port ' + str(local_port))
         return succeed(local_port)
 
-    events.init(SendCommandToGUI)
+    events.init()
 
     #---callbacks---
     # transport_control.SetContactAliveStateNotifierFunc(OnAliveStateChanged)

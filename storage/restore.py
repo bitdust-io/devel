@@ -177,7 +177,7 @@ class restore(automat.Automat):
         self.blockRestoredCallback = None
 
         automat.Automat.__init__(self, 'restore_%s' % self.BackupID, 'AT_STARTUP', _DebugLevel, _Debug)
-        events.info('restore', '%s start restoring' % self.BackupID)
+        events.send('restore-started', dict(backup_id=self.BackupID))
         # lg.out(6, "restore.__init__ %s, ecc=%s" % (self.BackupID, str(self.EccMap)))
 
     def state_changed(self, oldstate, newstate, event_string, arg):
@@ -468,19 +468,19 @@ class restore(automat.Automat):
         lg.out(6, "restore.doReportAborted " + self.BackupID)
         self.Done = True
         self.MyDeferred.callback(self.BackupID + ' aborted')
-        events.info('restore', '%s restoring were aborted' % self.BackupID)
+        events.send('restore-aborted', dict(backup_id=self.BackupID))
 
     def doReportFailed(self, arg):
         lg.out(6, "restore.doReportFailed ERROR %s : the block does not look good" % str(arg))
         self.Done = True
         self.MyDeferred.errback(self.BackupID + ' failed')
-        events.notify('restore', '%s failed to restore block number %d' % (self.BackupID, self.BlockNumber))
+        events.send('restore-failed', dict(backup_id=self.BackupID, block_number=self.BlockNumber))
 
     def doReportDone(self, arg):
         # lg.out(6, "restore.doReportDone - restore has finished. All is well that ends well !!!")
         self.Done = True
         self.MyDeferred.callback(self.BackupID + ' done')
-        events.info('restore', '%s restored successfully' % self.BackupID)
+        events.send('restore-done', dict(backup_id=self.BackupID))
 
     def doDestroyMe(self, arg):
         if self.InboxQueueWorker is not None:

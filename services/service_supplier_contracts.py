@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_miner.py
+# service_supplier_contracts.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
-# This file (service_miner.py) is part of BitDust Software.
+# This file (service_supplier_contracts.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,40 +27,47 @@
 """
 ..
 
-module:: service_miner
+module:: service_supplier_contracts
 """
 
 from services.local_service import LocalService
 
 
 def create_service():
-    return MinerService()
+    return SupplierContractsService()
 
 
-class MinerService(LocalService):
+class SupplierContractsService(LocalService):
 
-    service_name = 'service_miner'
-    config_path = 'services/miner/enabled'
+    service_name = 'service_supplier_contracts'
+    config_path = 'services/supplier-contracts/enabled'
 
     def dependent_on(self):
-        return ['service_p2p_hookups',
-                'service_nodes_lookup',
+        return ['service_supplier',
+                'service_nodes_lookup'
                 ]
 
     def start(self):
-        from coins import coins_miner
-        coins_miner.A('init')
-        coins_miner.A('start')
+        from main import events
+        events.add_subscriber(self.on_new_customer_accepted, 'new-customer-accepted')
+        from p2p import p2p_service_seeker
+        p2p_service_seeker.connect_random_node('service_miner')
         return True
 
     def stop(self):
-        from coins import coins_miner
-        coins_miner.A('stop')
-        coins_miner.Destroy()
         return True
 
-    def request(self, request, info):
-        return
+    def on_new_customer_accepted(self, e):
+        pass
 
-    def cancel(self, request, info):
-        return
+    def on_new_customer_denied(self, e):
+        pass
+
+    def on_existing_customer_denied(self, e):
+        pass
+
+    def on_existing_customer_accepted(self, e):
+        pass
+
+
+

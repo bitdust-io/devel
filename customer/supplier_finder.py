@@ -231,9 +231,9 @@ class SupplierFinder(automat.Automat):
         """
         Action method.
         """
-        d = lookup.start()
-        d.addCallback(self._nodes_lookup_finished)
-        d.addErrback(lambda err: self.automat('users-not-found'))
+        t = lookup.start()
+        t.result_defer.addCallback(self._nodes_lookup_finished)
+        t.result_defer.addErrback(lambda err: self.automat('users-not-found'))
 
     def doCleanPrevUser(self, arg):
         """

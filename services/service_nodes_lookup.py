@@ -54,22 +54,26 @@ class NodesLookupService(LocalService):
 
     def start(self):
         from p2p import lookup
-        lookup.init(lookup_method=self.lookup_in_dht,
-                    observe_method=self.observe_dht_node,
-                    process_method=self.process_idurl)
+        from p2p import p2p_service_seeker
+        lookup.init(lookup_method=self._lookup_in_dht,
+                    observe_method=self._observe_dht_node,
+                    process_method=self._process_idurl)
         lookup.start(count=5, consume=False)
+        p2p_service_seeker.A('init')
         return True
 
     def stop(self):
+        from p2p import p2p_service_seeker
         from p2p import lookup
+        p2p_service_seeker.A('shutdown')
         lookup.shutdown()
         return True
 
-    def lookup_in_dht(self, **kwargs):
+    def _lookup_in_dht(self, **kwargs):
         from dht import dht_service
         return dht_service.find_node(dht_service.random_key())
 
-    def observe_dht_node(self, node):
+    def _observe_dht_node(self, node):
         from twisted.internet.defer import Deferred
         result = Deferred()
         d = node.request('idurl')
@@ -77,7 +81,7 @@ class NodesLookupService(LocalService):
         d.addErrback(result.errback)
         return result
 
-    def process_idurl(self, idurl, node):
+    def _process_idurl(self, idurl, node):
         from twisted.internet.defer import Deferred
         from contacts import identitycache
         result = Deferred()

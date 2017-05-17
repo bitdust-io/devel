@@ -256,7 +256,7 @@ class backup(automat.Automat):
         """
         Action method.
         """
-        events.info('backup', '%s started' % self.backupID)
+        events.send('backup-started', dict(backup_id=self.backupID))
 
     def doRead(self, arg):
         def readChunk():
@@ -386,11 +386,11 @@ class backup(automat.Automat):
         if self.ask4abort:
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'abort')
-            events.info('backup', '%s aborted' % self.backupID)
+            events.send('backup-aborted', dict(backup_id=self.backupID))
         else:
             if self.finishCallback:
                 self.finishCallback(self.backupID, 'done')
-            events.info('backup', '%s done successfully' % self.backupID)
+            events.send('backup-done', dict(backup_id=self.backupID))
 
     def doDestroyMe(self, arg):
         self.currentBlockData.close()
@@ -428,7 +428,7 @@ class backup(automat.Automat):
             if _Debug:
                 lg.out(_DebugLevel, 'backup._raidmakeCallback WARNING - result is None :  %r eof=%s dt=%s' % (
                     blockNumber, str(self.stateEOF), str(time.time() - dt)))
-            events.info('backup', '%s aborted' % self.backupID)
+            events.send('backup-aborted', dict(backup_id=self.backupID))
             self._kill_pipe()
         else:
             if _Debug:

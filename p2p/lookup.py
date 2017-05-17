@@ -32,7 +32,7 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = False
+_Debug = True
 _DebugLevel = 10
 
 #------------------------------------------------------------------------------
@@ -73,7 +73,8 @@ def init(lookup_method=None, observe_method=None, process_method=None):
     _LookupMethod = lookup_method
     _ObserveMethod = observe_method
     _ProcessMethod = process_method
-    lg.out(_DebugLevel, "lookup.init")
+    if _Debug:
+        lg.out(_DebugLevel, "lookup.init")
 
 
 def shutdown():
@@ -86,7 +87,8 @@ def shutdown():
     _LookupMethod = None
     _ObserveMethod = None
     _ProcessMethod = None
-    lg.out(_DebugLevel, "lookup.shutdown")
+    if _Debug:
+        lg.out(_DebugLevel, "lookup.shutdown")
 
 #------------------------------------------------------------------------------
 
@@ -135,16 +137,20 @@ def schedule_next_lookup(current_lookup_task, delay=60):
         return
     if _Debug:
         lg.out(_DebugLevel, 'lookup.schedule_next_lookup after %d seconds' % delay)
-    _NextLookupTask = reactor.callLater(delay, start,
-                                        count=current_lookup_task.count,
-                                        consume=current_lookup_task.consume,
-                                        lookup_method=current_lookup_task.lookup_method,
-                                        observe_method=current_lookup_task.observe_method,
-                                        process_method=current_lookup_task.process_method
-                                        )
+    _NextLookupTask = reactor.callLater(
+        delay,
+        start,
+        count=current_lookup_task.count,
+        consume=current_lookup_task.consume,
+        lookup_method=current_lookup_task.lookup_method,
+        observe_method=current_lookup_task.observe_method,
+        process_method=current_lookup_task.process_method
+    )
 
 
 def reset_next_lookup():
+    """
+    """
     global _NextLookupTask
     if _NextLookupTask and not _NextLookupTask.called and not _NextLookupTask.cancelled:
         _NextLookupTask.cancel()
@@ -152,29 +158,35 @@ def reset_next_lookup():
 
 #------------------------------------------------------------------------------
 
-def start(count=1, consume=True,
-          lookup_method=None, observe_method=None, process_method=None,):
+def start(count=1, consume=True, lookup_method=None, observe_method=None, process_method=None,):
+    """
+    NOTE: no parallel threads, DHT lookup can be started only one at time.
+    """
+    t = DiscoveryTask(
+        count=count,
+        consume=consume,
+        lookup_method=lookup_method,
+        observe_method=observe_method,
+        process_method=process_method,
+    )
     if len(discovered_idurls()) > count:
-        result = Deferred()
+        if _Debug:
+            lg.out(_DebugLevel - 4, 'lookup.start  knows %d discovered nodes, SKIP and return %d nodes' % (
+                len(discovered_idurls()), count))
         if consume:
-            result.callback(consume_discovered_idurls(count))
+            t.result_defer.callback(consume_discovered_idurls(count))
         else:
-            result.callback(extract_discovered_idurls(count))
-        lg.out(_DebugLevel - 4, 'lookup.start  already know %d discovered nodes, return %d nodes' % (
-            len(discovered_idurls()), count))
-        return result
+            t.result_defer.callback(extract_discovered_idurls(count))
+        return t
     reset_next_lookup()
-    t = LookupTask(count=count, consume=consume,
-                   lookup_method=lookup_method,
-                   observe_method=observe_method,
-                   process_method=process_method)
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'lookup.start  new DiscoveryTask created for %d nodes' % count)
     t.start()
-    lg.out(_DebugLevel - 4, 'lookup.start  new task created for %d nodes' % count)
-    return t.result_defer
+    return t  # .result_defer
 
 #------------------------------------------------------------------------------
 
-class LookupTask(object):
+class DiscoveryTask(object):
 
     def __init__(self,
                  count,
@@ -195,18 +207,37 @@ class LookupTask(object):
         self.failed = 0
         self.lookup_now = False
         self.stopped = False
-        self.result_defer = Deferred(canceller=lambda d: setattr(self, 'stopped', True))
+        self.lookup_task = None
+        self.result_defer = Deferred(canceller=lambda x: self.stop())
+        # self.result_defer = Deferred(canceller=lambda d: setattr(self, 'stopped', True))
 
     def __del__(self):
         if _Debug:
             lg.out(_DebugLevel, 'lookup.__del__')
 
     def start(self):
-        d = self.lookup_nodes()
-        d.addErrback(lambda err: None if self.stopped else schedule_next_lookup(self))
+        if self.stopped:
+            lg.warn('DiscoveryTask already stopped')
+            return None
+        if self.lookup_task and not self.lookup_task.called:
+            lg.warn('lookup_nodes() method already called')
+            return self.lookup_task
+        self.lookup_task = self.lookup_nodes()
+        self.lookup_task.addBoth(lambda x: setattr(self, 'lookup_task', None))
+        self.lookup_task.addErrback(lambda err: None if self.stopped else schedule_next_lookup(self))
         if self.result_defer:
-            d.addErrback(lambda err: [self.report_result([]), self.close()])
-        return d
+            self.lookup_task.addErrback(lambda err: [self.report_result([]), self.close()])
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup.DiscoveryTask.start')
+        return self.lookup_task
+
+    def stop(self):
+        self.stopped = True
+        if self.lookup_task and not self.lookup_task.called:
+            self.lookup_task.cancel()
+            self.lookup_task = None
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup.DiscoveryTask.stop')
 
     def close(self):
         self.stopped = True
@@ -294,9 +325,10 @@ class LookupTask(object):
             self.report_result()
             self.close()
             return
-        if len(discovered_idurls()) < self.count:
-            self.lookup_nodes()
-            return
+        # if len(discovered_idurls()) < self.count:
+        #     # self.lookup_task = self.lookup_nodes()
+        #     self.start()
+        #     return
         self.report_result()
         self.close()
 
@@ -314,14 +346,15 @@ class LookupTask(object):
         return idurl
 
     def on_nodes_discovered(self, nodes):
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup.on_nodes_discovered : %s, stopped=%s' % (nodes, self.stopped))
         if self.stopped:
             self.close()
             return
         self.lookup_now = False
-        if _Debug:
-            lg.out(_DebugLevel, 'lookup.on_nodes_discovered : %s' % nodes)
-        if not nodes or len(discovered_idurls()) + len(nodes) < self.count:
-            self.lookup_nodes()
+        # if not nodes or len(discovered_idurls()) + len(nodes) < self.count:
+            # self.lookup_task = self.lookup_nodes()
+            # self.start()
         if len(nodes) == 0:
             self.report_result(result=[])
             self.close()

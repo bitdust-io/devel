@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# accountants_finder.py
+# p2p_service_seeker.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
-# This file (accountants_finder.py) is part of BitDust Software.
+# This file (p2p_service_seeker.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -22,15 +22,15 @@
 
 
 """
-.. module:: accountants_finder.
+.. module:: p2p_service_seeker
 
 .. role:: red
 
-BitDust accountants_finder() Automat
+BitDust p2p_service_seeker() Automat
 
 EVENTS:
     * :red:`ack-received`
-    * :red:`found-one-user`
+    * :red:`found-users`
     * :red:`init`
     * :red:`service-accepted`
     * :red:`service-denied`
@@ -45,6 +45,10 @@ EVENTS:
 
 _Debug = True
 _DebugLevel = 6
+
+#------------------------------------------------------------------------------
+
+from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
@@ -63,31 +67,29 @@ from transport import callback
 
 #------------------------------------------------------------------------------
 
-_AccountantsFinder = None
+_P2PServiceSeeker = None
 
 #------------------------------------------------------------------------------
-
 
 def A(event=None, arg=None):
     """
     Access method to interact with the state machine.
     """
-    global _AccountantsFinder
+    global _P2PServiceSeeker
     if event is None and arg is None:
-        return _AccountantsFinder
-    if _AccountantsFinder is None:
+        return _P2PServiceSeeker
+    if _P2PServiceSeeker is None:
         # set automat name and starting state here
-        _AccountantsFinder = AccountantsFinder('accountants_finder', 'AT_STARTUP', _DebugLevel, _Debug)
+        _P2PServiceSeeker = P2PServiceSeeker('p2p_service_seeker', 'AT_STARTUP', _DebugLevel, _Debug)
     if event is not None:
-        _AccountantsFinder.automat(event, arg)
-    return _AccountantsFinder
+        _P2PServiceSeeker.automat(event, arg)
+    return _P2PServiceSeeker
 
 #------------------------------------------------------------------------------
 
-
-class AccountantsFinder(automat.Automat):
+class P2PServiceSeeker(automat.Automat):
     """
-    This class implements all the functionality of the ``accountants_finder()``
+    This class implements all the functionality of the ``p2p_service_seeker()``
     state machine.
     """
 
@@ -99,22 +101,24 @@ class AccountantsFinder(automat.Automat):
     def init(self):
         """
         Method to initialize additional variables and flags at creation phase
-        of accountants_finder() machine.
+        of p2p_service_seeker() machine.
         """
         self.target_idurl = None
+        self.target_service = None
         self.requested_packet_id = None
         self.request_service_params = None
+        self.lookup_task = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
-        Method to catch the moment when accountants_finder() state were
+        Method to catch the moment when p2p_service_seeker() state were
         changed.
         """
 
     def state_not_changed(self, curstate, event, arg):
         """
         This method intended to catch the moment when some event was fired in
-        the accountants_finder() but its state was not changed.
+        the p2p_service_seeker() but its state was not changed.
         """
 
     def A(self, event, arg):
@@ -122,22 +126,26 @@ class AccountantsFinder(automat.Automat):
         The state machine code, generated using `visio2python
         <http://bitdust.io/visio2python/>`_ tool.
         """
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READY'
                 self.doInit(arg)
+        #---RANDOM_USER---
         elif self.state == 'RANDOM_USER':
             if event == 'shutdown':
                 self.state = 'CLOSED'
+                self.doStopLookup(arg)
                 self.doDestroyMe(arg)
-            elif event == 'found-one-user':
-                self.state = 'ACK?'
-                self.doRememberUser(arg)
-                self.Attempts += 1
-                self.doSendMyIdentity(arg)
             elif event == 'users-not-found':
                 self.state = 'READY'
                 self.doNotifyLookupFailed(arg)
+            elif event == 'found-users':
+                self.state = 'ACK?'
+                self.doSelectOneUser(arg)
+                self.Attempts+=1
+                self.doSendMyIdentity(arg)
+        #---ACK?---
         elif self.state == 'ACK?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -145,11 +153,12 @@ class AccountantsFinder(automat.Automat):
             elif event == 'ack-received':
                 self.state = 'SERVICE?'
                 self.doSendRequestService(arg)
-            elif event == 'timer-10sec' and self.Attempts < 5:
-                self.state = 'RANDOM_USER'
-                self.doLookupRandomUser(arg)
             elif event == 'timer-3sec':
                 self.doSendMyIdentity(arg)
+            elif event == 'timer-10sec' and self.Attempts<5:
+                self.state = 'RANDOM_USER'
+                self.doLookupRandomNode(arg)
+        #---SERVICE?---
         elif self.state == 'SERVICE?':
             if event == 'shutdown':
                 self.state = 'CLOSED'
@@ -157,21 +166,24 @@ class AccountantsFinder(automat.Automat):
             elif event == 'service-accepted':
                 self.state = 'READY'
                 self.doNotifyLookupSuccess(arg)
-            elif self.Attempts == 5 and (event == 'timer-10sec' or event == 'service-denied'):
+            elif ( event == 'timer-10sec' or event == 'service-denied' ) and self.Attempts<5:
+                self.state = 'RANDOM_USER'
+                self.doLookupRandomNode(arg)
+            elif self.Attempts==5 and ( event == 'timer-10sec' or event == 'service-denied' ):
                 self.state = 'READY'
                 self.doNotifyLookupFailed(arg)
-            elif (event == 'timer-10sec' or event == 'service-denied') and self.Attempts < 5:
-                self.state = 'RANDOM_USER'
-                self.doLookupRandomUser(arg)
+        #---READY---
         elif self.state == 'READY':
             if event == 'start':
                 self.state = 'RANDOM_USER'
-                self.doSetNotifyCallback(arg)
-                self.Attempts = 0
-                self.doLookupRandomUser(arg)
+                self.doSetRequest(arg)
+                self.doSetCallback(arg)
+                self.Attempts=0
+                self.doLookupRandomNode(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None
@@ -182,25 +194,37 @@ class AccountantsFinder(automat.Automat):
         """
         callback.insert_inbox_callback(0, self._inbox_packet_received)
 
-    def doSetNotifyCallback(self, arg):
+    def doSetRequest(self, arg):
         """
         Action method.
         """
-        self.result_callback, self.request_service_params = arg
+        self.target_service, self.request_service_params = arg[:2]
 
-    def doLookupRandomUser(self, arg):
+    def doSetCallback(self, arg):
         """
         Action method.
         """
-        t = lookup.start()
-        t.result_defer.addCallback(self._nodes_lookup_finished)
-        t.result_defer.addErrback(lambda err: self.automat('users-not-found'))
+        self.result_callback = arg[-1]
 
-    def doRememberUser(self, arg):
+    def doLookupRandomNode(self, arg):
         """
         Action method.
         """
-        self.target_idurl = arg
+        self.lookup_task = lookup.start()
+        self.lookup_task.result_defer.addCallback(self._nodes_lookup_finished)
+        self.lookup_task.result_defer.addErrback(lambda err: self.automat('users-not-found'))
+
+    def doStopLookup(self, arg):
+        """
+        Action method.
+        """
+        self.lookup_task.stop()
+
+    def doSelectOneUser(self, arg):
+        """
+        Action method.
+        """
+        self.target_idurl = arg[0]
 
     def doSendMyIdentity(self, arg):
         """
@@ -212,7 +236,9 @@ class AccountantsFinder(automat.Automat):
         """
         Action method.
         """
-        service_info = 'service_accountant ' + self.request_service_params
+        service_info = self.target_service
+        if self.request_service_params is not None:
+            service_info += ' {}'.format(self.request_service_params)
         out_packet = p2p_service.SendRequestService(
             self.target_idurl, service_info, callbacks={
                 commands.Ack(): self._node_acked,
@@ -225,31 +251,36 @@ class AccountantsFinder(automat.Automat):
         """
         Action method.
         """
+        if _Debug:
+            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyLookupSuccess with %s' % arg)
         if self.result_callback:
-            self.result_callback('accountant-connected', arg)
+            self.result_callback('node-connected', arg)
         self.result_callback = None
-        self.request_service_params = None
 
     def doNotifyLookupFailed(self, arg):
         """
         Action method.
         """
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
+            lg.out(_DebugLevel, 'p2p_service_seeker.doNotifyLookupFailed, Attempts=%d' % self.Attempts)
         if self.result_callback:
             self.result_callback('lookup-failed', arg)
         self.result_callback = None
-        self.request_service_params = None
 
     def doDestroyMe(self, arg):
         """
         Remove all references to the state machine object to destroy it.
         """
+        self.target_idurl = None
+        self.target_service = None
+        self.requested_packet_id = None
+        self.request_service_params = None
+        self.lookup_task = None
         callback.remove_inbox_callback(self._inbox_packet_received)
         automat.objects().pop(self.index)
-        global _AccountantsFinder
-        del _AccountantsFinder
-        _AccountantsFinder = None
+        global _P2PServiceSeeker
+        del _P2PServiceSeeker
+        _P2PServiceSeeker = None
 
     #------------------------------------------------------------------------------
 
@@ -264,31 +295,47 @@ class AccountantsFinder(automat.Automat):
 
     def _node_acked(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder._node_acked %r %r' % (response, info))
+            lg.out(_DebugLevel, 'p2p_service_seeker._node_acked %r %r' % (response, info))
         if not response.Payload.startswith('accepted'):
             if _Debug:
-                lg.out(_DebugLevel, 'accountants_finder._node_acked with service denied %r %r' % (response, info))
+                lg.out(_DebugLevel, 'p2p_service_seeker._node_acked with service denied %r %r' % (response, info))
             self.automat('service-denied')
             return
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder._node_acked !!!! accountant %s connected' % response.CreatorID)
+            lg.out(_DebugLevel, 'p2p_service_seeker._node_acked !!!! node %s connected' % response.CreatorID)
         self.automat('service-accepted', response.CreatorID)
 
     def _node_failed(self, response, info):
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder._node_failed %r %r' % (response, info))
+            lg.out(_DebugLevel, 'p2p_service_seeker._node_failed %r %r' % (response, info))
         self.automat('service-denied')
 
     def _nodes_lookup_finished(self, idurls):
-        # TODO: this is still under construction - so I am using this node for tests
-        # idurls = ['http://veselin-p2p.ru/bitdust_vps1000_k.xml', ]
         if _Debug:
-            lg.out(_DebugLevel, 'accountants_finder._nodes_lookup_finished : %r' % idurls)
+            lg.out(_DebugLevel, 'p2p_service_seeker._nodes_lookup_finished : %r' % idurls)
+        found_idurls = set()
         for idurl in idurls:
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
             if len(myprotos.intersection(remoteprotos)) > 0:
-                self.automat('found-one-user', idurl)
-                return
-        self.automat('users-not-found')
+                found_idurls.add(idurl)
+        if found_idurls:
+            self.automat('found-users', found_idurls)
+        else:
+            self.automat('users-not-found')
+
+#------------------------------------------------------------------------------
+
+def connect_random_node(self, service_name, service_params=None):
+    """
+    """
+    result = Deferred()
+    if A() and A().state == 'READY':
+        A('start', (
+            service_name, service_params,
+            lambda evt, arg: result.callback(arg) if evt == 'node-connected' else result.errback(arg),
+        ))
+    else:
+        result.errback(None)
+    return result

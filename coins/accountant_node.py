@@ -53,7 +53,6 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-import time
 import datetime
 
 from twisted.internet.defer import Deferred
@@ -72,6 +71,7 @@ from p2p import p2p_service
 from p2p import commands
 
 from coins import coins_db
+from coins import coins_io
 
 from broadcast import broadcast_service
 
@@ -339,7 +339,7 @@ class AccountantNode(automat.Automat):
         """
         Action method.
         """
-        if not coins_db.validate_coin(self.current_coin):
+        if not coins_io.validate_coin(self.current_coin):
             self.current_coin = None
             self.automat('coin-not-valid')
             return
@@ -385,7 +385,7 @@ class AccountantNode(automat.Automat):
         if status != 'finished':
             return False
         if newpacket.Command == commands.RetreiveCoin():
-            query_j = coins_db.read_query_from_packet(newpacket)
+            query_j = coins_io.read_query_from_packet(newpacket)
             if not query_j:
                 p2p_service.SendFail(newpacket, 'incorrect query received')
                 return False
@@ -393,16 +393,16 @@ class AccountantNode(automat.Automat):
             p2p_service.SendCoin(newpacket.CreatorID, coins, packet_id=newpacket.PacketID)
             return True
         if newpacket.Command == commands.Coin():
-            coins_list = coins_db.read_coins_from_packet(newpacket)
+            coins_list = coins_io.read_coins_from_packet(newpacket)
             if not coins_list:
                 p2p_service.SendFail(newpacket, 'failed to read coins from packet')
                 return True
             if len(coins_list) == 1:
                 acoin = coins_list[0]
-                if not coins_db.validate_coin(acoin):
+                if not coins_io.validate_coin(acoin):
                     p2p_service.SendFail(newpacket, 'coin validation failed')
                     return True
-                if not coins_db.verify_coin(acoin):
+                if not coins_io.verify_coin(acoin):
                     p2p_service.SendFail(newpacket, 'coin verification failed')
                     return True
                 if coins_db.exist(acoin):
@@ -412,9 +412,9 @@ class AccountantNode(automat.Automat):
                 return True
             valid_coins = []
             for acoin in coins_list:
-                if not coins_db.validate_coin(acoin):
+                if not coins_io.validate_coin(acoin):
                     continue
-                if not coins_db.verify_coin(acoin):
+                if not coins_io.verify_coin(acoin):
                     continue
                 valid_coins.append(acoin)
             if len(valid_coins) == len(coins_list):

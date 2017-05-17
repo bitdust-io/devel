@@ -65,6 +65,7 @@ class SupplierService(LocalService):
         return True
 
     def request(self, request, info):
+        from main import events
         from p2p import p2p_service
         words = request.Payload.split(' ')
         try:
@@ -105,11 +106,11 @@ class SupplierService(LocalService):
             accounting.write_customers_quotas(space_dict)
             reactor.callLater(0, local_tester.TestUpdateCustomers)
             if new_customer:
-                lg.out(
-                    8, "    NEW CUSTOMER - DENIED !!!!!!!!!!!    not enough space")
+                lg.out(8, "    NEW CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
+                events.send('new-customer-denied', dict(idurl=request.OwnerID))
             else:
-                lg.out(
-                    8, "    OLD CUSTOMER - DENIED !!!!!!!!!!!    not enough space")
+                lg.out(8, "    OLD CUSTOMER: DENIED !!!!!!!!!!!    not enough space available")
+                events.send('existing-customer-denied', dict(idurl=request.OwnerID))
             return p2p_service.SendAck(request, 'deny')
         space_dict['free'] = free_bytes - bytes_for_customer
         current_customers.append(request.OwnerID)
@@ -119,12 +120,15 @@ class SupplierService(LocalService):
         accounting.write_customers_quotas(space_dict)
         reactor.callLater(0, local_tester.TestUpdateCustomers)
         if new_customer:
-            lg.out(8, "    NEW CUSTOMER ACCEPTED !!!!!!!!!!!!!!")
+            lg.out(8, "    NEW CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
+            events.send('new-customer-accepted', dict(idurl=request.OwnerID))
         else:
-            lg.out(8, "    OLD CUSTOMER ACCEPTED !!!!!!!!!!!!!!")
+            lg.out(8, "    OLD CUSTOMER: ACCEPTED !!!!!!!!!!!!!!")
+            events.send('existing-customer-accepted', dict(idurl=request.OwnerID))
         return p2p_service.SendAck(request, 'accepted')
 
     def cancel(self, request, info):
+        from main import events
         from p2p import p2p_service
         if not contactsdb.is_customer(request.OwnerID):
             lg.warn(
@@ -153,4 +157,6 @@ class SupplierService(LocalService):
         accounting.write_customers_quotas(space_dict)
         from supplier import local_tester
         reactor.callLater(0, local_tester.TestUpdateCustomers)
+        lg.out(8, "    OLD CUSTOMER: TERMINATED !!!!!!!!!!!!!!")
+        events.send('existing-customer-terminated', dict(idurl=request.OwnerID))
         return p2p_service.SendAck(request, 'accepted')

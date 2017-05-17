@@ -135,7 +135,7 @@ def send_broadcast_message(payload):
             broadcast_listener.A('connect')
         broadcast_listener.A('outbound-message', msg)
     else:
-        lg.warn('nor broadcaster_node(), nor broadcast_listener() exist')
+        lg.warn('nor broadcaster_node(), nor broadcast_listener() exists')
         return None
     return msg
 

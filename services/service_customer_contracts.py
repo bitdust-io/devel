@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_miner.py
+# service_customer_contracts.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
-# This file (service_miner.py) is part of BitDust Software.
+# This file (service_customer_contracts.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,40 +27,27 @@
 """
 ..
 
-module:: service_miner
+module:: service_customer_contracts
 """
 
 from services.local_service import LocalService
 
 
 def create_service():
-    return MinerService()
+    return CustomerContractsService()
 
 
-class MinerService(LocalService):
+class CustomerContractsService(LocalService):
 
-    service_name = 'service_miner'
-    config_path = 'services/miner/enabled'
+    service_name = 'service_customer_contracts'
+    config_path = 'services/customer-contracts/enabled'
 
     def dependent_on(self):
-        return ['service_p2p_hookups',
-                'service_nodes_lookup',
+        return ['service_customer',
                 ]
 
     def start(self):
-        from coins import coins_miner
-        coins_miner.A('init')
-        coins_miner.A('start')
         return True
 
     def stop(self):
-        from coins import coins_miner
-        coins_miner.A('stop')
-        coins_miner.Destroy()
         return True
-
-    def request(self, request, info):
-        return
-
-    def cancel(self, request, info):
-        return

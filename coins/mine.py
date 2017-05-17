@@ -51,7 +51,7 @@ from crypt import key
 
 from lib import utime
 
-from coins import coins_db
+from coins import coins_io
 
 #------------------------------------------------------------------------------
 
@@ -64,7 +64,6 @@ def shutdown():
     pass
 
 #------------------------------------------------------------------------------
-
 
 def build_starter(length=5):
     return (''.join(
@@ -101,14 +100,18 @@ def get_hash_difficulty(hexdigest, simplification=2):
     return difficulty - 1
 
 
-def work_on_data_with_known_difficulty(data,
-                                       difficulty,
-                                       simplification=2,
-                                       starter_length=10,
-                                       starter_limit=99999,
-                                       stop_marker=None):
-    data['miner'] = my_id.getLocalID()
-    data_dump = json.dumps(data)
+def work_with_known_difficulty(coin_json,
+                               difficulty,
+                               simplification=2,
+                               starter_length=10,
+                               starter_limit=99999,
+                               stop_marker=None,
+                               prev_hash=''):
+    coin_json['miner'] = {
+        'idurl': my_id.getLocalID(),
+    }
+    # data_dump = json.dumps(data)
+    data_dump = coins_io.coin_to_string(coin_json)
     starter = build_starter(starter_length)
     on = 0
     while True:
@@ -116,42 +119,44 @@ def work_on_data_with_known_difficulty(data,
             if stop_marker():
                 return None
         check = starter + str(on)
-        if data is not None:
-            check += data_dump
+        # if coin_json is not None:
+        #     check += data_dump
         hexdigest = build_hash(check)
-        if difficulty != get_hash_complexity(hexdigest, simplification):
-            on += 1
-            if on > starter_limit:
-                starter = build_starter(starter_length)
-                on = 0
-            continue
-        return {
-            "starter": starter + str(on),
-            "hash": hexdigest,
-            "tm": utime.utcnow_to_sec1970(),
-            "data": data,
-        }
+        if difficulty == get_hash_complexity(hexdigest, simplification):
+            break
+        on += 1
+        if on > starter_limit:
+            starter = build_starter(starter_length)
+            on = 0
+    coin_json['miner'].update({
+        'hash': hexdigest,
+        'prev': prev_hash,
+        'starter': starter + str(on),
+        'mined': utime.utcnow_to_sec1970(),
+    })
+    return coin_json
 
 
-def work_on_data_from_known_hash(data,
-                                 prev_hash,
-                                 simplification=2,
-                                 starter_length=10,
-                                 starter_limit=99999,
-                                 stop_marker=None):
-    data.update({'prev': prev_hash, })
+def work_from_known_hash(coin_json,
+                         prev_hash,
+                         simplification=2,
+                         starter_length=10,
+                         starter_limit=99999,
+                         stop_marker=None):
+    # data.update({'prev': prev_hash, })
     difficulty = get_hash_difficulty(prev_hash)
     complexity = get_hash_complexity(prev_hash, simplification)
     if difficulty == complexity:
         complexity += 1
         # print 'found golden coin, step up difficulty:', difficulty
-    return work_on_data_with_known_difficulty(
-        data,
+    return work_with_known_difficulty(
+        coin_json,
         complexity,
         starter_limit=starter_limit,
         starter_length=starter_length,
         simplification=simplification,
-        stop_marker=stop_marker
+        stop_marker=stop_marker,
+        prev_hash=prev_hash,
     )
 
 #------------------------------------------------------------------------------
@@ -187,7 +192,7 @@ def _test():
             hexhash = ''
             data = {'a': 'b', }
             while True:
-                coin = work_on_data_from_known_hash(
+                coin = work_from_known_hash(
                     data,
                     hexhash,
                     simplification=simplification,

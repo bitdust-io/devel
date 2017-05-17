@@ -61,68 +61,135 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-def storage_contract_open(customer_idurl, duration, amount, price=1.0):
+def storage_contract_open(customer_idurl, duration, amount, price=1.0, trustee=None):
     """
-    + signer: idurl of this node.
-
-    + partner: idurl of given customer
-    + type: sold_storage (can be also : buy_cpu, sell_traffic, buy_hosting, etc.)
-    + duration: seconds
+    + type of resources: storage space (can be also : cpu, traffic, etc.)
     + amount: in megabytes
+    + duration: seconds
+    + customer: idurl of consumer
+    + supplier: idurl of provider
+    + trustee: idurl of trusted supporter
+    + started: seconds since epoch
     + price: 1.0 by default
     """
-    coin = {
+    return {
+        "miner": {
+            "prev": "",
+        },
         "payload": {
             "type": "storage",
             "amount": amount,
-            "price": price,
             "duration": duration,
             "customer": customer_idurl,
             "supplier": my_id.getLocalID(),
+            "trustee": trustee,
             "started": utime.utcnow_to_sec1970(),
+            "price": price,
         },
     }
-    return signed_coin(coin)
 
 
-def signed_coin(acoin):
-    scoin = {
-        "creator": my_id.getLocalID(),
-        "pubkey": key.MyPublicKey(),
+def storage_contract_accept(prev_coin_json):
+    """
+    """
+    return {
+        "miner": {
+            # populate previous hash from existing coin
+            "prev": prev_coin_json['miner']['hash'],
+        },
+        "payload": {
+            "accepted": utime.utcnow_to_sec1970(),
+        },
     }
-    scoin.update(acoin)
-    chash = get_coin_hash(scoin)
-    signature = key.Sign(chash)
-    scoin['signature'] = signature
-    return scoin
 
 
-def verify_coin_signature(scoin):
-    acoin = scoin.copy()
-    signature = acoin.pop('signature')
-    chash = get_coin_hash(acoin)
-    return key.VerifySignature(acoin.get('pubkey'), chash, signature)
+def storage_contract_continue(prev_coin_json, duration):
+    """
+    """
+    return {
+        "miner": {
+            # populate previous hash from existing coin
+            "prev": prev_coin_json['miner']['hash'],
+        },
+        "payload": {
+            "extended": utime.utcnow_to_sec1970(),
+            "duration": duration,
+        },
+    }
 
 
-def coin_to_string(acoin):
-    return json.dumps(acoin, sort_keys=True)
+def add_signature(coin_json, role):
+    """
+    """
+    _coin = coin_json.copy()
+    _coin[role] = {
+        'idurl': my_id.getLocalID(),
+        'pubkey': key.MyPublicKey(),
+        'signature': '',
+    }
+    coin_hash = get_coin_hash(_coin)
+    _coin[role]['signature'] = key.Sign(coin_hash)
+    return _coin
+
+
+def verify_signature(coin_json, role):
+    """
+    """
+    signature = coin_json[role]['signature']
+    coin_json[role]['signature'] = ''
+    # role_data = coin_json[role].copy()
+    # signature = role_data.pop('signature')
+    # _coin = dict(coin_json).c
+    coin_hash = get_coin_hash(coin_json)
+    coin_json[role]['signature'] = signature
+    return key.VerifySignature(coin_json[role]['pubkey'], coin_hash, signature)
+
+
+def set_prev_hash(coin_json, prev_hash):
+    """
+    """
+    if 'miner' not in coin_json:
+        coin_json['miner'] = {}
+    coin_json['miner']['prev'] = prev_hash
+    return coin_json
+
+
+
+# def signed_coin(coin_json):
+#     scoin = {
+#         "creator": my_id.getLocalID(),
+#         "pubkey": key.MyPublicKey(),
+#     }
+#     scoin.update(coin_json)
+#     chash = get_coin_hash(scoin)
+#     signature = key.Sign(chash)
+#     scoin['signature'] = signature
+#     return scoin
+
+
+def coin_to_string(coin_json):
+    return json.dumps(coin_json, sort_keys=True)
+
+def coins_to_string(coins_list):
+    return json.dumps(coins_list, sort_keys=True)
 
 
 def string_to_coin(s):
     return json.loads(s)
 
 
-def get_coin_hash(acoin):
-    coin_hashbase = coin_to_string(acoin)
+def get_coin_hash(coin_json):
+    coin_hashbase = coin_to_string(coin_json)
     return key.Hash(coin_hashbase, hexdigest=True)
 
 
-def get_coin_base(acoin):
-    bcoin = acoin.copy()
-    bcoin.pop('creator')
-    bcoin.pop('signature')
-    bcoin.pop('pubkey')
-    return bcoin
+def get_coin_base(coin_json):
+    return coin_json
+#     bcoin = coin_json.copy()
+#     bcoin.pop('creator')
+#     bcoin.pop('signature')
+#     bcoin.pop('pubkey')
+#     return bcoin
 
 
 def bought_storage(partner, ):
@@ -147,28 +214,29 @@ def read_coins_from_packet(newpacket):
     except:
         lg.exc()
         return None
-    # TODO: verify coins
+    # TODO: verify coins list
     return coins_list
 
 #------------------------------------------------------------------------------
 
-
-def validate_coin(acoin):
-    # TODO: validate fields, hashes, query on DB, etc.
-    if 'miner' not in acoin:
+def validate_coin(coin_json):
+    # TODO: validate sub-fields, hashes, query on DB, etc.
+    # if 'miner' not in coin_json:
+    #     return False
+    if 'creator' not in coin_json:
         return False
-    if 'hash' not in acoin['miner']:
+    if 'signature' not in coin_json['creator']:
         return False
-    if 'mined' not in acoin['miner']:
-        return False
-    if 'starter' not in acoin['miner']:
+    # if 'signer' not in coin_json:
+    #     return False
+    if 'payload' not in coin_json:
         return False
     return True
 
 
-def verify_coin(acoin):
+def verify_coin(coin_json, role):
     # TODO: check coin was really mined
-    # if acoin['hash'] != calculated_hash:
+    # if coin_json['hash'] != calculated_hash:
     #     return False
     return True
 

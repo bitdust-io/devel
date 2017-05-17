@@ -1061,16 +1061,6 @@ def getExecutableFilename():
     return unicode(path)
 
 
-def getExecutableP2PDir():
-    """
-    Tries to locate the p2p sub folder.
-    """
-    execdir = getExecutableDir()
-    if os.path.isdir(os.path.join(execdir, 'p2p')):
-        return os.path.join(execdir, 'p2p')
-    return execdir
-
-
 def getUserName():
     """
     Return current user name in unicode string.

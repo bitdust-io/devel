@@ -69,11 +69,13 @@ _LocalStorage = None
 
 def indexes():
     return {
-        'owner': IndexByOwnerIDURL,
-        'hash': IndexByHash,
-        'prev': IndexByPrevHash,
-        'time': IndexByTime,
-        'miner': IndexByMinerIDURL,
+        'creator': IndexByCreator,
+        'signer': IndexBySigner,
+        'miner': IndexByMiner,
+        # 'owner': IndexByOwnerIDURL,
+        # 'hash': IndexByHash,
+        # 'prev': IndexByPrevHash,
+        # 'time': IndexByTime,
     }
 
 
@@ -147,21 +149,27 @@ def get_all(index_name, limit=-1, offset=0, with_doc=True, with_storage=True):
         pass
 
 
-def insert(acoin):
-    return db().insert(acoin)
+def insert(coin_json):
+    return db().insert(coin_json)
 
 
-def exist(acoin):
-    if 'tm' in acoin:
-        if not list(get('time', key=acoin['tm'])):
-            return False
-    if 'idurl' in acoin:
-        if not list(get('idurl', key=acoin['idurl'])):
-            return False
-    if 'hash' in acoin:
-        if not list(get('hash', key=acoin['hash'])):
-            return False
-    return True
+def remove(coin_json):
+    # TODO: first need to lookup to get _id and _rev fields
+    return db().delete()
+
+
+def exist(coin_json):
+#     if 'tm' in coin_json:
+#         if not list(get('time', key=coin_json['tm'])):
+#             return False
+#     if 'idurl' in coin_json:
+#         if not list(get('idurl', key=coin_json['idurl'])):
+#             return False
+#     if 'hash' in coin_json:
+#         if not list(get('hash', key=coin_json['hash'])):
+#             return False
+#     return True
+    return False
 
 #------------------------------------------------------------------------------
 
@@ -176,11 +184,15 @@ def query_json(jdata):
     """
     Input keys:
 
-    method: 'get', 'get_many' or 'get_all'     index: 'id', 'idurl',
-    etc.     key: key to read single record from db (optional)
-    start: low key limit to search records in range     end: high key
-    limit to search records in range Returns tuple:     generator object
-    or None, error message
+        + method: 'get', 'get_many' or 'get_all'
+        + index: 'id', 'idurl', 'creator', etc.
+        + key: key to read single record from db (optional)
+        + start: low key limit to search records in range
+        + end: high key limit to search records in range
+
+    Returns tuple:
+
+        (generator object or None, error message)
     """
     if not db().opened:
         return None, 'database is closed'
@@ -207,86 +219,89 @@ def query_json(jdata):
 
 #------------------------------------------------------------------------------
 
+# class IndexByTime(TreeBasedIndex):
+# 
+#     def __init__(self, *args, **kwargs):
+#         kwargs['key_format'] = 'I'
+#         kwargs['node_capacity'] = 128
+#         super(IndexByTime, self).__init__(*args, **kwargs)
+# 
+#     def make_key(self, key):
+#         return key
+# 
+#     def make_key_value(self, data):
+#         tm = data.get('tm')
+#         if tm:
+#             return tm, None
+#         return None
 
-class IndexByTime(TreeBasedIndex):
 
-    def __init__(self, *args, **kwargs):
-        kwargs['key_format'] = 'I'
-        kwargs['node_capacity'] = 128
-        super(IndexByTime, self).__init__(*args, **kwargs)
-
-    def make_key(self, key):
-        return key
-
-    def make_key_value(self, data):
-        tm = data.get('tm')
-        if tm:
-            return tm, None
-        return None
-
-
-class IndexByOwnerIDURL(HashIndex):
+class IndexByRoleField(HashIndex):
+    role = None
+    field = None
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '16s'
-        super(IndexByOwnerIDURL, self).__init__(*args, **kwargs)
+        super(IndexByRoleField, self).__init__(*args, **kwargs)
 
     def make_key(self, key):
         return md5(key).digest()
 
     def make_key_value(self, data):
-        idurl = data.get('data', dict()).get('owner')
-        if idurl:
-            return md5(idurl).digest(), None
+        try:
+            field_value = data[self.role][self.field]
+            if field_value:
+                return md5(field_value).digest(), None
+        except:
+            pass
         return None
 
 
-class IndexByMinerIDURL(HashIndex):
-
-    def __init__(self, *args, **kwargs):
-        kwargs['key_format'] = '16s'
-        super(IndexByMinerIDURL, self).__init__(*args, **kwargs)
-
-    def make_key(self, key):
-        return md5(key).digest()
-
-    def make_key_value(self, data):
-        miner_idurl = data.get('data', dict()).get('miner')
-        if miner_idurl:
-            return md5(miner_idurl).digest(), None
-        return None
+class IndexByCreator(IndexByRoleField):
+    role = 'creator'
+    field = 'idurl'
 
 
-class IndexByHash(HashIndex):
-
-    def __init__(self, *args, **kwargs):
-        kwargs['key_format'] = '40s'
-        super(IndexByHash, self).__init__(*args, **kwargs)
-
-    def make_key(self, key):
-        return key
-
-    def make_key_value(self, data):
-        hashval = data.get('hash')
-        if hashval:
-            return hashval
-        return None
+class IndexBySigner(IndexByRoleField):
+    role = 'signer'
+    field = 'idurl'
 
 
-class IndexByPrevHash(HashIndex):
+class IndexByMiner(IndexByRoleField):
+    role = 'miner'
+    field = 'idurl'
 
-    def __init__(self, *args, **kwargs):
-        kwargs['key_format'] = '40s'
-        super(IndexByHash, self).__init__(*args, **kwargs)
 
-    def make_key(self, key):
-        return key
+# class IndexByHash(HashIndex):
+# 
+#     def __init__(self, *args, **kwargs):
+#         kwargs['key_format'] = '40s'
+#         super(IndexByHash, self).__init__(*args, **kwargs)
+# 
+#     def make_key(self, key):
+#         return key
+# 
+#     def make_key_value(self, data):
+#         hashval = data.get('hash')
+#         if hashval:
+#             return hashval
+#         return None
 
-    def make_key_value(self, data):
-        hashval = data.get('prev')
-        if hashval:
-            return hashval
-        return None
+
+# class IndexByPrevHash(HashIndex):
+# 
+#     def __init__(self, *args, **kwargs):
+#         kwargs['key_format'] = '40s'
+#         super(IndexByHash, self).__init__(*args, **kwargs)
+# 
+#     def make_key(self, key):
+#         return key
+# 
+#     def make_key_value(self, data):
+#         hashval = data.get('prev')
+#         if hashval:
+#             return hashval
+#         return None
 
 #------------------------------------------------------------------------------
 
@@ -329,36 +344,36 @@ def _test():
 #     for x in query_from_json({'method': 'get_all', 'index': 'idurl'})[0]:
 #         print x
 
-    print 'query one from "hash"'
-    _p(query_json({'method': 'get', 'index': 'hash', 'key': 'abcdef123', }))
-
-    print 'query many from "hash"'
-    _p(query_json({'method': 'get_many', 'index': 'hash', 'key': 'abcdef123', }))
-
-    print 'query one from "time"'
-    _p(query_json({'method': 'get', 'index': 'time', 'key': 1474380456, }))
-
-    print 'query one from "idurl"'
-    _p(query_json({'method': 'get', 'index': 'idurl', 'key': 'http://veselin-p2p.ru/veselin_kpn123.xml'}))
-
-    print 'query some from "time"'
-    _p(query_json({'method': 'get_many', 'index': 'time', 'limit': 3, 'offset': 2, 'start': 0, 'end': None, }))
-
-    print 'query all from "hash"'
-    _p(query_json({'method': 'get_all', 'index': 'hash'}))
-
-    print 'query some from "time"'
-    _p(query_json({'method': 'get_many', 'index': 'time', 'key': 1474380456, }))
-
-    print 'query one from "id"'
-    _p(query_json({'method': 'get', 'index': 'id', 'key': '5d909de518db44329183d187927cabc9', }))
-
-    print 'query all from "id"'
-    _p(query_json({'method': 'get_all', 'index': 'id'}))
-
-    print 'test item exists:', exist({'tm': 1474380456,
-                                      'hash': 'abcdef123',
-                                      'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml'})
+#     print 'query one from "hash"'
+#     _p(query_json({'method': 'get', 'index': 'hash', 'key': 'abcdef123', }))
+# 
+#     print 'query many from "hash"'
+#     _p(query_json({'method': 'get_many', 'index': 'hash', 'key': 'abcdef123', }))
+# 
+#     print 'query one from "time"'
+#     _p(query_json({'method': 'get', 'index': 'time', 'key': 1474380456, }))
+# 
+#     print 'query one from "idurl"'
+#     _p(query_json({'method': 'get', 'index': 'idurl', 'key': 'http://veselin-p2p.ru/veselin_kpn123.xml'}))
+# 
+#     print 'query some from "time"'
+#     _p(query_json({'method': 'get_many', 'index': 'time', 'limit': 3, 'offset': 2, 'start': 0, 'end': None, }))
+# 
+#     print 'query all from "hash"'
+#     _p(query_json({'method': 'get_all', 'index': 'hash'}))
+# 
+#     print 'query some from "time"'
+#     _p(query_json({'method': 'get_many', 'index': 'time', 'key': 1474380456, }))
+# 
+#     print 'query one from "id"'
+#     _p(query_json({'method': 'get', 'index': 'id', 'key': '5d909de518db44329183d187927cabc9', }))
+# 
+#     print 'query all from "id"'
+#     _p(query_json({'method': 'get_all', 'index': 'id'}))
+# 
+#     print 'test item exists:', exist({'tm': 1474380456,
+#                                       'hash': 'abcdef123',
+#                                       'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml'})
 
 
 if __name__ == "__main__":

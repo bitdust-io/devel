@@ -27,40 +27,118 @@
 """
 .. module:: events.
 
-A very simple "event" system, just to show and remember what is going
-on. TODO: need to store events on the local HDD
+A very simple "event" system, just to show and remember what is goin on.
+Also you can subscribe to given event and receive notifications.
+
+TODO: need to store events on the local HDD
 """
 
-import os
-import sys
+#------------------------------------------------------------------------------
+
+_Debug = True
+_DebugLevel = 12
+
+#------------------------------------------------------------------------------
+
 import time
+import sys
+
+try:
+    from twisted.internet import reactor
+except:
+    sys.exit('Error initializing twisted.internet.reactor in events.py')
+
 
 #------------------------------------------------------------------------------
 
-_OutputFunc = None
+from logs import lg
 
 #------------------------------------------------------------------------------
 
+_Subscribers = {}
 
-def init(output_func):
-    global _OutputFunc
-    _OutputFunc = output_func
+#------------------------------------------------------------------------------
 
+def subscribers():
+    global _Subscribers
+    return _Subscribers
 
-def call(typ, module, message, text=''):
-    global _OutputFunc
-    if _OutputFunc is None:
-        return
-    _OutputFunc('event %s (((%s))) [[[%s]]] %s' % (typ, module, message, text))
+#------------------------------------------------------------------------------
 
+def init():
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'events.init')
 
-def info(module, message, text=''):
-    call('info', module, message, text)
+def shutdown():
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'events.shutdown')
+    subscribers().clear()
 
+#------------------------------------------------------------------------------
 
-def notify(module, message, text=''):
-    call('notify', module, message, text)
+class Event(object):
+    """
+    """
 
+    def __init__(self, event_id, data=None):
+        self.event_id = event_id
+        self.data = data
+        self.created = time.time()
 
-def warning(module, message, text=''):
-    call('warning', module, message, text)
+    def __repr__(self):
+        return '<{}>'.format(self.event_id)
+
+#------------------------------------------------------------------------------
+
+def add_subscriber(subscriber_callback, event_id='*'):
+    """
+    """
+    if event_id not in subscribers():
+        subscribers()[event_id] = []
+    subscribers()[event_id].append(subscriber_callback)
+
+def remove_subscriber(subscriber_callback):
+    """
+    """
+    for event_id, subscribers in subscribers().items():
+        if subscriber_callback in subscribers:
+            subscribers()[event_id].remove(subscriber_callback)
+            return True
+    return False
+
+#------------------------------------------------------------------------------
+
+def dispatch(evt):
+    """
+    """
+    handled = False
+    if evt.event_id in subscribers():
+        for subscriber_callback in subscribers()[evt.event_id]:
+            try:
+                subscriber_callback(evt)
+            except:
+                lg.exc()
+                continue
+            handled = True
+    if '*' in subscribers():
+        for subscriber_callback in subscribers()['*']:
+            try:
+                subscriber_callback(evt)
+            except:
+                lg.exc()
+                continue
+            handled = True
+    if _Debug:
+        if not handled:
+            lg.warn('event {} was not handled'.format(evt.event_id))
+    return handled
+
+def send(event_id, data=None):
+    """
+    """
+    evt = Event(event_id, data=data)
+    reactor.callWhenRunning(dispatch, evt)
