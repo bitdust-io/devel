@@ -35,7 +35,6 @@ import sys
 
 from twisted.internet import reactor
 
-from lib.fastjsonrpc.client import Proxy as jsonProxy
 from lib import jsontemplate
 
 from interface import cmd_line_json_templates as templ
@@ -182,6 +181,7 @@ def call_jsonrpc_method(method, *args):
     """
     from system import bpio
     from main import settings
+    from lib.fastjsonrpc.client import Proxy as jsonProxy
     try:
         local_port = int(bpio.ReadBinaryFile(settings.LocalJsonRPCPortFilename()))
     except:
@@ -332,19 +332,29 @@ def cmd_deploy(opts, args, overDict):
     from main import settings
     from system import bpio
     source_dir = bpio.getExecutableDir()
-    venv_path = os.path.join(settings.BaseDir(), 'venv_test')
+    venv_path = os.path.join(settings.BaseDir(), 'venv')
+    script_path = os.path.join(settings.BaseDir(), 'bitdust')
     status = os.system('rm -rf {}'.format(venv_path))
     if status != 0:
+        print_text('Clean up of existing virtual environment files failed!\n')
         return status
     status = os.system('virtualenv -p python2.7 {}'.format(venv_path))
     if status != 0:
+        print_text('Failed to create virtual environment, please check/install virtualenv package\n')
         return status
-    status = os.system('{}/bin/pip install -U "pip>=7.0" -q'.format(venv_path))
+    status = os.system('{}/bin/pip install -r "{}/requirements.txt"'.format(venv_path, source_dir))
     if status != 0:
         return status
-    status = os.system('{}/bin/pip install -r "{}/requirements.txt" -q'.format(venv_path, source_dir))
-    if status != 0:
-        return status
+    script = "#!/bin/sh\n"
+    script += '# This is a short shell script to create an alias in OS for BitDust software.\n'
+    script += '# NOTICE: BitDust software do not require root permissions to run, please start as normal user.\n\n'
+    script += '{}/bin/python {}/bitdust.py "$@"\n\n'.format(venv_path, source_dir)
+    bpio.WriteFileSimple(script_path, script)
+    os.chmod(script_path, 0775)
+    print_text('\nBitDust application files created successfully in {}'.format(settings.BaseDir()))
+    print_text('To run the programm use this executable script:\n\n    {}\n'.format(script_path))
+    print_text('To create system-wide shell command, configure your PATH, or create a symlink:\n')
+    print_text('    sudo ln -s {} /usr/local/bin/bitdust\n\n'.format(script_path))
     return 0
 
 #------------------------------------------------------------------------------
@@ -698,35 +708,6 @@ def cmd_integrate(opts, args, overDict):
     src += 'python %s/bitdust.py "$@"\n\n' % curpath
     print_text(src)
     return 0
-#     print_text('creating a command script : %s ... ' % cmdpath, nl='')
-#     result = False
-#     try:
-#         f = open(cmdpath, 'w')
-#         f.write(src)
-#         f.close()
-#         os.chmod(cmdpath, 0755)
-#         result = True
-#         print_text('SUCCESS')
-#     except:
-#         print_text('FAILED')
-#     if not result:
-#         cmdpath = os.path.join(os.path.expanduser('~'), 'bin', 'bitdust')
-#         print_text('try to create a command script in user home folder : %s ... ' % cmdpath, nl='')
-#         try:
-#             if not os.path.isdir(os.path.join(os.path.expanduser('~'), 'bin')):
-#                 os.mkdir(os.path.join(os.path.expanduser('~'), 'bin'))
-#             f = open(cmdpath, 'w')
-#             f.write(src)
-#             f.close()
-#             os.chmod(cmdpath, 0755)
-#             result = True
-#             print_text('SUCCESS')
-#         except:
-#             print_text('FAILED')
-#             return 0
-#     if result:
-#         print_text('now use "bitdust" command to access the BitDust software.\n')
-#     return 0
 
 #------------------------------------------------------------------------------
 

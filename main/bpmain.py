@@ -630,6 +630,7 @@ def main(executable_path=None):
         lg.stdout_start_redirecting()
         lg.out(2, 'bpmain.main redirecting started')
 
+    # TODO: temporary solution to record run-time errors
     try:
         if os.path.isfile(os.path.join(appdata, 'logs', 'exception.log')):
             os.remove(os.path.join(appdata, 'logs', 'exception.log'))
