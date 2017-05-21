@@ -6,7 +6,7 @@ echo "running 'cmd'"
 
 ./up
 
-rm -rfv ~/.bitdust/logs/*
+# rm -rfv ~/.bitdust/logs/*
 
 cd ~/bitdust
 python bitdust.py deploy

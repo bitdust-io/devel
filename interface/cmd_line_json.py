@@ -344,6 +344,16 @@ def cmd_deploy(opts, args, overDict):
         return status
     status = os.system('{}/bin/pip install -r "{}/requirements.txt"'.format(venv_path, source_dir))
     if status != 0:
+        depends = [
+            'git',
+            'python-dev',
+            'python-setuptools',
+            'python-pip',
+            'python-virtualenv',
+        ]
+        print_text('Found an error. Try to install all binary package dependencies:\n')
+        # TODO: try to detect package manager on target OS: debian/mandrake/OSX
+        print_text('    sudo apt-get install %s\n\n' % (' '.join(depends)))
         return status
     script = "#!/bin/sh\n"
     script += '# This is a short shell script to create an alias in OS for BitDust software.\n'
