@@ -1,9 +1,11 @@
 twisted
-pyOpenSSL
-pycrypto
 pyasn1
+pycrypto
+pyOpenSSL
+pyparsing
+appdirs
+CodernityDB
 cryptography
 service_identity
-CodernityDB
 psutil
-django==1.7  # if only you want a gui
+django==1.7  # if only you want to have a gui
