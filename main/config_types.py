@@ -97,6 +97,7 @@ def defaults():
         'services/broadcasting/enabled': TYPE_BOOLEAN,
         'services/broadcasting/routing-enabled': TYPE_BOOLEAN,
         'services/broadcasting/max-broadcast-connections': TYPE_NON_ZERO_POSITIVE_INTEGER,
+        'services/contract-chain/enabled': TYPE_BOOLEAN,
         'services/customer/enabled': TYPE_BOOLEAN,
         'services/customer/needed-space': TYPE_DISK_SPACE,
         'services/customer/suppliers-number': TYPE_COMBO_BOX,

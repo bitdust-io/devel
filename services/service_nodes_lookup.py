@@ -49,23 +49,23 @@ class NodesLookupService(LocalService):
         # or some broadcasting, or other ways
         # then we redefine that in lookup_method
         return ['service_entangled_dht',
-                'service_identity_propagate',
+                'service_p2p_hookups',
                 ]
 
     def start(self):
         from p2p import lookup
-        from p2p import p2p_service_seeker
         lookup.init(lookup_method=self._lookup_in_dht,
                     observe_method=self._observe_dht_node,
                     process_method=self._process_idurl)
         lookup.start(count=5, consume=False)
-        p2p_service_seeker.A('init')
+        # from p2p import p2p_service_seeker
+        # p2p_service_seeker.A('init')
         return True
 
     def stop(self):
-        from p2p import p2p_service_seeker
+        # from p2p import p2p_service_seeker
+        # p2p_service_seeker.A('shutdown')
         from p2p import lookup
-        p2p_service_seeker.A('shutdown')
         lookup.shutdown()
         return True
 

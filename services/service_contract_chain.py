@@ -1,9 +1,9 @@
 #!/usr/bin/python
-# service_miner.py
+# service_contract_chain.py
 #
 # Copyright (C) 2008-2016 Veselin Penev, http://bitdust.io
 #
-# This file (service_miner.py) is part of BitDust Software.
+# This file (service_contract_chain.py) is part of BitDust Software.
 #
 # BitDust is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,42 +27,33 @@
 """
 ..
 
-module:: service_miner
+module:: service_contract_chain
 """
 
 from services.local_service import LocalService
 
 
 def create_service():
-    return MinerService()
+    return SupplierContractsService()
 
 
-class MinerService(LocalService):
+class SupplierContractsService(LocalService):
 
-    service_name = 'service_miner'
-    config_path = 'services/miner/enabled'
+    service_name = 'service_contract_chain'
+    config_path = 'services/contract-chain/enabled'
 
     def dependent_on(self):
         return ['service_nodes_lookup',
                 ]
 
     def start(self):
-        from coins import coins_miner
-        coins_miner.A('init')
-        coins_miner.A('start')
+        from coins import contract_chain_consumer
+        contract_chain_consumer.A('init')
+        contract_chain_consumer.A('start')
         return True
 
     def stop(self):
-        from coins import coins_miner
-        coins_miner.A('stop')
-        coins_miner.A('shutdown')
+        from coins import contract_chain_consumer
+        contract_chain_consumer.A('stop')
+        contract_chain_consumer.A('shutdown')
         return True
-
-    def request(self, request, info):
-        # TODO: we can add some limit for number of connections here
-        from p2p import p2p_service
-        return p2p_service.SendAck(request, 'accepted')
-
-    def cancel(self, request, info):
-        from p2p import p2p_service
-        return p2p_service.SendAck(request, 'accepted')

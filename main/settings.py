@@ -2333,6 +2333,8 @@ def _setUpDefaultSettings():
     config.conf().setDefaultValue('services/broadcasting/routing-enabled', 'false')
     config.conf().setDefaultValue('services/broadcasting/max-broadcast-connections', '3')
 
+    config.conf().setDefaultValue('services/contract-chain/enabled', 'false')
+
     config.conf().setDefaultValue('services/customer/enabled', 'true')
     config.conf().setDefaultValue('services/customer/needed-space',
                                   diskspace.MakeStringFromBytes(DefaultNeededBytes()))

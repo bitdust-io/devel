@@ -299,7 +299,7 @@ def get_idurl_by_ip_port(ip, port):
 
 def update(url, xml_src):
     """
-    This is a correct method to update an identity in the database.
+    This is a correct method to update an identity in the local cache.
 
     PREPRO need to check that date or version is after old one so not
     vulnerable to replay attacks.

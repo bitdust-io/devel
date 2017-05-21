@@ -74,16 +74,11 @@ class CoinsAccountantService(LocalService):
             lg.exc()
             return None
         if mode != 'join' and mode != 'write' and mode != 'read':
-            lg.out(
-                8,
-                "service_accountant.request DENIED, wrong mode provided : %s" %
-                mode)
+            lg.out(8, "service_accountant.request DENIED, wrong mode provided : %s" % mode)
             return None
         from coins import accountant_node
         if not accountant_node.A():
-            lg.out(
-                8,
-                "service_accountant.request DENIED, accountant_node() state machine not exist")
+            lg.out(8, "service_accountant.request DENIED, accountant_node() state machine not exist")
             return p2p_service.SendFail(
                 request, "accountant_node service not started")
         # if accountant_node.A().state not in ['ACCOUNTANTS?', "READY", "VALID_COIN?", "WRITE_COIN!", ]:

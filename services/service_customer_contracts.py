@@ -44,6 +44,7 @@ class CustomerContractsService(LocalService):
 
     def dependent_on(self):
         return ['service_customer',
+                'service_contract_chain',
                 ]
 
     def start(self):

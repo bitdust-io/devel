@@ -274,16 +274,19 @@ class Automat(object):
     """
     By default, a state machine is called like this::
 
-          reactor.callLater(0, self.event, 'event-01', arg1, arg2, ... )
+        reactor.callLater(0, self.event, 'event-01', (arg1, arg2, ... ))
 
-    If ``fast = True`` it will call state machine method directly.
+    If ``fast = True`` it will call state machine method directly:
+
+        self.event('event-01', (arg1, arg2, ... ))
+
     """
 
     post = False
     """
     Sometimes need to set the new state AFTER finish all actions.
     Set ``post = True`` to call ``self.state = <newstate>``
-    in the ``self.event()`` method, not in the ``self.A()`` method.
+    in the ``self.event()`` method, but not in the ``self.A()`` method.
     You also must set that flag in the MS Visio document and rebuild the code:
     put ``[post]`` string into the last line of the LABEL shape.
     """
@@ -362,12 +365,10 @@ class Automat(object):
         Be sure to not have any existing references on that instance so
         destructor will be called immediately.
         """
-        # self.log(self.debug_level, 'destroying %r, refs=%d' % (self, sys.getrefcount(self)))
         self._state_callbacks.clear()
         self.stopTimers()
-        # self.state = 'NOT_EXIST'
+        self.state = 'NOT_EXIST'
         objects().pop(self.index)
-        # print sys.getrefcount(self)
 
     def state_changed(self, oldstate, newstate, event_string, arg):
         """

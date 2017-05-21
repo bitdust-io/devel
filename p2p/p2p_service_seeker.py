@@ -67,31 +67,13 @@ from transport import callback
 
 #------------------------------------------------------------------------------
 
-_P2PServiceSeeker = None
-
-#------------------------------------------------------------------------------
-
-def A(event=None, arg=None):
-    """
-    Access method to interact with the state machine.
-    """
-    global _P2PServiceSeeker
-    if event is None and arg is None:
-        return _P2PServiceSeeker
-    if _P2PServiceSeeker is None:
-        # set automat name and starting state here
-        _P2PServiceSeeker = P2PServiceSeeker('p2p_service_seeker', 'AT_STARTUP', _DebugLevel, _Debug)
-    if event is not None:
-        _P2PServiceSeeker.automat(event, arg)
-    return _P2PServiceSeeker
-
-#------------------------------------------------------------------------------
-
 class P2PServiceSeeker(automat.Automat):
     """
     This class implements all the functionality of the ``p2p_service_seeker()``
     state machine.
     """
+
+    fast = True
 
     timers = {
         'timer-3sec': (3.0, ['ACK?']),
@@ -108,6 +90,7 @@ class P2PServiceSeeker(automat.Automat):
         self.requested_packet_id = None
         self.request_service_params = None
         self.lookup_task = None
+        self.exclude_nodes = []
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -192,6 +175,7 @@ class P2PServiceSeeker(automat.Automat):
         """
         Action method.
         """
+        self.exclude_nodes = arg[0]
         callback.insert_inbox_callback(0, self._inbox_packet_received)
 
     def doSetRequest(self, arg):
@@ -276,11 +260,12 @@ class P2PServiceSeeker(automat.Automat):
         self.requested_packet_id = None
         self.request_service_params = None
         self.lookup_task = None
+        self.exclude_nodes = []
         callback.remove_inbox_callback(self._inbox_packet_received)
         automat.objects().pop(self.index)
-        global _P2PServiceSeeker
-        del _P2PServiceSeeker
-        _P2PServiceSeeker = None
+        # global _P2PServiceSeeker
+        # del _P2PServiceSeeker
+        # _P2PServiceSeeker = None
 
     #------------------------------------------------------------------------------
 
@@ -315,6 +300,8 @@ class P2PServiceSeeker(automat.Automat):
             lg.out(_DebugLevel, 'p2p_service_seeker._nodes_lookup_finished : %r' % idurls)
         found_idurls = set()
         for idurl in idurls:
+            if idurl in self.exclude_nodes:
+                continue
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
@@ -327,15 +314,19 @@ class P2PServiceSeeker(automat.Automat):
 
 #------------------------------------------------------------------------------
 
-def connect_random_node(self, service_name, service_params=None):
+def connect_random_node(service_name, service_params=None, exclude_nodes=[]):
     """
     """
     result = Deferred()
-    if A() and A().state == 'READY':
-        A('start', (
-            service_name, service_params,
-            lambda evt, arg: result.callback(arg) if evt == 'node-connected' else result.errback(arg),
-        ))
-    else:
-        result.errback(None)
+    p2p_service_seeker = P2PServiceSeeker('p2p_service_seeker', 'AT_STARTUP', _DebugLevel, _Debug)
+    p2p_service_seeker.automat('init', (exclude_nodes, ))
+
+    def _on_lookup_result(event, arg):
+        p2p_service_seeker.automat('shutdown')
+        if event == 'node-connected':
+            result.callback(arg)
+        else:
+            result.errback(arg)
+
+    p2p_service_seeker.automat('start', (service_name, service_params, _on_lookup_result, ))
     return result

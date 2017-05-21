@@ -37,6 +37,7 @@ This serves requests from peers:
     * Ack           - response from remote peer after my request
     * Message       - a message from remote peer
     * Correspondent - request to be my correspondent
+    TODO: describe other packets here
 
 For listed customers we will save and retrieve data up to their specified limits.
 BitDust tells us who our customers are and limits, we get their identities.
@@ -70,6 +71,8 @@ Security:
     * Resource limits.
       A ``local_tester`` checks that someone is not trying to use more than they are supposed to
       and we could also do it here
+
+TODO: need to move logic from this monolitic file into a services
 """
 
 #------------------------------------------------------------------------------
@@ -334,30 +337,21 @@ def Identity(newpacket):
     """
     newxml = newpacket.Payload
     newidentity = identity.identity(xmlsrc=newxml)
-    # SECURITY - check that identity is signed correctly
-    # if not newidentity.Valid():
-    #     lg.out(1,"p2p_service.Identity ERROR has non-Valid identity")
-    #     return
+    # SECURITY
+    # check that identity is signed correctly
+    # old public key matches new one
+    # this is done in `UpdateAfterChecking()`
     idurl = newidentity.getIDURL()
     if not identitycache.UpdateAfterChecking(idurl, newxml):
         lg.warn("ERROR has non-Valid identity")
         return False
-    # if contacts.isKnown(idurl):
-        # This checks that old public key matches new
-    #     identitycache.UpdateAfterChecking(idurl, newxml)
-    # else:
-        # TODO
-        # may be we need to make some temporary storage
-        # for identities who we did not know yet
-        # just to be able to receive packets from them
-    #     identitycache.UpdateAfterChecking(idurl, newxml)
     # Now that we have ID we can check packet
     if not newpacket.Valid():
         # If not valid do nothing
         lg.warn("not Valid packet from %s" % idurl)
-        # TODO: send Fail ?
         return False
     if newpacket.OwnerID == idurl:
+        # TODO: this needs to be moved to a service
         # wide=True : a small trick to respond to all contacts if we receive pings
         SendAck(newpacket, wide=True)
         if _Debug:
@@ -401,6 +395,8 @@ def SendIdentity(remote_idurl, wide=False, callbacks={}):
 
 
 def RequestService(request, info):
+    """
+    """
     if len(request.Payload) > 1024 * 10:
         return SendFail(request, 'too long payload')
     words = request.Payload.split(' ')
@@ -756,10 +752,6 @@ def SendDeleteListBackups(SupplierID, ListBackupIDs):
 def Correspondent(request):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.Correspondent")
-#     MyID = my_id.getLocalID()
-#     RemoteID = request.OwnerID
-#     PacketID = request.PacketID
-#     Msg = misc.decode64(request.Payload)
     # TODO: need to connect users here
 
 #------------------------------------------------------------------------------
@@ -895,31 +887,3 @@ def SendRetreiveCoin(remote_idurl, query, wide=False, callbacks={}):
         json.dumps(query), remote_idurl)
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)
     return outpacket
-
-#------------------------------------------------------------------------------
-
-
-def message2gui(proto, text):
-    pass
-#    statusline.setp(proto, text)
-
-
-def getErrorString(error):
-    try:
-        return error.getErrorMessage()
-    except:
-        if error is None:
-            return ''
-        return str(error)
-
-
-def getHostString(host):
-    try:
-        return str(host.host) + ':' + str(host.port)
-    except:
-        if host is None:
-            return ''
-        return str(host)
-
-if __name__ == '__main__':
-    settings.init()

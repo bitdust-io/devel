@@ -49,15 +49,12 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-import time
 import random
 import string
 import hashlib
-import json
 
 from twisted.internet import reactor
 from twisted.internet import threads
-from twisted.internet.defer import Deferred, fail
 
 #------------------------------------------------------------------------------
 
@@ -76,14 +73,11 @@ from userid import my_id
 
 from lib import utime
 
-from crypt import key
-
 from p2p import commands
 from p2p import p2p_service
 
 from transport import callback
 
-from coins import coins_db
 from coins import coins_io
 
 #------------------------------------------------------------------------------
@@ -106,18 +100,6 @@ def A(event=None, arg=None):
     if event is not None:
         _CoinsMiner.automat(event, arg)
     return _CoinsMiner
-
-
-def Destroy():
-    """
-    Destroy the state machine and remove the instance from memory.
-    """
-    global _CoinsMiner
-    if _CoinsMiner is None:
-        return
-    _CoinsMiner.destroy()
-    del _CoinsMiner
-    _CoinsMiner = None
 
 #------------------------------------------------------------------------------
 
@@ -155,10 +137,12 @@ class CoinsMiner(automat.Automat):
         The state machine code, generated using `visio2python
         <http://bitdust.io/visio2python/>`_ tool.
         """
+        #---AT_STARTUP---
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'STOPPED'
                 self.doInit(arg)
+        #---READY---
         elif self.state == 'READY':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -170,6 +154,7 @@ class CoinsMiner(automat.Automat):
                 self.doStartMining(arg)
             elif event == 'new-data-received' and not self.isDecideOK(arg):
                 self.doSendFail(arg)
+        #---MINING---
         elif self.state == 'MINING':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -183,6 +168,7 @@ class CoinsMiner(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'new-data-received':
                 self.doPushInputData(arg)
+        #---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'start':
                 self.state = 'ACCOUNTANTS?'
@@ -190,6 +176,7 @@ class CoinsMiner(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+        #---PUBLISH_COIN---
         elif self.state == 'PUBLISH_COIN':
             if event == 'stop':
                 self.state = 'STOPPED'
@@ -209,8 +196,9 @@ class CoinsMiner(automat.Automat):
                 self.doContinueMining(arg)
             elif event == 'new-data-received':
                 self.doPushInputData(arg)
+        #---ACCOUNTANTS?---
         elif self.state == 'ACCOUNTANTS?':
-            if event == 'stop' or event == 'timer-2min' or (event == 'lookup-failed' and not self.isAnyAccountants(arg)):
+            if event == 'stop' or event == 'timer-2min' or ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ):
                 self.state = 'STOPPED'
             elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READY'
@@ -219,11 +207,12 @@ class CoinsMiner(automat.Automat):
             elif event == 'accountant-connected' and self.isMoreNeeded(arg):
                 self.doAddAccountant(arg)
                 self.doLookupAccountants(arg)
-            elif event == 'stop':
-                self.state = 'CLOSED'
-                self.doStopMining(arg)
             elif event == 'new-data-received':
                 self.doPushInputData(arg)
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+        #---CLOSED---
         elif self.state == 'CLOSED':
             pass
         return None

@@ -42,7 +42,9 @@ class BroadcastingService(LocalService):
     service_name = 'service_broadcasting'
     config_path = 'services/broadcasting/enabled'
 
-    scope = []  # set to [idurl1,idurl2,...] to receive only messages from certain nodes
+    scope = []  # set to [idurl1,idurl2,...] to receive only messages broadcasted from certain nodes
+    # TODO: need to be able dynamically add/remove scope after start of the service
+    # for now let's just listen for all broadcast messages (global scope)
 
     def dependent_on(self):
         return ['service_p2p_hookups',
@@ -50,12 +52,14 @@ class BroadcastingService(LocalService):
                 ]
 
     def start(self):
+        from twisted.internet.defer import Deferred
         from broadcast import broadcasters_finder
         from broadcast import broadcaster_node
         from broadcast import broadcast_listener
         from broadcast import broadcast_service
         from main.config import conf
         from main import settings
+        self.starting_deferred = Deferred()
         broadcasters_finder.A('init')
         if settings.enableBroadcastRouting():
             broadcaster_node.A('init', broadcast_service.on_incoming_broadcast_message)
@@ -70,7 +74,7 @@ class BroadcastingService(LocalService):
             'services/broadcasting/routing-enabled',
             self._on_broadcast_routing_enabled_disabled
         )
-        return True
+        return self.starting_deferred
 
     def stop(self):
         from broadcast import broadcaster_node
@@ -151,6 +155,10 @@ class BroadcastingService(LocalService):
         from logs import lg
         from twisted.internet import reactor
         from broadcast import broadcast_listener
+        if self.starting_deferred:
+            if newstate in ['LISTENING', 'OFFLINE', ]:
+                self.starting_deferred.callback(newstate)
+                self.starting_deferred = None
         if newstate == 'OFFLINE':
             reactor.callLater(60, broadcast_listener.A, 'connect', self.scope)
             lg.out(8, 'service_broadcasting._on_broadcast_listener_switched will try to connect again after 1 minute')
@@ -159,6 +167,10 @@ class BroadcastingService(LocalService):
         from logs import lg
         from twisted.internet import reactor
         from broadcast import broadcaster_node
+        if self.starting_deferred:
+            if newstate in ['BROADCASTING', 'OFFLINE', ]:
+                self.starting_deferred.callback(newstate)
+                self.starting_deferred = None
         if newstate == 'OFFLINE' and oldstate != 'AT_STARTUP':
             reactor.callLater(60, broadcaster_node.A, 'reconnect')
             lg.out(8, 'service_broadcasting._on_broadcaster_node_switched will try to reconnect again after 1 minute')

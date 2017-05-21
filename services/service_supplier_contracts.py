@@ -44,7 +44,7 @@ class SupplierContractsService(LocalService):
 
     def dependent_on(self):
         return ['service_supplier',
-                'service_nodes_lookup'
+                'service_contract_chain',
                 ]
 
     def start(self):
