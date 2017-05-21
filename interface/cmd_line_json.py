@@ -333,6 +333,8 @@ def cmd_deploy(opts, args, overDict):
     from system import bpio
     source_dir = bpio.getExecutableDir()
     venv_path = os.path.join(settings.BaseDir(), 'venv')
+    if len(args) > 1 and not os.path.exists(args[1]) and os.path.isdir(os.path.dirname(args[1])):
+        venv_path = args[1]
     script_path = os.path.join(settings.BaseDir(), 'bitdust')
     status = os.system('rm -rf {}'.format(venv_path))
     if status != 0:
