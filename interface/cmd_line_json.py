@@ -338,11 +338,11 @@ def cmd_deploy(opts, args, overDict):
     script_path = os.path.join(settings.BaseDir(), 'bitdust')
     status = os.system('rm -rf {}'.format(venv_path))
     if status != 0:
-        print_text('Clean up of existing virtual environment files failed!\n')
+        print_text('\nClean up of existing virtual environment files failed!\n')
         return status
     status = os.system('virtualenv -p python2.7 {}'.format(venv_path))
     if status != 0:
-        print_text('Failed to create virtual environment, please check/install virtualenv package\n')
+        print_text('\nFailed to create virtual environment, please check/install virtualenv package\n')
         return status
     status = os.system('{}/bin/pip install -r "{}/requirements.txt"'.format(venv_path, source_dir))
     if status != 0:
@@ -352,8 +352,10 @@ def cmd_deploy(opts, args, overDict):
             'python-setuptools',
             'python-pip',
             'python-virtualenv',
+            'libffi-dev',
+            'libssl-dev',
         ]
-        print_text('Found an error. Try to install all binary package dependencies:\n')
+        print_text('\nFound an error. Try to install all binary package dependencies:\n')
         # TODO: try to detect package manager on target OS: debian/mandrake/OSX
         print_text('    sudo apt-get install %s\n\n' % (' '.join(depends)))
         return status
