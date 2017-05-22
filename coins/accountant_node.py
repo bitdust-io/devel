@@ -220,10 +220,12 @@ class AccountantNode(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'start':
                 self.state = 'ACCOUNTANTS?'
+                self.Attempts=0
                 self.doLookupAccountants(arg)
             elif event == 'accountant-connected':
                 self.state = 'ACCOUNTANTS?'
                 self.doAddAccountant(arg)
+                self.Attempts=2
                 self.doLookupAccountants(arg)
         #---CLOSED---
         elif self.state == 'CLOSED':
@@ -236,13 +238,14 @@ class AccountantNode(automat.Automat):
             elif event == 'accountant-connected' and self.isMoreNeeded(arg):
                 self.doAddAccountant(arg)
                 self.doLookupAccountants(arg)
-            elif ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ) or event == 'timer-2min':
-                self.state = 'OFFLINE'
             elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READ_COINS'
                 self.doRetreiveCoins(arg)
-            elif event == 'lookup-failed' and self.isAnyAccountants(arg):
+            elif event == 'lookup-failed' and self.Attempts < 5 and self.isAnyAccountants(arg):
+                self.Attempts+=1
                 self.doLookupAccountants(arg)
+            elif ( event == 'lookup-failed' and ( self.Attempts>=5 or not self.isAnyAccountants(arg) ) ) or event == 'timer-2min':
+                self.state = 'OFFLINE'
         return None
 
     def isAnyAccountants(self, arg):
