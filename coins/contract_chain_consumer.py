@@ -89,20 +89,13 @@ class ContractChainConsumer(automat.Automat):
         'timer-1min': (60, ['MINER?', 'ACCOUNTANTS?']),
     }
 
-    def __init__(self, state):
-        """
-        Create contract_chain_consumer() state machine.
-        Use this method if you need to call Automat.__init__() in a special way.
-        """
-        super(ContractChainConsumer, self).__init__("contract_chain_consumer", state)
-
     def init(self):
         """
         Method to initialize additional variables and flags
         at creation phase of contract_chain_consumer() machine.
         """
-        self.accountants = []
-        self.miner = None
+        self.connected_accountants = []
+        self.connected_miner = None
 
     def state_changed(self, oldstate, newstate, event, arg):
         """
@@ -184,9 +177,9 @@ class ContractChainConsumer(automat.Automat):
         """
         Action method.
         """
-        for idurl in self.accountants:
+        for idurl in self.connected_accountants:
             p2p_service.SendCancelService(idurl, 'service_accountant')
-        self.accountants = []
+        self.connected_accountants = []
 
     def doConnectMiner(self, arg):
         """
@@ -199,9 +192,9 @@ class ContractChainConsumer(automat.Automat):
         """
         Action method.
         """
-        if self.miner:
-            p2p_service.SendCancelService(self.miner, 'service_miner')
-        self.miner = None
+        if self.connected_miner:
+            p2p_service.SendCancelService(self.connected_miner, 'service_miner')
+        self.connected_miner = None
 
     def doDestroyMe(self, arg):
         """
@@ -214,52 +207,58 @@ class ContractChainConsumer(automat.Automat):
 
     #------------------------------------------------------------------------------
 
-    def _on_accountant_connected(self, idurl):
+    def _on_accountant_lookup_finished(self, idurl):
         if self.state != 'ACCOUNTANTS?':
             lg.warn('internal state was changed during accountant lookup, SKIP next lookup')
-            return
-        if idurl in self.accountants:
+            return None
+        if not idurl:
+            if _Debug:
+                lg.out(_DebugLevel, 'contract_chain_consumer._on_accountant_lookup_finished with no results, try again')
+            reactor.callLater(0, self._lookup_next_accountant)
+            return None
+        if idurl in self.connected_accountants:
             lg.warn('node %s already connected as accountant')
         else:
-            self.accountants.append(idurl)
+            self.connected_accountants.append(idurl)
+            if _Debug:
+                lg.out(_DebugLevel, 'contract_chain_consumer._on_accountant_lookup_finished !!!!!!!! %s CONNECTED as new accountant' % idurl)
         reactor.callLater(0, self._lookup_next_accountant)
-
-    def _on_accountant_failed(self, x):
-        if self.state != 'ACCOUNTANTS?':
-            lg.warn('internal state was changed during accountant lookup, SKIP next lookup')
-            return
-        reactor.callLater(0, self._lookup_next_accountant)
+        return None
 
     def _lookup_next_accountant(self):
-        if len(self.accountants) > 3:  # TODO: read from settings.
+        if len(self.connected_accountants) >= 3:  # TODO: read from settings.
+            if _Debug:
+                lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant SUCCESS, %d accountants connected' % len(self.connected_accountants))
             self.automat('accountants-connected')
             return
-        if self.accountant_lookups > 10:  # TODO: read from settings.
+        if self.accountant_lookups >= 10:  # TODO: read from settings.
+            if _Debug:
+                lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant FAILED after %d retries' % self.accountant_lookups)
             self.automat('accountants-failed')
             return
         self.accountant_lookups += 1
         p2p_service_seeker.connect_random_node(
             'service_accountant',
             service_params='read',
-            exclude_nodes=self.accountants,
-        ).addCallbacks(
-            self._on_accountant_connected,
-            self._on_accountant_failed,
-        )
+            exclude_nodes=self.connected_accountants,
+        ).addBoth(self._on_accountant_lookup_finished)
 
-    def _on_miner_connected(self, idurl):
-        self.miner = idurl
+    def _on_miner_lookup_finished(self, idurl):
+        if not idurl:
+            if _Debug:
+                lg.out(_DebugLevel, 'contract_chain_consumer._on_miner_lookup_finished with no results, try again')
+            reactor.callLater(0, self._lookup_miner)
+            return None
+        self.connected_miner = idurl
+        if _Debug:
+            lg.out(_DebugLevel, 'contract_chain_consumer._on_miner_lookup_finished SUCCESS, miner %s connected' % self.connected_miner)
         self.automat('miner-connected')
 
-    def _on_miner_failed(self, x):
-        reactor.callLater(0, self._lookup_miner)
-
     def _lookup_miner(self):
-        if self.miner_lookups > 3:  # TODO: read from settings.
+        if self.miner_lookups >= 5:  # TODO: read value from settings
+            if _Debug:
+                lg.out(_DebugLevel, 'contract_chain_consumer._lookup_miner FAILED after %d retries' % self.miner_lookups)
             self.automat('miner-failed')
             return
         self.miner_lookups += 1
-        p2p_service_seeker.connect_random_node('service_miner').addCallbacks(
-            self._on_miner_connected,
-            self._on_miner_failed,
-        )
+        p2p_service_seeker.connect_random_node('service_miner').addBoth(self._on_miner_lookup_finished)

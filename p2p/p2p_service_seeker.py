@@ -43,7 +43,7 @@ EVENTS:
 
 #------------------------------------------------------------------------------
 
-_Debug = True
+_Debug = False
 _DebugLevel = 6
 
 #------------------------------------------------------------------------------
@@ -61,6 +61,7 @@ from p2p import p2p_service
 from p2p import lookup
 
 from contacts import identitycache
+
 from userid import my_id
 
 from transport import callback
@@ -298,15 +299,17 @@ class P2PServiceSeeker(automat.Automat):
     def _nodes_lookup_finished(self, idurls):
         if _Debug:
             lg.out(_DebugLevel, 'p2p_service_seeker._nodes_lookup_finished : %r' % idurls)
-        found_idurls = set()
+        found_idurls = []
         for idurl in idurls:
             if idurl in self.exclude_nodes:
+                continue
+            if idurl in found_idurls:
                 continue
             ident = identitycache.FromCache(idurl)
             remoteprotos = set(ident.getProtoOrder())
             myprotos = set(my_id.getLocalIdentity().getProtoOrder())
             if len(myprotos.intersection(remoteprotos)) > 0:
-                found_idurls.add(idurl)
+                found_idurls.append(idurl)
         if found_idurls:
             self.automat('found-users', found_idurls)
         else:
@@ -314,19 +317,26 @@ class P2PServiceSeeker(automat.Automat):
 
 #------------------------------------------------------------------------------
 
+def on_lookup_result(event, arg, result_defer, p2p_seeker_instance):
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'p2p_service_seeker.on_lookup_result %s with %s' % (event, arg))
+    p2p_seeker_instance.automat('shutdown')
+    if event == 'node-connected':
+        result_defer.callback(arg)
+    else:
+        result_defer.callback(None)
+
 def connect_random_node(service_name, service_params=None, exclude_nodes=[]):
     """
     """
     result = Deferred()
-    p2p_service_seeker = P2PServiceSeeker('p2p_service_seeker', 'AT_STARTUP', _DebugLevel, _Debug)
-    p2p_service_seeker.automat('init', (exclude_nodes, ))
-
-    def _on_lookup_result(event, arg):
-        p2p_service_seeker.automat('shutdown')
-        if event == 'node-connected':
-            result.callback(arg)
-        else:
-            result.errback(arg)
-
-    p2p_service_seeker.automat('start', (service_name, service_params, _on_lookup_result, ))
+    p2p_seeker = P2PServiceSeeker('p2p_service_seeker', 'AT_STARTUP', _DebugLevel, _Debug)
+    p2p_seeker.automat('init', (exclude_nodes, ))
+    p2p_seeker.automat(
+        'start', (
+            service_name, service_params, lambda evt, arg: on_lookup_result(evt, arg, result, p2p_seeker)
+        )
+    )
     return result

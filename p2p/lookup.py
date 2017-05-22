@@ -32,8 +32,8 @@
 
 #------------------------------------------------------------------------------
 
-_Debug = True
-_DebugLevel = 10
+_Debug = False
+_DebugLevel = 8
 
 #------------------------------------------------------------------------------
 
@@ -45,7 +45,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in lookup.py')
 
-from twisted.internet.defer import DeferredList, Deferred
+from twisted.internet.defer import DeferredList, Deferred, fail
 
 #------------------------------------------------------------------------------
 
@@ -208,7 +208,7 @@ class DiscoveryTask(object):
         self.lookup_now = False
         self.stopped = False
         self.lookup_task = None
-        self.result_defer = Deferred(canceller=lambda x: self.stop())
+        self.result_defer = Deferred(canceller=lambda d: self._close())
         # self.result_defer = Deferred(canceller=lambda d: setattr(self, 'stopped', True))
 
     def __del__(self):
@@ -222,25 +222,25 @@ class DiscoveryTask(object):
         if self.lookup_task and not self.lookup_task.called:
             lg.warn('lookup_nodes() method already called')
             return self.lookup_task
-        self.lookup_task = self.lookup_nodes()
-        self.lookup_task.addBoth(lambda x: setattr(self, 'lookup_task', None))
-        self.lookup_task.addErrback(lambda err: None if self.stopped else schedule_next_lookup(self))
-        if self.result_defer:
-            self.lookup_task.addErrback(lambda err: [self.report_result([]), self.close()])
+#         if self.lookup_now:
+#             lg.warn('lookup_nodes() method already running')
+#             return self.lookup_task
         if _Debug:
             lg.out(_DebugLevel, 'lookup.DiscoveryTask.start')
-        return self.lookup_task
+        return self._lookup_nodes()
+        # return self.lookup_task
 
     def stop(self):
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup.DiscoveryTask.stop')
+        self.stopped = True
+        self._close()
+
+    def _close(self):
         self.stopped = True
         if self.lookup_task and not self.lookup_task.called:
             self.lookup_task.cancel()
             self.lookup_task = None
-        if _Debug:
-            lg.out(_DebugLevel, 'lookup.DiscoveryTask.stop')
-
-    def close(self):
-        self.stopped = True
         self.lookup_method = None
         self.observe_method = None
         self.process_method = None
@@ -248,117 +248,159 @@ class DiscoveryTask(object):
         if _Debug:
             lg.out(_DebugLevel, 'lookup.close finished in %f seconds' % round(time.time() - self.started, 3))
 
-    def lookup_nodes(self):
-        if self.stopped:
-            return
-        if self.lookup_now:
-            return
-        self.lookup_now = True
+    def _lookup_nodes(self):
         if _Debug:
-            lg.out(_DebugLevel, 'lookup.lookup_nodes')
-        d = self.lookup_method()
-        d.addCallback(self.on_nodes_discovered)
-        d.addErrback(lambda err: setattr(self, 'lookup_now', False))
-        return d
+            lg.out(_DebugLevel, 'lookup._lookup_nodes')
+        self.lookup_now = True
+        self.lookup_task = self.lookup_method()
+        self.lookup_task.addCallback(self._on_nodes_discovered)
+        self.lookup_task.addErrback(self._on_lookup_failed)
+        # d.addErrback(lambda err: setattr(self, 'lookup_now', False))
+        # self.lookup_task = new_lookup
+        # self.lookup_task.addBoth(lambda x: setattr(self, 'lookup_task', None))
+        # if self.result_defer:
+        # self.lookup_task.addErrback(lambda err: [self._report_result([]), self._close()])
+        # self.lookup_task.addErrback(lambda err: None if self.stopped else schedule_next_lookup(self))
+        return self.lookup_task
 
-    def observe_nodes(self, nodes):
+    def _observe_nodes(self, nodes):
         if self.stopped:
-            return []
+            if _Debug:
+                lg.warn('discovery process already stopped')
+            return
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup._observe_nodes on %d items' % len(nodes))
         observe_list = []
         for node in nodes:
             d = self.observe_method(node)
-            d.addCallback(self.on_node_observed, node)
-            d.addErrback(self.on_node_failed, node)
+            d.addCallback(self._on_node_observed, node)
+            d.addErrback(self._on_node_failed, node)
             observe_list.append(d)
         dl = DeferredList(observe_list, consumeErrors=False)
-        dl.addCallback(self.on_all_nodes_observed)
-        return nodes
+        dl.addCallback(self._on_all_nodes_observed)
 
-    def report_result(self, results=None):
+    def _report_result(self, results=None):
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup._report_result %s, result_defer=%s' % (str(results), self.result_defer))
         if results is None:
             if self.consume:
                 results = consume_discovered_idurls(self.count)
+                if _Debug:
+                    lg.out(_DebugLevel, '    %d results consumed, %d were requested' % (len(results), self.count))
             else:
                 results = extract_discovered_idurls(self.count)
+                if _Debug:
+                    lg.out(_DebugLevel, '    %d results extracted, %d were requested' % (len(results), self.count))
         if self.result_defer:
             self.result_defer.callback(results)
         self.result_defer = None
 
-    def on_node_succeed(self, node, info):
+    def _report_fails(self, err):
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup._report_fails %s' % err)
+        if self.result_defer:
+            self.result_defer.errback(err)
+        self.result_defer = None
+
+    def _on_node_succeed(self, node, info):
         self.succeed += 1
         if _Debug:
-            lg.out(_DebugLevel + 10, 'lookup.on_succeed %s info: %s' % (node, info))
+            lg.out(_DebugLevel, 'lookup._on_succeed %s info: %s' % (node, info))
+        return node
 
-    def on_node_failed(self, err, arg=None):
+    def _on_node_failed(self, err, arg=None):
         self.failed += 1
         if _Debug:
             lg.warn('%r : %r' % (arg, err))
+        return err
 
-    def on_node_observed(self, idurl, node):
+    def _on_node_observed(self, idurl, node):
         if self.stopped:
+            lg.warn('node observed, but discovery process already stopped')
             return None
         if idurl in known_idurls():
             if _Debug:
-                lg.out(_DebugLevel + 10, 'lookup.on_node_observed SKIP %r' % idurl)
+                lg.out(_DebugLevel + 10, 'lookup._on_node_observed SKIP %r' % idurl)
             return None
         if _Debug:
-            lg.out(_DebugLevel + 10, 'lookup.on_node_observed %r : %r' % (node, idurl))
+            lg.out(_DebugLevel + 10, 'lookup._on_node_observed %r : %r' % (node, idurl))
         d = self.process_method(idurl, node)
-        d.addErrback(self.on_node_failed, node)
-        d.addCallback(self.on_identity_cached, node)
+        d.addErrback(self._on_node_failed, node)
+        d.addCallback(self._on_identity_cached, node)
         return d
 
-    def on_node_processed(self, node, idurl):
+    def _on_node_processed(self, node, idurl):
         if _Debug:
             if len(discovered_idurls()) < self.count:
-                lg.out(_DebugLevel + 10, 'lookup.on_node_processed %s, but need more nodes' % idurl)
+                lg.out(_DebugLevel, 'lookup._on_node_processed %s, but need more nodes' % idurl)
             else:
-                lg.out(_DebugLevel + 10, 'lookup.on_node_processed %s, have enough nodes now' % idurl)
+                lg.out(_DebugLevel, 'lookup._on_node_processed %s, have enough nodes now' % idurl)
 
-    def on_all_nodes_observed(self, results):
+    def _on_all_nodes_observed(self, observe_results):
         if self.stopped:
+            lg.warn('_on_all_nodes_observed finished, but discovery process already stopped')
             return
         if _Debug:
-            lg.out(_DebugLevel, 'lookup.on_all_nodes_observed results: %d, discovered nodes: %d' % (
-                len(results), len(discovered_idurls())))
-        if len(discovered_idurls()) == 0:
-            self.report_result()
-            self.close()
-            return
+            lg.out(_DebugLevel, 'lookup._on_all_nodes_observed results: %d, discovered nodes: %d' % (
+                len(observe_results), len(discovered_idurls())))
+#         results = []
+#         for item in observe_results:
+#             if item[0]:
+#                 results.append(item[1])
+#         if len(discovered_idurls()) == 0:
+#             self._report_result([])
+#             self._close()
+#             return
         # if len(discovered_idurls()) < self.count:
         #     # self.lookup_task = self.lookup_nodes()
         #     self.start()
         #     return
-        self.report_result()
-        self.close()
+        self._report_result()
+        self._close()
 
-    def on_identity_cached(self, idurl, node):
+    def _on_identity_cached(self, idurl, node):
         if self.stopped:
             return None
         if idurl is None:
             return None
         discovered_idurls().append(idurl)
         known_idurls()[idurl] = time.time()
-        self.on_node_succeed(node, idurl)
-        reactor.callLater(0, self.on_node_processed, node, idurl)
+        self._on_node_succeed(node, idurl)
+        reactor.callLater(0, self._on_node_processed, node, idurl)
         if _Debug:
-            lg.out(_DebugLevel + 10, 'lookup.on_identity_cached : %s' % idurl)
+            lg.out(_DebugLevel, 'lookup._on_identity_cached : %s' % idurl)
         return idurl
 
-    def on_nodes_discovered(self, nodes):
+    def _on_nodes_discovered(self, nodes):
         if _Debug:
-            lg.out(_DebugLevel, 'lookup.on_nodes_discovered : %s, stopped=%s' % (nodes, self.stopped))
-        if self.stopped:
-            self.close()
-            return
+            lg.out(_DebugLevel, 'lookup._on_nodes_discovered : %s, stopped=%s' % (str(nodes), self.stopped))
         self.lookup_now = False
+        self.lookup_task = None
+        if self.stopped:
+            lg.warn('on_nodes_discovered finished, but discovery process was already stopped')
+            self._close()
+            return None
         # if not nodes or len(discovered_idurls()) + len(nodes) < self.count:
             # self.lookup_task = self.lookup_nodes()
             # self.start()
-        if len(nodes) == 0:
-            self.report_result(result=[])
-            self.close()
-            return []
-        return self.observe_nodes(nodes)
+        if not nodes:
+            self._report_result()
+            self._close()
+            return None
+        self._observe_nodes(nodes)
+        return None
+
+    def _on_lookup_failed(self, err):
+        if _Debug:
+            lg.out(_DebugLevel, 'lookup._on_lookup_failed %s' % err)
+        self.lookup_now = False
+        self.lookup_task = None
+        if self.stopped:
+            lg.warn('discovery process already stopped')
+            self._close()
+            return
+        self._report_fails(err)
+        self._close()
+        return err
 
 #------------------------------------------------------------------------------

@@ -58,13 +58,9 @@ class NodesLookupService(LocalService):
                     observe_method=self._observe_dht_node,
                     process_method=self._process_idurl)
         lookup.start(count=5, consume=False)
-        # from p2p import p2p_service_seeker
-        # p2p_service_seeker.A('init')
         return True
 
     def stop(self):
-        # from p2p import p2p_service_seeker
-        # p2p_service_seeker.A('shutdown')
         from p2p import lookup
         lookup.shutdown()
         return True
