@@ -338,7 +338,7 @@ class CoinsMiner(automat.Automat):
         Action method.
         """
         callback.remove_inbox_callback(self._on_inbox_packet)
-        automat.objects().pop(self.index)
+        self.unregister()
         global _CoinsMiner
         del _CoinsMiner
         _CoinsMiner = None

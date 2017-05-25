@@ -194,7 +194,7 @@ class ProxyNode(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        automat.objects().pop(self.index)
+        self.unregister()
         global _ProxyNode
         del _ProxyNode
         _ProxyNode = None

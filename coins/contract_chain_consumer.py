@@ -200,7 +200,7 @@ class ContractChainConsumer(automat.Automat):
         """
         Action method.
         """
-        automat.objects().pop(self.index)
+        self.unregister()
         global _ContractChainConsumer
         del _ContractChainConsumer
         _ContractChainConsumer = None

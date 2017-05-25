@@ -104,11 +104,12 @@ def add_subscriber(subscriber_callback, event_id='*'):
 def remove_subscriber(subscriber_callback):
     """
     """
+    removed = False
     for event_id, subscribers in subscribers().items():
         if subscriber_callback in subscribers:
             subscribers()[event_id].remove(subscriber_callback)
-            return True
-    return False
+            removed = True
+    return removed
 
 #------------------------------------------------------------------------------
 

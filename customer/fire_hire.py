@@ -117,13 +117,14 @@ from lib import misc
 from lib import diskspace
 
 from main import settings
+from main import events
 
 from contacts import contactsdb
 
 from services import driver
 
-import supplier_finder
-import supplier_connector
+from customer import supplier_finder
+from customer import supplier_connector
 
 #-------------------------------------------------------------------------
 
@@ -145,14 +146,12 @@ def GetLastFireTime():
 
 def ClearLastFireTime():
     """
-    
     """
     _LastFireTime = 0
 
 
 def AddSupplierToFire(idurl):
     """
-    
     """
     global _SuppliersToFire
     _SuppliersToFire.append(idurl)
@@ -410,9 +409,7 @@ class FireHire(automat.Automat):
             sc = supplier_connector.by_idurl(supplier_idurl)
             if sc is None:
                 sc = supplier_connector.create(supplier_idurl)
-            sc.set_callback(
-                'fire_hire',
-                self._supplier_connector_state_changed)
+            sc.set_callback('fire_hire', self._supplier_connector_state_changed)
             self.connect_list.append(supplier_idurl)
             sc.automat('connect')
 
@@ -486,21 +483,26 @@ class FireHire(automat.Automat):
             time.strftime('%d-%m-%Y %H:%M:%S'))
         if settings.NewWebGUI():
             from web import control
-            # control.on_suppliers_changed(current_suppliers)
+            control.on_suppliers_changed(current_suppliers)
         else:
             from web import webcontrol
             webcontrol.OnListSuppliers()
         if position < 0:
-            lg.out(2, '!!!!!!!!!!! ADD SUPPLIER : %s' % (new_idurl))
+            lg.out(2, '!!!!!!!!!!! ADDED NEW SUPPLIER : %s' % (new_idurl))
+            events.send('supplier-modified', dict(
+                new_idurl=new_idurl, old_idurl=None, position=(len(current_suppliers) - 1),
+            ))
         else:
             if old_idurl:
-                lg.out(
-                    2, '!!!!!!!!!!! SUBSTITUTE SUPPLIER %d : %s->%s' %
-                    (position, old_idurl, new_idurl))
+                lg.out(2, '!!!!!!!!!!! SUBSTITUTE EXISTING SUPPLIER %d : %s->%s' % (position, old_idurl, new_idurl))
+                events.send('supplier-modified', dict(
+                    new_idurl=new_idurl, old_idurl=old_idurl, position=position,
+                ))
             else:
-                lg.out(
-                    2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' %
-                    (position, new_idurl))
+                lg.out(2, '!!!!!!!!!!! REPLACE EMPTY SUPPLIER %d : %s' % (position, new_idurl))
+                events.send('supplier-modified', dict(
+                    new_idurl=new_idurl, old_idurl=None, position=position,
+                ))
         self.restart_interval = 1.0
 
     def doRemoveSuppliers(self, arg):
@@ -512,6 +514,7 @@ class FireHire(automat.Automat):
         if len(current_suppliers) < desired_suppliers:
             lg.warn('must have more suppliers %d<%d' % (
                 len(current_suppliers), desired_suppliers))
+        removed_suppliers = []
         for supplier_idurl in self.dismiss_list:
             if supplier_idurl not in current_suppliers:
                 lg.warn('%s not a supplier' % supplier_idurl)
@@ -519,10 +522,12 @@ class FireHire(automat.Automat):
             pos = current_suppliers.index(supplier_idurl)
             # current_suppliers.remove(supplier_idurl)
             current_suppliers[pos] = ''
+            removed_suppliers.append((pos, supplier_idurl,))
             misc.writeSupplierData(
                 supplier_idurl,
                 'disconnected',
-                time.strftime('%d-%m-%Y %H:%M:%S'))
+                time.strftime('%d-%m-%Y %H:%M:%S'),
+            )
         current_suppliers = current_suppliers[:desired_suppliers]
         contactsdb.update_suppliers(current_suppliers)
         contactsdb.save_suppliers()
@@ -532,6 +537,10 @@ class FireHire(automat.Automat):
         else:
             from web import webcontrol
             webcontrol.OnListSuppliers()
+        for position, supplier_idurl in removed_suppliers:
+            events.send('supplier-modified', dict(
+                new_idurl=None, old_idurl=supplier_idurl, position=position,
+            ))
         lg.out(2, '!!!!!!!!!!! REMOVE SUPPLIERS : %d' % len(self.dismiss_list))
 
     def doDisconnectSuppliers(self, arg):
@@ -555,7 +564,7 @@ class FireHire(automat.Automat):
         """
         Action method.
         """
-        supplier_idurl, supplier_state = arg
+        supplier_idurl, _ = arg
         sc = supplier_connector.by_idurl(supplier_idurl)
         if supplier_idurl in self.dismiss_list:
             self.dismiss_list.remove(supplier_idurl)
@@ -612,9 +621,8 @@ class FireHire(automat.Automat):
         self.automat('restart')
 
     def _supplier_connector_state_changed(self, idurl, newstate):
-        lg.out(
-            14, 'fire_hire._supplier_connector_state_changed %s %s, state=%s' %
-            (idurl, newstate, self.state))
+        lg.out(14, 'fire_hire._supplier_connector_state_changed %s to %s, own state is %s' % (
+            idurl, newstate, self.state))
         supplier_connector.by_idurl(idurl).remove_callback('fire_hire')
         if self.state == 'SUPPLIERS?':
             self.connect_list.remove(idurl)

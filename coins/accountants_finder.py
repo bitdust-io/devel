@@ -246,7 +246,7 @@ class AccountantsFinder(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         callback.remove_inbox_callback(self._inbox_packet_received)
-        automat.objects().pop(self.index)
+        self.unregister()
         global _AccountantsFinder
         del _AccountantsFinder
         _AccountantsFinder = None

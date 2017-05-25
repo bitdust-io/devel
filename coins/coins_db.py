@@ -120,6 +120,7 @@ def db():
 
 
 def get(index_name, key, with_doc=True, with_storage=True):
+    # TODO: here and bellow need to add input validation
     try:
         res = db().get(index_name, key, with_doc, with_storage)
     except (RecordNotFound, RecordDeleted, ):
@@ -212,10 +213,11 @@ def query_json(jdata):
     try:
         result = callmethod(index_name, **jdata)
     except:
-        return None, lg.format_exception()
+        lg.exc()
+        return None, 'exception raised during processing'
     if jdata['with_doc'] and index_name != 'id':
-        return (_clean_doc(r['doc']) for r in result), ''
-    return result, ''
+        return (_clean_doc(r['doc']) for r in result), None
+    return result, None
 
 #------------------------------------------------------------------------------
 

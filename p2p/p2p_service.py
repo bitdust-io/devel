@@ -39,39 +39,6 @@ This serves requests from peers:
     * Correspondent - request to be my correspondent
     TODO: describe other packets here
 
-For listed customers we will save and retrieve data up to their specified limits.
-BitDust tells us who our customers are and limits, we get their identities.
-If a customer does not contact us for more than 30 hours (or something) then we can process
-requests from that customers scrubbers.
-
-Security:
-
-    * Transport_control has checked that it is signed by a contact,
-      but we need to check that this is a customer.
-
-    * Since we have control over suppliers, and may not change them much,
-      it feels like customers are more of a risk.
-
-    * Code treats suppliers and customers differently.  Fun that stores
-      have customers come in the front door and suppliers in the back door.
-
-    * But I don't see anything really worth doing.
-      On Unix machines we could run customers in a chrooted environment.
-      There would be a main code and any time it got a change
-      in the list of customers, it could restart the customer code.
-      The customer code could be kept very small this way.
-      Again, I doubt it.  We only have XML and binary.
-
-    * Real risk is probably the code for SSH, Email, Vetex, etc.
-      Once it is a packet object, we are probably ok.
-
-    * We will store in a file and be able to read it back when requested.
-      Request comes as a packet and we just verify it signature to be sure about sender.
-
-    * Resource limits.
-      A ``local_tester`` checks that someone is not trying to use more than they are supposed to
-      and we could also do it here
-
 TODO: need to move logic from this monolitic file into a services
 """
 
@@ -182,10 +149,10 @@ def inbox(newpacket, info, status, error_message):
         # will Delete all files starting in a backup
         DeleteBackup(newpacket)
         commandhandled = True
-    elif newpacket.Command == commands.RequestIdentity():
-        # contact asking for our current identity
-        RequestIdentity(newpacket)
-        commandhandled = True
+#     elif newpacket.Command == commands.RequestIdentity():
+#         # contact asking for our current identity
+#         RequestIdentity(newpacket)
+#         commandhandled = True
     elif newpacket.Command == commands.Message():
         # contact asking for our current identity
         if driver.is_started('service_private_messages'):
@@ -300,13 +267,13 @@ def SendFail(request, response='', remote_idurl=None):
         commands.Fail(),
         my_id.getLocalID(),
         my_id.getLocalID(),
-        request.PacketID,
+        request.PacketID,  # This is needed to identify Fail on remote side
         response,
         remote_idurl,
     )
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendFail %s to %s    response: %s ..." % (
-            result.PacketID, result.RemoteID, str(response)[:15]))
+            result.PacketID, result.RemoteID, str(response)[:40]))
     gateway.outbox(result)
     return result
 
@@ -362,7 +329,7 @@ def Identity(newpacket):
     return True
 
 
-def RequestIdentity(request):
+def _RequestIdentity(request):
     """
     Someone is requesting a copy of our current identity.
 
@@ -399,6 +366,7 @@ def RequestService(request, info):
     """
     if len(request.Payload) > 1024 * 10:
         return SendFail(request, 'too long payload')
+    # TODO: move code into driver module, use callback module here instead of direct call
     words = request.Payload.split(' ')
     if len(words) < 1:
         lg.warn("got wrong payload in %s" % request)
@@ -432,16 +400,13 @@ def SendRequestService(remote_idurl, service_info, wide=False, callbacks={}):
 def CancelService(request, info):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.CancelService")
+    # TODO: move code into driver module, use callback module here instead of direct call
     words = request.Payload.split(' ')
     if len(words) < 1:
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'wrong payload')
     service_name = words[0]
-    # TODO: - temporary keep that for backward compatibility
-    if service_name == 'storage':
-        if not driver.is_started('service_supplier'):
-            return SendFail(request, 'supplier service is off')
-        return driver.cancel('service_supplier', request, info)
+    # TODO: add validation
     if not driver.is_exist(service_name):
         lg.warn("got wrong payload in %s" % request)
         return SendFail(request, 'service %s not exist' % service_name)
@@ -469,6 +434,7 @@ def ListFiles(request):
     """
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')
+    # TODO: use callback module here instead of direct call
     from supplier import list_files
     return list_files.send(request.OwnerID, request.PacketID, request.Payload)
 
@@ -480,7 +446,7 @@ def Files(newpacket, info):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.Files from [%s] at %s://%s" % (
             nameurl.GetName(newpacket.OwnerID), info.proto, info.host))
-    # TODO use callback here
+    # TODO: use callback module here instead of direct call
     from storage import backup_control
     backup_control.IncomingSupplierListFiles(newpacket)
 

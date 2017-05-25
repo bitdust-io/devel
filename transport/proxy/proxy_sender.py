@@ -220,7 +220,7 @@ class ProxySender(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        automat.objects().pop(self.index)
+        self.unregister()
         global _ProxySender
         del _ProxySender
         _ProxySender = None

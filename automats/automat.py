@@ -118,6 +118,20 @@ def create_index(name):
     return automatid, _Index[automatid]
 
 
+def erase_index(automatid):
+    """
+    Removes given unique automat ID from Index dict and returns its index number or None if ID was not found.
+    """
+    global _Index
+    if _Index is None:
+        return None
+    return _Index.pop(automatid, None)
+#     index = _Index.get(automatid, None)
+#     if index is None:
+#         return None
+#     del _Index[automatid]
+
+
 def set_object(index, obj):
     """
     Put object for that index into memory.
@@ -133,8 +147,9 @@ def clear_object(index):
     global _Objects
     if _Objects is None:
         return
-    if index in _Objects:
-        del _Objects[index]
+    return _Objects.pop(index, None)
+#     if index in _Objects:
+#         del _Objects[index]
 
 
 def objects():
@@ -302,38 +317,43 @@ class Automat(object):
         self._state_callbacks = {}
         self.init()
         self.startTimers()
+        self.register()
         if _Debug:
             self.log(max(_DebugLevel, self.debug_level),
                      'CREATED AUTOMAT %s with index %d, %d running' % (
                 str(self), self.index, len(objects())))
+
+    def register(self):
+        """
+        Put reference to this automat instance into a global dictionary.
+        """
         set_object(self.index, self)
 
+    def unregister(self):
+        """
+        Removes reference to this instance from global dictionary tracking all state machines.
+        """
+        clear_object(self.index)
+
     def __del__(self):
-        global _Index
+        """
+        Calls state changed callback and removes state machine from the index.
+        """
         global _StateChangedCallback
         if self is None:
+            # Some crazy stuff happens? :-)
             return
         o = self
         automatid = self.id
         name = self.name
+        if _StateChangedCallback is not None:
+            _StateChangedCallback(index, automatid, name, '')
         debug_level = max(_DebugLevel, self.debug_level)
-        if _Index is None:
-            if _Debug:
-                self.log(debug_level, 'automat.__del__ WARNING Index is None: %r %r' % (automatid, name))
-            return
-        index = _Index.get(automatid, None)
-        if index is None:
-            if _Debug:
-                self.log(debug_level, 'automat.__del__ WARNING %s not found' % automatid)
-            return
-        del _Index[automatid]
+        erase_index(automatid)
         if _Debug:
             self.log(debug_level,
                      'DESTROYED AUTOMAT %s with index %d, %d running' % (
                          str(o), index, len(objects())))
-        del o
-        if _StateChangedCallback is not None:
-            _StateChangedCallback(index, automatid, name, '')
 
     def __repr__(self):
         """

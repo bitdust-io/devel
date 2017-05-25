@@ -516,7 +516,7 @@ class ProxyReceiver(automat.Automat):
         """
         Remove all references to the state machine object to destroy it.
         """
-        automat.objects().pop(self.index)
+        self.unregister()
         global _ProxyReceiver
         del _ProxyReceiver
         _ProxyReceiver = None

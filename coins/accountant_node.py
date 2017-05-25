@@ -369,7 +369,7 @@ class AccountantNode(automat.Automat):
         self.pending_coins = None
         self.connected_accountants = None
         callback.remove_inbox_callback(self._on_inbox_packet)
-        automat.objects().pop(self.index)
+        self.unregister()
         global _AccountantNode
         del _AccountantNode
         _AccountantNode = None
@@ -392,7 +392,10 @@ class AccountantNode(automat.Automat):
             if not query_j:
                 p2p_service.SendFail(newpacket, 'incorrect query received')
                 return False
-            coins = coins_db.query_json(query_j)
+            coins, error = coins_db.query_json(query_j)
+            if error:
+                p2p_service.SendFail(newpacket, error)
+                return False
             p2p_service.SendCoin(newpacket.CreatorID, coins, packet_id=newpacket.PacketID)
             return True
         if newpacket.Command == commands.Coin():

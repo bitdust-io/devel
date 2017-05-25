@@ -197,7 +197,7 @@ class BroadcastListener(automat.Automat):
         """
         self.incoming_broadcast_message_callback = None
         callback.remove_inbox_callback(self._on_inbox_packet)
-        automat.objects().pop(self.index)
+        self.unregister()
         global _BroadcastListener
         del _BroadcastListener
         _BroadcastListener = None

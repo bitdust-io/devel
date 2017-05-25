@@ -48,7 +48,25 @@ class CustomerContractsService(LocalService):
                 ]
 
     def start(self):
+        from contacts import contactsdb
+        from coins import customer_contract_executor
+        for supplier_idurl in contactsdb.suppliers():
+            customer_contract_executor.init_contract(supplier_idurl)
+        from main import events
+        events.add_subscriber(self.on_supplier_modified, 'supplier-modified')
         return True
 
     def stop(self):
+        from main import events
+        events.remove_subscriber(self.on_supplier_modified)
+        from coins import customer_contract_executor
+        for supplier_idurl in list(customer_contract_executor.all_contracts.keys()):
+            customer_contract_executor.shutdown_contract(supplier_idurl)
         return True
+
+    def on_supplier_modified(self, evt):
+        from coins import customer_contract_executor
+        if evt.data['old_idurl']:
+            customer_contract_executor.recheck_contract(evt.data['old_idurl'])
+        if evt.data['new_idurl']:
+            customer_contract_executor.recheck_contract(evt.data['new_idurl'])

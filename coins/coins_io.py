@@ -204,7 +204,7 @@ def read_query_from_packet(newpacket):
     except:
         lg.exc()
         return None
-    # TODO: verify query fields
+    # TODO: verify input query fields
     return query_j
 
 
@@ -214,7 +214,7 @@ def read_coins_from_packet(newpacket):
     except:
         lg.exc()
         return None
-    # TODO: verify coins list
+    # TODO: verify all input coins here
     return coins_list
 
 #------------------------------------------------------------------------------
