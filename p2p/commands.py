@@ -260,16 +260,12 @@ def Broadcast():
 
 def Coin():
     """
-    Every "contract" store a list of "coin" as a separate chain in global DB.
-
-    This is similar to well-known "blockchain" technology.
     """
     return "Coin"
 
 
 def RetreiveCoin():
     """
-    
     """
     return "RetreiveCoin"
 

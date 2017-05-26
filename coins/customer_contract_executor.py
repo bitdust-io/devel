@@ -61,6 +61,10 @@ from logs import lg
 
 from automats import automat
 
+from lib import nameurl
+
+from userid import my_id
+
 #------------------------------------------------------------------------------
 
 _ActiveContracts = dict()  # provides CustomerContractExecutor object by supplier idurl
@@ -81,8 +85,8 @@ def init_contract(supplier_idurl):
     if supplier_idurl in _ActiveContracts:
         lg.warn('this supplier already have a contract started')
         return _ActiveContracts[supplier_idurl]
-    cce = CustomerContractExecutor('customer_contract_executor', 'AT_STARTUP', _DebugLevel, _Debug)
-    cce.automat('init', supplier_idurl)
+    cce = CustomerContractExecutor(supplier_idurl)
+    cce.automat('init')
     _ActiveContracts[supplier_idurl] = cce
     return _ActiveContracts[supplier_idurl]
 
@@ -130,23 +134,10 @@ class CustomerContractExecutor(automat.Automat):
         'timer-5min': (300, ['SUPERVISE']),
     }
 
-    def init(self):
-        """
-        Method to initialize additional variables and flags
-        at creation phase of customer_contract_executor machine.
-        """
-        self.supplier_idurl = None
-
-    def state_changed(self, oldstate, newstate, event, arg):
-        """
-        Method to catch the moment when customer_contract_executor state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, arg):
-        """
-        This method intended to catch the moment when some event was fired in the customer_contract_executor
-        but its state was not changed.
-        """
+    def __init__(self, supplier_idurl):
+        self.supplier_idurl = supplier_idurl
+        name = 'executor_%s' % nameurl.GetName(self.supplier_idurl)
+        automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel, _Debug)
 
     def A(self, event, arg):
         """
@@ -156,7 +147,6 @@ class CustomerContractExecutor(automat.Automat):
         if self.state == 'AT_STARTUP':
             if event == 'init':
                 self.state = 'READ_COINS?'
-                self.doSetSupplier(arg)
                 self.doRequestCoins(arg)
         #---READ_COINS?---
         elif self.state == 'READ_COINS?':
@@ -241,18 +231,15 @@ class CustomerContractExecutor(automat.Automat):
         Condition method.
         """
 
-    def doSetSupplier(self, arg):
-        """
-        Action method.
-        """
-        self.supplier_idurl = arg
-
     def doRequestCoins(self, arg):
         """
         Action method.
         """
         from coins import contract_chain_node
-        contract_chain_node.get_coins()
+        contract_chain_node.get_coins_by_chain(
+            provider_idurl=self.supplier_idurl,
+            consumer_idurl=my_id.getLocalID(),
+        )
 
     def doSuperviseSupplier(self, arg):
         """
@@ -300,3 +287,4 @@ class CustomerContractExecutor(automat.Automat):
         Remove all references to the state machine object to destroy it.
         """
         self.unregister()
+

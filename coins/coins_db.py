@@ -33,6 +33,7 @@ module:: coins_db
 #------------------------------------------------------------------------------
 
 _Debug = True
+_DebugLevel = 10
 
 #------------------------------------------------------------------------------
 
@@ -41,8 +42,6 @@ import json
 from hashlib import md5
 
 from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
-from CodernityDB.hash_index import HashIndex
-from CodernityDB.tree_index import TreeBasedIndex
 from CodernityDB.index import IndexNotFoundException
 
 #------------------------------------------------------------------------------
@@ -60,41 +59,21 @@ from main import settings
 
 from crypt import key
 
+from coins import coins_index
+
 #------------------------------------------------------------------------------
 
 _LocalStorage = None
 
 #------------------------------------------------------------------------------
 
-
-def indexes():
-    return {
-        'creator': IndexByCreator,
-        'signer': IndexBySigner,
-        'miner': IndexByMiner,
-        # 'owner': IndexByOwnerIDURL,
-        # 'hash': IndexByHash,
-        # 'prev': IndexByPrevHash,
-        # 'time': IndexByTime,
-    }
-
-
-def refresh_indexes():
-    for ind, ind_class in indexes().items():
-        ind_obj = ind_class(db().path, ind)
-        if ind not in db().indexes_names:
-            db().add_index(ind_obj, create=True)
-        else:
-            db().edit_index(ind_obj, reindex=True)
-
-#------------------------------------------------------------------------------
-
-
 def init():
     global _LocalStorage
     if _LocalStorage is not None:
         lg.warn('local storage already initialized')
         return
+    if _Debug:
+        lg.out(_DebugLevel, 'coins_db.init')
     _LocalStorage = Database(os.path.join(settings.BlockChainDir(), 'current'))
     if db().exists():
         db().open()
@@ -108,16 +87,36 @@ def shutdown():
     if _LocalStorage is None:
         lg.warn('local storage is not initialized')
         return
+    if _Debug:
+        lg.out(_DebugLevel, 'coins_db.shutdown')
     _LocalStorage.close()
     _LocalStorage = None
 
 #------------------------------------------------------------------------------
 
-
 def db():
     global _LocalStorage
     return _LocalStorage
 
+#------------------------------------------------------------------------------
+
+def refresh_indexes():
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'coins_db.refresh_indexes')
+    for ind, ind_class in coins_index.definitions().items():
+        ind_obj = ind_class(db().path, ind)
+        if ind not in db().indexes_names:
+            if _Debug:
+                lg.out(_DebugLevel, '        add index %s : %r' % (ind, ind_obj))
+            db().add_index(ind_obj, create=True)
+        else:
+            if _Debug:
+                lg.out(_DebugLevel, '        update index %s : %r' % (ind, ind_obj))
+            db().edit_index(ind_obj, reindex=True)
+
+#------------------------------------------------------------------------------
 
 def get(index_name, key, with_doc=True, with_storage=True):
     # TODO: here and bellow need to add input validation
@@ -149,6 +148,7 @@ def get_all(index_name, limit=-1, offset=0, with_doc=True, with_storage=True):
     except (PreconditionsException, IndexNotFoundException, DatabaseIsNotOpened):
         pass
 
+#------------------------------------------------------------------------------
 
 def insert(coin_json):
     return db().insert(coin_json)
@@ -174,12 +174,12 @@ def exist(coin_json):
 
 #------------------------------------------------------------------------------
 
-
 def _clean_doc(doc):
     doc.pop('_id')
     doc.pop('_rev')
     return doc
 
+#------------------------------------------------------------------------------
 
 def query_json(jdata):
     """
@@ -195,7 +195,7 @@ def query_json(jdata):
 
         (generator object or None, error message)
     """
-    if not db().opened:
+    if not db() or not db().opened:
         return None, 'database is closed'
     method = jdata.pop('method', None)
     if method not in ['get', 'get_many', 'get_all', ]:
@@ -220,93 +220,6 @@ def query_json(jdata):
     return result, None
 
 #------------------------------------------------------------------------------
-
-# class IndexByTime(TreeBasedIndex):
-# 
-#     def __init__(self, *args, **kwargs):
-#         kwargs['key_format'] = 'I'
-#         kwargs['node_capacity'] = 128
-#         super(IndexByTime, self).__init__(*args, **kwargs)
-# 
-#     def make_key(self, key):
-#         return key
-# 
-#     def make_key_value(self, data):
-#         tm = data.get('tm')
-#         if tm:
-#             return tm, None
-#         return None
-
-
-class IndexByRoleField(HashIndex):
-    role = None
-    field = None
-
-    def __init__(self, *args, **kwargs):
-        kwargs['key_format'] = '16s'
-        super(IndexByRoleField, self).__init__(*args, **kwargs)
-
-    def make_key(self, key):
-        return md5(key).digest()
-
-    def make_key_value(self, data):
-        try:
-            field_value = data[self.role][self.field]
-            if field_value:
-                return md5(field_value).digest(), None
-        except:
-            pass
-        return None
-
-
-class IndexByCreator(IndexByRoleField):
-    role = 'creator'
-    field = 'idurl'
-
-
-class IndexBySigner(IndexByRoleField):
-    role = 'signer'
-    field = 'idurl'
-
-
-class IndexByMiner(IndexByRoleField):
-    role = 'miner'
-    field = 'idurl'
-
-
-# class IndexByHash(HashIndex):
-# 
-#     def __init__(self, *args, **kwargs):
-#         kwargs['key_format'] = '40s'
-#         super(IndexByHash, self).__init__(*args, **kwargs)
-# 
-#     def make_key(self, key):
-#         return key
-# 
-#     def make_key_value(self, data):
-#         hashval = data.get('hash')
-#         if hashval:
-#             return hashval
-#         return None
-
-
-# class IndexByPrevHash(HashIndex):
-# 
-#     def __init__(self, *args, **kwargs):
-#         kwargs['key_format'] = '40s'
-#         super(IndexByHash, self).__init__(*args, **kwargs)
-# 
-#     def make_key(self, key):
-#         return key
-# 
-#     def make_key_value(self, data):
-#         hashval = data.get('prev')
-#         if hashval:
-#             return hashval
-#         return None
-
-#------------------------------------------------------------------------------
-
 
 def _test():
     from lib import utime

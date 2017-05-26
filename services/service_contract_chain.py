@@ -47,13 +47,23 @@ class SupplierContractsService(LocalService):
                 ]
 
     def start(self):
+        from twisted.internet.defer import Deferred
         from coins import contract_chain_consumer
+        self.starting_deferred = Deferred()
         contract_chain_consumer.A('init')
+        contract_chain_consumer.A().addStateChangedCallback(self._on_contract_chain_state_changed)
         contract_chain_consumer.A('start')
-        return True
+        return self.starting_deferred
 
     def stop(self):
         from coins import contract_chain_consumer
+        contract_chain_consumer.A().removeStateChangedCallback(self._on_contract_chain_state_changed)
         contract_chain_consumer.A('stop')
         contract_chain_consumer.A('shutdown')
         return True
+
+    def _on_contract_chain_state_changed(self, oldstate, newstate, event_string, args):
+        if self.starting_deferred:
+            if newstate in ['CONNECTED', 'DISCONNECTED', ] and oldstate not in ['AT_STARTUP', ]:
+                self.starting_deferred.callback(newstate)
+                self.starting_deferred = None

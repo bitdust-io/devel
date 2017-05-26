@@ -848,7 +848,7 @@ def SendRetreiveCoin(remote_idurl, query, wide=False, callbacks={}):
     if _Debug:
         lg.out(_DebugLevel, "p2p_service.SendRetreiveCoin to %s" % remote_idurl)
     outpacket = signed.Packet(
-        commands.Coin(), my_id.getLocalID(),
+        commands.RetreiveCoin(), my_id.getLocalID(),
         my_id.getLocalID(), packetid.UniqueID(),
         json.dumps(query), remote_idurl)
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)

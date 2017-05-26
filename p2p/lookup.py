@@ -174,9 +174,10 @@ def start(count=1, consume=True, lookup_method=None, observe_method=None, proces
             lg.out(_DebugLevel - 4, 'lookup.start  knows %d discovered nodes, SKIP and return %d nodes' % (
                 len(discovered_idurls()), count))
         if consume:
-            t.result_defer.callback(consume_discovered_idurls(count))
+            idurls = consume_discovered_idurls(count)
         else:
-            t.result_defer.callback(extract_discovered_idurls(count))
+            idurls = extract_discovered_idurls(count)
+        reactor.callLater(0, t.result_defer.callback, idurls)
         return t
     reset_next_lookup()
     if _Debug:
@@ -312,7 +313,7 @@ class DiscoveryTask(object):
         self.failed += 1
         if _Debug:
             lg.warn('%r : %r' % (arg, err))
-        return err
+        return None
 
     def _on_node_observed(self, idurl, node):
         if self.stopped:

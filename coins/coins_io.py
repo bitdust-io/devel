@@ -28,6 +28,10 @@
 ..
 
 module:: coins_io
+
+Every "contract" store a list of "coins", they form a single "chain" in the global DB
+This is similar to well-known "blockchain" technology where every block is linked to another by hash.
+
 """
 
 #------------------------------------------------------------------------------

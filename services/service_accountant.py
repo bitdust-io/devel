@@ -47,8 +47,10 @@ class CoinsAccountantService(LocalService):
                 ]
 
     def start(self):
+        from coins import coins_db
         from coins import accountant_node
         from coins import accountants_finder
+        coins_db.init()
         accountants_finder.A('init')
         accountant_node.A('init')
         accountant_node.A('start')
@@ -57,11 +59,13 @@ class CoinsAccountantService(LocalService):
         return True
 
     def stop(self):
+        from coins import coins_db
         from coins import accountant_node
         accountant_node.A().removeStateChangedCallback(
             self._on_accountant_node_switched)
         accountant_node.A('stop')
         accountant_node.A('shutdown')
+        coins_db.shutdown()
         return True
 
     def request(self, request, info):

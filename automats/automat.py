@@ -346,6 +346,7 @@ class Automat(object):
         o = self
         automatid = self.id
         name = self.name
+        index = self.index
         if _StateChangedCallback is not None:
             _StateChangedCallback(index, automatid, name, '')
         debug_level = max(_DebugLevel, self.debug_level)
@@ -593,14 +594,15 @@ class Automat(object):
 
             cb(oldstate, newstate, event_string, args)
 
-        For example, methodA will be called when machineA become "ONLINE":
+        For example, method_B() will be called when machine_A become "ONLINE":
 
-            machineA.addStateChangedCallback(methodA, None, "ONLINE")
+            machine_A.addStateChangedCallback(method_B, None, "ONLINE")
 
         If you set "None" to both arguments,
         the callback will be executed every time when the state gets changed:
 
-            machineB.addStateChangedCallback(methodB)
+            machineB.addStateChangedCallback(method_B)
+
         """
         key = (oldstate, newstate)
         if key not in self._state_callbacks:

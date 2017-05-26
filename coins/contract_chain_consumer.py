@@ -97,17 +97,6 @@ class ContractChainConsumer(automat.Automat):
         self.connected_accountants = []
         self.connected_miner = None
 
-    def state_changed(self, oldstate, newstate, event, arg):
-        """
-        Method to catch the moment when contract_chain_consumer() state were changed.
-        """
-
-    def state_not_changed(self, curstate, event, arg):
-        """
-        This method intended to catch the moment when some event was fired in the contract_chain_consumer()
-        but its state was not changed.
-        """
-
     def A(self, event, arg):
         """
         The state machine code, generated using `visio2python <http://bitdust.io/visio2python/>`_ tool.
