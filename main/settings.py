@@ -827,11 +827,10 @@ def RatingsDir():
     return os.path.join(BaseDir(), 'ratings')
 
 
-def BlockChainDir():
+def ContractChainDir():
     """
-    
     """
-    return os.path.join(BaseDir(), 'blockchain')
+    return os.path.join(BaseDir(), 'contracts')
 
 #------------------------------------------------------------------------------
 #--- FILES --------------------------------------------------------------------

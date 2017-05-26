@@ -36,6 +36,8 @@ _Debug = True
 
 #------------------------------------------------------------------------------
 
+import os
+
 from hashlib import md5
 
 from CodernityDB.hash_index import HashIndex
@@ -52,20 +54,65 @@ if __name__ == '__main__':
 
 from logs import lg
 
+from system import bpio
+
+#------------------------------------------------------------------------------
+
+_orig_read_index_single = None
+_orig_add_single_index = None
+_orig_write_index = None
+
+def _fake_read_index_single(slf, p, ind, ind_kwargs={}):
+    global _orig_read_index_single
+    p = os.path.join(bpio.getExecutableDir(), 'coins', '_indexes')
+    return _orig_read_index_single(slf, p, ind, ind_kwargs)
+
+def _fake_add_single_index(slf, p, i, index):
+    return True
+
+def _fake_write_index(slf, new_index, number=0, edit=False, ind_kwargs=None):
+    p = os.path.join(bpio.getExecutableDir(), 'coins', '_indexes')
+    return _fake_read_index_single(slf, p, ), _fake_read_index_single.name
+
+def patch_CodernityDB():
+    global _orig_read_index_single
+    global _orig_add_single_index
+    global _orig_write_index
+    from CodernityDB import database
+    _orig_read_index_single = database.Database._read_index_single
+    database.Database._read_index_single = _fake_read_index_single
+    # _orig_add_single_index = database.Database._add_single_index
+    # database.Database._add_single_index = _fake_add_single_index
+    # _orig_write_index = getattr(database.Database, '__write_index')
+    # setattr(database.Database, '__write_index', _fake_write_index)
+
 #------------------------------------------------------------------------------
 
 def definitions():
-    return {
-        'creator': Creator,
-        'signer': Signer,
-        'miner': Miner,
-        'hash': HashID,
-        'prev': PrevHashID,
-        'supplier_customer': SupplierCustomer,
-        'time_created': TimeCreated,
-        'time_signed': TimeSigned,
-        'time_mined': TimeMined,
-    }
+    return [
+        ('creator', Creator, ),
+        ('signer', Signer, ),
+        ('miner', Miner, ),
+        ('hash', HashID, ),
+        ('prev', PrevHashID, ),
+        ('supplier_customer', SupplierCustomer, ),
+        ('time_created', TimeCreated, ),
+        ('time_signed', TimeSigned, ),
+        ('time_mined', TimeMined, ),
+    ]
+
+#------------------------------------------------------------------------------
+
+def make_customer_header():
+    src = '\n'
+    src += 'from CodernityDB.hash_index import HashIndex\n'
+    src += 'from CodernityDB.tree_index import TreeBasedIndex\n'
+    src += 'from coins.coins_index import AbstractHashIndexByRole\n'
+    src += 'from coins.coins_index import AbstractMD5IndexByRole\n'
+    src += 'from coins.coins_index import AbstractMD5IndexByChain\n'
+    src += 'from coins.coins_index import AbstractTimeIndex\n'
+    src += 'from coins.coins_index import make_customer_header\n\n'
+    return src
 
 #------------------------------------------------------------------------------
 
@@ -148,24 +195,28 @@ class AbstractTimeIndex(TreeBasedIndex):
 #------------------------------------------------------------------------------
 
 class Creator(AbstractMD5IndexByRole):
+    custom_header = make_customer_header()
     role = 'creator'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
 class Signer(AbstractMD5IndexByRole):
+    custom_header = make_customer_header()
     role = 'signer'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
 class Miner(AbstractMD5IndexByRole):
+    custom_header = make_customer_header()
     role = 'miner'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
 class HashID(AbstractHashIndexByRole):
+    custom_header = make_customer_header()
     role = 'miner'
     field = 'hash'
     key_format = '40s'
@@ -173,6 +224,7 @@ class HashID(AbstractHashIndexByRole):
 #------------------------------------------------------------------------------
 
 class PrevHashID(AbstractHashIndexByRole):
+    custom_header = make_customer_header()
     role = 'miner'
     field = 'prev'
     key_format = '40s'
@@ -180,20 +232,24 @@ class PrevHashID(AbstractHashIndexByRole):
 #------------------------------------------------------------------------------
 
 class SupplierCustomer(AbstractMD5IndexByChain):
+    custom_header = make_customer_header()
     producer_role = 'supplier'
     consumer_role = 'customer'
 
 #------------------------------------------------------------------------------
 
 class TimeCreated(AbstractTimeIndex):
+    custom_header = make_customer_header()
     role = 'creator'
 
 #------------------------------------------------------------------------------
 
 class TimeSigned(AbstractTimeIndex):
+    custom_header = make_customer_header()
     role = 'signer'
 
 #------------------------------------------------------------------------------
 
 class TimeMined(AbstractTimeIndex):
+    custom_header = make_customer_header()
     role = 'miner'

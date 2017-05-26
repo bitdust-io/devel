@@ -72,9 +72,11 @@ def init():
     if _LocalStorage is not None:
         lg.warn('local storage already initialized')
         return
+    coins_index.patch_CodernityDB()
+    contract_chain_dir = os.path.join(settings.ContractChainDir(), 'current')
+    _LocalStorage = Database(contract_chain_dir)
     if _Debug:
-        lg.out(_DebugLevel, 'coins_db.init')
-    _LocalStorage = Database(os.path.join(settings.BlockChainDir(), 'current'))
+        lg.out(_DebugLevel, 'coins_db.init in %s' % contract_chain_dir)
     if db().exists():
         db().open()
     else:
@@ -105,7 +107,7 @@ def refresh_indexes():
     """
     if _Debug:
         lg.out(_DebugLevel, 'coins_db.refresh_indexes')
-    for ind, ind_class in coins_index.definitions().items():
+    for ind, ind_class in coins_index.definitions():
         ind_obj = ind_class(db().path, ind)
         if ind not in db().indexes_names:
             if _Debug:
