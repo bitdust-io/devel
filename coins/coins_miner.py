@@ -30,6 +30,7 @@ BitDust coins_miner() Automat
 
 EVENTS:
     * :red:`accountant-connected`
+    * :red:`cancel`
     * :red:`coin-confirmed`
     * :red:`coin-mined`
     * :red:`coin-rejected`
@@ -55,6 +56,7 @@ import hashlib
 
 from twisted.internet import reactor
 from twisted.internet import threads
+from twisted.internet.defer import Deferred
 
 #------------------------------------------------------------------------------
 
@@ -110,6 +112,8 @@ class CoinsMiner(automat.Automat):
     machine.
     """
 
+    fast = True
+
     timers = {
         'timer-2min': (120, ['ACCOUNTANTS?']),
     }
@@ -120,6 +124,7 @@ class CoinsMiner(automat.Automat):
         of coins_miner() machine.
         """
         self.offline_mode = False  # only for Debug purposes
+        self.new_coin_filter_method = None
         self.connected_accountants = []
         self.min_accountants_connected = 3  # TODO: read from settings
         self.max_accountants_connected = 5  # TODO: read from settings
@@ -168,6 +173,11 @@ class CoinsMiner(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'new-data-received':
                 self.doPushInputData(arg)
+            elif event == 'cancel':
+                self.state = 'READY'
+                self.doStopMining(arg)
+                self.doSendFail(arg)
+                self.doPullInputData(arg)
         #---STOPPED---
         elif self.state == 'STOPPED':
             if event == 'start':
@@ -187,20 +197,18 @@ class CoinsMiner(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-            elif event == 'coin-rejected' and not self.isDecideOK(arg):
-                self.state = 'READY'
-                self.doSendFail(arg)
-                self.doPullInputData(arg)
             elif event == 'coin-rejected' and self.isDecideOK(arg):
                 self.state = 'MINING'
                 self.doContinueMining(arg)
             elif event == 'new-data-received':
                 self.doPushInputData(arg)
+            elif event == 'cancel' or ( event == 'coin-rejected' and not self.isDecideOK(arg) ):
+                self.state = 'READY'
+                self.doSendFail(arg)
+                self.doPullInputData(arg)
         #---ACCOUNTANTS?---
         elif self.state == 'ACCOUNTANTS?':
-            if event == 'stop' or event == 'timer-2min' or ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ):
-                self.state = 'STOPPED'
-            elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
+            if event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READY'
                 self.doAddAccountant(arg)
                 self.doPullInputData(arg)
@@ -212,6 +220,8 @@ class CoinsMiner(automat.Automat):
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+            elif event == 'stop' or event == 'cancel' or event == 'timer-2min' or ( event == 'lookup-failed' and not self.isAnyAccountants(arg) ):
+                self.state = 'STOPPED'
         #---CLOSED---
         elif self.state == 'CLOSED':
             pass
@@ -254,6 +264,8 @@ class CoinsMiner(automat.Automat):
         Action method.
         """
         callback.append_inbox_callback(self._on_inbox_packet)
+        if arg:
+            self.new_coin_filter_method, self.offline_mode = arg
 
     def doAddAccountant(self, arg):
         """
@@ -294,7 +306,7 @@ class CoinsMiner(automat.Automat):
         """
         self.mining_started = utime.get_sec1970()
         d = self._start(arg)
-        d.addCallback(lambda result: self.automat('coin-mined', result))
+        d.addCallback(self._on_coin_mined)
         d.addErrback(lambda err: self.automat('stop'))
         d.addErrback(lambda err: lg.exc(exc_value=err))
 
@@ -308,12 +320,12 @@ class CoinsMiner(automat.Automat):
         """
         Action method.
         """
-        if _Debug:
-            lg.out(_DebugLevel, 'coins_miner.doSendCoinToAccountants: %s' % arg)
         if self.offline_mode:
             self.automat('coin-confirmed')
             return
         coins = [arg, ]
+        if _Debug:
+            lg.out(_DebugLevel, 'coins_miner.doSendCoinToAccountants: %s' % coins)
         for idurl in self.connected_accountants:
             p2p_service.SendCoin(idurl, coins)
 
@@ -326,12 +338,18 @@ class CoinsMiner(automat.Automat):
         """
         Action method.
         """
-        print arg
+        if self.offline_mode:
+            return
+        # TODO:
 
     def doSendFail(self, arg):
         """
         Action method.
         """
+        if self.offline_mode:
+            return
+        # TODO:
+
 
     def doDestroyMe(self, arg):
         """
@@ -340,8 +358,9 @@ class CoinsMiner(automat.Automat):
         callback.remove_inbox_callback(self._on_inbox_packet)
         self.unregister()
         global _CoinsMiner
-        del _CoinsMiner
-        _CoinsMiner = None
+        if self == _CoinsMiner:
+            del _CoinsMiner
+            _CoinsMiner = None
 
     #------------------------------------------------------------------------------
 
@@ -369,6 +388,14 @@ class CoinsMiner(automat.Automat):
                 self.automat('new-data-received', coin)
             return True
         return False
+
+    def _on_coin_mined(self, coin):
+        if self.new_coin_filter_method is not None:
+            coin = self.new_coin_filter_method(coin)
+            if coin is None:
+                self.automat('cancel')
+                return
+        self.automat('coin-mined', coin)
 
     def _stop_marker(self):
         if self.mining_started < 0:
@@ -452,37 +479,27 @@ class CoinsMiner(automat.Automat):
 
 #------------------------------------------------------------------------------
 
+def start_offline_job(coin):
+    result = Deferred()
+    one_miner = CoinsMiner('coins_miner', 'AT_STARTUP', _DebugLevel, _Debug)
+
+    def _job_done(new_coin):
+        reactor.callLater(0, one_miner.automat, 'shutdown')
+        result.callback(new_coin)
+        return None
+
+    one_miner.automat('init', (_job_done, True))
+    one_miner.automat('start')
+    one_miner.automat('new-data-received', coin)
+
+    return result
+
+#------------------------------------------------------------------------------
 
 def _test():
-    from crypt import signed
-    from lib import packetid
-    lg.set_debug_level(24)
-    A('init')
-    A().offline_mode = True
-    A('start')
-    coins = []
-    for _ in xrange(1):
-        coin_payload = coins_io.storage_contract_open(
-            "http://some.id-host.org/alice_customer.xml",
-            3600,
-            4096,
-        )
-        # will be populated from previous coin in the chain
-        # coins_io.set_prev_hash(coin_payload, '11111abbd8318c4dfd2b7953f28950afe38117b4')
-        coin_json = coins_io.add_signature(coin_payload, 'creator')
-        # will be added by "customer" node during handshake:
-        # coin_json = coins_io.add_signature(coin_json, 'signer')
-        if coins_io.verify_signature(coin_json, 'creator'):
-            coins.append(coin_json)
-        else:
-            print 'NOT VALID SIGNATURE!', coin_json
-            sys.exit()
-    outpacket = signed.Packet(
-        commands.Coin(), my_id.getLocalID(),
-        my_id.getLocalID(), packetid.UniqueID(),
-        coins_io.coins_to_string(coins), 'http://server.com/id.xml')
-    reactor.callLater(0.1, callback.run_inbox_callbacks, outpacket, None, 'finished', '')
-    # reactor.callLater(5.1, A, 'shutdown')
+    lg.set_debug_level(20)
+    acoin = coins_io.storage_contract_open('http://abc.com/id.xml', 3600, 100)
+    start_offline_job(acoin).addBoth(lambda *a, **kw: reactor.stop())
     reactor.run()
 
 

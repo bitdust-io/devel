@@ -54,38 +54,6 @@ if __name__ == '__main__':
 
 from logs import lg
 
-from system import bpio
-
-#------------------------------------------------------------------------------
-
-_orig_read_index_single = None
-_orig_add_single_index = None
-_orig_write_index = None
-
-def _fake_read_index_single(slf, p, ind, ind_kwargs={}):
-    global _orig_read_index_single
-    p = os.path.join(bpio.getExecutableDir(), 'coins', '_indexes')
-    return _orig_read_index_single(slf, p, ind, ind_kwargs)
-
-def _fake_add_single_index(slf, p, i, index):
-    return True
-
-def _fake_write_index(slf, new_index, number=0, edit=False, ind_kwargs=None):
-    p = os.path.join(bpio.getExecutableDir(), 'coins', '_indexes')
-    return _fake_read_index_single(slf, p, ), _fake_read_index_single.name
-
-def patch_CodernityDB():
-    global _orig_read_index_single
-    global _orig_add_single_index
-    global _orig_write_index
-    from CodernityDB import database
-    _orig_read_index_single = database.Database._read_index_single
-    database.Database._read_index_single = _fake_read_index_single
-    # _orig_add_single_index = database.Database._add_single_index
-    # database.Database._add_single_index = _fake_add_single_index
-    # _orig_write_index = getattr(database.Database, '__write_index')
-    # setattr(database.Database, '__write_index', _fake_write_index)
-
 #------------------------------------------------------------------------------
 
 def definitions():
@@ -107,23 +75,19 @@ def make_customer_header():
     src = '\n'
     src += 'from CodernityDB.hash_index import HashIndex\n'
     src += 'from CodernityDB.tree_index import TreeBasedIndex\n'
-    src += 'from coins.coins_index import AbstractHashIndexByRole\n'
-    src += 'from coins.coins_index import AbstractMD5IndexByRole\n'
-    src += 'from coins.coins_index import AbstractMD5IndexByChain\n'
-    src += 'from coins.coins_index import AbstractTimeIndex\n'
-    src += 'from coins.coins_index import make_customer_header\n\n'
+    src += 'from coins.coins_index import *\n'
     return src
 
 #------------------------------------------------------------------------------
 
-class AbstractHashIndexByRole(HashIndex):
+class BaseHashIndex(HashIndex):
     role = None
     field = None
     key_format = '16s'
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = self.key_format
-        super(AbstractHashIndexByRole, self).__init__(*args, **kwargs)
+        super(BaseHashIndex, self).__init__(*args, **kwargs)
 
     def transform_key(self, key):
         return key
@@ -141,20 +105,20 @@ class AbstractHashIndexByRole(HashIndex):
 
 #------------------------------------------------------------------------------
 
-class AbstractMD5IndexByRole(AbstractHashIndexByRole):
+class BaseMD5Index(BaseHashIndex):
 
     def transform_key(self, key):
         return md5(key).digest()
 
 #------------------------------------------------------------------------------
 
-class AbstractMD5IndexByChain(HashIndex):
+class BaseChainIndex(HashIndex):
     producer_role = None
     consumer_role = None
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = '16s'
-        super(AbstractMD5IndexByChain, self).__init__(*args, **kwargs)
+        super(BaseChainIndex, self).__init__(*args, **kwargs)
 
     def make_key_value(self, data):
         try:
@@ -173,13 +137,13 @@ class AbstractMD5IndexByChain(HashIndex):
 
 #------------------------------------------------------------------------------
 
-class AbstractTimeIndex(TreeBasedIndex):
+class BaseTimeIndex(TreeBasedIndex):
     role = None
 
     def __init__(self, *args, **kwargs):
         kwargs['key_format'] = 'I'
         kwargs['node_capacity'] = 128
-        super(AbstractTimeIndex, self).__init__(*args, **kwargs)
+        super(BaseTimeIndex, self).__init__(*args, **kwargs)
 
     def make_key(self, key):
         return key
@@ -194,28 +158,28 @@ class AbstractTimeIndex(TreeBasedIndex):
 
 #------------------------------------------------------------------------------
 
-class Creator(AbstractMD5IndexByRole):
+class Creator(BaseMD5Index):
     custom_header = make_customer_header()
     role = 'creator'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
-class Signer(AbstractMD5IndexByRole):
+class Signer(BaseMD5Index):
     custom_header = make_customer_header()
     role = 'signer'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
-class Miner(AbstractMD5IndexByRole):
+class Miner(BaseMD5Index):
     custom_header = make_customer_header()
     role = 'miner'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
-class HashID(AbstractHashIndexByRole):
+class HashID(BaseHashIndex):
     custom_header = make_customer_header()
     role = 'miner'
     field = 'hash'
@@ -223,7 +187,7 @@ class HashID(AbstractHashIndexByRole):
 
 #------------------------------------------------------------------------------
 
-class PrevHashID(AbstractHashIndexByRole):
+class PrevHashID(BaseHashIndex):
     custom_header = make_customer_header()
     role = 'miner'
     field = 'prev'
@@ -231,25 +195,25 @@ class PrevHashID(AbstractHashIndexByRole):
 
 #------------------------------------------------------------------------------
 
-class SupplierCustomer(AbstractMD5IndexByChain):
+class SupplierCustomer(BaseChainIndex):
     custom_header = make_customer_header()
     producer_role = 'supplier'
     consumer_role = 'customer'
 
 #------------------------------------------------------------------------------
 
-class TimeCreated(AbstractTimeIndex):
+class TimeCreated(BaseTimeIndex):
     custom_header = make_customer_header()
     role = 'creator'
 
 #------------------------------------------------------------------------------
 
-class TimeSigned(AbstractTimeIndex):
+class TimeSigned(BaseTimeIndex):
     custom_header = make_customer_header()
     role = 'signer'
 
 #------------------------------------------------------------------------------
 
-class TimeMined(AbstractTimeIndex):
+class TimeMined(BaseTimeIndex):
     custom_header = make_customer_header()
     role = 'miner'

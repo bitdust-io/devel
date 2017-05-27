@@ -55,11 +55,14 @@ if __name__ == '__main__':
 
 from logs import lg
 
+from system import bpio
+
 from main import settings
 
 from crypt import key
 
 from coins import coins_index
+from coins import coins_io
 
 #------------------------------------------------------------------------------
 
@@ -72,7 +75,6 @@ def init():
     if _LocalStorage is not None:
         lg.warn('local storage already initialized')
         return
-    coins_index.patch_CodernityDB()
     contract_chain_dir = os.path.join(settings.ContractChainDir(), 'current')
     _LocalStorage = Database(contract_chain_dir)
     if _Debug:
@@ -111,11 +113,16 @@ def refresh_indexes():
         ind_obj = ind_class(db().path, ind)
         if ind not in db().indexes_names:
             if _Debug:
-                lg.out(_DebugLevel, '        add index %s : %r' % (ind, ind_obj))
-            db().add_index(ind_obj, create=True)
+                lg.out(_DebugLevel, '        add index %s' % ind)
+            try:
+                db().add_index(ind_obj, create=True)
+            except:
+                lg.exc()
+                db().revert_index(ind, reindex=True)
+                # db().add_index(ind_obj, create=False)
         else:
             if _Debug:
-                lg.out(_DebugLevel, '        update index %s : %r' % (ind, ind_obj))
+                lg.out(_DebugLevel, '        update index %s' % ind)
             db().edit_index(ind_obj, reindex=True)
 
 #------------------------------------------------------------------------------
@@ -223,16 +230,32 @@ def query_json(jdata):
 
 #------------------------------------------------------------------------------
 
+def _p(ret):
+    if ret and ret[0]:
+        print '\n'.join(map(str, list(ret[0])))
+    else:
+        print ret[1]
+
+
+def _test_coin_mined(coin_json):
+    insert(coin_json)
+
+
 def _test():
     from lib import utime
     import time
     import datetime
 
-    def _p(ret):
-        if ret and ret[0]:
-            print '\n'.join(map(str, list(ret[0])))
-        else:
-            print ret[1]
+    if False:
+        from coins import coins_miner
+        acoin = coins_io.storage_contract_open('http://abc.com/id.xml', 3600, 100)
+        d = coins_miner.start_offline_job(acoin)
+        d.addBoth(_test_coin_mined)
+        from twisted.internet import reactor
+        reactor.run()
+
+    if True:
+        _p(query_json({'method': 'get_all', 'index': 'id'}))
 
 #     print insert({'idurl': 'http://idurl1234', 'time': '12345678'})
 #     print insert({'hash': '1234567812345678' + random.choice(['a,b,c']), 'data': {'a':'b', 'c': 'd', 'time': 123456,}})
