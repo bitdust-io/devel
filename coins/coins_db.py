@@ -129,6 +129,10 @@ def rewrite_indexes(db_instance, source_location):
             os.remove(existing_index_path)
             if _Debug:
                 lg.out(_DebugLevel, '        removed index at %s' % existing_index_path)
+            index_name = existing_index_file[2:existing_index_file.index('.')]
+            buck_path = os.path.join(db_instance.path, index_name + '_buck')
+            if os.path.isfile(buck_path):
+                os.remove(buck_path)
     # source_location = os.path.join(bpio.getExecutableDir(), 'coins', '_indexes')
     source_indexes = os.listdir(source_location)
     for source_index_file in source_indexes:
