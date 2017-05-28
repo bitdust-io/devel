@@ -395,8 +395,8 @@ def _test():
 
     if sys.argv[1] == 'indexes':
         init()
-        print 'Indexes names:'
-        print '\n  '.join(db().indexes_names)
+        print 'Indexes in %s are:' % db().path
+        print '  ' + ('\n  '.join(db().indexes_names))
         shutdown()
 
     if sys.argv[1] == 'tmpdb':
