@@ -2,7 +2,6 @@
 
 echo "running 'stop'"
 
-cd ~/bitdust
-python bitdust.py stop
+~/.bitdust/bitdust stop
 
 exit 0

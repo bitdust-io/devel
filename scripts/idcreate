@@ -1,6 +1,5 @@
 #!/bin/bash
 
-cd ~/bitdust
 ~/.bitdust/bitdust id create "test_node_$1"
 
 

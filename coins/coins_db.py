@@ -355,12 +355,13 @@ def _test():
         get_all <index>
         get_many <index> <key>
         get <index> <key>
+        indexes
+        tmpdb <destination folder>
         """
         return
 
     if sys.argv[1] == 'work':
         init()
-        # _test_coin_worker('http://p2p-id.com/done.xml', 12400, 200)
         _test_coin_worker(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
         reactor.run()
         shutdown()
@@ -377,10 +378,8 @@ def _test():
         init()
         _test_query({
             'method': 'get_many',
-            # 'index': 'supplier_customer',
             'index': sys.argv[2],
             'key': sys.argv[3],
-            # 'key': '%s_%s' % ('http://p2p-id.ru/testveselin.xml', 'http://p2p-id.com/done.xml',)}
         })
         shutdown()
 

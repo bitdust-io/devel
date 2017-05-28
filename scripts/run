@@ -2,5 +2,4 @@
 
 echo "running 'run'"
 
-cd ~/bitdust
 ~/.bitdust/bitdust
