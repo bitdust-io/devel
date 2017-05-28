@@ -63,9 +63,6 @@ def init():
     P2PCommandAcks[Files()] = None
     P2PCommandAcks[ListContacts()] = Contacts()             # Ack with Contacts
     P2PCommandAcks[Contacts()] = None
-    P2PCommandAcks[NearnessCheck()] = Nearness()            # Ack with Nearness
-    P2PCommandAcks[Nearness()] = None
-    P2PCommandAcks[RequestIdentity()] = Identity()          # Ack with Identity (always an interested party waiting)
     P2PCommandAcks[Identity()] = Ack()                      # If identity comes in and no interested party then transport sends an Ack
     P2PCommandAcks[DeleteFile()] = Ack()                    # Ack with Ack (maybe should be Files)
     P2PCommandAcks[DeleteBackup()] = Ack()                  # Ack with Ack (maybe should be Files)
@@ -108,7 +105,6 @@ def Ack():
 
 def RequestService():
     """
-    
     """
     return "RequestService"
 
@@ -141,10 +137,6 @@ def Relay():
     """
     return "Relay"
 
-# for case when local scrubber has detected some bitrot and asks customer to resend
-# def Resend():
-#    return("Resend")
-
 
 def ListFiles():
     """
@@ -173,28 +165,6 @@ def Contacts():
     Request a list of my contacts.
     """
     return "Contacts"
-
-
-def NearnessCheck():
-    """
-    Used to detect how far is peers.
-    """
-    return "NearnessCheck"
-
-
-def Nearness():
-    """
-    Used to detect how far is peers.
-    """
-    return "Nearness"
-
-
-def RequestIdentity():
-    """
-    Not used right now, probably can be used to request latest version of
-    peer's identity.
-    """
-    return "RequestIdentity"
 
 
 def Identity():
@@ -249,9 +219,7 @@ def Correspondent():
 
 def Broadcast():
     """
-    This message type is for delivering some piece of data to all peers in the
-    network.
-
+    This message type is for delivering some piece of data to all peers in th network.
     It is used to broadcast "crypto-coins" between peers.
     """
     return "Broadcast"
@@ -267,47 +235,3 @@ def RetrieveCoin():
     """
     """
     return "RetrieveCoin"
-
-#------------------------------------------------------------------------------
-
-
-def Register():
-    """
-    Not used right now, probably to register a new identity.
-    """
-    return "Register"
-
-
-def RequestSuppliers():
-    """
-    Request a list of my suppliers.
-    """
-    return "RequestSuppliers"
-
-
-def Suppliers():
-    """
-    Not used right now.
-    """
-    return "Suppliers"
-
-
-def RequestCustomers():
-    """
-    Request a list of my customers.
-    """
-    return "RequestCustomers"
-
-
-def Settings():
-    """
-    Used to save my local settings.
-    """
-    return 'Settings'
-
-
-def BandwidthReport():
-    """
-    Used to daily reports of users bandwidh stats.
-    """
-    return 'BandwidthReport'

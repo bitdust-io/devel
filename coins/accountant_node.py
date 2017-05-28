@@ -302,11 +302,13 @@ class AccountantNode(automat.Automat):
         """
         Action method.
         """
-        query = {'method': 'get_all',
-                 'index': 'time_mined',
-                 'limit': self.download_limit,
-                 'start': utime.datetime_to_sec1970(self.download_offset),
-                 'end': utime.utcnow_to_sec1970(), }
+        query = {
+            'method': 'get_many',
+            'index': 'time_mined',
+            'limit': self.download_limit,
+            'start': utime.datetime_to_sec1970(self.download_offset),
+            'end': utime.utcnow_to_sec1970(),
+        }
         for idurl in self.connected_accountants:
             p2p_service.SendRetrieveCoin(idurl, query)
 

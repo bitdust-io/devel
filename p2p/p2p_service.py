@@ -149,10 +149,6 @@ def inbox(newpacket, info, status, error_message):
         # will Delete all files starting in a backup
         DeleteBackup(newpacket)
         commandhandled = True
-#     elif newpacket.Command == commands.RequestIdentity():
-#         # contact asking for our current identity
-#         RequestIdentity(newpacket)
-#         commandhandled = True
     elif newpacket.Command == commands.Message():
         # contact asking for our current identity
         if driver.is_started('service_private_messages'):
@@ -327,23 +323,6 @@ def Identity(newpacket):
         if _Debug:
             lg.out(_DebugLevel, "p2p_service.Identity from [%s]" % nameurl.GetName(idurl))
     return True
-
-
-def _RequestIdentity(request):
-    """
-    Someone is requesting a copy of our current identity.
-
-    Already verified that they are a contact. Can also be used as a sort
-    of "ping" test to make sure we are alive.
-    """
-    if _Debug:
-        lg.out(_DebugLevel, "p2p_service.RequestIdentity from %s" % request.OwnerID)
-    MyID = my_id.getLocalID()
-    RemoteID = request.OwnerID
-    PacketID = request.PacketID
-    identitystr = my_id.getLocalIdentity().serialize()
-    result = signed.Packet(commands.Identity(), MyID, MyID, PacketID, identitystr, RemoteID)
-    gateway.outbox(result, False)
 
 
 def SendIdentity(remote_idurl, wide=False, callbacks={}):
