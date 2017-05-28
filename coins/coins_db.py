@@ -38,8 +38,10 @@ _DebugLevel = 10
 #------------------------------------------------------------------------------
 
 import os
-import json
-from hashlib import md5
+
+from twisted.internet import reactor
+
+#------------------------------------------------------------------------------
 
 from CodernityDB.database import Database, RecordNotFound, RecordDeleted, PreconditionsException, DatabaseIsNotOpened
 from CodernityDB.index import IndexNotFoundException
@@ -59,8 +61,6 @@ from system import bpio
 
 from main import settings
 
-from crypt import key
-
 from coins import coins_index
 from coins import coins_io
 
@@ -77,13 +77,22 @@ def init():
         return
     contract_chain_dir = os.path.join(settings.ContractChainDir(), 'current')
     _LocalStorage = Database(contract_chain_dir)
+    _LocalStorage.custom_header = coins_index.make_custom_header()
     if _Debug:
         lg.out(_DebugLevel, 'coins_db.init in %s' % contract_chain_dir)
     if db().exists():
-        db().open()
+        try:
+            db().open()
+        except:
+            temp_dir = os.path.join(settings.ContractChainDir(), 'tmp')
+            regenerate_indexes(temp_dir)
+            rewrite_indexes(db(), os.path.join(temp_dir, '_indexes'))
+            bpio._dir_remove(temp_dir)
+            db().open()
+            db().reindex()
     else:
         db().create()
-    refresh_indexes()
+    refresh_indexes(db())
 
 
 def shutdown():
@@ -93,37 +102,85 @@ def shutdown():
         return
     if _Debug:
         lg.out(_DebugLevel, 'coins_db.shutdown')
-    _LocalStorage.close()
+    try:
+        _LocalStorage.close()
+    except:
+        pass
     _LocalStorage = None
 
 #------------------------------------------------------------------------------
 
-def db():
+def db(instance='current'):
     global _LocalStorage
     return _LocalStorage
 
 #------------------------------------------------------------------------------
 
-def refresh_indexes():
+def rewrite_indexes(db_instance, source_location):
     """
     """
     if _Debug:
-        lg.out(_DebugLevel, 'coins_db.refresh_indexes')
-    for ind, ind_class in coins_index.definitions():
-        ind_obj = ind_class(db().path, ind)
-        if ind not in db().indexes_names:
+        lg.out(_DebugLevel, 'coins_db.rewrite_indexes')
+    existing_location = os.path.join(db_instance.path, '_indexes')
+    existing_indexes = os.listdir(existing_location)
+    for existing_index_file in existing_indexes:
+        if existing_index_file != '00id.py':
+            existing_index_path = os.path.join(existing_location, existing_index_file)
+            os.remove(existing_index_path)
             if _Debug:
-                lg.out(_DebugLevel, '        add index %s' % ind)
+                lg.out(_DebugLevel, '        removed index at %s' % existing_index_path)
+    # source_location = os.path.join(bpio.getExecutableDir(), 'coins', '_indexes')
+    source_indexes = os.listdir(source_location)
+    for source_index_file in source_indexes:
+        if source_index_file != '00id.py':
+            destination_index_path = os.path.join(existing_location, source_index_file)
+            source_index_path = os.path.join(source_location, source_index_file)
+            if bpio.AtomicWriteFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
+                if _Debug:
+                    lg.out(_DebugLevel, '        %s refreshed from %s' % (source_index_file, source_index_path))
+            else:
+                lg.warn('failed writing to %s' % destination_index_path)
+
+
+def refresh_indexes(db_instance):
+    """
+    """
+    if _Debug:
+        lg.out(_DebugLevel, 'coins_db.refresh_indexes in %s' % db_instance.path)
+    for ind, ind_class in coins_index.definitions():
+        ind_obj = ind_class(db_instance.path, ind)
+        if ind not in db_instance.indexes_names:
             try:
-                db().add_index(ind_obj, create=True)
+                db_instance.add_index(ind_obj, create=True)
+                if _Debug:
+                    lg.out(_DebugLevel, '        added index %s' % ind)
             except:
                 lg.exc()
-                db().revert_index(ind, reindex=True)
-                # db().add_index(ind_obj, create=False)
+                try:
+                    db_instance.revert_index(ind, reindex=True)
+                    if _Debug:
+                        lg.out(_DebugLevel, '        reverted index %s' % ind)
+                except:
+                    try:
+                        db_instance.add_index(ind_obj, create=False)
+                        if _Debug:
+                            lg.out(_DebugLevel, '        recreated index %s' % ind)
+                    except:
+                        lg.exc()
         else:
+            db_instance.edit_index(ind_obj, reindex=True)
             if _Debug:
-                lg.out(_DebugLevel, '        update index %s' % ind)
-            db().edit_index(ind_obj, reindex=True)
+                lg.out(_DebugLevel, '        updated index %s' % ind)
+
+
+def regenerate_indexes(temp_dir):
+    """
+    """
+    tmpdb = Database(temp_dir)
+    tmpdb.custom_header = coins_index.make_custom_header()
+    tmpdb.create()
+    refresh_indexes(tmpdb)
+    tmpdb.close()
 
 #------------------------------------------------------------------------------
 
@@ -237,8 +294,25 @@ def _p(ret):
         print ret[1]
 
 
-def _test_coin_mined(coin_json):
+_prev_hash = ''
+
+def _do_mine_test_coin(customer_idurl, duration, amount, price=1.0, trustee=None):
+    global _prev_hash
+    from coins import coins_miner
+    storage_coin = coins_io.storage_contract_open(customer_idurl, duration, amount, price, trustee)
+    storage_coin['miner']['prev'] = _prev_hash
+    d = coins_miner.start_offline_job(storage_coin)
+    d.addBoth(_test_coin_mined, customer_idurl, duration, amount, price, trustee)
+
+def _test_coin_mined(coin_json, customer_idurl, duration, amount, price, trustee):
+    global _prev_hash
+    import json
+    print 'COIN MINED!!!'
+    print json.dumps(coin_json, indent=2)
     insert(coin_json)
+    _prev_hash = coin_json['miner']['hash']
+    reactor.callLater(1, _do_mine_test_coin, customer_idurl, duration, amount, price, trustee)
+    return coin_json
 
 
 def _test():
@@ -246,16 +320,44 @@ def _test():
     import time
     import datetime
 
-    if False:
-        from coins import coins_miner
-        acoin = coins_io.storage_contract_open('http://abc.com/id.xml', 3600, 100)
-        d = coins_miner.start_offline_job(acoin)
-        d.addBoth(_test_coin_mined)
-        from twisted.internet import reactor
+    if sys.argv[1] == '0':
+        init()
+        _do_mine_test_coin('http://p2p-id.com/done.xml', 12400, 200)
         reactor.run()
+        shutdown()
 
-    if True:
+    if sys.argv[1] == '1':
+        init()
         _p(query_json({'method': 'get_all', 'index': 'id'}))
+        print len(list(query_json({'method': 'get_all', 'index': 'id'})[0]))
+        shutdown()
+
+    if sys.argv[1] == '2':
+        init()
+        _p(query_json({'method': 'get_many', 'index': 'supplier_customer',
+                       'key': '%s_%s' % ('http://p2p-id.ru/testveselin.xml', 'http://p2p-id.com/done.xml',)}))
+        shutdown()
+
+    if sys.argv[1] == '3':
+        init()
+        _p(query_json({'method': 'get_many', 'index': 'supplier',
+                       'key': 'http://p2p-id.ru/testveselin.xml'}))
+        shutdown()
+
+    if sys.argv[1] == '4':
+        init()
+        _p(query_json({'method': 'get_many', 'index': 'customer',
+                       'key': 'http://abc.com/id.xml'}))
+        shutdown()
+
+    if sys.argv[1] == '5':
+        init()
+        _p(query_json({'method': 'get_many', 'index': 'prev',
+                       'key': ''}))
+        shutdown()
+
+    if sys.argv[1] == '100':
+        regenerate_indexes('/tmp')
 
 #     print insert({'idurl': 'http://idurl1234', 'time': '12345678'})
 #     print insert({'hash': '1234567812345678' + random.choice(['a,b,c']), 'data': {'a':'b', 'c': 'd', 'time': 123456,}})
@@ -315,9 +417,6 @@ def _test():
 #                                       'hash': 'abcdef123',
 #                                       'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml'})
 
-
 if __name__ == "__main__":
     lg.set_debug_level(20)
-    init()
     _test()
-    shutdown()

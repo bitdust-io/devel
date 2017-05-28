@@ -63,19 +63,22 @@ def definitions():
         ('miner', Miner, ),
         ('hash', HashID, ),
         ('prev', PrevHashID, ),
-        ('supplier_customer', SupplierCustomer, ),
         ('time_created', TimeCreated, ),
         ('time_signed', TimeSigned, ),
         ('time_mined', TimeMined, ),
+        ('supplier', Supplier, ),
+        ('customer', Customer, ),
+        ('supplier_customer', SupplierCustomer, ),
     ]
 
 #------------------------------------------------------------------------------
 
-def make_customer_header():
+def make_custom_header():
     src = '\n'
-    src += 'from CodernityDB.hash_index import HashIndex\n'
-    src += 'from CodernityDB.tree_index import TreeBasedIndex\n'
-    src += 'from coins.coins_index import *\n'
+    src += 'from coins.coins_index import BaseHashIndex\n'
+    src += 'from coins.coins_index import BaseMD5Index\n'
+    src += 'from coins.coins_index import BaseChainIndex\n'
+    src += 'from coins.coins_index import BaseTimeIndex\n'
     return src
 
 #------------------------------------------------------------------------------
@@ -159,28 +162,36 @@ class BaseTimeIndex(TreeBasedIndex):
 #------------------------------------------------------------------------------
 
 class Creator(BaseMD5Index):
-    custom_header = make_customer_header()
     role = 'creator'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
 class Signer(BaseMD5Index):
-    custom_header = make_customer_header()
     role = 'signer'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
 class Miner(BaseMD5Index):
-    custom_header = make_customer_header()
     role = 'miner'
     field = 'idurl'
 
 #------------------------------------------------------------------------------
 
+class Supplier(BaseMD5Index):
+    role = 'payload'
+    field = 'supplier'
+
+#------------------------------------------------------------------------------
+
+class Customer(BaseMD5Index):
+    role = 'payload'
+    field = 'customer'
+
+#------------------------------------------------------------------------------
+
 class HashID(BaseHashIndex):
-    custom_header = make_customer_header()
     role = 'miner'
     field = 'hash'
     key_format = '40s'
@@ -188,7 +199,6 @@ class HashID(BaseHashIndex):
 #------------------------------------------------------------------------------
 
 class PrevHashID(BaseHashIndex):
-    custom_header = make_customer_header()
     role = 'miner'
     field = 'prev'
     key_format = '40s'
@@ -196,24 +206,20 @@ class PrevHashID(BaseHashIndex):
 #------------------------------------------------------------------------------
 
 class SupplierCustomer(BaseChainIndex):
-    custom_header = make_customer_header()
     producer_role = 'supplier'
     consumer_role = 'customer'
 
 #------------------------------------------------------------------------------
 
 class TimeCreated(BaseTimeIndex):
-    custom_header = make_customer_header()
     role = 'creator'
 
 #------------------------------------------------------------------------------
 
 class TimeSigned(BaseTimeIndex):
-    custom_header = make_customer_header()
     role = 'signer'
 
 #------------------------------------------------------------------------------
 
 class TimeMined(BaseTimeIndex):
-    custom_header = make_customer_header()
     role = 'miner'
