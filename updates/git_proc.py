@@ -161,11 +161,11 @@ def sync(callback_func=None):
                 result = 'sync-error'
         if retcode == 0:
             run(['reset', '--hard', 'origin/master', ],
-                lambda resp, ret: _reset_done(resp, ret, result))
+                callback_func=lambda resp, ret: _reset_done(resp, ret, result))
         else:
             if callback_func:
                 callback_func(result)
-    run(['fetch', '--all', '-v'], _fetch_done)
+    run(['fetch', '--all', '-v'], callback_func=_fetch_done)
 
 #------------------------------------------------------------------------------
 
