@@ -85,8 +85,10 @@ def init():
             db().open()
         except:
             temp_dir = os.path.join(settings.ContractChainDir(), 'tmp')
-            regenerate_indexes(temp_dir)
-            rewrite_indexes(db(), os.path.join(temp_dir, '_indexes'))
+            if os.path.isdir(temp_dir):
+                bpio._dir_remove(temp_dir)
+            tmpdb = regenerate_indexes(temp_dir)
+            rewrite_indexes(db(), tmpdb)
             bpio._dir_remove(temp_dir)
             db().open()
             db().reindex()
@@ -116,34 +118,52 @@ def db(instance='current'):
 
 #------------------------------------------------------------------------------
 
-def rewrite_indexes(db_instance, source_location):
+def rewrite_indexes(db_instance, source_db_instance):
     """
     """
     if _Debug:
         lg.out(_DebugLevel, 'coins_db.rewrite_indexes')
+    source_location = os.path.join(source_db_instance.path, '_indexes')
+    source_indexes = os.listdir(source_location)
     existing_location = os.path.join(db_instance.path, '_indexes')
     existing_indexes = os.listdir(existing_location)
     for existing_index_file in existing_indexes:
         if existing_index_file != '00id.py':
+            index_name = existing_index_file[2:existing_index_file.index('.')]
             existing_index_path = os.path.join(existing_location, existing_index_file)
             os.remove(existing_index_path)
             if _Debug:
                 lg.out(_DebugLevel, '        removed index at %s' % existing_index_path)
-            index_name = existing_index_file[2:existing_index_file.index('.')]
             buck_path = os.path.join(db_instance.path, index_name + '_buck')
             if os.path.isfile(buck_path):
                 os.remove(buck_path)
-    # source_location = os.path.join(bpio.getExecutableDir(), 'coins', '_indexes')
-    source_indexes = os.listdir(source_location)
+                if _Debug:
+                    lg.out(_DebugLevel, '        removed bucket at %s' % buck_path)
+            stor_path = os.path.join(db_instance.path, index_name + '_stor')
+            if os.path.isfile(stor_path):
+                os.remove(stor_path)
+                if _Debug:
+                    lg.out(_DebugLevel, '        removed storage at %s' % stor_path)
     for source_index_file in source_indexes:
         if source_index_file != '00id.py':
+            index_name = source_index_file[2:source_index_file.index('.')]
             destination_index_path = os.path.join(existing_location, source_index_file)
             source_index_path = os.path.join(source_location, source_index_file)
-            if bpio.AtomicWriteFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
-                if _Debug:
-                    lg.out(_DebugLevel, '        %s refreshed from %s' % (source_index_file, source_index_path))
-            else:
-                lg.warn('failed writing to %s' % destination_index_path)
+            if not bpio.AtomicWriteFile(destination_index_path, bpio.ReadTextFile(source_index_path)):
+                lg.warn('failed writing index to %s' % destination_index_path)
+                continue
+            destination_buck_path = os.path.join(db_instance.path, index_name + '_buck')
+            source_buck_path = os.path.join(source_db_instance.path, index_name + '_buck')
+            if not bpio.AtomicWriteFile(destination_buck_path, bpio.ReadBinaryFile(source_buck_path)):
+                lg.warn('failed writing index bucket to %s' % destination_buck_path)
+                continue
+            destination_stor_path = os.path.join(db_instance.path, index_name + '_stor')
+            source_stor_path = os.path.join(source_db_instance.path, index_name + '_stor')
+            if not bpio.AtomicWriteFile(destination_stor_path, bpio.ReadBinaryFile(source_stor_path)):
+                lg.warn('failed writing index storage to %s' % destination_stor_path)
+                continue
+            if _Debug:
+                lg.out(_DebugLevel, '        rewrote inex %s' % index_name)
 
 
 def refresh_indexes(db_instance):
@@ -159,18 +179,20 @@ def refresh_indexes(db_instance):
                 if _Debug:
                     lg.out(_DebugLevel, '        added index %s' % ind)
             except:
-                lg.exc()
-                try:
-                    db_instance.revert_index(ind, reindex=True)
-                    if _Debug:
-                        lg.out(_DebugLevel, '        reverted index %s' % ind)
-                except:
-                    try:
-                        db_instance.add_index(ind_obj, create=False)
-                        if _Debug:
-                            lg.out(_DebugLevel, '        recreated index %s' % ind)
-                    except:
-                        lg.exc()
+                if _Debug:
+                    lg.out(_DebugLevel, '        index skipped %s' % ind)
+#                 try:
+#                     db_instance.revert_index(ind, reindex=True)
+#                     if _Debug:
+#                         lg.out(_DebugLevel, '        reverted index %s' % ind)
+#                 except:
+#                     pass
+#                     try:
+#                         db_instance.add_index(ind_obj, create=False)
+#                         if _Debug:
+#                             lg.out(_DebugLevel, '        recreated index %s' % ind)
+#                     except:
+#                         lg.exc()
         else:
             db_instance.edit_index(ind_obj, reindex=True)
             if _Debug:
@@ -185,6 +207,7 @@ def regenerate_indexes(temp_dir):
     tmpdb.create()
     refresh_indexes(tmpdb)
     tmpdb.close()
+    return tmpdb
 
 #------------------------------------------------------------------------------
 
