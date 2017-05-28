@@ -303,7 +303,7 @@ class AccountantNode(automat.Automat):
         Action method.
         """
         query = {'method': 'get_all',
-                 'index': 'time',
+                 'index': 'time_mined',
                  'limit': self.download_limit,
                  'start': utime.datetime_to_sec1970(self.download_offset),
                  'end': utime.utcnow_to_sec1970(), }
