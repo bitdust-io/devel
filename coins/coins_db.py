@@ -138,12 +138,12 @@ def rewrite_indexes(db_instance, source_db_instance):
             if os.path.isfile(buck_path):
                 os.remove(buck_path)
                 if _Debug:
-                    lg.out(_DebugLevel, '        removed bucket at %s' % buck_path)
+                    lg.out(_DebugLevel, '            also bucket at %s' % buck_path)
             stor_path = os.path.join(db_instance.path, index_name + '_stor')
             if os.path.isfile(stor_path):
                 os.remove(stor_path)
                 if _Debug:
-                    lg.out(_DebugLevel, '        removed storage at %s' % stor_path)
+                    lg.out(_DebugLevel, '            also storage at %s' % stor_path)
     for source_index_file in source_indexes:
         if source_index_file != '00id.py':
             index_name = source_index_file[2:source_index_file.index('.')]
@@ -163,7 +163,7 @@ def rewrite_indexes(db_instance, source_db_instance):
                 lg.warn('failed writing index storage to %s' % destination_stor_path)
                 continue
             if _Debug:
-                lg.out(_DebugLevel, '        rewrote inex %s' % index_name)
+                lg.out(_DebugLevel, '        wrote index %s from %s' % (index_name, source_index_path))
 
 
 def refresh_indexes(db_instance):
@@ -181,18 +181,6 @@ def refresh_indexes(db_instance):
             except:
                 if _Debug:
                     lg.out(_DebugLevel, '        index skipped %s' % ind)
-#                 try:
-#                     db_instance.revert_index(ind, reindex=True)
-#                     if _Debug:
-#                         lg.out(_DebugLevel, '        reverted index %s' % ind)
-#                 except:
-#                     pass
-#                     try:
-#                         db_instance.add_index(ind_obj, create=False)
-#                         if _Debug:
-#                             lg.out(_DebugLevel, '        recreated index %s' % ind)
-#                     except:
-#                         lg.exc()
         else:
             db_instance.edit_index(ind_obj, reindex=True)
             if _Debug:
@@ -386,63 +374,6 @@ def _test():
     if sys.argv[1] == '100':
         regenerate_indexes('/tmp')
 
-#     print insert({'idurl': 'http://idurl1234', 'time': '12345678'})
-#     print insert({'hash': '1234567812345678' + random.choice(['a,b,c']), 'data': {'a':'b', 'c': 'd', 'time': 123456,}})
-
-#     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn.xml',
-#                   'hash': 'abcdef',
-#                   'tm': utime.since1970(datetime.datetime.utcnow())})
-#
-#     time.sleep(3)
-#
-#     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml',
-#                   'hash': 'abcdef123',
-#                   'tm': utime.since1970(datetime.datetime.utcnow())})
-#
-#     time.sleep(4)
-#
-#     print insert({'idurl': 'http://veselin-p2p.ru/veselin_kpn567.xml',
-#                   'hash': 'abcdef567',
-#                   'tm': utime.since1970(datetime.datetime.utcnow())})
-
-#     print 'query all from "id"'
-#     for x in query_from_json({'method': 'get_all', 'index': 'id'})[0]:
-#         print x
-#
-#     print 'query all from "idurl"'
-#     for x in query_from_json({'method': 'get_all', 'index': 'idurl'})[0]:
-#         print x
-
-#     print 'query one from "hash"'
-#     _p(query_json({'method': 'get', 'index': 'hash', 'key': 'abcdef123', }))
-# 
-#     print 'query many from "hash"'
-#     _p(query_json({'method': 'get_many', 'index': 'hash', 'key': 'abcdef123', }))
-# 
-#     print 'query one from "time"'
-#     _p(query_json({'method': 'get', 'index': 'time', 'key': 1474380456, }))
-# 
-#     print 'query one from "idurl"'
-#     _p(query_json({'method': 'get', 'index': 'idurl', 'key': 'http://veselin-p2p.ru/veselin_kpn123.xml'}))
-# 
-#     print 'query some from "time"'
-#     _p(query_json({'method': 'get_many', 'index': 'time', 'limit': 3, 'offset': 2, 'start': 0, 'end': None, }))
-# 
-#     print 'query all from "hash"'
-#     _p(query_json({'method': 'get_all', 'index': 'hash'}))
-# 
-#     print 'query some from "time"'
-#     _p(query_json({'method': 'get_many', 'index': 'time', 'key': 1474380456, }))
-# 
-#     print 'query one from "id"'
-#     _p(query_json({'method': 'get', 'index': 'id', 'key': '5d909de518db44329183d187927cabc9', }))
-# 
-#     print 'query all from "id"'
-#     _p(query_json({'method': 'get_all', 'index': 'id'}))
-# 
-#     print 'test item exists:', exist({'tm': 1474380456,
-#                                       'hash': 'abcdef123',
-#                                       'idurl': 'http://veselin-p2p.ru/veselin_kpn123.xml'})
 
 if __name__ == "__main__":
     lg.set_debug_level(20)
