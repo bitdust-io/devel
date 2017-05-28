@@ -385,58 +385,64 @@ class AccountantNode(automat.Automat):
         d.callback(acoin)
         return d
 
+    def _on_command_retreive_coin(self, newpacket, info):
+        query_j = coins_io.read_query_from_packet(newpacket)
+        if not query_j:
+            p2p_service.SendFail(newpacket, 'incorrect query received')
+            return False
+        coins, error = coins_db.query_json(query_j)
+        if error:
+            p2p_service.SendFail(newpacket, error)
+            return False
+        result_coins = []
+        for coin in coins:
+            result_coins.append(coin)
+            if len(result_coins) > self.max_coins_per_packet:
+                result_coins.append(None)
+                break
+        p2p_service.SendCoin(newpacket.CreatorID, result_coins, packet_id=newpacket.PacketID)
+        return True
+
+    def _on_command_coin(self, newpacket, info):
+        coins_list = coins_io.read_coins_from_packet(newpacket)
+        if not coins_list:
+            p2p_service.SendFail(newpacket, 'failed to read coins from packet')
+            return True
+        if coins_list[-1] is None:
+            # TODO: partial result, request more coins
+            lg.warn('partial response, more coins were found but not transferred')
+            del coins_list[-1]
+        if len(coins_list) == 1:
+            acoin = coins_list[0]
+            if not coins_io.validate_coin(acoin):
+                p2p_service.SendFail(newpacket, 'coin validation failed')
+                return True
+            if not coins_io.verify_coin(acoin):
+                p2p_service.SendFail(newpacket, 'coin verification failed')
+                return True
+            if coins_db.exist(acoin):
+                self.automat('valid-coins-received', [acoin, ])
+            else:
+                self.automat('new-coin-mined', acoin)
+            return True
+        valid_coins = []
+        for acoin in coins_list:
+            if not coins_io.validate_coin(acoin):
+                continue
+            if not coins_io.verify_coin(acoin):
+                continue
+            valid_coins.append(acoin)
+        if len(valid_coins) == len(coins_list):
+            self.automat('valid-coins-received', valid_coins)
+        else:
+            p2p_service.SendFail(newpacket, 'some non-valid coins received')
+        return True
+
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
             return False
         if newpacket.Command == commands.RetreiveCoin():
-            query_j = coins_io.read_query_from_packet(newpacket)
-            if not query_j:
-                p2p_service.SendFail(newpacket, 'incorrect query received')
-                return False
-            coins, error = coins_db.query_json(query_j)
-            if error:
-                p2p_service.SendFail(newpacket, error)
-                return False
-            result_coins = []
-            for coin in coins:
-                result_coins.append(coin)
-                if len(result_coins) > self.max_coins_per_packet:
-                    result_coins.append(None)
-                    break
-            p2p_service.SendCoin(newpacket.CreatorID, result_coins, packet_id=newpacket.PacketID)
-            return True
+            return self._on_command_retreive_coin(newpacket, info)
         if newpacket.Command == commands.Coin():
-            coins_list = coins_io.read_coins_from_packet(newpacket)
-            if not coins_list:
-                p2p_service.SendFail(newpacket, 'failed to read coins from packet')
-                return True
-            if coins_list[-1] is None:
-                # TODO: partial result, request more coins
-                lg.warn('partial response, more coins were found but not transferred')
-                del coins_list[-1]
-            if len(coins_list) == 1:
-                acoin = coins_list[0]
-                if not coins_io.validate_coin(acoin):
-                    p2p_service.SendFail(newpacket, 'coin validation failed')
-                    return True
-                if not coins_io.verify_coin(acoin):
-                    p2p_service.SendFail(newpacket, 'coin verification failed')
-                    return True
-                if coins_db.exist(acoin):
-                    self.automat('valid-coins-received', [acoin, ])
-                else:
-                    self.automat('new-coin-mined', acoin)
-                return True
-            valid_coins = []
-            for acoin in coins_list:
-                if not coins_io.validate_coin(acoin):
-                    continue
-                if not coins_io.verify_coin(acoin):
-                    continue
-                valid_coins.append(acoin)
-            if len(valid_coins) == len(coins_list):
-                self.automat('valid-coins-received', valid_coins)
-            else:
-                p2p_service.SendFail(newpacket, 'some non-valid coins received')
-            return True
+            return self._on_command_coin(newpacket, info)
         return False

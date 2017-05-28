@@ -829,7 +829,7 @@ def Coin(request, info):
 
 def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendCoin to %s" % remote_idurl)
+        lg.out(_DebugLevel, "p2p_service.SendCoin to %s with %d records" % (remote_idurl, len(coins)))
     if packet_id is None:
         packet_id = packetid.UniqueID()
     outpacket = signed.Packet(
