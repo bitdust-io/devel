@@ -128,14 +128,14 @@ def get_coin_by_hash(hash_id):
     return result
 
 
-def get_coins_by_chain(provider_idurl, consumer_idurl):
+def get_coins_by_chain(chain, provider_idurl, consumer_idurl):
     """
     """
     if not is_connected():
         return succeed(None)
     query = dict(
         method='get_many',
-        index='chain_id',
+        index=chain,
         key='%s_%s' % (provider_idurl, consumer_idurl, ),
     )
     result = Deferred()

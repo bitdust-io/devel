@@ -237,6 +237,7 @@ class CustomerContractExecutor(automat.Automat):
         """
         from coins import contract_chain_node
         contract_chain_node.get_coins_by_chain(
+            chain='supplier_customer',
             provider_idurl=self.supplier_idurl,
             consumer_idurl=my_id.getLocalID(),
         )

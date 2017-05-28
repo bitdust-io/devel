@@ -117,6 +117,7 @@ class AccountantNode(automat.Automat):
         self.connected_accountants = []
         self.min_accountants_connected = 1  # TODO: read from settings
         self.max_accountants_connected = 1  # TODO: read from settings
+        self.max_coins_per_packet = 100     # TODO: read from settings
         self.download_offset = datetime.datetime(2016, 1, 1)
         self.download_limit = 100
         self.pending_coins = []
@@ -396,13 +397,23 @@ class AccountantNode(automat.Automat):
             if error:
                 p2p_service.SendFail(newpacket, error)
                 return False
-            p2p_service.SendCoin(newpacket.CreatorID, coins, packet_id=newpacket.PacketID)
+            result_coins = []
+            for coin in coins:
+                result_coins.append(coin)
+                if len(result_coins) > self.max_coins_per_packet:
+                    result_coins.append(None)
+                    break
+            p2p_service.SendCoin(newpacket.CreatorID, result_coins, packet_id=newpacket.PacketID)
             return True
         if newpacket.Command == commands.Coin():
             coins_list = coins_io.read_coins_from_packet(newpacket)
             if not coins_list:
                 p2p_service.SendFail(newpacket, 'failed to read coins from packet')
                 return True
+            if coins_list[-1] is None:
+                # TODO: partial result, request more coins
+                lg.warn('partial response, more coins were found but not transferred')
+                del coins_list[-1]
             if len(coins_list) == 1:
                 acoin = coins_list[0]
                 if not coins_io.validate_coin(acoin):

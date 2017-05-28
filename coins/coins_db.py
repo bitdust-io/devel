@@ -284,6 +284,8 @@ def query_json(jdata):
         + key: key to read single record from db (optional)
         + start: low key limit to search records in range
         + end: high key limit to search records in range
+        + offset: pagination offset
+        + limit: pagination size
 
     Returns tuple:
 
