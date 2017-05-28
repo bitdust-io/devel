@@ -199,6 +199,19 @@ def regenerate_indexes(temp_dir):
 
 #------------------------------------------------------------------------------
 
+def to_list(ret):
+    """
+    """
+    if ret and ret[0]:
+        lst = list(ret[0])
+        # print '\n'.join(map(str, lst))
+        return lst
+    else:
+        # print ret[1]
+        return ret[1]
+
+#------------------------------------------------------------------------------ 
+
 def get(index_name, key, with_doc=True, with_storage=True):
     # TODO: here and bellow need to add input validation
     try:
@@ -302,22 +315,16 @@ def query_json(jdata):
 
 #------------------------------------------------------------------------------
 
-def _p(ret):
-    if ret and ret[0]:
-        print '\n'.join(map(str, list(ret[0])))
-    else:
-        print ret[1]
-
-
 _prev_hash = ''
 
-def _do_mine_test_coin(customer_idurl, duration, amount, price=1.0, trustee=None):
+def _test_coin_worker(customer_idurl, duration, amount, price=1.0, trustee=None):
     global _prev_hash
     from coins import coins_miner
     storage_coin = coins_io.storage_contract_open(customer_idurl, duration, amount, price, trustee)
     storage_coin['miner']['prev'] = _prev_hash
     d = coins_miner.start_offline_job(storage_coin)
     d.addBoth(_test_coin_mined, customer_idurl, duration, amount, price, trustee)
+
 
 def _test_coin_mined(coin_json, customer_idurl, duration, amount, price, trustee):
     global _prev_hash
@@ -326,53 +333,74 @@ def _test_coin_mined(coin_json, customer_idurl, duration, amount, price, trustee
     print json.dumps(coin_json, indent=2)
     insert(coin_json)
     _prev_hash = coin_json['miner']['hash']
-    reactor.callLater(1, _do_mine_test_coin, customer_idurl, duration, amount, price, trustee)
+    reactor.callLater(1, _test_coin_worker, customer_idurl, duration, amount, price, trustee)
     return coin_json
 
 
-def _test():
-    from lib import utime
-    import time
-    import datetime
+def _test_query(inp):
+    print 'Query:'
+    print inp
+    print '==================================='
+    lst = to_list(query_json(inp))
+    print '\n'.join(map(str, lst))
+    print 'total:', len(lst)
+    return lst
 
-    if sys.argv[1] == '0':
+
+def _test():
+    if len(sys.argv) < 2:
+        print """
+        commands:
+        work <idurl> <duration> <amount>
+        get_all <index>
+        get_many <index> <key>
+        get <index> <key>
+        """
+        return
+
+    if sys.argv[1] == 'work':
         init()
-        _do_mine_test_coin('http://p2p-id.com/done.xml', 12400, 200)
+        # _test_coin_worker('http://p2p-id.com/done.xml', 12400, 200)
+        _test_coin_worker(sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
         reactor.run()
         shutdown()
 
-    if sys.argv[1] == '1':
+    if sys.argv[1] == 'get_all':
         init()
-        _p(query_json({'method': 'get_all', 'index': 'id'}))
-        print len(list(query_json({'method': 'get_all', 'index': 'id'})[0]))
+        _test_query({
+            'method': 'get_all',
+            'index': sys.argv[2],
+        })
         shutdown()
 
-    if sys.argv[1] == '2':
+    if sys.argv[1] == 'get_many':
         init()
-        _p(query_json({'method': 'get_many', 'index': 'supplier_customer',
-                       'key': '%s_%s' % ('http://p2p-id.ru/testveselin.xml', 'http://p2p-id.com/done.xml',)}))
+        _test_query({
+            'method': 'get_many',
+            # 'index': 'supplier_customer',
+            'index': sys.argv[2],
+            'key': sys.argv[3],
+            # 'key': '%s_%s' % ('http://p2p-id.ru/testveselin.xml', 'http://p2p-id.com/done.xml',)}
+        })
         shutdown()
 
-    if sys.argv[1] == '3':
+    if sys.argv[1] == 'get':
         init()
-        _p(query_json({'method': 'get_many', 'index': 'supplier',
-                       'key': 'http://p2p-id.ru/testveselin.xml'}))
+        _test_query({
+            'method': 'get',
+            'index': sys.argv[2],
+            'key': sys.argv[3],
+        })
         shutdown()
 
-    if sys.argv[1] == '4':
+    if sys.argv[1] == 'indexes':
         init()
-        _p(query_json({'method': 'get_many', 'index': 'customer',
-                       'key': 'http://abc.com/id.xml'}))
+        print 'Indexes names:'
+        print '\n  '.join(db().indexes_names)
         shutdown()
 
-    if sys.argv[1] == '5':
-        init()
-        _p(query_json({'method': 'get_many', 'index': 'prev',
-                       'key': ''}))
-        shutdown()
-
-    if sys.argv[1] == '100':
-        regenerate_indexes('/tmp')
+    if sys.argv[1] == 'tmpdb':
+        regenerate_indexes(sys.argv[2])
 
 
 if __name__ == "__main__":

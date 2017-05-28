@@ -841,7 +841,7 @@ def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
 
 def RetreiveCoin(request, info):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.RetreiveCoin   %r from %s" % (request, info.sender_idurl))
+        lg.out(_DebugLevel, "p2p_service.RetreiveCoin   {%r} from %s" % (request.Payload, info.sender_idurl))
 
 
 def SendRetreiveCoin(remote_idurl, query, wide=False, callbacks={}):

@@ -29,8 +29,6 @@ import cgitb
 cgitb.enable(0, '/tmp', 10, 'text')
 
 import os
-import sys
-import time
 
 #------------------------------------------------------------------------------
 
@@ -42,6 +40,13 @@ MAIL_SERVER_KEY_FILE_PATH = '/home/veselin/mail.bitdust.io.key'
 
 
 def SendEmail(args_9_tuple):
+    """
+    Input:
+        TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES
+
+    Output:
+        result code from smtplib.sendmail() method or an exception
+    """
     (TO, FROM, HOST, PORT, LOGIN, PASSWORD, SUBJECT, BODY, FILES) = args_9_tuple
     PORT = int(PORT)
     import smtplib
@@ -118,11 +123,8 @@ def save_uploaded_file():
     SendEmail(settings)
     return True
 
+
 if __name__ == '__main__':
-    #    settings = open('test.conf').read().split('\n')[:6]
-    #    settings.extend(['test', 'test\ntest\ntest', [],])
-    #    settings = tuple(settings)
-    #    SendEmail(settings)
     if not save_uploaded_file():
         print_html_response('ready')
     else:
