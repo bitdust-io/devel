@@ -29,7 +29,7 @@ _DebugLevel = 6
 
 #------------------------------------------------------------------------------
 
-from twisted.internet.defer import Deferred, DeferredList, succeed
+from twisted.internet.defer import Deferred, DeferredList, succeed, fail
 
 #------------------------------------------------------------------------------
 
@@ -62,14 +62,14 @@ def is_connected():
     return True
 
 
-def send_query_to_accountants(query_dict):
+def send_query(query_dict):
     """
     """
     result = Deferred()
     defer_list = []
     for idurl in contract_chain_consumer.A().connected_accountants:
         single_accountant = Deferred()
-        p2p_service.SendRetreiveCoin(idurl, query_dict, callbacks={
+        p2p_service.SendRetrieveCoin(idurl, query_dict, callbacks={
             commands.Coin(): lambda response_packet, info:
                 single_accountant.callback((idurl, response_packet, )) if not single_accountant.called else None,
             commands.Fail(): lambda response_packet, info:
@@ -77,6 +77,8 @@ def send_query_to_accountants(query_dict):
         })
         defer_list.append(single_accountant)
     DeferredList(defer_list).addBoth(result.callback)
+    if _Debug:
+        lg.out(_DebugLevel, 'contract_chain_node.send_query to %d accountants' % len(defer_list))
     return result
 
 
@@ -90,7 +92,7 @@ def collect_query_responses(accountant_results):
         if not success:
             fails[accountant_idurl] = fails.get(accountant_idurl, 0) + 1
             continue
-        if not response_packet:
+        if response_packet is None:
             fails[accountant_idurl] = fails.get(accountant_idurl, 0) + 1
             continue
         coins_list = coins_io.read_coins_from_packet(response_packet)
@@ -103,10 +105,30 @@ def collect_query_responses(accountant_results):
                 unique_coins[coin_hash] = coin
             if coins_io.coin_to_string(unique_coins[coin_hash]) != coins_io.coin_to_string(coin):
                 fails[accountant_idurl] = fails.get(accountant_idurl, 0) + 1
-    if fails:
-        lg.warn('got failed or conflicting results from accountants: %s' % fails)
-        # TODO: find some simple way to compare results and rich consensus between accountants
-    return unique_coins.values()
+    return unique_coins, fails
+
+
+def on_query_response(accountant_responses, result_defer=None):
+    """
+    """
+    lg.warn('%r %r' % (accountant_responses, result_defer))
+    coins, errors = collect_query_responses(accountant_responses)
+    if not coins:
+        if _Debug:
+            lg.out(_DebugLevel, 'contract_chain_node.on_query_response : NO COINS FOUND')
+        if result_defer is not None:
+            result_defer.errback(errors)
+        return None
+    if errors:
+        lg.warn('conflicting results from accountants: %s' % errors)
+        # TODO: find some simple way to establish consensus between accountants
+        # if one accountant is cheating or failing, coins from his machine must be filtered out
+        # probably here we can trigger a process to replace bad accountants
+    if _Debug:
+        lg.out(_DebugLevel, 'contract_chain_node.on_query_response : %d COINS FOUND' % len(coins))
+    if result_defer is not None:
+        result_defer.callback(coins)
+    return coins
 
 
 def get_coin_by_hash(hash_id):
@@ -120,11 +142,7 @@ def get_coin_by_hash(hash_id):
         key=hash_id,
     )
     result = Deferred()
-    send_query_to_accountants(query).addBoth(
-        lambda accountant_responses: result.callback(
-            collect_query_responses(accountant_responses),
-        )
-    )
+    send_query(query).addBoth(on_query_response, result)
     return result
 
 
@@ -132,29 +150,21 @@ def get_coins_by_chain(chain, provider_idurl, consumer_idurl):
     """
     """
     if not is_connected():
-        return succeed(None)
+        return fail([])
     query = dict(
         method='get_many',
         index=chain,
         key='%s_%s' % (provider_idurl, consumer_idurl, ),
     )
     result = Deferred()
-    send_query_to_accountants(query).addBoth(
-        lambda accountant_responses: result.callback(
-            collect_query_responses(accountant_responses),
-        )
-    )
+    send_query(query).addBoth(on_query_response, result)
     return result
 
 
-def walk_coins():
-    """
-    """
-
-
-def mine_coin():
+def send_data_to_miner():
     """
     """
     if not is_connected():
         return None
     contract_chain_consumer.A().connected_miner
+    # TODO: continue here

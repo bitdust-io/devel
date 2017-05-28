@@ -77,7 +77,7 @@ def init():
     P2PCommandAcks[Broadcast()] = None
     P2PCommandAcks[Relay()] = None
     P2PCommandAcks[Coin()] = None
-    P2PCommandAcks[RetreiveCoin()] = Coin()
+    P2PCommandAcks[RetrieveCoin()] = Coin()
 
 
 def IsCommand(s):
@@ -115,7 +115,6 @@ def RequestService():
 
 def CancelService():
     """
-    
     """
     return "CancelService"
 
@@ -124,7 +123,7 @@ def Retrieve():
     """
     Used to request some data from supplier for example.
     """
-    # TODO: rename to RetreiveData
+    # TODO: rename to RetrieveData
     return "Retrieve"
 
 
@@ -264,10 +263,10 @@ def Coin():
     return "Coin"
 
 
-def RetreiveCoin():
+def RetrieveCoin():
     """
     """
-    return "RetreiveCoin"
+    return "RetrieveCoin"
 
 #------------------------------------------------------------------------------
 

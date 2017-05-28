@@ -171,9 +171,9 @@ def inbox(newpacket, info, status, error_message):
         # handled by service_accountant()
         Coin(newpacket, info)
         commandhandled = False
-    elif newpacket.Command == commands.RetreiveCoin():
+    elif newpacket.Command == commands.RetrieveCoin():
         # handled by service_accountant()
-        RetreiveCoin(newpacket, info)
+        RetrieveCoin(newpacket, info)
         commandhandled = False
 
     return commandhandled
@@ -547,7 +547,7 @@ def Retrieve(request):
     We send with ``outboxNoAck()`` method because he will ask again if
     he does not get it
     """
-    # TODO: rename to RetreiveData()
+    # TODO: rename to RetrieveData()
     if not driver.is_started('service_supplier'):
         return SendFail(request, 'supplier service is off')
     if not contactsdb.is_customer(request.OwnerID):
@@ -823,8 +823,13 @@ def SendBroadcastMessage(outpacket):
 
 def Coin(request, info):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.Coin from %r with %d coins" % (
-            nameurl.GetName(info.sender_idurl), len(request.Payload), ))
+        try:
+            input_coins = json.loads(request.Payload)
+        except:
+            lg.exc()
+            input_coins = []
+        lg.out(_DebugLevel, "p2p_service.Coin from %s with %d coins" % (
+            nameurl.GetName(info.sender_idurl), len(input_coins), ))
 
 
 def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
@@ -840,17 +845,17 @@ def SendCoin(remote_idurl, coins, packet_id=None, wide=False, callbacks={}):
     return outpacket
 
 
-def RetreiveCoin(request, info):
+def RetrieveCoin(request, info):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.RetreiveCoin from %s : %s" % (
+        lg.out(_DebugLevel, "p2p_service.RetrieveCoin from %s : %s" % (
             nameurl.GetName(info.sender_idurl), request.Payload))
 
 
-def SendRetreiveCoin(remote_idurl, query, wide=False, callbacks={}):
+def SendRetrieveCoin(remote_idurl, query, wide=False, callbacks={}):
     if _Debug:
-        lg.out(_DebugLevel, "p2p_service.SendRetreiveCoin to %s" % remote_idurl)
+        lg.out(_DebugLevel, "p2p_service.SendRetrieveCoin to %s" % remote_idurl)
     outpacket = signed.Packet(
-        commands.RetreiveCoin(), my_id.getLocalID(),
+        commands.RetrieveCoin(), my_id.getLocalID(),
         my_id.getLocalID(), packetid.UniqueID(),
         json.dumps(query), remote_idurl)
     gateway.outbox(outpacket, wide=wide, callbacks=callbacks)

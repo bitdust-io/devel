@@ -161,14 +161,14 @@ class AccountantNode(automat.Automat):
                 self.doDestroyMe(arg)
             elif event == 'accountant-connected':
                 self.doAddAccountant(arg)
-                self.doRetreiveCoins(arg)
+                self.doRetrieveCoins(arg)
             elif event == 'stop' or ( event == 'timer-1min' and not self.isAnyCoinsReceived(arg) ):
                 self.state = 'OFFLINE'
             elif event == 'new-coin-mined':
                 self.doPushCoin(arg)
             elif event == 'valid-coins-received' and self.isMoreCoins(arg):
                 self.doWriteCoins(arg)
-                self.doRetreiveCoins(arg)
+                self.doRetrieveCoins(arg)
             elif event == 'valid-coins-received' and not self.isMoreCoins(arg):
                 self.state = 'READY'
                 self.doWriteCoins(arg)
@@ -241,7 +241,7 @@ class AccountantNode(automat.Automat):
                 self.doLookupAccountants(arg)
             elif event == 'accountant-connected' and not self.isMoreNeeded(arg):
                 self.state = 'READ_COINS'
-                self.doRetreiveCoins(arg)
+                self.doRetrieveCoins(arg)
             elif event == 'lookup-failed' and self.Attempts < 5 and self.isAnyAccountants(arg):
                 self.Attempts+=1
                 self.doLookupAccountants(arg)
@@ -298,7 +298,7 @@ class AccountantNode(automat.Automat):
             lg.out(_DebugLevel, 'accountant_node.doAddAccountant NEW %s connected, %d total accountants' % (
                 arg, len(self.connected_accountants)))
 
-    def doRetreiveCoins(self, arg):
+    def doRetrieveCoins(self, arg):
         """
         Action method.
         """
@@ -308,7 +308,7 @@ class AccountantNode(automat.Automat):
                  'start': utime.datetime_to_sec1970(self.download_offset),
                  'end': utime.utcnow_to_sec1970(), }
         for idurl in self.connected_accountants:
-            p2p_service.SendRetreiveCoin(idurl, query)
+            p2p_service.SendRetrieveCoin(idurl, query)
 
     def doWriteCoins(self, arg):
         """
@@ -400,6 +400,9 @@ class AccountantNode(automat.Automat):
             if len(result_coins) > self.max_coins_per_packet:
                 result_coins.append(None)
                 break
+        if not result_coins:
+            p2p_service.SendFail(newpacket, 'no coins found')
+            return False
         p2p_service.SendCoin(newpacket.CreatorID, result_coins, packet_id=newpacket.PacketID)
         return True
 
@@ -441,7 +444,9 @@ class AccountantNode(automat.Automat):
     def _on_inbox_packet(self, newpacket, info, status, error_message):
         if status != 'finished':
             return False
-        if newpacket.Command == commands.RetreiveCoin():
+        if _Debug:
+            lg.out(_DebugLevel, 'accountant_node._on_inbox_packet %r' % newpacket)
+        if newpacket.Command == commands.RetrieveCoin():
             return self._on_command_retreive_coin(newpacket, info)
         if newpacket.Command == commands.Coin():
             return self._on_command_coin(newpacket, info)
