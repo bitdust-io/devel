@@ -215,14 +215,20 @@ class ContractChainConsumer(automat.Automat):
         return None
 
     def _lookup_next_accountant(self):
-        if len(self.connected_accountants) >= 3:  # TODO: read from settings.
+        if len(self.connected_accountants) >= 3:  # TODO: read from settings.: max accountants
             if _Debug:
                 lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant SUCCESS, %d accountants connected' % len(self.connected_accountants))
             self.automat('accountants-connected')
             return
         if self.accountant_lookups >= 10:  # TODO: read from settings.
+            if len(self.connected_accountants) >= 1:  # TODO: read from settings: min accountants
+                if _Debug:
+                    lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant FAILED after %d retries, but %d accountants connected' % (
+                        self.accountant_lookups, len(self.connected_accountants)))
+                self.automat('accountants-connected')
+                return
             if _Debug:
-                lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant FAILED after %d retries' % self.accountant_lookups)
+                lg.out(_DebugLevel, 'contract_chain_consumer._lookup_next_accountant FAILED after %d retries with no results' % self.accountant_lookups)
             self.automat('accountants-failed')
             return
         self.accountant_lookups += 1

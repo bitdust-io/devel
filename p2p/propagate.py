@@ -355,7 +355,6 @@ def HandleAck(ackpacket, info):
 
 def OnFileSent(pkt_out, item, status, size, error_message):
     """
-    
     """
     return False
 
@@ -381,7 +380,8 @@ def SendToID(idurl, ack_handler=None, Payload=None, NeedAck=False, wide=False):
     # callback.register_interest(AckHandler, p.RemoteID, p.PacketID)
     gateway.outbox(p, wide, callbacks={
         commands.Ack(): ack_handler,
-        commands.Fail(): ack_handler})
+        commands.Fail(): ack_handler,
+    })
     if wide:
         # this is a ping packet - need to clear old info
         stats.ErasePeerProtosStates(idurl)

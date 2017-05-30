@@ -273,12 +273,10 @@ class SupplierConnector(automat.Automat):
         else:
             bytes_per_supplier = int(math.ceil(2.0 * settings.MinimumNeededBytes() / float(settings.DefaultDesiredSuppliers())))
         service_info = 'service_supplier %d' % bytes_per_supplier
-        request = p2p_service.SendRequestService(
-            self.idurl, service_info, callbacks={
-                commands.Ack(): self._supplier_acked,
-                commands.Fail(): self._supplier_failed})
-        # commands.Ack(): lambda response, info: self.automat('ack', response),
-        # commands.Fail(): lambda response, info: self.automat('fail', response)})
+        request = p2p_service.SendRequestService(self.idurl, service_info, callbacks={
+            commands.Ack(): self._supplier_acked,
+            commands.Fail(): self._supplier_failed,
+        })
         self.request_packet_id = request.PacketID
 
     def doCancelService(self, arg):

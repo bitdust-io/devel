@@ -22,7 +22,7 @@ cd ~
 # ./bd set services/broadcasting/max-broadcast-connections 3
 
 # ./bd set services/accountant/enabled true
-# ./bd set services/miner/enabled true
+./bd set services/miner/enabled true
 # ./bd set services/broadcasting/enabled true
 # ./bd set services/broadcasting/routing-enabled true
 # ./bd set services/customer/enabled false
