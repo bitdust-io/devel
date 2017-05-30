@@ -116,6 +116,8 @@ class Query(object):
             lg.out(_DebugLevel, 'contract_chain_node.Query created to request from %d accountants' % len(self.out_packets))
 
     def __del__(self):
+        """
+        """
         if _Debug:
             lg.out(_DebugLevel, 'contract_chain_node.Query object destoryed')
 
