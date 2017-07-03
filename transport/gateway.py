@@ -431,9 +431,9 @@ def inbox(info):
         lg.err("gateway.inbox ERROR during Unserialize data from %s://%s" % (info.proto, info.host))
         lg.err("data length=" + str(len(data)))
         lg.exc()
-        fd, filename = tmpfile.make('other', '.bad')
-        os.write(fd, data)
-        os.close(fd)
+#         fd, filename = tmpfile.make('other', '.bad')
+#         os.write(fd, data)
+#         os.close(fd)
         return None
     _LastInboxPacketTime = time.time()
     if _Debug:

@@ -51,17 +51,19 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor backup_db.py')
 
+from twisted.internet.defer import Deferred
+
 #------------------------------------------------------------------------------
 
 from logs import lg
 
 from system import bpio
-from lib import misc
 from system import tmpfile
 from system import dirsize
 
 from contacts import contactsdb
 
+from lib import misc
 from lib import packetid
 from lib import nameurl
 
@@ -80,6 +82,8 @@ from services import driver
 
 from storage import backup_fs
 from storage import backup_matrix
+from storage import backup_tar
+from storage import backup
 
 #------------------------------------------------------------------------------
 
@@ -463,6 +467,8 @@ class Task():
         self.pathID = pathID                            # source path to backup
         self.localPath = localPath
         self.created = time.time()
+        self.backupID = None
+        self.result_defer = Deferred()
         if _Debug:
             lg.out(_DebugLevel, 'new Task created: %r' % self)
 
@@ -473,7 +479,20 @@ class Task():
         """
         return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
 
-    #--- !!! STARTING BACKUP HERE !!! ---
+    def _on_job_done(self, backupID, result):
+        reactor.callLater(0, OnJobDone, backupID, result)
+        if self.result_defer is not None:
+            self.result_defer.callback((backupID, result))
+
+    def job(self):
+        """
+        """
+        if self.backupID is None:
+            return None
+        if self.backupID not in jobs():
+            return None
+        return jobs()[self.backupID]
+
     def run(self):
         """
         Runs a new ``Job`` from that ``Task``.
@@ -482,8 +501,6 @@ class Task():
         new task - the maximum number of simultaneously running ``Jobs``
         is limited.
         """
-        import backup_tar
-        import backup
         iter_and_path = backup_fs.WalkByID(self.pathID)
         if iter_and_path is None:
             lg.out(4, 'backup_control.Task.run ERROR %s not found in the index' % self.pathID)
@@ -496,11 +513,13 @@ class Task():
             except:
                 lg.exc()
                 return
-        if self.localPath and self.localPath != sourcePath:
-            lg.warn('local path were changed: %s -> %s' % (self.localPath, sourcePath))
-        self.localPath = sourcePath
-        if not bpio.pathExist(sourcePath):
-            lg.warn('path not exist: %s' % sourcePath)
+        if not self.localPath:
+            self.localPath = sourcePath
+            lg.out('backup_control.Task.run local path was populated from catalog: %s' % self.localPath)
+        if self.localPath != sourcePath:
+            lg.warn('local path is differ from catalog copy: %s != %s' % (self.localPath, sourcePath))
+        if not bpio.pathExist(self.localPath):
+            lg.warn('path not exist: %s' % self.localPath)
             reactor.callLater(0, OnTaskFailed, self.pathID, 'not exist')
             return
         dataID = misc.NewBackupID()
@@ -511,46 +530,52 @@ class Task():
             while itemInfo.has_version(dataID + str(i)):
                 i += 1
             dataID += str(i)
-        backupID = self.pathID + '/' + dataID
+        self.backupID = self.pathID + '/' + dataID
+        if self.backupID in jobs():
+            lg.warn('backup job %s already started' % self.backupID)
+            return
         try:
-            backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), backupID)
+            backup_fs.MakeLocalDir(settings.getLocalBackupsDir(), self.backupID)
         except:
             lg.exc()
             lg.out(4, 'backup_control.Task.run ERROR creating destination folder for %s' % self.pathID)
             # self.defer.callback('error', self.pathID)
             return
         compress_mode = 'bz2'  # 'none' # 'gz'
-        if bpio.pathIsDir(sourcePath):
-            backupPipe = backup_tar.backuptar(sourcePath, compress=compress_mode)
+        if bpio.pathIsDir(self.localPath):
+            backupPipe = backup_tar.backuptar(self.localPath, compress=compress_mode)
         else:
-            backupPipe = backup_tar.backuptarfile(sourcePath, compress=compress_mode)
+            backupPipe = backup_tar.backuptarfile(self.localPath, compress=compress_mode)
         backupPipe.make_nonblocking()
         job = backup.backup(
-            backupID, backupPipe,
-            OnJobDone, OnBackupBlockReport,
-            settings.getBackupBlockSize(),
-            sourcePath)
-        jobs()[backupID] = job
+            self.backupID,
+            backupPipe,
+            finishCallback=self._on_job_done,
+            blockResultCallback=OnBackupBlockReport,
+            blockSize=settings.getBackupBlockSize(),
+            sourcePath=self.localPath,
+        )
+        jobs()[self.backupID] = job
         itemInfo.add_version(dataID)
         if itemInfo.type in [backup_fs.PARENT, backup_fs.DIR]:
-            dirsize.ask(sourcePath, OnFoundFolderSize, (self.pathID, dataID))
+            dirsize.ask(self.localPath, OnFoundFolderSize, (self.pathID, dataID))
         else:
-            jobs()[backupID].totalSize = os.path.getsize(sourcePath)
-        jobs()[backupID].automat('start')
+            jobs()[self.backupID].totalSize = os.path.getsize(self.localPath)
+        jobs()[self.backupID].automat('start')
         reactor.callLater(0, FireTaskStartedCallbacks, self.pathID, dataID)
         lg.out(4, 'backup_control.Task-%d.run [%s/%s], size=%d, %s' % (
-            self.number, self.pathID, dataID, itemInfo.size, sourcePath))
+            self.number, self.pathID, dataID, itemInfo.size, self.localPath))
 
 #------------------------------------------------------------------------------
 
 
 def PutTask(pathID, localPath=None):
     """
-    Creates a new ``Task`` and append it to the list of tasks.
+    Creates a new backup ``Task`` and append it to the list of tasks.
     """
     t = Task(pathID, localPath)
     tasks().append(t)
-    return t.number
+    return t
 
 
 def HasTask(pathID):
@@ -726,9 +751,10 @@ def StartSingle(pathID, localPath=None):
     A high level method to start a backup of single file or folder.
     """
     from storage import backup_monitor
-    PutTask(pathID, localPath)
+    t = PutTask(pathID, localPath)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.A, 'restart')
+    return t
 
 
 def StartRecursive(pathID, localPath=None):

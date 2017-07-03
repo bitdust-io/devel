@@ -336,7 +336,7 @@ class PacketIn(automat.Automat):
                     self.host, os.path.basename(self.filename),))
             # net_misc.ConnectionFailed(None, proto, 'receiveStatusReport %s' % host)
             try:
-                fd, _ = tmpfile.make('other', '.inbox.error')
+                fd, _ = tmpfile.make('error', '.inbox')
                 data = bpio.ReadBinaryFile(self.filename)
                 os.write(fd, 'from %s:%s %s\n' % (self.proto, self.host, self.status))
                 os.write(fd, str(data))

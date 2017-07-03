@@ -820,7 +820,6 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
     from web import control
     from system import bpio
     from lib import packetid
-    print pathID_or_backupID_or_localPath, destinationPath
     if not packetid.Valid(pathID_or_backupID_or_localPath):
         localPath = bpio.portablePath(unicode(pathID_or_backupID_or_localPath))
         pathID = backup_fs.ToID(localPath)
@@ -855,7 +854,7 @@ def restore_single(pathID_or_backupID_or_localPath, destinationPath=None):
         lg.out(4, 'api.restore_single %s in process' % backupID)
         return ERROR('download not possible, uploading %s is in process' % backupID)
     pathID, version = packetid.SplitBackupID(backupID)
-    if backup_control.HasTask(pathID):
+    if restore_monitor.IsWorking(backupID):
         lg.out(4, 'api.restore_single %s scheduled already' % pathID)
         return OK('downloading task for %s already scheduled' % pathID)
     localPath = backup_fs.ToPath(pathID)

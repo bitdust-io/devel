@@ -467,19 +467,19 @@ class restore(automat.Automat):
     def doReportAborted(self, arg):
         lg.out(6, "restore.doReportAborted " + self.BackupID)
         self.Done = True
-        self.MyDeferred.callback(self.BackupID + ' aborted')
+        self.MyDeferred.callback('aborted')
         events.send('restore-aborted', dict(backup_id=self.BackupID))
 
     def doReportFailed(self, arg):
         lg.out(6, "restore.doReportFailed ERROR %s : the block does not look good" % str(arg))
         self.Done = True
-        self.MyDeferred.errback(self.BackupID + ' failed')
+        self.MyDeferred.callback('failed')
         events.send('restore-failed', dict(backup_id=self.BackupID, block_number=self.BlockNumber))
 
     def doReportDone(self, arg):
         # lg.out(6, "restore.doReportDone - restore has finished. All is well that ends well !!!")
         self.Done = True
-        self.MyDeferred.callback(self.BackupID + ' done')
+        self.MyDeferred.callback('done')
         events.send('restore-done', dict(backup_id=self.BackupID))
 
     def doDestroyMe(self, arg):

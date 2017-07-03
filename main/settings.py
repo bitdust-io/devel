@@ -1203,7 +1203,15 @@ def CertificateFiles():
 
 
 def DHTDBFile():
+    """
+    """
     return os.path.join(MetaDataDir(), 'dhtdb')
+
+
+def FTPServerCredentialsFile():
+    """
+    """
+    return os.path.join(MetaDataDir(), 'ftpcredentials')
 
 #------------------------------------------------------------------------------
 #--- BINARY FILES -------------------------------------------------------------
@@ -1304,16 +1312,20 @@ def FontImageFile():
 
 def DefaultXMLRPCPort():
     """
-    
     """
     return 8082
 
 
 def DefaultJsonRPCPort():
     """
-    
     """
     return 8083
+
+
+def DefaultFTPPort():
+    """
+    """
+    return 8021
 
 
 def IdentityServerPort():
@@ -1432,7 +1444,7 @@ def getTempDir():
     return TempDir()
 
 #------------------------------------------------------------------------------
-#--- PROXY SERVER OPTIONS -----------------------------------------------------
+#--- OS PROXY SERVER OPTIONS --------------------------------------------------
 #------------------------------------------------------------------------------
 
 
@@ -1538,6 +1550,22 @@ def enableIdServer(enable=None):
     config.conf().setData('services/id-server/enabled', str(enable))
 
 
+def enableJsonRPCServer(enable=None):
+    """
+    """
+    if enable is None:
+        return config.conf().getBool('interface/api/json-rpc-enabled')
+    config.conf().setData('interface/api/json-rpc-enabled', str(enable))
+
+
+def enableFTPServer(enable=None):
+    """
+    """
+    if enable is None:
+        return config.conf().getBool('interface/ftp/enabled')
+    config.conf().setData('interface/ftp/enabled', str(enable))
+
+
 def getIdServerHost():
     """
     """
@@ -1577,13 +1605,25 @@ def setIdServerTCPPort(tcp_port):
 def getJsonRPCServerPort():
     """
     """
-    return config.conf().getInt('api/json-rpc-server/port', DefaultJsonRPCPort())
+    return config.conf().getInt('interface/api/json-rpc-port', DefaultJsonRPCPort())
 
 
-def setJsonRPCServerTCPPort(json_rpc_port):
+def setJsonRPCServerPort(json_rpc_port):
     """
     """
-    return config.conf().setInt("sapi/json-rpc-server/port", json_rpc_port)
+    return config.conf().setInt("interface/api/json-rpc-port", json_rpc_port)
+
+
+def getFTPServerPort():
+    """
+    """
+    return config.conf().getInt('interface/ftp/port', DefaultFTPPort())
+
+
+def setFTPServerPort(ftp_port):
+    """
+    """
+    return config.conf().setInt("interface/ftp/port", ftp_port)
 
 
 def getTransportPort(proto):
@@ -2290,8 +2330,11 @@ def _setUpDefaultSettings():
 
     Every option must have a default value!
     """
-    config.conf().setDefaultValue('api/json-rpc-server/enabled', 'true')
-    config.conf().setDefaultValue('api/json-rpc-server/port', DefaultJsonRPCPort())
+    config.conf().setDefaultValue('interface/api/json-rpc-enabled', 'true')
+    config.conf().setDefaultValue('interface/api/json-rpc-port', DefaultJsonRPCPort())
+
+    config.conf().setDefaultValue('interface/ftp/enabled', 'true')
+    config.conf().setDefaultValue('interface/ftp/port', DefaultFTPPort())
 
     config.conf().setDefaultValue('logs/debug-level', defaultDebugLevel())
     config.conf().setDefaultValue('logs/memdebug-enabled', 'false')
@@ -2488,6 +2531,7 @@ def _checkCustomDirectories():
         config.conf().setData('paths/restore', DefaultRestoreDir())
 
 #-------------------------------------------------------------------------------
+
 
 if __name__ == '__main__':
     init()

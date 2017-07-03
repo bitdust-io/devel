@@ -58,12 +58,15 @@ def UniqueID():
     We wrap around every billion, old packets should be gone by then
     """
     global _LastUniqueNumber
+    if _LastUniqueNumber == 0:
+        _LastUniqueNumber = int(time.time() * 100.0)
     _LastUniqueNumber += 1
-    if _LastUniqueNumber > 1000000000:
-        _LastUniqueNumber = 0
-    inttime = int(time.time() * 100.0)
-    if _LastUniqueNumber < inttime:
-        _LastUniqueNumber = inttime
+    if _LastUniqueNumber > 100000000000000:
+        import pdb; pdb.set_trace()
+        _LastUniqueNumber = int(time.time() * 100.0)
+    # inttime = int(time.time() * 100.0)
+    # if _LastUniqueNumber < inttime:
+    #     _LastUniqueNumber = inttime
     return str(_LastUniqueNumber)
 
 

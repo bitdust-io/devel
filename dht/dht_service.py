@@ -221,7 +221,7 @@ def set_node_data(key, value):
 
 def on_nodes_found(result, node_id64):
     global _ActiveLookup
-    _ActiveLookup = None
+    # _ActiveLookup = None
     okay(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_nodes_found   node_id=[%s], %d nodes found' % (node_id64, len(result)))
@@ -229,7 +229,7 @@ def on_nodes_found(result, node_id64):
 
 def on_lookup_failed(result, node_id64):
     global _ActiveLookup
-    _ActiveLookup = None
+    # _ActiveLookup = None
     error(result, 'find_node', node_id64)
     if _Debug:
         lg.out(_DebugLevel, 'dht_service.on_lookup_failed   node_id=[%s], result=%s' % (node_id64, result))
@@ -237,7 +237,7 @@ def on_lookup_failed(result, node_id64):
 
 def find_node(node_id):
     global _ActiveLookup
-    if _ActiveLookup:
+    if _ActiveLookup and not _ActiveLookup.called:
         if _Debug:
             lg.out(_DebugLevel, 'dht_service.find_node SKIP, already started')
         return _ActiveLookup
@@ -247,8 +247,8 @@ def find_node(node_id):
     if not node():
         return fail(Exception('DHT service is off'))
     _ActiveLookup = node().iterativeFindNode(node_id)
-    _ActiveLookup.addCallback(on_nodes_found, node_id64)
     _ActiveLookup.addErrback(on_lookup_failed, node_id64)
+    _ActiveLookup.addCallback(on_nodes_found, node_id64)
     return _ActiveLookup
 
 #------------------------------------------------------------------------------

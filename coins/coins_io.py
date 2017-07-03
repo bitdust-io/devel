@@ -129,7 +129,6 @@ def add_signature(coin_json, role):
     _coin[role] = {
         'idurl': my_id.getLocalID(),
         'pubkey': key.MyPublicKey(),
-        'signature': '',
     }
     coin_hash = get_coin_hash(_coin)
     _coin[role]['signature'] = key.Sign(coin_hash)

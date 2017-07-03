@@ -49,25 +49,22 @@ class SupplierContractsService(LocalService):
 
     def start(self):
         from main import events
-        events.add_subscriber(self.on_new_customer_accepted, 'new-customer-accepted')
-        from p2p import p2p_service_seeker
-        p2p_service_seeker.connect_random_node('service_miner')
+        from contacts import contactsdb
+        from coins import supplier_contract_executor
+        for customer_idurl in contactsdb.customers():
+            supplier_contract_executor.init_contract(customer_idurl)
+        events.add_subscriber(self._on_customer_modified, 'customer-modified')
         return True
 
     def stop(self):
+        from main import events
+        from coins import supplier_contract_executor
+        events.remove_subscriber(self._on_customer_modified)
+        for customer_idurl in list(supplier_contract_executor.all_contracts.keys()):
+            supplier_contract_executor.shutdown_contract(customer_idurl)
         return True
 
-    def on_new_customer_accepted(self, e):
-        pass
-
-    def on_new_customer_denied(self, e):
-        pass
-
-    def on_existing_customer_denied(self, e):
-        pass
-
-    def on_existing_customer_accepted(self, e):
-        pass
-
-
-
+    def _on_customer_modified(self, evt):
+        from coins import supplier_contract_executor
+        if evt.data.get('idurl'):
+            supplier_contract_executor.recheck_contract(evt.data['idurl'])

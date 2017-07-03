@@ -79,6 +79,7 @@ from logs import lg
 from system import bpio
 
 from main import settings
+from main import config
 
 from automats import automat
 from automats import global_state
@@ -255,8 +256,12 @@ class Initializer(automat.Automat):
         lg.out(2, 'initializer.doInitInterfaces')
 #         from interface import xmlrpc_server
 #         xmlrpc_server.init()
-        from interface import jsonrpc_server
-        jsonrpc_server.init()
+        if settings.enableFTPServer():
+            from interface import ftp_server
+            ftp_server.init()
+        if settings.enableJsonRPCServer():
+            from interface import jsonrpc_server
+            jsonrpc_server.init()
         reactor.callLater(0, self.automat, 'init-interfaces-done')
 
     def doInitModules(self, arg):

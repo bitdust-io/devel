@@ -45,7 +45,7 @@ try:
 except:
     sys.exit('Error initializing twisted.internet.reactor in lookup.py')
 
-from twisted.internet.defer import DeferredList, Deferred, fail
+from twisted.internet.defer import DeferredList, Deferred
 
 #------------------------------------------------------------------------------
 
@@ -65,7 +65,6 @@ _ProcessMethod = None  # method to do some stuff with discovered IDURL
 
 def init(lookup_method=None, observe_method=None, process_method=None):
     """
-    
     """
     global _LookupMethod
     global _ObserveMethod
@@ -79,7 +78,6 @@ def init(lookup_method=None, observe_method=None, process_method=None):
 
 def shutdown():
     """
-    
     """
     global _LookupMethod
     global _ObserveMethod
@@ -223,13 +221,9 @@ class DiscoveryTask(object):
         if self.lookup_task and not self.lookup_task.called:
             lg.warn('lookup_nodes() method already called')
             return self.lookup_task
-#         if self.lookup_now:
-#             lg.warn('lookup_nodes() method already running')
-#             return self.lookup_task
         if _Debug:
             lg.out(_DebugLevel, 'lookup.DiscoveryTask.start')
         return self._lookup_nodes()
-        # return self.lookup_task
 
     def stop(self):
         if _Debug:
@@ -252,16 +246,14 @@ class DiscoveryTask(object):
     def _lookup_nodes(self):
         if _Debug:
             lg.out(_DebugLevel, 'lookup._lookup_nodes')
+        if self.lookup_task and not self.lookup_task.called:
+            if _Debug:
+                lg.out(_DebugLevel, '    SKIP, already started')
+            return self.lookup_task
         self.lookup_now = True
         self.lookup_task = self.lookup_method()
         self.lookup_task.addCallback(self._on_nodes_discovered)
         self.lookup_task.addErrback(self._on_lookup_failed)
-        # d.addErrback(lambda err: setattr(self, 'lookup_now', False))
-        # self.lookup_task = new_lookup
-        # self.lookup_task.addBoth(lambda x: setattr(self, 'lookup_task', None))
-        # if self.result_defer:
-        # self.lookup_task.addErrback(lambda err: [self._report_result([]), self._close()])
-        # self.lookup_task.addErrback(lambda err: None if self.stopped else schedule_next_lookup(self))
         return self.lookup_task
 
     def _observe_nodes(self, nodes):
@@ -376,7 +368,6 @@ class DiscoveryTask(object):
         if _Debug:
             lg.out(_DebugLevel, 'lookup._on_nodes_discovered : %s, stopped=%s' % (str(nodes), self.stopped))
         self.lookup_now = False
-        self.lookup_task = None
         if self.stopped:
             lg.warn('on_nodes_discovered finished, but discovery process was already stopped')
             self._close()
@@ -395,7 +386,6 @@ class DiscoveryTask(object):
         if _Debug:
             lg.out(_DebugLevel, 'lookup._on_lookup_failed %s' % err)
         self.lookup_now = False
-        self.lookup_task = None
         if self.stopped:
             lg.warn('discovery process already stopped')
             self._close()

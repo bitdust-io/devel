@@ -350,7 +350,6 @@ class CoinsMiner(automat.Automat):
             return
         # TODO:
 
-
     def doDestroyMe(self, arg):
         """
         Action method.
@@ -370,17 +369,21 @@ class CoinsMiner(automat.Automat):
         if newpacket.Command == commands.Coin():
             coins_list = coins_io.read_coins_from_packet(newpacket)
             if not coins_list:
-                # p2p_service.SendFail(newpacket, 'failed to read coins from packet')
-                return False
-            new_coins = []
-            for coin_json in coins_list:
-                if not coins_io.validate_coin(coin_json):
-                    lg.warn('coin not valid: %s' % coin_json)
-                    continue
-                if not coins_io.verify_signature(coin_json, 'creator'):
-                    lg.warn('creator signature is not valid: %s' % coin_json)
-                    continue
-                new_coins.append(coin_json)
+                p2p_service.SendFail(newpacket, 'failed to read coins from packet')
+                return True
+            if len(coins_list) != 1:
+                p2p_service.SendFail(newpacket, 'expected only one coin to be mined')
+                return True
+            coin_json = coins_list[0]
+            if not coins_io.validate_coin(coin_json):
+                lg.warn('coin not valid: %s' % coin_json)
+                p2p_service.SendFail(newpacket, 'coin not valid')
+                return True
+            if not coins_io.verify_signature(coin_json, 'creator'):
+                lg.warn('creator signature is not valid: %s' % coin_json)
+                p2p_service.SendFail(newpacket, 'creator signature is not valid')
+                return True
+            new_coins.append(coin_json)
             if not new_coins:
                 # p2p_service.SendFail(newpacket, 'did not received any coins to mine')
                 return False

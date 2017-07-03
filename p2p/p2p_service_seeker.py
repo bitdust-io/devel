@@ -196,8 +196,11 @@ class P2PServiceSeeker(automat.Automat):
         Action method.
         """
         self.lookup_task = lookup.start()
-        self.lookup_task.result_defer.addCallback(self._nodes_lookup_finished)
-        self.lookup_task.result_defer.addErrback(lambda err: self.automat('users-not-found'))
+        if self.lookup_task.result_defer:
+            self.lookup_task.result_defer.addCallback(self._nodes_lookup_finished)
+            self.lookup_task.result_defer.addErrback(lambda err: self.automat('users-not-found'))
+        else:
+            self.automat('users-not-found')
 
     def doStopLookup(self, arg):
         """

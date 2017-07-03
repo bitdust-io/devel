@@ -32,13 +32,24 @@ placed in the BitDust data directory. All files are divided into several
 sub folders.
 """
 
+#------------------------------------------------------------------------------
+
+_Debug = False
+_DebugLevel = 10
+
+#------------------------------------------------------------------------------
+
 import os
 import tempfile
 import time
 
 from twisted.internet import task
 
+#------------------------------------------------------------------------------
+
 from logs import lg
+
+from system import bpio
 
 #------------------------------------------------------------------------------
 
@@ -70,8 +81,8 @@ _SubDirs = {
     'backup': 60 * 10,
     # 10 minutes for backup files
 
-    'restore': 60 * 10,
-    # 10 minutes for restoring files
+    'restore': 0,
+    # never remove files during restore process, they must be cleaned afterwards
 
     'raid': 60 * 10,
     # 10 minutes for backup files
@@ -79,7 +90,10 @@ _SubDirs = {
     'idsrv': 60,
     # 1 minute for incoming xml identity files
 
-    'other': 0,
+    'error': 60 * 60 * 24 * 30,
+    # store errors for one month
+
+    'all': 0,
     # other files. do not know when to remove
     # they can be even in another location
     # use register(name, filename)
@@ -176,7 +190,7 @@ def register(filepath):
     subdir, filename = os.path.split(filepath)
     name = os.path.basename(subdir)
     if name not in _FilesDict.keys():
-        name = 'other'
+        name = 'all'
     _FilesDict[name][filepath] = time.time()
 
 
@@ -196,7 +210,7 @@ def make(name, extension='', prefix=''):
     if _TempDirPath is None:
         init()
     if name not in _FilesDict.keys():
-        name = 'other'
+        name = 'all'
     try:
         fd, filename = tempfile.mkstemp(extension, prefix, subdir(name))
         _FilesDict[name][filename] = time.time()
@@ -204,8 +218,30 @@ def make(name, extension='', prefix=''):
         lg.out(1, 'tmpfile.make ERROR creating file in sub folder ' + name)
         lg.exc()
         return None, ''
-    # lg.out(18, 'tmpfile.make ' + filename)
+    if _Debug:
+        lg.out(_DebugLevel, 'tmpfile.make ' + filename)
     return fd, filename
+
+
+def make_dir(name, extension='', prefix=''):
+    """
+    """
+    global _TempDirPath
+    global _FilesDict
+    if _TempDirPath is None:
+        init()
+    if name not in _FilesDict.keys():
+        name = 'all'
+    try:
+        dirname = tempfile.mkdtemp(extension, prefix, subdir(name))
+        _FilesDict[name][dirname] = time.time()
+    except:
+        lg.out(1, 'tmpfile.make_dir ERROR creating folder in ' + name)
+        lg.exc()
+        return None
+    if _Debug:
+        lg.out(_DebugLevel, 'tmpfile.make_dir ' + dirname)
+    return dirname
 
 
 def erase(name, filename, why='no reason'):
@@ -228,16 +264,25 @@ def erase(name, filename, why='no reason'):
         lg.warn('%s not exist' % filename)
         return
 
-    if not os.access(filename, os.W_OK):
-        lg.warn('%s no write permissions' % filename)
-        return
+    if os.path.isfile(filename):
+        if not os.access(filename, os.W_OK):
+            lg.warn('%s no write permissions' % filename)
+            return
+        try:
+            os.remove(filename)
+            if _Debug:
+                lg.out(_DebugLevel, 'tmpfile.erase [%s] : "%s"' % (filename, why))
+        except:
+            lg.out(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
+            # exc()
 
-    try:
-        os.remove(filename)
-        # lg.out(24, 'tmpfile.erase [%s] : "%s"' % (filename, why))
-    except:
-        lg.out(2, 'tmpfile.erase ERROR can not remove [%s], we tried because %s' % (filename, why))
-        # exc()
+    elif os.path.isdir(filename):
+        bpio.rmdir_recursive(filename, ignore_errors=True)
+        if _Debug:
+            lg.out(_DebugLevel, 'tmpfile.erase recursive [%s] : "%s"' % (filename, why))
+
+    else:
+        raise Exception('%s not exist' % filename)
 
 
 def throw_out(filepath, why='dont know'):
@@ -247,7 +292,7 @@ def throw_out(filepath, why='dont know'):
     """
     global _FilesDict
     global _SubDirs
-    subdir, filename = os.path.split(filepath)
+    subdir, _ = os.path.split(filepath)
     name = os.path.basename(subdir)
     erase(name, filepath, why)
 
@@ -256,7 +301,8 @@ def collect():
     """
     Removes old temporary files.
     """
-    # lg.out(10, 'tmpfile.collect')
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'tmpfile.collect')
     global _FilesDict
     global _SubDirs
     erase_list = []
@@ -281,7 +327,8 @@ def collect():
     for name, filename in erase_list:
         erase(name, filename, 'collected')
 
-    lg.out(6, 'tmpfile.collect %d files erased' % len(erase_list))
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'tmpfile.collect %d files erased' % len(erase_list))
 
     del erase_list
 
@@ -294,10 +341,12 @@ def startup_clean():
     """
     global _TempDirPath
     global _SubDirs
-    lg.out(6, 'tmpfile.startup_clean in %s' % _TempDirPath)
+    if _Debug:
+        lg.out(_DebugLevel - 4, 'tmpfile.startup_clean in %s' % _TempDirPath)
     if _TempDirPath is None:
         return
     counter = 0
+    limit_counts = 200
     for name in os.listdir(_TempDirPath):
         # we want to scan only our folders
         # do not want to be responsible of other files
@@ -316,12 +365,20 @@ def startup_clean():
                 continue
             for filename in os.listdir(subdir(name)):
                 filepath = os.path.join(subdir(name), filename)
-                filetime = os.stat(filepath).st_ctime
-                if time.time() - filetime > lifetime:
+                if os.path.isfile(filepath):
+                    filetime = os.stat(filepath).st_ctime
+                    if time.time() - filetime > lifetime:
+                        erase(name, filepath, 'startup cleaning')
+                        counter += 1
+                        if counter > limit_counts:
+                            break
+                elif os.path.isdir(filepath):
                     erase(name, filepath, 'startup cleaning')
                     counter += 1
-                    if counter > 200:
+                    if counter > limit_counts:
                         break
+                else:
+                    raise Exception('%s not exist' % filepath)
 
 #------------------------------------------------------------------------------
 

@@ -125,9 +125,9 @@ def _LinuxExcludeFunction(filename):
     Also should test that the file is readable and maybe that directory is executable.
     If tar gets stuff it can not read - it just stops and we the whole process is failed.
     """
+    # if filename.count(".bitdust"):
     # TODO: - must do more smart checking
-    if filename.count(".bitdust"):
-        return True
+    #     return True
     if not os.access(filename, os.R_OK):
         return True
     return False  # don't exclude the file
@@ -144,13 +144,14 @@ def _WindowsExcludeFunction(filename):
     os.access(filename, os.R_OK) == False to skip a file if I couldn't
     read it, but I did not get it to work every time. DWC.
     """
-    if (filename.lower().find("local settings\\temp") != -1) or (filename.lower().find(".bitdust") != -1):
+    if (filename.lower().find("local settings\\temp") != -1): #  or (filename.lower().find(".bitdust") != -1):
         return True
     if sys.version_info[:2] == (2, 7):
         if not os.access(filename, os.R_OK):
             return True
     # printlog(filename+'\n')
     return False  # don't exclude the file
+
 
 _ExcludeFunction = _LinuxExcludeFunction
 if platform.uname()[0] == 'Windows':

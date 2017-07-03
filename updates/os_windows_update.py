@@ -280,7 +280,7 @@ def download_and_replace_starter(output_func=None):
             lg.out(1, 'os_windows_update.download_and_replace_starter ERROR can not remove ' + filename)
         result.errback(Exception('error downloading starter'))
 
-    fileno, filename = tmpfile.make('other', '.starter')
+    fileno, filename = tmpfile.make('all', '.starter')
     os.close(fileno)
     d = net_misc.downloadHTTP(url, filename)
     d.addCallback(_done, filename)

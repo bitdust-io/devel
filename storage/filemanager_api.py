@@ -173,10 +173,11 @@ def _list(params):
             "id": item[2],
             "rights": "",
             "size": item[3],
+            "source_size": item[7].size,
             "date": item[4],
             "dirpath": item[5],
             "has_childs": item[6],
-            "content": '1' if item[7] else '',
+            "content": '1' if item[7].exist() else '',
             "versions": item[8],
         })
     return {'result': result, }

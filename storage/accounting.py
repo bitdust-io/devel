@@ -68,20 +68,28 @@ def init():
 #------------------------------------------------------------------------------
 
 
-def check_create_customers_quotas():
-    if not os.path.isfile(settings.CustomersSpaceFile()):
-        bpio._write_dict(settings.CustomersSpaceFile(),
-                         {'free': settings.getDonatedBytes()})
-        return True
-    return False
-
-
 def read_customers_quotas():
     return bpio._read_dict(settings.CustomersSpaceFile(), {})
 
 
 def write_customers_quotas(new_space_dict):
     return bpio._write_dict(settings.CustomersSpaceFile(), new_space_dict)
+
+
+def get_customer_quota(customer_idurl):
+    assert customer_idurl != 'free'
+    try:
+        return int(read_customers_quotas().get(customer_idurl, None))
+    except:
+        return None
+
+
+def check_create_customers_quotas():
+    if not os.path.isfile(settings.CustomersSpaceFile()):
+        bpio._write_dict(settings.CustomersSpaceFile(),
+                         {'free': settings.getDonatedBytes()})
+        return True
+    return False
 
 
 def count_consumed_space(space_dict=None):

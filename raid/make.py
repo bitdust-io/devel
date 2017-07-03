@@ -121,28 +121,6 @@ def WriteFile(filename, data):
     f.write(data)
     f.close()
 
-#
-#    try:
-#        tmpfilename = filename + ".new"
-#        f = open(tmpfilename, "wb")
-#        f.write(data)
-#        f.flush()
-#        #from http://docs.python.org/library/os.html on os.fsync
-#        os.fsync(f.fileno())
-#        f.close()
-#        #in Unix the rename will overwrite an existing file,
-#        #but in Windows it fails, so have to remove existing
-#        if platform.uname()[0] == "Windows" and os.path.exists(filename):
-#            os.remove(filename)
-#        os.rename(tmpfilename, filename)
-#    except:
-#        try:
-#            f.close() # make sure file gets closed
-#        except:
-#            pass
-#        return False
-#    return True
-
 #------------------------------------------------------------------------------
 
 # def raidmake(filename, eccmapname, backupId, blockNumber, targetDir=None, in_memory=True):

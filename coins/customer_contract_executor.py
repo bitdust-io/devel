@@ -26,13 +26,14 @@
 .. role:: red
 
 EVENTS:
+    * :red:`coin-failed`
+    * :red:`coin-published`
     * :red:`coins-received`
     * :red:`contract-extended`
     * :red:`contract-finished`
     * :red:`init`
-    * :red:`my-coin-failed`
-    * :red:`my-coin-sent`
     * :red:`recheck`
+    * :red:`request-failed`
     * :red:`shutdown`
     * :red:`supplier-coin-mined`
     * :red:`supplier-failed`
@@ -67,49 +68,49 @@ from userid import my_id
 
 #------------------------------------------------------------------------------
 
-_ActiveContracts = dict()  # provides CustomerContractExecutor object by supplier idurl
+_ActiveCustomerContracts = dict()  # provides CustomerContractExecutor object by supplier idurl
 
 #------------------------------------------------------------------------------
 
 def all_contracts():
     """
     """
-    global _ActiveContracts
-    return _ActiveContracts
+    global _ActiveCustomerContracts
+    return _ActiveCustomerContracts
 
 
 def init_contract(supplier_idurl):
     """
     """
-    global _ActiveContracts
-    if supplier_idurl in _ActiveContracts:
-        lg.warn('this supplier already have a contract started')
-        return _ActiveContracts[supplier_idurl]
+    global _ActiveCustomerContracts
+    if supplier_idurl in _ActiveCustomerContracts:
+        lg.warn('contract with supplier %s already started' % supplier_idurl)
+        return _ActiveCustomerContracts[supplier_idurl]
     cce = CustomerContractExecutor(supplier_idurl)
     cce.automat('init')
-    _ActiveContracts[supplier_idurl] = cce
-    return _ActiveContracts[supplier_idurl]
+    _ActiveCustomerContracts[supplier_idurl] = cce
+    return _ActiveCustomerContracts[supplier_idurl]
 
 
 def shutdown_contract(supplier_idurl):
     """
     """
-    global _ActiveContracts
-    if supplier_idurl not in _ActiveContracts:
+    global _ActiveCustomerContracts
+    if supplier_idurl not in _ActiveCustomerContracts:
         lg.warn('no contract started for given supplier')
         return False
-    _ActiveContracts[supplier_idurl].automat('shutdown')
-    _ActiveContracts.pop(supplier_idurl)
+    _ActiveCustomerContracts[supplier_idurl].automat('shutdown')
+    _ActiveCustomerContracts.pop(supplier_idurl)
     return True
 
 
 def get_contract(supplier_idurl):
     """
     """
-    global _ActiveContracts
-    if supplier_idurl not in _ActiveContracts:
+    global _ActiveCustomerContracts
+    if supplier_idurl not in _ActiveCustomerContracts:
         return None
-    return _ActiveContracts[supplier_idurl]
+    return _ActiveCustomerContracts[supplier_idurl]
 
 
 def recheck_contract(supplier_idurl):
@@ -136,7 +137,7 @@ class CustomerContractExecutor(automat.Automat):
 
     def __init__(self, supplier_idurl):
         self.supplier_idurl = supplier_idurl
-        name = 'executor_%s' % nameurl.GetName(self.supplier_idurl)
+        name = 'customer_executor_%s' % nameurl.GetName(self.supplier_idurl)
         automat.Automat.__init__(self, name, 'AT_STARTUP', _DebugLevel, _Debug)
 
     def A(self, event, arg):
@@ -154,47 +155,37 @@ class CustomerContractExecutor(automat.Automat):
                 self.state = 'SUPERVISE'
                 self.doSchedulePayment(arg)
                 self.doSuperviseSupplier(arg)
-            elif event == 'timer-1min':
-                self.state = 'OBSCURE'
+            elif event == 'timer-1min' or event == 'request-failed':
+                self.state = 'UNCLEAR'
         #---SUPERVISE---
         elif self.state == 'SUPERVISE':
-            if event == 'time-to-pay':
-                self.state = 'NEW_COIN!'
-                self.doSendSuccessCoin(arg)
-            elif event == 'timer-5min':
+            if event == 'timer-5min':
                 self.doSuperviseSupplier(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doCancelPayment(arg)
                 self.doDestroyMe(arg)
+            elif event == 'time-to-pay' and self.isOkToContinue(arg):
+                self.state = 'MY_COIN!'
+                self.doSendNextCoin(arg)
+            elif event == 'time-to-pay' and not self.isOkToContinue(arg):
+                self.state = 'MY_COIN!'
+                self.doSendLastCoin(arg)
             elif event == 'supplier-failed':
-                self.state = 'FINISHED'
+                self.state = 'MY_COIN!'
                 self.doCancelPayment(arg)
-                self.doSendFailedCoin(arg)
-                self.doReplaceSupplier(arg)
-        #---NEW_COIN!---
-        elif self.state == 'NEW_COIN!':
-            if event == 'my-coin-sent' and self.isOkToContinue(arg):
-                self.state = 'SUPPLIER_COIN?'
-            elif event == 'shutdown':
-                self.state = 'CLOSED'
-                self.doDestroyMe(arg)
-            elif event == 'my-coin-failed':
-                self.state = 'OBSCURE'
-            elif event == 'my-coin-sent' and not self.isOkToContinue(arg):
-                self.state = 'FINISHED'
-                self.doSendFinishCoin(arg)
+                self.doSendLastCoin(arg)
                 self.doReplaceSupplier(arg)
         #---SUPPLIER_COIN?---
         elif self.state == 'SUPPLIER_COIN?':
             if event == 'supplier-coin-mined':
                 self.state = 'EXTENSION?'
-                self.doRequestExtension(arg)
-            elif event == 'timer-30min':
-                self.state = 'OBSCURE'
+                self.doRequestService(arg)
             elif event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
+            elif event == 'timer-30min':
+                self.state = 'UNCLEAR'
         #---EXTENSION?---
         elif self.state == 'EXTENSION?':
             if event == 'shutdown':
@@ -213,20 +204,38 @@ class CustomerContractExecutor(automat.Automat):
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
-        #---OBSCURE---
-        elif self.state == 'OBSCURE':
+        #---CLOSED---
+        elif self.state == 'CLOSED':
+            pass
+        #---MY_COIN!---
+        elif self.state == 'MY_COIN!':
+            if event == 'coin-published' and not self.isChainClosed(arg):
+                self.state = 'SUPPLIER_COIN?'
+            elif event == 'shutdown':
+                self.state = 'CLOSED'
+                self.doDestroyMe(arg)
+            elif event == 'coin-failed':
+                self.state = 'UNCLEAR'
+            elif event == 'coin-published' and self.isChainClosed(arg):
+                self.state = 'FINISHED'
+                self.doSendFinishCoin(arg)
+                self.doReplaceSupplier(arg)
+        #---UNCLEAR---
+        elif self.state == 'UNCLEAR':
             if event == 'shutdown':
                 self.state = 'CLOSED'
                 self.doDestroyMe(arg)
             elif event == 'recheck':
                 self.state = 'READ_COINS?'
                 self.doRequestCoins(arg)
-        #---CLOSED---
-        elif self.state == 'CLOSED':
-            pass
         return None
 
     def isOkToContinue(self, arg):
+        """
+        Condition method.
+        """
+
+    def isChainClosed(self, arg):
         """
         Condition method.
         """
@@ -240,6 +249,9 @@ class CustomerContractExecutor(automat.Automat):
             chain='supplier_customer',
             provider_idurl=self.supplier_idurl,
             consumer_idurl=my_id.getLocalID(),
+        ).addCallbacks(
+            self._on_coins_received,
+            self._on_coins_failed,
         )
 
     def doSuperviseSupplier(self, arg):
@@ -258,12 +270,22 @@ class CustomerContractExecutor(automat.Automat):
         Action method.
         """
 
-    def doRequestExtension(self, arg):
+    def doRequestService(self, arg):
         """
         Action method.
         """
 
     def doReplaceSupplier(self, arg):
+        """
+        Action method.
+        """
+
+    def doSendNextCoin(self, arg):
+        """
+        Action method.
+        """
+
+    def doSendLastCoin(self, arg):
         """
         Action method.
         """
@@ -289,3 +311,13 @@ class CustomerContractExecutor(automat.Automat):
         """
         self.unregister()
 
+    def _on_coins_received(self, coins):
+        if _Debug:
+            lg.out(_DebugLevel, 'customer_contract_executor._on_coins_received %s' % coins)
+        if not coins:
+            self.automat('')
+            return
+
+    def _on_coins_failed(self, fails):
+        if _Debug:
+            lg.warn(str(fails))

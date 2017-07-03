@@ -94,7 +94,9 @@ def shutdown(x=None):
     from lib import net_misc
     from updates import git_proc
     from interface import jsonrpc_server
+    from interface import ftp_server
     dl = []
+    ftp_server.shutdown()
     jsonrpc_server.shutdown()
     driver.shutdown()
     eccmap.shutdown()

@@ -236,7 +236,9 @@ class ProxyReceiver(automat.Automat):
             wide=True,
             callbacks={
                 commands.Ack(): lambda response, info: self.automat('ack-received', (response, info)),
-                commands.Fail(): lambda x: self.automat('nodes-not-found')})
+                commands.Fail(): lambda response, info: self.automat('nodes-not-found'),
+            },
+        )
 
     def doSendRequestService(self, arg):
         """
@@ -260,7 +262,9 @@ class ProxyReceiver(automat.Automat):
             self.router_idurl, service_info,
             callbacks={
                 commands.Ack(): self._request_service_ack,
-                commands.Fail(): self._request_service_fail})
+                commands.Fail(): self._request_service_fail,
+            },
+        )
         self.request_service_packet_id.append(request.PacketID)
 
     def doSendCancelService(self, arg):
@@ -502,6 +506,7 @@ def main():
     from twisted.internet import reactor
     reactor.callWhenRunning(A, 'init')
     reactor.run()
+
 
 if __name__ == "__main__":
     main()

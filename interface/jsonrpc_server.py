@@ -35,7 +35,7 @@ import pprint
 import traceback
 
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, succeed, fail
+from twisted.internet.defer import Deferred, succeed
 from twisted.web import server
 
 if __name__ == '__main__':
@@ -56,11 +56,14 @@ import api
 
 _JsonRPCServer = None
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 
 def init(json_rpc_port=None):
     global _JsonRPCServer
     lg.out(4, 'jsonrpc_server.init')
+    if _JsonRPCServer:
+        lg.warn('already started')
+        return
     from main import settings
     from system import bpio
     if not json_rpc_port:
@@ -323,6 +326,7 @@ class BitDustJsonRPCServer(JSONRPCServer):
     #     return api.
 
 #------------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     lg.set_debug_level(20)
