@@ -393,7 +393,7 @@ def backup_start_id(pathID):
     return ERROR('item %s not found' % pathID)
 
 
-def backup_start_path(path, bind_local_path=True):
+def backup_start_path(path, mount_path=None, key_id=None):
     """
     Start uploading file or folder to remote nodes. It will assign a new path
     ID to that path and add it to the catalog. If bind_local_path is False all
@@ -408,7 +408,7 @@ def backup_start_path(path, bind_local_path=True):
 
     Otherwise item will be created in the top level of the catalog
     and final ID will be just a single unique number.
-    So if bind_local_path is True it will act like backup_map_path()
+    So if mount_path is set it will act like backup_map_path()
     and start the backup process after that.
     Return:
         {'status': 'OK',
@@ -430,32 +430,37 @@ def backup_start_path(path, bind_local_path=True):
     result = ''
     pathID = backup_fs.ToID(localPath)
     if pathID is None:
-        if bind_local_path:
+        if mount_path:
+            parent_path = os.path.dirname(mount_path)
+            if backup_fs.IsFile(parent_path):
+                return ERROR('mount path can not be created, file already exist: %s' % parent_path)
+            iter_and_iterID = backup_fs.GetIteratorsByPath(parent_path)
+            if iter_and_iterID is None:
+                _, parent_iter, parent_iterID = backup_fs.AddDir(parent_path, read_stats=False)
+                return ERROR('mount path already exist in catalog')
+            pathID, _, _ = backup_fs.MapPath(localPath, read_stats=True, iter=parent_iter, iterID=parent_iterID, keyID=key_id)
             fileorfolder = 'folder' if bpio.pathIsDir(localPath) else 'file'
-            pathID, _, _ = backup_fs.MapPath(localPath, read_stats=True)
             if fileorfolder == 'folder':
                 dirsize.ask(localPath, backup_control.OnFoundFolderSize, (pathID, None))
         else:
             if bpio.pathIsDir(localPath):
                 fileorfolder = 'folder'
-                pathID, _, _ = backup_fs.AddDir(localPath, read_stats=True)
+                pathID, _, _ = backup_fs.AddDir(localPath, read_stats=True, key_id=key_id)
                 result += 'new folder was added to catalog: %s, ' % localPath
             else:
                 fileorfolder = 'file'
-                pathID, _, _ = backup_fs.AddFile(localPath, read_stats=True)
+                pathID, _, _ = backup_fs.AddFile(localPath, read_stats=True, key_id=key_id)
         result += 'uploading of item %s started, ' % pathID
         result += 'new %s was added to catalog: %s, ' % (fileorfolder, localPath)
     else:
-        if backup_fs.IsDirID(pathID):
-            fileorfolder = 'folder'
-        elif backup_fs.IsFileID(pathID):
-            fileorfolder = 'file'
-        else:
-            lg.out(4, 'api.backup_start_path ERROR %s OK!' % path)
-            return ERROR('existing item has wrong type')
+        item_info = backup_fs.GetByID(pathID)
+        if item_info is None:
+            lg.out(4, 'api.backup_start_path ERROR failed reading item %s' % pathID)
+            return ERROR('failed reading item %s' % pathID)
+        fileorfolder = 'file' if item_info.type == backup_fs.FILE else 'folder'
         result += 'uploading of item %s started, ' % pathID
         result += 'local %s path is: %s' % (fileorfolder, localPath)
-    backup_control.StartSingle(pathID, localPath)
+    backup_control.StartSingle(pathID, localPath, keyID=item_info.key_id)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', pathID), ])
@@ -507,7 +512,7 @@ def backup_map_path(path, mount_path, key_id=None):
         extra_fields={'id': newPathID, 'type': fileorfolder})
 
 
-def backup_dir_add(dirpath):
+def backup_dir_add(dirpath, key_id=None):
     """
     Add given folder to the catalog but do not start uploading process. This
     method will create all sub folders in the catalog and keeps the same
@@ -528,7 +533,7 @@ def backup_dir_add(dirpath):
     pathID = backup_fs.ToID(dirpath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, _, _ = backup_fs.AddDir(dirpath, read_stats=True)
+    newPathID, _, _ = backup_fs.AddDir(dirpath, read_stats=True, keyID=key_id)
     dirsize.ask(dirpath, backup_control.OnFoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
     backup_control.Save()
@@ -537,7 +542,7 @@ def backup_dir_add(dirpath):
               extra_fields={'id': newPathID, 'type': 'folder'})
 
 
-def backup_file_add(filepath):
+def backup_file_add(filepath, key_id=None):
     """
     Add a single file to the catalog, skip uploading. This method will create
     all sub folders in the catalog and keeps the same structure as your local
@@ -557,7 +562,7 @@ def backup_file_add(filepath):
     pathID = backup_fs.ToID(filepath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, _, _ = backup_fs.AddFile(filepath, read_stats=True)
+    newPathID, _, _ = backup_fs.AddFile(filepath, read_stats=True, keyID=key_id)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])

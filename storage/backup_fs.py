@@ -411,7 +411,7 @@ def MakeID(iter, startID=-1):
 #------------------------------------------------------------------------------
 
 
-def AddFile(path, read_stats=False, iter=None, iterID=None):
+def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
     """
     Scan all components of the ``path`` and create an item in the index for
     that file.
@@ -448,7 +448,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
             # build a unique backup id for that file including all indexed ids
             resultID += '/' + str(id)
             # make new sub folder
-            ii = FSItemInfo(name, resultID.lstrip('/'), PARENT)
+            ii = FSItemInfo(name=name, path_id=resultID.lstrip('/'), typ=PARENT, key_id=keyID)
             if read_stats:
                 ii.read_stats(p)
             # we use 0 key as decimal value, all files and folders are strings - no conflicts possible 0 != '0'
@@ -469,7 +469,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
     id = MakeID(iter)
     resultID += '/' + str(id)
     resultID = resultID.lstrip('/')
-    ii = FSItemInfo(filename, path_id=resultID, typ=FILE)
+    ii = FSItemInfo(name=filename, path_id=resultID, typ=FILE, key_id=keyID)
     if read_stats:
         ii.read_stats(path)
     iter[ii.name()] = id
@@ -478,7 +478,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None):
     return resultID, iter, iterID
 
 
-def AddDir(path, read_stats=False, iter=None, iterID=None):
+def AddDir(path, read_stats=False, iter=None, iterID=None, keyID=None):
     """
     Add directory to the index, but do not read folder content.
 
@@ -512,7 +512,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
         if name not in iter:
             id = MakeID(iter)
             resultID += '/' + str(id)
-            ii = FSItemInfo(name, path_id=resultID.lstrip('/'), typ=PARENT)
+            ii = FSItemInfo(name, path_id=resultID.lstrip('/'), typ=PARENT, key_id=keyID)
             if read_stats:
                 ii.read_stats(p)
             iter[ii.name()] = {0: id}
@@ -527,7 +527,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None):
     return resultID.lstrip('/'), iter, iterID
 
 
-def AddLocalPath(localpath, read_stats=False):
+def AddLocalPath(localpath, read_stats=False, key_id=None):
     """
     Operate like ``AddDir()`` but also recursively reads the entire folder and
     put all items in the index. Parameter ``localpath`` can be a file or folder
@@ -567,7 +567,7 @@ def AddLocalPath(localpath, read_stats=False):
             if bpio.pathIsDir(p):
                 if name not in iter:
                     id = MakeID(iter, lastID)
-                    ii = FSItemInfo(name, (path_id + '/' + str(id)).lstrip('/'), DIR)
+                    ii = FSItemInfo(name=name, path_id=(path_id + '/' + str(id)).lstrip('/'), typ=DIR, key_id=key_id)
                     iter[ii.name()] = {0: id}
                     if read_stats:
                         ii.read_stats(p)
@@ -578,7 +578,7 @@ def AddLocalPath(localpath, read_stats=False):
                 c += recursive_read_dir(p, path_id + '/' + str(id), iter[name], iterID[id])
             else:
                 id = MakeID(iter, lastID)
-                ii = FSItemInfo(name, (path_id + '/' + str(id)).lstrip('/'), FILE)
+                ii = FSItemInfo(name=name, path_id=(path_id + '/' + str(id)).lstrip('/'), typ=FILE, key_id=key_id)
                 if read_stats:
                     ii.read_stats(p)
                 iter[ii.name()] = id
@@ -597,7 +597,7 @@ def AddLocalPath(localpath, read_stats=False):
     return None, None, None, 0
 
 
-def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, keyID=None):
+def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, key_id=None):
     """
     Acts like AddFile() but do not follow the directory structure. This just
     "map" some local path (file or dir) to one item  in the catalog - by default as a top level item.
@@ -612,7 +612,7 @@ def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, keyID=No
         iterID = fsID()
     # make an ID for the filename
     resultID = MakeID(iter, startID=startID)
-    ii = FSItemInfo(path, path_id=resultID, typ=FILE)
+    ii = FSItemInfo(path, path_id=resultID, typ=FILE, key_id=key_id)
     if read_stats:
         ii.read_stats(path)
     iter[ii.name()] = resultID

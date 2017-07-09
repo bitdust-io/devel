@@ -178,8 +178,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backups_id_list(self):
         return api.backups_id_list()
 
-    def jsonrpc_backup_start_path(self, path, bind_local_path=True):
-        return api.backup_start_path(path, bind_local_path=bind_local_path)
+    def jsonrpc_backup_start_path(self, path, mount_path=None, key_id=None):
+        return api.backup_start_path(path, mount_path=mount_path, key_id=key_id)
 
     def jsonrpc_backup_start_id(self, pathID):
         return api.backup_start_id(pathID)
@@ -187,11 +187,11 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backup_map_path(self, dirpath, mount_path, key_id=None):
         return api.backup_map_path(dirpath, mount_path=mount_path, key_id=key_id)
 
-    def jsonrpc_backup_dir_add(self, dirpath):
-        return api.backup_dir_add(dirpath)
+    def jsonrpc_backup_dir_add(self, dirpath, key_id=None):
+        return api.backup_dir_add(dirpath, key_id=key_id)
 
-    def jsonrpc_backup_file_add(self, filepath):
-        return api.backup_file_add(filepath)
+    def jsonrpc_backup_file_add(self, filepath, key_id=None):
+        return api.backup_file_add(filepath, key_id=key_id)
 
     def jsonrpc_backup_tree_add(self, dirpath):
         return api.backup_tree_add(dirpath)

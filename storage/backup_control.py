@@ -500,8 +500,9 @@ class Task():
 
     def __repr__(self):
         """
-        Return a string like "Task-5: 0/1/2/3 from
-        /home/veselin/Documents/myfile.txt".
+        Return a string like:
+
+            "Task-5: 0/1/2/3 from /home/veselin/Documents/myfile.txt"
         """
         return 'Task-%d(%s from %s)' % (self.number, self.pathID, self.localPath)
 
@@ -521,8 +522,7 @@ class Task():
 
     def run(self):
         """
-        Runs a new ``Job`` from that ``Task``.
-
+        Runs a new ``Job`` from that ``Task``
         Called from ``RunTasks()`` method if it is possible to start a
         new task - the maximum number of simultaneously running ``Jobs``
         is limited.
