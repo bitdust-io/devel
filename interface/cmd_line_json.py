@@ -600,10 +600,11 @@ def cmd_backup(opts, args, overDict, executablePath):
         tpl = jsontemplate.Template(templ.TPL_BACKUPS_TASKS_LIST)
         return call_jsonrpc_method_template_and_stop('backups_queue', tpl)
 
-    if len(args) >= 2 and args[1] in ['bind', 'map', ]:
+    if len(args) > 3 and args[1] in ['bind', 'map', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
+        key_id = args[4] if len(args) > 4 else None
         if os.path.exists(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_map_path', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_map_path', tpl, args[2], args[3], key_id)
         print_text('path %s not exist\n' % args[2])
         return 1
 
@@ -634,7 +635,7 @@ def cmd_backup(opts, args, overDict, executablePath):
             return call_jsonrpc_method_template_and_stop('backup_delete_id', tpl, args[2])
         return call_jsonrpc_method_template_and_stop('backup_delete_path', tpl, args[2])
 
-    if len(args) > 2 and args[1] in ['cancel', 'abort']:
+    if len(args) > 2 and args[1] in ['cancel', 'abort', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
         if packetid.IsBackupIDCorrect(args[2]):
             return call_jsonrpc_method_template_and_stop('backup_abort_running', tpl, args[2])
@@ -652,14 +653,14 @@ def cmd_backup(opts, args, overDict, executablePath):
             return 1
         return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[2])
 
-    if len(args) == 2:
-        tpl = jsontemplate.Template(templ.TPL_RAW)
-        if packetid.Valid(args[1]):
-            return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[1])
-        if not os.path.exists(os.path.abspath(args[1])):
-            print_text('path %s not exist\n' % args[1])
-            return 1
-        return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[1])
+#     if len(args) == 2:
+#         tpl = jsontemplate.Template(templ.TPL_RAW)
+#         if packetid.Valid(args[1]):
+#             return call_jsonrpc_method_template_and_stop('backup_start_id', tpl, args[1])
+#         if not os.path.exists(os.path.abspath(args[1])):
+#             print_text('path %s not exist\n' % args[1])
+#             return 1
+#         return call_jsonrpc_method_template_and_stop('backup_start_path', tpl, args[1])
 
     return 2
 

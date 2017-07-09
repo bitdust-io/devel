@@ -157,14 +157,14 @@ def restore_done(result, backupID, tarfilename, outputlocation, callback_method)
 #         callback(backupID, result)
 
 
-def Start(backupID, outputLocation, callback=None):
+def Start(backupID, outputLocation, callback=None, keyID=None):
     lg.out(8, 'restore_monitor.Start %s to %s' % (backupID, outputLocation))
     global _WorkingBackupIDs
     global _WorkingRestoreProgress
     if backupID in _WorkingBackupIDs.keys():
         return None
     outfd, outfilename = tmpfile.make('restore', '.tar.gz', backupID.replace('/', '_') + '_')
-    r = restore.restore(backupID, outfd)
+    r = restore.restore(backupID, outfd, keyID=keyID)
     r.MyDeferred.addCallback(restore_done, backupID, outfilename, outputLocation, callback)
     # r.MyDeferred.addErrback(restore_failed, outfilename, callback)
     r.set_block_restored_callback(block_restored_callback)

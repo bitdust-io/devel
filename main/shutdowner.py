@@ -95,7 +95,11 @@ def shutdown(x=None):
     from updates import git_proc
     from interface import jsonrpc_server
     from interface import ftp_server
+    from userid import my_id
+    from crypt import my_keys
     dl = []
+    my_keys.shutdown()
+    my_id.shutdown()
     ftp_server.shutdown()
     jsonrpc_server.shutdown()
     driver.shutdown()

@@ -369,7 +369,7 @@ class ProxyRouter(automat.Automat):
             key.SessionKeyType(),
             True,
             src,
-            EncryptFunc=lambda inp: key.EncryptStringPK(publickey, inp))
+            EncryptKey=lambda inp: key.EncryptStringPK(publickey, inp))
         routed_packet = signed.Packet(
             commands.Relay(),
             newpacket.OwnerID,

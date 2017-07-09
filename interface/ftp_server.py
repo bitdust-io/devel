@@ -301,8 +301,13 @@ class BitDustFTP(FTP):
         for itm in lst:
             if itm[1] == 'index':
                 continue
+            # known_size = max(itm[7].size, 0)
+            if itm[7].any_version():
+                known_size = itm[7].versions[itm[7].get_latest_version()][1]
+            else:
+                known_size = 0
             result.append((itm[1], [  # name
-                max(itm[7].size, 0),  # size
+                known_size,  # size
                 True if itm[0] == 'dir' else False,  # folder or file ?
                 filepath.Permissions(07777),  # permissions
                 0,  # hardlinks
@@ -353,6 +358,8 @@ class BitDustFTP(FTP):
         if not item:
             return defer.fail(FileNotFoundError(path))
         version = item.get_latest_version()
+        if version is None:
+            return defer.fail(FileNotFoundError(path))
         backupID = path_id + '/' + version
         if backup_control.IsBackupInProcess(backupID):
             # TODO: try older version, or return another error

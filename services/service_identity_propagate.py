@@ -69,6 +69,4 @@ class IdentityPropagateService(LocalService):
         contactsdb.shutdown()
         from contacts import identitycache
         identitycache.shutdown()
-        from userid import my_id
-        my_id.shutdown()
         return True

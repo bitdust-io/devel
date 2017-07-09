@@ -229,7 +229,8 @@ class BackupDBKeeper(automat.Automat):
             key.NewSessionKey(),
             key.SessionKeyType(),
             True,
-            src)
+            src,
+        )
         Payload = b.Serialize()
         for supplierId in contactsdb.suppliers():
             if not supplierId:

@@ -463,14 +463,15 @@ def backup_start_path(path, bind_local_path=True):
     return OK(result, extra_fields={'id': pathID, 'type': fileorfolder})
 
 
-def backup_map_path(path):
+def backup_map_path(path, mount_path, key_id=None):
     """
     Create a new top level item in the catalog and point it to given local
     path. This is the simplest way to upload a file and get an ID for that
-    remote copy. Return:
+    remote copy.
+    Return:
 
-    {'status': 'OK',  'result': [ 'new file was added: 1, local path is
-    /Users/veselin/Pictures/bitdust.png'],  'id': '1',  'type': 'file'}
+        {'status': 'OK',  'result': [ 'new file was added: 1, local path is
+        /Users/veselin/Pictures/bitdust.png'],  'id': '1',  'type': 'file'}
     """
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')
@@ -483,7 +484,16 @@ def backup_map_path(path):
     pathID = backup_fs.ToID(path)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, _, _ = backup_fs.MapPath(path, True)
+    if backup_fs.Exists(mount_path):
+        return ERROR('mount path already exist in catalog')
+    parent_path = os.path.dirname(mount_path)
+    if backup_fs.IsFile(parent_path):
+        return ERROR('mount path can not be created, file already exist: %s' % parent_path)
+    iter_and_iterID = backup_fs.GetIteratorsByPath(parent_path)
+    if iter_and_iterID is None:
+        _, parent_iter, parent_iterID = backup_fs.AddDir(parent_path, read_stats=False)
+        return ERROR('mount path already exist in catalog')
+    newPathID, _, _ = backup_fs.MapPath(path, read_stats=True, iter=parent_iter, iterID=parent_iterID, keyID=key_id)
     if os.path.isdir(path):
         fileorfolder = 'folder'
         dirsize.ask(path, backup_control.OnFoundFolderSize, (newPathID, None))
@@ -518,7 +528,7 @@ def backup_dir_add(dirpath):
     pathID = backup_fs.ToID(dirpath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, _, _ = backup_fs.AddDir(dirpath, True)
+    newPathID, _, _ = backup_fs.AddDir(dirpath, read_stats=True)
     dirsize.ask(dirpath, backup_control.OnFoundFolderSize, (newPathID, None))
     backup_fs.Calculate()
     backup_control.Save()
@@ -547,7 +557,7 @@ def backup_file_add(filepath):
     pathID = backup_fs.ToID(filepath)
     if pathID:
         return ERROR('path already exist in catalog: %s' % pathID)
-    newPathID, _, _ = backup_fs.AddFile(filepath, True)
+    newPathID, _, _ = backup_fs.AddFile(filepath, read_stats=True)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])
@@ -573,7 +583,7 @@ def backup_tree_add(dirpath):
     from system import bpio
     from web import control
     dirpath = bpio.portablePath(unicode(dirpath))
-    newPathID, _, _, num = backup_fs.AddLocalPath(dirpath, True)
+    newPathID, _, _, num = backup_fs.AddLocalPath(dirpath, read_stats=True)
     backup_fs.Calculate()
     backup_control.Save()
     control.request_update([('pathID', newPathID), ])

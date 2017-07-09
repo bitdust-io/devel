@@ -168,11 +168,11 @@ def WriteIndex(filepath=None):
     if filepath is None:
         filepath = settings.BackupIndexFilePath()
     src = '%d\n' % revision()
-    src += backup_fs.Serialize()
+    src += backup_fs.Serialize(to_json=True)
     return bpio.AtomicWriteFile(filepath, src)
 
 
-def ReadIndex(inpt):
+def ReadIndex(raw_data):
     """
     Read index data base, ``input`` is a ``cStringIO.StringIO`` object which
     keeps the data.
@@ -184,18 +184,25 @@ def ReadIndex(inpt):
     if _LoadingFlag:
         return False
     _LoadingFlag = True
+#     try:
+#         new_revision = int(inpt.readline().rstrip('\n'))
+#     except:
+#         _LoadingFlag = False
+#         lg.exc()
+#         return False
+    backup_fs.Clear()
     try:
-        new_revision = int(inpt.readline().rstrip('\n'))
-    except:
-        _LoadingFlag = False
+        count = backup_fs.Unserialize(raw_data, from_json=True)
+    except KeyError:
+        lg.warn('fallback to old (non-json) index format')
+        count = backup_fs.Unserialize(raw_data, from_json=False)
+    except ValueError:
         lg.exc()
         return False
-    backup_fs.Clear()
-    count = backup_fs.Unserialize(inpt)
     if _Debug:
         lg.out(_DebugLevel, 'backup_control.ReadIndex %d items loaded' % count)
     # local_site.update_backup_fs(backup_fs.ListAllBackupIDsSQL())
-    commit(new_revision)
+    # commit(new_revision)
     _LoadingFlag = False
     return True
 
@@ -218,10 +225,20 @@ def Load(filepath=None):
         lg.out(2, 'backup_control.Load ERROR reading file %s' % filepath)
         return False
     inpt = cStringIO.StringIO(src)
-    ret = ReadIndex(inpt)
+    try:
+        known_revision = int(inpt.readline().rstrip('\n'))
+    except:
+        lg.exc()
+        return False
+    raw_data = inpt.read()
     inpt.close()
-    backup_fs.Scan()
-    backup_fs.Calculate()
+    ret = ReadIndex(raw_data)
+    if ret:
+        commit(known_revision)
+        backup_fs.Scan()
+        backup_fs.Calculate()
+    else:
+        lg.warn('catalog index reading failed')
     return ret
 
 
@@ -297,7 +314,7 @@ def IncomingSupplierBackupIndex(newpacket):
             supplier_revision = int(supplier_revision)
         else:
             supplier_revision = -1
-        inpt.seek(0)
+        # inpt.seek(0)
     except:
         lg.out(2, 'backup_control.IncomingSupplierBackupIndex ERROR reading data from %s' % newpacket.RemoteID)
         lg.out(2, '\n' + padded_data)
@@ -310,15 +327,23 @@ def IncomingSupplierBackupIndex(newpacket):
     if driver.is_started('service_backup_db'):
         from storage import index_synchronizer
         index_synchronizer.A('index-file-received', (newpacket, supplier_revision))
-    if revision() < supplier_revision:
-        ReadIndex(inpt)
+    if revision() >= supplier_revision:
+        inpt.close()
+        lg.out(4, 'backup_control.IncomingSupplierBackupIndex skipped, supplier %s revision=%d, local revision=%d' % (
+            newpacket.RemoteID, supplier_revision, revision(), ))
+        return
+    raw_data = inpt.read()
+    inpt.close()
+    if ReadIndex(raw_data):
+        commit(supplier_revision)
         backup_fs.Scan()
         backup_fs.Calculate()
         WriteIndex()
         control.request_update()
-        lg.out(2, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
+        lg.out(4, 'backup_control.IncomingSupplierBackupIndex updated to revision %d from %s' % (
             revision(), newpacket.RemoteID))
-    inpt.close()
+    else:
+        lg.warn('failed to read catalog index from supplier')
 
 #------------------------------------------------------------------------------
 
@@ -462,9 +487,10 @@ class Task():
     All tasks are stored in the list, see ``tasks()`` method.
     """
 
-    def __init__(self, pathID, localPath=None):
+    def __init__(self, pathID, localPath=None, keyID=None):
         self.number = NewTaskNumber()                   # index number for the task
         self.pathID = pathID                            # source path to backup
+        self.keyID = keyID
         self.localPath = localPath
         self.created = time.time()
         self.backupID = None
@@ -569,11 +595,11 @@ class Task():
 #------------------------------------------------------------------------------
 
 
-def PutTask(pathID, localPath=None):
+def PutTask(pathID, localPath=None, keyID=None):
     """
     Creates a new backup ``Task`` and append it to the list of tasks.
     """
-    t = Task(pathID, localPath)
+    t = Task(pathID=pathID, localPath=localPath, keyID=keyID)
     tasks().append(t)
     return t
 

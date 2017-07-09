@@ -379,6 +379,7 @@ class Initializer(automat.Automat):
         from system import run_upnpc
         from raid import eccmap
         from userid import my_id
+        from crypt import my_keys
         my_id.init()
         if settings.enableWebStream():
             from logs import weblog
@@ -393,6 +394,7 @@ class Initializer(automat.Automat):
         settings.update_proxy_settings()
         run_upnpc.init()
         eccmap.init()
+        my_keys.init()
         if sys.argv.count('--twisted'):
             from twisted.python import log as twisted_log
             twisted_log.startLogging(MyTwistedOutputLog(), setStdout=0)

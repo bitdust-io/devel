@@ -152,11 +152,12 @@ class restore(automat.Automat):
         'timer-5sec': (5.0, ['REQUEST']),
     }
 
-    def __init__(self, BackupID, OutputFile):  # OutputFileName
+    def __init__(self, BackupID, OutputFile, KeyID=None):  # OutputFileName
         self.CreatorID = my_id.getLocalID()
         self.BackupID = BackupID
         self.PathID, self.Version = packetid.SplitBackupID(self.BackupID)
         self.File = OutputFile
+        self.KeyID = KeyID
         # is current active block - so when add 1 we get to first, which is 0
         self.BlockNumber = -1
         self.BytesWritten = 0
@@ -396,9 +397,9 @@ class restore(automat.Automat):
         splitindex = blockbits.index(":")
         lengthstring = blockbits[0:splitindex]
         try:
-            datalength = int(lengthstring)                                  # real length before raidmake/ECC
+            datalength = int(lengthstring)                                        # real length before raidmake/ECC
             blockdata = blockbits[splitindex + 1:splitindex + 1 + datalength]     # remove padding from raidmake/ECC
-            newblock = encrypted.Unserialize(blockdata)                      # convert to object
+            newblock = encrypted.Unserialize(blockdata, decrypt_key=self.KeyID)   # convert to object
         except:
             datalength = 0
             blockdata = ''

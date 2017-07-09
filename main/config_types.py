@@ -118,6 +118,7 @@ def defaults():
         'services/identity-propagate/enabled': TYPE_BOOLEAN,
         'services/id-server/enabled': TYPE_BOOLEAN,
         'services/ip-port-responder/enabled': TYPE_BOOLEAN,
+        'services/keys-registry/enabled': TYPE_BOOLEAN,
         'services/list-files/enabled': TYPE_BOOLEAN,
         'services/miner/enabled': TYPE_BOOLEAN,
         'services/my-ip-port/enabled': TYPE_BOOLEAN,

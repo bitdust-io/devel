@@ -271,7 +271,7 @@ class ProxySender(automat.Automat):
             key.SessionKeyType(),
             True,
             src,
-            EncryptFunc=lambda inp: key.EncryptStringPK(publickey, inp))
+            EncryptKey=lambda inp: key.EncryptStringPK(publickey, inp))
         block_encrypted = block.Serialize()
         newpacket = signed.Packet(
             commands.Relay(),

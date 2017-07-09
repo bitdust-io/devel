@@ -60,6 +60,7 @@ import os
 import sys
 import cStringIO
 import time
+import json
 
 #------------------------------------------------------------------------------
 
@@ -203,7 +204,7 @@ class FSItemInfo():
     the index.
     """
 
-    def __init__(self, name='', path_id='', typ=UNKNOWN):
+    def __init__(self, name='', path_id='', typ=UNKNOWN, key_id=None):
         if isinstance(name, unicode):
             self.unicodename = name
         else:
@@ -211,6 +212,7 @@ class FSItemInfo():
         self.path_id = path_id
         self.type = typ
         self.size = -1
+        self.key_id = key_id
         self.versions = {}  # set()
         # print self # typ, self.unicodename, path
 
@@ -340,16 +342,41 @@ class FSItemInfo():
                 version, maxblock, sz = word, -1, -1
             self.set_version_info(version, maxblock, sz)
 
-    def serialize(self, encoding='utf-8'):
+    def serialize(self, encoding='utf-8', to_json=False):
+        if to_json:
+            return {
+                'n': self.unicodename.encode(encoding),
+                'i': str(self.path_id),
+                't': self.type,
+                's': self.size,
+                'k': self.key_id,
+                'v': [{
+                    'n': v,
+                    'b': self.versions[v][0],
+                    's': self.versions[v][1],
+                } for v in self.list_versions(sorted=True)]
+            }
         e = self.unicodename.encode(encoding)
         return '%s %d %d %s\n%s\n' % (self.path_id, self.type,
                                       self.size, self.pack_versions(), e,)
 
-    def unserialize(self, src, decoding='utf-8'):
+    def unserialize(self, src, decoding='utf-8', from_json=False):
+        if from_json:
+            try:
+                self.unicodename = src['n'].decode(decoding)
+                self.path_id = str(src['i'])
+                self.type = src['t']
+                self.size = src['s']
+                self.key_id = src['k']
+                self.versions = {v['n']: [v['b'], v['s'], ] for v in src['v']}
+            except:
+                lg.exc()
+                raise KeyError('Incorrect item format:\n%s' % src)
+            return
         try:
             details, name = src.split('\n')[:2]
         except:
-            raise
+            raise Exception('Incorrect item format:\n%s' % src)
         if details == '' or name == '':
             raise Exception('Incorrect item format:\n%s' % src)
         try:
@@ -359,7 +386,8 @@ class FSItemInfo():
             self.type, self.size = int(self.type), int(self.size)
             self.unpack_versions(' '.join(details[3:]))
         except:
-            raise
+            lg.exc()
+            raise KeyError('Incorrect item format:\n%s' % src)
 
     def __repr__(self):
         return '<%s %s %d>' % (TYPES[self.type], misc.unicode_to_str_safe(self.name()), self.size)
@@ -569,7 +597,7 @@ def AddLocalPath(localpath, read_stats=False):
     return None, None, None, 0
 
 
-def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1):
+def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, keyID=None):
     """
     Acts like AddFile() but do not follow the directory structure. This just
     "map" some local path (file or dir) to one item  in the catalog - by default as a top level item.
@@ -591,7 +619,7 @@ def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1):
     iterID[resultID] = ii
     return str(resultID), iter, iterID
 
-# 
+
 # def AppendFile(name, parentPath, read_stats=False, iter=None, iterID=None, startID=-1):
 #     """
 #     """
@@ -943,6 +971,19 @@ def GetByPath(path):
     if not path_id:
         return None
     return GetByID(path_id)
+
+
+def GetIteratorsByPath(path):
+    """
+    Returns both iterators (iter, iterID) for given path, or None if not found.
+    """
+    iter_and_id = WalkByPath(path, iter)
+    if iter_and_id is None:
+        return None
+    iter_and_path = WalkByID(iter_and_id[1])
+    if iter_and_path is None:
+        return None
+    return iter_and_path[0], iter_and_id[0]
 
 #------------------------------------------------------------------------------
 
@@ -1787,44 +1828,78 @@ def Clear():
     fsID().clear()
 
 
-def Serialize(iterID=None):
+def Serialize(iterID=None, to_json=False, encoding='utf-8'):
     """
     Use this to write index to the local file.
     """
-    result = cStringIO.StringIO()
     cnt = [0]
+    if to_json:
+        result = {'items': []}
+    else:
+        result = cStringIO.StringIO()
 
     def cb(path_id, path, info):
-        result.write(info.serialize())
+        if to_json:
+            result['items'].append(info.serialize(encoding=encoding, to_json=True))
+        else:
+            result.write(info.serialize(encoding=encoding, to_json=False))
         cnt[0] += 1
     TraverseByID(cb, iterID)
-    src = result.getvalue()
-    result.close()
+    if to_json:
+        src = json.dumps(result, indent=2, encoding=encoding)
+    else:
+        src = result.getvalue()
+        result.close()
     lg.out(6, 'backup_fs.Serialize done with %d indexed files' % cnt[0])
     return src
 
 
-def Unserialize(inpt, iter=None, iterID=None):
+def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf-8'):
     """
     Read index from ``StringIO`` object.
     """
     count = 0
-    while True:
-        src = inpt.readline() + inpt.readline()  # 2 times because we take 2 lines for every item
-        if src.strip() == '':
-            break
-        item = FSItemInfo()
-        item.unserialize(src)
-        if item.type == FILE:
-            if not SetFile(item, iter, iterID):
-                raise Exception('Can not put item into the tree: %s' % str(item))
-            count += 1
-        elif item.type == DIR or item.type == PARENT:
-            if not SetDir(item, iter, iterID):
-                raise Exception('Can not put item into the tree: %s' % str(item))
-            count += 1
-        else:
-            raise Exception('Incorrect entry type')
+    if from_json:
+        json_data = json.loads(raw_data, encoding=decoding)
+        for json_item in json_data['items']:
+            item = FSItemInfo()
+            item.unserialize(json_item, decoding=decoding, from_json=True)
+            if item.type == FILE:
+                if not SetFile(item, iter=iter, iterID=iterID):
+                    lg.warn('Can not put FILE item into the tree: %s' % str(item))
+                    raise ValueError('Can not put FILE item into the tree: %s' % str(item))
+                count += 1
+            elif item.type == DIR or item.type == PARENT:
+                if not SetDir(item, iter=iter, iterID=iterID):
+                    lg.warn('Can not put DIR or PARENT item into the tree: %s' % str(item))
+                    raise ValueError('Can not put DIR or PARENT item into the tree: %s' % str(item))
+                count += 1
+            else:
+                raise ValueError('Incorrect entry type')
+    else:
+        inpt = cStringIO.StringIO(raw_data)
+        while True:
+            src = inpt.readline() + inpt.readline()  # 2 times because we take 2 lines for every item
+            if src.strip() == '':
+                break
+            item = FSItemInfo()
+            item.unserialize(src, decoding=decoding, from_json=False)
+            if item.type == FILE:
+                if not SetFile(item, iter=iter, iterID=iterID):
+                    inpt.close()
+                    lg.warn('Can not put FILE item into the tree: %s' % str(item))
+                    raise ValueError('Can not put FILE item into the tree: %s' % str(item))
+                count += 1
+            elif item.type == DIR or item.type == PARENT:
+                if not SetDir(item, iter=iter, iterID=iterID):
+                    inpt.close()
+                    lg.warn('Can not put DIR or PARENT item into the tree: %s' % str(item))
+                    raise ValueError('Can not put DIR or PARENT item into the tree: %s' % str(item))
+                count += 1
+            else:
+                inpt.close()
+                raise ValueError('Incorrect entry type')
+        inpt.close()
     lg.out(6, 'backup_fs.Unserialize done with %d indexed files' % count)
     return count
 

@@ -133,11 +133,17 @@ class backup(automat.Automat):
         'timer-001sec': (0.01, ['READ']),
     }
 
-    def __init__(self, backupID, pipe,
-                 finishCallback=None, blockResultCallback=None,
-                 blockSize=None, sourcePath=None):
+    def __init__(self,
+                 backupID,
+                 pipe,
+                 finishCallback=None,
+                 blockResultCallback=None,
+                 blockSize=None,
+                 sourcePath=None,
+                 keyID=None, ):
         self.backupID = backupID
         self.sourcePath = sourcePath
+        self.keyID = keyID
         self.eccmap = eccmap.Current()
         self.pipe = pipe
         self.blockSize = blockSize
@@ -308,7 +314,9 @@ class backup(automat.Automat):
                 key.NewSessionKey(),
                 key.SessionKeyType(),
                 self.stateEOF,
-                src,)
+                src,
+                EncryptKey=self.keyID,
+            )
             del src
             if _Debug:
                 lg.out(_DebugLevel, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s' % (

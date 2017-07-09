@@ -69,7 +69,8 @@ from lib import misc
 from contacts import contactsdb
 from userid import my_id
 
-import key
+from crypt import key
+from crypt import my_keys
 
 #------------------------------------------------------------------------------
 
@@ -102,17 +103,24 @@ class Block:
                  SessionKeyType,
                  LastBlock,
                  Data,
-                 EncryptFunc=key.EncryptLocalPK):
+                 EncryptKey=None,
+                 DecryptKey=None, ):
         self.CreatorID = CreatorID
         self.BackupID = BackupID
         self.BlockNumber = BlockNumber
-        self.EncryptedSessionKey = EncryptFunc(SessionKey)
+        if callable(EncryptKey):
+            self.EncryptedSessionKey = EncryptKey(SessionKey)
+        elif isinstance(EncryptKey, str):
+            self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
+        else:
+            self.EncryptedSessionKey = key.EncryptLocalPK(SessionKey)
         self.SessionKeyType = SessionKeyType
         self.Length = len(Data)
         self.LastBlock = bool(LastBlock)
         self.EncryptedData = key.EncryptWithSessionKey(SessionKey, Data)  # DataLonger
         self.Signature = None
         self.Sign()
+        self.DecryptKey = DecryptKey
         if _Debug:
             lg.out(_DebugLevel, 'new data in %s' % self)
 
@@ -124,6 +132,10 @@ class Block:
         Return original SessionKey from ``EncryptedSessionKey`` using
         ``crypt.key.DecryptLocalPK()`` method.
         """
+        if callable(self.DecryptKey):
+            return self.DecryptKey(self.EncryptedSessionKey)
+        elif isinstance(self.DecryptKey, str):
+            return my_keys.decrypt(self.DecryptKey, self.EncryptedSessionKey)
         return key.DecryptLocalPK(self.EncryptedSessionKey)
 
     def GenerateHashBase(self):
@@ -197,15 +209,19 @@ class Block:
         Create a string that stores all data fields of that ``encrypted.Block``
         object.
         """
+        decrypt_key = getattr(self, 'DecryptKey')
+        delattr(self, 'DecryptKey')
         e = misc.ObjectToString(self)
+        setattr(self, 'DecryptKey', decrypt_key)
         return e
 
 #------------------------------------------------------------------------------
 
 
-def Unserialize(data):
+def Unserialize(data, decrypt_key=None):
     """
     A method to create a ``encrypted.Block`` instance from input string.
     """
     newobject = misc.StringToObject(data)
+    setattr(newobject, 'DecryptKey', decrypt_key)
     return newobject

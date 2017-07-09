@@ -179,13 +179,13 @@ class BitDustJsonRPCServer(JSONRPCServer):
         return api.backups_id_list()
 
     def jsonrpc_backup_start_path(self, path, bind_local_path=True):
-        return api.backup_start_path(path, bind_local_path=True)
+        return api.backup_start_path(path, bind_local_path=bind_local_path)
 
     def jsonrpc_backup_start_id(self, pathID):
         return api.backup_start_id(pathID)
 
-    def jsonrpc_backup_map_path(self, dirpath):
-        return api.backup_map_path(dirpath)
+    def jsonrpc_backup_map_path(self, dirpath, mount_path, key_id=None):
+        return api.backup_map_path(dirpath, mount_path=mount_path, key_id=key_id)
 
     def jsonrpc_backup_dir_add(self, dirpath):
         return api.backup_dir_add(dirpath)
@@ -196,8 +196,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backup_tree_add(self, dirpath):
         return api.backup_tree_add(dirpath)
 
-    def jsonrpc_backup_delete_local(self, backupID):
-        return api.backup_delete_local(backupID)
+    def jsonrpc_backup_delete_local(self, backup_id):
+        return api.backup_delete_local(backup_id)
 
     def jsonrpc_backup_delete_id(self, pathID):
         return api.backup_delete_id(pathID)
@@ -205,8 +205,8 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backup_delete_path(self, path):
         return api.backup_delete_path(path)
 
-    def jsonrpc_restore_single(self, pathID_or_backupID_or_localPath, destinationPath=None):
-        return api.restore_single(pathID_or_backupID_or_localPath, destinationPath)
+    def jsonrpc_restore_single(self, path_id_or_backup_id_or_loca_path, destination_path=None):
+        return api.restore_single(path_id_or_backup_id_or_loca_path, destination_path)
 
     def jsonrpc_backups_queue(self):
         return api.backups_queue()
