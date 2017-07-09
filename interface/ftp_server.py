@@ -409,7 +409,6 @@ class BitDustFTP(FTP):
         if not upload_dir:
             return defer.fail(FileNotFoundError(path))
         upload_filename = os.path.join(upload_dir, newsegs[-1])
-
         fp = filepath.FilePath(upload_filename)
         try:
             fObj = fp.open('w')
@@ -417,10 +416,8 @@ class BitDustFTP(FTP):
             return errnoToFailure(e.errno, path)
         except:
             return defer.fail(FileNotFoundError(path))
-
         # TODO: remove file after all
         # d.addCallback(lambda ignored: file.close(); and remove file)
-
         # d = Deferred()
         d = Deferred()
         d.addCallback(self._cbWriteOpened, upload_filename, newsegs)

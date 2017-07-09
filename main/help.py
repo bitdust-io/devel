@@ -54,7 +54,7 @@ Commands:
   set list
   file list
   file idlist
-  file bind <local file or folder>
+  file bind <local file or folder> <mapped path> [key ID]
   file add <local file or folder>
   file addtree <folder path>
   file start <local path or ID>
@@ -138,8 +138,9 @@ Commands:
 
   file idlist           show a list of items already uploaded on remote peers
 
-  file bind <local path>
-                        add given path as a top level item in the catalog
+  file bind <local path> <mapped path> [key ID]
+                        add given local path to the catalog and map it to certain
+                        non-existing path in catalog
 
   file add <local path>
                         replicate given path into the catalog,

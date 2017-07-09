@@ -772,18 +772,18 @@ def FireTaskFinishedCallbacks(pathID, version, result):
 #------------------------------------------------------------------------------
 
 
-def StartSingle(pathID, localPath=None):
+def StartSingle(pathID, localPath=None, keyID=None):
     """
     A high level method to start a backup of single file or folder.
     """
     from storage import backup_monitor
-    t = PutTask(pathID, localPath)
+    t = PutTask(pathID=pathID, localPath=localPath, keyID=keyID)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.A, 'restart')
     return t
 
 
-def StartRecursive(pathID, localPath=None):
+def StartRecursive(pathID, keyID=None):
     """
     A high level method to start recursive backup of given path.
 
@@ -791,13 +791,14 @@ def StartRecursive(pathID, localPath=None):
     tasks for them.
     """
     from storage import backup_monitor
-    startedtasks = set()
+    startedtasks = []
 
     def visitor(path_id, path, info):
         if info.type == backup_fs.FILE:
             if path_id.startswith(pathID):
-                PutTask(path_id, path)
-                startedtasks.add(path_id)
+                t = PutTask(pathID=path_id, localPath=path, keyID=keyID)
+                startedtasks.append(t)
+
     backup_fs.TraverseByID(visitor)
     reactor.callLater(0, RunTasks)
     reactor.callLater(0, backup_monitor.A, 'restart')
