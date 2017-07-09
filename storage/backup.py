@@ -319,8 +319,8 @@ class backup(automat.Automat):
             )
             del src
             if _Debug:
-                lg.out(_DebugLevel, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s' % (
-                    self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time() - dt)))
+                lg.out(_DebugLevel, 'backup.doEncryptBlock blockNumber=%d size=%d atEOF=%s dt=%s EncryptKey=%s' % (
+                    self.blockNumber, self.currentBlockSize, self.stateEOF, str(time.time() - dt), self.keyID))
             return block
         maybeDeferred(_doBlock).addCallback(
             lambda block: self.automat('block-encrypted', block),)

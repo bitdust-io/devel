@@ -190,6 +190,9 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_backup_dir_add(self, dirpath, key_id=None):
         return api.backup_dir_add(dirpath, key_id=key_id)
 
+    def jsonrpc_backup_dir_make(self, dirpath, key_id=None):
+        return api.backup_dir_make(dirpath, key_id=key_id)
+
     def jsonrpc_backup_file_add(self, filepath, key_id=None):
         return api.backup_file_add(filepath, key_id=key_id)
 

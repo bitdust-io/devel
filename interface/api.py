@@ -513,6 +513,33 @@ def backup_map_path(path, mount_path, key_id=None):
         extra_fields={'id': newPathID, 'type': fileorfolder})
 
 
+def backup_dir_make(dirpath, key_id=None):
+    """
+    Creates empty folder in catalog.
+    Return:
+
+        {'status': 'OK',   'result': 'new folder was added: 0/0/8, local
+        path is /Users/veselin/Desktop/'}
+    """
+    if not driver.is_started('service_backups'):
+        return ERROR('service_backups() is not started')
+    from storage import backup_fs
+    from storage import backup_control
+    from system import bpio
+    from web import control
+    dirpath = '/' + (dirpath.lstrip('/'))
+    dirpath = bpio.portablePath(unicode(dirpath))
+    pathID = backup_fs.ToID(dirpath)
+    if pathID:
+        return ERROR('path already exist in catalog: %s' % pathID)
+    newPathID, _, _ = backup_fs.AddDir(dirpath, read_stats=False, keyID=key_id)
+    backup_fs.Calculate()
+    backup_control.Save()
+    control.request_update([('pathID', newPathID), ])
+    return OK('new folder was added: %s, local path is %s' % (newPathID, dirpath),
+              extra_fields={'id': newPathID, 'type': 'folder'})
+
+
 def backup_dir_add(dirpath, key_id=None):
     """
     Add given folder to the catalog but do not start uploading process. This
@@ -520,8 +547,8 @@ def backup_dir_add(dirpath, key_id=None):
     structure as your local folders structure. So the final ID will be
     combination of all parent IDs, separated with "/". Return:
 
-    {'status': 'OK',   'result': 'new folder was added: 0/0/2, local
-    path is /Users/veselin/Movies/'}
+        {'status': 'OK',   'result': 'new folder was added: 0/0/2, local
+        path is /Users/veselin/Movies/'}
     """
     if not driver.is_started('service_backups'):
         return ERROR('service_backups() is not started')

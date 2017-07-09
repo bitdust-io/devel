@@ -580,6 +580,7 @@ class Task():
             blockResultCallback=OnBackupBlockReport,
             blockSize=settings.getBackupBlockSize(),
             sourcePath=self.localPath,
+            keyID=self.keyID or itemInfo.key_id,
         )
         jobs()[self.backupID] = job
         itemInfo.add_version(dataID)
@@ -643,13 +644,14 @@ def OnFoundFolderSize(pth, sz, arg):
     """
     try:
         pathID, version = arg
-        backupID = pathID + '/' + version
         item = backup_fs.GetByID(pathID)
         if item:
             item.set_size(sz)
-        job = GetRunningBackupObject(backupID)
-        if job:
-            job.totalSize = sz
+        if version:
+            backupID = pathID + '/' + version
+            job = GetRunningBackupObject(backupID)
+            if job:
+                job.totalSize = sz
         if _Debug:
             lg.out(_DebugLevel, 'backup_control.OnFoundFolderSize %s %d' % (backupID, sz))
     except:

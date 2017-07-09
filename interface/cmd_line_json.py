@@ -608,12 +608,18 @@ def cmd_backup(opts, args, overDict, executablePath):
         print_text('path %s not exist\n' % args[2])
         return 1
 
-    if len(args) >= 2 and args[1] in ['add', 'append', 'insert', ]:
+    if len(args) >= 2 and args[1] in ['add', 'append', 'insert', 'make', 'create', ]:
         tpl = jsontemplate.Template(templ.TPL_RAW)
+        key_id = args[3] if len(args) > 3 else None
+        if args[1] in ['make', 'create', ]:
+            if args[0] in ['dir', 'folder', ]:
+                return call_jsonrpc_method_template_and_stop('backup_dir_make', tpl, args[2], key_id)
+            else:
+                return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2], key_id)
         if os.path.isdir(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_dir_add', tpl, args[2], key_id)
         elif os.path.isfile(args[2]):
-            return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2])
+            return call_jsonrpc_method_template_and_stop('backup_file_add', tpl, args[2], key_id)
         print_text('path %s not exist\n' % args[2])
         return 1
 
@@ -1270,7 +1276,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_friend(opts, args, overDict)
 
     #---backup---
-    elif cmd in ['file', 'files', 'fi', 'fs', 'backup', 'backups', 'bk', 'up', 'upload', 'uploads', ]:
+    elif cmd in ['file', 'files', 'fi', 'fs', 'backup', 'backups', 'bk', 'up', 'upload', 'uploads', 'folder', 'dir', ]:
         if not running:
             print_text('BitDust is not running at the moment\n')
             return 0

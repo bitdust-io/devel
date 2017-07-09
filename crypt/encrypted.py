@@ -110,7 +110,7 @@ class Block:
         self.BlockNumber = BlockNumber
         if callable(EncryptKey):
             self.EncryptedSessionKey = EncryptKey(SessionKey)
-        elif isinstance(EncryptKey, str):
+        elif isinstance(EncryptKey, basestring):
             self.EncryptedSessionKey = my_keys.encrypt(EncryptKey, SessionKey)
         else:
             self.EncryptedSessionKey = key.EncryptLocalPK(SessionKey)
@@ -134,7 +134,7 @@ class Block:
         """
         if callable(self.DecryptKey):
             return self.DecryptKey(self.EncryptedSessionKey)
-        elif isinstance(self.DecryptKey, str):
+        elif isinstance(self.DecryptKey, basestring):
             return my_keys.decrypt(self.DecryptKey, self.EncryptedSessionKey)
         return key.DecryptLocalPK(self.EncryptedSessionKey)
 

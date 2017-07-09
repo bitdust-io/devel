@@ -595,11 +595,11 @@ def AddLocalPath(localpath, read_stats=False, key_id=None):
         return c
     localpath = bpio.portablePath(localpath)
     if bpio.pathIsDir(localpath):
-        path_id, iter, iterID = AddDir(localpath, read_stats)
+        path_id, iter, iterID = AddDir(localpath, read_stats=read_stats, keyID=key_id)
         num = recursive_read_dir(localpath, path_id, iter, iterID)
         return path_id, iter, iterID, num
     else:
-        path_id, iter, iterID = AddFile(localpath, read_stats)
+        path_id, iter, iterID = AddFile(localpath, read_stats=read_stats, keyID=key_id)
         return path_id, iter, iterID, 1
     return None, None, None, 0
 
@@ -1952,7 +1952,7 @@ def _test():
 
     # print GetByPath('')
 
-    print WalkByID('8/0/0')
+    # print WalkByID('8/0/0')
 
     # print AppendFile('new', '/Users/veselin/Pictures')
 
