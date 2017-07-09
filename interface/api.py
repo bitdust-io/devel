@@ -491,14 +491,15 @@ def backup_map_path(path, mount_path, key_id=None):
         return ERROR('path already exist in catalog: %s' % pathID)
     if backup_fs.Exists(mount_path):
         return ERROR('mount path already exist in catalog')
-    parent_path = os.path.dirname(mount_path)
+    parent_path = os.path.dirname(bpio.portablePath(unicode(mount_path)))
     if backup_fs.IsFile(parent_path):
         return ERROR('mount path can not be created, file already exist: %s' % parent_path)
     iter_and_iterID = backup_fs.GetIteratorsByPath(parent_path)
     if iter_and_iterID is None:
         _, parent_iter, parent_iterID = backup_fs.AddDir(parent_path, read_stats=False)
-        return ERROR('mount path already exist in catalog')
-    newPathID, _, _ = backup_fs.MapPath(path, read_stats=True, iter=parent_iter, iterID=parent_iterID, keyID=key_id)
+    else:
+        parent_iter, parent_iterID = iter_and_iterID
+    newPathID, _, _ = backup_fs.MapPath(path, read_stats=True, iter=parent_iter, iterID=parent_iterID, key_id=key_id)
     if os.path.isdir(path):
         fileorfolder = 'folder'
         dirsize.ask(path, backup_control.OnFoundFolderSize, (newPathID, None))

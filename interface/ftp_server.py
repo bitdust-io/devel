@@ -306,7 +306,7 @@ class BitDustFTP(FTP):
                 known_size = itm[7].versions[itm[7].get_latest_version()][1]
             else:
                 known_size = 0
-            result.append((itm[1], [  # name
+            result.append((itm[7].filename(), [  # name
                 known_size,  # size
                 True if itm[0] == 'dir' else False,  # folder or file ?
                 filepath.Permissions(07777),  # permissions

@@ -216,6 +216,12 @@ class FSItemInfo():
         self.versions = {}  # set()
         # print self # typ, self.unicodename, path
 
+    def __repr__(self):
+        return '<%s %s %d %s>' % (TYPES[self.type], misc.unicode_to_str_safe(self.name()), self.size, self.key_id)
+
+    def filename(self):
+        return os.path.basename(self.unicodename)
+
     def name(self):
         return self.unicodename
 
@@ -363,7 +369,7 @@ class FSItemInfo():
     def unserialize(self, src, decoding='utf-8', from_json=False):
         if from_json:
             try:
-                self.unicodename = src['n'].decode(decoding)
+                self.unicodename = src['n']  # .decode(decoding)
                 self.path_id = str(src['i'])
                 self.type = src['t']
                 self.size = src['s']
@@ -388,9 +394,6 @@ class FSItemInfo():
         except:
             lg.exc()
             raise KeyError('Incorrect item format:\n%s' % src)
-
-    def __repr__(self):
-        return '<%s %s %d>' % (TYPES[self.type], misc.unicode_to_str_safe(self.name()), self.size)
 
 #------------------------------------------------------------------------------
 
@@ -430,6 +433,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
     if not iterID:
         iterID = fsID()
     resultID = ''
+    parentKeyID = None
     # build all tree, skip the last part
     for i in range(len(parts) - 1):
         name = parts[i]
@@ -448,7 +452,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
             # build a unique backup id for that file including all indexed ids
             resultID += '/' + str(id)
             # make new sub folder
-            ii = FSItemInfo(name=name, path_id=resultID.lstrip('/'), typ=PARENT, key_id=keyID)
+            ii = FSItemInfo(name=name, path_id=resultID.lstrip('/'), typ=DIR, key_id=keyID or parentKeyID)
             if read_stats:
                 ii.read_stats(p)
             # we use 0 key as decimal value, all files and folders are strings - no conflicts possible 0 != '0'
@@ -461,6 +465,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
             # go down into the existing forest
             resultID += '/' + str(id)
         # move down to the next level
+        parentKeyID = iterID[id][INFO_KEY].key_id
         iter = iter[name]
         iterID = iterID[id]
     # the last part of the path is a filename
@@ -469,7 +474,7 @@ def AddFile(path, read_stats=False, iter=None, iterID=None, keyID=None):
     id = MakeID(iter)
     resultID += '/' + str(id)
     resultID = resultID.lstrip('/')
-    ii = FSItemInfo(name=filename, path_id=resultID, typ=FILE, key_id=keyID)
+    ii = FSItemInfo(name=filename, path_id=resultID, typ=FILE, key_id=keyID or parentKeyID)
     if read_stats:
         ii.read_stats(path)
     iter[ii.name()] = id
@@ -500,6 +505,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, keyID=None):
     if not iterID:
         iterID = fsID()
     resultID = ''
+    parentKeyID = None
     for i in range(len(parts)):
         name = parts[i]
         if not name:
@@ -512,7 +518,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, keyID=None):
         if name not in iter:
             id = MakeID(iter)
             resultID += '/' + str(id)
-            ii = FSItemInfo(name, path_id=resultID.lstrip('/'), typ=PARENT, key_id=keyID)
+            ii = FSItemInfo(name, path_id=resultID.lstrip('/'), typ=DIR, key_id=keyID or parentKeyID)
             if read_stats:
                 ii.read_stats(p)
             iter[ii.name()] = {0: id}
@@ -520,6 +526,7 @@ def AddDir(path, read_stats=False, iter=None, iterID=None, keyID=None):
         else:
             id = iter[name][0]
             resultID += '/' + str(id)
+        parentKeyID = iterID[id][INFO_KEY].key_id
         iter = iter[name]
         iterID = iterID[id]
         if i == len(parts) - 1:
@@ -600,7 +607,7 @@ def AddLocalPath(localpath, read_stats=False, key_id=None):
 def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, key_id=None):
     """
     Acts like AddFile() but do not follow the directory structure. This just
-    "map" some local path (file or dir) to one item  in the catalog - by default as a top level item.
+    "bind" some local path (file or dir) to one item in the catalog - by default as a top level item.
     The name of new item will be equal to the local path.
     """
     path = bpio.portablePath(path)
@@ -611,8 +618,9 @@ def MapPath(path, read_stats=False, iter=None, iterID=None, startID=-1, key_id=N
     if not iterID:
         iterID = fsID()
     # make an ID for the filename
+    typ = DIR if bpio.pathIsDir(path) else FILE
     resultID = MakeID(iter, startID=startID)
-    ii = FSItemInfo(path, path_id=resultID, typ=FILE, key_id=key_id)
+    ii = FSItemInfo(path, path_id=resultID, typ=typ, key_id=key_id)
     if read_stats:
         ii.read_stats(path)
     iter[ii.name()] = resultID
@@ -977,7 +985,7 @@ def GetIteratorsByPath(path):
     """
     Returns both iterators (iter, iterID) for given path, or None if not found.
     """
-    iter_and_id = WalkByPath(path, iter)
+    iter_and_id = WalkByPath(path)
     if iter_and_id is None:
         return None
     iter_and_path = WalkByID(iter_and_id[1])
@@ -1906,7 +1914,7 @@ def Unserialize(raw_data, iter=None, iterID=None, from_json=False, decoding='utf
 #------------------------------------------------------------------------------
 
 
-def test():
+def _test():
     """
     For tests.
     """
@@ -1917,7 +1925,8 @@ def test():
     src = bpio.ReadTextFile(filepath)
     inpt = cStringIO.StringIO(src)
     inpt.readline()
-    count = Unserialize(inpt)
+    # count = Unserialize(inpt)
+    count = Unserialize(inpt.read(), from_json=True)
     inpt.close()
     print count
     Scan()
@@ -1925,8 +1934,25 @@ def test():
     pprint.pprint(fs())
     pprint.pprint(fsID())
 
+#     parent_path = os.path.dirname(bpio.portablePath(unicode('/some/remote/path')))
+#     if IsFile(parent_path):
+#         raise
+#     iter_and_iterID = GetIteratorsByPath(parent_path)
+#     if iter_and_iterID is None:
+#         _, parent_iter, parent_iterID = AddDir(parent_path, read_stats=False)
+#     else:
+#         parent_iter, parent_iterID = iter_and_iterID
+#     print MapPath('/tmp/com.apple.launchd.KlOCuOQw9M', iter=parent_iter, iterID=parent_iterID)
+
+#     print AddDir('/this/folder/not/exist/', read_stats=True, keyID='KKKKKKK')
+#     print AddDir('/this/folder/not/exist/subdir')
+
+#     pprint.pprint(fs())
+#     pprint.pprint(fsID())
+
     # print GetByPath('')
-    print WalkByID('0')
+
+    print WalkByID('8/0/0')
 
     # print AppendFile('new', '/Users/veselin/Pictures')
 
@@ -2000,5 +2026,6 @@ def test():
     # pprint.pprint( ListLocalFolder(sys.argv[1]) )
     # print ListLocalFolder(sys.argv[1])
 
+
 if __name__ == '__main__':
-    test()
+    _test()
