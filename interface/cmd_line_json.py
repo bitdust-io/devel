@@ -33,7 +33,6 @@ module:: cmd_line_json
 import os
 import sys
 
-from twisted.internet import reactor
 
 from lib import jsontemplate
 
@@ -135,6 +134,7 @@ def print_and_stop(result):
     """
     Print text to console and stop the reactor.
     """
+    from twisted.internet import reactor
     import pprint
     pprint.pprint(result, indent=2,)
     reactor.stop()
@@ -156,6 +156,7 @@ def print_template_and_stop(result, template):
     """
     Print text with json template formatting and stop the reactor.
     """
+    from twisted.internet import reactor
     print_template(result, template)
     reactor.stop()
 
@@ -164,6 +165,7 @@ def fail_and_stop(err):
     """
     Send error message to STDOUT and stop the reactor.
     """
+    from twisted.internet import reactor
     try:
         print_text(err.getErrorMessage())
     except:
@@ -194,6 +196,7 @@ def call_jsonrpc_method_and_stop(method, *args):
     """
     
     """
+    from twisted.internet import reactor
     d = call_jsonrpc_method(method, *args)
     d.addCallback(print_and_stop)
     d.addErrback(fail_and_stop)
@@ -205,6 +208,7 @@ def call_jsonrpc_method_template_and_stop(method, template, *args):
     """
     
     """
+    from twisted.internet import reactor
     d = call_jsonrpc_method(method, *args)
     d.addCallback(print_template_and_stop, template)
     d.addErrback(fail_and_stop)
@@ -216,6 +220,7 @@ def call_jsonrpc_method_transform_template_and_stop(method, template, transform,
     """
     
     """
+    from twisted.internet import reactor
     d = call_jsonrpc_method(method, *args)
     d.addCallback(lambda result: print_template_and_stop(transform(result), template))
     d.addErrback(fail_and_stop)
@@ -367,7 +372,7 @@ def cmd_deploy(opts, args, overDict):
     os.chmod(script_path, 0775)
     print_text('\nBitDust application files created successfully in {}'.format(settings.BaseDir()))
     print_text('To run the programm use this executable script:\n\n    {}\n'.format(script_path))
-    print_text('To create system-wide shell command, configure your PATH, or create a symlink:\n')
+    print_text('To create system-wide shell command, add /Users/veselin/.bitdust/bitdust to your PATH, or create a symlink:\n')
     print_text('    sudo ln -s {} /usr/local/bin/bitdust\n\n'.format(script_path))
     return 0
 
@@ -411,6 +416,7 @@ def cmd_identity(opts, args, overDict, running):
             except:
                 print_text('incorrect private key size\n')
                 return 0
+        from twisted.internet import reactor
         from automats import automat
         from main import initializer
         from lib import misc
@@ -1029,7 +1035,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     from system import bpio
     bpio.init()
 
-    if cmd == 'deploy':
+    if cmd in ['deploy', 'install', 'venv', 'virtualenv', ]:
         return cmd_deploy(opts, args, overDict)
 
     #---start---

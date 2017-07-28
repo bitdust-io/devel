@@ -37,6 +37,7 @@ def usage():
     return '''usage: bitdust [options] [command] [arguments]
 
 Commands:
+  install
   start
   detach
   restart
@@ -96,6 +97,9 @@ def help():
     return '''usage: bitdust [options] [command] [arguments]
 
 Commands:
+  install               create virtual environment and deploy
+                        Python2.7 dependencies in ~/.bitdust/venv/
+
   [start]               start main BitDust process
 
   detach                start BitDust in as a daemon process

@@ -567,8 +567,11 @@ def main(executable_path=None):
     # sys.excepthook = lg.exception_hook
 
     if not bpio.isFrozen():
-        from twisted.internet.defer import setDebugging
-        setDebugging(True)
+        try:
+            from twisted.internet.defer import setDebugging
+            setDebugging(True)
+        except:
+            lg.warn('python-twisted is not installed')
 
     pars = parser()
     (opts, args) = pars.parse_args()

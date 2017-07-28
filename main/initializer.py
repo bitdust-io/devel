@@ -254,8 +254,6 @@ class Initializer(automat.Automat):
 
     def doInitInterfaces(self, arg):
         lg.out(2, 'initializer.doInitInterfaces')
-#         from interface import xmlrpc_server
-#         xmlrpc_server.init()
         if settings.enableFTPServer():
             from interface import ftp_server
             ftp_server.init()
