@@ -32,8 +32,7 @@ instructions.
 """
 
 
-
-def usage():
+def usage_text():
     return '''usage: bitdust [options] [command] [arguments]
 
 Commands:
@@ -93,7 +92,7 @@ Commands:
 #------------------------------------------------------------------------------
 
 
-def help():
+def help_text():
     return '''usage: bitdust [options] [command] [arguments]
 
 Commands:

@@ -31,49 +31,71 @@ BitDust is written in Python using pure Twisted framework and published under GN
 
 ## Install
 
-Seems like in Ubuntu (probably most other distros) you just need to install all dependencies at first step:
+
+### Get the software
+
+Seems like in Ubuntu (probably most other distros) you can install all dependencies in that way:
+
+        sudo apt-get install git python-dev python-setuptools python-pip python-virtualenv
+        
+        sudo apt-get install python-twisted python-django python-crypto python-pyasn1 python-psutil libffi-dev
 
 
-        sudo apt-get install git python-dev python-setuptools
-        
-        sudo apt-get install python-twisted python-django python-crypto python-pyasn1 python-psutil
-        
-    
 Optionally, you can also install [miniupnpc](http://miniupnp.tuxfamily.org/) tool if you want BitDust automatically deal with UPnPc configuration of your network router so it can also accept incomming connections from other nodes.:
 
         sudo apt-get install miniupnpc
 
 
-Get Sources:
+Second step is to get the BitDust sources:
 
         git clone http://gitlab.bitdust.io/stable/bitdust.latest.git bitdust
 
 
-Create an alias in OS so you can easily run the program from any location:
+Then you need to build virtual environment with all required Python dependencies, BitDust software will run fully isolated.
+Single command should make it for you, all required files will be generated in `~/.bitdust/venv/` sub-folder:
 
         cd bitdust
-        python bitdust.py alias | sudo tee /usr/local/bin/bitdust
-        sudo chmod +x /usr/local/bin/bitdust
+        python bitdust.py install
+
+
+Last step to make BitDist software ready is to make a short alias in your OS, then just type `bitdust` in command line to access the program:
+        
+        sudo ln -s /home/<user>/.bitdust/bitdust /usr/local/bin/bitdust
         
 
-Create an identity for you in the BitDust network:
+
+### Run BitDist
+
+Start using the software by creating an identity for your device in BitDust network:
        
         bitdust id create <some nick name>
        
 
 I recommend you to create another copy of your Private Key in a safe place to be able to recover your data in the future. You can do it with such command:
 
-        bitdust key copy <filename>
+        bitdust key copy <nickname>.bitdust.key
 
 
-Your settings and local files are located in that folder: ~/.bitdust.
+Your settings and local files are located in that folder: ~/.bitdust
 
 Type this command to read more info about BitDust commands:
 
         bitdust help
 
 
-Please read more about [BitDust Commands](commands.md) to start playing with software.
+To run the software type:
+
+        bitdust
+        
+
+Start as background process:
+
+        bitdust detach
+
+
+To get some more insights or just to know how to start playing with software
+you can visit [BitDust Commands](https://bitdust.io/commands.html) page. 
+
 
 
 ## Dependencies

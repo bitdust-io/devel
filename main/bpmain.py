@@ -258,7 +258,7 @@ def parser():
     Create an ``optparse.OptionParser`` object to read command line arguments.
     """
     from optparse import OptionParser, OptionGroup
-    parser = OptionParser(usage=usage(), prog='BitDust')
+    parser = OptionParser(usage=usage_text(), prog='BitDust')
     group = OptionGroup(parser, "Logs")
     group.add_option('-d', '--debug',
                      dest='debug',
@@ -424,6 +424,7 @@ def wait_then_kill(x):
 
 #------------------------------------------------------------------------------
 
+
 _OriginalCallLater = None
 _DelayedCallsIndex = {}
 _LastCallableID = 0
@@ -493,25 +494,25 @@ def monitorDelayedCalls(r):
 #-------------------------------------------------------------------------------
 
 
-def usage():
+def usage_text():
     """
     Calls ``p2p.help.usage()`` method to print out how to run BitDust software
     from command line.
     """
     try:
         import help
-        return help.usage()
+        return help.usage_text()
     except:
         return ''
 
 
-def help():
+def help_text():
     """
     Same thing, calls ``p2p.help.help()`` to show detailed instructions.
     """
     try:
         import help
-        return help.help()
+        return help.help_text()
     except:
         return ''
 
@@ -931,7 +932,7 @@ def main(executable_path=None):
     from interface import cmd_line_json as cmdln
     ret = cmdln.run(opts, args, pars, overDict, executable_path)
     if ret == 2:
-        print usage()
+        print usage_text()
     bpio.shutdown()
     return ret
 
@@ -940,5 +941,5 @@ def main(executable_path=None):
 if __name__ == "__main__":
     ret = main()
     if ret == 2:
-        print usage()
+        print usage_text()
 #    sys.exit(ret)

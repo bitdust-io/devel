@@ -46,8 +46,8 @@ def parser():
     Create an ``optparse.OptionParser`` object to read command line arguments.
     """
     from optparse import OptionParser, OptionGroup
-    from main.help import usage
-    parser = OptionParser(usage=usage())
+    from main.help import usage_text
+    parser = OptionParser(usage=usage_text())
     group = OptionGroup(parser, "Logs")
     group.add_option('-d', '--debug',
                      dest='debug',
@@ -1035,6 +1035,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
     from system import bpio
     bpio.init()
 
+    #---install---
     if cmd in ['deploy', 'install', 'venv', 'virtualenv', ]:
         return cmd_deploy(opts, args, overDict)
 
