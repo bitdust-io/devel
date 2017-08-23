@@ -26,6 +26,7 @@ def ls(tpl, tag='result'):
 
 #------------------------------------------------------------------------------
 
+
 tpl_status = "{.section status}{@}{.end}"
 tpl_result = ls("{@}\n")
 tpl_message = "{.section message}{@}{.end}"
@@ -46,6 +47,14 @@ TPL_JSON = "{@}"
 
 TPL_RAW = tpl_5_items.format(
     tpl_status, tpl_execution, tpl_result, tpl_message, tpl_errors)
+
+#------------------------------------------------------------------------------
+
+TPL_KEYS_LIST = tpl_4_items.format(
+    tpl_status,
+    tpl_execution,
+    ls("\n{name}:\n{type} {size} {fingerprint}\n{public}\n"),
+    tpl_errors)
 
 #------------------------------------------------------------------------------
 

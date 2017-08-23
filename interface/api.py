@@ -238,9 +238,39 @@ def config_list(sort=False):
     r = map(lambda key: {
         'key': key,
         'value': str(r[key]).replace('\n', '\\n'),
-        'type': config.conf().getTypeLabel(key)}, sorted(r.keys()))
+        'type': config.conf().getTypeLabel(key)}, r.keys())
     if sort:
         r = sorted(r, key=lambda i: i['key'])
+    return RESULT(r)
+
+#------------------------------------------------------------------------------
+
+def keys_list(sort=False):
+    """
+    """
+    lg.out(4, 'api.keys_list')
+    from crypt import my_keys
+    from crypt import key
+    r = []
+    for key_name, key_object in my_keys.known_keys().items():
+        r.append({
+            'name': key_name,
+            'fingerprint': str(key_object.fingerprint()),
+            'type': str(key_object.type()),
+            'ssh_type': str(key_object.sshType()),
+            'size': str(key_object.size()),
+            'public': str(key_object.public().toString('openssh')),
+        })
+    if sort:
+        r = sorted(r, key=lambda i: i['name'])
+    r.insert(0, {
+        'name': 'master',
+        'fingerprint': key.MyPrivateKeyObject().fingerprint(),
+        'type': str(key.MyPrivateKeyObject().type()),
+        'ssh_type': str(key.MyPrivateKeyObject().sshType()),
+        'size': str(key.MyPrivateKeyObject().size()),
+        'public': str(key.MyPrivateKeyObject().public().toString('openssh')),
+    })
     return RESULT(r)
 
 #------------------------------------------------------------------------------

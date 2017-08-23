@@ -169,6 +169,18 @@ class BitDustJsonRPCServer(JSONRPCServer):
     def jsonrpc_filemanager(self, json_request):
         return api.filemanager(json_request)
 
+    def jsonrpc_config_list(self, sort=False):
+        return api.config_list(sort)
+
+    def jsonrpc_config_get(self, key, default=None):
+        return api.config_get(key, default)
+
+    def jsonrpc_config_set(self, key, value):
+        return api.config_set(key, value)
+
+    def jsonrpc_keys_list(self, sort=False):
+        return api.keys_list(sort)
+
     def jsonrpc_backups_update(self):
         return api.backups_update()
 
@@ -288,15 +300,6 @@ class BitDustJsonRPCServer(JSONRPCServer):
 
     def jsonrpc_ping(self, idurl, timeout=10):
         return api.ping(str(idurl), timeout)
-
-    def jsonrpc_config_list(self, sort=False):
-        return api.config_list(sort)
-
-    def jsonrpc_config_get(self, key, default=None):
-        return api.config_get(key, default)
-
-    def jsonrpc_config_set(self, key, value):
-        return api.config_set(key, value)
 
 #     def jsonrpc_list_messages(self):
 #         return api.list_messages()

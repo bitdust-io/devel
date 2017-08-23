@@ -52,6 +52,7 @@ def output(value):
 proxy = Proxy('http://localhost:%d' % settings.DefaultJsonRPCPort())
 # proxy.callRemote('ping', 'http://p2p-id.ru/bitdust_j_vps1014.xml').addBoth(output)
 # proxy.callRemote('config_set', 'logs/debug-level', '20').addBoth(output)
-proxy.callRemote('filemanager_list', 'path=/').addBoth(output)
+# proxy.callRemote('filemanager_list', 'path=/').addBoth(output)
+proxy.callRemote('keys_list').addBoth(output)
 
 reactor.run()

@@ -511,8 +511,15 @@ def cmd_key(opts, args, overDict, running, executablePath):
         print_text('private key not exist or is not valid\n')
         return 0
     if not my_id.isLocalIdentityReady():
-        print_text('local identity not exist, your key worth nothing\n')
+        print_text('local identity not exist, please run "bitdust id create <nickname>" command\n')
         return 0
+
+    if len(args) == 1 or (len(args) == 2 and args[1] == 'list'):
+        if not running:
+            print_text('BitDust is not running at the moment\n')
+            return 0
+        tpl = jsontemplate.Template(templ.TPL_KEYS_LIST)
+        return call_jsonrpc_method_template_and_stop('keys_list', tpl)
 
     if len(args) == 2:
         if args[1] == 'copy':
@@ -1199,7 +1206,7 @@ def run(opts, args, pars=None, overDict=None, executablePath=None):
         return cmd_identity(opts, args, overDict, running)
 
     #---key---
-    elif cmd == 'key':
+    elif cmd in ['key', 'keys', 'pk', 'private_key', 'priv', ]:
         return cmd_key(opts, args, overDict, running, executablePath)
 
     #---ping---
