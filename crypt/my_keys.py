@@ -152,8 +152,8 @@ def validate_key(key_object):
     """
     """
     data256 = os.urandom(256)
-    signature256 = key_object.keyObject.sign(data256)
-    return key_object.keyObject.verify(signature256, data256)
+    signature256 = key_object.keyObject.sign(data256, '')
+    return key_object.keyObject.verify(data256, signature256)
 
 #------------------------------------------------------------------------------
 
